@@ -1,0 +1,23 @@
+# Abhängigkeiten und Builds
+node_modules/
+dist/
+dist-electron/
+release/
+out/
+coverage/
+*.tsbuildinfo
+
+# Logs und Umgebung
+*.log
+npm-debug.log*
+.env
+.env.*
+
+# macOS / Windows
+.DS_Store
+Thumbs.db
+
+# Editoren
+.vscode/*
+!.vscode/extensions.json
+.idea/
