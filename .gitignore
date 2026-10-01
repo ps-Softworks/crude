@@ -21,3 +21,7 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# Python (Tabellenmodell)
+.venv/
+__pycache__/
