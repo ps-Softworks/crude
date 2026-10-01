@@ -10,6 +10,8 @@ Ziel: kommerzieller Release auf Steam, PC zuerst.
 - Roadmap bis Early Access (abhakbar): https://claude.ai/code/artifact/900e1b6c-0788-449d-a682-0f06781fd49b
 - Konzeptüberblick: [docs/konzept-ueberblick.md](docs/konzept-ueberblick.md)
 - Weltbibel (Schritt 0.5): [docs/weltbibel.md](docs/weltbibel.md)
+- Tabellenmodell (Schritt 0.6): [docs/tabellenmodell.xlsx](docs/tabellenmodell.xlsx)
+- Papierprototyp zum Ausdrucken (Schritt 0.7): [docs/papierprototyp.html](docs/papierprototyp.html)
 
 ## Technik (geplant ab Phase 1)
 

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CRUDE Papierprototyp</title><style>
+:root { --tinte:#1d1a16; --papier:#fff; --linie:#999; --sicker:#3a2e22; --kuppe:#b9a27a; --flach:#efe6d2; }
+* { box-sizing:border-box; }
+body { font-family: Georgia, 'Times New Roman', serif; color:var(--tinte); background:var(--papier); margin:0; padding:16px; }
+h1 { font-size:22pt; margin:0 0 4px; } h2 { font-size:14pt; margin:14px 0 6px; border-bottom:1px solid var(--tinte); }
+p, li { font-size:10.5pt; line-height:1.35; } .klein { font-size:9pt; color:#555; }
+.seite { max-width:190mm; margin:0 auto 24px; }
+.seite.quer { max-width:277mm; }
+table { border-collapse:collapse; width:100%; }
+td, th { border:1px solid var(--linie); padding:3px 4px; font-size:9pt; text-align:center; }
+.karte td { width:16.6%; height:28mm; vertical-align:middle; }
+.karte span { display:block; font-weight:bold; } .karte small { font-size:8pt; }
+.zS { background:var(--sicker); color:#fff; } .zK { background:var(--kuppe); } .zF { background:var(--flach); }
+.kartenraster { display:grid; grid-template-columns:repeat(6, 1fr); gap:0; }
+.kartei { border:1px dashed var(--linie); height:28mm; padding:4px; position:relative; display:flex; flex-direction:column; justify-content:center; text-align:center; font-size:8.5pt; }
+.kartei b { font-size:10pt; } .kartei span { font-size:7.5pt; margin-top:2px; }
+.kartei i { position:absolute; right:4px; bottom:2px; font-style:normal; font-weight:bold; font-size:8pt; }
+.aGusher { background:#222; color:#fff; } .aFund { background:#d8c9a8; } .aKlein { background:#eee4cf; }
+.leiste td.start { background:#ffe28a; font-weight:bold; }
+.foerder td { font-size:8pt; padding:2px; } .bogen td { height:9mm; } .bogen th { font-size:8pt; }
+@media print {
+  body { padding:0; } .seite { page-break-after:always; margin:0 auto; }
+  @page { size:A4; margin:10mm; }
+  .zS, .zK, .zF, .aGusher, .aFund, .aKlein, .start { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+}
+@media screen and (max-width:700px) { .seite, .seite.quer { overflow-x:auto; } }
+</style></head><body>
+<section class="seite">
+<h1>CRUDE – Papierprototyp Kapitel 1</h1>
+<p class="klein">Roadmap 0.7 · Zahlen aus dem Tabellenmodell (0.6), Stand vorläufig.
+Du spielst Jacob Harlan, Frühjahr 88, Cordova. 16 Runden = 4 Jahre.</p>
+
+<h2>Aufbau</h2>
+<ol>
+<li>Geologiekarten nach dem Buchstaben unten rechts in drei Stapel sortieren
+(S = Ölsicker, K = Kuppe, F = Flach), jeden Stapel verdeckt mischen.</li>
+<li>Auf jedes Feld der Karte verdeckt eine Karte aus dem Stapel mit dem passenden Zeichen legen.</li>
+<li>Preismarker auf 1,00 $, Schuldenmarker auf 0. Kasse: 2.000 $.</li>
+<li>Jacob hat <b>2 Pachtoptionen</b>: 2 beliebige Felder sind gratis gepachtet.</li>
+</ol>
+
+<h2>Ablauf einer Runde</h2>
+<ol>
+<li><b>Preis:</b> W6 würfeln: 1 → −0,20 · 2 → −0,10 · 3–4 → bleibt · 5 → +0,10 · 6 → +0,20.
+Dann −0,10 für jede Quelle, die <i>diese</i> Runde zum ersten Mal fördert (Ölschwemme).
+Grenzen 0,30 $ bis 1,50 $.</li>
+<li><b>Förderung verkaufen:</b> Jede Quelle fördert laut Fördertabelle (Zeile = Startrate,
+Spalte = wie oft sie schon gefördert hat). Summe in 1.000 bbl × Erlös laut Preistabelle.
+Förderzins (1/8) und Fuhrwerk (0,25 $/bbl) sind dort schon abgezogen.</li>
+<li><b>Silas:</b> Von den ersten 2 Quellen bekommt Silas 30% des Erlöses.</li>
+<li><b>Zinsen:</b> 10% pro Jahr = 2.5% der Schuld pro Runde.</li>
+<li><b>Pachten</b> (beliebig viele): Bonus Ölsicker 300 $ ·
+Kuppe 150 $ · Flach 50 $.</li>
+<li><b>Bohren</b> (höchstens 1 Bohrung, nur auf eigener Pacht, ein Bohrturm):
+2.000 $ zahlen, W6 würfeln: bei 1 Panne, noch einmal 500 $.
+Dann Karte aufdecken. Bei Fund Startrate würfeln. Die Quelle fördert ab der nächsten Runde.</li>
+<li><b>Bank:</b> Kredit jederzeit in Schritten von 500 $, höchstens
+3.000 $ Schuld. Tilgen jederzeit.</li>
+<li><b>Rundenbogen ausfüllen</b> – vor allem die Spalte „Spannend?“.</li>
+</ol>
+
+<h2>Pleite</h2>
+<p>Kannst du eine Rechnung weder aus der Kasse noch mit Kredit bezahlen, ist Jacob pleite.
+Mit den Startwerten passiert das nach <b>2 Trockenbohrungen</b>
+in Folge (die Zinsen fressen den Rest des Kreditrahmens).</p>
+
+<h2>Ende</h2>
+<p>Nach Runde 16: Ergebnis = Kasse − Schuld. Notiere auch, in welcher Runde du dachtest
+„jetzt ist es entschieden“.</p>
+
+<h2>Material</h2>
+<p>Ausdruck, Schere, 1 W6, zwei Marker (Münzen) für Preis und Schuld, Stift.
+Optional Spielgeld; sonst die Kasse auf dem Rundenbogen führen.</p>
+</section>
+<section class="seite">
+<h2>Karte – Cordova, Pachtgebiet am Salt Hill</h2>
+<table class="karte"><tr><td class="feld zS"><span>Ölsicker</span><small>Pacht 300 $</small></td><td class="feld zS"><span>Ölsicker</span><small>Pacht 300 $</small></td><td class="feld zS"><span>Ölsicker</span><small>Pacht 300 $</small></td><td class="feld zK"><span>Kuppe</span><small>Pacht 150 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td></tr><tr><td class="feld zS"><span>Ölsicker</span><small>Pacht 300 $</small></td><td class="feld zS"><span>Ölsicker</span><small>Pacht 300 $</small></td><td class="feld zK"><span>Kuppe</span><small>Pacht 150 $</small></td><td class="feld zK"><span>Kuppe</span><small>Pacht 150 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td></tr><tr><td class="feld zS"><span>Ölsicker</span><small>Pacht 300 $</small></td><td class="feld zK"><span>Kuppe</span><small>Pacht 150 $</small></td><td class="feld zK"><span>Kuppe</span><small>Pacht 150 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td></tr><tr><td class="feld zK"><span>Kuppe</span><small>Pacht 150 $</small></td><td class="feld zK"><span>Kuppe</span><small>Pacht 150 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td><td class="feld zK"><span>Kuppe</span><small>Pacht 150 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td></tr><tr><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td><td class="feld zK"><span>Kuppe</span><small>Pacht 150 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td></tr><tr><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td><td class="feld zK"><span>Kuppe</span><small>Pacht 150 $</small></td><td class="feld zF"><span>Flach</span><small>Pacht 50 $</small></td></tr></table>
+<p class="klein">Auf jedes Feld eine verdeckte Geologiekarte mit demselben Buchstaben legen.
+Gepachtete Felder mit einem Kreuz markieren, Quellen mit einem Kreis.</p>
+</section>
+<section class="seite">
+<h2>Geologiekarten (36 Stück, ausschneiden)</h2>
+<div class="kartenraster"><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>S</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>S</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>S</i></div><div class="kartei aKlein"><b>Kleiner Fund</b><span>Würfeln: 1–2: 50 · 3–4: 75 · 5–6: 100 bbl/Tag</span><i>S</i></div><div class="kartei aFund"><b>Fund</b><span>Würfeln: 1–2: 125 · 3–4: 150 · 5–6: 200 bbl/Tag</span><i>S</i></div><div class="kartei aGusher"><b>GUSHER</b><span>Würfeln: 1–2: 400 · 3–4: 500 · 5–6: 700 bbl/Tag</span><i>S</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>K</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>K</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>K</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>K</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>K</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>K</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>K</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>K</i></div><div class="kartei aKlein"><b>Kleiner Fund</b><span>Würfeln: 1–2: 50 · 3–4: 75 · 5–6: 100 bbl/Tag</span><i>K</i></div><div class="kartei aFund"><b>Fund</b><span>Würfeln: 1–2: 125 · 3–4: 150 · 5–6: 200 bbl/Tag</span><i>K</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aTrocken"><b>Trocken</b><span>Nur Salzwasser und Sand.</span><i>F</i></div><div class="kartei aKlein"><b>Kleiner Fund</b><span>Würfeln: 1–2: 50 · 3–4: 75 · 5–6: 100 bbl/Tag</span><i>F</i></div></div>
+</section>
+<section class="seite">
+<h2>Preisleiste und Erlös je 1.000 bbl</h2>
+<table class="leiste"><tr><th>Preis</th><td class="">0,30 $</td><td class="">0,40 $</td><td class="">0,50 $</td><td class="">0,60 $</td><td class="">0,70 $</td><td class="">0,80 $</td><td class="">0,90 $</td><td class="start">1,00 $</td><td class="">1,10 $</td><td class="">1,20 $</td><td class="">1,30 $</td><td class="">1,40 $</td><td class="">1,50 $</td></tr><tr><th>Erlös</th><td>13 $</td><td>100 $</td><td>188 $</td><td>275 $</td><td>362 $</td><td>450 $</td><td>538 $</td><td>625 $</td><td>713 $</td><td>800 $</td><td>888 $</td><td>975 $</td><td>1.062 $</td></tr></table>
+<p class="klein">Erlös = was Jacob je 1.000 bbl nach Förderzins (1/8) und Fuhrwerk behält.
+Unter etwa 0,30 $ lohnt sich Fördern kaum noch.</p>
+
+<h2>Schuldenleiste</h2>
+<table class="leiste"><tr><th>Schuld</th><td>0 $</td><td>500 $</td><td>1.000 $</td><td>1.500 $</td><td>2.000 $</td><td>2.500 $</td><td>3.000 $</td></tr><tr><th>Zins/Runde</th><td>0 $</td><td>12 $</td><td>25 $</td><td>38 $</td><td>50 $</td><td>62 $</td><td>75 $</td></tr></table>
+
+<h2>Fördertabelle (1.000 bbl pro Runde)</h2>
+<table class="foerder"><tr><th>bbl/Tag ↓ · Förderrunde →</th><th>1.</th><th>2.</th><th>3.</th><th>4.</th><th>5.</th><th>6.</th><th>7.</th><th>8.</th><th>9.</th><th>10.</th><th>11.</th><th>12.</th><th>13.</th><th>14.</th><th>15.</th><th>16.</th></tr><tr><th>50</th><td>4,5</td><td>4,0</td><td>3,5</td><td>3,1</td><td>2,7</td><td>2,4</td><td>2,1</td><td>1,9</td><td>1,6</td><td>1,4</td><td>1,3</td><td>1,1</td><td>1,0</td><td>0,9</td><td>0,8</td><td>0,7</td></tr><tr><th>75</th><td>6,8</td><td>6,0</td><td>5,3</td><td>4,7</td><td>4,1</td><td>3,6</td><td>3,2</td><td>2,8</td><td>2,5</td><td>2,2</td><td>1,9</td><td>1,7</td><td>1,5</td><td>1,3</td><td>1,1</td><td>1,0</td></tr><tr><th>100</th><td>9,1</td><td>8,0</td><td>7,0</td><td>6,2</td><td>5,5</td><td>4,8</td><td>4,2</td><td>3,7</td><td>3,3</td><td>2,9</td><td>2,5</td><td>2,2</td><td>2,0</td><td>1,7</td><td>1,5</td><td>1,3</td></tr><tr><th>125</th><td>11,4</td><td>10,0</td><td>8,8</td><td>7,8</td><td>6,8</td><td>6,0</td><td>5,3</td><td>4,6</td><td>4,1</td><td>3,6</td><td>3,2</td><td>2,8</td><td>2,5</td><td>2,2</td><td>1,9</td><td>1,7</td></tr><tr><th>150</th><td>13,7</td><td>12,0</td><td>10,6</td><td>9,3</td><td>8,2</td><td>7,2</td><td>6,3</td><td>5,6</td><td>4,9</td><td>4,3</td><td>3,8</td><td>3,3</td><td>2,9</td><td>2,6</td><td>2,3</td><td>2,0</td></tr><tr><th>200</th><td>18,2</td><td>16,0</td><td>14,1</td><td>12,4</td><td>10,9</td><td>9,6</td><td>8,5</td><td>7,4</td><td>6,5</td><td>5,8</td><td>5,1</td><td>4,5</td><td>3,9</td><td>3,5</td><td>3,0</td><td>2,7</td></tr><tr><th>400</th><td>36,4</td><td>32,0</td><td>28,2</td><td>24,8</td><td>21,8</td><td>19,2</td><td>16,9</td><td>14,9</td><td>13,1</td><td>11,5</td><td>10,1</td><td>8,9</td><td>7,9</td><td>6,9</td><td>6,1</td><td>5,3</td></tr><tr><th>500</th><td>45,5</td><td>40,0</td><td>35,2</td><td>31,0</td><td>27,3</td><td>24,0</td><td>21,1</td><td>18,6</td><td>16,4</td><td>14,4</td><td>12,7</td><td>11,2</td><td>9,8</td><td>8,6</td><td>7,6</td><td>6,7</td></tr><tr><th>700</th><td>63,7</td><td>56,1</td><td>49,3</td><td>43,4</td><td>38,2</td><td>33,6</td><td>29,6</td><td>26,0</td><td>22,9</td><td>20,2</td><td>17,7</td><td>15,6</td><td>13,7</td><td>12,1</td><td>10,6</td><td>9,4</td></tr></table>
+<p class="klein">Rückgang 12% pro Quartal, 91 Tage je Runde.
+Beispiel: Quelle mit 150 bbl/Tag, zweite Förderrunde = 12,0 × Erlös.</p>
+</section>
+<section class="seite quer">
+<h2>Rundenbogen (je Partie einmal drucken)</h2>
+<table class="bogen"><tr><th>Runde</th><th>Preis</th><th>Förderung (1.000 bbl)</th><th>Erlös</th><th>an Silas</th><th>Zinsen</th><th>Pacht</th><th>Bohren</th><th>Kredit + / Tilgung −</th><th>Kasse</th><th>Schuld</th><th>Spannend? (ja/nein + warum)</th></tr><tr><td>1<br><small>J1 Q1</small></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>2<br><small>J1 Q2</small></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>3<br><small>J1 Q3</small></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>4<br><small>J1 Q4</small></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>5<br><small>J2 Q1</small></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>6<br><small>J2 Q2</small></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>7<br><small>J2 Q3</small></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>8<br><small>J2 Q4</small></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>9<br><small>J3 Q1</small></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>10<br><small>J3 Q2</small></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>11<br><small>J3 Q3</small></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>12<br><small>J3 Q4</small></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>13<br><small>J4 Q1</small></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>14<br><small>J4 Q2</small></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>15<br><small>J4 Q3</small></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>16<br><small>J4 Q4</small></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></table>
+<p class="klein">Ergebnis Runde 16 (Kasse − Schuld): ________ · Pleite in Runde: ____ ·
+„Entschieden“ ab Runde: ____ · Mitspieler wollte zweite Partie: ja / nein</p>
+</section></body></html>
