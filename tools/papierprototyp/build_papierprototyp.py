@@ -18,17 +18,30 @@ ROOT = Path(__file__).resolve().parents[2]
 ZIEL = ROOT / "docs" / "papierprototyp.html"
 
 sys.path.insert(0, str(ROOT / "tools" / "tabellenmodell"))
-from build_tabellenmodell import RUNDEN, STARTWERTE  # noqa: E402
+from build_tabellenmodell import BESITZER, KREDIT, LAGEN, RATINGS, RUNDEN, STARTWERTE  # noqa: E402
 
 P = {name: wert for name, _text, wert, *_rest in STARTWERTE}
+P.update({name: wert for name, _text, wert, *_rest in KREDIT})
+LAGE = {name: (bonus, roy) for name, bonus, roy, _q in LAGEN}
+BES = {name: (faktor, zuschlag) for name, faktor, zuschlag, _b in BESITZER}
+RATING = dict(RATINGS)
+ROY_MIN, ROY_MAX = 0.10, 0.25  # GDD §5: Förderzins bleibt zwischen 10 und 25 %
 
 # --- Papier-Werte (ANNAHME, nicht im Tabellenmodell) ---------------------
-# Oberflächenzeichen: Pachtbonus und Inhalt des verdeckten Stapels.
+# Oberflächenzeichen: Inhalt des verdeckten Stapels und Mindest-Lage.
+# Ölsicker sieht jeder – der Landbesitzer verlangt dort mindestens den Preis
+# eines Nachbarn eines Funds.
 ZEICHEN = {
-    "S": dict(name="Ölsicker", bonus=300, karten={"Trocken": 3, "Klein": 1, "Fund": 1, "Gusher": 1}),
-    "K": dict(name="Kuppe", bonus=150, karten={"Trocken": 8, "Klein": 1, "Fund": 1}),
-    "F": dict(name="Flach", bonus=50, karten={"Trocken": 19, "Klein": 1}),
+    "S": dict(name="Ölsicker", lage="Nachbar eines Funds",
+              karten={"Trocken": 3, "Klein": 1, "Fund": 1, "Gusher": 1}),
+    "K": dict(name="Kuppe", lage="Randlage", karten={"Trocken": 8, "Klein": 1, "Fund": 1}),
+    "F": dict(name="Flach", lage="Randlage", karten={"Trocken": 19, "Klein": 1}),
 }
+# Landbesitzer beim Pachten auswürfeln (W6).
+BESITZER_WURF = {1: "gierig", 2: "verschuldet", 3: "misstrauisch", 4: "fromm",
+                 5: "neutral", 6: "neutral"}
+# Förderzins auf Papier gerundet auf diese Stufen (eine Spalte je Stufe in der Erlöstabelle).
+ROY_STUFEN = [(0.10, "1/10"), (0.125, "1/8"), (1 / 6, "1/6"), (0.20, "1/5"), (0.25, "1/4")]
 # Karte 6x6 – Ölsicker in einer Ecke gehäuft (Richtung Salt Hill).
 KARTE = [
     "SSSKFF",
@@ -50,6 +63,7 @@ PREIS_MIN, PREIS_MAX = 0.30, 1.50
 PREIS_WURF = {1: -0.20, 2: -0.10, 3: 0.0, 4: 0.0, 5: 0.10, 6: 0.20}
 PREIS_JE_NEUER_QUELLE = -0.10  # Ölschwemme: jede Quelle, die diese Runde zu fördern beginnt
 KREDIT_SCHRITT = 500
+BANK_LEISTE_MAX = 11000      # 3.000 $ + 4 Quellen × 2.000 $
 
 
 # --- Rechenregeln (werden getestet) --------------------------------------
@@ -58,9 +72,9 @@ def preisstufen():
     return [round(PREIS_MIN + i * 0.10, 2) for i in range(n + 1)]
 
 
-def marge_je_1000_bbl(preis):
+def marge_je_1000_bbl(preis, roy):
     """Was Jacob je 1.000 bbl behält: Preis minus Förderzins minus Fuhrwerk."""
-    return 1000 * (preis * (1 - P["royalty"]) - P["transport"])
+    return 1000 * (preis * (1 - roy) - P["transport"])
 
 
 def foerderung_kbbl(rate, alter):
@@ -68,8 +82,26 @@ def foerderung_kbbl(rate, alter):
     return rate * P["days"] * (1 - P["decline"]) ** alter / 1000
 
 
-def zinsen(schuld):
-    return schuld * P["rate"] / 4
+def pacht(lage, besitzer):
+    """(Bonus, Förderzins genau, Förderzins-Stufe) wie im Tabellenmodell, Bonus auf 10 $."""
+    bonus, roy = LAGE[lage]
+    faktor, zuschlag = BES[besitzer]
+    genau = min(ROY_MAX, max(ROY_MIN, roy + zuschlag))
+    stufe = min(ROY_STUFEN, key=lambda st: abs(st[0] - genau))
+    return round(bonus * faktor / 10) * 10, genau, stufe
+
+
+def bankzins(mit_pfand):
+    basis = RATING[P["rating"]] + P["klima"]
+    return basis - P["sicher_rabatt"] if mit_pfand else basis + P["ohne_aufschlag"]
+
+
+def zinsen(schuld, jahreszins):
+    return schuld * jahreszins / 4
+
+
+def aufrunden(betrag):
+    return -(-betrag // KREDIT_SCHRITT) * KREDIT_SCHRITT
 
 
 def stapel():
@@ -83,14 +115,22 @@ def trefferquote():
 
 
 def trockenbohrungen_bis_pleite():
-    """Jede Runde eine Trockenbohrung auf freier Pacht: wie viele schafft Jacob?"""
-    bar, schuld, gebohrt = P["start_cash"], 0, 0
+    """Jede Runde eine Trockenbohrung auf neuer Randlage-Pacht (neutraler Besitzer),
+    Kredit nach Papierregeln: erst Bank, dann Geldverleiher, in 500-$-Schritten."""
+    bar, bank, leiher, gebohrt = P["start_cash"], 0, 0, 0
+    zins_bank = bankzins(mit_pfand=False)
     while True:
-        rechnung = P["drill_cost"] + zinsen(schuld)
-        if rechnung > bar + (P["credit_limit"] - schuld):
+        bonus = pacht("Randlage", "neutral")[0] if gebohrt >= P["free_leases"] else 0
+        rechnung = (P["drill_cost"] + bonus + zinsen(bank, zins_bank)
+                    + zinsen(leiher, P["leiher_zins"]))
+        fehlt = max(0, rechnung - bar)
+        von_bank = min(aufrunden(fehlt), P["bank_grund"] - bank)
+        von_leiher = aufrunden(fehlt - von_bank) if fehlt > von_bank else 0
+        if von_leiher > P["leiher_rahmen"] * P["leiher_an"] - leiher:
             return gebohrt
-        kredit = max(0, rechnung - bar)
-        bar, schuld, gebohrt = bar + kredit - rechnung, schuld + kredit, gebohrt + 1
+        bank, leiher = bank + von_bank, leiher + von_leiher
+        bar = bar + von_bank + von_leiher - rechnung
+        gebohrt += 1
 
 
 # --- HTML ----------------------------------------------------------------
@@ -127,8 +167,10 @@ Du spielst Jacob Harlan, Frühjahr 88, Cordova. 16 Runden = 4 Jahre.</p>
 <li>Geologiekarten nach dem Buchstaben unten rechts in drei Stapel sortieren
 (S = Ölsicker, K = Kuppe, F = Flach), jeden Stapel verdeckt mischen.</li>
 <li>Auf jedes Feld der Karte verdeckt eine Karte aus dem Stapel mit dem passenden Zeichen legen.</li>
-<li>Preismarker auf {c(PREIS_START)}, Schuldenmarker auf 0. Kasse: {d(P['start_cash'])}.</li>
-<li>Jacob hat <b>{P['free_leases']} Pachtoptionen</b>: 2 beliebige Felder sind gratis gepachtet.</li>
+<li>Preismarker auf {c(PREIS_START)}, beide Schuldenmarker (Bank, Geldverleiher) auf 0.
+Kasse: {d(P['start_cash'])}.</li>
+<li>Jacob hat <b>{P['free_leases']} Pachtoptionen</b>: 2 Felder in Randlage ohne Bonus
+(Besitzer trotzdem würfeln – er bestimmt den Förderzins).</li>
 </ol>
 
 <h2>Ablauf einer Runde</h2>
@@ -137,27 +179,35 @@ Du spielst Jacob Harlan, Frühjahr 88, Cordova. 16 Runden = 4 Jahre.</p>
 Dann −0,10 für jede Quelle, die <i>diese</i> Runde zum ersten Mal fördert (Ölschwemme).
 Grenzen {c(PREIS_MIN)} bis {c(PREIS_MAX)}.</li>
 <li><b>Förderung verkaufen:</b> Jede Quelle fördert laut Fördertabelle (Zeile = Startrate,
-Spalte = wie oft sie schon gefördert hat). Summe in 1.000 bbl × Erlös laut Preistabelle.
-Förderzins (1/8) und Fuhrwerk ({c(P['transport'])}/bbl) sind dort schon abgezogen.</li>
+Spalte = wie oft sie schon gefördert hat). Je Quelle: 1.000 bbl × Erlös aus der Erlöstabelle
+(Zeile = Preis, Spalte = Förderzins <i>ihrer</i> Parzelle). Fuhrwerk ({c(P['transport'])}/bbl)
+ist dort schon abgezogen.</li>
 <li><b>Silas:</b> Von den ersten {P['silas_wells']} Quellen bekommt Silas {P['silas_share']:.0%} des Erlöses.</li>
-<li><b>Zinsen:</b> {P['rate']:.0%} pro Jahr = {P['rate']/4:.1%} der Schuld pro Runde.</li>
-<li><b>Pachten</b> (beliebig viele): Bonus Ölsicker {d(s['S']['bonus'])} ·
-Kuppe {d(s['K']['bonus'])} · Flach {d(s['F']['bonus'])}.</li>
+<li><b>Zinsen</b> laut Schuldenleisten. Bank: {bankzins(False):.0%} pro Jahr, solange keine
+Quelle fördert; {bankzins(True):.0%}, sobald eine fördernde Quelle als Pfand dient.
+Geldverleiher: {P['leiher_zins']:.0%}.</li>
+<li><b>Pachten</b> (beliebig viele): Lage bestimmen, Landbesitzer würfeln
+(1 gierig · 2 verschuldet · 3 misstrauisch · 4 fromm · 5–6 neutral), Bonus und
+Förderzins aus der Pachttabelle ablesen und den Förderzins aufs Feld schreiben.
+<br><i>Lage:</i> grenzt an eine Quelle (auch schräg) = Am Fund · zwei Felder entfernt =
+Nachbar eines Funds · sonst Randlage. Ölsicker gilt immer mindestens als Nachbar eines Funds.</li>
 <li><b>Bohren</b> (höchstens 1 Bohrung, nur auf eigener Pacht, ein Bohrturm):
 {d(P['drill_cost'])} zahlen, W6 würfeln: bei 1 Panne, noch einmal {d(PANNE_KOSTEN)}.
 Dann Karte aufdecken. Bei Fund Startrate würfeln. Die Quelle fördert ab der nächsten Runde.</li>
-<li><b>Bank:</b> Kredit jederzeit in Schritten von {d(KREDIT_SCHRITT)}, höchstens
-{d(P['credit_limit'])} Schuld. Tilgen jederzeit.</li>
+<li><b>Kredit</b> jederzeit in Schritten von {d(KREDIT_SCHRITT)}. Bank: Rahmen
+{d(P['bank_grund'])} + {d(P['bank_je_quelle'])} je fördernde Quelle.
+Geldverleiher: bis {d(P['leiher_rahmen'])}. Immer zuerst das billigere Geld leihen,
+zuerst das teurere tilgen.</li>
 <li><b>Rundenbogen ausfüllen</b> – vor allem die Spalte „Spannend?“.</li>
 </ol>
 
 <h2>Pleite</h2>
 <p>Kannst du eine Rechnung weder aus der Kasse noch mit Kredit bezahlen, ist Jacob pleite.
 Mit den Startwerten passiert das nach <b>{trockenbohrungen_bis_pleite()} Trockenbohrungen</b>
-in Folge (die Zinsen fressen den Rest des Kreditrahmens).</p>
+in Folge – die dritte geht nur noch mit dem Geldverleiher.</p>
 
 <h2>Ende</h2>
-<p>Nach Runde 16: Ergebnis = Kasse − Schuld. Notiere auch, in welcher Runde du dachtest
+<p>Nach Runde 16: Ergebnis = Kasse − alle Schulden. Notiere auch, in welcher Runde du dachtest
 „jetzt ist es entschieden“.</p>
 
 <h2>Material</h2>
@@ -171,7 +221,7 @@ def karte_html():
     for reihe in KARTE:
         zellen = "".join(
             f'<td class="feld z{z}"><span>{ZEICHEN[z]["name"]}</span>'
-            f'<small>Pacht {d(ZEICHEN[z]["bonus"])}</small></td>' for z in reihe)
+            f'<small>Förderzins: ____</small></td>' for z in reihe)
         zeilen.append(f"<tr>{zellen}</tr>")
     return f"""
 <section class="seite">
@@ -199,12 +249,27 @@ def karten_html():
 
 
 def leisten_html():
-    preise = "".join(f'<td class="{"start" if abs(p - PREIS_START) < 1e-9 else ""}">{c(p)}</td>'
-                     for p in preisstufen())
-    erloes = "".join(f"<td>{d(marge_je_1000_bbl(p))}</td>" for p in preisstufen())
-    stufen = range(0, int(P["credit_limit"]) + 1, KREDIT_SCHRITT)
-    schuld = "".join(f"<td>{d(s)}</td>" for s in stufen)
-    zins = "".join(f"<td>{d(zinsen(s))}</td>" for s in stufen)
+    roy_kopf = "".join(f"<th>{name}</th>" for _r, name in ROY_STUFEN)
+    erloes = "".join(
+        f'<tr><th class="{"start" if abs(p - PREIS_START) < 1e-9 else ""}">{c(p)}</th>'
+        + "".join(f"<td>{d(marge_je_1000_bbl(p, r))}</td>" for r, _n in ROY_STUFEN) + "</tr>"
+        for p in reversed(preisstufen()))
+    bes_namen = [name for name, *_r in BESITZER]
+    pacht_kopf = "".join(f"<th>{b}</th>" for b in bes_namen)
+    pacht_zeilen = ""
+    for lage in LAGE:
+        pacht_zeilen += f"<tr><th>{lage}</th>"
+        for b in bes_namen:
+            bonus, _g, (_r, stufe) = pacht(lage, b)
+            pacht_zeilen += f"<td>{d(bonus)} · {stufe}</td>"
+        pacht_zeilen += "</tr>"
+    b_stufen = range(0, BANK_LEISTE_MAX + 1, KREDIT_SCHRITT)
+    bank = "".join(
+        f"<tr><td>{d(s)}</td><td>{d(zinsen(s, bankzins(False)))}</td>"
+        f"<td>{d(zinsen(s, bankzins(True)))}</td></tr>" for s in b_stufen)
+    l_stufen = range(0, int(P["leiher_rahmen"]) + 1, KREDIT_SCHRITT)
+    leiher = "".join(f"<tr><td>{d(s)}</td><td>{d(zinsen(s, P['leiher_zins']))}</td></tr>"
+                     for s in l_stufen)
     raten = sorted({r for t in STARTRATE.values() for r in t})
     kopf = "".join(f"<th>{a + 1}.</th>" for a in range(RUNDEN))
     foerd = "".join(
@@ -212,13 +277,24 @@ def leisten_html():
         + "</tr>" for r in raten)
     return f"""
 <section class="seite">
-<h2>Preisleiste und Erlös je 1.000 bbl</h2>
-<table class="leiste"><tr><th>Preis</th>{preise}</tr><tr><th>Erlös</th>{erloes}</tr></table>
-<p class="klein">Erlös = was Jacob je 1.000 bbl nach Förderzins (1/8) und Fuhrwerk behält.
-Unter etwa 0,30 $ lohnt sich Fördern kaum noch.</p>
+<h2>Pachttabelle: Bonus · Förderzins</h2>
+<table class="leiste"><tr><th>Lage ↓ · Besitzer →</th>{pacht_kopf}</tr>{pacht_zeilen}</table>
+<p class="klein">Förderzins auf Papier auf 1/10, 1/8, 1/6, 1/5 oder 1/4 gerundet
+(GDD: zwischen 10 und 25 %).</p>
 
-<h2>Schuldenleiste</h2>
-<table class="leiste"><tr><th>Schuld</th>{schuld}</tr><tr><th>Zins/Runde</th>{zins}</tr></table>
+<h2>Preisleiste und Erlös je 1.000 bbl</h2>
+<table class="leiste erloes"><tr><th>Preis ↓ · Förderzins →</th>{roy_kopf}</tr>{erloes}</table>
+<p class="klein">Erlös = was Jacob je 1.000 bbl nach Förderzins und Fuhrwerk behält.
+Preismarker auf die Zeile legen. Negativ = Fördern kostet Geld.</p>
+</section>
+
+<section class="seite">
+<h2>Schuldenleisten</h2>
+<div class="zwei">
+<table class="leiste"><tr><th>Bank</th><th>Zins/Runde ohne Pfand</th>
+<th>Zins/Runde mit Pfand</th></tr>{bank}</table>
+<table class="leiste"><tr><th>Geldverleiher</th><th>Zins/Runde</th></tr>{leiher}</table>
+</div>
 
 <h2>Fördertabelle (1.000 bbl pro Runde)</h2>
 <table class="foerder"><tr><th>bbl/Tag ↓ · Förderrunde →</th>{kopf}</tr>{foerd}</table>
@@ -229,7 +305,8 @@ Beispiel: Quelle mit 150 bbl/Tag, zweite Förderrunde = {k(foerderung_kbbl(150, 
 
 def rundenbogen_html():
     spalten = ["Runde", "Preis", "Förderung (1.000 bbl)", "Erlös", "an Silas", "Zinsen",
-               "Pacht", "Bohren", "Kredit + / Tilgung −", "Kasse", "Schuld",
+               "Pacht", "Bohren", "Kredit + / Tilgung −", "Kasse", "Schuld Bank",
+               "Schuld Verleiher",
                "Spannend? (ja/nein + warum)"]
     kopf = "".join(f"<th>{s}</th>" for s in spalten)
     zeilen = ""
@@ -240,7 +317,7 @@ def rundenbogen_html():
 <section class="seite quer">
 <h2>Rundenbogen (je Partie einmal drucken)</h2>
 <table class="bogen"><tr>{kopf}</tr>{zeilen}</table>
-<p class="klein">Ergebnis Runde 16 (Kasse − Schuld): ________ · Pleite in Runde: ____ ·
+<p class="klein">Ergebnis Runde 16 (Kasse − Schulden): ________ · Pleite in Runde: ____ ·
 „Entschieden“ ab Runde: ____ · Mitspieler wollte zweite Partie: ja / nein</p>
 </section>"""
 
@@ -263,7 +340,8 @@ td, th { border:1px solid var(--linie); padding:3px 4px; font-size:9pt; text-ali
 .kartei b { font-size:10pt; } .kartei span { font-size:7.5pt; margin-top:2px; }
 .kartei i { position:absolute; right:4px; bottom:2px; font-style:normal; font-weight:bold; font-size:8pt; }
 .aGusher { background:#222; color:#fff; } .aFund { background:#d8c9a8; } .aKlein { background:#eee4cf; }
-.leiste td.start { background:#ffe28a; font-weight:bold; }
+.leiste .start { background:#ffe28a; font-weight:bold; }
+.zwei { display:grid; grid-template-columns:2fr 1fr; gap:12px; align-items:start; }
 .foerder td { font-size:8pt; padding:2px; } .bogen td { height:9mm; } .bogen th { font-size:8pt; }
 @media print {
   body { padding:0; } .seite { page-break-after:always; margin:0 auto; }

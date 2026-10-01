@@ -9,4 +9,4 @@ Erzeugt `docs/papierprototyp.html`: Regeln, Karte 6×6, 36 Geologiekarten, Preis
 
 Drucken: HTML im Browser öffnen → Drucken → A4, „Hintergrundgrafiken“ an. Den Rundenbogen je Partie einmal drucken.
 
-Hinweis: Die Startwerte werden aus dem Python-Skript des Tabellenmodells gelesen, nicht aus der Excel-Datei. Wer Zahlen in der Excel-Datei ändert, muss sie für den Bogen auch in `STARTWERTE` nachziehen.
+Hinweis: Die Startwerte werden aus dem Python-Skript des Tabellenmodells gelesen, nicht aus der Excel-Datei. Wer Zahlen in der Excel-Datei ändert, muss sie für den Bogen auch im Skript (`STARTWERTE`, `LAGEN`, `BESITZER`, `KREDIT`) nachziehen.
