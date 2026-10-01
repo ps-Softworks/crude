@@ -1,0 +1,29 @@
+/* Prototyp: graue Kästen, keine endgültige Optik. */
+:root {
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #222;
+  background: #f2f0eb;
+}
+body { margin: 0; }
+.app { max-width: 1100px; margin: 0 auto; padding: 16px; }
+header { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid #222; }
+h1 { margin: 0 0 8px; letter-spacing: 0.2em; }
+h2 { font-size: 1rem; margin: 0 0 6px; }
+.status { display: flex; gap: 24px; font-variant-numeric: tabular-nums; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; margin-top: 16px; }
+@media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+.map { width: 100%; height: auto; background: #e6e3dc; }
+.parcel { cursor: pointer; }
+.label { font: 11px sans-serif; fill: #222; pointer-events: none; }
+.label.light { fill: #f2f0eb; }
+.place { font: italic 14px Georgia, serif; fill: #333; pointer-events: none; }
+aside section { margin-bottom: 18px; }
+button { font: inherit; padding: 4px 10px; cursor: pointer; }
+button.primary { width: 100%; padding: 10px; font-size: 1.1rem; background: #222; color: #f2f0eb; border: none; }
+button.primary:disabled { background: #888; cursor: default; }
+.log { list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto; font-size: 0.9rem; }
+.log li { padding: 2px 0; border-bottom: 1px solid #ddd; }
+.muted { color: #777; }
+.debug { border-top: 1px dashed #999; padding-top: 10px; font-size: 0.9rem; }
+.debug form { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.debug input:not([type]) { width: 90px; }

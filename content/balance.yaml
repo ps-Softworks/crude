@@ -1,0 +1,43 @@
+# Spielzahlen für den Prototyp.
+# PLATZHALTER: grob geschätzt, werden durch das Tabellenmodell (Schritt 0.6)
+# und den Papierprototyp (0.7–0.9) ersetzt. Nur hier ändern, nicht im Code.
+
+start:
+  cash: 2000          # $ Bargeld bei Spielbeginn (GDD §13)
+  year: 88            # Jahr der Föderation
+  rounds: 16          # Runden in Kapitel 1 (ein Quartal pro Runde)
+
+map:
+  width: 12           # Parzellen von West nach Ost
+  height: 9           # Parzellen von Nord nach Süd
+  saltHill:           # Mitte des Booms
+    x: 6
+    y: 4
+
+# Geologie je Zone. Die Zone hängt vom Abstand zur Mitte von Salt Hill ab.
+# Wahrscheinlichkeiten pro Zone müssen zusammen 1 ergeben.
+geology:
+  zones:
+    - name: kern
+      maxDistance: 1.5
+      dry: 0.30
+      small: 0.55
+      gusher: 0.15
+    - name: ring
+      maxDistance: 3.5
+      dry: 0.50
+      small: 0.42
+      gusher: 0.08
+    - name: rand
+      maxDistance: 99
+      dry: 0.75
+      small: 0.23
+      gusher: 0.02
+  # Förderbare Gesamtmenge in Barrel (gleichverteilt zwischen min und max)
+  reserves:
+    small:
+      min: 2000
+      max: 12000
+    gusher:
+      min: 30000
+      max: 120000

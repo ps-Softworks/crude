@@ -8,7 +8,9 @@
 - Subagents: Du darfst nach eigener Einschätzung Subagents deiner Wahl einsetzen (z. B. Explore, Plan, general-purpose), ohne vorher zu fragen – immer dann, wenn es sinnvoll ist und Tokens spart (z. B. breite Suchen, unabhängige Teilaufgaben parallel). Für Kleinigkeiten, die du direkt erledigen kannst, keine Subagents.
 
 ## Projektstand
-- Aktuell Phase 0 (Fundament): noch kein Spielcode – nur Welt, Zahlen, Papierprototyp.
+- Phase 0 (Fundament) läuft noch (Tabellenmodell, Papierprototyp); Schritte 1.1–1.3 wurden vorgezogen.
+- Spielzahlen stehen in `content/balance.yaml` (vorerst Platzhalter, bis 0.6–0.9 fertig sind).
+- Starten: `npm run dev`; Debug-Ansicht über `?seed=abc&debug=1` in der Adresse.
 - Roadmap: https://claude.ai/code/artifact/900e1b6c-0788-449d-a682-0f06781fd49b
 
 ## Architektur (ab Phase 1, Details aus GDD §17 ergänzen)
