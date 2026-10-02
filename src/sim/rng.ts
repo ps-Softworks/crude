@@ -37,4 +37,12 @@ export class Rng {
   int(min: number, max: number): number {
     return min + Math.floor(this.float() * (max - min + 1));
   }
+
+  /** Zufälliges Element aus einer Liste. Leere Listen sind ein Fehler. */
+  pick<T>(items: readonly T[]): T {
+    if (items.length === 0) {
+      throw new Error('pick() braucht eine Liste mit mindestens einem Element.');
+    }
+    return items[this.int(0, items.length - 1)];
+  }
 }
