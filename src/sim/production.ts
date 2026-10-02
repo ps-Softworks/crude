@@ -9,6 +9,7 @@ import { formatDate } from './calendar';
 import type { Find, Well } from './drilling';
 import { fieldLabel, fieldOf, type Field } from './field';
 import type { GameState } from './game';
+import { parcelLabel } from './lease';
 
 /**
  * Druckfaktor eines Feldes mit so vielen fördernden Quellen: Die ersten
@@ -22,18 +23,20 @@ export function pressureFactor(balance: Balance, wells: number): number {
 }
 
 /**
- * Anteil der Feldreserve, der bei so vielen Quellen überhaupt noch herauskommt.
- * Überförderung kostet Ausbeute, höchstens recoveryLossMax.
+ * Anteil der Feldreserve, der überhaupt noch herauskommt, wenn auf dem Feld
+ * einmal so viele Quellen gleichzeitig gefördert haben (Höchststand). Erst über
+ * freeWells kostet Überförderung Ausbeute, höchstens recoveryLossMax. Der Schaden
+ * bleibt, auch wenn später weniger Quellen fördern.
  */
-export function recoveryFactor(balance: Balance, wells: number): number {
-  const { recoveryLossPerWell, recoveryLossMax } = balance.production;
-  const verlust = Math.min(recoveryLossMax, Math.max(0, wells - 1) * recoveryLossPerWell);
+export function recoveryFactor(balance: Balance, peakWells: number): number {
+  const { freeWells, recoveryLossPerWell, recoveryLossMax } = balance.production;
+  const verlust = Math.min(recoveryLossMax, Math.max(0, peakWells - freeWells) * recoveryLossPerWell);
   return 1 - verlust;
 }
 
-/** Förderbare Barrel eines Feldes mit so vielen Quellen. */
-export function recoverable(balance: Balance, reserves: number, wells: number): number {
-  return Math.round(reserves * recoveryFactor(balance, wells));
+/** Förderbare Barrel eines Feldes, auf dem höchstens so viele Quellen gefördert haben. */
+export function recoverable(balance: Balance, reserves: number, peakWells: number): number {
+  return Math.round(reserves * recoveryFactor(balance, peakWells));
 }
 
 /** Was eine Quelle in der nächsten Runde liefert: Anfangsrate minus Rückgang, mal Druck. */
@@ -54,6 +57,23 @@ export function fieldWells(state: Pick<GameState, 'parcels' | 'fields' | 'wells'
   return producingWells(state).filter((w) => fieldOf(state, w.parcelId)?.id === fieldId);
 }
 
+/** Lage eines Feldes für die Anzeige: Quellen, Druck, förderbare und restliche Barrel. */
+export function fieldStatus(
+  state: Pick<GameState, 'parcels' | 'fields' | 'wells'>,
+  balance: Balance,
+  field: Field,
+): { wells: number; pressure: number; recoverable: number; remaining: number } {
+  const quellen = fieldWells(state, field.id);
+  const ausbeute = recoverable(balance, field.reserves, Math.max(field.peakWells, quellen.length));
+  const gefoerdert = quellen.reduce((s, w) => s + (w.production?.total ?? 0), 0);
+  return {
+    wells: quellen.length,
+    pressure: pressureFactor(balance, quellen.length),
+    recoverable: ausbeute,
+    remaining: Math.max(0, ausbeute - gefoerdert),
+  };
+}
+
 /** Feld und Reserve einer Parzelle; ohne Feld bleibt nur die Parzelle selbst. */
 function pocketOf(state: Pick<GameState, 'parcels' | 'fields'>, parcelId: string): { field?: Field; reserves: number } {
   const parcel = state.parcels.find((p) => p.id === parcelId);
@@ -62,18 +82,23 @@ function pocketOf(state: Pick<GameState, 'parcels' | 'fields'>, parcelId: string
 }
 
 /**
- * Anfangsrate einer frischen Quelle: ein fester Anteil der Reserve ihres Feldes,
- * je nach Art des Funds. Liegt sie in keinem Feld (z. B. die Geologie wurde von
- * Hand geändert), zählt die Reserve der Parzelle selbst.
+ * Anfangsrate einer frischen Quelle: ein fester Anteil der Reserve ihrer eigenen
+ * Parzelle, je nach Art des Funds. (Gefördert wird trotzdem aus dem gemeinsamen
+ * Feld – die Parzelle bestimmt nur, wie stark die Quelle anfängt.)
  */
 export function initialRate(
   balance: Balance,
-  state: Pick<GameState, 'parcels' | 'fields'>,
+  state: Pick<GameState, 'parcels'>,
   well: { parcelId: string; result: Find },
 ): number {
-  const { reserves } = pocketOf(state, well.parcelId);
+  const reserves = state.parcels.find((p) => p.id === well.parcelId)?.reserves ?? 0;
   const anteil = balance.production.initialRateShare[well.result];
   return Math.round(reserves * anteil);
+}
+
+function parcelLabelOf(state: Pick<GameState, 'parcels'>, parcelId: string): string {
+  const parcel = state.parcels.find((p) => p.id === parcelId);
+  return parcel ? parcelLabel(parcel) : parcelId;
 }
 
 function barrels(value: number): string {
@@ -123,12 +148,23 @@ export function advanceProduction(input: GameState, balance: Balance): GameState
   }
 
   const neuenStand = new Map<string, { lastRate: number; total: number }>();
+  const hoechststand = new Map<string, number>();
   let gefoerdert = 0;
   for (const gruppe of gruppen.values()) {
     const { field, reserves } = pocketOf(input, gruppe[0].parcelId);
+    const n = gruppe.length;
+    // Höchststand zuerst festhalten: Die Überförderung dieser Runde kostet schon jetzt Ausbeute.
+    const vorher = field?.peakWells ?? 0;
+    const peak = Math.max(vorher, n);
+    if (field) hoechststand.set(field.id, peak);
+    const { freeWells } = balance.production;
+    if (vorher <= freeWells && n > freeWells) {
+      const ort = field ? fieldLabel(field) : `Parzelle ${parcelLabelOf(input, gruppe[0].parcelId)}`;
+      log.push(`${date}: Auf ${ort} sinkt der Druck – zu viele Quellen.`);
+    }
     const bereitsDa = gruppe.reduce((s, w) => s + (w.production?.total ?? 0), 0);
-    const ausbeute = recoverable(balance, reserves, gruppe.length);
-    const gewollt = gruppe.map((w) => wellRate(balance, w, gruppe.length));
+    const ausbeute = recoverable(balance, reserves, peak);
+    const gewollt = gruppe.map((w) => wellRate(balance, w, n));
     const bekommen = shareOut(gewollt, Math.max(0, ausbeute - bereitsDa));
     gruppe.forEach((w, i) => {
       neuenStand.set(w.parcelId, { lastRate: bekommen[i], total: (w.production?.total ?? 0) + bekommen[i] });
@@ -152,5 +188,9 @@ export function advanceProduction(input: GameState, balance: Balance): GameState
       `${date}: ${neuenStand.size} ${neuenStand.size === 1 ? 'Quelle fördert' : 'Quellen fördern'} ${barrels(gefoerdert)} Barrel, im Tank sind ${barrels(oilStock)} Barrel.`,
     );
   }
-  return { ...input, wells: neueWells, oilStock, log };
+  const fields = input.fields.map((f) => {
+    const peak = hoechststand.get(f.id);
+    return peak === undefined || peak === f.peakWells ? f : { ...f, peakWells: peak };
+  });
+  return { ...input, wells: neueWells, fields, oilStock, log };
 }

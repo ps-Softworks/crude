@@ -138,7 +138,7 @@ describe('Feld-IDs an den Parzellen', () => {
 
 describe('Feld-Namen', () => {
   it('nennt das Feld nach seinem Mittelpunkt, ab 1 gezählt', () => {
-    expect(fieldLabel({ id: 'f-0', parcelIds: [], reserves: 0, x: 0, y: 0 })).toBe('Feld 1/1');
-    expect(fieldLabel({ id: 'f-3', parcelIds: [], reserves: 0, x: 6, y: 4 })).toBe('Feld 7/5');
+    expect(fieldLabel({ id: 'f-0', parcelIds: [], reserves: 0, x: 0, y: 0, peakWells: 0 })).toBe('Feld 1/1');
+    expect(fieldLabel({ id: 'f-3', parcelIds: [], reserves: 0, x: 6, y: 4, peakWells: 0 })).toBe('Feld 7/5');
   });
 });

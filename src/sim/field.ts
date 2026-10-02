@@ -17,6 +17,8 @@ export interface Field {
   /** Mittelpunkt des Feldes auf der Karte, gerundet. */
   x: number;
   y: number;
+  /** Höchstzahl gleichzeitig fördernder Quellen bisher (für den Ausbeuteverlust). */
+  peakWells: number;
 }
 
 /** Kurzname eines Feldes für Log und Meldungen, wie auf der Karte (ab 1 gezählt). */
@@ -71,6 +73,7 @@ export function buildFields(parcels: readonly Parcel[]): Field[] {
       reserves: gruppe.reduce((sum, p) => sum + p.reserves, 0),
       x: mittel((p) => p.x),
       y: mittel((p) => p.y),
+      peakWells: 0,
     });
   }
   return fields;

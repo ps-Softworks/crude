@@ -147,10 +147,10 @@ describe('Spielzahlen (balance.yaml)', () => {
       const { production } = loadBalance();
       expect(production.initialRateShare).toEqual({ small: 0.2, gusher: 0.15 });
       expect(production.decline).toBe(0.12);
-      expect(production.freeWells).toBe(1);
-      expect(production.pressureLossPerWell).toBe(0.08);
-      expect(production.pressureMin).toBe(0.5);
-      expect(production.recoveryLossPerWell).toBe(0.08);
+      expect(production.freeWells).toBe(4);
+      expect(production.pressureLossPerWell).toBe(0.15);
+      expect(production.pressureMin).toBe(0.4);
+      expect(production.recoveryLossPerWell).toBe(0.06);
       expect(production.recoveryLossMax).toBe(0.3);
     });
 
@@ -176,6 +176,12 @@ describe('Spielzahlen (balance.yaml)', () => {
       const t = raw();
       t.production!.decline = -0.1;
       expect(() => parseBalance(t)).toThrow(/"production.decline" muss zwischen 0 und 1/);
+      const u = raw();
+      u.production!.decline = 1.5;
+      expect(() => parseBalance(u)).toThrow(/"production.decline" muss zwischen 0 und 1/);
+      const v = raw();
+      v.production!.recoveryLossMax = 1.2;
+      expect(() => parseBalance(v)).toThrow(/"production.recoveryLossMax" muss zwischen 0 und 1/);
     });
 
     it('meldet eine fehlende Anfangsrate mit ihrem Namen', () => {
@@ -196,11 +202,6 @@ describe('Spielzahlen (balance.yaml)', () => {
       expect(() => parseBalance(s)).toThrow(/"production.pressureMin" muss zwischen 0 und 1/);
     });
 
-    it('meldet einen zu hohen Mindestdruck', () => {
-      const r = raw();
-      r.production!.pressureMin = 0.95;
-      expect(() => parseBalance(r)).toThrow(/"production.pressureMin" ist größer als der Druckfaktor der freien Quellen/);
-    });
 
     it('meldet freie Quellen, die keine ganze Zahl ab 1 sind', () => {
       const r = raw();

@@ -5,6 +5,7 @@ import { fieldOf } from './field';
 import { endRound, newGame, type GameState } from './game';
 import {
   advanceProduction,
+  fieldStatus,
   fieldWells,
   initialRate,
   pressureFactor,
@@ -49,6 +50,11 @@ function stand(state: GameState, i = 0): Production {
   return p;
 }
 
+/** Die Parzelle der i-ten Quelle. */
+function parzelle(state: GameState, i = 0) {
+  return state.parcels.find((p) => p.id === state.wells[i].parcelId)!;
+}
+
 /** Das Feld, in dem die i-te Quelle liegt. */
 function feld(state: GameState, i = 0) {
   const id = fieldOf(state, state.wells[i].parcelId)!.id;
@@ -74,14 +80,13 @@ describe('Druck im Feld', () => {
 });
 
 describe('Ausbeute des Feldes', () => {
-  it('eine Quelle fördert die ganze Reserve', () => {
-    expect(recoveryFactor(balance, 1)).toBe(1);
-    expect(recoveryFactor(balance, 0)).toBe(1);
+  it('bis freeWells Quellen kommt die ganze Reserve heraus', () => {
+    for (let n = 0; n <= P.freeWells; n++) expect(recoveryFactor(balance, n)).toBe(1);
   });
 
-  it('jede weitere Quelle kostet Ausbeute', () => {
-    expect(recoveryFactor(balance, 2)).toBeCloseTo(1 - P.recoveryLossPerWell, 10);
-    expect(recoveryFactor(balance, 3)).toBeCloseTo(1 - 2 * P.recoveryLossPerWell, 10);
+  it('jede Quelle darüber kostet Ausbeute', () => {
+    expect(recoveryFactor(balance, P.freeWells + 1)).toBeCloseTo(1 - P.recoveryLossPerWell, 10);
+    expect(recoveryFactor(balance, P.freeWells + 2)).toBeCloseTo(1 - 2 * P.recoveryLossPerWell, 10);
   });
 
   it('höchstens recoveryLossMax (Überförderung, GDD §5: bis zu 30 %)', () => {
@@ -93,16 +98,16 @@ describe('Ausbeute des Feldes', () => {
 
   it('recoverable = Reserve × Faktor, auf Barrel gerundet', () => {
     expect(recoverable(balance, 100000, 1)).toBe(100000);
-    expect(recoverable(balance, 100000, 2)).toBe(Math.round(100000 * (1 - P.recoveryLossPerWell)));
+    expect(recoverable(balance, 100000, P.freeWells + 1)).toBe(Math.round(100000 * (1 - P.recoveryLossPerWell)));
     expect(recoverable(balance, 1234, 1)).toBe(1234);
     expect(recoverable(balance, 0, 4)).toBe(0);
   });
 });
 
 describe('Ratengang einer Quelle', () => {
-  it('beginnt mit der Anfangsrate aus der Feldreserve', () => {
+  it('beginnt mit der Anfangsrate aus der Reserve der eigenen Parzelle', () => {
     const state = spiel();
-    expect(stand(state, 0).initialRate).toBe(Math.round(feld(state).reserves * ANTEIL.small));
+    expect(stand(state, 0).initialRate).toBe(Math.round(parzelle(state).reserves * ANTEIL.small));
     expect(wellRate(balance, state.wells[0], 1)).toBe(stand(state, 0).initialRate);
   });
 
@@ -119,9 +124,11 @@ describe('Ratengang einer Quelle', () => {
 
   it('geht mit dem Druck des Feldes runter', () => {
     const state = spiel();
-    expect(wellRate(balance, state.wells[0], 2)).toBe(
-      Math.round(stand(state, 0).initialRate * pressureFactor(balance, 2)),
+    const n = P.freeWells + 1;
+    expect(wellRate(balance, state.wells[0], n)).toBe(
+      Math.round(stand(state, 0).initialRate * pressureFactor(balance, n)),
     );
+    expect(wellRate(balance, state.wells[0], n)).toBeLessThan(stand(state, 0).initialRate);
   });
 
   it('liefert 0, wenn die Bohrung noch nichts gefunden hat', () => {
@@ -174,27 +181,35 @@ describe('Rundenende in der Förderung', () => {
     expect(state.wells[0].production!.total).toBeGreaterThan(state.wells[0].production!.lastRate);
   });
 
-  it('eine zweite Quelle im selben Feld senkt die Rate der ersten', () => {
-    const allein = spiel(1);
-    const paar = spiel(2);
-    const vorher = advanceProduction(allein, balance);
-    const nachher = advanceProduction(paar, balance);
-    expect(stand(nachher, 0).lastRate).toBe(stand(nachher, 1).lastRate);
-    expect(stand(nachher, 0).lastRate).toBeLessThan(stand(vorher, 0).lastRate);
-    expect(nachher.log.at(-1)).toMatch(/2 Quellen fördern/);
+  it('bis freeWells Quellen im selben Feld stören sich nicht', () => {
+    const allein = advanceProduction(spiel(1), balance);
+    const voll = advanceProduction(spiel(P.freeWells), balance);
+    expect(stand(voll, 0).lastRate).toBe(stand(allein, 0).lastRate);
+    expect(voll.log.some((l) => /sinkt der Druck/.test(l))).toBe(false);
+    expect(voll.log.at(-1)).toMatch(new RegExp(`${P.freeWells} Quellen fördern`));
+  });
+
+  it('Quellen auf verschiedenen Feldern beeinflussen sich nicht', () => {
+    const state = spiel(P.freeWells + 1);
+    const fremdesFeld = state.fields.find((f) => f.id !== feld(state).id)!;
+    const fremd = quelle(state, fremdesFeld.parcelIds[0]);
+    const allein = advanceProduction({ ...state, wells: [fremd] }, balance);
+    const mitVollemFeld = advanceProduction({ ...state, wells: [...state.wells, fremd] }, balance);
+    expect(mitVollemFeld.wells.at(-1)!.production!.lastRate).toBe(allein.wells[0].production!.lastRate);
   });
 
   it('fördert nie mehr als die förderbare Menge des Feldes', () => {
     // Riesige Anfangsrate: die erste Runde schon über der Ausbeute des Feldes.
-    const gierig: Balance = { ...balance, production: { ...P, initialRateShare: { small: 5, gusher: 5 } } };
+    const gierig: Balance = { ...balance, production: { ...P, initialRateShare: { small: 1000, gusher: 1000 } } };
     const state = spiel(1, 'gierig', gierig);
     const einmal = advanceProduction(state, gierig);
     expect(stand(einmal, 0).total).toBeLessThanOrEqual(recoverable(gierig, feld(state).reserves, 1));
+    expect(stand(einmal, 0).lastRate).toBeLessThan(stand(state, 0).initialRate);
     expect(einmal.oilStock).toBe(feld(state).reserves);
   });
 
   it('meldet das leere Feld genau einmal und lässt es danach ruhen', () => {
-    const gierig: Balance = { ...balance, production: { ...P, initialRateShare: { small: 5, gusher: 5 } } };
+    const gierig: Balance = { ...balance, production: { ...P, initialRateShare: { small: 1000, gusher: 1000 } } };
     const trocken = advanceProduction(spiel(1, 'gierig', gierig), gierig);
     const gemeldet = trocken.log.filter((l) => /ist erschöpft/.test(l));
     expect(gemeldet).toHaveLength(1);
@@ -203,6 +218,15 @@ describe('Rundenende in der Förderung', () => {
     expect(danach.log.filter((l) => /ist erschöpft/.test(l))).toHaveLength(1);
     expect(danach.oilStock).toBe(trocken.oilStock);
     expect(stand(danach, 0).roundsProduced).toBe(2);
+  });
+
+  it('fieldStatus zeigt Restmenge = förderbar minus gefördert', () => {
+    const state = advanceProduction(spiel(2), balance);
+    const lage = fieldStatus(state, balance, feld(state));
+    expect(lage.wells).toBe(2);
+    expect(lage.pressure).toBe(1);
+    expect(lage.recoverable).toBe(feld(state).reserves);
+    expect(lage.remaining).toBe(lage.recoverable - state.oilStock);
   });
 
   it('ändert den alten Zustand nicht', () => {
@@ -255,10 +279,10 @@ describe('Anfangsrate', () => {
     return well;
   }
 
-  it('hängt an der Feldreserve, nicht nur an der Parzelle', () => {
+  it('hängt an der Reserve der eigenen Parzelle', () => {
     const state = spiel();
     const rate = initialRate(balance, state, { parcelId: state.wells[0].parcelId, result: 'small' });
-    expect(rate).toBe(Math.round(feld(state).reserves * ANTEIL.small));
+    expect(rate).toBe(Math.round(parzelle(state).reserves * ANTEIL.small));
     expect(rate).toBeGreaterThan(0);
   });
 
@@ -280,13 +304,56 @@ describe('Anfangsrate', () => {
     const gusher = fund(state, id('gusher'));
     expect(klein.result).toBe('small');
     expect(gusher.result).toBe('gusher');
-    expect(klein.production!.initialRate).toBe(Math.round(fieldOf(state, klein.parcelId)!.reserves * ANTEIL.small));
-    expect(gusher.production!.initialRate).toBe(Math.round(fieldOf(state, gusher.parcelId)!.reserves * ANTEIL.gusher));
+    const reserve = (id: string) => state.parcels.find((p) => p.id === id)!.reserves;
+    expect(klein.production!.initialRate).toBe(Math.round(reserve(klein.parcelId) * ANTEIL.small));
+    expect(gusher.production!.initialRate).toBe(Math.round(reserve(gusher.parcelId) * ANTEIL.gusher));
   });
 
   it('ist 0, wo kein Öl ist', () => {
     const state = newGame('trocken', balance);
     const trocken = state.parcels.find((p) => p.reserves === 0)!;
     expect(initialRate(balance, state, { parcelId: trocken.id, result: 'small' })).toBe(0);
+  });
+});
+describe('Fertig-Kriterium 1.7: die fünfte Quelle schwächt die anderen sichtbar', () => {
+  /**
+   * Größtes Feld der Karte mit riesiger Reserve, damit nur der Druck zählt;
+   * vier Quellen fördern schon, die fünfte steht bereit.
+   */
+  function grossesFeld(): { start: GameState; fuenfte: Well } {
+    const state = newGame('druck', balance);
+    const gross = [...state.fields].sort((a, b) => b.parcelIds.length - a.parcelIds.length)[0];
+    expect(gross.parcelIds.length).toBeGreaterThan(P.freeWells);
+    const fields = state.fields.map((f) => (f.id === gross.id ? { ...f, reserves: 1e12 } : f));
+    const wells = gross.parcelIds.slice(0, P.freeWells + 1).map((id) => quelle(state, id));
+    return { start: { ...state, fields, wells: wells.slice(0, P.freeWells) }, fuenfte: wells[P.freeWells] };
+  }
+
+  it('vier Quellen fördern ungestört, die fünfte drückt alle', () => {
+    expect(P.freeWells).toBe(4);
+    const { start, fuenfte } = grossesFeld();
+
+    const runde1 = advanceProduction(start, balance);
+    expect(runde1.log.some((l) => /sinkt der Druck/.test(l))).toBe(false);
+    expect(feld(runde1).peakWells).toBe(4);
+    const ausbeuteVorher = recoverable(balance, feld(runde1).reserves, feld(runde1).peakWells);
+
+    // Gegenprobe: ohne fünfte Quelle fällt die Rate nur um den normalen Rückgang.
+    const ohne = advanceProduction(runde1, balance);
+    const mit = advanceProduction({ ...runde1, wells: [...runde1.wells, fuenfte] }, balance);
+    for (let i = 0; i < P.freeWells; i++) {
+      const vorher = stand(runde1, i).lastRate;
+      expect(stand(ohne, i).lastRate).toBe(Math.round(stand(runde1, i).initialRate * (1 - P.decline)));
+      expect(stand(mit, i).lastRate).toBeLessThan(Math.floor(vorher * (1 - P.decline)));
+      expect(stand(mit, i).lastRate / stand(ohne, i).lastRate).toBeCloseTo(1 - P.pressureLossPerWell, 2);
+    }
+    expect(feld(mit).peakWells).toBe(5);
+    expect(fieldStatus(mit, balance, feld(mit))).toMatchObject({ wells: 5, pressure: 1 - P.pressureLossPerWell });
+    expect(recoverable(balance, feld(mit).reserves, feld(mit).peakWells)).toBeLessThan(ausbeuteVorher);
+    expect(mit.log.filter((l) => /sinkt der Druck – zu viele Quellen/.test(l))).toHaveLength(1);
+
+    // Die Drucklogzeile kommt nur einmal, nicht jede Runde.
+    const weiter = advanceProduction(mit, balance);
+    expect(weiter.log.filter((l) => /sinkt der Druck/.test(l))).toHaveLength(1);
   });
 });

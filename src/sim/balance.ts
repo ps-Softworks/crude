@@ -93,8 +93,8 @@ export interface DrillingBalance {
 /** Förderung (GDD §5): Ratengang, gemeinsames Feld, Druckverlust durch Nachbarn. */
 export interface ProductionBalance {
   /**
-   * Anfangsrate einer Quelle als Anteil der Reserve ihres Feldes, je Art von
-   * Fund: eine kleine Quelle zieht einen größeren Anteil als ein Gusher.
+   * Anfangsrate einer Quelle als Anteil der Reserve ihrer Parzelle, je Art von
+   * Fund.
    */
   initialRateShare: { small: number; gusher: number };
   /** Rückgang der Rate je Quartal, z. B. 0.12 = 12 % (GDD: 8–15 %). */
@@ -103,9 +103,9 @@ export interface ProductionBalance {
   freeWells: number;
   /** Druckverlust, den jede Quelle über freeWells hinaus allen anderen macht. */
   pressureLossPerWell: number;
-  /** Tiefster Druckfaktor: unter 1 geht er nicht, egal wie viele Quellen bohren. */
+  /** Tiefster Druckfaktor: darunter geht er nicht, egal wie viele Quellen bohren. */
   pressureMin: number;
-  /** Ausbeuteverlust des Feldes je Quelle über der ersten. */
+  /** Ausbeuteverlust des Feldes je Quelle über freeWells (Höchststand). */
   recoveryLossPerWell: number;
   /** Höchster Ausbeuteverlust des Feldes (Überförderung). */
   recoveryLossMax: number;
@@ -350,11 +350,6 @@ function parseProduction(raw: unknown): ProductionBalance {
   const recoveryLossMax = share(raw, 'production.recoveryLossMax');
   if (pressureMin < 0 || pressureMin > 1) {
     throw new BalanceError('balance.yaml: "production.pressureMin" muss zwischen 0 und 1 liegen');
-  }
-  if (pressureMin > 1 - freeWells * pressureLossPerWell) {
-    throw new BalanceError(
-      'balance.yaml: "production.pressureMin" ist größer als der Druckfaktor der freien Quellen',
-    );
   }
   if (recoveryLossPerWell > recoveryLossMax) {
     throw new BalanceError(

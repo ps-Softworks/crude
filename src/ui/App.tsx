@@ -24,7 +24,7 @@ import {
   roundsLeft,
   type LeaseResult,
 } from '../sim/lease';
-import { fieldWells, pressureFactor, recoverable } from '../sim/production';
+import { fieldStatus } from '../sim/production';
 import { balance } from './balance';
 import { Map } from './Map';
 
@@ -99,7 +99,7 @@ export function App() {
           </span>
           <span>{formatDate(game)}</span>
           <span>Kasse: {money(game.cash)}</span>
-          <span>Tank: {barrels(game.oilStock)} Barrel</span>
+          <span>Öl im Tank: {barrels(game.oilStock)} bbl</span>
           <span>
             Pachten: {leaseCount} · Optionen: {optionCount}
           </span>
@@ -333,41 +333,36 @@ function WellInfo({ well }: { well: Well }) {
 }
 
 /**
- * Zahlen zur fördernden Quelle: Rate, Ertrag und wie viel im Feld noch liegt.
+ * Zahlen zur fördernden Quelle: Rate, Ertrag und Druck im Feld. Reserve und
+ * Restmenge sind verdeckt und erscheinen nur in der Debug-Ansicht.
  * Alle Regeln kommen aus src/sim/production.
  */
 function SourceInfo({ game, well, debug }: { game: GameState; well: Well; debug: boolean }) {
   const field = fieldOf(game, well.parcelId);
   const p = well.production;
   if (!field || !p) return <p className="muted">Diese Quelle liegt in keinem Feld – sie fördert nichts.</p>;
-  const wells = fieldWells(game, field.id);
-  const ausbeute = recoverable(balance, field.reserves, wells.length);
-  const gefoerdert = wells.reduce((sum, w) => sum + (w.production?.total ?? 0), 0);
+  const lage = fieldStatus(game, balance, field);
   return (
     <dl className="terms quelle">
-      <dt>Feld</dt>
+      <dt>Förderung</dt>
       <dd>
-        {fieldLabel(field)} über {field.parcelIds.length} {field.parcelIds.length === 1 ? 'Parzelle' : 'Parzellen'} ·{' '}
-        {barrels(field.reserves)} Barrel im Boden
-      </dd>
-      <dt>Rate</dt>
-      <dd>
-        {barrels(p.lastRate)} Barrel je Quartal
+        letzte Runde: {barrels(p.lastRate)} bbl
         {debug && ` · anfangs ${barrels(p.initialRate)}`}
       </dd>
-      <dt>Bisher</dt>
+      <dt>Gesamt</dt>
       <dd>
-        {barrels(p.total)} Barrel in {rounds(p.roundsProduced)}
+        {barrels(p.total)} bbl in {rounds(p.roundsProduced)}
       </dd>
-      <dt>Im Feld</dt>
+      <dt>Feld</dt>
       <dd>
-        noch {barrels(Math.max(0, ausbeute - gefoerdert))} von {barrels(ausbeute)} Barrel förderbar
+        {fieldLabel(field)}: {lage.wells} {lage.wells === 1 ? 'Quelle' : 'Quellen'} · Druck {percent(lage.pressure)}
       </dd>
-      {wells.length > balance.production.freeWells && (
+      {debug && (
         <>
-          <dt>Druck</dt>
+          <dt>Debug</dt>
           <dd>
-            {percent(pressureFactor(balance, wells.length))} · {wells.length} Quellen im Feld
+            {field.parcelIds.length} Parzellen · {barrels(field.reserves)} bbl im Boden · noch{' '}
+            {barrels(lage.remaining)} von {barrels(lage.recoverable)} bbl förderbar
           </dd>
         </>
       )}
