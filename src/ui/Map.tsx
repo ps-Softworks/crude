@@ -91,6 +91,12 @@ export function Map({ balance, game, debug, selected, onSelect }: Props) {
                 pointerEvents="none"
               />
             )}
+            {!debug && well?.status === 'found' && (well.production?.lastRate ?? 0) > 0 && (
+              // Rate der fördernden Quelle unter dem Bohrturm.
+              <text x={x + CELL / 2} y={y + CELL - 2} textAnchor="middle" className="rate">
+                {well.production!.lastRate.toLocaleString('de-DE')}
+              </text>
+            )}
             {p.discovery && (
               // Bohrturm als Zeichen für die Entdeckungsquelle.
               <polygon

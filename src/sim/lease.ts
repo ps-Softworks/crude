@@ -17,7 +17,7 @@ export interface Lease {
   holder: Holder;
   /** Einmal gezahlter Bonus in $. */
   bonus: number;
-  /** Förderzins (Anteil der Förderung für den Landbesitzer), wird ab 1.7 abgezogen. */
+  /** Förderzins (Anteil der Förderung für den Landbesitzer), wird mit dem Verkauf in 1.8 abgezogen. */
   royalty: number;
   startRound: number;
   /** Letzte Runde, in der die Pacht noch gilt (sofern nicht gebohrt). */

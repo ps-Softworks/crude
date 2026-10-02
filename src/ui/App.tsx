@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { fieldLabel, fieldOf } from '../sim/field';
 import { endRound, formatDate, newGame, type GameState } from '../sim/game';
 import {
   abandonWell,
@@ -23,6 +24,7 @@ import {
   roundsLeft,
   type LeaseResult,
 } from '../sim/lease';
+import { fieldWells, pressureFactor, recoverable } from '../sim/production';
 import { balance } from './balance';
 import { Map } from './Map';
 
@@ -30,6 +32,11 @@ const GEOLOGY_LABEL = { dry: 'trocken', small: 'klein', gusher: 'Gusher' } as co
 
 function money(value: number) {
   return `${value.toLocaleString('de-DE')} $`;
+}
+
+/** Barrel-Menge in lesbarer Form. */
+function barrels(value: number) {
+  return value.toLocaleString('de-DE');
 }
 
 /** Förderzins als Prozent, z. B. 0.125 -> "12,5 %", 1/6 -> "16,7 %". */
@@ -92,6 +99,7 @@ export function App() {
           </span>
           <span>{formatDate(game)}</span>
           <span>Kasse: {money(game.cash)}</span>
+          <span>Tank: {barrels(game.oilStock)} Barrel</span>
           <span>
             Pachten: {leaseCount} · Optionen: {optionCount}
           </span>
@@ -257,6 +265,8 @@ function ParcelPanel({ game, parcel, debug, notice, onResult }: PanelProps) {
         </p>
       )}
 
+      {well?.status === 'found' && <SourceInfo game={game} well={well} debug={debug} />}
+
       <div className="actions">
         {tryDrill && (
           <button disabled={!tryDrill.ok} onClick={() => onResult(startDrilling(game, balance, id))}>
@@ -320,4 +330,47 @@ function WellInfo({ well }: { well: Well }) {
     case 'dry':
       return <>{head}<br />Trocken – kein Öl.</>;
   }
+}
+
+/**
+ * Zahlen zur fördernden Quelle: Rate, Ertrag und wie viel im Feld noch liegt.
+ * Alle Regeln kommen aus src/sim/production.
+ */
+function SourceInfo({ game, well, debug }: { game: GameState; well: Well; debug: boolean }) {
+  const field = fieldOf(game, well.parcelId);
+  const p = well.production;
+  if (!field || !p) return <p className="muted">Diese Quelle liegt in keinem Feld – sie fördert nichts.</p>;
+  const wells = fieldWells(game, field.id);
+  const ausbeute = recoverable(balance, field.reserves, wells.length);
+  const gefoerdert = wells.reduce((sum, w) => sum + (w.production?.total ?? 0), 0);
+  return (
+    <dl className="terms quelle">
+      <dt>Feld</dt>
+      <dd>
+        {fieldLabel(field)} über {field.parcelIds.length} {field.parcelIds.length === 1 ? 'Parzelle' : 'Parzellen'} ·{' '}
+        {barrels(field.reserves)} Barrel im Boden
+      </dd>
+      <dt>Rate</dt>
+      <dd>
+        {barrels(p.lastRate)} Barrel je Quartal
+        {debug && ` · anfangs ${barrels(p.initialRate)}`}
+      </dd>
+      <dt>Bisher</dt>
+      <dd>
+        {barrels(p.total)} Barrel in {rounds(p.roundsProduced)}
+      </dd>
+      <dt>Im Feld</dt>
+      <dd>
+        noch {barrels(Math.max(0, ausbeute - gefoerdert))} von {barrels(ausbeute)} Barrel förderbar
+      </dd>
+      {wells.length > balance.production.freeWells && (
+        <>
+          <dt>Druck</dt>
+          <dd>
+            {percent(pressureFactor(balance, wells.length))} · {wells.length} Quellen im Feld
+          </dd>
+        </>
+      )}
+    </dl>
+  );
 }

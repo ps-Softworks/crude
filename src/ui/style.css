@@ -17,6 +17,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; ma
 .parcel { cursor: pointer; }
 .label { font: 11px sans-serif; fill: #222; pointer-events: none; }
 .label.light { fill: #f2f0eb; }
+.rate { font: bold 9px sans-serif; fill: #2b2620; pointer-events: none; }
 .place { font: italic 14px Georgia, serif; fill: #333; pointer-events: none; }
 aside section { margin-bottom: 18px; }
 button { font: inherit; padding: 4px 10px; cursor: pointer; }

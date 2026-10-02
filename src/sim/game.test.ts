@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { endRound, formatDate, newGame } from './game';
+import { assignFields, buildFields } from './field';
+import { endRound, formatDate, newGame, type GameState } from './game';
 import { generateParcels } from './geology';
 import { startOptions } from './lease';
 import { Rng, seedFromString } from './rng';
@@ -76,7 +77,9 @@ describe('Geologen-Prognosen im Spielzustand', () => {
 
   it('lässt Karte und Startoptionen unverändert (Prognosen kommen danach)', () => {
     const rng = new Rng(seedFromString('reihenfolge'));
-    const parcels = generateParcels(balance, rng);
+    const geologie = generateParcels(balance, rng);
+    // Die Lagerstätten kommen nach der Geologie und verändern sie nicht.
+    const parcels = assignFields(geologie, buildFields(geologie));
     const options = startOptions({ ...newGame('leer', balance), parcels }, balance, rng);
     const state = newGame('reihenfolge', balance);
     expect(state.parcels).toEqual(parcels);
@@ -88,5 +91,71 @@ describe('Geologen-Prognosen im Spielzustand', () => {
     const first = state.forecasts;
     state = endRound(state, balance);
     expect(state.forecasts).toEqual(first);
+  });
+});
+
+describe('Lagerstätten und Tank im Spielzustand', () => {
+  it('legt zu Beginn leere Tanks an', () => {
+    expect(newGame('tank', balance).oilStock).toBe(0);
+  });
+
+  it('findet auf jeder Karte Lagerstätten', () => {
+    for (const seed of ['harlan', 'brandt', 'kalender']) {
+      expect(newGame(seed, balance).fields.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('gibt jeder ölführenden Parzelle ihre Feld-ID, ohne Öl verliert keine Reserve', () => {
+    const state = newGame('felder', balance);
+    const oel = state.parcels.filter((p) => p.reserves > 0);
+    expect(state.fields.flatMap((f) => f.parcelIds).sort()).toEqual(oel.map((p) => p.id).sort());
+    const summe = (list: { reserves: number }[]) => list.reduce((s, p) => s + p.reserves, 0);
+    expect(summe(state.fields)).toBe(summe(oel));
+  });
+
+  it('lässt Lagerstätten und Parzellen über die Runden unverändert', () => {
+    const before = newGame('stabil', balance);
+    const felder = before.fields;
+    const parzellen = before.parcels;
+    const state = endRound(before, balance);
+    expect(state.fields).toEqual(felder);
+    expect(state.parcels).toEqual(parzellen);
+  });
+});
+
+describe('Reihenfolge beim Rundenende', () => {
+  /** Spiel mit einer Bohrung, die genau in dieser Runde fertig wird. */
+  function amFund(seed = 'reihenfolge'): GameState {
+    const state = newGame(seed, balance);
+    const parcel = state.parcels.find((p) => p.reserves > 0)!;
+    return {
+      ...state,
+      wells: [
+        {
+          parcelId: parcel.id,
+          stage: 1,
+          status: 'drilling',
+          roundsLeft: 1,
+          spent: 1500,
+          oilStage: 1,
+          startRound: 1,
+        },
+      ],
+    };
+  }
+
+  it('die Förderrunde läuft vor der Bohrung: eine neue Quelle liefert erst ab der nächsten Runde', () => {
+    const state = endRound(amFund(), balance);
+    expect(state.wells[0].status).toBe('found');
+    expect(state.wells[0].production).toMatchObject({ roundsProduced: 0, lastRate: 0, total: 0 });
+    expect(state.oilStock).toBe(0);
+  });
+
+  it('in der Runde danach fließt Öl in den Tank', () => {
+    const state = endRound(endRound(amFund(), balance), balance);
+    expect(state.wells[0].production!.roundsProduced).toBe(1);
+    expect(state.oilStock).toBeGreaterThan(0);
+    expect(state.oilStock).toBe(state.wells[0].production!.total);
+    expect(state.log.some((l) => /fördert .* Barrel, im Tank sind/.test(l))).toBe(true);
   });
 });

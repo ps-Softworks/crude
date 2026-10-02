@@ -90,6 +90,24 @@ export interface DrillingBalance {
   stages: DrillStage[];
 }
 
+/** Förderung (GDD §5): Ratengang, gemeinsames Feld, Druckverlust durch Nachbarn. */
+export interface ProductionBalance {
+  /** Anfangsrate einer Quelle als Anteil der Reserve ihres Feldes. */
+  initialRateShare: number;
+  /** Rückgang der Rate je Quartal, z. B. 0.12 = 12 % (GDD: 8–15 %). */
+  decline: number;
+  /** So viele Quellen im Feld fördern noch ohne Druckverlust. */
+  freeWells: number;
+  /** Druckverlust, den jede Quelle über freeWells hinaus allen anderen macht. */
+  pressureLossPerWell: number;
+  /** Tiefster Druckfaktor: unter 1 geht er nicht, egal wie viele Quellen bohren. */
+  pressureMin: number;
+  /** Ausbeuteverlust des Feldes je Quelle über der ersten. */
+  recoveryLossPerWell: number;
+  /** Höchster Ausbeuteverlust des Feldes (Überförderung). */
+  recoveryLossMax: number;
+}
+
 export interface Balance {
   start: { cash: number; year: number; rounds: number };
   map: { width: number; height: number; saltHill: { x: number; y: number } };
@@ -100,6 +118,7 @@ export interface Balance {
   lease: LeaseBalance;
   forecast: ForecastBalance;
   drilling: DrillingBalance;
+  production: ProductionBalance;
 }
 
 export class BalanceError extends Error {}
@@ -311,6 +330,42 @@ function parseDrilling(raw: unknown): DrillingBalance {
   return { rigs: positiveInt(raw, 'drilling.rigs'), accidentCost, fishingCost, stages };
 }
 
+function parseProduction(raw: unknown): ProductionBalance {
+  const block = (raw as { production?: unknown })?.production;
+  if (!block || typeof block !== 'object') {
+    throw new BalanceError('balance.yaml: Block "production" fehlt');
+  }
+  const initialRateShare = share(raw, 'production.initialRateShare');
+  const decline = share(raw, 'production.decline');
+  const freeWells = positiveInt(raw, 'production.freeWells');
+  const pressureLossPerWell = share(raw, 'production.pressureLossPerWell');
+  const pressureMin = num(raw, 'production.pressureMin');
+  const recoveryLossPerWell = share(raw, 'production.recoveryLossPerWell');
+  const recoveryLossMax = share(raw, 'production.recoveryLossMax');
+  if (pressureMin < 0 || pressureMin > 1) {
+    throw new BalanceError('balance.yaml: "production.pressureMin" muss zwischen 0 und 1 liegen');
+  }
+  if (pressureMin > 1 - freeWells * pressureLossPerWell) {
+    throw new BalanceError(
+      'balance.yaml: "production.pressureMin" ist größer als der Druckfaktor der freien Quellen',
+    );
+  }
+  if (recoveryLossPerWell > recoveryLossMax) {
+    throw new BalanceError(
+      'balance.yaml: "production.recoveryLossPerWell" ist größer als "production.recoveryLossMax"',
+    );
+  }
+  return {
+    initialRateShare,
+    decline,
+    freeWells,
+    pressureLossPerWell,
+    pressureMin,
+    recoveryLossPerWell,
+    recoveryLossMax,
+  };
+}
+
 export function parseBalance(raw: unknown): Balance {
   const zonesRaw = (raw as { geology?: { zones?: unknown } })?.geology?.zones;
   if (!Array.isArray(zonesRaw) || zonesRaw.length === 0) {
@@ -359,6 +414,7 @@ export function parseBalance(raw: unknown): Balance {
     lease: parseLease(raw),
     forecast: parseForecast(raw),
     drilling: parseDrilling(raw),
+    production: parseProduction(raw),
   };
 
   const { width, height, saltHill } = balance.map;

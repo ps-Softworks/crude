@@ -6,12 +6,25 @@
 import type { Balance, DrillStage } from './balance';
 import { formatDate } from './calendar';
 import { makeForecast, trueChance } from './forecast';
+import { initialRate } from './production';
 import type { GameState } from './game';
 import type { Parcel } from './geology';
 import { leaseOf, parcelLabel } from './lease';
 import { Rng } from './rng';
 
 export type WellStatus = 'drilling' | 'decision' | 'stuck' | 'found' | 'dry';
+
+/** Was eine gefundene Quelle seit dem Fund geliefert hat. */
+export interface Production {
+  /** Anfangsrate in Barrel je Runde, beim Fund aus der Reserve des Feldes. */
+  initialRate: number;
+  /** Runden, in denen die Quelle schon gefördert hat. */
+  roundsProduced: number;
+  /** Barrel der letzten Runde. */
+  lastRate: number;
+  /** Insgesamt geförderte Barrel aus dieser Quelle. */
+  total: number;
+}
 
 export interface Well {
   parcelId: string;
@@ -25,6 +38,8 @@ export interface Well {
   /** Verdeckt: Stufe, in der das Öl liegt; null bei trockener Parzelle. */
   oilStage: number | null;
   result?: 'small' | 'gusher';
+  /** Wird beim Fund gesetzt; davor gibt es nichts zu fördern. */
+  production?: Production;
   startRound: number;
 }
 
@@ -178,7 +193,12 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
           ? `${date}: GUSHER! Auf Parzelle ${label} schießt in ${depth} m das Öl über den Bohrturm!`
           : `${date}: Öl! Parzelle ${label} fördert in ${depth} m eine kleine Quelle.`,
       );
-      return { ...well, status: 'found', result };
+      return {
+        ...well,
+        status: 'found',
+        result,
+        production: { initialRate: initialRate(balance, input, well.parcelId), roundsProduced: 0, lastRate: 0, total: 0 },
+      };
     }
     if (well.stage < lastStage) {
       const parcel = input.parcels.find((p) => p.id === well.parcelId)!;

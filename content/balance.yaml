@@ -105,6 +105,19 @@ lease:
     count: 2              # PLATZHALTER
     termRounds: 4         # PLATZHALTER
 
+# Förderung (GDD §5). Das Öl liegt in Lagerstätten, die mehrere Parzellen
+# umfassen. Jede Quelle startet mit einem Anteil der Feldreserve und fällt je
+# Quartal. Das Feld ist gemeinsam: eine weitere Quelle senkt den Druck aller
+# Quellen und verringert am Ende die Gesamtausbeute des Feldes.
+production:
+  initialRateShare: 0.05     # PLATZHALTER: Anfangsrate je Quelle, Anteil der Feldreserve
+  decline: 0.12              # PLATZHALTER: Rückgang je Quartal (GDD: 8–15 %)
+  freeWells: 1               # PLATZHALTER: Quellen, die ohne Druckverlust fördern
+  pressureLossPerWell: 0.08  # PLATZHALTER: Druckverlust je weiterer Quelle im Feld
+  pressureMin: 0.50          # PLATZHALTER: tiefster Druckfaktor
+  recoveryLossPerWell: 0.08  # PLATZHALTER: Ausbeuteverlust des Feldes je weiterer Quelle
+  recoveryLossMax: 0.30      # GDD: Überförderung senkt die Ausbeute um bis zu 30 %
+
 # Geologe (GDD §5): Er nennt nie die wahre Fundchance, sondern eine
 # Bandbreite. Je genauer und je weniger verzerrt, desto eher deckt sie die
 # Wahrheit ab.

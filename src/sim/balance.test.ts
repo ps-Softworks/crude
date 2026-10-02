@@ -138,4 +138,71 @@ describe('Spielzahlen (balance.yaml)', () => {
       expect(() => parseBalance(r)).toThrow(/"forecast.rounding" muss eine ganze Zahl ab 1/);
     });
   });
+
+  describe('Förderung', () => {
+    type RawProduction = { production?: Record<string, number> };
+    const raw = () => structuredClone(loadBalance()) as unknown as RawProduction;
+
+    it('liest die Förderungs-Zahlen aus der echten Datei', () => {
+      const { production } = loadBalance();
+      expect(production.initialRateShare).toBe(0.05);
+      expect(production.decline).toBe(0.12);
+      expect(production.freeWells).toBe(1);
+      expect(production.pressureLossPerWell).toBe(0.08);
+      expect(production.pressureMin).toBe(0.5);
+      expect(production.recoveryLossPerWell).toBe(0.08);
+      expect(production.recoveryLossMax).toBe(0.3);
+    });
+
+    it('meldet einen fehlenden Block', () => {
+      const r = raw();
+      delete r.production;
+      expect(() => parseBalance(r)).toThrow(/Block "production" fehlt/);
+    });
+
+    it('meldet fehlende Zahlen mit ihrem Namen', () => {
+      const r = raw();
+      delete r.production!.decline;
+      expect(() => parseBalance(r)).toThrow(/"production.decline" fehlt oder ist keine Zahl/);
+    });
+
+    it('meldet Werte, die keine Anteile zwischen 0 und 1 sind', () => {
+      const r = raw();
+      r.production!.initialRateShare = 5;
+      expect(() => parseBalance(r)).toThrow(/"production.initialRateShare" muss zwischen 0 und 1/);
+      const s = raw();
+      s.production!.decline = -0.1;
+      expect(() => parseBalance(s)).toThrow(/"production.decline" muss zwischen 0 und 1/);
+    });
+
+    it('meldet einen Druckfaktor außerhalb 0 bis 1', () => {
+      const r = raw();
+      r.production!.pressureMin = 1.5;
+      expect(() => parseBalance(r)).toThrow(/"production.pressureMin" muss zwischen 0 und 1/);
+      const s = raw();
+      s.production!.pressureMin = -0.5;
+      expect(() => parseBalance(s)).toThrow(/"production.pressureMin" muss zwischen 0 und 1/);
+    });
+
+    it('meldet einen zu hohen Mindestdruck', () => {
+      const r = raw();
+      r.production!.pressureMin = 0.95;
+      expect(() => parseBalance(r)).toThrow(/"production.pressureMin" ist größer als der Druckfaktor der freien Quellen/);
+    });
+
+    it('meldet freie Quellen, die keine ganze Zahl ab 1 sind', () => {
+      const r = raw();
+      r.production!.freeWells = 0;
+      expect(() => parseBalance(r)).toThrow(/"production.freeWells" muss eine ganze Zahl ab 1/);
+      const s = raw();
+      s.production!.freeWells = 1.5;
+      expect(() => parseBalance(s)).toThrow(/"production.freeWells" muss eine ganze Zahl ab 1/);
+    });
+
+    it('meldet einen Ausbeuteverlust über der Obergrenze', () => {
+      const r = raw();
+      r.production!.recoveryLossPerWell = 0.5;
+      expect(() => parseBalance(r)).toThrow(/"production.recoveryLossPerWell" ist größer als "production.recoveryLossMax"/);
+    });
+  });
 });

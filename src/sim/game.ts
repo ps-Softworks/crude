@@ -4,9 +4,11 @@
 import type { Balance } from './balance';
 import { formatDate } from './calendar';
 import { advanceDrilling, type Well } from './drilling';
+import { assignFields, buildFields, type Field } from './field';
 import { makeForecasts, type Forecast } from './forecast';
 import { generateParcels, type Parcel } from './geology';
 import { parcelLabel, settleLeases, startOptions, type Lease, type LeaseOption } from './lease';
+import { advanceProduction } from './production';
 import { Rng, seedFromString, type RngState } from './rng';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
@@ -20,6 +22,10 @@ export interface GameState {
   startYear: number;
   cash: number;
   parcels: Parcel[];
+  /** Lagerstätten: verbundene ölführende Parzellen mit ihren Reserven. */
+  fields: Field[];
+  /** Öl in den Tanks in Barrel. Der Verkauf kommt in 1.8. */
+  oilStock: number;
   leases: Lease[];
   options: LeaseOption[];
   /** Geologen-Prognose je Parzelle; für die Entdeckungsquelle gibt es keine. */
@@ -32,7 +38,9 @@ export interface GameState {
 
 export function newGame(seed: string, balance: Balance): GameState {
   const rng = new Rng(seedFromString(seed));
-  const parcels = generateParcels(balance, rng);
+  const geologie = generateParcels(balance, rng);
+  const fields = buildFields(geologie);
+  const parcels = assignFields(geologie, fields);
   const state: GameState = {
     seed,
     rng: rng.state,
@@ -41,6 +49,8 @@ export function newGame(seed: string, balance: Balance): GameState {
     startYear: balance.start.year,
     cash: balance.start.cash,
     parcels,
+    fields,
+    oilStock: 0,
     leases: [],
     options: [],
     forecasts: {},
@@ -63,12 +73,15 @@ export function newGame(seed: string, balance: Balance): GameState {
 }
 
 /**
- * Schließt die aktuelle Runde ab: erst die Bohrungen, dann die Pacht-Abrechnung (Verfall,
- * Verzögerungszins), dann die nächste Runde. Nach der letzten Runde ist das Kapitel beendet.
+ * Schließt die aktuelle Runde ab: erst die Förderung, dann die Bohrungen, dann die
+ * Pacht-Abrechnung (Verfall, Verzögerungszins), dann die nächste Runde. Die
+ * Förderung kommt zuerst, damit eine Quelle, die gerade ihren Abschlussbohrung
+ * hinter sich hat, erst in der nächsten Runde Öl liefert. Nach der letzten Runde
+ * ist das Kapitel beendet.
  */
 export function endRound(input: GameState, balance: Balance): GameState {
   if (input.finished) return input;
-  const state = settleLeases(advanceDrilling(input, balance), balance);
+  const state = settleLeases(advanceDrilling(advanceProduction(input, balance), balance), balance);
   if (state.round >= state.totalRounds) {
     return { ...state, finished: true, log: [...state.log, `${formatDate(state)}: Kapitel 1 ist zu Ende.`] };
   }

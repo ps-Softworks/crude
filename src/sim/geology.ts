@@ -17,6 +17,8 @@ export interface Parcel {
   landowner: LandownerType;
   /** Bekannter Fund (Salt Hill): Quelle des Booms, nicht pachtbar. */
   discovery: boolean;
+  /** Lagerstätte, in der die Parzelle liegt. Wird ab 1.7 gesetzt. */
+  fieldId?: string;
 }
 
 export function distanceToSaltHill(balance: Balance, x: number, y: number): number {
