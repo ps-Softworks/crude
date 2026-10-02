@@ -221,7 +221,7 @@ describe('Spielzahlen (balance.yaml)', () => {
 
   describe('Markt und Transport', () => {
     type RawTransport = {
-      market: Record<string, number>;
+      market: Record<string, number> & { neighbours: Record<string, number> };
       transport: { wagon: Record<string, unknown>; rail: Record<string, unknown>; thorne: Record<string, number> };
     };
     const raw = () => structuredClone(loadBalance()) as unknown as RawTransport;
@@ -270,6 +270,43 @@ describe('Spielzahlen (balance.yaml)', () => {
       const r = raw();
       r.market.basePrice = 0;
       expect(() => parseBalance(r)).toThrow(/basePrice/);
+    });
+
+    it('meldet eine Nachfrage von 0 oder weniger', () => {
+      for (const v of [0, -100]) {
+        const r = raw();
+        r.market.demand = v;
+        expect(() => parseBalance(r)).toThrow(/market\.demand/);
+      }
+    });
+
+    it('meldet eine Elastizität von 0 oder weniger', () => {
+      for (const v of [0, -1]) {
+        const r = raw();
+        r.market.elasticity = v;
+        expect(() => parseBalance(r)).toThrow(/market\.elasticity/);
+      }
+    });
+
+    it('meldet priceMin über basePrice und priceMax unter basePrice', () => {
+      const r = raw();
+      r.market.priceMin = 1.2;
+      expect(() => parseBalance(r)).toThrow(/market\.priceMin/);
+      const r2 = raw();
+      r2.market.priceMax = 0.9;
+      expect(() => parseBalance(r2)).toThrow(/market\.priceMax/);
+    });
+
+    it('meldet halbe oder negative Nachbarquellen und eine newsThreshold über 1', () => {
+      const r = raw();
+      r.market.neighbours.newWellsPerRound = 1.5;
+      expect(() => parseBalance(r)).toThrow(/market\.neighbours\.newWellsPerRound/);
+      const r2 = raw();
+      r2.market.neighbours.startWells = -1;
+      expect(() => parseBalance(r2)).toThrow(/market\.neighbours\.startWells/);
+      const r3 = raw();
+      r3.market.newsThreshold = 1.5;
+      expect(() => parseBalance(r3)).toThrow(/market\.newsThreshold/);
     });
   });
 });

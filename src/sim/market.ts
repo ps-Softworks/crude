@@ -1,73 +1,66 @@
-// Marktberechnung (GDD §6): Posted Price aus Angebot und Nachfrage.
-// Reine Funktionen, deterministisch, testbar.
+// Ölpreis (GDD §7.3): Der Posted Price am Salt Hill entsteht jede Runde aus
+// Angebot und Nachfrage. Reine Funktionen, deterministisch, ohne Zufall.
+//   P = T · (N / A)^ε · S − k, begrenzt auf priceMin..priceMax, auf Cent gerundet.
 
 import type { MarketBalance } from './balance';
-import type { GameState } from './game';
 import { formatDate } from './calendar';
+import type { GameState } from './game';
 
 /** Auf ganze Cent runden. */
 function cents(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-/** Nachbarangebot in dieser Runde. */
-export function neighbourSupply(balance: MarketBalance, round: number): number {
-  const { startWells, newWellsPerRound, ratePerWell } = balance.neighbours;
-  const wells = startWells + newWellsPerRound * (round - 1);
-  return wells * ratePerWell;
+/** Bohrtürme der anderen Firmen am Salt Hill in dieser Runde (bis es Rivalen gibt). */
+export function neighbourWells(balance: MarketBalance, round: number): number {
+  const { startWells, newWellsPerRound } = balance.neighbours;
+  return startWells + newWellsPerRound * (round - 1);
 }
 
-/** Jacobs Angebot: Summe der lastRate aller fördernden Quellen. */
+/** Förderung der Nachbarn in Barrel je Runde. */
+export function neighbourSupply(balance: MarketBalance, round: number): number {
+  return neighbourWells(balance, round) * balance.neighbours.ratePerWell;
+}
+
+/** Jacobs Förderung der letzten Runde: Summe über alle fündigen Quellen. */
 export function jacobSupply(state: Pick<GameState, 'wells'>): number {
   return state.wells
-    .filter((w) => w.status === 'found' && w.production)
+    .filter((w) => w.status === 'found')
     .reduce((sum, w) => sum + (w.production?.lastRate ?? 0), 0);
 }
 
-/** Berechnet den Posted Price für eine Runde. */
-export function computePrice(
-  balance: MarketBalance,
-  round: number,
-  jacobSupply: number,
-): number {
-  const neighbour = neighbourSupply(balance, round);
-  const totalSupply = neighbour + jacobSupply;
-  const A = Math.max(totalSupply, 1);
+/** Posted Price für ein Gesamtangebot in Barrel je Runde. */
+export function computePrice(balance: MarketBalance, supply: number): number {
   const { basePrice, demand, elasticity, shock, regionalDiscount, priceMin, priceMax } = balance;
-
-  const ratio = demand / A;
-  const price = basePrice * Math.pow(ratio, elasticity) * shock - regionalDiscount;
-  const clamped = Math.max(priceMin, Math.min(priceMax, price));
-  return cents(clamped);
+  const angebot = Math.max(supply, 1);
+  const roh = basePrice * (demand / angebot) ** elasticity * shock - regionalDiscount;
+  return cents(Math.min(priceMax, Math.max(priceMin, roh)));
 }
 
-/** Liefert das Nachbarangebot und Jacobs Angebot zurück (für Tests/Logging). */
-export function supplies(
-  balance: MarketBalance,
-  round: number,
-  state: Pick<GameState, 'wells'>,
-): { neighbour: number; jacob: number } {
-  return { neighbour: neighbourSupply(balance, round), jacob: jacobSupply(state) };
+/** Preis in deutscher Schreibweise, z. B. "0,72 $". */
+function formatPrice(value: number): string {
+  return `${value.toFixed(2).replace('.', ',')} $`;
 }
 
-/** Rundenende: Posted Price berechnen, History anhängen, Log bei großer Änderung. */
-export function advanceMarket(
-  input: GameState,
-  balance: MarketBalance,
-): GameState {
-  const { round, postedPrice: oldPrice, priceHistory, log } = input;
-  const jacob = jacobSupply(input);
-  const newPrice = computePrice(balance, round, jacob);
-  const history = [...priceHistory, newPrice];
+/**
+ * Rundenende: Aus Jacobs Förderung und der Förderung der Nachbarn wird der
+ * Posted Price für die nächste Runde. Große Sprünge kommen ins Protokoll.
+ */
+export function advanceMarket(input: GameState, balance: MarketBalance): GameState {
+  const supply = jacobSupply(input) + neighbourSupply(balance, input.round);
+  const oldPrice = input.postedPrice;
+  const newPrice = computePrice(balance, supply);
 
-  let newLog = log;
-  if (oldPrice > 0) {
-    const change = Math.abs(newPrice - oldPrice) / oldPrice;
-    if (change >= balance.newsThreshold) {
-      const direction = newPrice > oldPrice ? 'steigt' : 'fällt';
-      newLog = [...log, `${formatDate(input)}: Der Posted Price ${direction} auf ${newPrice.toFixed(2)} $ je Barrel.`];
-    }
+  let log = input.log;
+  const change = Math.abs(newPrice - oldPrice) / oldPrice;
+  // Kleine Toleranz, damit genau 10 % trotz Rundung als 10 % zählen.
+  if (newPrice !== oldPrice && change >= balance.newsThreshold - 1e-9) {
+    const text =
+      newPrice < oldPrice
+        ? `Der Trust senkt den Posted Price auf ${formatPrice(newPrice)} – Überangebot am Salt Hill.`
+        : `Der Trust hebt den Posted Price auf ${formatPrice(newPrice)} an – das Öl wird knapp.`;
+    log = [...log, `${formatDate(input)}: ${text}`];
   }
 
-  return { ...input, postedPrice: newPrice, priceHistory: history, log: newLog };
+  return { ...input, postedPrice: newPrice, priceHistory: [...input.priceHistory, newPrice], log };
 }

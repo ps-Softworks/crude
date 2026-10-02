@@ -6,7 +6,7 @@ import { loadBalance } from './testBalance';
 
 const balance = loadBalance();
 const T = balance.transport;
-const PRICE = balance.market.basePrice;
+const PRICE = newGame('transport', balance).postedPrice;
 
 /** Spiel mit Öl im Tank (ohne Bohren). */
 function mitOel(oil = 5000, royaltyOil = 0, seed = 'transport'): GameState {
@@ -119,7 +119,7 @@ describe('Transport und Verkauf', () => {
     });
 
     it('rundet auf ganze Cent', () => {
-      const q = quoteSale(mitOel(3, 1), balance, 'rail', 1);
+      const q = quoteSale({ ...mitOel(3, 1), postedPrice: 1 }, balance, 'rail', 1);
       expect(q.royalty).toBe(0.33);
     });
 
@@ -159,6 +159,16 @@ describe('Transport und Verkauf', () => {
     it('lehnt 0, negative Mengen und Bruchteile ab', () => {
       const state = mitOel();
       for (const n of [0, -5, 1.5, NaN]) expect(sellOil(state, balance, 'rail', n).ok).toBe(false);
+    });
+
+    it('nach einem Preissturz bringt derselbe Verkauf entsprechend weniger', () => {
+      const vorher = { ...mitOel(1000, 0), postedPrice: 1 };
+      const nachher = { ...vorher, postedPrice: 0.5 };
+      const a = quoteSale(vorher, balance, 'rail', 400);
+      const b = quoteSale(nachher, balance, 'rail', 400);
+      expect(b.gross).toBeCloseTo(a.gross / 2, 10);
+      expect(a.net - b.net).toBeCloseTo(400 * 0.5, 10);
+      expect(netPrice(nachher, balance, 'rail')).toBeCloseTo(0.5 - T.rail.costPerBarrel, 10);
     });
 
     it('lehnt ab, wenn das Kapitel beendet ist', () => {

@@ -25,3 +25,6 @@ Thumbs.db
 # Python (Tabellenmodell)
 .venv/
 __pycache__/
+
+# Claude-Code-Arbeitskopien
+.claude/worktrees/

@@ -407,39 +407,39 @@ function parseProduction(raw: unknown): ProductionBalance {
 }
 
 function parseMarket(raw: unknown): MarketBalance {
-  const basePrice = num(raw, 'market.basePrice');
-  const demand = num(raw, 'market.demand');
-  const elasticity = num(raw, 'market.elasticity');
-  const shock = num(raw, 'market.shock');
-  const regionalDiscount = num(raw, 'market.regionalDiscount');
-  const priceMin = num(raw, 'market.priceMin');
-  const priceMax = num(raw, 'market.priceMax');
-  const startWells = positiveInt(raw, 'market.neighbours.startWells');
-  const newWellsPerRound = num(raw, 'market.neighbours.newWellsPerRound');
-  const ratePerWell = positiveInt(raw, 'market.neighbours.ratePerWell');
-  const newsThreshold = num(raw, 'market.newsThreshold');
-
-  if (basePrice <= 0) throw new BalanceError('balance.yaml: "market.basePrice" muss größer als 0 sein');
-  if (demand <= 0) throw new BalanceError('balance.yaml: "market.demand" muss größer als 0 sein');
-  if (elasticity <= 0) throw new BalanceError('balance.yaml: "market.elasticity" muss größer als 0 sein');
-  if (shock <= 0) throw new BalanceError('balance.yaml: "market.shock" muss größer als 0 sein');
-  if (regionalDiscount < 0) throw new BalanceError('balance.yaml: "market.regionalDiscount" darf nicht negativ sein');
-  if (priceMin <= 0) throw new BalanceError('balance.yaml: "market.priceMin" muss größer als 0 sein');
-  if (priceMax <= priceMin) throw new BalanceError('balance.yaml: "market.priceMax" muss größer als "market.priceMin" sein');
-  if (newWellsPerRound < 0) throw new BalanceError('balance.yaml: "market.neighbours.newWellsPerRound" darf nicht negativ sein');
-  if (newsThreshold < 0 || newsThreshold > 1) throw new BalanceError('balance.yaml: "market.newsThreshold" muss zwischen 0 und 1 liegen');
-
-  return {
-    basePrice,
-    demand,
-    elasticity,
-    shock,
-    regionalDiscount,
-    priceMin,
-    priceMax,
-    neighbours: { startWells, newWellsPerRound, ratePerWell },
-    newsThreshold,
+  const positive = (path: string): number => {
+    const value = num(raw, path);
+    if (value <= 0) throw new BalanceError(`balance.yaml: "${path}" muss größer als 0 sein`);
+    return value;
   };
+  const wholeNonNegative = (path: string): number => {
+    const value = num(raw, path);
+    if (!Number.isInteger(value) || value < 0) {
+      throw new BalanceError(`balance.yaml: "${path}" muss eine ganze Zahl ab 0 sein`);
+    }
+    return value;
+  };
+  const basePrice = positive('market.basePrice');
+  const demand = positive('market.demand');
+  const elasticity = positive('market.elasticity');
+  const shock = positive('market.shock');
+  const regionalDiscount = num(raw, 'market.regionalDiscount');
+  if (regionalDiscount < 0) throw new BalanceError('balance.yaml: "market.regionalDiscount" darf nicht negativ sein');
+  const priceMin = positive('market.priceMin');
+  const priceMax = num(raw, 'market.priceMax');
+  if (priceMin > basePrice) {
+    throw new BalanceError('balance.yaml: "market.priceMin" darf nicht über "market.basePrice" liegen');
+  }
+  if (priceMax < basePrice) {
+    throw new BalanceError('balance.yaml: "market.priceMax" darf nicht unter "market.basePrice" liegen');
+  }
+  const neighbours = {
+    startWells: wholeNonNegative('market.neighbours.startWells'),
+    newWellsPerRound: wholeNonNegative('market.neighbours.newWellsPerRound'),
+    ratePerWell: positive('market.neighbours.ratePerWell'),
+  };
+  const newsThreshold = share(raw, 'market.newsThreshold');
+  return { basePrice, demand, elasticity, shock, regionalDiscount, priceMin, priceMax, neighbours, newsThreshold };
 }
 
 function parseTransportMode(raw: unknown, mode: TransportMode): TransportModeBalance {

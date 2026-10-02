@@ -276,6 +276,10 @@ function ParcelPanel({ game, parcel, debug, notice, onResult }: PanelProps) {
 
   return (
     <div className="parcel-panel">
+      <p>
+        <strong>Parzelle {parcel.x + 1}/{parcel.y + 1}</strong> · Zone {parcel.zone}
+      </p>
+
       {parcel.discovery ? (
         <p className="state discovery">Entdeckungsquelle – hier wurde zuerst Öl gefunden. Nicht pachtbar.</p>
       ) : (

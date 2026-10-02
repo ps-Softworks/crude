@@ -10,7 +10,7 @@ import { generateParcels, type Parcel } from './geology';
 import { parcelLabel, settleLeases, startOptions, type Lease, type LeaseOption } from './lease';
 import { advanceProduction } from './production';
 import { Rng, seedFromString, type RngState } from './rng';
-import { advanceMarket } from './market';
+import { advanceMarket, computePrice, neighbourSupply } from './market';
 import { advanceTransport } from './transport';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
@@ -53,6 +53,7 @@ export function newGame(seed: string, balance: Balance): GameState {
   const geologie = generateParcels(balance, rng);
   const fields = buildFields(geologie);
   const parcels = assignFields(geologie, fields);
+  const startPrice = computePrice(balance.market, neighbourSupply(balance.market, 1));
   const state: GameState = {
     seed,
     rng: rng.state,
@@ -70,8 +71,8 @@ export function newGame(seed: string, balance: Balance): GameState {
     options: [],
     forecasts: {},
     wells: [],
-    postedPrice: balance.market.basePrice,
-    priceHistory: [balance.market.basePrice],
+    postedPrice: startPrice,
+    priceHistory: [startPrice],
     finished: false,
     log: [],
   };
@@ -90,7 +91,7 @@ export function newGame(seed: string, balance: Balance): GameState {
 }
 
 /**
- * Schließt die aktuelle Runde ab: erst die Förderung, dann die Bohrungen, dann die
+ * Schließt die aktuelle Runde ab: erst die Förderung, dann der Ölpreis (Markt), dann die Bohrungen, dann die
  * Pacht-Abrechnung (Verfall, Verzögerungszins), dann der Transport (Thorne und
  * der Bahntarif, Kapazitäten wieder frei), dann die nächste Runde. Die
  * Förderung kommt zuerst, damit eine Quelle, die gerade ihren Abschlussbohrung
@@ -99,11 +100,11 @@ export function newGame(seed: string, balance: Balance): GameState {
  */
 export function endRound(input: GameState, balance: Balance): GameState {
   if (input.finished) return input;
-  const afterProduction = advanceProduction(input, balance);
-  const afterDrilling = advanceDrilling(afterProduction, balance);
-  const afterLeases = settleLeases(afterDrilling, balance);
-  const afterMarket = advanceMarket(afterLeases, balance.market);
-  const state = advanceTransport(afterMarket, balance);
+  // Der neue Preis gilt für die Verkäufe der nächsten Runde.
+  const state = advanceTransport(
+    settleLeases(advanceDrilling(advanceMarket(advanceProduction(input, balance), balance.market), balance), balance),
+    balance,
+  );
   if (state.round >= state.totalRounds) {
     return { ...state, finished: true, log: [...state.log, `${formatDate(state)}: Kapitel 1 ist zu Ende.`] };
   }

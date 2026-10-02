@@ -147,23 +147,24 @@ drilling:
     - { depth: 600, cost: 2400, rounds: 1, oilShare: 0.3, accident: 0.08, stuck: 0.10 }
     - { depth: 900, cost: 3800, rounds: 2, oilShare: 0.1, accident: 0.15, stuck: 0.15 }
 
-# Markt (GDD §6): Der Crane Trust kauft das Öl zum Posted Price.
-# Preisformel: P = T * (N / A)^ε * S - k, begrenzt auf [priceMin, priceMax],
-# auf ganze Cent gerundet. A = max(Gesamtangebot, 1). N = Nachfrage.
-# S = Shock-Multiplikator (Ereignisse, später). k = regionalDiscount.
+# Markt (GDD §7.3): Der Crane Trust kauft das Öl zum Posted Price. Der Preis
+# entsteht jede Runde aus Angebot und Nachfrage am Salt Hill:
+#   P = T · (N / A)^ε · S − k, begrenzt auf priceMin..priceMax, auf Cent gerundet.
+# A = Förderung von Jacob und den Nachbarn in der Runde. Der neue Preis gilt ab
+# der nächsten Runde. Alle Werte PLATZHALTER.
 market:
-  basePrice: 1.00           # T: Basistransportkosten, $/bbl (Referenz für 1.00)
-  demand: 5000              # N: Nachfrage in Barrel pro Runde
-  elasticity: 1.5           # ε: Preiselastizität (> 0)
-  shock: 1.0                # S: Ereignis-Multiplikator (später)
-  regionalDiscount: 0.00    # k: Regionalabschlag in $/bbl
-  priceMin: 0.20            # Preisuntergrenze in $/bbl
-  priceMax: 1.60            # Preisobergrenze in $/bbl
-  neighbours:
-    startWells: 12          # Nachbarquellen zu Spielbeginn
-    newWellsPerRound: 2     # neue Nachbarquellen pro Runde
-    ratePerWell: 400        # Förderrate pro Nachbarquelle (bbl/Runde)
-  newsThreshold: 0.10       # Änderungsschwelle für Log-Meldung (10 %)
+  basePrice: 1.00          # T: Trendpreis in $ je Barrel
+  demand: 5000             # N: Nachfrage am Salt Hill in Barrel je Runde
+  elasticity: 1.5          # ε: hoch = kleines Überangebot drückt den Preis stark
+  shock: 1.0               # S: Schockfaktor (Ereignisse kommen später)
+  regionalDiscount: 0.00   # k: Abschlag in $ je Barrel (Fracht läuft schon über transport)
+  priceMin: 0.20           # Untergrenze in $ je Barrel
+  priceMax: 1.60           # Obergrenze in $ je Barrel
+  neighbours:              # Förderung der anderen Firmen am Salt Hill (bis es Rivalen gibt)
+    startWells: 12         # Bohrtürme der Nachbarn in Runde 1
+    newWellsPerRound: 2    # so viele kommen jede Runde dazu
+    ratePerWell: 400       # Barrel je Nachbarquelle und Runde
+  newsThreshold: 0.10      # Preisänderung ab 10 % kommt ins Protokoll
 
 # Transport (GDD §6): Fuhrwerk oder Bahn. Die Bahn gehört Augustus Thorne – sie
 # ist billiger, aber Thorne kann den Tarif erhöhen, solange Jacob sie nutzt.

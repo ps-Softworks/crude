@@ -1,173 +1,186 @@
 import { describe, expect, it } from 'vitest';
-import { computePrice, neighbourSupply, jacobSupply, advanceMarket } from './market';
+import type { Balance, MarketBalance } from './balance';
+import { distanceToSaltHill } from './geology';
+import { drillDeeper, fishWell, startDrilling, wellOf, type Well } from './drilling';
+import { endRound, newGame, type GameState } from './game';
+import { buyLease, leaseOf } from './lease';
+import { advanceMarket, computePrice, jacobSupply, neighbourSupply, neighbourWells } from './market';
 import { loadBalance } from './testBalance';
-import { newGame, endRound, type GameState } from './game';
-import { startDrilling } from './drilling';
-import { buyLease } from './lease';
 
 const balance = loadBalance();
 const market = balance.market;
 
-describe('Marktberechnung', () => {
-  describe('Formeln', () => {
-    it('neighbourSupply wächst linear mit newWellsPerRound', () => {
-      expect(neighbourSupply(market, 1)).toBe(12 * 400);
-      expect(neighbourSupply(market, 2)).toBe((12 + 2) * 400);
-      expect(neighbourSupply(market, 3)).toBe((12 + 4) * 400);
+/** Feste Testwerte, unabhängig von den Platzhaltern in der YAML. */
+const fest: MarketBalance = {
+  basePrice: 1,
+  demand: 5000,
+  elasticity: 1.5,
+  shock: 1,
+  regionalDiscount: 0,
+  priceMin: 0.2,
+  priceMax: 1.6,
+  neighbours: { startWells: 12, newWellsPerRound: 2, ratePerWell: 400 },
+  newsThreshold: 0.1,
+};
+
+function quelle(status: Well['status'], lastRate: number): Well {
+  return {
+    parcelId: `p${lastRate}`,
+    status,
+    production: status === 'found' ? { initialRate: lastRate, lastRate, total: 0, roundsProduced: 1 } : undefined,
+  } as Well;
+}
+
+function mitMarkt(bal: Balance, markt: Partial<MarketBalance>, rest: Partial<Balance> = {}): Balance {
+  return { ...bal, ...rest, market: { ...bal.market, ...markt, neighbours: { ...bal.market.neighbours, ...markt.neighbours } } };
+}
+
+/**
+ * Jacob mit (fast) unbegrenztem Geld: pachtet jede Runde alles, was frei ist –
+ * nah am Salt Hill zuerst –, bohrt so viel, wie Türme da sind, und bohrt immer weiter.
+ */
+function bohrtAlles(state: GameState, bal: Balance): GameState {
+  let s: GameState = { ...state, cash: Math.max(state.cash, 10_000_000) };
+  const parzellen = s.parcels
+    .filter((p) => !p.discovery)
+    .sort((a, b) => distanceToSaltHill(bal, a.x, a.y) - distanceToSaltHill(bal, b.x, b.y));
+  for (const p of parzellen) {
+    const well = wellOf(s, p.id);
+    if (well?.status === 'decision') {
+      const r = drillDeeper(s, bal, p.id);
+      if (r.ok) s = r.state;
+      continue;
+    }
+    if (well?.status === 'stuck') {
+      const r = fishWell(s, bal, p.id);
+      if (r.ok) s = r.state;
+      continue;
+    }
+    if (well) continue;
+    if (!leaseOf(s, p.id)) {
+      const r = buyLease(s, bal, p.id);
+      if (r.ok) s = r.state;
+    }
+    if (leaseOf(s, p.id)) {
+      const r = startDrilling(s, bal, p.id);
+      if (r.ok) s = r.state;
+    }
+  }
+  return s;
+}
+
+/** Ganze Partie (alle Runden); mit oder ohne Jacobs Bohrungen. */
+function partie(seed: string, bal: Balance, jacobBohrt: boolean): GameState {
+  let s = newGame(seed, bal);
+  while (!s.finished) s = endRound(jacobBohrt ? bohrtAlles(s, bal) : s, bal);
+  return s;
+}
+
+describe('Ölpreis (1.9)', () => {
+  describe('Preisformel P = T · (N/A)^ε · S − k', () => {
+    it('Angebot gleich Nachfrage ergibt T · S − k', () => {
+      expect(computePrice(fest, 5000)).toBe(1);
+      expect(computePrice({ ...fest, shock: 1.2 }, 5000)).toBe(1.2);
     });
 
-    it('jacobSupply summiert lastRate aller fördernden Quellen', () => {
-      const state: Pick<GameState, 'wells'> = {
-        wells: [
-          { status: 'found', production: { lastRate: 500, initialRate: 600, total: 1000, roundsProduced: 2 } } as any,
-          { status: 'found', production: { lastRate: 300, initialRate: 400, total: 700, roundsProduced: 2 } } as any,
-          { status: 'drilling', production: undefined } as any,
-          { status: 'dry', production: undefined } as any,
-        ],
-      };
-      expect(jacobSupply(state)).toBe(800);
+    it('doppeltes Angebot ergibt 0,5^1,5 ≈ 0,35', () => {
+      expect(computePrice(fest, 10000)).toBe(0.35);
     });
 
-    it('computePrice: Basisformel P = T * (N/A)^ε * S - k', () => {
-      // Runde 1: neighbourSupply = 12*400 = 4800, jacobSupply = 0
-      // A = 4800, N = 5000, T = 1.0, ε = 1.5, S = 1.0, k = 0
-      // P = 1.0 * (5000/4800)^1.5 * 1.0 - 0 = (1.04166...)^1.5 ≈ 1.063
-      const price = computePrice(market, 1, 0);
-      expect(price).toBeCloseTo(1.06, 2);
+    it('der Preis fällt streng, wenn das Angebot steigt', () => {
+      const preise = [3000, 4000, 5000, 6000, 7000, 8000].map((a) => computePrice(fest, a));
+      for (let i = 1; i < preise.length; i++) expect(preise[i]).toBeLessThan(preise[i - 1]);
     });
 
-    it('computePrice: mit Jacob-Angebot sinkt der Preis', () => {
-      const priceOhne = computePrice(market, 1, 0);
-      const priceMit = computePrice(market, 1, 2000);
-      expect(priceMit).toBeLessThan(priceOhne);
+    it('wird auf priceMin und priceMax begrenzt, auch ohne Angebot', () => {
+      expect(computePrice(fest, 1_000_000)).toBe(fest.priceMin);
+      expect(computePrice(fest, 100)).toBe(fest.priceMax);
+      expect(computePrice(fest, 0)).toBe(fest.priceMax);
     });
 
-    it('computePrice: rundet auf ganze Cent', () => {
-      const custom = { ...market, basePrice: 1.0, demand: 100, elasticity: 1, shock: 1, regionalDiscount: 0, priceMin: 0.01, priceMax: 10 };
-      const price = computePrice(custom, 1, 0); // A = neighbour(1) = 4800, N/A = 100/4800
-      expect(price * 100).toBe(Math.round(price * 100));
-    });
-  });
-
-  describe('Grenzen', () => {
-    it('Preis wird nie unter priceMin fallen', () => {
-      const custom = { ...market, priceMin: 0.50, demand: 100, elasticity: 2 };
-      const price = computePrice(custom, 1, 100000);
-      expect(price).toBe(0.50);
+    it('zieht den regionalen Abschlag k ab', () => {
+      expect(computePrice({ ...fest, regionalDiscount: 0.15 }, 5000)).toBe(0.85);
     });
 
-    it('Preis wird nie über priceMax steigen', () => {
-      const custom = { ...market, priceMax: 1.20, demand: 100000, elasticity: 2 };
-      const price = computePrice(custom, 1, 0);
-      expect(price).toBe(1.20);
-    });
-
-    it('A ist mindestens 1 (Vermeidung Division durch 0)', () => {
-      const custom = { ...market, neighbours: { startWells: 0, newWellsPerRound: 0, ratePerWell: 0 } };
-      const price = computePrice(custom, 1, 0);
-      expect(price).toBeLessThanOrEqual(market.priceMax);
-      expect(price).toBeGreaterThanOrEqual(market.priceMin);
-    });
-  });
-
-  describe('Wachstum', () => {
-    it('Nachbarangebot steigt pro Runde um newWellsPerRound * ratePerWell', () => {
-      const diff = neighbourSupply(market, 2) - neighbourSupply(market, 1);
-      expect(diff).toBe(market.neighbours.newWellsPerRound * market.neighbours.ratePerWell);
-    });
-
-    it('Preis sinkt über die Runden wenn Jacob nicht fördert (Angebot wächst)', () => {
-      const prices = [1, 2, 3, 4].map((r) => computePrice(market, r, 0));
-      for (let i = 1; i < prices.length; i++) {
-        expect(prices[i]).toBeLessThan(prices[i - 1]);
-      }
-    });
-  });
-
-  describe('Log', () => {
-    it('advanceMarket loggt bei Änderung >= newsThreshold', () => {
-      const state = newGame('log-test', balance);
-      // Setze einen Preis, der sich stark ändert
-      state.postedPrice = 1.00;
-      state.priceHistory = [1.00];
-      state.round = 2;
-      // Simuliere großen Preissprung durch hohes Jacob-Angebot
-      const modified = advanceMarket({ ...state, wells: [{ status: 'found', production: { lastRate: 50000, initialRate: 50000, total: 50000, roundsProduced: 1 } } as any] }, market);
-      const logEntry = modified.log.find((l) => l.includes('Posted Price'));
-      expect(logEntry).toBeDefined();
-      expect(logEntry).toMatch(/steigt|fällt/);
-    });
-
-    it('advanceMarket loggt NICHT bei Änderung < newsThreshold', () => {
-      // Erstelle einen Zustand wo sich der Preis kaum ändert
-      // Runde 10: neighbourSupply = (12 + 9*2) * 400 = 30 * 400 = 12000
-      // N/A = 5000/12000 = 0.4167, Preis = 1.0 * (0.4167)^1.5 = 0.269
-      // Runde 11: neighbourSupply = 32 * 400 = 12800, N/A = 5000/12800 = 0.3906, Preis = 1.0 * (0.3906)^1.5 = 0.244
-      // Änderung = (0.269-0.244)/0.269 = 9.3% < 10%
-      const state = newGame('log-test-2', balance);
-      state.round = 10;
-      state.postedPrice = 0.27; // approximierter Preis für Runde 9
-      state.priceHistory = [0.27];
-      const modified = advanceMarket({ ...state, wells: [] }, market);
-      const logEntry = modified.log.find((l) => l.includes('Posted Price'));
-      expect(logEntry).toBeUndefined();
+    it('rundet auf ganze Cent', () => {
+      const p = computePrice(fest, 4321);
+      expect(Math.round(p * 100) / 100).toBe(p);
     });
   });
 
-  describe('Determinismus', () => {
-    it('gleicher Zustand = gleicher Preis', () => {
-      const p1 = computePrice(market, 5, 1234);
-      const p2 = computePrice(market, 5, 1234);
-      expect(p1).toBe(p2);
+  describe('Angebot', () => {
+    it('die Nachbarn bekommen jede Runde newWellsPerRound Bohrtürme dazu', () => {
+      expect(neighbourWells(fest, 1)).toBe(12);
+      expect(neighbourWells(fest, 2)).toBe(14);
+      expect(neighbourWells(fest, 9)).toBe(28);
+      expect(neighbourSupply(fest, 2)).toBe(14 * 400);
     });
 
-    it('advanceMarket ist deterministisch bei gleichem Input', () => {
-      const state = newGame('det', balance);
-      const r1 = advanceMarket(state, market);
-      const r2 = advanceMarket(state, market);
-      expect(r1.postedPrice).toBe(r2.postedPrice);
-      expect(r1.priceHistory).toEqual(r2.priceHistory);
+    it('Jacobs Angebot zählt nur fündige Quellen', () => {
+      const wells = [quelle('found', 500), quelle('found', 300), quelle('drilling', 0), quelle('dry', 0)];
+      expect(jacobSupply({ wells })).toBe(800);
     });
   });
 
-  describe('Szenarien', () => {
-    it('Szenario 16 Runden mit Jacob: Endpreis <= 0,6 * Startpreis', () => {
-      let state = newGame('szenario-jacob', balance);
-      // Pachte und bohne auf einer ölführenden Parzelle (nicht Entdeckungsquelle)
-      const oilParcel = state.parcels.find((p) => p.reserves > 0 && !p.discovery)!;
-      const leaseResult = buyLease(state, balance, oilParcel.id);
-      expect(leaseResult.ok).toBe(true);
-      if (!leaseResult.ok) throw new Error(leaseResult.reason);
-      state = leaseResult.state;
-      const drillResult = startDrilling(state, balance, oilParcel.id);
-      expect(drillResult.ok).toBe(true);
-      if (!drillResult.ok) throw new Error(drillResult.reason);
-      state = drillResult.state;
-
-      // Simuliere 16 Runden mit Förderung
-      for (let i = 0; i < 16; i++) {
-        state = endRound(state, balance);
-      }
-
-      const startPrice = state.priceHistory[0];
-      const endPrice = state.priceHistory[state.priceHistory.length - 1];
-      expect(endPrice).toBeLessThanOrEqual(startPrice * 0.6);
+  describe('advanceMarket', () => {
+    it('setzt den neuen Preis und hängt ihn an die Preisliste an', () => {
+      const start = newGame('markt', balance);
+      const nach = advanceMarket({ ...start, wells: [quelle('found', 2000)] }, market);
+      const erwartet = computePrice(market, 2000 + neighbourSupply(market, start.round));
+      expect(nach.postedPrice).toBe(erwartet);
+      expect(nach.priceHistory).toEqual([...start.priceHistory, erwartet]);
     });
 
-    it('Szenario ohne Jacob: Preis fällt kontinuierlich durch Nachbarn', () => {
-      let state = newGame('szenario-ohne-jacob', balance);
-      // Keine Bohrungen, nur Nachbarn
-      for (let i = 0; i < 16; i++) {
-        state = endRound(state, balance);
-      }
+    it('ein Preissturz ab newsThreshold kommt ins Protokoll', () => {
+      const start = { ...newGame('markt', balance), postedPrice: 1 };
+      const nach = advanceMarket({ ...start, wells: [quelle('found', 5000)] }, fest);
+      expect(nach.postedPrice).toBe(0.36);
+      expect(nach.log.at(-1)).toBe('Frühjahr 88: Der Trust senkt den Posted Price auf 0,36 $ – Überangebot am Salt Hill.');
+    });
 
-      const prices = state.priceHistory;
-      // Preis sollte über die Runden fallen (Nachbarn wachsen)
-      expect(prices[prices.length - 1]).toBeLessThan(prices[0]);
-      // Aber nie unter priceMin
-      prices.forEach((p) => {
-        expect(p).toBeGreaterThanOrEqual(balance.market.priceMin);
-      });
+    it('ein Preissprung nach oben wird auch gemeldet', () => {
+      const start = { ...newGame('markt', balance), postedPrice: 0.5 };
+      const nach = advanceMarket(start, { ...fest, neighbours: { ...fest.neighbours, startWells: 10 } });
+      expect(nach.log.at(-1)).toMatch(/hebt den Posted Price auf 1,40 \$ an/);
+    });
+
+    it('kleine Änderungen unter newsThreshold bleiben still', () => {
+      const start = { ...newGame('markt', balance), postedPrice: 1.05 };
+      const nach = advanceMarket(start, fest); // 4800 bbl ⇒ 1,06 $: knapp 1 %
+      expect(nach.postedPrice).toBe(1.06);
+      expect(nach.log).toEqual(start.log);
+    });
+  });
+
+  describe('Fertig-Kriterium: Preisverfall am Salt Hill, sobald alle bohren', () => {
+    // Jacob darf mehrere Türme gleichzeitig betreiben, damit er wirklich "alles" anbohrt.
+    const viel = { ...balance, drilling: { ...balance.drilling, rigs: 8 } };
+
+    it('Szenario 1: Jacob und die Nachbarn bohren 16 Runden – der Preis fällt um mindestens 40 %', () => {
+      const s = partie('salt-hill', viel, true);
+      expect(s.priceHistory).toHaveLength(balance.start.rounds + 1);
+      expect(s.priceHistory.at(-1)!).toBeLessThanOrEqual(0.6 * s.priceHistory[0]);
+      expect(s.log.some((l) => l.includes('senkt den Posted Price'))).toBe(true);
+    });
+
+    it('Szenario 2 (Gegenprobe): niemand bohrt neu – der Preis bleibt stehen', () => {
+      const ruhig = mitMarkt(balance, { neighbours: { ...market.neighbours, newWellsPerRound: 0 } });
+      const s = partie('salt-hill', ruhig, false);
+      expect(new Set(s.priceHistory)).toEqual(new Set([s.priceHistory[0]]));
+      expect(s.log.some((l) => l.includes('Posted Price'))).toBe(false);
+    });
+
+    it('Szenario 3: Jacobs eigene Bohrungen drücken den Preis', () => {
+      // Ohne neue Nachbarn, sonst landen beide Partien am Preisboden.
+      const nurJacob = mitMarkt(viel, { neighbours: { ...market.neighbours, newWellsPerRound: 0 } });
+      const mit = partie('salt-hill', nurJacob, true);
+      const ohne = partie('salt-hill', nurJacob, false);
+      expect(mit.priceHistory.at(-1)!).toBeLessThan(ohne.priceHistory.at(-1)!);
+      mit.priceHistory.forEach((p, i) => expect(p).toBeLessThanOrEqual(ohne.priceHistory[i]));
+    });
+
+    it('Determinismus: gleicher Seed und gleiche Züge ergeben dieselbe Preisliste', () => {
+      expect(partie('gleich', viel, true).priceHistory).toEqual(partie('gleich', viel, true).priceHistory);
     });
   });
 });
