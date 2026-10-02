@@ -357,3 +357,30 @@ describe('Fertig-Kriterium 1.7: die fünfte Quelle schwächt die anderen sichtba
     expect(weiter.log.filter((l) => /sinkt der Druck/.test(l))).toHaveLength(1);
   });
 });
+
+describe('Förderzins-Öl (1.8)', () => {
+  it('royaltyOil wächst um Förderung × Förderzins der Pacht', () => {
+    const state = spiel(2);
+    const [a, b] = state.wells.map((w) => w.parcelId);
+    const pacht = (parcelId: string, royalty: number) => ({
+      parcelId,
+      holder: 'jacob' as const,
+      bonus: 0,
+      royalty,
+      startRound: 1,
+      expiresAfterRound: 99,
+      drilled: true,
+    });
+    const vorher = { ...state, leases: [pacht(a, 0.125), pacht(b, 0.2)] };
+    const nach = advanceProduction(vorher, balance);
+    const erwartet = stand(nach, 0).lastRate * 0.125 + stand(nach, 1).lastRate * 0.2;
+    expect(erwartet).toBeGreaterThan(0);
+    expect(nach.royaltyOil).toBeCloseTo(erwartet, 10);
+  });
+
+  it('ohne Pacht gibt es kein Förderzins-Öl', () => {
+    const nach = advanceProduction(spiel(1), balance);
+    expect(nach.oilStock).toBeGreaterThan(0);
+    expect(nach.royaltyOil).toBe(0);
+  });
+});

@@ -2,14 +2,14 @@
 // Feldes und fällt je Quartal. Das Feld ist gemeinsam: Die förderbare Menge ist
 // fest, jede weitere Quelle im selben Feld senkt den Druck aller Quellen und
 // verringert am Ende die Gesamtausbeute (Überförderung, Wasser). Die geförderten
-// Barrel landen im Tank; Verkauf und Förderzins kommen mit dem Preis in 1.8.
+// Barrel landen im Tank; der Förderzins-Anteil wird als royaltyOil mitgeführt.
 
 import type { Balance } from './balance';
 import { formatDate } from './calendar';
 import type { Find, Well } from './drilling';
 import { fieldLabel, fieldOf, type Field } from './field';
 import type { GameState } from './game';
-import { parcelLabel } from './lease';
+import { leaseOf, parcelLabel } from './lease';
 
 /**
  * Druckfaktor eines Feldes mit so vielen fördernden Quellen: Die ersten
@@ -150,6 +150,7 @@ export function advanceProduction(input: GameState, balance: Balance): GameState
   const neuenStand = new Map<string, { lastRate: number; total: number }>();
   const hoechststand = new Map<string, number>();
   let gefoerdert = 0;
+  let zinsOel = 0;
   for (const gruppe of gruppen.values()) {
     const { field, reserves } = pocketOf(input, gruppe[0].parcelId);
     const n = gruppe.length;
@@ -169,6 +170,7 @@ export function advanceProduction(input: GameState, balance: Balance): GameState
     gruppe.forEach((w, i) => {
       neuenStand.set(w.parcelId, { lastRate: bekommen[i], total: (w.production?.total ?? 0) + bekommen[i] });
       gefoerdert += bekommen[i];
+      zinsOel += bekommen[i] * (leaseOf(input, w.parcelId)?.royalty ?? 0);
     });
     // Nur in der Runde melden, in der das Feld leer wird – nicht danach jede Runde.
     if (reserves > 0 && bereitsDa < ausbeute && bereitsDa + bekommen.reduce((s, b) => s + b, 0) >= ausbeute) {
@@ -192,5 +194,5 @@ export function advanceProduction(input: GameState, balance: Balance): GameState
     const peak = hoechststand.get(f.id);
     return peak === undefined || peak === f.peakWells ? f : { ...f, peakWells: peak };
   });
-  return { ...input, wells: neueWells, fields, oilStock, log };
+  return { ...input, wells: neueWells, fields, oilStock, royaltyOil: input.royaltyOil + zinsOel, log };
 }

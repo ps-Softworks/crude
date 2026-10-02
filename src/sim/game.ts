@@ -1,7 +1,7 @@
 // Spielzustand und Rundenschleife. Alles hier ist reine Logik:
 // Funktionen bekommen einen Zustand und geben einen neuen zurück.
 
-import type { Balance } from './balance';
+import type { Balance, TransportMode } from './balance';
 import { formatDate } from './calendar';
 import { advanceDrilling, type Well } from './drilling';
 import { assignFields, buildFields, type Field } from './field';
@@ -10,6 +10,7 @@ import { generateParcels, type Parcel } from './geology';
 import { parcelLabel, settleLeases, startOptions, type Lease, type LeaseOption } from './lease';
 import { advanceProduction } from './production';
 import { Rng, seedFromString, type RngState } from './rng';
+import { advanceTransport } from './transport';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
@@ -24,8 +25,14 @@ export interface GameState {
   parcels: Parcel[];
   /** Lagerstätten: verbundene ölführende Parzellen mit ihren Reserven. */
   fields: Field[];
-  /** Öl in den Tanks in Barrel. Der Verkauf kommt in 1.8. */
+  /** Öl in den Tanks in Barrel (Jacobs Anteil plus Förderzins-Öl). */
   oilStock: number;
+  /** Barrel im Tank, die den Landbesitzern gehören (Förderzins); beim Verkauf ausgezahlt. */
+  royaltyOil: number;
+  /** Aktueller Bahntarif in $ je Barrel – Thorne kann ihn erhöhen. */
+  railTariff: number;
+  /** In dieser Runde verschickte Barrel je Transportmittel. */
+  shipped: Record<TransportMode, number>;
   leases: Lease[];
   options: LeaseOption[];
   /** Geologen-Prognose je Parzelle; für die Entdeckungsquelle gibt es keine. */
@@ -51,6 +58,9 @@ export function newGame(seed: string, balance: Balance): GameState {
     parcels,
     fields,
     oilStock: 0,
+    royaltyOil: 0,
+    railTariff: balance.transport.rail.costPerBarrel,
+    shipped: { wagon: 0, rail: 0 },
     leases: [],
     options: [],
     forecasts: {},
@@ -74,14 +84,18 @@ export function newGame(seed: string, balance: Balance): GameState {
 
 /**
  * Schließt die aktuelle Runde ab: erst die Förderung, dann die Bohrungen, dann die
- * Pacht-Abrechnung (Verfall, Verzögerungszins), dann die nächste Runde. Die
+ * Pacht-Abrechnung (Verfall, Verzögerungszins), dann der Transport (Thorne und
+ * der Bahntarif, Kapazitäten wieder frei), dann die nächste Runde. Die
  * Förderung kommt zuerst, damit eine Quelle, die gerade ihren Abschlussbohrung
  * hinter sich hat, erst in der nächsten Runde Öl liefert. Nach der letzten Runde
  * ist das Kapitel beendet.
  */
 export function endRound(input: GameState, balance: Balance): GameState {
   if (input.finished) return input;
-  const state = settleLeases(advanceDrilling(advanceProduction(input, balance), balance), balance);
+  const state = advanceTransport(
+    settleLeases(advanceDrilling(advanceProduction(input, balance), balance), balance),
+    balance,
+  );
   if (state.round >= state.totalRounds) {
     return { ...state, finished: true, log: [...state.log, `${formatDate(state)}: Kapitel 1 ist zu Ende.`] };
   }

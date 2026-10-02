@@ -146,3 +146,24 @@ drilling:
     - { depth: 300, cost: 1500, rounds: 1, oilShare: 0.6, accident: 0.04, stuck: 0.05 }
     - { depth: 600, cost: 2400, rounds: 1, oilShare: 0.3, accident: 0.08, stuck: 0.10 }
     - { depth: 900, cost: 3800, rounds: 2, oilShare: 0.1, accident: 0.15, stuck: 0.15 }
+
+# Markt (GDD §6): Der Crane Trust kauft das Öl zum Posted Price.
+market:
+  postedPrice: 1.00         # PLATZHALTER: $ je Barrel (in 1.8 noch fest)
+
+# Transport (GDD §6): Fuhrwerk oder Bahn. Die Bahn gehört Augustus Thorne – sie
+# ist billiger, aber Thorne kann den Tarif erhöhen, solange Jacob sie nutzt.
+# capacity = höchstens so viele Barrel je Runde.
+transport:
+  wagon:
+    label: Fuhrwerk
+    costPerBarrel: 0.60     # PLATZHALTER
+    capacity: 600           # PLATZHALTER
+  rail:
+    label: Bahn
+    costPerBarrel: 0.25     # PLATZHALTER: Starttarif
+    capacity: 3000          # PLATZHALTER
+  thorne:
+    hikeChance: 0.20        # PLATZHALTER: Chance je Runde mit Bahnfracht
+    hikeStep: 0.10          # PLATZHALTER: Erhöhung in $ je Barrel
+    maxTariff: 0.80         # PLATZHALTER: höchster Bahntarif (darf über dem Fuhrwerk liegen)

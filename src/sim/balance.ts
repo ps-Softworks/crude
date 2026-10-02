@@ -111,6 +111,31 @@ export interface ProductionBalance {
   recoveryLossMax: number;
 }
 
+export type TransportMode = 'wagon' | 'rail';
+export const TRANSPORT_MODES: readonly TransportMode[] = ['wagon', 'rail'];
+
+export interface TransportModeBalance {
+  label: string;
+  /** Fracht in $ je Barrel (bei der Bahn: Starttarif). */
+  costPerBarrel: number;
+  /** Höchstens so viele Barrel je Runde. */
+  capacity: number;
+}
+
+/** Transport (GDD §6): Fuhrwerk oder Thornes Bahn. */
+export interface TransportBalance {
+  wagon: TransportModeBalance;
+  rail: TransportModeBalance;
+  thorne: {
+    /** Chance je Runde mit Bahnfracht, dass Thorne den Tarif erhöht. */
+    hikeChance: number;
+    /** Erhöhung in $ je Barrel. */
+    hikeStep: number;
+    /** Höchster Bahntarif in $ je Barrel. */
+    maxTariff: number;
+  };
+}
+
 export interface Balance {
   start: { cash: number; year: number; rounds: number };
   map: { width: number; height: number; saltHill: { x: number; y: number } };
@@ -122,6 +147,8 @@ export interface Balance {
   forecast: ForecastBalance;
   drilling: DrillingBalance;
   production: ProductionBalance;
+  market: { postedPrice: number };
+  transport: TransportBalance;
 }
 
 export class BalanceError extends Error {}
@@ -367,6 +394,37 @@ function parseProduction(raw: unknown): ProductionBalance {
   };
 }
 
+function parseMarket(raw: unknown): { postedPrice: number } {
+  const postedPrice = num(raw, 'market.postedPrice');
+  if (postedPrice <= 0) throw new BalanceError('balance.yaml: "market.postedPrice" muss größer als 0 sein');
+  return { postedPrice };
+}
+
+function parseTransportMode(raw: unknown, mode: TransportMode): TransportModeBalance {
+  const path = `transport.${mode}`;
+  const block = (raw as { transport?: Record<string, unknown> })?.transport?.[mode];
+  if (!block || typeof block !== 'object') throw new BalanceError(`balance.yaml: Block "${path}" fehlt`);
+  const costPerBarrel = num(raw, `${path}.costPerBarrel`);
+  if (costPerBarrel < 0) throw new BalanceError(`balance.yaml: "${path}.costPerBarrel" darf nicht negativ sein`);
+  return { label: text(block, 'label', path), costPerBarrel, capacity: positiveInt(raw, `${path}.capacity`) };
+}
+
+function parseTransport(raw: unknown): TransportBalance {
+  const wagon = parseTransportMode(raw, 'wagon');
+  const rail = parseTransportMode(raw, 'rail');
+  if (rail.costPerBarrel >= wagon.costPerBarrel) {
+    throw new BalanceError('balance.yaml: Bahn muss billiger als Fuhrwerk sein');
+  }
+  const hikeChance = share(raw, 'transport.thorne.hikeChance');
+  const hikeStep = num(raw, 'transport.thorne.hikeStep');
+  if (hikeStep <= 0) throw new BalanceError('balance.yaml: "transport.thorne.hikeStep" muss größer als 0 sein');
+  const maxTariff = num(raw, 'transport.thorne.maxTariff');
+  if (maxTariff < rail.costPerBarrel) {
+    throw new BalanceError('balance.yaml: "transport.thorne.maxTariff" ist kleiner als der Bahntarif');
+  }
+  return { wagon, rail, thorne: { hikeChance, hikeStep, maxTariff } };
+}
+
 export function parseBalance(raw: unknown): Balance {
   const zonesRaw = (raw as { geology?: { zones?: unknown } })?.geology?.zones;
   if (!Array.isArray(zonesRaw) || zonesRaw.length === 0) {
@@ -416,6 +474,8 @@ export function parseBalance(raw: unknown): Balance {
     forecast: parseForecast(raw),
     drilling: parseDrilling(raw),
     production: parseProduction(raw),
+    market: parseMarket(raw),
+    transport: parseTransport(raw),
   };
 
   const { width, height, saltHill } = balance.map;

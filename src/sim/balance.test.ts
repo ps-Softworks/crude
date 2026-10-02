@@ -218,4 +218,50 @@ describe('Spielzahlen (balance.yaml)', () => {
       expect(() => parseBalance(r)).toThrow(/"production.recoveryLossPerWell" ist größer als "production.recoveryLossMax"/);
     });
   });
+
+  describe('Markt und Transport', () => {
+    type RawTransport = {
+      market: Record<string, number>;
+      transport: { wagon: Record<string, unknown>; rail: Record<string, unknown>; thorne: Record<string, number> };
+    };
+    const raw = () => structuredClone(loadBalance()) as unknown as RawTransport;
+
+    it('liest Markt und Transport aus der echten Datei', () => {
+      const { market, transport } = loadBalance();
+      expect(market.postedPrice).toBe(1);
+      expect(transport.wagon).toEqual({ label: 'Fuhrwerk', costPerBarrel: 0.6, capacity: 600 });
+      expect(transport.rail).toEqual({ label: 'Bahn', costPerBarrel: 0.25, capacity: 3000 });
+      expect(transport.thorne).toEqual({ hikeChance: 0.2, hikeStep: 0.1, maxTariff: 0.8 });
+    });
+
+    it('meldet eine Bahn, die nicht billiger als das Fuhrwerk ist', () => {
+      const r = raw();
+      r.transport.rail.costPerBarrel = 0.6;
+      expect(() => parseBalance(r)).toThrow(/Bahn muss billiger als Fuhrwerk sein/);
+    });
+
+    it('meldet einen Höchsttarif unter dem Bahntarif', () => {
+      const r = raw();
+      r.transport.thorne.maxTariff = 0.2;
+      expect(() => parseBalance(r)).toThrow(/maxTariff/);
+    });
+
+    it('meldet Kapazität 0', () => {
+      const r = raw();
+      r.transport.wagon.capacity = 0;
+      expect(() => parseBalance(r)).toThrow(/transport.wagon.capacity/);
+    });
+
+    it('meldet hikeChance über 1', () => {
+      const r = raw();
+      r.transport.thorne.hikeChance = 1.5;
+      expect(() => parseBalance(r)).toThrow(/hikeChance/);
+    });
+
+    it('meldet einen Posted Price von 0', () => {
+      const r = raw();
+      r.market.postedPrice = 0;
+      expect(() => parseBalance(r)).toThrow(/postedPrice/);
+    });
+  });
 });

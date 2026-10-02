@@ -25,6 +25,8 @@ import {
   type LeaseResult,
 } from '../sim/lease';
 import { fieldStatus } from '../sim/production';
+import { TRANSPORT_MODES } from '../sim/balance';
+import { capacityLeft, netPrice, sellOil, tariff } from '../sim/transport';
 import { balance } from './balance';
 import { Map } from './Map';
 
@@ -124,6 +126,11 @@ export function App() {
           </section>
 
           <section>
+            <h2>Tank &amp; Verkauf</h2>
+            <SalePanel game={game} onSold={(state) => setGame(state)} />
+          </section>
+
+          <section>
             <h2>Parzelle</h2>
             {parcel ? (
               <ParcelPanel game={game} parcel={parcel} debug={debug} notice={notice} onResult={apply} />
@@ -164,6 +171,70 @@ export function App() {
           </section>
         </aside>
       </main>
+    </div>
+  );
+}
+
+/** Dollarbetrag mit Cent, z. B. für Tarife. */
+function price(value: number) {
+  return `${value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $`;
+}
+
+/**
+ * Öl aus dem Tank verkaufen: per Fuhrwerk oder Bahn. Tarife, Kapazität und ob ein
+ * Verkauf geht, kommen alle aus src/sim/transport.
+ */
+function SalePanel({ game, onSold }: { game: GameState; onSold: (state: GameState) => void }) {
+  const [amount, setAmount] = useState<string>('');
+  const tank = Math.floor(game.oilStock);
+  const vorschlag = Math.max(...TRANSPORT_MODES.map((m) => Math.min(tank, capacityLeft(game, balance, m))));
+  const menge = amount === '' ? vorschlag : Number(amount);
+  return (
+    <div className="sale-panel">
+      <p>
+        Im Tank: <strong>{barrels(tank)} bbl</strong> · Posted Price {price(balance.market.postedPrice)} je Barrel
+      </p>
+      <dl className="terms">
+        {TRANSPORT_MODES.map((mode) => (
+          <div key={mode} style={{ display: 'contents' }}>
+            <dt>{balance.transport[mode].label}</dt>
+            <dd>
+              Fracht {price(tariff(game, balance, mode))} · netto {price(netPrice(game, balance, mode))} je Barrel · frei{' '}
+              {barrels(capacityLeft(game, balance, mode))} bbl
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <label>
+        Menge (bbl){' '}
+        <input
+          type="number"
+          min={1}
+          step={1}
+          value={amount === '' ? vorschlag : amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+      </label>
+      <div className="actions">
+        {TRANSPORT_MODES.map((mode) => {
+          const probe = sellOil(game, balance, mode, menge);
+          return (
+            <button
+              key={mode}
+              disabled={!probe.ok}
+              title={probe.ok ? `Netto ${price(probe.quote.net)}` : probe.reason}
+              onClick={() => {
+                if (probe.ok) {
+                  onSold(probe.state);
+                  setAmount('');
+                }
+              }}
+            >
+              Per {balance.transport[mode].label} verkaufen
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

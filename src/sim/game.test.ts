@@ -159,3 +159,12 @@ describe('Reihenfolge beim Rundenende', () => {
     expect(state.log.some((l) => /fördert .* Barrel, im Tank sind/.test(l))).toBe(true);
   });
 });
+
+describe('Startwerte für Transport und Verkauf (1.8)', () => {
+  it('Bahntarif aus der Balance, nichts verschickt, kein Förderzins-Öl', () => {
+    const state = newGame('transport-start', balance);
+    expect(state.railTariff).toBe(balance.transport.rail.costPerBarrel);
+    expect(state.shipped).toEqual({ wagon: 0, rail: 0 });
+    expect(state.royaltyOil).toBe(0);
+  });
+});
