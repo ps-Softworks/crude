@@ -3,6 +3,7 @@
 
 import type { Balance } from './balance';
 import { formatDate } from './calendar';
+import { makeForecasts, type Forecast } from './forecast';
 import { generateParcels, type Parcel } from './geology';
 import { parcelLabel, settleLeases, startOptions, type Lease, type LeaseOption } from './lease';
 import { Rng, seedFromString, type RngState } from './rng';
@@ -20,6 +21,8 @@ export interface GameState {
   parcels: Parcel[];
   leases: Lease[];
   options: LeaseOption[];
+  /** Geologen-Prognose je Parzelle; für die Entdeckungsquelle gibt es keine. */
+  forecasts: Record<string, Forecast>;
   finished: boolean;
   log: string[];
 }
@@ -37,10 +40,14 @@ export function newGame(seed: string, balance: Balance): GameState {
     parcels,
     leases: [],
     options: [],
+    forecasts: {},
     finished: false,
     log: [],
   };
+  // Erst die Startoptionen, dann die Prognosen: so bleiben Karte und Startoptionen
+  // bei gleichem Seed so, wie sie es vor der Prognose waren.
   state.options = startOptions(state, balance, rng);
+  state.forecasts = makeForecasts(balance, parcels, balance.forecast.geologist, rng);
   state.rng = rng.state;
   const date = formatDate(state);
   state.log = [`${date}: Jacob Harlan kommt in Port Ellis an.`];

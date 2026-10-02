@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { endRound, formatDate, newGame, type GameState } from '../sim/game';
+import { formatForecast, trueChance } from '../sim/forecast';
 import type { Parcel } from '../sim/geology';
 import {
   buyLease,
@@ -162,6 +163,7 @@ function ParcelPanel({ game, parcel, debug, notice, onResult }: PanelProps) {
   const lease = leaseOf(game, id);
   const option = optionOf(game, id);
   const terms = parcel.discovery ? undefined : leaseTerms(game, balance, id);
+  const forecast = parcel.discovery ? undefined : game.forecasts[id];
 
   // Probelauf: Die Simulation sagt, ob die Aktion gerade geht und warum nicht.
   const tryLease = !lease && !option && terms ? buyLease(game, balance, id) : undefined;
@@ -181,6 +183,11 @@ function ParcelPanel({ game, parcel, debug, notice, onResult }: PanelProps) {
       ) : (
         terms && (
           <dl className="terms">
+            <dt>Geologe</dt>
+            <dd>
+              {forecast ? formatForecast(forecast) : '–'}
+              {debug && ` · wirklich ${percent(trueChance(balance, parcel))}`}
+            </dd>
             <dt>Lage</dt>
             <dd>{terms.location.label}</dd>
             <dt>Landbesitzer</dt>

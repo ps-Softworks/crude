@@ -37,6 +37,24 @@ export interface Landowner {
   royaltyAdd: number;
 }
 
+/** Die beiden verdeckten Werte eines Geologen (GDD §5). */
+export interface Geologist {
+  /** Genauigkeit 1–5: 1 = sehr breite, 5 = sehr schmale Bandbreite. */
+  accuracy: number;
+  /** Verzerrung in Prozentpunkten: verschiebt jede Prognose nach oben oder unten. */
+  bias: number;
+}
+
+export interface ForecastBalance {
+  /** Breiteste Bandbreite in Prozentpunkten (Genauigkeit 1). */
+  widthMax: number;
+  /** Schmalste Bandbreite in Prozentpunkten (Genauigkeit 5). */
+  widthMin: number;
+  /** Bandbreiten und Grenzen werden auf dieses Raster gerundet (z. B. 5 %). */
+  rounding: number;
+  geologist: Geologist;
+}
+
 export interface LeaseBalance {
   termRounds: number;
   delayRental: number;
@@ -57,6 +75,7 @@ export interface Balance {
     reserves: { small: Range; gusher: Range };
   };
   lease: LeaseBalance;
+  forecast: ForecastBalance;
 }
 
 export class BalanceError extends Error {}
@@ -111,6 +130,45 @@ function share(obj: unknown, path: string): number {
     throw new BalanceError(`balance.yaml: "${path}" muss zwischen 0 und 1 liegen`);
   }
   return value;
+}
+
+function integerInRange(obj: unknown, path: string, min: number, max: number): number {
+  const value = num(obj, path);
+  if (!Number.isInteger(value) || value < min || value > max) {
+    throw new BalanceError(`balance.yaml: "${path}" muss eine ganze Zahl zwischen ${min} und ${max} sein`);
+  }
+  return value;
+}
+
+function parseForecast(raw: unknown): ForecastBalance {
+  const block = (raw as { forecast?: unknown })?.forecast;
+  if (!block || typeof block !== 'object') {
+    throw new BalanceError('balance.yaml: Block "forecast" fehlt');
+  }
+  const widthMin = num(raw, 'forecast.widthMin');
+  const widthMax = num(raw, 'forecast.widthMax');
+  if (widthMin <= 0) {
+    throw new BalanceError('balance.yaml: "forecast.widthMin" muss größer als 0 sein');
+  }
+  if (widthMin > widthMax) {
+    throw new BalanceError('balance.yaml: "forecast.widthMin" ist größer als "forecast.widthMax"');
+  }
+  if (widthMax > 100) {
+    throw new BalanceError('balance.yaml: "forecast.widthMax" darf nicht größer als 100 sein');
+  }
+  const bias = num(raw, 'forecast.geologist.bias');
+  if (bias < -15 || bias > 15) {
+    throw new BalanceError('balance.yaml: "forecast.geologist.bias" muss zwischen -15 und +15 liegen');
+  }
+  return {
+    widthMin,
+    widthMax,
+    rounding: positiveInt(raw, 'forecast.rounding'),
+    geologist: {
+      accuracy: integerInRange(raw, 'forecast.geologist.accuracy', 1, 5),
+      bias,
+    },
+  };
 }
 
 function parseLease(raw: unknown): LeaseBalance {
@@ -239,6 +297,7 @@ export function parseBalance(raw: unknown): Balance {
       },
     },
     lease: parseLease(raw),
+    forecast: parseForecast(raw),
   };
 
   const { width, height, saltHill } = balance.map;

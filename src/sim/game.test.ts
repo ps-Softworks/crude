@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { endRound, formatDate, newGame } from './game';
+import { generateParcels } from './geology';
+import { startOptions } from './lease';
+import { Rng, seedFromString } from './rng';
 import { loadBalance } from './testBalance';
 
 const balance = loadBalance();
@@ -47,5 +50,43 @@ describe('Spielzustand und Rundenschleife', () => {
     const copy = structuredClone(before);
     endRound(before, balance);
     expect(before).toEqual(copy);
+  });
+});
+
+describe('Geologen-Prognosen im Spielzustand', () => {
+  it('gibt für jede pachtbare Parzelle eine Prognose, für Salt Hill keine', () => {
+    const state = newGame('prognosen', balance);
+    const pachtbar = state.parcels.filter((p) => !p.discovery);
+    const quelle = state.parcels.find((p) => p.discovery)!;
+    expect(Object.keys(state.forecasts)).toHaveLength(pachtbar.length);
+    for (const parcel of pachtbar) {
+      expect(state.forecasts[parcel.id]).toBeDefined();
+      expect(state.forecasts[parcel.id].parcelId).toBe(parcel.id);
+    }
+    expect(state.forecasts[quelle.id]).toBeUndefined();
+  });
+
+  it('gleicher Seed = gleiche Prognosen', () => {
+    expect(newGame('harlan', balance).forecasts).toEqual(newGame('harlan', balance).forecasts);
+  });
+
+  it('anderer Seed = andere Prognosen', () => {
+    expect(newGame('harlan', balance).forecasts).not.toEqual(newGame('brandt', balance).forecasts);
+  });
+
+  it('lässt Karte und Startoptionen unverändert (Prognosen kommen danach)', () => {
+    const rng = new Rng(seedFromString('reihenfolge'));
+    const parcels = generateParcels(balance, rng);
+    const options = startOptions({ ...newGame('leer', balance), parcels }, balance, rng);
+    const state = newGame('reihenfolge', balance);
+    expect(state.parcels).toEqual(parcels);
+    expect(state.options).toEqual(options);
+  });
+
+  it('bleiben über die Runden unverändert', () => {
+    let state = newGame('runden', balance);
+    const first = state.forecasts;
+    state = endRound(state, balance);
+    expect(state.forecasts).toEqual(first);
   });
 });

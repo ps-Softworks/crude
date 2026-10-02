@@ -104,3 +104,14 @@ lease:
   startOptions:
     count: 2              # PLATZHALTER
     termRounds: 4         # PLATZHALTER
+
+# Geologe (GDD §5): Er nennt nie die wahre Fundchance, sondern eine
+# Bandbreite. Je genauer und je weniger verzerrt, desto eher deckt sie die
+# Wahrheit ab.
+forecast:
+  widthMax: 50            # PLATZHALTER: breiteste Bandbreite in Prozentpunkten
+  widthMin: 10            # PLATZHALTER: schmalste Bandbreite (bester Geologe)
+  rounding: 5             # PLATZHALTER: Bandbreitengrenzen auf 5 Prozentpunkte runden
+  geologist:
+    accuracy: 3           # PLATZHALTER: Genauigkeit 1–5
+    bias: 0               # PLATZHALTER: Verzerrung −15 bis +15 Punkte

@@ -73,4 +73,69 @@ describe('Spielzahlen (balance.yaml)', () => {
       expect(() => parseBalance(r)).toThrow(/"lease.termRounds" muss eine ganze Zahl ab 1/);
     });
   });
+
+  describe('Prognose', () => {
+    type RawForecast = { forecast: Record<string, unknown> & { geologist: Record<string, unknown> } };
+    const raw = () => structuredClone(loadBalance()) as unknown as RawForecast;
+
+    it('liest die Geologen-Zahlen aus der echten Datei', () => {
+      const { forecast } = loadBalance();
+      expect(forecast.widthMax).toBe(50);
+      expect(forecast.widthMin).toBe(10);
+      expect(forecast.rounding).toBe(5);
+      expect(forecast.geologist.accuracy).toBe(3);
+      expect(forecast.geologist.bias).toBe(0);
+    });
+
+    it('meldet einen fehlenden Block', () => {
+      const r = raw();
+      delete (r as { forecast?: unknown }).forecast;
+      expect(() => parseBalance(r)).toThrow(/Block "forecast" fehlt/);
+    });
+
+    it('meldet fehlende Zahlen mit ihrem Namen', () => {
+      const r = raw();
+      delete r.forecast.rounding;
+      expect(() => parseBalance(r)).toThrow(/"forecast.rounding" fehlt/);
+    });
+
+    it('meldet eine Genauigkeit außerhalb 1–5', () => {
+      const r = raw();
+      r.forecast.geologist.accuracy = 0;
+      expect(() => parseBalance(r)).toThrow(/"forecast.geologist.accuracy" muss eine ganze Zahl zwischen 1 und 5/);
+      const s = raw();
+      s.forecast.geologist.accuracy = 6;
+      expect(() => parseBalance(s)).toThrow(/"forecast.geologist.accuracy" muss eine ganze Zahl zwischen 1 und 5/);
+      const t = raw();
+      t.forecast.geologist.accuracy = 2.5;
+      expect(() => parseBalance(t)).toThrow(/"forecast.geologist.accuracy" muss eine ganze Zahl/);
+    });
+
+    it('meldet eine Verzerrung außerhalb −15 bis +15', () => {
+      const r = raw();
+      r.forecast.geologist.bias = -16;
+      expect(() => parseBalance(r)).toThrow(/"forecast.geologist.bias" muss zwischen -15 und \+15/);
+      const s = raw();
+      s.forecast.geologist.bias = 15.1;
+      expect(() => parseBalance(s)).toThrow(/"forecast.geologist.bias" muss zwischen -15 und \+15/);
+    });
+
+    it('meldet vertauschte oder unbrauchbare Bandbreiten', () => {
+      const r = raw();
+      r.forecast.widthMin = 60;
+      expect(() => parseBalance(r)).toThrow(/"forecast.widthMin" ist größer als "forecast.widthMax"/);
+      const s = raw();
+      s.forecast.widthMin = 0;
+      expect(() => parseBalance(s)).toThrow(/"forecast.widthMin" muss größer als 0/);
+      const t = raw();
+      t.forecast.widthMax = 120;
+      expect(() => parseBalance(t)).toThrow(/"forecast.widthMax" darf nicht größer als 100/);
+    });
+
+    it('meldet ein Raster, das keine ganze Zahl ab 1 ist', () => {
+      const r = raw();
+      r.forecast.rounding = 0;
+      expect(() => parseBalance(r)).toThrow(/"forecast.rounding" muss eine ganze Zahl ab 1/);
+    });
+  });
 });
