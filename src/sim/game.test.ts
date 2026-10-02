@@ -24,7 +24,7 @@ describe('Spielzustand und Rundenschleife', () => {
     let state = newGame('kalender', balance);
     const dates = [formatDate(state)];
     for (let i = 0; i < 4; i++) {
-      state = endRound(state);
+      state = endRound(state, balance);
       dates.push(formatDate(state));
     }
     expect(dates).toEqual(['Frühjahr 88', 'Sommer 88', 'Herbst 88', 'Winter 88', 'Frühjahr 89']);
@@ -32,20 +32,20 @@ describe('Spielzustand und Rundenschleife', () => {
 
   it('nach 16 Runden ist Kapitel 1 zu Ende und weitere Runden ändern nichts', () => {
     let state = newGame('ende', balance);
-    for (let i = 0; i < 15; i++) state = endRound(state);
+    for (let i = 0; i < 15; i++) state = endRound(state, balance);
     expect(state.round).toBe(16);
     expect(formatDate(state)).toBe('Winter 91');
     expect(state.finished).toBe(false);
 
-    state = endRound(state);
+    state = endRound(state, balance);
     expect(state.finished).toBe(true);
-    expect(endRound(state)).toBe(state);
+    expect(endRound(state, balance)).toBe(state);
   });
 
   it('verändert den alten Zustand nicht', () => {
     const before = newGame('rein', balance);
     const copy = structuredClone(before);
-    endRound(before);
+    endRound(before, balance);
     expect(before).toEqual(copy);
   });
 });

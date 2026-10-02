@@ -41,3 +41,66 @@ geology:
     gusher:
       min: 30000
       max: 120000
+
+# Pacht (GDD §5, §15). Bonus und Förderzins hängen von der Lage zum nächsten
+# bekannten Fund und vom Landbesitzer ab.
+lease:
+  termRounds: 4         # PLATZHALTER: Laufzeit in Runden, Kaufrunde mitgezählt
+  delayRental: 25       # PLATZHALTER: $ Verzögerungszins je ungebohrter Pacht und Runde
+  royaltyMin: 0.10      # Förderzins wird auf 10–25 % begrenzt
+  royaltyMax: 0.25
+  bonusRounding: 10     # Bonus und Optionsgebühr auf 10 $ gerundet
+  # Lage nach Abstand (Felder, auch diagonal) zum nächsten bekannten Fund.
+  # Nach maxDistance aufsteigend sortiert; die letzte Lage gilt für den Rest.
+  locations:
+    - name: amFund
+      label: Am Fund
+      maxDistance: 1
+      bonus: 8000
+      royalty: 0.20
+    - name: nachbar
+      label: Nachbar eines Funds
+      maxDistance: 2
+      bonus: 2000
+      royalty: 0.1666667  # 1/6
+    - name: randlage
+      label: Randlage
+      maxDistance: 99
+      bonus: 150
+      royalty: 0.125
+  # Landbesitzer: weight = Häufigkeit (vorerst alle gleich),
+  # bonusFactor multipliziert den Lagebonus, royaltyAdd kommt auf den Förderzins.
+  landowners:
+    - name: neutral
+      label: neutral
+      weight: 1           # PLATZHALTER
+      bonusFactor: 1.00
+      royaltyAdd: 0
+    - name: gierig
+      label: gierig
+      weight: 1           # PLATZHALTER
+      bonusFactor: 1.25
+      royaltyAdd: 0.03
+    - name: verschuldet
+      label: verschuldet
+      weight: 1           # PLATZHALTER
+      bonusFactor: 1.25
+      royaltyAdd: -0.03
+    - name: misstrauisch
+      label: misstrauisch
+      weight: 1           # PLATZHALTER
+      bonusFactor: 1.50
+      royaltyAdd: 0
+    - name: fromm
+      label: fromm
+      weight: 1           # PLATZHALTER
+      bonusFactor: 0.90
+      royaltyAdd: 0
+  # Pachtoption: sichert Bonus und Förderzins für kurze Zeit.
+  option:
+    feeShare: 0.10        # PLATZHALTER: Gebühr = Anteil am Bonus
+    termRounds: 2         # PLATZHALTER: Laufzeit in Runden, Kaufrunde mitgezählt
+  # Jacob beginnt mit freien Optionen auf Randlage-Parzellen.
+  startOptions:
+    count: 2              # PLATZHALTER
+    termRounds: 4         # PLATZHALTER

@@ -1,49 +1,107 @@
 import type { Balance } from '../sim/balance';
-import type { Parcel } from '../sim/geology';
+import type { GameState } from '../sim/game';
+import { leaseOf, optionOf, roundsLeft } from '../sim/lease';
 
 const CELL = 48;
 const GULF = 40;
 
 const DEBUG_COLORS = { dry: '#c9c2b4', small: '#8a7f6b', gusher: '#2b2620' } as const;
 
+// Kennfarben: eigene Pacht = Grün, eigene Option = Blau (gestrichelt), Fund = Ocker.
+const LEASE_COLOR = '#2f6b3a';
+const LEASE_FILL = '#b9cdb5';
+const OPTION_COLOR = '#2d5a8a';
+const OPTION_FILL = '#c4d2e0';
+const DISCOVERY_FILL = '#c9a95c';
+
 interface Props {
   balance: Balance;
-  parcels: Parcel[];
+  game: GameState;
   debug: boolean;
   selected: string | null;
   onSelect: (id: string) => void;
 }
 
-export function Map({ balance, parcels, debug, selected, onSelect }: Props) {
+export function Map({ balance, game, debug, selected, onSelect }: Props) {
   const { width, height, saltHill } = balance.map;
   const w = width * CELL;
   const h = height * CELL;
 
   return (
     <svg className="map" viewBox={`0 0 ${w} ${h + GULF}`} role="img" aria-label="Karte von Cordova">
-      {parcels.map((p) => (
-        <g key={p.id} onClick={() => onSelect(p.id)} className="parcel">
-          <rect
-            x={p.x * CELL + 1}
-            y={p.y * CELL + 1}
-            width={CELL - 2}
-            height={CELL - 2}
-            fill={debug ? DEBUG_COLORS[p.geology] : '#d8d8d8'}
-            stroke={p.id === selected ? '#b3261e' : '#9a9a9a'}
-            strokeWidth={p.id === selected ? 3 : 1}
-          />
-          {debug && p.reserves > 0 && (
-            <text
-              x={p.x * CELL + CELL / 2}
-              y={p.y * CELL + CELL / 2 + 4}
-              textAnchor="middle"
-              className={p.geology === 'gusher' ? 'label light' : 'label'}
-            >
-              {Math.round(p.reserves / 1000)}k
-            </text>
-          )}
-        </g>
-      ))}
+      {game.parcels.map((p) => {
+        const lease = leaseOf(game, p.id);
+        const option = lease ? undefined : optionOf(game, p.id);
+        const x = p.x * CELL;
+        const y = p.y * CELL;
+        let fill = '#d8d8d8';
+        if (p.discovery) fill = DISCOVERY_FILL;
+        else if (lease) fill = LEASE_FILL;
+        else if (option) fill = OPTION_FILL;
+        if (debug) fill = DEBUG_COLORS[p.geology];
+
+        const isSelected = p.id === selected;
+        const markColor = lease ? LEASE_COLOR : option ? OPTION_COLOR : undefined;
+        const left = lease ? (lease.drilled ? undefined : roundsLeft(game, lease)) : option ? roundsLeft(game, option) : undefined;
+        const tag = lease ? 'P' : option ? 'O' : undefined;
+
+        return (
+          <g key={p.id} onClick={() => onSelect(p.id)} className="parcel">
+            <rect
+              x={x + 1}
+              y={y + 1}
+              width={CELL - 2}
+              height={CELL - 2}
+              fill={fill}
+              stroke={isSelected ? '#b3261e' : '#9a9a9a'}
+              strokeWidth={isSelected ? 3 : 1}
+            />
+            {markColor && (
+              <rect
+                x={x + 4}
+                y={y + 4}
+                width={CELL - 8}
+                height={CELL - 8}
+                fill="none"
+                stroke={markColor}
+                strokeWidth={2.5}
+                strokeDasharray={option ? '5 3' : undefined}
+                pointerEvents="none"
+              />
+            )}
+            {tag && (
+              <text x={x + 8} y={y + 16} className="tag" fill={markColor}>
+                {tag}
+              </text>
+            )}
+            {left !== undefined && (
+              <text x={x + CELL - 8} y={y + CELL - 8} textAnchor="end" className="tag" fill={markColor}>
+                {left}
+              </text>
+            )}
+            {p.discovery && (
+              // Bohrturm als Zeichen für die Entdeckungsquelle.
+              <polygon
+                points={`${x + CELL / 2},${y + 10} ${x + CELL / 2 - 10},${y + CELL - 10} ${x + CELL / 2 + 10},${y + CELL - 10}`}
+                fill="none"
+                stroke="#222"
+                strokeWidth={2}
+                pointerEvents="none"
+              />
+            )}
+            {debug && p.reserves > 0 && !p.discovery && (
+              <text
+                x={x + CELL / 2}
+                y={y + CELL / 2 + 4}
+                textAnchor="middle"
+                className={p.geology === 'gusher' ? 'label light' : 'label'}
+              >
+                {Math.round(p.reserves / 1000)}k
+              </text>
+            )}
+          </g>
+        );
+      })}
       <circle
         cx={saltHill.x * CELL + CELL / 2}
         cy={saltHill.y * CELL + CELL / 2}

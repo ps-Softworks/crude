@@ -2,11 +2,12 @@
 // Funktionen bekommen einen Zustand und geben einen neuen zurück.
 
 import type { Balance } from './balance';
+import { formatDate } from './calendar';
 import { generateParcels, type Parcel } from './geology';
+import { parcelLabel, settleLeases, startOptions, type Lease, type LeaseOption } from './lease';
 import { Rng, seedFromString, type RngState } from './rng';
 
-export const SEASONS = ['Frühjahr', 'Sommer', 'Herbst', 'Winter'] as const;
-export type Season = (typeof SEASONS)[number];
+export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
 export interface GameState {
   seed: string;
@@ -17,18 +18,10 @@ export interface GameState {
   startYear: number;
   cash: number;
   parcels: Parcel[];
+  leases: Lease[];
+  options: LeaseOption[];
   finished: boolean;
   log: string[];
-}
-
-export function dateOf(state: Pick<GameState, 'round' | 'startYear'>): { season: Season; year: number } {
-  const index = state.round - 1;
-  return { season: SEASONS[index % 4], year: state.startYear + Math.floor(index / 4) };
-}
-
-export function formatDate(state: Pick<GameState, 'round' | 'startYear'>): string {
-  const { season, year } = dateOf(state);
-  return `${season} ${year}`;
 }
 
 export function newGame(seed: string, balance: Balance): GameState {
@@ -42,16 +35,29 @@ export function newGame(seed: string, balance: Balance): GameState {
     startYear: balance.start.year,
     cash: balance.start.cash,
     parcels,
+    leases: [],
+    options: [],
     finished: false,
     log: [],
   };
-  state.log = [`${formatDate(state)}: Jacob Harlan kommt in Port Ellis an.`];
+  state.options = startOptions(state, balance, rng);
+  state.rng = rng.state;
+  const date = formatDate(state);
+  state.log = [`${date}: Jacob Harlan kommt in Port Ellis an.`];
+  if (state.options.length > 0) {
+    const labels = state.options.map((o) => parcelLabel(state.parcels.find((p) => p.id === o.parcelId)!));
+    state.log.push(`${date}: Jacob hat freie Pachtoptionen auf den Parzellen ${labels.join(' und ')}.`);
+  }
   return state;
 }
 
-/** Schließt die aktuelle Runde ab. Nach der letzten Runde ist das Kapitel beendet. */
-export function endRound(state: GameState): GameState {
-  if (state.finished) return state;
+/**
+ * Schließt die aktuelle Runde ab: erst die Pacht-Abrechnung (Verfall,
+ * Verzögerungszins), dann die nächste Runde. Nach der letzten Runde ist das Kapitel beendet.
+ */
+export function endRound(input: GameState, balance: Balance): GameState {
+  if (input.finished) return input;
+  const state = settleLeases(input, balance);
   if (state.round >= state.totalRounds) {
     return { ...state, finished: true, log: [...state.log, `${formatDate(state)}: Kapitel 1 ist zu Ende.`] };
   }
