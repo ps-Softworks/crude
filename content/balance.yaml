@@ -110,7 +110,11 @@ lease:
 # Quartal. Das Feld ist gemeinsam: eine weitere Quelle senkt den Druck aller
 # Quellen und verringert am Ende die Gesamtausbeute des Feldes.
 production:
-  initialRateShare: 0.05     # PLATZHALTER: Anfangsrate je Quelle, Anteil der Feldreserve
+  # Anteil der Feldreserve, mit dem eine Quelle anfängt – für kleine Funde und
+  # für Gusher je eigener Wert.
+  initialRateShare:
+    small: 0.20              # PLATZHALTER
+    gusher: 0.15             # PLATZHALTER
   decline: 0.12              # PLATZHALTER: Rückgang je Quartal (GDD: 8–15 %)
   freeWells: 1               # PLATZHALTER: Quellen, die ohne Druckverlust fördern
   pressureLossPerWell: 0.08  # PLATZHALTER: Druckverlust je weiterer Quelle im Feld

@@ -14,6 +14,9 @@ import { Rng } from './rng';
 
 export type WellStatus = 'drilling' | 'decision' | 'stuck' | 'found' | 'dry';
 
+/** Art des Funds: kleine Quelle oder Gusher. Entscheidet über die Anfangsrate. */
+export type Find = 'small' | 'gusher';
+
 /** Was eine gefundene Quelle seit dem Fund geliefert hat. */
 export interface Production {
   /** Anfangsrate in Barrel je Runde, beim Fund aus der Reserve des Feldes. */
@@ -37,7 +40,7 @@ export interface Well {
   spent: number;
   /** Verdeckt: Stufe, in der das Öl liegt; null bei trockener Parzelle. */
   oilStage: number | null;
-  result?: 'small' | 'gusher';
+  result?: Find;
   /** Wird beim Fund gesetzt; davor gibt es nichts zu fördern. */
   production?: Production;
   startRound: number;
@@ -197,7 +200,12 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
         ...well,
         status: 'found',
         result,
-        production: { initialRate: initialRate(balance, input, well.parcelId), roundsProduced: 0, lastRate: 0, total: 0 },
+        production: {
+          initialRate: initialRate(balance, input, { parcelId: well.parcelId, result }),
+          roundsProduced: 0,
+          lastRate: 0,
+          total: 0,
+        },
       };
     }
     if (well.stage < lastStage) {

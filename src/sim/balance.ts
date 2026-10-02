@@ -92,8 +92,11 @@ export interface DrillingBalance {
 
 /** Förderung (GDD §5): Ratengang, gemeinsames Feld, Druckverlust durch Nachbarn. */
 export interface ProductionBalance {
-  /** Anfangsrate einer Quelle als Anteil der Reserve ihres Feldes. */
-  initialRateShare: number;
+  /**
+   * Anfangsrate einer Quelle als Anteil der Reserve ihres Feldes, je Art von
+   * Fund: eine kleine Quelle zieht einen größeren Anteil als ein Gusher.
+   */
+  initialRateShare: { small: number; gusher: number };
   /** Rückgang der Rate je Quartal, z. B. 0.12 = 12 % (GDD: 8–15 %). */
   decline: number;
   /** So viele Quellen im Feld fördern noch ohne Druckverlust. */
@@ -335,7 +338,10 @@ function parseProduction(raw: unknown): ProductionBalance {
   if (!block || typeof block !== 'object') {
     throw new BalanceError('balance.yaml: Block "production" fehlt');
   }
-  const initialRateShare = share(raw, 'production.initialRateShare');
+  const initialRateShare = {
+    small: share(raw, 'production.initialRateShare.small'),
+    gusher: share(raw, 'production.initialRateShare.gusher'),
+  };
   const decline = share(raw, 'production.decline');
   const freeWells = positiveInt(raw, 'production.freeWells');
   const pressureLossPerWell = share(raw, 'production.pressureLossPerWell');

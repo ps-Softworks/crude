@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { Balance } from './balance';
-import type { Production, Well } from './drilling';
+import type { Balance, GeologyType } from './balance';
+import { advanceDrilling, type Find, type Production, type Well } from './drilling';
 import { fieldOf } from './field';
 import { endRound, newGame, type GameState } from './game';
 import {
@@ -17,17 +17,18 @@ import { loadBalance } from './testBalance';
 
 const balance = loadBalance();
 const P = balance.production;
+const ANTEIL = P.initialRateShare;
 
 /** Spiel mit so vielen fördernden Quellen auf der ersten ölführenden Parzelle. */
-function spiel(quellen = 1, seed = 'foerderung', bal: Balance = balance): GameState {
+function spiel(quellen = 1, seed = 'foerderung', bal: Balance = balance, result: Find = 'small'): GameState {
   const state = newGame(seed, bal);
   const parcel = state.parcels.find((p) => p.fieldId !== undefined)!;
   const ids = state.fields.find((f) => f.id === parcel.fieldId)!.parcelIds.slice(0, quellen);
-  return { ...state, wells: ids.map((id) => quelle(state, id, bal)) };
+  return { ...state, wells: ids.map((id) => quelle(state, id, bal, result)) };
 }
 
 /** Eine Quelle, wie sie ein Fund hinterlässt. */
-function quelle(state: GameState, parcelId: string, bal: Balance = balance): Well {
+function quelle(state: GameState, parcelId: string, bal: Balance = balance, result: Find = 'small'): Well {
   return {
     parcelId,
     stage: 1,
@@ -35,8 +36,8 @@ function quelle(state: GameState, parcelId: string, bal: Balance = balance): Wel
     roundsLeft: 0,
     spent: 1500,
     oilStage: 1,
-    result: 'small',
-    production: { initialRate: initialRate(bal, state, parcelId), roundsProduced: 0, lastRate: 0, total: 0 },
+    result,
+    production: { initialRate: initialRate(bal, state, { parcelId, result }), roundsProduced: 0, lastRate: 0, total: 0 },
     startRound: 1,
   };
 }
@@ -101,7 +102,7 @@ describe('Ausbeute des Feldes', () => {
 describe('Ratengang einer Quelle', () => {
   it('beginnt mit der Anfangsrate aus der Feldreserve', () => {
     const state = spiel();
-    expect(stand(state, 0).initialRate).toBe(Math.round(feld(state).reserves * P.initialRateShare));
+    expect(stand(state, 0).initialRate).toBe(Math.round(feld(state).reserves * ANTEIL.small));
     expect(wellRate(balance, state.wells[0], 1)).toBe(stand(state, 0).initialRate);
   });
 
@@ -185,22 +186,23 @@ describe('Rundenende in der Förderung', () => {
 
   it('fördert nie mehr als die förderbare Menge des Feldes', () => {
     // Riesige Anfangsrate: die erste Runde schon über der Ausbeute des Feldes.
-    const gierig: Balance = { ...balance, production: { ...P, initialRateShare: 5 } };
+    const gierig: Balance = { ...balance, production: { ...P, initialRateShare: { small: 5, gusher: 5 } } };
     const state = spiel(1, 'gierig', gierig);
     const einmal = advanceProduction(state, gierig);
     expect(stand(einmal, 0).total).toBeLessThanOrEqual(recoverable(gierig, feld(state).reserves, 1));
     expect(einmal.oilStock).toBe(feld(state).reserves);
   });
 
-  it('meldet ein leeres Feld und lässt es danach ruhen', () => {
-    const gierig: Balance = { ...balance, production: { ...P, initialRateShare: 5 } };
-    const voll = advanceProduction(spiel(1, 'gierig', gierig), gierig);
-    expect(voll.log.some((l) => /ist erschöpft/.test(l))).toBe(false);
-    const leer = advanceProduction(voll, gierig);
-    expect(leer.log.some((l) => /ist erschöpft/.test(l))).toBe(true);
-    const danach = advanceProduction(leer, gierig);
-    expect(danach.oilStock).toBe(leer.oilStock);
-    expect(stand(danach, 0).roundsProduced).toBe(3);
+  it('meldet das leere Feld genau einmal und lässt es danach ruhen', () => {
+    const gierig: Balance = { ...balance, production: { ...P, initialRateShare: { small: 5, gusher: 5 } } };
+    const trocken = advanceProduction(spiel(1, 'gierig', gierig), gierig);
+    const gemeldet = trocken.log.filter((l) => /ist erschöpft/.test(l));
+    expect(gemeldet).toHaveLength(1);
+    expect(trocken.oilStock).toBe(feld(trocken).reserves);
+    const danach = advanceProduction(trocken, gierig);
+    expect(danach.log.filter((l) => /ist erschöpft/.test(l))).toHaveLength(1);
+    expect(danach.oilStock).toBe(trocken.oilStock);
+    expect(stand(danach, 0).roundsProduced).toBe(2);
   });
 
   it('ändert den alten Zustand nicht', () => {
@@ -238,16 +240,53 @@ describe('Rundenende in der Förderung', () => {
 });
 
 describe('Anfangsrate', () => {
+  /** Bohrung ohne Unfallrisiko, die in dieser Runde ihren Fund meldet. */
+  function fund(state: GameState, parcelId: string): Well {
+    const sicher: Balance = {
+      ...balance,
+      drilling: { ...balance.drilling, stages: balance.drilling.stages.map((s) => ({ ...s, accident: 0, stuck: 0 })) },
+    };
+    const gebohrt: GameState = {
+      ...state,
+      wells: [{ parcelId, stage: 1, status: 'drilling', roundsLeft: 1, spent: 1500, oilStage: 1, startRound: 1 }],
+    };
+    const well = advanceDrilling(gebohrt, sicher).wells[0];
+    if (well.status !== 'found') throw new Error('Die Bohrung hat nichts gefunden.');
+    return well;
+  }
+
   it('hängt an der Feldreserve, nicht nur an der Parzelle', () => {
     const state = spiel();
-    const rate = initialRate(balance, state, state.wells[0].parcelId);
-    expect(rate).toBe(Math.round(feld(state).reserves * P.initialRateShare));
+    const rate = initialRate(balance, state, { parcelId: state.wells[0].parcelId, result: 'small' });
+    expect(rate).toBe(Math.round(feld(state).reserves * ANTEIL.small));
     expect(rate).toBeGreaterThan(0);
+  });
+
+  it('ein Gusher nimmt seinen eigenen, kleineren Anteil', () => {
+    const klein = spiel(1, 'klein', balance, 'small');
+    const gusher = spiel(1, 'klein', balance, 'gusher');
+    expect(ANTEIL.gusher).toBeLessThan(ANTEIL.small);
+    expect(stand(gusher, 0).initialRate).toBe(
+      initialRate(balance, gusher, { parcelId: gusher.wells[0].parcelId, result: 'gusher' }),
+    );
+    expect(stand(gusher, 0).initialRate).toBeLessThan(stand(klein, 0).initialRate);
+  });
+
+  it('der echte Fund richtet sich nach der Art: kleine Quelle und Gusher', () => {
+    const state = newGame('fund', balance);
+    const id = (geology: GeologyType) =>
+      state.parcels.find((p) => p.fieldId !== undefined && p.geology === geology)!.id;
+    const klein = fund(state, id('small'));
+    const gusher = fund(state, id('gusher'));
+    expect(klein.result).toBe('small');
+    expect(gusher.result).toBe('gusher');
+    expect(klein.production!.initialRate).toBe(Math.round(fieldOf(state, klein.parcelId)!.reserves * ANTEIL.small));
+    expect(gusher.production!.initialRate).toBe(Math.round(fieldOf(state, gusher.parcelId)!.reserves * ANTEIL.gusher));
   });
 
   it('ist 0, wo kein Öl ist', () => {
     const state = newGame('trocken', balance);
     const trocken = state.parcels.find((p) => p.reserves === 0)!;
-    expect(initialRate(balance, state, trocken.id)).toBe(0);
+    expect(initialRate(balance, state, { parcelId: trocken.id, result: 'small' })).toBe(0);
   });
 });

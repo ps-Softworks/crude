@@ -6,7 +6,7 @@
 
 import type { Balance } from './balance';
 import { formatDate } from './calendar';
-import type { Well } from './drilling';
+import type { Find, Well } from './drilling';
 import { fieldLabel, fieldOf, type Field } from './field';
 import type { GameState } from './game';
 
@@ -62,12 +62,18 @@ function pocketOf(state: Pick<GameState, 'parcels' | 'fields'>, parcelId: string
 }
 
 /**
- * Anfangsrate einer frischen Quelle: ein fester Anteil der Reserve ihres Feldes.
- * Liegt sie in keinem Feld (z. B. die Geologie wurde von Hand geändert), zählt
- * die Reserve der Parzelle selbst.
+ * Anfangsrate einer frischen Quelle: ein fester Anteil der Reserve ihres Feldes,
+ * je nach Art des Funds. Liegt sie in keinem Feld (z. B. die Geologie wurde von
+ * Hand geändert), zählt die Reserve der Parzelle selbst.
  */
-export function initialRate(balance: Balance, state: Pick<GameState, 'parcels' | 'fields'>, parcelId: string): number {
-  return Math.round(pocketOf(state, parcelId).reserves * balance.production.initialRateShare);
+export function initialRate(
+  balance: Balance,
+  state: Pick<GameState, 'parcels' | 'fields'>,
+  well: { parcelId: string; result: Find },
+): number {
+  const { reserves } = pocketOf(state, well.parcelId);
+  const anteil = balance.production.initialRateShare[well.result];
+  return Math.round(reserves * anteil);
 }
 
 function barrels(value: number): string {
@@ -121,14 +127,15 @@ export function advanceProduction(input: GameState, balance: Balance): GameState
   for (const gruppe of gruppen.values()) {
     const { field, reserves } = pocketOf(input, gruppe[0].parcelId);
     const bereitsDa = gruppe.reduce((s, w) => s + (w.production?.total ?? 0), 0);
-    const budget = Math.max(0, recoverable(balance, reserves, gruppe.length) - bereitsDa);
+    const ausbeute = recoverable(balance, reserves, gruppe.length);
     const gewollt = gruppe.map((w) => wellRate(balance, w, gruppe.length));
-    const bekommen = shareOut(gewollt, budget);
+    const bekommen = shareOut(gewollt, Math.max(0, ausbeute - bereitsDa));
     gruppe.forEach((w, i) => {
       neuenStand.set(w.parcelId, { lastRate: bekommen[i], total: (w.production?.total ?? 0) + bekommen[i] });
       gefoerdert += bekommen[i];
     });
-    if (budget === 0 && reserves > 0) {
+    // Nur in der Runde melden, in der das Feld leer wird – nicht danach jede Runde.
+    if (reserves > 0 && bereitsDa < ausbeute && bereitsDa + bekommen.reduce((s, b) => s + b, 0) >= ausbeute) {
       log.push(`${date}: ${field ? fieldLabel(field) : 'Das Feld'} ist erschöpft – die Quellen versiegen.`);
     }
   }

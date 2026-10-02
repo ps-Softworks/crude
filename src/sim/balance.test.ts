@@ -140,12 +140,12 @@ describe('Spielzahlen (balance.yaml)', () => {
   });
 
   describe('Förderung', () => {
-    type RawProduction = { production?: Record<string, number> };
+    type RawProduction = { production?: { initialRateShare: Record<string, number> } & Record<string, number> };
     const raw = () => structuredClone(loadBalance()) as unknown as RawProduction;
 
     it('liest die Förderungs-Zahlen aus der echten Datei', () => {
       const { production } = loadBalance();
-      expect(production.initialRateShare).toBe(0.05);
+      expect(production.initialRateShare).toEqual({ small: 0.2, gusher: 0.15 });
       expect(production.decline).toBe(0.12);
       expect(production.freeWells).toBe(1);
       expect(production.pressureLossPerWell).toBe(0.08);
@@ -168,11 +168,23 @@ describe('Spielzahlen (balance.yaml)', () => {
 
     it('meldet Werte, die keine Anteile zwischen 0 und 1 sind', () => {
       const r = raw();
-      r.production!.initialRateShare = 5;
-      expect(() => parseBalance(r)).toThrow(/"production.initialRateShare" muss zwischen 0 und 1/);
+      r.production!.initialRateShare.small = 5;
+      expect(() => parseBalance(r)).toThrow(/"production.initialRateShare.small" muss zwischen 0 und 1/);
       const s = raw();
-      s.production!.decline = -0.1;
-      expect(() => parseBalance(s)).toThrow(/"production.decline" muss zwischen 0 und 1/);
+      s.production!.initialRateShare.gusher = -0.1;
+      expect(() => parseBalance(s)).toThrow(/"production.initialRateShare.gusher" muss zwischen 0 und 1/);
+      const t = raw();
+      t.production!.decline = -0.1;
+      expect(() => parseBalance(t)).toThrow(/"production.decline" muss zwischen 0 und 1/);
+    });
+
+    it('meldet eine fehlende Anfangsrate mit ihrem Namen', () => {
+      const r = raw();
+      delete r.production!.initialRateShare.gusher;
+      expect(() => parseBalance(r)).toThrow(/"production.initialRateShare.gusher" fehlt oder ist keine Zahl/);
+      const s = raw();
+      delete (s.production as { initialRateShare?: unknown }).initialRateShare;
+      expect(() => parseBalance(s)).toThrow(/"production.initialRateShare.small" fehlt oder ist keine Zahl/);
     });
 
     it('meldet einen Druckfaktor außerhalb 0 bis 1', () => {
