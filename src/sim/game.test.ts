@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { assignFields, buildFields } from './field';
 import { endRound, formatDate, newGame, type GameState } from './game';
 import { generateParcels } from './geology';
-import { startOptions } from './lease';
+import { startOptions, buyLease } from './lease';
+import { startDrilling } from './drilling';
 import { Rng, seedFromString } from './rng';
 import { loadBalance } from './testBalance';
 
@@ -166,5 +167,64 @@ describe('Startwerte für Transport und Verkauf (1.8)', () => {
     expect(state.railTariff).toBe(balance.transport.rail.costPerBarrel);
     expect(state.shipped).toEqual({ wagon: 0, rail: 0 });
     expect(state.royaltyOil).toBe(0);
+  });
+});
+
+describe('Marktintegration (1.9)', () => {
+  it('newGame setzt postedPrice auf basePrice und priceHistory mit einem Eintrag', () => {
+    const state = newGame('market-start', balance);
+    expect(state.postedPrice).toBe(balance.market.basePrice);
+    expect(state.priceHistory).toEqual([balance.market.basePrice]);
+  });
+
+  it('endRound ruft advanceMarket auf: postedPrice ändert sich, priceHistory wächst', () => {
+    let state = newGame('market-round', balance);
+    const startPrice = state.postedPrice; // = basePrice = 1.00
+    state = endRound(state, balance);
+    expect(state.priceHistory).toHaveLength(2);
+    expect(state.postedPrice).toBe(state.priceHistory[1]);
+    // Runde 1 Preis wird berechnet: neighbourSupply=4800, Preis = 1.0 * (5000/4800)^1.5 ≈ 1.06
+    expect(state.postedPrice).toBeGreaterThan(startPrice);
+  });
+
+  it('priceHistory enthält alle postedPrice-Werte der bisherigen Runden', () => {
+    let state = newGame('market-history', balance);
+    for (let i = 0; i < 5; i++) {
+      state = endRound(state, balance);
+    }
+    expect(state.priceHistory).toHaveLength(6); // Runde 1 + 5 Runden
+    state.priceHistory.forEach((p) => {
+      expect(p).toBeGreaterThanOrEqual(balance.market.priceMin);
+      expect(p).toBeLessThanOrEqual(balance.market.priceMax);
+    });
+  });
+
+  it('Log-Eintrag bei Preissprung >= newsThreshold', () => {
+    let state = newGame('market-log', balance);
+    // Pachte und bohne auf einer ölführenden Parzelle (nicht Entdeckungsquelle)
+    const oilParcel = state.parcels.find((p) => p.reserves > 0 && !p.discovery)!;
+    const leaseResult = buyLease(state, balance, oilParcel.id);
+    expect(leaseResult.ok).toBe(true);
+    if (!leaseResult.ok) throw new Error(leaseResult.reason);
+    state = leaseResult.state;
+    const drillResult = startDrilling(state, balance, oilParcel.id);
+    expect(drillResult.ok).toBe(true);
+    if (!drillResult.ok) throw new Error(drillResult.reason);
+    state = drillResult.state;
+    // Bohre schnell durch alle Stufen
+    for (let i = 0; i < 3; i++) {
+      state = endRound(state, balance);
+    }
+    const hasPriceLog = state.log.some((l) => l.includes('Posted Price'));
+    expect(hasPriceLog).toBe(true);
+  });
+
+  it('Determinismus: gleicher Seed = gleiche Preisentwicklung', () => {
+    const run = (seed: string) => {
+      let s = newGame(seed, balance);
+      for (let i = 0; i < 10; i++) s = endRound(s, balance);
+      return s.priceHistory;
+    };
+    expect(run('det-market')).toEqual(run('det-market'));
   });
 });

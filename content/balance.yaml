@@ -148,8 +148,22 @@ drilling:
     - { depth: 900, cost: 3800, rounds: 2, oilShare: 0.1, accident: 0.15, stuck: 0.15 }
 
 # Markt (GDD §6): Der Crane Trust kauft das Öl zum Posted Price.
+# Preisformel: P = T * (N / A)^ε * S - k, begrenzt auf [priceMin, priceMax],
+# auf ganze Cent gerundet. A = max(Gesamtangebot, 1). N = Nachfrage.
+# S = Shock-Multiplikator (Ereignisse, später). k = regionalDiscount.
 market:
-  postedPrice: 1.00         # PLATZHALTER: $ je Barrel (in 1.8 noch fest)
+  basePrice: 1.00           # T: Basistransportkosten, $/bbl (Referenz für 1.00)
+  demand: 5000              # N: Nachfrage in Barrel pro Runde
+  elasticity: 1.5           # ε: Preiselastizität (> 0)
+  shock: 1.0                # S: Ereignis-Multiplikator (später)
+  regionalDiscount: 0.00    # k: Regionalabschlag in $/bbl
+  priceMin: 0.20            # Preisuntergrenze in $/bbl
+  priceMax: 1.60            # Preisobergrenze in $/bbl
+  neighbours:
+    startWells: 12          # Nachbarquellen zu Spielbeginn
+    newWellsPerRound: 2     # neue Nachbarquellen pro Runde
+    ratePerWell: 400        # Förderrate pro Nachbarquelle (bbl/Runde)
+  newsThreshold: 0.10       # Änderungsschwelle für Log-Meldung (10 %)
 
 # Transport (GDD §6): Fuhrwerk oder Bahn. Die Bahn gehört Augustus Thorne – sie
 # ist billiger, aber Thorne kann den Tarif erhöhen, solange Jacob sie nutzt.

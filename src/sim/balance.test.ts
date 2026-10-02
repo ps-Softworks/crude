@@ -228,7 +228,15 @@ describe('Spielzahlen (balance.yaml)', () => {
 
     it('liest Markt und Transport aus der echten Datei', () => {
       const { market, transport } = loadBalance();
-      expect(market.postedPrice).toBe(1);
+      expect(market.basePrice).toBe(1.00);
+      expect(market.demand).toBe(5000);
+      expect(market.elasticity).toBe(1.5);
+      expect(market.shock).toBe(1.0);
+      expect(market.regionalDiscount).toBe(0.00);
+      expect(market.priceMin).toBe(0.20);
+      expect(market.priceMax).toBe(1.60);
+      expect(market.neighbours).toEqual({ startWells: 12, newWellsPerRound: 2, ratePerWell: 400 });
+      expect(market.newsThreshold).toBe(0.10);
       expect(transport.wagon).toEqual({ label: 'Fuhrwerk', costPerBarrel: 0.6, capacity: 600 });
       expect(transport.rail).toEqual({ label: 'Bahn', costPerBarrel: 0.25, capacity: 3000 });
       expect(transport.thorne).toEqual({ hikeChance: 0.2, hikeStep: 0.1, maxTariff: 0.8 });
@@ -258,10 +266,10 @@ describe('Spielzahlen (balance.yaml)', () => {
       expect(() => parseBalance(r)).toThrow(/hikeChance/);
     });
 
-    it('meldet einen Posted Price von 0', () => {
+    it('meldet einen basePrice von 0', () => {
       const r = raw();
-      r.market.postedPrice = 0;
-      expect(() => parseBalance(r)).toThrow(/postedPrice/);
+      r.market.basePrice = 0;
+      expect(() => parseBalance(r)).toThrow(/basePrice/);
     });
   });
 });

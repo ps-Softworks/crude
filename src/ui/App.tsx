@@ -189,10 +189,18 @@ function SalePanel({ game, onSold }: { game: GameState; onSold: (state: GameStat
   const tank = Math.floor(game.oilStock);
   const vorschlag = Math.max(...TRANSPORT_MODES.map((m) => Math.min(tank, capacityLeft(game, balance, m))));
   const menge = amount === '' ? vorschlag : Number(amount);
+
+  const prevPrice = game.priceHistory[game.priceHistory.length - 2];
+  const priceChange = prevPrice !== undefined && prevPrice !== game.postedPrice
+    ? game.postedPrice > prevPrice
+      ? ' ↑'
+      : ' ↓'
+    : '';
+
   return (
     <div className="sale-panel">
       <p>
-        Im Tank: <strong>{barrels(tank)} bbl</strong> · Posted Price {price(balance.market.postedPrice)} je Barrel
+        Im Tank: <strong>{barrels(tank)} bbl</strong> · Posted Price {price(game.postedPrice)}{priceChange} je Barrel
       </p>
       <dl className="terms">
         {TRANSPORT_MODES.map((mode) => (
@@ -268,10 +276,6 @@ function ParcelPanel({ game, parcel, debug, notice, onResult }: PanelProps) {
 
   return (
     <div className="parcel-panel">
-      <p>
-        <strong>Parzelle {parcel.x + 1}/{parcel.y + 1}</strong> · Zone {parcel.zone}
-      </p>
-
       {parcel.discovery ? (
         <p className="state discovery">Entdeckungsquelle – hier wurde zuerst Öl gefunden. Nicht pachtbar.</p>
       ) : (

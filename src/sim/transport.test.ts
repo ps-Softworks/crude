@@ -6,7 +6,7 @@ import { loadBalance } from './testBalance';
 
 const balance = loadBalance();
 const T = balance.transport;
-const PRICE = balance.market.postedPrice;
+const PRICE = balance.market.basePrice;
 
 /** Spiel mit Öl im Tank (ohne Bohren). */
 function mitOel(oil = 5000, royaltyOil = 0, seed = 'transport'): GameState {

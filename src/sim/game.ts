@@ -10,6 +10,7 @@ import { generateParcels, type Parcel } from './geology';
 import { parcelLabel, settleLeases, startOptions, type Lease, type LeaseOption } from './lease';
 import { advanceProduction } from './production';
 import { Rng, seedFromString, type RngState } from './rng';
+import { advanceMarket } from './market';
 import { advanceTransport } from './transport';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
@@ -39,6 +40,10 @@ export interface GameState {
   forecasts: Record<string, Forecast>;
   /** Bohrungen, auch abgeschlossene. */
   wells: Well[];
+  /** Aktueller Posted Price in $ je Barrel (Market). */
+  postedPrice: number;
+  /** Preishistorie: postedPrice je Runde (Index 0 = Runde 1). */
+  priceHistory: number[];
   finished: boolean;
   log: string[];
 }
@@ -65,6 +70,8 @@ export function newGame(seed: string, balance: Balance): GameState {
     options: [],
     forecasts: {},
     wells: [],
+    postedPrice: balance.market.basePrice,
+    priceHistory: [balance.market.basePrice],
     finished: false,
     log: [],
   };
@@ -92,10 +99,11 @@ export function newGame(seed: string, balance: Balance): GameState {
  */
 export function endRound(input: GameState, balance: Balance): GameState {
   if (input.finished) return input;
-  const state = advanceTransport(
-    settleLeases(advanceDrilling(advanceProduction(input, balance), balance), balance),
-    balance,
-  );
+  const afterProduction = advanceProduction(input, balance);
+  const afterDrilling = advanceDrilling(afterProduction, balance);
+  const afterLeases = settleLeases(afterDrilling, balance);
+  const afterMarket = advanceMarket(afterLeases, balance.market);
+  const state = advanceTransport(afterMarket, balance);
   if (state.round >= state.totalRounds) {
     return { ...state, finished: true, log: [...state.log, `${formatDate(state)}: Kapitel 1 ist zu Ende.`] };
   }

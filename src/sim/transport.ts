@@ -28,8 +28,8 @@ export function capacityLeft(state: Pick<GameState, 'shipped'>, balance: Balance
 }
 
 /** Was je Barrel nach Fracht übrig bleibt (vor Förderzins). */
-export function netPrice(state: Pick<GameState, 'railTariff'>, balance: Balance, mode: TransportMode): number {
-  return cents(balance.market.postedPrice - tariff(state, balance, mode));
+export function netPrice(state: Pick<GameState, 'railTariff' | 'postedPrice'>, balance: Balance, mode: TransportMode): number {
+  return cents(state.postedPrice - tariff(state, balance, mode));
 }
 
 export interface SaleQuote {
@@ -51,12 +51,12 @@ function royaltyBarrels(state: Pick<GameState, 'oilStock' | 'royaltyOil'>, barre
 
 /** Rechnet einen Verkauf durch, ohne etwas zu ändern. */
 export function quoteSale(
-  state: Pick<GameState, 'oilStock' | 'royaltyOil' | 'railTariff'>,
+  state: Pick<GameState, 'oilStock' | 'royaltyOil' | 'railTariff' | 'postedPrice'>,
   balance: Balance,
   mode: TransportMode,
   barrels: number,
 ): SaleQuote {
-  const price = balance.market.postedPrice;
+  const price = state.postedPrice;
   const gross = cents(barrels * price);
   const transportCost = cents(barrels * tariff(state, balance, mode));
   const royalty = cents(royaltyBarrels(state, barrels) * price);
@@ -66,7 +66,12 @@ export function quoteSale(
 export type SaleResult = { ok: true; state: GameState; quote: SaleQuote } | { ok: false; reason: string };
 
 /** Verkauft Öl aus dem Tank über das gewählte Transportmittel. */
-export function sellOil(state: GameState, balance: Balance, mode: TransportMode, barrels: number): SaleResult {
+export function sellOil(
+  state: GameState,
+  balance: Balance,
+  mode: TransportMode,
+  barrels: number,
+): SaleResult {
   const label = balance.transport[mode].label;
   if (state.finished) return { ok: false, reason: 'Das Kapitel ist beendet.' };
   if (!Number.isInteger(barrels) || barrels <= 0) {
