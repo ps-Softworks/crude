@@ -1,5 +1,6 @@
 import type { Balance } from '../sim/balance';
 import type { GameState } from '../sim/game';
+import { wellOf } from '../sim/drilling';
 import { leaseOf, optionOf, roundsLeft } from '../sim/lease';
 
 const CELL = 48;
@@ -31,6 +32,7 @@ export function Map({ balance, game, debug, selected, onSelect }: Props) {
     <svg className="map" viewBox={`0 0 ${w} ${h + GULF}`} role="img" aria-label="Karte von Cordova">
       {game.parcels.map((p) => {
         const lease = leaseOf(game, p.id);
+        const well = wellOf(game, p.id);
         const option = lease ? undefined : optionOf(game, p.id);
         const x = p.x * CELL;
         const y = p.y * CELL;
@@ -78,6 +80,16 @@ export function Map({ balance, game, debug, selected, onSelect }: Props) {
               <text x={x + CELL - 8} y={y + CELL - 8} textAnchor="end" className="tag" fill={markColor}>
                 {left}
               </text>
+            )}
+            {well && (
+              // Bohrturm auf eigenen Bohrungen; Farbe nach Ergebnis.
+              <polygon
+                points={`${x + CELL / 2},${y + 12} ${x + CELL / 2 - 8},${y + CELL - 12} ${x + CELL / 2 + 8},${y + CELL - 12}`}
+                fill={well.status === 'found' ? '#2b2620' : 'none'}
+                stroke={well.status === 'dry' ? '#9a9a9a' : well.status === 'stuck' ? '#b3261e' : '#222'}
+                strokeWidth={2}
+                pointerEvents="none"
+              />
             )}
             {p.discovery && (
               // Bohrturm als Zeichen für die Entdeckungsquelle.

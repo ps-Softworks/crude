@@ -67,6 +67,29 @@ export interface LeaseBalance {
   startOptions: { count: number; termRounds: number };
 }
 
+/** Eine Bohrstufe: Stufe 1 = Zieltiefe, jede weitere = "tiefer bohren". */
+export interface DrillStage {
+  /** Tiefe in Metern. */
+  depth: number;
+  /** Kosten der Stufe in $. */
+  cost: number;
+  /** Dauer in Runden. */
+  rounds: number;
+  /** Anteil der nicht trockenen Parzellen, deren Öl in dieser Stufe liegt. */
+  oilShare: number;
+  /** Unfall-Chance beim Abschluss der Stufe. */
+  accident: number;
+  /** Chance, dass das Werkzeug klemmt. */
+  stuck: number;
+}
+
+export interface DrillingBalance {
+  rigs: number;
+  accidentCost: number;
+  fishingCost: number;
+  stages: DrillStage[];
+}
+
 export interface Balance {
   start: { cash: number; year: number; rounds: number };
   map: { width: number; height: number; saltHill: { x: number; y: number } };
@@ -76,6 +99,7 @@ export interface Balance {
   };
   lease: LeaseBalance;
   forecast: ForecastBalance;
+  drilling: DrillingBalance;
 }
 
 export class BalanceError extends Error {}
@@ -251,6 +275,42 @@ function parseLease(raw: unknown): LeaseBalance {
   };
 }
 
+function parseDrilling(raw: unknown): DrillingBalance {
+  const stages: DrillStage[] = list(raw, 'drilling.stages').map((_, i) => {
+    const path = `drilling.stages.${i}`;
+    const stage: DrillStage = {
+      depth: num(raw, `${path}.depth`),
+      cost: num(raw, `${path}.cost`),
+      rounds: positiveInt(raw, `${path}.rounds`),
+      oilShare: share(raw, `${path}.oilShare`),
+      accident: share(raw, `${path}.accident`),
+      stuck: share(raw, `${path}.stuck`),
+    };
+    if (stage.accident + stage.stuck > 1) {
+      throw new BalanceError(`balance.yaml: Bohrstufe ${i + 1} – accident + stuck ist größer als 1`);
+    }
+    return stage;
+  });
+  const sum = stages.reduce((s, st) => s + st.oilShare, 0);
+  if (Math.abs(sum - 1) > 1e-6) {
+    throw new BalanceError(`balance.yaml: Summe von "drilling.stages.*.oilShare" ergibt ${sum.toFixed(3)} statt 1`);
+  }
+  for (let i = 1; i < stages.length; i++) {
+    if (stages[i].cost <= stages[i - 1].cost) {
+      throw new BalanceError('balance.yaml: Bohrkosten müssen mit jeder Stufe steigen');
+    }
+    if (stages[i].accident <= stages[i - 1].accident) {
+      throw new BalanceError('balance.yaml: Unfall-Chance muss mit jeder Stufe steigen');
+    }
+  }
+  const accidentCost = num(raw, 'drilling.accidentCost');
+  const fishingCost = num(raw, 'drilling.fishingCost');
+  if (accidentCost < 0 || fishingCost < 0) {
+    throw new BalanceError('balance.yaml: Unfall- und Bergungskosten dürfen nicht negativ sein');
+  }
+  return { rigs: positiveInt(raw, 'drilling.rigs'), accidentCost, fishingCost, stages };
+}
+
 export function parseBalance(raw: unknown): Balance {
   const zonesRaw = (raw as { geology?: { zones?: unknown } })?.geology?.zones;
   if (!Array.isArray(zonesRaw) || zonesRaw.length === 0) {
@@ -298,6 +358,7 @@ export function parseBalance(raw: unknown): Balance {
     },
     lease: parseLease(raw),
     forecast: parseForecast(raw),
+    drilling: parseDrilling(raw),
   };
 
   const { width, height, saltHill } = balance.map;

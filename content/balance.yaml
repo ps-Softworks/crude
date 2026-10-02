@@ -115,3 +115,17 @@ forecast:
   geologist:
     accuracy: 3           # PLATZHALTER: Genauigkeit 1–5
     bias: 0               # PLATZHALTER: Verzerrung −15 bis +15 Punkte
+
+# Bohren (GDD §5): Stufe 1 ist die Zieltiefe, jede weitere Stufe heißt
+# "tiefer bohren". Tiefer = teurer und gefährlicher (Push your luck).
+# oilShare: in welcher Stufe das Öl einer nicht trockenen Parzelle liegt (Summe 1).
+# accident: Unfall-Chance je Stufe (Entschädigung, Stufe wird wiederholt).
+# stuck: Chance, dass das Werkzeug klemmt (bergen oder aufgeben).
+drilling:
+  rigs: 1                 # PLATZHALTER: gleichzeitige Bohrungen (geliehener Turm)
+  accidentCost: 200       # PLATZHALTER: $ Entschädigung je Unfall
+  fishingCost: 300        # PLATZHALTER: $ Bergung bei klemmendem Werkzeug
+  stages:                 # PLATZHALTER
+    - { depth: 300, cost: 1500, rounds: 1, oilShare: 0.6, accident: 0.04, stuck: 0.05 }
+    - { depth: 600, cost: 2400, rounds: 1, oilShare: 0.3, accident: 0.08, stuck: 0.10 }
+    - { depth: 900, cost: 3800, rounds: 2, oilShare: 0.1, accident: 0.15, stuck: 0.15 }

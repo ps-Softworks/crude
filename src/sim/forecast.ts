@@ -57,10 +57,12 @@ export function makeForecast(
   parcel: Parcel,
   geologist: Geologist,
   rng: Rng,
+  /** Wahre Chance (0–1), falls nicht die der Zone gilt, z. B. nach einer Bohrstufe. */
+  chanceOverride?: number,
 ): Forecast {
   const { rounding } = balance.forecast;
   const width = forecastWidth(balance, geologist.accuracy);
-  const chance = 100 * trueChance(balance, parcel);
+  const chance = 100 * (chanceOverride ?? trueChance(balance, parcel));
   const error = (rng.float() * 2 - 1) * width;
   const center = chance + geologist.bias + error;
   let low = clamp(roundTo(clamp(center - width / 2, 0, 100), rounding), 0, 100);

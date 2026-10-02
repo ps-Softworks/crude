@@ -3,6 +3,7 @@
 
 import type { Balance } from './balance';
 import { formatDate } from './calendar';
+import { advanceDrilling, type Well } from './drilling';
 import { makeForecasts, type Forecast } from './forecast';
 import { generateParcels, type Parcel } from './geology';
 import { parcelLabel, settleLeases, startOptions, type Lease, type LeaseOption } from './lease';
@@ -23,6 +24,8 @@ export interface GameState {
   options: LeaseOption[];
   /** Geologen-Prognose je Parzelle; für die Entdeckungsquelle gibt es keine. */
   forecasts: Record<string, Forecast>;
+  /** Bohrungen, auch abgeschlossene. */
+  wells: Well[];
   finished: boolean;
   log: string[];
 }
@@ -41,6 +44,7 @@ export function newGame(seed: string, balance: Balance): GameState {
     leases: [],
     options: [],
     forecasts: {},
+    wells: [],
     finished: false,
     log: [],
   };
@@ -59,12 +63,12 @@ export function newGame(seed: string, balance: Balance): GameState {
 }
 
 /**
- * Schließt die aktuelle Runde ab: erst die Pacht-Abrechnung (Verfall,
+ * Schließt die aktuelle Runde ab: erst die Bohrungen, dann die Pacht-Abrechnung (Verfall,
  * Verzögerungszins), dann die nächste Runde. Nach der letzten Runde ist das Kapitel beendet.
  */
 export function endRound(input: GameState, balance: Balance): GameState {
   if (input.finished) return input;
-  const state = settleLeases(input, balance);
+  const state = settleLeases(advanceDrilling(input, balance), balance);
   if (state.round >= state.totalRounds) {
     return { ...state, finished: true, log: [...state.log, `${formatDate(state)}: Kapitel 1 ist zu Ende.`] };
   }

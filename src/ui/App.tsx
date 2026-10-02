@@ -1,5 +1,16 @@
 import { useState } from 'react';
 import { endRound, formatDate, newGame, type GameState } from '../sim/game';
+import {
+  abandonWell,
+  accidentChance,
+  deeperChance,
+  drillDeeper,
+  fishWell,
+  stageCost,
+  startDrilling,
+  wellOf,
+  type Well,
+} from '../sim/drilling';
 import { formatForecast, trueChance } from '../sim/forecast';
 import type { Parcel } from '../sim/geology';
 import {
@@ -169,7 +180,11 @@ function ParcelPanel({ game, parcel, debug, notice, onResult }: PanelProps) {
   const tryLease = !lease && !option && terms ? buyLease(game, balance, id) : undefined;
   const tryOption = !lease && !option && terms ? buyOption(game, balance, id) : undefined;
   const tryExercise = option ? exerciseOption(game, balance, id) : undefined;
-  const firstReason = [tryLease, tryOption, tryExercise].find((r) => r && !r.ok);
+  const well = wellOf(game, id);
+  const tryDrill = lease && lease.holder === 'jacob' && !well ? startDrilling(game, balance, id) : undefined;
+  const tryDeeper = well?.status === 'decision' ? drillDeeper(game, balance, id) : undefined;
+  const tryFish = well?.status === 'stuck' ? fishWell(game, balance, id) : undefined;
+  const firstReason = [tryLease, tryOption, tryExercise, tryDrill, tryDeeper, tryFish].find((r) => r && !r.ok);
   const hint = notice ?? (firstReason && !firstReason.ok ? firstReason.reason : null);
 
   return (
@@ -229,7 +244,39 @@ function ParcelPanel({ game, parcel, debug, notice, onResult }: PanelProps) {
         </p>
       )}
 
+      {well && (
+        <p className={`state well ${well.status}`}>
+          <WellInfo well={well} />
+          {debug && (
+            <>
+              <br />
+              Debug: Öl in Stufe {well.oilStage ?? '– (trocken)'}
+              {well.status === 'decision' && ` · Chance nächste Stufe ${percent(deeperChance(balance, parcel, well.stage))}`}
+            </>
+          )}
+        </p>
+      )}
+
       <div className="actions">
+        {tryDrill && (
+          <button disabled={!tryDrill.ok} onClick={() => onResult(startDrilling(game, balance, id))}>
+            Bohren ({money(stageCost(balance, 1))})
+          </button>
+        )}
+        {tryDeeper && well && (
+          <button disabled={!tryDeeper.ok} onClick={() => onResult(drillDeeper(game, balance, id))}>
+            Tiefer bohren auf {balance.drilling.stages[well.stage].depth} m ({money(stageCost(balance, well.stage + 1))},
+            Unfallrisiko {percent(accidentChance(balance, well.stage + 1))})
+          </button>
+        )}
+        {tryFish && (
+          <button disabled={!tryFish.ok} onClick={() => onResult(fishWell(game, balance, id))}>
+            Werkzeug bergen ({money(balance.drilling.fishingCost)})
+          </button>
+        )}
+        {(tryDeeper || tryFish) && (
+          <button onClick={() => onResult(abandonWell(game, balance, id))}>Aufgeben</button>
+        )}
         {tryLease && terms && (
           <button disabled={!tryLease.ok} onClick={() => onResult(buyLease(game, balance, id))}>
             Pachten ({money(terms.bonus)})
@@ -255,4 +302,22 @@ function ParcelPanel({ game, parcel, debug, notice, onResult }: PanelProps) {
       )}
     </div>
   );
+}
+
+/** Bohrstatus in Worten. */
+function WellInfo({ well }: { well: Well }) {
+  const depth = balance.drilling.stages[well.stage - 1].depth;
+  const head = `Bohrung · Stufe ${well.stage}/${balance.drilling.stages.length} (${depth} m) · bisher ${money(well.spent)}`;
+  switch (well.status) {
+    case 'drilling':
+      return <>{head}<br />Der Turm bohrt – fertig in {rounds(well.roundsLeft)}.</>;
+    case 'decision':
+      return <>{head}<br />In {depth} m trocken. Tiefer bohren oder aufgeben?</>;
+    case 'stuck':
+      return <>{head}<br />Das Werkzeug klemmt in {depth} m.</>;
+    case 'found':
+      return <>{head}<br />{well.result === 'gusher' ? 'GUSHER! Ein gewaltiger Fund.' : 'Öl gefunden – eine kleine Quelle.'}</>;
+    case 'dry':
+      return <>{head}<br />Trocken – kein Öl.</>;
+  }
 }

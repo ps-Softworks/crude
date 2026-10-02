@@ -9,7 +9,7 @@
 - Subagents: Du darfst nach eigener Einschätzung Subagents deiner Wahl einsetzen (z. B. Explore, Plan, general-purpose), ohne vorher zu fragen – immer dann, wenn es sinnvoll ist und Tokens spart (z. B. breite Suchen, unabhängige Teilaufgaben parallel). Für Kleinigkeiten, die du direkt erledigen kannst, keine Subagents.
 
 ## Projektstand
-- Phase 0 abgeschlossen (Papierpartien 0.8/0.9 vorerst übersprungen). Phase 1 läuft: 1.1–1.5 fertig, als Nächstes 1.6.
+- Phase 0 abgeschlossen (Papierpartien 0.8/0.9 vorerst übersprungen). Phase 1 läuft: 1.1–1.6 fertig, als Nächstes 1.7.
 - Spielzahlen stehen in `content/balance.yaml` (viele noch Platzhalter; Balance klärt sich mit 1.14/1.15).
 - Starten: `npm run dev`; Debug-Ansicht über `?seed=abc&debug=1` in der Adresse.
 - Roadmap: https://claude.ai/code/artifact/900e1b6c-0788-449d-a682-0f06781fd49b
