@@ -5,6 +5,7 @@
 - Philipp programmiert kaum selbst: Code schreibt Claude. Erkläre Änderungen kurz und verständlich, ohne Fachjargon-Wände.
 - Vorgehen bei jedem Bau-Schritt: erst Plan zeigen, dann bauen, Tests schreiben, alle Tests laufen lassen, das Spiel starten.
 - Nach jedem abgeschlossenen Schritt: Tests grün → Git-Commit mit klarer deutscher Nachricht (z. B. „1.1 Projekt aufgesetzt“).
+- Version: steht nur in `package.json`, das Spiel zeigt sie oben neben dem Titel. Schema `0.<Phase>.<Schritt>` nach der Roadmap (Schritt 1.4 → 0.1.4, Schritt 2.3 → 0.2.3); das fertige Spiel ist 1.0.0. Bei jedem abgeschlossenen Roadmap-Schritt oder größeren Änderung die Version im selben Commit anheben; Mini-Änderungen (Tippfehler, Kleinkram) ändern sie nicht. Größere Änderung außerhalb eines Schritts → Zähler anhängen (0.1.4 → 0.1.4+1 → 0.1.4+2), weil package.json keine vierte Ziffer erlaubt.
 - Subagents: Du darfst nach eigener Einschätzung Subagents deiner Wahl einsetzen (z. B. Explore, Plan, general-purpose), ohne vorher zu fragen – immer dann, wenn es sinnvoll ist und Tokens spart (z. B. breite Suchen, unabhängige Teilaufgaben parallel). Für Kleinigkeiten, die du direkt erledigen kannst, keine Subagents.
 
 ## Projektstand

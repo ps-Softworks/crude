@@ -71,7 +71,9 @@ export function App() {
   return (
     <div className="app">
       <header>
-        <h1>CRUDE</h1>
+        <h1>
+          CRUDE <span className="version">v{__APP_VERSION__}</span>
+        </h1>
         <div className="status">
           <span>
             Runde {game.round}/{game.totalRounds}
