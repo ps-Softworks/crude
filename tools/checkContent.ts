@@ -33,3 +33,6 @@ if (errors.length > 0) {
 const ohneEnglisch = events.filter((e) => e.title.en.trim() === '').length;
 console.log(`Inhalte in Ordnung: ${events.length} Ereignisse in ${files.length} Datei(en).`);
 if (ohneEnglisch > 0) console.log(`Hinweis: ${ohneEnglisch} Ereignisse haben noch keinen englischen Text.`);
+// Entwürfe (2.10a): Schlüsselszenen, die Philipp noch überarbeiten soll.
+const entwuerfe = events.filter((e) => e.draft).map((e) => e.id);
+if (entwuerfe.length > 0) console.log(`Entwürfe (draft: true): ${entwuerfe.length} – ${entwuerfe.join(', ')}`);

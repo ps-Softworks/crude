@@ -290,6 +290,7 @@ rivals:
 # Ereignis-System (2.1): Ereignisse stehen in content/events/, hier nur die Taktung.
 events:
   maxPerRound: 1           # PLATZHALTER: höchstens so viele neue Ereignisse je Runde
+  repeatCooldown: 3        # Wiederholungsschutz (2.10a): wiederkehrende Ereignisse und Varianten einer Gruppe frühestens nach 3 Runden wieder (ein Ereignis kann eigenen cooldown haben; höchstens guaranteeRounds, sonst stockt die Post-Garantie)
   # Posteingang (2.4, GDD §3): Briefe (mail: offer/demand/info/personal) kommen zusätzlich mit der Post.
   mail:
     maxPerRound: 1         # PLATZHALTER: höchstens so viele neue Briefe je Runde

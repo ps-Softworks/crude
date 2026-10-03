@@ -1,0 +1,398 @@
+# Kapitel 1 – Alltag, Paket 3: Menschen in Port Ellis (2.10a, Ereignisse 21–30). Entwurf von
+# Claude, bitte in eigener Stimme umschreiben. Stadt, Familie, Sheriff, Nora, Fieber.
+# Wiederholungsschutz und Entwürfe: siehe Kopf von k1-8-alltag-1.yaml.
+
+# --- Stadt -------------------------------------------------------------------
+
+- id: geruecht_tarif
+  mail: info
+  group: geruecht
+  title:
+    de: Thorne erhöht bald den Tarif
+    en: Thorne Will Raise the Tariff Soon
+  text:
+    de: >-
+      Ein Bahnbeamter, dem Jacob einmal einen Whiskey ausgegeben hat, schreibt
+      in Eile: In Hallstead liege ein neuer Tarif für Cordova auf Thornes Tisch.
+      Wer noch zum alten Preis verladen wolle, müsse sich beeilen.
+    en: >-
+      A railway clerk Jacob once stood a whiskey writes in haste: in Hallstead a new
+      tariff for Cordova is lying on Thorne's desk. Anyone who wants to ship at the
+      old price had better hurry.
+  conditions: { minRound: 3 }
+  chance: 0.1
+  choices:
+    - id: danken
+      label: { de: "Dem Beamten 20 $ als Dank schicken", en: "Send the clerk 20 $ as thanks" }
+      result:
+        de: Der Beamte schreibt zurück, er melde sich wieder, wenn er etwas höre.
+        en: The clerk writes back that he'll be in touch again if he hears anything.
+      requires: { minCash: 20 }
+      effects: { cash: -20 }
+      appointments: 0
+      marks: [bahnbeamter_freund]
+    - id: lesen
+      label: { de: "Zur Kenntnis nehmen", en: "Take note" }
+      result:
+        de: Jacob rechnet nach, was ein Cent mehr je Barrel kostet. Es ist mehr, als er dachte.
+        en: Jacob works out what one cent more a barrel will cost him. It's more than he thought.
+      appointments: 0
+      default: true
+
+- id: prediger
+  title:
+    de: Der Prediger vom Hafen
+    en: The Preacher from the Harbour
+  text:
+    de: >-
+      Bruder Abel predigt jeden Abend am Hafen gegen Whiskey, Karten und Öl,
+      „den Schweiß des Teufels“. Jetzt steht er vor Jacobs Tür. Er will eine
+      Kirche bauen, aus Brettern, für die Bohrarbeiter. Und er nimmt Spenden
+      auch vom Teufel.
+    en: >-
+      Brother Abel preaches every evening at the harbour against whiskey, cards and
+      oil, "the devil's sweat". Now he's standing at Jacob's door. He wants to build
+      a church, of planks, for the drillers. And he takes donations even from the devil.
+  conditions: { minRound: 3 }
+  chance: 0.08
+  choices:
+    - id: spenden
+      label: { de: "100 $ für die Bretterkirche", en: "100 $ for the plank church" }
+      result:
+        de: Bruder Abel nennt Jacobs Namen am Sonntag von der Kanzel. Ruth sitzt in der ersten Reihe und tut, als höre sie es nicht.
+        en: On Sunday Brother Abel names Jacob from the pulpit. Ruth sits in the front row and pretends not to hear.
+      requires: { minCash: 100 }
+      effects: { cash: -100, ruth: 3 }
+      marks: [kirche_gespendet]
+    - id: bretter
+      label: { de: "Bretter vom alten Turm geben", en: "Give him planks from the old derrick" }
+      result:
+        de: Die Kirche riecht nach Öl. Bruder Abel predigt trotzdem darin.
+        en: The church smells of oil. Brother Abel preaches in it anyway.
+      appointments: 0
+    - id: tuer
+      label: { de: "Die Tür zumachen", en: "Close the door" }
+      result:
+        de: Am Abend predigt Bruder Abel am Hafen über Männer, die ihre Türen zumachen.
+        en: That evening Brother Abel preaches at the harbour about men who close their doors.
+      appointments: 0
+      default: true
+
+- id: sheriff_schutz
+  draft: true                # Schlüsselszene: erste Begegnung mit der käuflichen Ordnung Cordovas
+  title:
+    de: Der Sheriff bietet Schutz an
+    en: The Sheriff Offers Protection
+  text:
+    de: >-
+      Sheriff Boyd Tatum setzt sich, ohne zu fragen, und legt die Stiefel auf
+      Jacobs Kiste. In Salt Hill werde viel gestohlen, sagt er. Öl, Werkzeug,
+      manchmal ein ganzer Turm. Für 50 $ im Monat schaue er bei Jacob öfter vorbei.
+    en: >-
+      Sheriff Boyd Tatum sits down without asking and puts his boots on Jacob's
+      crate. A lot gets stolen on Salt Hill, he says. Oil, tools, sometimes a whole
+      derrick. For 50 $ a month he'll look in on Jacob more often.
+  conditions: { minLeases: 1, minRound: 4 }
+  chance: 0.1
+  choices:
+    - id: zahlen
+      label: { de: "Zahlen (50 $)", en: "Pay (50 $)" }
+      result:
+        de: Tatum steckt das Geld ein, ohne es zu zählen. Er kommt wirklich öfter vorbei – meistens zum Essen.
+        en: Tatum pockets the money without counting it. He really does look in more often – mostly at mealtimes.
+      requires: { minCash: 50 }
+      effects: { cash: -50 }
+      appointments: 0
+      marks: [sheriff_bezahlt]
+    - id: eigene_wache
+      label: { de: "Lieber einen eigenen Nachtwächter anstellen (70 $)", en: "Hire your own night watchman instead (70 $)" }
+      result:
+        de: Der Nachtwächter ist ein Veteran mit einer Schrotflinte und einem Hund. Tatum sieht das gar nicht gern.
+        en: The watchman is a veteran with a shotgun and a dog. Tatum doesn't like it one bit.
+      requires: { minCash: 70 }
+      effects: { cash: -70 }
+      marks: [sheriff_umgangen]
+    - id: ablehnen
+      label: { de: "Höflich ablehnen", en: "Decline politely" }
+      result:
+        de: Tatum nimmt die Stiefel von der Kiste. In der Woche darauf fehlen zwei Fässer und eine Rolle Seil.
+        en: Tatum takes his boots off the crate. The week after, two barrels and a coil of rope go missing.
+      effects: { oilStock: -60, cash: -40 }
+      appointments: 0
+      default: true
+      marks: [sheriff_abgewiesen]
+
+- id: nora_interview
+  draft: true                # Schlüsselszene: Noras erstes Gespräch mit Jacob (Weltbibel: sie verfolgt seinen Aufstieg)
+  title:
+    de: Nora Whitlock will ein Gespräch
+    en: Nora Whitlock Wants an Interview
+  text:
+    de: >-
+      Nora Whitlock vom Port Ellis Courier hat ein Notizbuch und keine Eile. Sie
+      schreibt eine Reihe über „die neuen Männer vom Salt Hill“. Ob Jacob ihr
+      erzählen wolle, woher er kommt. Und was die neuen Männer den Farmern für
+      ihr Land zahlen.
+    en: >-
+      Nora Whitlock of the Port Ellis Courier has a notebook and no hurry. She's
+      writing a series on "the new men of Salt Hill". Would Jacob tell her where he
+      comes from? And what the new men pay the farmers for their land?
+  conditions: { minRound: 5 }
+  notMarked: [nora_bestechung]
+  chance: 0.1
+  choices:
+    - id: erzaehlen
+      label: { de: "Von der Kohlengrube und dem Vater erzählen", en: "Tell her about the coal pit and his father" }
+      result:
+        de: Nora schreibt drei Seiten mit. Im Courier steht am Samstag ein Bergmannssohn, der es allen zeigen will. Die Leute am Hafen grüßen Jacob anders.
+        en: Nora fills three pages. On Saturday the Courier has a miner's son out to show them all. The men at the harbour greet Jacob differently.
+      effects: { strength: 2 }
+      marks: [nora_interview]
+    - id: zahlen_nennen
+      label: { de: "Nur über Zahlen reden", en: "Talk only about numbers" }
+      result:
+        de: Nora schreibt Barrel und Dollar mit und klappt das Notizbuch zu. „Sie sind vorsichtig, Mr. Harlan. Das merke ich mir.“
+        en: Nora notes barrels and dollars and snaps the notebook shut. "You're careful, Mr. Harlan. I'll remember that."
+      marks: [nora_interview]
+    - id: keine_zeit
+      label: { de: "Keine Zeit", en: "No time" }
+      result:
+        de: Im Courier steht am Samstag, Jacob Harlan habe „keine Zeit für Fragen“. Darunter eine Frage.
+        en: On Saturday the Courier reports that Jacob Harlan has "no time for questions". Below it, a question.
+      appointments: 0
+      default: true
+      marks: [nora_kein_gespraech]
+
+- id: poker
+  once: false
+  cooldown: 5
+  title:
+    de: Eine Pokerrunde im Gilded Lamp
+    en: A Poker Game at the Gilded Lamp
+  text:
+    de: >-
+      Am Hinterzimmertisch im Gilded Lamp sitzen drei Bohrmeister, ein Pachtmakler
+      und ein Mann aus Bullards Lohnbüro. Ein Stuhl ist frei. Man spielt um Geld
+      und redet über Pachten.
+    en: >-
+      At the back-room table of the Gilded Lamp sit three drillers, a lease broker
+      and a man from Bullard's pay office. One chair is empty. They play for money
+      and talk about leases.
+  conditions: { minRound: 2, minCash: 300 }
+  chance: 0.07
+  choices:
+    - id: spielen
+      label: { de: "Mitspielen und zuhören (100 $ Einsatz)", en: "Sit in and listen (100 $ stake)" }
+      result:
+        de: Jacob verliert das Geld bis zum letzten Dollar und erfährt, welche Parzellen Bullard als Nächstes will.
+        en: Jacob loses the money to the last dollar and learns which parcels Bullard wants next.
+      requires: { minCash: 100 }
+      effects: { cash: -100, strength: -2 }
+      marks: [poker_gehoert]
+    - id: zuschauen
+      label: { de: "Ein Bier trinken und zuschauen", en: "Drink a beer and watch" }
+      result:
+        de: Niemand redet vor einem Mann, der nicht mitspielt.
+        en: Nobody talks in front of a man who isn't playing.
+      effects: { cash: -2 }
+    - id: heim
+      label: { de: "Nach Hause zu Ruth", en: "Go home to Ruth" }
+      result:
+        de: Ruth sieht auf, als Jacob so früh kommt, und legt die Flickarbeit weg.
+        en: Ruth looks up when Jacob comes home so early and puts her mending aside.
+      effects: { ruth: 2 }
+      appointments: 0
+      default: true
+
+- id: kumpel
+  title:
+    de: Ein Kumpel aus der Grube
+    en: A Mate from the Pit
+  text:
+    de: >-
+      Vor der Pension steht Dan Kerrigan, mit dem Jacob als Junge in der Grube
+      gearbeitet hat. Er hustet wie Jacobs Vater. Er habe gehört, Jacob sei jetzt
+      ein Ölmann. Er brauche Arbeit, egal welche.
+    en: >-
+      Outside the boarding house stands Dan Kerrigan, who worked the pit with Jacob
+      as a boy. He coughs like Jacob's father. He heard Jacob was an oil man now. He
+      needs work, any work.
+  conditions: { minRound: 3 }
+  chance: 0.08
+  choices:
+    - id: einstellen
+      label: { de: "Ihn in den Trupp nehmen (60 $ Vorschuss)", en: "Take him onto the crew (60 $ advance)" }
+      result:
+        de: Dan schuftet für zwei und hustet für drei. Abends erzählen sie sich von der Grube und lachen, obwohl nichts daran lustig war.
+        en: Dan works for two and coughs for three. In the evenings they tell each other about the pit and laugh, though none of it was funny.
+      requires: { minCash: 60 }
+      effects: { cash: -60, strength: 3 }
+      marks: [kerrigan_eingestellt]
+    - id: geld
+      label: { de: "Ihm Geld für die Heimfahrt geben (30 $)", en: "Give him money for the trip home (30 $)" }
+      result:
+        de: Dan nimmt das Geld und sieht Jacob dabei nicht an.
+        en: Dan takes the money and doesn't look Jacob in the eye.
+      requires: { minCash: 30 }
+      effects: { cash: -30 }
+      appointments: 0
+    - id: nein
+      label: { de: "Kein Platz im Trupp", en: "No room on the crew" }
+      result:
+        de: Dan nickt, als hätte er es gewusst. Eine Woche später arbeitet er für Bullard.
+        en: Dan nods as if he'd known. A week later he's working for Bullard.
+      appointments: 0
+      default: true
+      marks: [kerrigan_abgewiesen]
+
+- id: fieber
+  draft: true                # Schlüsselszene: Fieber in Port Ellis, Ruth und das Kind in Gefahr
+  title:
+    de: Fieber in Port Ellis
+    en: Fever in Port Ellis
+  text:
+    de: >-
+      Im Hafenviertel ist das Fieber ausgebrochen. Die Pension hat zwei Kranke im
+      Dachgeschoss, und Ruth kocht das Wasser ab, bis die Küche dampft. Wer Geld
+      hat, schickt seine Familie für ein paar Wochen ins Hinterland.
+    en: >-
+      Fever has broken out in the harbour district. The boarding house has two sick
+      people in the attic, and Ruth boils the water until the kitchen steams. Those
+      with money send their families inland for a few weeks.
+  conditions: { minRound: 4, maxRound: 13 }
+  chance: 0.06
+  choices:
+    - id: wegschicken
+      label: { de: "Ruth und das Kind aufs Land schicken (200 $)", en: "Send Ruth and the child to the country (200 $)" }
+      result:
+        de: Ruth fährt mit einem Koffer und vielen Anweisungen. Die Pension ist still ohne sie. Jacob isst kalt.
+        en: Ruth leaves with one trunk and many instructions. The boarding house is quiet without her. Jacob eats cold food.
+      requires: { minCash: 200 }
+      effects: { cash: -200, ruth: 2, strength: -3 }
+      marks: [fieber_weggeschickt]
+    - id: bleiben
+      label: { de: "Zu Hause bleiben und Ruth helfen", en: "Stay home and help Ruth" }
+      result:
+        de: Jacob schleppt Wasser und Holz und sitzt nachts neben Ruth am Ofen. Das Fieber geht an ihrer Tür vorbei.
+        en: Jacob hauls water and wood and sits up nights with Ruth by the stove. The fever passes their door.
+      effects: { ruth: 6, strength: -2 }
+      appointments: 3
+      marks: [fieber_geblieben]
+    - id: arbeiten
+      label: { de: "Weiterarbeiten – Ruth kommt zurecht", en: "Keep working – Ruth will manage" }
+      result:
+        de: Ruth kommt zurecht. Sie sagt es Jacob auch, mit einer Stimme, die er nicht kennt.
+        en: Ruth manages. She tells Jacob so, too, in a voice he doesn't recognise.
+      effects: { ruth: -6 }
+      appointments: 0
+      default: true
+      marks: [fieber_allein]
+
+# --- Familie -----------------------------------------------------------------
+
+- id: thomas_nacht
+  once: false
+  cooldown: 4
+  marked: [thomas_geboren]
+  title:
+    de: Thomas schreit die Nacht durch
+    en: Thomas Cries All Night
+  text:
+    de: >-
+      Thomas schreit seit Mitternacht. Ruth geht mit ihm auf und ab, bis die
+      Dielen knarren und die Bohrarbeiter im Flur gegen die Wand klopfen. Um vier
+      sieht sie Jacob an.
+    en: >-
+      Thomas has been crying since midnight. Ruth walks him up and down until the
+      floorboards creak and the drillers in the hall bang on the wall. At four she
+      looks at Jacob.
+  delay: 1
+  chance: 0.12
+  choices:
+    - id: tragen
+      label: { de: "Thomas nehmen und Ruth schlafen lassen", en: "Take Thomas and let Ruth sleep" }
+      result:
+        de: Jacob singt das einzige Lied, das er kennt, ein Bergmannslied. Bei der dritten Strophe schläft Thomas. Jacob nicht mehr.
+        en: Jacob sings the only song he knows, a miners' song. By the third verse Thomas is asleep. Jacob isn't, any more.
+      effects: { ruth: 3, thomas: 3, strength: -3 }
+    - id: schlafen
+      label: { de: "Sich umdrehen – morgen wird gebohrt", en: "Roll over – there's drilling tomorrow" }
+      result:
+        de: Jacob schläft. Ruth nicht. Am Morgen steht der Kaffee da, aber sie sagt kein Wort.
+        en: Jacob sleeps. Ruth doesn't. In the morning the coffee is there, but she says not a word.
+      effects: { ruth: -3 }
+      appointments: 0
+      default: true
+
+- id: thomas_wort
+  draft: true                # Schlüsselszene: Thomas' erstes Wort – war Jacob dabei?
+  marked: [thomas_geboren]
+  delay: 6
+  title:
+    de: Thomas' erstes Wort
+    en: Thomas's First Word
+  text:
+    de: >-
+      Ruth schickt den Jungen vom Bohrtrupp mit einer Nachricht aufs Feld:
+      Thomas hat heute Morgen sein erstes Wort gesagt. Sie will nicht schreiben,
+      welches. Jacob soll nach Hause kommen und es selbst hören.
+    en: >-
+      Ruth sends the crew's boy out to the field with a message: Thomas said his
+      first word this morning. She won't write which one. Jacob should come home
+      and hear it himself.
+  chance: 0.3
+  choices:
+    - id: heim
+      label: { de: "Sofort nach Hause reiten", en: "Ride home at once" }
+      result:
+        de: Thomas sitzt auf dem Küchenboden und sagt „Öl“. Ruth lacht, bis ihr die Tränen kommen. Jacob auch.
+        en: Thomas sits on the kitchen floor and says "oil". Ruth laughs till the tears come. So does Jacob.
+      effects: { ruth: 4, thomas: 6 }
+      marks: [thomas_wort_dabei]
+    - id: abends
+      label: { de: "Am Abend, wenn der Turm steht", en: "This evening, once the derrick's done" }
+      result:
+        de: Am Abend schläft Thomas schon. Ruth sagt das Wort für ihn. Es war „Papa“.
+        en: By evening Thomas is asleep. Ruth says the word for him. It was "Papa".
+      appointments: 0
+      default: true
+      marks: [thomas_wort_verpasst]
+
+- id: ruth_geburtstag
+  mail: personal
+  conditions: { minRound: 6 }
+  title:
+    de: Ein Zettel in Ruths Handschrift
+    en: A Note in Ruth's Hand
+  text:
+    de: >-
+      Auf Jacobs Kiste liegt ein Zettel, mit Ruths ordentlicher Schrift und ohne
+      Gruß: „Donnerstag.“ Jacob braucht einen halben Tag, bis ihm einfällt, dass
+      sie am Donnerstag Geburtstag hat.
+    en: >-
+      On Jacob's crate lies a note in Ruth's neat hand, with no greeting: "Thursday."
+      It takes Jacob half a day to remember that Thursday is her birthday.
+  chance: 0.2
+  choices:
+    - id: stoff
+      label: { de: "Stoff für ein Kleid aus Port Ellis kaufen (40 $)", en: "Buy dress fabric in Port Ellis (40 $)" }
+      result:
+        de: Ruth hält den blauen Stoff gegen das Licht. Sie sagt, er sei zu teuer gewesen. Sie näht trotzdem noch am selben Abend.
+        en: Ruth holds the blue fabric up to the light. She says it cost too much. She starts sewing that same evening anyway.
+      requires: { minCash: 40 }
+      effects: { cash: -40, ruth: 5 }
+    - id: ausfahrt
+      label: { de: "Einen Tag mit ihr ans Meer fahren", en: "Take her to the sea for a day" }
+      result:
+        de: Sie sitzen am Strand hinter dem Hafen, wo kein Öl riecht. Ruth erzählt von ihren Plänen. Es sind viele.
+        en: They sit on the beach past the harbour where nothing smells of oil. Ruth talks about her plans. There are many.
+      effects: { ruth: 7, strength: 4 }
+      appointments: 2
+    - id: vergessen
+      label: { de: "Später daran denken", en: "Think about it later" }
+      result:
+        de: Am Donnerstag kommt Jacob spät. Auf dem Tisch steht ein Kuchen, den Ruth sich selbst gebacken hat.
+        en: On Thursday Jacob comes home late. On the table is a cake Ruth baked for herself.
+      effects: { ruth: -6 }
+      appointments: 0
+      default: true

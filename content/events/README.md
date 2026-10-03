@@ -8,7 +8,8 @@ ohne Codeänderung. Prüfen: `npm run check:content` (meldet Fehler mit Datei un
 
 Kurzreferenz der Felder:
 - Ereignis: `id`, `title`, `text`, `conditions`, `marked`, `notMarked`, `delay`, `chance`, `once`,
-  `routine`, `appointments`, `mail`, `deadline`, `document`, `certain`, `rival`, `choices`
+  `routine`, `appointments`, `mail`, `deadline`, `document`, `certain`, `rival`, `cooldown`, `group`,
+  `draft`, `choices`
 - Wahl: `id`, `label`, `result`, `requires`, `effects`, `marks`, `default`, `appointments`,
   `requiresFound`, `marksIfForged`, `sharp`
 - Bedingungen: `minRound`, `maxRound`, `minCash`, `maxCash`, `minOilStock`,
@@ -48,5 +49,11 @@ Kurzreferenz der Felder:
   (`certain: true`). Wie ein Bogen ausgeht, steht in `content/arcs.yaml`: Ausgänge mit den
   Merkzeichen, an denen man sie erkennt (`any`), erster passender gilt. Der Kapitelabschluss zeigt
   „Was aus ihnen wurde“. Alles Entwurf – Philipp überarbeitet.
+- Wiederholungsschutz (2.10a): `once: false` darf wiederkommen, frühestens nach `cooldown` Runden
+  (fehlt er: `events.repeatCooldown` in balance.yaml; `cooldown: 0` = kein Schutz). `group: name`
+  macht Varianten eines wiederkehrenden Ereignisses (z. B. drei Bohrpannen): Nach einer Variante kommt
+  keine aus derselben Gruppe, bis der Abstand um ist. `draft: true` markiert eine Schlüsselszene als
+  Entwurf – ändert nichts am Spiel, `npm run check:content` listet sie auf.
+- Alltag (2.10a): `k1-8-alltag-1.yaml` (Bohrstelle), `-2` (Geschäft), `-3` (Menschen) – je 10 Ereignisse.
 - Dateien werden alphabetisch gewürfelt, höchstens `events.maxPerRound` (balance.yaml) neue je Runde.
 - Die Bots spielen (noch) ohne Ereignisse.

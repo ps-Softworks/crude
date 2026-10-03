@@ -33,7 +33,10 @@ Zum Ausprobieren: `npm run dev`, dann im Browser `?seed=abc&debug=1`.
   `minRound`/`maxRound` (Runde 1–16 in Kapitel 1), `minCash`/`maxCash` ($),
   `minOilStock` (Barrel im Tank), `minProducingWells`/`maxProducingWells`, `minLeases`.
 - `chance`: Chance je Runde zwischen 0 und 1 (0.3 = 30 %), sobald die Bedingungen stimmen.
-- Ein Ereignis kommt höchstens einmal je Partie (`once: false` erlaubt Wiederholung).
+- Ein Ereignis kommt höchstens einmal je Partie (`once: false` erlaubt Wiederholung –
+  frühestens nach `cooldown` Runden, Standard aus balance.yaml). Varianten desselben Anlasses
+  bekommen dieselbe `group`, dann halten sie gemeinsam Abstand (2.10a).
+- `draft: true` = Schlüsselszene, noch Entwurf (ändert nichts am Spiel).
   Pro Runde kommt höchstens ein neues Ereignis (Zahl in `content/balance.yaml`).
 
 ### Optionen

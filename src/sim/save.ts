@@ -6,11 +6,11 @@
 
 import type { GameState } from './game';
 
-/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8). */
-export const SAVE_FORMAT = 7;
+/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a). */
+export const SAVE_FORMAT = 8;
 
 /** Ältere Formate, die mit Ersatzwerten noch geladen werden. */
-const ALTE_FORMATE = [2, 3, 4, 5, 6];
+const ALTE_FORMATE = [2, 3, 4, 5, 6, 7];
 
 export interface SaveFile {
   format: number;
@@ -96,6 +96,8 @@ export function validateState(value: unknown): LoadResult {
     !Object.values(events.due).every(istZahl) ||
     !istObjekt(events.lastMail) ||
     !Object.values(events.lastMail).every(istZahl) ||
+    !istObjekt(events.lastSeen) ||
+    !Object.values(events.lastSeen).every(istZahl) ||
     !istObjekt(events.docs) ||
     !Object.values(events.docs).every((d) => istObjekt(d) && (d.forgery === null || istText(d.forgery)) && istListe(d.checked))
   ) {
@@ -165,6 +167,11 @@ export function deserializeGame(text: string): LoadResult {
   // Ersatzwert (2.5): Spielstände bis Format 4 kennen keine Dokumente – offene Briefe gelten als echt.
   if (istObjekt(state.events) && state.events.docs === undefined) {
     state = { ...state, events: { ...state.events, docs: {} } };
+  }
+  // Ersatzwert (2.10a): Spielstände bis Format 7 kennen keinen Wiederholungsschutz –
+  // was schon kam, darf ab sofort wieder kommen (once gilt weiter über seen).
+  if (istObjekt(state.events) && state.events.lastSeen === undefined) {
+    state = { ...state, events: { ...state.events, lastSeen: {} } };
   }
   // Ersatzwerte (2.3): Spielstände aus Format 2 kennen noch keine Termine und
   // keine Kraft – Jacob ist ausgeruht, die Runde hat volle 5 Termine.

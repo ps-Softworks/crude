@@ -1,0 +1,403 @@
+# Kapitel 1 – Alltag, Paket 2: Geschäft in Port Ellis (2.10a, Ereignisse 11–20). Entwurf von
+# Claude, bitte in eigener Stimme umschreiben. Fuhrwerke, Fässer, Tanks, Pachten, Gerüchte.
+# Wiederholungsschutz und Entwürfe: siehe Kopf von k1-8-alltag-1.yaml.
+
+# --- Fuhrwerke (Gruppe fuhrwerk: zwei Varianten, beide wiederkehrend) ---------
+
+- id: fuhre_aufschlag
+  group: fuhrwerk
+  once: false
+  cooldown: 4
+  title:
+    de: Die Fuhrleute wollen Aufschlag
+    en: The Teamsters Want More
+  text:
+    de: >-
+      Die Fuhrleute stehen mit ihren Ochsengespannen am Feldrand und rühren sich
+      nicht. Der Weg zum Hafen sei schlechter geworden, sagt ihr Sprecher, die
+      Fässer schwerer und der Whiskey teurer. Zehn Cent mehr das Fass.
+    en: >-
+      The teamsters stand with their ox teams at the edge of the field and don't
+      move. The road to the harbour has got worse, says their spokesman, the
+      barrels heavier and the whiskey dearer. Ten cents more a barrel.
+  conditions: { minOilStock: 100, minRound: 2 }
+  chance: 0.1
+  choices:
+    - id: zahlen
+      label: { de: "Den Aufschlag zahlen (60 $)", en: "Pay the surcharge (60 $)" }
+      result:
+        de: Die Ochsen ziehen an. Der Sprecher tippt sich an den Hut.
+        en: The oxen pull. The spokesman touches his hat.
+      requires: { minCash: 60 }
+      effects: { cash: -60 }
+      appointments: 0
+    - id: selbst
+      label: { de: "Selbst auf den Bock steigen", en: "Climb up on the box yourself" }
+      result:
+        de: Jacob fährt zwei Tage lang Fässer zum Hafen. Die Fuhrleute lachen erst, dann fahren sie wieder – zum alten Preis.
+        en: Jacob hauls barrels to the harbour for two days. The teamsters laugh at first, then they drive again – at the old price.
+      effects: { strength: -5 }
+      appointments: 2
+      sharp: true              # beste Antwort (2.7): fehlt, wenn Jacob erschöpft ist
+    - id: warten
+      label: { de: "Sie stehen lassen", en: "Leave them standing" }
+      result:
+        de: Die Fässer stehen eine Woche in der Sonne. Ein Teil davon leckt.
+        en: The barrels stand a week in the sun. Some of them leak.
+      effects: { oilStock: -60 }
+      appointments: 0
+      default: true
+
+- id: fuhre_schlamm
+  group: fuhrwerk
+  once: false
+  cooldown: 4
+  title:
+    de: Der Weg ist ein Sumpf
+    en: The Road Is a Swamp
+  text:
+    de: >-
+      Drei Tage Regen, und der Fuhrweg nach Port Ellis ist ein brauner Sumpf. Ein
+      Wagen mit Jacobs Fässern liegt auf der Seite im Graben. Ein Farmer bietet
+      seine Maultiere an – gegen Bares.
+    en: >-
+      Three days of rain, and the wagon road to Port Ellis is a brown swamp. A
+      wagon with Jacob's barrels lies on its side in the ditch. A farmer offers his
+      mules – for cash.
+  conditions: { minOilStock: 50 }
+  chance: 0.08
+  choices:
+    - id: maultiere
+      label: { de: "Die Maultiere mieten (50 $)", en: "Hire the mules (50 $)" }
+      result:
+        de: Die Maultiere ziehen den Wagen aus dem Graben. Der Farmer zählt das Geld im Regen.
+        en: The mules haul the wagon out of the ditch. The farmer counts the money in the rain.
+      requires: { minCash: 50 }
+      effects: { cash: -50 }
+      appointments: 0
+    - id: bohlen
+      label: { de: "Mit dem Trupp Bohlen legen", en: "Lay planks with the crew" }
+      result:
+        de: Einen Tag lang legen die Männer Bohlen über den Schlamm. Jacob kommt bis zu den Knien braun nach Hause.
+        en: For a day the men lay planks over the mud. Jacob comes home brown to the knees.
+      effects: { strength: -3 }
+      appointments: 2
+    - id: liegen
+      label: { de: "Liegen lassen, bis es trocken ist", en: "Leave it till it dries" }
+      result:
+        de: Als der Weg trocken ist, fehlen vier Fässer. Niemand hat etwas gesehen.
+        en: By the time the road dries, four barrels are missing. Nobody saw a thing.
+      effects: { oilStock: -40 }
+      appointments: 0
+      default: true
+
+# --- Fässer und Tanks --------------------------------------------------------
+
+- id: faesser_angebot
+  mail: offer
+  once: false
+  cooldown: 5
+  title:
+    de: Ein Böttcher hat Fässer
+    en: A Cooper Has Barrels
+  text:
+    de: >-
+      Böttcher Lindqvist aus Port Ellis schreibt: Er habe hundert neue Fässer aus
+      Eiche, dicht und geteert. Die Fässer am Hafen seien knapp, schreibt er, und
+      würden noch knapper.
+    en: >-
+      Cooper Lindqvist of Port Ellis writes: he has a hundred new oak barrels,
+      tight and tarred. Barrels at the harbour are scarce, he writes, and getting
+      scarcer.
+  conditions: { minProducingWells: 1 }
+  chance: 0.1
+  choices:
+    - id: kaufen
+      label: { de: "Hundert Fässer kaufen (100 $)", en: "Buy a hundred barrels (100 $)" }
+      result:
+        de: Die Fässer riechen nach frischem Holz. Kein Tropfen geht mehr verloren, sagt Lindqvist. Es geht weniger verloren.
+        en: The barrels smell of fresh wood. Not a drop will be lost now, says Lindqvist. Less is lost.
+      requires: { minCash: 100 }
+      effects: { cash: -100, oilStock: 30 }
+      appointments: 0
+    - id: ablehnen
+      label: { de: "Mit den alten Fässern weitermachen", en: "Make do with the old barrels" }
+      result:
+        de: Die alten Fässer schwitzen Öl. Man gewöhnt sich an den Geruch.
+        en: The old barrels sweat oil. You get used to the smell.
+      appointments: 0
+      default: true
+
+- id: tank_leck
+  title:
+    de: Der Tank tropft
+    en: The Tank Is Dripping
+  text:
+    de: >-
+      Unter Jacobs Holztank am Feld ist der Boden schwarz und weich. Eine Daube
+      ist gerissen. Bis der Zimmermann kommt, vergehen Tage, und jeder Tag kostet
+      Barrel.
+    en: >-
+      Beneath Jacob's wooden tank at the field the ground is black and soft. A stave
+      has split. It'll be days before the carpenter comes, and every day costs
+      barrels.
+  conditions: { minOilStock: 200, minRound: 3 }
+  chance: 0.08
+  choices:
+    - id: zimmermann
+      label: { de: "Den Zimmermann sofort holen (80 $)", en: "Fetch the carpenter at once (80 $)" }
+      result:
+        de: Der Zimmermann kommt noch am Abend, gegen doppelten Lohn. Die neue Daube ist hell zwischen den dunklen.
+        en: The carpenter comes that same evening, for double pay. The new stave is pale among the dark ones.
+      requires: { minCash: 80 }
+      effects: { cash: -80, oilStock: -20 }
+    - id: umfuellen
+      label: { de: "Das Öl in Fässer umfüllen", en: "Decant the oil into barrels" }
+      result:
+        de: Eine Nacht lang schöpfen Jacob und Silas Öl mit Eimern. Am Morgen riechen beide wie die Quelle.
+        en: For a whole night Jacob and Silas bail oil with buckets. By morning both smell like the well.
+      effects: { oilStock: -40, strength: -4 }
+      appointments: 2
+    - id: warten
+      label: { de: "Auf den Zimmermann warten", en: "Wait for the carpenter" }
+      result:
+        de: Bis der Zimmermann kommt, ist ein guter Teil des Öls im Boden versickert.
+        en: By the time the carpenter comes, a good part of the oil has soaked into the ground.
+      effects: { oilStock: -150, cash: -40 }
+      appointments: 0
+      default: true
+
+# --- Wohnen, Pachten, Steuern ------------------------------------------------
+
+- id: pension_miete
+  mail: demand
+  once: false
+  cooldown: 5
+  title:
+    de: Die Wirtin erhöht die Miete
+    en: The Landlady Raises the Rent
+  text:
+    de: >-
+      Mrs. Dabney, die Wirtin der Pension, schiebt einen Zettel unter die Tür:
+      Ab dem Ersten koste das Zimmer das Doppelte. Unten im Flur schlafen drei
+      Bohrarbeiter auf dem Boden, die jeden Preis zahlen würden.
+    en: >-
+      Mrs. Dabney, who keeps the boarding house, slips a note under the door: from
+      the first of the month the room costs double. Down in the hall three drillers
+      are sleeping on the floor who would pay any price.
+  chance: 0.08
+  choices:
+    - id: zahlen
+      label: { de: "Zahlen (80 $)", en: "Pay (80 $)" }
+      result:
+        de: Mrs. Dabney nimmt das Geld und bringt am Sonntag ein Stück Kuchen für Ruth.
+        en: Mrs. Dabney takes the money and brings Ruth a piece of cake on Sunday.
+      requires: { minCash: 80 }
+      effects: { cash: -80 }
+      appointments: 0
+    - id: handeln
+      label: { de: "Ruth verhandeln lassen", en: "Let Ruth do the bargaining" }
+      result:
+        de: Ruth rechnet Mrs. Dabney vor, was drei Bohrarbeiter an Möbeln kosten. Die Miete steigt nur um ein Viertel.
+        en: Ruth works out for Mrs. Dabney what three drillers cost in broken furniture. The rent goes up by only a quarter.
+      requires: { minCash: 20 }
+      effects: { cash: -20, ruth: 3 }
+    - id: murren
+      label: { de: "Murrend zahlen, wenn sie mahnt", en: "Pay, grumbling, when she asks again" }
+      result:
+        de: Mrs. Dabney mahnt vor allen Gästen beim Frühstück. Jacob zahlt das Doppelte und das Gerede dazu.
+        en: Mrs. Dabney asks again in front of all the guests at breakfast. Jacob pays double and the gossip on top.
+      effects: { cash: -80, strength: -2 }
+      appointments: 0
+      default: true
+
+- id: saloon_serviette
+  title:
+    de: Eine Pacht auf der Serviette
+    en: A Lease on a Napkin
+  text:
+    de: >-
+      Im Gilded Lamp schiebt ein Mann mit goldenem Zahn Jacob eine Serviette hin.
+      Darauf, mit Bleistift, eine Pacht am Rand von Salt Hill, „direkt neben
+      Bullards bester Quelle“. 150 $, nur heute Abend.
+    en: >-
+      At the Gilded Lamp a man with a gold tooth slides a napkin across to Jacob. On
+      it, in pencil, a lease at the edge of Salt Hill, "right next to Bullard's best
+      well". 150 $, tonight only.
+  conditions: { minRound: 2, maxRound: 12 }
+  chance: 0.08
+  choices:
+    - id: kaufen
+      label: { de: "Einschlagen (150 $)", en: "Shake on it (150 $)" }
+      result:
+        de: Am nächsten Morgen steht auf der Parzelle schon ein Zaun. Der Mann mit dem Goldzahn hat sie an diesem Abend dreimal verkauft.
+        en: Next morning there's already a fence on the parcel. The man with the gold tooth sold it three times that evening.
+      requires: { minCash: 150 }
+      effects: { cash: -150 }
+      marks: [serviette_betrogen]
+    - id: grundbuch
+      label: { de: "Erst im Grundbuchamt nachsehen", en: "Check at the land office first" }
+      result:
+        de: Die Parzelle gehört der Eisenbahn. Als Jacob in den Saloon zurückkommt, ist der Mann mit dem Goldzahn verschwunden.
+        en: The parcel belongs to the railway. When Jacob gets back to the saloon, the man with the gold tooth has gone.
+      sharp: true              # beste Antwort (2.7): fehlt, wenn Jacob erschöpft ist
+    - id: lachen
+      label: { de: "Lachen und weitertrinken", en: "Laugh and keep drinking" }
+      result:
+        de: Der Mann zuckt mit den Schultern und geht zum nächsten Tisch.
+        en: The man shrugs and moves to the next table.
+      appointments: 0
+      default: true
+
+- id: spekulant_angebot
+  mail: offer
+  draft: true                # Schlüsselszene: das erste große Angebot für Jacobs Land
+  deadline: 3
+  title:
+    de: Ein Herr aus Hallstead will kaufen
+    en: A Gentleman from Hallstead Wants to Buy
+  text:
+    de: >-
+      Ein Brief auf schwerem Papier, das Siegel einer Kanzlei in Hallstead. Ein
+      Mr. Ashcombe möchte Jacobs Pacht übernehmen, „als Anlage für Mandanten“.
+      Er bietet 900 $ sofort. Unter der Unterschrift steht kein Vorname.
+    en: >-
+      A letter on heavy paper, the seal of a Hallstead law firm. A Mr. Ashcombe
+      wishes to take over Jacob's lease, "as an investment for clients". He offers
+      900 $ at once. There is no first name under the signature.
+  conditions: { minLeases: 2, minRound: 5 }
+  chance: 0.12
+  choices:
+    - id: hochhandeln
+      label: { de: "Zurückschreiben: nicht unter 1.500 $", en: "Write back: not under 1,500 $" }
+      result:
+        de: Ashcombe antwortet nicht. Drei Wochen später kauft er Bullards Nachbarpacht für 1.400 $.
+        en: Ashcombe does not reply. Three weeks later he buys Bullard's neighbouring lease for 1,400 $.
+      marks: [ashcombe_abgewiesen]
+    - id: behalten
+      label: { de: "Nicht antworten – das Land bleibt", en: "Don't reply – the land stays" }
+      result:
+        de: Der Brief kommt in die Schublade zu den anderen. Jacob bohrt weiter.
+        en: The letter goes into the drawer with the others. Jacob keeps drilling.
+      appointments: 0
+      default: true
+      marks: [ashcombe_abgewiesen]
+
+- id: bezirk_steuer
+  mail: demand
+  title:
+    de: Der Bezirk will Steuern
+    en: The County Wants Its Taxes
+  text:
+    de: >-
+      Der Bezirkskämmerer von Cordova hat entdeckt, dass Bohrtürme Bauwerke sind.
+      Für jedes Bauwerk ist eine Abgabe fällig, rückwirkend ab Frühjahr. Der Brief
+      ist höflich und lang und endet mit dem Wort „Pfändung“.
+    en: >-
+      The county treasurer of Cordova has discovered that derricks are structures.
+      Every structure owes a levy, backdated to the spring. The letter is polite and
+      long and ends with the word "distraint".
+  conditions: { minLeases: 1, minRound: 6 }
+  chance: 0.15
+  choices:
+    - id: zahlen
+      label: { de: "Zahlen (120 $)", en: "Pay (120 $)" }
+      result:
+        de: Der Kämmerer schickt eine Quittung mit Stempel. Es ist der schönste Stempel in Cordova.
+        en: The treasurer sends a stamped receipt. It is the finest stamp in Cordova.
+      requires: { minCash: 120 }
+      effects: { cash: -120 }
+      appointments: 0
+    - id: einspruch
+      label: { de: "Zum Bezirksgericht und Einspruch einlegen", en: "Go to the county court and appeal" }
+      result:
+        de: Der Richter liest das Gesetz laut vor und findet kein Wort über Bohrtürme. Die Abgabe halbiert sich.
+        en: The judge reads the statute aloud and finds no word about derricks. The levy is halved.
+      requires: { minCash: 60 }
+      effects: { cash: -60, strength: -3 }
+      appointments: 2
+    - id: liegen
+      label: { de: "Liegen lassen", en: "Let it lie" }
+      result:
+        de: Der Sheriff pfändet eine Dampfpumpe und versteigert sie an Bullard.
+        en: The sheriff seizes a steam pump and auctions it to Bullard.
+      effects: { cash: -200 }
+      appointments: 0
+      default: true
+
+# --- Gerüchte (Gruppe geruecht: Varianten im Posteingang) -------------------
+
+- id: geruecht_fund
+  mail: info
+  group: geruecht
+  title:
+    de: Ein Fund im Nachbarbezirk
+    en: A Strike in the Next County
+  text:
+    de: >-
+      Eine Postkarte von einem Bohrmeister, der früher für Silas gearbeitet hat:
+      Bei Marlow Creek, zwei Tage westlich, sei eine Quelle gesprungen. Die
+      Pachten dort kosten noch fast nichts. Die Karte ist eine Woche alt.
+    en: >-
+      A postcard from a driller who used to work for Silas: at Marlow Creek, two
+      days west, a well has come in. Leases out there still cost next to nothing.
+      The card is a week old.
+  conditions: { minRound: 5 }
+  chance: 0.1
+  choices:
+    - id: hinreiten
+      label: { de: "Selbst hinreiten und nachsehen", en: "Ride out and see for yourself" }
+      result:
+        de: In Marlow Creek steht ein einziger Turm, und um ihn herum schon zwanzig Männer mit Papieren. Jacob reitet mit wunden Beinen und einer Karte voller Notizen zurück.
+        en: At Marlow Creek there's a single derrick and around it twenty men with papers already. Jacob rides back with sore legs and a map full of notes.
+      effects: { strength: -5 }
+      appointments: 3
+      marks: [marlow_gesehen]
+    - id: ablegen
+      label: { de: "Die Karte an die Wand heften", en: "Pin the card to the wall" }
+      result:
+        de: Die Postkarte hängt über dem Schreibtisch. Marlow Creek ist weit.
+        en: The postcard hangs over the desk. Marlow Creek is far away.
+      appointments: 0
+      default: true
+
+- id: geruecht_tanks
+  mail: info
+  group: geruecht
+  title:
+    de: Volle Tanks im Hafen
+    en: Full Tanks at the Harbour
+  text:
+    de: >-
+      Ein Zettel ohne Absender, in ordentlicher Kontorschrift: Die Tanks des Crane
+      Trust am Hafen seien bis zum Rand voll, und Crane kaufe in diesem Monat
+      kein Barrel mehr zu. Wer jetzt verkauft, verkauft gut.
+    en: >-
+      A note with no sender, in a neat clerk's hand: the Crane Trust's tanks at the
+      harbour are full to the brim, and Crane won't buy another barrel this month.
+      Sell now and you sell well.
+  conditions: { minOilStock: 100, minRound: 4 }
+  chance: 0.1
+  choices:
+    - id: verkaufen
+      label: { de: "Sofort 100 Barrel an einen Händler abgeben (+70 $)", en: "Sell 100 barrels to a dealer at once (+70 $)" }
+      result:
+        de: Der Händler zahlt, ohne zu feilschen. Das war vielleicht der Fehler.
+        en: The dealer pays without haggling. That may have been the mistake.
+      requires: { minOilStock: 100 }
+      effects: { oilStock: -100, cash: 70 }
+      appointments: 0
+    - id: pruefen
+      label: { de: "Selbst zum Hafen und die Tanks ansehen", en: "Go to the harbour and look at the tanks" }
+      result:
+        de: Die Tanks klingen hohl, wenn man dagegen klopft. Jemand wollte, dass Jacob billig verkauft.
+        en: The tanks ring hollow when you knock on them. Someone wanted Jacob to sell cheap.
+      sharp: true              # beste Antwort (2.7): fehlt, wenn Jacob erschöpft ist
+      marks: [tanks_geprueft]
+    - id: ignorieren
+      label: { de: "Zettel ohne Absender liest man nicht", en: "Notes without a sender don't get read" }
+      result:
+        de: Der Zettel geht in den Ofen.
+        en: The note goes into the stove.
+      appointments: 0
+      default: true

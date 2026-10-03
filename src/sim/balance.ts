@@ -365,6 +365,12 @@ export interface FamilyBalance {
 /** Ereignis-System (2.1): wie viele neue Ereignisse höchstens je Runde kommen. */
 export interface EventsBalance {
   maxPerRound: number;
+  /**
+   * Wiederholungsschutz (2.10a): So viele Runden muss ein wiederkehrendes Ereignis
+   * (once: false) oder eine Variante derselben Gruppe (group) mindestens Abstand halten,
+   * wenn das Ereignis keinen eigenen cooldown hat.
+   */
+  repeatCooldown: number;
   /** Posteingang (2.4). */
   mail: MailBalance;
   /** Dokumentenprüfung (2.5). */
@@ -882,6 +888,7 @@ function parseEvents(raw: unknown): EventsBalance {
   }
   return {
     maxPerRound,
+    repeatCooldown: positiveInt(raw, 'events.repeatCooldown'),
     mail: {
       maxPerRound: positiveInt(raw, 'events.mail.maxPerRound'),
       deadlineRounds: positiveInt(raw, 'events.mail.deadlineRounds'),

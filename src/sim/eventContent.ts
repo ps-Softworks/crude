@@ -26,7 +26,7 @@ export interface ParsedEvents {
   errors: ContentError[];
 }
 
-const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'routine', 'appointments', 'choices', 'mail', 'deadline', 'document', 'certain', 'rival'];
+const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'routine', 'appointments', 'choices', 'mail', 'deadline', 'document', 'certain', 'rival', 'cooldown', 'group', 'draft'];
 const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default', 'appointments', 'requiresFound', 'marksIfForged', 'sharp'];
 const DOCUMENT_KEYS = ['title', 'reference', 'forgeryChance', 'fields'];
 const FIELD_KEYS = ['id', 'label', 'value', 'reference', 'forged'];
@@ -338,6 +338,29 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
       fehler([...pfad, 'rival'], `${wer}: „rival“ muss ein Rivale sein (${liste(RIVAL_IDS)}).`);
       ok = false;
     }
+    // Wiederholungsschutz und Entwürfe (2.10a).
+    const cooldown = raw.cooldown;
+    if (cooldown !== undefined && (typeof cooldown !== 'number' || !Number.isInteger(cooldown) || cooldown < 0)) {
+      fehler([...pfad, 'cooldown'], `${wer}: „cooldown“ muss eine ganze Zahl ab 0 sein (Runden Abstand).`);
+      ok = false;
+    }
+    const group = raw.group;
+    if (group !== undefined && (typeof group !== 'string' || !ID_MUSTER.test(group))) {
+      fehler([...pfad, 'group'], `${wer}: „group“ darf nur Kleinbuchstaben, Ziffern und _ enthalten.`);
+      ok = false;
+    }
+    if ((cooldown !== undefined || group !== undefined) && (routine || raw.certain === true)) {
+      fehler([...pfad, cooldown !== undefined ? 'cooldown' : 'group'], `${wer}: Feste Termine (routine) und sichere Ereignisse (certain) haben keinen Wiederholungsschutz (cooldown, group).`);
+      ok = false;
+    }
+    if (cooldown !== undefined && raw.once !== false && group === undefined) {
+      fehler([...pfad, 'cooldown'], `${wer}: „cooldown“ wirkt nur bei „once: false“ oder mit „group“ – ein einmaliges Ereignis kommt ohnehin nicht wieder.`);
+      ok = false;
+    }
+    if (raw.draft !== undefined && typeof raw.draft !== 'boolean') {
+      fehler([...pfad, 'draft'], `${wer}: „draft“ muss true oder false sein.`);
+      ok = false;
+    }
     // Dokumentenprüfung (2.5).
     let document: DocumentDef | undefined;
     if (raw.document !== undefined) {
@@ -394,6 +417,9 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
     if (document) def.document = document;
     if (raw.certain === true) def.certain = true;
     if (rival !== undefined) def.rival = rival as RivalId;
+    if (cooldown !== undefined) def.cooldown = cooldown as number;
+    if (group !== undefined) def.group = group as string;
+    if (raw.draft === true) def.draft = true;
     return def;
   }
 

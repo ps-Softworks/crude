@@ -114,6 +114,16 @@ export interface EventDef {
   certain?: boolean;
   /** Rivale hinter dem Ereignis (2.8). */
   rival?: RivalId;
+  /**
+   * Wiederholungsschutz (2.10a): frühestens so viele Runden nach dem letzten
+   * Eintreffen (des Ereignisses oder einer Variante seiner Gruppe) wieder. Fehlt er,
+   * gilt events.repeatCooldown für wiederkehrende Ereignisse und Gruppen, sonst 0.
+   */
+  cooldown?: number;
+  /** Variantengruppe (2.10a): Ereignisse derselben Gruppe halten gemeinsam Abstand. */
+  group?: string;
+  /** Entwurf (2.10a): Schlüsselszene, die Philipp noch überarbeiten soll. Ändert nichts am Spiel. */
+  draft?: boolean;
 }
 
 export interface EventsState {
@@ -131,10 +141,46 @@ export interface EventsState {
   lastMail: Partial<Record<MailKind, number>>;
   /** Dokumente der offenen Ereignisse (2.5): echt oder gefälscht, was die Lupe schon geprüft hat. */
   docs: Record<string, DocState>;
+  /**
+   * Wiederholungsschutz (2.10a): Runde, in der ein Ereignis (Schlüssel = ID) bzw.
+   * eine Variante einer Gruppe (Schlüssel = groupKey) zuletzt eintraf.
+   */
+  lastSeen: Record<string, number>;
 }
 
 export function newEventsState(seed: string): EventsState {
-  return { rng: seedFromString(`${seed}:ereignisse`), pending: [], seen: [], marks: {}, due: {}, lastMail: {}, docs: {} };
+  return { rng: seedFromString(`${seed}:ereignisse`), pending: [], seen: [], marks: {}, due: {}, lastMail: {}, docs: {}, lastSeen: {} };
+}
+
+/** Schlüssel einer Variantengruppe in lastSeen – mit @, damit er nie einer Ereignis-ID gleicht. */
+export function groupKey(group: string): string {
+  return `@${group}`;
+}
+
+/** Wiederholungsschutz (2.10a): Abstand in Runden, den ein Ereignis halten muss. */
+export function cooldownOf(event: Pick<EventDef, 'cooldown' | 'once' | 'group'>, balance: Balance): number {
+  if (event.cooldown !== undefined) return event.cooldown;
+  return !event.once || event.group ? balance.events.repeatCooldown : 0;
+}
+
+/**
+ * Wiederholungsschutz (2.10a): Ist der Abstand zum letzten Eintreffen des
+ * Ereignisses und jeder Variante seiner Gruppe groß genug? Kam es in Runde r,
+ * darf es mit cooldown c frühestens in Runde r + c wieder kommen.
+ */
+export function cooledDown(state: Pick<GameState, 'round' | 'events'>, event: Pick<EventDef, 'id' | 'cooldown' | 'once' | 'group'>, balance: Balance): boolean {
+  const abstand = cooldownOf(event, balance);
+  if (abstand <= 0) return true;
+  const last = state.events.lastSeen;
+  const keys = event.group ? [event.id, groupKey(event.group)] : [event.id];
+  return keys.every((k) => last[k] === undefined || state.round - last[k] >= abstand);
+}
+
+/** lastSeen nach dem Eintreffen eines Ereignisses (2.10a). */
+function merken(lastSeen: Record<string, number>, event: Pick<EventDef, 'id' | 'group'>, round: number): Record<string, number> {
+  const out = { ...lastSeen, [event.id]: round };
+  if (event.group) out[groupKey(event.group)] = round;
+  return out;
 }
 
 /** Frist eines Ereignisses in Runden (2.4): Briefe nach balance.yaml, alles andere eine Runde. */
@@ -303,6 +349,7 @@ export function drawEvents(state: GameState, balance: Balance, catalog: readonly
   const seen = [...state.events.seen];
   const due = { ...state.events.due };
   const docs = { ...state.events.docs };
+  let lastSeen = state.events.lastSeen;
   const log = [...state.log];
   let neu = 0;
   // Sichere Ereignisse (2.8) zuerst: ohne Würfel, ohne Platz in maxPerRound.
@@ -315,8 +362,11 @@ export function drawEvents(state: GameState, balance: Balance, catalog: readonly
     if (event.once && seen.includes(event.id)) continue;
     if (!conditionsMet(state, event.conditions)) continue;
     if (!marksMet(state, event)) continue;
+    // Wiederholungsschutz (2.10a): gilt auch für Varianten, die in dieser Runde schon kamen.
+    if (!cooledDown({ round: state.round, events: { ...state.events, lastSeen } }, event, balance)) continue;
     if (!event.certain && rng.float() >= event.chance) continue;
     pending.push(event.id);
+    lastSeen = merken(lastSeen, event, state.round);
     if (!seen.includes(event.id)) seen.push(event.id);
     due[event.id] = state.round + deadlineOf(event, balance) - 1;
     const doc = rollDocument(event, balance, rng);
@@ -324,12 +374,13 @@ export function drawEvents(state: GameState, balance: Balance, catalog: readonly
     log.push(`${formatDate(state)}: Auf dem Schreibtisch: ${localize(event.title, lang)}.`);
     if (!event.certain) neu++;
   }
-  return drawMail({ ...state, log, events: { ...state.events, rng: rng.state, pending, seen, due, docs } }, balance, catalog, lang);
+  return drawMail({ ...state, log, events: { ...state.events, rng: rng.state, pending, seen, due, docs, lastSeen } }, balance, catalog, lang);
 }
 
-/** Kann dieser Brief jetzt kommen? Bedingungen, Merkzeichen, nicht schon im Posteingang, bei once noch nie gekommen. */
-function briefMoeglich(state: GameState, event: EventDef): boolean {
+/** Kann dieser Brief jetzt kommen? Bedingungen, Merkzeichen, nicht schon im Posteingang, bei once noch nie gekommen, Abstand (2.10a). */
+function briefMoeglich(state: GameState, event: EventDef, balance: Balance): boolean {
   return (
+    cooledDown(state, event, balance) &&
     event.mail !== undefined &&
     !event.routine &&
     !state.events.pending.includes(event.id) &&
@@ -371,6 +422,7 @@ export function drawMail(state: GameState, balance: Balance, catalog: readonly E
         seen: ev.seen.includes(event.id) ? ev.seen : [...ev.seen, event.id],
         due: { ...ev.due, [event.id]: out.round + deadlineOf(event, balance) - 1 },
         lastMail: { ...ev.lastMail, [event.mail!]: out.round },
+        lastSeen: merken(ev.lastSeen, event, out.round),
         docs: doc ? { ...ev.docs, [event.id]: doc } : ev.docs,
       },
     };
@@ -378,16 +430,16 @@ export function drawMail(state: GameState, balance: Balance, catalog: readonly E
   };
   // Sichere Briefe (2.8) zuerst: ohne Würfel, ohne Platz in maxPerRound.
   for (const event of catalog) {
-    if (event.certain && briefMoeglich(out, event)) zustellen(event);
+    if (event.certain && briefMoeglich(out, event, balance)) zustellen(event);
   }
   for (const kind of dueMailKinds(out, balance)) {
     if (neu >= balance.events.mail.maxPerRound) break;
-    const moeglich = catalog.filter((e) => e.mail === kind && briefMoeglich(out, e));
+    const moeglich = catalog.filter((e) => e.mail === kind && briefMoeglich(out, e, balance));
     if (moeglich.length > 0) zustellen(rng.pick(moeglich));
   }
   for (const event of catalog) {
     if (neu >= balance.events.mail.maxPerRound) break;
-    if (event.certain || !briefMoeglich(out, event)) continue;
+    if (event.certain || !briefMoeglich(out, event, balance)) continue;
     if (rng.float() >= event.chance) continue;
     zustellen(event);
   }

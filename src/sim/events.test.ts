@@ -126,7 +126,7 @@ describe('Ereignisse würfeln', () => {
     let state = drawEvents(newGame('once', balance), balance, einmal);
     state = autoResolve(state, einmal);
     expect(drawEvents(state, balance, einmal).events.pending).toEqual([]);
-    const oefter = [ereignis('b', { once: false })];
+    const oefter = [ereignis('b', { once: false, cooldown: 0 })];
     state = drawEvents(newGame('once', balance), balance, oefter);
     expect(drawEvents(state, balance, oefter).events.pending).toEqual(['b']);
     state = autoResolve(state, oefter);
