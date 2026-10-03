@@ -130,7 +130,7 @@ describe('Ein kaputter Spielstand wird abgelehnt', () => {
   it('kaputter Text', () => {
     const geladen = deserializeGame('{"format": 1, "state":');
     expect(geladen.ok).toBe(false);
-    expect(geladen.ok ? '' : geladen.reason).toBe('Spielstand ist beschaedigt.');
+    expect(geladen.ok ? '' : geladen.reason).toBe('Spielstand ist beschädigt.');
   });
 
   it('etwas ganz anderes als ein Spielstand', () => {
@@ -184,6 +184,7 @@ describe('Ein kaputter Spielstand wird abgelehnt', () => {
       { ...voll, rival: { ...voll.rival, cash: Number.NaN } },
       { ...voll, rival: { ...voll.rival, wells: 'keine' } },
       { ...voll, finished: 'ja' },
+      { ...voll, rating: undefined },
       { ...voll, ending: 'gewonnen' },
       { ...voll, round: 0 },
       { ...voll, round: voll.totalRounds + 1 },
@@ -192,7 +193,7 @@ describe('Ein kaputter Spielstand wird abgelehnt', () => {
     for (const state of luecken) {
       const geladen = deserializeGame(datei(state));
       expect(geladen.ok).toBe(false);
-      expect(geladen.ok ? '' : geladen.reason).toBe('Spielstand ist unvollstaendig.');
+      expect(geladen.ok ? '' : geladen.reason).toBe('Spielstand ist unvollständig.');
     }
   });
 

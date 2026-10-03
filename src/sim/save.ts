@@ -20,9 +20,9 @@ export interface SaveFile {
 
 export type LoadResult = { ok: true; state: GameState } | { ok: false; reason: string };
 
-const KAPUTT = 'Spielstand ist beschaedigt.';
+const KAPUTT = 'Spielstand ist beschädigt.';
 const FREMDE_VERSION = 'Spielstand stammt aus einer anderen Version.';
-const UNVOLLSTAENDIG = 'Spielstand ist unvollstaendig.';
+const UNVOLLSTAENDIG = 'Spielstand ist unvollständig.';
 
 /** Zahlen im Zustand: endlich, sonst stimmt die Rechnung nicht mehr. */
 const ZAHLEN = [
@@ -69,7 +69,7 @@ function istObjekt(wert: unknown): wert is Record<string, unknown> {
  * Kasse, und die Runde zwischen 1 und dem Ende des Kapitels.
  */
 export function validateState(value: unknown): LoadResult {
-  if (!istObjekt(value) || !istText(value.seed)) return { ok: false, reason: UNVOLLSTAENDIG };
+  if (!istObjekt(value) || !istText(value.seed) || !istText(value.rating)) return { ok: false, reason: UNVOLLSTAENDIG };
   if (!ZAHLEN.every((key) => istZahl(value[key]))) return { ok: false, reason: UNVOLLSTAENDIG };
   if (!LISTEN.every((key) => istListe(value[key]))) return { ok: false, reason: UNVOLLSTAENDIG };
   if (!OBJEKTE.every((key) => istObjekt(value[key]))) return { ok: false, reason: UNVOLLSTAENDIG };
