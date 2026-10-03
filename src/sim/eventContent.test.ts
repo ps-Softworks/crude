@@ -1,7 +1,12 @@
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ContentLoadError, formatContentError, loadEventCatalog, parseEventFile, parseEventFiles } from './eventContent';
-import { loadEvents, readEventFiles } from './testEvents';
+import { resolveEvent } from './events';
+import { newGame } from './game';
+import { loadBalance } from './testBalance';
+import { EVENTS_DIR, loadEvents, readEventFiles } from './testEvents';
 
 const FIXTURE = new URL('./__fixtures__/events/', import.meta.url);
 
@@ -17,9 +22,18 @@ const GUT = `- id: brief
 `;
 
 describe('echte Inhalte in content/events/', () => {
-  it('sind fehlerfrei und enthalten die drei Testereignisse', () => {
+  it('sind fehlerfrei und enthalten die Probe-Ereignisse für Kapitel 1 (2.2)', () => {
     const ids = loadEvents().map((e) => e.id);
-    expect(ids).toEqual(['pension_miete', 'serviettenhandel', 'thorne_vertrag']);
+    expect(ids).toEqual(['ruth_buecher', 'silas_schnaps', 'moss_schulden', 'moss_wagenweg', 'moss_dank', 'nora_brand', 'vale_umschlag']);
+  });
+
+  it('jedes Probe-Ereignis hat 1–3 Wahlen und eine Standard-Wahl ohne Sperre', () => {
+    for (const event of loadEvents()) {
+      expect(event.choices.length).toBeGreaterThanOrEqual(1);
+      expect(event.choices.length).toBeLessThanOrEqual(3);
+      const standard = event.choices.find((c) => c.default) ?? event.choices[0];
+      expect(standard.requires).toEqual({});
+    }
   });
 
   it('jeder Text hat de und den Schlüssel en', () => {
@@ -72,7 +86,7 @@ describe('Prüfung mit Datei und Zeilennummer', () => {
   it('unbekannte Felder, fehlendes de und fremde Sprachen werden gemeldet', () => {
     const text = GUT.replace('  chance: 0.5', '  chanse: 0.5\n  chance: 0.5').replace('de: "Ein Brief", en: ""', 'en: "", fr: "Une lettre"');
     const meldungen = parseEventFile('a.yaml', text).errors.map((e) => `${e.line}: ${e.message}`);
-    expect(meldungen).toContain('4: Ereignis „brief“: unbekanntes Feld „chanse“ (erlaubt: id, title, text, conditions, chance, once, choices).');
+    expect(meldungen).toContain('4: Ereignis „brief“: unbekanntes Feld „chanse“ (erlaubt: id, title, text, conditions, marked, notMarked, delay, chance, once, choices).');
     expect(meldungen.some((m) => m.startsWith('2: ') && m.includes('unbekannte Sprache „fr“'))).toBe(true);
     expect(meldungen.some((m) => m.startsWith('2: ') && m.includes('„title.de“ fehlt'))).toBe(true);
   });
@@ -109,5 +123,102 @@ describe('Prüfung mit Datei und Zeilennummer', () => {
 
   it('eine leere Datei ist kein Fehler', () => {
     expect(parseEventFile('leer.yaml', '# nur ein Kommentar\n')).toEqual({ events: [], errors: [] });
+  });
+});
+
+describe('Nachwirkung im YAML (2.2)', () => {
+  const MIT_MARKE = `- id: anlass
+  title: { de: "A", en: "" }
+  text: { de: "A", en: "" }
+  chance: 1
+  choices:
+    - id: ja
+      label: { de: "Ja", en: "" }
+      result: { de: "Ja", en: "" }
+      marks: [gemerkt]
+- id: folge
+  title: { de: "F", en: "" }
+  text: { de: "F", en: "" }
+  marked: [gemerkt]
+  notMarked: [nie]
+  delay: 3
+  chance: 1
+  choices:
+    - id: ok
+      label: { de: "Ok", en: "" }
+      result: { de: "Ok", en: "" }
+`;
+
+  it('liest marks, marked, notMarked und delay; delay ist ohne Angabe 1', () => {
+    const { events, errors } = parseEventFiles([{ file: 'a.yaml', text: MIT_MARKE.replace('notMarked: [nie]', 'notMarked: [gemerkt]') }]);
+    expect(errors).toEqual([]);
+    expect(events[0]).toMatchObject({ marked: [], notMarked: [], delay: 1 });
+    expect(events[0].choices[0].marks).toEqual(['gemerkt']);
+    expect(events[1]).toMatchObject({ marked: ['gemerkt'], notMarked: ['gemerkt'], delay: 3 });
+  });
+
+  it('ein Merkzeichen, das keine Wahl setzt, ist ein Fehler mit Zeile', () => {
+    const { errors } = parseEventFiles([{ file: 'a.yaml', text: MIT_MARKE }]);
+    expect(errors.map(formatContentError)).toEqual([
+      'a.yaml:14: Ereignis „folge“: Das Merkzeichen „nie“ setzt keine Wahl (marks: [nie]) – Tippfehler?',
+    ]);
+  });
+
+  it('kaputte Merkzeichen und delay werden gemeldet', () => {
+    const kaputt = MIT_MARKE.replace('notMarked: [nie]', 'notMarked: [Gross Schreibung]').replace('delay: 3', 'delay: -1').replace('marks: [gemerkt]', 'marks: gemerkt');
+    const meldungen = parseEventFile('a.yaml', kaputt).errors.map((e) => e.message);
+    expect(meldungen).toEqual([
+      'Ereignis „anlass“, Wahl „ja“: „marks“ muss eine Liste sein, z. B. marks: [moss_betrogen].',
+      'Ereignis „folge“: Merkzeichen in „notMarked“ dürfen nur Kleinbuchstaben, Ziffern und _ enthalten.',
+      'Ereignis „folge“: „delay“ muss eine ganze Zahl ab 0 sein (Runden nach dem Merkzeichen).',
+    ]);
+  });
+});
+
+describe('Vorlage (2.2)', () => {
+  it('das kommentierte Beispiel docs/ereignis-beispiel.yaml ist gültig', () => {
+    const text = readFileSync(new URL('../../docs/ereignis-beispiel.yaml', import.meta.url), 'utf8');
+    const { events, errors } = parseEventFiles([{ file: 'docs/ereignis-beispiel.yaml', text }]);
+    expect(errors).toEqual([]);
+    expect(events.map((e) => e.id)).toEqual(['beispiel_salzwasser', 'beispiel_klage']);
+  });
+});
+
+describe('Fertig-Kriterium 2.2: ein neues Ereignis kommt nur durch eine YAML-Datei ins Spiel', () => {
+  const balance = loadBalance();
+  const NEU = `- id: neu_aus_datei
+  title: { de: "Ein Telegramm", en: "A Telegram" }
+  text: { de: "Ruths Mutter kommt zu Besuch.", en: "" }
+  chance: 1
+  choices:
+    - id: abholen
+      label: { de: "Am Bahnhof abholen (20 $)", en: "" }
+      result: { de: "Die Schwiegermutter ist da.", en: "" }
+      effects: { cash: -20 }
+      marks: [schwiegermutter_da]
+      default: true
+`;
+
+  it('Ordner kopieren, Datei dazulegen: das Ereignis wird geladen, gewürfelt und wirkt', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'crude-events-'));
+    try {
+      for (const { file, text } of readEventFiles(EVENTS_DIR)) writeFileSync(join(dir, file.split('/').at(-1)!), text);
+      const vorher = loadEventCatalog(readEventFiles(dir));
+      expect(vorher.map((e) => e.id)).not.toContain('neu_aus_datei');
+
+      writeFileSync(join(dir, 'zz-neu.yaml'), NEU);
+      const katalog = loadEventCatalog(readEventFiles(dir));
+      expect(katalog.map((e) => e.id)).toEqual([...vorher.map((e) => e.id), 'neu_aus_datei']);
+
+      // Nur das neue Ereignis kann in Runde 1 kommen (alle Probe-Ereignisse brauchen Runde 2+).
+      const state = newGame('neu', balance, katalog);
+      expect(state.events.pending).toEqual(['neu_aus_datei']);
+      const r = resolveEvent(state, katalog, 'neu_aus_datei', 'abholen');
+      if (!r.ok) throw new Error(r.reason);
+      expect(r.state.cash).toBe(state.cash - 20);
+      expect(r.state.events.marks).toEqual({ schwiegermutter_da: 1 });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

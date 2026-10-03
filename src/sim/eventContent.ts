@@ -23,8 +23,8 @@ export interface ParsedEvents {
   errors: ContentError[];
 }
 
-const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'chance', 'once', 'choices'];
-const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'default'];
+const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'choices'];
+const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default'];
 const ID_MUSTER = /^[a-z0-9_]+$/;
 
 type Pfad = (string | number)[];
@@ -126,6 +126,24 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
     return ok ? out : null;
   }
 
+  /** Eine Liste von Merkzeichen, z. B. [moss_betrogen]. Fehlt sie, ist sie leer. */
+  function namen(obj: Record<string, unknown>, key: string, pfad: Pfad, wer: string): string[] | null {
+    const value = obj[key];
+    if (value === undefined || value === null) return [];
+    if (!Array.isArray(value)) {
+      fehler([...pfad, key], `${wer}: „${key}“ muss eine Liste sein, z. B. ${key}: [moss_betrogen].`);
+      return null;
+    }
+    let ok = true;
+    value.forEach((v, i) => {
+      if (typeof v !== 'string' || !ID_MUSTER.test(v)) {
+        fehler([...pfad, key, i], `${wer}: Merkzeichen in „${key}“ dürfen nur Kleinbuchstaben, Ziffern und _ enthalten.`);
+        ok = false;
+      }
+    });
+    return ok ? (value as string[]) : null;
+  }
+
   function unbekannt(obj: Record<string, unknown>, erlaubt: string[], pfad: Pfad, wer: string): boolean {
     let ok = true;
     for (const k of Object.keys(obj)) {
@@ -153,12 +171,13 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
     const result = sprachtext(raw, 'result', pfad, wer);
     const requires = zahlen(raw, 'requires', CONDITION_KEYS, pfad, wer) as Conditions | null;
     const effects = zahlen(raw, 'effects', EFFECT_KEYS, pfad, wer) as Effects | null;
+    const marks = namen(raw, 'marks', pfad, wer);
     if (raw.default !== undefined && typeof raw.default !== 'boolean') {
       fehler([...pfad, 'default'], `${wer}: „default“ muss true oder false sein.`);
       ok = false;
     }
-    if (!ok || !label || !result || !requires || !effects) return null;
-    return { id: id as string, label, result, requires, effects, default: raw.default === true };
+    if (!ok || !label || !result || !requires || !effects || !marks) return null;
+    return { id: id as string, label, result, requires, effects, default: raw.default === true, marks };
   }
 
   function ereignis(raw: unknown, pfad: Pfad): EventDef | null {
@@ -176,6 +195,13 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
     const title = sprachtext(raw, 'title', pfad, wer);
     const body = sprachtext(raw, 'text', pfad, wer);
     const conditions = zahlen(raw, 'conditions', CONDITION_KEYS, pfad, wer) as Conditions | null;
+    const marked = namen(raw, 'marked', pfad, wer);
+    const notMarked = namen(raw, 'notMarked', pfad, wer);
+    const delay = raw.delay ?? 1;
+    if (typeof delay !== 'number' || !Number.isInteger(delay) || delay < 0) {
+      fehler([...pfad, 'delay'], `${wer}: „delay“ muss eine ganze Zahl ab 0 sein (Runden nach dem Merkzeichen).`);
+      ok = false;
+    }
     const chance = raw.chance;
     if (typeof chance !== 'number' || chance < 0 || chance > 1) {
       fehler([...pfad, 'chance'], `${wer}: „chance“ fehlt oder liegt nicht zwischen 0 und 1.`);
@@ -206,8 +232,19 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
         ok = false;
       }
     }
-    if (!ok || !title || !body || !conditions) return null;
-    return { id: id as string, title, text: body, conditions, chance: chance as number, once: raw.once !== false, choices };
+    if (!ok || !title || !body || !conditions || !marked || !notMarked) return null;
+    return {
+      id: id as string,
+      title,
+      text: body,
+      conditions,
+      marked,
+      notMarked,
+      delay: delay as number,
+      chance: chance as number,
+      once: raw.once !== false,
+      choices,
+    };
   }
 
   const events: EventDef[] = [];
@@ -243,6 +280,22 @@ export function parseEventFiles(files: readonly { file: string; text: string }[]
         herkunft.set(event.id, file);
         events.push(event);
       }
+    }
+  }
+  // Ein Merkzeichen, das keine Wahl setzt, ist fast immer ein Tippfehler – das
+  // Ereignis käme sonst nie (bzw. würde nie gesperrt).
+  const gesetzt = new Set(events.flatMap((e) => e.choices.flatMap((c) => c.marks)));
+  for (const event of events) {
+    for (const m of [...event.marked, ...event.notMarked]) {
+      if (gesetzt.has(m)) continue;
+      const file = herkunft.get(event.id)!;
+      const text = files.find((f) => f.file === file)?.text ?? '';
+      const line = text.split('\n').findIndex((l) => /^\s*(marked|notMarked)\s*:/.test(l) && l.includes(m)) + 1;
+      errors.push({
+        file,
+        line: Math.max(1, line),
+        message: `Ereignis „${event.id}“: Das Merkzeichen „${m}“ setzt keine Wahl (marks: [${m}]) – Tippfehler?`,
+      });
     }
   }
   return errors.length > 0 ? { events: [], errors } : { events, errors };

@@ -1,0 +1,41 @@
+# Kapitel 1 – Probe-Ereignis (2.2). Entwurf von Claude, bitte in eigener Stimme umschreiben.
+# Vorlage und Erklärung: docs/ereignis-vorlage.md
+# Das erste zinslose Geld „eines Freundes“ (Weltbibel, Mr. Vale). Kommt nur, wenn Jacob
+# knapp bei Kasse ist. Wer nicht antwortet, behält das Geld – die bequeme Falle.
+
+- id: vale_umschlag
+  title:
+    de: Ein Umschlag ohne Absender
+    en: An Envelope Without a Sender
+  text:
+    de: >-
+      Auf Jacobs Tisch liegt ein Umschlag ohne Absender. Darin 500 $ in neuen
+      Scheinen und eine Karte: „Von einem Freund, der an Sie glaubt. Zinsen sind
+      unter Freunden nicht nötig.“ Am Abend steht ein höflicher Herr im grauen
+      Mantel vor der Pension und nickt Jacob zu, als kenne er ihn seit Jahren.
+    en: >-
+      An envelope with no sender lies on Jacob's desk. Inside: 500 $ in new bills
+      and a card – "From a friend who believes in you. Between friends, interest is
+      unnecessary." That evening a polite gentleman in a grey coat stands outside
+      the boarding house and nods to Jacob as if they had known each other for years.
+  conditions: { minRound: 3, maxCash: 400 }
+  chance: 0.5
+  choices:
+    - id: behalten
+      label: { de: "Das Geld behalten", en: "Keep the money" }
+      result:
+        de: Jacob bezahlt seine Rechnungen. Der Herr im grauen Mantel ist am nächsten Morgen fort.
+        en: Jacob pays his bills. The gentleman in the grey coat is gone the next morning.
+      effects: { cash: 500 }
+      marks: [vale_geld]
+      default: true
+    - id: zurueckgeben
+      label: { de: "Den Umschlag im Hotel abgeben lassen", en: "Have the envelope left at the hotel" }
+      result:
+        de: >-
+          Der Portier nimmt den Umschlag. „Mr. Vale ist abgereist“, sagt er, „aber
+          er meinte, Sie würden das tun.“
+        en: >-
+          The porter takes the envelope. "Mr. Vale has left," he says, "but he said
+          you would do this."
+      marks: [vale_abgelehnt]

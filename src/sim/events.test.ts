@@ -8,6 +8,7 @@ import {
   conditionsMet,
   deskEvents,
   drawEvents,
+  marksMet,
   resolveEvent,
   unmetReason,
   type EventChoice,
@@ -15,7 +16,7 @@ import {
 } from './events';
 import { endRound, newGame, type GameState } from './game';
 import { localize } from './i18n';
-import { deserializeGame, serializeGame, validateState } from './save';
+import { deserializeGame, SAVE_FORMAT, serializeGame, validateState } from './save';
 import { loadBalance } from './testBalance';
 import { loadEvents } from './testEvents';
 
@@ -26,11 +27,11 @@ function t(de: string) {
 }
 
 function wahl(id: string, extra: Partial<EventChoice> = {}): EventChoice {
-  return { id, label: t(id), result: t(`Ergebnis ${id}`), requires: {}, effects: {}, default: false, ...extra };
+  return { id, label: t(id), result: t(`Ergebnis ${id}`), requires: {}, effects: {}, default: false, marks: [], ...extra };
 }
 
 function ereignis(id: string, extra: Partial<EventDef> = {}): EventDef {
-  return { id, title: t(`Titel ${id}`), text: t('Text'), conditions: {}, chance: 1, once: true, choices: [wahl('ja')], ...extra };
+  return { id, title: t(`Titel ${id}`), text: t('Text'), conditions: {}, marked: [], notMarked: [], delay: 1, chance: 1, once: true, choices: [wahl('ja')], ...extra };
 }
 
 const quelle = { status: 'found' } as Well;
@@ -209,37 +210,116 @@ describe('Spielstand mit Ereignissen', () => {
   });
 });
 
-describe('die drei Testereignisse aus content/events/', () => {
-  const katalog = loadEvents();
+describe('Nachwirkung: Merkzeichen (2.2)', () => {
+  const katalog = [
+    ereignis('anlass', { choices: [wahl('fair', { marks: ['fair'] }), wahl('betrug', { marks: ['betrug'], default: true })] }),
+    ereignis('dank', { marked: ['fair'], delay: 2 }),
+    ereignis('rache', { marked: ['betrug'], delay: 1 }),
+    ereignis('ohne_betrug', { notMarked: ['betrug'] }),
+  ];
+  const start = { ...newGame('marken', balance), events: { ...newGame('marken', balance).events, pending: ['anlass'], seen: ['anlass'] } };
 
-  /** Eine Lage, in der alle drei möglich sind, und dann Runde um Runde würfeln. */
-  function lauf(seed: string): GameState {
-    let state: GameState = { ...newGame(seed, balance, katalog), cash: 5000, oilStock: 1000, wells: [quelle] };
-    for (let i = 0; i < 4; i++) {
-      state = drawEvents(autoResolve(state, katalog), balance, katalog);
+  it('eine Wahl setzt ihre Merkzeichen mit der Runde, verdeckt und nur beim ersten Mal', () => {
+    const r = resolveEvent({ ...start, round: 3 }, katalog, 'anlass', 'fair');
+    if (!r.ok) throw new Error(r.reason);
+    expect(r.state.events.marks).toEqual({ fair: 3 });
+    expect(r.state.log.at(-1)).not.toMatch(/fair:/);
+    const spaeter = applyMarksAgain(r.state);
+    expect(spaeter.events.marks).toEqual({ fair: 3 });
+  });
+
+  /** Dieselbe Wahl in einer späteren Runde noch einmal. */
+  function applyMarksAgain(state: GameState): GameState {
+    const r = resolveEvent({ ...state, round: 7, events: { ...state.events, pending: ['anlass'] } }, katalog, 'anlass', 'fair');
+    if (!r.ok) throw new Error(r.reason);
+    return r.state;
+  }
+
+  it('auch die Standard-Wahl ohne Antwort setzt Merkzeichen', () => {
+    expect(autoResolve(start, katalog).events.marks).toEqual({ betrug: 1 });
+  });
+
+  it('marked wartet auf das Merkzeichen und delay Runden', () => {
+    const marks = (m: Record<string, number>, round: number): GameState => ({ ...start, round, events: { ...start.events, pending: [], seen: ['anlass'], marks: m } });
+    expect(marksMet(marks({}, 5), katalog[1])).toBe(false);
+    expect(marksMet(marks({ fair: 3 }, 4), katalog[1])).toBe(false);
+    expect(marksMet(marks({ fair: 3 }, 5), katalog[1])).toBe(true);
+    expect(drawEvents(marks({ fair: 3 }, 4), balance, katalog.slice(0, 2)).events.pending).toEqual([]);
+    expect(drawEvents(marks({ fair: 3 }, 5), balance, katalog.slice(0, 2)).events.pending).toEqual(['dank']);
+  });
+
+  it('notMarked sperrt, sobald das Merkzeichen gesetzt ist', () => {
+    const ohne: GameState = { ...start, events: { ...start.events, pending: [] } };
+    expect(marksMet(ohne, katalog[3])).toBe(true);
+    expect(marksMet({ ...ohne, events: { ...ohne.events, marks: { betrug: 1 } } }, katalog[3])).toBe(false);
+  });
+
+  it('über endRound: Betrug in Runde 1 bringt die Rache ab Runde 2, nie den Dank', () => {
+    const kat = [katalog[0], katalog[1], katalog[2]];
+    let state = endRound(start, balance, kat);
+    expect(state.round).toBe(2);
+    expect(state.events.marks).toEqual({ betrug: 1 });
+    expect(state.events.pending).toEqual(['rache']);
+    for (let i = 0; i < 4; i++) state = endRound(state, balance, kat);
+    expect(state.events.seen).not.toContain('dank');
+  });
+
+  it('Merkzeichen überstehen Sichern und Laden; alte Spielstände bekommen leere Merkzeichen', () => {
+    const state = autoResolve(start, katalog);
+    const geladen = deserializeGame(serializeGame(state, '0.2.2'));
+    expect(geladen.ok && geladen.state.events.marks).toEqual({ betrug: 1 });
+    const { marks: _weg, ...altEvents } = state.events;
+    const alt = JSON.stringify({ format: SAVE_FORMAT, appVersion: '0.2.1', savedRound: 1, state: { ...state, events: altEvents } });
+    const altGeladen = deserializeGame(alt);
+    expect(altGeladen.ok && altGeladen.state.events.marks).toEqual({});
+    expect(validateState({ ...state, events: { ...state.events, marks: { x: 'eins' } } }).ok).toBe(false);
+  });
+});
+
+describe('die Probe-Ereignisse für Kapitel 1 aus content/events/', () => {
+  const katalog = loadEvents();
+  const ANLAESSE = ['moss_schulden', 'nora_brand', 'ruth_buecher', 'silas_schnaps', 'vale_umschlag'];
+
+  /** Runde um Runde würfeln, ohne zu antworten (Standard-Wahl), in einer Lage, in der fast alles geht. */
+  function lauf(seed: string, cash: number): GameState {
+    let state: GameState = { ...newGame(seed, balance, katalog), cash, oilStock: 1000, wells: [quelle] };
+    for (let round = 1; round <= 12; round++) {
+      state = drawEvents(autoResolve({ ...state, round, cash }, katalog), balance, katalog);
     }
     return state;
   }
 
-  it('alle drei erscheinen auf dem Schreibtisch', () => {
-    const gesehen = new Set(Array.from({ length: 10 }, (_, i) => lauf(`test-${i}`).events.seen).flat());
-    expect([...gesehen].sort()).toEqual(['pension_miete', 'serviettenhandel', 'thorne_vertrag']);
+  it('alle fünf Anlässe erscheinen auf dem Schreibtisch', () => {
+    const gesehen = new Set(Array.from({ length: 20 }, (_, i) => [lauf(`probe-${i}`, 300), lauf(`probe-${i}`, 5000)].flatMap((s) => s.events.seen)).flat());
+    for (const id of ANLAESSE) expect(gesehen).toContain(id);
   });
 
-  it('ihre Effekte wirken: Serviette verkauft Öl, Thornes Vertrag senkt den Tarif', () => {
-    const state: GameState = {
-      ...newGame('wirkung', balance),
-      cash: 1000,
-      oilStock: 600,
-      events: { ...newGame('wirkung', balance).events, pending: ['serviettenhandel', 'thorne_vertrag'] },
-    };
-    const verkauft = resolveEvent(state, katalog, 'serviettenhandel', 'verkaufen');
-    if (!verkauft.ok) throw new Error(verkauft.reason);
-    expect(verkauft.state.oilStock).toBe(100);
-    expect(verkauft.state.cash).toBe(1250);
-    const vertrag = resolveEvent(verkauft.state, katalog, 'thorne_vertrag', 'unterschreiben');
-    if (!vertrag.ok) throw new Error(vertrag.reason);
-    expect(vertrag.state.cash).toBe(1050);
-    expect(vertrag.state.railTariff).toBe(Math.round((state.railTariff - 0.05) * 100) / 100);
+  it('Moss: fair geholfen bringt später den Dank, betrogen den Zaun – nie beides', () => {
+    let state: GameState = { ...newGame('moss', balance, katalog), round: 4, cash: 1000, events: { ...newGame('moss', balance).events, pending: ['moss_schulden'] } };
+    const fair = resolveEvent(state, katalog, 'moss_schulden', 'leihen');
+    const betrug = resolveEvent(state, katalog, 'moss_schulden', 'papier');
+    if (!fair.ok || !betrug.ok) throw new Error('Wahl ging nicht');
+    expect(fair.state.cash).toBe(700);
+    expect(fair.state.events.marks).toEqual({ moss_fair: 4 });
+    expect(betrug.state.events.marks).toEqual({ moss_betrogen: 4 });
+    const moss = katalog.filter((e) => e.id.startsWith('moss_'));
+    const kommt = (s: GameState, round: number) =>
+      moss.filter((e) => e.id !== 'moss_schulden' && conditionsMet({ ...s, round }, e.conditions) && marksMet({ ...s, round }, e)).map((e) => e.id);
+    expect(kommt(betrug.state, 5)).toEqual([]);
+    expect(kommt(betrug.state, 6)).toEqual(['moss_wagenweg']);
+    expect(kommt(fair.state, 6)).toEqual([]);
+    expect(kommt(fair.state, 7)).toEqual(['moss_dank']);
+    state = { ...betrug.state, round: 6, oilStock: 500, cash: 0, events: { ...betrug.state.events, pending: ['moss_wagenweg'] } };
+    expect(autoResolve(state, katalog).oilStock).toBe(300);
+  });
+
+  it('Vale kommt nur bei knapper Kasse, und ohne Antwort behält Jacob das Geld', () => {
+    const vale = katalog.find((e) => e.id === 'vale_umschlag')!;
+    const state = { ...newGame('vale', balance), round: 3 };
+    expect(conditionsMet({ ...state, cash: 400 }, vale.conditions)).toBe(true);
+    expect(conditionsMet({ ...state, cash: 401 }, vale.conditions)).toBe(false);
+    const nach = autoResolve({ ...state, cash: 100, events: { ...state.events, pending: ['vale_umschlag'] } }, katalog);
+    expect(nach.cash).toBe(600);
+    expect(nach.events.marks).toEqual({ vale_geld: 3 });
   });
 });

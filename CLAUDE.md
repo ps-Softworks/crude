@@ -9,7 +9,7 @@
 - Subagents: Du darfst nach eigener Einschätzung Subagents deiner Wahl einsetzen (z. B. Explore, Plan, general-purpose), ohne vorher zu fragen – immer dann, wenn es sinnvoll ist und Tokens spart (z. B. breite Suchen, unabhängige Teilaufgaben parallel). Für Kleinigkeiten, die du direkt erledigen kannst, keine Subagents.
 
 ## Projektstand
-- Phase 0 und Phase 1 abgeschlossen (Papierpartien, Philipps eigene Partien und die Tester-Runde aus 1.15/1.16 vorerst zurückgestellt; Anleitung dafür in docs/tester-anleitung.md). Phase 2 läuft: 2.1 Ereignis-System fertig, als Nächstes 2.2 laut Roadmap.
+- Phase 0 und Phase 1 abgeschlossen (Papierpartien, Philipps eigene Partien und die Tester-Runde aus 1.15/1.16 vorerst zurückgestellt; Anleitung dafür in docs/tester-anleitung.md). Phase 2 läuft: 2.1 Ereignis-System und 2.2 Schreibvorlage (docs/ereignis-vorlage.md, 5 Probe-Ereignisse k1-*.yaml, Nachwirkung über Merkzeichen) fertig, als Nächstes 2.3 laut Roadmap.
 - Ereignisse: YAML in `content/events/` (Format im README dort), prüfen mit `npm run check:content`; jeder Text mit `de`/`en` (en darf leer sein). Die drei Ereignisse dort sind Testentwürfe. Bots spielen ohne Ereignisse. Kaputtes Beispiel nur als Test-Fixture in `src/sim/__fixtures__/events/`.
 - Spielzahlen stehen in `content/balance.yaml` (per Bot-Läufen justiert, `npm run bots`; endgültig erst nach Philipps eigenen Partien).
 - Bot-Läufe: `npm run bots` (schreibt docs/botlaeufe.md).

@@ -1,0 +1,87 @@
+# ============================================================================
+#  BEISPIEL-EREIGNIS ZUM ABSCHREIBEN (Schritt 2.2)
+#  Erklärung in Ruhe: docs/ereignis-vorlage.md
+#
+#  So kommt ein neues Ereignis ins Spiel – ganz ohne Programmieren:
+#    1. Diese Datei nach content/events/ kopieren und umbenennen,
+#       z. B. content/events/k1-6-salzwasser.yaml
+#    2. Die Texte ändern. Jede "id" muss im ganzen Spiel einmalig sein
+#       (beim Kopieren also umbenennen!).
+#    3. Im Terminal:  npm run check:content
+#       Steht da "Inhalte in Ordnung", ist das Ereignis im Spiel.
+#       Sonst steht da Datei und Zeile mit dem Fehler.
+#
+#  Regeln fürs Schreiben:
+#    - Alles hinter # ist ein Kommentar. Das Spiel liest es nicht.
+#    - Einrückung (Leerzeichen am Zeilenanfang) ist wichtig. Keine Tabs.
+#    - Jeder Text hat "de:" (Pflicht) und "en:" (darf leer sein: en: "").
+#    - ">-" heißt: Der Text geht in den nächsten, eingerückten Zeilen weiter.
+#    - Enthält ein kurzer Text einen Doppelpunkt, ihn in "Anführungszeichen" setzen.
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# 1) DAS EREIGNIS – jedes beginnt mit "- id:"
+# ---------------------------------------------------------------------------
+- id: beispiel_salzwasser          # Name für das Spiel: klein, ohne Leerzeichen, _ erlaubt
+
+  # --- ANLASS: Was liegt auf Jacobs Schreibtisch? ---------------------------
+  title:                           # Überschrift der Karte
+    de: Salz im Brunnen
+    en: ""                         # Englisch kommt später – leer lassen ist erlaubt
+  text:                            # 2–4 Sätze. Wer, was, warum jetzt? Ton: Weltbibel.
+    de: >-
+      Die Witwe Pruitt steht vor der Bude, einen Eimer in der Hand. Seit Jacob
+      bohrt, schmeckt ihr Brunnen nach Salz, und die Kühe saufen nicht mehr.
+      Sie will wissen, was er dagegen zu tun gedenkt.
+    en: ""
+
+  # --- WANN darf es kommen? (alles optional, alle müssen stimmen) ------------
+  conditions: { minRound: 3, minProducingWells: 1 }   # ab Runde 3 und mit fördernder Quelle
+  chance: 0.3                      # Chance je Runde, sobald alles stimmt (0.3 = 30 %)
+  # once: false                    # nur nötig, wenn es MEHRMALS kommen darf (Standard: einmal)
+
+  # --- OPTIONEN: 2–3 Wahlmöglichkeiten --------------------------------------
+  choices:
+    - id: brunnen_graben           # Name der Wahl, nur innerhalb des Ereignisses einmalig
+      label: { de: "Ihr einen neuen Brunnen graben lassen (200 $)", en: "" }   # Knopftext
+      # FOLGEN: Was im Protokoll steht und was sich ändert
+      result:
+        de: Die Männer graben zwei Tage. Das neue Wasser ist klar.
+        en: ""
+      requires: { minCash: 200 }   # ohne 200 $ ist der Knopf gesperrt
+      effects: { cash: -200 }      # zieht 200 $ ab (Pluszahl = gibt Geld)
+
+    - id: bestreiten
+      label: { de: "Bestreiten – Salz war immer schon da", en: "" }
+      result:
+        de: Die Witwe geht wortlos. Am Tor spuckt sie aus.
+        en: ""
+      marks: [beispiel_brunnen_bestritten]   # NACHWIRKUNG: merkt sich das Spiel verdeckt
+      default: true                # gilt, wenn Jacob die Runde beendet, ohne zu antworten
+
+# ---------------------------------------------------------------------------
+# 2) DIE NACHWIRKUNG – ein eigenes Ereignis, das auf das Merkzeichen wartet
+# ---------------------------------------------------------------------------
+- id: beispiel_klage
+  title:
+    de: Ein Brief vom Bezirksrichter
+    en: ""
+  text:
+    de: >-
+      Die Witwe Pruitt hat einen Anwalt gefunden. Der Bezirksrichter lädt Jacob
+      vor – wegen eines vergifteten Brunnens.
+    en: ""
+  marked: [beispiel_brunnen_bestritten]   # kommt NUR, wenn dieses Merkzeichen gesetzt ist
+  delay: 2                         # frühestens 2 Runden danach (Standard: 1)
+  chance: 0.5
+  choices:
+    - id: vergleich
+      label: { de: "Sich vergleichen (300 $)", en: "" }
+      result: { de: "Jacob zahlt. Der Richter ist zufrieden, die Witwe nicht.", en: "" }
+      requires: { minCash: 300 }
+      effects: { cash: -300 }
+    - id: prozess
+      label: { de: "Es auf den Prozess ankommen lassen", en: "" }
+      result: { de: "Der Prozess kostet Wochen. Die Fässer stehen still und verderben.", en: "" }
+      effects: { oilStock: -150 }
+      default: true

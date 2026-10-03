@@ -43,6 +43,8 @@ export interface EventChoice {
   effects: Effects;
   /** Diese Wahl gilt, wenn Jacob die Runde beendet, ohne zu antworten. */
   default: boolean;
+  /** Merkzeichen, die diese Wahl setzt – für Nachwirkungen in späteren Ereignissen (2.2). */
+  marks: string[];
 }
 
 export interface EventDef {
@@ -55,6 +57,12 @@ export interface EventDef {
   chance: number;
   /** Kommt höchstens einmal je Partie. */
   once: boolean;
+  /** Nachwirkung (2.2): Kommt nur, wenn alle diese Merkzeichen gesetzt sind … */
+  marked: string[];
+  /** … und keins von diesen. */
+  notMarked: string[];
+  /** Frühestens so viele Runden, nachdem das letzte nötige Merkzeichen gesetzt wurde. */
+  delay: number;
   choices: EventChoice[];
 }
 
@@ -65,10 +73,25 @@ export interface EventsState {
   pending: string[];
   /** Ereignisse, die in dieser Partie schon gekommen sind (IDs). */
   seen: string[];
+  /** Gesetzte Merkzeichen (2.2) mit der Runde, in der sie gesetzt wurden. Verdeckt – nicht im Protokoll. */
+  marks: Record<string, number>;
 }
 
 export function newEventsState(seed: string): EventsState {
-  return { rng: seedFromString(`${seed}:ereignisse`), pending: [], seen: [] };
+  return { rng: seedFromString(`${seed}:ereignisse`), pending: [], seen: [], marks: {} };
+}
+
+/**
+ * Nachwirkung (2.2): Sind alle nötigen Merkzeichen gesetzt, keins der
+ * verbotenen, und ist seit dem letzten nötigen genug Zeit vergangen?
+ */
+export function marksMet(state: Pick<GameState, 'round' | 'events'>, event: Pick<EventDef, 'marked' | 'notMarked' | 'delay'>): boolean {
+  const marks = state.events.marks;
+  if (event.notMarked.some((m) => marks[m] !== undefined)) return false;
+  if (event.marked.length === 0) return true;
+  if (event.marked.some((m) => marks[m] === undefined)) return false;
+  const zuletzt = Math.max(...event.marked.map((m) => marks[m]));
+  return state.round >= zuletzt + event.delay;
 }
 
 type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases'>;
@@ -164,13 +187,14 @@ export function drawEvents(state: GameState, balance: Balance, catalog: readonly
     if (pending.includes(event.id)) continue;
     if (event.once && seen.includes(event.id)) continue;
     if (!conditionsMet(state, event.conditions)) continue;
+    if (!marksMet(state, event)) continue;
     if (rng.float() >= event.chance) continue;
     pending.push(event.id);
     if (!seen.includes(event.id)) seen.push(event.id);
     log.push(`${formatDate(state)}: Auf dem Schreibtisch: ${localize(event.title, lang)}.`);
     neu++;
   }
-  return { ...state, log, events: { rng: rng.state, pending, seen } };
+  return { ...state, log, events: { ...state.events, rng: rng.state, pending, seen } };
 }
 
 export type EventResult = { ok: true; state: GameState } | { ok: false; reason: string };
@@ -198,10 +222,13 @@ export function resolveEvent(
 
 function erledigen(state: GameState, event: EventDef, choice: EventChoice, lang: Lang, vorsatz: string): GameState {
   const nach = applyEffects(state, choice.effects);
+  // Merkzeichen behalten die Runde, in der sie zuerst gesetzt wurden.
+  const marks = { ...nach.events.marks };
+  for (const m of choice.marks) if (marks[m] === undefined) marks[m] = state.round;
   return {
     ...nach,
     log: [...nach.log, `${formatDate(state)}: ${vorsatz}${localize(event.title, lang)} – ${localize(choice.result, lang)}`],
-    events: { ...nach.events, pending: nach.events.pending.filter((id) => id !== event.id) },
+    events: { ...nach.events, pending: nach.events.pending.filter((id) => id !== event.id), marks },
   };
 }
 

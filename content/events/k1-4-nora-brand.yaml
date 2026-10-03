@@ -1,0 +1,51 @@
+# Kapitel 1 – Probe-Ereignis (2.2). Entwurf von Claude, bitte in eigener Stimme umschreiben.
+# Vorlage und Erklärung: docs/ereignis-vorlage.md
+# Erste Begegnung mit Nora Whitlock. Sie ist unbestechlich (Weltbibel) – Geld bietet
+# man ihr besser nicht an. Die Merkzeichen sind für ihre späteren Artikel gedacht.
+
+- id: nora_brand
+  title:
+    de: Die Reporterin nach dem Brand
+    en: The Reporter After the Fire
+  text:
+    de: >-
+      Am Salt Hill hat es wieder gebrannt, zwei Männer sind tot. Eine junge
+      Reporterin vom Port Ellis Courier, Nora Whitlock, steht vor Jacobs Turm und
+      will wissen, wie er seine Leute schützt. Sie schreibt alles mit – auch das,
+      was man ihr nicht sagt.
+    en: >-
+      There has been another fire on Salt Hill; two men are dead. A young reporter
+      from the Port Ellis Courier, Nora Whitlock, stands at Jacob's derrick and asks
+      how he keeps his men safe. She writes everything down – including what
+      nobody tells her.
+  conditions: { minRound: 4, minProducingWells: 1 }
+  chance: 0.3
+  choices:
+    - id: ehrlich
+      label: { de: "Ehrlich antworten: Schutz gibt es hier für niemanden", en: "Answer honestly: nobody here is safe" }
+      result:
+        de: >-
+          Nora schreibt zwei Seiten. Jacob steht darin als ein Mann, der nicht lügt –
+          beim Crane Trust liest man das nicht gern.
+        en: >-
+          Nora writes two pages. Jacob appears in them as a man who does not lie –
+          the Crane Trust does not enjoy reading it.
+      marks: [nora_ehrlich]
+    - id: bestechen
+      label: { de: "Ihr 50 $ für einen freundlichen Artikel anbieten", en: "Offer her 50 $ for a friendly article" }
+      result:
+        de: >-
+          Nora lässt das Geld liegen. Am Freitag steht im Courier ein Absatz über
+          einen jungen Förderer, der glaubt, Reporter kaufen zu können.
+        en: >-
+          Nora leaves the money on the table. On Friday the Courier runs a paragraph
+          about a young producer who thinks reporters can be bought.
+      requires: { minCash: 50 }
+      marks: [nora_bestechung]
+    - id: wegschicken
+      label: { de: "Sie vom Gelände schicken", en: "Send her off the lease" }
+      result:
+        de: Nora geht. Am Freitag steht im Courier nur ein Satz – „Harlan wollte sich nicht äußern.“
+        en: Nora leaves. On Friday the Courier prints a single line – "Harlan declined to comment."
+      marks: [nora_abgewiesen]
+      default: true

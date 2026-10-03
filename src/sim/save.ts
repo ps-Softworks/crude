@@ -79,7 +79,14 @@ export function validateState(value: unknown): LoadResult {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
   const events = value.events;
-  if (!istObjekt(events) || !istZahl(events.rng) || !istListe(events.pending) || !istListe(events.seen)) {
+  if (
+    !istObjekt(events) ||
+    !istZahl(events.rng) ||
+    !istListe(events.pending) ||
+    !istListe(events.seen) ||
+    !istObjekt(events.marks) ||
+    !Object.values(events.marks).every(istZahl)
+  ) {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
   if (typeof value.finished !== 'boolean') return { ok: false, reason: UNVOLLSTAENDIG };
@@ -115,5 +122,10 @@ export function deserializeGame(text: string): LoadResult {
   if (!istObjekt(parsed) || istZahl(parsed.format) === false || parsed.format !== SAVE_FORMAT) {
     return { ok: false, reason: FREMDE_VERSION };
   }
-  return validateState(parsed.state);
+  // Ersatzwert (2.2): Spielstände aus 0.2.1 kennen noch keine Merkzeichen.
+  const state = parsed.state;
+  if (istObjekt(state) && istObjekt(state.events) && state.events.marks === undefined) {
+    return validateState({ ...state, events: { ...state.events, marks: {} } });
+  }
+  return validateState(state);
 }

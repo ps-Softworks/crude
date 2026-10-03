@@ -1,0 +1,44 @@
+# Kapitel 1 – Probe-Ereignis (2.2). Entwurf von Claude, bitte in eigener Stimme umschreiben.
+# Vorlage und Erklärung: docs/ereignis-vorlage.md
+# Silas hat getrunken, das Seil ist gerissen. Ob Jacob ihn deckt, merkt sich das Spiel
+# (laut Weltbibel: Freund oder später Kronzeuge).
+
+- id: silas_schnaps
+  title:
+    de: Das gerissene Seil
+    en: The Snapped Cable
+  text:
+    de: >-
+      Bei Sonnenaufgang liegt Silas Brandt schnarchend neben dem Bohrturm, die
+      Flasche noch in der Hand. In der Nacht ist das Bohrseil gerissen, der Meißel
+      steckt unten im Loch. Die Männer stehen herum und schauen zu Jacob.
+    en: >-
+      At sunrise Silas Brandt lies snoring beside the derrick, bottle still in hand.
+      The drilling cable snapped in the night and the bit is stuck down the hole.
+      The men stand around and look at Jacob.
+  conditions: { minRound: 2 }
+  chance: 0.3
+  choices:
+    - id: decken
+      label: { de: "Den Schaden selbst zahlen und schweigen (120 $)", en: "Pay for the damage and say nothing (120 $)" }
+      result:
+        de: >-
+          Jacob bezahlt das neue Seil. Silas sagt kein Wort dazu, aber er ist von
+          da an jeden Morgen als Erster am Turm.
+        en: >-
+          Jacob pays for the new cable. Silas never says a word about it, but from
+          then on he is the first at the derrick every morning.
+      requires: { minCash: 120 }
+      effects: { cash: -120 }
+      marks: [silas_gedeckt]
+    - id: abziehen
+      label: { de: "Silas den Schaden von seinem Anteil abziehen", en: "Take the damage out of Silas's share" }
+      result:
+        de: >-
+          Silas zahlt. Vor den Männern nickt er nur – im Saloon erzählt er später,
+          was für ein feiner Rechner sein Partner geworden ist.
+        en: >-
+          Silas pays. In front of the men he only nods – later, in the saloon, he
+          tells everyone what a fine bookkeeper his partner has become.
+      marks: [silas_gedemuetigt]
+      default: true
