@@ -14,6 +14,7 @@ import {
   recoverable,
   wellRate,
 } from './production';
+import { areaFactor } from './geology';
 import { loadBalance } from './testBalance';
 
 const balance = loadBalance();
@@ -31,6 +32,7 @@ function spiel(quellen = 1, seed = 'foerderung', bal: Balance = balance, result:
 /** Eine Quelle, wie sie ein Fund hinterlässt. */
 function quelle(state: GameState, parcelId: string, bal: Balance = balance, result: Find = 'small'): Well {
   return {
+    id: `${parcelId}#1`,
     parcelId,
     stage: 1,
     status: 'found',
@@ -105,9 +107,9 @@ describe('Ausbeute des Feldes', () => {
 });
 
 describe('Ratengang einer Quelle', () => {
-  it('beginnt mit der Anfangsrate aus der Reserve der eigenen Parzelle', () => {
+  it('beginnt mit der Anfangsrate aus der Reserve je Standardfläche der eigenen Ranch', () => {
     const state = spiel();
-    expect(stand(state, 0).initialRate).toBe(Math.round(parzelle(state).reserves * ANTEIL.small));
+    expect(stand(state, 0).initialRate).toBe(Math.round((parzelle(state).reserves / areaFactor(balance, parzelle(state))) * ANTEIL.small));
     expect(wellRate(balance, state.wells[0], 1)).toBe(stand(state, 0).initialRate);
   });
 
@@ -190,7 +192,13 @@ describe('Rundenende in der Förderung', () => {
   });
 
   it('Quellen auf verschiedenen Feldern beeinflussen sich nicht', () => {
-    const state = spiel(P.freeWells + 1);
+    // Eine Karte mit mindestens zwei Feldern, das erste groß genug für freeWells + 1 Quellen.
+    const seed = Array.from({ length: 50 }, (_, i) => `felder-${i}`).find((s) => {
+      const g = newGame(s, balance);
+      const erstes = g.fields.find((f) => f.id === g.parcels.find((p) => p.fieldId !== undefined)!.fieldId)!;
+      return g.fields.length >= 2 && erstes.parcelIds.length > P.freeWells;
+    })!;
+    const state = spiel(P.freeWells + 1, seed);
     const fremdesFeld = state.fields.find((f) => f.id !== feld(state).id)!;
     const fremd = quelle(state, fremdesFeld.parcelIds[0]);
     const allein = advanceProduction({ ...state, wells: [fremd] }, balance);
@@ -272,17 +280,17 @@ describe('Anfangsrate', () => {
     };
     const gebohrt: GameState = {
       ...state,
-      wells: [{ parcelId, stage: 1, status: 'drilling', roundsLeft: 1, spent: 1500, oilStage: 1, startRound: 1 }],
+      wells: [{ id: `${parcelId}#1`, parcelId, stage: 1, status: 'drilling', roundsLeft: 1, spent: 1500, oilStage: 1, startRound: 1 }],
     };
     const well = advanceDrilling(gebohrt, sicher).wells[0];
     if (well.status !== 'found') throw new Error('Die Bohrung hat nichts gefunden.');
     return well;
   }
 
-  it('hängt an der Reserve der eigenen Parzelle', () => {
+  it('hängt an der Reserve der eigenen Ranch je Standardfläche', () => {
     const state = spiel();
     const rate = initialRate(balance, state, { parcelId: state.wells[0].parcelId, result: 'small' });
-    expect(rate).toBe(Math.round(parzelle(state).reserves * ANTEIL.small));
+    expect(rate).toBe(Math.round((parzelle(state).reserves / areaFactor(balance, parzelle(state))) * ANTEIL.small));
     expect(rate).toBeGreaterThan(0);
   });
 
@@ -304,7 +312,10 @@ describe('Anfangsrate', () => {
     const gusher = fund(state, id('gusher'));
     expect(klein.result).toBe('small');
     expect(gusher.result).toBe('gusher');
-    const reserve = (id: string) => state.parcels.find((p) => p.id === id)!.reserves;
+    const reserve = (id: string) => {
+      const p = state.parcels.find((x) => x.id === id)!;
+      return p.reserves / areaFactor(balance, p);
+    };
     expect(klein.production!.initialRate).toBe(Math.round(reserve(klein.parcelId) * ANTEIL.small));
     expect(gusher.production!.initialRate).toBe(Math.round(reserve(gusher.parcelId) * ANTEIL.gusher));
   });

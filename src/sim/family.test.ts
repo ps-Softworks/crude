@@ -16,8 +16,8 @@ import {
   thomasBorn,
 } from './family';
 import { endRound, newGame, type GameState } from './game';
-import { deserializeGame, serializeGame } from './save';
-import { loadBalance } from './testBalance';
+import { deserializeGame, serializeGame, SAVE_FORMAT } from './save';
+import { loadBalance, rawBalance } from './testBalance';
 import { loadEvents } from './testEvents';
 
 const balance = loadBalance();
@@ -289,7 +289,7 @@ describe('Familientexte (content/family.yaml)', () => {
 });
 
 describe('Balance und Spielstand (2.7)', () => {
-  const roh = () => parse(readFileSync(new URL('../../content/balance.yaml', import.meta.url), 'utf8'));
+  const roh = () => rawBalance() as any;
 
   it('Kraft-Schwellen müssen aufsteigen, Familien-Schwellen auch', () => {
     const r1 = roh();
@@ -313,7 +313,7 @@ describe('Balance und Spielstand (2.7)', () => {
 
   it('Spielstände aus Format 5 bekommen Ersatzwerte: gesund, Ruth zufrieden, Thomas kommt noch', () => {
     const { family: _f, sick: _s, ...alt } = newGame('alt', balance);
-    const geladen = deserializeGame(JSON.stringify({ format: 5, appVersion: '0.2.6', savedRound: 1, state: alt }));
+    const geladen = deserializeGame(JSON.stringify({ format: SAVE_FORMAT, appVersion: '0.2.6', savedRound: 1, state: alt }));
     if (!geladen.ok) throw new Error(geladen.reason);
     expect(geladen.state.sick).toBe(0);
     expect(geladen.state.family).toEqual({ ruth: 70, thomas: 0, thomasBorn: 0, time: 0 });

@@ -26,7 +26,7 @@ function kinds(actions: { kind: string }[]): string[] {
 /** Kurzer Name einer Parzelle auf der Karte, z. B. "3/5". */
 function label(state: GameState, parcelId: string): string {
   const parcel = state.parcels.find((p) => p.id === parcelId)!;
-  return `${parcel.x + 1}/${parcel.y + 1}`;
+  return parcel.name;
 }
 
 function ok(result: { ok: true; state: GameState } | { ok: false; reason: string }): GameState {
@@ -55,6 +55,7 @@ function mitBohrung(status: WellStatus, patch: Partial<Well> = {}, seed = 'bohru
   const state = mitPacht(seed);
   const parcelId = state.leases[0].parcelId;
   const well: Well = {
+    id: `${parcelId}#1`,
     parcelId,
     stage: 1,
     status,
@@ -140,11 +141,28 @@ describe('Aktionen auf einer Parzelle (parcelActions)', () => {
     ]);
   });
 
-  it('eine laufende oder abgeschlossene Bohrung lässt keine Aktion zu', () => {
+  it('eine laufende oder abgeschlossene Bohrung lässt keine Aktion zu (Ranch mit nur einem Bohrplatz)', () => {
     for (const status of ['drilling', 'found', 'dry'] as WellStatus[]) {
-      const state = mitBohrung(status, status === 'found' ? GEFUNDEN : {});
-      expect(parcelActions(state, balance, state.wells[0].parcelId)).toEqual([]);
+      const roh = mitBohrung(status, status === 'found' ? GEFUNDEN : {});
+      const id = roh.wells[0].parcelId;
+      const state = { ...roh, parcels: roh.parcels.map((p) => (p.id === id ? { ...p, slots: 1 } : p)) };
+      expect(parcelActions(state, balance, id)).toEqual([]);
     }
+  });
+
+  it('weitere Bohrlöcher (0.2.15+5): nur auf fündigem Land und solange Bohrplätze frei sind', () => {
+    const roh = mitBohrung('found', GEFUNDEN);
+    const id = roh.wells[0].parcelId;
+    const mitPlaetzen = (slots: number) => ({ ...roh, parcels: roh.parcels.map((p) => (p.id === id ? { ...p, slots } : p)) });
+    const kosten = balance.drilling.stages[0].cost.toLocaleString('de-DE');
+    expect(parcelActions(mitPlaetzen(3), balance, id)).toEqual([
+      { kind: 'drill', label: `Weiteres Bohrloch (${kosten} $, noch 2 frei)`, ok: true },
+    ]);
+    expect(parcelActions(mitPlaetzen(1), balance, id)).toEqual([]);
+    // Trocken gebohrt: kein weiteres Loch, auch wenn Platz wäre.
+    const trocken = mitBohrung('dry');
+    const tid = trocken.wells[0].parcelId;
+    expect(parcelActions({ ...trocken, parcels: trocken.parcels.map((p) => (p.id === tid ? { ...p, slots: 3 } : p)) }, balance, tid)).toEqual([]);
   });
 
   it('eine unbekannte Parzelle bleibt ohne Aktion', () => {
@@ -195,7 +213,7 @@ describe('Der nächste Schritt (nextStep)', () => {
       const state = mitBohrung(status, {}, `warten-${status}`);
       const id = state.wells[0].parcelId;
       expect(nextStep(state, balance)).toEqual({
-        text: `Auf Parzelle ${label(state, id)} wartet die Bohrung auf deine Entscheidung.`,
+        text: `Auf ${label(state, id)} wartet die Bohrung auf deine Entscheidung.`,
         parcelIds: [id],
       });
     }
@@ -210,7 +228,7 @@ describe('Der nächste Schritt (nextStep)', () => {
     };
     const schritt = nextStep(beide, balance)!;
     expect(schritt.text).toBe(
-      `Auf Parzelle ${label(state, state.wells[0].parcelId)} und ${label(state, zweite.id)} wartet die Bohrung auf deine Entscheidung.`,
+      `Auf ${label(state, state.wells[0].parcelId)} und ${label(state, zweite.id)} wartet die Bohrung auf deine Entscheidung.`,
     );
     expect(schritt.parcelIds).toEqual([state.wells[0].parcelId, zweite.id]);
   });
@@ -226,7 +244,7 @@ describe('Der nächste Schritt (nextStep)', () => {
     const state = mitPacht('bereit');
     const id = state.leases[0].parcelId;
     expect(nextStep(state, balance)).toEqual({
-      text: `Deine Pacht auf ${label(state, id)} ist bereit: Parzelle anklicken und „Bohren“ wählen.`,
+      text: `Deine Pacht auf ${label(state, id)} ist bereit: Ranch anklicken und „Bohren“ wählen.`,
       parcelIds: [id],
     });
   });
@@ -247,11 +265,11 @@ describe('Der nächste Schritt (nextStep)', () => {
     const state = newGame('startoption', balance);
     const orte = state.options.map((o) => label(state, o.parcelId));
     expect(nextStep(state, balance)).toEqual({
-      text: `Du hast Optionen auf ${orte[0]} und ${orte[1]}: Parzelle anklicken und „Option einlösen“ wählen, dann bohren.`,
+      text: `Du hast Optionen auf ${orte[0]} und ${orte[1]}: Ranch anklicken und „Option einlösen“ wählen, dann bohren.`,
       parcelIds: state.options.map((o) => o.parcelId),
     });
     expect(nextStep({ ...state, options: state.options.slice(0, 1) }, balance)).toEqual({
-      text: `Du hast eine Option auf ${orte[0]}: Parzelle anklicken und „Option einlösen“ wählen, dann bohren.`,
+      text: `Du hast eine Option auf ${orte[0]}: Ranch anklicken und „Option einlösen“ wählen, dann bohren.`,
       parcelIds: [state.options[0].parcelId],
     });
   });
@@ -265,7 +283,7 @@ describe('Der nächste Schritt (nextStep)', () => {
       leases: [...state.leases, { ...state.leases[0], parcelId: zweite.id }],
     };
     expect(nextStep(mitZweiter, balance)).toEqual({
-      text: `Deine Pachten auf ${orte[0]} und ${orte[1]} sind bereit: Parzelle anklicken und „Bohren“ wählen.`,
+      text: `Deine Pachten auf ${orte[0]} und ${orte[1]} sind bereit: Ranch anklicken und „Bohren“ wählen.`,
       parcelIds: [state.leases[0].parcelId, zweite.id],
     });
   });
@@ -273,7 +291,7 @@ describe('Der nächste Schritt (nextStep)', () => {
   it('ohne Pacht und ohne Option: erst pachten', () => {
     const state = newGame('nichts', balance);
     expect(nextStep({ ...state, leases: [], options: [] }, balance)).toEqual({
-      text: 'Pachte eine Parzelle auf der Karte, dann kannst du bohren.',
+      text: 'Pachte eine Ranch auf der Karte, dann kannst du bohren.',
       parcelIds: [],
     });
   });
@@ -286,7 +304,7 @@ describe('Der nächste Schritt (nextStep)', () => {
       options: state.options.map((o) => ({ ...o, holder: 'rival' as never })),
     };
     expect(nextStep(fremd, balance)).toEqual({
-      text: 'Pachte eine Parzelle auf der Karte, dann kannst du bohren.',
+      text: 'Pachte eine Ranch auf der Karte, dann kannst du bohren.',
       parcelIds: [],
     });
   });
@@ -331,9 +349,9 @@ describe('Die Quellenliste (sourceRows)', () => {
     const state = newGame('quellen', balance);
     const [trocken, laufend, quelle] = drei(state);
     const wells: Well[] = [
-      { parcelId: trocken, stage: 1, status: 'dry', roundsLeft: 0, spent: 1500, oilStage: null, startRound: 1 },
-      { parcelId: laufend, stage: 1, status: 'drilling', roundsLeft: 2, spent: 1500, oilStage: 2, startRound: 3 },
-      { parcelId: quelle, stage: 1, roundsLeft: 0, spent: 1500, oilStage: 1, startRound: 5, ...GEFUNDEN } as Well,
+      { id: `${trocken}#1`, parcelId: trocken, stage: 1, status: 'dry', roundsLeft: 0, spent: 1500, oilStage: null, startRound: 1 },
+      { id: `${laufend}#1`, parcelId: laufend, stage: 1, status: 'drilling', roundsLeft: 2, spent: 1500, oilStage: 2, startRound: 3 },
+      { id: `${quelle}#1`, parcelId: quelle, stage: 1, roundsLeft: 0, spent: 1500, oilStage: 1, startRound: 5, ...GEFUNDEN } as Well,
     ];
     expect(sourceRows({ ...state, wells }).map((r) => r.status)).toEqual(['found', 'drilling', 'dry']);
   });
@@ -342,8 +360,8 @@ describe('Die Quellenliste (sourceRows)', () => {
     const state = newGame('quellen-alt', balance);
     const [erste, zweite] = drei(state);
     const wells: Well[] = [
-      { parcelId: zweite, stage: 1, status: 'drilling', roundsLeft: 1, spent: 1500, oilStage: 2, startRound: 4 },
-      { parcelId: erste, stage: 1, status: 'drilling', roundsLeft: 1, spent: 1500, oilStage: 2, startRound: 2 },
+      { id: `${zweite}#1`, parcelId: zweite, stage: 1, status: 'drilling', roundsLeft: 1, spent: 1500, oilStage: 2, startRound: 4 },
+      { id: `${erste}#1`, parcelId: erste, stage: 1, status: 'drilling', roundsLeft: 1, spent: 1500, oilStage: 2, startRound: 2 },
     ];
     expect(sourceRows({ ...state, wells }).map((r) => r.parcelId)).toEqual([erste, zweite]);
   });
@@ -352,10 +370,10 @@ describe('Die Quellenliste (sourceRows)', () => {
     const state = newGame('quellen-text', balance);
     const [erste, zweite, dritte, vierte] = drei(state).concat(state.parcels.filter((p) => !p.discovery)[3].id);
     const wells: Well[] = [
-      { parcelId: erste, stage: 1, status: 'drilling', roundsLeft: 1, spent: 1500, oilStage: 2, startRound: 1 },
-      { parcelId: zweite, stage: 2, status: 'drilling', roundsLeft: 3, spent: 3900, oilStage: 3, startRound: 2 },
-      { parcelId: dritte, stage: 1, status: 'decision', roundsLeft: 0, spent: 1500, oilStage: 2, startRound: 3 },
-      { parcelId: vierte, stage: 1, status: 'stuck', roundsLeft: 0, spent: 1500, oilStage: 2, startRound: 4 },
+      { id: `${erste}#1`, parcelId: erste, stage: 1, status: 'drilling', roundsLeft: 1, spent: 1500, oilStage: 2, startRound: 1 },
+      { id: `${zweite}#1`, parcelId: zweite, stage: 2, status: 'drilling', roundsLeft: 3, spent: 3900, oilStage: 3, startRound: 2 },
+      { id: `${dritte}#1`, parcelId: dritte, stage: 1, status: 'decision', roundsLeft: 0, spent: 1500, oilStage: 2, startRound: 3 },
+      { id: `${vierte}#1`, parcelId: vierte, stage: 1, status: 'stuck', roundsLeft: 0, spent: 1500, oilStage: 2, startRound: 4 },
     ];
     const rows = sourceRows({ ...state, wells });
     expect(rows.map((r) => r.text)).toEqual([
@@ -381,9 +399,9 @@ describe('Die Quellenliste (sourceRows)', () => {
     const parcel = state.parcels[0];
     const rows = sourceRows({
       ...state,
-      wells: [{ parcelId: parcel.id, stage: 1, status: 'dry', roundsLeft: 0, spent: 1500, oilStage: null, startRound: 1 }],
+      wells: [{ id: `${parcel.id}#1`, parcelId: parcel.id, stage: 1, status: 'dry', roundsLeft: 0, spent: 1500, oilStage: null, startRound: 1 }],
     });
-    expect(rows[0].label).toBe(`${parcel.x + 1}/${parcel.y + 1}`);
+    expect(rows[0].label).toBe(parcel.name);
     expect(rows[0].parcelId).toBe(parcel.id);
   });
 
@@ -423,7 +441,7 @@ describe('Das Protokoll der Runde (roundLog)', () => {
     expect(roundLog(state)).not.toEqual([]);
     const gekauft = ok(buyLease(state, balance, state.parcels.find((p) => !p.discovery && !state.options.some((o) => o.parcelId === p.id))!.id));
     expect(roundLog(gekauft)).toHaveLength(roundLog(state).length + 1);
-    expect(roundLog(gekauft).at(-1)).toMatch(/Pacht auf Parzelle .* abgeschlossen/);
+    expect(roundLog(gekauft).at(-1)).toMatch(/Pacht auf .* abgeschlossen/);
   });
 
   it('auch bei Pleite gilt der Schnitt: das Protokoll der Runde bleibt sichtbar', () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { endRound, newGame } from './game';
 import { neighbourWells } from './market';
-import { deserializeGame } from './save';
+import { deserializeGame, SAVE_FORMAT } from './save';
 import { loadBalance } from './testBalance';
 import { advanceWildcatters, newWildcatters, wildcatterWells } from './wildcatters';
 
@@ -58,7 +58,7 @@ describe('Kleine Wildcatter im Hintergrund (2.8)', () => {
 
   it('ein Spielstand aus Format 6 lädt mit leeren Wildcattern', () => {
     const { wildcatters: _weg, ...alt } = newGame('format6', balance);
-    const geladen = deserializeGame(JSON.stringify({ format: 6, appVersion: '0.2.7', savedRound: 1, state: alt }));
+    const geladen = deserializeGame(JSON.stringify({ format: SAVE_FORMAT, appVersion: '0.2.7', savedRound: 1, state: alt }));
     expect(geladen.ok).toBe(true);
     expect(geladen.ok && geladen.state.wildcatters).toEqual({ rng: 0, firms: [] });
   });

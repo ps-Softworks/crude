@@ -1,0 +1,125 @@
+# Karte der Provinz Cordova (0.2.15+5).
+# Koordinaten in Karteneinheiten: x nach Osten, y nach Süden. Eine Einheit ist
+# etwa so groß wie eine alte Rasterparzelle (grob eine Viertelmeile).
+# Gebiete (regions):
+#   kind      drillable = hier gibt es Ranches und Farmen zum Pachten, town = Stadt
+#   unlocked  false = sichtbar, aber gesperrt (Freischaltung später über Ereignisse:
+#             Antwort mit unlocks: [gebiet] – siehe content/events/README.md)
+#   geology   Profil (Zonen aus balance.yaml geology) und Mitte des Salzdoms
+#   outline   Umriss; bohrbare Gebiete müssen konvex sein (die Ranches werden darin zerlegt)
+# draft: true = Name neu von Claude, noch nicht in der Weltbibel bestätigt.
+# Die Ranches selbst stehen nicht hier: Sie werden je Seed erzeugt (src/sim/ranches.ts),
+# Zahlen dazu in balance.yaml unter ranches.
+
+size: { width: 40, height: 30 }
+
+regions:
+  - id: salthill
+    name: { de: Salt Hill, en: Salt Hill }
+    kind: drillable
+    unlocked: true
+    geology: { profile: salzdom, center: [20, 11] }
+    # Pipeline-Route vom Salzdom zum Bahnhof: Die Figuren an der Route (siehe figures) liegen darauf.
+    pipelineTo: bahnhof_salthill
+    discovery:
+      name: { de: Salt-Hill-Quelle, en: Salt Hill Gusher }
+      owner: Wheeler & Söhne   # Entwurf
+    outline: [[13.5, 7.2], [17, 5.6], [22.5, 5.4], [26.2, 7.0], [27.4, 10.6], [26.2, 14.8], [22.4, 16.8], [16.8, 16.6], [13.4, 13.8], [12.6, 10.2]]
+  - id: portellis
+    name: { de: Port Ellis, en: Port Ellis }
+    kind: town
+    unlocked: true
+    outline: [[23.5, 23.2], [27.5, 22.8], [29.5, 24.5], [28.8, 26.6], [24.5, 27.0], [22.8, 25.2]]
+  - id: hollins
+    name: { de: Hollins-Prärie, en: Hollins Prairie }
+    draft: true
+    kind: drillable
+    unlocked: false
+    geology: { profile: salzdom, center: [21, 3] }
+    outline: [[12, 0.6], [30, 0.6], [30.4, 4.6], [24, 5.0], [17, 5.0], [12.4, 4.4]]
+  - id: cottonwood
+    name: { de: Cottonwood-Niederung, en: Cottonwood Bottoms }
+    draft: true
+    kind: drillable
+    unlocked: false
+    geology: { profile: salzdom, center: [33, 13] }
+    outline: [[28.4, 7.2], [39.4, 6.2], [39.4, 21], [30, 21.5], [28, 15.5], [27.9, 11]]
+  - id: bitterwasser
+    name: { de: Bitterwasser-Sümpfe, en: Bitterwater Marsh }
+    draft: true
+    kind: drillable
+    unlocked: false
+    geology: { profile: salzdom, center: [6, 16] }
+    outline: [[0.6, 9], [10.6, 8.6], [14.6, 21.4], [10, 24.2], [0.6, 23.6]]
+
+landmarks:
+  - id: golf
+    kind: sea
+    name: { de: Golf, en: Gulf }
+    outline: [[0, 24.6], [5, 25.6], [10, 25.0], [15, 26.0], [20, 26.6], [24, 27.4], [29, 27.2], [35, 26.8], [40, 26.0], [40, 30], [0, 30]]
+  - id: rio_salado
+    kind: river
+    draft: true
+    name: { de: Rio Salado, en: Rio Salado }
+    points: [[10, 0], [11.2, 4], [11.5, 8], [11.7, 12], [12.5, 16], [14.5, 19.5], [17.5, 22.5], [19.5, 26.4]]
+  - id: wagenweg
+    kind: road
+    name: { de: Wagenweg nach Port Ellis, en: Wagon Road to Port Ellis }
+    points: [[20, 11], [19.8, 14], [20.3, 17.5], [21.5, 20.5], [23.5, 23.2], [25.5, 24.8]]
+  - id: thorne_bahn
+    kind: rail
+    name: { de: Thornes Bahnlinie, en: Thorne's Railway }
+    points: [[23.2, 17.6], [23.8, 19.5], [24.3, 21.5], [25, 23.8]]
+  - id: bahnhof_salthill
+    kind: station
+    name: { de: Bahnhof Salt Hill, en: Salt Hill Station }
+    at: [23.2, 17.6]
+  - id: bahnhof_portellis
+    kind: station
+    name: { de: Bahnhof Port Ellis, en: Port Ellis Station }
+    at: [25, 23.8]
+  - id: hafen
+    kind: harbor
+    name: { de: Hafen Port Ellis, en: Port Ellis Harbour }
+    at: [27, 26.5]
+
+# Figuren aus den Ereignissen bekommen eine echte Ranch (Ereignisse verweisen mit ranch: <id> darauf).
+#   place: station = Ranch an der Pipeline-Route, die dem Bahnhof am nächsten liegt
+#          route   = die nächste Ranch an der Route, Richtung Salzdom
+#          largest = die größte noch freie Ranch im Gebiet
+figures:
+  - id: pruitt
+    region: salthill
+    place: station
+    name: { de: Witwe Pruitts Weide, en: Widow Pruitt's Pasture }
+    owner: Agnes Pruitt
+    landowner: misstrauisch
+  - id: moss
+    region: salthill
+    place: route
+    name: { de: Moss-Farm, en: Moss Farm }
+    owner: Ezekiel Moss
+    landowner: verschuldet
+  - id: hale
+    region: salthill
+    place: largest
+    name: { de: Hale-Ranch, en: Hale Ranch }
+    owner: Martha Hale   # Entwurf: Vorname neu
+    landowner: fromm
+
+# Namen der übrigen Ranches: Familienname nach Größe in ein Muster gesetzt.
+# Fläche unter smallBelow = Farm, ab largeFrom = Ranch, dazwischen Weide.
+ranchNames:
+  smallBelow: 2.4
+  largeFrom: 4.5
+  patterns:
+    small: { de: "{name}-Farm", en: "{name} Farm" }
+    medium: { de: "{name}-Weide", en: "{name} Pasture" }
+    large: { de: "{name}-Ranch", en: "{name} Ranch" }
+  # Entwurf: erfundene Familiennamen, keine Figuren aus den Ereignissen.
+  families: [Calloway, Brennan, Dawson, Fairchild, Garrity, Holloway, Jessup, Kincaid, Langley, McCready,
+             Norris, Oakes, Pemberton, Quarles, Rawlins, Sutter, Tolliver, Underwood, Vickers, Whitaker,
+             Yancey, Ashby, Bramlett, Cutler, Dobbs, Eckert, Flagg, Gentry, Hensley, Ivey,
+             Judd, Keel, Loftin, Mabry, Nance, Overby, Purcell, Rusk, Swope, Tubbs,
+             Upchurch, Voss, Wilcox, Gaines, Hooper, Mercer, Sloan, Tidwell, Varner, Abernathy,
+             Birdwell, Coggins, Driscoll, Ellery, Fulcher, Goforth, Hatcher, Ingram, Jarrell, Kimbrough]

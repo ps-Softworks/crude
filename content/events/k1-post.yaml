@@ -113,6 +113,7 @@
       default: true
 
 - id: post_witwe
+  ranch: hale
   mail: demand
   deadline: 3
   title:

@@ -47,7 +47,7 @@ function mitPacht(seed = 'einstieg', cash = 100000): GameState {
 function mitBohrung(status: WellStatus, patch: Partial<Well> = {}, cash = 100000): GameState {
   const state = mitPacht('einstieg', cash);
   const parcelId = state.leases[0].parcelId;
-  const well: Well = { parcelId, stage: 1, status, roundsLeft: 1, spent: 1000, oilStage: 2, startRound: 1, ...patch };
+  const well: Well = { id: `${parcelId}#1`, parcelId, stage: 1, status, roundsLeft: 1, spent: 1000, oilStage: 2, startRound: 1, ...patch };
   return { ...state, wells: [well], leases: state.leases.map((l) => ({ ...l, drilled: true })) };
 }
 
@@ -65,7 +65,7 @@ describe('Inhalte des Einstiegs (content/tutorial.yaml)', () => {
   });
 
   it('meldet fehlende Hinweise und unbekannte Platzhalter mit Datei', () => {
-    const kaputt = text.replace(/ {2}sold:\n(.*\n){2}/, '').replace('Parzelle {ort} –', 'Parzelle {parzelle} –');
+    const kaputt = text.replace(/ {2}sold:\n(.*\n){2}/, '').replace('Option auf {ort} –', 'Option auf {parzelle} –');
     const { content, errors } = parseTutorialContent('t.yaml', kaputt);
     expect(content).toBeNull();
     expect(errors.map((e) => e.message)).toEqual(

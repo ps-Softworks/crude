@@ -4,7 +4,6 @@
 // content/chapter.yaml und Spielstände.
 
 import { readFileSync } from 'node:fs';
-import { parse } from 'yaml';
 import { describe, expect, it } from 'vitest';
 import { parseArcContent } from './arcs';
 import { parseBalance } from './balance';
@@ -26,7 +25,7 @@ import type { Well } from './drilling';
 import { empireValue } from './empire';
 import { endRound, newGame, type GameState } from './game';
 import { deserializeGame, SAVE_FORMAT, serializeGame } from './save';
-import { loadBalance } from './testBalance';
+import { loadBalance, rawBalance } from './testBalance';
 import { loadEvents } from './testEvents';
 
 const balance = loadBalance();
@@ -43,7 +42,7 @@ function content(): ChapterContent {
 
 /** Fündige Quelle ohne Feld (zählt als fördernd, bringt keine Reserven). */
 function quelle(i: number): Well {
-  return { parcelId: `x${i}`, stage: 1, status: 'found', roundsLeft: 0, spent: 0, oilStage: 1, startRound: 1 };
+  return { id: `x${i}#1`, parcelId: `x${i}`, stage: 1, status: 'found', roundsLeft: 0, spent: 0, oilStage: 1, startRound: 1 };
 }
 
 /** Spiel in der letzten Runde mit gegebener Kasse und Quellenzahl. */
@@ -68,7 +67,7 @@ describe('balance.yaml: chapter', () => {
   });
 
   it('fehlender Block oder Anteil ab 50 % ist ein Fehler', () => {
-    const raw = parse(readFileSync(new URL('../../content/balance.yaml', import.meta.url), 'utf8'));
+    const raw = rawBalance() as any;
     expect(() => parseBalance({ ...raw, chapter: undefined })).toThrow('Block "chapter" fehlt');
     expect(() => parseBalance({ ...raw, chapter: { ...raw.chapter, ipo: { ...raw.chapter.ipo, shares: [0.5] } } })).toThrow(/Mehrheit/);
   });
@@ -231,7 +230,7 @@ describe('Spielstand', () => {
 
   it('ältere Spielstände ohne Börsengang laden mit „noch nicht entschieden“', () => {
     const { ipo: _, ...alt } = newGame('alt', balance);
-    const geladen = deserializeGame(JSON.stringify({ format: 8, appVersion: '0.2.10', savedRound: 1, state: alt }));
+    const geladen = deserializeGame(JSON.stringify({ format: SAVE_FORMAT, appVersion: '0.2.10', savedRound: 1, state: alt }));
     expect(geladen.ok && geladen.state.ipo).toBeNull();
   });
 

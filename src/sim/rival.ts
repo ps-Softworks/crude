@@ -8,7 +8,7 @@ import { stageCost } from './drilling';
 import { trueChance } from './forecast';
 import type { GameState } from './game';
 import type { Parcel } from './geology';
-import { chebyshev, leaseTerms, parcelLabel, type Lease } from './lease';
+import { adjacent, leaseTerms, parcelLabel, type Lease } from './lease';
 import { Rng, seedFromString, type RngState } from './rng';
 import { markRound, RIVAL_MARKS } from './trust';
 
@@ -54,7 +54,7 @@ function jacobFinds(state: GameState): Parcel[] {
 }
 
 function nextTo(parcel: Parcel, others: readonly Parcel[]): boolean {
-  return others.some((o) => o.id !== parcel.id && chebyshev(parcel, o) <= 1);
+  return others.some((o) => o.id !== parcel.id && adjacent(parcel, o));
 }
 
 /** Parzellen, auf denen Jacob eine Pacht oder eine Quelle hat. */
@@ -120,6 +120,8 @@ export function rivalUtility(state: GameState, balance: Balance, parcel: Parcel,
   const b = balance.rivals.bullard;
   const { risk, aggression } = b.personality;
   const cost = leaseTerms(state, balance, parcel.id).bonus + stageCost(balance, 1);
+  // Bullard bohrt je Ranch nur ein Loch mit fester Rate (ratePerWell) – große Ranches sind für ihn
+  // nicht mehr wert, nur teurer (0.2.15+5). Er sucht deshalb eher kleine Farmen in guter Lage.
   const value = rivalChance(state, balance, parcel) * b.valuePerFind * (1 + (risk - 3) * b.riskWeight);
   // Fehde (2.8): Er sucht Jacobs Nähe erst recht.
   const groll = bullardStance(state) === 'fehde' ? b.feudFactor : 1;
@@ -201,7 +203,7 @@ export function advanceRival(
   // Verrat (2.8): Hat Jacob trotz Handschlag neben Bullard gepachtet, merkt der es jetzt – für immer.
   const verrat = betrayalParcel(state);
   if (verrat) {
-    log.push(`${date}: Bullard erfährt, dass du neben ihm Parzelle ${parcelLabel(verrat)} gepachtet hast. Der Handschlag gilt nicht mehr.`);
+    log.push(`${date}: Bullard erfährt, dass du neben ihm ${parcelLabel(verrat)} gepachtet hast. Der Handschlag gilt nicht mehr.`);
     state = { ...state, events: { ...state.events, marks: { ...state.events.marks, [RIVAL_MARKS.bullardBetrayed]: state.round } } };
   }
   const fehde = bullardStance(state) === 'fehde';
@@ -229,8 +231,8 @@ export function advanceRival(
     const status = parcel.geology === 'dry' ? 'dry' : 'found';
     log.push(
       status === 'found'
-        ? `${date}: Bullard stößt auf Parzelle ${parcelLabel(parcel)} auf Öl.`
-        : `${date}: Bullard bohrt auf Parzelle ${parcelLabel(parcel)} trocken.`,
+        ? `${date}: Bullard stößt auf ${parcelLabel(parcel)} auf Öl.`
+        : `${date}: Bullard bohrt auf ${parcelLabel(parcel)} trocken.`,
     );
     if (status === 'dry') return { ...well, roundsLeft: 0, status };
     const royalty = state.leases.find((l) => l.parcelId === well.parcelId && l.holder === 'bullard')?.royalty;
@@ -267,10 +269,10 @@ export function advanceRival(
       before.leases.some((l) => l.parcelId === parcel.id && l.holder === 'jacob');
     log.push(
       hadIt || nextTo(parcel, jacobFinds(state))
-        ? `${date}: Bullard pachtet Parzelle ${parcelLabel(parcel)} – Bullard schnappt dir Parzelle ${parcelLabel(parcel)} weg!`
+        ? `${date}: Bullard pachtet ${parcelLabel(parcel)} – Bullard schnappt dir ${parcelLabel(parcel)} weg!`
         : fehde && nextTo(parcel, jacobLand(state))
-          ? `${date}: Bullard pachtet aus Groll Parzelle ${parcelLabel(parcel)} direkt neben deinem Land.`
-          : `${date}: Bullard pachtet Parzelle ${parcelLabel(parcel)}.`,
+          ? `${date}: Bullard pachtet aus Groll ${parcelLabel(parcel)} direkt neben deinem Land.`
+          : `${date}: Bullard pachtet ${parcelLabel(parcel)}.`,
     );
   }
 
@@ -280,7 +282,7 @@ export function advanceRival(
     if (lease.holder !== 'bullard' || lease.drilled || cash < cost) return lease;
     cash -= cost;
     wells.push({ parcelId: lease.parcelId, startRound: state.round, roundsLeft: b.drillRounds, status: 'drilling' });
-    log.push(`${date}: Bullard bohrt auf Parzelle ${label(lease.parcelId)}.`);
+    log.push(`${date}: Bullard bohrt auf ${label(lease.parcelId)}.`);
     return { ...lease, drilled: true };
   });
 

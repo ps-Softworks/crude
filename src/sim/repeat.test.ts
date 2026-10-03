@@ -6,7 +6,7 @@ import type { Well } from './drilling';
 import { parseEventFile } from './eventContent';
 import { autoResolve, cooldownOf, cooledDown, drawEvents, type EventDef } from './events';
 import { newGame, type GameState } from './game';
-import { deserializeGame, serializeGame } from './save';
+import { deserializeGame, serializeGame, SAVE_FORMAT } from './save';
 import { loadBalance } from './testBalance';
 import { loadEvents } from './testEvents';
 
@@ -96,7 +96,7 @@ describe('Wiederholungsschutz (2.10a)', () => {
     const geladen = deserializeGame(serializeGame(state, 'test'));
     expect(geladen.ok && geladen.state.events.lastSeen).toEqual({ a: 1, '@g': 1 });
     const alt = JSON.parse(serializeGame(state, 'test'));
-    alt.format = 7;
+    alt.format = SAVE_FORMAT;
     delete alt.state.events.lastSeen;
     const altGeladen = deserializeGame(JSON.stringify(alt));
     expect(altGeladen.ok && altGeladen.state.events.lastSeen).toEqual({});

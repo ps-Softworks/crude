@@ -370,6 +370,7 @@ describe('Bot-Läufe: Transportwege (0.2.15+4)', () => {
   function mitFoerderung(rate: number, round = 2, seed = 'wege'): GameState {
     const state = newGame(seed, balance);
     const wells = state.parcels.slice(0, 2).map((p) => ({
+      id: `${p.id}#1`,
       parcelId: p.id,
       stage: 1,
       status: 'found' as const,

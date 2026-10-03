@@ -157,7 +157,7 @@ export function takeLoan(state: GameState, balance: Balance, amount: number): Lo
     takenRound: state.round,
     collateral: pfand?.parcelId ?? null,
   };
-  const sicherheit = pfand ? `, Pfand ist die Quelle auf Parzelle ${labelOf(state, pfand.parcelId)}` : ', ohne Pfand';
+  const sicherheit = pfand ? `, Pfand ist die Quelle auf ${labelOf(state, pfand.parcelId)}` : ', ohne Pfand';
   return {
     ok: true,
     loan,

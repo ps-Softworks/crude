@@ -2,7 +2,7 @@
 # (src/sim/tutorial.ts) sucht aus dem Spielzustand aus, WELCHER Hinweis kommt;
 # hier steht nur, wie er klingt. Jeder Text mit Sprachschlüssel de/en.
 # Platzhalter in geschweiften Klammern füllt das Spiel ein:
-#   {ort}     Parzelle auf der Karte, z. B. 3/5
+#   {ort}     Ranch auf der Karte, z. B. Moss-Farm
 #   {kosten}  Betrag in $
 #   {chance}  Schätzung des Geologen, z. B. 35–60 % Fundchance
 #   {weg}     Fuhrwerk oder Bahn
@@ -26,22 +26,22 @@ steps:
 hints:
   # Schritt 1: Land sichern.
   lease_option:
-    de: Ohne Land kein Öl. Du hast eine kostenlose Option auf Parzelle {ort} – der Geologe schätzt {chance}. Klick die Parzelle auf der Karte an und wähle „Option einlösen“. Das kostet nichts, danach gehört dir die Pacht.
-    en: No land, no oil. You hold a free option on parcel {ort} – the geologist estimates {chance}. Click the parcel on the map and choose “Exercise option”. It costs nothing, and the lease is yours.
+    de: Ohne Land kein Öl. Du hast eine kostenlose Option auf {ort} – der Geologe schätzt {chance}. Klick die Ranch auf der Karte an und wähle „Option einlösen“. Das kostet nichts, danach gehört dir die Pacht.
+    en: No land, no oil. You hold a free option on {ort} – the geologist estimates {chance}. Click the ranch on the map and choose “Exercise option”. It costs nothing, and the lease is yours.
   lease_buy:
-    de: Ohne Land kein Öl. Parzelle {ort} sieht gut aus – der Geologe schätzt {chance}. Klick sie auf der Karte an und wähle „Pacht kaufen“ ({kosten}). Behalte Geld für die Bohrung übrig.
-    en: No land, no oil. Parcel {ort} looks promising – the geologist estimates {chance}. Click it on the map and choose “Buy lease” ({kosten}). Keep money aside for the drilling.
+    de: Ohne Land kein Öl. {ort} sieht gut aus – der Geologe schätzt {chance}. Klick sie auf der Karte an und wähle „Pacht kaufen“ ({kosten}). Behalte Geld für die Bohrung übrig.
+    en: No land, no oil. {ort} looks promising – the geologist estimates {chance}. Click it on the map and choose “Buy lease” ({kosten}). Keep money aside for the drilling.
   lease_none:
     de: Für Pacht und Bohrung reicht das Geld gerade nicht. Die Bank leiht dir etwas – oder du beendest die Runde und wartest auf Einnahmen.
     en: There is not enough money for a lease and a well right now. The bank will lend you some – or end the round and wait for income.
   loan_lease:
-    de: Für Pacht und Bohrung reicht die Kasse nicht mehr. Kein Wildcatter bohrt mit eigenem Geld – leih dir unter „Bank“ {kosten}, dann pachte Parzelle {ort}.
-    en: Your cash no longer covers a lease and a well. No wildcatter drills with his own money – borrow {kosten} under “Bank”, then lease parcel {ort}.
+    de: Für Pacht und Bohrung reicht die Kasse nicht mehr. Kein Wildcatter bohrt mit eigenem Geld – leih dir unter „Bank“ {kosten}, dann pachte {ort}.
+    en: Your cash no longer covers a lease and a well. No wildcatter drills with his own money – borrow {kosten} under “Bank”, then lease {ort}.
 
   # Schritt 2: bohren.
   drill:
-    de: Deine Pacht auf {ort} ist bereit. Klick die Parzelle an und wähle „Bohren“ ({kosten}). Der Turm braucht eine Runde für die erste Stufe.
-    en: Your lease on {ort} is ready. Click the parcel and choose “Drill” ({kosten}). The rig needs one round for the first stage.
+    de: Deine Pacht auf {ort} ist bereit. Klick die Ranch an und wähle „Bohren“ ({kosten}). Der Turm braucht eine Runde für die erste Stufe.
+    en: Your lease on {ort} is ready. Click the ranch and choose “Drill” ({kosten}). The rig needs one round for the first stage.
   drill_no_money:
     de: Deine Pacht auf {ort} wartet, aber die Bohrung kostet {kosten}. Hol dir das Geld bei der Bank, sonst verfällt die Pacht ungenutzt.
     en: Your lease on {ort} is waiting, but drilling costs {kosten}. Get the money from the bank, or the lease will lapse unused.

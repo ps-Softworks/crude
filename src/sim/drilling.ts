@@ -30,6 +30,8 @@ export interface Production {
 }
 
 export interface Well {
+  /** Eindeutig je Bohrloch (0.2.15+5): Ranch-id, # und laufende Nummer auf dieser Ranch. */
+  id: string;
   parcelId: string;
   /** Aktuelle Stufe, ab 1 gezählt. */
   stage: number;
@@ -72,15 +74,31 @@ export function stuckChance(balance: Balance, stage: number): number {
   return stageOf(balance, stage).stuck;
 }
 
+/** Alle Bohrlöcher auf einer Ranch, in der Reihenfolge, in der sie gebohrt wurden. */
+export function wellsOn(state: Pick<GameState, 'wells'>, parcelId: string): Well[] {
+  return state.wells.filter((w) => w.parcelId === parcelId);
+}
+
+/**
+ * Das Bohrloch, um das es auf einer Ranch gerade geht: das laufende, sonst das
+ * zuletzt gebohrte. Auf einer Ranch läuft höchstens eine Bohrung zugleich.
+ */
 export function wellOf(state: Pick<GameState, 'wells'>, parcelId: string): Well | undefined {
-  return state.wells.find((w) => w.parcelId === parcelId);
+  const auf = wellsOn(state, parcelId);
+  return auf.find((w) => ACTIVE.includes(w.status)) ?? auf[auf.length - 1];
+}
+
+/** Freie Bohrplätze auf einer Ranch. */
+export function freeSlots(state: Pick<GameState, 'wells' | 'parcels'>, parcelId: string): number {
+  const parcel = state.parcels.find((p) => p.id === parcelId);
+  return Math.max(0, (parcel?.slots ?? 0) - wellsOn(state, parcelId).length);
 }
 
 export function activeWells(state: Pick<GameState, 'wells'>): Well[] {
   return state.wells.filter((w) => ACTIVE.includes(w.status));
 }
 
-/** In welcher Stufe liegt das Öl? roll in [0, 1); trockene Parzellen haben keins. */
+/** In welcher Stufe liegt das Öl? roll in [0, 1); trockene Ranches haben keins. */
 export function rollOilStage(balance: Balance, parcel: Parcel, roll: number): number | null {
   if (parcel.geology === 'dry') return null;
   const stages = balance.drilling.stages;
@@ -106,7 +124,7 @@ export function deeperChance(balance: Balance, parcel: Parcel, stage: number): n
 }
 
 function replaceWell(state: GameState, well: Well): Well[] {
-  return state.wells.map((w) => (w.parcelId === well.parcelId ? well : w));
+  return state.wells.map((w) => (w.id === well.id ? well : w));
 }
 
 function labelOf(state: GameState, parcelId: string): string {
@@ -114,14 +132,27 @@ function labelOf(state: GameState, parcelId: string): string {
   return parcel ? parcelLabel(parcel) : parcelId;
 }
 
-/** Bohrung auf einer eigenen, ungebohrten Pacht beginnen. */
+/**
+ * Bohrung auf einer eigenen Pacht beginnen. Die erste Bohrung geht auf jeder
+ * eigenen Pacht; weitere Bohrlöcher (0.2.15+5) nur auf fündigem Land, bis alle
+ * Bohrplätze der Ranch belegt sind. Sie treffen das Öl in derselben Tiefe wie
+ * die erste Quelle – das Risiko sind nur noch Unfälle und klemmendes Werkzeug.
+ */
 export function startDrilling(state: GameState, balance: Balance, parcelId: string): DrillResult {
   if (state.finished) return { ok: false, reason: 'Das Kapitel ist beendet.' };
   const parcel = state.parcels.find((p) => p.id === parcelId);
-  if (!parcel) return { ok: false, reason: 'Diese Parzelle gibt es nicht.' };
+  if (!parcel) return { ok: false, reason: 'Diese Ranch gibt es nicht.' };
   const lease = leaseOf(state, parcelId);
   if (!lease || lease.holder !== 'jacob') return { ok: false, reason: 'Bohren geht nur auf einer eigenen Pacht.' };
-  if (lease.drilled || wellOf(state, parcelId)) return { ok: false, reason: 'Hier wird schon gebohrt.' };
+  const bisher = wellsOn(state, parcelId);
+  if (bisher.some((w) => ACTIVE.includes(w.status))) return { ok: false, reason: 'Hier wird schon gebohrt.' };
+  const quelle = bisher.find((w) => w.status === 'found');
+  if (bisher.length > 0 || lease.drilled) {
+    if (!quelle) return { ok: false, reason: 'Ein weiteres Bohrloch lohnt nur, wo schon Öl gefunden wurde.' };
+    if (bisher.length >= parcel.slots) {
+      return { ok: false, reason: `Alle ${parcel.slots} Bohrplätze auf ${parcelLabel(parcel)} sind belegt.` };
+    }
+  }
   if (activeWells(state).length >= balance.drilling.rigs) {
     return { ok: false, reason: 'Der Bohrturm ist noch bei einer anderen Bohrung im Einsatz.' };
   }
@@ -131,8 +162,11 @@ export function startDrilling(state: GameState, balance: Balance, parcelId: stri
   }
   const rng = new Rng(state.rng);
   // Immer genau ein Zufallswert, auch bei trockenem Land: so bleibt der Zufall gleichmäßig.
-  const oilStage = rollOilStage(balance, parcel, rng.float());
+  const gewuerfelt = rollOilStage(balance, parcel, rng.float());
+  const oilStage = quelle ? quelle.stage : gewuerfelt;
+  const nummer = bisher.length + 1;
   const well: Well = {
+    id: `${parcelId}#${nummer}`,
     parcelId,
     stage: 1,
     status: 'drilling',
@@ -151,7 +185,9 @@ export function startDrilling(state: GameState, balance: Balance, parcelId: stri
       wells: [...state.wells, well],
       log: [
         ...state.log,
-        `${formatDate(state)}: Bohrung auf Parzelle ${parcelLabel(parcel)} begonnen (${stageOf(balance, 1).depth} m, ${money(cost)}).`,
+        nummer === 1
+          ? `${formatDate(state)}: Bohrung auf ${parcelLabel(parcel)} begonnen (${stageOf(balance, 1).depth} m, ${money(cost)}).`
+          : `${formatDate(state)}: ${nummer}. Bohrloch auf ${parcelLabel(parcel)} begonnen (${stageOf(balance, 1).depth} m, ${money(cost)}).`,
       ],
     },
   };
@@ -181,11 +217,11 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
     if (a < accidentChance(balance, well.stage)) {
       const paid = Math.min(cash, balance.drilling.accidentCost);
       cash -= paid;
-      log.push(`${date}: Unfall auf dem Bohrturm (Parzelle ${label}) – ${money(paid)} Entschädigung, die Stufe muss wiederholt werden.`);
+      log.push(`${date}: Unfall auf dem Bohrturm (${label}) – ${money(paid)} Entschädigung, die Stufe muss wiederholt werden.`);
       return { ...well, roundsLeft: 1 };
     }
     if (s < stuckChance(balance, well.stage)) {
-      log.push(`${date}: Auf Parzelle ${label} klemmt das Werkzeug in ${depth} m Tiefe.`);
+      log.push(`${date}: Auf ${label} klemmt das Werkzeug in ${depth} m Tiefe.`);
       return { ...well, status: 'stuck' };
     }
     if (well.oilStage === well.stage) {
@@ -193,8 +229,8 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
       const result = parcel.geology === 'gusher' ? 'gusher' : 'small';
       log.push(
         result === 'gusher'
-          ? `${date}: GUSHER! Auf Parzelle ${label} schießt in ${depth} m das Öl über den Bohrturm!`
-          : `${date}: Öl! Parzelle ${label} fördert in ${depth} m eine kleine Quelle.`,
+          ? `${date}: GUSHER! Auf ${label} schießt in ${depth} m das Öl über den Bohrturm!`
+          : `${date}: Öl! ${label} fördert in ${depth} m eine kleine Quelle.`,
       );
       return {
         ...well,
@@ -217,10 +253,10 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
         rng,
         deeperChance(balance, parcel, well.stage),
       );
-      log.push(`${date}: Parzelle ${label} ist in ${depth} m trocken. Tiefer bohren oder aufgeben?`);
+      log.push(`${date}: ${label} ist in ${depth} m trocken. Tiefer bohren oder aufgeben?`);
       return { ...well, status: 'decision' };
     }
-    log.push(`${date}: Parzelle ${label} ist auch in ${depth} m trocken – die Bohrung ist ein Fehlschlag.`);
+    log.push(`${date}: ${label} ist auch in ${depth} m trocken – die Bohrung ist ein Fehlschlag.`);
     return { ...well, status: 'dry' };
   });
 
@@ -229,8 +265,8 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
 
 function needWell(state: GameState, parcelId: string, allowed: readonly WellStatus[]): Well | string {
   if (state.finished) return 'Das Kapitel ist beendet.';
-  const well = wellOf(state, parcelId);
-  if (!well || !allowed.includes(well.status)) return 'Das geht bei dieser Bohrung gerade nicht.';
+  const well = wellsOn(state, parcelId).find((w) => allowed.includes(w.status));
+  if (!well) return 'Das geht bei dieser Bohrung gerade nicht.';
   return well;
 }
 
@@ -250,7 +286,7 @@ export function drillDeeper(state: GameState, balance: Balance, parcelId: string
       ...state,
       cash: state.cash - stage.cost,
       wells: replaceWell(state, { ...well, stage: next, status: 'drilling', roundsLeft: stage.rounds, spent: well.spent + stage.cost }),
-      log: [...state.log, `${formatDate(state)}: Auf Parzelle ${labelOf(state, parcelId)} wird tiefer gebohrt, auf ${stage.depth} m (${money(stage.cost)}).`],
+      log: [...state.log, `${formatDate(state)}: Auf ${labelOf(state, parcelId)} wird tiefer gebohrt, auf ${stage.depth} m (${money(stage.cost)}).`],
     },
   };
 }
@@ -269,7 +305,7 @@ export function fishWell(state: GameState, balance: Balance, parcelId: string): 
       ...state,
       cash: state.cash - cost,
       wells: replaceWell(state, { ...well, status: 'drilling', roundsLeft: 1, spent: well.spent + cost }),
-      log: [...state.log, `${formatDate(state)}: Bergung des Werkzeugs auf Parzelle ${labelOf(state, parcelId)} (${money(cost)}).`],
+      log: [...state.log, `${formatDate(state)}: Bergung des Werkzeugs auf ${labelOf(state, parcelId)} (${money(cost)}).`],
     },
   };
 }
@@ -283,7 +319,7 @@ export function abandonWell(state: GameState, _balance: Balance, parcelId: strin
     state: {
       ...state,
       wells: replaceWell(state, { ...well, status: 'dry' }),
-      log: [...state.log, `${formatDate(state)}: Die Bohrung auf Parzelle ${labelOf(state, parcelId)} wird aufgegeben.`],
+      log: [...state.log, `${formatDate(state)}: Die Bohrung auf ${labelOf(state, parcelId)} wird aufgegeben.`],
     },
   };
 }

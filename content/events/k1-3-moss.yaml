@@ -19,6 +19,7 @@
 
 # Entwurf – Philipp überarbeitet.
 - id: moss_schulden
+  ranch: moss
   title:
     de: Ezekiel Moss hält den Hut in der Hand
     en: Ezekiel Moss, Hat in Hand
@@ -67,6 +68,7 @@
 # Entwurf – Philipp überarbeitet.
 # Nachwirkung: nur wenn Jacob Moss betrogen hat, 2 Runden danach.
 - id: moss_wagenweg
+  ranch: moss
   title:
     de: Ein Zaun über dem Wagenweg
     en: A Fence Across the Wagon Road
@@ -101,6 +103,7 @@
 # Entwurf – Philipp überarbeitet.
 # Nachwirkung: nur wenn Jacob Moss fair geholfen hat, 3 Runden danach.
 - id: moss_dank
+  ranch: moss
   title:
     de: Ein Glas Honig
     en: A Jar of Honey
@@ -135,6 +138,7 @@
 # Nachwirkung: Jacob hat abgelehnt, die Bank versteigert die Farm. Hier fällt die
 # zweite Hälfte der Schlüsselentscheidung (GDD: fairer Preis, Betrug oder Druck).
 - id: moss_versteigerung
+  ranch: moss
   title:
     de: Die Versteigerung
     en: The Auction
@@ -187,6 +191,7 @@
 # Entwurf – Philipp überarbeitet.
 # Nachwirkung (Druck): Das ersteigerte Land lässt sich weiterverkaufen.
 - id: moss_spekulant
+  ranch: moss
   title:
     de: Ein Herr mit Spazierstock
     en: A Gentleman with a Cane
@@ -220,6 +225,7 @@
 # Abschluss des Bogens in Kapitel 1: Daniel geht zum Studium nach Hallstead
 # (Kapitel 3: Bezirksstaatsanwalt). Zwei Fassungen je nach Ausgang.
 - id: moss_daniel_dank
+  ranch: moss
   title:
     de: Daniel geht nach Hallstead
     en: Daniel Leaves for Hallstead
@@ -254,6 +260,7 @@
 
 # Entwurf – Philipp überarbeitet.
 - id: moss_daniel_zorn
+  ranch: moss
   title:
     de: Daniel geht nach Hallstead
     en: Daniel Leaves for Hallstead

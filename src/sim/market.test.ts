@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Balance, MarketBalance } from './balance';
-import { distanceToSaltHill } from './geology';
+import { distanceToDome } from './geology';
 import { drillDeeper, fishWell, startDrilling, wellOf, type Well } from './drilling';
 import { endRound, newGame, type GameState } from './game';
 import { buyLease, leaseOf } from './lease';
@@ -43,7 +43,7 @@ function bohrtAlles(state: GameState, bal: Balance): GameState {
   let s: GameState = { ...state, cash: Math.max(state.cash, 10_000_000) };
   const parzellen = s.parcels
     .filter((p) => !p.discovery)
-    .sort((a, b) => distanceToSaltHill(bal, a.x, a.y) - distanceToSaltHill(bal, b.x, b.y));
+    .sort((a, b) => distanceToDome(bal, a.region, a.x, a.y) - distanceToDome(bal, b.region, b.x, b.y));
   for (const p of parzellen) {
     const well = wellOf(s, p.id);
     if (well?.status === 'decision') {

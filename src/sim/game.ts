@@ -10,6 +10,8 @@ import { advanceDrilling, type Well } from './drilling';
 import { assignFields, buildFields, type Field } from './field';
 import { makeForecasts, type Forecast } from './forecast';
 import { generateParcels, type Parcel } from './geology';
+import { initialRegions } from './ranches';
+import { openRegions } from './regions';
 import { checkBirth, newFamily, settleFamily, type FamilyState } from './family';
 import { autoResolve, drawEvents, newEventsState, type EventDef, type EventsState } from './events';
 import { parcelLabel, settleLeases, startOptions, type Lease, type LeaseOption } from './lease';
@@ -35,8 +37,11 @@ export interface GameState {
   totalRounds: number;
   startYear: number;
   cash: number;
+  /** Offene Gebiete aus content/map.yaml (0.2.15+5); nur dort gibt es Ranches. */
+  regions: string[];
+  /** Ranches und Farmen der offenen Gebiete (ohne Umrisse – die kommen aus dem Seed). */
   parcels: Parcel[];
-  /** Lagerstätten: verbundene ölführende Parzellen mit ihren Reserven. */
+  /** Lagerstätten: verbundene ölführende Ranches mit ihren Reserven. */
   fields: Field[];
   /** Öl in den Tanks in Barrel (Jacobs Anteil plus Förderzins-Öl). */
   oilStock: number;
@@ -99,7 +104,8 @@ export interface GameState {
  */
 export function newGame(seed: string, balance: Balance, catalog: readonly EventDef[] = []): GameState {
   const rng = new Rng(seedFromString(seed));
-  const geologie = generateParcels(balance, rng);
+  const regions = initialRegions(balance.world);
+  const geologie = generateParcels(balance, seed, regions);
   const fields = buildFields(geologie);
   const parcels = assignFields(geologie, fields);
   const startPrice = computePrice(balance.market, neighbourSupply(balance.market, 1));
@@ -110,6 +116,7 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
     totalRounds: balance.start.rounds,
     startYear: balance.start.year,
     cash: balance.start.cash,
+    regions,
     parcels,
     fields,
     oilStock: 0,
@@ -150,7 +157,7 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
   state.log = [`${date}: Jacob Harlan kommt in Port Ellis an.`];
   if (state.options.length > 0) {
     const labels = state.options.map((o) => parcelLabel(state.parcels.find((p) => p.id === o.parcelId)!));
-    state.log.push(`${date}: Jacob hat freie Pachtoptionen auf den Parzellen ${labels.join(' und ')}.`);
+    state.log.push(`${date}: Jacob hat freie Pachtoptionen auf ${labels.join(' und ')}.`);
   }
   return drawEvents(checkBirth(state, balance), balance, catalog);
 }
@@ -179,7 +186,8 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
 export function endRound(input: GameState, balance: Balance, catalog: readonly EventDef[] = []): GameState {
   if (input.finished) return input;
   // Offene Ereignisse bekommen ihre Standard-Antwort, bevor die Runde abgerechnet wird.
-  const beantwortet = autoResolve(input, catalog, undefined, balance.events.timedRounds);
+  // Gebiete (0.2.15+5): Hat eine Antwort ein Gebiet freigeschaltet, bekommt es jetzt seine Ranches.
+  const beantwortet = openRegions(autoResolve(input, catalog, undefined, balance.events.timedRounds), balance);
   const roundLogStart = beantwortet.log.length;
   // Crane-Übernahme (2.8): Hat Jacob verkauft, endet die Partie hier – ohne weitere Abrechnung.
   const verkauft = settleTakeover(beantwortet, balance);

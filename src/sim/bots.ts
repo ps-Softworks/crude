@@ -14,7 +14,9 @@ import { TRANSPORT_MODES, type Balance, type BotEventWeights, type BotTargetId, 
 import { overtimeFor } from './agenda';
 import { creditLimit, debt, headroom, takeLoan } from './credit';
 import { applyAction, parcelActions, type DeskActionKind } from './desk';
-import { stageCost, wellOf } from './drilling';
+import { freeSlots, stageCost, wellOf, wellsOn } from './drilling';
+import { fieldOf } from './field';
+import { fieldWells } from './production';
 import { chapterCheck } from './chapter';
 import { empireValue } from './empire';
 import { endRound, newGame, type GameState } from './game';
@@ -442,6 +444,24 @@ function jacobsOptions(state: GameState): { parcelId: string; bonus: number }[] 
   return state.options.filter((o) => o.holder === 'jacob');
 }
 
+/**
+ * Weitere Bohrlöcher (0.2.15+5): eigene fündige Ranches mit freiem Bohrplatz und
+ * ohne laufende Bohrung. Mit druckEgal = false nur, solange das Feld darunter noch
+ * ohne Druckverlust fördert (weniger als production.freeWells Quellen).
+ */
+function extraWellSpots(state: GameState, balance: Balance, druckEgal: boolean): string[] {
+  return jacobsLeases(state).filter((id) => {
+    if (freeSlots(state, id) === 0) return false;
+    const auf = wellsOn(state, id);
+    if (!auf.some((w) => w.status === 'found') || auf.some((w) => w.status === 'drilling' || w.status === 'decision' || w.status === 'stuck')) {
+      return false;
+    }
+    if (druckEgal) return true;
+    const feld = fieldOf(state, id);
+    return !feld || fieldWells(state, feld.id).length < balance.production.freeWells;
+  });
+}
+
 /** Offene Bohrungen, an denen Jacob entscheiden muss. */
 function openWells(state: GameState) {
   return state.wells.filter((w) => w.status === 'decision' || w.status === 'stuck');
@@ -465,6 +485,10 @@ function cautiousTurn(state: GameState, balance: Balance, catalog: readonly Even
     if (!wellOf(state, parcelId) && state.cash - stageCost(balance, 1) >= cashReserve) {
       state = act(state, balance, parcelId, 'drill');
     }
+  }
+  // Weitere Bohrlöcher auf fündigem Land – nur aus eigener Kasse und ohne Druckverlust.
+  for (const parcelId of extraWellSpots(state, balance, false)) {
+    if (state.cash - stageCost(balance, 1) >= cashReserve) state = act(state, balance, parcelId, 'drill');
   }
   // Eine Option nur, wenn danach auch der Bonus noch bezahlbar ist – sonst verfällt
   // sie ungenutzt. Die beste Prognose, die sich das leisten kann.
@@ -536,6 +560,10 @@ function greedyTurn(state: GameState, balance: Balance, catalog: readonly EventD
       state = withLoan(state, balance, parcelId, 'drill', stageCost(balance, 1), rentDue(state, balance) - balance.lease.delayRental);
     }
   }
+  // Weitere Bohrlöcher auf fündigem Land, auch auf Kredit und egal, wie voll das Feld ist.
+  for (const parcelId of extraWellSpots(state, balance, true)) {
+    state = withLoan(state, balance, parcelId, 'drill', stageCost(balance, 1), rentDue(state, balance));
+  }
   // Pachten, solange Kasse und Bankrahmen reichen – die beste Prognose zuerst,
   // die sich noch bezahlen lässt. Für jede ungebohrte Pacht bleibt Geld für die
   // erste Bohrstufe übrig; sonst verfiele die Pacht ungebohrt.
@@ -591,6 +619,8 @@ function balancedTurn(state: GameState, balance: Balance, catalog: readonly Even
   }
   for (const option of jacobsOptions(state)) state = balancedPay(state, balance, option.parcelId, 'exercise', option.bonus);
   for (const parcelId of undrilled(state)) state = balancedPay(state, balance, parcelId, 'drill', stageCost(balance, 1));
+  // Weitere Bohrlöcher auf fündigem Land, solange das Feld ohne Druckverlust fördert.
+  for (const parcelId of extraWellSpots(state, balance, false)) state = balancedPay(state, balance, parcelId, 'drill', stageCost(balance, 1));
   // Neues Land nur, wenn danach auch die erste Bohrstufe und die Rücklage bezahlbar bleiben.
   if (undrilled(state).length + jacobsOptions(state).length < maxUndrilled) {
     const geld = state.cash + balancedBorrowable(state, balance) - cashReserve - stageCost(balance, 1);
@@ -1056,10 +1086,10 @@ export function blindWildcatChance(balance: Balance, games = balance.bots.games)
   let summe = 0;
   let n = 0;
   for (let i = 0; i < games; i++) {
-    const parcels = generateParcels(balance, new Rng(seedFromString(`${balance.bots.seedPrefix}-${i}`)));
+    const parcels = generateParcels(balance, `${balance.bots.seedPrefix}-${i}`);
     const funde = parcels.filter((p) => p.discovery);
     for (const p of parcels) {
-      if (p.discovery || locationFor(balance, funde, p).name !== rand.name) continue;
+      if (p.discovery || locationFor(balance, parcels, funde, p).name !== rand.name) continue;
       summe += p.geology === 'dry' ? 0 : stufe1;
       n++;
     }

@@ -7,24 +7,34 @@ start:
   year: 88            # Jahr der Föderation
   rounds: 16          # Runden in Kapitel 1 (ein Quartal pro Runde)
 
-map:
-  width: 12           # Parzellen von West nach Ost
-  height: 9           # Parzellen von Nord nach Süd
-  saltHill:           # Mitte des Booms
-    x: 6
-    y: 4
+# Ranches und Farmen (0.2.15+5): Das bohrbare Land (Gebiete in content/map.yaml) wird
+# je Seed in unregelmäßige Grundstücke zerlegt (src/sim/ranches.ts). Karteneinheit ≈ alte Rasterparzelle.
+ranches:
+  spacing: 1.7        # Abstand der Hofstellen
+  jitter: 0.8         # Versatz als Anteil des Abstands – höher = unregelmäßiger
+  relax: 2            # Glättungsrunden (Lloyd)
+  minArea: 0.6        # kleinere Reste gehen an die Nachbarn
+  minEdge: 0.15       # so lang muss eine gemeinsame Grenze sein, damit Ranches Nachbarn sind
+  slotArea: 1.5       # Fläche je Bohrplatz; Reserven und Pachtbonus aus diesem Block gelten für so viel Fläche
+  maxSlots: 5         # mehr Bohrlöcher passen auf keine Ranch
+  sizes:              # Größenklassen der Hofstellen: Anteil und Gewicht (größer = mehr Land)
+    - { share: 0.40, weight: 0 }      # Kleinfarm
+    - { share: 0.40, weight: 0.35 }   # Weide
+    - { share: 0.20, weight: 0.9 }    # große Ranch
 
-# Geologie je Zone. Die Zone hängt vom Abstand zur Mitte von Salt Hill ab.
+# Geologie je Zone (Profil „salzdom“ in content/map.yaml). Die Zone hängt vom Abstand
+# der Ranch-Mitte zur Mitte des Salzdoms ab (in Karteneinheiten). Reserven gelten je
+# ranches.slotArea Fläche – größere Ranches haben entsprechend mehr Öl.
 # Wahrscheinlichkeiten pro Zone müssen zusammen 1 ergeben.
 geology:
   zones:
     - name: kern
-      maxDistance: 1.5
+      maxDistance: 2.5     # 0.2.15+5: Ranch-Mitten statt Rasterfelder (vorher 1,5)
       dry: 0.30
       small: 0.55
       gusher: 0.15
     - name: ring
-      maxDistance: 3.5
+      maxDistance: 5.0     # 0.2.15+5: vorher 3,5 – Anteil Kern/Ring/Rand an den Ranches etwa wie früher an den Feldern
       dry: 0.40
       small: 0.52
       gusher: 0.08
@@ -52,23 +62,24 @@ lease:
   royaltyMin: 0.10      # Förderzins wird auf 10–25 % begrenzt
   royaltyMax: 0.25
   bonusRounding: 10     # Bonus und Optionsgebühr auf 10 $ gerundet
-  # Lage nach Abstand (Felder, auch diagonal) zum nächsten bekannten Fund.
+  # Lage nach Abstand zum nächsten bekannten Fund, in Nachbarschaftsschritten
+  # (gemeinsame Grenze = 1). Der Bonus gilt je ranches.slotArea Fläche: große Ranches kosten mehr.
   # Nach maxDistance aufsteigend sortiert; die letzte Lage gilt für den Rest.
   locations:
     - name: amFund
       label: Am Fund
       maxDistance: 1
-      bonus: 8000
+      bonus: 4000         # 0.2.15+5: je Standardfläche (vorher 8.000 je Rasterfeld; eine Ranch hat im Schnitt 2 Standardflächen)
       royalty: 0.20
     - name: nachbar
       label: Nachbar eines Funds
       maxDistance: 2
-      bonus: 1000          # 1.15: vorher 2.000 – sonst bleibt Nachbarland vor dem ersten Fund unbezahlbar
+      bonus: 500           # 1.15: vorher 2.000 – sonst bleibt Nachbarland vor dem ersten Fund unbezahlbar; 0.2.15+5: je Standardfläche (vorher 1.000 je Feld)
       royalty: 0.1666667  # 1/6
     - name: randlage
       label: Randlage
       maxDistance: 99
-      bonus: 150
+      bonus: 80            # 0.2.15+5: je Standardfläche (vorher 150 je Feld)
       royalty: 0.125
   # Landbesitzer: weight = Häufigkeit (vorerst alle gleich),
   # bonusFactor multipliziert den Lagebonus, royaltyAdd kommt auf den Förderzins.
@@ -102,17 +113,17 @@ lease:
   option:
     feeShare: 0.10        # PLATZHALTER: Gebühr = Anteil am Bonus
     termRounds: 2         # PLATZHALTER: Laufzeit in Runden, Kaufrunde mitgezählt
-  # Jacob beginnt mit freien Optionen auf Randlage-Parzellen.
+  # Jacob beginnt mit freien Optionen auf Ranches in Randlage.
   startOptions:
     count: 2              # PLATZHALTER
     termRounds: 4         # PLATZHALTER
 
-# Förderung (GDD §5). Das Öl liegt in Lagerstätten, die mehrere Parzellen
-# umfassen. Jede Quelle startet mit einem Anteil der Reserve ihrer Parzelle und fällt je
+# Förderung (GDD §5). Das Öl liegt in Lagerstätten, die mehrere Ranches
+# umfassen. Jede Quelle startet mit einem Anteil der Reserve je Standardfläche (ranches.slotArea) ihrer Ranch und fällt je
 # Quartal. Das Feld ist gemeinsam: Mehr als freeWells Quellen senken den Druck
 # aller Quellen und verringern die Gesamtausbeute des Feldes.
 production:
-  # Anfangsrate je Runde als Anteil der Reserve der eigenen Parzelle – für
+  # Anfangsrate je Runde als Anteil der Reserve je Standardfläche der eigenen Ranch – für
   # kleine Funde und für Gusher je eigener Wert.
   initialRateShare:
     small: 0.25              # PLATZHALTER
@@ -137,7 +148,7 @@ forecast:
 
 # Bohren (GDD §5): Stufe 1 ist die Zieltiefe, jede weitere Stufe heißt
 # "tiefer bohren". Tiefer = teurer und gefährlicher (Push your luck).
-# oilShare: in welcher Stufe das Öl einer nicht trockenen Parzelle liegt (Summe 1).
+# oilShare: in welcher Stufe das Öl einer nicht trockenen Ranch liegt (Summe 1).
 # accident: Unfall-Chance je Stufe (Entschädigung, Stufe wird wiederholt).
 # stuck: Chance, dass das Werkzeug klemmt (bergen oder aufgeben).
 drilling:
@@ -204,9 +215,9 @@ transport:
     buildCost: 6000         # PLATZHALTER
     buildRounds: 3          # GDD §6: 1–4 Runden
     upkeepPerRound: 120     # Streckenwärter
-    rights:                 # Wegerechte: Merkzeichen aus content/events/k1-9-transport.yaml, Name für den Schreibtisch
-      - { mark: wegerecht_moss, label: "Moss' Weide" }
-      - { mark: wegerecht_bahndamm, label: "Bahndamm (Witwe Pruitt)" }
+    rights:                 # Wegerechte: Merkzeichen aus content/events/, Name für den Schreibtisch, Figur aus map.yaml (deren Ranch die Route kreuzt)
+      - { mark: wegerecht_moss, label: "Moss' Weide", figure: moss }
+      - { mark: wegerecht_bahndamm, label: "Bahndamm (Witwe Pruitt)", figure: pruitt }
     sabotageChance: 0.08    # PLATZHALTER: je Runde, sobald sie läuft
     sabotageFactor: 2       # … × 2 bei Fehde mit Bullard oder Streit mit Thorne
     repairCost: 600

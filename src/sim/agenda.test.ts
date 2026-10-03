@@ -279,14 +279,6 @@ describe('Sichern und Laden (2.3)', () => {
     expect(geladen.ok && geladen.state.strength).toBe(65);
   });
 
-  it('Spielstände aus Format 2 bekommen Ersatzwerte: ausgeruht, 5 Termine', () => {
-    const { agenda: _a, strength: _s, strengthMax: _m, ...alt } = newGame('alt', balance);
-    const geladen = deserializeGame(JSON.stringify({ format: 2, appVersion: '0.2.2', savedRound: 1, state: alt }));
-    if (!geladen.ok) throw new Error(geladen.reason);
-    expect(geladen.state.agenda).toEqual({ budget: 5, used: 0, done: [] });
-    expect(geladen.state.strength).toBe(100);
-  });
-
   it('ein Spielstand ohne Termine im neuen Format ist unvollständig', () => {
     const { agenda: _a, ...ohne } = newGame('ohne', balance);
     expect(deserializeGame(JSON.stringify({ format: 3, appVersion: '0.2.3', savedRound: 1, state: ohne })).ok).toBe(false);

@@ -20,10 +20,8 @@ import {
 } from './events';
 import { endRound, newGame, type GameState } from './game';
 import { deserializeGame, SAVE_FORMAT, serializeGame } from './save';
-import { loadBalance } from './testBalance';
+import { loadBalance, rawBalance } from './testBalance';
 import { loadEvents } from './testEvents';
-import { parse } from 'yaml';
-import { readFileSync } from 'node:fs';
 
 const balance = loadBalance();
 const inhalte = loadEvents();
@@ -253,7 +251,7 @@ describe('Inhalte und Zahlen', () => {
   });
 
   it('balance.yaml braucht den Block events.mail mit ganzen Zahlen ab 1', () => {
-    const raw = parse(readFileSync(new URL('../../content/balance.yaml', import.meta.url), 'utf8'));
+    const raw = rawBalance() as any;
     expect(parseBalance(raw).events.mail).toEqual({ maxPerRound: 1, deadlineRounds: 2, guaranteeRounds: 6 });
     expect(() => parseBalance({ ...raw, events: { maxPerRound: 1 } })).toThrow(/events.mail/);
     expect(() => parseBalance({ ...raw, events: { ...raw.events, mail: { ...raw.events.mail, deadlineRounds: 0 } } })).toThrow(
@@ -275,7 +273,7 @@ describe('Spielstand mit Posteingang', () => {
   it('Spielstände aus Format 3 laden mit Ersatzwerten', () => {
     const state = newGame('alt', balance, inhalte);
     const { due: _due, lastMail: _last, docs: _docs, ...alt } = state.events;
-    const text = JSON.stringify({ format: 3, appVersion: '0.2.3', savedRound: 1, state: { ...state, events: alt } });
+    const text = JSON.stringify({ format: SAVE_FORMAT, appVersion: '0.2.3', savedRound: 1, state: { ...state, events: alt } });
     const geladen = deserializeGame(text);
     expect(geladen.ok).toBe(true);
     if (geladen.ok) expect(geladen.state.events).toMatchObject({ due: {}, lastMail: {} });

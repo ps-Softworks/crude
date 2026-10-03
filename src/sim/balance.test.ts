@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BalanceError, BOT_TARGET_IDS, parseBalance } from './balance';
-import { loadBalance } from './testBalance';
+import { loadBalance, rawBalance } from './testBalance';
 
 describe('Spielzahlen (balance.yaml)', () => {
   it('die echte Datei ist gültig', () => {
@@ -499,10 +499,8 @@ describe('Spielzahlen (balance.yaml)', () => {
 });
 
 describe('Ereignisse in balance.yaml (2.1)', () => {
-  it('maxPerRound fehlt oder ist keine ganze Zahl ab 1 → Fehler', async () => {
-    const { parse } = await import('yaml');
-    const { readFileSync } = await import('node:fs');
-    const raw = parse(readFileSync(new URL('../../content/balance.yaml', import.meta.url), 'utf8'));
+  it('maxPerRound fehlt oder ist keine ganze Zahl ab 1 → Fehler', () => {
+    const raw = rawBalance() as any;
     expect(parseBalance(raw).events.maxPerRound).toBe(1);
     expect(() => parseBalance({ ...raw, events: undefined })).toThrow(/Block "events" fehlt/);
     expect(() => parseBalance({ ...raw, events: { maxPerRound: 0 } })).toThrow(/events.maxPerRound/);

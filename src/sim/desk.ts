@@ -11,9 +11,11 @@ import {
   abandonWell,
   drillDeeper,
   fishWell,
+  freeSlots,
   stageCost,
   startDrilling,
   wellOf,
+  wellsOn,
   type DrillResult,
   type Well,
   type WellStatus,
@@ -75,6 +77,15 @@ export function parcelActions(state: GameState, balance: Balance, parcelId: stri
     const actions: DeskAction[] = [];
     if (!well) {
       actions.push(knopf('drill', `Bohren (${money(stageCost(balance, 1))})`, startDrilling(state, balance, parcelId)));
+    } else if (
+      (well.status === 'found' || well.status === 'dry') &&
+      wellsOn(state, parcelId).some((w) => w.status === 'found') &&
+      freeSlots(state, parcelId) > 0
+    ) {
+      // Weitere Bohrlöcher (0.2.15+5): auf fündigem Land, solange Bohrplätze frei sind.
+      actions.push(
+        knopf('drill', `Weiteres Bohrloch (${money(stageCost(balance, 1))}, noch ${freeSlots(state, parcelId)} frei)`, startDrilling(state, balance, parcelId)),
+      );
     }
     // Nach einer trockenen Stufe geht es tiefer weiter, bei klemmendem Werkzeug
     // muss es erst bergen – beides kann man aufgeben.
@@ -171,7 +182,7 @@ export function nextStep(state: GameState, balance: Balance): NextStep | null {
   const wartet = state.wells.filter((w) => w.status === 'decision' || w.status === 'stuck');
   if (wartet.length > 0) {
     return {
-      text: `Auf Parzelle ${ort(labelsOf(state, wartet.map((w) => w.parcelId)))} wartet die Bohrung auf deine Entscheidung.`,
+      text: `Auf ${ort(labelsOf(state, wartet.map((w) => w.parcelId)))} wartet die Bohrung auf deine Entscheidung.`,
       parcelIds: wartet.map((w) => w.parcelId),
     };
   }
@@ -183,15 +194,15 @@ export function nextStep(state: GameState, balance: Balance): NextStep | null {
 
   // 3. Eine eigene, ungebohrte Pacht, die sofort gebohrt werden kann.
   const bereit = state.leases
-    .filter((l) => l.holder === 'jacob' && startDrilling(state, balance, l.parcelId).ok)
+    .filter((l) => l.holder === 'jacob' && !l.drilled && startDrilling(state, balance, l.parcelId).ok)
     .map((l) => l.parcelId);
   if (bereit.length > 0) {
     const orte = ort(labelsOf(state, bereit));
     return {
       text:
         bereit.length === 1
-          ? `Deine Pacht auf ${orte} ist bereit: Parzelle anklicken und „Bohren“ wählen.`
-          : `Deine Pachten auf ${orte} sind bereit: Parzelle anklicken und „Bohren“ wählen.`,
+          ? `Deine Pacht auf ${orte} ist bereit: Ranch anklicken und „Bohren“ wählen.`
+          : `Deine Pachten auf ${orte} sind bereit: Ranch anklicken und „Bohren“ wählen.`,
       parcelIds: bereit,
     };
   }
@@ -205,8 +216,8 @@ export function nextStep(state: GameState, balance: Balance): NextStep | null {
     return {
       text:
         optionen.length === 1
-          ? `Du hast eine Option auf ${orte}: Parzelle anklicken und „Option einlösen“ wählen, dann bohren.`
-          : `Du hast Optionen auf ${orte}: Parzelle anklicken und „Option einlösen“ wählen, dann bohren.`,
+          ? `Du hast eine Option auf ${orte}: Ranch anklicken und „Option einlösen“ wählen, dann bohren.`
+          : `Du hast Optionen auf ${orte}: Ranch anklicken und „Option einlösen“ wählen, dann bohren.`,
       parcelIds: optionen,
     };
   }
@@ -214,7 +225,7 @@ export function nextStep(state: GameState, balance: Balance): NextStep | null {
   // 5. Weder Pacht noch Option: ohne Recht auf Land geht kein Bohren.
   // Pachten und Optionen der Konkurrenz zählen nicht – sie bringen Jacob kein Land.
   if (!state.leases.some((l) => l.holder === 'jacob') && !state.options.some((o) => o.holder === 'jacob')) {
-    return { text: 'Pachte eine Parzelle auf der Karte, dann kannst du bohren.', parcelIds: [] };
+    return { text: 'Pachte eine Ranch auf der Karte, dann kannst du bohren.', parcelIds: [] };
   }
 
   // 6. Öl im Tank, das heute noch weg kann.

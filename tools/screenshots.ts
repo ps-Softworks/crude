@@ -10,8 +10,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServer } from 'vite';
-import { parse } from 'yaml';
-import { parseBalance } from '../src/sim/balance';
+import { loadBalance } from '../src/sim/testBalance';
 import { botTurn } from '../src/sim/bots';
 import { endRound, newGame, type GameState } from '../src/sim/game';
 import { Rng, seedFromString } from '../src/sim/rng';
@@ -19,7 +18,7 @@ import { serializeGame } from '../src/sim/save';
 import { loadEvents } from '../src/sim/testEvents';
 
 const root = new URL('../', import.meta.url);
-const balance = parseBalance(parse(readFileSync(new URL('content/balance.yaml', root), 'utf8')));
+const balance = loadBalance();
 const { version } = JSON.parse(readFileSync(new URL('package.json', root), 'utf8')) as { version: string };
 const events = loadEvents();
 const CHROME = process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';

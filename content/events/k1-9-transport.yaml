@@ -104,6 +104,7 @@
 
 # Moss, wenn noch nichts zwischen ihnen steht.
 - id: wegerecht_moss
+  ranch: moss
   certain: true
   once: false
   marked: [pipeline_geplant]
@@ -139,6 +140,7 @@
 
 # Moss, wenn Jacob ihm geholfen hat.
 - id: wegerecht_moss_freund
+  ranch: moss
   certain: true
   once: false
   marked: [pipeline_geplant, moss_fair]
@@ -173,6 +175,7 @@
 
 # Moss, wenn Jacob ihn vertrieben hat, sich aber bei Daniel entschuldigt hat (0.2.15+3).
 - id: wegerecht_moss_versoehnt
+  ranch: moss
   certain: true
   once: false
   draft: true
@@ -211,6 +214,7 @@
 
 # Moss, wenn Jacob ihn betrogen oder vertrieben hat.
 - id: wegerecht_moss_feind
+  ranch: moss
   certain: true
   once: false
   marked: [pipeline_geplant, moss_feind]
@@ -257,6 +261,7 @@
       default: true
 
 - id: wegerecht_bahndamm
+  ranch: pruitt
   rival: thorne
   mail: offer
   certain: true

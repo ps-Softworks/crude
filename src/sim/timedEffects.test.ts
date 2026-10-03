@@ -4,7 +4,7 @@ import { advanceProduction, initialRate } from './production';
 import { applyEffects, autoResolve, resolveEvent, timedEffect, timedRoundsLeft, type EventDef } from './events';
 import { newGame, type GameState } from './game';
 import { leaseTerms } from './lease';
-import { deserializeGame, serializeGame } from './save';
+import { deserializeGame, serializeGame, SAVE_FORMAT } from './save';
 import { loadBalance } from './testBalance';
 import { jacobPrice } from './trust';
 
@@ -23,6 +23,7 @@ function mitQuelle(): GameState {
     ...s,
     wells: [
       {
+        id: `${parcel.id}#1`,
         parcelId: parcel.id,
         stage: 1,
         status: 'found',
@@ -119,7 +120,7 @@ describe('Befristete Nachwirkungen (0.2.15+3)', () => {
     expect(r.ok && r.state.events.timed).toEqual(s.events.timed);
     const alt: GameState = { ...spiel(), events: { ...spiel().events } };
     delete (alt.events as Partial<GameState['events']>).timed;
-    const r2 = deserializeGame(JSON.stringify({ format: 10, appVersion: 'alt', savedRound: 1, state: alt }));
+    const r2 = deserializeGame(JSON.stringify({ format: SAVE_FORMAT, appVersion: 'alt', savedRound: 1, state: alt }));
     expect(r2.ok && r2.state.events.timed).toEqual([]);
   });
 });

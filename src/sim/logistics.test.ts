@@ -340,7 +340,7 @@ describe('Spielstand (0.2.15+2)', () => {
     const s = spiel();
     const alt: Record<string, unknown> = { ...s, shipped: { wagon: 0, rail: 0 } };
     delete alt.logistics;
-    const r = deserializeGame(JSON.stringify({ format: 9, appVersion: 'alt', savedRound: 1, state: alt }));
+    const r = deserializeGame(JSON.stringify({ format: SAVE_FORMAT, appVersion: 'alt', savedRound: 1, state: alt }));
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.state.logistics.teams).toBe(0);

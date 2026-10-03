@@ -21,7 +21,7 @@ import { seedFromString } from './rng';
 import { loadBalance } from './testBalance';
 
 const balance = loadBalance();
-const PARCEL = 'p-0-0';
+const PARCEL = 'salthill-01';
 
 /** Echte Zahlen, aber Unfall- und Klemm-Chance fest auf allen Stufen. */
 function withRisk(accident: number, stuck: number): Balance {
@@ -124,9 +124,9 @@ describe('Bohrung beginnen', () => {
 
   it('geht nicht, wenn der Turm belegt ist', () => {
     let state = game();
-    state = { ...state, leases: [...state.leases, { ...state.leases[0], parcelId: 'p-1-0' }] };
+    state = { ...state, leases: [...state.leases, { ...state.leases[0], parcelId: 'salthill-02' }] };
     state = ok(startDrilling(state, balance, PARCEL));
-    const r = startDrilling(state, balance, 'p-1-0');
+    const r = startDrilling(state, balance, 'salthill-02');
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.reason).toMatch(/Bohrturm/);
   });

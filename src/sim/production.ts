@@ -9,6 +9,7 @@ import { formatDate } from './calendar';
 import type { Find, Well } from './drilling';
 import { fieldLabel, fieldOf, type Field } from './field';
 import type { GameState } from './game';
+import { areaFactor } from './geology';
 import { timedEffect } from './events';
 import { leaseOf, parcelLabel } from './lease';
 
@@ -83,18 +84,22 @@ function pocketOf(state: Pick<GameState, 'parcels' | 'fields'>, parcelId: string
 }
 
 /**
- * Anfangsrate einer frischen Quelle: ein fester Anteil der Reserve ihrer eigenen
- * Parzelle, je nach Art des Funds. (Gefördert wird trotzdem aus dem gemeinsamen
- * Feld – die Parzelle bestimmt nur, wie stark die Quelle anfängt.)
+ * Anfangsrate einer frischen Quelle: ein fester Anteil der Reserve je
+ * Standardfläche (ranches.slotArea) ihrer Ranch, je nach Art des Funds – so viel,
+ * wie früher eine Rasterparzelle hatte. Gefördert wird trotzdem aus dem gemeinsamen
+ * Feld – die Ranch bestimmt nur, wie stark die Quelle anfängt. Mehr Bohrlöcher auf
+ * einer Ranch (0.2.15+5) = mehr Rate, aber das Feld leert sich schneller und
+ * verliert über freeWells Druck.
  */
 export function initialRate(
   balance: Balance,
   state: Pick<GameState, 'parcels'>,
   well: { parcelId: string; result: Find },
 ): number {
-  const reserves = state.parcels.find((p) => p.id === well.parcelId)?.reserves ?? 0;
+  const parcel = state.parcels.find((p) => p.id === well.parcelId);
+  if (!parcel) return 0;
   const anteil = balance.production.initialRateShare[well.result];
-  return Math.round(reserves * anteil);
+  return Math.round((parcel.reserves / areaFactor(balance, parcel)) * anteil);
 }
 
 function parcelLabelOf(state: Pick<GameState, 'parcels'>, parcelId: string): string {
@@ -162,7 +167,7 @@ export function advanceProduction(input: GameState, balance: Balance): GameState
     if (field) hoechststand.set(field.id, peak);
     const { freeWells } = balance.production;
     if (vorher <= freeWells && n > freeWells) {
-      const ort = field ? fieldLabel(field) : `Parzelle ${parcelLabelOf(input, gruppe[0].parcelId)}`;
+      const ort = field ? fieldLabel(field) : parcelLabelOf(input, gruppe[0].parcelId);
       log.push(`${date}: Auf ${ort} sinkt der Druck – zu viele Quellen.`);
     }
     const bereitsDa = gruppe.reduce((s, w) => s + (w.production?.total ?? 0), 0);
@@ -171,7 +176,7 @@ export function advanceProduction(input: GameState, balance: Balance): GameState
     const gewollt = gruppe.map((w) => wellRate(balance, w, n) * faktor);
     const bekommen = shareOut(gewollt, Math.max(0, ausbeute - bereitsDa));
     gruppe.forEach((w, i) => {
-      neuenStand.set(w.parcelId, { lastRate: bekommen[i], total: (w.production?.total ?? 0) + bekommen[i] });
+      neuenStand.set(w.id, { lastRate: bekommen[i], total: (w.production?.total ?? 0) + bekommen[i] });
       gefoerdert += bekommen[i];
       zinsOel += bekommen[i] * (leaseOf(input, w.parcelId)?.royalty ?? 0);
     });
@@ -183,7 +188,7 @@ export function advanceProduction(input: GameState, balance: Balance): GameState
 
   const oilStock = input.oilStock + gefoerdert;
   const neueWells = input.wells.map((w): Well => {
-    const stand = neuenStand.get(w.parcelId);
+    const stand = neuenStand.get(w.id);
     if (!stand || !w.production) return w;
     return { ...w, production: { ...w.production, lastRate: stand.lastRate, total: stand.total, roundsProduced: w.production.roundsProduced + 1 } };
   });

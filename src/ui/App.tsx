@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { applyAction, nextStep, parcelActions, type DeskActionKind } from '../sim/desk';
-import { accidentChance, deeperChance, wellOf, type Well } from '../sim/drilling';
+import { accidentChance, deeperChance, wellOf, wellsOn, type Well } from '../sim/drilling';
 import { formatForecast, trueChance } from '../sim/forecast';
 import { fieldLabel, fieldOf } from '../sim/field';
 import { endRound, newGame, type GameState } from '../sim/game';
@@ -176,7 +176,7 @@ export function App() {
               onAction={act}
             />
           ) : (
-            <p className="muted">Klick auf ein Feld der Karte – markierte Felder sind deine.</p>
+            <p className="muted">Klick auf eine Ranch auf der Karte – markierte Ranches sind deine.</p>
           )
         }
         onSelect={select}
@@ -213,7 +213,7 @@ interface PanelProps {
 }
 
 /**
- * Angaben und Knöpfe zur gewählten Parzelle. Welche Knöpfe es gibt, entscheidet
+ * Angaben und Knöpfe zur gewählten Ranch. Welche Knöpfe es gibt, entscheidet
  * parcelActions aus src/sim – hier steht keine einzige Spielregel.
  */
 function ParcelPanel({ game, parcel, debug, notice, stepText, onAction }: PanelProps) {
@@ -223,6 +223,7 @@ function ParcelPanel({ game, parcel, debug, notice, stepText, onAction }: PanelP
   const terms = parcel.discovery ? undefined : leaseTerms(game, balance, id);
   const forecast = parcel.discovery ? undefined : game.forecasts[id];
   const well = wellOf(game, id);
+  const wells = wellsOn(game, id);
 
   // Probelauf aus der Simulation: sie sagt, welche Knöpfe es gibt und ob sie gehen.
   const actions = parcelActions(game, balance, id);
@@ -233,7 +234,13 @@ function ParcelPanel({ game, parcel, debug, notice, stepText, onAction }: PanelP
   return (
     <div className="parcel-panel">
       <p>
-        <strong>Parzelle {parcel.x + 1}/{parcel.y + 1}</strong> · Zone {parcel.zone}
+        <strong>{parcel.name}</strong> · {parcel.owner}
+        <br />
+        <span className="muted">
+          {parcel.area.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Einheiten Land · {parcel.slots}{' '}
+          {parcel.slots === 1 ? 'Bohrplatz' : 'Bohrplätze'}
+          {wells.length > 0 && <> ({wells.length} belegt)</>} · Zone {parcel.zone}
+        </span>
       </p>
 
       {parcel.discovery ? (
@@ -292,6 +299,13 @@ function ParcelPanel({ game, parcel, debug, notice, stepText, onAction }: PanelP
         </p>
       )}
 
+      {wells
+        .filter((w) => w !== well)
+        .map((w) => (
+          <p key={w.id} className={`state well ${w.status}`}>
+            <WellInfo well={w} />
+          </p>
+        ))}
       {well && (
         <p className={`state well ${well.status}`}>
           <WellInfo well={well} />
@@ -414,7 +428,7 @@ function SourceInfo({ game, well, debug }: { game: GameState; well: Well; debug:
         <>
           <dt>Debug</dt>
           <dd>
-            {field.parcelIds.length} Parzellen · {barrels(field.reserves)} bbl im Boden · noch{' '}
+            {field.parcelIds.length} Ranches · {barrels(field.reserves)} bbl im Boden · noch{' '}
             {barrels(lage.remaining)} von {barrels(lage.recoverable)} bbl förderbar
           </dd>
         </>

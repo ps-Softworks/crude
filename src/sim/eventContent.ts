@@ -27,8 +27,8 @@ export interface ParsedEvents {
   errors: ContentError[];
 }
 
-const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'routine', 'appointments', 'choices', 'mail', 'deadline', 'document', 'certain', 'rival', 'cooldown', 'group', 'draft'];
-const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default', 'appointments', 'requiresFound', 'marksIfForged', 'sharp'];
+const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'routine', 'appointments', 'choices', 'mail', 'deadline', 'document', 'certain', 'rival', 'cooldown', 'group', 'draft', 'ranch'];
+const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default', 'appointments', 'requiresFound', 'marksIfForged', 'sharp', 'unlocks'];
 const DOCUMENT_KEYS = ['title', 'reference', 'forgeryChance', 'fields'];
 const FIELD_KEYS = ['id', 'label', 'value', 'reference', 'forged'];
 const ID_MUSTER = /^[a-z0-9_]+$/;
@@ -204,12 +204,15 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
       ok = false;
     }
     const marksIfForged = namen(raw, 'marksIfForged', pfad, wer);
-    if (!ok || !label || !result || !requires || !effects || !marks || !marksIfForged) return null;
+    // Gebiete (0.2.15+5): Diese Wahl schaltet Gebiete aus content/map.yaml frei.
+    const unlocks = namen(raw, 'unlocks', pfad, wer);
+    if (!ok || !label || !result || !requires || !effects || !marks || !marksIfForged || !unlocks) return null;
     const choice: EventChoice = { id: id as string, label, result, requires, effects, default: raw.default === true, marks };
     if (appointments !== undefined && appointments !== null) choice.appointments = appointments;
     if (raw.requiresFound === true) choice.requiresFound = true;
     if (marksIfForged.length > 0) choice.marksIfForged = marksIfForged;
     if (raw.sharp === true) choice.sharp = true;
+    if (unlocks.length > 0) choice.unlocks = unlocks;
     return choice;
   }
 
@@ -358,6 +361,12 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
       fehler([...pfad, 'cooldown'], `${wer}: „cooldown“ wirkt nur bei „once: false“ oder mit „group“ – ein einmaliges Ereignis kommt ohnehin nicht wieder.`);
       ok = false;
     }
+    // Karte (0.2.15+5): Figur, um deren Ranch es geht (figures in content/map.yaml).
+    const ranch = raw.ranch;
+    if (ranch !== undefined && (typeof ranch !== 'string' || !ID_MUSTER.test(ranch))) {
+      fehler([...pfad, 'ranch'], `${wer}: „ranch“ muss die id einer Figur aus content/map.yaml sein (z. B. moss).`);
+      ok = false;
+    }
     if (raw.draft !== undefined && typeof raw.draft !== 'boolean') {
       fehler([...pfad, 'draft'], `${wer}: „draft“ muss true oder false sein.`);
       ok = false;
@@ -418,6 +427,7 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
     if (document) def.document = document;
     if (raw.certain === true) def.certain = true;
     if (rival !== undefined) def.rival = rival as RivalId;
+    if (ranch !== undefined) def.ranch = ranch as string;
     if (cooldown !== undefined) def.cooldown = cooldown as number;
     if (group !== undefined) def.group = group as string;
     if (raw.draft === true) def.draft = true;

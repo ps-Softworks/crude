@@ -3,13 +3,12 @@
 // die Zielwerte (Ist/Ziel) und schreibt beides nach docs/botlaeufe.md.
 // Aufruf: npm run bots
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { parse } from 'yaml';
-import { parseBalance } from '../src/sim/balance';
+import { loadBalance } from '../src/sim/testBalance';
 import { blindWildcatChance, botTable, checkTargets, pipelineLine, runBots, targetTable, transportTable } from '../src/sim/bots';
 import { loadEvents } from '../src/sim/testEvents';
 
 const root = new URL('../', import.meta.url);
-const balance = parseBalance(parse(readFileSync(new URL('content/balance.yaml', root), 'utf8')));
+const balance = loadBalance();
 const { version } = JSON.parse(readFileSync(new URL('package.json', root), 'utf8')) as { version: string };
 const catalog = loadEvents();
 

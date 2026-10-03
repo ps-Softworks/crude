@@ -224,9 +224,19 @@ export function dismissTeam(state: GameState, balance: Balance): LogisticsResult
 
 // --- Pipeline ----------------------------------------------------------------
 
-/** Wegerechte mit Namen und ob Jacob sie schon hat. */
-export function rightsStatus(state: Pick<GameState, 'events'>, balance: Balance): { mark: string; label: string; held: boolean }[] {
-  return balance.transport.pipeline.rights.map((r) => ({ ...r, held: state.events.marks[r.mark] !== undefined }));
+/**
+ * Wegerechte mit Namen und ob Jacob sie schon hat. Kreuzt die Route die Ranch
+ * einer Figur (0.2.15+5), steht ihr Name da, sonst das Label aus balance.yaml.
+ */
+export function rightsStatus(
+  state: Pick<GameState, 'events'> & Partial<Pick<GameState, 'parcels'>>,
+  balance: Balance,
+): { mark: string; label: string; held: boolean; parcelId?: string }[] {
+  return balance.transport.pipeline.rights.map((r) => {
+    const ranch = r.figure ? state.parcels?.find((p) => p.figure === r.figure) : undefined;
+    const recht = { mark: r.mark, label: ranch ? `${ranch.name} (${ranch.owner})` : r.label, held: state.events.marks[r.mark] !== undefined };
+    return ranch ? { ...recht, parcelId: ranch.id } : recht;
+  });
 }
 
 /** Merkzeichen der Wegerechte, die noch fehlen. */

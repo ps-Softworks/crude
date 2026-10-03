@@ -78,7 +78,7 @@ describe('Geologen-Prognosen im Spielzustand', () => {
 
   it('lässt Karte und Startoptionen unverändert (Prognosen kommen danach)', () => {
     const rng = new Rng(seedFromString('reihenfolge'));
-    const geologie = generateParcels(balance, rng);
+    const geologie = generateParcels(balance, 'reihenfolge');
     // Die Lagerstätten kommen nach der Geologie und verändern sie nicht.
     const parcels = assignFields(geologie, buildFields(geologie));
     const options = startOptions({ ...newGame('leer', balance), parcels }, balance, rng);
@@ -133,6 +133,7 @@ describe('Reihenfolge beim Rundenende', () => {
       ...state,
       wells: [
         {
+          id: `${parcel.id}#1`,
           parcelId: parcel.id,
           stage: 1,
           status: 'drilling',

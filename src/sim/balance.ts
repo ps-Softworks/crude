@@ -1,5 +1,8 @@
 // Spielzahlen aus content/balance.yaml. Die Simulation bekommt ein fertiges
 // Objekt; parseBalance prüft es und meldet verständliche Fehler.
+// Seit 0.2.15+5 gehört die Karte (content/map.yaml) mit dazu: parseGameData.
+
+import { parseWorldMap, type WorldMap } from './worldMap';
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
 
@@ -16,6 +19,30 @@ export interface Range {
   max: number;
 }
 
+/** Größenklasse der Hofstellen: Anteil und Gewicht (in Abstand²) für die Zerlegung. */
+export interface RanchSize {
+  share: number;
+  weight: number;
+}
+
+/** Ranches und Farmen (0.2.15+5): wie das bohrbare Land zerlegt wird. */
+export interface RanchBalance {
+  /** Abstand der Hofstellen in Karteneinheiten. */
+  spacing: number;
+  /** Zufälliger Versatz als Anteil des Abstands (0–1). */
+  jitter: number;
+  /** Runden Lloyd-Glättung. */
+  relax: number;
+  /** Kleiner als das wird kein Grundstück – das Land geht an die Nachbarn. */
+  minArea: number;
+  /** Kürzeste gemeinsame Kante, die als Nachbarschaft zählt. */
+  minEdge: number;
+  /** Fläche je Bohrplatz; zugleich die Fläche, für die Reserven und Pachtbonus aus balance.yaml gelten. */
+  slotArea: number;
+  maxSlots: number;
+  sizes: RanchSize[];
+}
+
 export const LANDOWNER_TYPES = ['neutral', 'gierig', 'verschuldet', 'misstrauisch', 'fromm'] as const;
 export type LandownerType = (typeof LANDOWNER_TYPES)[number];
 
@@ -23,7 +50,7 @@ export type LandownerType = (typeof LANDOWNER_TYPES)[number];
 export interface LeaseLocation {
   name: string;
   label: string;
-  /** Höchster Abstand in Feldern (auch diagonal), für den diese Lage gilt. */
+  /** Höchster Abstand in Nachbarschaftsschritten (gemeinsame Grenze = 1), für den diese Lage gilt. */
   maxDistance: number;
   bonus: number;
   royalty: number;
@@ -145,7 +172,8 @@ export interface PipelineBalance extends TransportModeBalance {
   buildRounds: number;
   upkeepPerRound: number;
   /** Wegerechte, die alle da sein müssen: Merkzeichen und Name. */
-  rights: { mark: string; label: string }[];
+  /** Wegerechte: Merkzeichen, Name für den Schreibtisch und (0.2.15+5) die Figur, deren Ranch die Route kreuzt. */
+  rights: { mark: string; label: string; figure?: string }[];
   sabotageChance: number;
   sabotageFactor: number;
   repairCost: number;
@@ -416,7 +444,9 @@ export interface RivalsBalance {
 export interface Balance {
   rivals: RivalsBalance;
   start: { cash: number; year: number; rounds: number };
-  map: { width: number; height: number; saltHill: { x: number; y: number } };
+  /** Karte aus content/map.yaml (beim Laden als raw.world übergeben). */
+  world: WorldMap;
+  ranches: RanchBalance;
   geology: {
     zones: Zone[];
     reserves: { small: Range; gusher: Range };
@@ -878,7 +908,12 @@ function parseTransport(raw: unknown): TransportBalance {
     buildCost: nonNegative(raw, `${p}.buildCost`),
     buildRounds: positiveInt(raw, `${p}.buildRounds`),
     upkeepPerRound: nonNegative(raw, `${p}.upkeepPerRound`),
-    rights: rights.map((r, i) => ({ mark: (r as { mark: string }).mark, label: text(r, 'label', `${p}.rights.${i}`) })),
+    rights: rights.map((r, i) => {
+      const recht: { mark: string; label: string; figure?: string } = { mark: (r as { mark: string }).mark, label: text(r, 'label', `${p}.rights.${i}`) };
+      const figure = (r as { figure?: unknown }).figure;
+      if (figure !== undefined) recht.figure = text(r, 'figure', `${p}.rights.${i}`);
+      return recht;
+    }),
     sabotageChance: share(raw, `${p}.sabotageChance`),
     sabotageFactor: nonNegative(raw, `${p}.sabotageFactor`),
     repairCost: nonNegative(raw, `${p}.repairCost`),
@@ -1297,6 +1332,44 @@ function parseAgenda(raw: unknown): AgendaBalance {
   return agenda;
 }
 
+function parseRanches(raw: unknown): RanchBalance {
+  const r: RanchBalance = {
+    spacing: num(raw, 'ranches.spacing'),
+    jitter: share(raw, 'ranches.jitter'),
+    relax: num(raw, 'ranches.relax'),
+    minArea: num(raw, 'ranches.minArea'),
+    minEdge: num(raw, 'ranches.minEdge'),
+    slotArea: num(raw, 'ranches.slotArea'),
+    maxSlots: positiveInt(raw, 'ranches.maxSlots'),
+    sizes: list(raw, 'ranches.sizes').map((_, i) => ({
+      share: share(raw, `ranches.sizes.${i}.share`),
+      weight: num(raw, `ranches.sizes.${i}.weight`),
+    })),
+  };
+  if (r.spacing <= 0 || r.slotArea <= 0 || r.minArea < 0 || r.minEdge < 0) {
+    throw new BalanceError('balance.yaml: "ranches.spacing" und "ranches.slotArea" müssen größer als 0 sein');
+  }
+  if (!Number.isInteger(r.relax) || r.relax < 0) throw new BalanceError('balance.yaml: "ranches.relax" muss eine ganze Zahl ab 0 sein');
+  if (r.sizes.some((c) => c.weight < 0)) throw new BalanceError('balance.yaml: "ranches.sizes" – Gewichte dürfen nicht negativ sein');
+  return r;
+}
+
+/** Die Karte aus content/map.yaml; Fehler dort kommen als BalanceError mit „map.yaml:“ davor. */
+function parseWorld(raw: unknown): WorldMap {
+  const world = (raw as { world?: unknown })?.world;
+  if (world === undefined) throw new BalanceError('Karte fehlt: content/map.yaml muss als "world" mitgeladen werden');
+  try {
+    return parseWorldMap(world, LANDOWNER_TYPES);
+  } catch (e) {
+    throw new BalanceError(e instanceof Error ? e.message : String(e));
+  }
+}
+
+/** Spielzahlen und Karte zusammen: balance.yaml und map.yaml als rohe YAML-Daten. */
+export function parseGameData(balanceRaw: unknown, mapRaw: unknown): Balance {
+  return parseBalance({ ...(balanceRaw as object), world: mapRaw });
+}
+
 export function parseBalance(raw: unknown): Balance {
   const zonesRaw = (raw as { geology?: { zones?: unknown } })?.geology?.zones;
   if (!Array.isArray(zonesRaw) || zonesRaw.length === 0) {
@@ -1330,11 +1403,8 @@ export function parseBalance(raw: unknown): Balance {
       year: num(raw, 'start.year'),
       rounds: num(raw, 'start.rounds'),
     },
-    map: {
-      width: num(raw, 'map.width'),
-      height: num(raw, 'map.height'),
-      saltHill: { x: num(raw, 'map.saltHill.x'), y: num(raw, 'map.saltHill.y') },
-    },
+    world: parseWorld(raw),
+    ranches: parseRanches(raw),
     geology: {
       zones,
       reserves: {
@@ -1361,12 +1431,13 @@ export function parseBalance(raw: unknown): Balance {
     tutorial: parseTutorial(raw),
   };
 
-  const { width, height, saltHill } = balance.map;
-  if (saltHill.x < 0 || saltHill.x >= width || saltHill.y < 0 || saltHill.y >= height) {
-    throw new BalanceError('balance.yaml: "map.saltHill" liegt außerhalb der Karte');
+  for (const r of balance.transport.pipeline.rights) {
+    if (r.figure && !balance.world.figures.some((f) => f.id === r.figure)) {
+      throw new BalanceError(`balance.yaml: Wegerecht "${r.mark}" verweist auf die Figur "${r.figure}", die es in map.yaml nicht gibt`);
+    }
   }
   const { count } = balance.lease.startOptions;
-  if (!Number.isInteger(count) || count < 0 || count > width * height - 1) {
+  if (!Number.isInteger(count) || count < 0) {
     throw new BalanceError('balance.yaml: "lease.startOptions.count" muss eine ganze Zahl ab 0 sein und auf die Karte passen');
   }
   return balance;

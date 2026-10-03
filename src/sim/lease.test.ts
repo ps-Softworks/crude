@@ -1,29 +1,34 @@
 import { describe, expect, it } from 'vitest';
 import type { Balance, LandownerType } from './balance';
 import { endRound, newGame, type GameState } from './game';
-import { generateParcels } from './geology';
 import {
   buyLease,
   buyOption,
-  chebyshev,
   exerciseOption,
   leaseOf,
   leaseTerms,
   locationFor,
   optionOf,
   roundsLeft,
+  stepsBetween,
   type LeaseResult,
 } from './lease';
-import { Rng, seedFromString } from './rng';
 import { loadBalance } from './testBalance';
+import { fakeParcel } from './testParcels';
 
 const balance = loadBalance();
-const salt = balance.map.saltHill;
 
-/** Spiel ohne Startoptionen, damit Tests freie Parzellen sicher wählen können. */
+/**
+ * Eine feste Karte für alle Tests hier (Seed „pacht“), jede Ranch auf genau eine
+ * Standardfläche (ranches.slotArea) gesetzt – so gelten die Bonuszahlen aus balance.yaml 1:1.
+ */
+const KARTE = newGame('pacht', balance);
+const KARTE_PARCELS = KARTE.parcels.map((p) => ({ ...p, area: balance.ranches.slotArea }));
+
+/** Spiel ohne Startoptionen, damit Tests freie Ranches sicher wählen können. */
 function game(seed = 'pacht', cash = 100000): GameState {
   const state = newGame(seed, balance);
-  return { ...state, cash, options: [] };
+  return { ...state, cash, options: [], parcels: KARTE_PARCELS, fields: KARTE.fields };
 }
 
 /** Setzt den Besitzer einer Parzelle fest, um gezielt rechnen zu können. */
@@ -41,65 +46,101 @@ function rounds(state: GameState, n: number): GameState {
   return state;
 }
 
-// Parzellen in festen Abständen zu Salt Hill (6/4 auf 12×9)
-const AM_FUND = `p-${salt.x + 1}-${salt.y + 1}`; // diagonal daneben: Abstand 1
-const NACHBAR = `p-${salt.x - 2}-${salt.y}`; // Abstand 2
-const RAND = 'p-0-0'; // Abstand 6
-const SALT_HILL = `p-${salt.x}-${salt.y}`;
+// Ranches in festen Abständen (Nachbarschaftsschritten) zu Salt Hill auf der Karte „pacht“.
+const SALT = KARTE.parcels.find((p) => p.discovery)!;
+const schritte = (id: string) => stepsBetween(KARTE.parcels, [SALT], { id });
+const SALT_HILL = SALT.id;
+const AM_FUND = KARTE.parcels.find((p) => schritte(p.id) === 1)!.id;
+const NACHBAR = KARTE.parcels.find((p) => schritte(p.id) === 2)!.id;
+const [RAND, RAND2] = KARTE.parcels.filter((p) => schritte(p.id) >= 3).map((p) => p.id);
+
+/** Eine Kette a – b – c – d – e: jede Ranch grenzt nur an ihre Nachbarn in der Reihe. */
+const KETTE = ['a', 'b', 'c', 'd', 'e'].map((id, i, alle) =>
+  fakeParcel(id, { neighbors: [alle[i - 1], alle[i + 1]].filter((n): n is string => n !== undefined) }),
+);
+const kette = (id: string) => KETTE.find((p) => p.id === id)!;
 
 describe('Lage zum nächsten Fund', () => {
-  it('misst den Abstand in Feldern, Diagonalen zählen einfach', () => {
-    expect(chebyshev({ x: 0, y: 0 }, { x: 3, y: 1 })).toBe(3);
-    expect(chebyshev({ x: 2, y: 2 }, { x: 1, y: 1 })).toBe(1);
+  it('misst den Abstand in Nachbarschaftsschritten (gemeinsame Grenze = 1)', () => {
+    expect(stepsBetween(KETTE, [kette('a')], kette('a'))).toBe(0);
+    expect(stepsBetween(KETTE, [kette('a')], kette('b'))).toBe(1);
+    expect(stepsBetween(KETTE, [kette('a')], kette('e'))).toBe(4);
+    expect(stepsBetween(KETTE, [], kette('e'))).toBe(Infinity);
+    expect(stepsBetween([fakeParcel('x'), fakeParcel('y')], [fakeParcel('x')], fakeParcel('y'))).toBe(Infinity);
   });
 
   it('Abstand ≤ 1: Am Fund, ≤ 2: Nachbar, sonst Randlage', () => {
-    const finds = [salt];
-    const at = (dx: number, dy: number) => locationFor(balance, finds, { x: salt.x + dx, y: salt.y + dy }).label;
-    expect(at(0, 0)).toBe('Am Fund');
-    expect(at(1, 1)).toBe('Am Fund');
-    expect(at(-1, 0)).toBe('Am Fund');
-    expect(at(2, 0)).toBe('Nachbar eines Funds');
-    expect(at(-2, 2)).toBe('Nachbar eines Funds');
-    expect(at(3, 0)).toBe('Randlage');
-    expect(at(-3, -3)).toBe('Randlage');
+    const at = (id: string) => locationFor(balance, KETTE, [kette('a')], kette(id)).label;
+    expect(at('a')).toBe('Am Fund');
+    expect(at('b')).toBe('Am Fund');
+    expect(at('c')).toBe('Nachbar eines Funds');
+    expect(at('d')).toBe('Randlage');
   });
 
   it('nimmt den nächsten von mehreren Funden', () => {
-    const finds = [salt, { x: 0, y: 0 }];
-    expect(locationFor(balance, finds, { x: 1, y: 1 }).label).toBe('Am Fund');
-    expect(locationFor(balance, finds, { x: 2, y: 0 }).label).toBe('Nachbar eines Funds');
+    expect(locationFor(balance, KETTE, [kette('a'), kette('e')], kette('d')).label).toBe('Am Fund');
+    expect(locationFor(balance, KETTE, [kette('a'), kette('e')], kette('c')).label).toBe('Nachbar eines Funds');
   });
 
   it('ohne bekannte Funde ist alles Randlage', () => {
-    expect(locationFor(balance, [], salt).label).toBe('Randlage');
+    expect(locationFor(balance, KETTE, [], kette('a')).label).toBe('Randlage');
   });
 
-  it('Salt Hill ist die Entdeckungsparzelle, sonst keine', () => {
+  it('Salt Hill ist die einzige Entdeckungsquelle und liegt im Kern', () => {
     const state = newGame('fund', balance);
     const finds = state.parcels.filter((p) => p.discovery);
-    expect(finds.map((p) => p.id)).toEqual([SALT_HILL]);
+    expect(finds).toHaveLength(1);
+    expect(finds[0].zone).toBe('kern');
+    expect(finds[0].name).toBe('Salt-Hill-Quelle');
+  });
+
+  it('auf der echten Karte gibt es alle drei Lagen', () => {
+    expect([AM_FUND, NACHBAR, RAND, RAND2].every((id) => id !== undefined)).toBe(true);
+  });
+});
+
+describe('Größere Ranches kosten mehr (0.2.15+5)', () => {
+  it('der Bonus wächst mit der Fläche: doppelte Fläche, doppelter Bonus', () => {
+    const mitFlaeche = (area: number) => {
+      const g = game();
+      return { ...g, parcels: g.parcels.map((p) => (p.id === RAND ? { ...p, area, landowner: 'neutral' as const } : p)) };
+    };
+    const klein = leaseTerms(mitFlaeche(balance.ranches.slotArea), balance, RAND).bonus;
+    const gross = leaseTerms(mitFlaeche(2 * balance.ranches.slotArea), balance, RAND).bonus;
+    expect(klein).toBe(80);
+    expect(gross).toBe(160);
+  });
+
+  it('auf der echten Karte: in derselben Lage kostet die größere Ranch mehr', () => {
+    const echt = { ...newGame('pacht', balance), options: [] };
+    const rand = echt.parcels
+      .filter((p) => !p.discovery && stepsBetween(echt.parcels, [SALT], p) >= 3)
+      .map((p) => ({ ...p, landowner: 'neutral' as const }));
+    const state = { ...echt, parcels: echt.parcels.map((p) => rand.find((r) => r.id === p.id) ?? p) };
+    const sortiert = [...rand].sort((a, b) => a.area - b.area);
+    const bonus = (id: string) => leaseTerms(state, balance, id).bonus;
+    expect(bonus(sortiert[sortiert.length - 1].id)).toBeGreaterThan(bonus(sortiert[0].id));
   });
 });
 
 describe('Konditionen: Bonus und Förderzins', () => {
   const cases: [string, LandownerType, number, number][] = [
     // Parzelle, Besitzer, Bonus, Förderzins
-    [RAND, 'neutral', 150, 0.125],
-    [RAND, 'gierig', 190, 0.155], // 187,5 → 190
-    [RAND, 'verschuldet', 190, 0.1], // 0,095 → Untergrenze 10 %
-    [RAND, 'misstrauisch', 230, 0.125], // 225 → 230
-    [RAND, 'fromm', 140, 0.125], // 135 → 140
-    [NACHBAR, 'neutral', 1000, 1 / 6],
-    [NACHBAR, 'gierig', 1250, 1 / 6 + 0.03],
-    [NACHBAR, 'verschuldet', 1250, 1 / 6 - 0.03],
-    [NACHBAR, 'misstrauisch', 1500, 1 / 6],
-    [NACHBAR, 'fromm', 900, 1 / 6],
-    [AM_FUND, 'neutral', 8000, 0.2],
-    [AM_FUND, 'gierig', 10000, 0.23],
-    [AM_FUND, 'verschuldet', 10000, 0.17],
-    [AM_FUND, 'misstrauisch', 12000, 0.2],
-    [AM_FUND, 'fromm', 7200, 0.2],
+    [RAND, 'neutral', 80, 0.125],
+    [RAND, 'gierig', 100, 0.155],
+    [RAND, 'verschuldet', 100, 0.1], // 0,095 → Untergrenze 10 %
+    [RAND, 'misstrauisch', 120, 0.125],
+    [RAND, 'fromm', 70, 0.125], // 72 → 70
+    [NACHBAR, 'neutral', 500, 1 / 6],
+    [NACHBAR, 'gierig', 630, 1 / 6 + 0.03], // 625 → 630
+    [NACHBAR, 'verschuldet', 630, 1 / 6 - 0.03],
+    [NACHBAR, 'misstrauisch', 750, 1 / 6],
+    [NACHBAR, 'fromm', 450, 1 / 6],
+    [AM_FUND, 'neutral', 4000, 0.2],
+    [AM_FUND, 'gierig', 5000, 0.23],
+    [AM_FUND, 'verschuldet', 5000, 0.17],
+    [AM_FUND, 'misstrauisch', 6000, 0.2],
+    [AM_FUND, 'fromm', 3600, 0.2],
   ];
   it.each(cases)('%s mit Besitzer %s: Bonus %d $, Förderzins %f', (id, owner, bonus, royalty) => {
     const terms = leaseTerms(withOwner(game(), id, owner), balance, id);
@@ -116,9 +157,9 @@ describe('Konditionen: Bonus und Förderzins', () => {
   });
 
   it('Optionsgebühr ist 10 % vom Bonus, auf 10 $ gerundet', () => {
-    expect(leaseTerms(withOwner(game(), RAND, 'neutral'), balance, RAND).optionFee).toBe(20); // 15 → 20
-    expect(leaseTerms(withOwner(game(), RAND, 'fromm'), balance, RAND).optionFee).toBe(10); // 14 → 10
-    expect(leaseTerms(withOwner(game(), AM_FUND, 'neutral'), balance, AM_FUND).optionFee).toBe(800);
+    expect(leaseTerms(withOwner(game(), NACHBAR, 'gierig'), balance, NACHBAR).optionFee).toBe(60); // 63 → 60
+    expect(leaseTerms(withOwner(game(), RAND, 'fromm'), balance, RAND).optionFee).toBe(10); // 7 → 10
+    expect(leaseTerms(withOwner(game(), AM_FUND, 'neutral'), balance, AM_FUND).optionFee).toBe(400);
   });
 });
 
@@ -126,10 +167,10 @@ describe('Pacht kaufen', () => {
   it('zieht den Bonus ab und legt die Pacht an', () => {
     const before = withOwner(game('kauf', 2000), NACHBAR, 'fromm');
     const after = ok(buyLease(before, balance, NACHBAR));
-    expect(after.cash).toBe(1100);
+    expect(after.cash).toBe(1550);
     expect(leaseOf(after, NACHBAR)).toMatchObject({
       holder: 'jacob',
-      bonus: 900,
+      bonus: 450,
       startRound: 1,
       expiresAfterRound: 4,
       drilled: false,
@@ -144,11 +185,11 @@ describe('Pacht kaufen', () => {
   });
 
   it('ohne genug Geld kein Kauf', () => {
-    const state = withOwner(game('arm', 7999), AM_FUND, 'neutral');
+    const state = withOwner(game('arm', 3999), AM_FUND, 'neutral');
     const result = buyLease(state, balance, AM_FUND);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toMatch(/Nicht genug Geld/);
-    expect(ok(buyLease({ ...state, cash: 8000 }, balance, AM_FUND)).cash).toBe(0);
+    expect(ok(buyLease({ ...state, cash: 4000 }, balance, AM_FUND)).cash).toBe(0);
   });
 
   it('eine Parzelle kann nicht doppelt gepachtet werden', () => {
@@ -188,7 +229,8 @@ describe('Laufzeit und Verzögerungszins', () => {
 
     state = rounds(state, 1);
     expect(leaseOf(state, RAND)).toBeUndefined();
-    expect(state.log.some((l) => /Pacht auf Parzelle 1\/1 ist ungenutzt abgelaufen/.test(l))).toBe(true);
+    const name = KARTE.parcels.find((p) => p.id === RAND)!.name;
+    expect(state.log.some((l) => l.includes(`Pacht auf ${name} ist ungenutzt abgelaufen`))).toBe(true);
   });
 
   it('gebohrte Pacht verfällt nicht und kostet keinen Verzögerungszins', () => {
@@ -201,7 +243,7 @@ describe('Laufzeit und Verzögerungszins', () => {
 
   it('Verzögerungszins wird je ungebohrter Pacht und Runde abgezogen', () => {
     let state = ok(buyLease(game(), balance, RAND));
-    state = ok(buyLease(state, balance, 'p-11-8'));
+    state = ok(buyLease(state, balance, RAND2));
     const cash = state.cash;
     state = endRound(state, balance);
     expect(state.cash).toBe(cash - 2 * balance.lease.delayRental);
@@ -247,8 +289,8 @@ describe('Pachtoptionen', () => {
   it('Option kostet die Gebühr und sichert Bonus und Förderzins', () => {
     const before = withOwner(game('option', 1000), AM_FUND, 'neutral');
     const after = ok(buyOption(before, balance, AM_FUND));
-    expect(after.cash).toBe(200);
-    expect(optionOf(after, AM_FUND)).toMatchObject({ bonus: 8000, royalty: 0.2, fee: 800, free: false, expiresAfterRound: 2 });
+    expect(after.cash).toBe(600);
+    expect(optionOf(after, AM_FUND)).toMatchObject({ bonus: 4000, royalty: 0.2, fee: 400, free: false, expiresAfterRound: 2 });
   });
 
   it('eingelöste Option wird zur Pacht mit gesichertem Bonus, Laufzeit ab Einlöserunde', () => {
@@ -260,9 +302,9 @@ describe('Pachtoptionen', () => {
     const cash = state.cash;
     state = ok(exerciseOption(state, balance, AM_FUND));
     expect(optionOf(state, AM_FUND)).toBeUndefined();
-    expect(state.cash).toBe(cash - 8000);
+    expect(state.cash).toBe(cash - 4000);
     expect(leaseOf(state, AM_FUND)).toMatchObject({
-      bonus: 8000,
+      bonus: 4000,
       royalty: 0.2,
       startRound: 2,
       expiresAfterRound: 2 + balance.lease.termRounds - 1,
@@ -288,7 +330,7 @@ describe('Pachtoptionen', () => {
     state = rounds(state, 1);
     expect(optionOf(state, NACHBAR)).toBeUndefined();
     expect(exerciseOption(state, balance, NACHBAR).ok).toBe(false);
-    expect(state.log.some((l) => /Option auf Parzelle .* ist verfallen/.test(l))).toBe(true);
+    expect(state.log.some((l) => /Option auf .* ist verfallen/.test(l))).toBe(true);
   });
 
   it('Optionen kosten keinen Verzögerungszins', () => {
@@ -350,26 +392,5 @@ describe('Welt und Determinismus', () => {
   it('gleiche Spielzüge = gleicher Zustand', () => {
     const play = () => rounds(ok(buyLease(game('zug'), balance, RAND)), 6);
     expect(play()).toEqual(play());
-  });
-
-  it('die Geologie je Seed ist dieselbe wie vor Schritt 1.4', () => {
-    // Fingerabdrücke wurden vor dem Einbau der Landbesitzer aufgenommen – mit den
-    // Geologie-Zahlen von damals (1.15 hat Zonen und Reserven neu justiert).
-    const damals: Balance = structuredClone(balance);
-    damals.geology.zones = [
-      { name: 'kern', maxDistance: 1.5, dry: 0.3, small: 0.55, gusher: 0.15 },
-      { name: 'ring', maxDistance: 3.5, dry: 0.5, small: 0.42, gusher: 0.08 },
-      { name: 'rand', maxDistance: 99, dry: 0.75, small: 0.23, gusher: 0.02 },
-    ];
-    damals.geology.reserves = { small: { min: 2000, max: 12000 }, gusher: { min: 30000, max: 120000 } };
-    const fingerprint = (seed: string) => {
-      const parcels = generateParcels(damals, new Rng(seedFromString(seed)));
-      const text = parcels.map((p) => `${p.geology}:${p.reserves}`).join(',');
-      let h = 0;
-      for (let i = 0; i < text.length; i++) h = (Math.imul(h, 31) + text.charCodeAt(i)) >>> 0;
-      return h;
-    };
-    expect(fingerprint('harlan')).toBe(3553528969);
-    expect(fingerprint('brandt')).toBe(1378583280);
   });
 });

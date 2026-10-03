@@ -14,6 +14,7 @@ import { deskDocument, forgeryFound, isForged, rollDocument, type DeskDocument, 
 import { applyFamilyEffects } from './family';
 import type { GameState } from './game';
 import { DEFAULT_LANG, localize, type Lang, type LocalizedText } from './i18n';
+import { openRegions, unlockRegion } from './regions';
 import { Rng, seedFromString, type RngState } from './rng';
 
 /** Bedingungen: jede ist eine Untergrenze (min…) oder Obergrenze (max…). */
@@ -89,6 +90,8 @@ export interface EventChoice {
   marksIfForged?: string[];
   /** Beste Antwort (2.7): fehlt, solange Jacob erschöpft ist (Kraft unter agenda.errorsBelow). */
   sharp?: boolean;
+  /** Gebiete (0.2.15+5): Diese Wahl schaltet Gebiete aus content/map.yaml frei. */
+  unlocks?: string[];
 }
 
 export interface EventDef {
@@ -118,6 +121,8 @@ export interface EventDef {
   choices: EventChoice[];
   /** Briefart (2.4): Angebot, Forderung, Information oder Persönliches. Fehlt sie, ist es kein Brief. */
   mail?: MailKind;
+  /** Karte (0.2.15+5): Figur aus content/map.yaml, um deren Ranch es geht (z. B. moss). */
+  ranch?: string;
   /**
    * Frist in Runden (2.4): so lange bleibt ein Brief im Posteingang, bevor die
    * Standard-Wahl gilt. Fehlt sie, gilt events.mail.deadlineRounds; andere Ereignisse 1.
@@ -527,11 +532,13 @@ export function resolveEvent(
   if (reason) return { ok: false, reason };
   const belegt = spendAppointments(state, balance, choiceCost(event, choice));
   if (!belegt.ok) return belegt;
-  return { ok: true, state: erledigen(belegt.state, event, choice, lang, '', balance.events.timedRounds) };
+  return { ok: true, state: openRegions(erledigen(belegt.state, event, choice, lang, '', balance.events.timedRounds), balance) };
 }
 
 function erledigen(state: GameState, event: EventDef, choice: EventChoice, lang: Lang, vorsatz: string, timedRounds: number): GameState {
-  const nach = applyEffects(state, choice.effects, event.id, timedRounds);
+  // Gebiete (0.2.15+5): nur den Schalter umlegen – die Ranches kommen mit openRegions.
+  const offen = (choice.unlocks ?? []).reduce(unlockRegion, state);
+  const nach = applyEffects(offen, choice.effects, event.id, timedRounds);
   const agenda = event.routine ? { ...nach.agenda, done: [...nach.agenda.done, event.id] } : nach.agenda;
   // Merkzeichen behalten die Runde, in der sie zuerst gesetzt wurden.
   const marks = { ...nach.events.marks };

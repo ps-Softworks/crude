@@ -9,18 +9,19 @@ const balance: Balance = loadBalance();
 const NORMAL: Geologist = { accuracy: 3, bias: 0 };
 
 function world(seed: string): Parcel[] {
-  return generateParcels(balance, new Rng(seedFromString(seed)));
+  return generateParcels(balance, seed);
 }
 
 function rngFor(seed: string): Rng {
   return new Rng(seedFromString(seed));
 }
 
-/** 1.000 Parzellen aus 10 Welten, ohne Entdeckungsquelle. */
+/** 1.000 Ranches aus 30 Welten, ohne Entdeckungsquelle. */
 function sampleParcels(): Parcel[] {
   const parcels: Parcel[] = [];
-  for (let i = 0; i < 10; i++) {
-    parcels.push(...world(`welt-${i}`).filter((p) => !p.discovery));
+  for (let i = 0; i < 30; i++) {
+    // Ranch-ids wiederholen sich je Welt (salthill-01 …) – für die Prognosen eindeutig machen.
+    parcels.push(...world(`welt-${i}`).filter((p) => !p.discovery).map((p) => ({ ...p, id: `${i}:${p.id}` })));
   }
   return parcels.slice(0, 1000);
 }

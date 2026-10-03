@@ -26,7 +26,7 @@ function parcel(state: GameState, id: string) {
 
 function nachbarn(state: GameState, id: string) {
   const p = parcel(state, id);
-  return state.parcels.filter((q) => q.id !== id && Math.abs(q.x - p.x) <= 1 && Math.abs(q.y - p.y) <= 1);
+  return state.parcels.filter((q) => p.neighbors.includes(q.id));
 }
 
 function pacht(state: GameState, parcelId: string, holder: 'jacob' | 'bullard', drilled = false): Lease {
@@ -34,7 +34,7 @@ function pacht(state: GameState, parcelId: string, holder: 'jacob' | 'bullard', 
 }
 
 function fündigeQuelle(parcelId: string): Well {
-  return { parcelId, stage: 1, status: 'found', roundsLeft: 0, spent: 0, oilStage: 1, startRound: 1 } as Well;
+  return { id: `${parcelId}#1`, parcelId, stage: 1, status: 'found', roundsLeft: 0, spent: 0, oilStage: 1, startRound: 1 } as Well;
 }
 
 /** Eine Randparzelle ohne Option, Pacht oder Nachbarschaft zu Jacobs Startoptionen. */
@@ -166,7 +166,7 @@ describe('Rivale Bullard (1.12)', () => {
       const state0 = newGame('konflikt', balance);
       const p = freieRandparzelle(state0);
       const state = { ...state0, leases: [pacht(state0, p.id, 'bullard')] };
-      expect(buyLease(state, balance, p.id)).toEqual({ ok: false, reason: 'Diese Parzelle ist schon verpachtet.' });
+      expect(buyLease(state, balance, p.id)).toEqual({ ok: false, reason: 'Diese Ranch ist schon verpachtet.' });
     });
   });
 
@@ -199,7 +199,7 @@ describe('Rivale Bullard (1.12)', () => {
       const fund = s.rival.wells.find((w) => w.status === 'found')!;
       expect(fund.rate).toBe(bullard.ratePerWell);
       expect(fund.royalty).toBe(0.125);
-      expect(s.log.some((l) => l.includes('Bullard stößt auf Parzelle') && l.includes('auf Öl'))).toBe(true);
+      expect(s.log.some((l) => l.includes('Bullard stößt auf ') && l.includes('auf Öl'))).toBe(true);
     });
   });
 
@@ -262,7 +262,8 @@ describe('Rivale Bullard (1.12)', () => {
         summe += s.rival.cash;
       }
       const schnitt = summe / 20;
-      expect(schnitt).toBeGreaterThan(10_000);
+      // 0.2.15+5: Auf der Ranch-Karte sucht Bullard kleine Farmen – etwas weniger Kasse als auf dem Raster.
+      expect(schnitt).toBeGreaterThan(5_000);
       expect(schnitt).toBeLessThan(80_000);
     }, 30_000);
   });
@@ -297,9 +298,8 @@ describe('Rivale Bullard (1.12)', () => {
     it('Szenario: Jacobs Option verfällt, Bullard pachtet die beste Parzelle', () => {
       const state0 = newGame('bullard', balance);
       const reich = { ...state0, options: [], rival: { ...state0.rival, cash: 1_000_000 } };
-      // Die beste nicht-trockene Parzelle aus Bullards Sicht.
+      // Die beste Ranch aus Bullards Sicht (er kennt die Geologie nicht).
       const ziel = rivalCandidates(reich, balance)
-        .filter((p) => p.geology !== 'dry')
         .reduce((a, b) => (rivalUtility(reich, balance, b, 0.5) > rivalUtility(reich, balance, a, 0.5) ? b : a));
       const option = { parcelId: ziel.id, holder: 'jacob' as const, bonus: 0, royalty: 0.125, fee: 0, free: true, expiresAfterRound: reich.round };
       // Streuung aus, damit die beste Parzelle sicher gewinnt.
@@ -308,8 +308,8 @@ describe('Rivale Bullard (1.12)', () => {
 
       expect(s.options.some((o) => o.parcelId === ziel.id)).toBe(false);
       expect(s.leases.find((l) => l.parcelId === ziel.id)?.holder).toBe('bullard');
-      expect(s.log.some((l) => l.includes(`schnappt dir Parzelle ${ziel.x + 1}/${ziel.y + 1} weg`))).toBe(true);
-      expect(buyLease(s, ohneStreuung, ziel.id)).toEqual({ ok: false, reason: 'Diese Parzelle ist schon verpachtet.' });
+      expect(s.log.some((l) => l.includes(`schnappt dir ${ziel.name} weg`))).toBe(true);
+      expect(buyLease(s, ohneStreuung, ziel.id)).toEqual({ ok: false, reason: 'Diese Ranch ist schon verpachtet.' });
     });
 
     it('ohne Eingriff: Jacob spielt 16 Runden passiv, Bullard hält eine gute Parzelle', () => {

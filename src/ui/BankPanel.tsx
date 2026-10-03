@@ -43,7 +43,7 @@ function percent(value: number) {
 
 function parcelName(game: GameState, parcelId: string | null) {
   const parcel = game.parcels.find((p) => p.id === parcelId);
-  return parcel ? `Parzelle ${parcelLabel(parcel)}` : '–';
+  return parcel ? `${parcelLabel(parcel)}` : '–';
 }
 
 /** Schieberegler über die Stellungen, die die Simulation vorgibt; die letzte Stellung ist genau das Maximum. */

@@ -10,6 +10,7 @@ const balance = loadBalance();
 /** Eine fördernde Quelle auf der Parzelle. */
 function quelle(parcelId: string): Well {
   return {
+    id: `${parcelId}#1`,
     parcelId,
     stage: 1,
     status: 'found',

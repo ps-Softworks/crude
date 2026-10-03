@@ -193,7 +193,7 @@ export function Desk({
         </section>
 
         <section className="panel">
-          <h2>Parzelle</h2>
+          <h2>Ranch</h2>
           {parcelPanel}
         </section>
 
@@ -271,14 +271,14 @@ export function Desk({
 export function SourcesPanel({ game, onSelect }: { game: GameState; onSelect: (id: string) => void }) {
   const rows = sourceRows(game);
   if (rows.length === 0) {
-    return <p className="muted">Noch keine Bohrung. Pachte eine Parzelle und leg den Bohrturm auf.</p>;
+    return <p className="muted">Noch keine Bohrung. Pachte eine Ranch und leg den Bohrturm auf.</p>;
   }
   return (
     <ul className="sources">
       {rows.map((row) => (
         <li key={row.parcelId} className={row.status}>
           <button className="link" onClick={() => onSelect(row.parcelId)}>
-            Parzelle {row.label}
+            {row.label}
           </button>
           <span className="lage">{row.text}</span>
           {row.status === 'found' && (

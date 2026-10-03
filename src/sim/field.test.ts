@@ -1,26 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { assignFields, buildFields, fieldLabel, fieldOf } from './field';
 import { newGame } from './game';
-import type { Parcel } from './geology';
+import { fakeParcel, gridParcels } from './testParcels';
 import { loadBalance } from './testBalance';
 
 const balance = loadBalance();
 
-/** Kleines Testraster: 'o' = Öl, '.' = trocken, eine Zeile je Kartenreihe. */
-function welt(karte: string[]): Parcel[] {
-  return karte.flatMap((zeile, y) =>
-    [...zeile].map((zeichen, x) => ({
-      id: `p-${x}-${y}`,
-      x,
-      y,
-      zone: 'test',
-      geology: zeichen === 'o' ? ('small' as const) : ('dry' as const),
-      reserves: zeichen === 'o' ? 1000 : 0,
-      landowner: 'neutral' as const,
-      discovery: false,
-    })),
-  );
-}
+/** Kleines Testraster: 'o' = Öl, '.' = trocken; Nachbarn auch über Eck (wie früher das Raster). */
+const welt = gridParcels;
 
 describe('Lagerstätten finden', () => {
   it('verbindet Nachbarn zu einem Feld und addiert die Reserven', () => {
@@ -81,7 +68,7 @@ describe('Lagerstätten finden', () => {
 describe('Lagerstätten auf der echten Karte', () => {
   const state = newGame('harlan', balance);
 
-  it('gibt jeder ölführenden Parzelle genau ein Feld, das auch sie enthält', () => {
+  it('gibt jeder ölführenden Ranch genau ein Feld, das auch sie enthält', () => {
     for (const parcel of state.parcels) {
       if (parcel.reserves === 0) continue;
       expect(parcel.fieldId).toBeDefined();
@@ -90,7 +77,7 @@ describe('Lagerstätten auf der echten Karte', () => {
     }
   });
 
-  it('lässt trockene Parzellen ohne Feld', () => {
+  it('lässt trockene Ranches ohne Feld', () => {
     const trocken = state.parcels.filter((p) => p.reserves === 0);
     expect(trocken.length).toBeGreaterThan(0);
     for (const parcel of trocken) {
@@ -99,7 +86,7 @@ describe('Lagerstätten auf der echten Karte', () => {
     }
   });
 
-  it('vergibt keine Parzelle doppelt und verliert keine Reserve', () => {
+  it('vergibt keine Ranch doppelt und verliert keine Reserve', () => {
     const vergeben = state.fields.flatMap((f) => f.parcelIds);
     expect(new Set(vergeben).size).toBe(vergeben.length);
     const oelParzellen = state.parcels.filter((p) => p.reserves > 0);
@@ -108,7 +95,7 @@ describe('Lagerstätten auf der echten Karte', () => {
     expect(summe(state.fields)).toBe(summe(oelParzellen));
   });
 
-  it('findet ein Feld mit mehreren Parzellen (GDD §5: eine Lagerstätte über viele Parzellen)', () => {
+  it('findet ein Feld mit mehreren Ranches (GDD §5: eine Lagerstätte über viele Grundstücke)', () => {
     expect(Math.max(...state.fields.map((f) => f.parcelIds.length))).toBeGreaterThan(1);
   });
 
@@ -137,8 +124,34 @@ describe('Feld-IDs an den Parzellen', () => {
 });
 
 describe('Feld-Namen', () => {
-  it('nennt das Feld nach seinem Mittelpunkt, ab 1 gezählt', () => {
-    expect(fieldLabel({ id: 'f-0', parcelIds: [], reserves: 0, x: 0, y: 0, peakWells: 0 })).toBe('Feld 1/1');
-    expect(fieldLabel({ id: 'f-3', parcelIds: [], reserves: 0, x: 6, y: 4, peakWells: 0 })).toBe('Feld 7/5');
+  it('nennt das Feld nach der Ranch mit den meisten Reserven', () => {
+    const parcels = [
+      fakeParcel('a', { name: 'Moss-Farm', reserves: 500, geology: 'small', neighbors: ['b'] }),
+      fakeParcel('b', { name: 'Hale-Ranch', reserves: 900, geology: 'small', neighbors: ['a'] }),
+    ];
+    const [feld] = buildFields(parcels);
+    expect(feld.name).toBe('Hale-Ranch');
+    expect(fieldLabel(feld)).toBe('Feld bei Hale-Ranch');
+  });
+});
+
+describe('Felder über gemeinsame Grenzen (0.2.15+5)', () => {
+  it('verbindet nur Ranches, die als Nachbarn eingetragen sind – nicht nach Abstand', () => {
+    const parcels = [
+      fakeParcel('a', { x: 0, y: 0, reserves: 1, geology: 'small', neighbors: ['c'] }),
+      fakeParcel('b', { x: 0.5, y: 0, reserves: 1, geology: 'small', neighbors: [] }),
+      fakeParcel('c', { x: 9, y: 9, reserves: 1, geology: 'small', neighbors: ['a'] }),
+    ];
+    const fields = buildFields(parcels);
+    expect(fields.map((f) => f.parcelIds)).toEqual([['a', 'c'], ['b']]);
+  });
+
+  it('eine trockene Ranch dazwischen trennt zwei Felder', () => {
+    const parcels = [
+      fakeParcel('a', { reserves: 1, geology: 'small', neighbors: ['b'] }),
+      fakeParcel('b', { neighbors: ['a', 'c'] }),
+      fakeParcel('c', { reserves: 1, geology: 'small', neighbors: ['b'] }),
+    ];
+    expect(buildFields(parcels)).toHaveLength(2);
   });
 });

@@ -9,10 +9,8 @@ import { autoResolve, deskEvents, drawMail, resolveEvent, type EventChoice, type
 import { endRound, newGame, type GameState } from './game';
 import { Rng, seedFromString } from './rng';
 import { deserializeGame, SAVE_FORMAT, serializeGame } from './save';
-import { loadBalance } from './testBalance';
+import { loadBalance, rawBalance } from './testBalance';
 import { loadEvents } from './testEvents';
-import { parse } from 'yaml';
-import { readFileSync } from 'node:fs';
 
 const balance = loadBalance();
 
@@ -79,7 +77,7 @@ describe('balance.yaml: Dokumentenprüfung', () => {
   });
 
   it('meldet einen fehlenden Block und falsche Werte', () => {
-    const raw = parse(readFileSync(new URL('../../content/balance.yaml', import.meta.url), 'utf8'));
+    const raw = rawBalance() as any;
     const ohne = { ...raw, events: { ...raw.events, documents: undefined } };
     expect(() => parseBalance(ohne)).toThrow(/events.documents/);
     const falsch = { ...raw, events: { ...raw.events, documents: { forgeryChance: 2, maxChecks: 2 } } };
@@ -393,7 +391,7 @@ describe('Spielstand mit Dokumenten', () => {
   it('Spielstände aus Format 4 laden ohne Dokumente', () => {
     const s = newGame('alt', balance);
     const { docs: _docs, ...alt } = s.events;
-    const geladen = deserializeGame(JSON.stringify({ format: 4, appVersion: '0.2.4', savedRound: 1, state: { ...s, events: alt } }));
+    const geladen = deserializeGame(JSON.stringify({ format: SAVE_FORMAT, appVersion: '0.2.4', savedRound: 1, state: { ...s, events: alt } }));
     expect(geladen.ok && geladen.state.events.docs).toEqual({});
   });
 

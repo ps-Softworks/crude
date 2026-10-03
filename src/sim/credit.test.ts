@@ -38,6 +38,7 @@ function mitQuellen(n: number, seed = 'quellen'): GameState {
     .filter((p) => p.reserves > 0)
     .slice(0, n)
     .map((p) => ({
+      id: `${p.id}#1`,
       parcelId: p.id,
       stage: 1,
       status: 'found' as const,
@@ -170,7 +171,7 @@ describe('Kredit aufnehmen (takeLoan)', () => {
     expect(sicher.loan.rate).toBe(0.05);
     const quelle = mitQuellen(1, 'mit').wells[0];
     expect(sicher.loan.collateral).toBe(quelle.parcelId);
-    expect(sicher.state.log.at(-1)).toMatch(/5 % pro Jahr, Pfand ist die Quelle auf Parzelle \d+\/\d+/);
+    expect(sicher.state.log.at(-1)).toMatch(/5 % pro Jahr, Pfand ist die Quelle auf \S+/);
   });
 
   it('eine verpfändete Quelle wird nicht zweimal verwendet – der zweite Kredit ist ungesichert', () => {

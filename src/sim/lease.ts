@@ -7,7 +7,7 @@ import type { Balance, Landowner, LeaseLocation } from './balance';
 import { formatDate } from './calendar';
 import { timedEffect } from './events';
 import type { GameState } from './game';
-import type { Parcel } from './geology';
+import { areaFactor, type Parcel } from './geology';
 import type { Rng } from './rng';
 
 /** Wer eine Pacht oder Option hält: Jacob oder der Rivale Bullard (ab 1.12). */
@@ -51,14 +51,32 @@ export interface LeaseTerms {
 
 export type LeaseResult = { ok: true; state: GameState } | { ok: false; reason: string };
 
-export interface Point {
-  x: number;
-  y: number;
+/**
+ * Abstand in Nachbarschaftsschritten (0.2.15+5): 0 = eine der Ranches selbst,
+ * 1 = gemeinsame Grenze, 2 = Nachbar eines Nachbarn … Ohne Verbindung: Infinity.
+ */
+export function stepsBetween(parcels: readonly Parcel[], from: readonly Pick<Parcel, 'id'>[], to: Pick<Parcel, 'id'>): number {
+  if (from.length === 0) return Infinity;
+  const byId = new Map(parcels.map((p) => [p.id, p]));
+  const dist = new Map<string, number>(from.map((p) => [p.id, 0]));
+  const offen = from.map((p) => p.id);
+  for (let i = 0; i < offen.length; i++) {
+    const id = offen[i];
+    const d = dist.get(id)!;
+    if (id === to.id) return d;
+    for (const n of byId.get(id)?.neighbors ?? []) {
+      if (!dist.has(n)) {
+        dist.set(n, d + 1);
+        offen.push(n);
+      }
+    }
+  }
+  return Infinity;
 }
 
-/** Abstand in Feldern, Diagonalen zählen wie gerade Schritte. */
-export function chebyshev(a: Point, b: Point): number {
-  return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+/** Haben die beiden Ranches eine gemeinsame Grenze? */
+export function adjacent(a: Pick<Parcel, 'id' | 'neighbors'>, b: Pick<Parcel, 'id'>): boolean {
+  return a.neighbors.includes(b.id);
 }
 
 /** Alle bekannten Funde. Vorerst nur Salt Hill; ab 1.6 kommen eigene Funde dazu. */
@@ -66,9 +84,9 @@ export function knownDiscoveries(state: Pick<GameState, 'parcels'>): Parcel[] {
   return state.parcels.filter((p) => p.discovery);
 }
 
-/** Lage einer Stelle zum nächsten der übergebenen Funde. Ohne Funde: letzte Lage. */
-export function locationFor(balance: Balance, discoveries: readonly Point[], point: Point): LeaseLocation {
-  const d = discoveries.reduce((min, f) => Math.min(min, chebyshev(f, point)), Infinity);
+/** Lage einer Ranch zum nächsten der übergebenen Funde (in Nachbarschaftsschritten). Ohne Funde: letzte Lage. */
+export function locationFor(balance: Balance, parcels: readonly Parcel[], discoveries: readonly Parcel[], parcel: Parcel): LeaseLocation {
+  const d = stepsBetween(parcels, discoveries, parcel);
   const locations = balance.lease.locations;
   return locations.find((l) => d <= l.maxDistance) ?? locations[locations.length - 1];
 }
@@ -92,12 +110,14 @@ function parcelById(state: Pick<GameState, 'parcels'>, parcelId: string): Parcel
 /** Konditionen für eine Pacht auf dieser Parzelle, wenn man sie jetzt abschließt. */
 export function leaseTerms(state: GameState, balance: Balance, parcelId: string): LeaseTerms {
   const parcel = parcelById(state, parcelId);
-  if (!parcel) throw new Error(`Parzelle "${parcelId}" gibt es nicht.`);
-  const location = locationFor(balance, knownDiscoveries(state), parcel);
+  if (!parcel) throw new Error(`Ranch "${parcelId}" gibt es nicht.`);
+  const location = locationFor(balance, state.parcels, knownDiscoveries(state), parcel);
   const landowner = landownerOf(balance, parcel);
   const { royaltyMin, royaltyMax, option } = balance.lease;
   // Nachwirkung aus Ereignissen (0.2.15+3): leaseCost macht Pachten befristet teurer oder billiger.
-  const bonus = roundBonus(balance, location.bonus * landowner.bonusFactor * Math.max(0, 1 + timedEffect(state, 'leaseCost')));
+  // Größere Ranches kosten mehr (0.2.15+5): Der Lagebonus gilt je ranches.slotArea Fläche.
+  const flaeche = areaFactor(balance, parcel);
+  const bonus = roundBonus(balance, location.bonus * flaeche * landowner.bonusFactor * Math.max(0, 1 + timedEffect(state, 'leaseCost')));
   const royalty = Math.min(royaltyMax, Math.max(royaltyMin, location.royalty + landowner.royaltyAdd));
   const optionFee = roundBonus(balance, bonus * option.feeShare);
   return { location, landowner, bonus, royalty, optionFee };
@@ -116,9 +136,9 @@ export function roundsLeft(state: Pick<GameState, 'round'>, item: { expiresAfter
   return Math.max(0, item.expiresAfterRound - state.round + 1);
 }
 
-/** Kurzname einer Parzelle für Log und Meldungen, wie auf der Karte (ab 1 gezählt). */
-export function parcelLabel(parcel: Point): string {
-  return `${parcel.x + 1}/${parcel.y + 1}`;
+/** Name einer Ranch für Log und Meldungen, z. B. „Moss-Farm“. */
+export function parcelLabel(parcel: Pick<Parcel, 'name'>): string {
+  return parcel.name;
 }
 
 function money(value: number): string {
@@ -129,15 +149,15 @@ function money(value: number): string {
 function blockReason(state: GameState, parcelId: string): string | undefined {
   if (state.finished) return 'Das Kapitel ist beendet.';
   const parcel = parcelById(state, parcelId);
-  if (!parcel) return 'Diese Parzelle gibt es nicht.';
+  if (!parcel) return 'Diese Ranch gibt es nicht.';
   if (parcel.discovery) return 'Salt Hill ist schon erschlossen – hier gibt es nichts zu pachten.';
   const lease = leaseOf(state, parcelId);
-  if (lease) return lease.holder === 'jacob' ? 'Du hast diese Parzelle schon gepachtet.' : 'Diese Parzelle ist schon verpachtet.';
+  if (lease) return lease.holder === 'jacob' ? 'Du hast diese Ranch schon gepachtet.' : 'Diese Ranch ist schon verpachtet.';
   const option = optionOf(state, parcelId);
   if (option) {
     return option.holder === 'jacob'
-      ? 'Du hast schon eine Option auf diese Parzelle – löse sie ein.'
-      : 'Auf dieser Parzelle liegt schon eine Option.';
+      ? 'Du hast schon eine Option auf diese Ranch – löse sie ein.'
+      : 'Auf dieser Ranch liegt schon eine Option.';
   }
   return undefined;
 }
@@ -166,7 +186,7 @@ export function buyLease(state: GameState, balance: Balance, parcelId: string): 
       ...state,
       cash: state.cash - terms.bonus,
       leases: [...state.leases, lease],
-      log: [...state.log, `${formatDate(state)}: Pacht auf Parzelle ${parcelLabel(parcel)} für ${money(terms.bonus)} abgeschlossen.`],
+      log: [...state.log, `${formatDate(state)}: Pacht auf ${parcelLabel(parcel)} für ${money(terms.bonus)} abgeschlossen.`],
     },
   };
 }
@@ -200,7 +220,7 @@ export function buyOption(state: GameState, balance: Balance, parcelId: string):
       options: [...state.options, option],
       log: [
         ...state.log,
-        `${formatDate(state)}: Option auf Parzelle ${parcelLabel(parcel)} für ${money(terms.optionFee)} gekauft (Bonus ${money(terms.bonus)} gesichert).`,
+        `${formatDate(state)}: Option auf ${parcelLabel(parcel)} für ${money(terms.optionFee)} gekauft (Bonus ${money(terms.bonus)} gesichert).`,
       ],
     },
   };
@@ -210,7 +230,7 @@ export function buyOption(state: GameState, balance: Balance, parcelId: string):
 export function exerciseOption(state: GameState, balance: Balance, parcelId: string): LeaseResult {
   if (state.finished) return { ok: false, reason: 'Das Kapitel ist beendet.' };
   const option = optionOf(state, parcelId);
-  if (!option || option.holder !== 'jacob') return { ok: false, reason: 'Du hast keine Option auf diese Parzelle.' };
+  if (!option || option.holder !== 'jacob') return { ok: false, reason: 'Du hast keine Option auf diese Ranch.' };
   if (state.cash < option.bonus) {
     return {
       ok: false,
@@ -234,21 +254,21 @@ export function exerciseOption(state: GameState, balance: Balance, parcelId: str
       cash: state.cash - option.bonus,
       options: state.options.filter((o) => o !== option),
       leases: [...state.leases, lease],
-      log: [...state.log, `${formatDate(state)}: Option auf Parzelle ${parcelLabel(parcel)} eingelöst – die Pacht läuft.`],
+      log: [...state.log, `${formatDate(state)}: Option auf ${parcelLabel(parcel)} eingelöst – die Pacht läuft.`],
     },
   };
 }
 
-/** Startoptionen: freie Optionen auf verschiedenen Randlage-Parzellen, per Seed gewählt. */
+/** Startoptionen: freie Optionen auf verschiedenen Ranches in Randlage, per Seed gewählt. */
 export function startOptions(state: GameState, balance: Balance, rng: Rng): LeaseOption[] {
   const { count, termRounds } = balance.lease.startOptions;
   const outermost = balance.lease.locations[balance.lease.locations.length - 1];
   const discoveries = knownDiscoveries(state);
   const candidates = state.parcels.filter(
-    (p) => !p.discovery && locationFor(balance, discoveries, p).name === outermost.name,
+    (p) => !p.discovery && locationFor(balance, state.parcels, discoveries, p).name === outermost.name,
   );
   if (candidates.length < count) {
-    throw new Error(`Zu wenige Randlage-Parzellen für ${count} Startoptionen.`);
+    throw new Error(`Zu wenige Ranches in Randlage für ${count} Startoptionen.`);
   }
   const options: LeaseOption[] = [];
   for (let i = 0; i < count; i++) {
@@ -284,7 +304,7 @@ export function settleLeases(state: GameState, balance: Balance): GameState {
   for (const lease of state.leases) {
     if (!lease.drilled && lease.expiresAfterRound <= state.round) {
       const wessen = lease.holder === 'jacob' ? 'Die Pacht' : 'Bullards Pacht';
-      log.push(`${date}: ${wessen} auf Parzelle ${label(lease.parcelId)} ist ungenutzt abgelaufen.`);
+      log.push(`${date}: ${wessen} auf ${label(lease.parcelId)} ist ungenutzt abgelaufen.`);
     } else {
       running.push(lease);
     }
@@ -293,7 +313,7 @@ export function settleLeases(state: GameState, balance: Balance): GameState {
   const options: LeaseOption[] = [];
   for (const option of state.options) {
     if (option.expiresAfterRound <= state.round) {
-      log.push(`${date}: Die Option auf Parzelle ${label(option.parcelId)} ist verfallen.`);
+      log.push(`${date}: Die Option auf ${label(option.parcelId)} ist verfallen.`);
     } else {
       options.push(option);
     }
@@ -312,7 +332,7 @@ export function settleLeases(state: GameState, balance: Balance): GameState {
       cash -= rent;
       leases.push(lease);
     } else {
-      log.push(`${date}: Kein Geld für den Verzögerungszins – die Pacht auf Parzelle ${label(lease.parcelId)} ist verfallen.`);
+      log.push(`${date}: Kein Geld für den Verzögerungszins – die Pacht auf ${label(lease.parcelId)} ist verfallen.`);
     }
   }
 

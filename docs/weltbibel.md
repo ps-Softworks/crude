@@ -20,6 +20,10 @@ Port Ellis ist die Hafenstadt am Golf, in der Jacob im Frühjahr 88 ankommt. Hie
 ### Salt Hill
 Salt Hill ist ein flacher Salzdom einige Meilen landeinwärts von Port Ellis, auf dem wenige Wochen vor Spielbeginn die erste große Quelle sprang. Seitdem stehen dort Bohrtürme so dicht, dass man von einem zum nächsten über die Plattformen gehen könnte. Unter dem Hügel liegt ein gemeinsames Feld: Jede neue Quelle senkt den Druck aller anderen. Brände, Unfälle und Streit um Grenzen gehören zum Alltag. Salt Hill ist Jacobs erste Chance – und die erste Lektion, dass zu viele Gierige den Preis für alle ruinieren.
 
+### Gebiete rund um Salt Hill (Entwurf, 0.2.15+5)
+> Neu von Claude für die Karte (content/map.yaml), noch nicht bestätigt – bitte prüfen und in eigener Stimme umschreiben.
+Die Karte von Cordova ist in Gebiete geteilt. Salt Hill selbst ist in Ranches und Farmen zerlegt, deren Besitzer Pachten vergeben; die Entdeckungsquelle auf dem Salzdom gehört **Wheeler & Söhne**. Thornes Bahnlinie führt vom **Bahnhof Salt Hill** am Südrand des Feldes nach Port Ellis, daneben der Wagenweg. Westlich fließt der **Rio Salado** zum Golf. Nördlich liegt die **Hollins-Prärie** (Weideland), östlich die **Cottonwood-Niederung** (Baumwollfarmen), im Westen die **Bitterwasser-Sümpfe** (Salzsümpfe am Golf) – alle drei sind in Kapitel 1 gesperrt und werden später über Gerüchte und Ereignisse zugänglich. Die Pipeline-Route vom Feld zum Bahnhof kreuzt die **Moss-Farm** von Ezekiel Moss und **Witwe Pruitts Weide** (Agnes Pruitt); die **Hale-Ranch** gehört **Martha Hale**, der Witwe aus dem Brief von Anwalt Pruitt. Die übrigen Ranches tragen erfundene Familiennamen (Liste in content/map.yaml).
+
 ## Die drei Parteien
 
 ### Handelspartei
