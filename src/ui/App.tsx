@@ -1,7 +1,7 @@
 // App (1.11): hält den Spielzustand und reicht ihn an den Schreibtisch weiter.
 // Spielregeln und alle Texte kommen aus src/sim – hier wird nur geklickt.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { applyAction, nextStep, parcelActions, type DeskActionKind } from '../sim/desk';
 import { accidentChance, deeperChance, wellOf, type Well } from '../sim/drilling';
 import { formatForecast, trueChance } from '../sim/forecast';
@@ -12,6 +12,7 @@ import { leaseOf, leaseTerms, optionOf, roundsLeft } from '../sim/lease';
 import { fieldStatus } from '../sim/production';
 import type { LoanResult } from '../sim/credit';
 import { balance } from './balance';
+import { clearAutosave, loadAutosave, writeAutosave } from './autosave';
 import { Desk } from './Desk';
 import { GameOverScreen } from './GameOverScreen';
 
@@ -42,12 +43,31 @@ function randomSeed(): string {
 // Für Tests und Fehlersuche: ?seed=abc&debug=1 in der Adresse.
 const params = new URLSearchParams(window.location.search);
 
+/**
+ * Womit das Spiel anfängt: mit dem Seed aus der Adresse (immer eine frische
+ * Welt), sonst mit dem Spielstand vom letzten Besuch, sonst mit einer neuen
+ * zufälligen Welt. Seed und Zustand gehören zusammen, also kommen beide aus
+ * einem einzigen Aufruf.
+ */
+function start(): { seed: string; game: GameState } {
+  const ausUrl = params.get('seed');
+  if (ausUrl !== null) return { seed: ausUrl, game: newGame(ausUrl, balance) };
+  const gespeichert = loadAutosave();
+  if (gespeichert) return { seed: gespeichert.seed, game: gespeichert };
+  const seed = randomSeed();
+  return { seed, game: newGame(seed, balance) };
+}
+
 export function App() {
-  const [seed, setSeed] = useState(() => params.get('seed') ?? randomSeed());
-  const [game, setGame] = useState(() => newGame(seed, balance));
+  const [anfang] = useState(start);
+  const [seed, setSeed] = useState(anfang.seed);
+  const [game, setGame] = useState(anfang.game);
   const [debug, setDebug] = useState(params.get('debug') === '1');
   const [selected, setSelected] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  // Nach jeder Runde und jeder Aktion wird der Spielstand neu geschrieben.
+  useEffect(() => writeAutosave(game), [game]);
 
   // Der Schreibtisch sagt, was als Nächstes dran ist; danach richtet sich die Meldung.
   const step = nextStep(game, balance);
@@ -87,6 +107,12 @@ export function App() {
     setGame(newGame(neuerSeed, balance));
     setSelected(null);
     setNotice(null);
+  }
+
+  // Spielstand weg und neu anfangen: so lässt sich ein alter Stand gezielt prüfen.
+  function forget() {
+    clearAutosave();
+    startNewWorld(randomSeed());
   }
 
   if (game.ending === 'pleite') {
@@ -130,6 +156,7 @@ export function App() {
         onSeed={setSeed}
         onNewWorld={() => startNewWorld(seed)}
         onRandomWorld={() => startNewWorld(randomSeed())}
+        onForget={forget}
       />
     </div>
   );

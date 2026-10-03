@@ -44,6 +44,8 @@ export interface DeskProps {
   onSeed: (seed: string) => void;
   onNewWorld: () => void;
   onRandomWorld: () => void;
+  /** Spielstand löschen und ohne gespeichertes Spiel neu anfangen. */
+  onForget: () => void;
 }
 
 export function Desk({
@@ -61,6 +63,7 @@ export function Desk({
   onSeed,
   onNewWorld,
   onRandomWorld,
+  onForget,
 }: DeskProps) {
   const heroisch = step?.parcelIds ?? [];
   const leases = game.leases.filter((l) => l.holder === 'jacob').length;
@@ -160,6 +163,9 @@ export function Desk({
           <button type="submit">Welt laden</button>
           <button type="button" onClick={onRandomWorld}>
             Zufällige Welt
+          </button>
+          <button type="button" onClick={onForget}>
+            Spielstand löschen
           </button>
         </form>
       </section>
