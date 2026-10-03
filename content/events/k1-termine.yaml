@@ -8,6 +8,7 @@
 - id: termin_ruth
   routine: true
   appointments: 1
+  notMarked: [thomas_geboren]   # nach der Geburt: termin_familie
   title:
     de: Ein Abend mit Ruth
     en: An Evening with Ruth
@@ -24,7 +25,32 @@
       result:
         de: Jacob schläft zum ersten Mal seit Wochen, ohne vom Bohrseil zu träumen.
         en: For the first time in weeks, Jacob sleeps without dreaming of the drilling cable.
-      effects: { strength: 5 }
+      # Familienzeit (2.7): Die Kraft kommt am Rundenende, +3 bis +8 je nach Beziehung.
+      effects: { ruth: 6 }
+
+- id: termin_familie
+  routine: true
+  appointments: 1
+  marked: [thomas_geboren]
+  delay: 0
+  title:
+    de: Ein Abend zu dritt
+    en: An Evening for Three
+  text:
+    de: >-
+      Thomas schreit, bis Jacob ihn nimmt, und schläft dann auf seiner Brust ein,
+      als hätte er nie etwas anderes gewollt. Ruth lacht zum ersten Mal seit Tagen.
+    en: >-
+      Thomas screams until Jacob picks him up, then falls asleep on his chest as if
+      he had never wanted anything else. Ruth laughs for the first time in days.
+  choices:
+    - id: bleiben
+      label: { de: "Den Abend bei Ruth und Thomas bleiben", en: "Stay the evening with Ruth and Thomas" }
+      result:
+        de: Jacob sitzt bis spät im Schaukelstuhl, das Kind auf dem Arm. Das Bohrseil kann warten.
+        en: Jacob sits late in the rocking chair with the child in his arms. The drilling cable can wait.
+      # Familienzeit (2.7): Die Kraft kommt am Rundenende, +3 bis +8 je nach Beziehung.
+      effects: { ruth: 5, thomas: 6 }
 
 - id: termin_sonntag
   routine: true

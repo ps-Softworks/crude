@@ -7,10 +7,11 @@
 // Der Weltzufall (state.rng) bleibt unberührt – Karte, Bohrungen und Markt sind
 // mit und ohne Ereignisse gleich.
 
-import { spendAppointments, timeReason, overtimeFor } from './agenda';
+import { sharpReason, spendAppointments, timeReason, overtimeFor } from './agenda';
 import type { Balance } from './balance';
 import { formatDate } from './calendar';
 import { deskDocument, forgeryFound, isForged, rollDocument, type DeskDocument, type DocState, type DocumentDef } from './documents';
+import { applyFamilyEffects } from './family';
 import type { GameState } from './game';
 import { DEFAULT_LANG, localize, type Lang, type LocalizedText } from './i18n';
 import { Rng, seedFromString, type RngState } from './rng';
@@ -32,7 +33,7 @@ export type ConditionKey = (typeof CONDITION_KEYS)[number];
 export type Conditions = Partial<Record<ConditionKey, number>>;
 
 /** Effekte: Zahlen, die auf den Zustand addiert werden (negativ = abziehen). */
-export const EFFECT_KEYS = ['cash', 'oilStock', 'railTariff', 'strength'] as const;
+export const EFFECT_KEYS = ['cash', 'oilStock', 'railTariff', 'strength', 'ruth', 'thomas'] as const;
 export type EffectKey = (typeof EFFECT_KEYS)[number];
 export type Effects = Partial<Record<EffectKey, number>>;
 
@@ -63,6 +64,8 @@ export interface EventChoice {
   requiresFound?: boolean;
   /** Dokumentenprüfung (2.5): Merkzeichen, die nur gesetzt werden, wenn das Dokument gefälscht war – die verdeckte Folge. */
   marksIfForged?: string[];
+  /** Beste Antwort (2.7): fehlt, solange Jacob erschöpft ist (Kraft unter agenda.errorsBelow). */
+  sharp?: boolean;
 }
 
 export interface EventDef {
@@ -212,8 +215,16 @@ function cents(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-/** Effekte auf den Zustand anwenden. Öl und Tarif fallen nie unter null, Kraft bleibt zwischen 0 und dem Höchstwert. */
+/**
+ * Effekte auf den Zustand anwenden. Öl und Tarif fallen nie unter null, Kraft
+ * bleibt zwischen 0 und dem Höchstwert. ruth/thomas ändern die Beziehung (2.7);
+ * was der Familie guttut, zählt als Familienzeit.
+ */
 export function applyEffects(state: GameState, effects: Effects): GameState {
+  return applyFamilyEffects(applyWorldEffects(state, effects), effects.ruth, effects.thomas);
+}
+
+function applyWorldEffects(state: GameState, effects: Effects): GameState {
   let { cash, oilStock, royaltyOil, railTariff, strength } = state;
   if (effects.cash !== undefined) cash += effects.cash;
   if (effects.oilStock !== undefined) {
@@ -248,7 +259,12 @@ export function routineOffered(state: GameState, event: EventDef): boolean {
 
 /** Warum eine Wahl gerade nicht geht – Bedingung oder Zeit –, oder null. */
 export function choiceReason(state: GameState, balance: Balance, event: EventDef, choice: EventChoice): string | null {
-  return foundReason(state, event, choice) ?? unmetReason(state, choice.requires) ?? timeReason(state, balance, choiceCost(event, choice));
+  return (
+    foundReason(state, event, choice) ??
+    (choice.sharp ? sharpReason(state, balance) : null) ??
+    unmetReason(state, choice.requires) ??
+    timeReason(state, balance, choiceCost(event, choice))
+  );
 }
 
 /** Dokumentenprüfung (2.5): gesperrt, solange keine Fälschung gefunden ist. */
@@ -382,7 +398,7 @@ export function resolveEvent(
   if (!event || !daDa) return { ok: false, reason: 'Dieses Ereignis liegt nicht auf dem Schreibtisch.' };
   const choice = event.choices.find((c) => c.id === choiceId);
   if (!choice) return { ok: false, reason: 'Diese Antwort gibt es nicht.' };
-  const reason = foundReason(state, event, choice) ?? unmetReason(state, choice.requires);
+  const reason = foundReason(state, event, choice) ?? (choice.sharp ? sharpReason(state, balance) : null) ?? unmetReason(state, choice.requires);
   if (reason) return { ok: false, reason };
   const belegt = spendAppointments(state, balance, choiceCost(event, choice));
   if (!belegt.ok) return belegt;

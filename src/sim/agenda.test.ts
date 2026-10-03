@@ -12,6 +12,7 @@ import {
 import { nextStep } from './desk';
 import type { Well } from './drilling';
 import { autoResolve, choiceCost, deskEvents, deskRoutines, drawEvents, resolveEvent, type EventChoice, type EventDef } from './events';
+import { familyStrength } from './family';
 import { endRound, newGame, type GameState } from './game';
 import { deserializeGame, serializeGame } from './save';
 import { loadBalance } from './testBalance';
@@ -260,13 +261,13 @@ describe('Fertig-Kriterium 2.3 mit den echten Inhalten', () => {
     }
     // 3 + 2 Termine sind die Runde, Ruth ist die erste Überstunde.
     expect(state.agenda.used).toBe(6);
-    // 100 − 3 (Reise) − 3 (Bohren) − 5 (Überstunde) + 5 (Ruth)
-    expect(state.strength).toBe(94);
+    // 100 − 3 (Reise) − 3 (Bohren) − 5 (Überstunde); Ruths Abend gibt erst am Rundenende Kraft (2.7).
+    expect(state.strength).toBe(89);
     const [sonntag] = deskRoutines(state, balance, katalog);
     expect(sonntag.id).toBe('termin_sonntag');
     expect(sonntag.choices[0]).toMatchObject({ ok: false, reason: 'Dafür fehlt die Zeit (2 Termine nötig, nur noch 1 frei).' });
-    // Und nach der Runde gibt es keine Erholung.
-    expect(endRound(state, balance, katalog).strength).toBe(94);
+    // Nach der Runde keine Erholung (Überstunde) – nur die Familienzeit gibt Kraft (2.7).
+    expect(endRound(state, balance, katalog).strength).toBe(89 + familyStrength(state, balance));
   });
 });
 

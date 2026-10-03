@@ -6,11 +6,11 @@
 
 import type { GameState } from './game';
 
-/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5). */
-export const SAVE_FORMAT = 5;
+/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7). */
+export const SAVE_FORMAT = 6;
 
 /** Ältere Formate, die mit Ersatzwerten noch geladen werden. */
-const ALTE_FORMATE = [2, 3, 4];
+const ALTE_FORMATE = [2, 3, 4, 5];
 
 export interface SaveFile {
   format: number;
@@ -43,6 +43,7 @@ const ZAHLEN = [
   'roundLogStart',
   'strength',
   'strengthMax',
+  'sick',
 ] as const;
 
 /** Listen im Zustand. */
@@ -104,6 +105,10 @@ export function validateState(value: unknown): LoadResult {
   if (!istObjekt(agenda) || !istZahl(agenda.budget) || !istZahl(agenda.used) || !istListe(agenda.done)) {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
+  const family = value.family;
+  if (!istObjekt(family) || !istZahl(family.ruth) || !istZahl(family.thomas) || !istZahl(family.thomasBorn) || !istZahl(family.time)) {
+    return { ok: false, reason: UNVOLLSTAENDIG };
+  }
   if (typeof value.finished !== 'boolean') return { ok: false, reason: UNVOLLSTAENDIG };
   if (value.ending !== null && value.ending !== 'kapitel' && value.ending !== 'pleite') {
     return { ok: false, reason: UNVOLLSTAENDIG };
@@ -157,5 +162,10 @@ export function deserializeGame(text: string): LoadResult {
   if (parsed.format === 2) {
     state = { strength: 100, strengthMax: 100, agenda: { budget: 5, used: 0, done: [] }, ...state };
   }
+  // Ersatzwerte (2.7): Spielstände bis Format 5 kennen keine Familie und keine
+  // Krankheit – Jacob ist gesund, Ruth zufrieden (70 wie in balance.yaml).
+  // Thomas kommt zu Beginn der nächsten Runde zur Welt, falls seine Runde schon vorbei ist.
+  if (state.sick === undefined) state = { ...state, sick: 0 };
+  if (state.family === undefined) state = { ...state, family: { ruth: 70, thomas: 0, thomasBorn: 0, time: 0 } };
   return validateState(state);
 }

@@ -14,6 +14,7 @@ import { capacityLeft, netPrice, sellOil, tariff } from '../sim/transport';
 import { balance } from './balance';
 import { BankPanel } from './BankPanel';
 import { EventsPanel } from './EventsPanel';
+import { FamilyPanel } from './FamilyPanel';
 import { FeedbackLink } from './FeedbackLink';
 import { Map } from './Map';
 import { NewspaperPanel } from './NewspaperPanel';
@@ -85,9 +86,10 @@ export function Desk({
   const options = game.options.filter((o) => o.holder === 'jacob').length;
   const rivalLeases = game.leases.filter((l) => l.holder === 'bullard').length;
   const rivalWells = game.rival.wells.filter((w) => w.status === 'found').length;
+  const zeit = agendaView(game, balance);
 
   return (
-    <div className="desk">
+    <div className={zeit.exhausted || zeit.sickRounds > 0 ? 'desk erschoepft' : 'desk'}>
       <header>
         <h1>
           CRUDE <span className="version">v{__APP_VERSION__}</span> <FeedbackLink className="feedback kopf" />
@@ -138,9 +140,18 @@ export function Desk({
 
       <p className="nextstep">{step?.text ?? 'Das Kapitel ist zu Ende.'}</p>
 
+      {!game.finished && zeit.sickRounds > 0 && (
+        <p className="krankmeldung">
+          Jacob liegt krank im Bett{zeit.sickRounds > 1 ? ` – noch ${zeit.sickRounds} Runden` : ' – diese Runde noch'}. Keine
+          Termine: Ereignisse und Briefe bekommen ihre Standardantwort.
+        </p>
+      )}
+
       {!game.finished && <NewspaperPanel game={game} />}
 
       <EventsPanel game={game} onResolved={onEvent} />
+
+      <FamilyPanel game={game} debug={debug} />
 
       <div className="spalten">
         <section className="panel">
@@ -325,13 +336,20 @@ function SalePanel({ game, onSold }: { game: GameState; onSold: (state: GameStat
 function Termine({ game, debug }: { game: GameState; debug: boolean }) {
   const t = agendaView(game, balance);
   const punkte = '●'.repeat(t.used) + '○'.repeat(t.budget - t.used);
-  const extra = '◆'.repeat(t.overtimeUsed) + '◇'.repeat(t.overtimeMax - t.overtimeUsed);
+  const extra = t.sickRounds > 0 ? '' : '◆'.repeat(t.overtimeUsed) + '◇'.repeat(t.overtimeMax - t.overtimeUsed);
   return (
     <span className={t.left === 0 ? 'termine warn' : 'termine'} title="● belegt · ○ frei · ◇ mögliche Überstunde (kostet Kraft)">
       Termine <span className="punkte">{punkte}</span>
       <span className="punkte extra">{extra}</span> · Jacob wirkt {t.word}
       {t.tired && ' (Müdigkeit kostet einen Termin)'}
-      {debug && <> · Kraft {game.strength}</>}
+      {t.exhausted && ' (Fehler schleichen sich ein)'}
+      {debug && (
+        <>
+          {' '}
+          · Kraft {game.strength}
+          {game.sick > 0 && <> · krank {game.sick}</>}
+        </>
+      )}
     </span>
   );
 }

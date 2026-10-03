@@ -1,0 +1,57 @@
+# Familie (2.7, GDD §12): der Familienbildschirm. Die Simulation entscheidet, WELCHES
+# Zustandswort gilt (Schwellen in balance.yaml, family); hier steht nur, wie es klingt.
+# Jeder Text mit Sprachschlüssel de/en (Englisch darf leer bleiben, dann erscheint Deutsch).
+# Regel aus dem GDD: keine Zahlen – Kraft und Beziehung sind nie als Zahl sichtbar.
+# ENTWURF von Claude: Sätze bitte in eigener Stimme umschreiben.
+
+words:
+  content: { de: zufrieden, en: content }
+  neglected: { de: vernachlässigt, en: neglected }
+  bitter: { de: verbittert, en: bitter }
+  estranged: { de: entfremdet, en: estranged }
+
+ruth:
+  content:
+    de: Ruth summt beim Abwasch und fragt abends, wie es am Turm läuft.
+    en: Ruth hums over the dishes and asks in the evening how things are at the rig.
+  neglected:
+    de: Ruth deckt nur noch für sich, wenn es spät wird.
+    en: Ruth only sets one place now when it gets late.
+  bitter:
+    de: Ruth spricht mit der Wirtin mehr als mit dir.
+    en: Ruth talks more to the landlady than to you.
+  estranged:
+    de: Ruth hat ihrer Schwester in Hallstead geschrieben. Den Brief hat sie dir nicht gezeigt.
+    en: Ruth has written to her sister in Hallstead. She did not show you the letter.
+
+thomas:
+  content:
+    de: Thomas greift nach deinem Finger und lässt ihn nicht mehr los.
+    en: Thomas grabs your finger and won't let go.
+  neglected:
+    de: Thomas fremdelt, wenn du ihn auf den Arm nimmst.
+    en: Thomas shies away when you pick him up.
+  bitter:
+    de: Thomas schreit, sobald du die Kammer betrittst, und hört erst bei Ruth wieder auf.
+    en: Thomas screams as soon as you enter the room and only stops with Ruth.
+  estranged:
+    de: Thomas kennt die Wirtin besser als seinen Vater.
+    en: Thomas knows the landlady better than his own father.
+
+# Was zu Hause über Jacob gesagt wird – je nachdem, wie er beisammen ist.
+jacob:
+  rested:
+    de: Jacob pfeift auf dem Weg zum Turm.
+    en: Jacob whistles on his way to the rig.
+  tense:
+    de: Jacob schläft unruhig und redet im Schlaf von Bohrmeißeln.
+    en: Jacob sleeps badly and talks about drill bits in his sleep.
+  tired:
+    de: „Du bist grau im Gesicht“, sagt Ruth. Jacob schafft weniger, als er sich vornimmt.
+    en: '"You look grey," Ruth says. Jacob gets less done than he plans.'
+  exhausted:
+    de: Jacobs Handschrift in den Büchern wird zittrig. Er verliest sich, übersieht Dinge.
+    en: Jacob's handwriting in the ledgers grows shaky. He misreads things, overlooks them.
+  sick:
+    de: Jacob liegt mit Fieber in der Kammer. Ruth hält das Geschäft zusammen, so gut es geht.
+    en: Jacob lies in the room with a fever. Ruth holds the business together as best she can.

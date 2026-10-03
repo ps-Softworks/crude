@@ -146,6 +146,7 @@
       requires: { minCash: 100 }
       effects: { cash: -100 }
       appointments: 2
+      sharp: true              # beste Antwort (2.7): fehlt, wenn Jacob erschöpft ist
     - id: abweisen
       label: { de: "Nicht antworten", en: "Don't reply" }
       result:
@@ -220,6 +221,7 @@
         de: Silas riecht daran und lacht, bis er husten muss. „Lampenöl und Bahnschotter, Junge.“
         en: Silas sniffs them and laughs until he coughs. "Lamp oil and railway ballast, boy."
       marks: [pike_entlarvt]
+      sharp: true              # beste Antwort (2.7): fehlt, wenn Jacob erschöpft ist
     - id: wegwerfen
       label: { de: "Wegwerfen", en: "Throw it away" }
       result:

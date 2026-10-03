@@ -65,9 +65,14 @@ export function forgeryFound(state: Pick<GameState, 'events'>, eventId: string):
   return doc !== undefined && doc.forgery !== null && doc.checked.includes(doc.forgery);
 }
 
-/** Wie oft die Lupe bei diesem Dokument noch geht. */
-export function checksLeft(state: Pick<GameState, 'events'>, balance: Balance, eventId: string): number {
-  return Math.max(0, balance.events.documents.maxChecks - (state.events.docs[eventId]?.checked.length ?? 0));
+/**
+ * Wie oft die Lupe bei diesem Dokument noch geht. Erschöpft (2.7, Kraft unter
+ * agenda.errorsBelow) prüft Jacob agenda.errorsCheckPenalty Felder weniger.
+ */
+export function checksLeft(state: Pick<GameState, 'events'> & Partial<Pick<GameState, 'strength'>>, balance: Balance, eventId: string): number {
+  const muede = state.strength !== undefined && state.strength < balance.agenda.errorsBelow;
+  const max = balance.events.documents.maxChecks - (muede ? balance.agenda.errorsCheckPenalty : 0);
+  return Math.max(0, max - (state.events.docs[eventId]?.checked.length ?? 0));
 }
 
 /**
@@ -92,7 +97,12 @@ export function inspectField(
   const field = event.document.fields.find((f) => f.id === fieldId);
   if (!field) return { ok: false, reason: 'Dieses Feld gibt es nicht.' };
   if (doc.checked.includes(fieldId)) return { ok: false, reason: 'Dieses Feld ist schon geprüft.' };
-  if (checksLeft(state, balance, eventId) <= 0) return { ok: false, reason: 'Für mehr fehlt die Zeit – die Lupe bleibt liegen.' };
+  if (checksLeft(state, balance, eventId) <= 0) {
+    return {
+      ok: false,
+      reason: state.strength < balance.agenda.errorsBelow ? 'Jacobs Augen brennen – mehr prüft er heute nicht.' : 'Für mehr fehlt die Zeit – die Lupe bleibt liegen.',
+    };
+  }
   const docs = { ...state.events.docs, [eventId]: { ...doc, checked: [...doc.checked, fieldId] } };
   const log =
     doc.forgery === fieldId

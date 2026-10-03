@@ -4,6 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { formatContentError, parseEventFiles } from '../src/sim/eventContent';
+import { parseFamilyContent } from '../src/sim/family';
 import { parseNewspaperContent } from '../src/sim/newspaper';
 import { EVENTS_DIR, readEventFiles } from '../src/sim/testEvents';
 
@@ -16,7 +17,9 @@ const zeitung = parseNewspaperContent(
   'content/newspaper.yaml',
   readFileSync(new URL('../content/newspaper.yaml', import.meta.url), 'utf8'),
 );
-const errors = [...parsed.errors, ...zeitung.errors];
+// Familie (2.7): Zustandswörter und Sätze für den Familienbildschirm.
+const familie = parseFamilyContent('content/family.yaml', readFileSync(new URL('../content/family.yaml', import.meta.url), 'utf8'));
+const errors = [...parsed.errors, ...zeitung.errors, ...familie.errors];
 
 if (errors.length > 0) {
   for (const error of errors) console.error(formatContentError(error));

@@ -3,6 +3,12 @@
 // kostet Kraft. Eine Runde ohne Überstunden gibt Kraft zurück. Unter
 // tiredBelow gibt es weniger Termine: Müdigkeit frisst Zeit.
 //
+// Schwellen (2.7, GDD §4): Unter errorsBelow schleichen sich Fehler ein (die
+// besten Antworten fehlen, die Lupe prüft weniger – siehe exhausted). Fällt die
+// Kraft am Rundenende unter sickBelow, wird Jacob krank: 1 bis sickRoundsMax
+// Runden ohne Termine, je tiefer die Kraft, desto länger. Bei 0 bricht er
+// zusammen (collapseRounds). Im Krankenbett kommt er wieder zu Kräften.
+//
 // Die Zahl der Termine einer Runde wird am Rundenanfang festgelegt (budget), damit
 // eine Überstunde, die Jacob mitten in der Runde unter die Schwelle drückt, nicht
 // rückwirkend aus normalen Terminen Überstunden macht. Kein Zufall hier.
@@ -20,7 +26,7 @@ export interface AgendaState {
   done: string[];
 }
 
-type Zeit = Pick<GameState, 'agenda' | 'strength'>;
+type Zeit = Pick<GameState, 'agenda' | 'strength' | 'sick'>;
 
 /** Termine je Runde bei dieser Kraft: unter der Müdigkeitsschwelle weniger. */
 export function budgetFor(strength: number, balance: Balance): number {
@@ -28,13 +34,33 @@ export function budgetFor(strength: number, balance: Balance): number {
   return strength < a.tiredBelow ? a.appointments - a.tiredPenalty : a.appointments;
 }
 
-export function newAgenda(strength: number, balance: Balance): AgendaState {
-  return { budget: budgetFor(strength, balance), used: 0, done: [] };
+export function newAgenda(strength: number, balance: Balance, sick = 0): AgendaState {
+  return { budget: sick > 0 ? 0 : budgetFor(strength, balance), used: 0, done: [] };
 }
 
-/** Wie viele Termine noch gehen, Überstunden eingeschlossen. */
+/** Wie viele Termine noch gehen, Überstunden eingeschlossen. Krank: keine. */
 export function appointmentsLeft(state: Zeit, balance: Balance): number {
+  if (state.sick > 0) return 0;
   return Math.max(0, state.agenda.budget + balance.agenda.maxOvertime - state.agenda.used);
+}
+
+/** Unter errorsBelow (2.7): Jacob ist so erschöpft, dass sich Fehler einschleichen. */
+export function exhausted(state: Pick<GameState, 'strength'>, balance: Balance): boolean {
+  return state.strength < balance.agenda.errorsBelow;
+}
+
+/** Warum eine beste Antwort (sharp) gerade fehlt, oder null (2.7). */
+export function sharpReason(state: Pick<GameState, 'strength'>, balance: Balance): string | null {
+  return exhausted(state, balance) ? 'Jacob ist zu erschöpft – diese Antwort fällt ihm gerade nicht ein.' : null;
+}
+
+/** Wie lange Jacob bei dieser Kraft krank wird (2.7): 0 = gar nicht. Kein Zufall – je tiefer, desto länger. */
+export function sickRoundsFor(strength: number, balance: Balance): number {
+  const a = balance.agenda;
+  if (strength <= 0) return a.collapseRounds;
+  if (strength >= a.sickBelow) return 0;
+  const stufe = a.sickBelow / a.sickRoundsMax;
+  return Math.min(a.sickRoundsMax, 1 + Math.floor((a.sickBelow - strength) / stufe));
 }
 
 /** Wie viele Überstunden in dieser Runde schon gemacht sind. */
@@ -49,6 +75,7 @@ export function overtimeFor(state: Zeit, n: number): number {
 
 /** Warum n Termine nicht mehr gehen, oder null, wenn sie gehen. */
 export function timeReason(state: Zeit, balance: Balance, n: number): string | null {
+  if (n > 0 && state.sick > 0) return 'Jacob liegt krank im Bett – Termine gehen erst wieder, wenn er auf den Beinen ist.';
   const frei = appointmentsLeft(state, balance);
   if (n <= frei) return null;
   if (frei === 0) return 'Dafür fehlt die Zeit: Alle Termine und Überstunden sind belegt.';
@@ -75,29 +102,68 @@ export function spendAppointments(state: GameState, balance: Balance, n: number)
 }
 
 /**
- * Rundenende: Nach einer Runde ohne Überstunden kommt Jacob wieder zu Kräften
- * (restBonus, höchstens bis strengthMax). Dann beginnt die nächste Runde mit
- * frischen Terminen – so vielen, wie die Kraft jetzt hergibt.
+ * Rundenende: Erst die Krankheit (2.7) – liegt Jacob schon krank, ist eine
+ * Runde überstanden und er gewinnt sickRecovery Kraft; sonst wird er krank,
+ * wenn die Kraft unter sickBelow liegt (bei 0: Zusammenbruch). Dann gibt eine
+ * Runde ohne Überstunden restBonus zurück (höchstens bis strengthMax). Die
+ * nächste Runde beginnt mit frischen Terminen – so vielen, wie Kraft und
+ * Krankheit hergeben.
  */
 export function settleAgenda(state: GameState, balance: Balance): GameState {
-  const ruhig = overtimeUsed(state) === 0;
-  const strength = ruhig ? Math.min(state.strengthMax, state.strength + balance.agenda.restBonus) : state.strength;
-  const log =
-    strength > state.strength
-      ? [...state.log, `${formatDate(state)}: Eine ruhige Runde – Jacob kommt wieder zu Kräften.`]
-      : state.log;
-  return { ...state, strength, log, agenda: newAgenda(strength, balance) };
+  const a = balance.agenda;
+  const date = formatDate(state);
+  const log = [...state.log];
+  let { strength, sick } = state;
+  if (sick > 0) {
+    sick -= 1;
+    strength = Math.min(state.strengthMax, strength + a.sickRecovery);
+    log.push(sick > 0 ? `${date}: Jacob hütet weiter das Bett.` : `${date}: Jacob ist wieder auf den Beinen.`);
+  } else {
+    sick = sickRoundsFor(strength, balance);
+    if (sick > 0) {
+      const runden = sick === 1 ? 'eine Runde' : `${sick} Runden`;
+      log.push(
+        strength <= 0
+          ? `${date}: Zusammenbruch – Jacob bricht auf dem Bohrplatz zusammen. Der Arzt verordnet Bettruhe für ${runden}.`
+          : `${date}: Jacob ist krank. Fieber und Husten – er fällt ${runden} aus.`,
+      );
+    }
+  }
+  if (overtimeUsed(state) === 0) {
+    const vorher = strength;
+    strength = Math.min(state.strengthMax, strength + a.restBonus);
+    if (strength > vorher && state.sick === 0 && sick === 0) log.push(`${date}: Eine ruhige Runde – Jacob kommt wieder zu Kräften.`);
+  }
+  return { ...state, strength, sick, log, agenda: newAgenda(strength, balance, sick) };
 }
+
+/** Kraftstufen, wie man sie Jacob ansieht (2.7). */
+export const STRENGTH_LEVELS = ['rested', 'tense', 'tired', 'exhausted', 'sick'] as const;
+export type StrengthLevel = (typeof STRENGTH_LEVELS)[number];
+
+/** Wie Jacob gerade beisammen ist – die Stufe, nie die Zahl. */
+export function strengthLevel(state: Pick<GameState, 'strength' | 'strengthMax' | 'sick'>, balance: Balance): StrengthLevel {
+  if (state.sick > 0) return 'sick';
+  if (exhausted(state, balance)) return 'exhausted';
+  if (state.strength < balance.agenda.tiredBelow) return 'tired';
+  if (state.strength < state.strengthMax * 0.8) return 'tense';
+  return 'rested';
+}
+
+const STUFE: Record<StrengthLevel, string> = {
+  rested: 'ausgeruht',
+  tense: 'angespannt',
+  tired: 'müde',
+  exhausted: 'erschöpft',
+  sick: 'krank',
+};
 
 /**
  * Wie Jacob wirkt, in einem Wort. Kraft ist nie als Zahl sichtbar (GDD §4) –
  * die Oberfläche zeigt nur das.
  */
-export function strengthWord(state: Pick<GameState, 'strength' | 'strengthMax'>, balance: Balance): string {
-  if (state.strength < balance.agenda.tiredBelow * 0.6) return 'erschöpft';
-  if (state.strength < balance.agenda.tiredBelow) return 'müde';
-  if (state.strength < state.strengthMax * 0.8) return 'angespannt';
-  return 'ausgeruht';
+export function strengthWord(state: Pick<GameState, 'strength' | 'strengthMax' | 'sick'>, balance: Balance): string {
+  return STUFE[strengthLevel(state, balance)];
 }
 
 /** Was die Kopfzeile über die Termine der Runde zeigt. */
@@ -115,6 +181,10 @@ export interface AgendaView {
   word: string;
   /** Müdigkeit kostet gerade Termine. */
   tired: boolean;
+  /** Erschöpft (2.7): Fehler schleichen sich ein. */
+  exhausted: boolean;
+  /** Krank (2.7): keine Termine, noch so viele Runden (diese mitgezählt). */
+  sickRounds: number;
 }
 
 export function agendaView(state: GameState, balance: Balance): AgendaView {
@@ -125,7 +195,9 @@ export function agendaView(state: GameState, balance: Balance): AgendaView {
     overtimeUsed: overtimeUsed(state),
     left: appointmentsLeft(state, balance),
     word: strengthWord(state, balance),
-    tired: state.agenda.budget < balance.agenda.appointments,
+    tired: state.sick === 0 && state.agenda.budget < balance.agenda.appointments,
+    exhausted: state.sick === 0 && exhausted(state, balance),
+    sickRounds: state.sick,
   };
 }
 

@@ -277,6 +277,26 @@ agenda:
   tiredPenalty: 1          # … 1 Termin weniger je Runde
   strengthStart: 100
   strengthMax: 100         # Kapitel 1; sinkt mit dem Alter (90, 80, 70, 55) – kommt mit späteren Kapiteln
+  # Schwellen (2.7, GDD §4): Was niedrige Kraft anrichtet.
+  errorsBelow: 30          # unter 30: Fehler – die besten Antworten (sharp) fehlen, …
+  errorsCheckPenalty: 1    # … und die Lupe prüft so viele Felder weniger
+  sickBelow: 15            # unter 15 am Rundenende: Jacob wird krank (keine Termine, Ereignisse laufen ohne ihn)
+  sickRoundsMax: 3         # krank 1–3 Runden: je tiefer die Kraft, desto länger (kein Zufall)
+  collapseRounds: 4        # bei 0: Zusammenbruch, lange Krankheit (Tod und Erbfolge erst ab späteren Kapiteln)
+  sickRecovery: 10         # PLATZHALTER: Kraft je Runde im Krankenbett (zusätzlich zur ruhigen Runde)
+
+# Familie (2.7, GDD §12 und §4): Ruth und Thomas. Beziehung 0–100, angezeigt als Zustandswort.
+# Texte stehen in content/family.yaml, Familientermine in content/events/.
+family:
+  ruthStart: 70            # PLATZHALTER: Beziehung zu Ruth bei Spielbeginn
+  thomasBirthRound: 3      # Thomas kommt zu Beginn von Runde 3 zur Welt (Herbst 88; Ruth ist zu Spielbeginn schwanger)
+  thomasStart: 70          # PLATZHALTER: Beziehung zu Thomas bei der Geburt
+  neglect: 4               # PLATZHALTER: Beziehung −4 je Runde ohne Familienzeit (nicht, solange Jacob krank zu Hause liegt)
+  strengthFrom: 3          # Familienzeit gibt am Rundenende Kraft: +3 bei kaputter …
+  strengthTo: 8            # … bis +8 bei bester Beziehung (GDD §4: +3 bis +8)
+  contentFrom: 60          # ab 60: zufrieden
+  neglectedFrom: 35        # ab 35: vernachlässigt
+  bitterFrom: 15           # ab 15: verbittert, darunter entfremdet
 
 # Zeitung (2.6, GDD §7.2): Frühwarnzeichen. Die Zeitung schätzt den Posted Price,
 # den der Trust am Ende der Runde festlegt, und zeigt nur eine Schlagzeile, nie die Zahl.

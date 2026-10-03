@@ -262,6 +262,7 @@ export interface Balance {
   bots: BotsBalance;
   events: EventsBalance;
   agenda: AgendaBalance;
+  family: FamilyBalance;
   newspaper: NewspaperBalance;
 }
 
@@ -294,6 +295,33 @@ export interface AgendaBalance {
   /** Kraft bei Spielbeginn und Höchstwert (Kapitel 1). */
   strengthStart: number;
   strengthMax: number;
+  /** Schwellen (2.7): Unter errorsBelow fehlen die besten Antworten und die Lupe prüft errorsCheckPenalty Felder weniger. */
+  errorsBelow: number;
+  errorsCheckPenalty: number;
+  /** Unter sickBelow am Rundenende wird Jacob krank – 1 bis sickRoundsMax Runden. */
+  sickBelow: number;
+  sickRoundsMax: number;
+  /** Bei Kraft 0: Zusammenbruch, so viele Runden krank. */
+  collapseRounds: number;
+  /** Kraft je Runde im Krankenbett. */
+  sickRecovery: number;
+}
+
+/** Familie (2.7, GDD §12): Ruth, Thomas und was Familienzeit an Kraft gibt. */
+export interface FamilyBalance {
+  ruthStart: number;
+  /** Runde, zu deren Beginn Thomas geboren wird. */
+  thomasBirthRound: number;
+  thomasStart: number;
+  /** Beziehung weniger je Runde ohne Familienzeit. */
+  neglect: number;
+  /** Kraft nach Familienzeit: von strengthFrom (Beziehung 0) bis strengthTo (Beziehung 100). */
+  strengthFrom: number;
+  strengthTo: number;
+  /** Ab hier zufrieden, vernachlässigt, verbittert; darunter entfremdet. */
+  contentFrom: number;
+  neglectedFrom: number;
+  bitterFrom: number;
 }
 
 /** Ereignis-System (2.1): wie viele neue Ereignisse höchstens je Runde kommen. */
@@ -796,6 +824,34 @@ function parseEvents(raw: unknown): EventsBalance {
   };
 }
 
+function parseFamily(raw: unknown): FamilyBalance {
+  const block = (raw as { family?: unknown })?.family;
+  if (!block || typeof block !== 'object') throw new BalanceError('balance.yaml: Block "family" fehlt');
+  const beziehung = (path: string) => {
+    const value = nonNegative(raw, path);
+    if (value > 100) throw new BalanceError(`balance.yaml: "${path}" muss zwischen 0 und 100 liegen`);
+    return value;
+  };
+  const family: FamilyBalance = {
+    ruthStart: beziehung('family.ruthStart'),
+    thomasBirthRound: positiveInt(raw, 'family.thomasBirthRound'),
+    thomasStart: beziehung('family.thomasStart'),
+    neglect: nonNegative(raw, 'family.neglect'),
+    strengthFrom: nonNegative(raw, 'family.strengthFrom'),
+    strengthTo: nonNegative(raw, 'family.strengthTo'),
+    contentFrom: beziehung('family.contentFrom'),
+    neglectedFrom: beziehung('family.neglectedFrom'),
+    bitterFrom: beziehung('family.bitterFrom'),
+  };
+  if (!(family.bitterFrom <= family.neglectedFrom && family.neglectedFrom <= family.contentFrom)) {
+    throw new BalanceError('balance.yaml: "family.bitterFrom" ≤ "family.neglectedFrom" ≤ "family.contentFrom" muss gelten');
+  }
+  if (family.strengthFrom > family.strengthTo) {
+    throw new BalanceError('balance.yaml: "family.strengthFrom" darf nicht über "family.strengthTo" liegen');
+  }
+  return family;
+}
+
 function parseAgenda(raw: unknown): AgendaBalance {
   const block = (raw as { agenda?: unknown })?.agenda;
   if (!block || typeof block !== 'object') throw new BalanceError('balance.yaml: Block "agenda" fehlt');
@@ -813,7 +869,16 @@ function parseAgenda(raw: unknown): AgendaBalance {
     tiredPenalty: ganz('agenda.tiredPenalty'),
     strengthStart: nonNegative(raw, 'agenda.strengthStart'),
     strengthMax: positiveInt(raw, 'agenda.strengthMax'),
+    errorsBelow: nonNegative(raw, 'agenda.errorsBelow'),
+    errorsCheckPenalty: ganz('agenda.errorsCheckPenalty'),
+    sickBelow: nonNegative(raw, 'agenda.sickBelow'),
+    sickRoundsMax: positiveInt(raw, 'agenda.sickRoundsMax'),
+    collapseRounds: positiveInt(raw, 'agenda.collapseRounds'),
+    sickRecovery: nonNegative(raw, 'agenda.sickRecovery'),
   };
+  if (!(agenda.sickBelow <= agenda.errorsBelow && agenda.errorsBelow <= agenda.tiredBelow)) {
+    throw new BalanceError('balance.yaml: Kraft-Schwellen müssen aufsteigen: "agenda.sickBelow" ≤ "agenda.errorsBelow" ≤ "agenda.tiredBelow"');
+  }
   if (agenda.strengthStart > agenda.strengthMax) {
     throw new BalanceError('balance.yaml: "agenda.strengthStart" darf nicht über "agenda.strengthMax" liegen');
   }
@@ -881,6 +946,7 @@ export function parseBalance(raw: unknown): Balance {
     bots: parseBots(raw),
     events: parseEvents(raw),
     agenda: parseAgenda(raw),
+    family: parseFamily(raw),
     newspaper: parseNewspaper(raw),
   };
 

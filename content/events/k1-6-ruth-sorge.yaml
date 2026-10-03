@@ -24,11 +24,12 @@
       result:
         de: Jacob bleibt. Ruth sagt nichts mehr, aber sie lässt ihn ausschlafen.
         en: Jacob stays. Ruth says no more, but she lets him sleep late.
-      effects: { strength: 8 }
+      effects: { strength: 8, ruth: 4 }
     - id: abwinken
       label: { de: "Abwinken – nach der nächsten Quelle wird es ruhiger", en: "Wave it off – it'll calm down after the next well" }
       result:
         de: Ruth räumt den Teller ab, halb voll.
         en: Ruth clears the plate away, half full.
+      effects: { ruth: -4 }
       appointments: 0
       default: true

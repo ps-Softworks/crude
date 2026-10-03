@@ -24,7 +24,7 @@ const GUT = `- id: brief
 describe('echte Inhalte in content/events/', () => {
   it('sind fehlerfrei und enthalten die Probe-Ereignisse und festen Termine für Kapitel 1 (2.2–2.5)', () => {
     const ids = loadEvents().map((e) => e.id);
-    expect(ids).toEqual(['ruth_buecher', 'silas_schnaps', 'moss_schulden', 'moss_wagenweg', 'moss_dank', 'nora_brand', 'vale_umschlag', 'ruth_sorge', 'dok_pike_urkunde', 'dok_pike_echt_folge', 'dok_pike_falsch_folge', 'dok_hale_gutachten', 'dok_hale_echt_folge', 'dok_hale_falsch_folge', 'post_seil', 'post_oelkauf', 'post_mietstall', 'post_witwe', 'post_kurier', 'post_geologe', 'post_mutter', 'post_drohung', 'termin_ruth', 'termin_sonntag', 'termin_lohnbohren', 'termin_rundgang', 'termin_port_ellis']);
+    expect(ids).toEqual(['thomas_geburt', 'ruth_buecher', 'silas_schnaps', 'moss_schulden', 'moss_wagenweg', 'moss_dank', 'nora_brand', 'vale_umschlag', 'ruth_sorge', 'arzt_besuch', 'dok_pike_urkunde', 'dok_pike_echt_folge', 'dok_pike_falsch_folge', 'dok_hale_gutachten', 'dok_hale_echt_folge', 'dok_hale_falsch_folge', 'post_seil', 'post_oelkauf', 'post_mietstall', 'post_witwe', 'post_kurier', 'post_geologe', 'post_mutter', 'post_drohung', 'termin_ruth', 'termin_familie', 'termin_sonntag', 'termin_lohnbohren', 'termin_rundgang', 'termin_port_ellis']);
   });
 
   it('jedes Probe-Ereignis hat 1–4 Wahlen (GDD §3: 2–4 Antworten) und eine Standard-Wahl ohne Sperre', () => {
@@ -56,7 +56,7 @@ describe('Prüfung mit Datei und Zeilennummer', () => {
     expect(zeilen).toEqual([
       'src/sim/__fixtures__/events/kaputt.yaml:5: Ereignis „kaputtes_ereignis“: „title.en“ fehlt – darf leer sein (en: ""), muss aber da sein.',
       'src/sim/__fixtures__/events/kaputt.yaml:9: Ereignis „kaputtes_ereignis“: „chance“ fehlt oder liegt nicht zwischen 0 und 1.',
-      'src/sim/__fixtures__/events/kaputt.yaml:14: Ereignis „kaputtes_ereignis“, Wahl „weiter“: unbekannter Eintrag „cassh“ in „effects“ (erlaubt: cash, oilStock, railTariff, strength).',
+      'src/sim/__fixtures__/events/kaputt.yaml:14: Ereignis „kaputtes_ereignis“, Wahl „weiter“: unbekannter Eintrag „cassh“ in „effects“ (erlaubt: cash, oilStock, railTariff, strength, ruth, thomas).',
     ]);
   });
 

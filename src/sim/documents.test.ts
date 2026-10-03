@@ -383,8 +383,8 @@ describe('Fertig, wenn: eine übersehene Fälschung später spürbar Geld kostet
 });
 
 describe('Spielstand mit Dokumenten', () => {
-  it('Format 5 sichert Dokumente und lädt sie zurück', () => {
-    expect(SAVE_FORMAT).toBe(5);
+  it('Format 5 und neuer sichern Dokumente und laden sie zurück', () => {
+    expect(SAVE_FORMAT).toBeGreaterThanOrEqual(5);
     const s = mitUrkunde('parzelle');
     const geladen = deserializeGame(serializeGame(s, '0.2.5'));
     expect(geladen.ok && geladen.state.events.docs).toEqual({ urkunde: { forgery: 'parzelle', checked: [] } });

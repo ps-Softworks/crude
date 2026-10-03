@@ -10,10 +10,10 @@ Kurzreferenz der Felder:
 - Ereignis: `id`, `title`, `text`, `conditions`, `marked`, `notMarked`, `delay`, `chance`, `once`,
   `routine`, `appointments`, `mail`, `deadline`, `document`, `choices`
 - Wahl: `id`, `label`, `result`, `requires`, `effects`, `marks`, `default`, `appointments`,
-  `requiresFound`, `marksIfForged`
+  `requiresFound`, `marksIfForged`, `sharp`
 - Bedingungen: `minRound`, `maxRound`, `minCash`, `maxCash`, `minOilStock`,
   `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100)
-- Effekte: `cash`, `oilStock`, `railTariff`, `strength` (Kraft)
+- Effekte: `cash`, `oilStock`, `railTariff`, `strength` (Kraft), `ruth`, `thomas` (Beziehung 0–100, 2.7)
 - Termine (2.3): `appointments` = Termine, die eine Antwort kostet (Standard 1; an einer Wahl
   überschreibt es den Wert des Ereignisses, z. B. `appointments: 0` für „abwinken“).
   Bleibt ein Ereignis liegen, gilt die Standard-Wahl und kostet keine Termine.
@@ -32,5 +32,12 @@ Kurzreferenz der Felder:
   `events.documents.maxChecks` Felder. Wahl mit `requiresFound: true` geht nur nach gefundener
   Fälschung; `marksIfForged` setzt Merkzeichen nur bei einer Fälschung (die teure Folge).
   Beispiele: `k1-dokumente.yaml`.
+- Familie und Kraft (2.7): Eine Wahl mit `ruth` oder `thomas` > 0 ist Familienzeit – sie gibt am
+  Rundenende Kraft (+3 bis +8 je nach Beziehung, `family` in balance.yaml); eine Runde ohne
+  Familienzeit kostet Beziehung. Die Simulation setzt zur Geburt das Merkzeichen `thomas_geboren`
+  (mit `delay: 0` reagiert ein Ereignis noch in derselben Runde). `sharp: true` markiert eine beste
+  Antwort: Sie fehlt, solange Jacob erschöpft ist (`agenda.errorsBelow`). Zustandswörter und Sätze
+  des Familienbildschirms stehen in `content/family.yaml`. Beispiele: `k1-0-thomas-geburt.yaml`,
+  `k1-7-arzt.yaml`, `k1-termine.yaml`.
 - Dateien werden alphabetisch gewürfelt, höchstens `events.maxPerRound` (balance.yaml) neue je Runde.
 - Die Bots spielen (noch) ohne Ereignisse.

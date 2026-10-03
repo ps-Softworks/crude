@@ -141,3 +141,15 @@ h1 button.neustart { font-size: 12px; font-weight: normal; letter-spacing: norma
 .zeitung-titel p { margin: 0 0 8px; }
 .zeitung-meldungen { margin: 0; padding: 6px 0 0; list-style: none; border-top: 1px solid #999; font-size: 0.95rem; columns: 2 280px; }
 .zeitung-meldungen li { margin-bottom: 4px; break-inside: avoid; }
+
+/* Familie und Kraft (2.7) */
+.familie { margin-top: 16px; padding: 10px 14px; border: 1px solid #8a6d3b; background: #fbf6ec; }
+.familie h2 { margin: 0 0 6px; font-size: 1.1rem; }
+.familie ul { margin: 0; padding-left: 18px; }
+.familie .zustand { font-variant: small-caps; letter-spacing: 1px; }
+.familie .zustand.neglected { color: #8a6d3b; }
+.familie .zustand.bitter, .familie .zustand.estranged { color: #b3261e; }
+.familie .jacob { margin: 6px 0 0; font-style: italic; }
+.krankmeldung { margin-top: 12px; padding: 8px 12px; border: 1px solid #b3261e; background: #fbeceb; color: #6b1510; }
+/* Erschöpft: Jacobs Handschrift wird zittrig (GDD §4). */
+.desk.erschoepft .log li, .desk.erschoepft .familie .jacob { font-style: italic; transform: skewX(-6deg); letter-spacing: 0.03em; color: #4a3f33; }

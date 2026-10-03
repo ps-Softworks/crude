@@ -6,6 +6,7 @@
 import { LineCounter, parseDocument, type Document } from 'yaml';
 import { CONDITION_KEYS, EFFECT_KEYS, MAIL_KINDS, type Conditions, type EventChoice, type EventDef, type Effects, type MailKind } from './events';
 import type { DocumentDef, DocumentField } from './documents';
+import { SIM_MARKS } from './family';
 import { LANGUAGES, type LocalizedText } from './i18n';
 
 export interface ContentError {
@@ -25,7 +26,7 @@ export interface ParsedEvents {
 }
 
 const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'routine', 'appointments', 'choices', 'mail', 'deadline', 'document'];
-const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default', 'appointments', 'requiresFound', 'marksIfForged'];
+const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default', 'appointments', 'requiresFound', 'marksIfForged', 'sharp'];
 const DOCUMENT_KEYS = ['title', 'reference', 'forgeryChance', 'fields'];
 const FIELD_KEYS = ['id', 'label', 'value', 'reference', 'forged'];
 const ID_MUSTER = /^[a-z0-9_]+$/;
@@ -196,12 +197,17 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
       fehler([...pfad, 'requiresFound'], `${wer}: „requiresFound“ muss true oder false sein.`);
       ok = false;
     }
+    if (raw.sharp !== undefined && typeof raw.sharp !== 'boolean') {
+      fehler([...pfad, 'sharp'], `${wer}: „sharp“ muss true oder false sein.`);
+      ok = false;
+    }
     const marksIfForged = namen(raw, 'marksIfForged', pfad, wer);
     if (!ok || !label || !result || !requires || !effects || !marks || !marksIfForged) return null;
     const choice: EventChoice = { id: id as string, label, result, requires, effects, default: raw.default === true, marks };
     if (appointments !== undefined && appointments !== null) choice.appointments = appointments;
     if (raw.requiresFound === true) choice.requiresFound = true;
     if (marksIfForged.length > 0) choice.marksIfForged = marksIfForged;
+    if (raw.sharp === true) choice.sharp = true;
     return choice;
   }
 
@@ -411,7 +417,8 @@ export function parseEventFiles(files: readonly { file: string; text: string }[]
   }
   // Ein Merkzeichen, das keine Wahl setzt, ist fast immer ein Tippfehler – das
   // Ereignis käme sonst nie (bzw. würde nie gesperrt).
-  const gesetzt = new Set(events.flatMap((e) => e.choices.flatMap((c) => [...c.marks, ...(c.marksIfForged ?? [])])));
+  // Merkzeichen der Simulation selbst (2.7: thomas_geboren) zählen auch als gesetzt.
+  const gesetzt = new Set<string>([...SIM_MARKS, ...events.flatMap((e) => e.choices.flatMap((c) => [...c.marks, ...(c.marksIfForged ?? [])]))]);
   for (const event of events) {
     for (const m of [...event.marked, ...event.notMarked]) {
       if (gesetzt.has(m)) continue;

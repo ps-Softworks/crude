@@ -9,6 +9,7 @@ import { advanceDrilling, type Well } from './drilling';
 import { assignFields, buildFields, type Field } from './field';
 import { makeForecasts, type Forecast } from './forecast';
 import { generateParcels, type Parcel } from './geology';
+import { checkBirth, newFamily, settleFamily, type FamilyState } from './family';
 import { autoResolve, drawEvents, newEventsState, type EventDef, type EventsState } from './events';
 import { parcelLabel, settleLeases, startOptions, type Lease, type LeaseOption } from './lease';
 import { advanceProduction } from './production';
@@ -72,6 +73,10 @@ export interface GameState {
   strength: number;
   /** Höchste Kraft in diesem Lebensabschnitt (Kapitel 1: 100). */
   strengthMax: number;
+  /** Runden, die Jacob noch krank im Bett liegt (2.7); 0 = gesund. */
+  sick: number;
+  /** Ruth und Thomas (2.7). */
+  family: FamilyState;
   log: string[];
   /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
   roundLogStart: number;
@@ -120,6 +125,8 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
     agenda: newAgenda(balance.agenda.strengthStart, balance),
     strength: balance.agenda.strengthStart,
     strengthMax: balance.agenda.strengthMax,
+    sick: 0,
+    family: newFamily(balance),
   };
   // Erst die Startoptionen, dann die Prognosen: so bleiben Karte und Startoptionen
   // bei gleichem Seed so, wie sie es vor der Prognose waren.
@@ -132,7 +139,7 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
     const labels = state.options.map((o) => parcelLabel(state.parcels.find((p) => p.id === o.parcelId)!));
     state.log.push(`${date}: Jacob hat freie Pachtoptionen auf den Parzellen ${labels.join(' und ')}.`);
   }
-  return drawEvents(state, balance, catalog);
+  return drawEvents(checkBirth(state, balance), balance, catalog);
 }
 
 /**
@@ -148,15 +155,20 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
  * zur Abrechnung: roundLogStart merkt sich, wie lang das Protokoll davor war.
  * Ereignisse (2.1): Offene bekommen vorher ihre Standard-Antwort, zur neuen
  * Runde werden neue gewürfelt. Termine (2.3): Direkt danach wird die Kraft
- * abgerechnet und die Termine der nächsten Runde stehen fest.
+ * abgerechnet und die Termine der nächsten Runde stehen fest. Familie (2.7):
+ * Vor den Terminen gibt Familienzeit Kraft (oder Vernachlässigung kostet
+ * Beziehung), danach kann Jacob krank werden. Zu Beginn der neuen Runde kann
+ * Thomas zur Welt kommen – vor den Ereignissen, damit sie darauf reagieren.
  */
 export function endRound(input: GameState, balance: Balance, catalog: readonly EventDef[] = []): GameState {
   if (input.finished) return input;
   // Offene Ereignisse bekommen ihre Standard-Antwort, bevor die Runde abgerechnet wird.
   const beantwortet = autoResolve(input, catalog);
   const roundLogStart = beantwortet.log.length;
-  // Termine (2.3): ruhige Runde gibt Kraft zurück, die nächste beginnt mit frischen Terminen.
-  const ausgeruht = settleAgenda(beantwortet, balance);
+  // Familie (2.7): Familienzeit gibt Kraft, Vernachlässigung kostet Beziehung.
+  const familie = settleFamily(beantwortet, balance);
+  // Termine (2.3): Krankheit (2.7), ruhige Runde gibt Kraft zurück, die nächste beginnt mit frischen Terminen.
+  const ausgeruht = settleAgenda(familie, balance);
   const gefoerdert = advanceProduction(ausgeruht, balance);
   const markt = advanceMarket(gefoerdert, balance.market, balance.rivals.bullard.ratePerWell);
   const gebohrt = advanceDrilling(markt, balance);
@@ -176,6 +188,7 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
     };
   }
   const next = { ...state, round: state.round + 1 };
-  // Zur neuen Runde kommen neue Ereignisse auf den Schreibtisch.
-  return drawEvents({ ...next, log: [...state.log, `${formatDate(next)}: Eine neue Runde beginnt.`] }, balance, catalog);
+  // Zur neuen Runde kommen neue Ereignisse auf den Schreibtisch – nach einer Geburt (2.7).
+  const begonnen = checkBirth({ ...next, log: [...state.log, `${formatDate(next)}: Eine neue Runde beginnt.`] }, balance);
+  return drawEvents(begonnen, balance, catalog);
 }

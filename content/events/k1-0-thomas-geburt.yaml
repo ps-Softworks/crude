@@ -1,0 +1,50 @@
+# Kapitel 1 – Geburt von Thomas (2.7, GDD §12/§13). Entwurf von Claude, bitte in
+# eigener Stimme umschreiben. Die Simulation setzt zu Beginn der Runde
+# family.thomasBirthRound (balance.yaml) das Merkzeichen thomas_geboren – dieses
+# Ereignis kommt dann sicher (chance 1). Der Dateiname mit 0 sorgt dafür, dass es
+# vor den anderen Ereignissen gewürfelt wird (events.maxPerRound).
+#   geburt_dabei   -> Jacob war da (für spätere Kapitel: Thomas' Loyalität)
+#   geburt_verpasst -> Jacob war auf dem Bohrplatz (Ruth vergisst es nicht)
+
+- id: thomas_geburt
+  title:
+    de: Ein Sohn
+    en: A Son
+  text:
+    de: >-
+      Die Hebamme schickt den Jungen der Wirtin zum Bohrplatz: Es geht los. Ruth
+      liegt in der Kammer über der Pension, und unten wartet der Holzhändler auf
+      sein Geld, und am Turm klemmt seit gestern das Seil.
+    en: >-
+      The midwife sends the landlady's boy to the rig: it has started. Ruth lies in
+      the room above the boarding house, the lumber dealer is waiting downstairs
+      for his money, and the cable at the derrick has been stuck since yesterday.
+  marked: [thomas_geboren]
+  delay: 0                 # gleich in der Runde der Geburt
+  chance: 1
+  choices:
+    - id: dabei
+      label: { de: "Alles stehen lassen und zu Ruth gehen", en: "Drop everything and go to Ruth" }
+      result:
+        de: >-
+          Jacob hält ihre Hand die ganze Nacht. Gegen Morgen legt die Hebamme ihm
+          einen roten, schreienden Jungen in den Arm. Sie nennen ihn Thomas.
+        en: >-
+          Jacob holds her hand all night. Towards morning the midwife puts a red,
+          screaming boy into his arms. They name him Thomas.
+      appointments: 2
+      effects: { ruth: 15, thomas: 10 }
+      marks: [geburt_dabei]
+    - id: turm
+      label: { de: "Erst das Seil, dann die Familie", en: "The cable first, then the family" }
+      result:
+        de: >-
+          Als Jacob mit öligen Händen die Treppe hochkommt, schläft das Kind schon.
+          Ruth sieht ihn lange an und sagt nur: „Er heißt Thomas.“
+        en: >-
+          When Jacob comes up the stairs with oily hands, the child is already
+          asleep. Ruth looks at him for a long time and only says: "His name is Thomas."
+      appointments: 0
+      effects: { ruth: -20, thomas: -10 }
+      marks: [geburt_verpasst]
+      default: true
