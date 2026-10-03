@@ -38,6 +38,16 @@ export class Rng {
     return min + Math.floor(this.float() * (max - min + 1));
   }
 
+  /** Neue Liste in zufälliger Reihenfolge (Fisher-Yates); die alte bleibt unverändert. */
+  shuffle<T>(items: readonly T[]): T[] {
+    const out = [...items];
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = this.int(0, i);
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
+  }
+
   /** Zufälliges Element aus einer Liste. Leere Listen sind ein Fehler. */
   pick<T>(items: readonly T[]): T {
     if (items.length === 0) {

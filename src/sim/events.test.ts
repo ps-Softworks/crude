@@ -114,11 +114,21 @@ describe('Ereignisse würfeln', () => {
     expect(drawEvents(state, balance, katalog)).toEqual(drawEvents(state, balance, katalog));
   });
 
-  it('höchstens maxPerRound neue je Runde, in der Reihenfolge des Katalogs', () => {
+  it('höchstens maxPerRound neue je Runde, in zufälliger Reihenfolge (2.10b)', () => {
     const zwei: Balance = { ...balance, events: { ...balance.events, maxPerRound: 2 } };
+    const eins: Balance = { ...balance, events: { ...balance.events, maxPerRound: 1 } };
     const katalog = [ereignis('a'), ereignis('b'), ereignis('c')];
-    expect(drawEvents(newGame('max', balance), { ...balance, events: { ...balance.events, maxPerRound: 1 } }, katalog).events.pending).toEqual(['a']);
-    expect(drawEvents(newGame('max', balance), zwei, katalog).events.pending).toEqual(['a', 'b']);
+    expect(drawEvents(newGame('max', balance), eins, katalog).events.pending.length).toBe(1);
+    expect(drawEvents(newGame('max', balance), zwei, katalog).events.pending.length).toBe(2);
+    // Kein Vorrang für Ereignisse vorn im Katalog (sonst kämen späte Dateien kaum je vor).
+    const erste = Array.from({ length: 300 }, (_, i) => drawEvents(newGame(`fair-${i}`, balance), eins, katalog).events.pending[0]);
+    for (const id of ['a', 'b', 'c']) {
+      const anteil = erste.filter((x) => x === id).length / erste.length;
+      expect(anteil, id).toBeGreaterThan(0.2);
+      expect(anteil, id).toBeLessThan(0.47);
+    }
+    // Gleicher Seed, gleiche Reihenfolge.
+    expect(drawEvents(newGame('max', balance), eins, katalog).events.pending).toEqual(drawEvents(newGame('max', balance), eins, katalog).events.pending);
   });
 
   it('once-Ereignisse kommen einmal, andere wieder – aber nie doppelt gleichzeitig', () => {

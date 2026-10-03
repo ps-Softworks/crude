@@ -37,7 +37,8 @@ Zum Ausprobieren: `npm run dev`, dann im Browser `?seed=abc&debug=1`.
   frühestens nach `cooldown` Runden, Standard aus balance.yaml). Varianten desselben Anlasses
   bekommen dieselbe `group`, dann halten sie gemeinsam Abstand (2.10a).
 - `draft: true` = Schlüsselszene, noch Entwurf (ändert nichts am Spiel).
-  Pro Runde kommt höchstens ein neues Ereignis (Zahl in `content/balance.yaml`).
+  Pro Runde kommt höchstens ein neues Ereignis (Zahl in `content/balance.yaml`); welches zuerst
+  gewürfelt wird, ist zufällig (2.10b). Muss etwas sicher kommen: `certain: true`.
 
 ### Optionen
 - 2–3 Wahlen unter `choices`, jede mit `id` und `label` (Knopftext; Kosten in Klammern nennen).

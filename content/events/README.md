@@ -55,5 +55,10 @@ Kurzreferenz der Felder:
   keine aus derselben Gruppe, bis der Abstand um ist. `draft: true` markiert eine Schlüsselszene als
   Entwurf – ändert nichts am Spiel, `npm run check:content` listet sie auf.
 - Alltag (2.10a): `k1-8-alltag-1.yaml` (Bohrstelle), `-2` (Geschäft), `-3` (Menschen) – je 10 Ereignisse.
-- Dateien werden alphabetisch gewürfelt, höchstens `events.maxPerRound` (balance.yaml) neue je Runde.
+- Alltag (2.10b): `-4` (Rivalen und Bank, 13), `-5` (Arbeiter und Unglücke, 13), `-6` (Familie, Presse,
+  Politik in Cordova, 11) – zusammen 67 Alltagsereignisse. Viele greifen Merkzeichen aus Teil 1 auf
+  (Kerrigan, Eli, Sheriff, Nora, Ruths Bücher); die Liste steht oben in jeder Datei.
+- Gewürfelt wird in zufälliger Reihenfolge (seit 2.10b – vorher hatten Dateien vorn im Alphabet
+  Vorrang), höchstens `events.maxPerRound` (balance.yaml) neue je Runde. Was sicher kommen muss,
+  bekommt `certain: true` (z. B. die Geburt von Thomas).
 - Die Bots spielen (noch) ohne Ereignisse.

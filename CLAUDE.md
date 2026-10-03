@@ -9,7 +9,7 @@
 - Subagents: Du darfst nach eigener Einschätzung Subagents deiner Wahl einsetzen (z. B. Explore, Plan, general-purpose), ohne vorher zu fragen – immer dann, wenn es sinnvoll ist und Tokens spart (z. B. breite Suchen, unabhängige Teilaufgaben parallel). Für Kleinigkeiten, die du direkt erledigen kannst, keine Subagents.
 
 ## Projektstand
-- Phase 0 und 1 abgeschlossen. Phase 2 läuft: 2.1–2.9 und 2.10a (Ereignisse 1–30, Wiederholungsschutz) fertig, als Nächstes 2.10b (Ereignisse 31–60/70).
+- Phase 0 und 1 abgeschlossen. Phase 2 läuft: 2.1–2.10 fertig (2.10b: 67 Alltagsereignisse, Würfelreihenfolge zufällig), als Nächstes 2.11 laut Roadmap.
 - Spielzahlen stehen in `content/balance.yaml` (per Bot-Läufen justiert, `npm run bots`; endgültig erst nach Philipps eigenen Partien).
 - Bot-Läufe: `npm run bots` (schreibt docs/botlaeufe.md).
 - Tester-Build: `npm run release` → `release/crude-<version>.zip` (index.html im Wurzelverzeichnis, relative Pfade; release/ nicht committen). Feedback-Link in `content/tester.yaml` (leer = kein Knopf). Debug-Bereich im Build nur mit `?debug=1`.

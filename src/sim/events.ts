@@ -354,7 +354,10 @@ export function drawEvents(state: GameState, balance: Balance, catalog: readonly
   let neu = 0;
   // Sichere Ereignisse (2.8) zuerst: ohne Würfel, ohne Platz in maxPerRound.
   const sicher = catalog.filter((e) => e.certain && !e.routine && !e.mail);
-  for (const event of [...sicher, ...catalog.filter((e) => !e.certain)]) {
+  // Gewürfelte Ereignisse (2.10b) in zufälliger Reihenfolge: Sonst gewinnen bei maxPerRound
+  // immer die Dateien vorn im Alphabet, und späte Ereignisse kämen kaum je vor.
+  const gewuerfelt = rng.shuffle(catalog.filter((e) => !e.certain && !e.routine && !e.mail));
+  for (const event of [...sicher, ...gewuerfelt]) {
     if (!event.certain && neu >= balance.events.maxPerRound) break;
     // Feste Termine (2.3) werden nicht gewürfelt, Briefe kommen mit der Post (2.4).
     if (event.routine || event.mail) continue;

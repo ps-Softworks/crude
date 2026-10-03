@@ -1,8 +1,8 @@
 # Kapitel 1 – Geburt von Thomas (2.7, GDD §12/§13). Entwurf von Claude, bitte in
 # eigener Stimme umschreiben. Die Simulation setzt zu Beginn der Runde
 # family.thomasBirthRound (balance.yaml) das Merkzeichen thomas_geboren – dieses
-# Ereignis kommt dann sicher (chance 1). Der Dateiname mit 0 sorgt dafür, dass es
-# vor den anderen Ereignissen gewürfelt wird (events.maxPerRound).
+# Ereignis kommt dann sicher (certain: true, seit 2.10b: Die übrigen Ereignisse werden in
+# zufälliger Reihenfolge gewürfelt, der Dateiname allein sichert keinen Vorrang mehr).
 #   geburt_dabei   -> Jacob war da (für spätere Kapitel: Thomas' Loyalität)
 #   geburt_verpasst -> Jacob war auf dem Bohrplatz (Ruth vergisst es nicht)
 
@@ -21,7 +21,7 @@
       for his money, and the cable at the derrick has been stuck since yesterday.
   marked: [thomas_geboren]
   delay: 0                 # gleich in der Runde der Geburt
-  chance: 1
+  certain: true
   choices:
     - id: dabei
       label: { de: "Alles stehen lassen und zu Ruth gehen", en: "Drop everything and go to Ruth" }

@@ -56,4 +56,14 @@ describe('Zufall mit Startwert', () => {
     const rng = new Rng(seedFromString('leer'));
     expect(() => rng.pick([])).toThrow(/mindestens einem Element/);
   });
+
+  it('mischt eine Liste (2.10b): gleiche Elemente, Original unverändert, gleicher Seed gleiche Folge', () => {
+    const liste = [1, 2, 3, 4, 5, 6, 7, 8];
+    const gemischt = new Rng(seedFromString('misch')).shuffle(liste);
+    expect([...gemischt].sort((a, b) => a - b)).toEqual(liste);
+    expect(liste).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(new Rng(seedFromString('misch')).shuffle(liste)).toEqual(gemischt);
+    const anfaenge = new Set(Array.from({ length: 200 }, (_, i) => new Rng(seedFromString(`m${i}`)).shuffle(liste)[0]));
+    expect(anfaenge.size).toBe(liste.length);
+  });
 });

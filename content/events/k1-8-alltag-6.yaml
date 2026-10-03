@@ -1,0 +1,460 @@
+# Kapitel 1 – Alltag, Paket 6: Familie, Presse, Politik in Cordova (2.10b, Ereignisse 57–67).
+# Entwurf von Claude, bitte in eigener Stimme umschreiben. Ton: Weltbibel (Ruth will mitreden,
+# Nora Whitlock, die drei Parteien, käuflicher Sheriff, langsamer Bezirksrichter).
+#
+# Erfunden und nicht in der Weltbibel: Ruths Schwester Hannah, Redakteur Bixby vom Courier
+# (der Courier selbst stammt aus Paket 2/3), die Kandidaten Amos Teague (Handelspartei) und
+# Walt Harrow (Volksbund), Gerichtsschreiber Doolittle, Grenznachbar Fenwick.
+#
+# Folgen früherer Pakete, die hier aufgegriffen werden:
+#   ruth_buchhalterin (Ruth und die Quittungen) → ruth_anteil
+#   nora_interview (Nora will ein Gespräch)      → nora_artikel
+#   thomas_geboren (setzt die Simulation)         → thomas_krupp, thomas_taufe
+# Neu für spätere Kapitel: ruth_teilhaberin, volksbund_spende, handelspartei_spende, liga_petition.
+
+# --- Familie ------------------------------------------------------------------
+
+- id: ruth_anteil
+  marked: [ruth_buchhalterin]
+  delay: 3
+  chance: 0.3
+  draft: true                # Schlüsselszene: Ruth will einen eigenen Anteil (Weltbibel: Ziel und Bruchstelle)
+  title:
+    de: Ruth will ihren Namen auf dem Papier
+    en: Ruth Wants Her Name on the Paper
+  text:
+    de: >-
+      Ruth führt seit Monaten die Bücher. Heute legt sie eine Pachturkunde auf den
+      Tisch, die Feder daneben. Sie will ihren Namen neben Jacobs, nicht darunter.
+      „Wenn dir etwas passiert, Jacob, dann bin ich vor dem Richter nur deine Witwe.“
+    en: >-
+      Ruth has kept the books for months. Today she lays a lease deed on the table,
+      the pen beside it. She wants her name next to Jacob's, not beneath it. "If
+      something happens to you, Jacob, before the judge I'm only your widow."
+  choices:
+    - id: ja
+      label: { de: "Unterschreiben lassen", en: "Let her sign" }
+      result:
+        de: Ruth schreibt langsam und sehr gerade. Danach liest sie die Urkunde noch einmal, als hätte sie sie selbst aufgesetzt.
+        en: Ruth writes slowly and very straight. Afterwards she reads the deed again, as if she had drawn it up herself.
+      effects: { ruth: 12 }
+      marks: [ruth_teilhaberin]
+    - id: spaeter
+      label: { de: "„Wenn die zweite Quelle fließt“", en: "\"When the second well flows\"" }
+      result:
+        de: Ruth nickt und legt die Urkunde in die Kiste unter dem Bett. Sie wird sich das Datum merken.
+        en: Ruth nods and puts the deed in the box under the bed. She will remember the date.
+      effects: { ruth: -4 }
+      marks: [ruth_vertroestet]
+    - id: nein
+      label: { de: "„Das ist Männersache“", en: "\"That's men's business\"" }
+      result:
+        de: Ruth nimmt die Feder und legt sie in die Schublade. Am Abend führt sie die Bücher weiter, aber sie spricht nicht mehr darüber.
+        en: Ruth takes the pen and puts it in the drawer. That evening she keeps the books as before, but she no longer talks about them.
+      effects: { ruth: -12 }
+      marks: [ruth_zurueckgewiesen]
+      appointments: 0
+      default: true
+
+- id: ruth_schwester
+  mail: personal
+  title:
+    de: Hannah schreibt aus den Kohleprovinzen
+    en: Hannah Writes from the Coal Provinces
+  text:
+    de: >-
+      Ruths Schwester Hannah heiratet im Herbst, in der alten Kapelle neben der
+      Zeche. Sie schreibt vier Seiten und auf jeder steht: Komm. Die Fahrt dauert
+      eine Woche, hin und zurück zwei, und kostet, was ein Bohrtrupp im Monat verdient.
+    en: >-
+      Ruth's sister Hannah is getting married in the autumn, in the old chapel by
+      the colliery. She writes four pages, and every one says: come. The journey
+      takes a week, two there and back, and costs what a drilling crew earns in a month.
+  conditions: { minRound: 4, maxRound: 14 }
+  chance: 0.1
+  choices:
+    - id: zusammen
+      label: { de: "Zusammen fahren (250 $, drei Termine)", en: "Go together (250 $, three appointments)" }
+      result:
+        de: Die Kohlestadt ist kleiner, als Jacob sie in Erinnerung hat. Ruth tanzt mit ihm, zum ersten Mal seit Port Ellis.
+        en: The coal town is smaller than Jacob remembers. Ruth dances with him, for the first time since Port Ellis.
+      requires: { minCash: 250 }
+      effects: { cash: -250, ruth: 12, strength: 4 }
+      appointments: 3
+    - id: allein
+      label: { de: "Ruth allein fahren lassen (120 $)", en: "Let Ruth go alone (120 $)" }
+      result:
+        de: Drei Wochen ist die Pension still. Ruth kommt mit einem Kuchen zurück und mit Hannahs Grüßen, die nicht ganz freundlich klingen.
+        en: For three weeks the boarding house is quiet. Ruth comes back with a cake and with Hannah's greetings, which don't sound entirely friendly.
+      requires: { minCash: 120 }
+      effects: { cash: -120, ruth: 4 }
+    - id: geschenk
+      label: { de: "Ein Geschenk schicken (40 $)", en: "Send a present (40 $)" }
+      result:
+        de: Ein Teeservice aus Port Ellis, gut verpackt. Ruth schreibt die Karte. Sie schreibt nur ihren eigenen Namen darunter.
+        en: A tea service from Port Ellis, well packed. Ruth writes the card. She signs only her own name.
+      effects: { cash: -40, ruth: -6 }
+      appointments: 0
+      default: true
+
+- id: haus_kaufen
+  draft: true                # Schlüsselszene: das erste eigene Haus – oder noch ein Turm
+  title:
+    de: Ein Haus an der Bay Street
+    en: A House on Bay Street
+  text:
+    de: >-
+      An der Bay Street steht ein weißes Haus mit Veranda zum Verkauf, zwei Stockwerke,
+      ein Garten mit einem Feigenbaum. Der Besitzer geht nach Hallstead zurück. Ruth
+      ist zweimal daran vorbeigegangen und hat beide Male nichts gesagt.
+    en: >-
+      On Bay Street a white house with a porch is for sale, two storeys, a garden with
+      a fig tree. The owner is going back to Hallstead. Ruth has walked past it twice
+      and said nothing both times.
+  conditions: { minRound: 5, minCash: 1500 }
+  chance: 0.12
+  choices:
+    - id: kaufen
+      label: { de: "Kaufen (900 $)", en: "Buy it (900 $)" }
+      result:
+        de: Am ersten Abend sitzt Ruth auf der Veranda und tut nichts, eine ganze Stunde. Das Geld fehlt am Turm.
+        en: On the first evening Ruth sits on the porch and does nothing, for a whole hour. The money is missed at the derrick.
+      requires: { minCash: 900 }
+      effects: { cash: -900, ruth: 15, strength: 3 }
+      marks: [haus_bay_street]
+    - id: mieten
+      label: { de: "Für ein Jahr mieten (250 $)", en: "Rent it for a year (250 $)" }
+      result:
+        de: Gemietet ist nicht gekauft, sagt Ruth, und hängt trotzdem Vorhänge auf.
+        en: Rented isn't bought, Ruth says, and hangs curtains anyway.
+      requires: { minCash: 250 }
+      effects: { cash: -250, ruth: 6 }
+    - id: turm
+      label: { de: "Das Geld in einen Turm stecken", en: "Put the money into a derrick" }
+      result:
+        de: Ein Arzt aus Hallstead kauft das Haus. Ruth geht danach einen anderen Weg zum Markt.
+        en: A doctor from Hallstead buys the house. After that Ruth takes another way to the market.
+      effects: { ruth: -5 }
+      appointments: 0
+      default: true
+
+- id: thomas_krupp
+  marked: [thomas_geboren]
+  delay: 2
+  chance: 0.12
+  title:
+    de: Thomas bellt wie ein Hund
+    en: Thomas Barks Like a Dog
+  text:
+    de: >-
+      Mitten in der Nacht weckt ein Husten die ganze Pension, rau und bellend. Thomas
+      ringt nach Luft. Ruth hält ihn schon über den dampfenden Kessel. Doktor Haskell
+      wohnt am anderen Ende der Stadt.
+    en: >-
+      In the middle of the night a cough wakes the whole boarding house, rough and
+      barking. Thomas is fighting for air. Ruth is already holding him over the
+      steaming kettle. Doctor Haskell lives at the other end of town.
+  choices:
+    - id: haskell
+      label: { de: "Zu Haskell reiten (30 $)", en: "Ride for Haskell (30 $)" }
+      result:
+        de: Haskell kommt im Nachthemd unter dem Mantel. Kalte Nachtluft, sagt er, und Dampf. Gegen Morgen schläft Thomas auf Jacobs Brust ein.
+        en: Haskell arrives with his nightshirt under his coat. Cold night air, he says, and steam. Towards morning Thomas falls asleep on Jacob's chest.
+      requires: { minCash: 30 }
+      effects: { cash: -30, ruth: 5, thomas: 6, strength: -2 }
+      appointments: 2
+    - id: ruth
+      label: { de: "Ruth machen lassen und am Morgen zum Turm", en: "Leave it to Ruth and go to the derrick in the morning" }
+      result:
+        de: Ruth trägt Thomas bis zum Morgen auf dem Hof herum, in der kalten Luft. Es geht vorbei. Als Jacob zurückkommt, schlafen beide.
+        en: Ruth carries Thomas around the yard until morning, in the cold air. It passes. When Jacob comes back, both are asleep.
+      effects: { ruth: -6 }
+      appointments: 0
+      default: true
+
+- id: thomas_taufe
+  marked: [thomas_geboren]
+  delay: 1
+  chance: 0.2
+  title:
+    de: Wer wird Pate?
+    en: Who Will Be Godfather?
+  text:
+    de: >-
+      Die Taufe ist am Sonntag. Ruth fragt, wer Pate wird. Silas hat schon dreimal
+      erwähnt, dass er noch nie Pate war. Pettibone von der Bank hat beiläufig
+      gesagt, er fühle sich geehrt, falls. Ruth schaut Jacob an und wartet.
+    en: >-
+      The christening is on Sunday. Ruth asks who will be godfather. Silas has
+      mentioned three times that he has never been one. Pettibone from the bank said
+      in passing he'd be honoured, should the occasion arise. Ruth looks at Jacob
+      and waits.
+  choices:
+    - id: silas
+      label: { de: "Silas", en: "Silas" }
+      result:
+        de: Silas kommt nüchtern und in einem geliehenen Anzug. Er hält Thomas, als wäre er aus Glas, und weint als Einziger.
+        en: Silas comes sober and in a borrowed suit. He holds Thomas as if he were made of glass, and he is the only one who cries.
+      effects: { ruth: 4 }
+      marks: [silas_pate]
+    - id: bankier
+      label: { de: "Pettibone", en: "Pettibone" }
+      result:
+        de: Pettibone schenkt einen silbernen Löffel mit dem Zeichen der Thorne-Bank. Silas trinkt draußen.
+        en: Pettibone gives a silver spoon bearing the Thorne bank's mark. Silas drinks outside.
+      marks: [pettibone_pate]
+    - id: ruth
+      label: { de: "Ruth soll entscheiden", en: "Let Ruth decide" }
+      result:
+        de: Ruth wählt ihre Schwester Hannah, die nicht kommen kann. Bruder Abel tauft. Es ist klein und sehr still.
+        en: Ruth chooses her sister Hannah, who cannot come. Brother Abel baptises. It's small and very quiet.
+      effects: { ruth: 2 }
+      appointments: 0
+      default: true
+
+# --- Presse -------------------------------------------------------------------
+
+- id: courier_anzeige
+  mail: offer
+  title:
+    de: Der Courier verkauft Anzeigen
+    en: The Courier Sells Advertisements
+  text:
+    de: >-
+      Redakteur Bixby vom Port Ellis Courier schreibt: Eine Viertelseite koste 40 $.
+      Für 120 $ gebe es dazu einen „Bericht“ über Jacobs Unternehmen, freundlich im
+      Ton, auf Seite zwei. Das sei in Hallstead so üblich.
+    en: >-
+      Editor Bixby of the Port Ellis Courier writes: a quarter page costs 40 $. For
+      120 $ he would add a "report" on Jacob's company, friendly in tone, on page two.
+      That is customary in Hallstead.
+  conditions: { minRound: 3 }
+  chance: 0.1
+  choices:
+    - id: anzeige
+      label: { de: "Eine Anzeige schalten (40 $)", en: "Place an advertisement (40 $)" }
+      result:
+        de: „Harlan Oil – ehrliche Fässer, ehrlicher Preis.“ Zwei Händler aus dem Hafen fragen nach.
+        en: "\"Harlan Oil – honest barrels, honest price.\" Two traders from the harbour ask about it."
+      requires: { minCash: 40 }
+      effects: { cash: -40 }
+    - id: bericht
+      label: { de: "Den Bericht kaufen (120 $)", en: "Buy the report (120 $)" }
+      result:
+        de: Auf Seite zwei steht, Jacob sei „ein Mann der Zukunft“. Nora Whitlock hat den Artikel ausgeschnitten und in ihr Notizbuch geklebt.
+        en: Page two says Jacob is "a man of the future". Nora Whitlock has clipped the article and pasted it into her notebook.
+      requires: { minCash: 120 }
+      effects: { cash: -120 }
+      marks: [courier_gekauft]
+    - id: nein
+      label: { de: "Nicht antworten", en: "Don't answer" }
+      result:
+        de: Bixby schreibt nicht noch einmal.
+        en: Bixby doesn't write again.
+      appointments: 0
+      default: true
+
+- id: nora_artikel
+  marked: [nora_interview]
+  delay: 2
+  chance: 0.35
+  draft: true                # Schlüsselszene: Noras erster Artikel über Jacob – wie reagiert er?
+  title:
+    de: Noras Artikel ist erschienen
+    en: Nora's Article Is Out
+  text:
+    de: >-
+      „Die neuen Männer vom Salt Hill, Teil drei: Jacob Harlan.“ Nora hat genau
+      aufgeschrieben, was Jacob gesagt hat – auch das, was er lieber nicht gesagt
+      hätte. Im Saloon wird vorgelesen. Lusk vom Trust hat den Artikel an die Wand
+      seines Büros genagelt.
+    en: >-
+      "The New Men of Salt Hill, Part Three: Jacob Harlan." Nora wrote down exactly
+      what Jacob said – including what he'd rather not have said. In the saloon it's
+      being read aloud. Lusk from the Trust has nailed the article to his office wall.
+  choices:
+    - id: danken
+      label: { de: "Nora schreiben, dass es stimmt", en: "Write to Nora that it's accurate" }
+      result:
+        de: Nora antwortet mit einer Zeile. „Das schreibt mir sonst keiner.“ Sie wird wiederkommen.
+        en: "Nora replies with one line: \"Nobody else writes me that.\" She will be back."
+      marks: [nora_respekt]
+    - id: beschweren
+      label: { de: "Sich beim Redakteur beschweren", en: "Complain to the editor" }
+      result:
+        de: Bixby druckt eine Richtigstellung, klein, auf Seite sechs. Nora bekommt eine Rüge und ein Notizbuch mehr.
+        en: Bixby prints a correction, small, on page six. Nora gets a reprimand and one more notebook.
+      marks: [nora_beschwert]
+    - id: lachen
+      label: { de: "Den Artikel im Saloon selbst vorlesen", en: "Read the article aloud in the saloon yourself" }
+      result:
+        de: Jacob liest mit verstellter Stimme, der Saloon brüllt. Am Ende lacht sogar Bullard. Am Abend ist Jacob müder als nach einer Schicht.
+        en: Jacob reads in a put-on voice and the saloon roars. By the end even Bullard is laughing. By evening Jacob is wearier than after a shift.
+      effects: { strength: -2 }
+      appointments: 0
+      default: true
+
+# --- Politik in Cordova -------------------------------------------------------
+
+- id: wahl_spende
+  draft: true                # Schlüsselszene: erste Berührung mit den Parteien (GDD §8)
+  title:
+    de: Zwei Kandidaten für den Bezirk
+    en: Two Candidates for the County
+  text:
+    de: >-
+      Im Herbst wählt Cordova einen neuen Bezirksrat. Amos Teague von der
+      Handelspartei kommt mit Zigarren und spricht von Eisenbahnen. Walt Harrow vom
+      Volksbund kommt zu Fuß und spricht von Thornes Tarifen. Beide brauchen Geld.
+    en: >-
+      In the autumn Cordova elects a new county council. Amos Teague of the Trade
+      Party comes with cigars and talks about railways. Walt Harrow of the People's
+      League comes on foot and talks about Thorne's tariffs. Both need money.
+  conditions: { minRound: 5 }
+  chance: 0.12
+  choices:
+    - id: teague
+      label: { de: "Teague unterstützen (100 $)", en: "Back Teague (100 $)" }
+      result:
+        de: Teague schüttelt Jacobs Hand zu lange. „Die Handelspartei vergisst ihre Freunde nicht.“ Im Büro des Trust wird Jacobs Name genannt.
+        en: Teague shakes Jacob's hand too long. "The Trade Party doesn't forget its friends." Jacob's name comes up in the Trust office.
+      requires: { minCash: 100 }
+      effects: { cash: -100 }
+      marks: [handelspartei_spende]
+    - id: harrow
+      label: { de: "Harrow unterstützen (100 $)", en: "Back Harrow (100 $)" }
+      result:
+        de: Harrow nimmt das Geld, als wäre es ihm peinlich. Er wird es auf Flugblätter drucken, mit Jacobs Namen darunter.
+        en: Harrow takes the money as if embarrassed by it. He'll spend it on handbills, with Jacob's name at the bottom.
+      requires: { minCash: 100 }
+      effects: { cash: -100 }
+      marks: [volksbund_spende]
+    - id: keiner
+      label: { de: "Keinem etwas geben", en: "Give to neither" }
+      result:
+        de: Beide gehen höflich. Nach der Wahl weiß der Gewinner trotzdem, wer nichts gegeben hat.
+        en: Both leave politely. After the election the winner knows all the same who gave nothing.
+      appointments: 0
+      default: true
+
+- id: liga_petition
+  title:
+    de: Eine Petition der Provinzliga
+    en: A Provincial League Petition
+  text:
+    de: >-
+      Die Provinzliga sammelt Unterschriften für ein Gesetz: Wer in Cordova Gleise
+      oder Rohre besitzt, muss das Öl aller Förderer zum selben Preis befördern. Der
+      Sammler ist ein alter Farmer mit einem Klemmbrett. Thornes Leute stehen auf der
+      anderen Straßenseite und schauen, wer unterschreibt.
+    en: >-
+      The Provincial League is collecting signatures for a law: whoever owns rails or
+      pipes in Cordova must carry every producer's oil at the same price. The
+      collector is an old farmer with a clipboard. Thorne's men stand across the
+      street watching who signs.
+  conditions: { minRound: 4 }
+  chance: 0.1
+  choices:
+    - id: unterschreiben
+      label: { de: "Unterschreiben, gut sichtbar", en: "Sign, where everyone can see" }
+      result:
+        de: Jacobs Name steht als vierter auf der Liste, unter drei Farmern. Gaffney am Bahnhof grüßt ihn danach nicht mehr.
+        en: Jacob's name is fourth on the list, below three farmers. Gaffney at the station stops greeting him after that.
+      marks: [liga_petition]
+    - id: geld
+      label: { de: "Nicht unterschreiben, aber still Geld geben (50 $)", en: "Don't sign, but quietly give money (50 $)" }
+      result:
+        de: Der Farmer steckt das Geld ein, ohne zu danken. „Feigheit kostet bei uns fünfzig“, sagt er.
+        en: The farmer pockets the money without thanks. "Cowardice costs fifty with us," he says.
+      requires: { minCash: 50 }
+      effects: { cash: -50 }
+      marks: [liga_heimlich]
+    - id: nein
+      label: { de: "Vorbeigehen", en: "Walk on" }
+      result:
+        de: Thornes Männer nicken Jacob zu. Das ist schlimmer als ein Blick.
+        en: Thorne's men nod to Jacob. That's worse than a glare.
+      appointments: 0
+      default: true
+
+- id: richter_schreiber
+  title:
+    de: Der Richter ist langsam
+    en: The Judge Is Slow
+  text:
+    de: >-
+      Ein Grenzstreit mit dem Nachbarn Fenwick liegt seit Monaten beim
+      Bezirksgericht; so lange darf auf dem Streifen keiner bohren. Gerichtsschreiber
+      Doolittle sagt, die Akte liege leider ganz unten. Für 80 $ könne sie nach oben
+      wandern. Fenwick hat dasselbe Angebot bekommen.
+    en: >-
+      A boundary dispute with neighbour Fenwick has sat at the county court for
+      months; until it's settled nobody may drill the strip. Court clerk Doolittle
+      says the file is sadly right at the bottom. For 80 $ it could rise to the top.
+      Fenwick has had the same offer.
+  conditions: { minLeases: 1, minRound: 4 }
+  chance: 0.08
+  choices:
+    - id: zahlen
+      label: { de: "Doolittle zahlen (80 $)", en: "Pay Doolittle (80 $)" }
+      result:
+        de: Die Akte wandert. Der Richter entscheidet für Jacob, in zehn Minuten. Fenwick spuckt vor dem Gericht aus.
+        en: The file rises. The judge rules for Jacob in ten minutes. Fenwick spits outside the courthouse.
+      requires: { minCash: 80 }
+      effects: { cash: -80 }
+      marks: [richter_bezahlt]
+    - id: einigen
+      label: { de: "Mit Fenwick teilen (Streifen halbieren, 40 $ Vermesser)", en: "Split it with Fenwick (halve the strip, 40 $ surveyor)" }
+      result:
+        de: Fenwick und Jacob gehen den Streifen mit dem Vermesser ab und schlagen die Pfähle selbst ein. Danach trinken sie zusammen, ohne viel zu reden.
+        en: Fenwick and Jacob walk the strip with the surveyor and drive the stakes themselves. Afterwards they drink together without saying much.
+      requires: { minCash: 40 }
+      effects: { cash: -40 }
+      marks: [fenwick_geeinigt]
+      appointments: 2
+    - id: warten
+      label: { de: "Auf das Recht warten", en: "Wait for justice" }
+      result:
+        de: Die Akte bleibt unten. Fenwick hat gezahlt, sagt man. Der Streifen gehört jetzt ihm.
+        en: The file stays at the bottom. Fenwick paid, people say. The strip is his now.
+      effects: { cash: -100 }
+      appointments: 0
+      default: true
+
+- id: wahl_stimmen
+  title:
+    de: Wahltag in Port Ellis
+    en: Election Day in Port Ellis
+  text:
+    de: >-
+      Am Wahltag stehen Teagues Männer vor dem Wahllokal mit einem Fass Bier und einem
+      Beutel Silberdollar: zwei Dollar für jede Stimme, die richtig fällt. Ob Jacob
+      seinen Trupp geschlossen hinführt? Für jeden Mann einen Dollar extra, für Jacob.
+    en: >-
+      On election day Teague's men stand outside the polling station with a barrel of
+      beer and a bag of silver dollars: two dollars for every vote cast the right
+      way. Would Jacob march his crew there together? One dollar extra per man, for
+      Jacob.
+  conditions: { minLeases: 1, minRound: 6 }
+  chance: 0.08
+  choices:
+    - id: hinfuehren
+      label: { de: "Den Trupp hinführen (+30 $)", en: "March the crew over (+30 $)" }
+      result:
+        de: Die Männer trinken das Bier und wählen, wie man es ihnen sagt. Mateo, der nicht wählen darf, wartet draußen.
+        en: The men drink the beer and vote as they're told. Mateo, who isn't allowed to vote, waits outside.
+      effects: { cash: 30 }
+      marks: [stimmen_verkauft]
+    - id: frei
+      label: { de: "Den Männern frei geben, jeder wählt selbst", en: "Give the men the day off, each votes as he likes" }
+      result:
+        de: Ein halber Tag ohne Arbeit. Die Hälfte des Trupps trinkt trotzdem Teagues Bier.
+        en: Half a day without work. Half the crew drinks Teague's beer anyway.
+      effects: { cash: -30 }
+    - id: arbeiten
+      label: { de: "Am Wahltag wird gebohrt", en: "On election day, we drill" }
+      result:
+        de: Der Turm schlägt den ganzen Tag. Am Abend fragt Crabb, ob ein Mann aus Cordova kein Wahlrecht habe.
+        en: The derrick pounds all day. In the evening Crabb asks whether a Cordova man has no vote.
+      appointments: 0
+      default: true
