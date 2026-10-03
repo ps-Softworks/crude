@@ -20,10 +20,12 @@ interface Props {
   game: GameState;
   debug: boolean;
   selected: string | null;
+  /** Parzellen, die der Hinweis auf dem Schreibtisch meint. */
+  highlight: string[];
   onSelect: (id: string) => void;
 }
 
-export function Map({ balance, game, debug, selected, onSelect }: Props) {
+export function Map({ balance, game, debug, selected, highlight, onSelect }: Props) {
   const { width, height, saltHill } = balance.map;
   const w = width * CELL;
   const h = height * CELL;
@@ -116,6 +118,19 @@ export function Map({ balance, game, debug, selected, onSelect }: Props) {
               >
                 {Math.round(p.reserves / 1000)}k
               </text>
+            )}
+            {highlight.includes(p.id) && (
+              // Dicker gelber Rahmen: Hier will der Hinweis auf dem Schreibtisch hin.
+              <rect
+                x={x + 1.5}
+                y={y + 1.5}
+                width={CELL - 3}
+                height={CELL - 3}
+                fill="none"
+                strokeWidth={5}
+                className="highlight"
+                pointerEvents="none"
+              />
             )}
           </g>
         );

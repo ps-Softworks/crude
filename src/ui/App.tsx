@@ -1,59 +1,41 @@
+// App (1.11): hält den Spielzustand und reicht ihn an den Schreibtisch weiter.
+// Spielregeln und alle Texte kommen aus src/sim – hier wird nur geklickt.
+
 import { useState } from 'react';
-import { fieldLabel, fieldOf } from '../sim/field';
-import { endRound, formatDate, newGame, type GameState } from '../sim/game';
-import {
-  abandonWell,
-  accidentChance,
-  deeperChance,
-  drillDeeper,
-  fishWell,
-  stageCost,
-  startDrilling,
-  wellOf,
-  type Well,
-} from '../sim/drilling';
+import { applyAction, nextStep, parcelActions, type DeskActionKind } from '../sim/desk';
+import { accidentChance, deeperChance, wellOf, type Well } from '../sim/drilling';
 import { formatForecast, trueChance } from '../sim/forecast';
+import { fieldLabel, fieldOf } from '../sim/field';
+import { endRound, newGame, type GameState } from '../sim/game';
 import type { Parcel } from '../sim/geology';
-import {
-  buyLease,
-  buyOption,
-  exerciseOption,
-  leaseOf,
-  leaseTerms,
-  optionOf,
-  roundsLeft,
-  type LeaseResult,
-} from '../sim/lease';
+import { leaseOf, leaseTerms, optionOf, roundsLeft } from '../sim/lease';
 import { fieldStatus } from '../sim/production';
-import { TRANSPORT_MODES } from '../sim/balance';
-import { creditLimit, debt, headroom, type LoanResult } from '../sim/credit';
-import { capacityLeft, netPrice, sellOil, tariff } from '../sim/transport';
+import type { LoanResult } from '../sim/credit';
 import { balance } from './balance';
-import { BankPanel } from './BankPanel';
+import { Desk } from './Desk';
 import { GameOverScreen } from './GameOverScreen';
-import { Map } from './Map';
 
 const GEOLOGY_LABEL = { dry: 'trocken', small: 'klein', gusher: 'Gusher' } as const;
 
-function money(value: number) {
+function money(value: number): string {
   return `${value.toLocaleString('de-DE')} $`;
 }
 
 /** Barrel-Menge in lesbarer Form. */
-function barrels(value: number) {
+function barrels(value: number): string {
   return value.toLocaleString('de-DE');
 }
 
 /** Förderzins als Prozent, z. B. 0.125 -> "12,5 %", 1/6 -> "16,7 %". */
-function percent(value: number) {
+function percent(value: number): string {
   return `${(value * 100).toLocaleString('de-DE', { maximumFractionDigits: 1 })} %`;
 }
 
-function rounds(n: number) {
+function rounds(n: number): string {
   return n === 1 ? '1 Runde' : `${n} Runden`;
 }
 
-function randomSeed() {
+function randomSeed(): string {
   return Math.random().toString(36).slice(2, 8);
 }
 
@@ -61,22 +43,23 @@ function randomSeed() {
 const params = new URLSearchParams(window.location.search);
 
 export function App() {
-  const [seedInput, setSeedInput] = useState(() => params.get('seed') ?? randomSeed());
-  const [game, setGame] = useState(() => newGame(seedInput, balance));
+  const [seed, setSeed] = useState(() => params.get('seed') ?? randomSeed());
+  const [game, setGame] = useState(() => newGame(seed, balance));
   const [debug, setDebug] = useState(params.get('debug') === '1');
   const [selected, setSelected] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
+  // Der Schreibtisch sagt, was als Nächstes dran ist; danach richtet sich die Meldung.
+  const step = nextStep(game, balance);
   const parcel = game.parcels.find((p) => p.id === selected);
-  const leaseCount = game.leases.filter((l) => l.holder === 'jacob').length;
-  const optionCount = game.options.filter((o) => o.holder === 'jacob').length;
 
   function select(id: string) {
     setSelected(id);
     setNotice(null);
   }
 
-  function apply(result: LeaseResult | LoanResult) {
+  function act(kind: DeskActionKind, parcelId: string) {
+    const result = applyAction(game, balance, parcelId, kind);
     if (result.ok) {
       setGame(result.state);
       setNotice(null);
@@ -85,183 +68,69 @@ export function App() {
     }
   }
 
-  function startNewWorld(seed: string) {
-    setSeedInput(seed);
-    setGame(newGame(seed, balance));
+  function apply(result: LoanResult) {
+    if (result.ok) {
+      setGame(result.state);
+      setNotice(null);
+    } else {
+      setNotice(result.reason);
+    }
+  }
+
+  function end() {
+    setGame(endRound(game, balance));
+    setNotice(null);
+  }
+
+  function startNewWorld(neuerSeed: string) {
+    setSeed(neuerSeed);
+    setGame(newGame(neuerSeed, balance));
     setSelected(null);
     setNotice(null);
   }
 
+  if (game.ending === 'pleite') {
+    return (
+      <div className="app">
+        <GameOverScreen game={game} onRestart={() => startNewWorld(randomSeed())} />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
-      <header>
-        <h1>
-          CRUDE <span className="version">v{__APP_VERSION__}</span>
-        </h1>
-        <div className="status">
-          <span>
-            Runde {game.round}/{game.totalRounds}
-          </span>
-          <span>{formatDate(game)}</span>
-          <span>Kasse: {money(game.cash)}</span>
-          <span>Öl im Tank: {barrels(game.oilStock)} bbl</span>
-          <span>
-            Pachten: {leaseCount} · Optionen: {optionCount}
-          </span>
-          <span>
-            Rating {game.rating} · Schulden {money(debt(game))} · Rahmen frei {money(headroom(game, balance))} von{' '}
-            {money(creditLimit(game, balance))}
-          </span>
-          {game.bankruptcyDeadline > 0 && (
-            <span className="warn">Bankrott droht – Frist bis Runde {game.bankruptcyDeadline}</span>
-          )}
-        </div>
-      </header>
-
-      {game.ending === 'pleite' ? (
-        <GameOverScreen game={game} onRestart={() => startNewWorld(randomSeed())} />
-      ) : (
-        <main>
-          <Map balance={balance} game={game} debug={debug} selected={selected} onSelect={select} />
-
-          <aside>
-            <section>
-              <button
-                className="primary"
-                disabled={game.finished}
-                onClick={() => {
-                  setGame(endRound(game, balance));
-                  setNotice(null);
-                }}
-              >
-                {game.finished ? 'Kapitel beendet' : 'Runde beenden'}
-              </button>
-            </section>
-
-            <section>
-              <h2>Tank &amp; Verkauf</h2>
-              <SalePanel game={game} onSold={(state) => setGame(state)} />
-            </section>
-
-            <section>
-              <h2>Bank</h2>
-              <BankPanel game={game} onResult={apply} />
-            </section>
-
-            <section>
-              <h2>Parzelle</h2>
-              {parcel ? (
-                <ParcelPanel game={game} parcel={parcel} debug={debug} notice={notice} onResult={apply} />
-              ) : (
-                <p className="muted">Klick auf ein Feld der Karte.</p>
-              )}
-            </section>
-
-            <section>
-              <h2>Protokoll</h2>
-              <ul className="log">
-                {[...game.log].reverse().map((line, i) => (
-                  <li key={game.log.length - i}>{line}</li>
-                ))}
-              </ul>
-            </section>
-
-            <section className="debug">
-              <h2>Debug</h2>
-              <label>
-                <input type="checkbox" checked={debug} onChange={(e) => setDebug(e.target.checked)} /> Verdeckte
-                Geologie zeigen
-              </label>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  startNewWorld(seedInput);
-                }}
-              >
-                <label>
-                  Seed <input value={seedInput} onChange={(e) => setSeedInput(e.target.value)} />
-                </label>
-                <button type="submit">Welt laden</button>
-                <button type="button" onClick={() => startNewWorld(randomSeed())}>
-                  Zufällige Welt
-                </button>
-              </form>
-            </section>
-          </aside>
-        </main>
-      )}
-    </div>
-  );
-}
-
-/** Dollarbetrag mit Cent, z. B. für Tarife. */
-function price(value: number) {
-  return `${value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $`;
-}
-
-/**
- * Öl aus dem Tank verkaufen: per Fuhrwerk oder Bahn. Tarife, Kapazität und ob ein
- * Verkauf geht, kommen alle aus src/sim/transport.
- */
-function SalePanel({ game, onSold }: { game: GameState; onSold: (state: GameState) => void }) {
-  const [amount, setAmount] = useState<string>('');
-  const tank = Math.floor(game.oilStock);
-  const vorschlag = Math.max(...TRANSPORT_MODES.map((m) => Math.min(tank, capacityLeft(game, balance, m))));
-  const menge = amount === '' ? vorschlag : Number(amount);
-
-  const prevPrice = game.priceHistory[game.priceHistory.length - 2];
-  const priceChange = prevPrice !== undefined && prevPrice !== game.postedPrice
-    ? game.postedPrice > prevPrice
-      ? ' ↑'
-      : ' ↓'
-    : '';
-
-  return (
-    <div className="sale-panel">
-      <p>
-        Im Tank: <strong>{barrels(tank)} bbl</strong> · Posted Price {price(game.postedPrice)}{priceChange} je Barrel
-      </p>
-      <dl className="terms">
-        {TRANSPORT_MODES.map((mode) => (
-          <div key={mode} style={{ display: 'contents' }}>
-            <dt>{balance.transport[mode].label}</dt>
-            <dd>
-              Fracht {price(tariff(game, balance, mode))} · netto {price(netPrice(game, balance, mode))} je Barrel · frei{' '}
-              {barrels(capacityLeft(game, balance, mode))} bbl
-            </dd>
-          </div>
-        ))}
-      </dl>
-      <label>
-        Menge (bbl){' '}
-        <input
-          type="number"
-          min={1}
-          step={1}
-          value={amount === '' ? vorschlag : amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
-      </label>
-      <div className="actions">
-        {TRANSPORT_MODES.map((mode) => {
-          const probe = sellOil(game, balance, mode, menge);
-          return (
-            <button
-              key={mode}
-              disabled={!probe.ok}
-              title={probe.ok ? `Netto ${price(probe.quote.net)}` : probe.reason}
-              onClick={() => {
-                if (probe.ok) {
-                  onSold(probe.state);
-                  setAmount('');
-                }
-              }}
-            >
-              Per {balance.transport[mode].label} verkaufen
-            </button>
-          );
-        })}
-      </div>
+      <Desk
+        game={game}
+        step={step}
+        selected={selected}
+        debug={debug}
+        seed={seed}
+        parcelPanel={
+          parcel ? (
+            <ParcelPanel
+              game={game}
+              parcel={parcel}
+              debug={debug}
+              notice={notice}
+              stepText={step?.text ?? null}
+              onAction={act}
+            />
+          ) : (
+            <p className="muted">Klick auf ein Feld der Karte – markierte Felder sind deine.</p>
+          )
+        }
+        onSelect={select}
+        onEndRound={end}
+        onLoan={apply}
+        onSold={(state) => {
+          setGame(state);
+          setNotice(null);
+        }}
+        onDebug={setDebug}
+        onSeed={setSeed}
+        onNewWorld={() => startNewWorld(seed)}
+        onRandomWorld={() => startNewWorld(randomSeed())}
+      />
     </div>
   );
 }
@@ -270,28 +139,30 @@ interface PanelProps {
   game: GameState;
   parcel: Parcel;
   debug: boolean;
+  /** Grund der letzten gescheiterten Aktion. */
   notice: string | null;
-  onResult: (result: LeaseResult) => void;
+  /** Der nächste Schritt vom Schreibtisch. */
+  stepText: string | null;
+  onAction: (kind: DeskActionKind, parcelId: string) => void;
 }
 
-/** Angaben und Knöpfe zur gewählten Parzelle. Alle Regeln kommen aus src/sim/lease. */
-function ParcelPanel({ game, parcel, debug, notice, onResult }: PanelProps) {
+/**
+ * Angaben und Knöpfe zur gewählten Parzelle. Welche Knöpfe es gibt, entscheidet
+ * parcelActions aus src/sim – hier steht keine einzige Spielregel.
+ */
+function ParcelPanel({ game, parcel, debug, notice, stepText, onAction }: PanelProps) {
   const id = parcel.id;
   const lease = leaseOf(game, id);
   const option = optionOf(game, id);
   const terms = parcel.discovery ? undefined : leaseTerms(game, balance, id);
   const forecast = parcel.discovery ? undefined : game.forecasts[id];
-
-  // Probelauf: Die Simulation sagt, ob die Aktion gerade geht und warum nicht.
-  const tryLease = !lease && !option && terms ? buyLease(game, balance, id) : undefined;
-  const tryOption = !lease && !option && terms ? buyOption(game, balance, id) : undefined;
-  const tryExercise = option ? exerciseOption(game, balance, id) : undefined;
   const well = wellOf(game, id);
-  const tryDrill = lease && lease.holder === 'jacob' && !well ? startDrilling(game, balance, id) : undefined;
-  const tryDeeper = well?.status === 'decision' ? drillDeeper(game, balance, id) : undefined;
-  const tryFish = well?.status === 'stuck' ? fishWell(game, balance, id) : undefined;
-  const firstReason = [tryLease, tryOption, tryExercise, tryDrill, tryDeeper, tryFish].find((r) => r && !r.ok);
-  const hint = notice ?? (firstReason && !firstReason.ok ? firstReason.reason : null);
+
+  // Probelauf aus der Simulation: sie sagt, welche Knöpfe es gibt und ob sie gehen.
+  const actions = parcelActions(game, balance, id);
+  // Was der Spieler liest: der Fehler der letzten Aktion, sonst der Grund, warum
+  // ein Knopf gesperrt ist, sonst der nächste Schritt.
+  const hinweis = notice ?? actions.find((a) => !a.ok)?.reason ?? stepText;
 
   return (
     <div className="parcel-panel">
@@ -365,43 +236,28 @@ function ParcelPanel({ game, parcel, debug, notice, onResult }: PanelProps) {
 
       {well?.status === 'found' && <SourceInfo game={game} well={well} debug={debug} />}
 
-      <div className="actions">
-        {tryDrill && (
-          <button disabled={!tryDrill.ok} onClick={() => onResult(startDrilling(game, balance, id))}>
-            Bohren ({money(stageCost(balance, 1))})
-          </button>
-        )}
-        {tryDeeper && well && (
-          <button disabled={!tryDeeper.ok} onClick={() => onResult(drillDeeper(game, balance, id))}>
-            Tiefer bohren auf {balance.drilling.stages[well.stage].depth} m ({money(stageCost(balance, well.stage + 1))},
-            Unfallrisiko {percent(accidentChance(balance, well.stage + 1))})
-          </button>
-        )}
-        {tryFish && (
-          <button disabled={!tryFish.ok} onClick={() => onResult(fishWell(game, balance, id))}>
-            Werkzeug bergen ({money(balance.drilling.fishingCost)})
-          </button>
-        )}
-        {(tryDeeper || tryFish) && (
-          <button onClick={() => onResult(abandonWell(game, balance, id))}>Aufgeben</button>
-        )}
-        {tryLease && terms && (
-          <button disabled={!tryLease.ok} onClick={() => onResult(buyLease(game, balance, id))}>
-            Pachten ({money(terms.bonus)})
-          </button>
-        )}
-        {tryOption && terms && (
-          <button disabled={!tryOption.ok} onClick={() => onResult(buyOption(game, balance, id))}>
-            Option kaufen ({money(terms.optionFee)})
-          </button>
-        )}
-        {tryExercise && option && (
-          <button disabled={!tryExercise.ok} onClick={() => onResult(exerciseOption(game, balance, id))}>
-            Option einlösen ({money(option.bonus)})
-          </button>
-        )}
-      </div>
-      {hint && <p className="hint">{hint}</p>}
+      {actions.length > 0 && (
+        <div className="actions">
+          {actions.map((action) => (
+            <button
+              key={action.kind}
+              disabled={!action.ok}
+              title={action.reason}
+              onClick={() => onAction(action.kind, id)}
+            >
+              {action.label}
+              {action.kind === 'deeper' && well && (
+                <>
+                  {' '}
+                  auf {balance.drilling.stages[well.stage].depth} m, Unfallrisiko{' '}
+                  {percent(accidentChance(balance, well.stage + 1))}
+                </>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+      {hinweis && <p className="hint">{hinweis}</p>}
 
       {debug && (
         <p className="muted">
@@ -418,15 +274,42 @@ function WellInfo({ well }: { well: Well }) {
   const head = `Bohrung · Stufe ${well.stage}/${balance.drilling.stages.length} (${depth} m) · bisher ${money(well.spent)}`;
   switch (well.status) {
     case 'drilling':
-      return <>{head}<br />Der Turm bohrt – fertig in {rounds(well.roundsLeft)}.</>;
+      return (
+        <>
+          {head}
+          <br />
+          Der Turm bohrt – fertig in {rounds(well.roundsLeft)}.
+        </>
+      );
     case 'decision':
-      return <>{head}<br />In {depth} m trocken. Tiefer bohren oder aufgeben?</>;
+      return (
+        <>
+          {head}
+          <br />In {depth} m trocken. Tiefer bohren oder aufgeben?
+        </>
+      );
     case 'stuck':
-      return <>{head}<br />Das Werkzeug klemmt in {depth} m.</>;
+      return (
+        <>
+          {head}
+          <br />Das Werkzeug klemmt in {depth} m.
+        </>
+      );
     case 'found':
-      return <>{head}<br />{well.result === 'gusher' ? 'GUSHER! Ein gewaltiger Fund.' : 'Öl gefunden – eine kleine Quelle.'}</>;
+      return (
+        <>
+          {head}
+          <br />
+          {well.result === 'gusher' ? 'GUSHER! Ein gewaltiger Fund.' : 'Öl gefunden – eine kleine Quelle.'}
+        </>
+      );
     case 'dry':
-      return <>{head}<br />Trocken – kein Öl.</>;
+      return (
+        <>
+          {head}
+          <br />Trocken – kein Öl.
+        </>
+      );
   }
 }
 
@@ -453,7 +336,8 @@ function SourceInfo({ game, well, debug }: { game: GameState; well: Well; debug:
       </dd>
       <dt>Feld</dt>
       <dd>
-        {fieldLabel(field)}: {lage.wells} {lage.wells === 1 ? 'Quelle' : 'Quellen'} · Druck {percent(lage.pressure)}
+        {fieldLabel(field)}: {lage.wells} {lage.wells === 1 ? 'Quelle' : 'Quellen'} · Druck{' '}
+        {percent(lage.pressure)}
       </dd>
       {debug && (
         <>

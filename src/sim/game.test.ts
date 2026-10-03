@@ -245,6 +245,66 @@ describe('Bankrott beendet das Spiel (1.10, Fertig-Kriterium)', () => {
   });
 });
 
+describe('Protokoll der Runde (1.11)', () => {
+  it('im neuen Spiel beginnt das Rundenprotokoll bei 0', () => {
+    expect(newGame('protokoll-start', balance).roundLogStart).toBe(0);
+  });
+
+  it('endRound merkt sich die alte Länge: alles danach gehört zur Abrechnung', () => {
+    const state = newGame('protokoll-runde', balance);
+    const vorher = state.log.length;
+    const nachher = endRound(state, balance);
+    expect(nachher.roundLogStart).toBe(vorher);
+    expect(nachher.log.length).toBeGreaterThan(vorher);
+    expect(state.roundLogStart).toBe(0);
+  });
+
+  it('mit jeder Runde wandert der Schnitt weiter', () => {
+    let state = newGame('protokoll-mehrere', balance);
+    for (let i = 0; i < 3; i++) {
+      const vorher = state.log.length;
+      state = endRound(state, balance);
+      expect(state.roundLogStart).toBe(vorher);
+    }
+    expect(state.round).toBe(4);
+  });
+
+  it('auch am Ende des Kapitels bleibt das Protokoll der letzten Runde sichtbar', () => {
+    const state = { ...newGame('protokoll-kapitel', balance), round: balance.start.rounds };
+    const vorher = state.log.length;
+    const nachher = endRound(state, balance);
+    expect(nachher.finished).toBe(true);
+    expect(nachher.ending).toBe('kapitel');
+    expect(nachher.roundLogStart).toBe(vorher);
+    expect(nachher.log.at(-1)).toMatch(/Kapitel 1 ist zu Ende/);
+  });
+
+  it('bei Pleite auch: das Protokoll endet mit dem Schuldspruch', () => {
+    const tot: GameState = {
+      ...newGame('protokoll-pleite', balance),
+      cash: -500,
+      bankruptcyDeadline: 1,
+      rating: 'D',
+      loans: [
+        { id: 1, source: 'bank', principal: 3000, rate: 0.15, takenRound: 1, collateral: null },
+        {
+          id: 2,
+          source: 'lender',
+          principal: balance.credit.emergency.limit,
+          rate: balance.credit.emergency.rate,
+          takenRound: 1,
+          collateral: null,
+        },
+      ],
+    };
+    const vorher = tot.log.length;
+    const nachher = endRound(tot, balance);
+    expect(nachher.ending).toBe('pleite');
+    expect(nachher.roundLogStart).toBe(vorher);
+    expect(nachher.log.at(-1)).toMatch(/pleite/);
+  });
+});
+
 describe('Ölpreis im Spielablauf (1.9)', () => {
   it('newGame setzt den Posted Price aus dem Startangebot und eine Preisliste mit einem Eintrag', () => {
     const state = newGame('markt-start', balance);

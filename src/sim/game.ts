@@ -60,6 +60,8 @@ export interface GameState {
   /** Wie das Spiel endet, oder null, solange es weitergeht. */
   ending: Ending;
   log: string[];
+  /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
+  roundLogStart: number;
 }
 
 export function newGame(seed: string, balance: Balance): GameState {
@@ -94,6 +96,7 @@ export function newGame(seed: string, balance: Balance): GameState {
     finished: false,
     ending: null,
     log: [],
+    roundLogStart: 0,
   };
   // Erst die Startoptionen, dann die Prognosen: so bleiben Karte und Startoptionen
   // bei gleichem Seed so, wie sie es vor der Prognose waren.
@@ -117,10 +120,12 @@ export function newGame(seed: string, balance: Balance): GameState {
  * Pleiteprüfung. Die Förderung kommt zuerst, damit eine Quelle, die gerade ihren
  * Abschlussbohrung hinter sich hat, erst in der nächsten Runde Öl liefert. Bei
  * Pleite ist sofort Schluss: keine neue Runde und keine Kapitelprüfung. Nach der
- * letzten Runde ist das Kapitel beendet.
+ * letzten Runde ist das Kapitel beendet. Was ab hier ins Protokoll kommt, gehört
+ * zur Abrechnung: roundLogStart merkt sich, wie lang das Protokoll davor war.
  */
 export function endRound(input: GameState, balance: Balance): GameState {
   if (input.finished) return input;
+  const roundLogStart = input.log.length;
   const gefoerdert = advanceProduction(input, balance);
   const markt = advanceMarket(gefoerdert, balance.market);
   const gebohrt = advanceDrilling(markt, balance);
@@ -128,7 +133,7 @@ export function endRound(input: GameState, balance: Balance): GameState {
   const verzinst = settleLoans(gepachtet, balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   const gefahren = advanceTransport(verzinst, balance);
-  const state = checkBankruptcy(gefahren, balance);
+  const state = { ...checkBankruptcy(gefahren, balance), roundLogStart };
   if (state.ending === 'pleite') return state;
   if (state.round >= state.totalRounds) {
     return {
