@@ -222,7 +222,7 @@ describe('Schritt 3: Verkauf', () => {
   });
 
   it('nach dem Verkauf: geschafft, Runde beenden', () => {
-    const state = { ...quelle, oilStock: 0, shipped: { wagon: 0, rail: 500 } };
+    const state = { ...quelle, oilStock: 0, shipped: { wagon: 0, rail: 500, teams: 0, pipeline: 0 } };
     expect(hint(state)).toMatchObject({ id: 'sold', step: 'sell', action: { kind: 'endRound' } });
   });
 });

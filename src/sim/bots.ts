@@ -21,6 +21,8 @@ import { endRound, newGame, type GameState } from './game';
 import { generateParcels } from './geology';
 import { leaseOf, leaseTerms, locationFor, optionOf } from './lease';
 import { Rng, seedFromString } from './rng';
+import { buildTank, hireTeam, storageCapacity } from './logistics';
+import { jacobSupply } from './market';
 import { capacityLeft, netPrice, sellOil } from './transport';
 import { RIVAL_MARKS } from './trust';
 import { tutorialHint } from './tutorial';
@@ -57,6 +59,41 @@ function sell(state: GameState, balance: Balance, share: number): GameState {
   return state;
 }
 
+/**
+ * Lager und Fuhrpark (0.2.15+2), bewusst einfach: Bleibt nach dem Verkauf Öl
+ * liegen, weil alle Wege voll sind, stellt der Bot ein eigenes Gespann ein und
+ * verkauft weiter. Würde die nächste Förderung überlaufen, baut er Tanks. Beides
+ * nur, solange die Rücklage bleibt – gierig leiht dafür notfalls bei der Bank. Pipeline, Händler und Thorne-Drohung nutzen
+ * die Bots (noch) nicht.
+ */
+function logistics(state: GameState, balance: Balance, reserve: number, borrow = false, hire = true): GameState {
+  const { teams, storage } = balance.transport;
+  /** Genug Geld für cost? Gierig leiht notfalls bei der Bank. */
+  const bezahlbar = (cost: number): boolean => {
+    if (state.cash - cost >= reserve) return true;
+    if (!borrow) return false;
+    const amount = Math.max(balance.credit.minLoan, Math.ceil(cost + reserve - state.cash));
+    if (amount > headroom(state, balance)) return false;
+    const loan = takeLoan(state, balance, amount);
+    if (loan.ok) state = loan.state;
+    return loan.ok;
+  };
+  while (Math.floor(state.oilStock) > 0 && TRANSPORT_MODES.every((m) => capacityLeft(state, balance, m) === 0 || netPrice(state, balance, m) <= 0)) {
+    if (!hire || state.logistics.teams >= teams.maxTeams || !bezahlbar(teams.hireCost)) break;
+    const r = hireTeam(state, balance);
+    if (!r.ok) break;
+    state = sell(r.state, balance, 1);
+  }
+  const naechste = jacobSupply(state);
+  for (let i = 0; i < storage.maxTanks && state.oilStock + naechste > storageCapacity(state, balance) + state.logistics.tanksBuilding * storage.tankCapacity; i++) {
+    if (state.logistics.tanks + state.logistics.tanksBuilding >= storage.maxTanks || !bezahlbar(storage.tankCost)) break;
+    const r = buildTank(state, balance);
+    if (!r.ok) break;
+    state = r.state;
+  }
+  return state;
+}
+
 /** Fundchance laut Geologe als Anteil 0–1 (die Prognose rechnet in Prozent). */
 function chance(state: GameState, parcelId: string): number {
   const f = state.forecasts[parcelId];
@@ -89,7 +126,7 @@ function openWells(state: GameState) {
 
 function cautiousTurn(state: GameState, balance: Balance): GameState {
   const { minChance, cashReserve, maxStage } = balance.bots.cautious;
-  state = sell(state, balance, 1);
+  state = logistics(sell(state, balance, 1), balance, cashReserve);
   for (const well of openWells(state)) {
     const next = well.stage + 1;
     const leistbar = next <= maxStage && next <= balance.drilling.stages.length && state.cash - stageCost(balance, next) >= cashReserve;
@@ -150,7 +187,7 @@ function rentDue(state: GameState, balance: Balance): number {
 }
 
 function greedyTurn(state: GameState, balance: Balance): GameState {
-  state = sell(state, balance, 1);
+  state = logistics(sell(state, balance, 1), balance, 0, true, false);
   for (const well of openWells(state)) {
     if (well.status === 'stuck' || well.stage < balance.drilling.stages.length) {
       const vorher = state;
@@ -217,7 +254,7 @@ function balancedPay(state: GameState, balance: Balance, parcelId: string, kind:
 
 function balancedTurn(state: GameState, balance: Balance): GameState {
   const { minChance, cashReserve, maxStage, maxUndrilled } = balance.bots.balanced;
-  state = sell(state, balance, 1);
+  state = logistics(sell(state, balance, 1), balance, cashReserve, false, false);
   for (const well of openWells(state)) {
     const vorher = state;
     const next = well.stage + 1;
@@ -477,7 +514,7 @@ export function playByHints(seed: string, balance: Balance, catalog: readonly Ev
   let sold = false;
   while (!state.finished && tutorialHint(state, balance) !== null) {
     state = hintTurn(state, balance);
-    if (state.shipped.wagon + state.shipped.rail > 0) sold = true;
+    if (TRANSPORT_MODES.some((m) => state.shipped[m] > 0)) sold = true;
     const runde = state.round;
     state = endRound(state, balance, catalog);
     if (foundRound === null && state.wells.some((w) => w.status === 'found')) foundRound = runde;

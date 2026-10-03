@@ -5,12 +5,13 @@
 // vollständig ist.
 
 import type { GameState } from './game';
+import { newLogistics } from './logistics';
 
-/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11). */
-export const SAVE_FORMAT = 9;
+/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2). */
+export const SAVE_FORMAT = 10;
 
 /** Ältere Formate, die mit Ersatzwerten noch geladen werden. */
-const ALTE_FORMATE = [2, 3, 4, 5, 6, 7, 8];
+const ALTE_FORMATE = [2, 3, 4, 5, 6, 7, 8, 9];
 
 export interface SaveFile {
   format: number;
@@ -128,6 +129,19 @@ export function validateState(value: unknown): LoadResult {
   if (value.ending !== null && value.ending !== 'kapitel' && value.ending !== 'pleite' && value.ending !== 'verkauft') {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
+  const lg = value.logistics;
+  const PIPELINE = ['none', 'surveyed', 'building', 'ready', 'damaged'];
+  if (
+    !istObjekt(lg) ||
+    !['rng', 'tanks', 'tanksBuilding', 'teams', 'teamsIdleUntil', 'pipelineRounds', 'traderSold', 'traderLast', 'threatRound'].every((k) => istZahl(lg[k])) ||
+    !PIPELINE.includes(lg.pipeline as string) ||
+    typeof lg.guards !== 'boolean'
+  ) {
+    return { ok: false, reason: UNVOLLSTAENDIG };
+  }
+  if (!istObjekt(value.shipped) || !['wagon', 'rail', 'teams', 'pipeline'].every((k) => istZahl((value.shipped as Record<string, unknown>)[k]))) {
+    return { ok: false, reason: UNVOLLSTAENDIG };
+  }
   const round = value.round as number;
   const totalRounds = value.totalRounds as number;
   return round >= 1 && round <= totalRounds ? { ok: true, state: value as unknown as GameState } : { ok: false, reason: UNVOLLSTAENDIG };
@@ -192,5 +206,11 @@ export function deserializeGame(text: string): LoadResult {
   if (state.wildcatters === undefined) state = { ...state, wildcatters: { rng: 0, firms: [] } };
   // Ersatzwert (2.11): Spielstände bis Format 8 kennen keinen Börsengang – noch nicht entschieden.
   if (state.ipo === undefined) state = { ...state, ipo: null };
+  // Ersatzwerte (0.2.15+2): Spielstände bis Format 9 kennen kein Lager, keine eigenen
+  // Fuhrwerke, keine Pipeline – Jacob fängt damit bei null an.
+  if (state.logistics === undefined && istText(state.seed)) state = { ...state, logistics: newLogistics(state.seed) };
+  if (istObjekt(state.shipped) && (state.shipped.teams === undefined || state.shipped.pipeline === undefined)) {
+    state = { ...state, shipped: { teams: 0, pipeline: 0, ...state.shipped } };
+  }
   return validateState(state);
 }

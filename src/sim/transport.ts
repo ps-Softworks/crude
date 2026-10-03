@@ -1,13 +1,24 @@
-// Transport und Verkauf (GDD §6): Das Öl aus dem Tank geht per Fuhrwerk oder
-// per Bahn zum Crane Trust und wird zum Posted Price verkauft. Die Bahn gehört
-// Augustus Thorne: Sie ist billiger, aber wer sie nutzt, gibt Thorne die
-// Gelegenheit, den Tarif zu erhöhen.
+// Transport und Verkauf (GDD §6): Das Öl aus dem Tank geht über einen von vier
+// Wegen zum Käufer – gemietetes Fuhrwerk, Thornes Bahn, eigene Fuhrwerke oder die
+// eigene Pipeline (0.2.15+2, Anlagen in logistics.ts). Käufer ist der Crane Trust
+// (Posted Price minus Abschlag) oder der unabhängige Händler in Port Ellis
+// (Aufschlag, begrenzte Menge – Crane merkt es sich). Die Bahn gehört Augustus
+// Thorne: Wer sie nutzt, gibt ihm die Gelegenheit, den Tarif zu erhöhen; Verträge
+// mit ihm (Exklusiv, Mengenrabatt) ändern Tarif und Pflichten.
 
-import type { Balance, TransportMode } from './balance';
+import type { Balance, Buyer, TransportMode } from './balance';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
+import { LOGISTICS_MARKS, pipelineWorks, teamsIdle, withMark } from './logistics';
 import { Rng } from './rng';
-import { hikeChance as thorneHikeChance, jacobPrice, railFrozen } from './trust';
+import {
+  exclusiveActive,
+  hikeChance as thorneHikeChance,
+  jacobPrice,
+  railFrozen,
+  volumeDealActive,
+  volumeObligation,
+} from './trust';
 
 /** Auf ganze Cent runden. */
 function cents(value: number): number {
@@ -18,29 +29,83 @@ function dollars(value: number): string {
   return value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-/** Fracht in $ je Barrel: Fuhrwerk fest, Bahn nach Thornes aktuellem Tarif. */
-export function tariff(state: Pick<GameState, 'railTariff'>, balance: Balance, mode: TransportMode): number {
-  return mode === 'rail' ? state.railTariff : balance.transport.wagon.costPerBarrel;
+/** Was eine Verkaufsrechnung vom Zustand braucht. */
+type Verkaufslage = Pick<GameState, 'railTariff' | 'postedPrice' | 'round'> & Partial<Pick<GameState, 'events' | 'logistics'>>;
+
+/** Strafe je Barrel, die Thorne während eines Exklusivvertrags für andere Wege verlangt. */
+export function exclusiveSurcharge(state: Verkaufslage, balance: Balance, mode: TransportMode): number {
+  return mode !== 'rail' && exclusiveActive(state, balance) ? balance.transport.thorne.exclusivePenalty : 0;
+}
+
+/**
+ * Fracht in $ je Barrel: Fuhrwerk, eigene Fuhrwerke und Pipeline fest, Bahn nach
+ * Thornes aktuellem Tarif (mit Mengenrabatt weniger). Während eines
+ * Exklusivvertrags kommt auf jeden anderen Weg Thornes Strafe dazu.
+ */
+export function tariff(state: Verkaufslage, balance: Balance, mode: TransportMode): number {
+  const t = balance.transport;
+  const basis =
+    mode === 'rail'
+      ? Math.max(0, state.railTariff - (volumeDealActive(state, balance) ? t.thorne.volumeDiscount : 0))
+      : t[mode].costPerBarrel;
+  return cents(basis + exclusiveSurcharge(state, balance, mode));
+}
+
+/** Höchstmenge je Runde: eigene Fuhrwerke je Gespann (0, wenn sie stillstehen), Pipeline nur, wenn sie läuft. */
+export function modeCapacity(state: Partial<Pick<GameState, 'logistics' | 'round'>>, balance: Balance, mode: TransportMode): number {
+  const t = balance.transport;
+  const lg = state.logistics;
+  switch (mode) {
+    case 'wagon':
+    case 'rail':
+      return t[mode].capacity;
+    case 'teams':
+      return !lg || teamsIdle({ round: state.round ?? 0, logistics: lg }) ? 0 : lg.teams * t.teams.capacity;
+    case 'pipeline':
+      return lg && pipelineWorks({ logistics: lg }) ? t.pipeline.capacity : 0;
+  }
 }
 
 /** Wie viele Barrel dieses Transportmittel in dieser Runde noch schafft. */
-export function capacityLeft(state: Pick<GameState, 'shipped'>, balance: Balance, mode: TransportMode): number {
-  return Math.max(0, balance.transport[mode].capacity - state.shipped[mode]);
+export function capacityLeft(state: Pick<GameState, 'shipped'> & Partial<Pick<GameState, 'logistics' | 'round'>>, balance: Balance, mode: TransportMode): number {
+  return Math.max(0, modeCapacity(state, balance, mode) - (state.shipped[mode] ?? 0));
 }
 
-/** Wer Öl verkauft, braucht Preis, Runde und (für Cranes Abschlag, 2.8) die Merkzeichen. */
-type Verkaufslage = Pick<GameState, 'railTariff' | 'postedPrice' | 'round'> & Partial<Pick<GameState, 'events'>>;
+/** Warum ein Weg gar nicht geht (keine Gespanne, keine Pipeline), oder null. */
+export function modeUnavailable(state: Pick<GameState, 'round' | 'logistics'>, mode: TransportMode): string | null {
+  const lg = state.logistics;
+  if (mode === 'teams') {
+    if (lg.teams === 0) return 'Jacob hat keine eigenen Fuhrwerke.';
+    if (teamsIdle(state)) return 'Die eigenen Fuhrwerke stehen still.';
+  }
+  if (mode === 'pipeline') {
+    if (lg.pipeline === 'damaged') return 'Die Pipeline wird repariert.';
+    if (lg.pipeline !== 'ready') return 'Es gibt noch keine Pipeline.';
+  }
+  return null;
+}
 
-/** Was je Barrel nach Fracht übrig bleibt (vor Förderzins): Preis des Trusts (Posted Price minus Abschlag, 2.8) minus Fracht. */
-export function netPrice(state: Verkaufslage, balance: Balance, mode: TransportMode): number {
-  return cents(jacobPrice(state, balance) - tariff(state, balance, mode));
+/** Preis je Barrel beim Käufer: Crane zahlt Posted Price minus Abschlag/Groll, der Händler Posted Price plus Aufschlag. */
+export function buyerPrice(state: Verkaufslage, balance: Balance, buyer: Buyer = 'crane'): number {
+  return buyer === 'trader' ? cents(state.postedPrice + balance.transport.trader.premium) : jacobPrice(state, balance);
+}
+
+/** Wie viel der Käufer in dieser Runde noch nimmt (Crane: alles). */
+export function buyerCapacityLeft(state: Partial<Pick<GameState, 'logistics'>>, balance: Balance, buyer: Buyer): number {
+  if (buyer === 'crane') return Infinity;
+  return Math.max(0, balance.transport.trader.capacity - (state.logistics?.traderSold ?? 0));
+}
+
+/** Was je Barrel nach Fracht übrig bleibt (vor Förderzins). */
+export function netPrice(state: Verkaufslage, balance: Balance, mode: TransportMode, buyer: Buyer = 'crane'): number {
+  return cents(buyerPrice(state, balance, buyer) - tariff(state, balance, mode));
 }
 
 export interface SaleQuote {
   barrels: number;
-  /** Erlös zum Posted Price. */
+  /** Erlös beim Käufer. */
   gross: number;
-  /** Fracht. */
+  /** Fracht (mit Thornes Strafe während eines Exklusivvertrags). */
   transportCost: number;
   /** Anteil der Landbesitzer (Förderzins) in $. */
   royalty: number;
@@ -53,14 +118,15 @@ function royaltyBarrels(state: Pick<GameState, 'oilStock' | 'royaltyOil'>, barre
   return state.oilStock > 0 ? (barrels * state.royaltyOil) / state.oilStock : 0;
 }
 
-/** Rechnet einen Verkauf durch, ohne etwas zu ändern. Der Trust zahlt den Posted Price minus Cranes Abschlag (2.8). */
+/** Rechnet einen Verkauf durch, ohne etwas zu ändern. */
 export function quoteSale(
   state: Verkaufslage & Pick<GameState, 'oilStock' | 'royaltyOil'>,
   balance: Balance,
   mode: TransportMode,
   barrels: number,
+  buyer: Buyer = 'crane',
 ): SaleQuote {
-  const price = jacobPrice(state, balance);
+  const price = buyerPrice(state, balance, buyer);
   const gross = cents(barrels * price);
   const transportCost = cents(barrels * tariff(state, balance, mode));
   const royalty = cents(royaltyBarrels(state, barrels) * price);
@@ -69,12 +135,20 @@ export function quoteSale(
 
 export type SaleResult = { ok: true; state: GameState; quote: SaleQuote } | { ok: false; reason: string };
 
-/** Verkauft Öl aus dem Tank über das gewählte Transportmittel. */
+const PER: Record<TransportMode, string> = {
+  wagon: 'per Fuhrwerk',
+  rail: 'per Bahn',
+  teams: 'mit eigenen Fuhrwerken',
+  pipeline: 'durch die Pipeline',
+};
+
+/** Verkauft Öl aus dem Tank über den gewählten Weg an den gewählten Käufer. */
 export function sellOil(
   state: GameState,
   balance: Balance,
   mode: TransportMode,
   barrels: number,
+  buyer: Buyer = 'crane',
 ): SaleResult {
   const label = balance.transport[mode].label;
   if (state.finished) return { ok: false, reason: 'Das Kapitel ist beendet.' };
@@ -84,40 +158,55 @@ export function sellOil(
   if (barrels > Math.floor(state.oilStock)) {
     return { ok: false, reason: `So viel Öl ist nicht im Tank (${Math.floor(state.oilStock)} Barrel).` };
   }
+  const fehlt = modeUnavailable(state, mode);
+  if (fehlt) return { ok: false, reason: fehlt };
   const frei = capacityLeft(state, balance, mode);
   if (barrels > frei) {
     return { ok: false, reason: `${label}: in dieser Runde nur noch ${frei} Barrel frei.` };
   }
-  const quote = quoteSale(state, balance, mode, barrels);
-  const per = mode === 'rail' ? 'per Bahn' : 'per Fuhrwerk';
-  return {
-    ok: true,
-    quote,
-    state: {
-      ...state,
-      oilStock: state.oilStock - barrels,
-      royaltyOil: Math.max(0, state.royaltyOil - royaltyBarrels(state, barrels)),
-      cash: cents(state.cash + quote.net),
-      shipped: { ...state.shipped, [mode]: state.shipped[mode] + barrels },
-      log: [
-        ...state.log,
-        `${formatDate(state)}: ${barrels.toLocaleString('de-DE')} Barrel ${per} verkauft – ${dollars(quote.net)} $ nach Fracht und Förderzins.`,
-      ],
-    },
+  const nimmt = buyerCapacityLeft(state, balance, buyer);
+  if (barrels > nimmt) {
+    return { ok: false, reason: `Der Händler nimmt in dieser Runde nur noch ${nimmt} Barrel.` };
+  }
+  const quote = quoteSale(state, balance, mode, barrels, buyer);
+  const an = buyer === 'trader' ? ' an den Händler' : '';
+  const strafe = exclusiveSurcharge(state, balance, mode) > 0 ? ' (mit Thornes Strafe)' : '';
+  const logistics =
+    buyer === 'trader'
+      ? { ...state.logistics, traderSold: state.logistics.traderSold + barrels, traderLast: state.round }
+      : state.logistics;
+  const out: GameState = {
+    ...state,
+    oilStock: state.oilStock - barrels,
+    royaltyOil: Math.max(0, state.royaltyOil - royaltyBarrels(state, barrels)),
+    cash: cents(state.cash + quote.net),
+    shipped: { ...state.shipped, [mode]: (state.shipped[mode] ?? 0) + barrels },
+    logistics,
+    log: [
+      ...state.log,
+      `${formatDate(state)}: ${barrels.toLocaleString('de-DE')} Barrel ${PER[mode]}${an} verkauft${strafe} – ${dollars(quote.net)} $ nach Fracht und Förderzins.`,
+    ],
   };
+  return { ok: true, quote, state: buyer === 'trader' ? withMark(out, LOGISTICS_MARKS.trader) : out };
+}
+
+/** Leere Frachtliste für eine neue Runde. */
+export function noShipments(): Record<TransportMode, number> {
+  return { wagon: 0, rail: 0, teams: 0, pipeline: 0 };
 }
 
 /**
  * Rundenende: Hat Jacob per Bahn verschickt, erhöht Thorne vielleicht den Tarif
- * (bis höchstens maxTariff). Ohne Bahnfracht wird kein Zufall gezogen. Danach
- * sind beide Transportmittel wieder frei.
+ * (bis höchstens maxTariff). Ohne Bahnfracht wird kein Zufall gezogen.
  * 2.8: Mit Frachtvertrag erhöht Thorne nicht (der Zufall wird trotzdem gezogen,
  * damit der Weltzufall mit und ohne Vertrag gleich bleibt); nach einer Absage
  * erhöht er öfter.
+ * 0.2.15+2: Mit Mengenrabatt kostet jeder Barrel unter der Mindestabnahme
+ * shortfallPenalty. Danach sind alle Wege und der Händler wieder frei.
  */
 export function advanceTransport(input: GameState, balance: Balance): GameState {
-  const { hikeStep, maxTariff } = balance.transport.thorne;
-  let { railTariff, rng: rngState, log } = input;
+  const { hikeStep, maxTariff, shortfallPenalty } = balance.transport.thorne;
+  let { railTariff, rng: rngState, log, cash } = input;
   if (input.shipped.rail > 0 && railTariff < maxTariff) {
     const rng = new Rng(rngState);
     const roll = rng.float();
@@ -127,5 +216,23 @@ export function advanceTransport(input: GameState, balance: Balance): GameState 
     }
     rngState = rng.state;
   }
-  return { ...input, railTariff, rng: rngState, log, shipped: { wagon: 0, rail: 0 } };
+  const pflicht = volumeObligation(input, balance);
+  const fehlt = Math.max(0, pflicht - input.shipped.rail);
+  if (fehlt > 0) {
+    const strafe = cents(fehlt * shortfallPenalty);
+    cash = cents(cash - strafe);
+    log = [
+      ...log,
+      `${formatDate(input)}: Mindestabnahme verfehlt – ${fehlt.toLocaleString('de-DE')} Barrel zu wenig per Bahn. Thorne verlangt ${dollars(strafe)} $ Strafe.`,
+    ];
+  }
+  return {
+    ...input,
+    railTariff,
+    rng: rngState,
+    log,
+    cash,
+    shipped: noShipments(),
+    logistics: { ...input.logistics, traderSold: 0 },
+  };
 }

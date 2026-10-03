@@ -1,17 +1,14 @@
 // Der Schreibtisch (1.11): das ganze Spielbild auf einen Blick – Zahlenleiste,
 // Hinweis auf den nächsten Schritt, Karte, Parzelle, Quellen, Tank & Verkauf,
-// Bank und das Protokoll der laufenden Runde. Hier wird nichts gerechnet und
+// Bank, Protokoll der laufenden Runde und (0.2.15+2) Lager, Fuhrwerke, Pipeline, Wegevergleich. Hier wird nichts gerechnet und
 // nichts entschieden: Zahlen, Texte, Preise und Gründe kommen aus src/sim.
 
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { agendaView } from '../sim/agenda';
-import { TRANSPORT_MODES } from '../sim/balance';
 import { debt, headroom, creditLimit, type LoanResult } from '../sim/credit';
 import type { NextStep } from '../sim/desk';
 import { roundLog, sourceRows } from '../sim/desk';
 import { formatDate, type GameState } from '../sim/game';
-import { capacityLeft, netPrice, sellOil, tariff } from '../sim/transport';
-import { craneCut, craneCutRoundsLeft, railFrozen } from '../sim/trust';
 import { wildcatterWells } from '../sim/wildcatters';
 import { balance } from './balance';
 import { BankPanel } from './BankPanel';
@@ -21,6 +18,7 @@ import { FeedbackLink } from './FeedbackLink';
 import { Map } from './Map';
 import { NewspaperPanel } from './NewspaperPanel';
 import { Bohrturm } from './Silhouette';
+import { PipelinePanel, RoutePlanPanel, SalePanel, StoragePanel } from './TransportPanel';
 import type { TutorialAction, TutorialView } from '../sim/tutorial';
 
 function money(value: number): string {
@@ -29,11 +27,6 @@ function money(value: number): string {
 
 function barrels(value: number): string {
   return value.toLocaleString('de-DE');
-}
-
-/** Dollarbetrag mit Cent, z. B. für Tarife. */
-function price(value: number): string {
-  return `${value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $`;
 }
 
 export interface DeskProps {
@@ -227,6 +220,23 @@ export function Desk({
         </section>
       </div>
 
+      <div className="spalten">
+        <section className="panel">
+          <h2>Lager &amp; Fuhrwerke</h2>
+          <StoragePanel game={game} onChange={onSold} />
+        </section>
+
+        <section className="panel">
+          <h2>Pipeline &amp; Thorne</h2>
+          <PipelinePanel game={game} onChange={onSold} />
+        </section>
+
+        <section className="panel">
+          <h2>Wege im Vergleich</h2>
+          <RoutePlanPanel game={game} />
+        </section>
+      </div>
+
       {debugTools && (
         <section className="debug">
           <h2>Debug</h2>
@@ -308,77 +318,6 @@ function RoundLog({ game }: { game: GameState }) {
   );
 }
 
-/**
- * Öl aus dem Tank verkaufen: per Fuhrwerk oder Bahn. Tarife, Kapazität und ob ein
- * Verkauf geht, kommen alle aus src/sim/transport.
- */
-function SalePanel({ game, onSold }: { game: GameState; onSold: (state: GameState) => void }) {
-  const [amount, setAmount] = useState<string>('');
-  const tank = Math.floor(game.oilStock);
-  const vorschlag = Math.max(...TRANSPORT_MODES.map((m) => Math.min(tank, capacityLeft(game, balance, m))));
-  const menge = amount === '' ? vorschlag : Number(amount);
-
-  const prevPrice = game.priceHistory[game.priceHistory.length - 2];
-  const priceChange =
-    prevPrice !== undefined && prevPrice !== game.postedPrice ? (game.postedPrice > prevPrice ? ' ↑' : ' ↓') : '';
-
-  return (
-    <div className="sale-panel">
-      <p>
-        Im Tank: <strong>{barrels(tank)} bbl</strong> · Posted Price {price(game.postedPrice)}
-        {priceChange} je Barrel
-      </p>
-      {craneCut(game, balance) > 0 && (
-        <p className="hint">
-          Crane-Abschlag: Der Trust zahlt dir {price(craneCut(game, balance))} je Barrel weniger (noch{' '}
-          {craneCutRoundsLeft(game, balance)} {craneCutRoundsLeft(game, balance) === 1 ? 'Runde' : 'Runden'}).
-        </p>
-      )}
-      {railFrozen(game, balance) && <p className="hint">Frachtvertrag mit Thorne: Der Bahntarif bleibt fest.</p>}
-      <dl className="terms">
-        {TRANSPORT_MODES.map((mode) => (
-          <div key={mode} style={{ display: 'contents' }}>
-            <dt>{balance.transport[mode].label}</dt>
-            <dd>
-              Fracht {price(tariff(game, balance, mode))} · netto {price(netPrice(game, balance, mode))} je Barrel ·
-              frei {barrels(capacityLeft(game, balance, mode))} bbl
-            </dd>
-          </div>
-        ))}
-      </dl>
-      <label>
-        Menge (bbl){' '}
-        <input
-          type="number"
-          min={1}
-          step={1}
-          value={amount === '' ? vorschlag : amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
-      </label>
-      <div className="actions">
-        {TRANSPORT_MODES.map((mode) => {
-          const probe = sellOil(game, balance, mode, menge);
-          return (
-            <button
-              key={mode}
-              disabled={!probe.ok}
-              title={probe.ok ? `Netto ${price(probe.quote.net)}` : probe.reason}
-              onClick={() => {
-                if (probe.ok) {
-                  onSold(probe.state);
-                  setAmount('');
-                }
-              }}
-            >
-              Per {balance.transport[mode].label} verkaufen
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 /** Termine der Runde als Punkte (● belegt, ○ frei, ◆ Überstunde) und Jacobs Zustand in einem Wort (2.3). */
 function Termine({ game, debug }: { game: GameState; debug: boolean }) {
   const t = agendaView(game, balance);

@@ -33,7 +33,7 @@ export type ConditionKey = (typeof CONDITION_KEYS)[number];
 export type Conditions = Partial<Record<ConditionKey, number>>;
 
 /** Effekte: Zahlen, die auf den Zustand addiert werden (negativ = abziehen). */
-export const EFFECT_KEYS = ['cash', 'oilStock', 'railTariff', 'strength', 'ruth', 'thomas'] as const;
+export const EFFECT_KEYS = ['cash', 'oilStock', 'railTariff', 'strength', 'ruth', 'thomas', 'teams', 'teamsIdle'] as const;
 export type EffectKey = (typeof EFFECT_KEYS)[number];
 export type Effects = Partial<Record<EffectKey, number>>;
 
@@ -292,7 +292,14 @@ function applyWorldEffects(state: GameState, effects: Effects): GameState {
   }
   if (effects.railTariff !== undefined) railTariff = Math.max(0, cents(railTariff + effects.railTariff));
   if (effects.strength !== undefined) strength = Math.min(state.strengthMax, Math.max(0, strength + effects.strength));
-  return { ...state, cash, oilStock, royaltyOil, railTariff, strength };
+  // Eigene Fuhrwerke (0.2.15+2): teams ändert die Zahl der Gespanne (nie unter 0),
+  // teamsIdle n lässt sie bis einschließlich Runde (jetzt + n) stillstehen.
+  let logistics = state.logistics;
+  if (effects.teams !== undefined) logistics = { ...logistics, teams: Math.max(0, logistics.teams + effects.teams) };
+  if (effects.teamsIdle !== undefined && effects.teamsIdle > 0) {
+    logistics = { ...logistics, teamsIdleUntil: Math.max(logistics.teamsIdleUntil, state.round + effects.teamsIdle) };
+  }
+  return { ...state, cash, oilStock, royaltyOil, railTariff, strength, logistics };
 }
 
 function finde(catalog: readonly EventDef[], id: string): EventDef | undefined {

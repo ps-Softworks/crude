@@ -239,7 +239,7 @@ describe('Spielzahlen (balance.yaml)', () => {
       expect(market.newsThreshold).toBe(0.10);
       expect(transport.wagon).toEqual({ label: 'Fuhrwerk', costPerBarrel: 0.6, capacity: 3000 });
       expect(transport.rail).toEqual({ label: 'Bahn', costPerBarrel: 0.25, capacity: 20000 });
-      expect(transport.thorne).toEqual({ hikeChance: 0.2, hikeStep: 0.1, maxTariff: 0.8 });
+      expect(transport.thorne).toMatchObject({ hikeChance: 0.2, hikeStep: 0.1, maxTariff: 0.8 });
     });
 
     it('meldet eine Bahn, die nicht billiger als das Fuhrwerk ist', () => {

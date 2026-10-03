@@ -24,8 +24,12 @@ export const RIVAL_MARKS = {
   craneSold: 'crane_verkauft',
   /** Frachtvertrag mit Thorne: eine Weile keine Tariferhöhung. */
   thorneContract: 'thorne_vertrag',
-  /** Frachtvertrag abgelehnt: Thorne erhöht öfter. */
+  /** Frachtvertrag abgelehnt (oder Drohung als Bluff durchschaut): Thorne erhöht öfter. */
   thorneRefused: 'thorne_abgelehnt',
+  /** Exklusivvertrag (0.2.15+2, zusammen mit thorne_vertrag): andere Wege kosten Strafe. */
+  thorneExclusive: 'thorne_exklusiv',
+  /** Mengenrabatt gegen Mindestabnahme (0.2.15+2). */
+  thorneVolume: 'thorne_mengenrabatt',
   /** Handschlag mit Bullard: keiner pachtet dem anderen vor der Nase. */
   bullardPact: 'bullard_handschlag',
   /** Bullard fühlt sich beleidigt: Fehde. */
@@ -35,7 +39,7 @@ export const RIVAL_MARKS = {
 } as const;
 
 /** Merkzeichen, die die Simulation selbst setzt (für die Inhaltsprüfung). */
-export const RIVAL_SIM_MARKS = [RIVAL_MARKS.bullardBetrayed] as const;
+export const RIVAL_SIM_MARKS = [RIVAL_MARKS.bullardBetrayed, RIVAL_MARKS.thorneRefused] as const;
 
 /** Runde, in der ein Merkzeichen gesetzt wurde, oder undefined. */
 export function markRound(state: Partial<Pick<GameState, 'events'>>, mark: string): number | undefined {
@@ -46,12 +50,14 @@ function cents(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+type Lage = Pick<GameState, 'round'> & Partial<Pick<GameState, 'events' | 'logistics'>>;
+
 /**
  * Posted-Price-Druck (GDD §9.4): Hat Jacob den Abschlag hingenommen (Runde r),
  * zahlt der Trust ihm in den Runden r+1 … r+cutRounds priceCut $ je Barrel weniger,
  * mit Delgados Verband nur allianceFactor davon. Sonst 0.
  */
-export function craneCut(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'events'>>, balance: Balance): number {
+export function cartelCut(state: Lage, balance: Balance): number {
   const r = markRound(state, RIVAL_MARKS.craneCut);
   const { priceCut, cutRounds, allianceFactor } = balance.rivals.crane;
   if (r === undefined || state.round <= r || state.round > r + cutRounds) return 0;
@@ -59,16 +65,31 @@ export function craneCut(state: Pick<GameState, 'round'> & Partial<Pick<GameStat
   return cents(priceCut * faktor);
 }
 
+/**
+ * Cranes Groll (0.2.15+2): Hat Jacob in Runde h an den Händler verkauft, zahlt
+ * der Trust in den Runden h+1 … h+grudgeRounds grudgeCut $ je Barrel weniger.
+ */
+export function grudgeCut(state: Lage, balance: Balance): number {
+  const h = state.logistics?.traderLast ?? 0;
+  const { grudgeCut: cut, grudgeRounds } = balance.transport.trader;
+  return h > 0 && state.round > h && state.round <= h + grudgeRounds ? cut : 0;
+}
+
+/** Alles, was der Trust Jacob je Barrel abzieht: Abschlag (2.8) plus Groll (0.2.15+2). */
+export function craneCut(state: Lage, balance: Balance): number {
+  return cents(cartelCut(state, balance) + grudgeCut(state, balance));
+}
+
 /** Runden, die der Abschlag noch gilt (diese mitgezählt); 0 = keiner. */
-export function craneCutRoundsLeft(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'events'>>, balance: Balance): number {
+export function craneCutRoundsLeft(state: Lage, balance: Balance): number {
   const r = markRound(state, RIVAL_MARKS.craneCut);
-  if (r === undefined || craneCut(state, balance) === 0) return 0;
+  if (r === undefined || cartelCut(state, balance) === 0) return 0;
   return r + balance.rivals.crane.cutRounds - state.round + 1;
 }
 
 /** Was der Trust Jacob je Barrel zahlt: Posted Price minus Abschlag, nie unter null. */
 export function jacobPrice(
-  state: Pick<GameState, 'round' | 'postedPrice'> & Partial<Pick<GameState, 'events'>>,
+  state: Lage & Pick<GameState, 'postedPrice'>,
   balance: Balance,
 ): number {
   return Math.max(0, cents(state.postedPrice - craneCut(state, balance)));
@@ -88,6 +109,28 @@ export function hikeChance(state: Partial<Pick<GameState, 'events'>>, balance: B
   const base = balance.transport.thorne.hikeChance;
   const refused = markRound(state, RIVAL_MARKS.thorneRefused) !== undefined;
   return Math.min(1, refused ? base * balance.rivals.thorne.refusedHikeFactor : base);
+}
+
+/** Läuft gerade ein Vertrag dieser Art (Runde r … r+contractRounds−1)? */
+function contractActive(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'events'>>, balance: Balance, mark: string): boolean {
+  const r = markRound(state, mark);
+  return r !== undefined && state.round >= r && state.round < r + balance.rivals.thorne.contractRounds;
+}
+
+/** Exklusivvertrag (0.2.15+2): Tarif fest, jeder Barrel über einen anderen Weg kostet exclusivePenalty. */
+export function exclusiveActive(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'events'>>, balance: Balance): boolean {
+  return contractActive(state, balance, RIVAL_MARKS.thorneExclusive);
+}
+
+/** Mengenrabatt (0.2.15+2): Bahntarif minus volumeDiscount, solange der Vertrag läuft. */
+export function volumeDealActive(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'events'>>, balance: Balance): boolean {
+  return contractActive(state, balance, RIVAL_MARKS.thorneVolume);
+}
+
+/** Mindestabnahme per Bahn in dieser Runde (ab der Runde nach der Unterschrift), sonst 0. */
+export function volumeObligation(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'events'>>, balance: Balance): number {
+  const r = markRound(state, RIVAL_MARKS.thorneVolume);
+  return volumeDealActive(state, balance) && r !== undefined && state.round > r ? balance.transport.thorne.minVolume : 0;
 }
 
 /**

@@ -286,3 +286,17 @@ input[type='checkbox'] { accent-color: var(--tinte-weich); }
 .regler-zeile button { justify-self: start; }
 .regler { width: 100%; accent-color: var(--tinte-weich); }
 .regler-wert { font-variant-numeric: lining-nums tabular-nums; font-size: 0.97rem; }
+
+/* Transport (0.2.15+2): Wegevergleich, Lager, Pipeline */
+.wege { width: 100%; border-collapse: collapse; margin: 6px 0; font-size: 0.95rem; font-variant-numeric: lining-nums tabular-nums; }
+.wege th, .wege td { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--papier-dunkel); }
+.wege th { color: var(--tinte-weich); font-weight: normal; }
+.wege tr.gesperrt td { color: var(--tinte-blass); }
+.wege tr.bester td { font-weight: bold; }
+.wege td.warn { color: var(--rot); }
+.kaeufer { border: 1px solid var(--papier-dunkel); margin: 6px 0; padding: 4px 8px; display: flex; flex-direction: column; gap: 2px; }
+.klein { font-size: 0.88rem; color: var(--tinte-weich); }
+.lager h3, .pipeline h3 { margin: 10px 0 4px; font-size: 1.02rem; }
+.lager h3:first-child, .pipeline h3:first-child { margin-top: 0; }
+.actions.zeile { flex-direction: row; flex-wrap: wrap; }
+.rechte { list-style: none; padding: 0; margin: 4px 0; }

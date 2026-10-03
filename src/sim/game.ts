@@ -17,7 +17,8 @@ import { advanceProduction } from './production';
 import { Rng, seedFromString, type RngState } from './rng';
 import { advanceMarket, computePrice, neighbourSupply } from './market';
 import { newRival, advanceRival, type RivalState } from './rival';
-import { advanceTransport } from './transport';
+import { advanceLogistics, newLogistics, settleStorage, spillOver, type LogisticsState } from './logistics';
+import { advanceTransport, noShipments } from './transport';
 import { settleTakeover } from './trust';
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
 
@@ -45,6 +46,8 @@ export interface GameState {
   railTariff: number;
   /** In dieser Runde verschickte Barrel je Transportmittel. */
   shipped: Record<TransportMode, number>;
+  /** Lager, eigene Fuhrwerke, Pipeline, Händler (0.2.15+2). */
+  logistics: LogisticsState;
   leases: Lease[];
   options: LeaseOption[];
   /** Geologen-Prognose je Parzelle; für die Entdeckungsquelle gibt es keine. */
@@ -112,7 +115,8 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
     oilStock: 0,
     royaltyOil: 0,
     railTariff: balance.transport.rail.costPerBarrel,
-    shipped: { wagon: 0, rail: 0 },
+    shipped: noShipments(),
+    logistics: newLogistics(seed),
     leases: [],
     options: [],
     forecasts: {},
@@ -184,12 +188,15 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const familie = settleFamily(beantwortet, balance);
   // Termine (2.3): Krankheit (2.7), ruhige Runde gibt Kraft zurück, die nächste beginnt mit frischen Terminen.
   const ausgeruht = settleAgenda(familie, balance);
-  const gefoerdert = advanceProduction(ausgeruht, balance);
+  // Lager (0.2.15+2): Kosten, Schwund und Brand für das Öl, das noch im Tank steht; neue Tanks sind fertig.
+  // Nach der Förderung läuft aus, was nicht mehr in die Tanks passt.
+  const gefoerdert = spillOver(advanceProduction(settleStorage(ausgeruht, balance), balance), balance);
   const markt = advanceMarket(gefoerdert, balance.market, balance.rivals.bullard.ratePerWell);
   const gebohrt = advanceDrilling(markt, balance);
   const gepachtet = settleLeases(gebohrt, balance);
   const rivale = advanceRival(gepachtet, balance, gebohrt, input.postedPrice);
-  const verzinst = settleLoans(rivale, balance);
+  // Eigene Fuhrwerke und Pipeline (0.2.15+2): Löhne, Unterhalt, Baufortschritt, Sabotage – vor den Zinsen.
+  const verzinst = settleLoans(advanceLogistics(rivale, balance), balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   const gefahren = advanceTransport(verzinst, balance);
   const state = { ...checkBankruptcy(gefahren, balance), roundLogStart };

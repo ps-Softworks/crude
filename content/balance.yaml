@@ -177,16 +177,71 @@ market:
 transport:
   wagon:
     label: Fuhrwerk
-    costPerBarrel: 0.60     # PLATZHALTER
+    costPerBarrel: 0.60     # PLATZHALTER: gemietete Fuhrleute, keine Fixkosten
     capacity: 3000          # PLATZHALTER
   rail:
     label: Bahn
     costPerBarrel: 0.25     # PLATZHALTER: Starttarif
     capacity: 20000         # PLATZHALTER
+  # 0.2.15+2: eigene Fuhrwerke – Fixkosten je Runde, dafür billig je Barrel. Lohnt erst ab Menge:
+  # gegen das Mietfuhrwerk ab ~360 bbl je Gespann und Runde, gegen die Bahn (0,25 $) erst ab ~1.200.
+  teams:
+    label: Eigene Fuhrwerke
+    costPerBarrel: 0.10     # PLATZHALTER: Futter, Fässer, Verschleiß
+    capacity: 2000          # PLATZHALTER: je Gespann und Runde
+    wagePerRound: 180       # PLATZHALTER: Lohn je Gespann und Runde, auch wenn es steht
+    hireCost: 250           # PLATZHALTER: Wagen und Ochsen, einmalig
+    resale: 0.5             # Wer ein Gespann abgibt, bekommt diesen Anteil zurück
+    maxTeams: 5
+  # 0.2.15+2: kleine Pipeline zum Bahnhof/Hafen. Erst Route vermessen (surveyCost) – dann kommen
+  # Briefe der Landbesitzer; mit allen Wegerechten (rights) kann gebaut werden.
+  pipeline:
+    label: Pipeline
+    costPerBarrel: 0.03     # PLATZHALTER
+    capacity: 40000         # PLATZHALTER
+    surveyCost: 150         # Route vermessen
+    buildCost: 6000         # PLATZHALTER
+    buildRounds: 3          # GDD §6: 1–4 Runden
+    upkeepPerRound: 120     # Streckenwärter
+    rights:                 # Wegerechte: Merkzeichen aus content/events/k1-9-transport.yaml, Name für den Schreibtisch
+      - { mark: wegerecht_moss, label: "Moss' Weide" }
+      - { mark: wegerecht_bahndamm, label: "Bahndamm (Witwe Pruitt)" }
+    sabotageChance: 0.08    # PLATZHALTER: je Runde, sobald sie läuft
+    sabotageFactor: 2       # … × 2 bei Fehde mit Bullard oder Streit mit Thorne
+    repairCost: 600
+    repairRounds: 1         # so lange liegt sie nach einem Anschlag still
+    guardsPerRound: 100     # Wachleute
+    guardsFactor: 0.25      # … senken die Sabotage-Chance auf ein Viertel
   thorne:
     hikeChance: 0.20        # PLATZHALTER: Chance je Runde mit Bahnfracht
     hikeStep: 0.10          # PLATZHALTER: Erhöhung in $ je Barrel
     maxTariff: 0.80         # PLATZHALTER: höchster Bahntarif (darf über dem Fuhrwerk liegen)
+    # Verhandlung (Brief „Frachtvertrag“, rivals.thorne.contractRounds Runden):
+    volumeDiscount: 0.08    # Mengenrabatt in $ je Barrel …
+    minVolume: 5000         # … gegen Mindestabnahme je Runde (ab der Runde nach der Unterschrift) …
+    shortfallPenalty: 0.10  # … sonst Strafe je fehlendem Barrel
+    exclusivePenalty: 0.30  # Exklusivvertrag: Tarif eingefroren, jeder Barrel über einen anderen Weg kostet diese Strafe
+    threatCut: 0.10         # Drohung mit Pipeline: senkt den Tarif – nur wenn sie glaubwürdig ist
+    minTariff: 0.15         # tiefer geht Thorne nie
+    threatCooldown: 4       # Runden bis zur nächsten Drohung
+  # 0.2.15+2: zweiter Käufer – unabhängiger Händler in Port Ellis.
+  trader:
+    label: Händler in Port Ellis
+    premium: 0.10           # PLATZHALTER: zahlt Posted Price + Aufschlag (ohne Cranes Abschlag)
+    capacity: 2500          # PLATZHALTER: nimmt höchstens so viel je Runde
+    grudgeCut: 0.05         # Crane merkt es sich: zahlt danach so viel weniger je Barrel …
+    grudgeRounds: 2         # … so viele Runden nach dem letzten Händlerverkauf
+  # 0.2.15+2: Lager. Was über die Tanks hinaus gefördert wird, läuft aus.
+  storage:
+    startCapacity: 15000    # PLATZHALTER: Jacobs Holztanks am Feld
+    tankCapacity: 10000     # je zusätzlichem Tank
+    tankCost: 400           # PLATZHALTER
+    maxTanks: 6
+    costPerBarrel: 0.01     # Lagerkosten je Barrel und Runde
+    shrink: 0.02            # Schwund je Runde (Verdunstung, Lecks)
+    fireChance: 0.02        # Brand je Runde mit Öl im Tank …
+    fireLoss: 0.5           # … vernichtet diesen Anteil
+  assetShare: 0.5           # Tanks, Gespanne und Pipeline zählen mit diesem Anteil ihrer Kosten zum Imperiumswert
 
 # Bankkredit (GDD §8, §15). Der Rahmen wächst mit jeder fördernden Quelle, weil
 # sie als Pfand dient. Der Jahreszins steht nach dem Rating der Bank; mit Pfand

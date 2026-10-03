@@ -23,6 +23,7 @@ import type { EventDef } from './events';
 import type { GameState } from './game';
 import { LANGUAGES, localize, type Lang, type LocalizedText } from './i18n';
 import { producingWells } from './production';
+import { LOGISTICS_SIM_MARKS } from './logistics';
 
 /** Wie Kapitel 1 ausgegangen ist, oder null, solange es läuft. */
 export type ChapterResult = 'erreicht' | 'verfehlt' | 'verkauft' | 'pleite' | null;
@@ -146,9 +147,9 @@ export function fillText(text: LocalizedText, values: Record<string, string>, la
   return localize(text, lang).replace(/\{(\w+)\}/g, (ganz, key: string) => values[key] ?? ganz);
 }
 
-/** Inhaltsprüfung: Die Merkzeichen des Transport-Bonus muss eine Wahl in content/events/ setzen. */
+/** Inhaltsprüfung: Die Merkzeichen des Transport-Bonus muss eine Wahl in content/events/ oder die Simulation (Pipeline, 0.2.15+2) setzen. */
 export function checkChapterMarks(file: string, content: ChapterContent, catalog: readonly EventDef[]): ContentError[] {
-  const gesetzt = new Set(catalog.flatMap((e) => e.choices.flatMap((c) => [...c.marks, ...(c.marksIfForged ?? [])])));
+  const gesetzt = new Set<string>([...LOGISTICS_SIM_MARKS, ...catalog.flatMap((e) => e.choices.flatMap((c) => [...c.marks, ...(c.marksIfForged ?? [])]))]);
   return content.bonus.transport.any
     .filter((m) => !gesetzt.has(m))
     .map((m) => ({ file, line: 1, message: `bonus.transport: Das Merkzeichen „${m}“ setzt keine Wahl – Tippfehler?` }));

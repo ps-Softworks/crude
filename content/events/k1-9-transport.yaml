@@ -1,0 +1,268 @@
+# Kapitel 1 – Transport (0.2.15+2, GDD §6). Entwurf von Claude, bitte in eigener Stimme umschreiben.
+# Vorlage und Erklärung: docs/ereignis-vorlage.md
+#
+# Merkzeichen, die die Simulation setzt (src/sim/logistics.ts, LOGISTICS_MARKS):
+#   fuhrleute_eigen   Jacob hat eigene Fuhrwerke angestellt
+#   pipeline_geplant  Die Pipeline-Route ist vermessen – jetzt schreiben die Landbesitzer
+#   pipeline_gebaut   Die Pipeline läuft (Kapitelbonus „eigene Transportlösung“)
+#   haendler_kunde    Jacob hat an den Händler in Port Ellis verkauft
+# Merkzeichen, die die Simulation liest (transport.pipeline.rights in balance.yaml):
+#   wegerecht_moss, wegerecht_bahndamm  – erst mit beiden kann die Pipeline gebaut werden
+# Effekte für eigene Fuhrwerke: teams (Gespanne +/−), teamsIdle n (stehen bis Runde jetzt+n still).
+
+# --- Eigene Fuhrleute ----------------------------------------------------------
+
+- id: fuhrleute_streik
+  marked: [fuhrleute_eigen]
+  once: false
+  cooldown: 4
+  chance: 0.15
+  conditions: { minRound: 2 }
+  title:
+    de: Jacobs Fuhrleute legen die Peitschen hin
+    en: Jacob's Teamsters Put Down Their Whips
+  text:
+    de: >-
+      Die Männer, die Jacob für seine eigenen Gespanne angestellt hat, sitzen auf
+      den Deichseln und rauchen. Die Mietkutscher am Hafen verdienen mehr, sagt
+      ihr Sprecher – und die fahren nicht jeden Tag durch Bullards Land.
+    en: >-
+      The men Jacob hired for his own teams sit on the wagon tongues and smoke.
+      The hired drivers at the harbour earn more, says their spokesman – and they
+      don't drive through Bullard's land every day.
+  choices:
+    - id: zahlen
+      label: { de: "Den Lohn aufbessern (200 $)", en: "Raise their pay (200 $)" }
+      result:
+        de: Die Peitschen knallen wieder. Der Sprecher nickt Jacob zu, als wäre nichts gewesen.
+        en: The whips crack again. The spokesman nods to Jacob as if nothing had happened.
+      requires: { minCash: 200 }
+      effects: { cash: -200 }
+      appointments: 0
+    - id: reden
+      label: { de: "Sich zu ihnen setzen und reden", en: "Sit down with them and talk" }
+      result:
+        de: Ein Abend, eine Flasche, ein kleiner Zuschlag. Am Morgen sind die Ochsen angespannt.
+        en: One evening, one bottle, a small bonus. In the morning the oxen are yoked.
+      effects: { cash: -60, strength: -3 }
+      appointments: 2
+      sharp: true
+    - id: hart
+      label: { de: "Hart bleiben", en: "Stand firm" }
+      result:
+        de: Die Gespanne bleiben stehen – diese und die nächste Runde. Den Lohn will Jacob trotzdem zahlen müssen.
+        en: The teams stay put – this round and the next. Jacob will still have to pay the wages.
+      effects: { teamsIdle: 1 }
+      appointments: 0
+      default: true
+
+- id: fuhrleute_bestochen
+  rival: thorne
+  marked: [fuhrleute_eigen]
+  once: false
+  cooldown: 5
+  chance: 0.1
+  conditions: { minRound: 3, minOilStock: 300 }
+  title:
+    de: Ein Fuhrmann zählt zu viel Geld
+    en: A Teamster Counts Too Much Money
+  text:
+    de: >-
+      Im Saloon zahlt einer von Jacobs Fuhrleuten eine Runde für alle – mit
+      frischen Scheinen der Thorne Rail & Trust Bank. Seit zwei Wochen kommen am
+      Hafen weniger Fässer an, als am Feld aufgeladen werden.
+    en: >-
+      At the saloon one of Jacob's teamsters buys a round for everyone – with
+      crisp notes from the Thorne Rail & Trust Bank. For two weeks fewer barrels
+      have reached the harbour than were loaded at the field.
+  choices:
+    - id: entlassen
+      label: { de: "Den Mann entlassen – samt Gespann", en: "Fire the man – team and all" }
+      result:
+        de: Der Fuhrmann geht und nimmt die Ochsen mit, die er „gekauft“ habe. Jacob hat ein Gespann weniger.
+        en: The teamster leaves and takes the oxen he says he "bought". Jacob has one team fewer.
+      effects: { teams: -1 }
+    - id: lohn
+      label: { de: "Allen mehr zahlen, als Thorne bietet (150 $)", en: "Pay them all more than Thorne offers (150 $)" }
+      result:
+        de: Loyalität hat einen Preis, und Jacob hat ihn gezahlt. Die Fässer kommen wieder vollzählig an.
+        en: Loyalty has a price, and Jacob has paid it. The barrels arrive in full again.
+      requires: { minCash: 150 }
+      effects: { cash: -150 }
+      appointments: 0
+    - id: nichts
+      label: { de: "Nichts tun", en: "Do nothing" }
+      result:
+        de: Die Fässer verschwinden weiter, bis keiner mehr nachzählt. 300 Barrel sind weg.
+        en: The barrels keep vanishing until nobody counts any more. 300 barrels are gone.
+      effects: { oilStock: -300 }
+      appointments: 0
+      default: true
+
+# --- Wegerechte für die Pipeline ----------------------------------------------
+# Kommen sicher, sobald die Route vermessen ist, und jede Runde wieder, bis Jacob das Recht hat.
+
+# Moss, wenn noch nichts zwischen ihnen steht.
+- id: wegerecht_moss
+  certain: true
+  once: false
+  marked: [pipeline_geplant]
+  notMarked: [wegerecht_moss, moss_fair, moss_feind]
+  title:
+    de: Die Pipeline soll über Moss' Weide
+    en: The Pipeline Must Cross Moss's Pasture
+  text:
+    de: >-
+      Die abgesteckte Route läuft quer über Ezekiel Moss' Weide. Moss steht am
+      Pflock, die Bibel unter dem Arm. „Ein Rohr in meinem Land, Mr. Harlan? Das
+      kostet. Die Bank will ihr Geld, und Gott will, dass ich meine Kinder satt bekomme.“
+    en: >-
+      The staked route runs straight across Ezekiel Moss's pasture. Moss stands
+      by the stake, Bible under his arm. "A pipe in my land, Mr. Harlan? That
+      costs. The bank wants its money, and God wants my children fed."
+  choices:
+    - id: zahlen
+      label: { de: "Das Wegerecht kaufen (300 $)", en: "Buy the right of way (300 $)" }
+      result:
+        de: Moss setzt sein Kreuz unter das Papier. Das Rohr darf durch.
+        en: Moss puts his cross on the paper. The pipe may pass.
+      requires: { minCash: 300 }
+      effects: { cash: -300 }
+      marks: [wegerecht_moss]
+    - id: spaeter
+      label: { de: "Später wiederkommen", en: "Come back later" }
+      result:
+        de: Moss zuckt die Schultern. Die Weide läuft nicht weg.
+        en: Moss shrugs. The pasture isn't going anywhere.
+      appointments: 0
+      default: true
+
+# Moss, wenn Jacob ihm geholfen hat.
+- id: wegerecht_moss_freund
+  certain: true
+  once: false
+  marked: [pipeline_geplant, moss_fair]
+  notMarked: [wegerecht_moss, moss_feind]
+  title:
+    de: Moss erinnert sich
+    en: Moss Remembers
+  text:
+    de: >-
+      Moss hat von der Pipeline gehört, bevor Jacob fragen kann. „Sie haben mir
+      geholfen, als die Bank kam. Das Rohr darf durch. Aber Sie zahlen, was es dem
+      Land schadet – nicht mehr.“
+    en: >-
+      Moss has heard about the pipeline before Jacob can ask. "You helped me when
+      the bank came. The pipe may pass. But you pay what it costs the land – no more."
+  choices:
+    - id: annehmen
+      label: { de: "Das Wegerecht für einen fairen Preis (80 $)", en: "The right of way at a fair price (80 $)" }
+      result:
+        de: Moss liest das Papier nicht, er vertraut Jacob. Das wiegt schwerer als das Geld.
+        en: Moss doesn't read the paper; he trusts Jacob. That weighs more than the money.
+      requires: { minCash: 80 }
+      effects: { cash: -80 }
+      marks: [wegerecht_moss]
+    - id: spaeter
+      label: { de: "Noch warten", en: "Wait a while" }
+      result:
+        de: Moss nickt. „Wenn Sie so weit sind.“
+        en: Moss nods. "When you're ready."
+      appointments: 0
+      default: true
+
+# Moss, wenn Jacob ihn betrogen oder vertrieben hat.
+- id: wegerecht_moss_feind
+  certain: true
+  once: false
+  marked: [pipeline_geplant, moss_feind]
+  notMarked: [wegerecht_moss]
+  title:
+    de: Kein Rohr durch Moss' Land
+    en: No Pipe Through Moss's Land
+  text:
+    de: >-
+      Wo die Pflöcke standen, liegen sie jetzt zerbrochen im Gras. Die Familie
+      Moss – oder wer immer jetzt für sie spricht – lässt ausrichten: Über ihr Land
+      kommt kein Rohr von Harlan, nicht für alles Geld in Cordova. Bleibt der
+      Umweg durchs Sumpfland.
+    en: >-
+      Where the stakes stood, they now lie broken in the grass. The Moss family –
+      or whoever speaks for them now – sends word: no pipe of Harlan's crosses
+      their land, not for all the money in Cordova. That leaves the detour through
+      the marsh.
+  choices:
+    - id: umweg
+      label: { de: "Den Umweg durchs Sumpfland kaufen (900 $)", en: "Buy the detour through the marsh (900 $)" }
+      result:
+        de: Drei Sumpfbauern verkaufen gern. Die Route wird länger, aber sie steht.
+        en: Three marsh farmers are glad to sell. The route gets longer, but it stands.
+      requires: { minCash: 900 }
+      effects: { cash: -900 }
+      marks: [wegerecht_moss]
+    - id: abbitte
+      label: { de: "Hingehen und Abbitte leisten (500 $)", en: "Go and make amends (500 $)" }
+      result:
+        de: Es ist der schwerste Gang des Jahres. Am Ende nimmt Daniel das Geld, ohne Jacob die Hand zu geben.
+        en: It is the hardest walk of the year. In the end Daniel takes the money without shaking Jacob's hand.
+      requires: { minCash: 500 }
+      effects: { cash: -500, strength: -5 }
+      marks: [wegerecht_moss, daniel_entschuldigung]
+      appointments: 2
+      sharp: true
+    - id: liegen
+      label: { de: "Liegen lassen", en: "Leave it" }
+      result:
+        de: Die Pflöcke bleiben zerbrochen im Gras.
+        en: The stakes stay broken in the grass.
+      appointments: 0
+      default: true
+
+- id: wegerecht_bahndamm
+  rival: thorne
+  mail: offer
+  certain: true
+  once: false
+  deadline: 2
+  marked: [pipeline_geplant]
+  notMarked: [wegerecht_bahndamm]
+  title:
+    de: Die Witwe am Bahndamm
+    en: The Widow by the Embankment
+  text:
+    de: >-
+      Das letzte Stück zum Bahnhof gehört Mrs. Agnes Pruitt, Witwe, Hühner, ein
+      Zaun aus Eisenbahnschwellen. Ihr Brief ist kurz: Mr. Thornes Agent habe ihr
+      ebenfalls geschrieben. Sie verkaufe an den, der sie zuerst besuche – oder an
+      den, der mehr zahle.
+    en: >-
+      The last stretch to the station belongs to Mrs. Agnes Pruitt, widow,
+      chickens, a fence made of railway sleepers. Her letter is short: Mr.
+      Thorne's agent has written to her as well. She will sell to whoever visits
+      her first – or to whoever pays more.
+  choices:
+    - id: zahlen
+      label: { de: "Mehr zahlen als Thorne (450 $)", en: "Outbid Thorne (450 $)" }
+      result:
+        de: Mrs. Pruitt zählt das Geld auf dem Küchentisch. Thornes Agent kommt einen Tag zu spät.
+        en: Mrs. Pruitt counts the money on the kitchen table. Thorne's agent arrives a day too late.
+      requires: { minCash: 450 }
+      effects: { cash: -450 }
+      marks: [wegerecht_bahndamm]
+    - id: besuchen
+      label: { de: "Sie besuchen, Kuchen essen, zuhören (150 $)", en: "Visit her, eat cake, listen (150 $)" }
+      result:
+        de: Zwei Stunden über ihren seligen Mann und die Hühner. Am Ende unterschreibt sie für wenig Geld.
+        en: Two hours about her late husband and the chickens. In the end she signs for little money.
+      requires: { minCash: 150 }
+      effects: { cash: -150 }
+      marks: [wegerecht_bahndamm]
+      appointments: 2
+      sharp: true
+    - id: warten
+      label: { de: "Nicht antworten", en: "Don't reply" }
+      result:
+        de: Mrs. Pruitt wartet. Lange wird sie es nicht tun.
+        en: Mrs. Pruitt waits. She won't for long.
+      appointments: 0
+      default: true

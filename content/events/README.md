@@ -14,7 +14,8 @@ Kurzreferenz der Felder:
   `requiresFound`, `marksIfForged`, `sharp`
 - Bedingungen: `minRound`, `maxRound`, `minCash`, `maxCash`, `minOilStock`,
   `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100)
-- Effekte: `cash`, `oilStock`, `railTariff`, `strength` (Kraft), `ruth`, `thomas` (Beziehung 0–100, 2.7)
+- Effekte: `cash`, `oilStock`, `railTariff`, `strength` (Kraft), `ruth`, `thomas` (Beziehung 0–100, 2.7),
+  `teams` (eigene Gespanne +/−), `teamsIdle` (eigene Fuhrwerke stehen bis Runde jetzt+n still; 0.2.15+2)
 - Termine (2.3): `appointments` = Termine, die eine Antwort kostet (Standard 1; an einer Wahl
   überschreibt es den Wert des Ereignisses, z. B. `appointments: 0` für „abwinken“).
   Bleibt ein Ereignis liegen, gilt die Standard-Wahl und kostet keine Termine.
@@ -61,4 +62,5 @@ Kurzreferenz der Felder:
 - Gewürfelt wird in zufälliger Reihenfolge (seit 2.10b – vorher hatten Dateien vorn im Alphabet
   Vorrang), höchstens `events.maxPerRound` (balance.yaml) neue je Runde. Was sicher kommen muss,
   bekommt `certain: true` (z. B. die Geburt von Thomas).
-- Die Bots spielen (noch) ohne Ereignisse.
+- Transport (0.2.15+2): `k1-9-transport.yaml` – Streik/Bestechung eigener Fuhrleute, Wegerechte für die
+  Pipeline. Merkzeichen der Simulation: `fuhrleute_eigen`, `pipeline_geplant`, `pipeline_gebaut`, `haendler_kunde`.

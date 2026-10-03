@@ -84,7 +84,7 @@ describe('Thorne Rail: Frachtvertrag (2.8)', () => {
   });
 
   it('mit Vertrag erhöht Thorne nicht – und der Weltzufall läuft trotzdem gleich weiter', () => {
-    const bahn = { ...start, round: 5, shipped: { wagon: 0, rail: 100 } };
+    const bahn = { ...start, round: 5, shipped: { wagon: 0, rail: 100, teams: 0, pipeline: 0 } };
     const ohne = advanceTransport(bahn, immer);
     const mit = advanceTransport(mitMarken(bahn, { [RIVAL_MARKS.thorneContract]: 4 }), immer);
     expect(ohne.railTariff).toBeGreaterThan(start.railTariff);

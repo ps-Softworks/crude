@@ -1,18 +1,18 @@
 # Bot-Läufe
 
-Stand: 2026-10-03 · Version 0.2.15
+Stand: 2026-10-03 · Version 0.2.15+1
 
 - Partien je Strategie: 1.000
 - Seeds: `bot-0` bis `bot-999` (für jede Strategie dieselben)
-- Mit allen 113 Ereignissen aus content/events/ (Briefe, feste Termine, Rivalen, Story-Bögen)
+- Mit allen 119 Ereignissen aus content/events/ (Briefe, feste Termine, Rivalen, Story-Bögen)
 - Erzeugt mit `npm run bots` (tools/botlaeufe.ts, Regeln in src/sim/bots.ts)
 
 | Strategie | Partien | Bankrottquote | Kapitelziel | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen | Ø Termine |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| vorsichtig | 1.000 | 0,0 % | 16,5 % | 23.050 $ | 11,2 % | 36.493 $ | 8,6 | 5,0 |
-| gierig | 1.000 | 8,0 % | 27,5 % | 38.648 $ | 24,0 % | 28.595 $ | 8,6 | 5,0 |
-| ausgewogen | 1.000 | 0,8 % | 34,8 % | 49.120 $ | 37,5 % | 29.627 $ | 8,6 | 5,0 |
-| zufaellig | 1.000 | 0,0 % | 0,0 % | -1.778 $ | 0,2 % | 43.695 $ | 8,8 | 5,0 |
+| vorsichtig | 1.000 | 0,0 % | 16,7 % | 17.627 $ | 11,8 % | 36.637 $ | 8,7 | 5,0 |
+| gierig | 1.000 | 11,7 % | 22,7 % | 25.845 $ | 20,3 % | 28.562 $ | 8,6 | 5,0 |
+| ausgewogen | 1.000 | 2,5 % | 32,3 % | 36.733 $ | 39,8 % | 29.585 $ | 8,6 | 5,0 |
+| zufaellig | 1.000 | 27,6 % | 0,2 % | -1.050 $ | 0,3 % | 36.142 $ | 7,5 | 5,0 |
 
 - **vorsichtig:** bohrt und kauft nur, wenn danach noch die Rücklage in der Kasse bleibt, kauft nur Optionen, deren Bonus er danach auch zahlen kann, nimmt nie selbst einen Kredit.
 - **gierig:** bohrt jede Pacht, bohrt immer tiefer (gibt auf, wenn auch ein Kredit nicht mehr reicht), pachtet die beste bezahlbare Prognose, solange Kasse und Bankrahmen reichen und höchstens so viele Pachten ungebohrt sind, wie in balance.yaml steht; leiht fehlendes Geld und behält Bargeld für den Verzögerungszins.
@@ -20,7 +20,7 @@ Stand: 2026-10-03 · Version 0.2.15
 - **zufällig:** wählt jede Runde einige erlaubte Aktionen per Zufall und beantwortet Ereignisse zufällig.
 - **Ereignisse:** Die drei planenden Bots bewerten jede Antwort in $ (Geld, Öl, Kraft, Familie, Bahntarif, Termine; Gewichte in balance.yaml unter bots.events) und antworten, wenn das mehr bringt als liegen lassen. Den Verkauf an Crane wählt kein Bot.
 - **Kapitelziel:** Anteil der Partien, in denen die Kapitelprüfung bestanden ist (nicht bankrott und Imperiumswert ≥ 50.000 $ oder 5 fördernde Quellen, Zahlen in balance.yaml unter chapter).
-- **Siegquote:** Anteil der Seeds, in denen die Strategie den höchsten Imperiumswert hat. Eine Pleite zählt immer als letzter Platz, Gleichstand wird geteilt. Seit 2.15 gewinnt nur, wer mindestens die Startkasse (2.500 $) erreicht – sonst hat niemand gewonnen (diesmal 27,1 % der Seeds).
+- **Siegquote:** Anteil der Seeds, in denen die Strategie den höchsten Imperiumswert hat. Eine Pleite zählt immer als letzter Platz, Gleichstand wird geteilt. Seit 2.15 gewinnt nur, wer mindestens die Startkasse (2.500 $) erreicht – sonst hat niemand gewonnen (diesmal 27,8 % der Seeds).
 - **Ø Termine:** Termine je Runde zu Rundenbeginn (krank = 0).
 
 ## Zielwerte Kapitel 1
@@ -29,14 +29,14 @@ Toleranzbereiche stehen in balance.yaml unter bots.targets; gemessen wird in src
 
 | Kennzahl | Ziel (Quelle) | Toleranz | Ist | im Rahmen |
 | --- | --- | ---: | ---: | :---: |
-| Höchste Siegquote einer Strategie | GDD §17: keine Einzelstrategie gewinnt in mehr als 40 % | 0,0 % – 40,0 % | 37,5 % | ja |
-| Pleitequote Standard-Bot (ausgewogen) | Kapitel 1 ist der Einstieg (GDD §17: Kapitel 4 übersteht er in 55–70 %) | 0,0 % – 15,0 % | 0,8 % | ja |
-| Pleitequote gierig | GDD §15: wer im Boom zu viele Schulden macht, stirbt (Krisen erst ab Kapitel 2) | 5,0 % – 45,0 % | 8,0 % | ja |
-| Ø Imperium vorsichtig ÷ bester Ø der Mutigeren | GDD §15: wer nie Schulden macht, wird überholt (unter 1) | 0,00 – 0,95 | 0,47 | ja |
-| Kapitelziel Standard-Bot (ausgewogen) | Kapitelprüfung erreichbar, aber nicht geschenkt | 20,0 % – 70,0 % | 34,8 % | ja |
+| Höchste Siegquote einer Strategie | GDD §17: keine Einzelstrategie gewinnt in mehr als 40 % | 0,0 % – 40,0 % | 39,8 % | ja |
+| Pleitequote Standard-Bot (ausgewogen) | Kapitel 1 ist der Einstieg (GDD §17: Kapitel 4 übersteht er in 55–70 %) | 0,0 % – 15,0 % | 2,5 % | ja |
+| Pleitequote gierig | GDD §15: wer im Boom zu viele Schulden macht, stirbt (Krisen erst ab Kapitel 2) | 5,0 % – 45,0 % | 11,7 % | ja |
+| Ø Imperium vorsichtig ÷ bester Ø der Mutigeren | GDD §15: wer nie Schulden macht, wird überholt (unter 1) | 0,00 – 0,95 | 0,48 | ja |
+| Kapitelziel Standard-Bot (ausgewogen) | Kapitelprüfung erreichbar, aber nicht geschenkt | 20,0 % – 70,0 % | 32,3 % | ja |
 | Kleine Funde mit 50–500 bbl/Tag | GDD §15: Anfangsrate 50–500 bbl/Tag | 90,0 % – 100,0 % | 99,1 % | ja |
 | Ø Anfangsrate Gusher ÷ kleiner Fund | GDD §15: Gusher deutlich mehr | 2,00 – 20,00 | 4,98 | ja |
-| Gemessener Rückgang je Quartal | GDD §15: 8–15 % | 8,0 % – 15,0 % | 12,3 % | ja |
+| Gemessener Rückgang je Quartal | GDD §15: 8–15 % | 8,0 % – 15,0 % | 12,4 % | ja |
 | Trefferquote blinde Wildcat-Bohrung (Randlage, 300 m) | GDD §15: etwa 1 von 5 bis 1 von 10 | 5,0 % – 25,0 % | 20,9 % | ja |
 | Ø Termine je Runde (Standard-Bot) | GDD §15: 5 je Quartal | 4,50 – 5,00 | 5,00 | ja |
 

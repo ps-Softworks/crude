@@ -51,12 +51,12 @@ goals:
 
 # Boni (GDD §13): zeigen nur an, was Jacob zusätzlich geschafft hat.
 # transport.any: Merkzeichen, die als eigene Transportlösung zählen (eins reicht).
-# Eigene Fuhrwerke oder eine Pipeline gibt es in Kapitel 1 noch nicht – bis dahin
-# zählt der Frachtvertrag mit Thorne. Die Silas-Frage gilt als geklärt, sobald der
+# Seit 0.2.15+2 zählt die eigene Pipeline (Merkzeichen pipeline_gebaut setzt die
+# Simulation, sobald sie fertig ist). Die Silas-Frage gilt als geklärt, sobald der
 # Bogen in content/arcs.yaml einen Ausgang hat.
 bonus:
   transport:
-    any: [thorne_vertrag]
+    any: [pipeline_gebaut]
     label: { de: "Eigene Transportlösung", en: "Own transport solution" }
   silas:
     label: { de: "Silas-Frage geklärt", en: "Silas question settled" }

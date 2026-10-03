@@ -111,21 +111,55 @@ export interface ProductionBalance {
   recoveryLossMax: number;
 }
 
-export type TransportMode = 'wagon' | 'rail';
-export const TRANSPORT_MODES: readonly TransportMode[] = ['wagon', 'rail'];
+/**
+ * Transportwege (GDD §6): gemietetes Fuhrwerk, Thornes Bahn, eigene Fuhrwerke
+ * und – nach dem Bau – die eigene Pipeline (0.2.15+2).
+ */
+export type TransportMode = 'wagon' | 'rail' | 'teams' | 'pipeline';
+export const TRANSPORT_MODES: readonly TransportMode[] = ['wagon', 'rail', 'teams', 'pipeline'];
+
+/** Käufer (0.2.15+2): der Crane Trust oder der unabhängige Händler in Port Ellis. */
+export type Buyer = 'crane' | 'trader';
+export const BUYERS: readonly Buyer[] = ['crane', 'trader'];
 
 export interface TransportModeBalance {
   label: string;
   /** Fracht in $ je Barrel (bei der Bahn: Starttarif). */
   costPerBarrel: number;
-  /** Höchstens so viele Barrel je Runde. */
+  /** Höchstens so viele Barrel je Runde (eigene Fuhrwerke: je Gespann). */
   capacity: number;
 }
 
-/** Transport (GDD §6): Fuhrwerk oder Thornes Bahn. */
+/** Eigene Fuhrwerke: Fixkosten je Runde, billig je Barrel. */
+export interface TeamsBalance extends TransportModeBalance {
+  wagePerRound: number;
+  hireCost: number;
+  resale: number;
+  maxTeams: number;
+}
+
+/** Kleine Pipeline zum Bahnhof/Hafen. */
+export interface PipelineBalance extends TransportModeBalance {
+  surveyCost: number;
+  buildCost: number;
+  buildRounds: number;
+  upkeepPerRound: number;
+  /** Wegerechte, die alle da sein müssen: Merkzeichen und Name. */
+  rights: { mark: string; label: string }[];
+  sabotageChance: number;
+  sabotageFactor: number;
+  repairCost: number;
+  repairRounds: number;
+  guardsPerRound: number;
+  guardsFactor: number;
+}
+
+/** Transport (GDD §6): Wege, Thorne, zweiter Käufer, Lager. */
 export interface TransportBalance {
   wagon: TransportModeBalance;
   rail: TransportModeBalance;
+  teams: TeamsBalance;
+  pipeline: PipelineBalance;
   thorne: {
     /** Chance je Runde mit Bahnfracht, dass Thorne den Tarif erhöht. */
     hikeChance: number;
@@ -133,7 +167,27 @@ export interface TransportBalance {
     hikeStep: number;
     /** Höchster Bahntarif in $ je Barrel. */
     maxTariff: number;
+    volumeDiscount: number;
+    minVolume: number;
+    shortfallPenalty: number;
+    exclusivePenalty: number;
+    threatCut: number;
+    minTariff: number;
+    threatCooldown: number;
   };
+  trader: { label: string; premium: number; capacity: number; grudgeCut: number; grudgeRounds: number };
+  storage: {
+    startCapacity: number;
+    tankCapacity: number;
+    tankCost: number;
+    maxTanks: number;
+    costPerBarrel: number;
+    shrink: number;
+    fireChance: number;
+    fireLoss: number;
+  };
+  /** Anteil der Anlagekosten, der zum Imperiumswert zählt. */
+  assetShare: number;
 }
 
 export interface MarketBalance {
@@ -761,7 +815,70 @@ function parseTransport(raw: unknown): TransportBalance {
   if (maxTariff < rail.costPerBarrel) {
     throw new BalanceError('balance.yaml: "transport.thorne.maxTariff" ist kleiner als der Bahntarif');
   }
-  return { wagon, rail, thorne: { hikeChance, hikeStep, maxTariff } };
+  const t = 'transport.teams';
+  const teams: TeamsBalance = {
+    ...parseTransportMode(raw, 'teams'),
+    wagePerRound: nonNegative(raw, `${t}.wagePerRound`),
+    hireCost: nonNegative(raw, `${t}.hireCost`),
+    resale: share(raw, `${t}.resale`),
+    maxTeams: positiveInt(raw, `${t}.maxTeams`),
+  };
+  const p = 'transport.pipeline';
+  const rights = list(raw, `${p}.rights`);
+  if (rights.some((r) => typeof (r as { mark?: unknown })?.mark !== 'string' || !/^[a-z0-9_]+$/.test((r as { mark: string }).mark))) {
+    throw new BalanceError(`balance.yaml: "${p}.rights" muss eine Liste mit mark (Merkzeichen) und label sein`);
+  }
+  const pipeline: PipelineBalance = {
+    ...parseTransportMode(raw, 'pipeline'),
+    surveyCost: nonNegative(raw, `${p}.surveyCost`),
+    buildCost: nonNegative(raw, `${p}.buildCost`),
+    buildRounds: positiveInt(raw, `${p}.buildRounds`),
+    upkeepPerRound: nonNegative(raw, `${p}.upkeepPerRound`),
+    rights: rights.map((r, i) => ({ mark: (r as { mark: string }).mark, label: text(r, 'label', `${p}.rights.${i}`) })),
+    sabotageChance: share(raw, `${p}.sabotageChance`),
+    sabotageFactor: nonNegative(raw, `${p}.sabotageFactor`),
+    repairCost: nonNegative(raw, `${p}.repairCost`),
+    repairRounds: positiveInt(raw, `${p}.repairRounds`),
+    guardsPerRound: nonNegative(raw, `${p}.guardsPerRound`),
+    guardsFactor: share(raw, `${p}.guardsFactor`),
+  };
+  const h = 'transport.thorne';
+  const thorne = {
+    hikeChance,
+    hikeStep,
+    maxTariff,
+    volumeDiscount: nonNegative(raw, `${h}.volumeDiscount`),
+    minVolume: nonNegative(raw, `${h}.minVolume`),
+    shortfallPenalty: nonNegative(raw, `${h}.shortfallPenalty`),
+    exclusivePenalty: nonNegative(raw, `${h}.exclusivePenalty`),
+    threatCut: nonNegative(raw, `${h}.threatCut`),
+    minTariff: nonNegative(raw, `${h}.minTariff`),
+    threatCooldown: positiveInt(raw, `${h}.threatCooldown`),
+  };
+  if (thorne.minTariff > rail.costPerBarrel) {
+    throw new BalanceError('balance.yaml: "transport.thorne.minTariff" liegt über dem Starttarif der Bahn');
+  }
+  const r = 'transport.trader';
+  const traderBlock = (raw as { transport?: Record<string, unknown> })?.transport?.trader;
+  const trader = {
+    label: text(traderBlock, 'label', r),
+    premium: nonNegative(raw, `${r}.premium`),
+    capacity: positiveInt(raw, `${r}.capacity`),
+    grudgeCut: nonNegative(raw, `${r}.grudgeCut`),
+    grudgeRounds: positiveInt(raw, `${r}.grudgeRounds`),
+  };
+  const s = 'transport.storage';
+  const storage = {
+    startCapacity: positiveInt(raw, `${s}.startCapacity`),
+    tankCapacity: positiveInt(raw, `${s}.tankCapacity`),
+    tankCost: nonNegative(raw, `${s}.tankCost`),
+    maxTanks: positiveInt(raw, `${s}.maxTanks`),
+    costPerBarrel: nonNegative(raw, `${s}.costPerBarrel`),
+    shrink: share(raw, `${s}.shrink`),
+    fireChance: share(raw, `${s}.fireChance`),
+    fireLoss: share(raw, `${s}.fireLoss`),
+  };
+  return { wagon, rail, teams, pipeline, thorne, trader, storage, assetShare: share(raw, 'transport.assetShare') };
 }
 
 /** Rating-Namen wie "B"; erlaubt sind nur A bis D. */

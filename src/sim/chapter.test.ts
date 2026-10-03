@@ -144,9 +144,9 @@ describe('Boni', () => {
     expect(chapterBonuses(mitMarks({}), content(), arcs)).toEqual({ transport: false, silas: false });
   });
 
-  it('Frachtvertrag zählt als Transportlösung, ein Silas-Ausgang als geklärt', () => {
+  it('die eigene Pipeline zählt als Transportlösung, ein Silas-Ausgang als geklärt', () => {
     const silasMark = arcs.silas.outcomes[0].any[0];
-    expect(chapterBonuses(mitMarks({ thorne_vertrag: 3, [silasMark]: 8 }), content(), arcs)).toEqual({ transport: true, silas: true });
+    expect(chapterBonuses(mitMarks({ pipeline_gebaut: 3, [silasMark]: 8 }), content(), arcs)).toEqual({ transport: true, silas: true });
   });
 });
 
@@ -221,11 +221,11 @@ describe('content/chapter.yaml', () => {
 });
 
 describe('Spielstand', () => {
-  it('Format 9 sichert die Entscheidung mit', () => {
+  it('ab Format 9 sichert der Spielstand die Entscheidung mit', () => {
     const r = decideIpo(amEnde(80000), balance, 0);
     if (!r.ok) throw new Error(r.reason);
     const geladen = deserializeGame(serializeGame(r.state, 'test'));
-    expect(SAVE_FORMAT).toBe(9);
+    expect(SAVE_FORMAT).toBeGreaterThanOrEqual(9);
     expect(geladen.ok && geladen.state.ipo).toEqual({ share: 0, proceeds: 0 });
   });
 

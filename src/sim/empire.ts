@@ -12,6 +12,7 @@
 
 import type { Balance } from './balance';
 import { debt } from './credit';
+import { logisticsAssets } from './logistics';
 import type { GameState } from './game';
 import { fieldStatus, fieldWells, wellRate } from './production';
 
@@ -38,5 +39,6 @@ export function empireValue(state: GameState, balance: Balance): number {
   const tank = (state.oilStock - state.royaltyOil) * state.postedPrice;
   const imBoden = state.fields.reduce((sum, field) => sum + ownReserves(state, balance, field.id), 0);
   const reserven = balance.empire.reserveFactor * state.postedPrice * imBoden;
-  return cents(state.cash + tank + reserven - debt(state));
+  // Tanks, Gespanne und Pipeline (0.2.15+2) zählen mit ihrem Buchwert.
+  return cents(state.cash + tank + reserven + logisticsAssets(state, balance) - debt(state));
 }

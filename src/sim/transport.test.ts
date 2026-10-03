@@ -25,7 +25,7 @@ function verkauf(state: GameState, mode: 'wagon' | 'rail', barrels: number, bal 
 
 /** Jede Runde per Bahn verkaufen und die Runde beenden; liefert den Tarifverlauf. */
 function bahnSpiel(seed: string, runden: number, bal = balance): number[] {
-  let state: GameState = { ...newGame(seed, bal), oilStock: 1e6 };
+  let state: GameState = { ...newGame(seed, bal), oilStock: 10_000 };
   const verlauf = [state.railTariff];
   for (let i = 0; i < runden && !state.finished; i++) {
     state = endRound(verkauf(state, 'rail', 100, bal), bal);
@@ -130,7 +130,7 @@ describe('Transport und Verkauf', () => {
       expect(r.state.oilStock).toBe(600);
       expect(r.state.royaltyOil).toBeCloseTo(90, 10);
       expect(r.state.cash).toBeCloseTo(state.cash + r.quote.net, 10);
-      expect(r.state.shipped).toEqual({ wagon: 400, rail: 0 });
+      expect(r.state.shipped).toEqual({ wagon: 400, rail: 0, teams: 0, pipeline: 0 });
       expect(r.state.log.at(-1)).toMatch(/400 Barrel per Fuhrwerk verkauft – .* \$ nach Fracht und Förderzins\./);
     });
 
@@ -180,7 +180,7 @@ describe('Transport und Verkauf', () => {
   it('nach dem Rundenende ist die Kapazität wieder voll', () => {
     let state = verkauf(verkauf(mitOel(1e6), 'wagon', 100), 'rail', 200);
     state = endRound(state, balance);
-    expect(state.shipped).toEqual({ wagon: 0, rail: 0 });
+    expect(state.shipped).toEqual({ wagon: 0, rail: 0, teams: 0, pipeline: 0 });
     expect(capacityLeft(state, balance, 'wagon')).toBe(T.wagon.capacity);
     expect(capacityLeft(state, balance, 'rail')).toBe(T.rail.capacity);
   });

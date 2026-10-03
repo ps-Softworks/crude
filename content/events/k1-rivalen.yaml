@@ -12,7 +12,10 @@
 #   crane_treue       kein Abschlag, aber schlechteres Übernahmeangebot (rivals.crane.loyalPremium)
 #   crane_verkauft    Jacob verkauft an den Trust – frühes Ende „Der kluge Mann“
 #   thorne_vertrag    Thorne erhöht den Bahntarif eine Weile nicht (rivals.thorne.contractRounds)
-#   thorne_abgelehnt  Thorne erhöht danach öfter (rivals.thorne.refusedHikeFactor)
+#   thorne_exklusiv   … und andere Wege kosten so lange Strafe (transport.thorne.exclusivePenalty)
+#   thorne_mengenrabatt  Rabatt je Barrel gegen Mindestabnahme (transport.thorne.volumeDiscount/minVolume)
+#   thorne_abgelehnt  Thorne erhöht danach öfter (rivals.thorne.refusedHikeFactor); setzt auch
+#                     die Simulation, wenn Jacob mit einer unglaubwürdigen Pipeline droht
 #   bullard_handschlag  Bullard pachtet nicht direkt neben Jacobs Land
 #   bullard_fehde       Bullard pachtet erst recht neben Jacob (rivals.bullard.feudFactor)
 #   bullard_verraten    setzt die Simulation: Jacob hat trotz Handschlag neben Bullard gepachtet
@@ -217,23 +220,46 @@
   text:
     de: >-
       Briefkopf der Thorne Rail & Trust Bank, Unterschrift von Augustus Thorne
-      persönlich: Gegen eine Bürgschaft von 150 $ garantiere die Bahn Mr. Harlan
-      den heutigen Tarif für anderthalb Jahre. „Andernfalls“, so Thorne, „müssen
-      wir uns die übliche Freiheit vorbehalten.“
+      persönlich. Zwei Angebote für anderthalb Jahre: Gegen eine Bürgschaft von
+      150 $ friert die Bahn Mr. Harlans Tarif ein – sofern er sein Öl
+      ausschließlich der Bahn anvertraut. Oder Thorne gewährt einen Mengenrabatt,
+      wenn Mr. Harlan jede Runde eine feste Menge verlädt; was fehlt, wird
+      berechnet. „Andernfalls“, so Thorne, „müssen wir uns die übliche Freiheit
+      vorbehalten.“
     en: >-
-      Letterhead of Thorne Rail & Trust Bank, signed by Augustus Thorne himself:
-      against a bond of 150 $, the railway guarantees Mr. Harlan today's tariff for
-      a year and a half. "Otherwise," writes Thorne, "we must reserve our usual
-      freedom."
+      Letterhead of Thorne Rail & Trust Bank, signed by Augustus Thorne himself.
+      Two offers for a year and a half: against a bond of 150 $ the railway
+      freezes Mr. Harlan's tariff – provided he entrusts his oil to the railway
+      alone. Or Thorne grants a volume discount if Mr. Harlan loads a fixed amount
+      every round; any shortfall will be charged. "Otherwise," writes Thorne, "we
+      must reserve our usual freedom."
   choices:
     - id: unterschreiben
-      label: { de: "Unterschreiben (150 $)", en: "Sign (150 $)" }
+      label: { de: "Exklusivvertrag unterschreiben (150 $): Tarif fest, andere Wege kosten Strafe", en: "Sign the exclusive contract (150 $): fixed tariff, other routes cost a penalty" }
       result:
-        de: Thorne schickt eine Abschrift mit Prägesiegel. Der Bahntarif bleibt eine Weile, wie er ist.
-        en: Thorne sends a copy with an embossed seal. The rail tariff will stay as it is for a while.
+        de: >-
+          Thorne schickt eine Abschrift mit Prägesiegel. Der Bahntarif bleibt eine
+          Weile, wie er ist – aber jedes Fass, das nicht mit der Bahn fährt, stellt
+          Thorne in Rechnung.
+        en: >-
+          Thorne sends a copy with an embossed seal. The rail tariff will stay as it
+          is for a while – but Thorne will bill every barrel that doesn't go by rail.
       requires: { minCash: 150 }
       effects: { cash: -150 }
-      marks: [thorne_vertrag]
+      marks: [thorne_vertrag, thorne_exklusiv]
+    - id: mengenrabatt
+      label: { de: "Mengenrabatt aushandeln: billiger, aber Mindestmenge je Runde", en: "Negotiate a volume discount: cheaper, but a minimum per round" }
+      result:
+        de: >-
+          Zwei Tage im Kontor der Bahn, dann steht es auf Papier: Thorne gibt
+          Rabatt je Barrel. Verlädt Jacob weniger als die Mindestmenge, zahlt er
+          für jedes fehlende Fass. Erhöhen darf Thorne trotzdem.
+        en: >-
+          Two days in the railway office, then it's on paper: Thorne gives a
+          discount per barrel. If Jacob loads less than the minimum, he pays for
+          every missing barrel. Thorne may still raise the tariff.
+      marks: [thorne_mengenrabatt]
+      appointments: 2
     - id: ablehnen
       label: { de: "Nicht antworten", en: "Don't reply" }
       result:

@@ -85,9 +85,9 @@
     - id: liegen
       label: { de: "Liegen lassen, bis es trocken ist", en: "Leave it till it dries" }
       result:
-        de: Als der Weg trocken ist, fehlen vier Fässer. Niemand hat etwas gesehen.
-        en: By the time the road dries, four barrels are missing. Nobody saw a thing.
-      effects: { oilStock: -40 }
+        de: Als der Weg trocken ist, fehlen vier Fässer. Niemand hat etwas gesehen. Jacobs eigene Gespanne stehen bis dahin im Schlamm.
+        en: By the time the road dries, four barrels are missing. Nobody saw a thing. Jacob's own teams sit in the mud until then.
+      effects: { oilStock: -40, teamsIdle: 1 }
       appointments: 0
       default: true
 
