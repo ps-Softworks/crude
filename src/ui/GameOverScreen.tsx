@@ -3,6 +3,7 @@
 
 import { debt } from '../sim/credit';
 import { formatDate, type GameState } from '../sim/game';
+import { FeedbackLink } from './FeedbackLink';
 
 function money(value: number) {
   return `${value.toLocaleString('de-DE')} $`;
@@ -51,9 +52,12 @@ export function GameOverScreen({ game, onRestart }: { game: GameState; onRestart
           <li key={i}>{line}</li>
         ))}
       </ul>
-      <button className="primary" onClick={onRestart}>
-        Neues Spiel
-      </button>
+      <div className="knoepfe">
+        <FeedbackLink className="feedback gross" />
+        <button className="primary" onClick={onRestart}>
+          Neues Spiel
+        </button>
+      </div>
     </section>
   );
 }

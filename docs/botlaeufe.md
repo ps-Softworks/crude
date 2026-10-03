@@ -1,6 +1,6 @@
 # Bot-Läufe
 
-Stand: 2026-10-03 · Version 0.1.14+1
+Stand: 2026-10-03 · Version 0.1.14+2
 
 - Partien je Strategie: 1.000
 - Seeds: `bot-0` bis `bot-999` (für jede Strategie dieselben)
@@ -8,9 +8,9 @@ Stand: 2026-10-03 · Version 0.1.14+1
 
 | Strategie | Partien | Bankrottquote | Ø Imperiumswert | Siegquote |
 | --- | ---: | ---: | ---: | ---: |
-| vorsichtig | 1.000 | 0,0 % | 25.713 $ | 56,4 % |
-| gierig | 1.000 | 29,1 % | 39.120 $ | 42,1 % |
-| zufaellig | 1.000 | 0,0 % | 571 $ | 1,5 % |
+| vorsichtig | 1.000 | 0,0 % | 25.973 $ | 56,3 % |
+| gierig | 1.000 | 28,4 % | 39.031 $ | 42,6 % |
+| zufaellig | 1.000 | 0,0 % | 491 $ | 1,1 % |
 
 - **vorsichtig:** bohrt und kauft nur, wenn danach noch die Rücklage in der Kasse bleibt, kauft nur Optionen, deren Bonus er danach auch zahlen kann, nimmt nie selbst einen Kredit.
 - **gierig:** bohrt jede Pacht, bohrt immer tiefer (gibt auf, wenn auch ein Kredit nicht mehr reicht), pachtet die beste bezahlbare Prognose, solange Kasse und Bankrahmen reichen und höchstens so viele Pachten ungebohrt sind, wie in balance.yaml steht; leiht fehlendes Geld und behält Bargeld für den Verzögerungszins.
@@ -50,3 +50,12 @@ Code-Korrekturen (je mit Test):
 - **Siegquote** als neue Spalte (Pleite zählt immer als letzter Platz).
 
 Offen: Startkasse, Bankrahmen, Geldverleiher und Bohrkosten weichen jetzt vom GDD ab – nach Philipps eigenen Partien entscheiden, ob GDD oder balance.yaml angepasst wird. Bullards Bewertung eines Funds (valuePerFind 8.000 $) ist noch auf der alten Skala.
+
+## Nachbesserung 1.16
+
+| Wert | vorher | nachher | Warum |
+| --- | ---: | ---: | --- |
+| Bullard: Wert eines Funds | 8.000 $ | 25.000 $ | Noch alte Größenordnung: Ein kleiner Fund bringt seit 1.15 im Schnitt etwa 31.500 bbl × ~0,8 $ ≈ 25.000 $; mit 8.000 $ war Land am Fund (Bonus 8.000 $) für Bullard nie lohnend. Nicht ganz ×10 (80.000 $ läge über dem Ø Imperiumswert der Bots). |
+| Bullard: Streuung | 200 $ | 1.000 $ | Mit dem Fundwert mitgezogen. |
+
+Wirkung (300 Seeds je Strategie, vorher → nachher): Bullard bohrt weiter etwa eine Parzelle je Runde (sein Limit ist eine Aktion je Runde), wählt aber etwas bessere Lagen – Ø 8,0 → 8,5 Funde je Partie. Für Jacob ändert sich fast nichts (Tabelle oben). Auffällig, aber noch nicht angefasst: Bullards Kasse wächst bis Kapitelende auf Ø ~185.000 $ (3.000 $ je Quelle und Runde), Geld ist für ihn nie die Grenze.

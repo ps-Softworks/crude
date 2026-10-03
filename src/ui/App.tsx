@@ -14,7 +14,9 @@ import type { LoanResult } from '../sim/credit';
 import { balance } from './balance';
 import { clearAutosave, loadAutosave, writeAutosave } from './autosave';
 import { Desk } from './Desk';
+import { ChapterEndScreen } from './ChapterEndScreen';
 import { GameOverScreen } from './GameOverScreen';
+import { debugToolsVisible } from './testerConfig';
 
 const GEOLOGY_LABEL = { dry: 'trocken', small: 'klein', gusher: 'Gusher' } as const;
 
@@ -42,6 +44,8 @@ function randomSeed(): string {
 
 // Für Tests und Fehlersuche: ?seed=abc&debug=1 in der Adresse.
 const params = new URLSearchParams(window.location.search);
+// Debug-Bereich: beim Entwickeln immer, im Tester-Build nur mit ?debug=1.
+const debugTools = debugToolsVisible(import.meta.env.DEV, window.location.search);
 
 /**
  * Womit das Spiel anfängt: mit dem Seed aus der Adresse (immer eine frische
@@ -130,7 +134,11 @@ export function App() {
         step={step}
         selected={selected}
         debug={debug}
+        debugTools={debugTools}
         seed={seed}
+        chapterEnd={
+          game.ending === 'kapitel' ? <ChapterEndScreen game={game} onRestart={() => startNewWorld(randomSeed())} /> : null
+        }
         parcelPanel={
           parcel ? (
             <ParcelPanel

@@ -87,6 +87,16 @@ describe('Rivale Bullard (1.12)', () => {
       );
     });
 
+    it('Fundwert passt zur Größenordnung der Funde (1.16): Land am Fund kann sich lohnen', () => {
+      // Sonst wäre jede Parzelle am Fund für Bullard ein sicheres Minusgeschäft,
+      // selbst wenn er sicher wäre, Öl zu finden.
+      const teuersterBonus = Math.max(...balance.lease.locations.map((l) => l.bonus));
+      expect(bullard.valuePerFind).toBeGreaterThan(teuersterBonus + stageCost(balance, 1));
+      // Und nicht mehr wert als ein mittlerer kleiner Fund zum Höchstpreis.
+      const { min, max } = balance.geology.reserves.small;
+      expect(bullard.valuePerFind).toBeLessThanOrEqual(((min + max) / 2) * balance.market.priceMax);
+    });
+
     it('neben Jacobs Pacht: + aggression · nearJacobBonus', () => {
       const state0 = newGame('nutzen', balance);
       const p = freieRandparzelle(state0);

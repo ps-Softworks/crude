@@ -90,4 +90,8 @@ details summary { cursor: pointer; color: #555; }
 .gameover h2 { font-size: 1.6rem; letter-spacing: 0.2em; }
 .actions { display: flex; flex-direction: column; gap: 6px; }
 .actions button:disabled { cursor: default; color: #999; }
-.hint { margin: 6px 0 0; font-size: 0.9rem; color: #b3261e; }
+.hint { margin: 6px 0 0; font-size: 0.9rem; color: #b3261e; }.kapitelende { margin-bottom: 8px; }
+.knoepfe { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 12px; }
+a.feedback { color: #222; }
+a.feedback.kopf { font-size: 12px; font-weight: normal; letter-spacing: normal; color: #777; margin-left: 8px; }
+a.feedback.gross { font-size: 1.05rem; }

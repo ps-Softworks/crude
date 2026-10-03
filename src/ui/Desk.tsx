@@ -12,6 +12,7 @@ import { formatDate, type GameState } from '../sim/game';
 import { capacityLeft, netPrice, sellOil, tariff } from '../sim/transport';
 import { balance } from './balance';
 import { BankPanel } from './BankPanel';
+import { FeedbackLink } from './FeedbackLink';
 import { Map } from './Map';
 
 function money(value: number): string {
@@ -33,7 +34,11 @@ export interface DeskProps {
   step: NextStep | null;
   selected: string | null;
   debug: boolean;
+  /** Debug-Bereich zeigen (beim Entwickeln oder mit ?debug=1). */
+  debugTools: boolean;
   seed: string;
+  /** Abschluss-Kasten nach der letzten Runde; null, solange das Kapitel läuft. */
+  chapterEnd: ReactNode;
   /** Angaben und Knöpfe zur gewählten Parzelle. */
   parcelPanel: ReactNode;
   onSelect: (id: string) => void;
@@ -53,7 +58,9 @@ export function Desk({
   step,
   selected,
   debug,
+  debugTools,
   seed,
+  chapterEnd,
   parcelPanel,
   onSelect,
   onEndRound,
@@ -75,7 +82,7 @@ export function Desk({
     <div className="desk">
       <header>
         <h1>
-          CRUDE <span className="version">v{__APP_VERSION__}</span>
+          CRUDE <span className="version">v{__APP_VERSION__}</span> <FeedbackLink className="feedback kopf" />
         </h1>
         <div className="status">
           <span>
@@ -108,6 +115,8 @@ export function Desk({
           {game.finished ? 'Kapitel beendet' : 'Runde beenden'}
         </button>
       </header>
+
+      {chapterEnd}
 
       <p className="nextstep">{step?.text ?? 'Das Kapitel ist zu Ende.'}</p>
 
@@ -145,30 +154,32 @@ export function Desk({
         </section>
       </div>
 
-      <section className="debug">
-        <h2>Debug</h2>
-        <label>
-          <input type="checkbox" checked={debug} onChange={(e) => onDebug(e.target.checked)} /> Verdeckte Geologie
-          zeigen
-        </label>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onNewWorld();
-          }}
-        >
+      {debugTools && (
+        <section className="debug">
+          <h2>Debug</h2>
           <label>
-            Seed <input value={seed} onChange={(e) => onSeed(e.target.value)} />
+            <input type="checkbox" checked={debug} onChange={(e) => onDebug(e.target.checked)} /> Verdeckte Geologie
+            zeigen
           </label>
-          <button type="submit">Welt laden</button>
-          <button type="button" onClick={onRandomWorld}>
-            Zufällige Welt
-          </button>
-          <button type="button" onClick={onForget}>
-            Spielstand löschen
-          </button>
-        </form>
-      </section>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              onNewWorld();
+            }}
+          >
+            <label>
+              Seed <input value={seed} onChange={(e) => onSeed(e.target.value)} />
+            </label>
+            <button type="submit">Welt laden</button>
+            <button type="button" onClick={onRandomWorld}>
+              Zufällige Welt
+            </button>
+            <button type="button" onClick={onForget}>
+              Spielstand löschen
+            </button>
+          </form>
+        </section>
+      )}
     </div>
   );
 }

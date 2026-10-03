@@ -1,0 +1,6 @@
+# Tester-Build (Schritt 1.16): Einstellungen für die Testrunde.
+#
+# feedbackUrl: Adresse des Fragebogens (z. B. Google-Formular), beginnend mit https://.
+# Leer lassen ("") – dann zeigt das Spiel keinen „Feedback geben“-Knopf.
+# Nach dem Eintragen neu bauen: npm run release
+feedbackUrl: ""

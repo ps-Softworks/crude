@@ -242,11 +242,11 @@ rivals:
     personality: { risk: 5, aggression: 5, loyalty: 5, grudge: 5, patience: 1 }
     startCash: 6000
     actionsPerRound: 1
-    valuePerFind: 8000
+    valuePerFind: 25000      # 1.16: vorher 8.000 – alte Größenordnung; ein kleiner Fund (Ø 31.500 bbl × ~0,8 $) bringt jetzt etwa 25.000 $
     riskWeight: 0.10
     nearJacobBonus: 300
     nearFindChance: 0.15
-    noise: 200
+    noise: 1000              # 1.16: vorher 200, mit valuePerFind mitgezogen
     minUtility: 0
     drillRounds: 1
     ratePerWell: 4000

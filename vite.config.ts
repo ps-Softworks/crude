@@ -6,6 +6,9 @@ import react from '@vitejs/plugin-react';
 const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
 export default defineConfig({
+  // Relative Pfade: Der Tester-Build läuft auf itch.io in einem iframe unter
+  // einem Unterpfad und muss auch als entpackter Ordner funktionieren.
+  base: './',
   plugins: [react()],
   define: {
     __APP_VERSION__: JSON.stringify(version),
