@@ -9,7 +9,7 @@ import type { GameState } from './game';
 import type { Parcel } from './geology';
 import type { Rng } from './rng';
 
-/** Wer eine Pacht oder Option hält. Der Rivale kommt mit 1.12 dazu. */
+/** Wer eine Pacht oder Option hält: Jacob oder der Rivale Bullard (ab 1.12). */
 export type Holder = 'jacob' | 'bullard';
 
 export interface Lease {
@@ -281,7 +281,8 @@ export function settleLeases(state: GameState, balance: Balance): GameState {
   const running: Lease[] = [];
   for (const lease of state.leases) {
     if (!lease.drilled && lease.expiresAfterRound <= state.round) {
-      log.push(`${date}: Die Pacht auf Parzelle ${label(lease.parcelId)} ist ungenutzt abgelaufen.`);
+      const wessen = lease.holder === 'jacob' ? 'Die Pacht' : 'Bullards Pacht';
+      log.push(`${date}: ${wessen} auf Parzelle ${label(lease.parcelId)} ist ungenutzt abgelaufen.`);
     } else {
       running.push(lease);
     }
@@ -302,15 +303,14 @@ export function settleLeases(state: GameState, balance: Balance): GameState {
   for (const lease of running) {
     if (lease.drilled) {
       leases.push(lease);
-    } else if (lease.holder === 'jacob' && cash >= rent) {
-      // Verzögerungszins NUR für Jacobs Pachten
+    } else if (lease.holder !== 'jacob') {
+      // Verzögerungszins zahlt nur Jacob – Bullards Pachten laufen ohne Zins.
+      leases.push(lease);
+    } else if (cash >= rent) {
       cash -= rent;
       leases.push(lease);
-    } else if (lease.holder === 'jacob') {
-      log.push(`${date}: Kein Geld für den Verzögerungszins – die Pacht auf Parzelle ${label(lease.parcelId)} ist verfallen.`);
     } else {
-      // Bullards Pachten laufen ohne Zins
-      leases.push(lease);
+      log.push(`${date}: Kein Geld für den Verzögerungszins – die Pacht auf Parzelle ${label(lease.parcelId)} ist verfallen.`);
     }
   }
 

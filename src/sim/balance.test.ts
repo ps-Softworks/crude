@@ -370,4 +370,37 @@ describe('Spielzahlen (balance.yaml)', () => {
       expect(() => parseBalance(t)).toThrow(/"bankruptcy.graceRounds" muss eine ganze Zahl ab 1/);
     });
   });
+
+  describe('Rivale Bullard', () => {
+    type RawRival = { rivals?: { bullard: Record<string, unknown> & { personality: Record<string, number> } } };
+    const raw = () => structuredClone(loadBalance()) as unknown as RawRival;
+
+    it('liest Bullards Profil aus der echten Datei (GDD §9.2)', () => {
+      const { bullard } = loadBalance().rivals;
+      expect(bullard.name).toBe('"Big" Jim Bullard');
+      expect(bullard.personality).toEqual({ risk: 5, aggression: 5, loyalty: 5, grudge: 5, patience: 1 });
+    });
+
+    it('meldet einen fehlenden Block', () => {
+      const r = raw();
+      delete r.rivals;
+      expect(() => parseBalance(r)).toThrow(BalanceError);
+      expect(() => parseBalance(r)).toThrow(/rivals\.bullard/);
+    });
+
+    it('meldet Persönlichkeitswerte außerhalb 1–5', () => {
+      const r = raw();
+      r.rivals!.bullard.personality.risk = 6;
+      expect(() => parseBalance(r)).toThrow(/"rivals\.bullard\.personality\.risk" muss eine ganze Zahl zwischen 1 und 5/);
+    });
+
+    it('meldet negative Beträge und Anteile über 1', () => {
+      const r = raw();
+      r.rivals!.bullard.startCash = -1;
+      expect(() => parseBalance(r)).toThrow(/rivals\.bullard\.startCash/);
+      const r2 = raw();
+      r2.rivals!.bullard.nearFindChance = 1.5;
+      expect(() => parseBalance(r2)).toThrow(/rivals\.bullard\.nearFindChance/);
+    });
+  });
 });

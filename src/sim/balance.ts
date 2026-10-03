@@ -605,48 +605,44 @@ function parseCredit(raw: unknown): CreditBalance {
 }
 
 
-function parseRivals(raw: unknown): RivalsBalance {
-  const rivalsBlock = (raw as { rivals?: unknown })?.rivals;
-  if (!rivalsBlock || typeof rivalsBlock !== 'object') {
-    throw new BalanceError('balance.yaml: Block "rivals" fehlt');
-  }
+/** Zahl ≥ 0. */
+function nonNegative(obj: unknown, path: string): number {
+  const value = num(obj, path);
+  if (value < 0) throw new BalanceError(`balance.yaml: "${path}" darf nicht negativ sein`);
+  return value;
+}
 
-  const bullardBlock = (rivalsBlock as { bullard?: unknown })?.bullard;
-  if (!bullardBlock || typeof bullardBlock !== 'object') {
+function parseRivals(raw: unknown): RivalsBalance {
+  const block = (raw as { rivals?: { bullard?: unknown } })?.rivals;
+  if (!block || typeof block !== 'object' || !block.bullard || typeof block.bullard !== 'object') {
     throw new BalanceError('balance.yaml: Block "rivals.bullard" fehlt');
   }
-
-  const personality = (bullardBlock as { personality?: unknown })?.personality;
-  if (!personality || typeof personality !== 'object') {
-    throw new BalanceError('balance.yaml: "rivals.bullard.personality" fehlt oder ist kein Objekt');
-  }
-
-  const personality_validated: RivalPersonality = {
-    risk: integerInRange(personality, 'risk', 1, 5),
-    aggression: integerInRange(personality, 'aggression', 1, 5),
-    loyalty: integerInRange(personality, 'loyalty', 1, 5),
-    grudge: integerInRange(personality, 'grudge', 1, 5),
-    patience: integerInRange(personality, 'patience', 1, 5),
-  };
-
+  const p = 'rivals.bullard';
+  const trait = (key: string) => integerInRange(raw, `${p}.personality.${key}`, 1, 5);
   const bullard: RivalBalance = {
-    name: text(bullardBlock, 'name', 'rivals.bullard'),
-    personality: personality_validated,
-    startCash: positiveInt(bullardBlock, 'startCash'),
-    actionsPerRound: positiveInt(bullardBlock, 'actionsPerRound'),
-    valuePerFind: num(bullardBlock, 'valuePerFind'),
-    riskWeight: num(bullardBlock, 'riskWeight'),
-    nearJacobBonus: num(bullardBlock, 'nearJacobBonus'),
-    nearFindChance: share(bullardBlock, 'nearFindChance'),
-    noise: num(bullardBlock, 'noise'),
-    minUtility: num(bullardBlock, 'minUtility'),
-    drillRounds: positiveInt(bullardBlock, 'drillRounds'),
-    ratePerWell: num(bullardBlock, 'ratePerWell'),
-    incomePerWell: num(bullardBlock, 'incomePerWell'),
+    name: text(block.bullard, 'name', p),
+    personality: {
+      risk: trait('risk'),
+      aggression: trait('aggression'),
+      loyalty: trait('loyalty'),
+      grudge: trait('grudge'),
+      patience: trait('patience'),
+    },
+    startCash: nonNegative(raw, `${p}.startCash`),
+    actionsPerRound: positiveInt(raw, `${p}.actionsPerRound`),
+    valuePerFind: nonNegative(raw, `${p}.valuePerFind`),
+    riskWeight: share(raw, `${p}.riskWeight`),
+    nearJacobBonus: nonNegative(raw, `${p}.nearJacobBonus`),
+    nearFindChance: share(raw, `${p}.nearFindChance`),
+    noise: nonNegative(raw, `${p}.noise`),
+    minUtility: nonNegative(raw, `${p}.minUtility`),
+    drillRounds: positiveInt(raw, `${p}.drillRounds`),
+    ratePerWell: nonNegative(raw, `${p}.ratePerWell`),
+    incomePerWell: nonNegative(raw, `${p}.incomePerWell`),
   };
-
   return { bullard };
 }
+
 function parseBankruptcy(raw: unknown): BankruptcyBalance {
   const block = (raw as { bankruptcy?: unknown })?.bankruptcy;
   if (!block || typeof block !== 'object') {

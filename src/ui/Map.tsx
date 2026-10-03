@@ -14,6 +14,9 @@ const LEASE_FILL = '#b9cdb5';
 const OPTION_COLOR = '#2d5a8a';
 const OPTION_FILL = '#c4d2e0';
 const DISCOVERY_FILL = '#c9a95c';
+// Rivale Bullard: rotbraun, Kürzel „B“.
+const RIVAL_COLOR = '#8a3b2f';
+const RIVAL_FILL = '#e0c2b8';
 
 interface Props {
   balance: Balance;
@@ -36,18 +39,21 @@ export function Map({ balance, game, debug, selected, highlight, onSelect }: Pro
         const lease = leaseOf(game, p.id);
         const well = wellOf(game, p.id);
         const option = lease ? undefined : optionOf(game, p.id);
+        const rivals = lease?.holder === 'bullard';
+        const rivalWell = game.rival.wells.find((rw) => rw.parcelId === p.id);
         const x = p.x * CELL;
         const y = p.y * CELL;
         let fill = '#d8d8d8';
         if (p.discovery) fill = DISCOVERY_FILL;
+        else if (rivals) fill = RIVAL_FILL;
         else if (lease) fill = LEASE_FILL;
         else if (option) fill = OPTION_FILL;
         if (debug) fill = DEBUG_COLORS[p.geology];
 
         const isSelected = p.id === selected;
-        const markColor = lease ? LEASE_COLOR : option ? OPTION_COLOR : undefined;
+        const markColor = rivals ? RIVAL_COLOR : lease ? LEASE_COLOR : option ? OPTION_COLOR : undefined;
         const left = lease ? (lease.drilled ? undefined : roundsLeft(game, lease)) : option ? roundsLeft(game, option) : undefined;
-        const tag = lease ? 'P' : option ? 'O' : undefined;
+        const tag = rivals ? 'B' : lease ? 'P' : option ? 'O' : undefined;
 
         return (
           <g key={p.id} onClick={() => onSelect(p.id)} className="parcel">
@@ -89,6 +95,16 @@ export function Map({ balance, game, debug, selected, highlight, onSelect }: Pro
                 points={`${x + CELL / 2},${y + 12} ${x + CELL / 2 - 8},${y + CELL - 12} ${x + CELL / 2 + 8},${y + CELL - 12}`}
                 fill={well.status === 'found' ? '#2b2620' : 'none'}
                 stroke={well.status === 'dry' ? '#9a9a9a' : well.status === 'stuck' ? '#b3261e' : '#222'}
+                strokeWidth={2}
+                pointerEvents="none"
+              />
+            )}
+            {rivalWell && (
+              // Kleiner Turm für Bullards Bohrung; gefüllt, wenn er Öl gefunden hat.
+              <polygon
+                points={`${x + CELL / 2},${y + 18} ${x + CELL / 2 - 6},${y + CELL - 14} ${x + CELL / 2 + 6},${y + CELL - 14}`}
+                fill={rivalWell.status === 'found' ? RIVAL_COLOR : 'none'}
+                stroke={rivalWell.status === 'dry' ? '#9a9a9a' : RIVAL_COLOR}
                 strokeWidth={2}
                 pointerEvents="none"
               />

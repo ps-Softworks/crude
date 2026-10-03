@@ -1,289 +1,245 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import type { Balance } from './balance';
+import { stageCost, type Well } from './drilling';
+import { endRound, newGame, type GameState } from './game';
+import { buyLease, leaseTerms, settleLeases, type Lease } from './lease';
+import { advanceMarket } from './market';
+import { advanceRival, newRival, rivalCandidates, rivalChance, rivalUtility } from './rival';
+import { Rng } from './rng';
 import { loadBalance } from './testBalance';
-import { newGame, endRound } from './game';
-import { newRival, rivalChance, rivalUtility, rivalCandidates, advanceRival } from './rival';
-import { trueChance } from './forecast';
-import { buyLease } from './lease';
 
 const balance = loadBalance();
+const bullard = balance.rivals.bullard;
+
+/** Balance mit geänderten Bullard-Zahlen (nur für Tests, ohne Prüfung). */
+function mitBullard(change: Partial<typeof bullard>): Balance {
+  return { ...balance, rivals: { bullard: { ...bullard, ...change } } };
+}
+
+/** Bullard pachtet nie von selbst – für Tests, die nur Bohren oder Abrechnung prüfen. */
+const passiv = mitBullard({ minUtility: Infinity });
+
+function parcel(state: GameState, id: string) {
+  return state.parcels.find((p) => p.id === id)!;
+}
+
+function nachbarn(state: GameState, id: string) {
+  const p = parcel(state, id);
+  return state.parcels.filter((q) => q.id !== id && Math.abs(q.x - p.x) <= 1 && Math.abs(q.y - p.y) <= 1);
+}
+
+function pacht(state: GameState, parcelId: string, holder: 'jacob' | 'bullard', drilled = false): Lease {
+  return { parcelId, holder, bonus: 0, royalty: 0.125, startRound: state.round, expiresAfterRound: state.round + 3, drilled };
+}
+
+function fündigeQuelle(parcelId: string): Well {
+  return { parcelId, stage: 1, status: 'found', roundsLeft: 0, spent: 0, oilStage: 1, startRound: 1 } as Well;
+}
+
+/** Eine Randparzelle ohne Option, Pacht oder Nachbarschaft zu Jacobs Startoptionen. */
+function freieRandparzelle(state: GameState) {
+  const jacob = new Set(state.options.map((o) => o.parcelId));
+  return state.parcels.find(
+    (p) => p.zone === 'rand' && !jacob.has(p.id) && !nachbarn(state, p.id).some((n) => jacob.has(n.id) || n.discovery),
+  )!;
+}
 
 describe('Rivale Bullard (1.12)', () => {
-  describe('newRival', () => {
-    it('initialisiert Bullard mit startCash aus balance', () => {
-      const rival = newRival('test', balance);
-      expect(rival.cash).toBe(balance.rivals.bullard.startCash);
-      expect(rival.wells).toHaveLength(0);
-      expect(rival.id).toBe('bullard');
-    });
-
-    it('gibt jedem Seed einen eigenen RNG-Strom', () => {
-      const r1 = newRival('seed1', balance);
-      const r2 = newRival('seed2', balance);
-      expect(r1.rng).not.toBe(r2.rng);
-    });
+  it('startet mit seinem Geld aus balance.yaml und eigenem Zufallsstrom', () => {
+    const state = newGame('start', balance);
+    expect(state.rival).toEqual(newRival('start', balance));
+    expect(state.rival.cash).toBe(bullard.startCash);
+    expect(state.rival.wells).toEqual([]);
+    expect(state.rival.rng).not.toEqual(state.rng);
   });
 
-  describe('rivalChance', () => {
-    it('ergibt wahre Chance für eine beliebige Parzelle', () => {
+  describe('Bullards Fundchance', () => {
+    it('Randparzelle: 1 − rand.dry (Zonenwissen, nicht die Wahrheit)', () => {
       const state = newGame('chance', balance);
-      const parcel = state.parcels[0];
-      const chance = rivalChance(state, balance, parcel);
-      const expected = trueChance(balance, parcel);
-      expect(chance).toBe(expected);
+      const p = freieRandparzelle(state);
+      const rand = balance.geology.zones.find((z) => z.name === 'rand')!;
+      expect(rivalChance(state, balance, p)).toBeCloseTo(1 - rand.dry, 10);
     });
 
-    it('erhöht die Chance neben einer gebohrten Jacob-Pacht mit Öl', () => {
-      let state = newGame('chance-neighbor', balance);
-      // Finde eine Parzelle und bohre sie als Jacob
-      const targetParcel = state.parcels.find(p => p.geology !== 'dry');
-      if (!targetParcel) return; // Skip if no non-dry parcel
-      
-      const resultBuy = buyLease(state, balance, targetParcel.id);
-      if (!resultBuy.ok) return;
-      state = resultBuy.state;
-      state = endRound(state, balance);
-      state = { ...state, wells: state.wells.map(w => w.parcelId === targetParcel.id ? { ...w, status: 'found' as const } : w) };
-      
-      // Jetzt sollte eine Nachbar-Parzelle höhere Chance haben
-      const neighbors = state.parcels.filter(p => 
-        Math.abs(p.x - targetParcel.x) <= 1 && Math.abs(p.y - targetParcel.y) <= 1 && p.id !== targetParcel.id
+    it('neben einer fündigen Quelle von Jacob kommt nearFindChance dazu', () => {
+      const state0 = newGame('chance', balance);
+      const p = freieRandparzelle(state0);
+      const n = nachbarn(state0, p.id)[0];
+      const state = { ...state0, wells: [fündigeQuelle(n.id)] };
+      expect(rivalChance(state, balance, p)).toBeCloseTo(rivalChance(state0, balance, p) + bullard.nearFindChance, 10);
+    });
+  });
+
+  describe('Nutzen', () => {
+    it('folgt der Formel (roll 0.5 = ohne Streuung)', () => {
+      const state = newGame('nutzen', balance);
+      const p = freieRandparzelle(state);
+      const { risk } = bullard.personality;
+      const erwartet =
+        rivalChance(state, balance, p) * bullard.valuePerFind * (1 + (risk - 3) * bullard.riskWeight) -
+        leaseTerms(state, balance, p.id).bonus -
+        stageCost(balance, 1);
+      expect(rivalUtility(state, balance, p, 0.5)).toBeCloseTo(erwartet, 6);
+      // Streuung: roll 1 statt 0.5 bringt 0.5 · noise · risk/5.
+      expect(rivalUtility(state, balance, p, 1) - rivalUtility(state, balance, p, 0.5)).toBeCloseTo(
+        0.5 * bullard.noise * (risk / 5),
+        6,
       );
-      
-      if (neighbors.length > 0) {
-        const neighbor = neighbors[0];
-        const withoutBonus = trueChance(balance, neighbor);
-        const withBonus = rivalChance(state, balance, neighbor);
-        expect(withBonus).toBeGreaterThanOrEqual(withoutBonus);
-      }
-    });
-  });
-
-  describe('rivalUtility', () => {
-    it('berechnet Nutzen nach der Formel mit roll 0.5', () => {
-      const state = newGame('utility', balance);
-      const parcel = state.parcels.find(p => !p.discovery && p.x !== balance.map.saltHill.x && p.y !== balance.map.saltHill.y);
-      if (!parcel) return;
-
-      const utility = rivalUtility(state, balance, parcel, 0.5);
-      expect(typeof utility).toBe('number');
-      expect(isNaN(utility)).toBe(false);
     });
 
-    it('erhöht Nutzen für Nachbar einer Jacob-Pacht um aggression·nearJacobBonus', () => {
-      let state = newGame('utility-neighbor', balance);
-      const parcel1 = state.parcels.find(p => p.x < 5 && p.y < 5 && !p.discovery && p.id !== 'p-6-4');
-      if (!parcel1) return;
-
-      const resultBuy = buyLease(state, balance, parcel1.id);
-      if (!resultBuy.ok) return;
-      state = resultBuy.state;
-
-      const neighbors = state.parcels.filter(p => 
-        Math.abs(p.x - parcel1.x) <= 1 && Math.abs(p.y - parcel1.y) <= 1 && p.id !== parcel1.id
+    it('neben Jacobs Pacht: + aggression · nearJacobBonus', () => {
+      const state0 = newGame('nutzen', balance);
+      const p = freieRandparzelle(state0);
+      const n = nachbarn(state0, p.id)[0];
+      const state = { ...state0, leases: [pacht(state0, n.id, 'jacob')] };
+      expect(rivalUtility(state, balance, p, 0.5) - rivalUtility(state0, balance, p, 0.5)).toBeCloseTo(
+        bullard.personality.aggression * bullard.nearJacobBonus,
+        6,
       );
-      
-      if (neighbors.length > 0) {
-        const neighbor = neighbors[0];
-        const utilityWithNeighbor = rivalUtility(state, balance, neighbor, 0.5);
-        expect(utilityWithNeighbor).toBeGreaterThan(0);
-      }
     });
   });
 
-  describe('rivalCandidates', () => {
-    it('schließt Salt Hill aus', () => {
-      const state = newGame('candidates', balance);
-      const candidates = rivalCandidates(state, balance);
-      const saltHill = balance.map.saltHill;
-      expect(candidates.every(p => p.id !== `p-${saltHill.x}-${saltHill.y}`)).toBe(true);
+  it('Kandidaten: weder Salt Hill noch Pachten noch Optionen (auch Jacobs), sortiert nach id', () => {
+    const state0 = newGame('kandidaten', balance);
+    const p = freieRandparzelle(state0);
+    const state = { ...state0, leases: [pacht(state0, p.id, 'bullard')] };
+    const ids = rivalCandidates(state, balance).map((c) => c.id);
+    expect(ids).not.toContain(p.id);
+    expect(state.options.length).toBeGreaterThan(0);
+    for (const o of state.options) expect(ids).not.toContain(o.parcelId);
+    for (const d of state.parcels.filter((q) => q.discovery)) expect(ids).not.toContain(d.id);
+    expect(ids).toEqual([...ids].sort());
+    expect(ids.length).toBe(state.parcels.length - 1 - state.options.length - 1);
+  });
+
+  describe('Pachten', () => {
+    it('höchstens actionsPerRound je Runde und nur, wenn das Geld für den Bonus reicht', () => {
+      const reich = newGame('pachten', balance);
+      const s = advanceRival({ ...reich, rival: { ...reich.rival, cash: 1_000_000 } }, balance);
+      expect(s.leases.filter((l) => l.holder === 'bullard')).toHaveLength(bullard.actionsPerRound);
+
+      const arm = advanceRival({ ...reich, rival: { ...reich.rival, cash: 0 } }, balance);
+      expect(arm.leases.filter((l) => l.holder === 'bullard')).toHaveLength(0);
+      expect(arm.rival.cash).toBe(0);
     });
 
-    it('schließt bereits verpachtete Parzellen aus', () => {
-      let state = newGame('candidates-leased', balance);
-      const parcel = state.parcels.find(p => !p.discovery && p.id !== 'p-6-4');
-      if (!parcel) return;
-
-      const resultBuy = buyLease(state, balance, parcel.id);
-      if (!resultBuy.ok) return;
-      state = resultBuy.state;
-
-      const candidates = rivalCandidates(state, balance);
-      expect(candidates.every(c => c.id !== parcel.id)).toBe(true);
+    it('nie unter minUtility', () => {
+      const state = newGame('pachten', balance);
+      const s = advanceRival({ ...state, rival: { ...state.rival, cash: 1_000_000 } }, mitBullard({ minUtility: 1e9 }));
+      expect(s.leases.filter((l) => l.holder === 'bullard')).toHaveLength(0);
     });
 
-    it('sortiert nach id', () => {
-      const state = newGame('candidates-sort', balance);
-      const candidates = rivalCandidates(state, balance);
-      for (let i = 1; i < candidates.length; i++) {
-        expect(candidates[i].id >= candidates[i - 1].id).toBe(true);
-      }
+    it('nimmt die Parzelle mit dem höchsten Nutzen und zahlt Bonus plus Bohrung', () => {
+      const state0 = newGame('pachten', balance);
+      const state = { ...state0, rival: { ...state0.rival, cash: 1_000_000 } };
+      const s = advanceRival(state, balance);
+      const lease = s.leases.find((l) => l.holder === 'bullard')!;
+      // Nachrechnen mit demselben Zufallsstrom.
+      const rng = new Rng(state.rival.rng);
+      const nutzen = rivalCandidates(state, balance).map((p) => ({ id: p.id, u: rivalUtility(state, balance, p, rng.float()) }));
+      const bester = nutzen.reduce((a, b) => (b.u > a.u ? b : a));
+      expect(lease.parcelId).toBe(bester.id);
+      expect(s.rival.cash).toBe(1_000_000 - lease.bonus - stageCost(balance, 1));
+    });
+
+    it('Bullards ungebohrte Pacht kostet keinen Verzögerungszins', () => {
+      const state0 = newGame('zins', balance);
+      const p = freieRandparzelle(state0);
+      const state = { ...state0, leases: [pacht(state0, p.id, 'bullard')] };
+      const s = settleLeases(state, balance);
+      expect(s.cash).toBe(state.cash);
+      expect(s.leases).toHaveLength(1);
+    });
+
+    it('Jacob kann eine Bullard-Parzelle nicht pachten', () => {
+      const state0 = newGame('konflikt', balance);
+      const p = freieRandparzelle(state0);
+      const state = { ...state0, leases: [pacht(state0, p.id, 'bullard')] };
+      expect(buyLease(state, balance, p.id)).toEqual({ ok: false, reason: 'Diese Parzelle ist schon verpachtet.' });
     });
   });
 
-  describe('advanceRival', () => {
-    it('führt Bohrungen fort: roundsLeft − 1 pro Runde', () => {
-      let state = newGame('advance-drilling', balance);
-      const parcel = state.parcels.find(p => p.geology !== 'dry' && !p.discovery && p.id !== 'p-6-4');
-      if (!parcel) return;
+  describe('Bohren', () => {
+    const state0 = newGame('bohren', balance);
+    const trocken = state0.parcels.find((p) => p.geology === 'dry' && !p.discovery)!;
+    const öl = state0.parcels.find((p) => p.geology !== 'dry' && !p.discovery)!;
+    const mitPachten = { ...state0, options: [], leases: [pacht(state0, trocken.id, 'bullard'), pacht(state0, öl.id, 'bullard')] };
 
-      // Manuell eine Bullard-Pacht und Bohrung erstellen
-      const rival = { ...state.rival, cash: 100000 };
-      state = {
-        ...state,
-        rival,
-        leases: [...state.leases, {
-          parcelId: parcel.id,
-          holder: 'bullard' as const,
-          bonus: 1000,
-          royalty: 0.15,
-          startRound: state.round,
-          expiresAfterRound: state.round + 4,
-          drilled: false,
-        }],
-      };
-
-      state = advanceRival(state, balance);
-      // Jetzt sollte eine Bohrung im Gang sein
-      expect(state.rival.wells.some(w => w.parcelId === parcel.id && w.status === 'drilling')).toBe(true);
+    it('bohrt sofort (Geduld 1) und zahlt die Bohrung', () => {
+      const s = advanceRival(mitPachten, passiv);
+      expect(s.leases.every((l) => l.drilled)).toBe(true);
+      expect(s.rival.wells.map((w) => w.status)).toEqual(['drilling', 'drilling']);
+      expect(s.rival.cash).toBe(bullard.startCash - 2 * stageCost(balance, 1));
     });
 
-    it('pachtet bis zu actionsPerRound beste Parzellen', () => {
-      let state = newGame('advance-leasing', balance);
-      let rival = { ...state.rival, cash: 200000 };
-      state = { ...state, rival };
-
-      state = advanceRival(state, balance);
-      const bullardLeases = state.leases.filter(l => l.holder === 'bullard');
-      expect(bullardLeases.length).toBeLessThanOrEqual(balance.rivals.bullard.actionsPerRound);
+    it('ohne Geld wird nicht gebohrt', () => {
+      const s = advanceRival({ ...mitPachten, rival: { ...mitPachten.rival, cash: 0 } }, passiv);
+      expect(s.rival.wells).toEqual([]);
+      expect(s.leases.some((l) => l.drilled)).toBe(false);
     });
 
-    it('pachtet nie über verfügbares Geld', () => {
-      let state = newGame('advance-budget', balance);
-      const rival = state.rival; // Original mit startCash
-      state = { ...state, rival };
-
-      state = advanceRival(state, balance);
-      expect(state.rival.cash).toBeGreaterThanOrEqual(0);
-    });
-
-    it('pachtet nicht unter minUtility', () => {
-      let state = newGame('advance-min-utility', balance);
-      const rival = { ...state.rival, cash: 200000 };
-      const hiBalance = { ...balance, rivals: { bullard: { ...balance.rivals.bullard, minUtility: 1000000 } } };
-      state = { ...state, rival };
-
-      state = advanceRival(state, hiBalance);
-      expect(state.leases.filter(l => l.holder === 'bullard')).toHaveLength(0);
+    it('nach drillRounds: Ergebnis = Geologie; fündige Quellen bringen incomePerWell', () => {
+      let s = advanceRival(mitPachten, passiv);
+      const kasse = s.rival.cash;
+      for (let i = 0; i < bullard.drillRounds; i++) s = advanceRival(s, passiv);
+      const status = Object.fromEntries(s.rival.wells.map((w) => [w.parcelId, w.status]));
+      expect(status).toEqual({ [trocken.id]: 'dry', [öl.id]: 'found' });
+      expect(s.rival.cash).toBe(kasse + bullard.incomePerWell);
+      expect(s.log.some((l) => l.includes('Bullard stößt auf Parzelle') && l.includes('auf Öl'))).toBe(true);
     });
   });
 
   describe('Determinismus', () => {
     it('gleicher Seed → gleicher Rivalenzustand nach 5 Runden', () => {
-      const seed = 'determinism-test';
-      let s1 = newGame(seed, balance);
-      let s2 = newGame(seed, balance);
-
+      let a = newGame('gleich', balance);
+      let b = newGame('gleich', balance);
       for (let i = 0; i < 5; i++) {
-        s1 = endRound(s1, balance);
-        s2 = endRound(s2, balance);
+        a = endRound(a, balance);
+        b = endRound(b, balance);
       }
-
-      expect(s1.rival.cash).toBe(s2.rival.cash);
-      expect(s1.rival.wells.length).toBe(s2.rival.wells.length);
-      expect(s1.leases.filter(l => l.holder === 'bullard').length).toBe(
-        s2.leases.filter(l => l.holder === 'bullard').length
-      );
+      expect(a.rival).toEqual(b.rival);
+      expect(a.leases).toEqual(b.leases);
     });
 
-    it('state.rng (Jacobs Strom) bleibt unberührt', () => {
-      const state1 = newGame('rng-test', balance);
-      const rngBefore = state1.rng;
-
-      const state2 = advanceRival(state1, balance);
-      // Der Jacob-RNG sollte nicht verändert werden durch advanceRival
-      expect(state2.rng).toBe(rngBefore);
+    it('Bullard rührt Jacobs Zufallsstrom nicht an', () => {
+      const state = newGame('strom', balance);
+      expect(advanceRival(state, balance).rng).toEqual(state.rng);
     });
   });
 
-  describe('Markt-Integration', () => {
-    it('eine fündige Bullard-Quelle senkt den Preis', () => {
-      let state = newGame('market-test', balance);
-      let rival = { ...state.rival, cash: 100000, wells: [
-        { parcelId: 'p-5-4', startRound: 1, roundsLeft: 0, status: 'found' as const },
-      ]};
-      state = { ...state, rival };
-
-      const state1 = endRound(state, balance);
-      // Preis sollte niedriger sein als ohne fündige Bullard-Quelle
-      const baseline = newGame('baseline', balance);
-      const state2 = endRound(baseline, balance);
-      
-      expect(state1.postedPrice).toBeLessThanOrEqual(state2.postedPrice);
-    });
+  it('Markt: eine fündige Bullard-Quelle senkt den Preis', () => {
+    const state = newGame('markt', balance);
+    const ohne = advanceMarket(state, balance.market, bullard.ratePerWell);
+    const mitQuelle = { ...state, rival: { ...state.rival, wells: [{ parcelId: 'x', startRound: 1, roundsLeft: 0, status: 'found' as const }] } };
+    const mit = advanceMarket(mitQuelle, balance.market, bullard.ratePerWell);
+    expect(mit.postedPrice).toBeLessThan(ohne.postedPrice);
   });
 
-  describe('Pacht-Schnittstellen', () => {
-    it('Jacobs buyLease auf Bullard-Parzelle schlägt fehl', () => {
-      let state = newGame('lease-conflict', balance);
-      let rival = { ...state.rival, cash: 100000 };
-      const parcel = state.parcels.find(p => !p.discovery && p.id !== 'p-6-4');
-      if (!parcel) return;
+  describe('Fertig-Kriterium: Bullard schnappt dir eine gute Parzelle weg', () => {
+    it('Szenario: Jacobs Option verfällt, Bullard pachtet die beste Parzelle', () => {
+      const state0 = newGame('bullard', balance);
+      const reich = { ...state0, options: [], rival: { ...state0.rival, cash: 1_000_000 } };
+      // Die beste nicht-trockene Parzelle aus Bullards Sicht.
+      const ziel = rivalCandidates(reich, balance)
+        .filter((p) => p.geology !== 'dry')
+        .reduce((a, b) => (rivalUtility(reich, balance, b, 0.5) > rivalUtility(reich, balance, a, 0.5) ? b : a));
+      const option = { parcelId: ziel.id, holder: 'jacob' as const, bonus: 0, royalty: 0.125, fee: 0, free: true, expiresAfterRound: reich.round };
+      // Streuung aus, damit die beste Parzelle sicher gewinnt.
+      const ohneStreuung = mitBullard({ noise: 0 });
+      const s = endRound({ ...reich, options: [option] }, ohneStreuung);
 
-      state = { ...state, rival };
-      state = advanceRival(state, balance);
-
-      const bullardLeases = state.leases.filter(l => l.holder === 'bullard');
-      if (bullardLeases.length > 0) {
-        const bullardParcelId = bullardLeases[0].parcelId;
-        const result = buyLease(state, balance, bullardParcelId);
-        expect(result.ok).toBe(false);
-        if (!result.ok) {
-          expect(result.reason).toContain('verpachtet');
-        }
-      }
+      expect(s.options.some((o) => o.parcelId === ziel.id)).toBe(false);
+      expect(s.leases.find((l) => l.parcelId === ziel.id)?.holder).toBe('bullard');
+      expect(s.log.some((l) => l.includes(`schnappt dir Parzelle ${ziel.x + 1}/${ziel.y + 1} weg`))).toBe(true);
+      expect(buyLease(s, ohneStreuung, ziel.id)).toEqual({ ok: false, reason: 'Diese Parzelle ist schon verpachtet.' });
     });
-  });
 
-  describe('Fertig-Kriterium 1', () => {
-    it('Option verfällt, Bullard pachtet, Log enthält "schnappt dir weg"', () => {
-      let state = newGame('snatch', balance);
-      // Setze Jacob eine Option
-      const parcel = state.parcels.find(p => !p.discovery && p.id !== 'p-6-4' && p.geology !== 'dry');
-      if (!parcel) return;
-
-      state = { ...state, options: [...state.options, {
-        parcelId: parcel.id,
-        holder: 'jacob' as const,
-        bonus: 1000,
-        royalty: 0.15,
-        fee: 100,
-        free: true,
-        expiresAfterRound: state.round,
-      }]};
-
-      // Bullard mit Geld
-      let rival = { ...state.rival, cash: 100000 };
-      state = { ...state, rival };
-
-      state = endRound(state, balance);
-
-      // Option sollte verfallen sein
-      expect(state.options.some(o => o.parcelId === parcel.id)).toBe(false);
-      // Bullard sollte jetzt eine Pacht haben
-      const bullardLeaseCount = state.leases.filter(l => l.holder === 'bullard').length;
-      expect(bullardLeaseCount).toBeGreaterThan(0);
-    });
-  });
-
-  describe('Fertig-Kriterium 2', () => {
-    it('passives Spiel 16 Runden → Bullard hat ≥1 Pacht', () => {
-      let state = newGame('passive-16', balance);
-      for (let i = 0; i < 16; i++) {
-        state = endRound(state, balance);
-      }
-
-      const bullardLeases = state.leases.filter(l => l.holder === 'bullard');
-      expect(bullardLeases.length).toBeGreaterThanOrEqual(1);
+    it('ohne Eingriff: Jacob spielt 16 Runden passiv, Bullard hält eine gute Parzelle', () => {
+      let s = newGame('rivale', balance);
+      while (!s.finished) s = endRound(s, balance);
+      const gute = s.leases.filter((l) => l.holder === 'bullard' && parcel(s, l.parcelId).geology !== 'dry');
+      expect(gute.length).toBeGreaterThanOrEqual(1);
+      expect(s.rival.wells.some((w) => w.status === 'found')).toBe(true);
     });
   });
 });

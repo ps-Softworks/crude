@@ -196,7 +196,12 @@ function ParcelPanel({ game, parcel, debug, notice, stepText, onAction }: PanelP
 
       {!parcel.discovery && (
         <p className={`state ${lease ? 'lease' : option ? 'option' : ''}`}>
-          {lease ? (
+          {lease?.holder === 'bullard' ? (
+            <>
+              Pacht von {balance.rivals.bullard.name}
+              {lease.drilled ? ' · er bohrt hier' : <> · noch {rounds(roundsLeft(game, lease))}</>}
+            </>
+          ) : lease ? (
             <>
               Deine Pacht
               {lease.drilled ? ' (gebohrt, läuft unbefristet)' : <> · noch {rounds(roundsLeft(game, lease))}</>}

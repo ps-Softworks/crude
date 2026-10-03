@@ -1,41 +1,37 @@
-// Rivale Bullard: pachtet, bohrt und fördert nebenan mit Jacob.
-// GDD §9.2, §15.
+// Rivale Bullard (GDD §9.2, §9.3): pachtet und bohrt nebenan mit einer
+// einfachen Nutzen-KI. Eigene Kasse, eigener Zufallsstrom – Jacobs Zufall
+// bleibt unberührt. Reine Funktionen, deterministisch.
 
 import type { Balance } from './balance';
-import { Rng, seedFromString, type RngState } from './rng';
+import { formatDate } from './calendar';
+import { stageCost } from './drilling';
+import { trueChance } from './forecast';
 import type { GameState } from './game';
 import type { Parcel } from './geology';
-import { parcelLabel } from './lease';
-import { trueChance } from './forecast';
-import { stageCost } from './drilling';
-import { leaseTerms, chebyshev, type Holder } from './lease';
-import { formatDate } from './calendar';
+import { chebyshev, leaseTerms, parcelLabel, type Lease } from './lease';
+import { Rng, seedFromString, type RngState } from './rng';
 
-/** Eine Bullard-Quelle mit Bohr-Fortschritt. */
+/** Eine Bohrung von Bullard. Vereinfacht: ein Bohrgang, Ergebnis = Geologie. */
 export interface RivalWell {
   parcelId: string;
-  /** Runde, in der die Bohrung gestartet wurde. */
+  /** Runde, in der die Bohrung begann. */
   startRound: number;
-  /** Verbleibende Runden bis zur Fertigstellung. */
+  /** Runden bis zum Ergebnis (nur solange gebohrt wird). */
   roundsLeft: number;
-  /** Status: "drilling" = bohrt noch, "found" = fertig und Öl, "dry" = fertig und trocken. */
   status: 'drilling' | 'found' | 'dry';
 }
 
-/** Bullards Spielzustand. */
 export interface RivalState {
   id: 'bullard';
   cash: number;
   /** Bullards eigener Zufallsstrom (unabhängig von Jacobs rng). */
   rng: RngState;
-  /** Bohrungen und abgeschlossene Quellen. */
   wells: RivalWell[];
 }
 
 /**
- * Neuer Rivalstaat für das Spiel.
- * Der Rivale bekommt seinen eigenen Zufallsstrom (seed + ':bullard'),
- * damit bestehende Tests sich nicht verschieben.
+ * Bullard zu Spielbeginn. Sein Zufall kommt aus seed + ':bullard', damit
+ * bestehende Seeds (Karte, Startoptionen, Bohrungen) sich nicht verschieben.
  */
 export function newRival(seed: string, balance: Balance): RivalState {
   return {
@@ -46,222 +42,147 @@ export function newRival(seed: string, balance: Balance): RivalState {
   };
 }
 
+/** Jacobs fündige Quellen als Parzellen. */
+function jacobFinds(state: GameState): Parcel[] {
+  const ids = new Set(state.wells.filter((w) => w.status === 'found').map((w) => w.parcelId));
+  return state.parcels.filter((p) => ids.has(p.id));
+}
+
+function nextTo(parcel: Parcel, others: readonly Parcel[]): boolean {
+  return others.some((o) => o.id !== parcel.id && chebyshev(parcel, o) <= 1);
+}
+
+/** Parzellen, auf denen Jacob eine Pacht oder eine Quelle hat. */
+function jacobLand(state: GameState): Parcel[] {
+  const ids = new Set([
+    ...state.leases.filter((l) => l.holder === 'jacob').map((l) => l.parcelId),
+    ...state.wells.map((w) => w.parcelId),
+  ]);
+  return state.parcels.filter((p) => ids.has(p.id));
+}
+
 /**
- * Bullards Schätzung der Fundchance für eine Parzelle.
- * Basis: wahre Chance (aus Zonenwissen) + Aufschlag neben einer fündigen Jacob-Pacht.
+ * Bullards Bild der Fundchance – nicht die Wahrheit: Zonenwissen (wie die
+ * wahre Grundchance der Zone) plus Aufschlag neben einer fündigen Quelle Jacobs.
  */
 export function rivalChance(state: GameState, balance: Balance, parcel: Parcel): number {
-  const c = trueChance(balance, parcel);
-  const bullardBalance = balance.rivals.bullard;
-
-  // Prüfe, ob die Parzelle nahe (Chebyshev ≤ 1) bei einer gebohrten Jacob-Pacht liegt
-  let near_found = false;
-  for (const lease of state.leases) {
-    if (lease.holder === 'jacob' && lease.drilled) {
-      const neighbor = state.parcels.find(p => p.id === lease.parcelId);
-      if (neighbor && neighbor.geology !== 'dry' && chebyshev(parcel, neighbor) <= 1) {
-        near_found = true;
-        break;
-      }
-    }
-  }
-
-  const result = c + (near_found ? bullardBalance.nearFindChance : 0);
-  return Math.min(1, Math.max(0, result));
+  const c = trueChance(balance, parcel) + (nextTo(parcel, jacobFinds(state)) ? balance.rivals.bullard.nearFindChance : 0);
+  return Math.min(1, Math.max(0, c));
 }
 
 /**
- * Bullards Nutzen-Berechnung für eine Parzelle.
- * U = c · valuePerFind · (1 + (risk − 3) · riskWeight) − cost
- *     + (grenzt an Jacob-Pacht ? aggression · nearJacobBonus : 0)
- *     + (roll − 0.5) · noise · risk / 5
+ * Nutzen einer Pacht für Bullard (GDD §9.3):
+ *   U = c · valuePerFind · (1 + (risk − 3) · riskWeight) − (Bonus + Bohrkosten Stufe 1)
+ *       + (grenzt an Jacobs Pacht oder Quelle ? aggression · nearJacobBonus : 0)
+ *       + (roll − 0.5) · noise · risk / 5
  */
 export function rivalUtility(state: GameState, balance: Balance, parcel: Parcel, roll: number): number {
-  const bullardBalance = balance.rivals.bullard;
-  const personality = bullardBalance.personality;
+  const b = balance.rivals.bullard;
+  const { risk, aggression } = b.personality;
+  const cost = leaseTerms(state, balance, parcel.id).bonus + stageCost(balance, 1);
+  const value = rivalChance(state, balance, parcel) * b.valuePerFind * (1 + (risk - 3) * b.riskWeight);
+  const neighbour = nextTo(parcel, jacobLand(state)) ? aggression * b.nearJacobBonus : 0;
+  const noise = (roll - 0.5) * b.noise * (risk / 5);
+  return value - cost + neighbour + noise;
+}
 
-  // Kosten: Paketbonus + Bohrstufe 1
-  const terms = leaseTerms(state, balance, parcel.id);
-  const cost = terms.bonus + stageCost(balance, 1);
-
-  // Chance und Gewinn
-  const c = rivalChance(state, balance, parcel);
-  const riskFactor = 1 + (personality.risk - 3) * bullardBalance.riskWeight;
-  const value = c * bullardBalance.valuePerFind * riskFactor;
-
-  // Prüfe auf Nachbarn-Bonus (Jacob-Pacht)
-  let neighborBonus = 0;
-  for (const lease of state.leases) {
-    if (lease.holder === 'jacob') {
-      const neighbor = state.parcels.find(p => p.id === lease.parcelId);
-      if (neighbor && chebyshev(parcel, neighbor) <= 1) {
-        neighborBonus = personality.aggression * bullardBalance.nearJacobBonus;
-        break;
-      }
-    }
-  }
-
-  // Zufallsstreuung
-  const noise = (roll - 0.5) * bullardBalance.noise * personality.risk / 5;
-
-  return value - cost + neighborBonus + noise;
+/** Parzellen, die Bullard pachten könnte: frei, nicht Salt Hill, nicht schon einmal von ihm gebohrt. Sortiert nach id. */
+export function rivalCandidates(state: GameState, _balance: Balance): Parcel[] {
+  const taken = new Set([
+    ...state.leases.map((l) => l.parcelId),
+    ...state.options.map((o) => o.parcelId),
+    ...state.wells.map((w) => w.parcelId),
+    ...state.rival.wells.map((w) => w.parcelId),
+  ]);
+  return state.parcels
+    .filter((p) => !p.discovery && !taken.has(p.id))
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 
 /**
- * Liste von Parzellen, die Bullard pachten könnte.
- * Ausgeschlossen: Salt Hill, bereits verpachtete/optionierten, entdeckt.
+ * Bullards Zug am Rundenende, direkt nach der Pacht-Abrechnung:
+ *   a) laufende Bohrungen kommen voran, Ergebnis = Geologie der Parzelle;
+ *   b) fündige Quellen bringen Geld;
+ *   c) neue Pachten nach Nutzen (je Kandidat genau ein Zufallswert);
+ *   d) Geduld 1: jede ungebohrte eigene Pacht wird sofort angebohrt, wenn das Geld reicht.
+ * `before` ist der Stand vor der Pacht-Abrechnung: Hatte Jacob dort eine Option
+ * oder Pacht, die gerade verfallen ist, schnappt Bullard sie ihm weg.
  */
-export function rivalCandidates(state: GameState, balance: Balance): Parcel[] {
-  const saltHill = balance.map.saltHill;
-  const candidates: Parcel[] = [];
-
-  for (const parcel of state.parcels) {
-    // Salt Hill ausschließen
-    if (parcel.x === saltHill.x && parcel.y === saltHill.y) continue;
-
-    // Discovery ausschließen
-    if (parcel.discovery) continue;
-
-    // Pacht oder Option ausschließen
-    const hasPacht = state.leases.some(l => l.parcelId === parcel.id);
-    const hasOption = state.options.some(o => o.parcelId === parcel.id);
-    if (hasPacht || hasOption) continue;
-
-    // Bullards eigene Quellen nicht wieder pachten
-    const hasBullardWell = state.rival.wells.some(w => w.parcelId === parcel.id && w.status !== 'drilling');
-    if (hasBullardWell) continue;
-
-    candidates.push(parcel);
-  }
-
-  // Nach ID sortieren
-  return candidates.sort((a, b) => a.id.localeCompare(b.id));
-}
-
-/**
- * Bullards Runde: Bohrungen abwickeln, Einkommen, neue Pachten kaufen.
- */
-export function advanceRival(state: GameState, balance: Balance): GameState {
-  const log = [...state.log];
-  const bullardBalance = balance.rivals.bullard;
-  let rival = { ...state.rival };
-  let leases = [...state.leases];
-  let cash = rival.cash;
-
+export function advanceRival(
+  state: GameState,
+  balance: Balance,
+  before: Pick<GameState, 'leases' | 'options'> = state,
+): GameState {
+  const b = balance.rivals.bullard;
   const date = formatDate(state);
+  const log = [...state.log];
+  const label = (parcelId: string) => {
+    const parcel = state.parcels.find((p) => p.id === parcelId);
+    return parcel ? parcelLabel(parcel) : parcelId;
+  };
 
-  // a) Bohrungen fortschreiten
-  const newWells: RivalWell[] = [];
-  for (const well of rival.wells) {
-    const parcel = state.parcels.find(p => p.id === well.parcelId);
-    if (!parcel) continue;
-
-    const updatedWell = { ...well, roundsLeft: well.roundsLeft - 1 };
-
-    if (updatedWell.roundsLeft === 0 && well.status === 'drilling') {
-      // Fertig: status = Geologie der Parzelle
-      updatedWell.status = parcel.geology === 'dry' ? 'dry' : 'found';
-
-      if (updatedWell.status === 'found') {
-        log.push(`${date}: Bullard stößt auf Parzelle ${parcelLabel(parcel)} auf Öl.`);
-      } else {
-        log.push(`${date}: Bullard stößt auf Parzelle ${parcelLabel(parcel)} trocken.`);
-      }
-    }
-
-    newWells.push(updatedWell);
-  }
-  rival.wells = newWells;
-
-  // b) Einnahmen aus fündigen Quellen
-  const foundCount = rival.wells.filter(w => w.status === 'found').length;
-  const income = foundCount * bullardBalance.incomePerWell;
-  cash += income;
-  if (income > 0) {
-    log.push(`${date}: Bullard kassiert $${income} aus ${foundCount} Quelle${foundCount === 1 ? '' : 'n'}.`);
-  }
-
-  // c) Neue Bohrungen starten (Geduld 1 = sofort)
-  const drillingCost = stageCost(balance, 1);
-  const toBeDrilled = leases.filter(l => l.holder === 'bullard' && !l.drilled).map(l => l.parcelId);
-  for (const parcelId of toBeDrilled) {
-    if (cash >= drillingCost) {
-      cash -= drillingCost;
-      // Pacht als gebohrt markieren
-      leases = leases.map(l =>
-        l.parcelId === parcelId && l.holder === 'bullard' ? { ...l, drilled: true } : l
-      );
-      // Neue Well eintragen
-      rival.wells.push({
-        parcelId,
-        startRound: state.round,
-        roundsLeft: bullardBalance.drillRounds,
-        status: 'drilling',
-      });
-    }
-  }
-
-  // d) Neue Pachten kaufen - RNG generieren
-  const rng = new Rng(rival.rng);
-  const candidates = rivalCandidates(state, balance);
-  const bids: { parcel: Parcel; utility: number; roll: number }[] = [];
-
-  for (const parcel of candidates) {
-    const roll = rng.float();
-    const utility = rivalUtility(state, balance, parcel, roll);
-    bids.push({ parcel, utility, roll });
-  }
-
-  // Sortiere nach Nutzen (absteigend), bei Gleichstand nach id (aufsteigend)
-  bids.sort((a, b) => {
-    if (b.utility !== a.utility) return b.utility - a.utility;
-    return a.parcel.id.localeCompare(b.parcel.id);
+  // a) Bohrungen
+  const wells: RivalWell[] = state.rival.wells.map((well) => {
+    if (well.status !== 'drilling') return well;
+    const roundsLeft = well.roundsLeft - 1;
+    if (roundsLeft > 0) return { ...well, roundsLeft };
+    const parcel = state.parcels.find((p) => p.id === well.parcelId)!;
+    const status = parcel.geology === 'dry' ? 'dry' : 'found';
+    log.push(
+      status === 'found'
+        ? `${date}: Bullard stößt auf Parzelle ${parcelLabel(parcel)} auf Öl.`
+        : `${date}: Bullard bohrt auf Parzelle ${parcelLabel(parcel)} trocken.`,
+    );
+    return { ...well, roundsLeft: 0, status };
   });
 
-  // Kaufe bis zu actionsPerRound beste Pachten
-  let pachedCount = 0;
-  for (const bid of bids) {
-    if (pachedCount >= bullardBalance.actionsPerRound) break;
-    if (bid.utility <= bullardBalance.minUtility) break;
+  // b) Einnahmen
+  let cash = state.rival.cash + wells.filter((w) => w.status === 'found').length * b.incomePerWell;
 
-    const terms = leaseTerms(state, balance, bid.parcel.id);
-    if (cash < terms.bonus) break; // Nicht genug Geld
+  // c) Pachten: jeder Kandidat bekommt genau einen Zufallswert, in id-Reihenfolge.
+  const rng = new Rng(state.rival.rng);
+  const bids = rivalCandidates(state, balance).map((parcel) => ({
+    parcel,
+    utility: rivalUtility(state, balance, parcel, rng.float()),
+  }));
+  bids.sort((x, y) => y.utility - x.utility || (x.parcel.id < y.parcel.id ? -1 : 1));
 
-    // Pacht kaufen
+  const leases: Lease[] = [...state.leases];
+  let bought = 0;
+  for (const { parcel, utility } of bids) {
+    if (bought >= b.actionsPerRound || utility <= b.minUtility) break;
+    const terms = leaseTerms(state, balance, parcel.id);
+    if (terms.bonus > cash) continue;
     cash -= terms.bonus;
     leases.push({
-      parcelId: bid.parcel.id,
-      holder: 'bullard' as Holder,
+      parcelId: parcel.id,
+      holder: 'bullard',
       bonus: terms.bonus,
       royalty: terms.royalty,
       startRound: state.round,
       expiresAfterRound: state.round + balance.lease.termRounds - 1,
       drilled: false,
     });
-
-    // Log-Meldungen
-    const prefix = `${date}: Bullard pachtet Parzelle ${parcelLabel(bid.parcel)}.`;
-
-    // Prüfe, ob Jacob dort eine Option/Pacht hatte
-    let snappedFromJacob = false;
-    const hadOption = state.options.some(o => o.parcelId === bid.parcel.id && o.holder === 'jacob');
-    const hadLease = state.leases.some(l => l.parcelId === bid.parcel.id && l.holder === 'jacob');
-
-    if (hadOption || hadLease) {
-      snappedFromJacob = true;
-    }
-
-    if (snappedFromJacob) {
-      log.push(`${prefix} Bullard schnappt dir Parzelle ${parcelLabel(bid.parcel)} weg!`);
-    } else {
-      log.push(prefix);
-    }
-
-    pachedCount++;
+    bought++;
+    const hadIt =
+      before.options.some((o) => o.parcelId === parcel.id && o.holder === 'jacob') ||
+      before.leases.some((l) => l.parcelId === parcel.id && l.holder === 'jacob');
+    log.push(
+      hadIt || nextTo(parcel, jacobFinds(state))
+        ? `${date}: Bullard pachtet Parzelle ${parcelLabel(parcel)} – Bullard schnappt dir Parzelle ${parcelLabel(parcel)} weg!`
+        : `${date}: Bullard pachtet Parzelle ${parcelLabel(parcel)}.`,
+    );
   }
 
-  rival.cash = cash;
-  rival.rng = rng.state; // Speichern des aktualisierten RNG-Zustands
+  // d) Bohren (Geduld 1 = sofort, auch auf der gerade gekauften Pacht)
+  const cost = stageCost(balance, 1);
+  const drilled = leases.map((lease) => {
+    if (lease.holder !== 'bullard' || lease.drilled || cash < cost) return lease;
+    cash -= cost;
+    wells.push({ parcelId: lease.parcelId, startRound: state.round, roundsLeft: b.drillRounds, status: 'drilling' });
+    log.push(`${date}: Bullard bohrt auf Parzelle ${label(lease.parcelId)}.`);
+    return { ...lease, drilled: true };
+  });
 
-  return { ...state, rival, leases, log };
+  return { ...state, leases: drilled, log, rival: { ...state.rival, cash, rng: rng.state, wells } };
 }

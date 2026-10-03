@@ -119,7 +119,8 @@ export function newGame(seed: string, balance: Balance): GameState {
 /**
  * Schließt die aktuelle Runde ab: erst die Förderung, dann der Ölpreis (Markt),
  * dann die Bohrungen, dann die Pacht-Abrechnung (Verfall, Verzögerungszins), dann
- * die Zinsen (mit Notkredit, wenn eine Rate nicht zu zahlen ist), dann der
+ * der Rivale Bullard (direkt danach, damit gerade verfallene Optionen und Pachten
+ * Jacobs für ihn frei sind), dann die Zinsen (mit Notkredit, wenn eine Rate nicht zu zahlen ist), dann der
  * Transport (Thorne und der Bahntarif, Kapazitäten wieder frei) und zuletzt die
  * Pleiteprüfung. Die Förderung kommt zuerst, damit eine Quelle, die gerade ihren
  * Abschlussbohrung hinter sich hat, erst in der nächsten Runde Öl liefert. Bei
@@ -131,10 +132,10 @@ export function endRound(input: GameState, balance: Balance): GameState {
   if (input.finished) return input;
   const roundLogStart = input.log.length;
   const gefoerdert = advanceProduction(input, balance);
-  const markt = advanceMarket(gefoerdert, balance);
+  const markt = advanceMarket(gefoerdert, balance.market, balance.rivals.bullard.ratePerWell);
   const gebohrt = advanceDrilling(markt, balance);
   const gepachtet = settleLeases(gebohrt, balance);
-  const rivale = advanceRival(gepachtet, balance);
+  const rivale = advanceRival(gepachtet, balance, gebohrt);
   const verzinst = settleLoans(rivale, balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   const gefahren = advanceTransport(verzinst, balance);

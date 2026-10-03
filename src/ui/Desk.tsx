@@ -65,6 +65,8 @@ export function Desk({
   const heroisch = step?.parcelIds ?? [];
   const leases = game.leases.filter((l) => l.holder === 'jacob').length;
   const options = game.options.filter((o) => o.holder === 'jacob').length;
+  const rivalLeases = game.leases.filter((l) => l.holder === 'bullard').length;
+  const rivalWells = game.rival.wells.filter((w) => w.status === 'found').length;
 
   return (
     <div className="desk">
@@ -86,6 +88,11 @@ export function Desk({
           </span>
           <span>
             Pachten {leases} · Optionen {options}
+          </span>
+          <span>
+            Bullard: {rivalLeases} {rivalLeases === 1 ? 'Pacht' : 'Pachten'}, {rivalWells}{' '}
+            {rivalWells === 1 ? 'Quelle' : 'Quellen'}
+            {debug && <> · Kasse {money(game.rival.cash)}</>}
           </span>
           <span>
             Runde {game.round}/{game.totalRounds} · {formatDate(game)}

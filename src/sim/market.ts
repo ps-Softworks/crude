@@ -2,7 +2,7 @@
 // Angebot und Nachfrage. Reine Funktionen, deterministisch, ohne Zufall.
 //   P = T · (N / A)^ε · S − k, begrenzt auf priceMin..priceMax, auf Cent gerundet.
 
-import type { Balance, MarketBalance } from './balance';
+import type { MarketBalance } from './balance';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
 
@@ -22,13 +22,12 @@ export function neighbourSupply(balance: MarketBalance, round: number): number {
   return neighbourWells(balance, round) * balance.neighbours.ratePerWell;
 }
 
-/** Jacobs Förderung der letzten Runde: Summe über alle fündigen Quellen. */
-/** Bullards Förderung: Anzahl fündiger Quellen × ratePerWell. */
-export function rivalSupply(state: Pick<Pick<GameState, 'rival'>, 'rival'>, ratePerWell: number): number {
-  const foundCount = state.rival.wells.filter((w) => w.status === 'found').length;
-  return foundCount * ratePerWell;
+/** Bullards Förderung je Runde: fündige Bullard-Quellen · ratePerWell. */
+export function rivalSupply(state: Pick<GameState, 'rival'>, ratePerWell: number): number {
+  return state.rival.wells.filter((w) => w.status === 'found').length * ratePerWell;
 }
 
+/** Jacobs Förderung der letzten Runde: Summe über alle fündigen Quellen. */
 export function jacobSupply(state: Pick<GameState, 'wells'>): number {
   return state.wells
     .filter((w) => w.status === 'found')
@@ -49,13 +48,12 @@ function formatPrice(value: number): string {
 }
 
 /**
- * Rundenende: Aus Jacobs Förderung und der Förderung der Nachbarn wird der
+ * Rundenende: Aus Jacobs Förderung, der Förderung der Nachbarn und Bullards
+ * Förderung (rivalRatePerWell je fündiger Quelle) wird der
  * Posted Price für die nächste Runde. Große Sprünge kommen ins Protokoll.
  */
-export function advanceMarket(input: GameState, balance: MarketBalance | Balance): GameState {
-  const marketBalance = 'market' in balance ? balance.market : balance as MarketBalance;
-  const ratePerWell = 'rivals' in balance ? balance.rivals.bullard.ratePerWell : 0;
-  const supply = jacobSupply(input) + neighbourSupply(marketBalance, input.round) + rivalSupply(input, ratePerWell);
+export function advanceMarket(input: GameState, marketBalance: MarketBalance, rivalRatePerWell = 0): GameState {
+  const supply = jacobSupply(input) + neighbourSupply(marketBalance, input.round) + rivalSupply(input, rivalRatePerWell);
   const oldPrice = input.postedPrice;
   const newPrice = computePrice(marketBalance, supply);
 
