@@ -5,6 +5,7 @@
 import tutorialText from '../../content/tutorial.yaml?raw';
 import { formatContentError } from '../sim/eventContent';
 import { parseTutorialContent } from '../sim/tutorial';
+import { saveStore } from './storage';
 
 const { content, errors } = parseTutorialContent('content/tutorial.yaml', tutorialText);
 if (!content) throw new Error(errors.map(formatContentError).join('\n'));
@@ -16,7 +17,7 @@ const KEY = 'crude.tutorial';
 /** Sind die Hinweise eingeschaltet? Ohne gespeicherte Wahl: ja. */
 export function loadTutorialOn(): boolean {
   try {
-    return window.localStorage.getItem(KEY) !== 'aus';
+    return saveStore().read(KEY) !== 'aus';
   } catch {
     return true;
   }
@@ -24,7 +25,7 @@ export function loadTutorialOn(): boolean {
 
 export function saveTutorialOn(on: boolean): void {
   try {
-    window.localStorage.setItem(KEY, on ? 'an' : 'aus');
+    saveStore().write(KEY, on ? 'an' : 'aus');
   } catch {
     /* Kein Speicher – dann gilt die Wahl nur bis zum Neuladen. */
   }

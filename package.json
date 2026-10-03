@@ -1,8 +1,12 @@
 {
   "name": "crude",
+  "productName": "CRUDE",
   "private": true,
-  "version": "0.2.13",
+  "version": "0.2.14",
+  "description": "CRUDE – ein Ölbaron-Spiel",
+  "author": "Philipp Singer",
   "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -13,7 +17,10 @@
     "bots": "tsx tools/botlaeufe.ts",
     "check:content": "tsx tools/checkContent.ts",
     "release": "node tools/release.mjs",
-    "screenshots": "tsx tools/screenshots.ts"
+    "screenshots": "tsx tools/screenshots.ts",
+    "desktop": "npm run build && electron .",
+    "desktop:win": "npm run build && electron-builder --win zip --x64 --publish never",
+    "desktop:mac": "npm run build && electron-builder --mac dir --publish never"
   },
   "dependencies": {
     "@fontsource/eb-garamond": "^5.3.0",
@@ -26,9 +33,42 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.2",
     "vitest": "^5.0.3"
+  },
+  "build": {
+    "appId": "de.burlov.crude",
+    "productName": "CRUDE",
+    "directories": {
+      "output": "release/desktop-${version}"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json",
+      "!node_modules/**/*"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "CRUDE-${version}-windows-x64.${ext}"
+    },
+    "mac": {
+      "target": [
+        "dir"
+      ],
+      "identity": null
+    }
   }
 }

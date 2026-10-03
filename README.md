@@ -18,3 +18,12 @@ Ziel: kommerzieller Release auf Steam, PC zuerst.
 TypeScript + React + Vite, reine TS-Simulation, YAML-Inhalte, Vitest, Electron + steamworks.js.
 
 Geplante Ordner: `src/sim` (Simulation), `src/ui` (Oberfläche), `content/` (YAML-Inhalte), `docs/` (Design).
+
+## Desktop-Fassung (Schritt 2.14)
+
+- `npm run desktop` – baut das Spiel und öffnet es in einem Electron-Fenster.
+- `npm run desktop:win` – Windows-Fassung als ZIP: `release/desktop-<version>/CRUDE-<version>-windows-x64.zip`. Entpacken, `CRUDE.exe` starten; läuft ohne Internet. Auf dem Mac gebaut, ohne Installer und ohne Signatur (Windows zeigt beim ersten Start evtl. „Computer geschützt“ → „Weitere Informationen“ → „Trotzdem ausführen“).
+- `npm run desktop:mac` – Mac-Fassung zum Testen: `release/desktop-<version>/mac-arm64/CRUDE.app`.
+- Spielstände liegen als Datei im Benutzerordner: Windows `%APPDATA%\CRUDE\spielstaende\`, macOS `~/Library/Application Support/CRUDE/spielstaende/`. Im Browser bleibt es beim localStorage.
+- Selbsttest: `CRUDE_SMOKE=1 release/desktop-<version>/mac-arm64/CRUDE.app/Contents/MacOS/CRUDE` startet die App, prüft Anzeige und Spielstand-Speicher und beendet sich.
+- F12 öffnet die Entwicklerwerkzeuge (zum Fehlersuchen).

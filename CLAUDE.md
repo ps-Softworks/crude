@@ -9,7 +9,7 @@
 - Subagents: Du darfst nach eigener Einschätzung Subagents deiner Wahl einsetzen (z. B. Explore, Plan, general-purpose), ohne vorher zu fragen – immer dann, wenn es sinnvoll ist und Tokens spart (z. B. breite Suchen, unabhängige Teilaufgaben parallel). Für Kleinigkeiten, die du direkt erledigen kannst, keine Subagents.
 
 ## Projektstand
-- Phase 0 und 1 abgeschlossen. Phase 2 läuft: 2.1–2.13 fertig (2.13: Einstieg – Tutorial-Hinweise in `src/sim/tutorial.ts`, Texte in `content/tutorial.yaml`, Zahlen unter `tutorial` in balance.yaml, abschaltbar im Spiel; Hinweis-Bot `playByHints` findet in ~85 % der Seeds eine Quelle), als Nächstes 2.14 laut Roadmap.
+- Phase 0 und 1 abgeschlossen. Phase 2 läuft: 2.1–2.14 fertig (2.14: Electron-Build – `electron/main.cjs` + `preload.cjs`, `npm run desktop:win` erzeugt Windows-ZIP unter `release/desktop-<version>/`, `npm run desktop:mac` Mac-App zum Testen; Spielstände als Datei im Benutzerordner über `src/ui/storage.ts`, im Browser weiter localStorage; Test auf fremdem Windows-PC steht aus), als Nächstes 2.15 laut Roadmap.
 - Spielzahlen stehen in `content/balance.yaml` (per Bot-Läufen justiert, `npm run bots`; endgültig erst nach Philipps eigenen Partien).
 - Bot-Läufe: `npm run bots` (schreibt docs/botlaeufe.md).
 - Tester-Build: `npm run release` → `release/crude-<version>.zip` (index.html im Wurzelverzeichnis, relative Pfade; release/ nicht committen). Feedback-Link in `content/tester.yaml` (leer = kein Knopf). Debug-Bereich im Build nur mit `?debug=1`.
