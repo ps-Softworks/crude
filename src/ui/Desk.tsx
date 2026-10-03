@@ -20,6 +20,7 @@ import { FamilyPanel } from './FamilyPanel';
 import { FeedbackLink } from './FeedbackLink';
 import { Map } from './Map';
 import { NewspaperPanel } from './NewspaperPanel';
+import { Bohrturm } from './Silhouette';
 
 function money(value: number): string {
   return `${value.toLocaleString('de-DE')} $`;
@@ -94,6 +95,7 @@ export function Desk({
     <div className={zeit.exhausted || zeit.sickRounds > 0 ? 'desk erschoepft' : 'desk'}>
       <header>
         <h1>
+          <Bohrturm />
           CRUDE <span className="version">v{__APP_VERSION__}</span> <FeedbackLink className="feedback kopf" />
           <button
             type="button"

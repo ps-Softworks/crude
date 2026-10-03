@@ -1,0 +1,22 @@
+# Figuren (2.12, GDD §16): Bis die gezeichneten Porträts kommen, steht jede Person
+# als Silhouette auf dem Papier. Hier steht nur, welche Silhouette zu wem gehört –
+# die Formen selbst zeichnet src/ui/Silhouette.tsx.
+#
+# Mögliche Silhouetten:
+#   hut       – Mann mit Hut (Jacob)
+#   frau      – Frau mit Haarknoten
+#   kind      – Säugling / kleines Kind
+#   muetze    – Arbeiter mit Schirmmütze und Bart
+#   strohhut  – Farmer mit breitem Strohhut
+#   zylinder  – Herr mit Zylinder (Bankiers, Trust)
+#   kopf      – ohne Kopfbedeckung (Ersatz für alle, die hier fehlen)
+#
+# Schlüssel = die Kennung der Person, wie sie in family.yaml (ruth, thomas) und
+# arcs.yaml (silas, moss) steht.
+
+jacob: hut
+ruth: frau
+thomas: kind
+silas: muetze
+moss: strohhut
+crane: zylinder

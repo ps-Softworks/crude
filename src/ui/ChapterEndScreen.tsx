@@ -14,6 +14,7 @@ import { arcContent } from './arcs';
 import { balance } from './balance';
 import { chapterContent } from './chapter';
 import { FeedbackLink } from './FeedbackLink';
+import { Silhouette } from './Silhouette';
 
 function money(value: number) {
   return `${value.toLocaleString('de-DE')} $`;
@@ -49,7 +50,10 @@ export function ChapterEndScreen({
   const { goals, bonus, ipo } = chapterContent;
   return (
     <section className={`gameover kapitelende ${ergebnis ?? ''}`}>
-      <h2>{fillText(ende.title, {})}</h2>
+      <div className="ergebnis-kopf">
+        <Silhouette id="jacob" name="Jacob Harlan" size={52} />
+        <h2>{fillText(ende.title, {})}</h2>
+      </div>
       <p>
         {formatDate(game)}: {fillText(ende.text, {})}
       </p>
@@ -116,16 +120,18 @@ export function ChapterEndScreen({
         </div>
       )}
       <h3>Was aus ihnen wurde</h3>
-      <dl className="terms boegen">
+      <ul className="boegen">
         {arcSummaries(game, arcContent).map((b) => (
-          <div key={b.arc} className="bogen">
-            <dt>
-              {b.name}: <em>{b.title}</em>
-            </dt>
-            <dd>{b.text}</dd>
-          </div>
+          <li key={b.arc} className="person">
+            <Silhouette id={b.arc} name={b.name} size={44} />
+            <div>
+              <strong>{b.name}:</strong> <em>{b.title}</em>
+              <br />
+              {b.text}
+            </div>
+          </li>
         ))}
-      </dl>
+      </ul>
       <div className="knoepfe">
         <FeedbackLink className="feedback gross" />
         <button className="primary" onClick={onRestart}>

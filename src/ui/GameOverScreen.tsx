@@ -4,6 +4,7 @@
 import { debt } from '../sim/credit';
 import { formatDate, type GameState } from '../sim/game';
 import { FeedbackLink } from './FeedbackLink';
+import { Silhouette } from './Silhouette';
 
 function money(value: number) {
   return `${value.toLocaleString('de-DE')} $`;
@@ -18,7 +19,10 @@ export function GameOverScreen({ game, onRestart }: { game: GameState; onRestart
   const ergebnis = game.cash - schuld;
   return (
     <section className="gameover">
-      <h2>Pleite</h2>
+      <div className="ergebnis-kopf">
+        <Silhouette id="jacob" name="Jacob Harlan" size={52} />
+        <h2>Pleite</h2>
+      </div>
       <p>
         {formatDate(game)}, Runde {game.round} von {game.totalRounds}: Jacob Harlan hat die Rechnung nicht
         bezahlen können. Die Bank nimmt die Firma in Zwangsverwaltung – der Bohrturm, die Pachten und die

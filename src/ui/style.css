@@ -1,167 +1,275 @@
-/* Prototyp: graue Kästen, keine endgültige Optik. */
+/* Platzhaltergrafik (2.12, GDD §16): Kapitel 1 „Der Wildcatter“ – Papier, Sepia,
+   Braun und Ocker. Eine Schrift (EB Garamond, lokal aus @fontsource, SIL OFL).
+   Alle Farben stehen hier als Variablen; Komponenten benutzen nur diese.
+   Mehr dazu in docs/stil.md. */
 :root {
-  font-family: Georgia, 'Times New Roman', serif;
-  color: #222;
-  background: #f2f0eb;
+  /* Papier und Tisch */
+  --tisch: #4a3828;
+  --tisch-dunkel: #3a2b1e;
+  --papier: #efe4cb;
+  --papier-hell: #f8f1df;
+  --papier-dunkel: #e3d4b1;
+  --linie: #b8a27a;
+  --linie-hell: #d8c8a4;
+  /* Tinte */
+  --tinte: #2b2118;
+  --tinte-weich: #5a4935;
+  --tinte-blass: #8a775c;
+  /* Akzente: Ocker für Hinweise und Funde, Siegelrot für Gefahr */
+  --ocker: #b07f2a;
+  --ocker-hell: #ecd9a6;
+  --rot: #9c2b1f;
+  --rot-hell: #f0d5c8;
+  /* Kennfarben der Karte, gedämpft wie kolorierte Stiche */
+  --gruen: #4c6a38;
+  --gruen-hell: #d3dbbb;
+  --blau: #3c5872;
+  --blau-hell: #cfd6d6;
+  --rost: #7d3a22;
+  --rost-hell: #e2c3ac;
+  --grau: #a3967e;
+  --grau-hell: #e2d8c2;
+  --land: #e6d7b3;
+  --meer: #a9b5aa;
+  --oel: #1f1813;
+
+  --schrift: 'EB Garamond', Georgia, 'Times New Roman', serif;
+  --schatten: 0 1px 2px rgba(30, 20, 10, 0.25), 0 6px 18px rgba(30, 20, 10, 0.18);
+
+  font-family: var(--schrift);
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--tinte);
+  background: var(--tisch);
+  font-variant-numeric: oldstyle-nums;
 }
-body { margin: 0; }
-.app { max-width: 1400px; margin: 0 auto; padding: 16px; }
-header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 24px; border-bottom: 2px solid #222; }
-h1 { margin: 0 0 8px; letter-spacing: 0.2em; }
-h1 .version { font-size: 12px; font-weight: normal; letter-spacing: normal; color: #777; }
-h2 { font-size: 1rem; margin: 0 0 6px; }
-.status { display: flex; flex-wrap: wrap; gap: 4px 24px; font-variant-numeric: tabular-nums; }
-.status .warn { color: #b3261e; font-weight: bold; }
-button { font: inherit; padding: 4px 10px; cursor: pointer; }
-button.primary { padding: 10px 18px; font-size: 1.1rem; background: #222; color: #f2f0eb; border: none; }
-button.primary:disabled { background: #888; cursor: default; }
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at 50% 0%, var(--tisch) 0%, var(--tisch-dunkel) 100%) fixed;
+  min-height: 100vh;
+}
+::selection { background: var(--ocker-hell); }
+
+/* Das Blatt: alles liegt auf einem großen Bogen Papier auf dem Schreibtisch. */
+.app {
+  max-width: 1400px;
+  margin: 18px auto;
+  padding: 18px 22px 28px;
+  background:
+    radial-gradient(ellipse at 15% 10%, rgba(255, 250, 235, 0.55), transparent 60%),
+    radial-gradient(ellipse at 90% 95%, rgba(160, 120, 60, 0.12), transparent 55%),
+    var(--papier);
+  box-shadow: var(--schatten);
+  border: 1px solid var(--linie);
+}
+@media (max-width: 700px) { .app { margin: 0; padding: 12px 16px 20px; } }
+
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 24px; padding-bottom: 8px; border-bottom: 3px double var(--tinte); }
+h1 { margin: 0 0 4px; letter-spacing: 0.22em; font-weight: 700; font-size: 2.1rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+h1 .bohrturm { color: var(--tinte); }
+h1 .version { font-size: 13px; font-weight: normal; letter-spacing: normal; color: var(--tinte-blass); }
+h2 { font-size: 1.15rem; margin: 0 0 6px; font-weight: 600; letter-spacing: 0.02em; }
+h3 { font-size: 1.05rem; margin: 12px 0 4px; font-weight: 600; font-variant: small-caps; letter-spacing: 0.05em; }
+.panel > h2 {
+  font-variant: small-caps;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--linie);
+  padding-bottom: 2px;
+}
+.status { display: flex; flex-wrap: wrap; gap: 2px 22px; font-variant-numeric: lining-nums tabular-nums; color: var(--tinte-weich); }
+.status strong { color: var(--tinte); }
+.status .warn { color: var(--rot); font-weight: bold; }
+
+button {
+  font: inherit;
+  padding: 4px 12px;
+  cursor: pointer;
+  color: var(--tinte);
+  background: var(--papier-hell);
+  border: 1px solid var(--linie);
+  border-radius: 2px;
+  box-shadow: 0 1px 0 var(--linie-hell);
+}
+button:hover:not(:disabled) { background: var(--ocker-hell); border-color: var(--ocker); }
+button:disabled { cursor: default; color: var(--tinte-blass); background: var(--papier); }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--ocker); outline-offset: 2px; }
+button.primary { padding: 9px 20px; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.04em; background: var(--tinte); color: var(--papier-hell); border: 1px solid var(--tinte); }
+button.primary:hover:not(:disabled) { background: var(--tinte-weich); border-color: var(--tinte-weich); }
+button.primary:disabled { background: var(--grau); border-color: var(--grau); color: var(--papier); }
 button.runde { align-self: center; margin-left: auto; }
-button.link { padding: 0; border: none; background: none; color: #222; text-decoration: underline; }
-.spalten { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 16px; align-items: start; }
+button.link { padding: 0; border: none; background: none; box-shadow: none; color: var(--tinte); text-decoration: underline; text-decoration-color: var(--linie); }
+button.link:hover:not(:disabled) { background: none; color: var(--ocker); }
+a { color: var(--tinte); }
+.spalten { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 18px; align-items: start; }
 @media (max-width: 1000px) { .spalten { grid-template-columns: 1fr; } }
 .panel { margin-bottom: 18px; }
 
-/* Der Hinweis auf den nächsten Schritt: so auffällig, dass er nicht übersehen wird. */
+/* Der Hinweis auf den nächsten Schritt: ein Zettel mit Ocker-Rand, nicht zu übersehen. */
 .nextstep {
   margin: 16px 0 0;
-  padding: 12px 14px;
-  border: 2px solid #222;
-  background: #fdf3cf;
-  font-size: 1.05rem;
+  padding: 10px 14px 10px 16px;
+  border: 1px solid var(--ocker);
+  border-left: 6px solid var(--ocker);
+  background: var(--ocker-hell);
+  font-size: 1.1rem;
+  font-style: italic;
 }
 
-/* Die Karte: hervorgehobene Parzellen bekommen einen dicken gelben Rahmen. */
-.map { width: 100%; height: auto; background: #e6e3dc; }
+/* Die Karte: ein kolorierter Plan auf Papier. */
+.map { width: 100%; height: auto; background: var(--land); border: 1px solid var(--tinte-weich); box-shadow: inset 0 0 18px rgba(90, 60, 20, 0.18); }
 .parcel { cursor: pointer; }
-.highlight { stroke: #d8a300; animation: highlight 1.2s ease-in-out infinite; }
+.highlight { stroke: var(--ocker); animation: highlight 1.2s ease-in-out infinite; }
 @keyframes highlight {
   0%, 100% { stroke-opacity: 1; }
   50% { stroke-opacity: 0.2; }
 }
-.label { font: 11px sans-serif; fill: #222; pointer-events: none; }
-.label.light { fill: #f2f0eb; }
-.rate { font: bold 9px sans-serif; fill: #2b2620; pointer-events: none; }
-.place { font: italic 14px Georgia, serif; fill: #333; pointer-events: none; }
-.tag { font: bold 10px sans-serif; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .highlight { animation: none; } }
+.label { font: 12px var(--schrift); fill: var(--tinte); pointer-events: none; }
+.label.light { fill: var(--papier-hell); }
+.rate { font: bold 10px var(--schrift); fill: var(--tinte); pointer-events: none; }
+.place { font: italic 15px var(--schrift); fill: var(--tinte-weich); pointer-events: none; }
+.tag { font: bold 12px var(--schrift); pointer-events: none; }
 
-.log { list-style: none; padding: 0; margin: 0; max-height: 220px; overflow-y: auto; font-size: 0.9rem; }
-.log li { padding: 2px 0; border-bottom: 1px solid #ddd; }
-details { margin-top: 8px; font-size: 0.9rem; }
-details summary { cursor: pointer; color: #555; }
-.muted { color: #777; }
-.debug { border-top: 1px dashed #999; padding-top: 10px; font-size: 0.9rem; }
+.log { list-style: none; padding: 0; margin: 0; max-height: 220px; overflow-y: auto; font-size: 0.95rem; }
+.log li { padding: 3px 0; border-bottom: 1px dotted var(--linie); }
+details { margin-top: 8px; font-size: 0.95rem; }
+details summary { cursor: pointer; color: var(--tinte-weich); }
+.muted { color: var(--tinte-blass); }
+.debug { border-top: 1px dashed var(--linie); padding-top: 10px; font-size: 0.9rem; color: var(--tinte-weich); }
 .debug form { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .debug input:not([type]) { width: 90px; }
 
-/* Quellenliste auf dem Schreibtisch: eine Zeile je Bohrung. */
-.sources { list-style: none; padding: 0; margin: 0; font-size: 0.95rem; }
+/* Quellenliste auf dem Schreibtisch: eine Zeile je Bohrung, wie Karteikarten. */
+.sources { list-style: none; padding: 0; margin: 0; font-size: 0.97rem; }
 .sources li {
   display: flex;
   flex-wrap: wrap;
   gap: 2px 10px;
   align-items: baseline;
   padding: 4px 8px;
-  border-left: 4px solid #9a9a9a;
-  background: #eceae4;
+  border-left: 4px solid var(--grau);
+  background: var(--grau-hell);
   margin-bottom: 4px;
 }
-.sources li.found { border-left-color: #2b2620; background: #e3e0d2; }
-.sources li.decision { border-left-color: #c9a95c; background: #efe6cf; }
-.sources li.stuck { border-left-color: #b3261e; background: #f0dbd8; }
-.sources li.dry { border-left-color: #b0aca0; color: #777; }
+.sources li.found { border-left-color: var(--oel); background: var(--papier-dunkel); }
+.sources li.decision { border-left-color: var(--ocker); background: var(--ocker-hell); }
+.sources li.stuck { border-left-color: var(--rot); background: var(--rot-hell); }
+.sources li.dry { border-left-color: var(--grau); color: var(--tinte-blass); }
 .sources .lage { flex: 1 1 auto; }
-.sources .zahlen { flex-basis: 100%; color: #555; font-variant-numeric: tabular-nums; font-size: 0.9rem; }
+.sources .zahlen { flex-basis: 100%; color: var(--tinte-weich); font-variant-numeric: lining-nums tabular-nums; font-size: 0.92rem; }
 
-.terms { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0 0 8px; font-size: 0.95rem; }
-.terms dt { color: #555; }
-.terms dd { margin: 0; font-variant-numeric: tabular-nums; }
-.state { padding: 6px 8px; background: #e6e3dc; border-left: 4px solid #9a9a9a; font-size: 0.95rem; }
-.state.lease { border-left-color: #2f6b3a; background: #dfe8dc; }
-.state.option { border-left-color: #2d5a8a; background: #dde5ee; border-left-style: dashed; }
-.state.discovery { border-left-color: #c9a95c; background: #efe6cf; }
-.state.rating { border-left-color: #9a9a9a; }
-.state.rating-b { border-left-color: #2f6b3a; background: #dfe8dc; }
-.state.rating-c { border-left-color: #c9a95c; background: #efe6cf; }
-.state.rating-d { border-left-color: #b3261e; background: #f0dbd8; }
-.state.pleite { border-left-color: #b3261e; background: #f0dbd8; }
-.loans { list-style: none; padding: 0; margin: 0 0 8px; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
-.loans li { padding: 4px 0; border-bottom: 1px solid #ddd; }
-.gameover { margin-top: 16px; padding: 16px; border: 2px solid #222; background: #f7f4ee; max-width: 640px; }
-.gameover h2 { font-size: 1.6rem; letter-spacing: 0.2em; }
+.terms { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0 0 8px; font-size: 0.97rem; }
+.terms dt { color: var(--tinte-weich); }
+.terms dd { margin: 0; font-variant-numeric: lining-nums tabular-nums; }
+.state { padding: 6px 10px; background: var(--grau-hell); border-left: 4px solid var(--grau); font-size: 0.97rem; }
+.state.lease { border-left-color: var(--gruen); background: var(--gruen-hell); }
+.state.option { border-left-color: var(--blau); background: var(--blau-hell); border-left-style: dashed; }
+.state.discovery { border-left-color: var(--ocker); background: var(--ocker-hell); }
+.state.rating { border-left-color: var(--grau); }
+.state.rating-b { border-left-color: var(--gruen); background: var(--gruen-hell); }
+.state.rating-c { border-left-color: var(--ocker); background: var(--ocker-hell); }
+.state.rating-d { border-left-color: var(--rot); background: var(--rot-hell); }
+.state.pleite { border-left-color: var(--rot); background: var(--rot-hell); }
+.loans { list-style: none; padding: 0; margin: 0 0 8px; font-size: 0.95rem; font-variant-numeric: lining-nums tabular-nums; }
+.loans li { padding: 4px 0; border-bottom: 1px dotted var(--linie); }
+
+/* Ergebnis-Bögen (Pleite, Kapitelende): ein gesiegeltes Dokument. */
+.gameover {
+  margin-top: 16px;
+  padding: 18px 22px;
+  border: 1px solid var(--tinte-weich);
+  outline: 1px solid var(--linie);
+  outline-offset: -6px;
+  background: var(--papier-hell);
+  box-shadow: var(--schatten);
+  max-width: 680px;
+}
+.gameover h2 { font-size: 1.8rem; letter-spacing: 0.18em; font-variant: small-caps; margin-bottom: 8px; }
+.ergebnis-kopf { display: flex; align-items: center; gap: 16px; }
+.ergebnis-kopf h2 { margin: 0; }
 .actions { display: flex; flex-direction: column; gap: 6px; }
-.actions button:disabled { cursor: default; color: #999; }
-.hint { margin: 6px 0 0; font-size: 0.9rem; color: #b3261e; }.kapitelende { margin-bottom: 8px; }
+.actions button { text-align: left; }
+.hint { margin: 6px 0 0; font-size: 0.95rem; color: var(--rot); font-style: italic; }
+.kapitelende { margin-bottom: 8px; }
 .knoepfe { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 12px; }
-a.feedback { color: #222; }
-a.feedback.kopf { font-size: 12px; font-weight: normal; letter-spacing: normal; color: #777; margin-left: 8px; }
+a.feedback { color: var(--tinte); }
+a.feedback.kopf { font-size: 13px; font-weight: normal; letter-spacing: normal; color: var(--tinte-blass); }
 a.feedback.gross { font-size: 1.05rem; }
-h1 button.neustart { font-size: 12px; font-weight: normal; letter-spacing: normal; margin-left: 8px; padding: 1px 6px; }
+h1 button.neustart { font-size: 13px; font-weight: normal; letter-spacing: normal; padding: 1px 8px; }
 
 /* Ereignisse auf dem Schreibtisch (2.1): ein Brief, der auf Antwort wartet. */
 .events { margin-top: 16px; }
 .event {
-  padding: 12px 14px;
+  padding: 12px 16px;
   margin-bottom: 12px;
-  border: 1px solid #8a6d3b;
-  background: #fffaf0;
+  border: 1px solid var(--linie);
+  background: var(--papier-hell);
+  box-shadow: 0 1px 3px rgba(40, 25, 10, 0.18);
 }
-.event h2 { margin: 0 0 6px; font-size: 1.1rem; }
+.event h2 { margin: 0 0 6px; font-size: 1.2rem; }
 
 /* Termine und Kraft (2.3) */
 .termine .punkte { letter-spacing: 2px; }
-.termine .punkte.extra { color: #8a6d3b; margin-left: 4px; }
+.termine .punkte.extra { color: var(--ocker); margin-left: 4px; }
 .kalender { margin-top: 8px; }
-.kalender > summary { cursor: pointer; font-weight: bold; margin-bottom: 8px; }
-.event.termin { border-style: dashed; background: #fbf8f1; }
-.event button .kosten { color: #666; font-size: 0.85em; }
-.event button.ueberstunde { border-color: #b3261e; }
+.kalender > summary, .posteingang > summary { cursor: pointer; font-weight: 600; font-variant: small-caps; letter-spacing: 0.06em; color: var(--tinte); margin-bottom: 8px; }
+.event.termin { border-style: dashed; background: var(--papier); }
+.event button .kosten { color: var(--tinte-blass); font-size: 0.88em; }
+.event button.ueberstunde { border-color: var(--rot); }
 
 /* Posteingang (2.4): Briefe mit Briefart, Frist und rotem Siegel. */
 .posteingang { margin-top: 8px; }
-.posteingang > summary { cursor: pointer; font-weight: bold; margin-bottom: 8px; }
-.event.brief { background: #fffdf6; border-left-width: 4px; }
-.event.brief.dringend { border-left-color: #b3261e; }
-.briefkopf { margin: 0 0 4px; font-size: 0.85em; color: #666; display: flex; align-items: center; gap: 6px; }
-.briefkopf .briefart { font-variant: small-caps; letter-spacing: 1px; color: #5a4a2f; }
-.siegel { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #d9534f, #8b1a14); box-shadow: 0 0 0 2px #e8c4c1; }
+.event.brief { border-left-width: 4px; border-left-color: var(--tinte-blass); }
+.event.brief.dringend { border-left-color: var(--rot); }
+.briefkopf { margin: 0 0 4px; font-size: 0.88em; color: var(--tinte-blass); display: flex; align-items: center; gap: 6px; }
+.briefkopf .briefart { font-variant: small-caps; letter-spacing: 1px; color: var(--tinte-weich); }
+.siegel { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #c4483a, var(--rot) 60%, #6e1a12); box-shadow: 0 0 0 2px var(--rot-hell); }
 /* Dokumentenprüfung (2.5) */
-.dokument { margin: 8px 0; padding: 8px; background: #f7f1e1; border: 1px dashed #b9a77d; overflow-x: auto; }
-.dokument table { border-collapse: collapse; width: 100%; font-family: Georgia, serif; font-size: 0.9em; }
-.dokument th, .dokument td { padding: 3px 6px; text-align: left; border-bottom: 1px solid #e3d8bb; }
-.dokument thead th { font-variant: small-caps; color: #5a4a2f; }
-.dokument tr.gefaelscht td { background: #f6d6d3; }
-.dokument .lupe { padding: 2px 8px; font-size: 0.85em; }
-.befund.ok { color: #2e6b2e; }
-.befund.forged { color: #b3261e; font-weight: bold; }
+.dokument { margin: 8px 0; padding: 8px; background: var(--papier); border: 1px dashed var(--linie); overflow-x: auto; }
+.dokument table { border-collapse: collapse; width: 100%; font-size: 0.93em; font-variant-numeric: lining-nums tabular-nums; }
+.dokument th, .dokument td { padding: 3px 6px; text-align: left; border-bottom: 1px solid var(--linie-hell); }
+.dokument thead th { font-variant: small-caps; color: var(--tinte-weich); }
+.dokument tr.gefaelscht td { background: var(--rot-hell); }
+.dokument .lupe { padding: 2px 8px; font-size: 0.88em; }
+.befund.ok { color: var(--gruen); }
+.befund.forged { color: var(--rot); font-weight: bold; }
 
 /* Zeitung (2.6): Titelseite und Kurzmeldungen. */
-.zeitung { margin-top: 16px; padding: 10px 14px; border: 1px solid #222; background: #fbfaf6; }
-.zeitung-kopf { text-align: center; font-size: 1.3rem; letter-spacing: 0.15em; font-variant: small-caps; border-bottom: 3px double #222; padding-bottom: 4px; margin-bottom: 8px; }
-.zeitung-titel h2 { font-size: 1.25rem; margin: 0 0 4px; }
+.zeitung { margin-top: 16px; padding: 10px 16px 12px; border: 1px solid var(--tinte-weich); background: var(--papier-hell); box-shadow: 0 1px 3px rgba(40, 25, 10, 0.18); }
+.zeitung-kopf { text-align: center; font-size: 1.7rem; font-weight: 700; letter-spacing: 0.12em; font-variant: small-caps; border-bottom: 3px double var(--tinte); padding-bottom: 2px; margin-bottom: 8px; }
+.zeitung-titel h2 { font-size: 1.4rem; margin: 0 0 4px; text-align: center; font-weight: 700; }
 .zeitung-titel p { margin: 0 0 8px; }
-.zeitung-meldungen { margin: 0; padding: 6px 0 0; list-style: none; border-top: 1px solid #999; font-size: 0.95rem; columns: 2 280px; }
+.zeitung-meldungen { margin: 0; padding: 6px 0 0; list-style: none; border-top: 1px solid var(--tinte-weich); font-size: 0.97rem; columns: 2 280px; column-rule: 1px solid var(--linie); column-gap: 24px; }
 .zeitung-meldungen li { margin-bottom: 4px; break-inside: avoid; }
 
+/* Silhouetten (2.12): Scherenschnitt im Oval statt Porträt. */
+.silhouette { flex: none; display: block; }
+.silhouette-grund { fill: var(--papier-dunkel); }
+.silhouette-figur { fill: var(--tinte); }
+.silhouette-rahmen { fill: none; stroke: var(--tinte-weich); stroke-width: 1.5; }
+
 /* Familie und Kraft (2.7) */
-.familie { margin-top: 16px; padding: 10px 14px; border: 1px solid #8a6d3b; background: #fbf6ec; }
-.familie h2 { margin: 0 0 6px; font-size: 1.1rem; }
-.familie ul { margin: 0; padding-left: 18px; }
+.familie { margin-top: 16px; padding: 10px 16px; border: 1px solid var(--linie); background: var(--papier-hell); box-shadow: 0 1px 3px rgba(40, 25, 10, 0.18); }
+.familie h2 { margin: 0 0 8px; font-size: 1.15rem; font-variant: small-caps; letter-spacing: 0.06em; }
+.familie ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.familie li, .person { display: flex; gap: 12px; align-items: center; }
 .familie .zustand { font-variant: small-caps; letter-spacing: 1px; }
-.familie .zustand.neglected { color: #8a6d3b; }
-.familie .zustand.bitter, .familie .zustand.estranged { color: #b3261e; }
-.familie .jacob { margin: 6px 0 0; font-style: italic; }
-.krankmeldung { margin-top: 12px; padding: 8px 12px; border: 1px solid #b3261e; background: #fbeceb; color: #6b1510; }
+.familie .zustand.neglected { color: var(--ocker); }
+.familie .zustand.bitter, .familie .zustand.estranged { color: var(--rot); }
+.familie .jacob { margin: 8px 0 0; font-style: italic; color: var(--tinte-weich); }
+.krankmeldung { margin-top: 12px; padding: 8px 12px; border: 1px solid var(--rot); background: var(--rot-hell); color: var(--rot); }
 /* Erschöpft: Jacobs Handschrift wird zittrig (GDD §4). */
-.desk.erschoepft .log li, .desk.erschoepft .familie .jacob { font-style: italic; transform: skewX(-6deg); letter-spacing: 0.03em; color: #4a3f33; }
+.desk.erschoepft .log li, .desk.erschoepft .familie .jacob { font-style: italic; transform: skewX(-6deg); letter-spacing: 0.03em; color: var(--tinte-weich); }
 /* Kapitelende (2.9): Was aus Silas und Moss wurde. */
-.terms.boegen { display: block; }
-.terms.boegen .bogen { margin-bottom: 6px; }
-.terms.boegen dt { color: #333; }
+.boegen { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 10px; }
 
 /* Kapitelende (2.11): Kapitelprüfung und Börsengang */
 .pruefung { list-style: none; padding: 0; margin: 8px 0; }
 .pruefung li { margin: 2px 0; }
-.pruefung .bonus { color: #555; font-size: 0.95rem; }
-.pruefung .ok { color: #2e7d32; font-weight: bold; }
-.pruefung .nein { color: #b3261e; font-weight: bold; }
-.kapitelende .ipo { margin: 12px 0; padding: 10px; border: 1px dashed #888; }
+.pruefung .bonus { color: var(--tinte-weich); font-size: 0.97rem; }
+.pruefung .ok { color: var(--gruen); font-weight: bold; }
+.pruefung .nein { color: var(--rot); font-weight: bold; }
+.kapitelende .ipo { margin: 12px 0; padding: 10px 12px; border: 1px dashed var(--linie); background: var(--papier); }
+.kapitelende .ipo h3 { margin-top: 0; }
+input { font: inherit; color: var(--tinte); background: var(--papier-hell); border: 1px solid var(--linie); padding: 1px 6px; }
+input[type='checkbox'] { accent-color: var(--tinte-weich); }

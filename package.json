@@ -1,7 +1,7 @@
 {
   "name": "crude",
   "private": true,
-  "version": "0.2.11",
+  "version": "0.2.12",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,9 +12,11 @@
     "typecheck": "tsc --noEmit",
     "bots": "tsx tools/botlaeufe.ts",
     "check:content": "tsx tools/checkContent.ts",
-    "release": "node tools/release.mjs"
+    "release": "node tools/release.mjs",
+    "screenshots": "tsx tools/screenshots.ts"
   },
   "dependencies": {
+    "@fontsource/eb-garamond": "^5.3.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "yaml": "^2.9.1"

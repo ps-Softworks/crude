@@ -6,17 +6,24 @@ import { leaseOf, optionOf, roundsLeft } from '../sim/lease';
 const CELL = 48;
 const GULF = 40;
 
-const DEBUG_COLORS = { dry: '#c9c2b4', small: '#8a7f6b', gusher: '#2b2620' } as const;
+// Farben nur aus den CSS-Variablen in style.css (2.12). SVG-Attribute verstehen
+// var() nicht, darum gehen alle Farben über style={{ fill, stroke }}.
+const DEBUG_COLORS = { dry: 'var(--grau-hell)', small: 'var(--tinte-blass)', gusher: 'var(--oel)' } as const;
 
 // Kennfarben: eigene Pacht = Grün, eigene Option = Blau (gestrichelt), Fund = Ocker.
-const LEASE_COLOR = '#2f6b3a';
-const LEASE_FILL = '#b9cdb5';
-const OPTION_COLOR = '#2d5a8a';
-const OPTION_FILL = '#c4d2e0';
-const DISCOVERY_FILL = '#c9a95c';
-// Rivale Bullard: rotbraun, Kürzel „B“.
-const RIVAL_COLOR = '#8a3b2f';
-const RIVAL_FILL = '#e0c2b8';
+const LEASE_COLOR = 'var(--gruen)';
+const LEASE_FILL = 'var(--gruen-hell)';
+const OPTION_COLOR = 'var(--blau)';
+const OPTION_FILL = 'var(--blau-hell)';
+const DISCOVERY_FILL = 'var(--ocker-hell)';
+// Rivale Bullard: rostbraun, Kürzel „B“.
+const RIVAL_COLOR = 'var(--rost)';
+const RIVAL_FILL = 'var(--rost-hell)';
+const LAND = 'var(--land)';
+const GRENZE = 'var(--linie)';
+const TINTE = 'var(--tinte)';
+const ROT = 'var(--rot)';
+const GRAU = 'var(--grau)';
 
 interface Props {
   balance: Balance;
@@ -43,7 +50,7 @@ export function Map({ balance, game, debug, selected, highlight, onSelect }: Pro
         const rivalWell = game.rival.wells.find((rw) => rw.parcelId === p.id);
         const x = p.x * CELL;
         const y = p.y * CELL;
-        let fill = '#d8d8d8';
+        let fill = LAND;
         if (p.discovery) fill = DISCOVERY_FILL;
         else if (rivals) fill = RIVAL_FILL;
         else if (lease) fill = LEASE_FILL;
@@ -62,8 +69,7 @@ export function Map({ balance, game, debug, selected, highlight, onSelect }: Pro
               y={y + 1}
               width={CELL - 2}
               height={CELL - 2}
-              fill={fill}
-              stroke={isSelected ? '#b3261e' : '#9a9a9a'}
+              style={{ fill, stroke: isSelected ? ROT : GRENZE }}
               strokeWidth={isSelected ? 3 : 1}
             />
             {markColor && (
@@ -73,19 +79,19 @@ export function Map({ balance, game, debug, selected, highlight, onSelect }: Pro
                 width={CELL - 8}
                 height={CELL - 8}
                 fill="none"
-                stroke={markColor}
+                style={{ stroke: markColor }}
                 strokeWidth={2.5}
                 strokeDasharray={option ? '5 3' : undefined}
                 pointerEvents="none"
               />
             )}
             {tag && (
-              <text x={x + 8} y={y + 16} className="tag" fill={markColor}>
+              <text x={x + 8} y={y + 16} className="tag" style={{ fill: markColor }}>
                 {tag}
               </text>
             )}
             {left !== undefined && (
-              <text x={x + CELL - 8} y={y + CELL - 8} textAnchor="end" className="tag" fill={markColor}>
+              <text x={x + CELL - 8} y={y + CELL - 8} textAnchor="end" className="tag" style={{ fill: markColor }}>
                 {left}
               </text>
             )}
@@ -93,8 +99,10 @@ export function Map({ balance, game, debug, selected, highlight, onSelect }: Pro
               // Bohrturm auf eigenen Bohrungen; Farbe nach Ergebnis.
               <polygon
                 points={`${x + CELL / 2},${y + 12} ${x + CELL / 2 - 8},${y + CELL - 12} ${x + CELL / 2 + 8},${y + CELL - 12}`}
-                fill={well.status === 'found' ? '#2b2620' : 'none'}
-                stroke={well.status === 'dry' ? '#9a9a9a' : well.status === 'stuck' ? '#b3261e' : '#222'}
+                style={{
+                  fill: well.status === 'found' ? 'var(--oel)' : 'none',
+                  stroke: well.status === 'dry' ? GRAU : well.status === 'stuck' ? ROT : TINTE,
+                }}
                 strokeWidth={2}
                 pointerEvents="none"
               />
@@ -103,8 +111,10 @@ export function Map({ balance, game, debug, selected, highlight, onSelect }: Pro
               // Kleiner Turm für Bullards Bohrung; gefüllt, wenn er Öl gefunden hat.
               <polygon
                 points={`${x + CELL / 2},${y + 18} ${x + CELL / 2 - 6},${y + CELL - 14} ${x + CELL / 2 + 6},${y + CELL - 14}`}
-                fill={rivalWell.status === 'found' ? RIVAL_COLOR : 'none'}
-                stroke={rivalWell.status === 'dry' ? '#9a9a9a' : RIVAL_COLOR}
+                style={{
+                  fill: rivalWell.status === 'found' ? RIVAL_COLOR : 'none',
+                  stroke: rivalWell.status === 'dry' ? GRAU : RIVAL_COLOR,
+                }}
                 strokeWidth={2}
                 pointerEvents="none"
               />
@@ -120,7 +130,7 @@ export function Map({ balance, game, debug, selected, highlight, onSelect }: Pro
               <polygon
                 points={`${x + CELL / 2},${y + 10} ${x + CELL / 2 - 10},${y + CELL - 10} ${x + CELL / 2 + 10},${y + CELL - 10}`}
                 fill="none"
-                stroke="#222"
+                style={{ stroke: TINTE }}
                 strokeWidth={2}
                 pointerEvents="none"
               />
@@ -156,14 +166,14 @@ export function Map({ balance, game, debug, selected, highlight, onSelect }: Pro
         cy={saltHill.y * CELL + CELL / 2}
         r={CELL * balance.geology.zones[0].maxDistance}
         fill="none"
-        stroke="#555"
+        style={{ stroke: 'var(--tinte-weich)' }}
         strokeDasharray="6 4"
         pointerEvents="none"
       />
       <text x={saltHill.x * CELL + CELL / 2} y={(saltHill.y - balance.geology.zones[0].maxDistance) * CELL - 6} textAnchor="middle" className="place">
         Salt Hill
       </text>
-      <rect x={0} y={h} width={w} height={GULF} fill="#a9b8c2" />
+      <rect x={0} y={h} width={w} height={GULF} style={{ fill: 'var(--meer)' }} />
       <text x={w - 12} y={h + 26} textAnchor="end" className="place">
         Golf · Port Ellis
       </text>
