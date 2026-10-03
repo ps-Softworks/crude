@@ -11,6 +11,7 @@ import { TRANSPORT_MODES, type Balance } from './balance';
 import { headroom, takeLoan } from './credit';
 import { applyAction, parcelActions, type DeskActionKind } from './desk';
 import { stageCost, wellOf } from './drilling';
+import { chapterCheck } from './chapter';
 import { empireValue } from './empire';
 import { endRound, newGame, type GameState } from './game';
 import { leaseOf, leaseTerms, optionOf } from './lease';
@@ -220,6 +221,8 @@ export function botTurn(state: GameState, balance: Balance, strategy: Strategy, 
 
 export interface GameResult {
   bankrupt: boolean;
+  /** Kapitelprüfung (2.11) bestanden. */
+  goal: boolean;
   empire: number;
   rounds: number;
   state: GameState;
@@ -237,13 +240,16 @@ export function playGame(seed: string, balance: Balance, strategy: Strategy): Ga
     state = endRound(botTurn(state, balance, strategy, rng), balance);
     rounds++;
   }
-  return { bankrupt: state.ending === 'pleite', empire: empireValue(state, balance), rounds, state };
+  const bankrupt = state.ending === 'pleite';
+  return { bankrupt, goal: !bankrupt && chapterCheck(state, balance).passed, empire: empireValue(state, balance), rounds, state };
 }
 
 export interface BotRow {
   strategy: Strategy;
   games: number;
   bankruptRate: number;
+  /** Anteil der Partien, in denen die Kapitelprüfung (2.11) bestanden ist. */
+  goalRate: number;
   meanEmpire: number;
   /** Anteil der Seeds, in denen diese Strategie den höchsten Imperiumswert hat (Gleichstand wird geteilt). */
   winRate: number;
@@ -268,8 +274,8 @@ export function seedWinners(results: readonly { strategy: Strategy; bankrupt: bo
 
 /** Spielt games Partien je Strategie, für jede Strategie mit denselben Seeds. */
 export function runBots(balance: Balance, games = balance.bots.games): BotRow[] {
-  const summe = new Map<Strategy, { pleiten: number; wert: number; siege: number; bKasse: number; bQuellen: number }>(
-    STRATEGIES.map((s) => [s, { pleiten: 0, wert: 0, siege: 0, bKasse: 0, bQuellen: 0 }]),
+  const summe = new Map<Strategy, { pleiten: number; ziel: number; wert: number; siege: number; bKasse: number; bQuellen: number }>(
+    STRATEGIES.map((s) => [s, { pleiten: 0, ziel: 0, wert: 0, siege: 0, bKasse: 0, bQuellen: 0 }]),
   );
   for (let i = 0; i < games; i++) {
     const seed = `${balance.bots.seedPrefix}-${i}`;
@@ -277,6 +283,7 @@ export function runBots(balance: Balance, games = balance.bots.games): BotRow[] 
       const r = playGame(seed, balance, strategy);
       const s = summe.get(strategy)!;
       if (r.bankrupt) s.pleiten++;
+      if (r.goal) s.ziel++;
       s.wert += r.empire;
       s.bKasse += r.state.rival.cash;
       s.bQuellen += r.state.rival.wells.filter((w) => w.status === 'found').length;
@@ -291,6 +298,7 @@ export function runBots(balance: Balance, games = balance.bots.games): BotRow[] 
       strategy,
       games,
       bankruptRate: anteil(s.pleiten),
+      goalRate: anteil(s.ziel),
       meanEmpire: anteil(s.wert),
       winRate: anteil(s.siege),
       rivalCash: anteil(s.bKasse),
@@ -307,11 +315,11 @@ function prozent(value: number): string {
 export function botTable(rows: readonly BotRow[]): string {
   const zeilen = rows.map(
     (r) =>
-      `| ${r.strategy} | ${r.games.toLocaleString('de-DE')} | ${prozent(r.bankruptRate)} | ${Math.round(r.meanEmpire).toLocaleString('de-DE')} $ | ${prozent(r.winRate)} | ${Math.round(r.rivalCash).toLocaleString('de-DE')} $ | ${r.rivalWells.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} |`,
+      `| ${r.strategy} | ${r.games.toLocaleString('de-DE')} | ${prozent(r.bankruptRate)} | ${prozent(r.goalRate)} | ${Math.round(r.meanEmpire).toLocaleString('de-DE')} $ | ${prozent(r.winRate)} | ${Math.round(r.rivalCash).toLocaleString('de-DE')} $ | ${r.rivalWells.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} |`,
   );
   return [
-    '| Strategie | Partien | Bankrottquote | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen |',
-    '| --- | ---: | ---: | ---: | ---: | ---: | ---: |',
+    '| Strategie | Partien | Bankrottquote | Kapitelziel | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen |',
+    '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
     ...zeilen,
   ].join('\n');
 }

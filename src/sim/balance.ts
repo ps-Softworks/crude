@@ -182,6 +182,20 @@ export interface CreditBalance {
 
 /** Bankrott: Frist, bevor es Konkurs gibt. */
 /** Imperiumswert (GDD §4). */
+/** Kapitelprüfung und Kapitelende (2.11, GDD §13, §8). */
+export interface ChapterBalance {
+  /** Ziel: Imperiumswert ab so viel $ … */
+  goalValue: number;
+  /** … oder so viele fördernde Quellen. */
+  goalWells: number;
+  ipo: {
+    /** Anteile (0–1), die Jacob beim Börsengang verkaufen kann. */
+    shares: number[];
+    /** Anleger zahlen Imperiumswert × Anteil × priceFactor. */
+    priceFactor: number;
+  };
+}
+
 export interface EmpireBalance {
   /** Anteil, mit dem die förderbaren Barrel im Boden zählen. */
   reserveFactor: number;
@@ -297,6 +311,7 @@ export interface Balance {
   credit: CreditBalance;
   bankruptcy: BankruptcyBalance;
   empire: EmpireBalance;
+  chapter: ChapterBalance;
   bots: BotsBalance;
   events: EventsBalance;
   agenda: AgendaBalance;
@@ -845,6 +860,20 @@ function parseEmpire(raw: unknown): EmpireBalance {
   return { reserveFactor: share(raw, 'empire.reserveFactor') };
 }
 
+function parseChapter(raw: unknown): ChapterBalance {
+  const block = (raw as { chapter?: unknown })?.chapter;
+  if (!block || typeof block !== 'object') throw new BalanceError('balance.yaml: Block "chapter" fehlt');
+  const shares = list(raw, 'chapter.ipo.shares');
+  if (!shares.every((s) => typeof s === 'number' && s > 0 && s < 0.5)) {
+    throw new BalanceError('balance.yaml: "chapter.ipo.shares" darf nur Anteile über 0 und unter 0,5 enthalten (Jacob behält die Mehrheit)');
+  }
+  return {
+    goalValue: num(raw, 'chapter.goalValue'),
+    goalWells: positiveInt(raw, 'chapter.goalWells'),
+    ipo: { shares: shares as number[], priceFactor: share(raw, 'chapter.ipo.priceFactor') },
+  };
+}
+
 function parseBots(raw: unknown): BotsBalance {
   const block = (raw as { bots?: unknown })?.bots;
   if (!block || typeof block !== 'object') throw new BalanceError('balance.yaml: Block "bots" fehlt');
@@ -1020,6 +1049,7 @@ export function parseBalance(raw: unknown): Balance {
     bankruptcy: parseBankruptcy(raw),
     rivals: parseRivals(raw),
     empire: parseEmpire(raw),
+    chapter: parseChapter(raw),
     bots: parseBots(raw),
     events: parseEvents(raw),
     agenda: parseAgenda(raw),

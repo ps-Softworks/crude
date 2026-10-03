@@ -15,6 +15,7 @@ import { balance } from './balance';
 import { events } from './events';
 import { clearAutosave, loadAutosave, writeAutosave } from './autosave';
 import { Desk } from './Desk';
+import { decideIpo } from '../sim/chapter';
 import { ChapterEndScreen } from './ChapterEndScreen';
 import { GameOverScreen } from './GameOverScreen';
 import { debugToolsVisible } from './testerConfig';
@@ -107,6 +108,13 @@ export function App() {
     setNotice(null);
   }
 
+  // Entscheidung zur Aktiengesellschaft am Kapitelende (2.11).
+  function ipo(share: number) {
+    const result = decideIpo(game, balance, share);
+    if (result.ok) setGame(result.state);
+    else setNotice(result.reason);
+  }
+
   function startNewWorld(neuerSeed: string) {
     setSeed(neuerSeed);
     setGame(newGame(neuerSeed, balance, events));
@@ -138,7 +146,9 @@ export function App() {
         debugTools={debugTools}
         seed={seed}
         chapterEnd={
-          game.ending === 'kapitel' || game.ending === 'verkauft' ? <ChapterEndScreen game={game} onRestart={() => startNewWorld(randomSeed())} /> : null
+          game.ending === 'kapitel' || game.ending === 'verkauft' ? (
+            <ChapterEndScreen game={game} onRestart={() => startNewWorld(randomSeed())} onIpo={ipo} />
+          ) : null
         }
         parcelPanel={
           parcel ? (

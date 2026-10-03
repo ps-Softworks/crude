@@ -1,0 +1,87 @@
+# Kapitelende (2.11, GDD §13, §14): Texte für den Ergebnisbildschirm von Kapitel 1.
+# Die Zahlen der Kapitelprüfung (Imperiumswert, Quellen, Börsengang) stehen in
+# content/balance.yaml unter chapter. Die Regeln in src/sim/chapter.ts.
+#
+# Platzhalter in Texten: {anteil} = verkaufter Anteil in %, {preis} = Erlös in $.
+#
+# Entwurf – Philipp überarbeitet.
+
+draft: true
+
+# Ausgänge des Kapitels. erreicht/verfehlt nach der Kapitelprüfung,
+# verkauft = frühes Ende „Der kluge Mann“ (Crane-Übernahme angenommen).
+endings:
+  erreicht:
+    title: { de: "Kapitel 1 geschafft", en: "Chapter 1 Complete" }
+    text:
+      de: >-
+        Vier Jahre in Cordova. Aus dem geliehenen Bohrturm ist eine Firma geworden,
+        mit der man in Port Ellis rechnen muss. Die Bank grüßt Jacob jetzt zuerst.
+      en: >-
+        Four years in Cordova. The borrowed rig has become a company Port Ellis has
+        to reckon with. The bank greets Jacob first now.
+  verfehlt:
+    title: { de: "Kapitel 1 verfehlt", en: "Chapter 1 Missed" }
+    text:
+      de: >-
+        Vier Jahre in Cordova, und Jacob ist noch immer ein kleiner Wildcatter. Die
+        Firma lebt, aber sie ist zu klein, um Anleger oder Banker zu beeindrucken.
+        Er wird geschwächt in die nächsten Jahre gehen.
+      en: >-
+        Four years in Cordova, and Jacob is still a small wildcatter. The company is
+        alive, but too small to impress investors or bankers. He goes into the next
+        years weakened.
+  verkauft:
+    title: { de: "Der kluge Mann", en: "The Wise Man" }
+    text:
+      de: >-
+        Jacob Harlan hat seine Firma an den Crane Trust verkauft. Cornelius Crane
+        schüttelt ihm die Hand, als hätte er nie etwas anderes erwartet. Jacob ist ein
+        reicher Mann – und in Cordova bohrt jetzt ein anderer.
+      en: >-
+        Jacob Harlan has sold his company to the Crane Trust. Cornelius Crane shakes
+        his hand as if he had never expected anything else. Jacob is a rich man – and
+        someone else drills in Cordova now.
+
+# Die Prüfung selbst, wie sie auf dem Bildschirm steht.
+goals:
+  solvent: { de: "Nicht bankrott (Kasse nicht im Minus)", en: "Not bankrupt (cash not negative)" }
+  value: { de: "Imperiumswert mindestens {ziel}", en: "Empire value at least {ziel}" }
+  wells: { de: "oder mindestens {ziel} fördernde Quellen", en: "or at least {ziel} producing wells" }
+
+# Boni (GDD §13): zeigen nur an, was Jacob zusätzlich geschafft hat.
+# transport.any: Merkzeichen, die als eigene Transportlösung zählen (eins reicht).
+# Eigene Fuhrwerke oder eine Pipeline gibt es in Kapitel 1 noch nicht – bis dahin
+# zählt der Frachtvertrag mit Thorne. Die Silas-Frage gilt als geklärt, sobald der
+# Bogen in content/arcs.yaml einen Ausgang hat.
+bonus:
+  transport:
+    any: [thorne_vertrag]
+    label: { de: "Eigene Transportlösung", en: "Own transport solution" }
+  silas:
+    label: { de: "Silas-Frage geklärt", en: "Silas question settled" }
+
+# Entscheidung zum Kapitelende: Umwandlung in eine Aktiengesellschaft (GDD §8, §13).
+ipo:
+  title: { de: "Eine Aktiengesellschaft?", en: "A Joint-Stock Company?" }
+  text:
+    de: >-
+      Ein Bankier aus der Hauptstadt sitzt in Jacobs Büro. Er könnte aus der Firma eine
+      Aktiengesellschaft machen und einen Teil der Anteile an Anleger verkaufen. Das
+      bringt Geld für das nächste Kapitel – aber jeder verkaufte Anteil ist eine Stimme,
+      die nicht mehr Jacob gehört.
+    en: >-
+      A banker from the capital sits in Jacob's office. He could turn the company into a
+      joint-stock company and sell part of the shares to investors. That brings money for
+      the next chapter – but every share sold is a vote that no longer belongs to Jacob.
+  sell: { de: "{anteil} verkaufen – {preis}", en: "Sell {anteil} – {preis}" }
+  keep: { de: "Familienfirma bleiben", en: "Stay a family firm" }
+  sold:
+    de: Jacob verkauft {anteil} seiner Firma an Anleger und bekommt {preis}. Er behält die Mehrheit – noch.
+    en: Jacob sells {anteil} of his company to investors and receives {preis}. He keeps the majority – for now.
+  kept:
+    de: Jacob schickt den Bankier wieder nach Hause. Die Firma bleibt in der Familie.
+    en: Jacob sends the banker home. The company stays in the family.
+  blocked:
+    de: Für eine so kleine Firma interessiert sich kein Anleger. Die Firma bleibt in der Familie.
+    en: No investor is interested in such a small company. It stays in the family.

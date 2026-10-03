@@ -226,6 +226,17 @@ bankruptcy:
 empire:
   reserveFactor: 0.4       # GDD §4: Reserven im Boden vorsichtig bewertet
 
+# Kapitelprüfung und Kapitelende (2.11, GDD §13, §14, §8 Börsengang).
+# Geschafft ist Kapitel 1, wenn Jacob am Ende nicht bankrott ist (Kasse nicht im Minus)
+# und der Imperiumswert mindestens goalValue beträgt ODER mindestens goalWells Quellen fördern.
+# Texte und Boni: content/chapter.yaml. Wer das Ziel verfehlt, darf keine Aktien ausgeben.
+chapter:
+  goalValue: 50000         # GDD §13: Imperiumswert ab so viel $ …
+  goalWells: 5             # … oder so viele fördernde Quellen
+  ipo:
+    shares: [0.2, 0.33, 0.49]  # GDD §8: zur Wahl stehende Anteile, die Jacob verkaufen kann (typisch 20–49 %)
+    priceFactor: 0.8           # PLATZHALTER: Anleger zahlen Imperiumswert × Anteil × 0,8 (Abschlag für Risiko und Bankprovision)
+
 # Bot-Läufe (GDD §17, Schritt 1.14): Partien ohne Grafik mit drei Strategien.
 # Was die Bots damit machen, steht in src/sim/bots.ts. Alle Werte PLATZHALTER.
 bots:

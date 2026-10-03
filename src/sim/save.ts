@@ -6,11 +6,11 @@
 
 import type { GameState } from './game';
 
-/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a). */
-export const SAVE_FORMAT = 8;
+/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11). */
+export const SAVE_FORMAT = 9;
 
 /** Ältere Formate, die mit Ersatzwerten noch geladen werden. */
-const ALTE_FORMATE = [2, 3, 4, 5, 6, 7];
+const ALTE_FORMATE = [2, 3, 4, 5, 6, 7, 8];
 
 export interface SaveFile {
   format: number;
@@ -121,6 +121,10 @@ export function validateState(value: unknown): LoadResult {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
   if (typeof value.finished !== 'boolean') return { ok: false, reason: UNVOLLSTAENDIG };
+  const ipo = value.ipo;
+  if (ipo !== null && !(istObjekt(ipo) && istZahl(ipo.share) && ipo.share >= 0 && ipo.share < 1 && istZahl(ipo.proceeds))) {
+    return { ok: false, reason: UNVOLLSTAENDIG };
+  }
   if (value.ending !== null && value.ending !== 'kapitel' && value.ending !== 'pleite' && value.ending !== 'verkauft') {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
@@ -186,5 +190,7 @@ export function deserializeGame(text: string): LoadResult {
   // Ersatzwert (2.8): Spielstände bis Format 6 kennen keine Wildcatter – die
   // Nachbarquellen bleiben namenlos (der Markt rechnet sie trotzdem mit).
   if (state.wildcatters === undefined) state = { ...state, wildcatters: { rng: 0, firms: [] } };
+  // Ersatzwert (2.11): Spielstände bis Format 8 kennen keinen Börsengang – noch nicht entschieden.
+  if (state.ipo === undefined) state = { ...state, ipo: null };
   return validateState(state);
 }

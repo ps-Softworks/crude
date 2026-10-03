@@ -2,13 +2,17 @@
 // Imperiumswert aus src/sim und lädt zum Feedback und zu einer neuen Partie ein.
 // 2.9: „Was aus ihnen wurde“ – wie die Story-Bögen Silas und Moss ausgegangen sind.
 // 2.8: Auch das frühe Ende „Der kluge Mann“ – Jacob hat an den Crane Trust verkauft.
+// 2.11: Kapitelprüfung (erreicht/verfehlt) mit Boni und die Entscheidung zur
+// Aktiengesellschaft. Regeln in src/sim/chapter.ts, Texte in content/chapter.yaml.
 
 import { arcSummaries } from '../sim/arcs';
+import { canGoPublic, chapterBonuses, chapterCheck, chapterResult, fillText, ipoProceeds } from '../sim/chapter';
 import { debt } from '../sim/credit';
 import { empireValue } from '../sim/empire';
 import { formatDate, type GameState } from '../sim/game';
 import { arcContent } from './arcs';
 import { balance } from './balance';
+import { chapterContent } from './chapter';
 import { FeedbackLink } from './FeedbackLink';
 
 function money(value: number) {
@@ -19,22 +23,57 @@ function barrels(value: number) {
   return value.toLocaleString('de-DE');
 }
 
-export function ChapterEndScreen({ game, onRestart }: { game: GameState; onRestart: () => void }) {
+function prozent(share: number) {
+  return `${Math.round(share * 100)} %`;
+}
+
+function Haken({ ok }: { ok: boolean }) {
+  return <span className={ok ? 'ok' : 'nein'}>{ok ? '✓' : '✗'}</span>;
+}
+
+export function ChapterEndScreen({
+  game,
+  onRestart,
+  onIpo,
+}: {
+  game: GameState;
+  onRestart: () => void;
+  onIpo: (share: number) => void;
+}) {
+  const ergebnis = chapterResult(game, balance);
+  const verkauft = ergebnis === 'verkauft';
+  const ende = chapterContent.endings[ergebnis === 'erreicht' || ergebnis === 'verkauft' ? ergebnis : 'verfehlt'];
   const quellen = game.wells.filter((w) => w.status === 'found');
-  const verkauft = game.ending === 'verkauft';
+  const pruefung = chapterCheck(game, balance);
+  const boni = chapterBonuses(game, chapterContent, arcContent);
+  const { goals, bonus, ipo } = chapterContent;
   return (
-    <section className="gameover kapitelende">
-      <h2>{verkauft ? 'Der kluge Mann' : 'Kapitel 1 ist zu Ende'}</h2>
-      {verkauft ? (
-        <p>
-          {formatDate(game)}: Jacob Harlan hat seine Firma an den Crane Trust verkauft. Cornelius Crane schüttelt ihm die
-          Hand, als hätte er nie etwas anderes erwartet. Jacob ist ein reicher Mann – und in Cordova bohrt jetzt ein
-          anderer.
-        </p>
-      ) : (
-        <p>
-          {formatDate(game)}: Die {game.totalRounds} Runden in Cordova sind gespielt. So steht Jacob Harlans Firma da:
-        </p>
+    <section className={`gameover kapitelende ${ergebnis ?? ''}`}>
+      <h2>{fillText(ende.title, {})}</h2>
+      <p>
+        {formatDate(game)}: {fillText(ende.text, {})}
+      </p>
+      {!verkauft && (
+        <>
+          <h3>Kapitelprüfung</h3>
+          <ul className="pruefung">
+            <li>
+              <Haken ok={pruefung.solvent} /> {fillText(goals.solvent, {})}
+            </li>
+            <li>
+              <Haken ok={pruefung.valueReached} /> {fillText(goals.value, { ziel: money(balance.chapter.goalValue) })} ({money(pruefung.value)})
+            </li>
+            <li>
+              <Haken ok={pruefung.wellsReached} /> {fillText(goals.wells, { ziel: String(balance.chapter.goalWells) })} ({pruefung.wells})
+            </li>
+            <li className="bonus">
+              <Haken ok={boni.transport} /> Bonus: {fillText(bonus.transport.label, {})}
+            </li>
+            <li className="bonus">
+              <Haken ok={boni.silas} /> Bonus: {fillText(bonus.silas.label, {})}
+            </li>
+          </ul>
+        </>
       )}
       <dl className="terms">
         <dt>{verkauft ? 'Kaufpreis' : 'Imperiumswert'}</dt>
@@ -52,6 +91,30 @@ export function ChapterEndScreen({ game, onRestart }: { game: GameState; onResta
         <dt>Rating</dt>
         <dd>{game.rating}</dd>
       </dl>
+      {!verkauft && (
+        <div className="ipo">
+          <h3>{fillText(ipo.title, {})}</h3>
+          {game.ipo === null && canGoPublic(game, balance) ? (
+            <>
+              <p>{fillText(ipo.text, {})}</p>
+              <div className="knoepfe">
+                {balance.chapter.ipo.shares.map((share) => (
+                  <button key={share} onClick={() => onIpo(share)}>
+                    {fillText(ipo.sell, { anteil: prozent(share), preis: money(ipoProceeds(game, balance, share)) })}
+                  </button>
+                ))}
+                <button onClick={() => onIpo(0)}>{fillText(ipo.keep, {})}</button>
+              </div>
+            </>
+          ) : game.ipo !== null && game.ipo.share > 0 ? (
+            <p>{fillText(ipo.sold, { anteil: prozent(game.ipo.share), preis: money(game.ipo.proceeds) })}</p>
+          ) : game.ipo !== null ? (
+            <p>{fillText(ipo.kept, {})}</p>
+          ) : (
+            <p>{fillText(ipo.blocked, {})}</p>
+          )}
+        </div>
+      )}
       <h3>Was aus ihnen wurde</h3>
       <dl className="terms boegen">
         {arcSummaries(game, arcContent).map((b) => (

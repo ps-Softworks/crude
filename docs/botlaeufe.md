@@ -1,20 +1,21 @@
 # Bot-Läufe
 
-Stand: 2026-10-03 · Version 0.2.8
+Stand: 2026-10-03 · Version 0.2.11
 
 - Partien je Strategie: 1.000
 - Seeds: `bot-0` bis `bot-999` (für jede Strategie dieselben)
 - Erzeugt mit `npm run bots` (tools/botlaeufe.ts, Regeln in src/sim/bots.ts)
 
-| Strategie | Partien | Bankrottquote | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| vorsichtig | 1.000 | 0,0 % | 27.995 $ | 56,2 % | 33.378 $ | 8,5 |
-| gierig | 1.000 | 28,4 % | 42.104 $ | 42,9 % | 28.288 $ | 8,3 |
-| zufaellig | 1.000 | 0,0 % | 479 $ | 0,9 % | 40.918 $ | 8,8 |
+| Strategie | Partien | Bankrottquote | Kapitelziel | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| vorsichtig | 1.000 | 0,0 % | 23,7 % | 27.995 $ | 56,2 % | 33.378 $ | 8,5 |
+| gierig | 1.000 | 28,4 % | 34,2 % | 42.104 $ | 42,9 % | 28.288 $ | 8,3 |
+| zufaellig | 1.000 | 0,0 % | 0,1 % | 479 $ | 0,9 % | 40.918 $ | 8,8 |
 
 - **vorsichtig:** bohrt und kauft nur, wenn danach noch die Rücklage in der Kasse bleibt, kauft nur Optionen, deren Bonus er danach auch zahlen kann, nimmt nie selbst einen Kredit.
 - **gierig:** bohrt jede Pacht, bohrt immer tiefer (gibt auf, wenn auch ein Kredit nicht mehr reicht), pachtet die beste bezahlbare Prognose, solange Kasse und Bankrahmen reichen und höchstens so viele Pachten ungebohrt sind, wie in balance.yaml steht; leiht fehlendes Geld und behält Bargeld für den Verzögerungszins.
 - **zufällig:** wählt jede Runde einige erlaubte Aktionen per Zufall.
+- **Kapitelziel:** Anteil der Partien, in denen die Kapitelprüfung bestanden ist (nicht bankrott und Imperiumswert ≥ 50.000 $ oder 5 fördernde Quellen, Zahlen in balance.yaml unter chapter).
 - **Siegquote:** Anteil der Seeds, in denen die Strategie den höchsten Imperiumswert hat. Eine Pleite zählt immer als letzter Platz, Gleichstand wird geteilt.
 
 ## Justierung 1.15

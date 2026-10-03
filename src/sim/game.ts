@@ -5,6 +5,7 @@ import { newAgenda, settleAgenda, type AgendaState } from './agenda';
 import type { Balance, Rating, TransportMode } from './balance';
 import { formatDate } from './calendar';
 import { checkBankruptcy, settleLoans, type Loan } from './credit';
+import { chapterCheck } from './chapter';
 import { advanceDrilling, type Well } from './drilling';
 import { assignFields, buildFields, type Field } from './field';
 import { makeForecasts, type Forecast } from './forecast';
@@ -65,6 +66,8 @@ export interface GameState {
   finished: boolean;
   /** Wie das Spiel endet, oder null, solange es weitergeht. */
   ending: Ending;
+  /** Börsengang am Kapitelende (2.11): null = noch nicht entschieden; share 0 = Familienfirma, sonst verkaufter Anteil und Erlös in $. */
+  ipo: { share: number; proceeds: number } | null;
   /** Rivale Bullard: Pachten, Bohrungen, Einkommen. */
   rival: RivalState;
   /** Kleine Wildcatter im Hintergrund (2.8): Namen für die Nachbarquellen. */
@@ -122,6 +125,7 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
     bankruptcyDeadline: 0,
     finished: false,
     ending: null,
+    ipo: null,
     log: [],
     roundLogStart: 0,
     rival: newRival(seed, balance),
@@ -156,7 +160,7 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
  * Pleiteprüfung. Die Förderung kommt zuerst, damit eine Quelle, die gerade ihren
  * Abschlussbohrung hinter sich hat, erst in der nächsten Runde Öl liefert. Bei
  * Pleite ist sofort Schluss: keine neue Runde und keine Kapitelprüfung. Nach der
- * letzten Runde ist das Kapitel beendet. Was ab hier ins Protokoll kommt, gehört
+ * letzten Runde ist das Kapitel beendet und die Kapitelprüfung (2.11) kommt ins Protokoll. Was ab hier ins Protokoll kommt, gehört
  * zur Abrechnung: roundLogStart merkt sich, wie lang das Protokoll davor war.
  * Ereignisse (2.1): Offene bekommen vorher ihre Standard-Antwort, zur neuen
  * Runde werden neue gewürfelt. Termine (2.3): Direkt danach wird die Kraft
@@ -191,12 +195,10 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const state = { ...checkBankruptcy(gefahren, balance), roundLogStart };
   if (state.ending === 'pleite') return state;
   if (state.round >= state.totalRounds) {
-    return {
-      ...state,
-      finished: true,
-      ending: 'kapitel',
-      log: [...state.log, `${formatDate(state)}: Kapitel 1 ist zu Ende.`],
-    };
+    // Kapitelprüfung (2.11): steht im Protokoll, der Ergebnisbildschirm zeigt die Einzelheiten.
+    const ende: GameState = { ...state, finished: true, ending: 'kapitel' };
+    const pruefung = chapterCheck(ende, balance).passed ? 'Das Ziel ist erreicht.' : 'Das Ziel ist verfehlt.';
+    return { ...ende, log: [...state.log, `${formatDate(state)}: Kapitel 1 ist zu Ende. ${pruefung}`] };
   }
   const next = { ...state, round: state.round + 1 };
   // Zur neuen Runde kommen neue Ereignisse auf den Schreibtisch – nach einer Geburt (2.7).

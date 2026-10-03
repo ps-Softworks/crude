@@ -157,3 +157,11 @@ h1 button.neustart { font-size: 12px; font-weight: normal; letter-spacing: norma
 .terms.boegen { display: block; }
 .terms.boegen .bogen { margin-bottom: 6px; }
 .terms.boegen dt { color: #333; }
+
+/* Kapitelende (2.11): Kapitelprüfung und Börsengang */
+.pruefung { list-style: none; padding: 0; margin: 8px 0; }
+.pruefung li { margin: 2px 0; }
+.pruefung .bonus { color: #555; font-size: 0.95rem; }
+.pruefung .ok { color: #2e7d32; font-weight: bold; }
+.pruefung .nein { color: #b3261e; font-weight: bold; }
+.kapitelende .ipo { margin: 12px 0; padding: 10px; border: 1px dashed #888; }
