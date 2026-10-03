@@ -235,7 +235,7 @@ export interface RivalBalance {
   minUtility: number;
   drillRounds: number;
   ratePerWell: number;
-  incomePerWell: number;
+  transportPerBarrel: number;
 }
 
 /** Rivalen im Spiel. */
@@ -661,7 +661,7 @@ function parseRivals(raw: unknown): RivalsBalance {
     minUtility: nonNegative(raw, `${p}.minUtility`),
     drillRounds: positiveInt(raw, `${p}.drillRounds`),
     ratePerWell: nonNegative(raw, `${p}.ratePerWell`),
-    incomePerWell: nonNegative(raw, `${p}.incomePerWell`),
+    transportPerBarrel: nonNegative(raw, `${p}.transportPerBarrel`),
   };
   return { bullard };
 }

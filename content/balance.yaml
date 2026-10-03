@@ -249,5 +249,7 @@ rivals:
     noise: 1000              # 1.16: vorher 200, mit valuePerFind mitgezogen
     minUtility: 0
     drillRounds: 1
-    ratePerWell: 4000
-    incomePerWell: 3000
+    ratePerWell: 4000        # Anfangsförderung je Quelle in Barrel je Runde; fällt wie bei Jacob um production.decline
+    # Nachbesserung 0.1.14+3: statt pauschal 3.000 $ je Quelle und Runde verkauft Bullard
+    # seine Förderung zum Posted Price: Förderung · (Preis · (1 − Förderzins) − Transport).
+    transportPerBarrel: 0.40 # PLATZHALTER: $ je Barrel (eigene Fuhrwerke, zwischen Bahn 0,25 und Fuhrwerk 0,60)

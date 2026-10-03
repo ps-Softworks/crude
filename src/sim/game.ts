@@ -135,7 +135,7 @@ export function endRound(input: GameState, balance: Balance): GameState {
   const markt = advanceMarket(gefoerdert, balance.market, balance.rivals.bullard.ratePerWell);
   const gebohrt = advanceDrilling(markt, balance);
   const gepachtet = settleLeases(gebohrt, balance);
-  const rivale = advanceRival(gepachtet, balance, gebohrt);
+  const rivale = advanceRival(gepachtet, balance, gebohrt, input.postedPrice);
   const verzinst = settleLoans(rivale, balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   const gefahren = advanceTransport(verzinst, balance);

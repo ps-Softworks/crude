@@ -22,9 +22,9 @@ export function neighbourSupply(balance: MarketBalance, round: number): number {
   return neighbourWells(balance, round) * balance.neighbours.ratePerWell;
 }
 
-/** Bullards Förderung je Runde: fündige Bullard-Quellen · ratePerWell. */
+/** Bullards Förderung je Runde: Summe der Raten seiner fündigen Quellen (ratePerWell, wo keine Rate gespeichert ist). */
 export function rivalSupply(state: Pick<GameState, 'rival'>, ratePerWell: number): number {
-  return state.rival.wells.filter((w) => w.status === 'found').length * ratePerWell;
+  return state.rival.wells.filter((w) => w.status === 'found').reduce((sum, w) => sum + (w.rate ?? ratePerWell), 0);
 }
 
 /** Jacobs Förderung der letzten Runde: Summe über alle fündigen Quellen. */

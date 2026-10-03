@@ -247,6 +247,10 @@ export interface BotRow {
   meanEmpire: number;
   /** Anteil der Seeds, in denen diese Strategie den höchsten Imperiumswert hat (Gleichstand wird geteilt). */
   winRate: number;
+  /** Ø Kasse des Rivalen Bullard am Ende der Partie. */
+  rivalCash: number;
+  /** Ø fündige Quellen Bullards am Ende der Partie. */
+  rivalWells: number;
 }
 
 /**
@@ -264,8 +268,8 @@ export function seedWinners(results: readonly { strategy: Strategy; bankrupt: bo
 
 /** Spielt games Partien je Strategie, für jede Strategie mit denselben Seeds. */
 export function runBots(balance: Balance, games = balance.bots.games): BotRow[] {
-  const summe = new Map<Strategy, { pleiten: number; wert: number; siege: number }>(
-    STRATEGIES.map((s) => [s, { pleiten: 0, wert: 0, siege: 0 }]),
+  const summe = new Map<Strategy, { pleiten: number; wert: number; siege: number; bKasse: number; bQuellen: number }>(
+    STRATEGIES.map((s) => [s, { pleiten: 0, wert: 0, siege: 0, bKasse: 0, bQuellen: 0 }]),
   );
   for (let i = 0; i < games; i++) {
     const seed = `${balance.bots.seedPrefix}-${i}`;
@@ -274,6 +278,8 @@ export function runBots(balance: Balance, games = balance.bots.games): BotRow[] 
       const s = summe.get(strategy)!;
       if (r.bankrupt) s.pleiten++;
       s.wert += r.empire;
+      s.bKasse += r.state.rival.cash;
+      s.bQuellen += r.state.rival.wells.filter((w) => w.status === 'found').length;
       return { strategy, bankrupt: r.bankrupt, empire: r.empire };
     });
     for (const [strategy, anteil] of seedWinners(results)) summe.get(strategy)!.siege += anteil;
@@ -281,7 +287,15 @@ export function runBots(balance: Balance, games = balance.bots.games): BotRow[] 
   return STRATEGIES.map((strategy) => {
     const s = summe.get(strategy)!;
     const anteil = (x: number) => (games > 0 ? x / games : 0);
-    return { strategy, games, bankruptRate: anteil(s.pleiten), meanEmpire: anteil(s.wert), winRate: anteil(s.siege) };
+    return {
+      strategy,
+      games,
+      bankruptRate: anteil(s.pleiten),
+      meanEmpire: anteil(s.wert),
+      winRate: anteil(s.siege),
+      rivalCash: anteil(s.bKasse),
+      rivalWells: anteil(s.bQuellen),
+    };
   });
 }
 
@@ -289,15 +303,15 @@ function prozent(value: number): string {
   return `${(value * 100).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
 }
 
-/** Markdown-Tabelle: Quoten in % mit einer Nachkommastelle, Wert in ganzen $. */
+/** Markdown-Tabelle: Quoten in % mit einer Nachkommastelle, Werte in ganzen $, Bullards Quellen mit einer Nachkommastelle. */
 export function botTable(rows: readonly BotRow[]): string {
   const zeilen = rows.map(
     (r) =>
-      `| ${r.strategy} | ${r.games.toLocaleString('de-DE')} | ${prozent(r.bankruptRate)} | ${Math.round(r.meanEmpire).toLocaleString('de-DE')} $ | ${prozent(r.winRate)} |`,
+      `| ${r.strategy} | ${r.games.toLocaleString('de-DE')} | ${prozent(r.bankruptRate)} | ${Math.round(r.meanEmpire).toLocaleString('de-DE')} $ | ${prozent(r.winRate)} | ${Math.round(r.rivalCash).toLocaleString('de-DE')} $ | ${r.rivalWells.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} |`,
   );
   return [
-    '| Strategie | Partien | Bankrottquote | Ø Imperiumswert | Siegquote |',
-    '| --- | ---: | ---: | ---: | ---: |',
+    '| Strategie | Partien | Bankrottquote | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen |',
+    '| --- | ---: | ---: | ---: | ---: | ---: | ---: |',
     ...zeilen,
   ].join('\n');
 }

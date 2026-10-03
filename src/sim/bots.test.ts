@@ -109,7 +109,7 @@ describe('Bot-Läufe', () => {
   it('die Tabelle hat Kopfzeile und eine Zeile je Strategie', () => {
     const table = botTable(runBots(balance, 3));
     const zeilen = table.split('\n');
-    expect(zeilen[0]).toBe('| Strategie | Partien | Bankrottquote | Ø Imperiumswert | Siegquote |');
+    expect(zeilen[0]).toBe('| Strategie | Partien | Bankrottquote | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen |');
     expect(zeilen).toHaveLength(2 + 3);
     for (const s of STRATEGIES) expect(table).toContain(`| ${s} |`);
   });

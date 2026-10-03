@@ -19,6 +19,10 @@ export interface RivalWell {
   /** Runden bis zum Ergebnis (nur solange gebohrt wird). */
   roundsLeft: number;
   status: 'drilling' | 'found' | 'dry';
+  /** Förderung in Barrel je Runde (nur fündige Quellen; fällt je Runde um production.decline). */
+  rate?: number;
+  /** Förderzins der Pacht, auf der die Quelle steht (Anteil am Erlös für den Landbesitzer). */
+  royalty?: number;
 }
 
 export interface RivalState {
@@ -86,6 +90,32 @@ export function rivalUtility(state: GameState, balance: Balance, parcel: Parcel,
   return value - cost + neighbour + noise;
 }
 
+/** Auf ganze Cent runden. */
+function cents(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+/**
+ * Bullards Erlös je Barrel bei einem Posted Price (GDD §7.3, wie bei Jacob):
+ *   Preis · (1 − Förderzins) − Transport, nie unter null
+ * (liegt der Preis darunter, lässt er das Öl im Boden statt draufzuzahlen).
+ */
+export function rivalNetPerBarrel(price: number, royalty: number, transportPerBarrel: number): number {
+  return Math.max(0, price * (1 - royalty) - transportPerBarrel);
+}
+
+/**
+ * Einnahmen einer fündigen Bullard-Quelle in dieser Runde:
+ *   Förderung · (Preis · (1 − Förderzins) − Transport), auf Cent gerundet.
+ */
+export function rivalWellIncome(well: RivalWell, balance: Balance, price: number): number {
+  if (well.status !== 'found') return 0;
+  const b = balance.rivals.bullard;
+  const rate = well.rate ?? b.ratePerWell;
+  const royalty = well.royalty ?? balance.lease.royaltyMin;
+  return cents(rate * rivalNetPerBarrel(price, royalty, b.transportPerBarrel));
+}
+
 /** Parzellen, die Bullard pachten könnte: frei, nicht Salt Hill, nicht schon einmal von ihm gebohrt. Sortiert nach id. */
 export function rivalCandidates(state: GameState, _balance: Balance): Parcel[] {
   const taken = new Set([
@@ -101,17 +131,24 @@ export function rivalCandidates(state: GameState, _balance: Balance): Parcel[] {
 
 /**
  * Bullards Zug am Rundenende, direkt nach der Pacht-Abrechnung:
- *   a) laufende Bohrungen kommen voran, Ergebnis = Geologie der Parzelle;
- *   b) fündige Quellen bringen Geld;
+ *   a) laufende Bohrungen kommen voran, Ergebnis = Geologie der Parzelle
+ *      (ein Fund startet mit ratePerWell Barrel je Runde);
+ *   b) Quellen, die schon vor dieser Runde fündig waren, verkaufen ihre Förderung
+ *      zum Posted Price der Runde (salePrice) abzüglich Förderzins und Transport;
+ *      danach fällt ihre Rate um production.decline (wie bei Jacob). Neue Funde
+ *      liefern erst ab der nächsten Runde;
  *   c) neue Pachten nach Nutzen (je Kandidat genau ein Zufallswert);
  *   d) Geduld 1: jede ungebohrte eigene Pacht wird sofort angebohrt, wenn das Geld reicht.
  * `before` ist der Stand vor der Pacht-Abrechnung: Hatte Jacob dort eine Option
  * oder Pacht, die gerade verfallen ist, schnappt Bullard sie ihm weg.
+ * `salePrice` ist der Posted Price, zu dem in dieser Runde verkauft wird (vor dem
+ * Marktschritt am Rundenende – derselbe Preis, zu dem auch Jacob verkauft).
  */
 export function advanceRival(
   state: GameState,
   balance: Balance,
   before: Pick<GameState, 'leases' | 'options'> = state,
+  salePrice: number = state.postedPrice,
 ): GameState {
   const b = balance.rivals.bullard;
   const date = formatDate(state);
@@ -121,8 +158,18 @@ export function advanceRival(
     return parcel ? parcelLabel(parcel) : parcelId;
   };
 
+  // b) Einnahmen der Quellen, die schon vor dieser Runde förderten; danach Rückgang.
+  let cash = state.rival.cash;
+  const decline = balance.production.decline;
+  const producing = state.rival.wells.map((well) => {
+    if (well.status !== 'found') return well;
+    cash += rivalWellIncome(well, balance, salePrice);
+    return { ...well, rate: (well.rate ?? b.ratePerWell) * (1 - decline) };
+  });
+  cash = cents(cash);
+
   // a) Bohrungen
-  const wells: RivalWell[] = state.rival.wells.map((well) => {
+  const wells: RivalWell[] = producing.map((well) => {
     if (well.status !== 'drilling') return well;
     const roundsLeft = well.roundsLeft - 1;
     if (roundsLeft > 0) return { ...well, roundsLeft };
@@ -133,11 +180,10 @@ export function advanceRival(
         ? `${date}: Bullard stößt auf Parzelle ${parcelLabel(parcel)} auf Öl.`
         : `${date}: Bullard bohrt auf Parzelle ${parcelLabel(parcel)} trocken.`,
     );
-    return { ...well, roundsLeft: 0, status };
+    if (status === 'dry') return { ...well, roundsLeft: 0, status };
+    const royalty = state.leases.find((l) => l.parcelId === well.parcelId && l.holder === 'bullard')?.royalty;
+    return { ...well, roundsLeft: 0, status, rate: b.ratePerWell, royalty: royalty ?? balance.lease.royaltyMin };
   });
-
-  // b) Einnahmen
-  let cash = state.rival.cash + wells.filter((w) => w.status === 'found').length * b.incomePerWell;
 
   // c) Pachten: jeder Kandidat bekommt genau einen Zufallswert, in id-Reihenfolge.
   const rng = new Rng(state.rival.rng);

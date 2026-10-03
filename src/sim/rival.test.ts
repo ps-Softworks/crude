@@ -4,7 +4,7 @@ import { stageCost, type Well } from './drilling';
 import { endRound, newGame, type GameState } from './game';
 import { buyLease, leaseTerms, settleLeases, type Lease } from './lease';
 import { advanceMarket } from './market';
-import { advanceRival, newRival, rivalCandidates, rivalChance, rivalUtility } from './rival';
+import { advanceRival, newRival, rivalCandidates, rivalChance, rivalNetPerBarrel, rivalUtility, rivalWellIncome, type RivalWell } from './rival';
 import { Rng } from './rng';
 import { loadBalance } from './testBalance';
 
@@ -188,15 +188,82 @@ describe('Rivale Bullard (1.12)', () => {
       expect(s.leases.some((l) => l.drilled)).toBe(false);
     });
 
-    it('nach drillRounds: Ergebnis = Geologie; fündige Quellen bringen incomePerWell', () => {
+    it('nach drillRounds: Ergebnis = Geologie; ein Fund startet mit ratePerWell und bringt erst ab der nächsten Runde Geld', () => {
       let s = advanceRival(mitPachten, passiv);
       const kasse = s.rival.cash;
       for (let i = 0; i < bullard.drillRounds; i++) s = advanceRival(s, passiv);
       const status = Object.fromEntries(s.rival.wells.map((w) => [w.parcelId, w.status]));
       expect(status).toEqual({ [trocken.id]: 'dry', [öl.id]: 'found' });
-      expect(s.rival.cash).toBe(kasse + bullard.incomePerWell);
+      expect(s.rival.cash).toBe(kasse);
+      const fund = s.rival.wells.find((w) => w.status === 'found')!;
+      expect(fund.rate).toBe(bullard.ratePerWell);
+      expect(fund.royalty).toBe(0.125);
       expect(s.log.some((l) => l.includes('Bullard stößt auf Parzelle') && l.includes('auf Öl'))).toBe(true);
     });
+  });
+
+  describe('Einnahmen (Nachbesserung 0.1.14+3): an Ölpreis und Förderung gekoppelt', () => {
+    const quelle = (rate: number, royalty = 0.125): RivalWell => ({ parcelId: 'q', startRound: 1, roundsLeft: 0, status: 'found', rate, royalty });
+    const state0 = newGame('einnahmen', balance);
+    const mitQuelle = (well: RivalWell, cash = 0): GameState => ({ ...state0, options: [], rival: { ...state0.rival, cash, wells: [well] } });
+
+    it('Erlös je Barrel = Preis · (1 − Förderzins) − Transport, nie unter null', () => {
+      expect(rivalNetPerBarrel(1.0, 0.125, 0.4)).toBeCloseTo(0.475, 10);
+      expect(rivalNetPerBarrel(0.4, 0.125, 0.4)).toBe(0);
+    });
+
+    it('Einnahmen = Förderung · Erlös je Barrel, zum Verkaufspreis der Runde', () => {
+      const s = advanceRival(mitQuelle(quelle(4000)), passiv, undefined, 1.0);
+      expect(s.rival.cash).toBeCloseTo(4000 * (1.0 * (1 - 0.125) - bullard.transportPerBarrel), 2);
+      expect(rivalWellIncome(quelle(4000), balance, 1.0)).toBe(s.rival.cash);
+    });
+
+    it('hoher Preis bringt mehr, niedriger weniger; unter den Kosten nichts', () => {
+      const hoch = advanceRival(mitQuelle(quelle(4000)), passiv, undefined, 1.4).rival.cash;
+      const tief = advanceRival(mitQuelle(quelle(4000)), passiv, undefined, 0.7).rival.cash;
+      const unter = advanceRival(mitQuelle(quelle(4000)), passiv, undefined, 0.3).rival.cash;
+      expect(hoch).toBeGreaterThan(tief);
+      expect(tief).toBeGreaterThan(0);
+      expect(unter).toBe(0);
+    });
+
+    it('höherer Förderzins senkt die Einnahmen', () => {
+      expect(rivalWellIncome(quelle(4000, 0.25), balance, 1.0)).toBeLessThan(rivalWellIncome(quelle(4000, 0.1), balance, 1.0));
+    });
+
+    it('die Förderung fällt je Runde um production.decline – auch fürs Marktangebot', () => {
+      let s = mitQuelle(quelle(bullard.ratePerWell));
+      const kassen: number[] = [];
+      for (let i = 0; i < 3; i++) {
+        const vorher = s.rival.cash;
+        s = advanceRival(s, passiv, undefined, 1.0);
+        kassen.push(s.rival.cash - vorher);
+      }
+      expect(s.rival.wells[0].rate).toBeCloseTo(bullard.ratePerWell * (1 - balance.production.decline) ** 3, 6);
+      expect(kassen[1]).toBeCloseTo(kassen[0] * (1 - balance.production.decline), 0);
+      // Weniger Förderung → weniger Druck auf den Preis.
+      const frisch = advanceMarket(mitQuelle(quelle(bullard.ratePerWell)), balance.market, bullard.ratePerWell);
+      const alt = advanceMarket(s, balance.market, bullard.ratePerWell);
+      expect(alt.postedPrice).toBeGreaterThanOrEqual(frisch.postedPrice);
+    });
+
+    it('im Spiel verkauft Bullard zum Preis vor dem Marktschritt (wie Jacob)', () => {
+      const state = { ...mitQuelle(quelle(4000)), postedPrice: 1.2 };
+      const s = endRound(state, passiv);
+      expect(s.rival.cash).toBeCloseTo(rivalWellIncome(quelle(4000), balance, 1.2), 2);
+    });
+
+    it('Größenordnung: Bullards Kasse am Kapitelende bleibt begrenzt (passiver Jacob, 20 Seeds)', () => {
+      let summe = 0;
+      for (let i = 0; i < 20; i++) {
+        let s = newGame(`kasse-${i}`, balance);
+        while (!s.finished) s = endRound(s, balance);
+        summe += s.rival.cash;
+      }
+      const schnitt = summe / 20;
+      expect(schnitt).toBeGreaterThan(10_000);
+      expect(schnitt).toBeLessThan(80_000);
+    }, 30_000);
   });
 
   describe('Determinismus', () => {

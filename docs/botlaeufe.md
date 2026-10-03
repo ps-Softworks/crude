@@ -1,16 +1,16 @@
 # Bot-Läufe
 
-Stand: 2026-10-03 · Version 0.1.14+2
+Stand: 2026-10-03 · Version 0.1.14+3
 
 - Partien je Strategie: 1.000
 - Seeds: `bot-0` bis `bot-999` (für jede Strategie dieselben)
 - Erzeugt mit `npm run bots` (tools/botlaeufe.ts, Regeln in src/sim/bots.ts)
 
-| Strategie | Partien | Bankrottquote | Ø Imperiumswert | Siegquote |
-| --- | ---: | ---: | ---: | ---: |
-| vorsichtig | 1.000 | 0,0 % | 25.973 $ | 56,3 % |
-| gierig | 1.000 | 28,4 % | 39.031 $ | 42,6 % |
-| zufaellig | 1.000 | 0,0 % | 491 $ | 1,1 % |
+| Strategie | Partien | Bankrottquote | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| vorsichtig | 1.000 | 0,0 % | 27.995 $ | 56,2 % | 33.378 $ | 8,5 |
+| gierig | 1.000 | 28,4 % | 42.104 $ | 42,9 % | 28.288 $ | 8,3 |
+| zufaellig | 1.000 | 0,0 % | 479 $ | 0,9 % | 40.918 $ | 8,8 |
 
 - **vorsichtig:** bohrt und kauft nur, wenn danach noch die Rücklage in der Kasse bleibt, kauft nur Optionen, deren Bonus er danach auch zahlen kann, nimmt nie selbst einen Kredit.
 - **gierig:** bohrt jede Pacht, bohrt immer tiefer (gibt auf, wenn auch ein Kredit nicht mehr reicht), pachtet die beste bezahlbare Prognose, solange Kasse und Bankrahmen reichen und höchstens so viele Pachten ungebohrt sind, wie in balance.yaml steht; leiht fehlendes Geld und behält Bargeld für den Verzögerungszins.
@@ -59,3 +59,26 @@ Offen: Startkasse, Bankrahmen, Geldverleiher und Bohrkosten weichen jetzt vom GD
 | Bullard: Streuung | 200 $ | 1.000 $ | Mit dem Fundwert mitgezogen. |
 
 Wirkung (300 Seeds je Strategie, vorher → nachher): Bullard bohrt weiter etwa eine Parzelle je Runde (sein Limit ist eine Aktion je Runde), wählt aber etwas bessere Lagen – Ø 8,0 → 8,5 Funde je Partie. Für Jacob ändert sich fast nichts (Tabelle oben). Auffällig, aber noch nicht angefasst: Bullards Kasse wächst bis Kapitelende auf Ø ~185.000 $ (3.000 $ je Quelle und Runde), Geld ist für ihn nie die Grenze.
+
+## Nachbesserung Bullard (0.1.14+3)
+
+Problem: Jede fündige Bullard-Quelle brachte pauschal 3.000 $ je Runde – egal wie tief der Ölpreis stand, ohne Förderzins und Transport und ohne dass die Quelle nachließ. Seine Kasse wuchs bis Kapitelende auf Ø ~185.000 $.
+
+Neue Regel (src/sim/rival.ts, Test in rival.test.ts): Bullard wirtschaftet wie Jacob.
+
+- Eine fündige Quelle startet mit 4.000 bbl je Runde (`ratePerWell`) und fällt jede Runde um denselben Rückgang wie Jacobs Quellen (`production.decline`, 12 %). Über ihr Leben kommen so etwa 33.000 bbl heraus – so viel wie ein mittlerer kleiner Fund.
+- Einnahmen je Runde = Förderung · (Posted Price · (1 − Förderzins seiner Pacht) − Transport 0,40 $/bbl). Verkauft wird zum Preis der Runde (wie bei Jacob); fällt der Preis unter die Kosten, verdient er nichts.
+- Ein neuer Fund liefert erst ab der nächsten Runde (wie bei Jacob).
+- Der Markt rechnet mit Bullards tatsächlicher, fallender Förderung statt 4.000 bbl je Quelle für immer.
+- Pacht-Bonus und Bohrkosten zahlt er weiter aus der eigenen Kasse.
+
+| Wert | vorher | nachher |
+| --- | ---: | ---: |
+| Einkommen je Quelle und Runde | 3.000 $ pauschal | Förderung × (Preis × (1 − Förderzins) − 0,40 $) – neue Quelle bei 0,70–1,30 $ Preis etwa 850–3.100 $, dann fallend |
+| Förderung je Quelle | 4.000 bbl, gleichbleibend | 4.000 bbl, −12 % je Runde |
+| Ø Bullard-Kasse am Kapitelende | ~185.000 $ | 28.000–41.000 $ (je nach Jacobs Spielweise, Tabelle oben) |
+| Ø fündige Bullard-Quellen | ~8,5 | 8,3–8,8 |
+
+Wirkung: Bullards Kasse liegt jetzt in derselben Größenordnung wie Jacobs Imperiumswert. Spielt Jacob gierig, drückt seine Förderung den Preis und damit auch Bullards Einnahmen (28.000 $ statt 41.000 $ gegen den Zufalls-Bot). Bullard pachtet und bohrt weiter etwa eine Parzelle je Runde und schnappt Jacob weiterhin Parzellen weg (Tests unverändert grün). Gate 1 hält: höchste Siegquote 56,2 % (vorsichtig).
+
+Offen: Geld bremst Bullard nur selten (im Schnitt sinkt seine Kasse nie unter ~2.900 $), weil sein Limit eine Aktion je Runde ist. Sollte er sich später mehr Aktionen leisten dürfen (Kapitel 2, „Bullard verschuldet sich“), wird die Kasse zur echten Grenze. `valuePerFind` (25.000 $) liegt über dem, was ein Fund ihm jetzt tatsächlich bringt (übers ganze Leben etwa 8.000–20.000 $, je nach Preis) – er überschätzt Funde also, was zu seinem Draufgänger-Charakter passt.
