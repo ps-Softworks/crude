@@ -95,3 +95,4 @@ details summary { cursor: pointer; color: #555; }
 a.feedback { color: #222; }
 a.feedback.kopf { font-size: 12px; font-weight: normal; letter-spacing: normal; color: #777; margin-left: 8px; }
 a.feedback.gross { font-size: 1.05rem; }
+h1 button.neustart { font-size: 12px; font-weight: normal; letter-spacing: normal; margin-left: 8px; padding: 1px 6px; }

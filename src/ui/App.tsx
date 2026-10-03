@@ -165,6 +165,7 @@ export function App() {
         onNewWorld={() => startNewWorld(seed)}
         onRandomWorld={() => startNewWorld(randomSeed())}
         onForget={forget}
+        onRestart={forget}
       />
     </div>
   );

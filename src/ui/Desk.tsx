@@ -49,6 +49,7 @@ export interface DeskProps {
   onSeed: (seed: string) => void;
   onNewWorld: () => void;
   onRandomWorld: () => void;
+  onRestart: () => void;
   /** Spielstand löschen und ohne gespeichertes Spiel neu anfangen. */
   onForget: () => void;
 }
@@ -70,6 +71,7 @@ export function Desk({
   onSeed,
   onNewWorld,
   onRandomWorld,
+  onRestart,
   onForget,
 }: DeskProps) {
   const heroisch = step?.parcelIds ?? [];
@@ -83,6 +85,15 @@ export function Desk({
       <header>
         <h1>
           CRUDE <span className="version">v{__APP_VERSION__}</span> <FeedbackLink className="feedback kopf" />
+          <button
+            type="button"
+            className="neustart"
+            onClick={() => {
+              if (window.confirm('Neues Spiel beginnen? Der aktuelle Stand geht verloren.')) onRestart();
+            }}
+          >
+            Neues Spiel
+          </button>
         </h1>
         <div className="status">
           <span>
