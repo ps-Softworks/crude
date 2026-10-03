@@ -186,21 +186,23 @@ export function Desk({
 
       <FamilyPanel game={game} debug={debug} />
 
-      <div className="spalten">
+      <div className="spalten karte-zeile">
         <section className="panel">
           <h2>Karte von Cordova</h2>
           <Map balance={balance} game={game} debug={debug} selected={selected} highlight={heroisch} onSelect={onSelect} />
         </section>
 
-        <section className="panel">
-          <h2>Ranch</h2>
-          {parcelPanel}
-        </section>
+        <div>
+          <section className="panel">
+            <h2>Ranch</h2>
+            {parcelPanel}
+          </section>
 
-        <section className="panel">
-          <h2>Quellen</h2>
-          <SourcesPanel game={game} onSelect={onSelect} />
-        </section>
+          <section className="panel">
+            <h2>Quellen</h2>
+            <SourcesPanel game={game} onSelect={onSelect} />
+          </section>
+        </div>
       </div>
 
       <div className="spalten">

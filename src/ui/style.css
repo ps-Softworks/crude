@@ -123,20 +123,100 @@ a { color: var(--tinte); }
 .nextstep.tutorial .tutorial-kopf .link { float: right; }
 .panel.tutorial-ziel { outline: 3px solid var(--ocker); outline-offset: 2px; }
 
-/* Die Karte: ein kolorierter Plan auf Papier. */
-.map { width: 100%; height: auto; background: var(--land); border: 1px solid var(--tinte-weich); box-shadow: inset 0 0 18px rgba(90, 60, 20, 0.18); }
-.parcel { cursor: pointer; }
+/* Die Karte (0.2.15+6): ein kolorierter Plan auf Papier, zoom- und verschiebbar. */
+.karte { position: relative; }
+.karte-bild {
+  display: block; width: 100%; aspect-ratio: 4 / 3; height: auto;
+  border: 1px solid var(--tinte-weich); outline: 1px solid var(--linie); outline-offset: 3px;
+  box-shadow: inset 0 0 18px rgba(90, 60, 20, 0.18);
+  cursor: grab; touch-action: none; user-select: none; background: var(--land);
+}
+.karte-bild:active { cursor: grabbing; }
+.karte-bild:focus-visible { outline: 2px solid var(--ocker); }
+.karte-land { fill: var(--land); }
+.karte-meer { fill: var(--meer); }
+.karte-kueste { stroke: var(--tinte-weich); stroke-linejoin: round; }
+.karte-meername { font-family: var(--schrift); font-style: italic; fill: var(--blau); opacity: 0.75; text-anchor: middle; }
+.karte-schraffur-grau { stroke: var(--grau); }
+.karte-gebiet { cursor: pointer; outline: none; }
+.karte-gebiet-flaeche { fill: transparent; }
+.karte-gebiet.gesperrt .karte-gebiet-flaeche { fill: var(--grau-hell); }
+.karte-gebiet.stadt .karte-gebiet-flaeche { fill: var(--papier-dunkel); }
+.karte-gebiet-rand { fill: none; stroke: var(--tinte-weich); stroke-linejoin: round; }
+.karte-gebiet.gesperrt .karte-gebiet-rand { stroke: var(--tinte-blass); }
+.karte-gebiet.gesperrt { cursor: not-allowed; }
+.karte-gebiet:hover .karte-gebiet-flaeche, .karte-gebiet:focus-visible .karte-gebiet-flaeche { fill: rgba(176, 127, 42, 0.12); }
+.karte-gebiet.gesperrt:hover .karte-gebiet-flaeche, .karte-gebiet.gesperrt:focus-visible .karte-gebiet-flaeche { fill: var(--papier-dunkel); }
+.karte-gebiet:focus-visible .karte-gebiet-rand { stroke: var(--ocker); }
+.karte-haus { fill: var(--tinte-blass); stroke: var(--tinte-weich); }
+.karte-ranch { cursor: pointer; outline: none; }
+.karte-ranch-flaeche { stroke: var(--tinte-blass); stroke-linejoin: round; transition: filter 0.15s; }
+.karte-ranch:hover .karte-ranch-flaeche, .karte-ranch:focus-visible .karte-ranch-flaeche { filter: brightness(0.93) sepia(0.3); }
+.karte-ranch:focus-visible .karte-ranch-flaeche { stroke: var(--ocker); }
+.karte-fluss { stroke: var(--blau); stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; }
+.karte-fluss-ufer { stroke: var(--blau-hell); stroke-linecap: round; stroke-linejoin: round; }
+.karte-flussname { font-family: var(--schrift); font-style: italic; fill: var(--blau); }
+.karte-weg { stroke: var(--ocker); stroke-linecap: round; }
+.karte-weg-rand { stroke: var(--papier-hell); stroke-linecap: round; opacity: 0.7; }
+.karte-bahn { stroke: var(--tinte); }
+.karte-pipeline path { stroke: var(--oel); }
+.karte-pipeline.surveyed path { stroke: var(--tinte-blass); }
+.karte-pipeline.damaged path { stroke: var(--rot); }
+.karte-platz { fill: var(--papier-hell); fill-opacity: 0.6; stroke: var(--tinte-blass); }
+.karte-turm { fill: none; stroke: var(--tinte); stroke-linecap: round; }
+.karte-turm.found { stroke: var(--oel); }
+.karte-turm.stuck { stroke: var(--rot); }
+.karte-turm.decision { stroke: var(--ocker); }
+.karte-rivale .karte-turm { stroke: var(--rost); }
+.karte-trocken { stroke: var(--grau); stroke-linecap: round; fill: none; }
+.karte-oelpfuetze { fill: var(--oel); opacity: 0.85; }
+.karte-punkt { fill: var(--oel); }
+.karte-symbol path { fill: var(--papier-hell); stroke: var(--tinte); stroke-linejoin: round; }
+.karte-symbol-innen { fill: var(--tinte); }
+.karte-anker { stroke: var(--tinte); }
+.karte-ranchname { font-family: var(--schrift); fill: var(--tinte); text-anchor: middle; stroke: var(--papier-hell); stroke-opacity: 0.75; stroke-linejoin: round; }
+.karte-ranchname.fund { font-weight: 700; }
+.karte-klein { font-family: var(--schrift); fill: var(--tinte-weich); text-anchor: middle; stroke: var(--papier-hell); stroke-opacity: 0.7; stroke-linejoin: round; font-variant-numeric: lining-nums; }
+.karte-ort { font-family: var(--schrift); font-style: italic; fill: var(--tinte); stroke: var(--papier-hell); stroke-opacity: 0.8; stroke-linejoin: round; }
+.karte-gebietsname { font-family: var(--schrift); font-variant: small-caps; font-weight: 600; fill: var(--tinte-weich); text-anchor: middle; stroke: var(--papier); stroke-opacity: 0.85; stroke-linejoin: round; }
+.karte-gebietsname.gesperrt { fill: var(--tinte-blass); }
+.karte-unerforscht { font-family: var(--schrift); font-style: italic; fill: var(--tinte-blass); text-anchor: middle; stroke: var(--papier); stroke-opacity: 0.8; stroke-linejoin: round; }
+.karte-gewaehlt { stroke: var(--rot); }
+.karte-knoepfe { position: absolute; top: 10px; left: 10px; display: flex; gap: 4px; }
+.karte-knoepfe button { padding: 2px 10px; background: var(--papier-hell); box-shadow: 0 1px 3px rgba(40, 25, 10, 0.25); min-width: 30px; }
+.karte-kompass { position: absolute; top: 8px; right: 10px; width: 44px; height: 50px; pointer-events: none; }
+.kompass-ring { fill: rgba(248, 241, 223, 0.7); stroke: var(--tinte-weich); stroke-width: 1; }
+.kompass-nadel { fill: var(--papier-hell); stroke: var(--tinte-weich); stroke-width: 0.8; }
+.kompass-nord { fill: var(--tinte); }
+.kompass-n { font: 600 9px var(--schrift); fill: var(--tinte); text-anchor: middle; }
+.karte-notiz { position: absolute; left: 10px; right: 10px; bottom: 44px; margin: 0; padding: 6px 10px; background: var(--papier-hell); border: 1px solid var(--linie); border-left: 4px solid var(--tinte-blass); font-style: italic; box-shadow: 0 1px 3px rgba(40, 25, 10, 0.25); }
+.karte-tipp {
+  position: absolute; z-index: 5; width: 210px; pointer-events: none;
+  padding: 6px 10px; font-size: 0.9rem; line-height: 1.3;
+  background: var(--papier-hell); border: 1px solid var(--tinte-weich); box-shadow: var(--schatten);
+}
+.karte-tipp dl { display: grid; grid-template-columns: auto 1fr; gap: 0 8px; margin: 4px 0 0; }
+.karte-tipp dt { color: var(--tinte-weich); }
+.karte-tipp dd { margin: 0; font-variant-numeric: lining-nums tabular-nums; }
+.karte-legende { list-style: none; display: flex; flex-wrap: wrap; gap: 2px 14px; margin: 6px 0 0; padding: 0; font-size: 0.85rem; color: var(--tinte-weich); }
+.karte-legende li { display: flex; align-items: center; gap: 5px; }
+.karte-legende .feld { width: 14px; height: 11px; border: 1px solid var(--tinte-blass); display: inline-block; }
+.karte-legende .feld.frei { background: var(--land); }
+.karte-legende .feld.option { background: repeating-linear-gradient(45deg, var(--blau-hell) 0 3px, var(--blau) 3px 4px); border-color: var(--blau); }
+.karte-legende .feld.lease { background: var(--gruen-hell); border-color: var(--gruen); }
+.karte-legende .feld.bullard { background: var(--rost-hell); border-color: var(--rost); }
+.karte-legende .feld.other { background: var(--ocker-hell); border-color: var(--ocker); }
+.karte-legende .feld.gesperrt { background: repeating-linear-gradient(45deg, var(--grau-hell) 0 3px, var(--grau) 3px 4px); }
+.legende-symbol { width: 14px; height: 16px; }
 .highlight { stroke: var(--ocker); animation: highlight 1.2s ease-in-out infinite; }
 @keyframes highlight {
   0%, 100% { stroke-opacity: 1; }
   50% { stroke-opacity: 0.2; }
 }
-@media (prefers-reduced-motion: reduce) { .highlight { animation: none; } }
-.label { font: 12px var(--schrift); fill: var(--tinte); pointer-events: none; }
-.label.light { fill: var(--papier-hell); }
-.rate { font: bold 10px var(--schrift); fill: var(--tinte); pointer-events: none; }
-.place { font: italic 15px var(--schrift); fill: var(--tinte-weich); pointer-events: none; }
-.tag { font: bold 12px var(--schrift); pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .highlight { animation: none; } .karte-ranch-flaeche { transition: none; } }
+/* Erste Zeile: Karte breit, rechts Ranch und Quellen übereinander. */
+.spalten.karte-zeile { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+@media (max-width: 1000px) { .spalten.karte-zeile { grid-template-columns: 1fr; } }
 
 .log { list-style: none; padding: 0; margin: 0; max-height: 220px; overflow-y: auto; font-size: 0.95rem; }
 .log li { padding: 3px 0; border-bottom: 1px dotted var(--linie); }

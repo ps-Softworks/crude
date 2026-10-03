@@ -1,4 +1,4 @@
-// Screenshots (2.12): fünf Bildschirme des Spiels nach docs/screenshots/, um zu
+// Screenshots (2.12): fünf Bildschirme des Spiels (ab 0.2.15+6 dazu vier Kartenausschnitte) nach docs/screenshots/, um zu
 // prüfen, ob die Platzhaltergrafik wie aus einem Guss wirkt.
 // Aufruf: npm run screenshots  (braucht Google Chrome; startet einen eigenen
 // Vite-Server auf Port 5199 und beendet ihn danach wieder).
@@ -129,6 +129,39 @@ try {
     });
     writeFileSync(new URL(`${bild.name}.png`, OUT), Buffer.from(data, 'base64'));
     console.log(`docs/screenshots/${bild.name}.png (Runde ${bild.state.round}${bild.state.ending ? `, ${bild.state.ending}` : ''})`);
+  }
+  // Karte (0.2.15+6): Ausschnitte nur der Karte – Salt Hill, Übersicht, Hinweis beim Darüberfahren.
+  const karten: { name: string; state: GameState; vorher?: string }[] = [
+    { name: '6-karte-salthill', state: bilder[2].state },
+    { name: '9-karte-start', state: bilder[0].state },
+    { name: '7-karte-uebersicht', state: bilder[1].state, vorher: `[...document.querySelectorAll('.karte-knoepfe button')].find((b) => b.textContent.includes('Übersicht')).click()` },
+    {
+      name: '8-karte-hinweis',
+      state: bilder[1].state,
+      vorher: `(() => { const r = document.querySelector('.karte-ranch'); const b = r.getBoundingClientRect(); r.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: b.x + b.width / 2, clientY: b.y + b.height / 2 })); })()`,
+    },
+  ];
+  for (const karte of karten) {
+    await cdp.send('Runtime.evaluate', { expression: `localStorage.setItem('crude.autosave', ${JSON.stringify(serializeGame(karte.state, version))})` });
+    geladen = cdp.einmal('Page.loadEventFired');
+    await cdp.send('Page.navigate', { url });
+    await geladen;
+    await cdp.send('Runtime.evaluate', { expression: 'document.fonts.ready', awaitPromise: true });
+    await new Promise((r) => setTimeout(r, 300));
+    if (karte.vorher) await cdp.send('Runtime.evaluate', { expression: karte.vorher });
+    await new Promise((r) => setTimeout(r, 900));
+    const { result } = await cdp.send('Runtime.evaluate', {
+      expression: `(() => { const k = document.querySelector('.karte'); k.scrollIntoView(); const r = k.getBoundingClientRect(); return JSON.stringify({ x: r.x + scrollX, y: r.y + scrollY, w: r.width, h: r.height }); })()`,
+      returnByValue: true,
+    });
+    const box = JSON.parse(result.value) as { x: number; y: number; w: number; h: number };
+    const { data } = await cdp.send('Page.captureScreenshot', {
+      format: 'png',
+      captureBeyondViewport: true,
+      clip: { x: box.x - 4, y: box.y - 4, width: box.w + 8, height: box.h + 8, scale: 1 },
+    });
+    writeFileSync(new URL(`${karte.name}.png`, OUT), Buffer.from(data, 'base64'));
+    console.log(`docs/screenshots/${karte.name}.png (Runde ${karte.state.round})`);
   }
   ws.close();
 } finally {
