@@ -9,6 +9,7 @@ import { formatContentError, parseEventFiles } from '../src/sim/eventContent';
 import { parseFamilyContent } from '../src/sim/family';
 import { parseNewspaperContent } from '../src/sim/newspaper';
 import { EVENTS_DIR, readEventFiles } from '../src/sim/testEvents';
+import { parseTutorialContent } from '../src/sim/tutorial';
 
 const dir = process.argv[2] ? resolve(process.argv[2]) : EVENTS_DIR;
 const files = readEventFiles(dir);
@@ -27,7 +28,9 @@ const bogenMarks = boegen.content && parsed.errors.length === 0 ? checkArcMarks(
 // Kapitelende (2.11): Texte des Ergebnisbildschirms und Merkzeichen der Boni.
 const kapitel = parseChapterContent('content/chapter.yaml', readFileSync(new URL('../content/chapter.yaml', import.meta.url), 'utf8'));
 const kapitelMarks = kapitel.content && parsed.errors.length === 0 ? checkChapterMarks('content/chapter.yaml', kapitel.content, events) : [];
-const errors = [...parsed.errors, ...zeitung.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks];
+// Einstieg (2.13): Hinweistexte des Tutorials.
+const einstieg = parseTutorialContent('content/tutorial.yaml', readFileSync(new URL('../content/tutorial.yaml', import.meta.url), 'utf8'));
+const errors = [...einstieg.errors, ...parsed.errors, ...zeitung.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks];
 
 if (errors.length > 0) {
   for (const error of errors) console.error(formatContentError(error));

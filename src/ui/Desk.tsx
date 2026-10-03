@@ -21,6 +21,7 @@ import { FeedbackLink } from './FeedbackLink';
 import { Map } from './Map';
 import { NewspaperPanel } from './NewspaperPanel';
 import { Bohrturm } from './Silhouette';
+import type { TutorialAction, TutorialView } from '../sim/tutorial';
 
 function money(value: number): string {
   return `${value.toLocaleString('de-DE')} $`;
@@ -39,6 +40,11 @@ export interface DeskProps {
   game: GameState;
   /** Hinweis auf den nächsten Schritt; null, wenn das Kapitel vorbei ist. */
   step: NextStep | null;
+  /** Einstieg (2.13): der Hinweis für jetzt, oder null (vorbei oder ausgeschaltet). */
+  tutorial: { view: TutorialView; parcelIds: string[]; target: TutorialAction['kind'] } | null;
+  /** Der Einstieg läuft noch, ist aber ausgeschaltet: Knopf zum Wieder-Einschalten zeigen. */
+  tutorialOffer: boolean;
+  onTutorial: (on: boolean) => void;
   selected: string | null;
   debug: boolean;
   /** Debug-Bereich zeigen (beim Entwickeln oder mit ?debug=1). */
@@ -66,6 +72,9 @@ export interface DeskProps {
 export function Desk({
   game,
   step,
+  tutorial,
+  tutorialOffer,
+  onTutorial,
   selected,
   debug,
   debugTools,
@@ -84,7 +93,9 @@ export function Desk({
   onRestart,
   onForget,
 }: DeskProps) {
-  const heroisch = step?.parcelIds ?? [];
+  const heroisch = tutorial?.parcelIds ?? step?.parcelIds ?? [];
+  // Der Einstieg zeigt auch auf Verkauf und Bank, wenn es dort weitergeht.
+  const ziel = (kind: TutorialAction['kind']) => (tutorial?.target === kind ? 'panel tutorial-ziel' : 'panel');
   const leases = game.leases.filter((l) => l.holder === 'jacob').length;
   const options = game.options.filter((o) => o.holder === 'jacob').length;
   const rivalLeases = game.leases.filter((l) => l.holder === 'bullard').length;
@@ -147,7 +158,27 @@ export function Desk({
 
       {chapterEnd}
 
-      <p className="nextstep">{step?.text ?? 'Das Kapitel ist zu Ende.'}</p>
+      {tutorial ? (
+        <div className="nextstep tutorial">
+          <p className="tutorial-kopf">
+            <strong>{tutorial.view.title}</strong> · Schritt {tutorial.view.stepNumber} von {tutorial.view.stepCount}:{' '}
+            {tutorial.view.stepLabel}
+            <button type="button" className="link" onClick={() => onTutorial(false)}>
+              Hinweise ausblenden
+            </button>
+          </p>
+          <p>{tutorial.view.text}</p>
+        </div>
+      ) : (
+        <p className="nextstep">
+          {step?.text ?? 'Das Kapitel ist zu Ende.'}
+          {tutorialOffer && (
+            <button type="button" className="link" onClick={() => onTutorial(true)}>
+              Einstiegshilfe zeigen
+            </button>
+          )}
+        </p>
+      )}
 
       {!game.finished && zeit.sickRounds > 0 && (
         <p className="krankmeldung">
@@ -180,12 +211,12 @@ export function Desk({
       </div>
 
       <div className="spalten">
-        <section className="panel">
+        <section className={ziel('sell')}>
           <h2>Tank &amp; Verkauf</h2>
           <SalePanel game={game} onSold={onSold} />
         </section>
 
-        <section className="panel">
+        <section className={ziel('loan')}>
           <h2>Bank</h2>
           <BankPanel game={game} onResult={onLoan} />
         </section>

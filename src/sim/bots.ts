@@ -17,6 +17,8 @@ import { endRound, newGame, type GameState } from './game';
 import { leaseOf, leaseTerms, optionOf } from './lease';
 import { Rng, seedFromString } from './rng';
 import { capacityLeft, netPrice, sellOil } from './transport';
+import { tutorialHint } from './tutorial';
+import type { EventDef } from './events';
 
 export type Strategy = 'vorsichtig' | 'gierig' | 'zufaellig';
 export const STRATEGIES: readonly Strategy[] = ['vorsichtig', 'gierig', 'zufaellig'];
@@ -242,6 +244,59 @@ export function playGame(seed: string, balance: Balance, strategy: Strategy): Ga
   }
   const bankrupt = state.ending === 'pleite';
   return { bankrupt, goal: !bankrupt && chapterCheck(state, balance).passed, empire: empireValue(state, balance), rounds, state };
+}
+
+// --- Einstieg (2.13) ------------------------------------------------------------
+
+/**
+ * Ein Zug nach den Tutorial-Hinweisen: tut genau, was der Hinweis sagt, bis er
+ * „Runde beenden“ sagt, eine Aktion scheitert oder der Einstieg vorbei ist.
+ * Höchstens maxSteps Schritte, damit ein Fehler im Hinweis nicht hängen bleibt.
+ */
+export function hintTurn(state: GameState, balance: Balance, maxSteps = 20): GameState {
+  for (let i = 0; i < maxSteps; i++) {
+    const hint = tutorialHint(state, balance);
+    if (!hint || hint.action.kind === 'endRound') return state;
+    const action = hint.action;
+    const r =
+      action.kind === 'sell'
+        ? sellOil(state, balance, action.mode, action.barrels)
+        : action.kind === 'loan'
+          ? takeLoan(state, balance, action.amount)
+          : applyAction(state, balance, action.parcelId, action.kind);
+    if (!r.ok) return state;
+    state = r.state;
+  }
+  return state;
+}
+
+export interface HintGame {
+  /** Hat der Bot im Einstieg eine eigene Quelle gefunden? */
+  found: boolean;
+  /** Runde, in der die erste Quelle fündig wurde (am Ende dieser Runde), sonst null. */
+  foundRound: number | null;
+  /** Hat er in dieser Zeit Öl verkauft? */
+  sold: boolean;
+  state: GameState;
+}
+
+/**
+ * Ein neuer Spieler, der nur den Hinweisen folgt: spielt, solange der Einstieg
+ * läuft (höchstens bis zum Kapitelende), und meldet, ob er eine Quelle gefunden hat.
+ * Ereignisse bekommen ihre Standardantwort – der Bot liest keine Briefe.
+ */
+export function playByHints(seed: string, balance: Balance, catalog: readonly EventDef[] = []): HintGame {
+  let state = newGame(seed, balance, catalog);
+  let foundRound: number | null = null;
+  let sold = false;
+  while (!state.finished && tutorialHint(state, balance) !== null) {
+    state = hintTurn(state, balance);
+    if (state.shipped.wagon + state.shipped.rail > 0) sold = true;
+    const runde = state.round;
+    state = endRound(state, balance, catalog);
+    if (foundRound === null && state.wells.some((w) => w.status === 'found')) foundRound = runde;
+  }
+  return { found: foundRound !== null, foundRound, sold, state };
 }
 
 export interface BotRow {

@@ -351,3 +351,11 @@ newspaper:
   crashFrom: 0.12          # PLATZHALTER: ab 12 % → „Tanks laufen über“
   riseFrom: 0.05           # PLATZHALTER: erwarteter Anstieg ab 5 % → „Leere Tanks“
   maxItems: 3              # Kurzmeldungen unter der Titelseite
+
+# Einstieg (2.13): Tutorial-Hinweise führen durch Pacht, Bohrung und Verkauf.
+# Texte stehen in content/tutorial.yaml; im Spiel lassen sie sich abschalten.
+tutorial:
+  lastRound: 8               # spätestens nach Runde 8 schweigen die Hinweise (halbes Kapitel)
+  endAfterProducedRounds: 2  # fertig, wenn die erste Quelle 2 Runden gefördert hat (die Verkaufsrunde ist vorbei)
+  deeperMinChance: 25        # PLATZHALTER: tiefer bohren nur raten, wenn der Geologe der nächsten Stufe mind. 25 % gibt
+  loanRounding: 100          # vorgeschlagene Kredite auf 100 $ aufgerundet (mindestens credit.minLoan)

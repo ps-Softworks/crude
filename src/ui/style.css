@@ -114,6 +114,14 @@ a { color: var(--tinte); }
   font-size: 1.1rem;
   font-style: italic;
 }
+.nextstep .link { margin-left: 12px; font-size: 0.85rem; font-style: normal; }
+
+/* Einstieg (2.13): der Hinweis mit Schrittzahl, abschaltbar. */
+.nextstep.tutorial { font-style: normal; }
+.nextstep.tutorial p { margin: 0; }
+.nextstep.tutorial .tutorial-kopf { font-size: 0.9rem; color: var(--tinte-weich); margin-bottom: 4px; }
+.nextstep.tutorial .tutorial-kopf .link { float: right; }
+.panel.tutorial-ziel { outline: 3px solid var(--ocker); outline-offset: 2px; }
 
 /* Die Karte: ein kolorierter Plan auf Papier. */
 .map { width: 100%; height: auto; background: var(--land); border: 1px solid var(--tinte-weich); box-shadow: inset 0 0 18px rgba(90, 60, 20, 0.18); }

@@ -19,6 +19,8 @@ import { decideIpo } from '../sim/chapter';
 import { ChapterEndScreen } from './ChapterEndScreen';
 import { GameOverScreen } from './GameOverScreen';
 import { debugToolsVisible } from './testerConfig';
+import { tutorialActive, tutorialHint, viewTutorial } from '../sim/tutorial';
+import { loadTutorialOn, saveTutorialOn, tutorialContent } from './tutorial';
 
 const GEOLOGY_LABEL = { dry: 'trocken', small: 'klein', gusher: 'Gusher' } as const;
 
@@ -71,12 +73,22 @@ export function App() {
   const [debug, setDebug] = useState(params.get('debug') === '1');
   const [selected, setSelected] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // Einstieg (2.13): Hinweise an oder aus – eine Vorliebe, kein Teil des Spielstands.
+  const [tutorialOn, setTutorialOn] = useState(loadTutorialOn);
 
   // Nach jeder Runde und jeder Aktion wird der Spielstand neu geschrieben.
   useEffect(() => writeAutosave(game), [game]);
 
   // Der Schreibtisch sagt, was als Nächstes dran ist; danach richtet sich die Meldung.
   const step = nextStep(game, balance);
+  // Der Einstieg führt durch die ersten Runden; ausgeschaltet bleibt die kurze Zeile.
+  const hint = tutorialOn ? tutorialHint(game, balance) : null;
+  const tutorial = hint ? { view: viewTutorial(hint, tutorialContent), parcelIds: hint.parcelIds, target: hint.action.kind } : null;
+
+  function toggleTutorial(on: boolean) {
+    setTutorialOn(on);
+    saveTutorialOn(on);
+  }
   const parcel = game.parcels.find((p) => p.id === selected);
 
   function select(id: string) {
@@ -141,6 +153,9 @@ export function App() {
       <Desk
         game={game}
         step={step}
+        tutorial={tutorial}
+        tutorialOffer={!tutorialOn && tutorialActive(game, balance)}
+        onTutorial={toggleTutorial}
         selected={selected}
         debug={debug}
         debugTools={debugTools}
@@ -157,7 +172,7 @@ export function App() {
               parcel={parcel}
               debug={debug}
               notice={notice}
-              stepText={step?.text ?? null}
+              stepText={tutorial?.view.text ?? step?.text ?? null}
               onAction={act}
             />
           ) : (

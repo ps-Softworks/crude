@@ -317,6 +317,19 @@ export interface Balance {
   agenda: AgendaBalance;
   family: FamilyBalance;
   newspaper: NewspaperBalance;
+  tutorial: TutorialBalance;
+}
+
+/** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
+export interface TutorialBalance {
+  /** Spätestens nach dieser Runde schweigen die Hinweise. */
+  lastRound: number;
+  /** Die Hinweise enden, sobald eine eigene Quelle so viele Runden gefördert hat (2 = nach der ersten Verkaufsrunde). */
+  endAfterProducedRounds: number;
+  /** Tiefer bohren rät der Hinweis nur, wenn der Geologe der nächsten Stufe mindestens so viel % gibt. */
+  deeperMinChance: number;
+  /** Kredite, die der Hinweis vorschlägt, werden auf so viele $ aufgerundet. */
+  loanRounding: number;
 }
 
 /** Zeitung (2.6, GDD §7.2): ab welcher erwarteten Preisänderung welche Schlagzeile kommt. */
@@ -890,6 +903,17 @@ function parseBots(raw: unknown): BotsBalance {
   };
 }
 
+function parseTutorial(raw: unknown): TutorialBalance {
+  const block = (raw as { tutorial?: unknown })?.tutorial;
+  if (!block || typeof block !== 'object') throw new BalanceError('balance.yaml: Block "tutorial" fehlt');
+  return {
+    lastRound: positiveInt(raw, 'tutorial.lastRound'),
+    endAfterProducedRounds: positiveInt(raw, 'tutorial.endAfterProducedRounds'),
+    deeperMinChance: integerInRange(raw, 'tutorial.deeperMinChance', 0, 100),
+    loanRounding: positiveInt(raw, 'tutorial.loanRounding'),
+  };
+}
+
 function parseNewspaper(raw: unknown): NewspaperBalance {
   const block = (raw as { newspaper?: unknown })?.newspaper;
   if (!block || typeof block !== 'object') throw new BalanceError('balance.yaml: Block "newspaper" fehlt');
@@ -1055,6 +1079,7 @@ export function parseBalance(raw: unknown): Balance {
     agenda: parseAgenda(raw),
     family: parseFamily(raw),
     newspaper: parseNewspaper(raw),
+    tutorial: parseTutorial(raw),
   };
 
   const { width, height, saltHill } = balance.map;
