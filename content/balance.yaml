@@ -197,6 +197,7 @@ transport:
 credit:
   startRating: B           # Rating, mit dem Jacob in Port Ellis ankommt
   minLoan: 500             # kleinster Kredit am Stück
+  sliderStep: 100          # Schrittweite der Regler „Kredit aufnehmen“ und „Tilgen“ in der Bank
   limitBase: 5000          # Bankrahmen ohne Pfand (GDD §12: 3.000; 1.15: Platz für 3–4 Wildcat-Bohrungen)
   limitPerWell: 2000       # Rahmen je fördernder Quelle
   rates:                   # Jahreszins je Rating (GDD §12)

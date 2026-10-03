@@ -321,6 +321,7 @@ describe('Spielzahlen (balance.yaml)', () => {
       const { credit, bankruptcy } = loadBalance();
       expect(credit.startRating).toBe('B');
       expect(credit.minLoan).toBe(500);
+      expect(credit.sliderStep).toBe(100);
       expect(credit.limitBase).toBe(5000);
       expect(credit.limitPerWell).toBe(2000);
       expect(credit.rates).toEqual({ A: 0.05, B: 0.07, C: 0.1, D: 0.15 });

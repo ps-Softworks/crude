@@ -64,7 +64,7 @@ function lenderDebt(state: Pick<GameState, 'loans'>): number {
 
 /** Alle Schulden in $, Bank und Geldverleiher zusammen. */
 export function debt(state: Pick<GameState, 'loans'>): number {
-  return state.loans.reduce((sum, loan) => sum + loan.principal, 0);
+  return cents(state.loans.reduce((sum, loan) => sum + loan.principal, 0));
 }
 
 /** Bankrahmen: limitBase plus limitPerWell für jede fördernde Quelle. */
@@ -170,47 +170,111 @@ export function takeLoan(state: GameState, balance: Balance, amount: number): Lo
   };
 }
 
+/** Höchstens so viel kann Jacob jetzt tilgen: was in der Kasse ist, aber nicht mehr als die Schulden (auf den Cent). */
+export function repayMax(state: Pick<GameState, 'loans' | 'cash' | 'finished'>): number {
+  if (state.finished) return 0;
+  return cents(Math.max(0, Math.min(state.cash, debt(state))));
+}
+
 /**
  * Schulden aus der Kasse tilgen. Erst das teurere Geld – Notkredite des
  * Geldverleihers vor den Bankkrediten. Ein ganz getilgter Kredit verschwindet
- * und gibt sein Pfand frei.
+ * und gibt sein Pfand frei. Beträge gehen auf den Cent genau, weil Notkredite
+ * und Zinsen Cent-Beträge haben: Wer genug in der Kasse hat, kann immer alles
+ * tilgen.
  */
 export function repay(state: GameState, _balance: Balance, amount: number): LoanResult {
   if (state.finished) return { ok: false, reason: 'Das Kapitel ist beendet.' };
   if (state.loans.length === 0) return { ok: false, reason: 'Du schuldest niemandem Geld.' };
-  if (!Number.isInteger(amount) || amount <= 0) return { ok: false, reason: 'Der Betrag muss eine ganze Zahl über 0 sein.' };
-  const schuld = debt(state);
-  if (amount > schuld) return { ok: false, reason: `So viel schuldest du nicht: ${money(schuld)}.` };
-  if (amount > state.cash) return { ok: false, reason: `Nicht genug Geld: In der Kasse sind ${money(state.cash)}.` };
+  if (!Number.isFinite(amount) || cents(amount) <= 0) return { ok: false, reason: 'Der Betrag muss über 0 sein.' };
+  const betrag = cents(amount);
+  const schuld = cents(debt(state));
+  if (betrag > schuld) return { ok: false, reason: `So viel schuldest du nicht: ${money(schuld)}.` };
+  if (betrag > cents(state.cash)) return { ok: false, reason: `Nicht genug Geld: In der Kasse sind ${money(state.cash)}.` };
 
-  let rest = amount;
+  let rest = betrag;
   /** Was von jedem Kredit übrig bleibt; null heißt: ganz getilgt. */
   const neu = new Map<number, number | null>();
   let erstes: Loan | undefined;
   for (const loan of teuersteZuerst(state.loans)) {
-    const teil = Math.min(loan.principal, rest);
+    const teil = cents(Math.min(loan.principal, rest));
     if (teil <= 0) continue;
-    rest -= teil;
+    rest = cents(rest - teil);
     erstes ??= loan;
-    neu.set(loan.id, teil < loan.principal ? loan.principal - teil : null);
+    const uebrig = cents(loan.principal - teil);
+    neu.set(loan.id, uebrig > 0 ? uebrig : null);
   }
   // Die Liste behält ihre Reihenfolge; ein ganz getilgter Kredit fällt weg.
   const loans = state.loans.flatMap((loan) => {
     if (!neu.has(loan.id)) return [loan];
-    const schuld = neu.get(loan.id)!;
-    return schuld === null ? [] : [{ ...loan, principal: schuld }];
+    const uebrig = neu.get(loan.id)!;
+    return uebrig === null ? [] : [{ ...loan, principal: uebrig }];
   });
   const getilgt = erstes!;
   return {
     ok: true,
-    loan: { ...getilgt, principal: getilgt.principal - Math.min(getilgt.principal, amount) },
+    loan: { ...getilgt, principal: neu.get(getilgt.id) ?? 0 },
     state: {
       ...state,
-      cash: state.cash - amount,
+      cash: cents(state.cash - betrag),
       loans,
-      log: [...state.log, `${formatDate(state)}: ${money(amount)} getilgt – zuerst das teurere Geld (${percent(getilgt.rate)} pro Jahr).`],
+      log: [...state.log, `${formatDate(state)}: ${money(betrag)} getilgt – zuerst das teurere Geld (${percent(getilgt.rate)} pro Jahr).`],
     },
   };
+}
+
+/** Zinsen, die am Rundenende für alle Kredite zusammen fällig werden. */
+export function quarterInterestTotal(state: Pick<GameState, 'loans'>): number {
+  return cents(state.loans.reduce((sum, loan) => sum + quarterInterest(loan), 0));
+}
+
+/**
+ * Ein Schieberegler für einen Geldbetrag: von min bis max in Schritten von
+ * step. Die letzte Stellung ist immer genau max – auch wenn max kein
+ * Vielfaches von step ist (etwa Schulden mit Cent-Beträgen).
+ */
+export interface AmountSlider {
+  min: number;
+  max: number;
+  step: number;
+}
+
+/** Wie viele Stellungen der Regler hat (mindestens eine). */
+export function sliderPositions(slider: AmountSlider): number {
+  if (slider.max <= slider.min) return 1;
+  return Math.ceil(cents(slider.max - slider.min) / slider.step) + 1;
+}
+
+/** Betrag an einer Reglerstellung (0 = ganz links); die letzte Stellung ist genau max. */
+export function sliderAmount(slider: AmountSlider, position: number): number {
+  const letzte = sliderPositions(slider) - 1;
+  const p = Math.max(0, Math.min(letzte, Math.round(position)));
+  if (p === letzte) return slider.max;
+  return cents(Math.min(slider.max, slider.min + p * slider.step));
+}
+
+/**
+ * Regler „Kredit aufnehmen“: vom kleinsten Kredit bis zum freien Bankrahmen.
+ * null, wenn die Bank gerade keinen Kredit gibt (Rating D, Rahmen voll,
+ * Kapitel beendet).
+ */
+export function loanSlider(state: GameState, balance: Balance): AmountSlider | null {
+  const { minLoan, sliderStep } = balance.credit;
+  if (loanBlocked(state, balance, minLoan)) return null;
+  return { min: minLoan, max: Math.floor(headroom(state, balance)), step: sliderStep };
+}
+
+/**
+ * Regler „Tilgen“: von einem Schritt (oder weniger, wenn nicht mehr geht) bis
+ * min(Kasse, Schulden). Die Endstellung tilgt alles, was die Kasse hergibt –
+ * reicht sie, sind die Schulden danach genau 0. null ohne Schulden oder Geld.
+ */
+export function repaySlider(state: GameState, balance: Balance): AmountSlider | null {
+  if (state.loans.length === 0) return null;
+  const max = repayMax(state);
+  if (max <= 0) return null;
+  const step = balance.credit.sliderStep;
+  return { min: Math.min(step, max), max, step };
 }
 
 /**
@@ -226,7 +290,7 @@ export function repay(state: GameState, _balance: Balance, amount: number): Loan
 export function settleLoans(input: GameState, balance: Balance): GameState {
   const date = formatDate(input);
   const { emergency, minLoan } = balance.credit;
-  const faellig = cents(input.loans.reduce((sum, loan) => sum + quarterInterest(loan), 0));
+  const faellig = quarterInterestTotal(input);
   const bezahlt = Math.min(Math.max(input.cash, 0), faellig);
   let state: GameState = { ...input, cash: cents(input.cash - faellig), log: [...input.log] };
   if (bezahlt > 0) {

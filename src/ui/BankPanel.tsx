@@ -9,9 +9,15 @@ import {
   freeCollateral,
   headroom,
   loanRate,
+  loanSlider,
   quarterInterest,
+  quarterInterestTotal,
   repay,
+  repaySlider,
+  sliderAmount,
+  sliderPositions,
   takeLoan,
+  type AmountSlider,
   type LoanResult,
 } from '../sim/credit';
 import type { GameState } from '../sim/game';
@@ -40,18 +46,51 @@ function parcelName(game: GameState, parcelId: string | null) {
   return parcel ? `Parzelle ${parcelLabel(parcel)}` : '–';
 }
 
+/** Schieberegler über die Stellungen, die die Simulation vorgibt; die letzte Stellung ist genau das Maximum. */
+function Regler({
+  slider,
+  position,
+  onChange,
+  label,
+}: {
+  slider: AmountSlider;
+  position: number;
+  onChange: (position: number) => void;
+  label: string;
+}) {
+  const letzte = sliderPositions(slider) - 1;
+  return (
+    <input
+      type="range"
+      className="regler"
+      aria-label={label}
+      min={0}
+      max={letzte}
+      step={1}
+      value={Math.min(position, letzte)}
+      disabled={letzte === 0}
+      onChange={(e) => onChange(Number(e.target.value))}
+    />
+  );
+}
+
 export function BankPanel({ game, onResult }: { game: GameState; onResult: (result: LoanResult) => void }) {
-  const [betrag, setBetrag] = useState<string>('');
+  // Reglerstellungen: Kredit startet beim kleinsten Kredit, Tilgung bei „alles“.
+  const [kreditPos, setKreditPos] = useState(0);
+  const [tilgPos, setTilgPos] = useState(Number.MAX_SAFE_INTEGER);
   const schuld = debt(game);
   const rahmen = creditLimit(game, balance);
   const frei = headroom(game, balance);
   const pfandFrei = freeCollateral(game).length;
-  const wert = betrag === '' ? frei : Number(betrag);
-  const tilgung = Math.min(Math.floor(game.cash), schuld);
+  const zinsZeile = quarterInterestTotal(game);
 
-  // Probelauf: Die Simulation sagt, ob die Aktion gerade geht und warum nicht.
-  const probe = takeLoan(game, balance, wert);
-  const zinsZeile = game.loans.length > 0 ? game.loans.reduce((s, l) => s + quarterInterest(l), 0) : 0;
+  // Reglergrenzen und Folgen kommen aus der Simulation (Probelauf).
+  const kreditRegler = loanSlider(game, balance);
+  const kreditBetrag = kreditRegler ? sliderAmount(kreditRegler, kreditPos) : 0;
+  const kreditProbe = kreditRegler ? takeLoan(game, balance, kreditBetrag) : takeLoan(game, balance, balance.credit.minLoan);
+  const tilgRegler = repaySlider(game, balance);
+  const tilgBetrag = tilgRegler ? sliderAmount(tilgRegler, tilgPos) : 0;
+  const tilgProbe = tilgRegler ? repay(game, balance, tilgBetrag) : null;
 
   return (
     <div className="bank-panel">
@@ -105,37 +144,69 @@ export function BankPanel({ game, onResult }: { game: GameState; onResult: (resu
         </ul>
       )}
 
-      <label>
-        Betrag (${balance.credit.minLoan} = kleinster Kredit){' '}
-        <input
-          type="number"
-          min={balance.credit.minLoan}
-          step={balance.credit.minLoan}
-          value={betrag === '' ? frei : betrag}
-          onChange={(e) => setBetrag(e.target.value)}
-        />
-      </label>
-      <div className="actions">
-        <button
-          disabled={!probe.ok}
-          title={probe.ok ? `${percent(probe.loan.rate)} pro Jahr` : probe.reason}
-          onClick={() => {
-            const r = takeLoan(game, balance, wert);
-            onResult(r);
-            if (r.ok) setBetrag('');
-          }}
-        >
-          Kredit aufnehmen ({money(wert)})
-        </button>
-        <button
-          disabled={schuld === 0 || tilgung <= 0}
-          title={schuld > 0 ? 'Zuerst das teurere Geld tilgen' : 'Du schuldest niemandem Geld'}
-          onClick={() => onResult(repay(game, balance, tilgung))}
-        >
-          Tilgen ({money(tilgung)})
-        </button>
+      <div className="regler-zeile">
+        <strong>Kredit aufnehmen</strong>
+        {kreditRegler ? (
+          <>
+            <Regler slider={kreditRegler} position={kreditPos} onChange={setKreditPos} label="Kredit aufnehmen" />
+            <span className="regler-wert">
+              {money(kreditBetrag)}
+              {kreditProbe.ok && (
+                <>
+                  {' '}
+                  · {percent(kreditProbe.loan.rate)} pro Jahr · Zins je Quartal danach {money(quarterInterestTotal(kreditProbe.state))}
+                </>
+              )}
+            </span>
+            <button
+              disabled={!kreditProbe.ok}
+              onClick={() => {
+                onResult(takeLoan(game, balance, kreditBetrag));
+                setKreditPos(0);
+              }}
+            >
+              {money(kreditBetrag)} leihen
+            </button>
+          </>
+        ) : (
+          !kreditProbe.ok && <p className="hint">{kreditProbe.reason}</p>
+        )}
       </div>
-      {!probe.ok && <p className="hint">{probe.reason}</p>}
+
+      {game.loans.length > 0 && (
+        <div className="regler-zeile">
+          <strong>Tilgen</strong>
+          {tilgRegler ? (
+            <>
+              <Regler slider={tilgRegler} position={tilgPos} onChange={setTilgPos} label="Tilgen" />
+              <span className="regler-wert">
+                {money(tilgBetrag)}
+                {tilgBetrag === schuld && ' (alles)'}
+                {tilgProbe?.ok && (
+                  <>
+                    {' '}
+                    · Restschuld {money(debt(tilgProbe.state))} · Zins je Quartal danach{' '}
+                    {money(quarterInterestTotal(tilgProbe.state))}
+                  </>
+                )}
+              </span>
+              <button
+                disabled={!tilgProbe?.ok}
+                title="Zuerst das teurere Geld tilgen"
+                onClick={() => {
+                  onResult(repay(game, balance, tilgBetrag));
+                  setTilgPos(Number.MAX_SAFE_INTEGER);
+                }}
+              >
+                {money(tilgBetrag)} tilgen
+              </button>
+            </>
+          ) : (
+            <p className="hint">Kein Geld in der Kasse zum Tilgen.</p>
+          )}
+        </div>
+      )}
+      {tilgProbe && !tilgProbe.ok && <p className="hint">{tilgProbe.reason}</p>}
     </div>
   );
 }

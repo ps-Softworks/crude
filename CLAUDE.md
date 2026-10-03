@@ -10,6 +10,7 @@
 
 ## Projektstand
 - Phase 0 und 1 abgeschlossen. Phase 2 läuft: 2.1–2.15 fertig (2.14: Electron-Build – `npm run desktop:win`/`desktop:mac`, Spielstände über `src/ui/storage.ts`; Test auf fremdem Windows-PC steht aus. 2.15: Bot-Läufe mit Ereignissen und viertem Bot „ausgewogen“, Zielwerte in balance.yaml unter `bots.targets`, Ist/Ziel-Tabelle in docs/botlaeufe.md – alle im Rahmen), als Nächstes 2.16 laut Roadmap.
+- 0.2.15+1: Bank mit Schiebereglern für Kredit und Tilgung (Grenzen aus `loanSlider`/`repaySlider` in src/sim/credit.ts, Schritt `credit.sliderStep`); Tilgen geht auf den Cent, komplette Tilgung klappt auch bei Notkrediten mit Cent-Beträgen.
 - Spielzahlen stehen in `content/balance.yaml` (per Bot-Läufen justiert, `npm run bots`; endgültig erst nach Philipps eigenen Partien).
 - Bot-Läufe: `npm run bots` (schreibt docs/botlaeufe.md).
 - Tester-Build: `npm run release` → `release/crude-<version>.zip` (index.html im Wurzelverzeichnis, relative Pfade; release/ nicht committen). Feedback-Link in `content/tester.yaml` (leer = kein Knopf). Debug-Bereich im Build nur mit `?debug=1`.

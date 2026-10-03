@@ -281,3 +281,8 @@ h1 button.neustart { font-size: 13px; font-weight: normal; letter-spacing: norma
 .kapitelende .ipo h3 { margin-top: 0; }
 input { font: inherit; color: var(--tinte); background: var(--papier-hell); border: 1px solid var(--linie); padding: 1px 6px; }
 input[type='checkbox'] { accent-color: var(--tinte-weich); }
+/* Bank (0.2.15+1): Regler für Kredit und Tilgung */
+.regler-zeile { display: grid; gap: 4px; margin: 8px 0; }
+.regler-zeile button { justify-self: start; }
+.regler { width: 100%; accent-color: var(--tinte-weich); }
+.regler-wert { font-variant-numeric: lining-nums tabular-nums; font-size: 0.97rem; }

@@ -7,10 +7,17 @@ import {
   freeCollateral,
   headroom,
   loanRate,
+  loanSlider,
   quarterInterest,
+  quarterInterestTotal,
   repay,
+  repayMax,
+  repaySlider,
   settleLoans,
+  sliderAmount,
+  sliderPositions,
   takeLoan,
+  type Loan,
 } from './credit';
 import type { Well } from './drilling';
 import { endRound, newGame, type GameState } from './game';
@@ -510,5 +517,117 @@ describe('Kredit und Pleite im Spielablauf', () => {
     const nach = endRound(state, balance);
     expect(nach.ending).toBe('kapitel');
     expect(nach.finished).toBe(true);
+  });
+});
+describe('Komplett tilgen (Regression: Schulden mit Cent-Beträgen ließen sich nicht ganz tilgen)', () => {
+  const kredit = (id: number, source: Loan['source'], principal: number, rate: number): Loan => ({
+    id,
+    source,
+    principal,
+    rate,
+    takenRound: 1,
+    collateral: null,
+  });
+
+  it('tilgt einen Notkredit mit Cent-Betrag vollständig', () => {
+    const state = { ...newGame('cent', balance), cash: 5000, loans: [kredit(1, 'lender', 123.45, 0.4)] };
+    expect(repayMax(state)).toBe(123.45);
+    const r = repay(state, balance, repayMax(state));
+    if (!r.ok) throw new Error(r.reason);
+    expect(r.state.loans).toEqual([]);
+    expect(debt(r.state)).toBe(0);
+    expect(r.state.cash).toBe(4876.55);
+  });
+
+  it('tilgt mehrere Kredite mit krummen Beträgen vollständig, ohne Rundungsreste', () => {
+    const loans = [kredit(1, 'bank', 500, 0.07), kredit(2, 'lender', 0.1, 0.4), kredit(3, 'lender', 0.2, 0.4), kredit(4, 'bank', 1000, 0.1)];
+    const state = { ...newGame('mehrere', balance), cash: 1500.3, loans };
+    expect(repayMax(state)).toBe(1500.3);
+    const r = repay(state, balance, repayMax(state));
+    if (!r.ok) throw new Error(r.reason);
+    expect(r.state.loans).toEqual([]);
+    expect(r.state.cash).toBe(0);
+  });
+
+  it('reicht die Kasse genau (auch mit Cent), geht alles; ein Cent weniger lässt einen Cent stehen', () => {
+    const state = { ...newGame('genau', balance), cash: 1012.5, loans: [kredit(1, 'lender', 12.5, 0.4), kredit(2, 'bank', 1000, 0.07)] };
+    const alles = repay(state, balance, 1012.5);
+    if (!alles.ok) throw new Error(alles.reason);
+    expect(alles.state.loans).toEqual([]);
+    expect(alles.state.cash).toBe(0);
+    const knapp = repay({ ...state, cash: 1012.49 }, balance, 1012.49);
+    if (!knapp.ok) throw new Error(knapp.reason);
+    expect(debt(knapp.state)).toBe(0.01);
+  });
+
+  it('tilgt nach echten Rundenenden mit Notkredit und Zinsen vollständig', () => {
+    // Bankrahmen voll, Kasse leer: der Geldverleiher springt mit Cent-Beträgen ein.
+    let state = mitKredit(3000, 0.07, { ...newGame('echt', balance), cash: 0 });
+    state = settleLoans(state, balance);
+    state = settleLoans(state, balance);
+    expect(state.loans.some((l) => l.source === 'lender')).toBe(true);
+    state = { ...state, cash: 10000 };
+    const r = repay(state, balance, repayMax(state));
+    if (!r.ok) throw new Error(r.reason);
+    expect(r.state.loans).toEqual([]);
+    expect(debt(r.state)).toBe(0);
+    expect(r.state.cash).toBe(Math.round((10000 - debt(state)) * 100) / 100);
+  });
+
+  it('ohne Geld in der Kasse gibt es nichts zu tilgen', () => {
+    const state = { ...mitKredit(1000, 0.1), cash: -50 };
+    expect(repayMax(state)).toBe(0);
+    expect(repaySlider(state, balance)).toBeNull();
+  });
+});
+
+describe('Schieberegler für Kredit und Tilgung', () => {
+  it('Regler „Tilgen“ endet genau bei min(Kasse, Schulden) – auch mit Cent', () => {
+    const state = { ...mitNotkredit(1234.56), cash: 5000 };
+    const regler = repaySlider(state, balance)!;
+    expect(regler).toEqual({ min: C.sliderStep, max: 1234.56, step: C.sliderStep });
+    const letzte = sliderPositions(regler) - 1;
+    expect(sliderAmount(regler, letzte)).toBe(1234.56);
+    expect(sliderAmount(regler, letzte - 1)).toBe(1200);
+    expect(sliderAmount(regler, 0)).toBe(C.sliderStep);
+    const r = repay(state, balance, sliderAmount(regler, letzte));
+    if (!r.ok) throw new Error(r.reason);
+    expect(r.state.loans).toEqual([]);
+  });
+
+  it('Regler „Tilgen“ wird von der Kasse begrenzt', () => {
+    const state = { ...mitKredit(3000, 0.1), cash: 720.5 };
+    const regler = repaySlider(state, balance)!;
+    expect(regler.max).toBe(720.5);
+    expect(repay(state, balance, sliderAmount(regler, 99)).ok).toBe(true);
+  });
+
+  it('kleine Schulden: der Regler hat nur eine Stellung, nämlich alles', () => {
+    const state = { ...mitNotkredit(42.1), cash: 100 };
+    const regler = repaySlider(state, balance)!;
+    expect(sliderPositions(regler)).toBe(1);
+    expect(sliderAmount(regler, 0)).toBe(42.1);
+  });
+
+  it('Regler „Kredit aufnehmen“ geht vom kleinsten Kredit bis zum freien Rahmen, jede Stellung geht bei der Bank durch', () => {
+    const state = newGame('regler', balance);
+    const regler = loanSlider(state, balance)!;
+    expect(regler).toEqual({ min: C.minLoan, max: headroom(state, balance), step: C.sliderStep });
+    for (let p = 0; p < sliderPositions(regler); p++) {
+      expect(takeLoan(state, balance, sliderAmount(regler, p)).ok).toBe(true);
+    }
+    expect(sliderAmount(regler, sliderPositions(regler) - 1)).toBe(headroom(state, balance));
+  });
+
+  it('Regler „Kredit aufnehmen“ fehlt bei vollem Rahmen und bei Rating D', () => {
+    expect(loanSlider(mitKredit(3000, 0.07, newGame('voll', balance)) , balance)).toBeNull();
+    expect(loanSlider({ ...newGame('d', balance), rating: 'D' }, balance)).toBeNull();
+    // Rahmen kleiner als der kleinste Kredit: auch kein Regler.
+    expect(loanSlider(mitKredit(3000 - C.minLoan + 1, 0.07, newGame('rest', balance)), balance)).toBeNull();
+  });
+
+  it('Zinsen je Quartal für alle Kredite zusammen', () => {
+    const state = { ...mitKredit(1000, 0.1), loans: [...mitKredit(1000, 0.1).loans, { ...mitNotkredit(100).loans[0], id: 2 }] };
+    expect(quarterInterestTotal(state)).toBe(25 + 10);
   });
 });

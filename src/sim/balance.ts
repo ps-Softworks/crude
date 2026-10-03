@@ -158,6 +158,8 @@ export interface CreditBalance {
   startRating: Rating;
   /** Kleinster Kredit am Stück. */
   minLoan: number;
+  /** Schrittweite der Regler für Kredit und Tilgung. */
+  sliderStep: number;
   /** Bankrahmen ohne Pfand. */
   limitBase: number;
   /** Rahmen je fördernder Quelle. */
@@ -807,6 +809,7 @@ function parseCredit(raw: unknown): CreditBalance {
   return {
     startRating: ratingText(block, 'startRating', 'credit.startRating'),
     minLoan: positiveInt(raw, 'credit.minLoan'),
+    sliderStep: positiveInt(raw, 'credit.sliderStep'),
     limitBase: num(raw, 'credit.limitBase'),
     limitPerWell: num(raw, 'credit.limitPerWell'),
     rates,
