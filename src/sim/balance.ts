@@ -494,6 +494,22 @@ export interface EventsBalance {
   mail: MailBalance;
   /** Dokumentenprüfung (2.5). */
   documents: DocumentsBalance;
+  /** Befristete Nachwirkungen (0.2.15+3): price, production, leaseCost gelten so viele Runden (die Antwortrunde mitgezählt). */
+  timedRounds: number;
+  /** Prüfung schwacher Antworten (0.2.15+3, tools/ereignisWirkung.ts). */
+  relevance: RelevanceBalance;
+}
+
+/** Ab wann eine Ereignis-Antwort als spürbar gilt (0.2.15+3). */
+export interface RelevanceBalance {
+  /** Typisches Geld eines Kapitels in $ – Bezugsgröße für die Schwelle. */
+  chapterMoney: number;
+  /** Anteil davon, ab dem eine Wirkung spürbar ist (0,02 = 2 %). */
+  minShare: number;
+  /** Typische Barrel, die Jacob je Runde verkauft – um Preis, Förderung und Tarif in $ umzurechnen. */
+  refBarrels: number;
+  /** Typischer Pachtbonus in $, den Jacob in timedRounds Runden zahlt – für leaseCost. */
+  refLeaseSpend: number;
 }
 
 /** Einfache Dokumentenprüfung (2.5, GDD §3). */
@@ -1136,6 +1152,13 @@ function parseEvents(raw: unknown): EventsBalance {
     documents: {
       forgeryChance: share(raw, 'events.documents.forgeryChance'),
       maxChecks: positiveInt(raw, 'events.documents.maxChecks'),
+    },
+    timedRounds: positiveInt(raw, 'events.timedRounds'),
+    relevance: {
+      chapterMoney: nonNegative(raw, 'events.relevance.chapterMoney'),
+      minShare: share(raw, 'events.relevance.minShare'),
+      refBarrels: nonNegative(raw, 'events.relevance.refBarrels'),
+      refLeaseSpend: nonNegative(raw, 'events.relevance.refLeaseSpend'),
     },
   };
 }

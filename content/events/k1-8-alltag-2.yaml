@@ -24,31 +24,32 @@
   chance: 0.1
   choices:
     - id: zahlen
-      label: { de: "Den Aufschlag zahlen (60 $)", en: "Pay the surcharge (60 $)" }
+      label: { de: "Den Aufschlag für die Saison zahlen (200 $)", en: "Pay the surcharge for the season (200 $)" }
       result:
         de: Die Ochsen ziehen an. Der Sprecher tippt sich an den Hut.
         en: The oxen pull. The spokesman touches his hat.
-      requires: { minCash: 60 }
-      effects: { cash: -60 }
+      requires: { minCash: 200 }
+      effects: { cash: -200 }
       appointments: 0
     - id: selbst
       label: { de: "Selbst auf den Bock steigen", en: "Climb up on the box yourself" }
       result:
         de: Jacob fährt zwei Tage lang Fässer zum Hafen. Die Fuhrleute lachen erst, dann fahren sie wieder – zum alten Preis.
         en: Jacob hauls barrels to the harbour for two days. The teamsters laugh at first, then they drive again – at the old price.
-      effects: { strength: -5 }
+      effects: { strength: -6 }
       appointments: 2
       sharp: true              # beste Antwort (2.7): fehlt, wenn Jacob erschöpft ist
     - id: warten
       label: { de: "Sie stehen lassen", en: "Leave them standing" }
       result:
-        de: Die Fässer stehen eine Woche in der Sonne. Ein Teil davon leckt.
-        en: The barrels stand a week in the sun. Some of them leak.
-      effects: { oilStock: -60 }
+        de: "Die Fässer stehen zwei Wochen in der Sonne. Holz schwindet, Öl leckt – 250 Barrel sind weg."
+        en: "The barrels stand two weeks in the sun. Wood shrinks, oil leaks – 250 barrels are gone."
+      effects: { oilStock: -250 }
       appointments: 0
       default: true
 
 - id: fuhre_schlamm
+  notMarked: [bohlenweg]
   group: fuhrwerk
   once: false
   cooldown: 4
@@ -76,11 +77,13 @@
       effects: { cash: -50 }
       appointments: 0
     - id: bohlen
-      label: { de: "Mit dem Trupp Bohlen legen", en: "Lay planks with the crew" }
+      label: { de: "Mit dem Trupp einen Bohlenweg legen (40 $ Holz)", en: "Have the crew lay a plank road (40 $ timber)" }
       result:
-        de: Einen Tag lang legen die Männer Bohlen über den Schlamm. Jacob kommt bis zu den Knien braun nach Hause.
-        en: For a day the men lay planks over the mud. Jacob comes home brown to the knees.
-      effects: { strength: -3 }
+        de: "Zwei Tage lang legen die Männer Bohlen über den Schlamm. Jacob kommt bis zu den Knien braun nach Hause – aber der Weg hält jetzt auch beim nächsten Regen."
+        en: "For two days the men lay planks across the mud. Jacob comes home brown to the knees – but now the road will hold in the next rain too."
+      effects: { cash: -40, strength: -4 }
+      requires: { minCash: 40 }
+      marks: [bohlenweg]
       appointments: 2
     - id: liegen
       label: { de: "Liegen lassen, bis es trocken ist", en: "Leave it till it dries" }
@@ -113,12 +116,12 @@
   chance: 0.1
   choices:
     - id: kaufen
-      label: { de: "Hundert Fässer kaufen (100 $)", en: "Buy a hundred barrels (100 $)" }
+      label: { de: "Hundert Fässer kaufen (150 $)", en: "Buy a hundred barrels (150 $)" }
       result:
-        de: Die Fässer riechen nach frischem Holz. Kein Tropfen geht mehr verloren, sagt Lindqvist. Es geht weniger verloren.
-        en: The barrels smell of fresh wood. Not a drop will be lost now, says Lindqvist. Less is lost.
-      requires: { minCash: 100 }
-      effects: { cash: -100, oilStock: 30 }
+        de: "Die Fässer riechen nach frischem Holz. Lusk am Verladeplatz findet nichts mehr auszusetzen und zahlt erste Klasse."
+        en: "The barrels smell of fresh wood. Lusk at the loading yard finds nothing more to fault and pays first grade."
+      requires: { minCash: 150 }
+      effects: { cash: -150, price: 0.03 }
       appointments: 0
     - id: ablehnen
       label: { de: "Mit den alten Fässern weitermachen", en: "Make do with the old barrels" }
@@ -145,12 +148,12 @@
   chance: 0.08
   choices:
     - id: zimmermann
-      label: { de: "Den Zimmermann sofort holen (80 $)", en: "Fetch the carpenter at once (80 $)" }
+      label: { de: "Den Zimmermann sofort holen und alle Dauben nachziehen lassen (200 $)", en: "Fetch the carpenter at once and have every stave tightened (200 $)" }
       result:
         de: Der Zimmermann kommt noch am Abend, gegen doppelten Lohn. Die neue Daube ist hell zwischen den dunklen.
         en: The carpenter comes that same evening, for double pay. The new stave is pale among the dark ones.
-      requires: { minCash: 80 }
-      effects: { cash: -80, oilStock: -20 }
+      requires: { minCash: 200 }
+      effects: { cash: -200, oilStock: -20 }
     - id: umfuellen
       label: { de: "Das Öl in Fässer umfüllen", en: "Decant the oil into barrels" }
       result:
@@ -161,9 +164,9 @@
     - id: warten
       label: { de: "Auf den Zimmermann warten", en: "Wait for the carpenter" }
       result:
-        de: Bis der Zimmermann kommt, ist ein guter Teil des Öls im Boden versickert.
-        en: By the time the carpenter comes, a good part of the oil has soaked into the ground.
-      effects: { oilStock: -150, cash: -40 }
+        de: "Bis der Zimmermann kommt, sind 300 Barrel im Boden versickert."
+        en: "By the time the carpenter comes, 300 barrels have seeped into the ground."
+      effects: { oilStock: -300, cash: -40 }
       appointments: 0
       default: true
 
@@ -188,26 +191,26 @@
   chance: 0.08
   choices:
     - id: zahlen
-      label: { de: "Zahlen (80 $)", en: "Pay (80 $)" }
+      label: { de: "Zahlen (200 $ für das Quartal)", en: "Pay (200 $ for the quarter)" }
       result:
         de: Mrs. Dabney nimmt das Geld und bringt am Sonntag ein Stück Kuchen für Ruth.
         en: Mrs. Dabney takes the money and brings Ruth a piece of cake on Sunday.
-      requires: { minCash: 80 }
-      effects: { cash: -80 }
+      requires: { minCash: 200 }
+      effects: { cash: -200 }
       appointments: 0
     - id: handeln
-      label: { de: "Ruth verhandeln lassen", en: "Let Ruth do the bargaining" }
+      label: { de: "Ruth verhandeln lassen (100 $)", en: "Let Ruth negotiate (100 $)" }
       result:
         de: Ruth rechnet Mrs. Dabney vor, was drei Bohrarbeiter an Möbeln kosten. Die Miete steigt nur um ein Viertel.
         en: Ruth works out for Mrs. Dabney what three drillers cost in broken furniture. The rent goes up by only a quarter.
-      requires: { minCash: 20 }
-      effects: { cash: -20, ruth: 3 }
+      requires: { minCash: 100 }
+      effects: { cash: -100, ruth: 4 }
     - id: murren
       label: { de: "Murrend zahlen, wenn sie mahnt", en: "Pay, grumbling, when she asks again" }
       result:
         de: Mrs. Dabney mahnt vor allen Gästen beim Frühstück. Jacob zahlt das Doppelte und das Gerede dazu.
         en: Mrs. Dabney asks again in front of all the guests at breakfast. Jacob pays double and the gossip on top.
-      effects: { cash: -80, strength: -2 }
+      effects: { cash: -200, strength: -3, ruth: -3 }
       appointments: 0
       default: true
 
@@ -219,27 +222,27 @@
     de: >-
       Im Gilded Lamp schiebt ein Mann mit goldenem Zahn Jacob eine Serviette hin.
       Darauf, mit Bleistift, eine Pacht am Rand von Salt Hill, „direkt neben
-      Bullards bester Quelle“. 150 $, nur heute Abend.
+      Bullards bester Quelle“. 250 $, nur heute Abend.
     en: >-
       At the Gilded Lamp a man with a gold tooth slides a napkin across to Jacob. On
       it, in pencil, a lease at the edge of Salt Hill, "right next to Bullard's best
-      well". 150 $, tonight only.
+      well". 250 $, tonight only.
   conditions: { minRound: 2, maxRound: 12 }
   chance: 0.08
   choices:
     - id: kaufen
-      label: { de: "Einschlagen (150 $)", en: "Shake on it (150 $)" }
+      label: { de: "Einschlagen (250 $)", en: "Shake on it (250 $)" }
       result:
         de: Am nächsten Morgen steht auf der Parzelle schon ein Zaun. Der Mann mit dem Goldzahn hat sie an diesem Abend dreimal verkauft.
         en: Next morning there's already a fence on the parcel. The man with the gold tooth sold it three times that evening.
-      requires: { minCash: 150 }
-      effects: { cash: -150 }
-      marks: [serviette_betrogen]
+      requires: { minCash: 250 }
+      effects: { cash: -250 }
     - id: grundbuch
       label: { de: "Erst im Grundbuchamt nachsehen", en: "Check at the land office first" }
       result:
-        de: Die Parzelle gehört der Eisenbahn. Als Jacob in den Saloon zurückkommt, ist der Mann mit dem Goldzahn verschwunden.
-        en: The parcel belongs to the railway. When Jacob gets back to the saloon, the man with the gold tooth has gone.
+        de: "Die Parzelle gehört der Eisenbahn. Als Jacob in den Saloon zurückkommt, ist der Mann mit dem Goldzahn verschwunden. Dafür weiß Jacob jetzt, wem am Hügel welches Land gehört – und wer verpachten muss."
+        en: "The parcel belongs to the railway. When Jacob gets back to the saloon, the man with the gold tooth has gone. But now Jacob knows who owns which land on the hill – and who has to lease."
+      effects: { strength: -2, leaseCost: -0.15 }
       sharp: true              # beste Antwort (2.7): fehlt, wenn Jacob erschöpft ist
     - id: lachen
       label: { de: "Lachen und weitertrinken", en: "Laugh and keep drinking" }
@@ -269,11 +272,11 @@
   chance: 0.12
   choices:
     - id: hochhandeln
-      label: { de: "Zurückschreiben: nicht unter 1.500 $", en: "Write back: not under 1,500 $" }
+      label: { de: "Ihm für 300 $ ein Vorkaufsrecht geben", en: "Sell him a right of first refusal for 300 $" }
       result:
-        de: Ashcombe antwortet nicht. Drei Wochen später kauft er Bullards Nachbarpacht für 1.400 $.
-        en: Ashcombe does not reply. Three weeks later he buys Bullard's neighbouring lease for 1,400 $.
-      marks: [ashcombe_abgewiesen]
+        de: "Ashcombe zahlt prompt. Drei Wochen später kauft er auch Bullards Nachbarpacht – seitdem verlangen die Farmer am Hügel mehr."
+        en: "Ashcombe pays promptly. Three weeks later he buys Bullard's neighbouring lease too – since then the farmers on the hill have asked for more."
+      effects: { cash: 300, leaseCost: 0.2 }
     - id: behalten
       label: { de: "Nicht antworten – das Land bleibt", en: "Don't reply – the land stays" }
       result:
@@ -281,7 +284,6 @@
         en: The letter goes into the drawer with the others. Jacob keeps drilling.
       appointments: 0
       default: true
-      marks: [ashcombe_abgewiesen]
 
 - id: bezirk_steuer
   mail: demand
@@ -301,12 +303,12 @@
   chance: 0.15
   choices:
     - id: zahlen
-      label: { de: "Zahlen (120 $)", en: "Pay (120 $)" }
+      label: { de: "Zahlen (200 $)", en: "Pay (200 $)" }
       result:
         de: Der Kämmerer schickt eine Quittung mit Stempel. Es ist der schönste Stempel in Cordova.
         en: The treasurer sends a stamped receipt. It is the finest stamp in Cordova.
-      requires: { minCash: 120 }
-      effects: { cash: -120 }
+      requires: { minCash: 200 }
+      effects: { cash: -200 }
       appointments: 0
     - id: einspruch
       label: { de: "Zum Bezirksgericht und Einspruch einlegen", en: "Go to the county court and appeal" }
@@ -319,9 +321,9 @@
     - id: liegen
       label: { de: "Liegen lassen", en: "Let it lie" }
       result:
-        de: Der Sheriff pfändet eine Dampfpumpe und versteigert sie an Bullard.
-        en: The sheriff seizes a steam pump and auctions it to Bullard.
-      effects: { cash: -200 }
+        de: "Der Sheriff pfändet eine Dampfpumpe und versteigert sie an Bullard. Mit Gebühren kostet das 320 $."
+        en: "The sheriff seizes a steam pump and auctions it to Bullard. With fees that costs 320 $."
+      effects: { cash: -320 }
       appointments: 0
       default: true
 
@@ -348,11 +350,10 @@
     - id: hinreiten
       label: { de: "Selbst hinreiten und nachsehen", en: "Ride out and see for yourself" }
       result:
-        de: In Marlow Creek steht ein einziger Turm, und um ihn herum schon zwanzig Männer mit Papieren. Jacob reitet mit wunden Beinen und einer Karte voller Notizen zurück.
-        en: At Marlow Creek there's a single derrick and around it twenty men with papers already. Jacob rides back with sore legs and a map full of notes.
-      effects: { strength: -5 }
+        de: "In Marlow Creek steht ein einziger Turm, und um ihn herum schon zwanzig Männer mit Papieren. Jacob reitet mit wunden Beinen und einer Karte voller Notizen zurück. Zurück am Salt Hill handelt er die Farmer herunter: Wer jetzt nicht verpachtet, verpachtet bald an keinen mehr."
+        en: "At Marlow Creek there's a single derrick and around it twenty men with papers already. Jacob rides back with sore legs and a map full of notes. Back at Salt Hill he beats the farmers down: whoever doesn't lease now will soon lease to no one."
+      effects: { strength: -5, leaseCost: -0.2 }
       appointments: 3
-      marks: [marlow_gesehen]
     - id: ablegen
       label: { de: "Die Karte an die Wand heften", en: "Pin the card to the wall" }
       result:
@@ -380,20 +381,20 @@
   chance: 0.1
   choices:
     - id: verkaufen
-      label: { de: "Sofort 100 Barrel an einen Händler abgeben (+70 $)", en: "Sell 100 barrels to a dealer at once (+70 $)" }
+      label: { de: "Sofort 400 Barrel an einen Händler abgeben (+160 $)", en: "Sell 400 barrels to a dealer at once (+160 $)" }
       result:
         de: Der Händler zahlt, ohne zu feilschen. Das war vielleicht der Fehler.
         en: The dealer pays without haggling. That may have been the mistake.
-      requires: { minOilStock: 100 }
-      effects: { oilStock: -100, cash: 70 }
+      requires: { minOilStock: 400 }
+      effects: { oilStock: -400, cash: 160 }
       appointments: 0
     - id: pruefen
       label: { de: "Selbst zum Hafen und die Tanks ansehen", en: "Go to the harbour and look at the tanks" }
       result:
-        de: Die Tanks klingen hohl, wenn man dagegen klopft. Jemand wollte, dass Jacob billig verkauft.
-        en: The tanks ring hollow when you knock on them. Someone wanted Jacob to sell cheap.
+        de: "Die Tanks klingen hohl, wenn man dagegen klopft. Jemand wollte, dass Jacob billig verkauft. Jacob lässt Lusk wissen, dass er es weiß. Der Trust zahlt ihm eine Weile ein paar Cent mehr, damit er schweigt."
+        en: "The tanks ring hollow when you knock on them. Someone wanted Jacob to sell cheap. Jacob lets Lusk know that he knows. For a while the Trust pays him a few cents more to keep quiet."
+      effects: { strength: -3, price: 0.03 }
       sharp: true              # beste Antwort (2.7): fehlt, wenn Jacob erschöpft ist
-      marks: [tanks_geprueft]
     - id: ignorieren
       label: { de: "Zettel ohne Absender liest man nicht", en: "Notes without a sender don't get read" }
       result:

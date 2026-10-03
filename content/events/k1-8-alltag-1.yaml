@@ -30,12 +30,12 @@
   chance: 0.12
   choices:
     - id: neu
-      label: { de: "Einen neuen Meißel kaufen (120 $)", en: "Buy a new bit (120 $)" }
+      label: { de: "Einen neuen Meißel kaufen (220 $)", en: "Buy a new bit (220 $)" }
       result:
         de: Der neue Meißel ist blank und schwer. Am Abend schlägt der Turm wieder.
         en: The new bit is bright and heavy. By evening the derrick is pounding again.
-      requires: { minCash: 120 }
-      effects: { cash: -120 }
+      requires: { minCash: 220 }
+      effects: { cash: -220 }
       appointments: 0
     - id: schmieden
       label: { de: "Selbst hinfahren und den alten schweißen lassen (40 $)", en: "Ride out and have the old one welded (40 $)" }
@@ -43,14 +43,14 @@
         de: Jacob steht den halben Tag neben der Esse. Der Meißel hält, die Schultern tun weh.
         en: Jacob stands half the day beside the forge. The bit holds; his shoulders ache.
       requires: { minCash: 40 }
-      effects: { cash: -40, strength: -3 }
+      effects: { cash: -40, strength: -4 }
       appointments: 2
     - id: warten
       label: { de: "Den Trupp warten lassen", en: "Let the crew wait" }
       result:
-        de: Der Trupp sitzt drei Tage im Schatten und wird trotzdem bezahlt. Am Ende kauft der Vorarbeiter den Meißel – teurer.
-        en: The crew sits three days in the shade and gets paid anyway. In the end the foreman buys the bit – dearer.
-      effects: { cash: -160 }
+        de: "Der Trupp sitzt drei Tage im Schatten und wird trotzdem bezahlt, an den Pumpen fehlen die Hände. Am Ende kauft der Vorarbeiter den Meißel – teurer."
+        en: "The crew sits three days in the shade and gets paid anyway, and hands are missing at the pumps. In the end the foreman buys the bit – dearer."
+      effects: { cash: -100, production: -0.1 }
       appointments: 0
       default: true
 
@@ -107,12 +107,12 @@
   chance: 0.1
   choices:
     - id: wexler
-      label: { de: "Wexler holen (180 $)", en: "Hire Wexler (180 $)" }
+      label: { de: "Wexler holen (200 $)", en: "Fetch Wexler (200 $)" }
       result:
         de: Wexler arbeitet eine Nacht allein. Am Morgen liegt das Gestänge neben dem Turm, verbogen, aber ganz.
         en: Wexler works one night alone. By morning the tools lie beside the derrick, bent but whole.
-      requires: { minCash: 180 }
-      effects: { cash: -180 }
+      requires: { minCash: 200 }
+      effects: { cash: -200 }
     - id: selbst
       label: { de: "Selbst mit Silas fischen", en: "Fish for them yourself with Silas" }
       result:
@@ -133,6 +133,7 @@
 # --- Der Bohrtrupp (Gruppe trupp: drei Varianten) ------------------------------
 
 - id: trupp_lohn
+  notMarked: [trupp_sonntag]
   group: trupp
   once: false
   cooldown: 5
@@ -154,24 +155,25 @@
     - id: zahlen
       label: { de: "Den Lohn erhöhen (150 $)", en: "Raise the wages (150 $)" }
       result:
-        de: Hollister nickt und nimmt endlich den Hut ab.
-        en: Hollister nods and finally takes off his hat.
+        de: "Hollister nickt und nimmt endlich den Hut ab. Die Männer arbeiten, als ginge es um ihr eigenes Öl."
+        en: "Hollister nods and finally takes off his hat. The men work as if it were their own oil."
       requires: { minCash: 150 }
-      effects: { cash: -150 }
+      effects: { cash: -150, production: 0.1 }
       appointments: 0
     - id: reden
       label: { de: "Mit den Männern am Feuer reden", en: "Talk to the men by the fire" }
       result:
         de: Jacob erzählt von der Grube, in der sein Vater alt wurde. Die Männer bleiben – für diesmal und für ein Fass Bier.
         en: Jacob tells them about the pit where his father grew old. The men stay – this time, and for a barrel of beer.
-      effects: { cash: -30, strength: -2 }
+      effects: { cash: -30, strength: -3 }
+      requires: { minCash: 30 }
       sharp: true              # beste Antwort (2.7): fehlt, wenn Jacob erschöpft ist
     - id: nein
       label: { de: "Ablehnen", en: "Refuse" }
       result:
-        de: Am Montag fehlen drei Männer. Bullards Turm schlägt lauter als sonst.
-        en: On Monday three men are missing. Bullard's derrick pounds louder than usual.
-      effects: { cash: -100, strength: -3 }
+        de: "Am Montag fehlen drei Männer. Bullards Turm schlägt lauter als sonst, Jacobs leiser."
+        en: "On Monday three men are missing. Bullard's derrick pounds louder than usual, Jacob's quieter."
+      effects: { production: -0.1 }
       appointments: 0
       default: true
 
@@ -195,9 +197,9 @@
     - id: decken
       label: { de: "Die eigenen Männer decken", en: "Cover for your own men" }
       result:
-        de: Jacob sagt, seine Männer hätten geschlafen. Der Sheriff schreibt es auf, ohne es zu glauben. Der Trupp vergisst es nicht.
-        en: Jacob says his men were asleep. The sheriff writes it down without believing it. The crew won't forget it.
-      effects: { strength: -2 }
+        de: "Jacob sagt, seine Männer hätten geschlafen. Der Sheriff schreibt es auf, ohne es zu glauben. Der Trupp vergisst es nicht – und legt sich ins Zeug."
+        en: "Jacob says his men were asleep. The sheriff writes it down without believing it. The crew does not forget – and puts its back into it."
+      effects: { strength: -2, production: 0.05 }
       marks: [trupp_gedeckt]
     - id: strafe
       label: { de: "Dem Sheriff die Strafe zahlen (60 $)", en: "Pay the sheriff the fine (60 $)" }
@@ -210,12 +212,11 @@
     - id: entlassen
       label: { de: "Die beiden entlassen", en: "Dismiss the two of them" }
       result:
-        de: Zwei Männer gehen mit ihrem Bündel. Beim nächsten Lohntag ist es still im Lager.
-        en: Two men leave with their bundles. On the next payday the camp is quiet.
-      effects: { strength: -3 }
+        de: "Zwei Männer gehen mit ihrem Bündel, zwei Löhne gespart. Beim nächsten Lohntag ist es still im Lager, und am Turm fehlen zwei Paar Hände."
+        en: "Two men leave with their bundles, two wages saved. On the next payday the camp is quiet, and two pairs of hands are missing at the derrick."
+      effects: { cash: 80, production: -0.1 }
       appointments: 0
       default: true
-      marks: [trupp_entlassen]
 
 - id: trupp_unfall
   group: trupp
@@ -281,18 +282,17 @@
     - id: absetzen
       label: { de: "Absetztanks bauen lassen (150 $)", en: "Have settling tanks built (150 $)" }
       result:
-        de: In zwei Holztanks setzt sich das Wasser ab. Der Händler riecht am Öl und sagt nichts mehr.
-        en: The water settles out in two wooden tanks. The dealer sniffs the oil and says no more.
+        de: "In zwei Holztanks setzt sich das Wasser ab. Der Händler riecht am Öl und sagt nichts mehr. Für sauberes Öl zahlt der Trust ein paar Cent mehr."
+        en: "The water settles out in two wooden tanks. The dealer sniffs the oil and says no more. For clean oil the Trust pays a few cents more."
       requires: { minCash: 150 }
-      effects: { cash: -150 }
+      effects: { cash: -150, price: 0.03 }
     - id: mischen
       label: { de: "Das Wasser unters Öl mischen und verkaufen", en: "Mix the water in and sell it" }
       result:
-        de: Es geht durch – diesmal. Der Händler schreibt sich Jacobs Namen in ein kleines schwarzes Buch.
-        en: It passes – this time. The dealer writes Jacob's name in a little black book.
-      effects: { cash: 60 }
+        de: "Es geht durch – diesmal, und bringt 150 $ extra. Der Händler schreibt sich Jacobs Namen in ein kleines schwarzes Buch; die nächsten Monate prüft der Trust jedes Fass und zieht ab."
+        en: "It goes through – this time, and brings in 150 $ extra. The dealer writes Jacob's name in a little black book; for months the Trust tests every barrel and docks him."
+      effects: { cash: 150, price: -0.05 }
       appointments: 0
-      marks: [oel_gepanscht]
     - id: hinnehmen
       label: { de: "Den Abschlag hinnehmen", en: "Accept the discount" }
       result:
@@ -319,12 +319,12 @@
   chance: 0.08
   choices:
     - id: ableiten
-      label: { de: "Ein Rohr legen und das Gas abfackeln (90 $)", en: "Lay a pipe and flare the gas (90 $)" }
+      label: { de: "Ein Rohr legen und das Gas unter den Kessel leiten (120 $)", en: "Lay a pipe and lead the gas under the boiler (120 $)" }
       result:
-        de: Nachts brennt eine gelbe Flamme über dem Feld. Man sieht sie bis Port Ellis.
-        en: At night a yellow flame burns over the field. You can see it from Port Ellis.
-      requires: { minCash: 90 }
-      effects: { cash: -90 }
+        de: "Silas leitet das Gas unter den Kessel. Die Pumpe läuft Tag und Nacht, ohne ein Scheit Holz, und nachts brennt eine gelbe Flamme über dem Feld."
+        en: "Silas leads the gas under the boiler. The pump runs day and night without a stick of wood, and at night a yellow flame burns over the field."
+      requires: { minCash: 120 }
+      effects: { cash: -120, production: 0.1 }
     - id: wache
       label: { de: "Selbst Nachtwache halten", en: "Stand night watch yourself" }
       result:
@@ -372,7 +372,6 @@
         de: Jacobs Türme bleiben stehen. Bullards brennt bis auf die Grundmauern. Am Morgen weiß jeder am Hügel, wo Jacob gestanden hat.
         en: Jacob's derricks stand. Bullard's burns to the ground. By morning everyone on the hill knows where Jacob stood.
       effects: { strength: -3 }
-      marks: [brand_abseits]
     - id: schlafen
       label: { de: "Das ist Bullards Feuer", en: "That's Bullard's fire" }
       result:
@@ -381,7 +380,6 @@
       effects: { oilStock: -200, cash: -150 }
       appointments: 0
       default: true
-      marks: [brand_abseits]
 
 - id: rutengaenger
   title:
@@ -399,20 +397,13 @@
   conditions: { minRound: 2, maxRound: 10 }
   chance: 0.08
   choices:
-    - id: bezahlen
-      label: { de: "Ihn laufen lassen (25 $)", en: "Let him walk the land (25 $)" }
-      result:
-        de: Die Rute schlägt dreimal aus, jedes Mal genau dort, wo Bullards Türme stehen. Der Alte nimmt das Geld und geht.
-        en: The rod dips three times, each time exactly where Bullard's derricks stand. The old man takes the money and leaves.
-      requires: { minCash: 25 }
-      effects: { cash: -25 }
     - id: essen
       label: { de: "Ihm ein Essen spendieren und zuhören", en: "Buy him a meal and listen" }
       result:
-        de: Die Rute taugt nichts, die Geschichten schon. Er kennt jeden Bohrmeister zwischen hier und dem Golf.
-        en: The rod is worthless, the stories aren't. He knows every driller between here and the Gulf.
+        de: "Die Rute taugt nichts, die Geschichten schon. Er kennt jeden Bohrmeister zwischen hier und dem Golf – und jeden Farmer, der verpachten muss."
+        en: "The rod is worthless, the stories are not. He knows every drilling boss between here and the Gulf – and every farmer who has to lease."
       requires: { minCash: 5 }
-      effects: { cash: -5, strength: 2 }
+      effects: { cash: -5, strength: 2, leaseCost: -0.15 }
     - id: weg
       label: { de: "Ihn wegschicken", en: "Send him off" }
       result:

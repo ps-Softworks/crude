@@ -35,25 +35,18 @@
     - id: decken
       label: { de: "Den Schaden selbst zahlen und schweigen (120 $)", en: "Pay for the damage and say nothing (120 $)" }
       result:
-        de: >-
-          Jacob bezahlt das neue Seil. Silas sagt kein Wort dazu, aber er ist von
-          da an jeden Morgen als Erster am Turm.
-        en: >-
-          Jacob pays for the new cable. Silas never says a word about it, but from
-          then on he is the first at the derrick every morning.
+        de: "Jacob bezahlt das neue Seil. Silas sagt kein Wort dazu, aber er ist von da an jeden Morgen als Erster am Turm. Der Turm läuft wie nie."
+        en: "Jacob pays for the new cable. Silas never says a word about it, but from then on he is the first at the derrick every morning. The derrick runs as never before."
       requires: { minCash: 120 }
-      effects: { cash: -120 }
+      effects: { cash: -120, production: 0.1 }
       marks: [silas_gedeckt]
     - id: abziehen
       label: { de: "Silas den Schaden von seinem Anteil abziehen", en: "Take the damage out of Silas's share" }
       result:
-        de: >-
-          Silas zahlt. Vor den Männern nickt er nur – im Saloon erzählt er später,
-          was für ein feiner Rechner sein Partner geworden ist.
-        en: >-
-          Silas pays. In front of the men he only nods – later, in the saloon, he
-          tells everyone what a fine bookkeeper his partner has become.
+        de: "Silas zahlt. Vor den Männern nickt er nur – im Saloon erzählt er später, was für ein feiner Rechner sein Partner geworden ist. Am Turm erscheint er jetzt erst gegen Mittag."
+        en: "Silas pays. In front of the men he only nods – later, in the saloon, he tells everyone what a fine bookkeeper his partner has become. At the derrick he now turns up only around noon."
       marks: [silas_gedemuetigt]
+      effects: { production: -0.1 }
       default: true
 
 # Entwurf – Philipp überarbeitet.
@@ -135,19 +128,15 @@
       result:
         de: Jacob schläft zwei Nächte durch. Als er zurückkommt, ist das Loch zwanzig Fuß tiefer.
         en: Jacob sleeps two nights through. When he comes back, the hole is twenty feet deeper.
-      effects: { strength: 10 }
+      effects: { strength: 15 }
       appointments: 0
       default: true
     - id: einladen
       label: { de: "Silas zum Sonntagsessen einladen", en: "Invite Silas to Sunday dinner" }
       result:
-        de: >-
-          Silas bringt Thomas eine geschnitzte Bohrturm-Figur mit und erzählt Ruth
-          Geschichten, die nur zur Hälfte gelogen sind.
-        en: >-
-          Silas brings Thomas a carved little derrick and tells Ruth stories that are
-          only half lies.
-      effects: { strength: 5, ruth: 5 }
+        de: "Silas bringt Thomas eine geschnitzte Bohrturm-Figur mit und erzählt Ruth Geschichten, die nur zur Hälfte gelogen sind. Seitdem hält er den Turm, als wäre es seiner."
+        en: "Silas brings Thomas a carved little derrick and tells Ruth stories that are only half lies. Since then he minds the derrick as if it were his own."
+      effects: { strength: 5, ruth: 8, production: 0.1 }
       marks: [silas_freund]
 
 # Entwurf – Philipp überarbeitet.
@@ -172,9 +161,9 @@
     - id: hingehen
       label: { de: "Zum Bahnsteig gehen", en: "Go to the platform" }
       result:
-        de: Die beiden reden über das Wetter. Zum Abschied drückt Silas Jacob so fest, dass ihm die Rippen wehtun.
-        en: The two of them talk about the weather. When they part, Silas hugs Jacob so hard his ribs ache.
-      effects: { strength: 5 }
+        de: "Die beiden reden über das Wetter. Zum Abschied drückt Silas Jacob so fest, dass ihm die Rippen wehtun. Zum Schluss flüstert er Jacob den Namen eines Händlers am Hafen zu, der ein paar Cent mehr zahlt."
+        en: "The two of them talk about the weather. When they part, Silas hugs Jacob so hard his ribs ache. At the end he whispers the name of a dealer at the harbour who pays a few cents more."
+      effects: { strength: 5, price: 0.03 }
       marks: [silas_abschied_gut]
     - id: fernbleiben
       label: { de: "Keine Zeit – der Turm läuft", en: "No time – the rig is running" }

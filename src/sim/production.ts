@@ -9,6 +9,7 @@ import { formatDate } from './calendar';
 import type { Find, Well } from './drilling';
 import { fieldLabel, fieldOf, type Field } from './field';
 import type { GameState } from './game';
+import { timedEffect } from './events';
 import { leaseOf, parcelLabel } from './lease';
 
 /**
@@ -147,6 +148,7 @@ export function advanceProduction(input: GameState, balance: Balance): GameState
     gruppen.set(key, [...(gruppen.get(key) ?? []), well]);
   }
 
+  const faktor = Math.max(0, 1 + timedEffect(input, 'production'));
   const neuenStand = new Map<string, { lastRate: number; total: number }>();
   const hoechststand = new Map<string, number>();
   let gefoerdert = 0;
@@ -165,7 +167,8 @@ export function advanceProduction(input: GameState, balance: Balance): GameState
     }
     const bereitsDa = gruppe.reduce((s, w) => s + (w.production?.total ?? 0), 0);
     const ausbeute = recoverable(balance, reserves, peak);
-    const gewollt = gruppe.map((w) => wellRate(balance, w, n));
+    // Nachwirkung aus Ereignissen (0.2.15+3): production hebt oder senkt Jacobs Raten befristet.
+    const gewollt = gruppe.map((w) => wellRate(balance, w, n) * faktor);
     const bekommen = shareOut(gewollt, Math.max(0, ausbeute - bereitsDa));
     gruppe.forEach((w, i) => {
       neuenStand.set(w.parcelId, { lastRate: bekommen[i], total: (w.production?.total ?? 0) + bekommen[i] });

@@ -37,7 +37,7 @@
         de: Das neue Seil singt am Turm. Die Männer fluchen weniger, Jacob schläft besser.
         en: The new rope hums on the derrick. The men curse less, Jacob sleeps better.
       requires: { minCash: 80 }
-      effects: { cash: -80, strength: 3 }
+      effects: { cash: -80, strength: 3, production: 0.05 }
     - id: ablegen
       label: { de: "In den Ofen damit", en: "Into the stove" }
       result:
@@ -106,9 +106,9 @@
     - id: liegen
       label: { de: "Liegen lassen", en: "Let it lie" }
       result:
-        de: Der Stallbesitzer holt sich das Geld mit Aufschlag – vor allen Leuten im Saloon.
-        en: The stable owner collects with a surcharge – in front of everyone at the saloon.
-      effects: { cash: -90, strength: -2 }
+        de: "Der Stallbesitzer holt sich das Geld mit Aufschlag – vor allen Leuten im Saloon. Bis es bezahlt ist, rührt kein Gespann von Jacob einen Huf."
+        en: "The stable owner collects the money with a surcharge – in front of everyone in the saloon. Until it's paid, none of Jacob's teams moves a hoof."
+      effects: { cash: -100, teamsIdle: 1 }
       appointments: 0
       default: true
 
@@ -137,7 +137,6 @@
         en: 'Mrs. Hale sends a card. It says only: "Thank you. He liked you."'
       requires: { minCash: 200 }
       effects: { cash: -200 }
-      marks: [witwe_bezahlt]
     - id: verhandeln
       label: { de: "Zu Pruitt gehen und verhandeln (100 $)", en: "Go to Pruitt and bargain (100 $)" }
       result:
@@ -153,7 +152,6 @@
         de: Der Bezirksrichter spricht Mrs. Hale 350 $ zu. Nora Whitlock sitzt in der letzten Reihe und schreibt mit.
         en: The district judge awards Mrs. Hale 350 $. Nora Whitlock sits in the back row, taking notes.
       effects: { cash: -350 }
-      marks: [witwe_verklagt]
       appointments: 0
       default: true
 
@@ -179,9 +177,9 @@
     - id: lesen
       label: { de: "In Ruhe lesen", en: "Read it properly" }
       result:
-        de: Jacob liest bis die Lampe rußt. Er kennt jetzt jeden Bohrturm am Hügel beim Namen.
-        en: Jacob reads until the lamp smokes. He now knows every derrick on the hill by name.
-      effects: { strength: 2 }
+        de: "Jacob liest bis die Lampe rußt. Er kennt jetzt jeden Bohrturm am Hügel beim Namen. Er weiß jetzt, wann er verkaufen muss – ein paar Cent je Barrel."
+        en: "Jacob reads until the lamp smokes. He now knows every derrick on the hill by name. Now he knows when to sell – a few cents a barrel."
+      effects: { strength: -1, price: 0.02 }
     - id: ueberfliegen
       label: { de: "Überfliegen", en: "Skim it" }
       result:
@@ -199,28 +197,27 @@
     de: >-
       Ein Geologe namens Dr. Ambrose Pike schickt ungefragt einen Bericht: Unter
       der Parzelle am Bach liege „ohne jeden Zweifel“ ein zweiter Salzdom. Für
-      weitere 100 $ verrate er, wo genau. Die Proben im Umschlag riechen nach Lampenöl.
+      weitere 200 $ verrate er, wo genau. Die Proben im Umschlag riechen nach Lampenöl.
     en: >-
       A geologist named Dr. Ambrose Pike sends an unsolicited report: beneath the
       parcel by the creek lies "beyond all doubt" a second salt dome. For another
-      100 $ he will say exactly where. The samples in the envelope smell of lamp oil.
+      200 $ he will say exactly where. The samples in the envelope smell of lamp oil.
   conditions: { minRound: 3 }
   chance: 0.25
   choices:
     - id: bezahlen
-      label: { de: "Pike 100 $ schicken", en: "Send Pike 100 $" }
+      label: { de: "Pike 200 $ schicken", en: "Send Pike 200 $" }
       result:
         de: Pikes Antwort kommt nie. In Port Ellis erzählt man, er habe dasselbe an zwölf Männer verkauft.
         en: Pike's answer never comes. In Port Ellis they say he sold the same report to twelve men.
-      requires: { minCash: 100 }
-      effects: { cash: -100 }
-      marks: [pike_bezahlt]
+      requires: { minCash: 200 }
+      effects: { cash: -200 }
     - id: entlarven
       label: { de: "Die Proben Silas zeigen", en: "Show the samples to Silas" }
       result:
-        de: Silas riecht daran und lacht, bis er husten muss. „Lampenöl und Bahnschotter, Junge.“
-        en: Silas sniffs them and laughs until he coughs. "Lamp oil and railway ballast, boy."
-      marks: [pike_entlarvt]
+        de: "Silas riecht daran und lacht, bis er husten muss. „Lampenöl und Bahnschotter, Junge.“ Dann erzählt er, wo am Bach wirklich Öl riecht – bei einem Farmer, der billig verpachtet."
+        en: "Silas sniffs them and laughs until he coughs. \"Lamp oil and railway ballast, boy.\" Then he tells where oil really smells by the creek – on a farm that leases cheap."
+      effects: { strength: 2, leaseCost: -0.15 }
       sharp: true              # beste Antwort (2.7): fehlt, wenn Jacob erschöpft ist
     - id: wegwerfen
       label: { de: "Wegwerfen", en: "Throw it away" }
@@ -254,14 +251,14 @@
       result:
         de: Jacob schreibt bis spät in die Nacht. Danach ist ihm leichter.
         en: Jacob writes late into the night. Afterwards he feels lighter.
-      effects: { strength: 5 }
+      effects: { strength: 14 }
     - id: geld
-      label: { de: "Ein paar Zeilen und 50 $ schicken", en: "Send a few lines and 50 $" }
+      label: { de: "Ein paar Zeilen und 150 $ für den Doktor des Vaters schicken", en: "Send a few lines and 150 $ for father's doctor" }
       result:
         de: Das Geld kommt an. Die Mutter schreibt zurück, sie hätte lieber mehr Zeilen gehabt.
         en: The money arrives. His mother writes back that she would rather have had more lines.
-      requires: { minCash: 50 }
-      effects: { cash: -50, strength: 2 }
+      requires: { minCash: 150 }
+      effects: { cash: -150, strength: 4 }
       appointments: 0
     - id: liegen
       label: { de: "Später antworten", en: "Answer later" }
@@ -291,16 +288,18 @@
   chance: 0.25
   choices:
     - id: sheriff
-      label: { de: "Den Zettel zum Sheriff bringen", en: "Take the note to the sheriff" }
+      label: { de: "Den Zettel zum Sheriff bringen (50 $ für seine Mühe)", en: "Take the note to the sheriff (50 $ for his trouble)" }
       result:
-        de: Der Sheriff liest ihn, faltet ihn und steckt ihn ein. „Ich kümmere mich drum“, sagt er, ohne aufzustehen.
-        en: The sheriff reads it, folds it and pockets it. "I'll see to it," he says without getting up.
+        de: "Der Sheriff liest ihn, faltet ihn und steckt ihn ein. „Ich kümmere mich drum“, sagt er, ohne aufzustehen. Bullards Männer wissen am Abend, dass der Sheriff den Zettel hat."
+        en: "The sheriff reads it, folds it and pockets it. \"I'll see to it,\" he says without getting up. By evening Bullard's men know the sheriff has the note."
       marks: [drohung_sheriff]
+      effects: { cash: -50 }
+      requires: { minCash: 50 }
     - id: aufheben
       label: { de: "Aufheben – für später", en: "Keep it – for later" }
       result:
-        de: Jacob legt den Zettel zu seinen Papieren. Man weiß nie, wann Bullards Briefpapier noch nützlich wird.
-        en: Jacob puts the note with his papers. You never know when Bullard's stationery might come in handy.
+        de: "Jacob legt den Zettel zu seinen Papieren. Man weiß nie, wann Bullards Briefpapier noch nützlich wird. Bullard erfährt, dass Jacob den Zettel hat. Seine Männer halten sich seitdem von Jacobs Turm fern."
+        en: "Jacob puts the note with his papers. You never know when Bullard's stationery might come in handy. Bullard learns that Jacob has the note. His men keep away from Jacob's derrick since."
       appointments: 0
       marks: [drohung_aufgehoben]
     - id: verbrennen

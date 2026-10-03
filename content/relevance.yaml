@@ -1,0 +1,31 @@
+# Wirkung der Ereignis-Antworten (0.2.15+3): begründete Ausnahmen für npm run check:events.
+#
+# later: Merkzeichen, die in Kapitel 1 nichts abfragt, die aber ein späteres Kapitel braucht
+# (GDD: Bögen von Silas, Moss/Daniel, Nora, Mr. Vale, Ruth, Thomas und Crane laufen über das
+# ganze Spiel). Sie gelten nicht als „folgenlos“ – machen eine Antwort aber auch nicht stark:
+# Die Antwort braucht trotzdem eine spürbare Wirkung in Kapitel 1.
+# Jede Ausnahme braucht einen Grund. Fragt später ein Ereignis das Merkzeichen ab, kann sie raus.
+
+later:
+  - { mark: geburt_dabei, reason: "Thomas' Bogen (GDD Kapitel 3: Thomas kommt ins Unternehmen – oder nicht)" }
+  - { mark: geburt_verpasst, reason: "Thomas' Bogen (GDD Kapitel 3)" }
+  - { mark: thomas_wort_dabei, reason: "Thomas' Bogen (GDD Kapitel 3)" }
+  - { mark: thomas_wort_verpasst, reason: "Thomas' Bogen (GDD Kapitel 3)" }
+  - { mark: ruth_beiseite, reason: "Ruths Bogen (GDD Kapitel 2: Ruths Wunsch mitzuarbeiten)" }
+  - { mark: ruth_teilhaberin, reason: "Ruths Bogen (GDD Kapitel 2)" }
+  - { mark: ruth_vertroestet, reason: "Ruths Bogen (GDD Kapitel 2)" }
+  - { mark: ruth_zurueckgewiesen, reason: "Ruths Bogen (GDD Kapitel 2)" }
+  - { mark: silas_gedeckt, reason: "Silas' Bogen (GDD Kapitel 2: Silas gegen den Aufsichtsrat; Freund oder Kronzeuge)" }
+  - { mark: silas_gedemuetigt, reason: "Silas' Bogen (GDD Kapitel 2)" }
+  - { mark: silas_freund, reason: "Silas' Bogen (GDD Kapitel 2)" }
+  - { mark: silas_abschied_gut, reason: "Silas' Bogen (GDD Kapitel 2)" }
+  - { mark: daniel_gefoerdert, reason: "Daniel Moss kehrt in Kapitel 3 als Bezirksstaatsanwalt zurück (GDD)" }
+  - { mark: nora_ehrlich, reason: "Nora Whitlock recherchiert ab Kapitel 2 über Jahrzehnte (GDD)" }
+  - { mark: nora_abgewiesen, reason: "Nora Whitlock (GDD ab Kapitel 2)" }
+  - { mark: nora_kein_gespraech, reason: "Nora Whitlock (GDD ab Kapitel 2)" }
+  - { mark: nora_respekt, reason: "Nora Whitlock (GDD ab Kapitel 2)" }
+  - { mark: nora_beschwert, reason: "Nora Whitlock (GDD ab Kapitel 2)" }
+  - { mark: courier_gekauft, reason: "Nora Whitlock hat den gekauften Bericht ausgeschnitten (GDD ab Kapitel 2)" }
+  - { mark: vale_geld, reason: "Mr. Vales Einladung (GDD Kapitel 3)" }
+  - { mark: vale_abgelehnt, reason: "Mr. Vales Einladung (GDD Kapitel 3)" }
+  - { mark: crane_abgelehnt, reason: "Crane merkt sich die Absage (GDD: Rivalen merken sich Gefallen und Verrat)" }

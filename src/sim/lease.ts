@@ -5,6 +5,7 @@
 
 import type { Balance, Landowner, LeaseLocation } from './balance';
 import { formatDate } from './calendar';
+import { timedEffect } from './events';
 import type { GameState } from './game';
 import type { Parcel } from './geology';
 import type { Rng } from './rng';
@@ -95,7 +96,8 @@ export function leaseTerms(state: GameState, balance: Balance, parcelId: string)
   const location = locationFor(balance, knownDiscoveries(state), parcel);
   const landowner = landownerOf(balance, parcel);
   const { royaltyMin, royaltyMax, option } = balance.lease;
-  const bonus = roundBonus(balance, location.bonus * landowner.bonusFactor);
+  // Nachwirkung aus Ereignissen (0.2.15+3): leaseCost macht Pachten befristet teurer oder billiger.
+  const bonus = roundBonus(balance, location.bonus * landowner.bonusFactor * Math.max(0, 1 + timedEffect(state, 'leaseCost')));
   const royalty = Math.min(royaltyMax, Math.max(royaltyMin, location.royalty + landowner.royaltyAdd));
   const optionFee = roundBonus(balance, bonus * option.feeShare);
   return { location, landowner, bonus, royalty, optionFee };

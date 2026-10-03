@@ -7,11 +7,11 @@
 import type { GameState } from './game';
 import { newLogistics } from './logistics';
 
-/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2). */
-export const SAVE_FORMAT = 10;
+/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2), 11 = mit befristeten Nachwirkungen der Ereignisse (0.2.15+3). */
+export const SAVE_FORMAT = 11;
 
 /** Ältere Formate, die mit Ersatzwerten noch geladen werden. */
-const ALTE_FORMATE = [2, 3, 4, 5, 6, 7, 8, 9];
+const ALTE_FORMATE = [2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 export interface SaveFile {
   format: number;
@@ -99,6 +99,8 @@ export function validateState(value: unknown): LoadResult {
     !Object.values(events.lastMail).every(istZahl) ||
     !istObjekt(events.lastSeen) ||
     !Object.values(events.lastSeen).every(istZahl) ||
+    !istListe(events.timed) ||
+    !events.timed.every((t) => istObjekt(t) && istText(t.key) && istZahl(t.value) && istZahl(t.until) && istText(t.source)) ||
     !istObjekt(events.docs) ||
     !Object.values(events.docs).every((d) => istObjekt(d) && (d.forgery === null || istText(d.forgery)) && istListe(d.checked))
   ) {
@@ -191,7 +193,11 @@ export function deserializeGame(text: string): LoadResult {
   if (istObjekt(state.events) && state.events.lastSeen === undefined) {
     state = { ...state, events: { ...state.events, lastSeen: {} } };
   }
-  // Ersatzwerte (2.3): Spielstände aus Format 2 kennen noch keine Termine und
+  // Ersatzwert (0.2.15+3): Spielstände bis Format 10 kennen keine befristeten Nachwirkungen.
+  if (istObjekt(state.events) && state.events.timed === undefined) {
+    state = { ...state, events: { ...state.events, timed: [] } };
+  }
+    // Ersatzwerte (2.3): Spielstände aus Format 2 kennen noch keine Termine und
   // keine Kraft – Jacob ist ausgeruht, die Runde hat volle 5 Termine.
   if (parsed.format === 2) {
     state = { strength: 100, strengthMax: 100, agenda: { budget: 5, used: 0, done: [] }, ...state };

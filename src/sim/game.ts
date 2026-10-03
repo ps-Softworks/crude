@@ -179,7 +179,7 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
 export function endRound(input: GameState, balance: Balance, catalog: readonly EventDef[] = []): GameState {
   if (input.finished) return input;
   // Offene Ereignisse bekommen ihre Standard-Antwort, bevor die Runde abgerechnet wird.
-  const beantwortet = autoResolve(input, catalog);
+  const beantwortet = autoResolve(input, catalog, undefined, balance.events.timedRounds);
   const roundLogStart = beantwortet.log.length;
   // Crane-Übernahme (2.8): Hat Jacob verkauft, endet die Partie hier – ohne weitere Abrechnung.
   const verkauft = settleTakeover(beantwortet, balance);

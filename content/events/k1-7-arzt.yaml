@@ -28,7 +28,7 @@
         en: For a week Ruth runs the business from the kitchen table. Jacob sleeps, eats and sleeps.
       requires: { minCash: 40 }
       appointments: 2
-      effects: { cash: -40, strength: 10, ruth: 3 }
+      effects: { cash: -40, strength: 15, ruth: 3 }
     - id: wegschicken
       label: { de: "Den Doktor bezahlen und wegschicken (10 $)", en: "Pay the doctor and send him away (10 $)" }
       result:

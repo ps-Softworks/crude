@@ -65,21 +65,19 @@
       marks: [pike_pacht_gekauft]
       marksIfForged: [pike_urkunde_falsch]
     - id: erpressen
-      label: { de: "Pike die Fälschung vorhalten – 100 $ fürs Schweigen", en: "Show Pike the forgery – 100 $ for silence" }
+      label: { de: "Pike die Fälschung vorhalten – 250 $ fürs Schweigen", en: "Show Pike the forgery – 250 $ for silence" }
       result:
         de: Pike wird weiß, dann zahlt er. Jacob hat jetzt Geld und einen Feind, der weiß, wo er wohnt.
         en: Pike goes white, then pays. Jacob now has money and an enemy who knows where he lives.
       requiresFound: true
-      effects: { cash: 100 }
-      marks: [pike_erpresst]
+      effects: { cash: 250 }
     - id: anzeigen
       label: { de: "Mit der Urkunde zum Sheriff", en: "Take the deed to the sheriff" }
       result:
         de: Der Sheriff gähnt, nimmt die Urkunde aber an sich. Pike verlässt Port Ellis noch in der Nacht. Jacob schläft ruhig.
         en: The sheriff yawns but keeps the deed. Pike leaves Port Ellis that same night. Jacob sleeps soundly.
       requiresFound: true
-      effects: { strength: 5 }
-      marks: [pike_angezeigt]
+      effects: { strength: 15 }
     - id: ablehnen
       label: { de: "Nicht antworten", en: "Don't reply" }
       result:
@@ -212,11 +210,10 @@
     - id: entlarven
       label: { de: "Hale das Gutachten zurückschicken – mit Anmerkungen", en: "Return Hale's survey – annotated" }
       result:
-        de: Jacob schreibt die echten Zahlen an den Rand. Nora Whitlock hört davon und bringt eine kleine Meldung. Hale sucht seine Teilhaber jetzt woanders.
-        en: Jacob writes the real figures in the margin. Nora Whitlock hears of it and runs a short item. Hale now looks for partners elsewhere.
+        de: "Jacob schreibt die echten Zahlen an den Rand. Nora Whitlock hört davon und bringt eine kleine Meldung. Hale sucht seine Teilhaber jetzt woanders. Die Farmer am Hügel merken sich, wer Schwindler entlarvt."
+        en: "Jacob writes the real figures in the margin. Nora Whitlock hears of it and runs a short item. Hale now looks for partners elsewhere. The farmers on the hill remember who unmasks swindlers."
       requiresFound: true
-      effects: { strength: 5 }
-      marks: [hale_entlarvt]
+      effects: { strength: 5, leaseCost: -0.15 }
     - id: ablehnen
       label: { de: "Ablegen", en: "File it away" }
       result:

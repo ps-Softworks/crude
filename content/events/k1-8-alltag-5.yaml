@@ -15,6 +15,7 @@
 # --- Arbeiter -----------------------------------------------------------------
 
 - id: trupp_sonntag
+  notMarked: [crabb_entlassen]
   title:
     de: Der Trupp will den Sonntag
     en: The Crew Wants Sunday Off
@@ -55,6 +56,7 @@
 
 - id: streik
   marked: [trupp_unmut]
+  notMarked: [trupp_gedeckt]
   delay: 2
   chance: 0.35
   title:
@@ -73,27 +75,24 @@
     - id: nachgeben
       label: { de: "Nachgeben (150 $)", en: "Give in (150 $)" }
       result:
-        de: Bis Mittag läuft der Kessel wieder. Crabb gibt Jacob die Hand, ohne zu lächeln.
-        en: By noon the boiler is running again. Crabb shakes Jacob's hand without smiling.
+        de: "Bis Mittag läuft der Kessel wieder. Crabb gibt Jacob die Hand, ohne zu lächeln. Die Männer arbeiten danach, als hätten sie etwas zu beweisen."
+        en: "By noon the boiler is running again. Crabb shakes Jacob's hand without smiling. Afterwards the men work as if they had something to prove."
       requires: { minCash: 150 }
-      effects: { cash: -150 }
-      marks: [streik_nachgegeben]
+      effects: { cash: -150, production: 0.05 }
     - id: ersetzen
       label: { de: "Neue Männer vom Hafen holen (120 $)", en: "Bring new men from the docks (120 $)" }
       result:
         de: Die neuen Männer sind billig und ungeschickt. Die alten stehen am Zaun und schauen zu, wie einer sich die Hand quetscht.
         en: The new men are cheap and clumsy. The old ones stand at the fence and watch one of them crush his hand.
       requires: { minCash: 120 }
-      effects: { cash: -120, strength: -4 }
-      marks: [streikbrecher]
+      effects: { cash: -120, strength: -4, production: -0.1 }
       appointments: 2
     - id: aussitzen
       label: { de: "Aussitzen", en: "Sit it out" }
       result:
         de: Zehn Tage Stillstand. Dann kommen sie zurück, weil sie Hunger haben. Vergessen tun sie es nicht.
         en: Ten days idle. Then they come back because they're hungry. They don't forget it.
-      effects: { cash: -200, strength: -5 }
-      marks: [streik_ausgesessen]
+      effects: { cash: -200, strength: -5, production: -0.1 }
       appointments: 0
       default: true
 
@@ -121,7 +120,6 @@
         en: Haskell prescribes dry air and no work. Kerrigan laughs at that. He still comes to the fence every day to watch.
       requires: { minCash: 90 }
       effects: { cash: -90 }
-      marks: [kerrigan_geschont]
     - id: buero
       label: { de: "Ihm die Bücher und das Lager geben", en: "Give him the books and the store shed" }
       result:
@@ -129,7 +127,7 @@
         en: Kerrigan now counts barrels and rope, sitting down. He is thorough. Ruth says he's the first who doesn't correct her figures.
       appointments: 2
       sharp: true
-      marks: [kerrigan_geschont]
+      marks: [kerrigan_lager]
     - id: schweigen
       label: { de: "Ihn weiterarbeiten lassen", en: "Let him keep working" }
       result:
@@ -137,6 +135,42 @@
         en: Kerrigan works on. Jacob hears the cough at night now too, though the boarding house is a mile away.
       effects: { strength: -3 }
       marks: [kerrigan_verheizt]
+      appointments: 0
+      default: true
+
+- id: kerrigan_zusammenbruch
+  draft: true
+  marked: [kerrigan_verheizt]
+  delay: 2
+  chance: 0.5
+  title:
+    de: Kerrigan bricht zusammen
+    en: Kerrigan Collapses
+  text:
+    de: >-
+      Mitten in der Schicht sackt Dan Kerrigan an der Plattform zusammen, wie ein
+      leerer Sack. Die Männer tragen ihn ins Kesselhaus. Er lebt, aber er hustet,
+      wie Jacobs Vater am Ende gehustet hat. Hollister sieht Jacob an und sagt
+      nichts. Das sagt genug.
+    en: >-
+      In the middle of the shift Dan Kerrigan sinks down at the platform like an
+      empty sack. The men carry him into the boiler house. He is alive, but he
+      coughs the way Jacob's father coughed at the end. Hollister looks at Jacob and
+      says nothing. That says enough.
+  choices:
+    - id: sanatorium
+      label: { de: "Ihn ins Sanatorium in den Bergen schicken (300 $)", en: "Send him to the sanatorium in the hills (300 $)" }
+      result:
+        de: Kerrigan fährt mit dem Abendzug, eine Decke über den Knien. Im Trupp wird wieder gesungen, leise.
+        en: Kerrigan leaves on the evening train, a blanket over his knees. The crew sings again, quietly.
+      requires: { minCash: 300 }
+      effects: { cash: -300, strength: 3 }
+    - id: heimschicken
+      label: { de: "Ihm den Lohn auszahlen und ihn heimschicken", en: "Pay out his wages and send him home" }
+      result:
+        de: Kerrigan nimmt das Geld und den Zug. Die Männer arbeiten weiter, aber langsamer. Jeder von ihnen hustet manchmal.
+        en: Kerrigan takes the money and the train. The men keep working, but slower. Every one of them coughs sometimes.
+      effects: { cash: -60, strength: -6, production: -0.1 }
       appointments: 0
       default: true
 
@@ -192,13 +226,12 @@
       only wants Mr. Harlan to know.
   choices:
     - id: geld
-      label: { de: "Geld schicken (60 $)", en: "Send money (60 $)" }
+      label: { de: "Geld schicken (120 $)", en: "Send money (120 $)" }
       result:
         de: Jacob schreibt drei Sätze und legt das Geld dazu. Den dritten Satz streicht er wieder.
         en: Jacob writes three sentences and encloses the money. He crosses out the third sentence.
-      requires: { minCash: 60 }
-      effects: { cash: -60 }
-      marks: [eli_spaet_geholfen]
+      requires: { minCash: 120 }
+      effects: { cash: -120, strength: 4, ruth: 3 }
     - id: weglegen
       label: { de: "Den Brief weglegen", en: "Put the letter away" }
       result:
@@ -209,6 +242,7 @@
       default: true
 
 - id: crabb_lager
+  notMarked: [kerrigan_lager]
   title:
     de: Im Lager fehlt Seil
     en: Rope Is Missing from the Store
@@ -227,11 +261,11 @@
     - id: stellen
       label: { de: "Crabb unter vier Augen fragen", en: "Ask Crabb in private" }
       result:
-        de: Crabb leugnet erst, dann nicht mehr. Seine Tochter ist krank. Er zahlt es vom Lohn ab, und er bleibt.
-        en: Crabb denies it, then stops denying it. His daughter is sick. He pays it back from his wages, and he stays.
+        de: "Crabb leugnet erst, dann nicht mehr. Seine Tochter ist krank. Er zahlt es vom Lohn ab, und er bleibt. Seitdem ist er der Erste am Turm und der Letzte am Kessel."
+        en: "Crabb denies it, then stops denying it. His daughter is sick. He pays it back from his wages, and he stays. Since then he is the first at the derrick and the last at the boiler."
+      effects: { production: 0.05 }
       appointments: 2
       sharp: true
-      marks: [crabb_geschont]
     - id: entlassen
       label: { de: "Crabb vor dem Trupp entlassen", en: "Fire Crabb in front of the crew" }
       result:
@@ -267,10 +301,10 @@
     - id: buergen
       label: { de: "Für Mateo bürgen und mit zum Richter gehen", en: "Vouch for Mateo and go to the judge with him" }
       result:
-        de: Ein ganzer Tag im Bezirksgericht, ein Stempel, ein Formular. Mateo bleibt. Pruitt merkt sich, wer sich eingemischt hat.
-        en: A whole day at the county court, a stamp, a form. Mateo stays. Pruitt remembers who interfered.
-      effects: { cash: -20, strength: -3 }
-      marks: [mateo_geschuetzt]
+        de: "Ein ganzer Tag im Bezirksgericht, ein Stempel, ein Formular. Mateo bleibt. Pruitt merkt sich, wer sich eingemischt hat. Mateo heizt seitdem wie für zwei."
+        en: "A whole day at the county court, a stamp, a form. Mateo stays. Pruitt remembers who interfered. Since then Mateo stokes like two men."
+      effects: { cash: -20, strength: -3, production: 0.05 }
+      requires: { minCash: 20 }
       appointments: 2
     - id: zahlen
       label: { de: "Pruitt die Prämie selbst zahlen (25 $)", en: "Pay Pruitt the bounty yourself (25 $)" }
@@ -279,14 +313,13 @@
         en: Pruitt takes twenty-five instead of five and touches his hat. He'll be back next month, he says.
       requires: { minCash: 25 }
       effects: { cash: -25 }
-      marks: [pruitt_bezahlt]
       appointments: 0
     - id: ausliefern
       label: { de: "Mateo gehen lassen", en: "Let Mateo go" }
       result:
         de: Pruitt nimmt Mateo am Arm. Der Kessel läuft am Nachmittag schlechter. Niemand im Trupp sagt etwas.
         en: Pruitt takes Mateo by the arm. The boiler runs worse in the afternoon. Nobody in the crew says anything.
-      marks: [mateo_ausgeliefert]
+      effects: { production: -0.1 }
       appointments: 0
       default: true
 
@@ -393,12 +426,12 @@
   chance: 0.08
   choices:
     - id: schiessen
-      label: { de: "Die Quelle schießen lassen (120 $)", en: "Have the well shot (120 $)" }
+      label: { de: "Die Quelle schießen lassen (150 $)", en: "Have the well shot (150 $)" }
       result:
-        de: Ein dumpfer Schlag unter den Füßen, dann eine Fontäne aus Öl und Steinen. Der Tank füllt sich in einem Tag. Silas hat sich die ganze Zeit hinter dem Wagen versteckt.
-        en: A dull thump underfoot, then a fountain of oil and stones. The tank fills in a day. Silas hid behind the wagon the whole time.
-      requires: { minCash: 120 }
-      effects: { cash: -120, oilStock: 250 }
+        de: "Ein dumpfer Schlag unter den Füßen, dann eine Fontäne aus Öl und Steinen. Die Quelle fließt wie am ersten Tag – eine Weile jedenfalls. Silas hat sich die ganze Zeit hinter dem Kesselhaus versteckt."
+        en: "A dull thud underfoot, then a fountain of oil and stones. The well flows like on the first day – for a while, anyway. Silas hid behind the boiler house the whole time."
+      requires: { minCash: 150 }
+      effects: { cash: -150, production: 0.25 }
       appointments: 2
     - id: nein
       label: { de: "Den Wagen weiterfahren lassen", en: "Let the wagon roll on" }
@@ -428,30 +461,29 @@
     - id: selbst
       label: { de: "Selbst am Seil hinunter", en: "Go down on a rope yourself" }
       result:
-        de: Jacob kommt schwarz bis zum Hals heraus, das Kind auf dem Arm. Es weint, also lebt es. Der Farmer kann kein Wort sagen.
-        en: Jacob comes out black to the neck, the child in his arms. She's crying, so she's alive. The farmer can't say a word.
-      effects: { strength: -8, ruth: 4 }
-      marks: [annie_gerettet]
+        de: "Jacob kommt schwarz bis zum Hals heraus, das Kind auf dem Arm. Es weint, also lebt es. Der Farmer kann kein Wort sagen. Er verpachtet sein Land am Nordhang seitdem nur an Jacob, und die Nachbarn reden mit."
+        en: "Jacob comes out black to the neck, the child in his arms. She's crying, so she's alive. The farmer can't say a word. Since then he leases his land on the north slope only to Jacob, and the neighbours talk."
+      effects: { strength: -8, ruth: 4, leaseCost: -0.2 }
       appointments: 2
     - id: trupp
       label: { de: "Den Trupp eine Rampe aus Brettern bauen lassen", en: "Have the crew build a plank ramp" }
       result:
-        de: Es dauert eine Stunde, eine lange. Dann reicht Crabb das Kind nach oben. Es hustet Schlamm und lebt.
-        en: It takes an hour, a long one. Then Crabb hands the child up. She coughs mud and lives.
-      effects: { cash: -30, strength: -2 }
-      marks: [annie_gerettet]
+        de: "Es dauert eine Stunde, eine lange. Dann reicht Crabb das Kind nach oben. Es hustet Schlamm und lebt. Der Farmer vergisst es nicht – und die Nachbarn am Nordhang auch nicht."
+        en: "It takes an hour, a long one. Then Crabb hands the child up. She coughs mud and lives. The farmer does not forget – nor do the neighbours on the north slope."
+      effects: { cash: -30, strength: -2, leaseCost: -0.2 }
+      requires: { minCash: 30 }
     - id: weg
       label: { de: "Nach dem Sheriff schicken und weiterarbeiten", en: "Send for the sheriff and get back to work" }
       result:
-        de: Der Sheriff kommt am Nachmittag. Das Kind haben bis dahin Bullards Männer herausgeholt. In Salt Hill erzählt man es so.
-        en: The sheriff comes in the afternoon. By then Bullard's men have pulled the child out. That's how they tell it in Salt Hill.
-      marks: [annie_weggesehen]
+        de: "Der Sheriff kommt am Nachmittag. Das Kind haben bis dahin Bullards Männer herausgeholt. In Salt Hill erzählt man es so. Die Farmer verlangen von Jacob seitdem mehr für ihr Land."
+        en: "The sheriff comes in the afternoon. By then Bullard's men have pulled the child out. That's how they tell it in Salt Hill. Since then the farmers have asked Jacob more for their land."
+      effects: { leaseCost: 0.15 }
       appointments: 0
       default: true
 
 - id: diebe_tank
   group: diebe
-  notMarked: [sheriff_bezahlt]
+  notMarked: [sheriff_bezahlt, sheriff_umgangen, eli_waechter]
   title:
     de: Jemand zapft den Tank an
     en: Someone Is Tapping the Tank
@@ -517,19 +549,11 @@
         de: Tatum lädt das Fass selbst auf. Die beiden Diebe sind am Sonntag wieder frei; einer arbeitet jetzt für Tatum.
         en: Tatum loads the barrel himself. The two thieves are free again on Sunday; one of them now works for Tatum.
       effects: { oilStock: -40 }
+      default: true
     - id: gericht
       label: { de: "Auf einem Prozess bestehen", en: "Insist on a trial" }
       result:
-        de: Der Bezirksrichter verhandelt in drei Wochen, Jacob muss aussagen. Die Diebe bekommen ein halbes Jahr. Tatum grüßt seitdem knapper.
-        en: The county judge hears it in three weeks; Jacob has to testify. The thieves get half a year. Tatum's greeting has been curter since.
-      effects: { strength: -3 }
-      marks: [diebe_verurteilt]
+        de: "Der Bezirksrichter verhandelt in drei Wochen, Jacob muss aussagen. Die Diebe bekommen ein halbes Jahr, und Jacob 200 $ Schadenersatz aus ihrem Wagen. Tatum grüßt seitdem knapper."
+        en: "The district judge hears it in three weeks; Jacob has to testify. The thieves get half a year, and Jacob 200 $ damages from the sale of their wagon. Tatum greets him more curtly since."
+      effects: { strength: -4, cash: 200 }
       appointments: 2
-    - id: danke
-      label: { de: "Danken und nichts weiter fragen", en: "Thank him and ask nothing more" }
-      result:
-        de: Tatum nimmt das Fass trotzdem. Üblich ist üblich.
-        en: Tatum takes the barrel anyway. Customary is customary.
-      effects: { oilStock: -40 }
-      appointments: 0
-      default: true

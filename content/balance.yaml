@@ -391,6 +391,19 @@ events:
   documents:
     forgeryChance: 0.5     # PLATZHALTER: Chance, dass ein Dokument gefälscht ist (ein Ereignis kann eigene forgeryChance haben)
     maxChecks: 2           # PLATZHALTER: so viele Felder prüft die Lupe je Dokument (sonst wäre alles prüfen zu leicht)
+  # Befristete Nachwirkungen (0.2.15+3): Ereignis-Effekte price ($ je Barrel beim Crane Trust),
+  # production (Anteil der eigenen Förderung) und leaseCost (Anteil am Pachtbonus) gelten so viele
+  # Runden, die Antwortrunde mitgezählt. Dieselbe Wirkung aus demselben Ereignis zählt nur einmal.
+  timedRounds: 4           # PLATZHALTER
+  # Prüfung schwacher Antworten (0.2.15+3, npm run check:events): Eine Antwort ist spürbar, wenn sie
+  # mindestens minShare × chapterMoney wert ist (hier 200 $), eine dauerhafte Wirkung hat (Tarif,
+  # Fuhrwerke, Preis, Förderung, Pacht) oder ein Merkzeichen setzt, das später etwas abfragt.
+  # Kraft und Familie zählen mit den Gewichten des Standard-Bots (bots.events.balanced), Öl zum Trendpreis.
+  relevance:
+    chapterMoney: 10000    # typisches Geld eines Kapitels: Startkasse 2.500 $, Kapitelziel 50.000 $ – grob die Kasse zur Mitte
+    minShare: 0.02         # 2 % davon = 200 $
+    refBarrels: 5000       # typischer Verkauf je Runde (eine kleine Quelle zur Kapitelmitte)
+    refLeaseSpend: 1500    # typischer Pachtbonus in timedRounds Runden
 
 # Termine und Kraft (2.3, GDD §3 und §4). Kraft ist für den Spieler nie als Zahl sichtbar.
 agenda:

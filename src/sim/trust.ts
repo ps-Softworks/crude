@@ -7,6 +7,7 @@
 import type { Balance } from './balance';
 import { formatDate } from './calendar';
 import { empireValue } from './empire';
+import { timedEffect } from './events';
 import type { GameState } from './game';
 
 /**
@@ -87,12 +88,15 @@ export function craneCutRoundsLeft(state: Lage, balance: Balance): number {
   return r + balance.rivals.crane.cutRounds - state.round + 1;
 }
 
-/** Was der Trust Jacob je Barrel zahlt: Posted Price minus Abschlag, nie unter null. */
+/**
+ * Was der Trust Jacob je Barrel zahlt: Posted Price minus Abschlag, plus/minus
+ * befristete Nachwirkungen aus Ereignissen (price, 0.2.15+3), nie unter null.
+ */
 export function jacobPrice(
   state: Lage & Pick<GameState, 'postedPrice'>,
   balance: Balance,
 ): number {
-  return Math.max(0, cents(state.postedPrice - craneCut(state, balance)));
+  return Math.max(0, cents(state.postedPrice - craneCut(state, balance) + timedEffect(state, 'price')));
 }
 
 /**

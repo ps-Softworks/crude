@@ -15,7 +15,9 @@ Kurzreferenz der Felder:
 - Bedingungen: `minRound`, `maxRound`, `minCash`, `maxCash`, `minOilStock`,
   `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100)
 - Effekte: `cash`, `oilStock`, `railTariff`, `strength` (Kraft), `ruth`, `thomas` (Beziehung 0–100, 2.7),
-  `teams` (eigene Gespanne +/−), `teamsIdle` (eigene Fuhrwerke stehen bis Runde jetzt+n still; 0.2.15+2)
+  `teams` (eigene Gespanne +/−), `teamsIdle` (eigene Fuhrwerke stehen bis Runde jetzt+n still; 0.2.15+2),
+  befristet für `events.timedRounds` Runden (0.2.15+3): `price` ($ je Barrel beim Trust), `production`
+  (Anteil der Förderung), `leaseCost` (Anteil am Pachtbonus); dasselbe Ereignis stapelt sich nicht
 - Termine (2.3): `appointments` = Termine, die eine Antwort kostet (Standard 1; an einer Wahl
   überschreibt es den Wert des Ereignisses, z. B. `appointments: 0` für „abwinken“).
   Bleibt ein Ereignis liegen, gilt die Standard-Wahl und kostet keine Termine.
@@ -64,3 +66,9 @@ Kurzreferenz der Felder:
   bekommt `certain: true` (z. B. die Geburt von Thomas).
 - Transport (0.2.15+2): `k1-9-transport.yaml` – Streik/Bestechung eigener Fuhrleute, Wegerechte für die
   Pipeline. Merkzeichen der Simulation: `fuhrleute_eigen`, `pipeline_geplant`, `pipeline_gebaut`, `haendler_kunde`.
+- Wirkung (0.2.15+3): `npm run check:events` (`-- --alle` für alle) bewertet jede Antwort und meldet
+  schwache: Wirkung unter 2 % des Kapitel-Gelds (balance.yaml `events.relevance`, 200 $), keine dauerhafte
+  Folge, kein Merkzeichen, das später etwas abfragt. Eine einzelne schwache Antwort neben einer starken
+  ist das „Gegenstück“ und erlaubt. Merkzeichen für spätere Kapitel: `content/relevance.yaml` (mit Grund).
+  Neue Folgen früher folgenloser Merkzeichen: `bullard_rache_folge`, `kerrigan_zusammenbruch`,
+  `wegerecht_moss_versoehnt`; Schutz durch `notMarked` (Diebe, Seil, Streik, Lohn, Schlamm, Lager).

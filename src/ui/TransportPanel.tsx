@@ -26,6 +26,7 @@ import {
 } from '../sim/logistics';
 import { jacobSupply } from '../sim/market';
 import { buyerCapacityLeft, buyerPrice, capacityLeft, exclusiveSurcharge, modeUnavailable, netPrice, sellOil, tariff } from '../sim/transport';
+import { timedEffect, timedRoundsLeft } from '../sim/events';
 import { cartelCut, craneCutRoundsLeft, exclusiveActive, grudgeCut, railFrozen, volumeDealActive, volumeObligation } from '../sim/trust';
 import { balance } from './balance';
 
@@ -68,6 +69,8 @@ export function SalePanel({ game, onSold }: { game: GameState; onSold: (state: G
     prevPrice !== undefined && prevPrice !== game.postedPrice ? (game.postedPrice > prevPrice ? ' ↑' : ' ↓') : '';
   const abschlag = cartelCut(game, balance);
   const groll = grudgeCut(game, balance);
+  const nachwirkung = timedEffect(game, 'price');
+  const nachwirkungRunden = timedRoundsLeft(game, 'price');
 
   return (
     <div className="sale-panel">
@@ -80,6 +83,12 @@ export function SalePanel({ game, onSold }: { game: GameState; onSold: (state: G
         <p className="hint">
           Crane-Abschlag: {price(abschlag)} je Barrel weniger (noch {craneCutRoundsLeft(game, balance)}{' '}
           {craneCutRoundsLeft(game, balance) === 1 ? 'Runde' : 'Runden'}).
+        </p>
+      )}
+      {nachwirkung !== 0 && (
+        <p className="hint">
+          Folge einer Entscheidung: Der Trust zahlt dir {price(Math.abs(nachwirkung))} je Barrel {nachwirkung > 0 ? 'mehr' : 'weniger'} (noch{' '}
+          {nachwirkungRunden} {nachwirkungRunden === 1 ? 'Runde' : 'Runden'}).
         </p>
       )}
       {groll > 0 && <p className="hint">Crane ist verärgert, weil du an den Händler verkauft hast: {price(groll)} je Barrel weniger.</p>}

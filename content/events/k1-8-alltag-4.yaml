@@ -89,7 +89,6 @@
         de: Zwei Männer der Bank kommen mit einem Wagen und einer Liste. Sie nehmen das Öl aus dem Tank und, was fehlt, in bar.
         en: Two bank men arrive with a wagon and a list. They take the oil from the tank and the rest in cash.
       effects: { oilStock: -400, cash: -400 }
-      marks: [bank_gepfaendet]
       appointments: 0
       default: true
 
@@ -162,7 +161,6 @@
         de: Am Abend geht der Neffe. In der Nacht brennt der Schuppen mit dem Seil und dem Werkzeug. Rourke bekommt sein Geld trotzdem, aus Jacobs Kasse, vor Zeugen.
         en: In the evening the nephew leaves. That night the shed with the rope and tools burns. Rourke gets his money anyway, out of Jacob's till, in front of witnesses.
       effects: { cash: -420, strength: -6 }
-      marks: [rourke_feind]
       appointments: 0
       default: true
 
@@ -223,12 +221,12 @@
       longer knows Merriwether. A lawyer there would try, for a retainer.
   choices:
     - id: anwalt
-      label: { de: "Den Anwalt bezahlen (60 $) und auf einen Teil hoffen", en: "Pay the lawyer (60 $) and hope for part of it" }
+      label: { de: "Den Anwalt bezahlen (100 $) und auf einen Teil hoffen", en: "Pay the lawyer (100 $) and hope for a share" }
       result:
-        de: Nach Monaten kommt ein Scheck über 150 $. Der Brief des Anwalts dazu ist länger als der Scheck wert.
-        en: Months later a cheque for 150 $ arrives. The lawyer's letter with it is longer than the cheque is worth.
-      requires: { minCash: 60 }
-      effects: { cash: 90 }
+        de: "Nach Monaten kommt ein Scheck über 300 $. Abzüglich des Anwalts bleiben 200 $, und ein Brief, der länger ist als der Scheck wert."
+        en: "After months a cheque for 300 $ arrives. Less the lawyer, 200 $ remain – and a letter longer than the cheque is worth."
+      requires: { minCash: 100 }
+      effects: { cash: 200 }
       appointments: 2
     - id: abschreiben
       label: { de: "Abschreiben", en: "Write it off" }
@@ -265,7 +263,6 @@
         de: Der junge Mann bläst auf die Tinte. „Mr. Crane schätzt verlässliche Partner.“ Im Hafen weiß man es am Abend.
         en: The young man blows on the ink. "Mr. Crane values reliable partners." By evening the harbour knows.
       effects: { oilStock: -400, cash: 440 }
-      marks: [crane_vorkauf]
     - id: ablehnen
       label: { de: "Ablehnen", en: "Decline" }
       result:
@@ -297,23 +294,22 @@
       result:
         de: Jacob schöpft selbst, aus der Mitte des Fasses. Lusk misst noch einmal und findet nichts mehr. Er notiert sich Jacobs Namen.
         en: Jacob draws it himself, from the middle of the barrel. Lusk measures again and finds nothing. He writes down Jacob's name.
+      effects: { strength: -4 }
       appointments: 2
       sharp: true
-      marks: [lusk_beschaemt]
     - id: schmieren
-      label: { de: "Lusk eine Zigarre und 20 $ anbieten", en: "Offer Lusk a cigar and 20 $" }
+      label: { de: "Lusk eine Zigarre und 60 $ anbieten", en: "Offer Lusk a cigar and 60 $" }
       result:
-        de: Die Probe ist plötzlich klar. Lusk steckt die Zigarre ein und das Geld schneller.
-        en: Suddenly the sample is clear. Lusk pockets the cigar, and the money faster.
-      requires: { minCash: 20 }
-      effects: { cash: -20 }
-      marks: [lusk_bestochen]
+        de: "Die Probe ist plötzlich klar. Lusk steckt die Zigarre ein und das Geld schneller. Seitdem bekommt Jacobs Öl immer erste Klasse."
+        en: "Suddenly the sample is clear. Lusk pockets the cigar, and the money faster. Since then Jacob's oil always gets first grade."
+      requires: { minCash: 60 }
+      effects: { cash: -60, price: 0.02 }
     - id: hinnehmen
       label: { de: "Den Abzug hinnehmen", en: "Accept the deduction" }
       result:
-        de: Zweite Klasse. Der Trust verkauft dasselbe Öl in Hallstead als erste.
-        en: Second grade. The Trust sells the same oil in Hallstead as first.
-      effects: { cash: -60 }
+        de: "Zweite Klasse – und Lusk bleibt dabei. Eine Weile zahlt der Trust Jacob fünf Cent weniger je Barrel und verkauft dasselbe Öl in Hallstead als erste."
+        en: "Second grade – and Lusk sticks to it. For a while the Trust pays Jacob five cents less a barrel and sells the same oil in Hallstead as first."
+      effects: { price: -0.05 }
       appointments: 0
       default: true
 
@@ -340,18 +336,17 @@
     - id: helfen
       label: { de: "Mit dem ganzen Trupp hinfahren", en: "Ride over with the whole crew" }
       result:
-        de: Bis zum Morgen schaufeln sie einen Wall und fangen das Öl in einer Grube. Bullard sagt nichts, er drückt Jacob nur die Schulter. Das ist bei ihm viel.
-        en: By morning they have shovelled a dike and caught the oil in a pit. Bullard says nothing; he only grips Jacob's shoulder. For him that is a lot.
-      effects: { strength: -8 }
-      marks: [bullard_geholfen]
+        de: "Bis zum Morgen schaufeln sie einen Wall und fangen das Öl in einer Grube. Bullard sagt nichts, er drückt Jacob nur die Schulter. Das ist bei ihm viel. Das Öl aus der Grube, sagt er, gehöre Jacob: 300 Barrel."
+        en: "By morning they have shovelled a dike and caught the oil in a pit. Bullard says nothing; he only grips Jacob's shoulder. For him that is a lot. The oil in the pit, he says, belongs to Jacob: 300 barrels."
+      effects: { strength: -8, oilStock: 300 }
       appointments: 3
     - id: maenner
-      label: { de: "Den Trupp schicken, selbst bleiben (50 $ Nachtlohn)", en: "Send the crew, stay behind (50 $ night wages)" }
+      label: { de: "Den Trupp schicken, selbst bleiben (80 $ Nachtlohn)", en: "Send the crew, stay behind (80 $ night wages)" }
       result:
-        de: Die Männer kommen bei Sonnenaufgang zurück, schwarz bis zu den Augen. Bullard lässt ausrichten, er habe Jacob nicht gesehen.
-        en: The men come back at sunrise, black to the eyes. Bullard sends word he didn't see Jacob there.
-      requires: { minCash: 50 }
-      effects: { cash: -50 }
+        de: "Die Männer kommen bei Sonnenaufgang zurück, schwarz bis zu den Augen, mit 150 Barrel aus der Grube. Bullard lässt ausrichten, er habe Jacob nicht gesehen."
+        en: "The men come back at sunrise, black to the eyes, with 150 barrels from the pit. Bullard sends word that he did not see Jacob."
+      requires: { minCash: 80 }
+      effects: { cash: -80, oilStock: 150 }
     - id: schlafen
       label: { de: "Die Tür zumachen", en: "Close the door" }
       result:
@@ -363,6 +358,7 @@
 - id: bullard_seil
   rival: bullard
   marked: [bullard_fehde]
+  notMarked: [brand_geholfen, drohung_aufgehoben, drohung_sheriff]
   delay: 1
   title:
     de: Das Seil ist angeschnitten
@@ -380,12 +376,12 @@
   chance: 0.2
   choices:
     - id: wache
-      label: { de: "Eine Nachtwache bezahlen (80 $)", en: "Pay for a night watch (80 $)" }
+      label: { de: "Eine Nachtwache für die ganze Saison bezahlen (200 $)", en: "Pay for a night watch all season (200 $)" }
       result:
         de: Zwei Männer mit Laternen und einer Flinte. In den nächsten Nächten passiert nichts, und das kostet jede Nacht.
         en: Two men with lanterns and a shotgun. Nothing happens the next few nights, and that costs every night.
-      requires: { minCash: 80 }
-      effects: { cash: -80 }
+      requires: { minCash: 200 }
+      effects: { cash: -200 }
     - id: zurueck
       label: { de: "Bullards Seil auch anschneiden lassen", en: "Have Bullard's cable cut too" }
       result:
@@ -396,9 +392,49 @@
     - id: ersetzen
       label: { de: "Ein neues Seil kaufen und schweigen (60 $)", en: "Buy a new cable and keep quiet (60 $)" }
       result:
-        de: Das alte Seil hängt jetzt im Schuppen, als Andenken. Silas schaut es jeden Morgen an.
-        en: The old cable now hangs in the shed as a keepsake. Silas looks at it every morning.
-      effects: { cash: -60 }
+        de: "Das alte Seil hängt jetzt im Schuppen, als Andenken. Silas schaut es jeden Morgen an. Bis das neue Seil eingelaufen ist, schlägt der Turm nur halb so oft."
+        en: "The old cable now hangs in the shed as a keepsake. Silas looks at it every morning. Until the new rope is broken in, the derrick strikes only half as often."
+      effects: { cash: -60, production: -0.1 }
+      default: true
+
+- id: bullard_rache_folge
+  draft: true
+  marked: [bullard_rache]
+  delay: 1
+  chance: 0.5
+  title:
+    de: Bullards Antwort
+    en: Bullard's Answer
+  text:
+    de: >-
+      Bullard hat das angeschnittene Seil nicht vergessen. In der Nacht brennt der
+      Schuppen neben Jacobs Tank, und am Morgen steht einer von Bullards Männern
+      am Zaun und raucht. „Quitt, Harlan?“, ruft er herüber. „Oder noch eine Runde?“
+    en: >-
+      Bullard has not forgotten the cut rope. In the night the shed beside Jacob's
+      tank burns, and in the morning one of Bullard's men stands at the fence,
+      smoking. "Even, Harlan?" he calls over. "Or another round?"
+  choices:
+    - id: quitt
+      label: { de: "„Quitt.“ Den Schuppen neu bauen (150 $)", en: "\"Even.\" Rebuild the shed (150 $)" }
+      result:
+        de: Jacob nickt zum Zaun hinüber. Der Mann tippt an den Hut und geht. Der neue Schuppen riecht nach frischem Holz und nach Waffenstillstand.
+        en: Jacob nods toward the fence. The man touches his hat and leaves. The new shed smells of fresh timber and of truce.
+      requires: { minCash: 150 }
+      effects: { cash: -150 }
+    - id: noch_eine
+      label: { de: "„Noch eine Runde.“", en: "\"Another round.\"" }
+      result:
+        de: In der Woche darauf brennt auch Bullards Kesselhaus. Am Salt Hill schläft jetzt keiner mehr ruhig – Jacobs Männer am wenigsten, und am Turm fehlt es an Händen.
+        en: The week after, Bullard's boiler house burns too. Nobody at Salt Hill sleeps soundly now – Jacob's men least of all, and the derrick is short of hands.
+      effects: { strength: -6, production: -0.15 }
+    - id: abschreiben
+      label: { de: "Nichts sagen und das Öl umfüllen", en: "Say nothing and move the oil" }
+      result:
+        de: Mit dem Schuppen ist ein Teil des Öls verbrannt. Jacob schreibt es ab. Der Mann am Zaun lacht.
+        en: Part of the oil burned with the shed. Jacob writes it off. The man at the fence laughs.
+      effects: { oilStock: -300 }
+      appointments: 0
       default: true
 
 - id: thorne_waggons
@@ -421,11 +457,10 @@
     - id: trinkgeld
       label: { de: "Gaffney ein „Trinkgeld“ geben (40 $)", en: "Give Gaffney a \"tip\" (40 $)" }
       result:
-        de: Am nächsten Morgen stehen zwei Kesselwagen am Gleis. Gaffney grüßt jetzt mit Namen.
-        en: Next morning two tank cars stand at the siding. Gaffney now greets Jacob by name.
+        de: "Am nächsten Morgen stehen zwei Kesselwagen am Gleis. Gaffney grüßt jetzt mit Namen und bucht Jacobs Fässer in die billigere Klasse – einen Cent je Barrel."
+        en: "The next morning two tank cars stand on the siding. Gaffney now greets him by name and books Jacob's barrels in the cheaper class – one cent a barrel."
       requires: { minCash: 40 }
-      effects: { cash: -40 }
-      marks: [gaffney_geschmiert]
+      effects: { cash: -40, railTariff: -0.01 }
     - id: fuhrwerk
       label: { de: "Mit Fuhrwerken zum Hafen fahren (90 $)", en: "Haul it to the harbour by wagon (90 $)" }
       result:
@@ -437,9 +472,9 @@
     - id: warten
       label: { de: "Warten", en: "Wait" }
       result:
-        de: Die Fässer stehen in der Sonne. Holz schwindet, Öl tropft. Als die Wagen kommen, fehlen hundert Barrel.
-        en: The barrels stand in the sun. Wood shrinks, oil drips. When the cars come, a hundred barrels are missing.
-      effects: { oilStock: -100 }
+        de: "Die Fässer stehen in der Sonne. Holz schwindet, Öl tropft. Als die Wagen kommen, fehlen 250 Barrel."
+        en: "The barrels stand in the sun. Wood shrinks, oil drips. When the cars come, 250 barrels are missing."
+      effects: { oilStock: -250 }
       appointments: 0
       default: true
 
@@ -462,11 +497,10 @@
     - id: graben
       label: { de: "Mitmachen (150 $ und eine Woche Arbeit)", en: "Join in (150 $ and a week's work)" }
       result:
-        de: Der Tank ist ein Loch mit Lehmwänden und einem Bretterdach. Tilly füllt ihre Hälfte als Erste, und Jacob lagert hundert Barrel mit ein.
-        en: The tank is a pit with clay walls and a plank roof. Tilly fills her half first, and Jacob stores a hundred barrels alongside.
+        de: "Der Tank ist ein Loch mit Lehmwänden und einem Bretterdach. Tilly füllt ihre Hälfte als Erste, und Jacob lagert hundert Barrel mit ein. Wer nicht sofort verkaufen muss, verkauft besser: Eine Weile bekommt Jacob ein paar Cent mehr."
+        en: "The tank is a pit with clay walls and a plank roof. Tilly fills her half first, and Jacob stores a hundred barrels alongside. Whoever need not sell at once sells better: for a while Jacob gets a few cents more."
       requires: { minCash: 150 }
-      effects: { cash: -150, oilStock: 100, strength: -3 }
-      marks: [tilly_partner]
+      effects: { cash: -150, oilStock: 100, strength: -3, price: 0.03 }
       appointments: 2
     - id: nein
       label: { de: "Lieber allein bleiben", en: "Rather stay on his own" }
@@ -502,11 +536,10 @@
     - id: fair
       label: { de: "Den vollen Preis zahlen (300 Barrel für 300 $)", en: "Pay full price (300 barrels for 300 $)" }
       result:
-        de: Pickett zählt zweimal nach. „Das hätte keiner gemacht.“ Er erzählt es jedem im Hafen, bevor sein Schiff ablegt.
-        en: Pickett counts twice. "Nobody would have done that." He tells everyone at the harbour before his boat sails.
+        de: "Pickett zählt zweimal nach. „Das hätte keiner gemacht.“ Er erzählt es jedem im Hafen, bevor sein Schiff ablegt. Die Farmer am Hügel hören es gern – sie verpachten an Jacob eine Weile billiger."
+        en: "Pickett counts twice. \"Nobody would have done that.\" He tells everyone at the harbour before his boat sails. The farmers on the hill like to hear it – for a while they lease to Jacob cheaper."
       requires: { minCash: 300 }
-      effects: { cash: -300, oilStock: 300 }
-      marks: [pickett_fair]
+      effects: { cash: -300, oilStock: 300, leaseCost: -0.15 }
     - id: vorbei
       label: { de: "Vorbeigehen", en: "Walk past" }
       result:

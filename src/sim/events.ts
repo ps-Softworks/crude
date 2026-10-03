@@ -33,9 +33,28 @@ export type ConditionKey = (typeof CONDITION_KEYS)[number];
 export type Conditions = Partial<Record<ConditionKey, number>>;
 
 /** Effekte: Zahlen, die auf den Zustand addiert werden (negativ = abziehen). */
-export const EFFECT_KEYS = ['cash', 'oilStock', 'railTariff', 'strength', 'ruth', 'thomas', 'teams', 'teamsIdle'] as const;
+export const EFFECT_KEYS = ['cash', 'oilStock', 'railTariff', 'strength', 'ruth', 'thomas', 'teams', 'teamsIdle', 'price', 'production', 'leaseCost'] as const;
 export type EffectKey = (typeof EFFECT_KEYS)[number];
 export type Effects = Partial<Record<EffectKey, number>>;
+
+/**
+ * Befristete Nachwirkungen (0.2.15+3): gelten balance.events.timedRounds Runden,
+ * die Antwortrunde mitgezählt.
+ *   price       $ je Barrel, die der Crane Trust Jacob mehr (+) oder weniger (−) zahlt
+ *   production  Anteil der eigenen Förderung mehr (+0,1 = 10 %) oder weniger
+ *   leaseCost   Anteil am Pachtbonus mehr (+0,2 = 20 % teurer) oder weniger
+ */
+export const TIMED_KEYS = ['price', 'production', 'leaseCost'] as const;
+export type TimedKey = (typeof TIMED_KEYS)[number];
+
+export interface TimedEffect {
+  key: TimedKey;
+  value: number;
+  /** Letzte Runde, in der die Wirkung gilt. */
+  until: number;
+  /** Ereignis, aus dem sie stammt: dasselbe Ereignis ersetzt seine eigene Wirkung, statt sie zu stapeln. */
+  source: string;
+}
 
 /**
  * Posteingang (2.4, GDD §3): die vier Briefarten. Ein Ereignis mit mail ist ein
@@ -146,10 +165,36 @@ export interface EventsState {
    * eine Variante einer Gruppe (Schlüssel = groupKey) zuletzt eintraf.
    */
   lastSeen: Record<string, number>;
+  /** Befristete Nachwirkungen (0.2.15+3). Abgelaufene fliegen beim nächsten Eintrag raus. */
+  timed: TimedEffect[];
 }
 
 export function newEventsState(seed: string): EventsState {
-  return { rng: seedFromString(`${seed}:ereignisse`), pending: [], seen: [], marks: {}, due: {}, lastMail: {}, docs: {}, lastSeen: {} };
+  return { rng: seedFromString(`${seed}:ereignisse`), pending: [], seen: [], marks: {}, due: {}, lastMail: {}, docs: {}, lastSeen: {}, timed: [] };
+}
+
+/** Summe der laufenden Nachwirkungen einer Art in dieser Runde (0.2.15+3); 0, wenn keine läuft. */
+export function timedEffect(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'events'>>, key: TimedKey): number {
+  const liste = state.events?.timed ?? [];
+  let sum = 0;
+  for (const t of liste) if (t.key === key && t.until >= state.round) sum += t.value;
+  return Math.round(sum * 10000) / 10000;
+}
+
+/** Runden, die die längste laufende Nachwirkung dieser Art noch gilt (diese mitgezählt); 0 = keine. */
+export function timedRoundsLeft(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'events'>>, key: TimedKey): number {
+  const liste = (state.events?.timed ?? []).filter((t) => t.key === key && t.until >= state.round);
+  return liste.length === 0 ? 0 : Math.max(...liste.map((t) => t.until)) - state.round + 1;
+}
+
+/** Trägt die befristeten Wirkungen einer Antwort ein (0.2.15+3). */
+function addTimed(state: GameState, effects: Effects, source: string, rounds: number): GameState {
+  const neu = TIMED_KEYS.filter((k) => effects[k] !== undefined && effects[k] !== 0);
+  if (neu.length === 0) return state;
+  const until = state.round + rounds - 1;
+  const behalten = (state.events.timed ?? []).filter((t) => t.until >= state.round && !(t.source === source && neu.includes(t.key)));
+  const timed = [...behalten, ...neu.map((key) => ({ key, value: effects[key]!, until, source }))];
+  return { ...state, events: { ...state.events, timed } };
 }
 
 /** Schlüssel einer Variantengruppe in lastSeen – mit @, damit er nie einer Ereignis-ID gleicht. */
@@ -278,8 +323,8 @@ function cents(value: number): number {
  * bleibt zwischen 0 und dem Höchstwert. ruth/thomas ändern die Beziehung (2.7);
  * was der Familie guttut, zählt als Familienzeit.
  */
-export function applyEffects(state: GameState, effects: Effects): GameState {
-  return applyFamilyEffects(applyWorldEffects(state, effects), effects.ruth, effects.thomas);
+export function applyEffects(state: GameState, effects: Effects, source = '', timedRounds = 1): GameState {
+  return addTimed(applyFamilyEffects(applyWorldEffects(state, effects), effects.ruth, effects.thomas), effects, source, timedRounds);
 }
 
 function applyWorldEffects(state: GameState, effects: Effects): GameState {
@@ -482,11 +527,11 @@ export function resolveEvent(
   if (reason) return { ok: false, reason };
   const belegt = spendAppointments(state, balance, choiceCost(event, choice));
   if (!belegt.ok) return belegt;
-  return { ok: true, state: erledigen(belegt.state, event, choice, lang, '') };
+  return { ok: true, state: erledigen(belegt.state, event, choice, lang, '', balance.events.timedRounds) };
 }
 
-function erledigen(state: GameState, event: EventDef, choice: EventChoice, lang: Lang, vorsatz: string): GameState {
-  const nach = applyEffects(state, choice.effects);
+function erledigen(state: GameState, event: EventDef, choice: EventChoice, lang: Lang, vorsatz: string, timedRounds: number): GameState {
+  const nach = applyEffects(state, choice.effects, event.id, timedRounds);
   const agenda = event.routine ? { ...nach.agenda, done: [...nach.agenda.done, event.id] } : nach.agenda;
   // Merkzeichen behalten die Runde, in der sie zuerst gesetzt wurden.
   const marks = { ...nach.events.marks };
@@ -526,8 +571,9 @@ function ohne(due: Record<string, number>, id: string): Record<string, number> {
  * Standard-Wahl (default: true, sonst die erste). Ist sie gesperrt, die erste
  * mögliche. Geht gar keine oder fehlt das Ereignis im Katalog, verfällt es ohne Effekt.
  * Die Standard-Wahl kostet keine Termine – sie ist ja gerade das, was ohne Jacob passiert.
+ * timedRounds: Dauer befristeter Nachwirkungen (balance.events.timedRounds).
  */
-export function autoResolve(state: GameState, catalog: readonly EventDef[], lang: Lang = DEFAULT_LANG): GameState {
+export function autoResolve(state: GameState, catalog: readonly EventDef[], lang: Lang = DEFAULT_LANG, timedRounds = 1): GameState {
   let out = state;
   for (const id of state.events.pending) {
     const event = finde(catalog, id);
@@ -539,7 +585,7 @@ export function autoResolve(state: GameState, catalog: readonly EventDef[], lang
         )
       : undefined;
     if (event && choice) {
-      out = erledigen(out, event, choice, lang, 'Ohne Antwort: ');
+      out = erledigen(out, event, choice, lang, 'Ohne Antwort: ', timedRounds);
     } else {
       out = {
         ...out,

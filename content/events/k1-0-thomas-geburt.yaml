@@ -38,13 +38,9 @@
     - id: turm
       label: { de: "Erst das Seil, dann die Familie", en: "The cable first, then the family" }
       result:
-        de: >-
-          Als Jacob mit öligen Händen die Treppe hochkommt, schläft das Kind schon.
-          Ruth sieht ihn lange an und sagt nur: „Er heißt Thomas.“
-        en: >-
-          When Jacob comes up the stairs with oily hands, the child is already
-          asleep. Ruth looks at him for a long time and only says: "His name is Thomas."
+        de: "Als Jacob mit öligen Händen die Treppe hochkommt, schläft das Kind schon. Ruth sieht ihn lange an und sagt nur: „Er heißt Thomas.“ Das Seil hält, und der Turm schlägt die ganze Woche durch."
+        en: "When Jacob comes up the stairs with oily hands, the child is already asleep. Ruth looks at him for a long time and only says: \"His name is Thomas.\" The rope holds, and the derrick pounds all week long."
       appointments: 0
-      effects: { ruth: -20, thomas: -10 }
+      effects: { ruth: -20, thomas: -10, production: 0.1 }
       marks: [geburt_verpasst]
       default: true

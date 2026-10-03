@@ -171,12 +171,50 @@
       appointments: 0
       default: true
 
+# Moss, wenn Jacob ihn vertrieben hat, sich aber bei Daniel entschuldigt hat (0.2.15+3).
+- id: wegerecht_moss_versoehnt
+  certain: true
+  once: false
+  draft: true
+  marked: [pipeline_geplant, daniel_entschuldigung]
+  notMarked: [wegerecht_moss]
+  title:
+    de: Ein Brief aus Hallstead
+    en: A Letter from Hallstead
+  text:
+    de: >-
+      Daniel Moss schreibt aus Hallstead, in der geraden Schrift eines
+      Rechtsstudenten: Sein Vater habe die Entschuldigung nicht vergessen. Über die
+      Weide dürfe ein Rohr – zum Preis, den das Land wert sei, und keinen Cent
+      darunter. Darunter, kleiner: „Ich schreibe mir alles auf, Mr. Harlan.“
+    en: >-
+      Daniel Moss writes from Hallstead in the straight hand of a law student: his
+      father has not forgotten the apology. A pipe may cross the pasture – at the
+      price the land is worth, and not a cent below. Beneath, smaller: "I write
+      everything down, Mr. Harlan."
+  choices:
+    - id: annehmen
+      label: { de: "Das Wegerecht zum vollen Preis kaufen (300 $)", en: "Buy the right of way at full price (300 $)" }
+      result:
+        de: Der Vertrag kommt mit der Post zurück, unterschrieben von Ezekiel und bezeugt von Daniel. Der Umweg durchs Sumpfland ist vom Tisch.
+        en: The contract comes back by post, signed by Ezekiel and witnessed by Daniel. The detour through the marsh is off the table.
+      requires: { minCash: 300 }
+      effects: { cash: -300 }
+      marks: [wegerecht_moss]
+    - id: spaeter
+      label: { de: "Noch warten", en: "Wait a while" }
+      result:
+        de: Jacob legt den Brief zu den anderen Papieren. Daniel wird sich das Datum merken.
+        en: Jacob puts the letter with the other papers. Daniel will remember the date.
+      appointments: 0
+      default: true
+
 # Moss, wenn Jacob ihn betrogen oder vertrieben hat.
 - id: wegerecht_moss_feind
   certain: true
   once: false
   marked: [pipeline_geplant, moss_feind]
-  notMarked: [wegerecht_moss]
+  notMarked: [wegerecht_moss, daniel_entschuldigung]
   title:
     de: Kein Rohr durch Moss' Land
     en: No Pipe Through Moss's Land

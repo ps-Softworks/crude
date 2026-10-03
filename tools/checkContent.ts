@@ -6,8 +6,10 @@ import { resolve } from 'node:path';
 import { checkArcMarks, parseArcContent } from '../src/sim/arcs';
 import { checkChapterMarks, parseChapterContent } from '../src/sim/chapter';
 import { formatContentError, parseEventFiles } from '../src/sim/eventContent';
+import { analyzeRelevance, checkRelevanceMarks, parseRelevanceContent, readMarks, simReadMarks } from '../src/sim/eventRelevance';
 import { parseFamilyContent } from '../src/sim/family';
 import { parseNewspaperContent } from '../src/sim/newspaper';
+import { loadBalance } from '../src/sim/testBalance';
 import { EVENTS_DIR, readEventFiles } from '../src/sim/testEvents';
 import { parseTutorialContent } from '../src/sim/tutorial';
 
@@ -30,7 +32,10 @@ const kapitel = parseChapterContent('content/chapter.yaml', readFileSync(new URL
 const kapitelMarks = kapitel.content && parsed.errors.length === 0 ? checkChapterMarks('content/chapter.yaml', kapitel.content, events) : [];
 // Einstieg (2.13): Hinweistexte des Tutorials.
 const einstieg = parseTutorialContent('content/tutorial.yaml', readFileSync(new URL('../content/tutorial.yaml', import.meta.url), 'utf8'));
-const errors = [...einstieg.errors, ...parsed.errors, ...zeitung.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks];
+// Wirkung der Antworten (0.2.15+3): begründete Ausnahmen.
+const wirkung = parseRelevanceContent('content/relevance.yaml', readFileSync(new URL('../content/relevance.yaml', import.meta.url), 'utf8'));
+const wirkungMarks = wirkung.content && parsed.errors.length === 0 ? checkRelevanceMarks('content/relevance.yaml', wirkung.content, events) : [];
+const errors = [...wirkung.errors, ...wirkungMarks, ...einstieg.errors, ...parsed.errors, ...zeitung.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks];
 
 if (errors.length > 0) {
   for (const error of errors) console.error(formatContentError(error));
@@ -43,3 +48,16 @@ if (ohneEnglisch > 0) console.log(`Hinweis: ${ohneEnglisch} Ereignisse haben noc
 // Entwürfe (2.10a): Schlüsselszenen, die Philipp noch überarbeiten soll.
 const entwuerfe = events.filter((e) => e.draft).map((e) => e.id);
 if (entwuerfe.length > 0) console.log(`Entwürfe (draft: true): ${entwuerfe.length} – ${entwuerfe.join(', ')}`);
+// Wirkung der Antworten (0.2.15+3): Zusammenfassung; die Liste zeigt npm run check:events.
+if (boegen.content && kapitel.content && wirkung.content) {
+  const balance = loadBalance();
+  const gelesen = readMarks(events, [
+    ...simReadMarks(balance),
+    ...Object.values(boegen.content).flatMap((a) => a.outcomes.flatMap((o) => o.any)),
+    ...kapitel.content.bonus.transport.any,
+  ]);
+  const bericht = analyzeRelevance(events, gelesen, balance, new Set(wirkung.content.later.map((l) => l.mark)));
+  if (bericht.weak.length > 0) {
+    console.log(`Hinweis: ${bericht.weak.length} schwache Antworten (zu wenig Wirkung oder Merkzeichen ohne Folge) – Liste: npm run check:events`);
+  } else console.log(`Wirkung: alle ${bericht.choices.length} Antworten spürbar (Schwelle ${bericht.threshold} $).`);
+}

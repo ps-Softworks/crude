@@ -50,9 +50,14 @@ Zum Ausprobieren: `npm run dev`, dann im Browser `?seed=abc&debug=1`.
 ### Folgen
 - `result`: ein, zwei Sätze fürs Protokoll – was Jacob sieht, nicht was er fühlt.
 - `effects` (optional, Zahlen werden addiert, minus = weniger):
-  `cash` ($), `oilStock` (Barrel), `railTariff` ($ je Barrel Bahnfracht), `strength` (Kraft).
-  Andere Folgen (Ruf, Beziehungen, Pachten) kommen mit späteren Schritten dazu;
-  bis dahin trägt die Nachwirkung sie.
+  `cash` ($), `oilStock` (Barrel), `railTariff` ($ je Barrel Bahnfracht), `strength` (Kraft),
+  `ruth`/`thomas` (Beziehung), `teams`/`teamsIdle` (eigene Fuhrwerke). Befristet für
+  `events.timedRounds` Runden (0.2.15+3): `price` ($ je Barrel beim Trust), `production`
+  (Anteil der eigenen Förderung, 0,1 = +10 %), `leaseCost` (Anteil am Pachtbonus, −0,2 = 20 % billiger).
+- Jede Antwort soll spürbar sein (0.2.15+3): `npm run check:events` listet alle Antworten mit
+  ihrer Wirkung und meldet schwache – unter 200 $ Wirkung, ohne dauerhafte Folge und ohne
+  Merkzeichen, das später etwas abfragt. Eine einzelne „lieber nicht“-Antwort neben einer
+  starken ist erlaubt. Merkzeichen für spätere Kapitel stehen begründet in `content/relevance.yaml`.
 
 ### Termine (ab 2.3)
 - Jede Antwort kostet Zeit: `appointments` am Ereignis (Standard 1 Termin) oder an einer

@@ -329,8 +329,8 @@ describe('Kein Weg dominiert immer – Beispielrechnungen (0.2.15+2)', () => {
 });
 
 describe('Spielstand (0.2.15+2)', () => {
-  it('Format 10 sichert Lager, Fuhrwerke und Pipeline mit', () => {
-    expect(SAVE_FORMAT).toBe(10);
+  it('Format 10+ sichert Lager, Fuhrwerke und Pipeline mit', () => {
+    expect(SAVE_FORMAT).toBeGreaterThanOrEqual(10);
     const s = { ...spiel(), logistics: { ...spiel().logistics, teams: 2, tanks: 1, pipeline: 'building' as const, pipelineRounds: 2 } };
     const r = deserializeGame(serializeGame(s, 'test'));
     expect(r.ok && r.state.logistics).toEqual(s.logistics);

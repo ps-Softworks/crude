@@ -305,7 +305,21 @@ function barrelsAhead(state: GameState): number {
 }
 
 /** Wert der Effekte in $ – ohne Termine. Kraft zählt nur, soweit sie unter dem Höchstwert Platz hat. */
-function effectValue(state: GameState, choice: EventChoice, policy: EventPolicy, extraStrength = 0): number {
+/**
+ * Befristete Nachwirkungen (0.2.15+3) grob in $: Preis und Förderung auf die
+ * Förderung der nächsten timedRounds Runden, Pacht auf relevance.refLeaseSpend.
+ */
+function timedValue(state: GameState, balance: Balance, e: EventChoice['effects']): number {
+  const runden = Math.min(balance.events.timedRounds, Math.max(0, state.totalRounds - state.round + 1));
+  const jeRunde = state.wells.reduce((s, w) => s + (w.status === 'found' ? (w.production?.lastRate ?? 0) : 0), 0);
+  return (
+    (e.price ?? 0) * jeRunde * runden +
+    (e.production ?? 0) * jeRunde * runden * state.postedPrice -
+    (e.leaseCost ?? 0) * balance.events.relevance.refLeaseSpend
+  );
+}
+
+function effectValue(state: GameState, balance: Balance, choice: EventChoice, policy: EventPolicy, extraStrength = 0): number {
   const e = choice.effects;
   const kraft = (e.strength ?? 0) + extraStrength;
   const wirksam = kraft > 0 ? Math.min(kraft, state.strengthMax - state.strength) : kraft;
@@ -314,7 +328,8 @@ function effectValue(state: GameState, choice: EventChoice, policy: EventPolicy,
     (e.oilStock ?? 0) * state.postedPrice +
     wirksam * policy.strength +
     ((e.ruth ?? 0) + (e.thomas ?? 0)) * policy.family -
-    (e.railTariff ?? 0) * barrelsAhead(state)
+    (e.railTariff ?? 0) * barrelsAhead(state) +
+    timedValue(state, balance, e)
   );
 }
 
@@ -329,14 +344,14 @@ export function choiceValue(state: GameState, balance: Balance, event: EventDef,
   if (over > 0 && state.strength < policy.overtimeFrom) return null;
   const cash = choice.effects.cash ?? 0;
   if (cash < 0 && state.cash + cash < policy.reserve) return null;
-  return effectValue(state, choice, policy, -over * balance.agenda.overtimeCost) - cost * policy.appointment;
+  return effectValue(state, balance, choice, policy, -over * balance.agenda.overtimeCost) - cost * policy.appointment;
 }
 
 /** Was ohne Antwort passiert: die Standard-Wahl wie in autoResolve, ohne Termine. Feste Termine: nichts. */
-function baseline(state: GameState, event: EventDef, policy: EventPolicy): number {
+function baseline(state: GameState, balance: Balance, event: EventDef, policy: EventPolicy): number {
   if (event.routine) return 0;
   const standard = event.choices.find((c) => c.default) ?? event.choices[0];
-  return standard ? effectValue(state, standard, policy) : 0;
+  return standard ? effectValue(state, balance, standard, policy) : 0;
 }
 
 /** Alles, worauf Jacob gerade antworten kann: offene Ereignisse und feste Termine. */
@@ -354,7 +369,7 @@ export function answerEvents(state: GameState, balance: Balance, catalog: readon
   for (let i = 0; i < 30; i++) {
     let best: { event: EventDef; choice: EventChoice; gain: number } | null = null;
     for (const event of openItems(state, catalog)) {
-      const basis = baseline(state, event, policy);
+      const basis = baseline(state, balance, event, policy);
       for (const choice of event.choices) {
         const wert = choiceValue(state, balance, event, choice, policy);
         if (wert === null) continue;

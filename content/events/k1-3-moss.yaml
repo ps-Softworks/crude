@@ -127,9 +127,9 @@
     - id: behalten_lassen
       label: { de: "„Behalt es für Daniels Schule.“", en: "\"Keep it for Daniel's schooling.\"" }
       result:
-        de: Moss schweigt lange. Dann steckt er das Geld ein und gibt Jacob die Hand.
-        en: Moss is silent for a long time. Then he pockets the money and shakes Jacob's hand.
-      marks: [moss_freund]
+        de: "Moss schweigt lange. Dann steckt er das Geld ein und gibt Jacob die Hand. „Wenn du je ein Rohr über meine Weide legen willst, Harlan – es darf durch.“"
+        en: "Moss is silent a long while. Then he pockets the money and shakes Jacob's hand. \"If you ever want to lay a pipe across my pasture, Harlan – it may pass.\""
+      marks: [wegerecht_moss]
 
 # Entwurf – Philipp überarbeitet.
 # Nachwirkung: Jacob hat abgelehnt, die Bank versteigert die Farm. Hier fällt die
@@ -211,10 +211,10 @@
     - id: behalten
       label: { de: "Behalten – vielleicht liegt Öl darunter", en: "Keep it – there may be oil beneath" }
       result:
-        de: Jacob lässt das Farmhaus leer stehen. Nachts brennt manchmal Licht darin, aber niemand gibt es zu.
-        en: Jacob leaves the farmhouse empty. At night a light sometimes burns inside, but nobody admits to it.
+        de: "Jacob lässt das Farmhaus leer stehen. Nachts brennt manchmal Licht darin, aber niemand gibt es zu. Wer selbst Land besitzt, pachtet billiger: Die Farmer verhandeln mit Jacob jetzt wie mit einem der Ihren."
+        en: "Jacob leaves the farmhouse empty. At night a light sometimes burns inside, but nobody admits to it. A man who owns land leases cheaper: the farmers now bargain with Jacob as with one of their own."
+      effects: { leaseCost: -0.2 }
       appointments: 0
-      marks: [moss_land_behalten]
 
 # Entwurf – Philipp überarbeitet.
 # Abschluss des Bogens in Kapitel 1: Daniel geht zum Studium nach Hallstead
@@ -237,12 +237,12 @@
   certain: true
   choices:
     - id: fahrkarte
-      label: { de: "Ihm die Fahrkarte bezahlen (60 $)", en: "Pay for his train ticket (60 $)" }
+      label: { de: "Ihm Fahrkarte und erstes Semester bezahlen (200 $)", en: "Pay for his ticket and first term (200 $)" }
       result:
-        de: Daniel steckt die Karte in die Innentasche, als wäre sie aus Glas. „Ich vergesse das nicht, Mr. Harlan.“
-        en: Daniel puts the ticket in his inside pocket as though it were made of glass. "I won't forget this, Mr. Harlan."
-      requires: { minCash: 60 }
-      effects: { cash: -60 }
+        de: "Daniel steckt die Karte und den Umschlag in die Innentasche, als wären sie aus Glas. „Ich vergesse das nicht, Mr. Harlan.“"
+        en: "Daniel slips the ticket and the envelope into his breast pocket as if they were glass. \"I won't forget this, Mr. Harlan.\""
+      requires: { minCash: 200 }
+      effects: { cash: -200 }
       marks: [daniel_gefoerdert]
     - id: glueck
       label: { de: "Ihm Glück wünschen", en: "Wish him luck" }
@@ -273,13 +273,10 @@
     - id: entschuldigen
       label: { de: "Zu ihm gehen und sich entschuldigen", en: "Go over and apologise" }
       result:
-        de: >-
-          Daniel hört zu, bis Jacob fertig ist. „Das schreibe ich mir auf“, sagt er.
-          Ob als Trost oder als Beweis, lässt er offen.
-        en: >-
-          Daniel listens until Jacob has finished. "I'll write that down," he says.
-          Whether as comfort or as evidence, he does not say.
+        de: "Daniel hört zu, bis Jacob fertig ist. „Das schreibe ich mir auf“, sagt er. Ob als Trost oder als Beweis, lässt er offen. Ezekiel Moss hört davon. Über die Pipeline, lässt er ausrichten, könne man jetzt reden."
+        en: "Daniel listens until Jacob has finished. \"I'll write that down,\" he says. Whether as comfort or as evidence, he does not say. Ezekiel Moss hears of it. About the pipeline, he lets it be known, they can talk now."
       marks: [daniel_entschuldigung]
+      effects: { strength: -3 }
     - id: weitergehen
       label: { de: "Weitergehen", en: "Walk on" }
       result:

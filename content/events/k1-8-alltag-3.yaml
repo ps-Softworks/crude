@@ -25,12 +25,11 @@
     - id: danken
       label: { de: "Dem Beamten 20 $ als Dank schicken", en: "Send the clerk 20 $ as thanks" }
       result:
-        de: Der Beamte schreibt zurück, er melde sich wieder, wenn er etwas höre.
-        en: The clerk writes back that he'll be in touch again if he hears anything.
+        de: "Der Beamte schreibt zurück und lädt Jacobs Fässer noch zum alten Tarif – einen Cent billiger je Barrel."
+        en: "The clerk writes back and loads Jacob's barrels at the old rate – one cent cheaper per barrel."
       requires: { minCash: 20 }
-      effects: { cash: -20 }
+      effects: { cash: -20, railTariff: -0.01 }
       appointments: 0
-      marks: [bahnbeamter_freund]
     - id: lesen
       label: { de: "Zur Kenntnis nehmen", en: "Take note" }
       result:
@@ -59,11 +58,10 @@
     - id: spenden
       label: { de: "100 $ für die Bretterkirche", en: "100 $ for the plank church" }
       result:
-        de: Bruder Abel nennt Jacobs Namen am Sonntag von der Kanzel. Ruth sitzt in der ersten Reihe und tut, als höre sie es nicht.
-        en: On Sunday Brother Abel names Jacob from the pulpit. Ruth sits in the front row and pretends not to hear.
+        de: "Bruder Abel nennt Jacobs Namen am Sonntag von der Kanzel. Ruth sitzt in der ersten Reihe und tut, als höre sie es nicht. Die Bohrarbeiter sitzen sonntags in Jacobs Kirche und montags pünktlich am Turm."
+        en: "On Sunday Brother Abel names Jacob from the pulpit. Ruth sits in the front row and pretends not to hear. The drillers sit in Jacob's church on Sundays and at the derrick on time on Mondays."
       requires: { minCash: 100 }
-      effects: { cash: -100, ruth: 3 }
-      marks: [kirche_gespendet]
+      effects: { cash: -100, ruth: 5, production: 0.05 }
     - id: bretter
       label: { de: "Bretter vom alten Turm geben", en: "Give him planks from the old derrick" }
       result:
@@ -73,8 +71,9 @@
     - id: tuer
       label: { de: "Die Tür zumachen", en: "Close the door" }
       result:
-        de: Am Abend predigt Bruder Abel am Hafen über Männer, die ihre Türen zumachen.
-        en: That evening Brother Abel preaches at the harbour about men who close their doors.
+        de: "Am Abend predigt Bruder Abel am Hafen über Männer, die ihre Türen zumachen. Ein paar von Jacobs Männern hören ihm zu und kommen montags später."
+        en: "That evening Brother Abel preaches at the harbour about men who close their doors. A few of Jacob's men listen and turn up later on Mondays."
+      effects: { production: -0.05 }
       appointments: 0
       default: true
 
@@ -107,8 +106,8 @@
     - id: eigene_wache
       label: { de: "Lieber einen eigenen Nachtwächter anstellen (70 $)", en: "Hire your own night watchman instead (70 $)" }
       result:
-        de: Der Nachtwächter ist ein Veteran mit einer Schrotflinte und einem Hund. Tatum sieht das gar nicht gern.
-        en: The watchman is a veteran with a shotgun and a dog. Tatum doesn't like it one bit.
+        de: "Der Nachtwächter ist ein Veteran mit einer Schrotflinte und einem Hund. Tatum sieht das gar nicht gern. Seitdem schleicht nachts niemand mehr um den Tank."
+        en: "The watchman is a veteran with a shotgun and a dog. Tatum doesn't like it one bit. Since then nobody creeps round the tank at night."
       requires: { minCash: 70 }
       effects: { cash: -70 }
       marks: [sheriff_umgangen]
@@ -120,7 +119,6 @@
       effects: { oilStock: -60, cash: -40 }
       appointments: 0
       default: true
-      marks: [sheriff_abgewiesen]
 
 - id: nora_interview
   draft: true                # Schlüsselszene: Noras erstes Gespräch mit Jacob (Weltbibel: sie verfolgt seinen Aufstieg)
@@ -184,23 +182,16 @@
     - id: spielen
       label: { de: "Mitspielen und zuhören (100 $ Einsatz)", en: "Sit in and listen (100 $ stake)" }
       result:
-        de: Jacob verliert das Geld bis zum letzten Dollar und erfährt, welche Parzellen Bullard als Nächstes will.
-        en: Jacob loses the money to the last dollar and learns which parcels Bullard wants next.
+        de: "Jacob verliert das Geld bis zum letzten Dollar und erfährt, welche Parzellen Bullard als Nächstes will – und welche Farmer verkaufen müssen."
+        en: "Jacob loses the money down to the last dollar and learns which parcels Bullard wants next – and which farmers must sell."
       requires: { minCash: 100 }
-      effects: { cash: -100, strength: -2 }
-      marks: [poker_gehoert]
-    - id: zuschauen
-      label: { de: "Ein Bier trinken und zuschauen", en: "Drink a beer and watch" }
-      result:
-        de: Niemand redet vor einem Mann, der nicht mitspielt.
-        en: Nobody talks in front of a man who isn't playing.
-      effects: { cash: -2 }
+      effects: { cash: -100, strength: -2, leaseCost: -0.2 }
     - id: heim
       label: { de: "Nach Hause zu Ruth", en: "Go home to Ruth" }
       result:
         de: Ruth sieht auf, als Jacob so früh kommt, und legt die Flickarbeit weg.
         en: Ruth looks up when Jacob comes home so early and puts her mending aside.
-      effects: { ruth: 2 }
+      effects: { ruth: 4 }
       appointments: 0
       default: true
 
@@ -228,14 +219,6 @@
       requires: { minCash: 60 }
       effects: { cash: -60, strength: 3 }
       marks: [kerrigan_eingestellt]
-    - id: geld
-      label: { de: "Ihm Geld für die Heimfahrt geben (30 $)", en: "Give him money for the trip home (30 $)" }
-      result:
-        de: Dan nimmt das Geld und sieht Jacob dabei nicht an.
-        en: Dan takes the money and doesn't look Jacob in the eye.
-      requires: { minCash: 30 }
-      effects: { cash: -30 }
-      appointments: 0
     - id: nein
       label: { de: "Kein Platz im Trupp", en: "No room on the crew" }
       result:
@@ -243,7 +226,6 @@
         en: Dan nods as if he'd known. A week later he's working for Bullard.
       appointments: 0
       default: true
-      marks: [kerrigan_abgewiesen]
 
 - id: fieber
   draft: true                # Schlüsselszene: Fieber in Port Ellis, Ruth und das Kind in Gefahr
@@ -269,24 +251,21 @@
         en: Ruth leaves with one trunk and many instructions. The boarding house is quiet without her. Jacob eats cold food.
       requires: { minCash: 200 }
       effects: { cash: -200, ruth: 2, strength: -3 }
-      marks: [fieber_weggeschickt]
     - id: bleiben
       label: { de: "Zu Hause bleiben und Ruth helfen", en: "Stay home and help Ruth" }
       result:
         de: Jacob schleppt Wasser und Holz und sitzt nachts neben Ruth am Ofen. Das Fieber geht an ihrer Tür vorbei.
         en: Jacob hauls water and wood and sits up nights with Ruth by the stove. The fever passes their door.
-      effects: { ruth: 6, strength: -2 }
+      effects: { ruth: 8, strength: -2 }
       appointments: 3
-      marks: [fieber_geblieben]
     - id: arbeiten
       label: { de: "Weiterarbeiten – Ruth kommt zurecht", en: "Keep working – Ruth will manage" }
       result:
-        de: Ruth kommt zurecht. Sie sagt es Jacob auch, mit einer Stimme, die er nicht kennt.
-        en: Ruth manages. She tells Jacob so, too, in a voice he doesn't recognise.
-      effects: { ruth: -6 }
+        de: "Ruth kommt zurecht. Sie sagt es Jacob auch, mit einer Stimme, die er nicht kennt. Am Turm schafft Jacob in diesen Wochen für zwei."
+        en: "Ruth manages. She tells Jacob so, too, in a voice he doesn't recognise. At the derrick Jacob does the work of two these weeks."
+      effects: { ruth: -8, production: 0.1 }
       appointments: 0
       default: true
-      marks: [fieber_allein]
 
 # --- Familie -----------------------------------------------------------------
 
@@ -314,13 +293,13 @@
       result:
         de: Jacob singt das einzige Lied, das er kennt, ein Bergmannslied. Bei der dritten Strophe schläft Thomas. Jacob nicht mehr.
         en: Jacob sings the only song he knows, a miners' song. By the third verse Thomas is asleep. Jacob isn't, any more.
-      effects: { ruth: 3, thomas: 3, strength: -3 }
+      effects: { ruth: 5, thomas: 5, strength: -7 }
     - id: schlafen
       label: { de: "Sich umdrehen – morgen wird gebohrt", en: "Roll over – there's drilling tomorrow" }
       result:
         de: Jacob schläft. Ruth nicht. Am Morgen steht der Kaffee da, aber sie sagt kein Wort.
         en: Jacob sleeps. Ruth doesn't. In the morning the coffee is there, but she says not a word.
-      effects: { ruth: -3 }
+      effects: { ruth: -4, thomas: -2, strength: 3 }
       appointments: 0
       default: true
 
@@ -347,13 +326,14 @@
       result:
         de: Thomas sitzt auf dem Küchenboden und sagt „Öl“. Ruth lacht, bis ihr die Tränen kommen. Jacob auch.
         en: Thomas sits on the kitchen floor and says "oil". Ruth laughs till the tears come. So does Jacob.
-      effects: { ruth: 4, thomas: 6 }
+      effects: { ruth: 8, thomas: 12 }
       marks: [thomas_wort_dabei]
     - id: abends
       label: { de: "Am Abend, wenn der Turm steht", en: "This evening, once the derrick's done" }
       result:
-        de: Am Abend schläft Thomas schon. Ruth sagt das Wort für ihn. Es war „Papa“.
-        en: By evening Thomas is asleep. Ruth says the word for him. It was "Papa".
+        de: "Der Turm läuft bis zur Dunkelheit. Am Abend schläft Thomas schon. Ruth sagt das Wort für ihn. Es war „Papa“."
+        en: "The derrick runs until dark. By evening Thomas is already asleep. Ruth says the word for him. It was \"Papa\"."
+      effects: { ruth: -3, production: 0.05 }
       appointments: 0
       default: true
       marks: [thomas_wort_verpasst]
@@ -375,24 +355,24 @@
   chance: 0.2
   choices:
     - id: stoff
-      label: { de: "Stoff für ein Kleid aus Port Ellis kaufen (40 $)", en: "Buy dress fabric in Port Ellis (40 $)" }
+      label: { de: "Seide für ein Kleid aus Port Ellis kaufen (120 $)", en: "Buy silk for a dress from Port Ellis (120 $)" }
       result:
-        de: Ruth hält den blauen Stoff gegen das Licht. Sie sagt, er sei zu teuer gewesen. Sie näht trotzdem noch am selben Abend.
-        en: Ruth holds the blue fabric up to the light. She says it cost too much. She starts sewing that same evening anyway.
-      requires: { minCash: 40 }
-      effects: { cash: -40, ruth: 5 }
+        de: "Ruth hält die blaue Seide gegen das Licht. Sie sagt, sie sei zu teuer gewesen. Sie näht trotzdem noch am selben Abend."
+        en: "Ruth holds the blue silk up to the light. She says it cost too much. She sews that same evening all the same."
+      requires: { minCash: 120 }
+      effects: { cash: -120, ruth: 8 }
     - id: ausfahrt
       label: { de: "Einen Tag mit ihr ans Meer fahren", en: "Take her to the sea for a day" }
       result:
         de: Sie sitzen am Strand hinter dem Hafen, wo kein Öl riecht. Ruth erzählt von ihren Plänen. Es sind viele.
         en: They sit on the beach past the harbour where nothing smells of oil. Ruth talks about her plans. There are many.
-      effects: { ruth: 7, strength: 4 }
+      effects: { ruth: 10, strength: 8 }
       appointments: 2
     - id: vergessen
       label: { de: "Später daran denken", en: "Think about it later" }
       result:
         de: Am Donnerstag kommt Jacob spät. Auf dem Tisch steht ein Kuchen, den Ruth sich selbst gebacken hat.
         en: On Thursday Jacob comes home late. On the table is a cake Ruth baked for herself.
-      effects: { ruth: -6 }
+      effects: { ruth: -8 }
       appointments: 0
       default: true

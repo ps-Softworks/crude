@@ -24,13 +24,10 @@
     - id: ehrlich
       label: { de: "Ehrlich antworten: Schutz gibt es hier für niemanden", en: "Answer honestly: nobody here is safe" }
       result:
-        de: >-
-          Nora schreibt zwei Seiten. Jacob steht darin als ein Mann, der nicht lügt –
-          beim Crane Trust liest man das nicht gern.
-        en: >-
-          Nora writes two pages. Jacob appears in them as a man who does not lie –
-          the Crane Trust does not enjoy reading it.
+        de: "Nora schreibt zwei Seiten. Jacob steht darin als ein Mann, der nicht lügt – beim Crane Trust liest man das nicht gern, und Lusk zieht ein paar Cent je Barrel ab."
+        en: "Nora writes two pages. Jacob appears in them as a man who does not lie – at the Crane Trust they do not like to read that, and Lusk docks a few cents a barrel."
       marks: [nora_ehrlich]
+      effects: { strength: 5, price: -0.03 }
     - id: bestechen
       label: { de: "Ihr 50 $ für einen freundlichen Artikel anbieten", en: "Offer her 50 $ for a friendly article" }
       result:
