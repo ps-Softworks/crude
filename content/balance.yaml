@@ -216,6 +216,20 @@ credit:
 bankruptcy:
   graceRounds: 2           # Runden Frist, bevor es Konkurs gibt
 
+# Imperiumswert (GDD §4): Kasse + Öl im Tank + Reserven im Boden − Schulden.
+# Reserven zählen nur vorsichtig, weil Förderkosten und Risiko noch darin stecken.
+empire:
+  reserveFactor: 0.4       # GDD §4: Reserven im Boden vorsichtig bewertet
+
+# Bot-Läufe (GDD §17, Schritt 1.14): Partien ohne Grafik mit drei Strategien.
+# Was die Bots damit machen, steht in src/sim/bots.ts. Alle Werte PLATZHALTER.
+bots:
+  games: 1000              # Partien je Strategie
+  seedPrefix: bot          # Seeds bot-0, bot-1, … – für jede Strategie dieselben
+  cautious: { minChance: 0.5, cashReserve: 1500, maxStage: 2 }  # vorsichtig: Fundchance ab 50 %, 1.500 $ Rücklage, höchstens Stufe 2
+  greedy: { minChance: 0.25 }                                   # gierig: pachtet ab 25 % Fundchance
+  random: { actionsPerRound: 3 }                                # zufällig: so viele Aktionen je Runde
+
 # Rivale Bullard (GDD §9.2, §15): pachtet und bohrt nach Gewinn-Formel.
 rivals:
   bullard:

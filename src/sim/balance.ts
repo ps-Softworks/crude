@@ -181,6 +181,26 @@ export interface CreditBalance {
 }
 
 /** Bankrott: Frist, bevor es Konkurs gibt. */
+/** Imperiumswert (GDD §4). */
+export interface EmpireBalance {
+  /** Anteil, mit dem die förderbaren Barrel im Boden zählen. */
+  reserveFactor: number;
+}
+
+/** Bot-Läufe (GDD §17): Zahlen für die drei Strategien in src/sim/bots.ts. */
+export interface BotsBalance {
+  /** Partien je Strategie. */
+  games: number;
+  /** Seeds sind `${seedPrefix}-0`, `${seedPrefix}-1`, … */
+  seedPrefix: string;
+  /** vorsichtig: Fundchance ab minChance, Rücklage cashReserve, höchstens Stufe maxStage. */
+  cautious: { minChance: number; cashReserve: number; maxStage: number };
+  /** gierig: pachtet ab minChance. */
+  greedy: { minChance: number };
+  /** zufällig: so viele Aktionen je Runde. */
+  random: { actionsPerRound: number };
+}
+
 export interface BankruptcyBalance {
   graceRounds: number;
 }
@@ -237,6 +257,8 @@ export interface Balance {
   transport: TransportBalance;
   credit: CreditBalance;
   bankruptcy: BankruptcyBalance;
+  empire: EmpireBalance;
+  bots: BotsBalance;
 }
 
 export class BalanceError extends Error {}
@@ -651,6 +673,28 @@ function parseBankruptcy(raw: unknown): BankruptcyBalance {
   return { graceRounds: positiveInt(raw, 'bankruptcy.graceRounds') };
 }
 
+function parseEmpire(raw: unknown): EmpireBalance {
+  const block = (raw as { empire?: unknown })?.empire;
+  if (!block || typeof block !== 'object') throw new BalanceError('balance.yaml: Block "empire" fehlt');
+  return { reserveFactor: share(raw, 'empire.reserveFactor') };
+}
+
+function parseBots(raw: unknown): BotsBalance {
+  const block = (raw as { bots?: unknown })?.bots;
+  if (!block || typeof block !== 'object') throw new BalanceError('balance.yaml: Block "bots" fehlt');
+  return {
+    games: positiveInt(raw, 'bots.games'),
+    seedPrefix: text(block, 'seedPrefix', 'bots'),
+    cautious: {
+      minChance: share(raw, 'bots.cautious.minChance'),
+      cashReserve: nonNegative(raw, 'bots.cautious.cashReserve'),
+      maxStage: positiveInt(raw, 'bots.cautious.maxStage'),
+    },
+    greedy: { minChance: share(raw, 'bots.greedy.minChance') },
+    random: { actionsPerRound: positiveInt(raw, 'bots.random.actionsPerRound') },
+  };
+}
+
 export function parseBalance(raw: unknown): Balance {
   const zonesRaw = (raw as { geology?: { zones?: unknown } })?.geology?.zones;
   if (!Array.isArray(zonesRaw) || zonesRaw.length === 0) {
@@ -705,6 +749,8 @@ export function parseBalance(raw: unknown): Balance {
     credit: parseCredit(raw),
     bankruptcy: parseBankruptcy(raw),
     rivals: parseRivals(raw),
+    empire: parseEmpire(raw),
+    bots: parseBots(raw),
   };
 
   const { width, height, saltHill } = balance.map;

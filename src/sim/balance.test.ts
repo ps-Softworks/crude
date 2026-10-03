@@ -403,4 +403,32 @@ describe('Spielzahlen (balance.yaml)', () => {
       expect(() => parseBalance(r2)).toThrow(/rivals\.bullard\.nearFindChance/);
     });
   });
+
+  describe('Imperiumswert und Bots', () => {
+    type RawExtra = { empire: Record<string, unknown>; bots: Record<string, unknown> };
+    const raw = () => structuredClone(loadBalance()) as unknown as RawExtra;
+
+    it('liest reserveFactor und die Bot-Zahlen aus der echten Datei', () => {
+      const b = loadBalance();
+      expect(b.empire.reserveFactor).toBe(0.4);
+      expect(b.bots.games).toBe(1000);
+      expect(b.bots.seedPrefix).toBe('bot');
+    });
+
+    it('meldet einen fehlenden reserveFactor', () => {
+      const r = raw();
+      delete r.empire.reserveFactor;
+      expect(() => parseBalance(r)).toThrow(BalanceError);
+      expect(() => parseBalance(r)).toThrow(/empire\.reserveFactor/);
+    });
+
+    it('meldet bots.games unter 1 und negative Rücklage', () => {
+      const r = raw();
+      r.bots.games = 0;
+      expect(() => parseBalance(r)).toThrow(/"bots\.games" muss eine ganze Zahl ab 1/);
+      const s = raw();
+      (s.bots.cautious as Record<string, number>).cashReserve = -1;
+      expect(() => parseBalance(s)).toThrow(/bots\.cautious\.cashReserve/);
+    });
+  });
 });

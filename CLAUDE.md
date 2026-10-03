@@ -9,8 +9,9 @@
 - Subagents: Du darfst nach eigener Einschätzung Subagents deiner Wahl einsetzen (z. B. Explore, Plan, general-purpose), ohne vorher zu fragen – immer dann, wenn es sinnvoll ist und Tokens spart (z. B. breite Suchen, unabhängige Teilaufgaben parallel). Für Kleinigkeiten, die du direkt erledigen kannst, keine Subagents.
 
 ## Projektstand
-- Phase 0 abgeschlossen (Papierpartien 0.8/0.9 vorerst übersprungen). Phase 1 läuft: 1.1–1.13 fertig (zuletzt Speichern und Laden: der Spielstand liegt im localStorage und das Spiel macht dort weiter), als Nächstes 1.14 (siehe Roadmap).
+- Phase 0 abgeschlossen (Papierpartien 0.8/0.9 vorerst übersprungen). Phase 1 läuft: 1.1–1.14 fertig (zuletzt Bot-Läufe: drei Strategien spielen je 1.000 Partien, Ergebnis in docs/botlaeufe.md), als Nächstes 1.15 (siehe Roadmap).
 - Spielzahlen stehen in `content/balance.yaml` (viele noch Platzhalter; Balance klärt sich mit 1.14/1.15).
+- Bot-Läufe: `npm run bots` (schreibt docs/botlaeufe.md).
 - Starten: `npm run dev`; Debug-Ansicht über `?seed=abc&debug=1` in der Adresse (mit Seed startet immer eine frische Welt, ohne Seed der gespeicherte Stand).
 - Roadmap: https://claude.ai/code/artifact/900e1b6c-0788-449d-a682-0f06781fd49b
 
