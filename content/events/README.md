@@ -8,7 +8,7 @@ ohne Codeänderung. Prüfen: `npm run check:content` (meldet Fehler mit Datei un
 
 Kurzreferenz der Felder:
 - Ereignis: `id`, `title`, `text`, `conditions`, `marked`, `notMarked`, `delay`, `chance`, `once`,
-  `routine`, `appointments`, `choices`
+  `routine`, `appointments`, `mail`, `deadline`, `choices`
 - Wahl: `id`, `label`, `result`, `requires`, `effects`, `marks`, `default`, `appointments`
 - Bedingungen: `minRound`, `maxRound`, `minCash`, `maxCash`, `minOilStock`,
   `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100)
@@ -19,5 +19,11 @@ Kurzreferenz der Felder:
 - Feste Termine: `routine: true` – nicht gewürfelt (`chance` darf fehlen), stehen jede Runde im
   Terminkalender, solange die Bedingungen stimmen; einmal je Runde; liegen lassen hat keine Folgen.
   Beispiele: `k1-termine.yaml`.
+- Posteingang (2.4): `mail: offer | demand | info | personal` macht ein Ereignis zum Brief
+  (Angebot, Forderung, Information, Persönliches). Briefe kommen zusätzlich mit der Post
+  (`events.mail.maxPerRound`), bleiben `deadline` Runden liegen (Standard `events.mail.deadlineRounds`),
+  in der letzten Runde mit rotem Siegel, danach gilt die Standard-Wahl. Kam von einer Art
+  `events.mail.guaranteeRounds` Runden keiner, bringt die Post sicher einen – darum braucht jede
+  Art einen Alltagsbrief ohne Bedingungen mit `once: false`. Beispiele: `k1-post.yaml`.
 - Dateien werden alphabetisch gewürfelt, höchstens `events.maxPerRound` (balance.yaml) neue je Runde.
 - Die Bots spielen (noch) ohne Ereignisse.

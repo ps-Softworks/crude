@@ -18,6 +18,8 @@
       and a card – "From a friend who believes in you. Between friends, interest is
       unnecessary." That evening a polite gentleman in a grey coat stands outside
       the boarding house and nods to Jacob as if they had known each other for years.
+  mail: offer       # Posteingang (2.4): ein Angebot, das als Brief kommt
+  deadline: 1       # rotes Siegel: der Herr im grauen Mantel wartet nicht
   conditions: { minRound: 3, maxCash: 400 }
   chance: 0.5
   choices:

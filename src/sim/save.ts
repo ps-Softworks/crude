@@ -6,11 +6,11 @@
 
 import type { GameState } from './game';
 
-/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3). */
-export const SAVE_FORMAT = 3;
+/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4). */
+export const SAVE_FORMAT = 4;
 
 /** Ältere Formate, die mit Ersatzwerten noch geladen werden. */
-const ALTE_FORMATE = [2];
+const ALTE_FORMATE = [2, 3];
 
 export interface SaveFile {
   format: number;
@@ -90,7 +90,11 @@ export function validateState(value: unknown): LoadResult {
     !istListe(events.pending) ||
     !istListe(events.seen) ||
     !istObjekt(events.marks) ||
-    !Object.values(events.marks).every(istZahl)
+    !Object.values(events.marks).every(istZahl) ||
+    !istObjekt(events.due) ||
+    !Object.values(events.due).every(istZahl) ||
+    !istObjekt(events.lastMail) ||
+    !Object.values(events.lastMail).every(istZahl)
   ) {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
@@ -136,6 +140,11 @@ export function deserializeGame(text: string): LoadResult {
   // Ersatzwert (2.2): Spielstände aus 0.2.1 kennen noch keine Merkzeichen.
   if (istObjekt(state.events) && state.events.marks === undefined) {
     state = { ...state, events: { ...state.events, marks: {} } };
+  }
+  // Ersatzwerte (2.4): Spielstände aus Format 2 und 3 kennen noch keine Fristen
+  // und Briefarten – offene Ereignisse laufen in dieser Runde ab, die Garantie zählt ab Runde 0.
+  if (istObjekt(state.events) && (state.events.due === undefined || state.events.lastMail === undefined)) {
+    state = { ...state, events: { ...state.events, due: state.events.due ?? {}, lastMail: state.events.lastMail ?? {} } };
   }
   // Ersatzwerte (2.3): Spielstände aus Format 2 kennen noch keine Termine und
   // keine Kraft – Jacob ist ausgeruht, die Runde hat volle 5 Termine.

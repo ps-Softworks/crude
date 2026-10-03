@@ -286,6 +286,18 @@ export interface AgendaBalance {
 /** Ereignis-System (2.1): wie viele neue Ereignisse höchstens je Runde kommen. */
 export interface EventsBalance {
   maxPerRound: number;
+  /** Posteingang (2.4). */
+  mail: MailBalance;
+}
+
+/** Posteingang (2.4, GDD §3). */
+export interface MailBalance {
+  /** Höchstens so viele neue Briefe je Runde (zusätzlich zu den übrigen Ereignissen). */
+  maxPerRound: number;
+  /** Standard-Frist eines Briefs in Runden (die Ankunftsrunde mitgezählt). */
+  deadlineRounds: number;
+  /** Kam von einer Briefart so viele Runden keiner, bringt die Post sicher einen. */
+  guaranteeRounds: number;
 }
 
 export class BalanceError extends Error {}
@@ -725,7 +737,18 @@ function parseBots(raw: unknown): BotsBalance {
 function parseEvents(raw: unknown): EventsBalance {
   const block = (raw as { events?: unknown })?.events;
   if (!block || typeof block !== 'object') throw new BalanceError('balance.yaml: Block "events" fehlt');
-  return { maxPerRound: positiveInt(raw, 'events.maxPerRound') };
+  const maxPerRound = positiveInt(raw, 'events.maxPerRound');
+  if (!(block as { mail?: unknown }).mail || typeof (block as { mail?: unknown }).mail !== 'object') {
+    throw new BalanceError('balance.yaml: Block "events.mail" fehlt');
+  }
+  return {
+    maxPerRound,
+    mail: {
+      maxPerRound: positiveInt(raw, 'events.mail.maxPerRound'),
+      deadlineRounds: positiveInt(raw, 'events.mail.deadlineRounds'),
+      guaranteeRounds: positiveInt(raw, 'events.mail.guaranteeRounds'),
+    },
+  };
 }
 
 function parseAgenda(raw: unknown): AgendaBalance {

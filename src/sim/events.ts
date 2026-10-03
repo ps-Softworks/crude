@@ -35,6 +35,14 @@ export const EFFECT_KEYS = ['cash', 'oilStock', 'railTariff', 'strength'] as con
 export type EffectKey = (typeof EFFECT_KEYS)[number];
 export type Effects = Partial<Record<EffectKey, number>>;
 
+/**
+ * Posteingang (2.4, GDD §3): die vier Briefarten. Ein Ereignis mit mail ist ein
+ * Brief – er kommt mit der Post, hat eine Frist und zählt für die Briefarten-Garantie.
+ * Ereignisse ohne mail sind Besuche und Vorfälle am Schreibtisch wie bisher.
+ */
+export const MAIL_KINDS = ['offer', 'demand', 'info', 'personal'] as const;
+export type MailKind = (typeof MAIL_KINDS)[number];
+
 export interface EventChoice {
   id: string;
   /** Was auf dem Knopf steht. */
@@ -77,6 +85,13 @@ export interface EventDef {
   /** Termine, die eine Antwort kostet (2.3), sofern die Wahl nichts anderes sagt. */
   appointments: number;
   choices: EventChoice[];
+  /** Briefart (2.4): Angebot, Forderung, Information oder Persönliches. Fehlt sie, ist es kein Brief. */
+  mail?: MailKind;
+  /**
+   * Frist in Runden (2.4): so lange bleibt ein Brief im Posteingang, bevor die
+   * Standard-Wahl gilt. Fehlt sie, gilt events.mail.deadlineRounds; andere Ereignisse 1.
+   */
+  deadline?: number;
 }
 
 export interface EventsState {
@@ -88,10 +103,29 @@ export interface EventsState {
   seen: string[];
   /** Gesetzte Merkzeichen (2.2) mit der Runde, in der sie gesetzt wurden. Verdeckt – nicht im Protokoll. */
   marks: Record<string, number>;
+  /** Frist (2.4): letzte Runde, in der ein offenes Ereignis noch beantwortet werden kann. Fehlt der Eintrag: diese Runde. */
+  due: Record<string, number>;
+  /** Runde, in der zuletzt ein Brief dieser Art kam (2.4) – für die Briefarten-Garantie. */
+  lastMail: Partial<Record<MailKind, number>>;
 }
 
 export function newEventsState(seed: string): EventsState {
-  return { rng: seedFromString(`${seed}:ereignisse`), pending: [], seen: [], marks: {} };
+  return { rng: seedFromString(`${seed}:ereignisse`), pending: [], seen: [], marks: {}, due: {}, lastMail: {} };
+}
+
+/** Frist eines Ereignisses in Runden (2.4): Briefe nach balance.yaml, alles andere eine Runde. */
+export function deadlineOf(event: Pick<EventDef, 'mail' | 'deadline'>, balance: Balance): number {
+  return event.deadline ?? (event.mail ? balance.events.mail.deadlineRounds : 1);
+}
+
+/** Letzte Runde, in der ein offenes Ereignis noch beantwortet werden kann (2.4). */
+export function dueRound(state: Pick<GameState, 'round' | 'events'>, eventId: string): number {
+  return state.events.due[eventId] ?? state.round;
+}
+
+/** Rotes Siegel (2.4): Läuft die Frist in dieser Runde ab? */
+export function isUrgent(state: Pick<GameState, 'round' | 'events'>, eventId: string): boolean {
+  return dueRound(state, eventId) <= state.round;
 }
 
 /**
@@ -220,12 +254,13 @@ export function drawEvents(state: GameState, balance: Balance, catalog: readonly
   const rng = new Rng(state.events.rng);
   const pending = [...state.events.pending];
   const seen = [...state.events.seen];
+  const due = { ...state.events.due };
   const log = [...state.log];
   let neu = 0;
   for (const event of catalog) {
     if (neu >= balance.events.maxPerRound) break;
-    // Feste Termine (2.3) werden nicht gewürfelt.
-    if (event.routine) continue;
+    // Feste Termine (2.3) werden nicht gewürfelt, Briefe kommen mit der Post (2.4).
+    if (event.routine || event.mail) continue;
     if (pending.includes(event.id)) continue;
     if (event.once && seen.includes(event.id)) continue;
     if (!conditionsMet(state, event.conditions)) continue;
@@ -233,10 +268,72 @@ export function drawEvents(state: GameState, balance: Balance, catalog: readonly
     if (rng.float() >= event.chance) continue;
     pending.push(event.id);
     if (!seen.includes(event.id)) seen.push(event.id);
+    due[event.id] = state.round + deadlineOf(event, balance) - 1;
     log.push(`${formatDate(state)}: Auf dem Schreibtisch: ${localize(event.title, lang)}.`);
     neu++;
   }
-  return { ...state, log, events: { ...state.events, rng: rng.state, pending, seen } };
+  return drawMail({ ...state, log, events: { ...state.events, rng: rng.state, pending, seen, due } }, balance, catalog, lang);
+}
+
+/** Kann dieser Brief jetzt kommen? Bedingungen, Merkzeichen, nicht schon im Posteingang, bei once noch nie gekommen. */
+function briefMoeglich(state: GameState, event: EventDef): boolean {
+  return (
+    event.mail !== undefined &&
+    !event.routine &&
+    !state.events.pending.includes(event.id) &&
+    !(event.once && state.events.seen.includes(event.id)) &&
+    conditionsMet(state, event.conditions) &&
+    marksMet(state, event)
+  );
+}
+
+/** Briefarten, für die die Post fällig ist: länger als events.mail.guaranteeRounds keine – die am längsten wartende zuerst. */
+export function dueMailKinds(state: Pick<GameState, 'round' | 'events'>, balance: Balance): MailKind[] {
+  const zuletzt = (k: MailKind) => state.events.lastMail[k] ?? 0;
+  return MAIL_KINDS.filter((k) => state.round - zuletzt(k) >= balance.events.mail.guaranteeRounds).sort(
+    (a, b) => zuletzt(a) - zuletzt(b),
+  );
+}
+
+/**
+ * Posteingang (2.4): Höchstens events.mail.maxPerRound neue Briefe je Runde.
+ * Zuerst die Garantie: Kam von einer Briefart seit guaranteeRounds Runden keiner,
+ * bringt die Post einen davon (zufällig unter denen, die gerade kommen können).
+ * Danach würfeln die übrigen Briefe mit ihrer Chance, in der Reihenfolge des
+ * Katalogs. Jeder Brief bekommt seine Frist.
+ */
+export function drawMail(state: GameState, balance: Balance, catalog: readonly EventDef[], lang: Lang = DEFAULT_LANG): GameState {
+  if (state.finished || !catalog.some((e) => e.mail)) return state;
+  const rng = new Rng(state.events.rng);
+  let out = state;
+  let neu = 0;
+  const zustellen = (event: EventDef) => {
+    const ev = out.events;
+    out = {
+      ...out,
+      log: [...out.log, `${formatDate(out)}: Im Posteingang: ${localize(event.title, lang)}.`],
+      events: {
+        ...ev,
+        pending: [...ev.pending, event.id],
+        seen: ev.seen.includes(event.id) ? ev.seen : [...ev.seen, event.id],
+        due: { ...ev.due, [event.id]: out.round + deadlineOf(event, balance) - 1 },
+        lastMail: { ...ev.lastMail, [event.mail!]: out.round },
+      },
+    };
+    neu++;
+  };
+  for (const kind of dueMailKinds(out, balance)) {
+    if (neu >= balance.events.mail.maxPerRound) break;
+    const moeglich = catalog.filter((e) => e.mail === kind && briefMoeglich(out, e));
+    if (moeglich.length > 0) zustellen(rng.pick(moeglich));
+  }
+  for (const event of catalog) {
+    if (neu >= balance.events.mail.maxPerRound) break;
+    if (!briefMoeglich(out, event)) continue;
+    if (rng.float() >= event.chance) continue;
+    zustellen(event);
+  }
+  return { ...out, events: { ...out.events, rng: rng.state } };
 }
 
 export type EventResult = { ok: true; state: GameState } | { ok: false; reason: string };
@@ -277,13 +374,20 @@ function erledigen(state: GameState, event: EventDef, choice: EventChoice, lang:
   return {
     ...nach,
     log: [...nach.log, `${formatDate(state)}: ${vorsatz}${localize(event.title, lang)} – ${localize(choice.result, lang)}`],
-    events: { ...nach.events, pending: nach.events.pending.filter((id) => id !== event.id), marks },
+    events: { ...nach.events, pending: nach.events.pending.filter((id) => id !== event.id), marks, due: ohne(nach.events.due, event.id) },
     agenda,
   };
 }
 
+function ohne(due: Record<string, number>, id: string): Record<string, number> {
+  const rest = { ...due };
+  delete rest[id];
+  return rest;
+}
+
 /**
- * Am Rundenende bleibt nichts liegen: Für jedes offene Ereignis gilt die
+ * Am Rundenende bleibt nichts liegen, dessen Frist abläuft (2.4: Briefe mit
+ * längerer Frist warten weiter im Posteingang): Für jedes offene Ereignis gilt die
  * Standard-Wahl (default: true, sonst die erste). Ist sie gesperrt, die erste
  * mögliche. Geht gar keine oder fehlt das Ereignis im Katalog, verfällt es ohne Effekt.
  * Die Standard-Wahl kostet keine Termine – sie ist ja gerade das, was ohne Jacob passiert.
@@ -292,6 +396,8 @@ export function autoResolve(state: GameState, catalog: readonly EventDef[], lang
   let out = state;
   for (const id of state.events.pending) {
     const event = finde(catalog, id);
+    // Frist läuft noch: der Brief bleibt liegen.
+    if (event && dueRound(out, id) > out.round) continue;
     const choice = event
       ? [event.choices.find((c) => c.default) ?? event.choices[0], ...event.choices].find(
           (c) => c && unmetReason(out, c.requires) === null,
@@ -300,7 +406,7 @@ export function autoResolve(state: GameState, catalog: readonly EventDef[], lang
     if (event && choice) {
       out = erledigen(out, event, choice, lang, 'Ohne Antwort: ');
     } else {
-      out = { ...out, events: { ...out.events, pending: out.events.pending.filter((p) => p !== id) } };
+      out = { ...out, events: { ...out.events, pending: out.events.pending.filter((p) => p !== id), due: ohne(out.events.due, id) } };
     }
   }
   return out;
@@ -324,6 +430,12 @@ export interface DeskEvent {
   title: string;
   text: string;
   choices: DeskChoice[];
+  /** Briefart (2.4), wenn es ein Brief ist. */
+  mail?: MailKind;
+  /** Runden bis zum Ablauf der Frist, diese mitgezählt (2.4). */
+  roundsLeft: number;
+  /** Rotes Siegel: die Frist läuft in dieser Runde ab (2.4). */
+  urgent: boolean;
 }
 
 function zeigen(state: GameState, balance: Balance, event: EventDef, lang: Lang): DeskEvent {
@@ -331,6 +443,9 @@ function zeigen(state: GameState, balance: Balance, event: EventDef, lang: Lang)
     id: event.id,
     title: localize(event.title, lang),
     text: localize(event.text, lang),
+    ...(event.mail ? { mail: event.mail } : {}),
+    roundsLeft: event.routine ? 1 : dueRound(state, event.id) - state.round + 1,
+    urgent: !event.routine && isUrgent(state, event.id),
     choices: event.choices.map((c) => {
       const cost = choiceCost(event, c);
       const reason = choiceReason(state, balance, event, c);
@@ -340,7 +455,7 @@ function zeigen(state: GameState, balance: Balance, event: EventDef, lang: Lang)
   };
 }
 
-/** Die offenen Ereignisse mit Texten in der gewünschten Sprache, Kosten in Terminen und gesperrten Wahlen. */
+/** Die offenen Ereignisse (Besuche und Briefe) mit Texten in der gewünschten Sprache, Kosten in Terminen und gesperrten Wahlen. */
 export function deskEvents(state: GameState, balance: Balance, catalog: readonly EventDef[], lang: Lang = DEFAULT_LANG): DeskEvent[] {
   return state.events.pending.flatMap((id) => {
     const event = finde(catalog, id);
@@ -351,4 +466,11 @@ export function deskEvents(state: GameState, balance: Balance, catalog: readonly
 /** Die festen Termine, die in dieser Runde noch im Kalender stehen (2.3). */
 export function deskRoutines(state: GameState, balance: Balance, catalog: readonly EventDef[], lang: Lang = DEFAULT_LANG): DeskEvent[] {
   return catalog.filter((e) => routineOffered(state, e)).map((e) => zeigen(state, balance, e, lang));
+}
+
+/** Nur die Briefe im Posteingang (2.4), dringende zuerst. */
+export function deskMail(state: GameState, balance: Balance, catalog: readonly EventDef[], lang: Lang = DEFAULT_LANG): DeskEvent[] {
+  return deskEvents(state, balance, catalog, lang)
+    .filter((e) => e.mail)
+    .sort((a, b) => a.roundsLeft - b.roundsLeft);
 }

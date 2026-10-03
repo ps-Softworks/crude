@@ -257,6 +257,11 @@ rivals:
 # Ereignis-System (2.1): Ereignisse stehen in content/events/, hier nur die Taktung.
 events:
   maxPerRound: 1           # PLATZHALTER: höchstens so viele neue Ereignisse je Runde
+  # Posteingang (2.4, GDD §3): Briefe (mail: offer/demand/info/personal) kommen zusätzlich mit der Post.
+  mail:
+    maxPerRound: 1         # PLATZHALTER: höchstens so viele neue Briefe je Runde
+    deadlineRounds: 2      # PLATZHALTER: Frist eines Briefs in Runden (Ankunftsrunde mitgezählt); letzte Runde = rotes Siegel
+    guaranteeRounds: 6     # Kam von einer Briefart 6 Runden keiner, bringt die Post sicher einen (jede Art kommt so in jeder Partie)
 
 # Termine und Kraft (2.3, GDD §3 und §4). Kraft ist für den Spieler nie als Zahl sichtbar.
 agenda:

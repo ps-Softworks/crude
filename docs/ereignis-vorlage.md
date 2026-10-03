@@ -57,6 +57,10 @@ Zum Ausprobieren: `npm run dev`, dann im Browser `?seed=abc&debug=1`.
   Überstunden bis zu 7; jede Überstunde kostet Kraft.
 - Kraft ändert `effects: { strength: 5 }` (Familie, Ruhe: plus; Reisen, Krisen: minus).
   `conditions: { maxStrength: 60 }` lässt ein Ereignis nur kommen, wenn Jacob müde ist.
+- `mail: offer` (oder `demand`, `info`, `personal`) macht einen **Brief** für den Posteingang:
+  Angebot, Forderung, Information oder Persönliches. Ein Brief bleibt ein paar Runden liegen
+  (`deadline: 2` = zwei Runden; ohne Angabe gilt der Wert aus balance.yaml); in der letzten Runde
+  trägt er ein rotes Siegel. Beispiele: `content/events/k1-post.yaml`.
 - `routine: true` macht einen **festen Termin**: kein Würfeln, er steht jede Runde im
   Terminkalender (Beispiele in `content/events/k1-termine.yaml`).
 

@@ -115,9 +115,9 @@ describe('Ereignisse würfeln', () => {
   });
 
   it('höchstens maxPerRound neue je Runde, in der Reihenfolge des Katalogs', () => {
-    const zwei: Balance = { ...balance, events: { maxPerRound: 2 } };
+    const zwei: Balance = { ...balance, events: { ...balance.events, maxPerRound: 2 } };
     const katalog = [ereignis('a'), ereignis('b'), ereignis('c')];
-    expect(drawEvents(newGame('max', balance), { ...balance, events: { maxPerRound: 1 } }, katalog).events.pending).toEqual(['a']);
+    expect(drawEvents(newGame('max', balance), { ...balance, events: { ...balance.events, maxPerRound: 1 } }, katalog).events.pending).toEqual(['a']);
     expect(drawEvents(newGame('max', balance), zwei, katalog).events.pending).toEqual(['a', 'b']);
   });
 

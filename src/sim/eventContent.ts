@@ -4,7 +4,7 @@
 // benutzt sowohl das Spiel beim Laden als auch npm run check:content.
 
 import { LineCounter, parseDocument, type Document } from 'yaml';
-import { CONDITION_KEYS, EFFECT_KEYS, type Conditions, type EventChoice, type EventDef, type Effects } from './events';
+import { CONDITION_KEYS, EFFECT_KEYS, MAIL_KINDS, type Conditions, type EventChoice, type EventDef, type Effects, type MailKind } from './events';
 import { LANGUAGES, type LocalizedText } from './i18n';
 
 export interface ContentError {
@@ -23,7 +23,7 @@ export interface ParsedEvents {
   errors: ContentError[];
 }
 
-const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'routine', 'appointments', 'choices'];
+const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'routine', 'appointments', 'choices', 'mail', 'deadline'];
 const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default', 'appointments'];
 const ID_MUSTER = /^[a-z0-9_]+$/;
 
@@ -234,6 +234,21 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
       fehler([...pfad, 'once'], `${wer}: „once“ muss true oder false sein.`);
       ok = false;
     }
+    // Posteingang (2.4): Briefart und Frist.
+    const mail = raw.mail;
+    if (mail !== undefined && !(MAIL_KINDS as readonly unknown[]).includes(mail)) {
+      fehler([...pfad, 'mail'], `${wer}: „mail“ muss eine Briefart sein (${liste(MAIL_KINDS)}).`);
+      ok = false;
+    }
+    if (mail !== undefined && routine) {
+      fehler([...pfad, 'mail'], `${wer}: Ein fester Termin (routine) kann kein Brief (mail) sein.`);
+      ok = false;
+    }
+    const deadline = raw.deadline;
+    if (deadline !== undefined && (typeof deadline !== 'number' || !Number.isInteger(deadline) || deadline < 1)) {
+      fehler([...pfad, 'deadline'], `${wer}: „deadline“ muss eine ganze Zahl ab 1 sein (Frist in Runden).`);
+      ok = false;
+    }
     const choicesRaw = raw.choices;
     let choices: EventChoice[] = [];
     if (!Array.isArray(choicesRaw) || choicesRaw.length === 0) {
@@ -256,7 +271,7 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
       }
     }
     if (!ok || !title || !body || !conditions || !marked || !notMarked) return null;
-    return {
+    const def: EventDef = {
       id: id as string,
       title,
       text: body,
@@ -270,6 +285,9 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
       appointments: appointments as number,
       choices,
     };
+    if (mail !== undefined) def.mail = mail as MailKind;
+    if (deadline !== undefined) def.deadline = deadline as number;
+    return def;
   }
 
   const events: EventDef[] = [];

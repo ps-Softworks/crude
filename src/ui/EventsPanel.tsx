@@ -1,17 +1,35 @@
 // Ereignisse auf dem Schreibtisch (2.1) und der Terminkalender (2.3): Titel,
 // Text und die Antworten als Knöpfe, jeweils mit dem, was sie an Terminen
 // kosten. Was eine Antwort bewirkt und ob sie geht, entscheidet src/sim.
+// Posteingang (2.4): Briefe mit Briefart, Frist und rotem Siegel.
 
 import { costLabel } from '../sim/agenda';
-import { deskEvents, deskRoutines, resolveEvent, type DeskEvent } from '../sim/events';
+import { deskEvents, deskMail, deskRoutines, resolveEvent, type DeskEvent, type MailKind } from '../sim/events';
 import type { GameState } from '../sim/game';
 import { balance } from './balance';
 import { events } from './events';
+
+const BRIEFART: Record<MailKind, string> = {
+  offer: 'Angebot',
+  demand: 'Forderung',
+  info: 'Information',
+  personal: 'Persönliches',
+};
+
+function frist(event: DeskEvent): string {
+  return event.urgent ? 'Frist läuft ab – sonst gilt die Standardantwort' : `noch ${event.roundsLeft} Runden Zeit`;
+}
 
 function Karte({ game, event, onResolved, className }: { game: GameState; event: DeskEvent; onResolved: (state: GameState) => void; className: string }) {
   const gesperrt = event.choices.find((c) => !c.ok);
   return (
     <article className={className}>
+      {event.mail && (
+        <p className="briefkopf">
+          {event.urgent && <span className="siegel" title="Dringend" aria-label="Rotes Siegel" />}
+          <span className="briefart">{BRIEFART[event.mail]}</span> · {frist(event)}
+        </p>
+      )}
       <h2>{event.title}</h2>
       <p>{event.text}</p>
       <div className="actions">
@@ -36,14 +54,23 @@ function Karte({ game, event, onResolved, className }: { game: GameState; event:
 }
 
 export function EventsPanel({ game, onResolved }: { game: GameState; onResolved: (state: GameState) => void }) {
-  const offen = deskEvents(game, balance, events);
+  const offen = deskEvents(game, balance, events).filter((e) => !e.mail);
+  const post = deskMail(game, balance, events);
   const termine = deskRoutines(game, balance, events);
-  if (offen.length === 0 && termine.length === 0) return null;
+  if (offen.length === 0 && post.length === 0 && termine.length === 0) return null;
   return (
     <section className="events">
       {offen.map((event) => (
         <Karte key={event.id} game={game} event={event} onResolved={onResolved} className="event" />
       ))}
+      {post.length > 0 && (
+        <details className="posteingang" open>
+          <summary>Posteingang – {post.length === 1 ? '1 Brief' : `${post.length} Briefe`}</summary>
+          {post.map((event) => (
+            <Karte key={event.id} game={game} event={event} onResolved={onResolved} className={event.urgent ? 'event brief dringend' : 'event brief'} />
+          ))}
+        </details>
+      )}
       {termine.length > 0 && (
         <details className="kalender" open>
           <summary>Terminkalender – was diese Runde noch ginge</summary>

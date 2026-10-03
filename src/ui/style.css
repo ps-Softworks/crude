@@ -115,3 +115,12 @@ h1 button.neustart { font-size: 12px; font-weight: normal; letter-spacing: norma
 .event.termin { border-style: dashed; background: #fbf8f1; }
 .event button .kosten { color: #666; font-size: 0.85em; }
 .event button.ueberstunde { border-color: #b3261e; }
+
+/* Posteingang (2.4): Briefe mit Briefart, Frist und rotem Siegel. */
+.posteingang { margin-top: 8px; }
+.posteingang > summary { cursor: pointer; font-weight: bold; margin-bottom: 8px; }
+.event.brief { background: #fffdf6; border-left-width: 4px; }
+.event.brief.dringend { border-left-color: #b3261e; }
+.briefkopf { margin: 0 0 4px; font-size: 0.85em; color: #666; display: flex; align-items: center; gap: 6px; }
+.briefkopf .briefart { font-variant: small-caps; letter-spacing: 1px; color: #5a4a2f; }
+.siegel { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #d9534f, #8b1a14); box-shadow: 0 0 0 2px #e8c4c1; }
