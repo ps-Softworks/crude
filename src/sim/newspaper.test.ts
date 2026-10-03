@@ -212,3 +212,13 @@ describe('Zeitung: Spielzahlen', () => {
     expect(() => parseBalance(verdreht)).toThrow(BalanceError);
   });
 });
+
+describe('Kurzmeldung zu Cranes Abschlag (2.8)', () => {
+  it('erscheint in der ersten Runde des Abschlags, nicht davor und nicht danach', () => {
+    const base = newGame('abschlag', balance);
+    const mit = (round: number): GameState => ({ ...base, round, events: { ...base.events, marks: { crane_abschlag: 6 } } });
+    expect(newsItems(mit(6), balance)).not.toContain('crane_cut');
+    expect(newsItems(mit(7), balance)).toContain('crane_cut');
+    expect(newsItems(mit(8), balance)).not.toContain('crane_cut');
+  });
+});

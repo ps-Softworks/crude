@@ -3,6 +3,7 @@
 //   Wert = Kasse + (Öl im Tank − Förderzins-Öl) · Posted Price
 //        + reserveFactor · Posted Price · eigene Reserven − Schulden
 //
+// Nach dem Verkauf an den Crane Trust zählt nur noch der Kaufpreis.
 // Reserven im Boden zählen nur vorsichtig (reserveFactor). Eigene Reserven sind,
 // was Jacobs fördernde Quellen bei gleichbleibendem Rückgang noch aus dem Boden
 // holen (Rate der nächsten Runde / Rückgang) – höchstens so viel, wie im Feld
@@ -32,6 +33,8 @@ export function ownReserves(state: GameState, balance: Balance, fieldId: string)
 /** Der Imperiumswert in $, auf Cent gerundet. */
 export function empireValue(state: GameState, balance: Balance): number {
   if (state.ending === 'pleite') return 0;
+  // An den Crane Trust verkauft (2.8): Die Firma ist zu Geld geworden.
+  if (state.ending === 'verkauft') return state.cash;
   const tank = (state.oilStock - state.royaltyOil) * state.postedPrice;
   const imBoden = state.fields.reduce((sum, field) => sum + ownReserves(state, balance, field.id), 0);
   const reserven = balance.empire.reserveFactor * state.postedPrice * imBoden;

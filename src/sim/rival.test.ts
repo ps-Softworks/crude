@@ -4,16 +4,17 @@ import { stageCost, type Well } from './drilling';
 import { endRound, newGame, type GameState } from './game';
 import { buyLease, leaseTerms, settleLeases, type Lease } from './lease';
 import { advanceMarket } from './market';
-import { advanceRival, newRival, rivalCandidates, rivalChance, rivalNetPerBarrel, rivalUtility, rivalWellIncome, type RivalWell } from './rival';
+import { advanceRival, betrayalParcel, bullardStance, newRival, rivalCandidates, rivalChance, rivalNetPerBarrel, rivalUtility, rivalWellIncome, type RivalWell } from './rival';
 import { Rng } from './rng';
 import { loadBalance } from './testBalance';
+import { RIVAL_MARKS } from './trust';
 
 const balance = loadBalance();
 const bullard = balance.rivals.bullard;
 
 /** Balance mit geänderten Bullard-Zahlen (nur für Tests, ohne Prüfung). */
 function mitBullard(change: Partial<typeof bullard>): Balance {
-  return { ...balance, rivals: { bullard: { ...bullard, ...change } } };
+  return { ...balance, rivals: { ...balance.rivals, bullard: { ...bullard, ...change } } };
 }
 
 /** Bullard pachtet nie von selbst – für Tests, die nur Bohren oder Abrechnung prüfen. */
@@ -318,5 +319,71 @@ describe('Rivale Bullard (1.12)', () => {
       expect(gute.length).toBeGreaterThanOrEqual(1);
       expect(s.rival.wells.some((w) => w.status === 'found')).toBe(true);
     });
+  });
+});
+
+describe('Bullard merkt sich Jacobs Antwort (2.8)', () => {
+  function mitMarken(state: GameState, marks: Record<string, number>): GameState {
+    return { ...state, events: { ...state.events, marks: { ...state.events.marks, ...marks } } };
+  }
+
+  /** Spiel ohne Startoptionen, mit einer Pacht Jacobs auf einer freien Randparzelle. */
+  function mitJacobPacht(seed: string) {
+    const roh = { ...newGame(seed, balance), options: [] };
+    const p = freieRandparzelle(roh);
+    const state = { ...roh, leases: [pacht(roh, p.id, 'jacob')] };
+    return { state, p };
+  }
+
+  it('Haltung: neutral ohne Merkzeichen, Pakt nach dem Handschlag, Fehde nach Beleidigung oder Verrat', () => {
+    const s = newGame('haltung', balance);
+    expect(bullardStance(s)).toBe('neutral');
+    expect(bullardStance(mitMarken(s, { [RIVAL_MARKS.bullardPact]: 2 }))).toBe('pakt');
+    expect(bullardStance(mitMarken(s, { [RIVAL_MARKS.bullardFeud]: 2 }))).toBe('fehde');
+    expect(bullardStance(mitMarken(s, { [RIVAL_MARKS.bullardPact]: 2, [RIVAL_MARKS.bullardBetrayed]: 5 }))).toBe('fehde');
+  });
+
+  it('Handschlag: Bullard pachtet nichts direkt neben Jacobs Land', () => {
+    const { state, p } = mitJacobPacht('pakt');
+    const frei = nachbarn(state, p.id).filter((n) => !n.discovery);
+    const ohne = rivalCandidates(state, balance).map((c) => c.id);
+    expect(frei.some((n) => ohne.includes(n.id))).toBe(true);
+    const mit = rivalCandidates(mitMarken(state, { [RIVAL_MARKS.bullardPact]: 1 }), balance).map((c) => c.id);
+    expect(frei.some((n) => mit.includes(n.id))).toBe(false);
+    // Weiter weg darf er weiter pachten.
+    expect(mit.length).toBeGreaterThan(0);
+  });
+
+  it('Fehde: Der Nachbarschaftsbonus neben Jacobs Land zählt feudFactor-fach', () => {
+    const { state, p } = mitJacobPacht('fehde');
+    const n = nachbarn(state, p.id).find((q) => !q.discovery)!;
+    const neutral = rivalUtility(state, balance, n, 0.5);
+    const fehde = rivalUtility(mitMarken(state, { [RIVAL_MARKS.bullardFeud]: 1 }), balance, n, 0.5);
+    expect(fehde - neutral).toBeCloseTo(bullard.personality.aggression * bullard.nearJacobBonus * (bullard.feudFactor - 1), 6);
+  });
+
+  it('Verrat: Pachtet Jacob nach dem Handschlag neben Bullard, merkt der es – für immer Fehde', () => {
+    const roh = { ...newGame('verrat', balance), options: [], round: 4 };
+    const b = freieRandparzelle(roh);
+    const n = nachbarn(roh, b.id).find((q) => !q.discovery)!;
+    const bullardPacht = { ...pacht(roh, b.id, 'bullard'), startRound: 1 };
+    const jacobPacht = { ...pacht(roh, n.id, 'jacob'), startRound: 4 };
+    const s = mitMarken({ ...roh, leases: [bullardPacht, jacobPacht] }, { [RIVAL_MARKS.bullardPact]: 3 });
+    expect(betrayalParcel(s)?.id).toBe(n.id);
+    const nach = advanceRival(s, passiv);
+    expect(nach.events.marks[RIVAL_MARKS.bullardBetrayed]).toBe(4);
+    expect(bullardStance(nach)).toBe('fehde');
+    expect(nach.log.some((l) => l.includes('Handschlag gilt nicht mehr'))).toBe(true);
+    // Was Jacob vor dem Handschlag gepachtet hatte, zählt nicht.
+    const vorher = mitMarken({ ...roh, leases: [bullardPacht, { ...jacobPacht, startRound: 2 }] }, { [RIVAL_MARKS.bullardPact]: 3 });
+    expect(betrayalParcel(vorher)).toBeNull();
+    expect(advanceRival(vorher, passiv).events.marks[RIVAL_MARKS.bullardBetrayed]).toBeUndefined();
+  });
+
+  it('ohne Ereignisse (Bots) bleibt Bullard wie bisher: neutral', () => {
+    let s = newGame('bots', balance);
+    for (let i = 0; i < 5; i++) s = endRound(s, balance);
+    expect(bullardStance(s)).toBe('neutral');
+    expect(Object.values(RIVAL_MARKS).some((m) => s.events.marks[m] !== undefined)).toBe(false);
   });
 });

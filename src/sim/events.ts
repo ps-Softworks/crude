@@ -45,6 +45,10 @@ export type Effects = Partial<Record<EffectKey, number>>;
 export const MAIL_KINDS = ['offer', 'demand', 'info', 'personal'] as const;
 export type MailKind = (typeof MAIL_KINDS)[number];
 
+/** Rivalen (2.8, GDD §9.2): Wer hinter einem Ereignis steckt. */
+export const RIVAL_IDS = ['crane', 'thorne', 'bullard'] as const;
+export type RivalId = (typeof RIVAL_IDS)[number];
+
 export interface EventChoice {
   id: string;
   /** Was auf dem Knopf steht. */
@@ -102,6 +106,14 @@ export interface EventDef {
   deadline?: number;
   /** Dokumentenprüfung (2.5): ein Dokument zum Prüfen, z. B. eine Pachturkunde. */
   document?: DocumentDef;
+  /**
+   * Sicher (2.8): kommt ohne Würfeln, sobald Bedingungen und Merkzeichen stimmen,
+   * und zählt nicht gegen events.maxPerRound bzw. events.mail.maxPerRound. Für
+   * Züge der Rivalen, die in jeder Partie kommen müssen.
+   */
+  certain?: boolean;
+  /** Rivale hinter dem Ereignis (2.8). */
+  rival?: RivalId;
 }
 
 export interface EventsState {
@@ -293,22 +305,24 @@ export function drawEvents(state: GameState, balance: Balance, catalog: readonly
   const docs = { ...state.events.docs };
   const log = [...state.log];
   let neu = 0;
-  for (const event of catalog) {
-    if (neu >= balance.events.maxPerRound) break;
+  // Sichere Ereignisse (2.8) zuerst: ohne Würfel, ohne Platz in maxPerRound.
+  const sicher = catalog.filter((e) => e.certain && !e.routine && !e.mail);
+  for (const event of [...sicher, ...catalog.filter((e) => !e.certain)]) {
+    if (!event.certain && neu >= balance.events.maxPerRound) break;
     // Feste Termine (2.3) werden nicht gewürfelt, Briefe kommen mit der Post (2.4).
     if (event.routine || event.mail) continue;
     if (pending.includes(event.id)) continue;
     if (event.once && seen.includes(event.id)) continue;
     if (!conditionsMet(state, event.conditions)) continue;
     if (!marksMet(state, event)) continue;
-    if (rng.float() >= event.chance) continue;
+    if (!event.certain && rng.float() >= event.chance) continue;
     pending.push(event.id);
     if (!seen.includes(event.id)) seen.push(event.id);
     due[event.id] = state.round + deadlineOf(event, balance) - 1;
     const doc = rollDocument(event, balance, rng);
     if (doc) docs[event.id] = doc;
     log.push(`${formatDate(state)}: Auf dem Schreibtisch: ${localize(event.title, lang)}.`);
-    neu++;
+    if (!event.certain) neu++;
   }
   return drawMail({ ...state, log, events: { ...state.events, rng: rng.state, pending, seen, due, docs } }, balance, catalog, lang);
 }
@@ -360,8 +374,12 @@ export function drawMail(state: GameState, balance: Balance, catalog: readonly E
         docs: doc ? { ...ev.docs, [event.id]: doc } : ev.docs,
       },
     };
-    neu++;
+    if (!event.certain) neu++;
   };
+  // Sichere Briefe (2.8) zuerst: ohne Würfel, ohne Platz in maxPerRound.
+  for (const event of catalog) {
+    if (event.certain && briefMoeglich(out, event)) zustellen(event);
+  }
   for (const kind of dueMailKinds(out, balance)) {
     if (neu >= balance.events.mail.maxPerRound) break;
     const moeglich = catalog.filter((e) => e.mail === kind && briefMoeglich(out, e));
@@ -369,7 +387,7 @@ export function drawMail(state: GameState, balance: Balance, catalog: readonly E
   }
   for (const event of catalog) {
     if (neu >= balance.events.mail.maxPerRound) break;
-    if (!briefMoeglich(out, event)) continue;
+    if (event.certain || !briefMoeglich(out, event)) continue;
     if (rng.float() >= event.chance) continue;
     zustellen(event);
   }

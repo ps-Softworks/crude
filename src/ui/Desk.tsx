@@ -11,6 +11,8 @@ import type { NextStep } from '../sim/desk';
 import { roundLog, sourceRows } from '../sim/desk';
 import { formatDate, type GameState } from '../sim/game';
 import { capacityLeft, netPrice, sellOil, tariff } from '../sim/transport';
+import { craneCut, craneCutRoundsLeft, railFrozen } from '../sim/trust';
+import { wildcatterWells } from '../sim/wildcatters';
 import { balance } from './balance';
 import { BankPanel } from './BankPanel';
 import { EventsPanel } from './EventsPanel';
@@ -123,6 +125,11 @@ export function Desk({
             {rivalWells === 1 ? 'Quelle' : 'Quellen'}
             {debug && <> · Kasse {money(game.rival.cash)}</>}
           </span>
+          {game.wildcatters.firms.length > 0 && (
+            <span title={game.wildcatters.firms.map((f) => `${f.name}: ${f.wells}`).join(' · ')}>
+              Kleine Wildcatter: {game.wildcatters.firms.length} Firmen, {wildcatterWells(game)} Quellen
+            </span>
+          )}
           <span>
             Runde {game.round}/{game.totalRounds} · {formatDate(game)}
           </span>
@@ -288,6 +295,13 @@ function SalePanel({ game, onSold }: { game: GameState; onSold: (state: GameStat
         Im Tank: <strong>{barrels(tank)} bbl</strong> · Posted Price {price(game.postedPrice)}
         {priceChange} je Barrel
       </p>
+      {craneCut(game, balance) > 0 && (
+        <p className="hint">
+          Crane-Abschlag: Der Trust zahlt dir {price(craneCut(game, balance))} je Barrel weniger (noch{' '}
+          {craneCutRoundsLeft(game, balance)} {craneCutRoundsLeft(game, balance) === 1 ? 'Runde' : 'Runden'}).
+        </p>
+      )}
+      {railFrozen(game, balance) && <p className="hint">Frachtvertrag mit Thorne: Der Bahntarif bleibt fest.</p>}
       <dl className="terms">
         {TRANSPORT_MODES.map((mode) => (
           <div key={mode} style={{ display: 'contents' }}>

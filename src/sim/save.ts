@@ -6,11 +6,11 @@
 
 import type { GameState } from './game';
 
-/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7). */
-export const SAVE_FORMAT = 6;
+/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8). */
+export const SAVE_FORMAT = 7;
 
 /** Ältere Formate, die mit Ersatzwerten noch geladen werden. */
-const ALTE_FORMATE = [2, 3, 4, 5];
+const ALTE_FORMATE = [2, 3, 4, 5, 6];
 
 export interface SaveFile {
   format: number;
@@ -109,8 +109,17 @@ export function validateState(value: unknown): LoadResult {
   if (!istObjekt(family) || !istZahl(family.ruth) || !istZahl(family.thomas) || !istZahl(family.thomasBorn) || !istZahl(family.time)) {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
+  const wildcatters = value.wildcatters;
+  if (
+    !istObjekt(wildcatters) ||
+    !istZahl(wildcatters.rng) ||
+    !istListe(wildcatters.firms) ||
+    !wildcatters.firms.every((f) => istObjekt(f) && istText(f.name) && istZahl(f.wells))
+  ) {
+    return { ok: false, reason: UNVOLLSTAENDIG };
+  }
   if (typeof value.finished !== 'boolean') return { ok: false, reason: UNVOLLSTAENDIG };
-  if (value.ending !== null && value.ending !== 'kapitel' && value.ending !== 'pleite') {
+  if (value.ending !== null && value.ending !== 'kapitel' && value.ending !== 'pleite' && value.ending !== 'verkauft') {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
   const round = value.round as number;
@@ -167,5 +176,8 @@ export function deserializeGame(text: string): LoadResult {
   // Thomas kommt zu Beginn der nächsten Runde zur Welt, falls seine Runde schon vorbei ist.
   if (state.sick === undefined) state = { ...state, sick: 0 };
   if (state.family === undefined) state = { ...state, family: { ruth: 70, thomas: 0, thomasBorn: 0, time: 0 } };
+  // Ersatzwert (2.8): Spielstände bis Format 6 kennen keine Wildcatter – die
+  // Nachbarquellen bleiben namenlos (der Markt rechnet sie trotzdem mit).
+  if (state.wildcatters === undefined) state = { ...state, wildcatters: { rng: 0, firms: [] } };
   return validateState(state);
 }

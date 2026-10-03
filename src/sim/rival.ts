@@ -10,6 +10,7 @@ import type { GameState } from './game';
 import type { Parcel } from './geology';
 import { chebyshev, leaseTerms, parcelLabel, type Lease } from './lease';
 import { Rng, seedFromString, type RngState } from './rng';
+import { markRound, RIVAL_MARKS } from './trust';
 
 /** Eine Bohrung von Bullard. Vereinfacht: ein Bohrgang, Ergebnis = Geologie. */
 export interface RivalWell {
@@ -66,6 +67,41 @@ function jacobLand(state: GameState): Parcel[] {
 }
 
 /**
+ * Bullards Haltung zu Jacob (2.8, GDD §9.3: Gedächtnis). Sie kommt aus Jacobs
+ * Antwort im Saloon (Merkzeichen): Handschlag = Pakt, Beleidigung = Fehde.
+ * Ein gebrochener Handschlag ist Verrat und damit für immer Fehde.
+ */
+export type BullardStance = 'neutral' | 'pakt' | 'fehde';
+
+export function bullardStance(state: Pick<GameState, 'events'>): BullardStance {
+  if (markRound(state, RIVAL_MARKS.bullardBetrayed) !== undefined || markRound(state, RIVAL_MARKS.bullardFeud) !== undefined) {
+    return 'fehde';
+  }
+  return markRound(state, RIVAL_MARKS.bullardPact) !== undefined ? 'pakt' : 'neutral';
+}
+
+/**
+ * Verrat (2.8): Solange der Handschlag gilt, pachtet Jacob nichts direkt neben
+ * Bullards Pachten und Quellen. Tut er es doch (Pacht ab der Runde des
+ * Handschlags), ist das die Parzelle, an der Bullard es merkt – sonst null.
+ */
+export function betrayalParcel(state: GameState): Parcel | null {
+  const pakt = markRound(state, RIVAL_MARKS.bullardPact);
+  if (pakt === undefined || bullardStance(state) !== 'pakt') return null;
+  const seineIds = new Set([
+    ...state.leases.filter((l) => l.holder === 'bullard').map((l) => l.parcelId),
+    ...state.rival.wells.map((w) => w.parcelId),
+  ]);
+  const seine = state.parcels.filter((p) => seineIds.has(p.id));
+  const neue = state.leases
+    .filter((l) => l.holder === 'jacob' && l.startRound >= pakt)
+    .map((l) => state.parcels.find((p) => p.id === l.parcelId)!)
+    .filter((p) => p && nextTo(p, seine))
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return neue[0] ?? null;
+}
+
+/**
  * Bullards Bild der Fundchance – nicht die Wahrheit: Zonenwissen (wie die
  * wahre Grundchance der Zone) plus Aufschlag neben einer fündigen Quelle Jacobs.
  */
@@ -77,7 +113,7 @@ export function rivalChance(state: GameState, balance: Balance, parcel: Parcel):
 /**
  * Nutzen einer Pacht für Bullard (GDD §9.3):
  *   U = c · valuePerFind · (1 + (risk − 3) · riskWeight) − (Bonus + Bohrkosten Stufe 1)
- *       + (grenzt an Jacobs Pacht oder Quelle ? aggression · nearJacobBonus : 0)
+ *       + (grenzt an Jacobs Pacht oder Quelle ? aggression · nearJacobBonus (· feudFactor bei Fehde) : 0)
  *       + (roll − 0.5) · noise · risk / 5
  */
 export function rivalUtility(state: GameState, balance: Balance, parcel: Parcel, roll: number): number {
@@ -85,7 +121,9 @@ export function rivalUtility(state: GameState, balance: Balance, parcel: Parcel,
   const { risk, aggression } = b.personality;
   const cost = leaseTerms(state, balance, parcel.id).bonus + stageCost(balance, 1);
   const value = rivalChance(state, balance, parcel) * b.valuePerFind * (1 + (risk - 3) * b.riskWeight);
-  const neighbour = nextTo(parcel, jacobLand(state)) ? aggression * b.nearJacobBonus : 0;
+  // Fehde (2.8): Er sucht Jacobs Nähe erst recht.
+  const groll = bullardStance(state) === 'fehde' ? b.feudFactor : 1;
+  const neighbour = nextTo(parcel, jacobLand(state)) ? aggression * b.nearJacobBonus * groll : 0;
   const noise = (roll - 0.5) * b.noise * (risk / 5);
   return value - cost + neighbour + noise;
 }
@@ -116,7 +154,10 @@ export function rivalWellIncome(well: RivalWell, balance: Balance, price: number
   return cents(rate * rivalNetPerBarrel(price, royalty, b.transportPerBarrel));
 }
 
-/** Parzellen, die Bullard pachten könnte: frei, nicht Salt Hill, nicht schon einmal von ihm gebohrt. Sortiert nach id. */
+/**
+ * Parzellen, die Bullard pachten könnte: frei, nicht Salt Hill, nicht schon einmal
+ * von ihm gebohrt. Mit Handschlag (2.8) nichts direkt neben Jacobs Land. Sortiert nach id.
+ */
 export function rivalCandidates(state: GameState, _balance: Balance): Parcel[] {
   const taken = new Set([
     ...state.leases.map((l) => l.parcelId),
@@ -124,8 +165,11 @@ export function rivalCandidates(state: GameState, _balance: Balance): Parcel[] {
     ...state.wells.map((w) => w.parcelId),
     ...state.rival.wells.map((w) => w.parcelId),
   ]);
+  const pakt = bullardStance(state) === 'pakt';
+  const jacobs = pakt ? jacobLand(state) : [];
   return state.parcels
     .filter((p) => !p.discovery && !taken.has(p.id))
+    .filter((p) => !pakt || !nextTo(p, jacobs))
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 
@@ -153,6 +197,14 @@ export function advanceRival(
   const b = balance.rivals.bullard;
   const date = formatDate(state);
   const log = [...state.log];
+
+  // Verrat (2.8): Hat Jacob trotz Handschlag neben Bullard gepachtet, merkt der es jetzt – für immer.
+  const verrat = betrayalParcel(state);
+  if (verrat) {
+    log.push(`${date}: Bullard erfährt, dass du neben ihm Parzelle ${parcelLabel(verrat)} gepachtet hast. Der Handschlag gilt nicht mehr.`);
+    state = { ...state, events: { ...state.events, marks: { ...state.events.marks, [RIVAL_MARKS.bullardBetrayed]: state.round } } };
+  }
+  const fehde = bullardStance(state) === 'fehde';
   const label = (parcelId: string) => {
     const parcel = state.parcels.find((p) => p.id === parcelId);
     return parcel ? parcelLabel(parcel) : parcelId;
@@ -216,7 +268,9 @@ export function advanceRival(
     log.push(
       hadIt || nextTo(parcel, jacobFinds(state))
         ? `${date}: Bullard pachtet Parzelle ${parcelLabel(parcel)} – Bullard schnappt dir Parzelle ${parcelLabel(parcel)} weg!`
-        : `${date}: Bullard pachtet Parzelle ${parcelLabel(parcel)}.`,
+        : fehde && nextTo(parcel, jacobLand(state))
+          ? `${date}: Bullard pachtet aus Groll Parzelle ${parcelLabel(parcel)} direkt neben deinem Land.`
+          : `${date}: Bullard pachtet Parzelle ${parcelLabel(parcel)}.`,
     );
   }
 

@@ -11,6 +11,7 @@ import type { GameState } from './game';
 import { LANGUAGES, localize, type Lang, type LocalizedText } from './i18n';
 import { computePrice, jacobSupply, neighbourSupply, rivalSupply } from './market';
 import { advanceProduction } from './production';
+import { craneCut, markRound, RIVAL_MARKS } from './trust';
 
 /** Aussicht für den Ölpreis bis zum Rundenende. */
 export type Outlook = 'crash' | 'fall' | 'steady' | 'rise';
@@ -23,6 +24,7 @@ export const HEADLINE_IDS = [
   'outlook_steady',
   'price_cut',
   'price_raise',
+  'crane_cut',
   'rival_find',
   'jacob_gusher',
   'jacob_find',
@@ -94,6 +96,9 @@ export function newsItems(state: GameState, balance: Balance): HeadlineId[] {
     if (change <= -balance.market.newsThreshold + 1e-9) ids.push('price_cut');
     else if (change >= balance.market.newsThreshold - 1e-9) ids.push('price_raise');
   }
+  // Cranes Abschlag (2.8) gilt ab dieser Runde.
+  const abschlag = markRound(state, RIVAL_MARKS.craneCut);
+  if (abschlag !== undefined && abschlag + 1 === state.round && craneCut(state, balance) > 0) ids.push('crane_cut');
   // Neue Funde der letzten Runde: Jacobs Quelle hat noch nicht gefördert,
   // Bullards Quelle steht noch auf ihrer Anfangsrate.
   const neu = state.wells.filter((w) => w.status === 'found' && (w.production?.roundsProduced ?? 0) === 0);

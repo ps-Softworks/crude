@@ -4,10 +4,11 @@
 // benutzt sowohl das Spiel beim Laden als auch npm run check:content.
 
 import { LineCounter, parseDocument, type Document } from 'yaml';
-import { CONDITION_KEYS, EFFECT_KEYS, MAIL_KINDS, type Conditions, type EventChoice, type EventDef, type Effects, type MailKind } from './events';
+import { CONDITION_KEYS, EFFECT_KEYS, MAIL_KINDS, RIVAL_IDS, type Conditions, type EventChoice, type EventDef, type Effects, type MailKind, type RivalId } from './events';
 import type { DocumentDef, DocumentField } from './documents';
 import { SIM_MARKS } from './family';
 import { LANGUAGES, type LocalizedText } from './i18n';
+import { RIVAL_SIM_MARKS } from './trust';
 
 export interface ContentError {
   file: string;
@@ -25,7 +26,7 @@ export interface ParsedEvents {
   errors: ContentError[];
 }
 
-const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'routine', 'appointments', 'choices', 'mail', 'deadline', 'document'];
+const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'routine', 'appointments', 'choices', 'mail', 'deadline', 'document', 'certain', 'rival'];
 const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default', 'appointments', 'requiresFound', 'marksIfForged', 'sharp'];
 const DOCUMENT_KEYS = ['title', 'reference', 'forgeryChance', 'fields'];
 const FIELD_KEYS = ['id', 'label', 'value', 'reference', 'forged'];
@@ -298,8 +299,8 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
     const routine = raw.routine === true;
     const appointments = termine(raw, pfad, wer, 1);
     if (appointments === null) ok = false;
-    // Feste Termine werden nicht gewürfelt: chance darf fehlen.
-    const chance = raw.chance ?? (routine ? 1 : undefined);
+    // Feste Termine und sichere Ereignisse (2.8) werden nicht gewürfelt: chance darf fehlen.
+    const chance = raw.chance ?? (routine || raw.certain === true ? 1 : undefined);
     if (typeof chance !== 'number' || chance < 0 || chance > 1) {
       fehler([...pfad, 'chance'], `${wer}: „chance“ fehlt oder liegt nicht zwischen 0 und 1.`);
       ok = false;
@@ -321,6 +322,20 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
     const deadline = raw.deadline;
     if (deadline !== undefined && (typeof deadline !== 'number' || !Number.isInteger(deadline) || deadline < 1)) {
       fehler([...pfad, 'deadline'], `${wer}: „deadline“ muss eine ganze Zahl ab 1 sein (Frist in Runden).`);
+      ok = false;
+    }
+    // Rivalen (2.8): sicher kommende Ereignisse und wer dahintersteckt.
+    if (raw.certain !== undefined && typeof raw.certain !== 'boolean') {
+      fehler([...pfad, 'certain'], `${wer}: „certain“ muss true oder false sein.`);
+      ok = false;
+    }
+    if (raw.certain === true && routine) {
+      fehler([...pfad, 'certain'], `${wer}: Ein fester Termin (routine) kann nicht „certain“ sein.`);
+      ok = false;
+    }
+    const rival = raw.rival;
+    if (rival !== undefined && !(RIVAL_IDS as readonly unknown[]).includes(rival)) {
+      fehler([...pfad, 'rival'], `${wer}: „rival“ muss ein Rivale sein (${liste(RIVAL_IDS)}).`);
       ok = false;
     }
     // Dokumentenprüfung (2.5).
@@ -377,6 +392,8 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
     if (mail !== undefined) def.mail = mail as MailKind;
     if (deadline !== undefined) def.deadline = deadline as number;
     if (document) def.document = document;
+    if (raw.certain === true) def.certain = true;
+    if (rival !== undefined) def.rival = rival as RivalId;
     return def;
   }
 
@@ -417,8 +434,8 @@ export function parseEventFiles(files: readonly { file: string; text: string }[]
   }
   // Ein Merkzeichen, das keine Wahl setzt, ist fast immer ein Tippfehler – das
   // Ereignis käme sonst nie (bzw. würde nie gesperrt).
-  // Merkzeichen der Simulation selbst (2.7: thomas_geboren) zählen auch als gesetzt.
-  const gesetzt = new Set<string>([...SIM_MARKS, ...events.flatMap((e) => e.choices.flatMap((c) => [...c.marks, ...(c.marksIfForged ?? [])]))]);
+  // Merkzeichen der Simulation selbst (2.7: thomas_geboren, 2.8: bullard_verraten) zählen auch als gesetzt.
+  const gesetzt = new Set<string>([...SIM_MARKS, ...RIVAL_SIM_MARKS, ...events.flatMap((e) => e.choices.flatMap((c) => [...c.marks, ...(c.marksIfForged ?? [])]))]);
   for (const event of events) {
     for (const m of [...event.marked, ...event.notMarked]) {
       if (gesetzt.has(m)) continue;

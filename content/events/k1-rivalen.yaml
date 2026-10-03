@@ -1,0 +1,336 @@
+# Kapitel 1 – Rivalen (2.8, GDD §9). Entwurf von Claude, bitte in eigener Stimme umschreiben.
+# Vorlage und Erklärung: docs/ereignis-vorlage.md
+#
+# certain: true  = kommt sicher, sobald Bedingungen und Merkzeichen stimmen (kein Würfel,
+#                  zählt nicht gegen maxPerRound). So zwingt jeder Rivale in jeder Partie
+#                  mindestens eine Entscheidung.
+# rival: …       = wer dahintersteckt (crane, thorne, bullard).
+#
+# Die Simulation liest diese Merkzeichen (src/sim/trust.ts, RIVAL_MARKS) – Namen nicht ändern:
+#   crane_abschlag    Trust zahlt Jacob einige Runden weniger je Barrel (rivals.crane.priceCut)
+#   delgado_verband   … mit Delgados Verband nur die Hälfte (rivals.crane.allianceFactor)
+#   crane_treue       kein Abschlag, aber schlechteres Übernahmeangebot (rivals.crane.loyalPremium)
+#   crane_verkauft    Jacob verkauft an den Trust – frühes Ende „Der kluge Mann“
+#   thorne_vertrag    Thorne erhöht den Bahntarif eine Weile nicht (rivals.thorne.contractRounds)
+#   thorne_abgelehnt  Thorne erhöht danach öfter (rivals.thorne.refusedHikeFactor)
+#   bullard_handschlag  Bullard pachtet nicht direkt neben Jacobs Land
+#   bullard_fehde       Bullard pachtet erst recht neben Jacob (rivals.bullard.feudFactor)
+#   bullard_verraten    setzt die Simulation: Jacob hat trotz Handschlag neben Bullard gepachtet
+
+# --- Bullard ----------------------------------------------------------------
+
+- id: bullard_saloon
+  rival: bullard
+  certain: true
+  title:
+    de: Bullard im Saloon
+    en: Bullard at the Saloon
+  text:
+    de: >-
+      Im Silver Dollar schiebt sich ein breiter Mann neben Jacob an die Theke und
+      stellt zwei Gläser hin. „Jim Bullard. Wir bohren nebeneinander, Harlan. Ich
+      schlag dir was vor: Keiner pachtet dem anderen vor der Nase. Wer den
+      Handschlag bricht, kriegt es mit mir zu tun.“ Er hält die Hand hin und wartet.
+    en: >-
+      At the Silver Dollar a broad man shoulders up to the bar beside Jacob and sets
+      down two glasses. "Jim Bullard. We're drilling side by side, Harlan. Here's my
+      offer: neither of us leases right under the other's nose. Whoever breaks the
+      handshake deals with me." He holds out his hand and waits.
+  conditions: { minRound: 2 }
+  choices:
+    - id: handschlag
+      label: { de: "Einschlagen", en: "Shake on it" }
+      result:
+        de: >-
+          Bullards Hand ist hart wie ein Bohrmeißel. „Gut. Ich halte mein Wort,
+          Harlan. Halt du deins.“ Neben Jacobs Land wird er nicht pachten – solange
+          Jacob nicht neben seinem pachtet.
+        en: >-
+          Bullard's hand is as hard as a drill bit. "Good. I keep my word, Harlan.
+          You keep yours." He won't lease next to Jacob's land – as long as Jacob
+          doesn't lease next to his.
+      marks: [bullard_handschlag]
+      appointments: 2
+    - id: whisky
+      label: { de: "Höflich ablehnen und einen Whisky ausgeben (10 $)", en: "Decline politely and buy him a whisky (10 $)" }
+      result:
+        de: Bullard trinkt, zuckt die Schultern. „Dann eben jeder für sich. Nichts für ungut.“
+        en: Bullard drinks and shrugs. "Every man for himself, then. No hard feelings."
+      requires: { minCash: 10 }
+      effects: { cash: -10 }
+    - id: stehenlassen
+      label: { de: "Ihn stehen lassen", en: "Leave him standing" }
+      result:
+        de: >-
+          Bullard sieht Jacob nach, die Hand noch ausgestreckt. Dann spuckt er auf
+          die Dielen. Ab jetzt pachtet er mit Vorliebe direkt neben Jacob.
+        en: >-
+          Bullard watches Jacob go, hand still outstretched. Then he spits on the
+          floorboards. From now on he likes nothing better than leasing right next to Jacob.
+      marks: [bullard_fehde]
+      appointments: 0
+      default: true
+
+- id: bullard_verrat
+  rival: bullard
+  certain: true
+  marked: [bullard_verraten]
+  title:
+    de: Bullard hat es gemerkt
+    en: Bullard Found Out
+  text:
+    de: >-
+      Bullard steht im Büro, den Hut in der Faust. „Ein Handschlag, Harlan. Und du
+      pachtest mir die Parzelle vor der Nase weg.“ Er wird es nie vergessen. Die
+      Frage ist nur, was es Jacob jetzt kostet.
+    en: >-
+      Bullard stands in the office, hat crushed in his fist. "A handshake, Harlan.
+      And you lease the parcel right under my nose." He will never forget it. The
+      only question is what it costs Jacob now.
+  choices:
+    - id: entschaedigen
+      label: { de: "Ihn entschädigen (200 $)", en: "Compensate him (200 $)" }
+      result:
+        de: Bullard steckt das Geld ein, ohne Jacob anzusehen. „Das ändert nichts. Aber es hält meine Jungs ruhig.“
+        en: Bullard pockets the money without looking at Jacob. "Changes nothing. But it keeps my boys quiet."
+      requires: { minCash: 200 }
+      effects: { cash: -200 }
+    - id: aussitzen
+      label: { de: "Ihn hinauswerfen", en: "Throw him out" }
+      result:
+        de: >-
+          In der Nacht verschwinden Seile und ein Meißel von Jacobs Bohrstelle. Der
+          Sheriff zuckt die Schultern. Neues Werkzeug kostet 400 $ und eine schlaflose Woche.
+        en: >-
+          That night rope and a bit vanish from Jacob's rig. The sheriff shrugs. New
+          tools cost 400 $ and a sleepless week.
+      effects: { cash: -400, strength: -5 }
+      appointments: 0
+      default: true
+
+- id: bullard_kredit
+  rival: bullard
+  mail: offer
+  marked: [bullard_handschlag]
+  delay: 3
+  chance: 0.4
+  title:
+    de: Bullard braucht Geld
+    en: Bullard Needs Money
+  text:
+    de: >-
+      Ein Zettel in großer, ungelenker Schrift: „Harlan – meine Bank zickt, der
+      Bohrmeister will Lohn. Leih mir 500 $ bis zur nächsten Quelle. Du kriegst 650
+      zurück. Mein Wort drauf. J. B.“
+    en: >-
+      A note in large, clumsy handwriting: "Harlan – my bank is being difficult and
+      the driller wants his wages. Lend me 500 $ till the next well. You'll get 650
+      back. My word on it. J. B."
+  choices:
+    - id: leihen
+      label: { de: "500 $ leihen", en: "Lend 500 $" }
+      result:
+        de: Bullards Bote nimmt das Geld und tippt an den Hut.
+        en: Bullard's messenger takes the money and touches his hat.
+      requires: { minCash: 500 }
+      effects: { cash: -500 }
+      marks: [bullard_schuld]
+    - id: ablehnen
+      label: { de: "Nicht antworten", en: "Don't reply" }
+      result:
+        de: Bullard leiht sich das Geld woanders. Er erwähnt es nie wieder.
+        en: Bullard borrows the money elsewhere. He never mentions it again.
+      appointments: 0
+      default: true
+
+- id: bullard_rueckzahlung
+  rival: bullard
+  mail: personal
+  certain: true
+  marked: [bullard_schuld]
+  delay: 3
+  title:
+    de: Bullard zahlt zurück
+    en: Bullard Pays Back
+  text:
+    de: >-
+      Ein Umschlag mit 650 $ und einem Zettel: „Wie versprochen. Wenn du mal
+      Hilfe brauchst, Harlan – du weißt, wo ich trinke.“
+    en: >-
+      An envelope with 650 $ and a note: "As promised. If you ever need a hand,
+      Harlan – you know where I drink."
+  choices:
+    - id: nehmen
+      label: { de: "Das Geld nehmen", en: "Take the money" }
+      result:
+        de: Bullard hat Wort gehalten. In Port Ellis gibt es nicht viele, die das tun.
+        en: Bullard kept his word. There aren't many in Port Ellis who do.
+      effects: { cash: 650 }
+      appointments: 0
+      default: true
+
+- id: bullard_treue
+  rival: bullard
+  certain: true
+  marked: [crane_treue]
+  notMarked: [bullard_fehde, bullard_verraten]
+  title:
+    de: Bullard hat von Crane gehört
+    en: Bullard Heard About Crane
+  text:
+    de: >-
+      Bullard fängt Jacob vor der Bank ab. „Du hast Crane die Hand geleckt, hab ich
+      gehört. Treueerklärung. Der Trust frisst Leute wie uns zum Frühstück, Harlan.
+      Erklär mir das.“
+    en: >-
+      Bullard catches Jacob outside the bank. "Heard you licked Crane's hand. A
+      loyalty pledge. The Trust eats men like us for breakfast, Harlan. Explain
+      that to me."
+  choices:
+    - id: erklaeren
+      label: { de: "Sich mit ihm hinsetzen und es erklären", en: "Sit down with him and explain" }
+      result:
+        de: Es dauert zwei Stunden und eine Flasche. Am Ende brummt Bullard. „Hätt ich vielleicht auch gemacht.“
+        en: It takes two hours and a bottle. In the end Bullard grunts. "Might have done the same."
+      appointments: 2
+      sharp: true
+    - id: schweigen
+      label: { de: "Weitergehen", en: "Walk on" }
+      result:
+        de: Bullard ruft Jacob etwas hinterher, das die ganze Straße hört. Ab jetzt ist er Jacobs Feind.
+        en: Bullard shouts something after Jacob that the whole street hears. From now on he is Jacob's enemy.
+      marks: [bullard_fehde]
+      appointments: 0
+      default: true
+
+# --- Thorne -----------------------------------------------------------------
+
+- id: thorne_frachtvertrag
+  rival: thorne
+  mail: offer
+  certain: true
+  deadline: 2
+  conditions: { minRound: 4 }
+  title:
+    de: Thorne Rail bietet einen Frachtvertrag
+    en: Thorne Rail Offers a Freight Contract
+  text:
+    de: >-
+      Briefkopf der Thorne Rail & Trust Bank, Unterschrift von Augustus Thorne
+      persönlich: Gegen eine Bürgschaft von 150 $ garantiere die Bahn Mr. Harlan
+      den heutigen Tarif für anderthalb Jahre. „Andernfalls“, so Thorne, „müssen
+      wir uns die übliche Freiheit vorbehalten.“
+    en: >-
+      Letterhead of Thorne Rail & Trust Bank, signed by Augustus Thorne himself:
+      against a bond of 150 $, the railway guarantees Mr. Harlan today's tariff for
+      a year and a half. "Otherwise," writes Thorne, "we must reserve our usual
+      freedom."
+  choices:
+    - id: unterschreiben
+      label: { de: "Unterschreiben (150 $)", en: "Sign (150 $)" }
+      result:
+        de: Thorne schickt eine Abschrift mit Prägesiegel. Der Bahntarif bleibt eine Weile, wie er ist.
+        en: Thorne sends a copy with an embossed seal. The rail tariff will stay as it is for a while.
+      requires: { minCash: 150 }
+      effects: { cash: -150 }
+      marks: [thorne_vertrag]
+    - id: ablehnen
+      label: { de: "Nicht antworten", en: "Don't reply" }
+      result:
+        de: Thorne lässt ausrichten, er bedauere. Wer die Bahn nutzt, wird bald merken, wie sehr.
+        en: Thorne sends word that he regrets it. Anyone using the railway will soon find out how much.
+      marks: [thorne_abgelehnt]
+      appointments: 0
+      default: true
+
+# --- Crane ------------------------------------------------------------------
+
+- id: crane_abschlag
+  rival: crane
+  mail: demand
+  certain: true
+  deadline: 2
+  conditions: { minRound: 6 }
+  title:
+    de: Der Crane Trust kündigt einen Abschlag an
+    en: The Crane Trust Announces a Discount
+  text:
+    de: >-
+      Ein Rundschreiben des Crane Trust an alle unabhängigen Produzenten am Salt
+      Hill: Wegen „Qualitätsschwankungen“ zahlt der Trust ab dem nächsten Quartal
+      ein Jahr lang weniger als den Posted Price. Wer eine Treueerklärung
+      unterschreibt, ist ausgenommen. Darunter, mit der Hand: Rosa Delgado sammelt
+      Unterschriften für einen Verband der Unabhängigen.
+    en: >-
+      A circular from the Crane Trust to all independent producers at Salt Hill:
+      citing "quality fluctuations", from next quarter the Trust will pay less than
+      the posted price for a year. Those who sign a loyalty pledge are exempt.
+      Below, by hand: Rosa Delgado is collecting signatures for an association of
+      independents.
+  choices:
+    - id: hinnehmen
+      label: { de: "Hinnehmen", en: "Accept it" }
+      result:
+        de: Der Trust zahlt Jacob ein Jahr lang weniger je Barrel.
+        en: For a year the Trust pays Jacob less per barrel.
+      marks: [crane_abschlag]
+      appointments: 0
+      default: true
+    - id: verband
+      label: { de: "Delgados Verband beitreten (100 $)", en: "Join Delgado's association (100 $)" }
+      result:
+        de: >-
+          Rosa Delgado verhandelt für zwanzig Unabhängige. Der Trust gibt nach – zur
+          Hälfte. Delgado lächelt zum ersten Mal.
+        en: >-
+          Rosa Delgado negotiates for twenty independents. The Trust gives way – by
+          half. Delgado smiles for the first time.
+      requires: { minCash: 100 }
+      effects: { cash: -100 }
+      marks: [crane_abschlag, delgado_verband]
+      appointments: 2
+    - id: treue
+      label: { de: "Die Treueerklärung unterschreiben", en: "Sign the loyalty pledge" }
+      result:
+        de: >-
+          Crane zahlt Jacob den vollen Preis. Im Kontor des Trusts gibt es jetzt eine
+          Akte „Harlan“, und in Port Ellis spricht es sich herum.
+        en: >-
+          Crane pays Jacob the full price. There is now a file marked "Harlan" in the
+          Trust's office, and word gets around Port Ellis.
+      marks: [crane_treue]
+
+- id: crane_uebernahme
+  rival: crane
+  mail: offer
+  certain: true
+  deadline: 2
+  conditions: { minRound: 15 }
+  title:
+    de: Cornelius Crane macht ein Angebot
+    en: Cornelius Crane Makes an Offer
+  text:
+    de: >-
+      Ein Bote in Livree bringt einen Brief auf schwerem Papier. Cornelius Crane
+      möchte Jacobs Firma kaufen: Pachten, Quellen, Öl und Schulden, zu einem Preis
+      deutlich über dem, was die Bücher hergeben. „Ein kluger Mann“, schreibt Crane,
+      „weiß, wann er verkaufen muss.“
+    en: >-
+      A messenger in livery delivers a letter on heavy paper. Cornelius Crane wants
+      to buy Jacob's company: leases, wells, oil and debts, at a price well above
+      what the books are worth. "A wise man," writes Crane, "knows when to sell."
+  choices:
+    - id: verkaufen
+      label: { de: "Verkaufen – das Spiel endet", en: "Sell – the game ends" }
+      result:
+        de: Jacob unterschreibt. Zum Quartalsende geht die Firma an den Crane Trust.
+        en: Jacob signs. At the end of the quarter the company passes to the Crane Trust.
+      marks: [crane_verkauft]
+    - id: ablehnen
+      label: { de: "Ablehnen", en: "Decline" }
+      result:
+        de: Crane antwortet nicht. Männer wie er warten.
+        en: Crane does not reply. Men like him wait.
+      marks: [crane_abgelehnt]
+      appointments: 0
+      default: true

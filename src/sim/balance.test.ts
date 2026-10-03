@@ -404,6 +404,42 @@ describe('Spielzahlen (balance.yaml)', () => {
     });
   });
 
+  describe('Crane, Thorne und Wildcatter (2.8)', () => {
+    type RawRivals = { rivals: Record<string, Record<string, unknown>> };
+    const raw = () => structuredClone(loadBalance()) as unknown as RawRivals;
+
+    it('liest Crane, Thorne und die Wildcatter aus der echten Datei', () => {
+      const { crane, thorne, wildcatters } = loadBalance().rivals;
+      expect(crane.name).toBe('Cornelius Crane');
+      expect(thorne.name).toBe('Augustus Thorne');
+      expect(crane.allianceFactor).toBeLessThanOrEqual(1);
+      expect(wildcatters.min).toBe(6);
+      expect(wildcatters.max).toBe(8);
+      expect(new Set(wildcatters.names).size).toBeGreaterThanOrEqual(wildcatters.max);
+    });
+
+    it('meldet fehlende Blöcke und kaputte Werte', () => {
+      const ohneCrane = raw();
+      delete ohneCrane.rivals.crane;
+      expect(() => parseBalance(ohneCrane)).toThrow(/rivals\.crane/);
+      const vertrag = raw();
+      vertrag.rivals.thorne.contractRounds = 0;
+      expect(() => parseBalance(vertrag)).toThrow(/rivals\.thorne\.contractRounds/);
+      const verband = raw();
+      verband.rivals.crane.allianceFactor = 1.5;
+      expect(() => parseBalance(verband)).toThrow(/rivals\.crane\.allianceFactor/);
+    });
+
+    it('Wildcatter: min ≤ max und genug verschiedene Namen', () => {
+      const r = raw();
+      r.rivals.wildcatters.min = 9;
+      expect(() => parseBalance(r)).toThrow(/min > max/);
+      const n = raw();
+      n.rivals.wildcatters.names = ['A', 'A', 'B', 'C', 'D', 'E', 'F', 'G'];
+      expect(() => parseBalance(n)).toThrow(/verschiedene Namen/);
+    });
+  });
+
   describe('Imperiumswert und Bots', () => {
     type RawExtra = { empire: Record<string, unknown>; bots: Record<string, unknown> };
     const raw = () => structuredClone(loadBalance()) as unknown as RawExtra;

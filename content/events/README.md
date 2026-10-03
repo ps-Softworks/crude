@@ -8,7 +8,7 @@ ohne Codeänderung. Prüfen: `npm run check:content` (meldet Fehler mit Datei un
 
 Kurzreferenz der Felder:
 - Ereignis: `id`, `title`, `text`, `conditions`, `marked`, `notMarked`, `delay`, `chance`, `once`,
-  `routine`, `appointments`, `mail`, `deadline`, `document`, `choices`
+  `routine`, `appointments`, `mail`, `deadline`, `document`, `certain`, `rival`, `choices`
 - Wahl: `id`, `label`, `result`, `requires`, `effects`, `marks`, `default`, `appointments`,
   `requiresFound`, `marksIfForged`, `sharp`
 - Bedingungen: `minRound`, `maxRound`, `minCash`, `maxCash`, `minOilStock`,
@@ -39,5 +39,10 @@ Kurzreferenz der Felder:
   Antwort: Sie fehlt, solange Jacob erschöpft ist (`agenda.errorsBelow`). Zustandswörter und Sätze
   des Familienbildschirms stehen in `content/family.yaml`. Beispiele: `k1-0-thomas-geburt.yaml`,
   `k1-7-arzt.yaml`, `k1-termine.yaml`.
+- Rivalen (2.8): `certain: true` – kommt sicher, sobald Bedingungen und Merkzeichen stimmen (kein
+  Würfel, `chance` darf fehlen, zählt nicht gegen `maxPerRound`). `rival: crane | thorne | bullard`
+  sagt, wer dahintersteckt. Einige Merkzeichen liest die Simulation selbst (Crane-Abschlag,
+  Thorne-Frachtvertrag, Bullards Handschlag/Fehde, Verkauf an Crane) – Liste oben in
+  `k1-rivalen.yaml`, Namen nicht ändern. `bullard_verraten` setzt die Simulation.
 - Dateien werden alphabetisch gewürfelt, höchstens `events.maxPerRound` (balance.yaml) neue je Runde.
 - Die Bots spielen (noch) ohne Ereignisse.

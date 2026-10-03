@@ -138,7 +138,7 @@ export function App() {
         debugTools={debugTools}
         seed={seed}
         chapterEnd={
-          game.ending === 'kapitel' ? <ChapterEndScreen game={game} onRestart={() => startNewWorld(randomSeed())} /> : null
+          game.ending === 'kapitel' || game.ending === 'verkauft' ? <ChapterEndScreen game={game} onRestart={() => startNewWorld(randomSeed())} /> : null
         }
         parcelPanel={
           parcel ? (

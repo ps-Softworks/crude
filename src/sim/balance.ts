@@ -236,11 +236,49 @@ export interface RivalBalance {
   drillRounds: number;
   ratePerWell: number;
   transportPerBarrel: number;
+  /** Fehde mit Jacob (2.8): Nachbarschaftsbonus × feudFactor. */
+  feudFactor: number;
+}
+
+/** Crane Trust (2.8): Posted-Price-Druck und Übernahmeangebot. */
+export interface CraneBalance {
+  name: string;
+  /** Abschlag in $ je Barrel auf Jacobs Verkäufe. */
+  priceCut: number;
+  /** So viele Runden gilt der Abschlag. */
+  cutRounds: number;
+  /** Mit Delgados Verband zahlt Jacob nur diesen Anteil des Abschlags. */
+  allianceFactor: number;
+  /** Übernahmeangebot = Imperiumswert × takeoverPremium … */
+  takeoverPremium: number;
+  /** … nach einer Treueerklärung × loyalPremium … */
+  loyalPremium: number;
+  /** … mindestens takeoverMin $. */
+  takeoverMin: number;
+}
+
+/** Thorne Rail (2.8): Frachtvertrag. */
+export interface ThorneBalance {
+  name: string;
+  /** Frachtvertrag: so viele Runden keine Tariferhöhung. */
+  contractRounds: number;
+  /** Vertrag abgelehnt: Erhöhungschance × refusedHikeFactor. */
+  refusedHikeFactor: number;
+}
+
+/** Kleine Wildcatter im Hintergrund (2.8). */
+export interface WildcattersBalance {
+  min: number;
+  max: number;
+  names: string[];
 }
 
 /** Rivalen im Spiel. */
 export interface RivalsBalance {
   bullard: RivalBalance;
+  crane: CraneBalance;
+  thorne: ThorneBalance;
+  wildcatters: WildcattersBalance;
 }
 export interface Balance {
   rivals: RivalsBalance;
@@ -751,8 +789,40 @@ function parseRivals(raw: unknown): RivalsBalance {
     drillRounds: positiveInt(raw, `${p}.drillRounds`),
     ratePerWell: nonNegative(raw, `${p}.ratePerWell`),
     transportPerBarrel: nonNegative(raw, `${p}.transportPerBarrel`),
+    feudFactor: nonNegative(raw, `${p}.feudFactor`),
   };
-  return { bullard };
+  const r = raw as { rivals: Record<string, unknown> };
+  const c = 'rivals.crane';
+  const crane: CraneBalance = {
+    name: text(r.rivals.crane, 'name', c),
+    priceCut: nonNegative(raw, `${c}.priceCut`),
+    cutRounds: positiveInt(raw, `${c}.cutRounds`),
+    allianceFactor: share(raw, `${c}.allianceFactor`),
+    takeoverPremium: nonNegative(raw, `${c}.takeoverPremium`),
+    loyalPremium: nonNegative(raw, `${c}.loyalPremium`),
+    takeoverMin: nonNegative(raw, `${c}.takeoverMin`),
+  };
+  const t = 'rivals.thorne';
+  const thorne: ThorneBalance = {
+    name: text(r.rivals.thorne, 'name', t),
+    contractRounds: positiveInt(raw, `${t}.contractRounds`),
+    refusedHikeFactor: nonNegative(raw, `${t}.refusedHikeFactor`),
+  };
+  const w = 'rivals.wildcatters';
+  const names = list(raw, `${w}.names`);
+  if (!names.every((n) => typeof n === 'string' && n.trim() !== '')) {
+    throw new BalanceError(`balance.yaml: "${w}.names" darf nur Namen enthalten`);
+  }
+  const wildcatters: WildcattersBalance = {
+    min: positiveInt(raw, `${w}.min`),
+    max: positiveInt(raw, `${w}.max`),
+    names: names as string[],
+  };
+  if (wildcatters.min > wildcatters.max) throw new BalanceError(`balance.yaml: "${w}" hat min > max`);
+  if (new Set(wildcatters.names).size < wildcatters.max) {
+    throw new BalanceError(`balance.yaml: "${w}.names" braucht mindestens ${wildcatters.max} verschiedene Namen`);
+  }
+  return { bullard, crane, thorne, wildcatters };
 }
 
 function parseBankruptcy(raw: unknown): BankruptcyBalance {

@@ -59,6 +59,14 @@ headlines:
     text:
       de: Der Crane Trust hebt den Posted Price an – das Öl am Salt Hill ist gefragt.
       en: The Crane Trust raises the posted price – Salt Hill oil is in demand.
+  # 2.8: Der Crane Trust zahlt den Unabhängigen ab dieser Runde weniger (Jacob hat den Abschlag hingenommen).
+  crane_cut:
+    title:
+      de: Trust drückt die Unabhängigen
+      en: Trust squeezes the independents
+    text:
+      de: Der Crane Trust zahlt kleinen Produzenten weniger als den Posted Price. In den Saloons am Salt Hill wird geflucht.
+      en: The Crane Trust pays small producers less than the posted price. In the Salt Hill saloons, men are cursing.
   rival_find:
     title:
       de: Bullard stößt auf Öl

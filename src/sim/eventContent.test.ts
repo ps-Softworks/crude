@@ -22,9 +22,9 @@ const GUT = `- id: brief
 `;
 
 describe('echte Inhalte in content/events/', () => {
-  it('sind fehlerfrei und enthalten die Probe-Ereignisse und festen Termine für Kapitel 1 (2.2–2.5)', () => {
+  it('sind fehlerfrei und enthalten die Probe-Ereignisse und festen Termine für Kapitel 1 (2.2–2.8)', () => {
     const ids = loadEvents().map((e) => e.id);
-    expect(ids).toEqual(['thomas_geburt', 'ruth_buecher', 'silas_schnaps', 'moss_schulden', 'moss_wagenweg', 'moss_dank', 'nora_brand', 'vale_umschlag', 'ruth_sorge', 'arzt_besuch', 'dok_pike_urkunde', 'dok_pike_echt_folge', 'dok_pike_falsch_folge', 'dok_hale_gutachten', 'dok_hale_echt_folge', 'dok_hale_falsch_folge', 'post_seil', 'post_oelkauf', 'post_mietstall', 'post_witwe', 'post_kurier', 'post_geologe', 'post_mutter', 'post_drohung', 'termin_ruth', 'termin_familie', 'termin_sonntag', 'termin_lohnbohren', 'termin_rundgang', 'termin_port_ellis']);
+    expect(ids).toEqual(['thomas_geburt', 'ruth_buecher', 'silas_schnaps', 'moss_schulden', 'moss_wagenweg', 'moss_dank', 'nora_brand', 'vale_umschlag', 'ruth_sorge', 'arzt_besuch', 'dok_pike_urkunde', 'dok_pike_echt_folge', 'dok_pike_falsch_folge', 'dok_hale_gutachten', 'dok_hale_echt_folge', 'dok_hale_falsch_folge', 'post_seil', 'post_oelkauf', 'post_mietstall', 'post_witwe', 'post_kurier', 'post_geologe', 'post_mutter', 'post_drohung', 'bullard_saloon', 'bullard_verrat', 'bullard_kredit', 'bullard_rueckzahlung', 'bullard_treue', 'thorne_frachtvertrag', 'crane_abschlag', 'crane_uebernahme', 'termin_ruth', 'termin_familie', 'termin_sonntag', 'termin_lohnbohren', 'termin_rundgang', 'termin_port_ellis']);
   });
 
   it('jedes Probe-Ereignis hat 1–4 Wahlen (GDD §3: 2–4 Antworten) und eine Standard-Wahl ohne Sperre', () => {
@@ -87,7 +87,7 @@ describe('Prüfung mit Datei und Zeilennummer', () => {
   it('unbekannte Felder, fehlendes de und fremde Sprachen werden gemeldet', () => {
     const text = GUT.replace('  chance: 0.5', '  chanse: 0.5\n  chance: 0.5').replace('de: "Ein Brief", en: ""', 'en: "", fr: "Une lettre"');
     const meldungen = parseEventFile('a.yaml', text).errors.map((e) => `${e.line}: ${e.message}`);
-    expect(meldungen).toContain('4: Ereignis „brief“: unbekanntes Feld „chanse“ (erlaubt: id, title, text, conditions, marked, notMarked, delay, chance, once, routine, appointments, choices, mail, deadline, document).');
+    expect(meldungen).toContain('4: Ereignis „brief“: unbekanntes Feld „chanse“ (erlaubt: id, title, text, conditions, marked, notMarked, delay, chance, once, routine, appointments, choices, mail, deadline, document, certain, rival).');
     expect(meldungen.some((m) => m.startsWith('2: ') && m.includes('unbekannte Sprache „fr“'))).toBe(true);
     expect(meldungen.some((m) => m.startsWith('2: ') && m.includes('„title.de“ fehlt'))).toBe(true);
   });

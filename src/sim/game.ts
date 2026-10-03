@@ -17,11 +17,13 @@ import { Rng, seedFromString, type RngState } from './rng';
 import { advanceMarket, computePrice, neighbourSupply } from './market';
 import { newRival, advanceRival, type RivalState } from './rival';
 import { advanceTransport } from './transport';
+import { settleTakeover } from './trust';
+import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
-/** Wie das Spiel ausgeht: gar nicht, mit Ende des Kapitels oder mit Pleite. */
-export type Ending = 'kapitel' | 'pleite' | null;
+/** Wie das Spiel ausgeht: gar nicht, mit Ende des Kapitels, mit Pleite oder mit dem Verkauf an den Crane Trust (2.8). */
+export type Ending = 'kapitel' | 'pleite' | 'verkauft' | null;
 
 export interface GameState {
   seed: string;
@@ -65,6 +67,8 @@ export interface GameState {
   ending: Ending;
   /** Rivale Bullard: Pachten, Bohrungen, Einkommen. */
   rival: RivalState;
+  /** Kleine Wildcatter im Hintergrund (2.8): Namen für die Nachbarquellen. */
+  wildcatters: WildcattersState;
   /** Ereignisse: eigener Zufall, offene und schon gekommene (2.1). */
   events: EventsState;
   /** Termine der laufenden Runde (2.3). */
@@ -121,6 +125,7 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
     log: [],
     roundLogStart: 0,
     rival: newRival(seed, balance),
+    wildcatters: newWildcatters(seed, balance),
     events: newEventsState(seed),
     agenda: newAgenda(balance.agenda.strengthStart, balance),
     strength: balance.agenda.strengthStart,
@@ -159,12 +164,18 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
  * Vor den Terminen gibt Familienzeit Kraft (oder Vernachlässigung kostet
  * Beziehung), danach kann Jacob krank werden. Zu Beginn der neuen Runde kann
  * Thomas zur Welt kommen – vor den Ereignissen, damit sie darauf reagieren.
+ * Rivalen (2.8): Hat Jacob das Übernahmeangebot des Crane Trust angenommen,
+ * endet die Partie direkt nach den Antworten; zur neuen Runde bekommen die
+ * neuen Nachbarquellen ihre Wildcatter.
  */
 export function endRound(input: GameState, balance: Balance, catalog: readonly EventDef[] = []): GameState {
   if (input.finished) return input;
   // Offene Ereignisse bekommen ihre Standard-Antwort, bevor die Runde abgerechnet wird.
   const beantwortet = autoResolve(input, catalog);
   const roundLogStart = beantwortet.log.length;
+  // Crane-Übernahme (2.8): Hat Jacob verkauft, endet die Partie hier – ohne weitere Abrechnung.
+  const verkauft = settleTakeover(beantwortet, balance);
+  if (verkauft.ending === 'verkauft') return { ...verkauft, roundLogStart };
   // Familie (2.7): Familienzeit gibt Kraft, Vernachlässigung kostet Beziehung.
   const familie = settleFamily(beantwortet, balance);
   // Termine (2.3): Krankheit (2.7), ruhige Runde gibt Kraft zurück, die nächste beginnt mit frischen Terminen.
@@ -189,6 +200,10 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   }
   const next = { ...state, round: state.round + 1 };
   // Zur neuen Runde kommen neue Ereignisse auf den Schreibtisch – nach einer Geburt (2.7).
-  const begonnen = checkBirth({ ...next, log: [...state.log, `${formatDate(next)}: Eine neue Runde beginnt.`] }, balance);
+  // Wildcatter (2.8): Die neuen Nachbarquellen der Runde bekommen ihre Besitzer.
+  const begonnen = advanceWildcatters(
+    checkBirth({ ...next, log: [...state.log, `${formatDate(next)}: Eine neue Runde beginnt.`] }, balance),
+    balance,
+  );
   return drawEvents(begonnen, balance, catalog);
 }

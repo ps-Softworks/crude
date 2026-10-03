@@ -235,7 +235,7 @@ bots:
   greedy: { minChance: 0.25, maxUndrilled: 1 }                 # gierig: pachtet ab 25 % Fundchance, hält höchstens 1 ungebohrte Pacht
   random: { actionsPerRound: 3 }                                # zufällig: so viele Aktionen je Runde
 
-# Rivale Bullard (GDD §9.2, §15): pachtet und bohrt nach Gewinn-Formel.
+# Rivalen (GDD §9.2, §15). Bullard pachtet und bohrt nach Gewinn-Formel.
 rivals:
   bullard:
     name: '"Big" Jim Bullard'
@@ -253,6 +253,39 @@ rivals:
     # Nachbesserung 0.1.14+3: statt pauschal 3.000 $ je Quelle und Runde verkauft Bullard
     # seine Förderung zum Posted Price: Förderung · (Preis · (1 − Förderzins) − Transport).
     transportPerBarrel: 0.40 # PLATZHALTER: $ je Barrel (eigene Fuhrwerke, zwischen Bahn 0,25 und Fuhrwerk 0,60)
+    # 2.8: Bullard merkt sich Jacobs Antwort im Saloon (Merkzeichen, content/events/k1-rivalen.yaml).
+    # Handschlag: Er pachtet nichts direkt neben Jacobs Land. Fehde (oder Verrat): Nachbarschaftsbonus × feudFactor.
+    feudFactor: 2            # PLATZHALTER
+  # 2.8 (GDD §9.2): Cornelius Crane, Crane Trust – diktiert den Posted Price und bietet am Kapitelende die Übernahme an.
+  crane:
+    name: Cornelius Crane
+    priceCut: 0.10           # PLATZHALTER: Posted-Price-Druck – so viel $ je Barrel zahlt der Trust Jacob weniger …
+    cutRounds: 4             # PLATZHALTER: … so viele Runden lang (ab der Runde nach der Antwort)
+    allianceFactor: 0.5      # PLATZHALTER: mit Delgados Verband unabhängiger Produzenten nur die Hälfte
+    takeoverPremium: 1.25    # PLATZHALTER: Übernahmeangebot = Imperiumswert × 1,25 …
+    loyalPremium: 1.10       # PLATZHALTER: … nach einer Treueerklärung nur × 1,10 (er hat Jacob schon in der Tasche) …
+    takeoverMin: 3000        # PLATZHALTER: … aber mindestens so viel $
+  # 2.8 (GDD §9.2): Augustus Thorne, Thorne Rail & Trust Bank – Bahntarife (Erhöhung: transport.thorne).
+  thorne:
+    name: Augustus Thorne
+    contractRounds: 6        # PLATZHALTER: Frachtvertrag – so viele Runden keine Tariferhöhung (ab der Unterschrift)
+    refusedHikeFactor: 2     # PLATZHALTER: Vertrag abgelehnt – Thorne erhöht danach doppelt so oft
+  # 2.8 (GDD §9.2): kleine Wildcatter im Hintergrund. Ihnen gehören die Nachbarquellen am Salt Hill
+  # (market.neighbours) – sie ändern den Markt nicht, sie geben ihm Namen.
+  wildcatters:
+    min: 6                   # so viele kleine Firmen je Partie (mindestens …
+    max: 8                   # … höchstens)
+    names:                   # ENTWURF: Namen, aus denen jede Partie zieht (mindestens max Stück)
+      - Ezra Pickett
+      - Haskell & Dunn
+      - Widow Carraway
+      - Lars Lindqvist
+      - Bascom Brothers
+      - Caleb Shaw
+      - Two-Rig Tilly
+      - Jeb Merriwether
+      - O'Rourke Drilling
+      - Amos Fairweather
 
 # Ereignis-System (2.1): Ereignisse stehen in content/events/, hier nur die Taktung.
 events:

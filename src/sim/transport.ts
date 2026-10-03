@@ -7,6 +7,7 @@ import type { Balance, TransportMode } from './balance';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
 import { Rng } from './rng';
+import { hikeChance as thorneHikeChance, jacobPrice, railFrozen } from './trust';
 
 /** Auf ganze Cent runden. */
 function cents(value: number): number {
@@ -27,9 +28,12 @@ export function capacityLeft(state: Pick<GameState, 'shipped'>, balance: Balance
   return Math.max(0, balance.transport[mode].capacity - state.shipped[mode]);
 }
 
-/** Was je Barrel nach Fracht übrig bleibt (vor Förderzins). */
-export function netPrice(state: Pick<GameState, 'railTariff' | 'postedPrice'>, balance: Balance, mode: TransportMode): number {
-  return cents(state.postedPrice - tariff(state, balance, mode));
+/** Wer Öl verkauft, braucht Preis, Runde und (für Cranes Abschlag, 2.8) die Merkzeichen. */
+type Verkaufslage = Pick<GameState, 'railTariff' | 'postedPrice' | 'round'> & Partial<Pick<GameState, 'events'>>;
+
+/** Was je Barrel nach Fracht übrig bleibt (vor Förderzins): Preis des Trusts (Posted Price minus Abschlag, 2.8) minus Fracht. */
+export function netPrice(state: Verkaufslage, balance: Balance, mode: TransportMode): number {
+  return cents(jacobPrice(state, balance) - tariff(state, balance, mode));
 }
 
 export interface SaleQuote {
@@ -49,14 +53,14 @@ function royaltyBarrels(state: Pick<GameState, 'oilStock' | 'royaltyOil'>, barre
   return state.oilStock > 0 ? (barrels * state.royaltyOil) / state.oilStock : 0;
 }
 
-/** Rechnet einen Verkauf durch, ohne etwas zu ändern. */
+/** Rechnet einen Verkauf durch, ohne etwas zu ändern. Der Trust zahlt den Posted Price minus Cranes Abschlag (2.8). */
 export function quoteSale(
-  state: Pick<GameState, 'oilStock' | 'royaltyOil' | 'railTariff' | 'postedPrice'>,
+  state: Verkaufslage & Pick<GameState, 'oilStock' | 'royaltyOil'>,
   balance: Balance,
   mode: TransportMode,
   barrels: number,
 ): SaleQuote {
-  const price = state.postedPrice;
+  const price = jacobPrice(state, balance);
   const gross = cents(barrels * price);
   const transportCost = cents(barrels * tariff(state, balance, mode));
   const royalty = cents(royaltyBarrels(state, barrels) * price);
@@ -107,13 +111,17 @@ export function sellOil(
  * Rundenende: Hat Jacob per Bahn verschickt, erhöht Thorne vielleicht den Tarif
  * (bis höchstens maxTariff). Ohne Bahnfracht wird kein Zufall gezogen. Danach
  * sind beide Transportmittel wieder frei.
+ * 2.8: Mit Frachtvertrag erhöht Thorne nicht (der Zufall wird trotzdem gezogen,
+ * damit der Weltzufall mit und ohne Vertrag gleich bleibt); nach einer Absage
+ * erhöht er öfter.
  */
 export function advanceTransport(input: GameState, balance: Balance): GameState {
-  const { hikeChance, hikeStep, maxTariff } = balance.transport.thorne;
+  const { hikeStep, maxTariff } = balance.transport.thorne;
   let { railTariff, rng: rngState, log } = input;
   if (input.shipped.rail > 0 && railTariff < maxTariff) {
     const rng = new Rng(rngState);
-    if (rng.float() < hikeChance) {
+    const roll = rng.float();
+    if (!railFrozen(input, balance) && roll < thorneHikeChance(input, balance)) {
       railTariff = cents(Math.min(maxTariff, railTariff + hikeStep));
       log = [...log, `${formatDate(input)}: Thorne erhöht den Bahntarif auf ${dollars(railTariff)} $ je Barrel.`];
     }
