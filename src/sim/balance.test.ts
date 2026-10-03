@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BalanceError, parseBalance } from './balance';
+import { BalanceError, BOT_TARGET_IDS, parseBalance } from './balance';
 import { loadBalance } from './testBalance';
 
 describe('Spielzahlen (balance.yaml)', () => {
@@ -146,7 +146,7 @@ describe('Spielzahlen (balance.yaml)', () => {
     it('liest die Förderungs-Zahlen aus der echten Datei', () => {
       const { production } = loadBalance();
       expect(production.initialRateShare).toEqual({ small: 0.25, gusher: 0.3 });
-      expect(production.decline).toBe(0.12);
+      expect(production.decline).toBe(0.1);
       expect(production.freeWells).toBe(4);
       expect(production.pressureLossPerWell).toBe(0.15);
       expect(production.pressureMin).toBe(0.4);
@@ -465,6 +465,27 @@ describe('Spielzahlen (balance.yaml)', () => {
       const s = raw();
       (s.bots.cautious as Record<string, number>).cashReserve = -1;
       expect(() => parseBalance(s)).toThrow(/bots\.cautious\.cashReserve/);
+    });
+
+    it('liest ausgewogen, Ereignis-Gewichte und Zielwerte (2.15) und meldet Fehler', () => {
+      const b = loadBalance();
+      expect(b.bots.balanced.maxDebtShare).toBe(0.5);
+      expect(b.bots.daysPerRound).toBe(91);
+      expect(b.bots.events.cautious.overtimeFrom).toBeGreaterThan(100);
+      for (const id of BOT_TARGET_IDS) expect(b.bots.targets[id].min).toBeLessThanOrEqual(b.bots.targets[id].max);
+      expect(b.bots.targets.winRate.max).toBe(0.4);
+      const r = raw();
+      (r.bots.targets as Record<string, { min: number; max: number }>).decline = { min: 0.2, max: 0.1 };
+      expect(() => parseBalance(r)).toThrow(/bots\.targets\.decline/);
+      const s = raw();
+      delete (s.bots.targets as Record<string, unknown>).wildcatHit;
+      expect(() => parseBalance(s)).toThrow(/bots\.targets\.wildcatHit\.min/);
+      const t = raw();
+      (t.bots.balanced as Record<string, number>).maxDebtShare = 1.5;
+      expect(() => parseBalance(t)).toThrow(/bots\.balanced\.maxDebtShare/);
+      const u = raw();
+      (u.bots.events as Record<string, Record<string, number>>).greedy.strength = -1;
+      expect(() => parseBalance(u)).toThrow(/bots\.events\.greedy\.strength/);
     });
 
     it('meldet gierig.maxUndrilled unter 1', () => {

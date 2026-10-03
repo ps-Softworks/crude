@@ -63,7 +63,7 @@ describe('Geologe: Bandbreite der Prognose', () => {
       };
       expect(byZone('kern')).toBeCloseTo(0.7, 10);
       expect(byZone('ring')).toBeCloseTo(0.6, 10);
-      expect(byZone('rand')).toBeCloseTo(0.45, 10);
+      expect(byZone('rand')).toBeCloseTo(0.25, 10);
       expect(byZone('kern')).toBeGreaterThan(byZone('rand'));
     });
   });

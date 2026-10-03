@@ -30,9 +30,9 @@ geology:
       gusher: 0.08
     - name: rand
       maxDistance: 99
-      dry: 0.55
-      small: 0.43
-      gusher: 0.02
+      dry: 0.75          # 2.15: vorher 0,55 – blinde Wildcat-Bohrung traf 1 von 3, GDD §15 sagt 1 von 5 bis 1 von 10
+      small: 0.24
+      gusher: 0.01
   # Förderbare Gesamtmenge in Barrel (gleichverteilt zwischen min und max).
   # 1.15: deutlich angehoben (vorher 2.000–12.000 und 30.000–120.000), damit die Anfangsrate im GDD-Rahmen liegt
   # (kleiner Fund 50–125 bbl/Tag, Gusher 200–650 bbl/Tag).
@@ -117,7 +117,7 @@ production:
   initialRateShare:
     small: 0.25              # PLATZHALTER
     gusher: 0.30             # PLATZHALTER
-  decline: 0.12              # PLATZHALTER: Rückgang je Quartal (GDD: 8–15 %)
+  decline: 0.10              # Rückgang je Quartal (GDD: 8–15 %); 2.15: vorher 0,12 – gemessen kamen mit Druckverlust und leeren Feldern 14,5 % heraus
   freeWells: 4               # PLATZHALTER: so viele Quellen verträgt ein Feld ohne Druckverlust
   pressureLossPerWell: 0.15  # PLATZHALTER: Druckverlust je Quelle über freeWells
   pressureMin: 0.40          # PLATZHALTER: tiefster Druckfaktor
@@ -237,7 +237,7 @@ chapter:
     shares: [0.2, 0.33, 0.49]  # GDD §8: zur Wahl stehende Anteile, die Jacob verkaufen kann (typisch 20–49 %)
     priceFactor: 0.8           # PLATZHALTER: Anleger zahlen Imperiumswert × Anteil × 0,8 (Abschlag für Risiko und Bankprovision)
 
-# Bot-Läufe (GDD §17, Schritt 1.14): Partien ohne Grafik mit drei Strategien.
+# Bot-Läufe (GDD §17, Schritt 1.14/2.15): Partien ohne Grafik mit vier Strategien.
 # Was die Bots damit machen, steht in src/sim/bots.ts. Alle Werte PLATZHALTER.
 bots:
   games: 1000              # Partien je Strategie
@@ -245,6 +245,30 @@ bots:
   cautious: { minChance: 0.5, cashReserve: 500, maxStage: 2 }   # vorsichtig: Fundchance ab 50 %, 500 $ Rücklage, höchstens Stufe 2
   greedy: { minChance: 0.25, maxUndrilled: 1 }                 # gierig: pachtet ab 25 % Fundchance, hält höchstens 1 ungebohrte Pacht
   random: { actionsPerRound: 3 }                                # zufällig: so viele Aktionen je Runde
+  # 2.15: ausgewogen ist der Standard-Bot – leiht, aber nur bis maxDebtShare des Bankrahmens.
+  balanced: { minChance: 0.4, cashReserve: 300, maxStage: 3, maxDebtShare: 0.5, maxUndrilled: 1 }
+  daysPerRound: 91         # ein Quartal; für die Anfangsrate in bbl/Tag (GDD §15)
+  # Ereignisse (2.15): So bewerten die Bots eine Antwort – Geld zählt in $, dazu
+  # strength = $ je Kraftpunkt, family = $ je Beziehungspunkt (Ruth, Thomas),
+  # appointment = $ je Termin, overtimeFrom = Überstunden nur ab dieser Kraft (über 100 = nie).
+  # Den Verkauf an Crane wählt kein Bot – die Partie läuft immer bis zum Kapitelende.
+  events:
+    cautious: { strength: 30, family: 20, appointment: 25, overtimeFrom: 101 }
+    greedy: { strength: 5, family: 0, appointment: 5, overtimeFrom: 40 }
+    balanced: { strength: 15, family: 10, appointment: 10, overtimeFrom: 70 }
+  # Zielwerte Kapitel 1 (2.15, GDD §15 und §17): Toleranzbereich min–max je Kennzahl.
+  # Was gemessen wird, steht in src/sim/bots.ts (TARGETS); die Tabelle Ist/Ziel in docs/botlaeufe.md.
+  targets:
+    winRate: { min: 0, max: 0.40 }            # höchste Siegquote einer Strategie (GDD §17: keine über 40 %)
+    standardBankrupt: { min: 0, max: 0.15 }   # Pleitequote ausgewogen (Standard-Bot): Kapitel 1 ist der Einstieg
+    greedyBankrupt: { min: 0.05, max: 0.45 }  # Pleitequote gierig (GDD §15: wer im Boom zu viele Schulden macht, stirbt; Crashs kommen erst später)
+    cautiousBehind: { min: 0, max: 0.95 }     # Ø Imperium vorsichtig ÷ bester Ø der Mutigeren (GDD §15: wird überholt)
+    standardGoal: { min: 0.20, max: 0.70 }    # Kapitelziel ausgewogen: erreichbar, aber nicht geschenkt
+    smallRateInRange: { min: 0.90, max: 1 }   # Anteil kleiner Funde mit 50–500 bbl/Tag (GDD §15)
+    gusherFactor: { min: 2, max: 20 }         # Ø Anfangsrate Gusher ÷ kleiner Fund (GDD §15: deutlich mehr)
+    decline: { min: 0.08, max: 0.15 }         # gemessener Rückgang je Quartal (GDD §15: 8–15 %)
+    wildcatHit: { min: 0.05, max: 0.25 }      # blinde Wildcat-Bohrung in Randlage auf 300 m (GDD §15: 1 von 5 bis 1 von 10)
+    appointments: { min: 4.5, max: 5 }        # Ø Termine je Runde des Standard-Bots (GDD §15: 5 je Quartal)
 
 # Rivalen (GDD §9.2, §15). Bullard pachtet und bohrt nach Gewinn-Formel.
 rivals:

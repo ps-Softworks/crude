@@ -1,27 +1,33 @@
 // Bot-Läufe (GDD §17, Schritt 1.14): Die Simulation spielt ganze Partien ohne
-// Grafik, mit drei Strategien – vorsichtig, gierig, zufällig. Daraus entstehen
-// Bankrottquote und mittlerer Imperiumswert je Strategie für die Balance.
+// Grafik, mit vier Strategien – vorsichtig, gierig, ausgewogen, zufällig. Daraus
+// entstehen Bankrottquote und mittlerer Imperiumswert je Strategie für die Balance.
+// Seit 2.15 spielen die Bots mit den echten Ereignissen (Briefe, feste Termine,
+// Rivalen) und beantworten sie nach ihrer Strategie; dazu kommen Kennzahlen, die
+// gegen die Zielwerte aus GDD §15 geprüft werden (bots.targets in balance.yaml).
 //
 // Die Bots benutzen nur die öffentlichen Funktionen der Simulation, so wie der
 // Schreibtisch. Ihr eigener Zufall kommt aus einem eigenen Rng – state.rng
 // gehört der Welt und wird nie angefasst; Math.random kommt nicht vor.
 // Die Zahlen stehen in content/balance.yaml unter bots.
 
-import { TRANSPORT_MODES, type Balance } from './balance';
-import { headroom, takeLoan } from './credit';
+import { TRANSPORT_MODES, type Balance, type BotEventWeights, type BotTargetId } from './balance';
+import { overtimeFor } from './agenda';
+import { creditLimit, debt, headroom, takeLoan } from './credit';
 import { applyAction, parcelActions, type DeskActionKind } from './desk';
 import { stageCost, wellOf } from './drilling';
 import { chapterCheck } from './chapter';
 import { empireValue } from './empire';
 import { endRound, newGame, type GameState } from './game';
-import { leaseOf, leaseTerms, optionOf } from './lease';
+import { generateParcels } from './geology';
+import { leaseOf, leaseTerms, locationFor, optionOf } from './lease';
 import { Rng, seedFromString } from './rng';
 import { capacityLeft, netPrice, sellOil } from './transport';
+import { RIVAL_MARKS } from './trust';
 import { tutorialHint } from './tutorial';
-import type { EventDef } from './events';
+import { choiceCost, choiceReason, resolveEvent, routineOffered, type EventChoice, type EventDef } from './events';
 
-export type Strategy = 'vorsichtig' | 'gierig' | 'zufaellig';
-export const STRATEGIES: readonly Strategy[] = ['vorsichtig', 'gierig', 'zufaellig'];
+export type Strategy = 'vorsichtig' | 'gierig' | 'ausgewogen' | 'zufaellig';
+export const STRATEGIES: readonly Strategy[] = ['vorsichtig', 'gierig', 'ausgewogen', 'zufaellig'];
 
 /** Führt eine Aktion aus; bei ok:false bleibt alles, wie es war. */
 function act(state: GameState, balance: Balance, parcelId: string, kind: DeskActionKind): GameState {
@@ -186,6 +192,159 @@ function greedyTurn(state: GameState, balance: Balance): GameState {
   return state;
 }
 
+// --- ausgewogen (2.15, Standard-Bot) -------------------------------------------
+
+/**
+ * So viel darf der ausgewogene Bot noch leihen: höchstens maxDebtShare des
+ * Bankrahmens insgesamt, und nie mehr, als die Bank gerade gibt.
+ */
+export function balancedBorrowable(state: GameState, balance: Balance): number {
+  const grenze = balance.bots.balanced.maxDebtShare * creditLimit(state, balance) - debt(state);
+  return Math.max(0, Math.min(headroom(state, balance), Math.floor(grenze)));
+}
+
+/** Zahlt eine Aktion; fehlt Geld bis zur Rücklage, leiht er den Rest – aber nur im eigenen Rahmen. */
+function balancedPay(state: GameState, balance: Balance, parcelId: string, kind: DeskActionKind, cost: number): GameState {
+  const { cashReserve } = balance.bots.balanced;
+  if (state.cash - cost >= cashReserve) return act(state, balance, parcelId, kind);
+  const amount = Math.max(balance.credit.minLoan, Math.ceil(cost + cashReserve - state.cash));
+  if (amount > balancedBorrowable(state, balance)) return state;
+  const loan = takeLoan(state, balance, amount);
+  if (!loan.ok) return state;
+  const r = applyAction(loan.state, balance, parcelId, kind);
+  return r.ok ? r.state : state;
+}
+
+function balancedTurn(state: GameState, balance: Balance): GameState {
+  const { minChance, cashReserve, maxStage, maxUndrilled } = balance.bots.balanced;
+  state = sell(state, balance, 1);
+  for (const well of openWells(state)) {
+    const vorher = state;
+    const next = well.stage + 1;
+    if (well.status === 'stuck') state = balancedPay(state, balance, well.parcelId, 'fish', balance.drilling.fishingCost);
+    else if (next <= maxStage && next <= balance.drilling.stages.length) {
+      state = balancedPay(state, balance, well.parcelId, 'deeper', stageCost(balance, next));
+    }
+    if (state === vorher) state = act(state, balance, well.parcelId, 'abandon');
+  }
+  for (const option of jacobsOptions(state)) state = balancedPay(state, balance, option.parcelId, 'exercise', option.bonus);
+  for (const parcelId of undrilled(state)) state = balancedPay(state, balance, parcelId, 'drill', stageCost(balance, 1));
+  // Neues Land nur, wenn danach auch die erste Bohrstufe und die Rücklage bezahlbar bleiben.
+  if (undrilled(state).length + jacobsOptions(state).length < maxUndrilled) {
+    const geld = state.cash + balancedBorrowable(state, balance) - cashReserve - stageCost(balance, 1);
+    const best = freeParcels(state, minChance).find((id) => leaseTerms(state, balance, id).bonus <= geld);
+    if (best !== undefined) state = balancedPay(state, balance, best, 'lease', leaseTerms(state, balance, best).bonus);
+  }
+  return state;
+}
+
+// --- Ereignisse (2.15) -----------------------------------------------------------
+
+/** Wie der Bot eine Antwort bewertet; reserve = Bargeld, das danach bleiben muss. */
+export interface EventPolicy extends BotEventWeights {
+  reserve: number;
+}
+
+export function eventPolicy(balance: Balance, strategy: Exclude<Strategy, 'zufaellig'>): EventPolicy {
+  switch (strategy) {
+    case 'vorsichtig':
+      return { ...balance.bots.events.cautious, reserve: balance.bots.cautious.cashReserve };
+    case 'gierig':
+      return { ...balance.bots.events.greedy, reserve: 0 };
+    case 'ausgewogen':
+      return { ...balance.bots.events.balanced, reserve: balance.bots.balanced.cashReserve };
+  }
+}
+
+/** Den Verkauf an Crane (frühes Ende) wählt kein Bot: die Bot-Läufe messen das ganze Kapitel. */
+function endsGame(choice: EventChoice): boolean {
+  return choice.marks.includes(RIVAL_MARKS.craneSold);
+}
+
+/** Barrel, die Jacob bis Kapitelende noch fördert (grob): letzte Förderung × Restrunden. Für den Bahntarif. */
+function barrelsAhead(state: GameState): number {
+  const jeRunde = state.wells.reduce((s, w) => s + (w.status === 'found' ? (w.production?.lastRate ?? 0) : 0), 0);
+  return jeRunde * Math.max(0, state.totalRounds - state.round + 1);
+}
+
+/** Wert der Effekte in $ – ohne Termine. Kraft zählt nur, soweit sie unter dem Höchstwert Platz hat. */
+function effectValue(state: GameState, choice: EventChoice, policy: EventPolicy, extraStrength = 0): number {
+  const e = choice.effects;
+  const kraft = (e.strength ?? 0) + extraStrength;
+  const wirksam = kraft > 0 ? Math.min(kraft, state.strengthMax - state.strength) : kraft;
+  return (
+    (e.cash ?? 0) +
+    (e.oilStock ?? 0) * state.postedPrice +
+    wirksam * policy.strength +
+    ((e.ruth ?? 0) + (e.thomas ?? 0)) * policy.family -
+    (e.railTariff ?? 0) * barrelsAhead(state)
+  );
+}
+
+/**
+ * Wert einer Antwort, die der Bot jetzt geben könnte, oder null, wenn sie nicht
+ * geht oder er sie nicht will (Verkauf an Crane, Überstunden zu müde, Rücklage).
+ */
+export function choiceValue(state: GameState, balance: Balance, event: EventDef, choice: EventChoice, policy: EventPolicy): number | null {
+  if (endsGame(choice) || choiceReason(state, balance, event, choice) !== null) return null;
+  const cost = choiceCost(event, choice);
+  const over = overtimeFor(state, cost);
+  if (over > 0 && state.strength < policy.overtimeFrom) return null;
+  const cash = choice.effects.cash ?? 0;
+  if (cash < 0 && state.cash + cash < policy.reserve) return null;
+  return effectValue(state, choice, policy, -over * balance.agenda.overtimeCost) - cost * policy.appointment;
+}
+
+/** Was ohne Antwort passiert: die Standard-Wahl wie in autoResolve, ohne Termine. Feste Termine: nichts. */
+function baseline(state: GameState, event: EventDef, policy: EventPolicy): number {
+  if (event.routine) return 0;
+  const standard = event.choices.find((c) => c.default) ?? event.choices[0];
+  return standard ? effectValue(state, standard, policy) : 0;
+}
+
+/** Alles, worauf Jacob gerade antworten kann: offene Ereignisse und feste Termine. */
+function openItems(state: GameState, catalog: readonly EventDef[]): EventDef[] {
+  const offen = state.events.pending.flatMap((id) => catalog.filter((e) => e.id === id));
+  return [...offen, ...catalog.filter((e) => routineOffered(state, e))];
+}
+
+/**
+ * Beantwortet Ereignisse und nimmt feste Termine wahr: immer die Antwort mit dem
+ * größten Gewinn gegenüber „liegen lassen“, bis keine mehr etwas bringt oder die
+ * Zeit fehlt. Was liegen bleibt, bekommt am Rundenende die Standard-Wahl.
+ */
+export function answerEvents(state: GameState, balance: Balance, catalog: readonly EventDef[], policy: EventPolicy): GameState {
+  for (let i = 0; i < 30; i++) {
+    let best: { event: EventDef; choice: EventChoice; gain: number } | null = null;
+    for (const event of openItems(state, catalog)) {
+      const basis = baseline(state, event, policy);
+      for (const choice of event.choices) {
+        const wert = choiceValue(state, balance, event, choice, policy);
+        if (wert === null) continue;
+        const gain = wert - basis;
+        if (gain > (best?.gain ?? 0)) best = { event, choice, gain };
+      }
+    }
+    if (!best) break;
+    const r = resolveEvent(state, balance, catalog, best.event.id, best.choice.id);
+    if (!r.ok) break;
+    state = r.state;
+  }
+  return state;
+}
+
+/** Zufall: Jedes offene Ereignis und jeder feste Termin wird mit halber Chance zufällig beantwortet. */
+function randomAnswers(state: GameState, balance: Balance, catalog: readonly EventDef[], rng: Rng): GameState {
+  for (const event of openItems(state, catalog)) {
+    if (rng.float() >= 0.5) continue;
+    const moeglich = event.choices.filter((c) => !endsGame(c) && choiceReason(state, balance, event, c) === null);
+    if (moeglich.length === 0) continue;
+    const r = resolveEvent(state, balance, catalog, event.id, rng.pick(moeglich).id);
+    if (r.ok) state = r.state;
+  }
+  return state;
+}
+
 // --- zufällig -----------------------------------------------------------------
 
 /** Alle Aktionen, die gerade gehen, über alle Parzellen. */
@@ -208,14 +367,22 @@ function randomTurn(state: GameState, balance: Balance, rng: Rng): GameState {
   return state;
 }
 
-/** Eine Runde Aktionen nach der Strategie – ohne endRound. */
-export function botTurn(state: GameState, balance: Balance, strategy: Strategy, rng: Rng): GameState {
+/**
+ * Eine Runde Aktionen nach der Strategie – ohne endRound. Mit Katalog (2.15)
+ * beantwortet der Bot zuerst Ereignisse und nimmt feste Termine wahr.
+ */
+export function botTurn(state: GameState, balance: Balance, strategy: Strategy, rng: Rng, catalog: readonly EventDef[] = []): GameState {
   if (state.finished) return state;
+  if (catalog.length > 0) {
+    state = strategy === 'zufaellig' ? randomAnswers(state, balance, catalog, rng) : answerEvents(state, balance, catalog, eventPolicy(balance, strategy));
+  }
   switch (strategy) {
     case 'vorsichtig':
       return cautiousTurn(state, balance);
     case 'gierig':
       return greedyTurn(state, balance);
+    case 'ausgewogen':
+      return balancedTurn(state, balance);
     case 'zufaellig':
       return randomTurn(state, balance, rng);
   }
@@ -227,23 +394,42 @@ export interface GameResult {
   goal: boolean;
   empire: number;
   rounds: number;
+  /** Termine zu Rundenbeginn, über alle gespielten Runden summiert (krank = 0). */
+  appointments: number;
+  /** Runden, die Jacob krank war. */
+  sickRounds: number;
   state: GameState;
 }
 
-/** Spielt eine ganze Partie bis zum Ende des Kapitels oder bis zur Pleite. */
-export function playGame(seed: string, balance: Balance, strategy: Strategy): GameResult {
-  let state = newGame(seed, balance);
+/**
+ * Spielt eine ganze Partie bis zum Ende des Kapitels oder bis zur Pleite. Mit
+ * Katalog (2.15) kommen Ereignisse, Briefe und feste Termine dazu.
+ */
+export function playGame(seed: string, balance: Balance, strategy: Strategy, catalog: readonly EventDef[] = []): GameResult {
+  let state = newGame(seed, balance, catalog);
   const rng = new Rng(seedFromString(`${seed}-bot`));
   let rounds = 0;
+  let appointments = 0;
+  let sickRounds = 0;
   while (!state.finished) {
     if (rounds >= state.totalRounds + 5) {
       throw new Error(`Partie ${seed} (${strategy}) endet nicht nach ${rounds} Runden.`);
     }
-    state = endRound(botTurn(state, balance, strategy, rng), balance);
+    if (state.sick > 0) sickRounds++;
+    else appointments += state.agenda.budget;
+    state = endRound(botTurn(state, balance, strategy, rng, catalog), balance, catalog);
     rounds++;
   }
   const bankrupt = state.ending === 'pleite';
-  return { bankrupt, goal: !bankrupt && chapterCheck(state, balance).passed, empire: empireValue(state, balance), rounds, state };
+  return {
+    bankrupt,
+    goal: !bankrupt && chapterCheck(state, balance).passed,
+    empire: empireValue(state, balance),
+    rounds,
+    appointments,
+    sickRounds,
+    state,
+  };
 }
 
 // --- Einstieg (2.13) ------------------------------------------------------------
@@ -306,12 +492,21 @@ export interface BotRow {
   /** Anteil der Partien, in denen die Kapitelprüfung (2.11) bestanden ist. */
   goalRate: number;
   meanEmpire: number;
-  /** Anteil der Seeds, in denen diese Strategie den höchsten Imperiumswert hat (Gleichstand wird geteilt). */
+  /**
+   * Anteil der Seeds, in denen diese Strategie den höchsten Imperiumswert hat (Gleichstand wird geteilt).
+   * Seit 2.15 nur, wenn der Beste mindestens die Startkasse erreicht – sonst hat niemand gewonnen.
+   */
   winRate: number;
   /** Ø Kasse des Rivalen Bullard am Ende der Partie. */
   rivalCash: number;
   /** Ø fündige Quellen Bullards am Ende der Partie. */
   rivalWells: number;
+  /** Ø Termine je Runde (2.15; krank = 0 Termine). */
+  meanAppointments: number;
+  /** Anteil der Runden, die Jacob krank war. */
+  sickShare: number;
+  /** Jacobs Funde (2.15): Anfangsraten in Barrel je Runde und gemessener Rückgang je Quelle. */
+  finds: FindStats;
 }
 
 /**
@@ -319,32 +514,82 @@ export interface BotRow {
  * Pleite zählt immer als letzter Platz – auch hinter einem Imperiumswert unter
  * null, denn wer pleite ist, hat das Kapitel verloren. Bei Gleichstand teilen
  * sich die Besten den Sieg. Gibt je Strategie den Sieganteil 0–1 zurück.
+ * minEmpire (2.15): Bleibt auch der Beste unter diesem Imperiumswert (in den
+ * Bot-Läufen: die Startkasse), hat niemand gewonnen – wer am wenigsten verliert,
+ * ist kein Sieger. Die Karte bleibt dann ohne Sieger (leere Map).
  */
-export function seedWinners(results: readonly { strategy: Strategy; bankrupt: boolean; empire: number }[]): Map<Strategy, number> {
+export function seedWinners(
+  results: readonly { strategy: Strategy; bankrupt: boolean; empire: number }[],
+  minEmpire = -Infinity,
+): Map<Strategy, number> {
   const rang = (r: { bankrupt: boolean; empire: number }) => (r.bankrupt ? -Infinity : r.empire);
   const bester = Math.max(...results.map(rang));
+  if (bester === -Infinity || bester < minEmpire) return new Map();
   const sieger = results.filter((r) => rang(r) === bester);
   return new Map(sieger.map((r) => [r.strategy, 1 / sieger.length]));
 }
 
-/** Spielt games Partien je Strategie, für jede Strategie mit denselben Seeds. */
-export function runBots(balance: Balance, games = balance.bots.games): BotRow[] {
-  const summe = new Map<Strategy, { pleiten: number; ziel: number; wert: number; siege: number; bKasse: number; bQuellen: number }>(
-    STRATEGIES.map((s) => [s, { pleiten: 0, ziel: 0, wert: 0, siege: 0, bKasse: 0, bQuellen: 0 }]),
+/** Summen über Jacobs Funde – zum Zusammenlegen über Strategien. */
+export interface FindStats {
+  small: number[];
+  gusher: number[];
+  /** Gemessener Rückgang je Runde, eine Zahl je Quelle mit mindestens zwei Förderrunden. */
+  declines: number[];
+}
+
+/**
+ * Gemessener Rückgang einer Quelle je Runde: aus Anfangsrate und letzter Förderung
+ * über die Förderrunden dazwischen – Druckverlust im Feld eingeschlossen. null, wenn
+ * die Quelle noch keine zwei Runden gefördert hat.
+ */
+export function measuredDecline(production: { initialRate: number; roundsProduced: number; lastRate: number }): number | null {
+  const { initialRate, roundsProduced, lastRate } = production;
+  if (roundsProduced < 2 || initialRate <= 0 || lastRate <= 0) return null;
+  return 1 - (lastRate / initialRate) ** (1 / (roundsProduced - 1));
+}
+
+function findStats(state: GameState): FindStats {
+  const out: FindStats = { small: [], gusher: [], declines: [] };
+  for (const w of state.wells) {
+    if (w.status !== 'found' || !w.production || !w.result) continue;
+    (w.result === 'gusher' ? out.gusher : out.small).push(w.production.initialRate);
+    const d = measuredDecline(w.production);
+    if (d !== null) out.declines.push(d);
+  }
+  return out;
+}
+
+/**
+ * Spielt games Partien je Strategie, für jede Strategie mit denselben Seeds.
+ * catalog: Ereignisse aus content/events/ (2.15); ohne Katalog spielen die Bots ohne Ereignisse.
+ */
+export function runBots(balance: Balance, games = balance.bots.games, catalog: readonly EventDef[] = []): BotRow[] {
+  const summe = new Map(
+    STRATEGIES.map((s) => [
+      s,
+      { pleiten: 0, ziel: 0, wert: 0, siege: 0, bKasse: 0, bQuellen: 0, termine: 0, runden: 0, krank: 0, finds: { small: [], gusher: [], declines: [] } as FindStats },
+    ]),
   );
   for (let i = 0; i < games; i++) {
     const seed = `${balance.bots.seedPrefix}-${i}`;
     const results = STRATEGIES.map((strategy) => {
-      const r = playGame(seed, balance, strategy);
+      const r = playGame(seed, balance, strategy, catalog);
       const s = summe.get(strategy)!;
       if (r.bankrupt) s.pleiten++;
       if (r.goal) s.ziel++;
       s.wert += r.empire;
       s.bKasse += r.state.rival.cash;
       s.bQuellen += r.state.rival.wells.filter((w) => w.status === 'found').length;
+      s.termine += r.appointments;
+      s.runden += r.rounds;
+      s.krank += r.sickRounds;
+      const f = findStats(r.state);
+      s.finds.small.push(...f.small);
+      s.finds.gusher.push(...f.gusher);
+      s.finds.declines.push(...f.declines);
       return { strategy, bankrupt: r.bankrupt, empire: r.empire };
     });
-    for (const [strategy, anteil] of seedWinners(results)) summe.get(strategy)!.siege += anteil;
+    for (const [strategy, anteil] of seedWinners(results, balance.start.cash)) summe.get(strategy)!.siege += anteil;
   }
   return STRATEGIES.map((strategy) => {
     const s = summe.get(strategy)!;
@@ -358,23 +603,127 @@ export function runBots(balance: Balance, games = balance.bots.games): BotRow[] 
       winRate: anteil(s.siege),
       rivalCash: anteil(s.bKasse),
       rivalWells: anteil(s.bQuellen),
+      meanAppointments: s.runden > 0 ? s.termine / s.runden : 0,
+      sickShare: s.runden > 0 ? s.krank / s.runden : 0,
+      finds: s.finds,
     };
   });
+}
+
+/**
+ * Blinde Wildcat-Bohrung (GDD §15: „etwa 1 von 5 bis 1 von 10“): Wer ohne
+ * Geologen irgendeine Parzelle in Randlage (weit weg vom bekannten Fund) bis zur
+ * Zieltiefe (Stufe 1) bohrt – wie oft trifft er Öl? Erwartungswert über alle
+ * Randlage-Parzellen der Karten der Bot-Seeds; nur die Geologie zählt, kein Bot.
+ */
+export function blindWildcatChance(balance: Balance, games = balance.bots.games): number {
+  const rand = balance.lease.locations[balance.lease.locations.length - 1];
+  const stufe1 = balance.drilling.stages[0].oilShare;
+  let summe = 0;
+  let n = 0;
+  for (let i = 0; i < games; i++) {
+    const parcels = generateParcels(balance, new Rng(seedFromString(`${balance.bots.seedPrefix}-${i}`)));
+    const funde = parcels.filter((p) => p.discovery);
+    for (const p of parcels) {
+      if (p.discovery || locationFor(balance, funde, p).name !== rand.name) continue;
+      summe += p.geology === 'dry' ? 0 : stufe1;
+      n++;
+    }
+  }
+  return n > 0 ? summe / n : 0;
+}
+
+/** Eine Zeile der Zielwert-Tabelle (2.15). */
+export interface TargetRow {
+  id: BotTargetId;
+  /** Was gemessen wird. */
+  label: string;
+  /** Wo der Zielwert herkommt und wie er im GDD steht. */
+  goal: string;
+  value: number;
+  min: number;
+  max: number;
+  ok: boolean;
+  unit: 'prozent' | 'faktor' | 'zahl';
+}
+
+const TARGET_TEXT: Record<BotTargetId, { label: string; goal: string; unit: TargetRow['unit'] }> = {
+  winRate: { label: 'Höchste Siegquote einer Strategie', goal: 'GDD §17: keine Einzelstrategie gewinnt in mehr als 40 %', unit: 'prozent' },
+  standardBankrupt: { label: 'Pleitequote Standard-Bot (ausgewogen)', goal: 'Kapitel 1 ist der Einstieg (GDD §17: Kapitel 4 übersteht er in 55–70 %)', unit: 'prozent' },
+  greedyBankrupt: { label: 'Pleitequote gierig', goal: 'GDD §15: wer im Boom zu viele Schulden macht, stirbt (Krisen erst ab Kapitel 2)', unit: 'prozent' },
+  cautiousBehind: { label: 'Ø Imperium vorsichtig ÷ bester Ø der Mutigeren', goal: 'GDD §15: wer nie Schulden macht, wird überholt (unter 1)', unit: 'faktor' },
+  standardGoal: { label: 'Kapitelziel Standard-Bot (ausgewogen)', goal: 'Kapitelprüfung erreichbar, aber nicht geschenkt', unit: 'prozent' },
+  smallRateInRange: { label: 'Kleine Funde mit 50–500 bbl/Tag', goal: 'GDD §15: Anfangsrate 50–500 bbl/Tag', unit: 'prozent' },
+  gusherFactor: { label: 'Ø Anfangsrate Gusher ÷ kleiner Fund', goal: 'GDD §15: Gusher deutlich mehr', unit: 'faktor' },
+  decline: { label: 'Gemessener Rückgang je Quartal', goal: 'GDD §15: 8–15 %', unit: 'prozent' },
+  wildcatHit: { label: 'Trefferquote blinde Wildcat-Bohrung (Randlage, 300 m)', goal: 'GDD §15: etwa 1 von 5 bis 1 von 10', unit: 'prozent' },
+  appointments: { label: 'Ø Termine je Runde (Standard-Bot)', goal: 'GDD §15: 5 je Quartal', unit: 'zahl' },
+};
+
+function mean(xs: readonly number[]): number {
+  return xs.length > 0 ? xs.reduce((s, x) => s + x, 0) / xs.length : 0;
+}
+
+/** Misst alle Kennzahlen aus den Bot-Zeilen und vergleicht sie mit bots.targets. */
+export function checkTargets(rows: readonly BotRow[], wildcatHit: number, balance: Balance): TargetRow[] {
+  const row = (s: Strategy) => rows.find((r) => r.strategy === s);
+  const alle = <K extends keyof FindStats>(k: K) => rows.flatMap((r) => r.finds[k]);
+  const tag = balance.bots.daysPerRound;
+  const klein = alle('small').map((r) => r / tag);
+  const gusher = alle('gusher').map((r) => r / tag);
+  const mutig = Math.max(row('gierig')?.meanEmpire ?? 0, row('ausgewogen')?.meanEmpire ?? 0);
+  const werte: Record<BotTargetId, number> = {
+    winRate: Math.max(0, ...rows.map((r) => r.winRate)),
+    standardBankrupt: row('ausgewogen')?.bankruptRate ?? 0,
+    greedyBankrupt: row('gierig')?.bankruptRate ?? 0,
+    cautiousBehind: mutig > 0 ? (row('vorsichtig')?.meanEmpire ?? 0) / mutig : 0,
+    standardGoal: row('ausgewogen')?.goalRate ?? 0,
+    smallRateInRange: klein.length > 0 ? klein.filter((r) => r >= 50 && r <= 500).length / klein.length : 0,
+    gusherFactor: mean(klein) > 0 ? mean(gusher) / mean(klein) : 0,
+    decline: mean(alle('declines')),
+    wildcatHit,
+    appointments: row('ausgewogen')?.meanAppointments ?? 0,
+  };
+  return (Object.keys(TARGET_TEXT) as BotTargetId[]).map((id) => {
+    const { min, max } = balance.bots.targets[id];
+    const value = werte[id];
+    return { id, ...TARGET_TEXT[id], value, min, max, ok: value >= min && value <= max };
+  });
+}
+
+function zahl(value: number, digits: number): string {
+  return value.toLocaleString('de-DE', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
+
+function zielWert(unit: TargetRow['unit'], value: number): string {
+  return unit === 'prozent' ? prozent(value) : zahl(value, 2);
+}
+
+/** Markdown-Tabelle Ist/Ziel (2.15). */
+export function targetTable(targets: readonly TargetRow[]): string {
+  return [
+    '| Kennzahl | Ziel (Quelle) | Toleranz | Ist | im Rahmen |',
+    '| --- | --- | ---: | ---: | :---: |',
+    ...targets.map(
+      (t) =>
+        `| ${t.label} | ${t.goal} | ${zielWert(t.unit, t.min)} – ${zielWert(t.unit, t.max)} | ${zielWert(t.unit, t.value)} | ${t.ok ? 'ja' : '**nein**'} |`,
+    ),
+  ].join('\n');
 }
 
 function prozent(value: number): string {
   return `${(value * 100).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
 }
 
-/** Markdown-Tabelle: Quoten in % mit einer Nachkommastelle, Werte in ganzen $, Bullards Quellen mit einer Nachkommastelle. */
+/** Markdown-Tabelle: Quoten in % mit einer Nachkommastelle, Werte in ganzen $, Bullards Quellen und Termine mit einer Nachkommastelle. */
 export function botTable(rows: readonly BotRow[]): string {
   const zeilen = rows.map(
     (r) =>
-      `| ${r.strategy} | ${r.games.toLocaleString('de-DE')} | ${prozent(r.bankruptRate)} | ${prozent(r.goalRate)} | ${Math.round(r.meanEmpire).toLocaleString('de-DE')} $ | ${prozent(r.winRate)} | ${Math.round(r.rivalCash).toLocaleString('de-DE')} $ | ${r.rivalWells.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} |`,
+      `| ${r.strategy} | ${r.games.toLocaleString('de-DE')} | ${prozent(r.bankruptRate)} | ${prozent(r.goalRate)} | ${Math.round(r.meanEmpire).toLocaleString('de-DE')} $ | ${prozent(r.winRate)} | ${Math.round(r.rivalCash).toLocaleString('de-DE')} $ | ${zahl(r.rivalWells, 1)} | ${zahl(r.meanAppointments, 1)} |`,
   );
   return [
-    '| Strategie | Partien | Bankrottquote | Kapitelziel | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen |',
-    '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
+    '| Strategie | Partien | Bankrottquote | Kapitelziel | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen | Ø Termine |',
+    '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
     ...zeilen,
   ].join('\n');
 }

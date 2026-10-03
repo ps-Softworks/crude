@@ -214,7 +214,42 @@ export interface BotsBalance {
   greedy: { minChance: number; maxUndrilled: number };
   /** zufällig: so viele Aktionen je Runde. */
   random: { actionsPerRound: number };
+  /** ausgewogen (2.15, Standard-Bot): wie vorsichtig, leiht aber bis maxDebtShare des Bankrahmens. */
+  balanced: { minChance: number; cashReserve: number; maxStage: number; maxDebtShare: number; maxUndrilled: number };
+  /** Tage je Runde (Quartal) – für die Anfangsrate in bbl/Tag. */
+  daysPerRound: number;
+  /** Wie die Bots Ereignisse bewerten (2.15). */
+  events: Record<'cautious' | 'greedy' | 'balanced', BotEventWeights>;
+  /** Zielwerte Kapitel 1 (2.15): Toleranzbereich je Kennzahl. */
+  targets: Record<BotTargetId, { min: number; max: number }>;
 }
+
+/** Bewertung einer Ereignis-Antwort durch einen Bot (2.15). */
+export interface BotEventWeights {
+  /** $ je Kraftpunkt. */
+  strength: number;
+  /** $ je Beziehungspunkt (Ruth, Thomas). */
+  family: number;
+  /** $ je Termin, den die Antwort kostet. */
+  appointment: number;
+  /** Überstunden nur ab dieser Kraft. */
+  overtimeFrom: number;
+}
+
+/** Kennzahlen mit Zielwert (2.15, GDD §15/§17); gemessen in src/sim/bots.ts. */
+export const BOT_TARGET_IDS = [
+  'winRate',
+  'standardBankrupt',
+  'greedyBankrupt',
+  'cautiousBehind',
+  'standardGoal',
+  'smallRateInRange',
+  'gusherFactor',
+  'decline',
+  'wildcatHit',
+  'appointments',
+] as const;
+export type BotTargetId = (typeof BOT_TARGET_IDS)[number];
 
 export interface BankruptcyBalance {
   graceRounds: number;
@@ -900,6 +935,37 @@ function parseBots(raw: unknown): BotsBalance {
     },
     greedy: { minChance: share(raw, 'bots.greedy.minChance'), maxUndrilled: positiveInt(raw, 'bots.greedy.maxUndrilled') },
     random: { actionsPerRound: positiveInt(raw, 'bots.random.actionsPerRound') },
+    balanced: {
+      minChance: share(raw, 'bots.balanced.minChance'),
+      cashReserve: nonNegative(raw, 'bots.balanced.cashReserve'),
+      maxStage: positiveInt(raw, 'bots.balanced.maxStage'),
+      maxDebtShare: share(raw, 'bots.balanced.maxDebtShare'),
+      maxUndrilled: positiveInt(raw, 'bots.balanced.maxUndrilled'),
+    },
+    daysPerRound: positiveInt(raw, 'bots.daysPerRound'),
+    events: {
+      cautious: parseBotWeights(raw, 'cautious'),
+      greedy: parseBotWeights(raw, 'greedy'),
+      balanced: parseBotWeights(raw, 'balanced'),
+    },
+    targets: Object.fromEntries(
+      BOT_TARGET_IDS.map((id) => {
+        const min = num(raw, `bots.targets.${id}.min`);
+        const max = num(raw, `bots.targets.${id}.max`);
+        if (min > max) throw new BalanceError(`balance.yaml: "bots.targets.${id}": min darf nicht über max liegen`);
+        return [id, { min, max }];
+      }),
+    ) as Record<BotTargetId, { min: number; max: number }>,
+  };
+}
+
+function parseBotWeights(raw: unknown, name: string): BotEventWeights {
+  const p = `bots.events.${name}`;
+  return {
+    strength: nonNegative(raw, `${p}.strength`),
+    family: nonNegative(raw, `${p}.family`),
+    appointment: nonNegative(raw, `${p}.appointment`),
+    overtimeFrom: nonNegative(raw, `${p}.overtimeFrom`),
   };
 }
 
