@@ -1,7 +1,7 @@
 {
   "name": "crude",
   "private": true,
-  "version": "0.1.14+3",
+  "version": "0.2.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "bots": "tsx tools/botlaeufe.ts",
+    "check:content": "tsx tools/checkContent.ts",
     "release": "node tools/release.mjs"
   },
   "dependencies": {

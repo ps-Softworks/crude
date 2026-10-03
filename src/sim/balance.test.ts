@@ -439,3 +439,14 @@ describe('Spielzahlen (balance.yaml)', () => {
     });
   });
 });
+
+describe('Ereignisse in balance.yaml (2.1)', () => {
+  it('maxPerRound fehlt oder ist keine ganze Zahl ab 1 → Fehler', async () => {
+    const { parse } = await import('yaml');
+    const { readFileSync } = await import('node:fs');
+    const raw = parse(readFileSync(new URL('../../content/balance.yaml', import.meta.url), 'utf8'));
+    expect(parseBalance(raw).events.maxPerRound).toBe(1);
+    expect(() => parseBalance({ ...raw, events: undefined })).toThrow(/Block "events" fehlt/);
+    expect(() => parseBalance({ ...raw, events: { maxPerRound: 0 } })).toThrow(/events.maxPerRound/);
+  });
+});

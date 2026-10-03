@@ -6,8 +6,8 @@
 
 import type { GameState } from './game';
 
-/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. */
-export const SAVE_FORMAT = 1;
+/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1). */
+export const SAVE_FORMAT = 2;
 
 export interface SaveFile {
   format: number;
@@ -76,6 +76,10 @@ export function validateState(value: unknown): LoadResult {
 
   const rival = value.rival;
   if (!istObjekt(rival) || !istZahl(rival.rng) || !istZahl(rival.cash) || !istListe(rival.wells)) {
+    return { ok: false, reason: UNVOLLSTAENDIG };
+  }
+  const events = value.events;
+  if (!istObjekt(events) || !istZahl(events.rng) || !istListe(events.pending) || !istListe(events.seen)) {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
   if (typeof value.finished !== 'boolean') return { ok: false, reason: UNVOLLSTAENDIG };

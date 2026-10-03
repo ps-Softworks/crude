@@ -154,12 +154,17 @@ function ort(stellen: string[]): string {
 
 /**
  * Was Jacob als Nächstes tun kann, in einem Satz. Die erste passende Regel gewinnt:
- * erst eine Bohrung, die auf ihn wartet, dann der laufende Turm, dann eine Pacht
+ * erst ein offenes Ereignis, dann eine Bohrung, die auf ihn wartet, dann der laufende Turm, dann eine Pacht
  * zum Bohren, dann eine Option zum Einlösen, dann nichts zum Pachten, dann Öl im
  * Tank, sonst einfach die Runde beenden. Ist das Kapitel vorbei, gibt es nichts.
  */
 export function nextStep(state: GameState, balance: Balance): NextStep | null {
   if (state.finished) return null;
+
+  // 0. Ein Ereignis wartet auf Antwort (2.1).
+  if (state.events.pending.length > 0) {
+    return { text: 'Auf dem Schreibtisch liegt etwas, das auf deine Antwort wartet.', parcelIds: [] };
+  }
 
   // 1. Eine Bohrung wartet auf eine Entscheidung: tiefer bohren, bergen oder aufgeben.
   const wartet = state.wells.filter((w) => w.status === 'decision' || w.status === 'stuck');

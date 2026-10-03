@@ -1,0 +1,14 @@
+# Absichtlich kaputt – nur für Tests (src/sim/eventContent.test.ts) und zum
+# Ausprobieren: npm run check:content -- src/sim/__fixtures__/events
+- id: kaputtes_ereignis
+  title:
+    de: Ein kaputtes Ereignis
+  text:
+    de: Hier fehlt der englische Schlüssel im Titel.
+    en: ""
+  chance: 1.5
+  choices:
+    - id: weiter
+      label: { de: "Weiter", en: "" }
+      result: { de: "Nichts passiert.", en: "" }
+      effects: { cassh: -100 }

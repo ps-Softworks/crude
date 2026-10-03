@@ -8,6 +8,7 @@ import { advanceDrilling, type Well } from './drilling';
 import { assignFields, buildFields, type Field } from './field';
 import { makeForecasts, type Forecast } from './forecast';
 import { generateParcels, type Parcel } from './geology';
+import { autoResolve, drawEvents, newEventsState, type EventDef, type EventsState } from './events';
 import { parcelLabel, settleLeases, startOptions, type Lease, type LeaseOption } from './lease';
 import { advanceProduction } from './production';
 import { Rng, seedFromString, type RngState } from './rng';
@@ -62,12 +63,19 @@ export interface GameState {
   ending: Ending;
   /** Rivale Bullard: Pachten, Bohrungen, Einkommen. */
   rival: RivalState;
+  /** Ereignisse: eigener Zufall, offene und schon gekommene (2.1). */
+  events: EventsState;
   log: string[];
   /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
   roundLogStart: number;
 }
 
-export function newGame(seed: string, balance: Balance): GameState {
+/**
+ * Neue Partie. catalog sind die Ereignisse aus content/events/; ohne Katalog
+ * (Bots, ältere Tests) gibt es keine Ereignisse. Ereignisse würfeln mit eigenem
+ * Zufall, die Welt ist mit und ohne Katalog dieselbe.
+ */
+export function newGame(seed: string, balance: Balance, catalog: readonly EventDef[] = []): GameState {
   const rng = new Rng(seedFromString(seed));
   const geologie = generateParcels(balance, rng);
   const fields = buildFields(geologie);
@@ -101,6 +109,7 @@ export function newGame(seed: string, balance: Balance): GameState {
     log: [],
     roundLogStart: 0,
     rival: newRival(seed, balance),
+    events: newEventsState(seed),
   };
   // Erst die Startoptionen, dann die Prognosen: so bleiben Karte und Startoptionen
   // bei gleichem Seed so, wie sie es vor der Prognose waren.
@@ -113,7 +122,7 @@ export function newGame(seed: string, balance: Balance): GameState {
     const labels = state.options.map((o) => parcelLabel(state.parcels.find((p) => p.id === o.parcelId)!));
     state.log.push(`${date}: Jacob hat freie Pachtoptionen auf den Parzellen ${labels.join(' und ')}.`);
   }
-  return state;
+  return drawEvents(state, balance, catalog);
 }
 
 /**
@@ -127,11 +136,15 @@ export function newGame(seed: string, balance: Balance): GameState {
  * Pleite ist sofort Schluss: keine neue Runde und keine Kapitelprüfung. Nach der
  * letzten Runde ist das Kapitel beendet. Was ab hier ins Protokoll kommt, gehört
  * zur Abrechnung: roundLogStart merkt sich, wie lang das Protokoll davor war.
+ * Ereignisse (2.1): Offene bekommen vorher ihre Standard-Antwort, zur neuen
+ * Runde werden neue gewürfelt.
  */
-export function endRound(input: GameState, balance: Balance): GameState {
+export function endRound(input: GameState, balance: Balance, catalog: readonly EventDef[] = []): GameState {
   if (input.finished) return input;
-  const roundLogStart = input.log.length;
-  const gefoerdert = advanceProduction(input, balance);
+  // Offene Ereignisse bekommen ihre Standard-Antwort, bevor die Runde abgerechnet wird.
+  const beantwortet = autoResolve(input, catalog);
+  const roundLogStart = beantwortet.log.length;
+  const gefoerdert = advanceProduction(beantwortet, balance);
   const markt = advanceMarket(gefoerdert, balance.market, balance.rivals.bullard.ratePerWell);
   const gebohrt = advanceDrilling(markt, balance);
   const gepachtet = settleLeases(gebohrt, balance);
@@ -150,5 +163,6 @@ export function endRound(input: GameState, balance: Balance): GameState {
     };
   }
   const next = { ...state, round: state.round + 1 };
-  return { ...next, log: [...state.log, `${formatDate(next)}: Eine neue Runde beginnt.`] };
+  // Zur neuen Runde kommen neue Ereignisse auf den Schreibtisch.
+  return drawEvents({ ...next, log: [...state.log, `${formatDate(next)}: Eine neue Runde beginnt.`] }, balance, catalog);
 }

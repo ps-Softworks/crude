@@ -13,5 +13,5 @@
     "skipLibCheck": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["src", "tools/botlaeufe.ts", "vite.config.ts"]
+  "include": ["src", "tools/botlaeufe.ts", "tools/checkContent.ts", "vite.config.ts"]
 }

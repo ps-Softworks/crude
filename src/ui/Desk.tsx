@@ -12,6 +12,7 @@ import { formatDate, type GameState } from '../sim/game';
 import { capacityLeft, netPrice, sellOil, tariff } from '../sim/transport';
 import { balance } from './balance';
 import { BankPanel } from './BankPanel';
+import { EventsPanel } from './EventsPanel';
 import { FeedbackLink } from './FeedbackLink';
 import { Map } from './Map';
 
@@ -45,6 +46,8 @@ export interface DeskProps {
   onEndRound: () => void;
   onLoan: (result: LoanResult) => void;
   onSold: (state: GameState) => void;
+  /** Jacob hat auf ein Ereignis geantwortet. */
+  onEvent: (state: GameState) => void;
   onDebug: (debug: boolean) => void;
   onSeed: (seed: string) => void;
   onNewWorld: () => void;
@@ -67,6 +70,7 @@ export function Desk({
   onEndRound,
   onLoan,
   onSold,
+  onEvent,
   onDebug,
   onSeed,
   onNewWorld,
@@ -130,6 +134,8 @@ export function Desk({
       {chapterEnd}
 
       <p className="nextstep">{step?.text ?? 'Das Kapitel ist zu Ende.'}</p>
+
+      <EventsPanel game={game} onResolved={onEvent} />
 
       <div className="spalten">
         <section className="panel">

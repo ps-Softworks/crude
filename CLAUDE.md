@@ -9,7 +9,8 @@
 - Subagents: Du darfst nach eigener Einschätzung Subagents deiner Wahl einsetzen (z. B. Explore, Plan, general-purpose), ohne vorher zu fragen – immer dann, wenn es sinnvoll ist und Tokens spart (z. B. breite Suchen, unabhängige Teilaufgaben parallel). Für Kleinigkeiten, die du direkt erledigen kannst, keine Subagents.
 
 ## Projektstand
-- Phase 0 abgeschlossen (Papierpartien 0.8/0.9 vorerst übersprungen). Phase 1 läuft: 1.1–1.14 fertig. 1.15: Bot-Justierung erledigt (Zahlen in balance.yaml, Begründung in docs/botlaeufe.md unter „Justierung 1.15“/„Nachbesserung 1.16“/„Nachbesserung Bullard“ – Bullards Einkommen hängt seit 0.1.14+3 an Ölpreis, Förderung, Förderzins und Transport); offen sind drei eigene Partien von Philipp. 1.16 Tester-Build vorbereitet; offen: Fragebogen anlegen, Link in `content/tester.yaml`, auf itch.io hochladen, Tester anschreiben (macht Philipp, Anleitung in docs/tester-anleitung.md, Fragen in docs/tester-fragebogen.md).
+- Phase 0 und Phase 1 abgeschlossen (Papierpartien, Philipps eigene Partien und die Tester-Runde aus 1.15/1.16 vorerst zurückgestellt; Anleitung dafür in docs/tester-anleitung.md). Phase 2 läuft: 2.1 Ereignis-System fertig, als Nächstes 2.2 laut Roadmap.
+- Ereignisse: YAML in `content/events/` (Format im README dort), prüfen mit `npm run check:content`; jeder Text mit `de`/`en` (en darf leer sein). Die drei Ereignisse dort sind Testentwürfe. Bots spielen ohne Ereignisse. Kaputtes Beispiel nur als Test-Fixture in `src/sim/__fixtures__/events/`.
 - Spielzahlen stehen in `content/balance.yaml` (per Bot-Läufen justiert, `npm run bots`; endgültig erst nach Philipps eigenen Partien).
 - Bot-Läufe: `npm run bots` (schreibt docs/botlaeufe.md).
 - Tester-Build: `npm run release` → `release/crude-<version>.zip` (index.html im Wurzelverzeichnis, relative Pfade; release/ nicht committen). Feedback-Link in `content/tester.yaml` (leer = kein Knopf). Debug-Bereich im Build nur mit `?debug=1`.

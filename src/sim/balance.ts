@@ -260,6 +260,12 @@ export interface Balance {
   bankruptcy: BankruptcyBalance;
   empire: EmpireBalance;
   bots: BotsBalance;
+  events: EventsBalance;
+}
+
+/** Ereignis-System (2.1): wie viele neue Ereignisse höchstens je Runde kommen. */
+export interface EventsBalance {
+  maxPerRound: number;
 }
 
 export class BalanceError extends Error {}
@@ -696,6 +702,12 @@ function parseBots(raw: unknown): BotsBalance {
   };
 }
 
+function parseEvents(raw: unknown): EventsBalance {
+  const block = (raw as { events?: unknown })?.events;
+  if (!block || typeof block !== 'object') throw new BalanceError('balance.yaml: Block "events" fehlt');
+  return { maxPerRound: positiveInt(raw, 'events.maxPerRound') };
+}
+
 export function parseBalance(raw: unknown): Balance {
   const zonesRaw = (raw as { geology?: { zones?: unknown } })?.geology?.zones;
   if (!Array.isArray(zonesRaw) || zonesRaw.length === 0) {
@@ -752,6 +764,7 @@ export function parseBalance(raw: unknown): Balance {
     rivals: parseRivals(raw),
     empire: parseEmpire(raw),
     bots: parseBots(raw),
+    events: parseEvents(raw),
   };
 
   const { width, height, saltHill } = balance.map;

@@ -96,3 +96,13 @@ a.feedback { color: #222; }
 a.feedback.kopf { font-size: 12px; font-weight: normal; letter-spacing: normal; color: #777; margin-left: 8px; }
 a.feedback.gross { font-size: 1.05rem; }
 h1 button.neustart { font-size: 12px; font-weight: normal; letter-spacing: normal; margin-left: 8px; padding: 1px 6px; }
+
+/* Ereignisse auf dem Schreibtisch (2.1): ein Brief, der auf Antwort wartet. */
+.events { margin-top: 16px; }
+.event {
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border: 1px solid #8a6d3b;
+  background: #fffaf0;
+}
+.event h2 { margin: 0 0 6px; font-size: 1.1rem; }

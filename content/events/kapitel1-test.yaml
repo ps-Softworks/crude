@@ -1,0 +1,73 @@
+# Testereignisse für das Ereignis-System (Schritt 2.1). Entwürfe von Claude –
+# sie zeigen, was das Format kann, und werden mit den echten Kapitel-1-Ereignissen
+# ersetzt. Aufbau und alle erlaubten Felder: content/events/README.md
+# Prüfen: npm run check:content
+
+- id: pension_miete
+  title:
+    de: Die Wirtin will Geld
+    en: ""
+  text:
+    de: >-
+      Mrs. Doyle, die Wirtin der Pension am Hafen von Port Ellis, steht in der Tür.
+      Die Stadt ist voll, für Jacobs Kammer zahlen andere das Doppelte. Sie will
+      die Miete für den Winter im Voraus – oder das Zimmer geht an einen Spekulanten.
+    en: ""
+  conditions: { maxRound: 4 }
+  chance: 0.5
+  choices:
+    - id: zahlen
+      label: { de: "Im Voraus zahlen (150 $)", en: "" }
+      result: { de: "Jacob zahlt. Mrs. Doyle lächelt zum ersten Mal.", en: "" }
+      requires: { minCash: 150 }
+      effects: { cash: -150 }
+    - id: zelt
+      label: { de: "Ausziehen und im Zelt am Feld schlafen", en: "" }
+      result: { de: "Jacob packt seine Sachen. Die Nächte am Salt Hill sind kalt.", en: "" }
+      default: true
+
+- id: serviettenhandel
+  title:
+    de: Ein Angebot auf der Serviette
+    en: ""
+  text:
+    de: >-
+      Im Saloon schiebt ein Händler aus Hallstead eine Serviette über den Tisch.
+      Er kauft 500 Barrel direkt aus Jacobs Tank, bar und ohne Fracht – aber unter
+      dem, was der Hafen gerade zahlt.
+    en: ""
+  conditions: { minOilStock: 500 }
+  chance: 0.4
+  choices:
+    - id: verkaufen
+      label: { de: "500 Barrel für 250 $ abgeben", en: "" }
+      result: { de: "Handschlag. Der Händler lässt die Fässer noch am Abend abholen.", en: "" }
+      requires: { minOilStock: 500 }
+      effects: { oilStock: -500, cash: 250 }
+    - id: ablehnen
+      label: { de: "Ablehnen", en: "" }
+      result: { de: "Jacob lässt die Serviette liegen.", en: "" }
+      default: true
+
+- id: thorne_vertrag
+  title:
+    de: Thornes Agent bietet einen Vertrag
+    en: ""
+  text:
+    de: >-
+      Ein Mann mit Melone und Bahnabzeichen besucht Jacobs Quelle. Mr. Thorne
+      biete festen Frachtraum zu einem besseren Tarif – gegen eine einmalige
+      „Bearbeitungsgebühr“, versteht sich.
+    en: ""
+  conditions: { minProducingWells: 1 }
+  chance: 0.6
+  choices:
+    - id: unterschreiben
+      label: { de: "Unterschreiben (200 $, Bahntarif −0,05 $)", en: "" }
+      result: { de: "Jacob unterschreibt. Der Agent tippt an die Melone.", en: "" }
+      requires: { minCash: 200 }
+      effects: { cash: -200, railTariff: -0.05 }
+    - id: ablehnen
+      label: { de: "Den Mann vom Grundstück schicken", en: "" }
+      result: { de: "Der Agent geht. Thorne vergisst so etwas nicht.", en: "" }
+      default: true

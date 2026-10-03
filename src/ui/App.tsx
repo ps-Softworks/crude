@@ -12,6 +12,7 @@ import { leaseOf, leaseTerms, optionOf, roundsLeft } from '../sim/lease';
 import { fieldStatus } from '../sim/production';
 import type { LoanResult } from '../sim/credit';
 import { balance } from './balance';
+import { events } from './events';
 import { clearAutosave, loadAutosave, writeAutosave } from './autosave';
 import { Desk } from './Desk';
 import { ChapterEndScreen } from './ChapterEndScreen';
@@ -55,11 +56,11 @@ const debugTools = debugToolsVisible(import.meta.env.DEV, window.location.search
  */
 function start(): { seed: string; game: GameState } {
   const ausUrl = params.get('seed');
-  if (ausUrl !== null) return { seed: ausUrl, game: newGame(ausUrl, balance) };
+  if (ausUrl !== null) return { seed: ausUrl, game: newGame(ausUrl, balance, events) };
   const gespeichert = loadAutosave();
   if (gespeichert) return { seed: gespeichert.seed, game: gespeichert };
   const seed = randomSeed();
-  return { seed, game: newGame(seed, balance) };
+  return { seed, game: newGame(seed, balance, events) };
 }
 
 export function App() {
@@ -102,13 +103,13 @@ export function App() {
   }
 
   function end() {
-    setGame(endRound(game, balance));
+    setGame(endRound(game, balance, events));
     setNotice(null);
   }
 
   function startNewWorld(neuerSeed: string) {
     setSeed(neuerSeed);
-    setGame(newGame(neuerSeed, balance));
+    setGame(newGame(neuerSeed, balance, events));
     setSelected(null);
     setNotice(null);
   }
@@ -157,6 +158,10 @@ export function App() {
         onEndRound={end}
         onLoan={apply}
         onSold={(state) => {
+          setGame(state);
+          setNotice(null);
+        }}
+        onEvent={(state) => {
           setGame(state);
           setNotice(null);
         }}
