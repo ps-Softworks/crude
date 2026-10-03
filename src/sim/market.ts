@@ -2,7 +2,7 @@
 // Angebot und Nachfrage. Reine Funktionen, deterministisch, ohne Zufall.
 //   P = T · (N / A)^ε · S − k, begrenzt auf priceMin..priceMax, auf Cent gerundet.
 
-import type { MarketBalance } from './balance';
+import type { Balance, MarketBalance } from './balance';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
 
@@ -23,6 +23,12 @@ export function neighbourSupply(balance: MarketBalance, round: number): number {
 }
 
 /** Jacobs Förderung der letzten Runde: Summe über alle fündigen Quellen. */
+/** Bullards Förderung: Anzahl fündiger Quellen × ratePerWell. */
+export function rivalSupply(state: Pick<Pick<GameState, 'rival'>, 'rival'>, ratePerWell: number): number {
+  const foundCount = state.rival.wells.filter((w) => w.status === 'found').length;
+  return foundCount * ratePerWell;
+}
+
 export function jacobSupply(state: Pick<GameState, 'wells'>): number {
   return state.wells
     .filter((w) => w.status === 'found')
@@ -46,15 +52,17 @@ function formatPrice(value: number): string {
  * Rundenende: Aus Jacobs Förderung und der Förderung der Nachbarn wird der
  * Posted Price für die nächste Runde. Große Sprünge kommen ins Protokoll.
  */
-export function advanceMarket(input: GameState, balance: MarketBalance): GameState {
-  const supply = jacobSupply(input) + neighbourSupply(balance, input.round);
+export function advanceMarket(input: GameState, balance: MarketBalance | Balance): GameState {
+  const marketBalance = 'market' in balance ? balance.market : balance as MarketBalance;
+  const ratePerWell = 'rivals' in balance ? balance.rivals.bullard.ratePerWell : 0;
+  const supply = jacobSupply(input) + neighbourSupply(marketBalance, input.round) + rivalSupply(input, ratePerWell);
   const oldPrice = input.postedPrice;
-  const newPrice = computePrice(balance, supply);
+  const newPrice = computePrice(marketBalance, supply);
 
   let log = input.log;
   const change = Math.abs(newPrice - oldPrice) / oldPrice;
   // Kleine Toleranz, damit genau 10 % trotz Rundung als 10 % zählen.
-  if (newPrice !== oldPrice && change >= balance.newsThreshold - 1e-9) {
+  if (newPrice !== oldPrice && change >= marketBalance.newsThreshold - 1e-9) {
     const text =
       newPrice < oldPrice
         ? `Der Trust senkt den Posted Price auf ${formatPrice(newPrice)} – Überangebot am Salt Hill.`

@@ -164,7 +164,7 @@ describe('Ölpreis (1.9)', () => {
     });
 
     it('Szenario 2 (Gegenprobe): niemand bohrt neu – der Preis bleibt stehen', () => {
-      const ruhig = mitMarkt(balance, { neighbours: { ...market.neighbours, newWellsPerRound: 0 } });
+      const ruhig = mitMarkt(balance, { neighbours: { ...market.neighbours, newWellsPerRound: 0 } }, { rivals: { bullard: { ...balance.rivals.bullard, minUtility: Infinity } } });
       const s = partie('salt-hill', ruhig, false);
       expect(new Set(s.priceHistory)).toEqual(new Set([s.priceHistory[0]]));
       expect(s.log.some((l) => l.includes('Posted Price'))).toBe(false);

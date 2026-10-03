@@ -10,7 +10,7 @@ import type { Parcel } from './geology';
 import type { Rng } from './rng';
 
 /** Wer eine Pacht oder Option hält. Der Rivale kommt mit 1.12 dazu. */
-export type Holder = 'jacob';
+export type Holder = 'jacob' | 'bullard';
 
 export interface Lease {
   parcelId: string;
@@ -302,11 +302,15 @@ export function settleLeases(state: GameState, balance: Balance): GameState {
   for (const lease of running) {
     if (lease.drilled) {
       leases.push(lease);
-    } else if (cash >= rent) {
+    } else if (lease.holder === 'jacob' && cash >= rent) {
+      // Verzögerungszins NUR für Jacobs Pachten
       cash -= rent;
       leases.push(lease);
-    } else {
+    } else if (lease.holder === 'jacob') {
       log.push(`${date}: Kein Geld für den Verzögerungszins – die Pacht auf Parzelle ${label(lease.parcelId)} ist verfallen.`);
+    } else {
+      // Bullards Pachten laufen ohne Zins
+      leases.push(lease);
     }
   }
 

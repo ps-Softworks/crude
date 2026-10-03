@@ -205,7 +205,7 @@ describe('Laufzeit und Verzögerungszins', () => {
     const cash = state.cash;
     state = endRound(state, balance);
     expect(state.cash).toBe(cash - 2 * balance.lease.delayRental);
-    expect(state.leases).toHaveLength(2);
+    expect(state.leases.filter(l => l.holder === 'jacob')).toHaveLength(2);
   });
 
   it('zahlt über die ganze Laufzeit genau termRounds − 1 mal Zins', () => {

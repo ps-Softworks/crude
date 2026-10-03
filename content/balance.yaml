@@ -215,3 +215,20 @@ credit:
 # Wer sie übersteht, macht weiter; wer sie verstreichen lässt, ist pleite.
 bankruptcy:
   graceRounds: 2           # Runden Frist, bevor es Konkurs gibt
+
+# Rivale Bullard (GDD §9.2, §15): pachtet und bohrt nach Gewinn-Formel.
+rivals:
+  bullard:
+    name: '"Big" Jim Bullard'
+    personality: { risk: 5, aggression: 5, loyalty: 5, grudge: 5, patience: 1 }
+    startCash: 6000
+    actionsPerRound: 1
+    valuePerFind: 8000
+    riskWeight: 0.10
+    nearJacobBonus: 300
+    nearFindChance: 0.15
+    noise: 200
+    minUtility: 0
+    drillRounds: 1
+    ratePerWell: 400
+    incomePerWell: 300

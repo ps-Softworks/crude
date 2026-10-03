@@ -12,7 +12,6 @@ import { parcelLabel, settleLeases, startOptions, type Lease, type LeaseOption }
 import { advanceProduction } from './production';
 import { Rng, seedFromString, type RngState } from './rng';
 import { advanceMarket, computePrice, neighbourSupply } from './market';
-import { newRival, advanceRival, type RivalState } from './rival';
 import { advanceTransport } from './transport';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
@@ -100,7 +99,6 @@ export function newGame(seed: string, balance: Balance): GameState {
     ending: null,
     log: [],
     roundLogStart: 0,
-    rival: newRival(seed, balance),
   };
   // Erst die Startoptionen, dann die Prognosen: so bleiben Karte und Startoptionen
   // bei gleichem Seed so, wie sie es vor der Prognose waren.
@@ -131,11 +129,10 @@ export function endRound(input: GameState, balance: Balance): GameState {
   if (input.finished) return input;
   const roundLogStart = input.log.length;
   const gefoerdert = advanceProduction(input, balance);
-  const markt = advanceMarket(gefoerdert, balance);
+  const markt = advanceMarket(gefoerdert, balance.market);
   const gebohrt = advanceDrilling(markt, balance);
   const gepachtet = settleLeases(gebohrt, balance);
-  const rivale = advanceRival(gepachtet, balance);
-  const verzinst = settleLoans(rivale, balance);
+  const verzinst = settleLoans(gepachtet, balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   const gefahren = advanceTransport(verzinst, balance);
   const state = { ...checkBankruptcy(gefahren, balance), roundLogStart };

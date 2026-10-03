@@ -185,7 +185,44 @@ export interface BankruptcyBalance {
   graceRounds: number;
 }
 
+
+/** Rivale-Persönlichkeit: Werte von 1–5 (GDD §9.2). */
+export interface RivalPersonality {
+  /** Risikoneigung: 1 = konservativ, 5 = abenteuerlustig. */
+  risk: number;
+  /** Aggressivität: 1 = passiv, 5 = kämpferisch. */
+  aggression: number;
+  /** Treue zu Verträgen: 1 = treulos, 5 = zuverlässig. */
+  loyalty: number;
+  /** Nachtragsfähigkeit: 1 = vergesslich, 5 = rachsüchtig. */
+  grudge: number;
+  /** Geduld: 1 = ungeduldig, 5 = geduldig. */
+  patience: number;
+}
+
+/** Rivale Bullard: Pacht- und Bohrparameter. */
+export interface RivalBalance {
+  name: string;
+  personality: RivalPersonality;
+  startCash: number;
+  actionsPerRound: number;
+  valuePerFind: number;
+  riskWeight: number;
+  nearJacobBonus: number;
+  nearFindChance: number;
+  noise: number;
+  minUtility: number;
+  drillRounds: number;
+  ratePerWell: number;
+  incomePerWell: number;
+}
+
+/** Rivalen im Spiel. */
+export interface RivalsBalance {
+  bullard: RivalBalance;
+}
 export interface Balance {
+  rivals: RivalsBalance;
   start: { cash: number; year: number; rounds: number };
   map: { width: number; height: number; saltHill: { x: number; y: number } };
   geology: {
@@ -567,6 +604,49 @@ function parseCredit(raw: unknown): CreditBalance {
   };
 }
 
+
+function parseRivals(raw: unknown): RivalsBalance {
+  const rivalsBlock = (raw as { rivals?: unknown })?.rivals;
+  if (!rivalsBlock || typeof rivalsBlock !== 'object') {
+    throw new BalanceError('balance.yaml: Block "rivals" fehlt');
+  }
+
+  const bullardBlock = (rivalsBlock as { bullard?: unknown })?.bullard;
+  if (!bullardBlock || typeof bullardBlock !== 'object') {
+    throw new BalanceError('balance.yaml: Block "rivals.bullard" fehlt');
+  }
+
+  const personality = (bullardBlock as { personality?: unknown })?.personality;
+  if (!personality || typeof personality !== 'object') {
+    throw new BalanceError('balance.yaml: "rivals.bullard.personality" fehlt oder ist kein Objekt');
+  }
+
+  const personality_validated: RivalPersonality = {
+    risk: integerInRange(personality, 'risk', 1, 5),
+    aggression: integerInRange(personality, 'aggression', 1, 5),
+    loyalty: integerInRange(personality, 'loyalty', 1, 5),
+    grudge: integerInRange(personality, 'grudge', 1, 5),
+    patience: integerInRange(personality, 'patience', 1, 5),
+  };
+
+  const bullard: RivalBalance = {
+    name: text(bullardBlock, 'name', 'rivals.bullard'),
+    personality: personality_validated,
+    startCash: positiveInt(bullardBlock, 'startCash'),
+    actionsPerRound: positiveInt(bullardBlock, 'actionsPerRound'),
+    valuePerFind: num(bullardBlock, 'valuePerFind'),
+    riskWeight: num(bullardBlock, 'riskWeight'),
+    nearJacobBonus: num(bullardBlock, 'nearJacobBonus'),
+    nearFindChance: share(bullardBlock, 'nearFindChance'),
+    noise: num(bullardBlock, 'noise'),
+    minUtility: num(bullardBlock, 'minUtility'),
+    drillRounds: positiveInt(bullardBlock, 'drillRounds'),
+    ratePerWell: num(bullardBlock, 'ratePerWell'),
+    incomePerWell: num(bullardBlock, 'incomePerWell'),
+  };
+
+  return { bullard };
+}
 function parseBankruptcy(raw: unknown): BankruptcyBalance {
   const block = (raw as { bankruptcy?: unknown })?.bankruptcy;
   if (!block || typeof block !== 'object') {
@@ -628,6 +708,7 @@ export function parseBalance(raw: unknown): Balance {
     transport: parseTransport(raw),
     credit: parseCredit(raw),
     bankruptcy: parseBankruptcy(raw),
+    rivals: parseRivals(raw),
   };
 
   const { width, height, saltHill } = balance.map;
