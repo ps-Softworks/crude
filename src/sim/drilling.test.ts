@@ -79,11 +79,11 @@ describe('Ölstufe ziehen', () => {
     expect(rollOilStage(balance, { ...parcel(game()), geology: 'dry' }, 0)).toBeNull();
   });
 
-  it('teilt nach den kumulierten Anteilen (0,6 / 0,3 / 0,1)', () => {
+  it('teilt nach den kumulierten Anteilen (0,7 / 0,2 / 0,1)', () => {
     const p = parcel(game());
     expect(rollOilStage(balance, p, 0)).toBe(1);
-    expect(rollOilStage(balance, p, 0.599)).toBe(1);
-    expect(rollOilStage(balance, p, 0.6)).toBe(2);
+    expect(rollOilStage(balance, p, 0.699)).toBe(1);
+    expect(rollOilStage(balance, p, 0.7)).toBe(2);
     expect(rollOilStage(balance, p, 0.899)).toBe(2);
     expect(rollOilStage(balance, p, 0.9)).toBe(3);
     expect(rollOilStage(balance, p, 0.9999)).toBe(3);
@@ -93,8 +93,8 @@ describe('Ölstufe ziehen', () => {
 describe('Chance beim Tieferbohren', () => {
   it('stimmt mit der Handrechnung überein', () => {
     const p = parcel(game());
-    const q = trueChance(balance, p); // Randzone: 0,25
-    expect(deeperChance(balance, p, 1)).toBeCloseTo((q * 0.3) / (1 - q * 0.6), 10);
+    const q = trueChance(balance, p); // Randzone: 0,45
+    expect(deeperChance(balance, p, 1)).toBeCloseTo((q * 0.2) / (1 - q * 0.7), 10);
     expect(deeperChance(balance, p, 2)).toBeCloseTo((q * 0.1) / (1 - q * 0.9), 10);
     expect(deeperChance(balance, p, 3)).toBe(0);
   });
@@ -102,7 +102,7 @@ describe('Chance beim Tieferbohren', () => {
   it('ist konsistent: Fund in Stufe 1 + weiter + weiter ergibt die Gesamtchance', () => {
     const p = parcel(game());
     const q = trueChance(balance, p);
-    const d1 = q * 0.6;
+    const d1 = q * 0.7;
     const total = d1 + (1 - d1) * deeperChance(balance, p, 1) +
       (1 - d1) * (1 - deeperChance(balance, p, 1)) * deeperChance(balance, p, 2);
     expect(total).toBeCloseTo(q, 10);
@@ -117,7 +117,7 @@ describe('Bohrung beginnen', () => {
   });
 
   it('geht nicht ohne genug Geld', () => {
-    const r = startDrilling(game('small', 1000), balance, PARCEL);
+    const r = startDrilling(game('small', stageCost(balance, 1) - 1), balance, PARCEL);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.reason).toMatch(/Nicht genug Geld/);
   });
@@ -136,7 +136,7 @@ describe('Bohrung beginnen', () => {
     const state = ok(startDrilling(before, balance, PARCEL));
     expect(state.cash).toBe(before.cash - stageCost(balance, 1));
     expect(state.leases[0].drilled).toBe(true);
-    expect(well(state)).toMatchObject({ stage: 1, status: 'drilling', roundsLeft: 1, spent: 1500 });
+    expect(well(state)).toMatchObject({ stage: 1, status: 'drilling', roundsLeft: 1, spent: 1000 });
     expect(state.rng).not.toBe(before.rng);
     // Laufzeit wäre jetzt vorbei – gebohrt verfällt sie trotzdem nicht.
     expect(settleLeases(state, balance).leases).toHaveLength(1);
@@ -173,7 +173,7 @@ describe('Rundenende beim Bohren', () => {
 
     const fished = ok(fishWell(stuck, balance, PARCEL));
     expect(fished.cash).toBe(stuck.cash - balance.drilling.fishingCost);
-    expect(well(fished)).toMatchObject({ status: 'drilling', roundsLeft: 1, spent: 1500 + 300 });
+    expect(well(fished)).toMatchObject({ status: 'drilling', roundsLeft: 1, spent: 1000 + 300 });
 
     const given = ok(abandonWell(stuck, balance, PARCEL));
     expect(well(given).status).toBe('dry');
@@ -214,12 +214,12 @@ describe('Tiefer bohren', () => {
     let state = advanceDrilling(setWell(ok(startDrilling(game(), balance, PARCEL)), { oilStage: null }), SAFE);
     const cash = state.cash;
     state = ok(drillDeeper(state, balance, PARCEL));
-    expect(well(state)).toMatchObject({ stage: 2, status: 'drilling', roundsLeft: 1, spent: 1500 + 2400 });
-    expect(state.cash).toBe(cash - 2400);
+    expect(well(state)).toMatchObject({ stage: 2, status: 'drilling', roundsLeft: 1, spent: 1000 + 1100 });
+    expect(state.cash).toBe(cash - 1100);
 
     state = advanceDrilling(state, SAFE);
     state = ok(drillDeeper(state, balance, PARCEL));
-    expect(well(state)).toMatchObject({ stage: 3, roundsLeft: 2, spent: 1500 + 2400 + 3800 });
+    expect(well(state)).toMatchObject({ stage: 3, roundsLeft: 2, spent: 1000 + 1100 + 1400 });
     state = advanceDrilling(state, SAFE);
     expect(well(state)).toMatchObject({ status: 'drilling', roundsLeft: 1 });
     state = advanceDrilling(state, SAFE);

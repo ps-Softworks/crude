@@ -5,7 +5,7 @@ import { loadBalance } from './testBalance';
 describe('Spielzahlen (balance.yaml)', () => {
   it('die echte Datei ist gültig', () => {
     const balance = loadBalance();
-    expect(balance.start.cash).toBe(2000);
+    expect(balance.start.cash).toBe(2500);
     expect(balance.start.rounds).toBe(16);
   });
 
@@ -145,7 +145,7 @@ describe('Spielzahlen (balance.yaml)', () => {
 
     it('liest die Förderungs-Zahlen aus der echten Datei', () => {
       const { production } = loadBalance();
-      expect(production.initialRateShare).toEqual({ small: 0.2, gusher: 0.15 });
+      expect(production.initialRateShare).toEqual({ small: 0.25, gusher: 0.3 });
       expect(production.decline).toBe(0.12);
       expect(production.freeWells).toBe(4);
       expect(production.pressureLossPerWell).toBe(0.15);
@@ -229,16 +229,16 @@ describe('Spielzahlen (balance.yaml)', () => {
     it('liest Markt und Transport aus der echten Datei', () => {
       const { market, transport } = loadBalance();
       expect(market.basePrice).toBe(1.00);
-      expect(market.demand).toBe(5000);
-      expect(market.elasticity).toBe(1.5);
+      expect(market.demand).toBe(150000);
+      expect(market.elasticity).toBe(1.2);
       expect(market.shock).toBe(1.0);
       expect(market.regionalDiscount).toBe(0.00);
       expect(market.priceMin).toBe(0.20);
       expect(market.priceMax).toBe(1.60);
-      expect(market.neighbours).toEqual({ startWells: 12, newWellsPerRound: 2, ratePerWell: 400 });
+      expect(market.neighbours).toEqual({ startWells: 30, newWellsPerRound: 1, ratePerWell: 4000 });
       expect(market.newsThreshold).toBe(0.10);
-      expect(transport.wagon).toEqual({ label: 'Fuhrwerk', costPerBarrel: 0.6, capacity: 600 });
-      expect(transport.rail).toEqual({ label: 'Bahn', costPerBarrel: 0.25, capacity: 3000 });
+      expect(transport.wagon).toEqual({ label: 'Fuhrwerk', costPerBarrel: 0.6, capacity: 3000 });
+      expect(transport.rail).toEqual({ label: 'Bahn', costPerBarrel: 0.25, capacity: 20000 });
       expect(transport.thorne).toEqual({ hikeChance: 0.2, hikeStep: 0.1, maxTariff: 0.8 });
     });
 
@@ -321,7 +321,7 @@ describe('Spielzahlen (balance.yaml)', () => {
       const { credit, bankruptcy } = loadBalance();
       expect(credit.startRating).toBe('B');
       expect(credit.minLoan).toBe(500);
-      expect(credit.limitBase).toBe(3000);
+      expect(credit.limitBase).toBe(5000);
       expect(credit.limitPerWell).toBe(2000);
       expect(credit.rates).toEqual({ A: 0.05, B: 0.07, C: 0.1, D: 0.15 });
       expect(credit.collateralDiscount).toBe(0.02);
@@ -330,7 +330,7 @@ describe('Spielzahlen (balance.yaml)', () => {
       expect(credit.usageD).toBe(0.6);
       expect(credit.missedC).toBe(1);
       expect(credit.missedD).toBe(2);
-      expect(credit.emergency).toEqual({ limit: 2000, rate: 0.4 });
+      expect(credit.emergency).toEqual({ limit: 1000, rate: 0.4 });
       expect(bankruptcy.graceRounds).toBe(2);
     });
 
@@ -429,6 +429,13 @@ describe('Spielzahlen (balance.yaml)', () => {
       const s = raw();
       (s.bots.cautious as Record<string, number>).cashReserve = -1;
       expect(() => parseBalance(s)).toThrow(/bots\.cautious\.cashReserve/);
+    });
+
+    it('meldet gierig.maxUndrilled unter 1', () => {
+      expect(loadBalance().bots.greedy.maxUndrilled).toBe(1);
+      const r = raw();
+      (r.bots.greedy as Record<string, number>).maxUndrilled = 0;
+      expect(() => parseBalance(r)).toThrow(/bots\.greedy\.maxUndrilled/);
     });
   });
 });

@@ -95,10 +95,13 @@ function cautiousTurn(state: GameState, balance: Balance): GameState {
       state = act(state, balance, parcelId, 'drill');
     }
   }
-  const best = freeParcels(state, minChance)[0];
-  if (best !== undefined && state.cash - leaseTerms(state, balance, best).optionFee >= cashReserve) {
-    state = act(state, balance, best, 'option');
-  }
+  // Eine Option nur, wenn danach auch der Bonus noch bezahlbar ist – sonst verfällt
+  // sie ungenutzt. Die beste Prognose, die sich das leisten kann.
+  const best = freeParcels(state, minChance).find((id) => {
+    const t = leaseTerms(state, balance, id);
+    return state.cash - t.optionFee - t.bonus >= cashReserve;
+  });
+  if (best !== undefined) state = act(state, balance, best, 'option');
   return state;
 }
 
@@ -107,13 +110,16 @@ function cautiousTurn(state: GameState, balance: Balance): GameState {
 /**
  * Versucht die Aktion; fehlt Geld, leiht der Bot den fehlenden Betrag bei der
  * Bank (mindestens minLoan, höchstens headroom) und versucht es noch einmal.
+ * keep: so viel Bargeld soll danach noch in der Kasse liegen.
  * Klappt es auch dann nicht, bleibt der Zustand ohne Kredit.
  */
-function withLoan(state: GameState, balance: Balance, parcelId: string, kind: DeskActionKind, cost: number): GameState {
-  const first = applyAction(state, balance, parcelId, kind);
-  if (first.ok) return first.state;
-  if (state.cash >= cost) return state;
-  const amount = Math.max(balance.credit.minLoan, Math.ceil(cost - state.cash));
+function withLoan(state: GameState, balance: Balance, parcelId: string, kind: DeskActionKind, cost: number, keep = 0): GameState {
+  if (state.cash - cost >= keep) {
+    const first = applyAction(state, balance, parcelId, kind);
+    if (first.ok) return first.state;
+    if (state.cash >= cost) return state;
+  }
+  const amount = Math.max(balance.credit.minLoan, Math.ceil(cost + keep - state.cash));
   if (amount > headroom(state, balance)) return state;
   const loan = takeLoan(state, balance, amount);
   if (!loan.ok) return state;
@@ -121,31 +127,56 @@ function withLoan(state: GameState, balance: Balance, parcelId: string, kind: De
   return second.ok ? second.state : state;
 }
 
+/** Eigene Pachten ohne Bohrung. */
+function undrilled(state: GameState): string[] {
+  return jacobsLeases(state).filter((id) => !wellOf(state, id));
+}
+
+/**
+ * Verzögerungszins, der am Rundenende fällig wird. Der gierige Bot behält ihn als
+ * Bargeld – fehlt er, verfällt die Pacht sofort.
+ */
+function rentDue(state: GameState, balance: Balance): number {
+  return undrilled(state).length * balance.lease.delayRental;
+}
+
 function greedyTurn(state: GameState, balance: Balance): GameState {
   state = sell(state, balance, 1);
   for (const well of openWells(state)) {
-    if (well.status === 'stuck') {
-      state = withLoan(state, balance, well.parcelId, 'fish', balance.drilling.fishingCost);
-    } else if (well.stage < balance.drilling.stages.length) {
-      state = withLoan(state, balance, well.parcelId, 'deeper', stageCost(balance, well.stage + 1));
+    if (well.status === 'stuck' || well.stage < balance.drilling.stages.length) {
+      const vorher = state;
+      state =
+        well.status === 'stuck'
+          ? withLoan(state, balance, well.parcelId, 'fish', balance.drilling.fishingCost, rentDue(state, balance))
+          : withLoan(state, balance, well.parcelId, 'deeper', stageCost(balance, well.stage + 1), rentDue(state, balance));
+      // Reicht auch der Kredit nicht, gibt der Bot auf – sonst bliebe der Turm
+      // für den Rest des Kapitels an dieser Bohrung hängen.
+      if (state === vorher) state = act(state, balance, well.parcelId, 'abandon');
     } else {
       // Tiefer geht es mit dem Turm nicht – dann bleibt nur aufgeben.
       state = act(state, balance, well.parcelId, 'abandon');
     }
   }
   for (const option of jacobsOptions(state)) {
-    state = withLoan(state, balance, option.parcelId, 'exercise', option.bonus);
+    state = withLoan(state, balance, option.parcelId, 'exercise', option.bonus, rentDue(state, balance) + balance.lease.delayRental);
   }
   for (const parcelId of jacobsLeases(state)) {
-    if (!wellOf(state, parcelId)) state = withLoan(state, balance, parcelId, 'drill', stageCost(balance, 1));
+    if (!wellOf(state, parcelId)) {
+      state = withLoan(state, balance, parcelId, 'drill', stageCost(balance, 1), rentDue(state, balance) - balance.lease.delayRental);
+    }
   }
-  // Pachten, solange Kasse und Bankrahmen reichen – die beste Prognose zuerst.
+  // Pachten, solange Kasse und Bankrahmen reichen – die beste Prognose zuerst,
+  // die sich noch bezahlen lässt. Für jede ungebohrte Pacht bleibt Geld für die
+  // erste Bohrstufe übrig; sonst verfiele die Pacht ungebohrt.
   for (;;) {
-    const best = freeParcels(state, balance.bots.greedy.minChance)[0];
+    const ungebohrt = undrilled(state).length;
+    if (ungebohrt >= balance.bots.greedy.maxUndrilled) break;
+    const geld = state.cash + headroom(state, balance) - (ungebohrt + 1) * stageCost(balance, 1);
+    const best = freeParcels(state, balance.bots.greedy.minChance).find((id) => leaseTerms(state, balance, id).bonus <= geld);
     if (best === undefined) break;
     const bonus = leaseTerms(state, balance, best).bonus;
-    if (state.cash + headroom(state, balance) < bonus) break;
-    const next = withLoan(state, balance, best, 'lease', bonus);
+    // Bargeld für den Verzögerungszins behalten – ohne ihn verfällt die Pacht sofort.
+    const next = withLoan(state, balance, best, 'lease', bonus, rentDue(state, balance) + balance.lease.delayRental);
     if (next === state) break;
     state = next;
   }
@@ -214,27 +245,59 @@ export interface BotRow {
   games: number;
   bankruptRate: number;
   meanEmpire: number;
+  /** Anteil der Seeds, in denen diese Strategie den höchsten Imperiumswert hat (Gleichstand wird geteilt). */
+  winRate: number;
+}
+
+/**
+ * Wer gewinnt einen Seed? Die Strategie mit dem höchsten Imperiumswert. Eine
+ * Pleite zählt immer als letzter Platz – auch hinter einem Imperiumswert unter
+ * null, denn wer pleite ist, hat das Kapitel verloren. Bei Gleichstand teilen
+ * sich die Besten den Sieg. Gibt je Strategie den Sieganteil 0–1 zurück.
+ */
+export function seedWinners(results: readonly { strategy: Strategy; bankrupt: boolean; empire: number }[]): Map<Strategy, number> {
+  const rang = (r: { bankrupt: boolean; empire: number }) => (r.bankrupt ? -Infinity : r.empire);
+  const bester = Math.max(...results.map(rang));
+  const sieger = results.filter((r) => rang(r) === bester);
+  return new Map(sieger.map((r) => [r.strategy, 1 / sieger.length]));
 }
 
 /** Spielt games Partien je Strategie, für jede Strategie mit denselben Seeds. */
 export function runBots(balance: Balance, games = balance.bots.games): BotRow[] {
+  const summe = new Map<Strategy, { pleiten: number; wert: number; siege: number }>(
+    STRATEGIES.map((s) => [s, { pleiten: 0, wert: 0, siege: 0 }]),
+  );
+  for (let i = 0; i < games; i++) {
+    const seed = `${balance.bots.seedPrefix}-${i}`;
+    const results = STRATEGIES.map((strategy) => {
+      const r = playGame(seed, balance, strategy);
+      const s = summe.get(strategy)!;
+      if (r.bankrupt) s.pleiten++;
+      s.wert += r.empire;
+      return { strategy, bankrupt: r.bankrupt, empire: r.empire };
+    });
+    for (const [strategy, anteil] of seedWinners(results)) summe.get(strategy)!.siege += anteil;
+  }
   return STRATEGIES.map((strategy) => {
-    let pleiten = 0;
-    let summe = 0;
-    for (let i = 0; i < games; i++) {
-      const r = playGame(`${balance.bots.seedPrefix}-${i}`, balance, strategy);
-      if (r.bankrupt) pleiten++;
-      summe += r.empire;
-    }
-    return { strategy, games, bankruptRate: games > 0 ? pleiten / games : 0, meanEmpire: games > 0 ? summe / games : 0 };
+    const s = summe.get(strategy)!;
+    const anteil = (x: number) => (games > 0 ? x / games : 0);
+    return { strategy, games, bankruptRate: anteil(s.pleiten), meanEmpire: anteil(s.wert), winRate: anteil(s.siege) };
   });
 }
 
-/** Markdown-Tabelle: Quote in % mit einer Nachkommastelle, Wert in ganzen $. */
+function prozent(value: number): string {
+  return `${(value * 100).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
+}
+
+/** Markdown-Tabelle: Quoten in % mit einer Nachkommastelle, Wert in ganzen $. */
 export function botTable(rows: readonly BotRow[]): string {
   const zeilen = rows.map(
     (r) =>
-      `| ${r.strategy} | ${r.games.toLocaleString('de-DE')} | ${(r.bankruptRate * 100).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} % | ${Math.round(r.meanEmpire).toLocaleString('de-DE')} $ |`,
+      `| ${r.strategy} | ${r.games.toLocaleString('de-DE')} | ${prozent(r.bankruptRate)} | ${Math.round(r.meanEmpire).toLocaleString('de-DE')} $ | ${prozent(r.winRate)} |`,
   );
-  return ['| Strategie | Partien | Bankrottquote | Ø Imperiumswert |', '| --- | ---: | ---: | ---: |', ...zeilen].join('\n');
+  return [
+    '| Strategie | Partien | Bankrottquote | Ø Imperiumswert | Siegquote |',
+    '| --- | ---: | ---: | ---: | ---: |',
+    ...zeilen,
+  ].join('\n');
 }

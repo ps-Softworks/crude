@@ -196,7 +196,8 @@ export interface BotsBalance {
   /** vorsichtig: Fundchance ab minChance, Rücklage cashReserve, höchstens Stufe maxStage. */
   cautious: { minChance: number; cashReserve: number; maxStage: number };
   /** gierig: pachtet ab minChance. */
-  greedy: { minChance: number };
+  /** maxUndrilled: so viele ungebohrte Pachten hält er höchstens – mehr schafft der Turm nicht. */
+  greedy: { minChance: number; maxUndrilled: number };
   /** zufällig: so viele Aktionen je Runde. */
   random: { actionsPerRound: number };
 }
@@ -690,7 +691,7 @@ function parseBots(raw: unknown): BotsBalance {
       cashReserve: nonNegative(raw, 'bots.cautious.cashReserve'),
       maxStage: positiveInt(raw, 'bots.cautious.maxStage'),
     },
-    greedy: { minChance: share(raw, 'bots.greedy.minChance') },
+    greedy: { minChance: share(raw, 'bots.greedy.minChance'), maxUndrilled: positiveInt(raw, 'bots.greedy.maxUndrilled') },
     random: { actionsPerRound: positiveInt(raw, 'bots.random.actionsPerRound') },
   };
 }

@@ -286,14 +286,14 @@ describe('Anfangsrate', () => {
     expect(rate).toBeGreaterThan(0);
   });
 
-  it('ein Gusher nimmt seinen eigenen, kleineren Anteil', () => {
+  it('ein Gusher nimmt seinen eigenen, größeren Anteil (mehr Druck)', () => {
     const klein = spiel(1, 'klein', balance, 'small');
     const gusher = spiel(1, 'klein', balance, 'gusher');
-    expect(ANTEIL.gusher).toBeLessThan(ANTEIL.small);
+    expect(ANTEIL.gusher).toBeGreaterThan(ANTEIL.small);
     expect(stand(gusher, 0).initialRate).toBe(
       initialRate(balance, gusher, { parcelId: gusher.wells[0].parcelId, result: 'gusher' }),
     );
-    expect(stand(gusher, 0).initialRate).toBeLessThan(stand(klein, 0).initialRate);
+    expect(stand(gusher, 0).initialRate).toBeGreaterThan(stand(klein, 0).initialRate);
   });
 
   it('der echte Fund richtet sich nach der Art: kleine Quelle und Gusher', () => {

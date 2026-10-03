@@ -3,7 +3,7 @@
 # und den Papierprototyp (0.7–0.9) ersetzt. Nur hier ändern, nicht im Code.
 
 start:
-  cash: 2000          # $ Bargeld bei Spielbeginn (GDD §13)
+  cash: 2500          # $ Bargeld bei Spielbeginn (GDD §13: 2.000; 1.15: zwei Startbohrungen müssen drin sein)
   year: 88            # Jahr der Föderation
   rounds: 16          # Runden in Kapitel 1 (ein Quartal pro Runde)
 
@@ -25,22 +25,24 @@ geology:
       gusher: 0.15
     - name: ring
       maxDistance: 3.5
-      dry: 0.50
-      small: 0.42
+      dry: 0.40
+      small: 0.52
       gusher: 0.08
     - name: rand
       maxDistance: 99
-      dry: 0.75
-      small: 0.23
+      dry: 0.55
+      small: 0.43
       gusher: 0.02
-  # Förderbare Gesamtmenge in Barrel (gleichverteilt zwischen min und max)
+  # Förderbare Gesamtmenge in Barrel (gleichverteilt zwischen min und max).
+  # 1.15: deutlich angehoben (vorher 2.000–12.000 und 30.000–120.000), damit die Anfangsrate im GDD-Rahmen liegt
+  # (kleiner Fund 50–125 bbl/Tag, Gusher 200–650 bbl/Tag).
   reserves:
     small:
-      min: 2000
-      max: 12000
+      min: 18000
+      max: 45000
     gusher:
-      min: 30000
-      max: 120000
+      min: 60000
+      max: 200000
 
 # Pacht (GDD §5, §15). Bonus und Förderzins hängen von der Lage zum nächsten
 # bekannten Fund und vom Landbesitzer ab.
@@ -61,7 +63,7 @@ lease:
     - name: nachbar
       label: Nachbar eines Funds
       maxDistance: 2
-      bonus: 2000
+      bonus: 1000          # 1.15: vorher 2.000 – sonst bleibt Nachbarland vor dem ersten Fund unbezahlbar
       royalty: 0.1666667  # 1/6
     - name: randlage
       label: Randlage
@@ -113,8 +115,8 @@ production:
   # Anfangsrate je Runde als Anteil der Reserve der eigenen Parzelle – für
   # kleine Funde und für Gusher je eigener Wert.
   initialRateShare:
-    small: 0.20              # PLATZHALTER
-    gusher: 0.15             # PLATZHALTER
+    small: 0.25              # PLATZHALTER
+    gusher: 0.30             # PLATZHALTER
   decline: 0.12              # PLATZHALTER: Rückgang je Quartal (GDD: 8–15 %)
   freeWells: 4               # PLATZHALTER: so viele Quellen verträgt ein Feld ohne Druckverlust
   pressureLossPerWell: 0.15  # PLATZHALTER: Druckverlust je Quelle über freeWells
@@ -142,28 +144,31 @@ drilling:
   rigs: 1                 # PLATZHALTER: gleichzeitige Bohrungen (geliehener Turm)
   accidentCost: 200       # PLATZHALTER: $ Entschädigung je Unfall
   fishingCost: 300        # PLATZHALTER: $ Bergung bei klemmendem Werkzeug
-  stages:                 # PLATZHALTER
-    - { depth: 300, cost: 1500, rounds: 1, oilShare: 0.6, accident: 0.04, stuck: 0.05 }
-    - { depth: 600, cost: 2400, rounds: 1, oilShare: 0.3, accident: 0.08, stuck: 0.10 }
-    - { depth: 900, cost: 3800, rounds: 2, oilShare: 0.1, accident: 0.15, stuck: 0.15 }
+  stages:                 # PLATZHALTER; 1.15: Stufe 1 unter GDD (1.500–3.000 $), damit Tieferbohren mit der Startkasse geht
+    - { depth: 300, cost: 1000, rounds: 1, oilShare: 0.7, accident: 0.04, stuck: 0.05 }
+    - { depth: 600, cost: 1100, rounds: 1, oilShare: 0.2, accident: 0.08, stuck: 0.10 }
+    - { depth: 900, cost: 1400, rounds: 2, oilShare: 0.1, accident: 0.15, stuck: 0.15 }
 
 # Markt (GDD §7.3): Der Crane Trust kauft das Öl zum Posted Price. Der Preis
 # entsteht jede Runde aus Angebot und Nachfrage am Salt Hill:
 #   P = T · (N / A)^ε · S − k, begrenzt auf priceMin..priceMax, auf Cent gerundet.
 # A = Förderung von Jacob und den Nachbarn in der Runde. Der neue Preis gilt ab
 # der nächsten Runde. Alle Werte PLATZHALTER.
+# 1.15: Ohne Jacob fällt der Preis über das Kapitel von etwa 1,30 $ auf etwa
+# 0,70 $ (Überbohrung), aber nicht unter das Fuhrwerk. Darunter drückt ihn nur
+# Jacobs eigene Förderung. Eine kleine Quelle ist etwa 5 % des Marktes.
 market:
   basePrice: 1.00          # T: Trendpreis in $ je Barrel
-  demand: 5000             # N: Nachfrage am Salt Hill in Barrel je Runde
-  elasticity: 1.5          # ε: hoch = kleines Überangebot drückt den Preis stark
+  demand: 150000           # N: Nachfrage am Salt Hill in Barrel je Runde
+  elasticity: 1.2          # ε: hoch = kleines Überangebot drückt den Preis stark
   shock: 1.0               # S: Schockfaktor (Ereignisse kommen später)
   regionalDiscount: 0.00   # k: Abschlag in $ je Barrel (Fracht läuft schon über transport)
   priceMin: 0.20           # Untergrenze in $ je Barrel
   priceMax: 1.60           # Obergrenze in $ je Barrel
   neighbours:              # Förderung der anderen Firmen am Salt Hill (bis es Rivalen gibt)
-    startWells: 12         # Bohrtürme der Nachbarn in Runde 1
-    newWellsPerRound: 2    # so viele kommen jede Runde dazu
-    ratePerWell: 400       # Barrel je Nachbarquelle und Runde
+    startWells: 30         # Bohrtürme der Nachbarn in Runde 1
+    newWellsPerRound: 1    # so viele kommen jede Runde dazu
+    ratePerWell: 4000      # Barrel je Nachbarquelle und Runde
   newsThreshold: 0.10      # Preisänderung ab 10 % kommt ins Protokoll
 
 # Transport (GDD §6): Fuhrwerk oder Bahn. Die Bahn gehört Augustus Thorne – sie
@@ -173,11 +178,11 @@ transport:
   wagon:
     label: Fuhrwerk
     costPerBarrel: 0.60     # PLATZHALTER
-    capacity: 600           # PLATZHALTER
+    capacity: 3000          # PLATZHALTER
   rail:
     label: Bahn
     costPerBarrel: 0.25     # PLATZHALTER: Starttarif
-    capacity: 3000          # PLATZHALTER
+    capacity: 20000         # PLATZHALTER
   thorne:
     hikeChance: 0.20        # PLATZHALTER: Chance je Runde mit Bahnfracht
     hikeStep: 0.10          # PLATZHALTER: Erhöhung in $ je Barrel
@@ -192,7 +197,7 @@ transport:
 credit:
   startRating: B           # Rating, mit dem Jacob in Port Ellis ankommt
   minLoan: 500             # kleinster Kredit am Stück
-  limitBase: 3000          # Bankrahmen ohne Pfand (GDD §12)
+  limitBase: 5000          # Bankrahmen ohne Pfand (GDD §12: 3.000; 1.15: Platz für 3–4 Wildcat-Bohrungen)
   limitPerWell: 2000       # Rahmen je fördernder Quelle
   rates:                   # Jahreszins je Rating (GDD §12)
     A: 0.05
@@ -208,7 +213,7 @@ credit:
   missedC: 1               # eine Runde mit Notkredit/offenen Zinsen bringt C, PLATZHALTER
   missedD: 2               # zwei solche Runden bringen D, PLATZHALTER
   emergency:               # Notkredit vom Geldverleiher
-    limit: 2000            # so viel leiht er insgesamt (GDD §12)
+    limit: 1000            # so viel leiht er insgesamt (GDD §12: 2.000; 1.15: Schuldenfalle muss zur Pleite führen können)
     rate: 0.40             # Jahreszins ohne Sicherheit
 
 # Bankrott (GDD §8): Bargeld unter null ohne Kreditrahmen startet eine Frist.
@@ -226,8 +231,8 @@ empire:
 bots:
   games: 1000              # Partien je Strategie
   seedPrefix: bot          # Seeds bot-0, bot-1, … – für jede Strategie dieselben
-  cautious: { minChance: 0.5, cashReserve: 1500, maxStage: 2 }  # vorsichtig: Fundchance ab 50 %, 1.500 $ Rücklage, höchstens Stufe 2
-  greedy: { minChance: 0.25 }                                   # gierig: pachtet ab 25 % Fundchance
+  cautious: { minChance: 0.5, cashReserve: 500, maxStage: 2 }   # vorsichtig: Fundchance ab 50 %, 500 $ Rücklage, höchstens Stufe 2
+  greedy: { minChance: 0.25, maxUndrilled: 1 }                 # gierig: pachtet ab 25 % Fundchance, hält höchstens 1 ungebohrte Pacht
   random: { actionsPerRound: 3 }                                # zufällig: so viele Aktionen je Runde
 
 # Rivale Bullard (GDD §9.2, §15): pachtet und bohrt nach Gewinn-Formel.
@@ -244,5 +249,5 @@ rivals:
     noise: 200
     minUtility: 0
     drillRounds: 1
-    ratePerWell: 400
-    incomePerWell: 300
+    ratePerWell: 4000
+    incomePerWell: 3000

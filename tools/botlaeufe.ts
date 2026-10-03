@@ -1,7 +1,7 @@
 // Bot-Läufe (Schritt 1.14): spielt je Strategie balance.bots.games Partien ohne
 // Grafik, druckt die Tabelle und schreibt sie nach docs/botlaeufe.md.
 // Aufruf: npm run bots
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import { parseBalance } from '../src/sim/balance';
 import { botTable, runBots } from '../src/sim/bots';
@@ -19,6 +19,10 @@ console.log(table);
 console.log(`\n${balance.bots.games} Partien je Strategie in ${sekunden} s.`);
 
 const datum = new Date().toISOString().slice(0, 10);
+// Alles ab "## Justierung" ist von Hand geschrieben und bleibt beim Neuschreiben stehen.
+const ziel = new URL('docs/botlaeufe.md', root);
+const alt = existsSync(ziel) ? readFileSync(ziel, 'utf8') : '';
+const handTeil = alt.includes('\n## Justierung') ? alt.slice(alt.indexOf('\n## Justierung')) : '';
 const md = `# Bot-Läufe
 
 Stand: ${datum} · Version ${version}
@@ -29,11 +33,10 @@ Stand: ${datum} · Version ${version}
 
 ${table}
 
-- **vorsichtig:** bohrt und kauft nur, wenn danach noch die Rücklage in der Kasse bleibt, nimmt nie einen Kredit.
-- **gierig:** bohrt jede Pacht, bohrt immer tiefer, pachtet, solange Kasse und Bankrahmen reichen, leiht fehlendes Geld.
+- **vorsichtig:** bohrt und kauft nur, wenn danach noch die Rücklage in der Kasse bleibt, kauft nur Optionen, deren Bonus er danach auch zahlen kann, nimmt nie selbst einen Kredit.
+- **gierig:** bohrt jede Pacht, bohrt immer tiefer (gibt auf, wenn auch ein Kredit nicht mehr reicht), pachtet die beste bezahlbare Prognose, solange Kasse und Bankrahmen reichen und höchstens so viele Pachten ungebohrt sind, wie in balance.yaml steht; leiht fehlendes Geld und behält Bargeld für den Verzögerungszins.
 - **zufällig:** wählt jede Runde einige erlaubte Aktionen per Zufall.
-
-Hinweis: Die Zahlen in content/balance.yaml sind Platzhalter, die Balance folgt in 1.15.
-`;
-writeFileSync(new URL('docs/botlaeufe.md', root), md);
+- **Siegquote:** Anteil der Seeds, in denen die Strategie den höchsten Imperiumswert hat. Eine Pleite zählt immer als letzter Platz, Gleichstand wird geteilt.
+${handTeil}`;
+writeFileSync(ziel, md);
 console.log('Geschrieben: docs/botlaeufe.md');

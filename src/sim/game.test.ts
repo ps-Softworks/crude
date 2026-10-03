@@ -18,11 +18,11 @@ describe('Spielzustand und Rundenschleife', () => {
     expect(newGame('harlan', balance).parcels).not.toEqual(newGame('brandt', balance).parcels);
   });
 
-  it('startet im Frühjahr 88 mit 2.000 $', () => {
+  it('startet im Frühjahr 88 mit 2.500 $', () => {
     const state = newGame('start', balance);
     expect(state.round).toBe(1);
     expect(formatDate(state)).toBe('Frühjahr 88');
-    expect(state.cash).toBe(2000);
+    expect(state.cash).toBe(2500);
   });
 
   it('jede Runde ist ein Quartal, nach Winter beginnt ein neues Jahr', () => {

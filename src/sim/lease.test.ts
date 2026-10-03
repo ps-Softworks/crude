@@ -90,11 +90,11 @@ describe('Konditionen: Bonus und Förderzins', () => {
     [RAND, 'verschuldet', 190, 0.1], // 0,095 → Untergrenze 10 %
     [RAND, 'misstrauisch', 230, 0.125], // 225 → 230
     [RAND, 'fromm', 140, 0.125], // 135 → 140
-    [NACHBAR, 'neutral', 2000, 1 / 6],
-    [NACHBAR, 'gierig', 2500, 1 / 6 + 0.03],
-    [NACHBAR, 'verschuldet', 2500, 1 / 6 - 0.03],
-    [NACHBAR, 'misstrauisch', 3000, 1 / 6],
-    [NACHBAR, 'fromm', 1800, 1 / 6],
+    [NACHBAR, 'neutral', 1000, 1 / 6],
+    [NACHBAR, 'gierig', 1250, 1 / 6 + 0.03],
+    [NACHBAR, 'verschuldet', 1250, 1 / 6 - 0.03],
+    [NACHBAR, 'misstrauisch', 1500, 1 / 6],
+    [NACHBAR, 'fromm', 900, 1 / 6],
     [AM_FUND, 'neutral', 8000, 0.2],
     [AM_FUND, 'gierig', 10000, 0.23],
     [AM_FUND, 'verschuldet', 10000, 0.17],
@@ -126,10 +126,10 @@ describe('Pacht kaufen', () => {
   it('zieht den Bonus ab und legt die Pacht an', () => {
     const before = withOwner(game('kauf', 2000), NACHBAR, 'fromm');
     const after = ok(buyLease(before, balance, NACHBAR));
-    expect(after.cash).toBe(200);
+    expect(after.cash).toBe(1100);
     expect(leaseOf(after, NACHBAR)).toMatchObject({
       holder: 'jacob',
-      bonus: 1800,
+      bonus: 900,
       startRound: 1,
       expiresAfterRound: 4,
       drilled: false,
@@ -353,9 +353,17 @@ describe('Welt und Determinismus', () => {
   });
 
   it('die Geologie je Seed ist dieselbe wie vor Schritt 1.4', () => {
-    // Fingerabdrücke wurden vor dem Einbau der Landbesitzer aufgenommen.
+    // Fingerabdrücke wurden vor dem Einbau der Landbesitzer aufgenommen – mit den
+    // Geologie-Zahlen von damals (1.15 hat Zonen und Reserven neu justiert).
+    const damals: Balance = structuredClone(balance);
+    damals.geology.zones = [
+      { name: 'kern', maxDistance: 1.5, dry: 0.3, small: 0.55, gusher: 0.15 },
+      { name: 'ring', maxDistance: 3.5, dry: 0.5, small: 0.42, gusher: 0.08 },
+      { name: 'rand', maxDistance: 99, dry: 0.75, small: 0.23, gusher: 0.02 },
+    ];
+    damals.geology.reserves = { small: { min: 2000, max: 12000 }, gusher: { min: 30000, max: 120000 } };
     const fingerprint = (seed: string) => {
-      const parcels = generateParcels(balance, new Rng(seedFromString(seed)));
+      const parcels = generateParcels(damals, new Rng(seedFromString(seed)));
       const text = parcels.map((p) => `${p.geology}:${p.reserves}`).join(',');
       let h = 0;
       for (let i = 0; i < text.length; i++) h = (Math.imul(h, 31) + text.charCodeAt(i)) >>> 0;

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Well } from './drilling';
-import { empireValue } from './empire';
+import { empireValue, ownReserves } from './empire';
 import { newGame, type GameState } from './game';
-import { fieldStatus } from './production';
+import { fieldStatus, wellRate } from './production';
 import { loadBalance } from './testBalance';
 
 const balance = loadBalance();
@@ -46,11 +46,27 @@ describe('Imperiumswert', () => {
     const [eigenes, fremdes] = start.fields;
     expect(fremdes).toBeDefined();
     const state: GameState = { ...start, postedPrice: 1, wells: [quelle(eigenes.parcelIds[0])] };
-    const rest = fieldStatus(state, balance, eigenes).remaining;
-    expect(rest).toBeGreaterThan(0);
-    expect(fieldStatus(state, balance, fremdes).wells).toBe(0);
-    const erwartet = Math.round((start.cash + balance.empire.reserveFactor * 1 * rest) * 100) / 100;
+    expect(ownReserves(state, balance, eigenes.id)).toBeGreaterThan(0);
+    expect(ownReserves(state, balance, fremdes.id)).toBe(0);
+    const erwartet = Math.round((start.cash + balance.empire.reserveFactor * 1 * ownReserves(state, balance, eigenes.id)) * 100) / 100;
     expect(empireValue(state, balance)).toBe(erwartet);
+  });
+
+  it('eigene Reserven: was die Quellen noch fördern (Rate / Rückgang), nicht das ganze Feld', () => {
+    const gross = start.fields.find((f) => f.reserves > 10 * 400 / balance.production.decline)!;
+    expect(gross).toBeDefined();
+    const state: GameState = { ...start, postedPrice: 1, wells: [quelle(gross.parcelIds[0])] };
+    const naechsteRate = wellRate(balance, state.wells[0], 1);
+    expect(ownReserves(state, balance, gross.id)).toBe(Math.round(naechsteRate / balance.production.decline));
+    expect(ownReserves(state, balance, gross.id)).toBeLessThan(fieldStatus(state, balance, gross).remaining);
+  });
+
+  it('eigene Reserven: höchstens, was im Feld noch förderbar ist', () => {
+    const feld = start.fields[0];
+    const fast = { ...quelle(feld.parcelIds[0]), production: { initialRate: 400, roundsProduced: 1, lastRate: 400, total: feld.reserves - 10 } };
+    const state: GameState = { ...start, postedPrice: 1, wells: [fast] };
+    expect(ownReserves(state, balance, feld.id)).toBe(fieldStatus(state, balance, feld).remaining);
+    expect(ownReserves(state, balance, feld.id)).toBeLessThanOrEqual(10);
   });
 
   it('pleite ist 0 wert', () => {

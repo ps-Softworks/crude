@@ -17,7 +17,11 @@ import { endRound, newGame, type GameState } from './game';
 import { buyLease } from './lease';
 import { loadBalance } from './testBalance';
 
-const balance = loadBalance();
+// Die Handrechnungen hier gehen von den GDD-Zahlen aus (§12): Bankrahmen 3.000 $,
+// Geldverleiher bis 2.000 $. balance.yaml weicht seit 1.15 davon ab (Bot-Justierung);
+// die Regeln sind dieselben, deshalb stehen die beiden Werte hier fest.
+const echt = loadBalance();
+const balance: Balance = { ...echt, credit: { ...echt.credit, limitBase: 3000, emergency: { ...echt.credit.emergency, limit: 2000 } } };
 const C = balance.credit;
 
 /** Spiel mit n fördernden Quellen; die Bohrungen werden nur so hingesetzt. */
