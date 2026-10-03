@@ -182,3 +182,36 @@ transport:
     hikeChance: 0.20        # PLATZHALTER: Chance je Runde mit Bahnfracht
     hikeStep: 0.10          # PLATZHALTER: Erhöhung in $ je Barrel
     maxTariff: 0.80         # PLATZHALTER: höchster Bahntarif (darf über dem Fuhrwerk liegen)
+
+# Bankkredit (GDD §8, §15). Der Rahmen wächst mit jeder fördernden Quelle, weil
+# sie als Pfand dient. Der Jahreszins steht nach dem Rating der Bank; mit Pfand
+# zahlt Jacob zwei Punkte weniger, ohne Sicherheit drei mehr. Reicht die Kasse
+# für die Zinsen nicht, leiht Jacob automatisch zuerst bei der Bank (billiger);
+# gibt die nichts mehr, leiht der Geldverleiher sofort und ohne Sicherheit, aber
+# zu 40 % (Notkredit).
+credit:
+  startRating: B           # Rating, mit dem Jacob in Port Ellis ankommt
+  minLoan: 500             # kleinster Kredit am Stück
+  limitBase: 3000          # Bankrahmen ohne Pfand (GDD §12)
+  limitPerWell: 2000       # Rahmen je fördernder Quelle
+  rates:                   # Jahreszins je Rating (GDD §12)
+    A: 0.05
+    B: 0.07
+    C: 0.10
+    D: 0.15
+  collateralDiscount: 0.02 # fördernde Quelle als Pfand senkt den Zins um 2 Punkte
+  unsecuredAdd: 0.03       # ohne Sicherheit steigt er um 3 Punkte
+  # Das Rating folgt der Verschuldung (Anteil am Bankrahmen) und der
+  # Zahlungshistorie (Runden, für die der Geldverleiher einspringen musste).
+  usageC: 0.25             # bis hierher bleibt es bei B, PLATZHALTER
+  usageD: 0.60             # darüber ist es D, PLATZHALTER
+  missedC: 1               # eine Runde mit Notkredit/offenen Zinsen bringt C, PLATZHALTER
+  missedD: 2               # zwei solche Runden bringen D, PLATZHALTER
+  emergency:               # Notkredit vom Geldverleiher
+    limit: 2000            # so viel leiht er insgesamt (GDD §12)
+    rate: 0.40             # Jahreszins ohne Sicherheit
+
+# Bankrott (GDD §8): Bargeld unter null ohne Kreditrahmen startet eine Frist.
+# Wer sie übersteht, macht weiter; wer sie verstreichen lässt, ist pleite.
+bankruptcy:
+  graceRounds: 2           # Runden Frist, bevor es Konkurs gibt

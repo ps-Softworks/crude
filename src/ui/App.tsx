@@ -26,8 +26,11 @@ import {
 } from '../sim/lease';
 import { fieldStatus } from '../sim/production';
 import { TRANSPORT_MODES } from '../sim/balance';
+import { creditLimit, debt, headroom, type LoanResult } from '../sim/credit';
 import { capacityLeft, netPrice, sellOil, tariff } from '../sim/transport';
 import { balance } from './balance';
+import { BankPanel } from './BankPanel';
+import { GameOverScreen } from './GameOverScreen';
 import { Map } from './Map';
 
 const GEOLOGY_LABEL = { dry: 'trocken', small: 'klein', gusher: 'Gusher' } as const;
@@ -73,7 +76,7 @@ export function App() {
     setNotice(null);
   }
 
-  function apply(result: LeaseResult) {
+  function apply(result: LeaseResult | LoanResult) {
     if (result.ok) {
       setGame(result.state);
       setNotice(null);
@@ -105,72 +108,88 @@ export function App() {
           <span>
             Pachten: {leaseCount} · Optionen: {optionCount}
           </span>
+          <span>
+            Rating {game.rating} · Schulden {money(debt(game))} · Rahmen frei {money(headroom(game, balance))} von{' '}
+            {money(creditLimit(game, balance))}
+          </span>
+          {game.bankruptcyDeadline > 0 && (
+            <span className="warn">Bankrott droht – Frist bis Runde {game.bankruptcyDeadline}</span>
+          )}
         </div>
       </header>
 
-      <main>
-        <Map balance={balance} game={game} debug={debug} selected={selected} onSelect={select} />
+      {game.ending === 'pleite' ? (
+        <GameOverScreen game={game} onRestart={() => startNewWorld(randomSeed())} />
+      ) : (
+        <main>
+          <Map balance={balance} game={game} debug={debug} selected={selected} onSelect={select} />
 
-        <aside>
-          <section>
-            <button
-              className="primary"
-              disabled={game.finished}
-              onClick={() => {
-                setGame(endRound(game, balance));
-                setNotice(null);
-              }}
-            >
-              {game.finished ? 'Kapitel beendet' : 'Runde beenden'}
-            </button>
-          </section>
-
-          <section>
-            <h2>Tank &amp; Verkauf</h2>
-            <SalePanel game={game} onSold={(state) => setGame(state)} />
-          </section>
-
-          <section>
-            <h2>Parzelle</h2>
-            {parcel ? (
-              <ParcelPanel game={game} parcel={parcel} debug={debug} notice={notice} onResult={apply} />
-            ) : (
-              <p className="muted">Klick auf ein Feld der Karte.</p>
-            )}
-          </section>
-
-          <section>
-            <h2>Protokoll</h2>
-            <ul className="log">
-              {[...game.log].reverse().map((line, i) => (
-                <li key={game.log.length - i}>{line}</li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="debug">
-            <h2>Debug</h2>
-            <label>
-              <input type="checkbox" checked={debug} onChange={(e) => setDebug(e.target.checked)} /> Verdeckte
-              Geologie zeigen
-            </label>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                startNewWorld(seedInput);
-              }}
-            >
-              <label>
-                Seed <input value={seedInput} onChange={(e) => setSeedInput(e.target.value)} />
-              </label>
-              <button type="submit">Welt laden</button>
-              <button type="button" onClick={() => startNewWorld(randomSeed())}>
-                Zufällige Welt
+          <aside>
+            <section>
+              <button
+                className="primary"
+                disabled={game.finished}
+                onClick={() => {
+                  setGame(endRound(game, balance));
+                  setNotice(null);
+                }}
+              >
+                {game.finished ? 'Kapitel beendet' : 'Runde beenden'}
               </button>
-            </form>
-          </section>
-        </aside>
-      </main>
+            </section>
+
+            <section>
+              <h2>Tank &amp; Verkauf</h2>
+              <SalePanel game={game} onSold={(state) => setGame(state)} />
+            </section>
+
+            <section>
+              <h2>Bank</h2>
+              <BankPanel game={game} onResult={apply} />
+            </section>
+
+            <section>
+              <h2>Parzelle</h2>
+              {parcel ? (
+                <ParcelPanel game={game} parcel={parcel} debug={debug} notice={notice} onResult={apply} />
+              ) : (
+                <p className="muted">Klick auf ein Feld der Karte.</p>
+              )}
+            </section>
+
+            <section>
+              <h2>Protokoll</h2>
+              <ul className="log">
+                {[...game.log].reverse().map((line, i) => (
+                  <li key={game.log.length - i}>{line}</li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="debug">
+              <h2>Debug</h2>
+              <label>
+                <input type="checkbox" checked={debug} onChange={(e) => setDebug(e.target.checked)} /> Verdeckte
+                Geologie zeigen
+              </label>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  startNewWorld(seedInput);
+                }}
+              >
+                <label>
+                  Seed <input value={seedInput} onChange={(e) => setSeedInput(e.target.value)} />
+                </label>
+                <button type="submit">Welt laden</button>
+                <button type="button" onClick={() => startNewWorld(randomSeed())}>
+                  Zufällige Welt
+                </button>
+              </form>
+            </section>
+          </aside>
+        </main>
+      )}
     </div>
   );
 }

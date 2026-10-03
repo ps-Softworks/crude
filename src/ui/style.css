@@ -37,6 +37,16 @@ button.primary:disabled { background: #888; cursor: default; }
 .state.lease { border-left-color: #2f6b3a; background: #dfe8dc; }
 .state.option { border-left-color: #2d5a8a; background: #dde5ee; border-left-style: dashed; }
 .state.discovery { border-left-color: #c9a95c; background: #efe6cf; }
+.state.rating { border-left-color: #9a9a9a; }
+.state.rating-b { border-left-color: #2f6b3a; background: #dfe8dc; }
+.state.rating-c { border-left-color: #c9a95c; background: #efe6cf; }
+.state.rating-d { border-left-color: #b3261e; background: #f0dbd8; }
+.state.pleite { border-left-color: #b3261e; background: #f0dbd8; }
+.status .warn { color: #b3261e; font-weight: bold; }
+.loans { list-style: none; padding: 0; margin: 0 0 8px; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.loans li { padding: 4px 0; border-bottom: 1px solid #ddd; }
+.gameover { margin-top: 16px; padding: 16px; border: 2px solid #222; background: #f7f4ee; max-width: 640px; }
+.gameover h2 { font-size: 1.6rem; letter-spacing: 0.2em; }
 .actions { display: flex; flex-direction: column; gap: 6px; }
 .actions button:disabled { cursor: default; color: #999; }
 .hint { margin: 6px 0 0; font-size: 0.9rem; color: #b3261e; }

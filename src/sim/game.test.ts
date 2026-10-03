@@ -170,6 +170,81 @@ describe('Startwerte für Transport und Verkauf (1.8)', () => {
   });
 });
 
+describe('Startwerte für Kredit und Pleite (1.10)', () => {
+  it('Jacob kommt mit Rating B, ohne Schulden und ohne Frist an', () => {
+    const state = newGame('kredit-start', balance);
+    expect(state.rating).toBe(balance.credit.startRating);
+    expect(state.rating).toBe('B');
+    expect(state.loans).toEqual([]);
+    expect(state.missedPayments).toBe(0);
+    expect(state.bankruptcyDeadline).toBe(0);
+    expect(state.ending).toBeNull();
+  });
+
+  it('ohne Schulden kostet das Rundenende keine Zinsen und das Kapitel endet normal', () => {
+    let state = newGame('ohne-kredit', balance);
+    for (let i = 0; i < balance.start.rounds; i++) state = endRound(state, balance);
+    expect(state.cash).toBe(balance.start.cash);
+    expect(state.loans).toEqual([]);
+    expect(state.finished).toBe(true);
+    expect(state.ending).toBe('kapitel');
+  });
+});
+
+describe('Bankrott beendet das Spiel (1.10, Fertig-Kriterium)', () => {
+  /** Schulden, Rating D, Geldverleiher ausgeschöpft, Zinsen höher als die Kasse. */
+  function verschuldet(seed: string): GameState {
+    const state = newGame(seed, balance);
+    return {
+      ...state,
+      cash: 50,
+      rating: 'D',
+      loans: [
+        { id: 1, source: 'bank', principal: 3000, rate: 0.15, takenRound: 1, collateral: null },
+        { id: 2, source: 'lender', principal: balance.credit.emergency.limit, rate: balance.credit.emergency.rate, takenRound: 1, collateral: null },
+      ],
+    };
+  }
+
+  it('nach graceRounds Runden im Minus ist Jacob pleite; danach ändert endRound nichts mehr', () => {
+    let state = endRound(verschuldet('bankrott'), balance);
+    expect(state.cash).toBeLessThan(0);
+    expect(state.bankruptcyDeadline).toBe(1 + balance.bankruptcy.graceRounds);
+    expect(state.ending).toBeNull();
+    for (let i = 0; i < balance.bankruptcy.graceRounds; i++) state = endRound(state, balance);
+    expect(state.finished).toBe(true);
+    expect(state.ending).toBe('pleite');
+    expect(state.round).toBe(1 + balance.bankruptcy.graceRounds);
+    expect(state.log.at(-1)).toMatch(/pleite/);
+    expect(endRound(state, balance)).toBe(state);
+  });
+
+  it('wer sich in der Frist rettet, spielt weiter', () => {
+    let state = endRound(verschuldet('rettung'), balance);
+    expect(state.bankruptcyDeadline).toBeGreaterThan(0);
+    state = { ...state, cash: 10000 };
+    state = endRound(state, balance);
+    expect(state.bankruptcyDeadline).toBe(0);
+    expect(state.ending).toBeNull();
+  });
+
+  it('im Minus in der letzten Runde: sofort pleite statt Kapitelende', () => {
+    const state = endRound({ ...verschuldet('letzte'), round: balance.start.rounds }, balance);
+    expect(state.ending).toBe('pleite');
+    expect(state.finished).toBe(true);
+    expect(state.log.some((l) => /Kapitel 1 ist zu Ende/.test(l))).toBe(false);
+  });
+
+  it('gleicher Seed und gleiche Schritte ergeben den gleichen Bankrott', () => {
+    const lauf = () => {
+      let s = verschuldet('gleich');
+      for (let i = 0; i < 5; i++) s = endRound(s, balance);
+      return s;
+    };
+    expect(lauf()).toEqual(lauf());
+  });
+});
+
 describe('Ölpreis im Spielablauf (1.9)', () => {
   it('newGame setzt den Posted Price aus dem Startangebot und eine Preisliste mit einem Eintrag', () => {
     const state = newGame('markt-start', balance);

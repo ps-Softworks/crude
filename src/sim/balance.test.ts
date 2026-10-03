@@ -309,4 +309,65 @@ describe('Spielzahlen (balance.yaml)', () => {
       expect(() => parseBalance(r3)).toThrow(/market\.newsThreshold/);
     });
   });
+
+  describe('Kredit und Bankrott', () => {
+    type RawCredit = {
+      credit: Record<string, unknown> & { rates: Record<string, number>; emergency: Record<string, unknown> };
+      bankruptcy: Record<string, unknown>;
+    };
+    const raw = () => structuredClone(loadBalance()) as unknown as RawCredit;
+
+    it('liest die Kredit- und Bankrott-Zahlen aus der echten Datei', () => {
+      const { credit, bankruptcy } = loadBalance();
+      expect(credit.startRating).toBe('B');
+      expect(credit.minLoan).toBe(500);
+      expect(credit.limitBase).toBe(3000);
+      expect(credit.limitPerWell).toBe(2000);
+      expect(credit.rates).toEqual({ A: 0.05, B: 0.07, C: 0.1, D: 0.15 });
+      expect(credit.collateralDiscount).toBe(0.02);
+      expect(credit.unsecuredAdd).toBe(0.03);
+      expect(credit.usageC).toBe(0.25);
+      expect(credit.usageD).toBe(0.6);
+      expect(credit.missedC).toBe(1);
+      expect(credit.missedD).toBe(2);
+      expect(credit.emergency).toEqual({ limit: 2000, rate: 0.4 });
+      expect(bankruptcy.graceRounds).toBe(2);
+    });
+
+    it('meldet ein unbekanntes oder fehlendes Startrating', () => {
+      const r = raw();
+      r.credit.startRating = 'E';
+      expect(() => parseBalance(r)).toThrow(/"credit.startRating" muss ein Rating sein/);
+      const s = raw();
+      delete s.credit.startRating;
+      expect(() => parseBalance(s)).toThrow(/"credit.startRating" muss ein Rating sein/);
+    });
+
+    it('meldet Zinsen, die nicht von A nach D steigen', () => {
+      const r = raw();
+      r.credit.rates.C = 0.07;
+      expect(() => parseBalance(r)).toThrow(/"credit.rates.C" muss größer als "credit.rates.B" sein/);
+    });
+
+    it('meldet Rating-Grenzen in falscher Reihenfolge', () => {
+      const r = raw();
+      r.credit.usageC = 0.8;
+      expect(() => parseBalance(r)).toThrow(/"credit.usageC" muss kleiner als "credit.usageD" sein/);
+      const s = raw();
+      s.credit.missedC = 2;
+      expect(() => parseBalance(s)).toThrow(/"credit.missedC" muss kleiner als "credit.missedD" sein/);
+    });
+
+    it('meldet fehlende Blöcke und eine ungültige Pleitefrist', () => {
+      const r = raw();
+      delete (r as unknown as Record<string, unknown>).credit;
+      expect(() => parseBalance(r)).toThrow(/Block "credit" fehlt/);
+      const s = raw();
+      delete (s as unknown as Record<string, unknown>).bankruptcy;
+      expect(() => parseBalance(s)).toThrow(/Block "bankruptcy" fehlt/);
+      const t = raw();
+      t.bankruptcy.graceRounds = 0;
+      expect(() => parseBalance(t)).toThrow(/"bankruptcy.graceRounds" muss eine ganze Zahl ab 1/);
+    });
+  });
 });

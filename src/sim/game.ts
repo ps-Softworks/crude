@@ -1,8 +1,9 @@
 // Spielzustand und Rundenschleife. Alles hier ist reine Logik:
 // Funktionen bekommen einen Zustand und geben einen neuen zurück.
 
-import type { Balance, TransportMode } from './balance';
+import type { Balance, Rating, TransportMode } from './balance';
 import { formatDate } from './calendar';
+import { checkBankruptcy, settleLoans, type Loan } from './credit';
 import { advanceDrilling, type Well } from './drilling';
 import { assignFields, buildFields, type Field } from './field';
 import { makeForecasts, type Forecast } from './forecast';
@@ -14,6 +15,9 @@ import { advanceMarket, computePrice, neighbourSupply } from './market';
 import { advanceTransport } from './transport';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
+
+/** Wie das Spiel ausgeht: gar nicht, mit Ende des Kapitels oder mit Pleite. */
+export type Ending = 'kapitel' | 'pleite' | null;
 
 export interface GameState {
   seed: string;
@@ -44,7 +48,17 @@ export interface GameState {
   postedPrice: number;
   /** Preishistorie: postedPrice je Runde (Index 0 = Runde 1). */
   priceHistory: number[];
+  /** Offene Kredite bei der Bank und beim Geldverleiher. */
+  loans: Loan[];
+  /** Kreditwürdigkeit der Bank A–D. */
+  rating: Rating;
+  /** Rundenenden, für die der Geldverleiher einspringen musste. */
+  missedPayments: number;
+  /** Letzte Runde, in der die Kasse negativ sein darf; 0 = keine Frist läuft. */
+  bankruptcyDeadline: number;
   finished: boolean;
+  /** Wie das Spiel endet, oder null, solange es weitergeht. */
+  ending: Ending;
   log: string[];
 }
 
@@ -73,7 +87,12 @@ export function newGame(seed: string, balance: Balance): GameState {
     wells: [],
     postedPrice: startPrice,
     priceHistory: [startPrice],
+    loans: [],
+    rating: balance.credit.startRating,
+    missedPayments: 0,
+    bankruptcyDeadline: 0,
     finished: false,
+    ending: null,
     log: [],
   };
   // Erst die Startoptionen, dann die Prognosen: so bleiben Karte und Startoptionen
@@ -91,22 +110,33 @@ export function newGame(seed: string, balance: Balance): GameState {
 }
 
 /**
- * Schließt die aktuelle Runde ab: erst die Förderung, dann der Ölpreis (Markt), dann die Bohrungen, dann die
- * Pacht-Abrechnung (Verfall, Verzögerungszins), dann der Transport (Thorne und
- * der Bahntarif, Kapazitäten wieder frei), dann die nächste Runde. Die
- * Förderung kommt zuerst, damit eine Quelle, die gerade ihren Abschlussbohrung
- * hinter sich hat, erst in der nächsten Runde Öl liefert. Nach der letzten Runde
- * ist das Kapitel beendet.
+ * Schließt die aktuelle Runde ab: erst die Förderung, dann der Ölpreis (Markt),
+ * dann die Bohrungen, dann die Pacht-Abrechnung (Verfall, Verzögerungszins), dann
+ * die Zinsen (mit Notkredit, wenn eine Rate nicht zu zahlen ist), dann der
+ * Transport (Thorne und der Bahntarif, Kapazitäten wieder frei) und zuletzt die
+ * Pleiteprüfung. Die Förderung kommt zuerst, damit eine Quelle, die gerade ihren
+ * Abschlussbohrung hinter sich hat, erst in der nächsten Runde Öl liefert. Bei
+ * Pleite ist sofort Schluss: keine neue Runde und keine Kapitelprüfung. Nach der
+ * letzten Runde ist das Kapitel beendet.
  */
 export function endRound(input: GameState, balance: Balance): GameState {
   if (input.finished) return input;
+  const gefoerdert = advanceProduction(input, balance);
+  const markt = advanceMarket(gefoerdert, balance.market);
+  const gebohrt = advanceDrilling(markt, balance);
+  const gepachtet = settleLeases(gebohrt, balance);
+  const verzinst = settleLoans(gepachtet, balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
-  const state = advanceTransport(
-    settleLeases(advanceDrilling(advanceMarket(advanceProduction(input, balance), balance.market), balance), balance),
-    balance,
-  );
+  const gefahren = advanceTransport(verzinst, balance);
+  const state = checkBankruptcy(gefahren, balance);
+  if (state.ending === 'pleite') return state;
   if (state.round >= state.totalRounds) {
-    return { ...state, finished: true, log: [...state.log, `${formatDate(state)}: Kapitel 1 ist zu Ende.`] };
+    return {
+      ...state,
+      finished: true,
+      ending: 'kapitel',
+      log: [...state.log, `${formatDate(state)}: Kapitel 1 ist zu Ende.`],
+    };
   }
   const next = { ...state, round: state.round + 1 };
   return { ...next, log: [...state.log, `${formatDate(next)}: Eine neue Runde beginnt.`] };

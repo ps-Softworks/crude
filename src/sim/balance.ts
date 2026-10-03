@@ -148,6 +148,43 @@ export interface MarketBalance {
   newsThreshold: number;
 }
 
+/** Kreditwürdigkeit, von gut nach schlecht. */
+export const RATINGS = ['A', 'B', 'C', 'D'] as const;
+export type Rating = (typeof RATINGS)[number];
+
+/** Bankkredit und Notkredit (GDD §8, §15). */
+export interface CreditBalance {
+  /** Rating, mit dem das Spiel startet. */
+  startRating: Rating;
+  /** Kleinster Kredit am Stück. */
+  minLoan: number;
+  /** Bankrahmen ohne Pfand. */
+  limitBase: number;
+  /** Rahmen je fördernder Quelle. */
+  limitPerWell: number;
+  /** Jahreszins je Rating. */
+  rates: Record<Rating, number>;
+  /** Eine fördernde Quelle als Pfand senkt den Zins um so viel. */
+  collateralDiscount: number;
+  /** Ohne Sicherheit steigt der Zins um so viel. */
+  unsecuredAdd: number;
+  /** Anteil der Schulden am Bankrahmen, bis zu dem das Rating B bleibt. */
+  usageC: number;
+  /** Anteil der Schulden am Bankrahmen, ab dem es D ist. */
+  usageD: number;
+  /** Fehlzahlungen, ab denen das Rating auf C fällt. */
+  missedC: number;
+  /** Fehlzahlungen, ab denen das Rating D ist. */
+  missedD: number;
+  /** Der Geldverleiher: leiht sofort, ohne Sicherheit, aber zu einem Wucherzins. */
+  emergency: { limit: number; rate: number };
+}
+
+/** Bankrott: Frist, bevor es Konkurs gibt. */
+export interface BankruptcyBalance {
+  graceRounds: number;
+}
+
 export interface Balance {
   start: { cash: number; year: number; rounds: number };
   map: { width: number; height: number; saltHill: { x: number; y: number } };
@@ -161,6 +198,8 @@ export interface Balance {
   production: ProductionBalance;
   market: MarketBalance;
   transport: TransportBalance;
+  credit: CreditBalance;
+  bankruptcy: BankruptcyBalance;
 }
 
 export class BalanceError extends Error {}
@@ -467,6 +506,75 @@ function parseTransport(raw: unknown): TransportBalance {
   return { wagon, rail, thorne: { hikeChance, hikeStep, maxTariff } };
 }
 
+/** Rating-Namen wie "B"; erlaubt sind nur A bis D. */
+function ratingText(obj: unknown, key: string, path: string): Rating {
+  const value = (obj as Record<string, unknown> | undefined)?.[key];
+  if (typeof value !== 'string' || !(RATINGS as readonly string[]).includes(value)) {
+    throw new BalanceError(`balance.yaml: "${path}" muss ein Rating sein (${RATINGS.join(', ')})`);
+  }
+  return value as Rating;
+}
+
+/** Prozentwert, der nicht negativ sein darf. */
+function nonNegativeShare(obj: unknown, path: string): number {
+  const value = num(obj, path);
+  if (value < 0) throw new BalanceError(`balance.yaml: "${path}" darf nicht negativ sein`);
+  if (value > 1) throw new BalanceError(`balance.yaml: "${path}" darf nicht über 1 liegen`);
+  return value;
+}
+
+function parseCredit(raw: unknown): CreditBalance {
+  const block = (raw as { credit?: unknown })?.credit;
+  if (!block || typeof block !== 'object') {
+    throw new BalanceError('balance.yaml: Block "credit" fehlt');
+  }
+  const rates = {} as Record<Rating, number>;
+  for (const r of RATINGS) {
+    rates[r] = nonNegativeShare(raw, `credit.rates.${r}`);
+    if (r !== 'A') {
+      const besser = RATINGS[RATINGS.indexOf(r) - 1];
+      if (rates[r] <= rates[besser]) {
+        throw new BalanceError(`balance.yaml: "credit.rates.${r}" muss größer als "credit.rates.${besser}" sein`);
+      }
+    }
+  }
+  const usageC = nonNegativeShare(raw, 'credit.usageC');
+  const usageD = nonNegativeShare(raw, 'credit.usageD');
+  if (usageC >= usageD) {
+    throw new BalanceError('balance.yaml: "credit.usageC" muss kleiner als "credit.usageD" sein');
+  }
+  const missedC = positiveInt(raw, 'credit.missedC');
+  const missedD = positiveInt(raw, 'credit.missedD');
+  if (missedC >= missedD) {
+    throw new BalanceError('balance.yaml: "credit.missedC" muss kleiner als "credit.missedD" sein');
+  }
+  return {
+    startRating: ratingText(block, 'startRating', 'credit.startRating'),
+    minLoan: positiveInt(raw, 'credit.minLoan'),
+    limitBase: num(raw, 'credit.limitBase'),
+    limitPerWell: num(raw, 'credit.limitPerWell'),
+    rates,
+    collateralDiscount: nonNegativeShare(raw, 'credit.collateralDiscount'),
+    unsecuredAdd: nonNegativeShare(raw, 'credit.unsecuredAdd'),
+    usageC,
+    usageD,
+    missedC,
+    missedD,
+    emergency: {
+      limit: num(raw, 'credit.emergency.limit'),
+      rate: nonNegativeShare(raw, 'credit.emergency.rate'),
+    },
+  };
+}
+
+function parseBankruptcy(raw: unknown): BankruptcyBalance {
+  const block = (raw as { bankruptcy?: unknown })?.bankruptcy;
+  if (!block || typeof block !== 'object') {
+    throw new BalanceError('balance.yaml: Block "bankruptcy" fehlt');
+  }
+  return { graceRounds: positiveInt(raw, 'bankruptcy.graceRounds') };
+}
+
 export function parseBalance(raw: unknown): Balance {
   const zonesRaw = (raw as { geology?: { zones?: unknown } })?.geology?.zones;
   if (!Array.isArray(zonesRaw) || zonesRaw.length === 0) {
@@ -518,6 +626,8 @@ export function parseBalance(raw: unknown): Balance {
     production: parseProduction(raw),
     market: parseMarket(raw),
     transport: parseTransport(raw),
+    credit: parseCredit(raw),
+    bankruptcy: parseBankruptcy(raw),
   };
 
   const { width, height, saltHill } = balance.map;
