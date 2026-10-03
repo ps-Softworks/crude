@@ -9,7 +9,15 @@ import {
   checkTargets,
   choiceValue,
   eventPolicy,
+  bookRound,
   measuredDecline,
+  newLedger,
+  pipelineWorth,
+  profitPerBarrel,
+  ROUTE_KEYS,
+  routeShares,
+  thorneOfferValue,
+  transportTable,
   okActions,
   playGame,
   runBots,
@@ -22,7 +30,7 @@ import { BOT_TARGET_IDS } from './balance';
 import { creditLimit, debt } from './credit';
 import { applyAction } from './desk';
 import type { EventDef } from './events';
-import { endRound, newGame } from './game';
+import { endRound, newGame, type GameState } from './game';
 import { Rng, seedFromString } from './rng';
 import { validateState } from './save';
 import { loadBalance } from './testBalance';
@@ -318,6 +326,10 @@ describe('Bot-Läufe mit Ereignissen (2.15)', () => {
       meanAppointments: 5,
       sickShare: 0,
       finds: { small: [], gusher: [], declines: [] },
+      transport: newLedger(),
+      pipelineGames: 0,
+      goalGames: 0,
+      pipelineGoalGames: 0,
       ...o,
     });
     const tag = balance.bots.daysPerRound;
@@ -351,4 +363,104 @@ describe('Bot-Läufe mit Ereignissen (2.15)', () => {
     const ziele = checkTargets(rows, blindWildcatChance(balance), balance);
     expect(ziele.filter((z) => !z.ok).map((z) => `${z.label}: ${z.value}`)).toEqual([]);
   }, 240_000);
+});
+
+describe('Bot-Läufe: Transportwege (0.2.15+4)', () => {
+  /** Spiel mit n fördernden Quellen, die zusammen rate Barrel je Runde liefern. */
+  function mitFoerderung(rate: number, round = 2, seed = 'wege'): GameState {
+    const state = newGame(seed, balance);
+    const wells = state.parcels.slice(0, 2).map((p) => ({
+      parcelId: p.id,
+      stage: 1,
+      status: 'found' as const,
+      roundsLeft: 0,
+      spent: 1000,
+      oilStage: 1,
+      result: 'small' as const,
+      production: { initialRate: rate / 2, roundsProduced: 2, lastRate: rate / 2, total: rate },
+      startRound: 1,
+    }));
+    return { ...state, round, wells };
+  }
+  const spiele = (strategy: (typeof STRATEGIES)[number], n = 30) => seeds(n).map((seed) => playGame(seed, balance, strategy, events));
+
+  it('Pipeline lohnt nur mit Förderung, genug Restzeit und Bereitschaft (payback > 0)', () => {
+    const viel = { ...mitFoerderung(30_000), railTariff: 0.55 };
+    expect(pipelineWorth(viel, balance, 1)).toBe(true);
+    expect(pipelineWorth(viel, balance, 0)).toBe(false);
+    expect(pipelineWorth(mitFoerderung(0), balance, 1)).toBe(false);
+    expect(pipelineWorth({ ...viel, round: viel.totalRounds - 2 }, balance, 1)).toBe(false);
+    expect(pipelineWorth({ ...viel, logistics: { ...viel.logistics, pipeline: 'ready' } }, balance, 1)).toBe(false);
+  });
+
+  it('Thornes Vertrag: Mengenrabatt lohnt erst ab der Mindestmenge, Exklusiv kostet ohne Förderung nur', () => {
+    const { minVolume } = balance.transport.thorne;
+    expect(thorneOfferValue(mitFoerderung(minVolume * 2), balance, 'volume')).toBeGreaterThan(0);
+    expect(thorneOfferValue(mitFoerderung(minVolume / 5), balance, 'volume')).toBeLessThan(0);
+    expect(thorneOfferValue(mitFoerderung(0), balance, 'exclusive')).toBeLessThan(0);
+  });
+
+  it('Buchführung: Löhne gehen auf die Fuhrwerke, Streckenwärter auf die Pipeline, Reparatur nach Sabotage auch', () => {
+    const s = mitFoerderung(10_000);
+    const vorher: GameState = { ...s, logistics: { ...s.logistics, teams: 2, pipeline: 'ready', guards: true } };
+    const nachher: GameState = { ...vorher, logistics: { ...vorher.logistics, pipeline: 'damaged' } };
+    const ledger = newLedger();
+    bookRound(vorher, nachher, balance, ledger);
+    const t = balance.transport;
+    expect(ledger.teams.costs).toBe(2 * t.teams.wagePerRound);
+    expect(ledger.pipeline.costs).toBe(t.pipeline.upkeepPerRound + t.pipeline.guardsPerRound + t.pipeline.repairCost);
+    expect(ledger.rail.costs).toBe(0);
+  });
+
+  it('Kennzahlen je Weg: Anteile ergeben 100 %, Gewinn je Barrel = (Erlös − Kosten) ÷ Barrel', () => {
+    const l = newLedger();
+    l.rail = { barrels: 300, net: 120, costs: 0 };
+    l.teams = { barrels: 100, net: 50, costs: 20 };
+    const a = routeShares(l);
+    expect(a.rail).toBeCloseTo(0.75, 10);
+    expect(a.teams).toBeCloseTo(0.25, 10);
+    expect(profitPerBarrel(l.teams)).toBeCloseTo(0.3, 10);
+    expect(profitPerBarrel(l.pipeline)).toBeNull();
+  });
+
+  it('jede Partie führt Buch: verkaufte Barrel stecken in den Wegen, Händler-Barrel sind ein Teil davon', () => {
+    for (const s of STRATEGIES) {
+      for (const r of spiele(s, 8)) {
+        const wege = (['wagon', 'rail', 'teams', 'pipeline'] as const).reduce((x, m) => x + r.transport[m].barrels, 0);
+        expect(r.transport.trader.barrels).toBeLessThanOrEqual(wege);
+        for (const k of ROUTE_KEYS) expect(Number.isFinite(r.transport[k].net)).toBe(true);
+      }
+    }
+  });
+
+  it('vorsichtig verkauft nie an den Händler und droht Thorne nie', () => {
+    for (const r of spiele('vorsichtig')) {
+      expect(r.transport.trader.barrels).toBe(0);
+      expect(r.state.logistics.threatRound).toBe(0);
+    }
+  });
+
+  it('gierig verkauft an den Händler und baut in manchen Partien eine Pipeline; ausgewogen nutzt eigene Fuhrwerke', () => {
+    const gierig = spiele('gierig', 40);
+    expect(gierig.some((r) => r.transport.trader.barrels > 0)).toBe(true);
+    expect(gierig.some((r) => r.pipeline)).toBe(true);
+    expect(spiele('ausgewogen', 40).some((r) => r.transport.teams.barrels > 0)).toBe(true);
+  });
+
+  it('die planenden Bots mit Marge verkaufen nie mit Verlust nach Fracht und Förderzins', () => {
+    for (const s of ['vorsichtig', 'ausgewogen'] as const) {
+      for (const r of spiele(s, 15)) {
+        expect(r.state.log.some((z) => / verkauft.* – -[0-9]/.test(z))).toBe(false);
+      }
+    }
+  });
+
+  it('die Transporttabelle hat eine Zeile je Weg und den Händler', () => {
+    const rows = runBots(balance, 3, events);
+    const t = transportTable(rows).split('\n');
+    expect(t).toHaveLength(2 + ROUTE_KEYS.length);
+    expect(t[0]).toContain('Ø Gewinn je bbl');
+    expect(t.some((z) => z.startsWith('| Pipeline'))).toBe(true);
+    expect(t.some((z) => z.startsWith('| davon an den Händler'))).toBe(true);
+  });
 });

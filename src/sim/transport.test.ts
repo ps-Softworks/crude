@@ -74,7 +74,7 @@ describe('Transport und Verkauf', () => {
     it('meldet die Erhöhung im Protokoll', () => {
       const bal = mitThorne({ hikeChance: 1 });
       const state = endRound(verkauf(mitOel(), 'rail', 100, bal), bal);
-      expect(state.log.some((l) => l.includes('Thorne erhöht den Bahntarif auf 0,35 $'))).toBe(true);
+      expect(state.log.some((l) => l.includes('Thorne erhöht den Bahntarif auf 0,40 $'))).toBe(true);
     });
   });
 

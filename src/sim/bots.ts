@@ -10,7 +10,7 @@
 // gehört der Welt und wird nie angefasst; Math.random kommt nicht vor.
 // Die Zahlen stehen in content/balance.yaml unter bots.
 
-import { TRANSPORT_MODES, type Balance, type BotEventWeights, type BotTargetId } from './balance';
+import { TRANSPORT_MODES, type Balance, type BotEventWeights, type BotTargetId, type BotTransport, type Buyer, type TransportMode } from './balance';
 import { overtimeFor } from './agenda';
 import { creditLimit, debt, headroom, takeLoan } from './credit';
 import { applyAction, parcelActions, type DeskActionKind } from './desk';
@@ -21,10 +21,26 @@ import { endRound, newGame, type GameState } from './game';
 import { generateParcels } from './geology';
 import { leaseOf, leaseTerms, locationFor, optionOf } from './lease';
 import { Rng, seedFromString } from './rng';
-import { buildTank, hireTeam, storageCapacity } from './logistics';
+import {
+  buildPipeline,
+  buildTank,
+  dismissTeam,
+  fixedCosts,
+  hireTeam,
+  LOGISTICS_MARKS,
+  missingRights,
+  pipelineCredible,
+  sabotageChance,
+  setGuards,
+  storageCapacity,
+  surveyPipeline,
+  threatenThorne,
+  threatWait,
+  traderGain,
+} from './logistics';
 import { jacobSupply } from './market';
-import { capacityLeft, netPrice, sellOil } from './transport';
-import { RIVAL_MARKS } from './trust';
+import { buyerCapacityLeft, capacityLeft, modeCapacity, netPrice, quoteSale, sellOil, tariff } from './transport';
+import { grudgeCut, RIVAL_MARKS, volumeObligation } from './trust';
 import { tutorialHint } from './tutorial';
 import { choiceCost, choiceReason, resolveEvent, routineOffered, type EventChoice, type EventDef } from './events';
 
@@ -37,61 +53,370 @@ function act(state: GameState, balance: Balance, parcelId: string, kind: DeskAct
   return r.ok ? r.state : state;
 }
 
+// --- Transport (0.2.15+2, Charakter je Strategie seit 0.2.15+4) ----------------------
+
+/** Ein Transportweg in der Buchführung der Bot-Läufe; der Händler ist ein Käufer und zählt zusätzlich. */
+export type RouteKey = TransportMode | 'trader';
+export const ROUTE_KEYS: readonly RouteKey[] = [...TRANSPORT_MODES, 'trader'];
+
 /**
- * Verkauft Öl aus dem Tank: Transportmittel mit dem höchsten Nettopreis zuerst,
- * jeweils bis zur freien Kapazität. share = Anteil des Tanks (1 = alles).
- * Ein Transportmittel, bei dem nach Fracht nichts übrig bleibt, wird nicht benutzt.
+ * Was ein Weg in einer Partie gebracht hat: verkaufte Barrel, Erlös nach Fracht und
+ * Förderzins (net) und was der Weg sonst gekostet hat (costs): Anschaffung, soweit
+ * sie nicht im Imperiumswert weiterzählt, Löhne, Unterhalt, Reparatur, Strafen,
+ * Wegerechte; beim Händler Cranes Groll auf die übrigen Verkäufe.
  */
-function sell(state: GameState, balance: Balance, share: number): GameState {
+export interface RouteStats {
+  barrels: number;
+  net: number;
+  costs: number;
+}
+export type TransportLedger = Record<RouteKey, RouteStats>;
+
+export function newLedger(): TransportLedger {
+  return Object.fromEntries(ROUTE_KEYS.map((k) => [k, { barrels: 0, net: 0, costs: 0 }])) as TransportLedger;
+}
+
+function addLedger(into: TransportLedger, from: TransportLedger): void {
+  for (const k of ROUTE_KEYS) {
+    into[k].barrels += from[k].barrels;
+    into[k].net += from[k].net;
+    into[k].costs += from[k].costs;
+  }
+}
+
+/** Ø Gewinn je Barrel eines Wegs: (Erlös − Kosten) ÷ Barrel; null ohne Verkäufe. */
+export function profitPerBarrel(r: RouteStats): number | null {
+  return r.barrels > 0 ? (r.net - r.costs) / r.barrels : null;
+}
+
+/** Barrel, die Jacobs Quellen je Runde fördern (letzte Förderung). */
+function production(state: GameState): number {
+  return state.wells.reduce((s, w) => s + (w.status === 'found' ? (w.production?.lastRate ?? 0) : 0), 0);
+}
+
+function roundsLeft(state: GameState): number {
+  return Math.max(0, state.totalRounds - state.round + 1);
+}
+
+/**
+ * Verkauft Öl aus dem Tank: Weg und Käufer mit dem höchsten Nettopreis zuerst,
+ * jeweils bis zur freien Kapazität. share = Anteil des Tanks (1 = alles).
+ * Ein Weg, bei dem nach Fracht nichts übrig bleibt, wird nicht benutzt. An den
+ * Händler nur mit trader = true. Jeder Verkauf landet in der Buchführung.
+ */
+function sell(state: GameState, balance: Balance, share: number, ledger: TransportLedger, trader = false, margin = true): GameState {
   let rest = Math.floor(Math.floor(state.oilStock) * share);
-  const modes = [...TRANSPORT_MODES].sort((a, b) => netPrice(state, balance, b) - netPrice(state, balance, a));
-  for (const mode of modes) {
+  const buyers: Buyer[] = trader ? ['trader', 'crane'] : ['crane'];
+  const wege = TRANSPORT_MODES.flatMap((mode) => buyers.map((buyer) => ({ mode, buyer })));
+  wege.sort((a, b) => netPrice(state, balance, b.mode, b.buyer) - netPrice(state, balance, a.mode, a.buyer));
+  for (const { mode, buyer } of wege) {
     if (rest <= 0) break;
-    if (netPrice(state, balance, mode) <= 0) continue;
-    const menge = Math.min(rest, capacityLeft(state, balance, mode), Math.floor(state.oilStock));
+    // margin: Nach Fracht und Förderzins muss etwas übrig bleiben – sonst bleibt das Öl lieber im
+    // Tank. Ohne margin (gierig: Menge vor Marge) reicht, dass der Preis die Fracht deckt.
+    if (netPrice(state, balance, mode, buyer) <= 0 || (margin && quoteSale(state, balance, mode, 1, buyer).net <= 0)) continue;
+    const menge = Math.min(rest, capacityLeft(state, balance, mode), buyerCapacityLeft(state, balance, buyer), Math.floor(state.oilStock));
     if (menge <= 0) continue;
-    const r = sellOil(state, balance, mode, menge);
+    const groll = buyer === 'crane' ? grudgeCut(state, balance) : 0;
+    const r = sellOil(state, balance, mode, menge, buyer);
     if (r.ok) {
       state = r.state;
       rest -= menge;
+      ledger[mode].barrels += menge;
+      ledger[mode].net += r.quote.net;
+      if (buyer === 'trader') {
+        ledger.trader.barrels += menge;
+        ledger.trader.net += r.quote.net;
+      }
+      // Cranes Groll nach einem Händlerverkauf geht auf das Konto des Händlers.
+      ledger.trader.costs += groll * menge;
+    }
+  }
+  return state;
+}
+
+/** Wie ein Bot bezahlt: Rücklage, die bleiben muss, und wie viel er dafür höchstens leihen darf. */
+interface Purse {
+  reserve: number;
+  borrowable: (state: GameState) => number;
+}
+
+function purseFor(balance: Balance, strategy: Exclude<Strategy, 'zufaellig'>): Purse {
+  switch (strategy) {
+    case 'vorsichtig':
+      return { reserve: balance.bots.cautious.cashReserve, borrowable: () => 0 };
+    case 'gierig':
+      return { reserve: 0, borrowable: (s) => headroom(s, balance) };
+    case 'ausgewogen':
+      return { reserve: balance.bots.balanced.cashReserve, borrowable: (s) => balancedBorrowable(s, balance) };
+  }
+}
+
+/** Sorgt dafür, dass cost bezahlbar ist (leiht notfalls im Rahmen); null, wenn nicht. */
+function afford(state: GameState, balance: Balance, purse: Purse, cost: number): GameState | null {
+  if (state.cash - cost >= purse.reserve) return state;
+  const amount = Math.max(balance.credit.minLoan, Math.ceil(cost + purse.reserve - state.cash));
+  if (amount > purse.borrowable(state)) return null;
+  const loan = takeLoan(state, balance, amount);
+  return loan.ok ? loan.state : null;
+}
+
+/** Läuft der Händler für diesen Bot? „calc“: nur, wenn der Aufschlag Cranes Groll auf den Rest überwiegt. */
+function useTrader(state: GameState, balance: Balance, cfg: BotTransport, share: number): boolean {
+  if (cfg.trader === 'never') return false;
+  if (cfg.trader === 'always') return true;
+  return traderGain(balance, Math.floor(state.oilStock * share)) > 0;
+}
+
+/** Timing: Ist der Preis zuletzt gestiegen, bleibt holdShare des Tanks liegen. */
+function sellShare(state: GameState, cfg: BotTransport): number {
+  const h = state.priceHistory;
+  const steigt = h.length >= 2 && h[h.length - 1] > h[h.length - 2];
+  return steigt ? 1 - cfg.holdShare : 1;
+}
+
+/**
+ * Kosten je Barrel für ein zusätzliches eigenes Gespann bei voller Auslastung –
+ * Fracht, Lohn und der Teil der Anschaffung, der beim Verkauf verloren geht.
+ */
+function teamCostPerBarrel(state: GameState, balance: Balance): number {
+  const t = balance.transport.teams;
+  return tariff(state, balance, 'teams') + (t.wagePerRound + (t.hireCost * (1 - t.resale)) / Math.max(1, roundsLeft(state))) / t.capacity;
+}
+
+/** Barrel je Runde, die nach Pipeline und eigenen Gespannen noch für ein weiteres Gespann übrig sind. */
+function teamSlice(state: GameState, balance: Balance): number {
+  const pipe = modeCapacity(state, balance, 'pipeline');
+  return production(state) - pipe - state.logistics.teams * balance.transport.teams.capacity;
+}
+
+/**
+ * Lohnt die Pipeline? Erwartete Ersparnis gegenüber der Bahn über die Runden
+ * nach dem Bau (mit Rückgang der Förderung) gegen Vermessung, Wegerechte und
+ * den Teil der Baukosten, der nicht im Imperiumswert weiterzählt.
+ */
+export function pipelineWorth(state: GameState, balance: Balance, payback: number): boolean {
+  if (payback <= 0) return false;
+  const t = balance.transport;
+  const p = t.pipeline;
+  const lg = state.logistics;
+  if (lg.pipeline !== 'none' && lg.pipeline !== 'surveyed') return false;
+  const warten = p.buildRounds + (lg.pipeline === 'none' ? 1 : 0);
+  let barrel = 0;
+  for (let k = warten; k < roundsLeft(state); k++) barrel += Math.min(p.capacity, production(state) * (1 - balance.production.decline) ** k);
+  const nutzbar = Math.max(0, roundsLeft(state) - warten);
+  const ersparnis = barrel * (tariff(state, balance, 'rail') - tariff(state, balance, 'pipeline')) - nutzbar * (p.upkeepPerRound + p.sabotageChance * p.repairCost);
+  const rechte = missingRights(state, balance).length > 0 ? balance.bots.rightsEstimate : 0;
+  const kosten = (lg.pipeline === 'none' ? p.surveyCost : 0) + rechte + p.buildCost * (1 - t.assetShare);
+  return ersparnis >= payback * kosten;
+}
+
+/**
+ * Wegerechte: Liegt ein Brief eines Landbesitzers auf dem Tisch, nimmt der Bot die
+ * billigste Antwort, die das fehlende Recht bringt – wenn er sie bezahlen kann.
+ */
+function buyRights(state: GameState, balance: Balance, catalog: readonly EventDef[], purse: Purse, ledger: TransportLedger): GameState {
+  for (const event of openItems(state, catalog)) {
+    const fehlt = missingRights(state, balance);
+    const passend = event.choices
+      .filter((c) => c.marks.some((m) => fehlt.includes(m)))
+      .sort((a, b) => (a.effects.cash ?? 0) < (b.effects.cash ?? 0) ? 1 : -1);
+    for (const choice of passend) {
+      const kosten = -(choice.effects.cash ?? 0);
+      const bezahlt = afford(state, balance, purse, kosten);
+      if (!bezahlt || choiceReason(bezahlt, balance, event, choice) !== null) continue;
+      const r = resolveEvent(bezahlt, balance, catalog, event.id, choice.id);
+      if (!r.ok) continue;
+      ledger.pipeline.costs += kosten;
+      state = r.state;
+      break;
     }
   }
   return state;
 }
 
 /**
- * Lager und Fuhrpark (0.2.15+2), bewusst einfach: Bleibt nach dem Verkauf Öl
- * liegen, weil alle Wege voll sind, stellt der Bot ein eigenes Gespann ein und
- * verkauft weiter. Würde die nächste Förderung überlaufen, baut er Tanks. Beides
- * nur, solange die Rücklage bleibt – gierig leiht dafür notfalls bei der Bank. Pipeline, Händler und Thorne-Drohung nutzen
- * die Bots (noch) nicht.
+ * Thornes Frachtvertrag: Wert der Antworten gegenüber „ablehnen“ in $ über die
+ * Vertragszeit. Abgelehnt erhöht Thorne doppelt so oft; mit Mengenrabatt halb so
+ * oft wie abgelehnt, dazu Rabatt minus Strafe für fehlende Menge; exklusiv gar
+ * nicht, dafür kostet alles, was nicht auf die Bahn passt, Strafe.
  */
-function logistics(state: GameState, balance: Balance, reserve: number, borrow = false, hire = true): GameState {
-  const { teams, storage } = balance.transport;
-  /** Genug Geld für cost? Gierig leiht notfalls bei der Bank. */
-  const bezahlbar = (cost: number): boolean => {
-    if (state.cash - cost >= reserve) return true;
-    if (!borrow) return false;
-    const amount = Math.max(balance.credit.minLoan, Math.ceil(cost + reserve - state.cash));
-    if (amount > headroom(state, balance)) return false;
-    const loan = takeLoan(state, balance, amount);
-    if (loan.ok) state = loan.state;
-    return loan.ok;
-  };
-  while (Math.floor(state.oilStock) > 0 && TRANSPORT_MODES.every((m) => capacityLeft(state, balance, m) === 0 || netPrice(state, balance, m) <= 0)) {
-    if (!hire || state.logistics.teams >= teams.maxTeams || !bezahlbar(teams.hireCost)) break;
-    const r = hireTeam(state, balance);
-    if (!r.ok) break;
-    state = sell(r.state, balance, 1);
+export function thorneOfferValue(state: GameState, balance: Balance, kind: 'exclusive' | 'volume'): number {
+  const th = balance.transport.thorne;
+  const runden = Math.min(balance.rivals.thorne.contractRounds, roundsLeft(state));
+  const menge = production(state);
+  const bahn = Math.min(menge, balance.transport.rail.capacity);
+  const h = th.hikeChance;
+  const abgelehnt = Math.min(1, h * balance.rivals.thorne.refusedHikeFactor);
+  const stufen = (runden * (runden + 1)) / 2;
+  if (kind === 'volume') {
+    return runden * (bahn * th.volumeDiscount - Math.max(0, th.minVolume - bahn) * th.shortfallPenalty) + (abgelehnt - h) * th.hikeStep * bahn * stufen;
   }
-  const naechste = jacobSupply(state);
-  for (let i = 0; i < storage.maxTanks && state.oilStock + naechste > storageCapacity(state, balance) + state.logistics.tanksBuilding * storage.tankCapacity; i++) {
-    if (state.logistics.tanks + state.logistics.tanksBuilding >= storage.maxTanks || !bezahlbar(storage.tankCost)) break;
-    const r = buildTank(state, balance);
-    if (!r.ok) break;
+  return -150 - runden * Math.max(0, menge - bahn) * th.exclusivePenalty + abgelehnt * th.hikeStep * bahn * stufen;
+}
+
+function answerThorne(state: GameState, balance: Balance, catalog: readonly EventDef[], cfg: BotTransport, purse: Purse, ledger: TransportLedger): GameState {
+  if (cfg.thorne === 'refuse') return state;
+  for (const event of openItems(state, catalog)) {
+    const exklusiv = event.choices.find((c) => c.marks.includes(RIVAL_MARKS.thorneExclusive));
+    const rabatt = event.choices.find((c) => c.marks.includes(RIVAL_MARKS.thorneVolume));
+    if (!exklusiv && !rabatt) continue;
+    // Ohne eigene Förderung wartet der Bot ab, bis die Frist abläuft.
+    if (production(state) <= 0) continue;
+    let wahl: EventChoice | undefined;
+    if (cfg.thorne === 'exclusive') wahl = exklusiv;
+    else if (cfg.thorne === 'volume') wahl = production(state) >= balance.transport.thorne.minVolume ? rabatt : undefined;
+    else {
+      const werte = [
+        { c: exklusiv, v: exklusiv ? thorneOfferValue(state, balance, 'exclusive') : -Infinity },
+        { c: rabatt, v: rabatt ? thorneOfferValue(state, balance, 'volume') : -Infinity },
+      ].sort((a, b) => b.v - a.v);
+      wahl = werte[0].v > 0 ? werte[0].c : undefined;
+    }
+    if (!wahl) continue;
+    const kosten = -(wahl.effects.cash ?? 0);
+    if (state.cash - kosten < purse.reserve || choiceReason(state, balance, event, wahl) !== null) continue;
+    const r = resolveEvent(state, balance, catalog, event.id, wahl.id);
+    if (!r.ok) continue;
+    ledger.rail.costs += kosten;
     state = r.state;
   }
   return state;
+}
+
+/**
+ * Lager und Wege für einen planenden Bot (0.2.15+4), jeder nach seinem Charakter
+ * (bots.transport in balance.yaml): verkaufen (mit Timing und Händler), Gespanne,
+ * Tanks, Pipeline mit Wegerechten, Wachleute, Drohung gegenüber Thorne.
+ */
+function transportTurn(
+  state: GameState,
+  balance: Balance,
+  strategy: Exclude<Strategy, 'zufaellig'>,
+  catalog: readonly EventDef[],
+  ledger: TransportLedger,
+): GameState {
+  const cfg = balance.bots.transport[strategyKey(strategy)];
+  const purse = purseFor(balance, strategy);
+  const { teams, storage, pipeline, thorne } = balance.transport;
+  state = answerThorne(state, balance, catalog, cfg, purse, ledger);
+
+  // Pipeline: vermessen, Wegerechte kaufen, bauen – nur, wenn sie sich lohnt.
+  const lg0 = state.logistics;
+  if (lg0.pipeline === 'none' && pipelineWorth(state, balance, cfg.pipelinePayback)) {
+    const bezahlt = afford(state, balance, purse, pipeline.surveyCost);
+    const r = bezahlt && surveyPipeline(bezahlt, balance);
+    if (r && r.ok) {
+      state = r.state;
+      ledger.pipeline.costs += pipeline.surveyCost;
+    }
+  }
+  if (state.logistics.pipeline === 'surveyed' && pipelineWorth(state, balance, cfg.pipelinePayback)) {
+    state = buyRights(state, balance, catalog, purse, ledger);
+    if (missingRights(state, balance).length === 0) {
+      const bezahlt = afford(state, balance, purse, pipeline.buildCost);
+      const r = bezahlt && buildPipeline(bezahlt, balance);
+      if (r && r.ok) {
+        state = r.state;
+        ledger.pipeline.costs += pipeline.buildCost * (1 - balance.transport.assetShare);
+      }
+    }
+  }
+  // Wachleute
+  if (state.logistics.pipeline === 'ready' && cfg.guards !== 'never') {
+    const feinde = sabotageChance({ ...state, logistics: { ...state.logistics, guards: false } }, balance) > pipeline.sabotageChance;
+    const wollen = cfg.guards === 'always' || feinde;
+    if (wollen !== state.logistics.guards) {
+      const r = setGuards(state, wollen);
+      if (r.ok) state = r.state;
+    }
+  }
+  // Drohung: nur, wenn sie glaubwürdig ist und die Bahn etwas trägt.
+  if (cfg.threaten && production(state) > 0 && state.railTariff > thorne.minTariff && threatWait(state, balance) === 0 && pipelineCredible(state, balance)) {
+    const r = threatenThorne(state, balance);
+    if (r.ok) state = r.state;
+  }
+  // Gespanne, die billiger sind als die Bahn – vor dem Verkauf, damit sie gleich fahren.
+  if (cfg.teams === 'cheaper') {
+    while (
+      state.logistics.teams < teams.maxTeams &&
+      teamSlice(state, balance) >= teams.capacity &&
+      teamCostPerBarrel(state, balance) < tariff(state, balance, 'rail')
+    ) {
+      const bezahlt = afford(state, balance, purse, teams.hireCost);
+      const r = bezahlt && hireTeam(bezahlt, balance);
+      if (!r || !r.ok) break;
+      state = r.state;
+      ledger.teams.costs += teams.hireCost * (1 - teams.resale);
+    }
+    // Fördert Jacob kaum noch, gibt er überzählige Gespanne ab.
+    while (state.logistics.teams > 0 && teamSlice(state, balance) < -teams.capacity * 0.5) {
+      const r = dismissTeam(state, balance);
+      if (!r.ok) break;
+      state = r.state;
+    }
+  }
+
+  const anteil = sellShare(state, cfg);
+  state = sell(state, balance, anteil, ledger, useTrader(state, balance, cfg, anteil), cfg.margin);
+
+  // Bleibt nach dem Verkauf Öl liegen, weil alle Wege voll sind: ein Gespann mehr.
+  if (cfg.teams !== 'never') {
+    while (anteil === 1 && Math.floor(state.oilStock) > 0 && TRANSPORT_MODES.every((m) => capacityLeft(state, balance, m) === 0 || netPrice(state, balance, m) <= 0)) {
+      if (state.logistics.teams >= teams.maxTeams) break;
+      const bezahlt = afford(state, balance, purse, teams.hireCost);
+      const r = bezahlt && hireTeam(bezahlt, balance);
+      if (!r || !r.ok) break;
+      ledger.teams.costs += teams.hireCost * (1 - teams.resale);
+      state = sell(r.state, balance, 1, ledger, useTrader(r.state, balance, cfg, 1), cfg.margin);
+    }
+  }
+  // Würde die nächste Förderung überlaufen, baut er Tanks.
+  if (cfg.tanks) {
+    const naechste = jacobSupply(state);
+    for (let i = 0; i < storage.maxTanks && state.oilStock + naechste > storageCapacity(state, balance) + state.logistics.tanksBuilding * storage.tankCapacity; i++) {
+      if (state.logistics.tanks + state.logistics.tanksBuilding >= storage.maxTanks) break;
+      const bezahlt = afford(state, balance, purse, storage.tankCost);
+      const r = bezahlt && buildTank(bezahlt, balance);
+      if (!r || !r.ok) break;
+      state = r.state;
+    }
+  }
+  return state;
+}
+
+function strategyKey(strategy: Exclude<Strategy, 'zufaellig'>): 'cautious' | 'greedy' | 'balanced' {
+  return strategy === 'vorsichtig' ? 'cautious' : strategy === 'gierig' ? 'greedy' : 'balanced';
+}
+
+/** Zufällig: mit logisticsChance je Runde eine zufällige Anschaffung oder Drohung, die gerade geht. */
+function randomLogistics(state: GameState, balance: Balance, rng: Rng, ledger: TransportLedger): GameState {
+  if (rng.float() >= balance.bots.random.logisticsChance) return state;
+  const t = balance.transport;
+  const wahl = rng.pick(['tank', 'team', 'survey', 'build', 'guards', 'threat'] as const);
+  const kosten: Record<typeof wahl, [RouteKey, number] | null> = {
+    tank: null,
+    team: ['teams', t.teams.hireCost * (1 - t.teams.resale)],
+    survey: ['pipeline', t.pipeline.surveyCost],
+    build: ['pipeline', t.pipeline.buildCost * (1 - t.assetShare)],
+    guards: null,
+    threat: null,
+  };
+  const r =
+    wahl === 'tank'
+      ? buildTank(state, balance)
+      : wahl === 'team'
+        ? hireTeam(state, balance)
+        : wahl === 'survey'
+          ? surveyPipeline(state, balance)
+          : wahl === 'build'
+            ? buildPipeline(state, balance)
+            : wahl === 'guards'
+              ? setGuards(state, !state.logistics.guards)
+              : threatenThorne(state, balance);
+  if (!r.ok) return state;
+  const k = kosten[wahl];
+  if (k) ledger[k[0]].costs += k[1];
+  return r.state;
 }
 
 /** Fundchance laut Geologe als Anteil 0–1 (die Prognose rechnet in Prozent). */
@@ -124,9 +449,9 @@ function openWells(state: GameState) {
 
 // --- vorsichtig ---------------------------------------------------------------
 
-function cautiousTurn(state: GameState, balance: Balance): GameState {
+function cautiousTurn(state: GameState, balance: Balance, catalog: readonly EventDef[], ledger: TransportLedger): GameState {
   const { minChance, cashReserve, maxStage } = balance.bots.cautious;
-  state = logistics(sell(state, balance, 1), balance, cashReserve);
+  state = transportTurn(state, balance, 'vorsichtig', catalog, ledger);
   for (const well of openWells(state)) {
     const next = well.stage + 1;
     const leistbar = next <= maxStage && next <= balance.drilling.stages.length && state.cash - stageCost(balance, next) >= cashReserve;
@@ -186,8 +511,8 @@ function rentDue(state: GameState, balance: Balance): number {
   return undrilled(state).length * balance.lease.delayRental;
 }
 
-function greedyTurn(state: GameState, balance: Balance): GameState {
-  state = logistics(sell(state, balance, 1), balance, 0, true, false);
+function greedyTurn(state: GameState, balance: Balance, catalog: readonly EventDef[], ledger: TransportLedger): GameState {
+  state = transportTurn(state, balance, 'gierig', catalog, ledger);
   for (const well of openWells(state)) {
     if (well.status === 'stuck' || well.stage < balance.drilling.stages.length) {
       const vorher = state;
@@ -252,9 +577,9 @@ function balancedPay(state: GameState, balance: Balance, parcelId: string, kind:
   return r.ok ? r.state : state;
 }
 
-function balancedTurn(state: GameState, balance: Balance): GameState {
+function balancedTurn(state: GameState, balance: Balance, catalog: readonly EventDef[], ledger: TransportLedger): GameState {
   const { minChance, cashReserve, maxStage, maxUndrilled } = balance.bots.balanced;
-  state = logistics(sell(state, balance, 1), balance, cashReserve, false, false);
+  state = transportTurn(state, balance, 'ausgewogen', catalog, ledger);
   for (const well of openWells(state)) {
     const vorher = state;
     const next = well.stage + 1;
@@ -408,8 +733,8 @@ export function okActions(state: GameState, balance: Balance): { parcelId: strin
   );
 }
 
-function randomTurn(state: GameState, balance: Balance, rng: Rng): GameState {
-  state = sell(state, balance, rng.float());
+function randomTurn(state: GameState, balance: Balance, rng: Rng, ledger: TransportLedger): GameState {
+  state = randomLogistics(sell(state, balance, rng.float(), ledger, rng.float() < 0.5), balance, rng, ledger);
   for (let i = 0; i < balance.bots.random.actionsPerRound; i++) {
     const moeglich = okActions(state, balance);
     if (moeglich.length === 0) break;
@@ -423,20 +748,27 @@ function randomTurn(state: GameState, balance: Balance, rng: Rng): GameState {
  * Eine Runde Aktionen nach der Strategie – ohne endRound. Mit Katalog (2.15)
  * beantwortet der Bot zuerst Ereignisse und nimmt feste Termine wahr.
  */
-export function botTurn(state: GameState, balance: Balance, strategy: Strategy, rng: Rng, catalog: readonly EventDef[] = []): GameState {
+export function botTurn(
+  state: GameState,
+  balance: Balance,
+  strategy: Strategy,
+  rng: Rng,
+  catalog: readonly EventDef[] = [],
+  ledger: TransportLedger = newLedger(),
+): GameState {
   if (state.finished) return state;
   if (catalog.length > 0) {
     state = strategy === 'zufaellig' ? randomAnswers(state, balance, catalog, rng) : answerEvents(state, balance, catalog, eventPolicy(balance, strategy));
   }
   switch (strategy) {
     case 'vorsichtig':
-      return cautiousTurn(state, balance);
+      return cautiousTurn(state, balance, catalog, ledger);
     case 'gierig':
-      return greedyTurn(state, balance);
+      return greedyTurn(state, balance, catalog, ledger);
     case 'ausgewogen':
-      return balancedTurn(state, balance);
+      return balancedTurn(state, balance, catalog, ledger);
     case 'zufaellig':
-      return randomTurn(state, balance, rng);
+      return randomTurn(state, balance, rng, ledger);
   }
 }
 
@@ -450,6 +782,10 @@ export interface GameResult {
   appointments: number;
   /** Runden, die Jacob krank war. */
   sickRounds: number;
+  /** Buchführung je Transportweg (0.2.15+4). */
+  transport: TransportLedger;
+  /** Lief in dieser Partie eine Pipeline? */
+  pipeline: boolean;
   state: GameState;
 }
 
@@ -463,13 +799,16 @@ export function playGame(seed: string, balance: Balance, strategy: Strategy, cat
   let rounds = 0;
   let appointments = 0;
   let sickRounds = 0;
+  const ledger = newLedger();
   while (!state.finished) {
     if (rounds >= state.totalRounds + 5) {
       throw new Error(`Partie ${seed} (${strategy}) endet nicht nach ${rounds} Runden.`);
     }
     if (state.sick > 0) sickRounds++;
     else appointments += state.agenda.budget;
-    state = endRound(botTurn(state, balance, strategy, rng, catalog), balance, catalog);
+    const gezogen = botTurn(state, balance, strategy, rng, catalog, ledger);
+    state = endRound(gezogen, balance, catalog);
+    bookRound(gezogen, state, balance, ledger);
     rounds++;
   }
   const bankrupt = state.ending === 'pleite';
@@ -480,8 +819,23 @@ export function playGame(seed: string, balance: Balance, strategy: Strategy, cat
     rounds,
     appointments,
     sickRounds,
+    transport: ledger,
+    pipeline: state.events.marks[LOGISTICS_MARKS.built] !== undefined,
     state,
   };
+}
+
+/**
+ * Buchführung am Rundenende: Löhne gehen auf die eigenen Fuhrwerke, Streckenwärter
+ * und Wachleute auf die Pipeline, Thornes Strafe für fehlende Mindestmenge auf die
+ * Bahn, eine Reparatur nach Sabotage auf die Pipeline.
+ */
+export function bookRound(vorher: GameState, nachher: GameState, balance: Balance, ledger: TransportLedger): void {
+  const fix = fixedCosts(vorher, balance);
+  ledger.teams.costs += fix.wages;
+  ledger.pipeline.costs += fix.upkeep + fix.guards;
+  ledger.rail.costs += Math.max(0, volumeObligation(vorher, balance) - vorher.shipped.rail) * balance.transport.thorne.shortfallPenalty;
+  if (vorher.logistics.pipeline === 'ready' && nachher.logistics.pipeline === 'damaged') ledger.pipeline.costs += balance.transport.pipeline.repairCost;
 }
 
 // --- Einstieg (2.13) ------------------------------------------------------------
@@ -559,6 +913,13 @@ export interface BotRow {
   sickShare: number;
   /** Jacobs Funde (2.15): Anfangsraten in Barrel je Runde und gemessener Rückgang je Quelle. */
   finds: FindStats;
+  /** Buchführung je Transportweg über alle Partien (0.2.15+4). */
+  transport: TransportLedger;
+  /** Partien mit laufender Pipeline. */
+  pipelineGames: number;
+  /** Partien mit Kapitelziel – und davon mit Pipeline. */
+  goalGames: number;
+  pipelineGoalGames: number;
 }
 
 /**
@@ -619,7 +980,21 @@ export function runBots(balance: Balance, games = balance.bots.games, catalog: r
   const summe = new Map(
     STRATEGIES.map((s) => [
       s,
-      { pleiten: 0, ziel: 0, wert: 0, siege: 0, bKasse: 0, bQuellen: 0, termine: 0, runden: 0, krank: 0, finds: { small: [], gusher: [], declines: [] } as FindStats },
+      {
+        pleiten: 0,
+        ziel: 0,
+        wert: 0,
+        siege: 0,
+        bKasse: 0,
+        bQuellen: 0,
+        termine: 0,
+        runden: 0,
+        krank: 0,
+        finds: { small: [], gusher: [], declines: [] } as FindStats,
+        transport: newLedger(),
+        pipeline: 0,
+        pipelineZiel: 0,
+      },
     ]),
   );
   for (let i = 0; i < games; i++) {
@@ -639,6 +1014,9 @@ export function runBots(balance: Balance, games = balance.bots.games, catalog: r
       s.finds.small.push(...f.small);
       s.finds.gusher.push(...f.gusher);
       s.finds.declines.push(...f.declines);
+      addLedger(s.transport, r.transport);
+      if (r.pipeline) s.pipeline++;
+      if (r.pipeline && r.goal) s.pipelineZiel++;
       return { strategy, bankrupt: r.bankrupt, empire: r.empire };
     });
     for (const [strategy, anteil] of seedWinners(results, balance.start.cash)) summe.get(strategy)!.siege += anteil;
@@ -658,6 +1036,10 @@ export function runBots(balance: Balance, games = balance.bots.games, catalog: r
       meanAppointments: s.runden > 0 ? s.termine / s.runden : 0,
       sickShare: s.runden > 0 ? s.krank / s.runden : 0,
       finds: s.finds,
+      transport: s.transport,
+      pipelineGames: s.pipeline,
+      goalGames: s.ziel,
+      pipelineGoalGames: s.pipelineZiel,
     };
   });
 }
@@ -710,7 +1092,21 @@ const TARGET_TEXT: Record<BotTargetId, { label: string; goal: string; unit: Targ
   decline: { label: 'Gemessener Rückgang je Quartal', goal: 'GDD §15: 8–15 %', unit: 'prozent' },
   wildcatHit: { label: 'Trefferquote blinde Wildcat-Bohrung (Randlage, 300 m)', goal: 'GDD §15: etwa 1 von 5 bis 1 von 10', unit: 'prozent' },
   appointments: { label: 'Ø Termine je Runde (Standard-Bot)', goal: 'GDD §15: 5 je Quartal', unit: 'zahl' },
+  routeShare: { label: 'Höchster Anteil eines Transportwegs an allen verkauften Barrel', goal: 'GDD §6: kein Weg dominiert, jeder hat seinen Preis', unit: 'prozent' },
+  pipelineSuccess: { label: 'Partien mit Kapitelziel, in denen eine Pipeline läuft', goal: 'Pipeline ist eine Wahl, kein Pflichtweg', unit: 'prozent' },
 };
+
+/** Anteil je Weg an allen verkauften Barrel (Händler nicht extra – er fährt über einen der Wege). */
+export function routeShares(ledger: TransportLedger): Record<TransportMode, number> {
+  const summe = TRANSPORT_MODES.reduce((s, m) => s + ledger[m].barrels, 0);
+  return Object.fromEntries(TRANSPORT_MODES.map((m) => [m, summe > 0 ? ledger[m].barrels / summe : 0])) as Record<TransportMode, number>;
+}
+
+function totalLedger(rows: readonly BotRow[]): TransportLedger {
+  const out = newLedger();
+  for (const r of rows) addLedger(out, r.transport);
+  return out;
+}
 
 function mean(xs: readonly number[]): number {
   return xs.length > 0 ? xs.reduce((s, x) => s + x, 0) / xs.length : 0;
@@ -735,6 +1131,12 @@ export function checkTargets(rows: readonly BotRow[], wildcatHit: number, balanc
     decline: mean(alle('declines')),
     wildcatHit,
     appointments: row('ausgewogen')?.meanAppointments ?? 0,
+    routeShare: Math.max(0, ...Object.values(routeShares(totalLedger(rows)))),
+    pipelineSuccess: (() => {
+      const planend = rows.filter((r) => r.strategy !== 'zufaellig');
+      const ziel = planend.reduce((s, r) => s + r.goalGames, 0);
+      return ziel > 0 ? planend.reduce((s, r) => s + r.pipelineGoalGames, 0) / ziel : 0;
+    })(),
   };
   return (Object.keys(TARGET_TEXT) as BotTargetId[]).map((id) => {
     const { min, max } = balance.bots.targets[id];
@@ -778,4 +1180,47 @@ export function botTable(rows: readonly BotRow[]): string {
     '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
     ...zeilen,
   ].join('\n');
+}
+
+const ROUTE_LABEL: Record<RouteKey, string> = {
+  wagon: 'Mietfuhrwerk',
+  rail: 'Bahn (Thorne)',
+  teams: 'Eigene Fuhrwerke',
+  pipeline: 'Pipeline',
+  trader: 'davon an den Händler',
+};
+
+function dollarJeBarrel(x: number | null): string {
+  return x === null ? '–' : `${zahl(x, 2)} $`;
+}
+
+/**
+ * Markdown-Tabelle Transportwege (0.2.15+4): Anteil an allen verkauften Barrel
+ * (gesamt und je Strategie), Erlös nach Fracht und Förderzins, Anlagen- und
+ * Fixkosten und Gewinn je Barrel. Der Händler ist ein Käufer – seine Barrel
+ * stecken schon in den Wegen, seine Kosten sind Cranes Groll.
+ */
+export function transportTable(rows: readonly BotRow[]): string {
+  const gesamt = totalLedger(rows);
+  const anteile = routeShares(gesamt);
+  const jeStrategie = rows.map((r) => ({ r, a: routeShares(r.transport), summe: TRANSPORT_MODES.reduce((s, m) => s + r.transport[m].barrels, 0) }));
+  const zeile = (k: RouteKey) => {
+    const g = gesamt[k];
+    const anteil = (x: { r: BotRow; a: Record<TransportMode, number>; summe: number }) =>
+      k === 'trader' ? (x.summe > 0 ? x.r.transport.trader.barrels / x.summe : 0) : x.a[k];
+    const ges = k === 'trader' ? gesamt.trader.barrels / Math.max(1, TRANSPORT_MODES.reduce((s, m) => s + gesamt[m].barrels, 0)) : anteile[k];
+    return `| ${ROUTE_LABEL[k]} | ${prozent(ges)} | ${jeStrategie.map((x) => prozent(anteil(x))).join(' | ')} | ${dollarJeBarrel(g.barrels > 0 ? g.net / g.barrels : null)} | ${dollarJeBarrel(g.barrels > 0 ? g.costs / g.barrels : null)} | ${dollarJeBarrel(profitPerBarrel(g))} |`;
+  };
+  return [
+    `| Weg | Anteil Barrel | ${rows.map((r) => r.strategy).join(' | ')} | Ø Erlös je bbl | Ø Anlagen/Fixkosten je bbl | Ø Gewinn je bbl |`,
+    `| --- | ---: | ${rows.map(() => '---:').join(' | ')} | ---: | ---: | ---: |`,
+    ...ROUTE_KEYS.map(zeile),
+  ].join('\n');
+}
+
+/** Wie oft lief eine Pipeline – je Strategie, in allen Partien und in denen mit Kapitelziel. */
+export function pipelineLine(rows: readonly BotRow[]): string {
+  return rows
+    .map((r) => `${r.strategy} ${prozent(r.games > 0 ? r.pipelineGames / r.games : 0)} (mit Kapitelziel ${r.goalGames > 0 ? prozent(r.pipelineGoalGames / r.goalGames) : '–'})`)
+    .join(', ');
 }

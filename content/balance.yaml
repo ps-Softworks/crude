@@ -184,12 +184,13 @@ transport:
     costPerBarrel: 0.25     # PLATZHALTER: Starttarif
     capacity: 20000         # PLATZHALTER
   # 0.2.15+2: eigene Fuhrwerke – Fixkosten je Runde, dafür billig je Barrel. Lohnt erst ab Menge:
-  # gegen das Mietfuhrwerk ab ~360 bbl je Gespann und Runde, gegen die Bahn (0,25 $) erst ab ~1.200.
+  # gegen das Mietfuhrwerk ab ~460 bbl je Gespann und Runde, gegen die Bahn (0,25 $) erst ab ~1.700.
+  # 0.2.15+4: 0,10 → 0,12 $ und Lohn 180 → 220 $ – vorher schlugen eigene Fuhrwerke in den Bot-Läufen jeden anderen Weg.
   teams:
     label: Eigene Fuhrwerke
-    costPerBarrel: 0.10     # PLATZHALTER: Futter, Fässer, Verschleiß
+    costPerBarrel: 0.12     # PLATZHALTER: Futter, Fässer, Verschleiß
     capacity: 2000          # PLATZHALTER: je Gespann und Runde
-    wagePerRound: 180       # PLATZHALTER: Lohn je Gespann und Runde, auch wenn es steht
+    wagePerRound: 220       # PLATZHALTER: Lohn je Gespann und Runde, auch wenn es steht
     hireCost: 250           # PLATZHALTER: Wagen und Ochsen, einmalig
     resale: 0.5             # Wer ein Gespann abgibt, bekommt diesen Anteil zurück
     maxTeams: 5
@@ -213,9 +214,9 @@ transport:
     guardsPerRound: 100     # Wachleute
     guardsFactor: 0.25      # … senken die Sabotage-Chance auf ein Viertel
   thorne:
-    hikeChance: 0.20        # PLATZHALTER: Chance je Runde mit Bahnfracht
-    hikeStep: 0.10          # PLATZHALTER: Erhöhung in $ je Barrel
-    maxTariff: 0.80         # PLATZHALTER: höchster Bahntarif (darf über dem Fuhrwerk liegen)
+    hikeChance: 0.30        # PLATZHALTER: Chance je Runde mit Bahnfracht (0.2.15+4: 0,20 → 0,30 – Thorne soll spürbar drücken, sonst lohnt kein anderer Weg)
+    hikeStep: 0.15          # PLATZHALTER: Erhöhung in $ je Barrel (0.2.15+4: 0,10 → 0,15)
+    maxTariff: 1.00         # PLATZHALTER: höchster Bahntarif (darf über dem Fuhrwerk liegen; 0.2.15+4: 0,80 → 1,00)
     # Verhandlung (Brief „Frachtvertrag“, rivals.thorne.contractRounds Runden):
     volumeDiscount: 0.08    # Mengenrabatt in $ je Barrel …
     minVolume: 5000         # … gegen Mindestabnahme je Runde (ab der Runde nach der Unterschrift) …
@@ -300,7 +301,7 @@ bots:
   seedPrefix: bot          # Seeds bot-0, bot-1, … – für jede Strategie dieselben
   cautious: { minChance: 0.5, cashReserve: 500, maxStage: 2 }   # vorsichtig: Fundchance ab 50 %, 500 $ Rücklage, höchstens Stufe 2
   greedy: { minChance: 0.25, maxUndrilled: 1 }                 # gierig: pachtet ab 25 % Fundchance, hält höchstens 1 ungebohrte Pacht
-  random: { actionsPerRound: 3 }                                # zufällig: so viele Aktionen je Runde
+  random: { actionsPerRound: 3, logisticsChance: 0.15 }         # zufällig: so viele Aktionen je Runde; mit 15 % je Runde eine zufällige Anschaffung (Tank, Gespann, Pipeline, Drohung …)
   # 2.15: ausgewogen ist der Standard-Bot – leiht, aber nur bis maxDebtShare des Bankrahmens.
   balanced: { minChance: 0.4, cashReserve: 300, maxStage: 3, maxDebtShare: 0.5, maxUndrilled: 1 }
   daysPerRound: 91         # ein Quartal; für die Anfangsrate in bbl/Tag (GDD §15)
@@ -312,6 +313,16 @@ bots:
     cautious: { strength: 30, family: 20, appointment: 25, overtimeFrom: 101 }
     greedy: { strength: 5, family: 0, appointment: 5, overtimeFrom: 40 }
     balanced: { strength: 15, family: 10, appointment: 10, overtimeFrom: 70 }
+  # Transport (0.2.15+4): So nutzen die planenden Bots Lager und Wege – jeder nach seinem Charakter.
+  # trader never|always|calc · teams never|overflow|cheaper · pipelinePayback: Pipeline nur, wenn die erwartete
+  # Ersparnis das Wievielfache der Kosten bringt (0 = nie) · thorne exclusive|volume|calc|refuse ·
+  # guards never|always|enemies · holdShare: so viel bleibt im Tank, wenn der Preis gerade steigt ·
+  # margin: nur verkaufen, wenn nach Fracht und Förderzins etwas übrig bleibt (gierig: Menge vor Marge).
+  transport:
+    cautious: { trader: never, teams: overflow, tanks: true, pipelinePayback: 2, thorne: exclusive, threaten: false, guards: always, holdShare: 0, margin: true }
+    greedy: { trader: always, teams: overflow, tanks: true, pipelinePayback: 1, thorne: refuse, threaten: false, guards: never, holdShare: 0.5, margin: false }
+    balanced: { trader: calc, teams: cheaper, tanks: true, pipelinePayback: 1.5, thorne: calc, threaten: true, guards: enemies, holdShare: 0, margin: true }
+  rightsEstimate: 600      # grobe Schätzung der Bots: so viel kosten die Wegerechte für die Pipeline zusammen
   # Zielwerte Kapitel 1 (2.15, GDD §15 und §17): Toleranzbereich min–max je Kennzahl.
   # Was gemessen wird, steht in src/sim/bots.ts (TARGETS); die Tabelle Ist/Ziel in docs/botlaeufe.md.
   targets:
@@ -325,6 +336,8 @@ bots:
     decline: { min: 0.08, max: 0.15 }         # gemessener Rückgang je Quartal (GDD §15: 8–15 %)
     wildcatHit: { min: 0.05, max: 0.25 }      # blinde Wildcat-Bohrung in Randlage auf 300 m (GDD §15: 1 von 5 bis 1 von 10)
     appointments: { min: 4.5, max: 5 }        # Ø Termine je Runde des Standard-Bots (GDD §15: 5 je Quartal)
+    routeShare: { min: 0, max: 0.75 }         # 0.2.15+4: höchster Anteil eines Transportwegs an allen verkauften Barrel – kein Weg dominiert
+    pipelineSuccess: { min: 0, max: 0.6 }     # 0.2.15+4: Anteil der Partien mit Kapitelziel (planende Bots), in denen eine Pipeline läuft
 
 # Rivalen (GDD §9.2, §15). Bullard pachtet und bohrt nach Gewinn-Formel.
 rivals:

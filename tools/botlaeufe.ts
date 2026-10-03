@@ -5,7 +5,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import { parseBalance } from '../src/sim/balance';
-import { blindWildcatChance, botTable, checkTargets, runBots, targetTable } from '../src/sim/bots';
+import { blindWildcatChance, botTable, checkTargets, pipelineLine, runBots, targetTable, transportTable } from '../src/sim/bots';
 import { loadEvents } from '../src/sim/testEvents';
 
 const root = new URL('../', import.meta.url);
@@ -16,12 +16,14 @@ const catalog = loadEvents();
 const start = Date.now();
 const rows = runBots(balance, balance.bots.games, catalog);
 const table = botTable(rows);
+const wege = transportTable(rows);
 const targets = checkTargets(rows, blindWildcatChance(balance), balance);
 const zielTabelle = targetTable(targets);
 const ohneSieger = Math.max(0, 1 - rows.reduce((s, r) => s + r.winRate, 0));
 const sekunden = ((Date.now() - start) / 1000).toFixed(1);
 
 console.log(table);
+console.log(`\n${wege}\nPipeline: ${pipelineLine(rows)}`);
 console.log(`\n${zielTabelle}`);
 console.log(`\n${balance.bots.games} Partien je Strategie in ${sekunden} s.`);
 const verfehlt = targets.filter((t) => !t.ok);
@@ -57,6 +59,16 @@ ${table}
 - **Kapitelziel:** Anteil der Partien, in denen die Kapitelprüfung bestanden ist (nicht bankrott und Imperiumswert ≥ 50.000 $ oder 5 fördernde Quellen, Zahlen in balance.yaml unter chapter).
 - **Siegquote:** Anteil der Seeds, in denen die Strategie den höchsten Imperiumswert hat. Eine Pleite zählt immer als letzter Platz, Gleichstand wird geteilt. Seit 2.15 gewinnt nur, wer mindestens die Startkasse (${balance.start.cash.toLocaleString('de-DE')} $) erreicht – sonst hat niemand gewonnen (diesmal ${prozent(ohneSieger)} der Seeds).
 - **Ø Termine:** Termine je Runde zu Rundenbeginn (krank = 0).
+
+## Transportwege
+
+Anteil an allen verkauften Barrel (gesamt und je Strategie). Erlös = was nach Fracht und Förderzins in der Kasse landet; Anlagen/Fixkosten = Anschaffung (soweit sie nicht im Imperiumswert weiterzählt), Löhne, Streckenwärter, Wachleute, Reparaturen, Wegerechte, Thornes Strafen und Vertragsgebühr; beim Händler Cranes Groll auf die übrigen Verkäufe. Gewinn = Erlös − Kosten.
+
+${wege}
+
+Pipeline lief in: ${pipelineLine(rows)}.
+
+- **Transport-Charakter** (balance.yaml bots.transport): vorsichtig ${JSON.stringify(balance.bots.transport.cautious)}; gierig ${JSON.stringify(balance.bots.transport.greedy)}; ausgewogen ${JSON.stringify(balance.bots.transport.balanced)}; zufällig: mit ${prozent(balance.bots.random.logisticsChance)} je Runde eine zufällige Anschaffung, verkauft zufällig auch an den Händler.
 
 ## Zielwerte Kapitel 1
 

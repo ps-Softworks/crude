@@ -239,7 +239,7 @@ describe('Spielzahlen (balance.yaml)', () => {
       expect(market.newsThreshold).toBe(0.10);
       expect(transport.wagon).toEqual({ label: 'Fuhrwerk', costPerBarrel: 0.6, capacity: 3000 });
       expect(transport.rail).toEqual({ label: 'Bahn', costPerBarrel: 0.25, capacity: 20000 });
-      expect(transport.thorne).toMatchObject({ hikeChance: 0.2, hikeStep: 0.1, maxTariff: 0.8 });
+      expect(transport.thorne).toMatchObject({ hikeChance: 0.3, hikeStep: 0.15, maxTariff: 1.0 });
     });
 
     it('meldet eine Bahn, die nicht billiger als das Fuhrwerk ist', () => {
@@ -506,5 +506,16 @@ describe('Ereignisse in balance.yaml (2.1)', () => {
     expect(parseBalance(raw).events.maxPerRound).toBe(1);
     expect(() => parseBalance({ ...raw, events: undefined })).toThrow(/Block "events" fehlt/);
     expect(() => parseBalance({ ...raw, events: { maxPerRound: 0 } })).toThrow(/events.maxPerRound/);
+  });
+
+  it('Bot-Transport (0.2.15+4): unbekannte Werte und fehlende Schalter werden abgelehnt', () => {
+    const raw = () => structuredClone(loadBalance()) as unknown as { bots: { transport: { greedy: Record<string, unknown> } } };
+    const falsch = raw();
+    falsch.bots.transport.greedy.trader = 'manchmal';
+    expect(() => parseBalance(falsch)).toThrow(/bots.transport.greedy.trader/);
+    const ohne = raw();
+    delete ohne.bots.transport.greedy.margin;
+    expect(() => parseBalance(ohne)).toThrow(/margin/);
+    expect(parseBalance(raw()).bots.transport.cautious.trader).toBe('never');
   });
 });

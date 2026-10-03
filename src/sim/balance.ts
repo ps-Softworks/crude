@@ -268,14 +268,18 @@ export interface BotsBalance {
   /** gierig: pachtet ab minChance. */
   /** maxUndrilled: so viele ungebohrte Pachten hält er höchstens – mehr schafft der Turm nicht. */
   greedy: { minChance: number; maxUndrilled: number };
-  /** zufällig: so viele Aktionen je Runde. */
-  random: { actionsPerRound: number };
+  /** zufällig: so viele Aktionen je Runde; mit logisticsChance je Runde eine zufällige Anschaffung (0.2.15+4). */
+  random: { actionsPerRound: number; logisticsChance: number };
   /** ausgewogen (2.15, Standard-Bot): wie vorsichtig, leiht aber bis maxDebtShare des Bankrahmens. */
   balanced: { minChance: number; cashReserve: number; maxStage: number; maxDebtShare: number; maxUndrilled: number };
   /** Tage je Runde (Quartal) – für die Anfangsrate in bbl/Tag. */
   daysPerRound: number;
   /** Wie die Bots Ereignisse bewerten (2.15). */
   events: Record<'cautious' | 'greedy' | 'balanced', BotEventWeights>;
+  /** Wie die planenden Bots Lager und Transportwege nutzen (0.2.15+4). */
+  transport: Record<'cautious' | 'greedy' | 'balanced', BotTransport>;
+  /** Grobe Schätzung in $, was die Wegerechte für die Pipeline zusammen kosten (Planung der Bots). */
+  rightsEstimate: number;
   /** Zielwerte Kapitel 1 (2.15): Toleranzbereich je Kennzahl. */
   targets: Record<BotTargetId, { min: number; max: number }>;
 }
@@ -292,6 +296,28 @@ export interface BotEventWeights {
   overtimeFrom: number;
 }
 
+/** Transport-Charakter eines Bots (0.2.15+4, src/sim/bots.ts). */
+export interface BotTransport {
+  /** Händler in Port Ellis: nie, immer (wenn er mehr zahlt) oder nach Rechnung (Aufschlag gegen Cranes Groll). */
+  trader: 'never' | 'always' | 'calc';
+  /** Eigene Fuhrwerke: nie, nur wenn alle Wege voll sind, oder sobald sie billiger sind als die Bahn. */
+  teams: 'never' | 'overflow' | 'cheaper';
+  /** Tanks bauen, bevor die nächste Förderung überläuft. */
+  tanks: boolean;
+  /** Pipeline nur, wenn die erwartete Ersparnis das Wievielfache der Kosten bringt; 0 = nie. */
+  pipelinePayback: number;
+  /** Thornes Frachtvertrag: Exklusiv, Mengenrabatt (nur wenn die Menge reicht), nach Rechnung oder ablehnen. */
+  thorne: 'exclusive' | 'volume' | 'calc' | 'refuse';
+  /** Mit der Pipeline drohen, sobald sie glaubwürdig ist. */
+  threaten: boolean;
+  /** Wachleute an der Pipeline: nie, immer oder nur, wenn Jacob Feinde hat. */
+  guards: 'never' | 'always' | 'enemies';
+  /** Steigt der Preis, bleibt dieser Anteil des Tanks liegen (Timing); 0 = immer alles verkaufen. */
+  holdShare: number;
+  /** Nur verkaufen, wenn nach Fracht und Förderzins etwas übrig bleibt; false: Hauptsache, der Preis deckt die Fracht. */
+  margin: boolean;
+}
+
 /** Kennzahlen mit Zielwert (2.15, GDD §15/§17); gemessen in src/sim/bots.ts. */
 export const BOT_TARGET_IDS = [
   'winRate',
@@ -304,6 +330,8 @@ export const BOT_TARGET_IDS = [
   'decline',
   'wildcatHit',
   'appointments',
+  'routeShare',
+  'pipelineSuccess',
 ] as const;
 export type BotTargetId = (typeof BOT_TARGET_IDS)[number];
 
@@ -1070,7 +1098,7 @@ function parseBots(raw: unknown): BotsBalance {
       maxStage: positiveInt(raw, 'bots.cautious.maxStage'),
     },
     greedy: { minChance: share(raw, 'bots.greedy.minChance'), maxUndrilled: positiveInt(raw, 'bots.greedy.maxUndrilled') },
-    random: { actionsPerRound: positiveInt(raw, 'bots.random.actionsPerRound') },
+    random: { actionsPerRound: positiveInt(raw, 'bots.random.actionsPerRound'), logisticsChance: share(raw, 'bots.random.logisticsChance') },
     balanced: {
       minChance: share(raw, 'bots.balanced.minChance'),
       cashReserve: nonNegative(raw, 'bots.balanced.cashReserve'),
@@ -1084,6 +1112,12 @@ function parseBots(raw: unknown): BotsBalance {
       greedy: parseBotWeights(raw, 'greedy'),
       balanced: parseBotWeights(raw, 'balanced'),
     },
+    transport: {
+      cautious: parseBotTransport(raw, 'cautious'),
+      greedy: parseBotTransport(raw, 'greedy'),
+      balanced: parseBotTransport(raw, 'balanced'),
+    },
+    rightsEstimate: nonNegative(raw, 'bots.rightsEstimate'),
     targets: Object.fromEntries(
       BOT_TARGET_IDS.map((id) => {
         const min = num(raw, `bots.targets.${id}.min`);
@@ -1093,6 +1127,42 @@ function parseBots(raw: unknown): BotsBalance {
       }),
     ) as Record<BotTargetId, { min: number; max: number }>,
   };
+}
+
+function choice<T extends string>(obj: unknown, path: string, allowed: readonly T[]): T {
+  const value = path.split('.').reduce<unknown>(
+    (o, key) => (o && typeof o === 'object' ? (o as Record<string, unknown>)[key] : undefined),
+    obj,
+  );
+  if (typeof value !== 'string' || !(allowed as readonly string[]).includes(value)) {
+    throw new BalanceError(`balance.yaml: "${path}" muss eins davon sein: ${allowed.join(', ')}`);
+  }
+  return value as T;
+}
+
+function parseBotTransport(raw: unknown, name: string): BotTransport {
+  const p = `bots.transport.${name}`;
+  const tanks = path(raw, `${p}.tanks`);
+  const threaten = path(raw, `${p}.threaten`);
+  const margin = path(raw, `${p}.margin`);
+  if (typeof margin !== 'boolean') throw new BalanceError(`balance.yaml: "${p}.margin" muss true oder false sein`);
+  if (typeof tanks !== 'boolean') throw new BalanceError(`balance.yaml: "${p}.tanks" muss true oder false sein`);
+  if (typeof threaten !== 'boolean') throw new BalanceError(`balance.yaml: "${p}.threaten" muss true oder false sein`);
+  return {
+    trader: choice(raw, `${p}.trader`, ['never', 'always', 'calc'] as const),
+    teams: choice(raw, `${p}.teams`, ['never', 'overflow', 'cheaper'] as const),
+    tanks,
+    pipelinePayback: nonNegative(raw, `${p}.pipelinePayback`),
+    thorne: choice(raw, `${p}.thorne`, ['exclusive', 'volume', 'calc', 'refuse'] as const),
+    threaten,
+    guards: choice(raw, `${p}.guards`, ['never', 'always', 'enemies'] as const),
+    holdShare: share(raw, `${p}.holdShare`),
+    margin,
+  };
+}
+
+function path(obj: unknown, p: string): unknown {
+  return p.split('.').reduce<unknown>((o, key) => (o && typeof o === 'object' ? (o as Record<string, unknown>)[key] : undefined), obj);
 }
 
 function parseBotWeights(raw: unknown, name: string): BotEventWeights {
