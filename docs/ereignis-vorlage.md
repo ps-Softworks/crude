@@ -61,6 +61,13 @@ Zum Ausprobieren: `npm run dev`, dann im Browser `?seed=abc&debug=1`.
   Angebot, Forderung, Information oder Persönliches. Ein Brief bleibt ein paar Runden liegen
   (`deadline: 2` = zwei Runden; ohne Angabe gilt der Wert aus balance.yaml); in der letzten Runde
   trägt er ein rotes Siegel. Beispiele: `content/events/k1-post.yaml`.
+- `document:` legt dem Brief ein **Dokument zum Prüfen** bei (2.5): `title` (z. B. Pachturkunde),
+  `reference` (das Vergleichsstück, z. B. „dem Grundbuchauszug“) und `fields` mit `id`, `label`,
+  `value` (echter Wert), `reference` (Wert im Vergleichsstück) und `forged` (so steht es da, wenn
+  genau dieses Feld gefälscht ist). Ob gefälscht wird, würfelt das Spiel (`forgeryChance`, sonst
+  balance.yaml). An der Wahl: `requiresFound: true` = geht nur nach gefundener Fälschung,
+  `marksIfForged: [name]` = Merkzeichen nur, wenn das Dokument gefälscht war – damit kostet eine
+  übersehene Fälschung später. Beispiele: `content/events/k1-dokumente.yaml`.
 - `routine: true` macht einen **festen Termin**: kein Würfeln, er steht jede Runde im
   Terminkalender (Beispiele in `content/events/k1-termine.yaml`).
 

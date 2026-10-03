@@ -262,6 +262,10 @@ events:
     maxPerRound: 1         # PLATZHALTER: höchstens so viele neue Briefe je Runde
     deadlineRounds: 2      # PLATZHALTER: Frist eines Briefs in Runden (Ankunftsrunde mitgezählt); letzte Runde = rotes Siegel
     guaranteeRounds: 6     # Kam von einer Briefart 6 Runden keiner, bringt die Post sicher einen (jede Art kommt so in jeder Partie)
+  # Dokumentenprüfung (2.5, GDD §3): Briefe mit Dokument (Pachturkunde, Gutachten) können gefälscht sein.
+  documents:
+    forgeryChance: 0.5     # PLATZHALTER: Chance, dass ein Dokument gefälscht ist (ein Ereignis kann eigene forgeryChance haben)
+    maxChecks: 2           # PLATZHALTER: so viele Felder prüft die Lupe je Dokument (sonst wäre alles prüfen zu leicht)
 
 # Termine und Kraft (2.3, GDD §3 und §4). Kraft ist für den Spieler nie als Zahl sichtbar.
 agenda:

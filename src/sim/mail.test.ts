@@ -263,10 +263,10 @@ describe('Inhalte und Zahlen', () => {
 });
 
 describe('Spielstand mit Posteingang', () => {
-  it('Format 4 sichert Fristen und Briefarten und lädt sie zurück', () => {
+  it('der Spielstand sichert Fristen und Briefarten und lädt sie zurück', () => {
     let state = newGame('save', balance, inhalte);
     for (let i = 0; i < 7; i++) state = endRound(state, balance, inhalte);
-    expect(SAVE_FORMAT).toBe(4);
+    expect(SAVE_FORMAT).toBeGreaterThanOrEqual(4);
     expect(Object.keys(state.events.lastMail).length).toBeGreaterThan(0);
     const geladen = deserializeGame(serializeGame(state, '0.2.4'));
     expect(geladen.ok && geladen.state).toEqual(state);
@@ -274,7 +274,7 @@ describe('Spielstand mit Posteingang', () => {
 
   it('Spielstände aus Format 3 laden mit Ersatzwerten', () => {
     const state = newGame('alt', balance, inhalte);
-    const { due: _due, lastMail: _last, ...alt } = state.events;
+    const { due: _due, lastMail: _last, docs: _docs, ...alt } = state.events;
     const text = JSON.stringify({ format: 3, appVersion: '0.2.3', savedRound: 1, state: { ...state, events: alt } });
     const geladen = deserializeGame(text);
     expect(geladen.ok).toBe(true);

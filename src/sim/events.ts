@@ -10,6 +10,7 @@
 import { spendAppointments, timeReason, overtimeFor } from './agenda';
 import type { Balance } from './balance';
 import { formatDate } from './calendar';
+import { deskDocument, forgeryFound, isForged, rollDocument, type DeskDocument, type DocState, type DocumentDef } from './documents';
 import type { GameState } from './game';
 import { DEFAULT_LANG, localize, type Lang, type LocalizedText } from './i18n';
 import { Rng, seedFromString, type RngState } from './rng';
@@ -58,6 +59,10 @@ export interface EventChoice {
   marks: string[];
   /** Termine, die diese Wahl kostet (2.3); fehlt die Angabe, gilt die des Ereignisses. */
   appointments?: number;
+  /** Dokumentenprüfung (2.5): Diese Wahl geht nur, wenn Jacob die Fälschung gefunden hat. */
+  requiresFound?: boolean;
+  /** Dokumentenprüfung (2.5): Merkzeichen, die nur gesetzt werden, wenn das Dokument gefälscht war – die verdeckte Folge. */
+  marksIfForged?: string[];
 }
 
 export interface EventDef {
@@ -92,6 +97,8 @@ export interface EventDef {
    * Standard-Wahl gilt. Fehlt sie, gilt events.mail.deadlineRounds; andere Ereignisse 1.
    */
   deadline?: number;
+  /** Dokumentenprüfung (2.5): ein Dokument zum Prüfen, z. B. eine Pachturkunde. */
+  document?: DocumentDef;
 }
 
 export interface EventsState {
@@ -107,10 +114,12 @@ export interface EventsState {
   due: Record<string, number>;
   /** Runde, in der zuletzt ein Brief dieser Art kam (2.4) – für die Briefarten-Garantie. */
   lastMail: Partial<Record<MailKind, number>>;
+  /** Dokumente der offenen Ereignisse (2.5): echt oder gefälscht, was die Lupe schon geprüft hat. */
+  docs: Record<string, DocState>;
 }
 
 export function newEventsState(seed: string): EventsState {
-  return { rng: seedFromString(`${seed}:ereignisse`), pending: [], seen: [], marks: {}, due: {}, lastMail: {} };
+  return { rng: seedFromString(`${seed}:ereignisse`), pending: [], seen: [], marks: {}, due: {}, lastMail: {}, docs: {} };
 }
 
 /** Frist eines Ereignisses in Runden (2.4): Briefe nach balance.yaml, alles andere eine Runde. */
@@ -239,7 +248,17 @@ export function routineOffered(state: GameState, event: EventDef): boolean {
 
 /** Warum eine Wahl gerade nicht geht – Bedingung oder Zeit –, oder null. */
 export function choiceReason(state: GameState, balance: Balance, event: EventDef, choice: EventChoice): string | null {
-  return unmetReason(state, choice.requires) ?? timeReason(state, balance, choiceCost(event, choice));
+  return foundReason(state, event, choice) ?? unmetReason(state, choice.requires) ?? timeReason(state, balance, choiceCost(event, choice));
+}
+
+/** Dokumentenprüfung (2.5): gesperrt, solange keine Fälschung gefunden ist. */
+function foundReason(state: Pick<GameState, 'events'>, event: EventDef, choice: EventChoice): string | null {
+  return choice.requiresFound && !forgeryFound(state, event.id) ? 'Dafür muss die Lupe erst eine Fälschung finden.' : null;
+}
+
+/** Ist eine Wahl ohne Blick auf die Termine möglich? Bedingungen und Dokumentenprüfung. */
+function waehlbar(state: GameState, event: EventDef, choice: EventChoice): boolean {
+  return foundReason(state, event, choice) === null && unmetReason(state, choice.requires) === null;
 }
 
 /**
@@ -255,6 +274,7 @@ export function drawEvents(state: GameState, balance: Balance, catalog: readonly
   const pending = [...state.events.pending];
   const seen = [...state.events.seen];
   const due = { ...state.events.due };
+  const docs = { ...state.events.docs };
   const log = [...state.log];
   let neu = 0;
   for (const event of catalog) {
@@ -269,10 +289,12 @@ export function drawEvents(state: GameState, balance: Balance, catalog: readonly
     pending.push(event.id);
     if (!seen.includes(event.id)) seen.push(event.id);
     due[event.id] = state.round + deadlineOf(event, balance) - 1;
+    const doc = rollDocument(event, balance, rng);
+    if (doc) docs[event.id] = doc;
     log.push(`${formatDate(state)}: Auf dem Schreibtisch: ${localize(event.title, lang)}.`);
     neu++;
   }
-  return drawMail({ ...state, log, events: { ...state.events, rng: rng.state, pending, seen, due } }, balance, catalog, lang);
+  return drawMail({ ...state, log, events: { ...state.events, rng: rng.state, pending, seen, due, docs } }, balance, catalog, lang);
 }
 
 /** Kann dieser Brief jetzt kommen? Bedingungen, Merkzeichen, nicht schon im Posteingang, bei once noch nie gekommen. */
@@ -309,6 +331,7 @@ export function drawMail(state: GameState, balance: Balance, catalog: readonly E
   let neu = 0;
   const zustellen = (event: EventDef) => {
     const ev = out.events;
+    const doc = rollDocument(event, balance, rng);
     out = {
       ...out,
       log: [...out.log, `${formatDate(out)}: Im Posteingang: ${localize(event.title, lang)}.`],
@@ -318,6 +341,7 @@ export function drawMail(state: GameState, balance: Balance, catalog: readonly E
         seen: ev.seen.includes(event.id) ? ev.seen : [...ev.seen, event.id],
         due: { ...ev.due, [event.id]: out.round + deadlineOf(event, balance) - 1 },
         lastMail: { ...ev.lastMail, [event.mail!]: out.round },
+        docs: doc ? { ...ev.docs, [event.id]: doc } : ev.docs,
       },
     };
     neu++;
@@ -358,7 +382,7 @@ export function resolveEvent(
   if (!event || !daDa) return { ok: false, reason: 'Dieses Ereignis liegt nicht auf dem Schreibtisch.' };
   const choice = event.choices.find((c) => c.id === choiceId);
   if (!choice) return { ok: false, reason: 'Diese Antwort gibt es nicht.' };
-  const reason = unmetReason(state, choice.requires);
+  const reason = foundReason(state, event, choice) ?? unmetReason(state, choice.requires);
   if (reason) return { ok: false, reason };
   const belegt = spendAppointments(state, balance, choiceCost(event, choice));
   if (!belegt.ok) return belegt;
@@ -370,13 +394,28 @@ function erledigen(state: GameState, event: EventDef, choice: EventChoice, lang:
   const agenda = event.routine ? { ...nach.agenda, done: [...nach.agenda.done, event.id] } : nach.agenda;
   // Merkzeichen behalten die Runde, in der sie zuerst gesetzt wurden.
   const marks = { ...nach.events.marks };
-  for (const m of choice.marks) if (marks[m] === undefined) marks[m] = state.round;
+  // Dokumentenprüfung (2.5): War das Dokument gefälscht, keimt die verdeckte Folge.
+  const gesetzt = isForged(state, event.id) ? [...choice.marks, ...(choice.marksIfForged ?? [])] : choice.marks;
+  for (const m of gesetzt) if (marks[m] === undefined) marks[m] = state.round;
   return {
     ...nach,
     log: [...nach.log, `${formatDate(state)}: ${vorsatz}${localize(event.title, lang)} – ${localize(choice.result, lang)}`],
-    events: { ...nach.events, pending: nach.events.pending.filter((id) => id !== event.id), marks, due: ohne(nach.events.due, event.id) },
+    events: {
+      ...nach.events,
+      pending: nach.events.pending.filter((id) => id !== event.id),
+      marks,
+      due: ohne(nach.events.due, event.id),
+      docs: ohneDoc(nach.events.docs, event.id),
+    },
     agenda,
   };
+}
+
+function ohneDoc(docs: Record<string, DocState>, id: string): Record<string, DocState> {
+  if (!(id in docs)) return docs;
+  const rest = { ...docs };
+  delete rest[id];
+  return rest;
 }
 
 function ohne(due: Record<string, number>, id: string): Record<string, number> {
@@ -400,13 +439,21 @@ export function autoResolve(state: GameState, catalog: readonly EventDef[], lang
     if (event && dueRound(out, id) > out.round) continue;
     const choice = event
       ? [event.choices.find((c) => c.default) ?? event.choices[0], ...event.choices].find(
-          (c) => c && unmetReason(out, c.requires) === null,
+          (c) => c && waehlbar(out, event, c),
         )
       : undefined;
     if (event && choice) {
       out = erledigen(out, event, choice, lang, 'Ohne Antwort: ');
     } else {
-      out = { ...out, events: { ...out.events, pending: out.events.pending.filter((p) => p !== id), due: ohne(out.events.due, id) } };
+      out = {
+        ...out,
+        events: {
+          ...out.events,
+          pending: out.events.pending.filter((p) => p !== id),
+          due: ohne(out.events.due, id),
+          docs: ohneDoc(out.events.docs, id),
+        },
+      };
     }
   }
   return out;
@@ -436,10 +483,14 @@ export interface DeskEvent {
   roundsLeft: number;
   /** Rotes Siegel: die Frist läuft in dieser Runde ab (2.4). */
   urgent: boolean;
+  /** Dokument zum Prüfen (2.5). */
+  document?: DeskDocument;
 }
 
 function zeigen(state: GameState, balance: Balance, event: EventDef, lang: Lang): DeskEvent {
+  const document = deskDocument(state, balance, event, lang);
   return {
+    ...(document ? { document } : {}),
     id: event.id,
     title: localize(event.title, lang),
     text: localize(event.text, lang),

@@ -2,8 +2,10 @@
 // Text und die Antworten als Knöpfe, jeweils mit dem, was sie an Terminen
 // kosten. Was eine Antwort bewirkt und ob sie geht, entscheidet src/sim.
 // Posteingang (2.4): Briefe mit Briefart, Frist und rotem Siegel.
+// Dokumentenprüfung (2.5): Dokument neben dem Vergleichsstück, Lupe je Feld.
 
 import { costLabel } from '../sim/agenda';
+import { inspectField, type DeskDocument } from '../sim/documents';
 import { deskEvents, deskMail, deskRoutines, resolveEvent, type DeskEvent, type MailKind } from '../sim/events';
 import type { GameState } from '../sim/game';
 import { balance } from './balance';
@@ -20,6 +22,54 @@ function frist(event: DeskEvent): string {
   return event.urgent ? 'Frist läuft ab – sonst gilt die Standardantwort' : `noch ${event.roundsLeft} Runden Zeit`;
 }
 
+const BEFUND = { unchecked: '', ok: 'stimmt', forged: 'Fälschung!' } as const;
+
+function Dokument({ game, eventId, doc, onResolved }: { game: GameState; eventId: string; doc: DeskDocument; onResolved: (state: GameState) => void }) {
+  return (
+    <div className="dokument">
+      <table>
+        <thead>
+          <tr>
+            <th />
+            <th>{doc.title}</th>
+            <th>laut {doc.reference}</th>
+            <th />
+          </tr>
+        </thead>
+        <tbody>
+          {doc.fields.map((f) => (
+            <tr key={f.id} className={f.verdict === 'forged' ? 'gefaelscht' : undefined}>
+              <th scope="row">{f.label}</th>
+              <td>{f.value}</td>
+              <td>{f.reference ?? '–'}</td>
+              <td>
+                {f.verdict === 'unchecked' ? (
+                  <button
+                    className="lupe"
+                    disabled={doc.checksLeft === 0}
+                    title="Dieses Feld mit der Lupe prüfen"
+                    onClick={() => {
+                      const r = inspectField(game, balance, events, eventId, f.id);
+                      if (r.ok) onResolved(r.state);
+                    }}
+                  >
+                    Lupe
+                  </button>
+                ) : (
+                  <span className={`befund ${f.verdict}`}>{BEFUND[f.verdict]}</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="hint">
+        {doc.checksLeft > 0 ? `Die Lupe reicht noch für ${doc.checksLeft === 1 ? 'ein Feld' : `${doc.checksLeft} Felder`}.` : 'Für weitere Prüfungen fehlt die Zeit.'}
+      </p>
+    </div>
+  );
+}
+
 function Karte({ game, event, onResolved, className }: { game: GameState; event: DeskEvent; onResolved: (state: GameState) => void; className: string }) {
   const gesperrt = event.choices.find((c) => !c.ok);
   return (
@@ -32,6 +82,7 @@ function Karte({ game, event, onResolved, className }: { game: GameState; event:
       )}
       <h2>{event.title}</h2>
       <p>{event.text}</p>
+      {event.document && <Dokument game={game} eventId={event.id} doc={event.document} onResolved={onResolved} />}
       <div className="actions">
         {event.choices.map((choice) => (
           <button

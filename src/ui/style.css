@@ -124,3 +124,12 @@ h1 button.neustart { font-size: 12px; font-weight: normal; letter-spacing: norma
 .briefkopf { margin: 0 0 4px; font-size: 0.85em; color: #666; display: flex; align-items: center; gap: 6px; }
 .briefkopf .briefart { font-variant: small-caps; letter-spacing: 1px; color: #5a4a2f; }
 .siegel { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #d9534f, #8b1a14); box-shadow: 0 0 0 2px #e8c4c1; }
+/* Dokumentenprüfung (2.5) */
+.dokument { margin: 8px 0; padding: 8px; background: #f7f1e1; border: 1px dashed #b9a77d; overflow-x: auto; }
+.dokument table { border-collapse: collapse; width: 100%; font-family: Georgia, serif; font-size: 0.9em; }
+.dokument th, .dokument td { padding: 3px 6px; text-align: left; border-bottom: 1px solid #e3d8bb; }
+.dokument thead th { font-variant: small-caps; color: #5a4a2f; }
+.dokument tr.gefaelscht td { background: #f6d6d3; }
+.dokument .lupe { padding: 2px 8px; font-size: 0.85em; }
+.befund.ok { color: #2e6b2e; }
+.befund.forged { color: #b3261e; font-weight: bold; }

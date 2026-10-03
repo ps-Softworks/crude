@@ -8,8 +8,9 @@ ohne Codeänderung. Prüfen: `npm run check:content` (meldet Fehler mit Datei un
 
 Kurzreferenz der Felder:
 - Ereignis: `id`, `title`, `text`, `conditions`, `marked`, `notMarked`, `delay`, `chance`, `once`,
-  `routine`, `appointments`, `mail`, `deadline`, `choices`
-- Wahl: `id`, `label`, `result`, `requires`, `effects`, `marks`, `default`, `appointments`
+  `routine`, `appointments`, `mail`, `deadline`, `document`, `choices`
+- Wahl: `id`, `label`, `result`, `requires`, `effects`, `marks`, `default`, `appointments`,
+  `requiresFound`, `marksIfForged`
 - Bedingungen: `minRound`, `maxRound`, `minCash`, `maxCash`, `minOilStock`,
   `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100)
 - Effekte: `cash`, `oilStock`, `railTariff`, `strength` (Kraft)
@@ -25,5 +26,11 @@ Kurzreferenz der Felder:
   in der letzten Runde mit rotem Siegel, danach gilt die Standard-Wahl. Kam von einer Art
   `events.mail.guaranteeRounds` Runden keiner, bringt die Post sicher einen – darum braucht jede
   Art einen Alltagsbrief ohne Bedingungen mit `once: false`. Beispiele: `k1-post.yaml`.
+- Dokumentenprüfung (2.5): `document` mit `title`, `reference`, `forgeryChance` (optional) und
+  `fields` (`id`, `label`, `value`, `reference`, `forged`). Beim Eintreffen wird gewürfelt, ob ein
+  Feld mit `forged` gefälscht ist (`events.documents.forgeryChance`); die Lupe prüft bis zu
+  `events.documents.maxChecks` Felder. Wahl mit `requiresFound: true` geht nur nach gefundener
+  Fälschung; `marksIfForged` setzt Merkzeichen nur bei einer Fälschung (die teure Folge).
+  Beispiele: `k1-dokumente.yaml`.
 - Dateien werden alphabetisch gewürfelt, höchstens `events.maxPerRound` (balance.yaml) neue je Runde.
 - Die Bots spielen (noch) ohne Ereignisse.

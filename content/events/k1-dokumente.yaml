@@ -1,0 +1,288 @@
+# Kapitel 1 – Dokumentenprüfung (2.5, GDD §3). Entwurf von Claude, bitte in eigener Stimme umschreiben.
+# Vorlage und Erklärung: docs/ereignis-vorlage.md
+#
+# Ein Brief mit „document“ trägt ein Dokument und ein Vergleichsstück. Beim Eintreffen würfelt das
+# Spiel, ob es gefälscht ist (forgeryChance, sonst events.documents.forgeryChance in balance.yaml).
+# Gefälscht wird genau ein Feld mit „forged“ – dort steht dann der falsche Wert.
+# Mit der Lupe prüft Jacob bis zu events.documents.maxChecks Felder.
+#   requiresFound: true   – Wahl geht nur, wenn die Lupe die Fälschung gefunden hat
+#   marksIfForged: [...]  – Merkzeichen, die nur gesetzt werden, wenn das Dokument gefälscht war
+#                           (die verdeckte Folge: ein späteres Ereignis mit marked: [...] kostet Geld)
+# Kapitel 1 ist leicht: Der falsche Wert steht sichtbar neben dem richtigen.
+
+# --- Pachturkunde gegen Grundbuchauszug --------------------------------------
+
+- id: dok_pike_urkunde
+  mail: offer
+  deadline: 3
+  title:
+    de: Amos Pike verkauft eine Pacht
+    en: Amos Pike Sells a Lease
+  text:
+    de: >-
+      Ein Landmakler namens Amos Pike schreibt aus dem Grand Hotel: Er müsse dringend
+      nach Hallstead und gebe seine Pacht am Salt Hill für 400 $ ab – „ein Viertel
+      ihres Werts, Sie verstehen, die Eile“. Die Urkunde liegt bei. Ruth hat im
+      Bezirksamt den Grundbuchauszug abgeschrieben.
+    en: >-
+      A land agent named Amos Pike writes from the Grand Hotel: he must leave for
+      Hallstead at once and will part with his lease at Salt Hill for 400 $ –
+      "a quarter of its worth, you understand, the hurry". The deed is enclosed.
+      Ruth copied the land register entry at the county office.
+  conditions: { minRound: 3 }
+  chance: 0.25
+  document:
+    title: { de: Pachturkunde, en: Lease Deed }
+    reference: { de: dem Grundbuchauszug, en: the land register }
+    fields:
+      - id: parzelle
+        label: { de: Parzelle, en: Parcel }
+        value: { de: "Nr. 14, Salt Hill Süd", en: "No. 14, Salt Hill South" }
+        reference: { de: "Nr. 14, Salt Hill Süd", en: "No. 14, Salt Hill South" }
+        forged: { de: "Nr. 41, Salt Hill Süd", en: "No. 41, Salt Hill South" }
+      - id: eigentuemer
+        label: { de: Pachtberechtigter, en: Leaseholder }
+        value: { de: Amos Pike, en: Amos Pike }
+        reference: { de: Amos Pike, en: Amos Pike }
+      - id: datum
+        label: { de: Eingetragen am, en: Registered on }
+        value: { de: 2. Februar 1888, en: 2 February 1888 }
+        reference: { de: 2. Februar 1888, en: 2 February 1888 }
+        forged: { de: 12. Februar 1888, en: 12 February 1888 }
+      - id: unterschrift
+        label: { de: Unterschrift Bezirksamt, en: County clerk's signature }
+        value: { de: "gez. O. Marsh, Schreiber", en: "signed O. Marsh, clerk" }
+        reference: { de: "O. Marsh, Schreiber", en: "O. Marsh, clerk" }
+        forged: { de: "gez. O. Marshall, Schreiber", en: "signed O. Marshall, clerk" }
+  choices:
+    - id: kaufen
+      label: { de: "Die Pacht kaufen (400 $)", en: "Buy the lease (400 $)" }
+      result:
+        de: Pike zählt die Scheine zweimal, lüftet den Hut und ist mit dem Abendzug fort.
+        en: Pike counts the notes twice, tips his hat and is gone on the evening train.
+      requires: { minCash: 400 }
+      effects: { cash: -400 }
+      marks: [pike_pacht_gekauft]
+      marksIfForged: [pike_urkunde_falsch]
+    - id: erpressen
+      label: { de: "Pike die Fälschung vorhalten – 100 $ fürs Schweigen", en: "Show Pike the forgery – 100 $ for silence" }
+      result:
+        de: Pike wird weiß, dann zahlt er. Jacob hat jetzt Geld und einen Feind, der weiß, wo er wohnt.
+        en: Pike goes white, then pays. Jacob now has money and an enemy who knows where he lives.
+      requiresFound: true
+      effects: { cash: 100 }
+      marks: [pike_erpresst]
+    - id: anzeigen
+      label: { de: "Mit der Urkunde zum Sheriff", en: "Take the deed to the sheriff" }
+      result:
+        de: Der Sheriff gähnt, nimmt die Urkunde aber an sich. Pike verlässt Port Ellis noch in der Nacht. Jacob schläft ruhig.
+        en: The sheriff yawns but keeps the deed. Pike leaves Port Ellis that same night. Jacob sleeps soundly.
+      requiresFound: true
+      effects: { strength: 5 }
+      marks: [pike_angezeigt]
+    - id: ablehnen
+      label: { de: "Nicht antworten", en: "Don't reply" }
+      result:
+        de: Pikes Brief landet in der Schublade. Billig war es schon.
+        en: Pike's letter goes in the drawer. It was cheap, though.
+      appointments: 0
+      default: true
+
+# Echt: Die Pacht ist etwas wert.
+- id: dok_pike_echt_folge
+  mail: offer
+  marked: [pike_pacht_gekauft]
+  notMarked: [pike_urkunde_falsch]
+  delay: 2
+  chance: 1
+  title:
+    de: Bullard will Pikes Parzelle
+    en: Bullard Wants Pike's Parcel
+  text:
+    de: >-
+      Bullards Mann im grauen Anzug legt ein Angebot auf den Tisch: 750 $ für
+      die Parzelle 14, die Jacob von Pike gekauft hat. „Ehrliches Papier ist
+      dieser Tage selten“, sagt er.
+    en: >-
+      Bullard's man in the grey suit puts an offer on the table: 750 $ for
+      parcel 14, which Jacob bought from Pike. "Honest paper is rare these days,"
+      he says.
+  choices:
+    - id: verkaufen
+      label: { de: "Für 750 $ verkaufen", en: "Sell for 750 $" }
+      result:
+        de: Aus 400 $ wurden 750 $. Pike war also doch ehrlich – nur in Eile.
+        en: 400 $ became 750 $. Pike was honest after all – just in a hurry.
+      effects: { cash: 750 }
+      default: true
+    - id: behalten
+      label: { de: "Nicht verkaufen", en: "Don't sell" }
+      result:
+        de: Jacob behält das Papier. Bullards Mann notiert sich etwas.
+        en: Jacob keeps the paper. Bullard's man writes something down.
+      appointments: 0
+
+# Gefälscht und übersehen: Das kostet.
+- id: dok_pike_falsch_folge
+  mail: demand
+  marked: [pike_urkunde_falsch]
+  delay: 3
+  chance: 1
+  deadline: 2
+  title:
+    de: Das Bezirksgericht schreibt
+    en: A Letter from the County Court
+  text:
+    de: >-
+      Die Pachturkunde von Amos Pike ist gefälscht, schreibt der Bezirksrichter.
+      Die Parzelle gehört einer Bohrfirma aus Port Ellis, und die verlangt Ersatz
+      für die Pfähle, die Jacobs Leute gesetzt haben, und für die Anwaltskosten.
+      Pike ist verschwunden, mit Jacobs 400 $.
+    en: >-
+      Amos Pike's lease deed is a forgery, the county judge writes. The parcel
+      belongs to a drilling company in Port Ellis, which demands damages for the
+      stakes Jacob's men set and for its lawyer's fees. Pike has vanished, along
+      with Jacob's 400 $.
+  choices:
+    - id: vergleich
+      label: { de: "Sich vergleichen (300 $)", en: "Settle (300 $)" }
+      result:
+        de: Jacob zahlt und unterschreibt, dass er nie wieder einen Fuß auf Parzelle 41 setzt. Die Lupe liegt jetzt neben dem Tintenfass.
+        en: Jacob pays and signs that he will never set foot on parcel 41 again. The magnifying glass now sits next to the inkwell.
+      effects: { cash: -300 }
+    - id: prozess
+      label: { de: "Es auf den Prozess ankommen lassen", en: "Let it go to trial" }
+      result:
+        de: Der Richter ist langsam, aber gründlich. Urteil, Kosten und ein verlorener Tag im Gericht – 450 $.
+        en: The judge is slow but thorough. Judgment, costs and a lost day in court – 450 $.
+      effects: { cash: -450, strength: -5 }
+      appointments: 0
+      default: true
+
+# --- Geologengutachten gegen Nachbarbohrung ----------------------------------
+
+- id: dok_hale_gutachten
+  mail: info
+  deadline: 3
+  title:
+    de: Das Gutachten des Dr. Hale
+    en: Dr. Hale's Survey
+  text:
+    de: >-
+      Dr. Lucius Hale, „Geologe, ausgebildet in Hallstead“, sucht Teilhaber für
+      eine Bohrung am Cedar Creek. Sein Gutachten liegt bei. Für 300 $ ist Jacob
+      mit einem Viertel dabei. Silas hat die Bohrliste der Nachbarbohrung besorgt.
+    en: >-
+      Dr. Lucius Hale, "geologist, trained in Hallstead", seeks partners for a
+      well at Cedar Creek. His survey is enclosed. For 300 $ Jacob gets a quarter
+      share. Silas got hold of the log of the neighbouring well.
+  conditions: { minRound: 5 }
+  chance: 0.25
+  document:
+    title: { de: Gutachten, en: Survey }
+    reference: { de: der Bohrliste der Nachbarbohrung, en: the neighbouring well's log }
+    fields:
+      - id: gestein
+        label: { de: Gestein über dem Ölsand, en: Rock above the oil sand }
+        value: { de: Kalkstein über Salz, en: Limestone over salt }
+        reference: { de: Kalkstein über Salz, en: Limestone over salt }
+      - id: tiefe
+        label: { de: Tiefe des Ölsands, en: Depth of the oil sand }
+        value: { de: "1.240 Fuß", en: "1,240 feet" }
+        reference: { de: "1.180 Fuß", en: "1,180 feet" }
+        forged: { de: "380 Fuß", en: "380 feet" }
+      - id: proben
+        label: { de: Proben mit Öl, en: Samples showing oil }
+        value: { de: "3 von 12, Spuren", en: "3 of 12, traces" }
+        reference: { de: "2 von 12, Spuren", en: "2 of 12, traces" }
+        forged: { de: "12 von 12, reines Öl", en: "12 of 12, pure oil" }
+      - id: unterschrift
+        label: { de: Unterschrift, en: Signature }
+        value: { de: "Dr. L. Hale", en: "Dr. L. Hale" }
+  choices:
+    - id: beteiligen
+      label: { de: "Mit 300 $ einsteigen", en: "Buy in for 300 $" }
+      result:
+        de: Hale schüttelt Jacob die Hand, lange und herzlich. Die Bohrung beginnt nächste Woche, sagt er.
+        en: Hale shakes Jacob's hand, long and warmly. Drilling starts next week, he says.
+      requires: { minCash: 300 }
+      effects: { cash: -300 }
+      marks: [hale_beteiligt]
+      marksIfForged: [hale_gutachten_falsch]
+    - id: entlarven
+      label: { de: "Hale das Gutachten zurückschicken – mit Anmerkungen", en: "Return Hale's survey – annotated" }
+      result:
+        de: Jacob schreibt die echten Zahlen an den Rand. Nora Whitlock hört davon und bringt eine kleine Meldung. Hale sucht seine Teilhaber jetzt woanders.
+        en: Jacob writes the real figures in the margin. Nora Whitlock hears of it and runs a short item. Hale now looks for partners elsewhere.
+      requiresFound: true
+      effects: { strength: 5 }
+      marks: [hale_entlarvt]
+    - id: ablehnen
+      label: { de: "Ablegen", en: "File it away" }
+      result:
+        de: Das Gutachten verschwindet in der Schublade. Vielleicht war es gut. Vielleicht nicht.
+        en: The survey disappears into the drawer. Perhaps it was good. Perhaps not.
+      appointments: 0
+      default: true
+
+# Echt: Die Bohrung fördert.
+- id: dok_hale_echt_folge
+  mail: info
+  marked: [hale_beteiligt]
+  notMarked: [hale_gutachten_falsch]
+  delay: 3
+  chance: 1
+  title:
+    de: Cedar Creek fördert
+    en: Cedar Creek Is Producing
+  text:
+    de: >-
+      Hale schreibt kurz und zufrieden: Die Bohrung am Cedar Creek hat in 1.200 Fuß
+      Öl gefunden. Ein Wechsel über Jacobs Viertel liegt bei.
+    en: >-
+      Hale writes briefly and contentedly: the Cedar Creek well struck oil at
+      1,200 feet. A draft for Jacob's quarter share is enclosed.
+  choices:
+    - id: einloesen
+      label: { de: "Den Wechsel einlösen (500 $)", en: "Cash the draft (500 $)" }
+      result:
+        de: 500 $ für 300 $ Einsatz. Ehrliche Geologen gibt es also doch.
+        en: 500 $ for a 300 $ stake. Honest geologists do exist.
+      effects: { cash: 500 }
+      default: true
+
+# Gefälscht und übersehen: Das kostet.
+- id: dok_hale_falsch_folge
+  mail: demand
+  marked: [hale_gutachten_falsch]
+  delay: 3
+  chance: 1
+  deadline: 2
+  title:
+    de: Hales Bohrtrupp will Lohn
+    en: Hale's Crew Wants Wages
+  text:
+    de: >-
+      Am Cedar Creek ist in 1.300 Fuß nur Salzwasser gekommen, kein Öl in 380 Fuß, wie
+      das Gutachten versprach. Dr. Hale ist abgereist. Sein Bohrtrupp steht vor
+      Jacobs Tür: Jacob hat als Teilhaber unterschrieben, also soll Jacob die
+      Löhne zahlen.
+    en: >-
+      At Cedar Creek only salt water came up at 1,300 feet, no oil at 380 feet as
+      the survey promised. Dr. Hale has left town. His crew stands at Jacob's door:
+      Jacob signed as a partner, so Jacob should pay the wages.
+  choices:
+    - id: zahlen
+      label: { de: "Die Löhne zahlen (250 $)", en: "Pay the wages (250 $)" }
+      result:
+        de: Die Männer bekommen ihr Geld. Jacob bekommt eine Lehre, die 550 $ gekostet hat.
+        en: The men get their money. Jacob gets a lesson that cost 550 $.
+      effects: { cash: -250 }
+    - id: verweigern
+      label: { de: "Nicht zahlen", en: "Refuse to pay" }
+      result:
+        de: Der Sheriff pfändet für den Bohrtrupp – mit Gebühren 350 $. Die Männer erzählen es in jedem Saloon.
+        en: The sheriff seizes it for the crew – 350 $ with fees. The men tell the story in every saloon.
+      effects: { cash: -350, strength: -5 }
+      appointments: 0
+      default: true

@@ -5,6 +5,7 @@
 
 import { LineCounter, parseDocument, type Document } from 'yaml';
 import { CONDITION_KEYS, EFFECT_KEYS, MAIL_KINDS, type Conditions, type EventChoice, type EventDef, type Effects, type MailKind } from './events';
+import type { DocumentDef, DocumentField } from './documents';
 import { LANGUAGES, type LocalizedText } from './i18n';
 
 export interface ContentError {
@@ -23,8 +24,10 @@ export interface ParsedEvents {
   errors: ContentError[];
 }
 
-const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'routine', 'appointments', 'choices', 'mail', 'deadline'];
-const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default', 'appointments'];
+const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'routine', 'appointments', 'choices', 'mail', 'deadline', 'document'];
+const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default', 'appointments', 'requiresFound', 'marksIfForged'];
+const DOCUMENT_KEYS = ['title', 'reference', 'forgeryChance', 'fields'];
+const FIELD_KEYS = ['id', 'label', 'value', 'reference', 'forged'];
 const ID_MUSTER = /^[a-z0-9_]+$/;
 
 type Pfad = (string | number)[];
@@ -189,10 +192,75 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
       fehler([...pfad, 'default'], `${wer}: „default“ muss true oder false sein.`);
       ok = false;
     }
-    if (!ok || !label || !result || !requires || !effects || !marks) return null;
+    if (raw.requiresFound !== undefined && typeof raw.requiresFound !== 'boolean') {
+      fehler([...pfad, 'requiresFound'], `${wer}: „requiresFound“ muss true oder false sein.`);
+      ok = false;
+    }
+    const marksIfForged = namen(raw, 'marksIfForged', pfad, wer);
+    if (!ok || !label || !result || !requires || !effects || !marks || !marksIfForged) return null;
     const choice: EventChoice = { id: id as string, label, result, requires, effects, default: raw.default === true, marks };
     if (appointments !== undefined && appointments !== null) choice.appointments = appointments;
+    if (raw.requiresFound === true) choice.requiresFound = true;
+    if (marksIfForged.length > 0) choice.marksIfForged = marksIfForged;
     return choice;
+  }
+
+  /** Dokumentenprüfung (2.5): das Dokument eines Briefs mit seinen Feldern. */
+  function dokument(raw: unknown, pfad: Pfad, ereignis: string): DocumentDef | null {
+    const wer = `${ereignis}, Dokument`;
+    if (!istObjekt(raw)) {
+      fehler(pfad, `${wer}: „document“ braucht title, reference und fields.`);
+      return null;
+    }
+    let ok = unbekannt(raw, DOCUMENT_KEYS, pfad, wer);
+    const title = sprachtext(raw, 'title', pfad, wer);
+    const reference = sprachtext(raw, 'reference', pfad, wer);
+    const chance = raw.forgeryChance;
+    if (chance !== undefined && (typeof chance !== 'number' || chance < 0 || chance > 1)) {
+      fehler([...pfad, 'forgeryChance'], `${wer}: „forgeryChance“ muss zwischen 0 und 1 liegen.`);
+      ok = false;
+    }
+    const fieldsRaw = raw.fields;
+    const fields: DocumentField[] = [];
+    if (!Array.isArray(fieldsRaw) || fieldsRaw.length === 0) {
+      fehler([...pfad, 'fields'], `${wer}: „fields“ fehlt – ein Dokument braucht mindestens ein Feld.`);
+      ok = false;
+    } else {
+      fieldsRaw.forEach((f, i) => {
+        const fp = [...pfad, 'fields', i];
+        if (!istObjekt(f)) {
+          fehler(fp, `${wer}: Jedes Feld braucht id, label und value.`);
+          ok = false;
+          return;
+        }
+        const fid = f.id;
+        const fwer = typeof fid === 'string' ? `${wer}, Feld „${fid}“` : wer;
+        if (!unbekannt(f, FIELD_KEYS, fp, fwer)) ok = false;
+        if (typeof fid !== 'string' || !ID_MUSTER.test(fid)) {
+          fehler([...fp, 'id'], `${fwer}: „id“ fehlt oder enthält mehr als Kleinbuchstaben, Ziffern und _.`);
+          ok = false;
+        } else if (fields.some((x) => x.id === fid)) {
+          fehler([...fp, 'id'], `${fwer}: Das Feld gibt es doppelt.`);
+          ok = false;
+        }
+        const label = sprachtext(f, 'label', fp, fwer);
+        const value = sprachtext(f, 'value', fp, fwer);
+        const ref = f.reference === undefined ? undefined : sprachtext(f, 'reference', fp, fwer);
+        const forged = f.forged === undefined ? undefined : sprachtext(f, 'forged', fp, fwer);
+        if (!label || !value || ref === null || forged === null) {
+          ok = false;
+          return;
+        }
+        const field: DocumentField = { id: fid as string, label, value };
+        if (ref) field.reference = ref;
+        if (forged) field.forged = forged;
+        fields.push(field);
+      });
+    }
+    if (!ok || !title || !reference) return null;
+    const def: DocumentDef = { title, reference, fields };
+    if (chance !== undefined) def.forgeryChance = chance as number;
+    return def;
   }
 
   function ereignis(raw: unknown, pfad: Pfad): EventDef | null {
@@ -249,6 +317,13 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
       fehler([...pfad, 'deadline'], `${wer}: „deadline“ muss eine ganze Zahl ab 1 sein (Frist in Runden).`);
       ok = false;
     }
+    // Dokumentenprüfung (2.5).
+    let document: DocumentDef | undefined;
+    if (raw.document !== undefined) {
+      const d = dokument(raw.document, [...pfad, 'document'], wer);
+      if (d) document = d;
+      else ok = false;
+    }
     const choicesRaw = raw.choices;
     let choices: EventChoice[] = [];
     if (!Array.isArray(choicesRaw) || choicesRaw.length === 0) {
@@ -265,6 +340,14 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
           ok = false;
         }
       });
+      if (!document && raw.document === undefined) {
+        choices.forEach((c, i) => {
+          if (c.requiresFound || c.marksIfForged) {
+            fehler([...pfad, 'choices', i], `${wer}: „requiresFound“ und „marksIfForged“ gehen nur bei einem Ereignis mit „document“.`);
+            ok = false;
+          }
+        });
+      }
       if (choices.filter((c) => c.default).length > 1) {
         fehler([...pfad, 'choices'], `${wer}: Höchstens eine Wahl darf „default: true“ haben.`);
         ok = false;
@@ -287,6 +370,7 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
     };
     if (mail !== undefined) def.mail = mail as MailKind;
     if (deadline !== undefined) def.deadline = deadline as number;
+    if (document) def.document = document;
     return def;
   }
 
@@ -327,7 +411,7 @@ export function parseEventFiles(files: readonly { file: string; text: string }[]
   }
   // Ein Merkzeichen, das keine Wahl setzt, ist fast immer ein Tippfehler – das
   // Ereignis käme sonst nie (bzw. würde nie gesperrt).
-  const gesetzt = new Set(events.flatMap((e) => e.choices.flatMap((c) => c.marks)));
+  const gesetzt = new Set(events.flatMap((e) => e.choices.flatMap((c) => [...c.marks, ...(c.marksIfForged ?? [])])));
   for (const event of events) {
     for (const m of [...event.marked, ...event.notMarked]) {
       if (gesetzt.has(m)) continue;

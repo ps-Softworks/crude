@@ -288,6 +288,16 @@ export interface EventsBalance {
   maxPerRound: number;
   /** Posteingang (2.4). */
   mail: MailBalance;
+  /** Dokumentenprüfung (2.5). */
+  documents: DocumentsBalance;
+}
+
+/** Einfache Dokumentenprüfung (2.5, GDD §3). */
+export interface DocumentsBalance {
+  /** Chance, dass ein Dokument gefälscht ist, wenn das Ereignis nichts anderes sagt. */
+  forgeryChance: number;
+  /** So viele Felder darf die Lupe je Dokument prüfen. */
+  maxChecks: number;
 }
 
 /** Posteingang (2.4, GDD §3). */
@@ -741,12 +751,19 @@ function parseEvents(raw: unknown): EventsBalance {
   if (!(block as { mail?: unknown }).mail || typeof (block as { mail?: unknown }).mail !== 'object') {
     throw new BalanceError('balance.yaml: Block "events.mail" fehlt');
   }
+  if (!(block as { documents?: unknown }).documents || typeof (block as { documents?: unknown }).documents !== 'object') {
+    throw new BalanceError('balance.yaml: Block "events.documents" fehlt');
+  }
   return {
     maxPerRound,
     mail: {
       maxPerRound: positiveInt(raw, 'events.mail.maxPerRound'),
       deadlineRounds: positiveInt(raw, 'events.mail.deadlineRounds'),
       guaranteeRounds: positiveInt(raw, 'events.mail.guaranteeRounds'),
+    },
+    documents: {
+      forgeryChance: share(raw, 'events.documents.forgeryChance'),
+      maxChecks: positiveInt(raw, 'events.documents.maxChecks'),
     },
   };
 }
