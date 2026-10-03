@@ -6,8 +6,11 @@
 
 import type { GameState } from './game';
 
-/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1). */
-export const SAVE_FORMAT = 2;
+/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3). */
+export const SAVE_FORMAT = 3;
+
+/** Ältere Formate, die mit Ersatzwerten noch geladen werden. */
+const ALTE_FORMATE = [2];
 
 export interface SaveFile {
   format: number;
@@ -38,6 +41,8 @@ const ZAHLEN = [
   'missedPayments',
   'bankruptcyDeadline',
   'roundLogStart',
+  'strength',
+  'strengthMax',
 ] as const;
 
 /** Listen im Zustand. */
@@ -89,6 +94,10 @@ export function validateState(value: unknown): LoadResult {
   ) {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
+  const agenda = value.agenda;
+  if (!istObjekt(agenda) || !istZahl(agenda.budget) || !istZahl(agenda.used) || !istListe(agenda.done)) {
+    return { ok: false, reason: UNVOLLSTAENDIG };
+  }
   if (typeof value.finished !== 'boolean') return { ok: false, reason: UNVOLLSTAENDIG };
   if (value.ending !== null && value.ending !== 'kapitel' && value.ending !== 'pleite') {
     return { ok: false, reason: UNVOLLSTAENDIG };
@@ -119,13 +128,19 @@ export function deserializeGame(text: string): LoadResult {
   } catch {
     return { ok: false, reason: KAPUTT };
   }
-  if (!istObjekt(parsed) || istZahl(parsed.format) === false || parsed.format !== SAVE_FORMAT) {
+  if (!istObjekt(parsed) || !istZahl(parsed.format) || (parsed.format !== SAVE_FORMAT && !ALTE_FORMATE.includes(parsed.format))) {
     return { ok: false, reason: FREMDE_VERSION };
   }
+  if (!istObjekt(parsed.state)) return validateState(parsed.state);
+  let state: Record<string, unknown> = parsed.state;
   // Ersatzwert (2.2): Spielstände aus 0.2.1 kennen noch keine Merkzeichen.
-  const state = parsed.state;
-  if (istObjekt(state) && istObjekt(state.events) && state.events.marks === undefined) {
-    return validateState({ ...state, events: { ...state.events, marks: {} } });
+  if (istObjekt(state.events) && state.events.marks === undefined) {
+    state = { ...state, events: { ...state.events, marks: {} } };
+  }
+  // Ersatzwerte (2.3): Spielstände aus Format 2 kennen noch keine Termine und
+  // keine Kraft – Jacob ist ausgeruht, die Runde hat volle 5 Termine.
+  if (parsed.format === 2) {
+    state = { strength: 100, strengthMax: 100, agenda: { budget: 5, used: 0, done: [] }, ...state };
   }
   return validateState(state);
 }

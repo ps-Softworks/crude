@@ -46,9 +46,19 @@ Zum Ausprobieren: `npm run dev`, dann im Browser `?seed=abc&debug=1`.
 ### Folgen
 - `result`: ein, zwei Sätze fürs Protokoll – was Jacob sieht, nicht was er fühlt.
 - `effects` (optional, Zahlen werden addiert, minus = weniger):
-  `cash` ($), `oilStock` (Barrel), `railTariff` ($ je Barrel Bahnfracht).
+  `cash` ($), `oilStock` (Barrel), `railTariff` ($ je Barrel Bahnfracht), `strength` (Kraft).
   Andere Folgen (Ruf, Beziehungen, Pachten) kommen mit späteren Schritten dazu;
   bis dahin trägt die Nachwirkung sie.
+
+### Termine (ab 2.3)
+- Jede Antwort kostet Zeit: `appointments` am Ereignis (Standard 1 Termin) oder an einer
+  einzelnen Wahl (z. B. `appointments: 0` für „abwinken“, 2 für eine Feldinspektion,
+  2–3 für eine Reise – Richtwerte aus GDD §3). Jacob hat 5 Termine je Runde, mit
+  Überstunden bis zu 7; jede Überstunde kostet Kraft.
+- Kraft ändert `effects: { strength: 5 }` (Familie, Ruhe: plus; Reisen, Krisen: minus).
+  `conditions: { maxStrength: 60 }` lässt ein Ereignis nur kommen, wenn Jacob müde ist.
+- `routine: true` macht einen **festen Termin**: kein Würfeln, er steht jede Runde im
+  Terminkalender (Beispiele in `content/events/k1-termine.yaml`).
 
 ### Nachwirkung
 - `marks: [name]` an einer Wahl setzt ein **Merkzeichen**. Der Spieler sieht es nicht.

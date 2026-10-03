@@ -257,3 +257,14 @@ rivals:
 # Ereignis-System (2.1): Ereignisse stehen in content/events/, hier nur die Taktung.
 events:
   maxPerRound: 1           # PLATZHALTER: höchstens so viele neue Ereignisse je Runde
+
+# Termine und Kraft (2.3, GDD §3 und §4). Kraft ist für den Spieler nie als Zahl sichtbar.
+agenda:
+  appointments: 5          # Termine je Runde (GDD §3: zu Beginn 5 pro Quartal)
+  maxOvertime: 2           # Überstunden: bis zu 2 Termine extra (GDD §3)
+  overtimeCost: 5          # Kraft je Überstunde (GDD §4: −5 je Extra-Termin)
+  restBonus: 5             # Kraft nach einer Runde ohne Überstunden (GDD §4: +5)
+  tiredBelow: 50           # unter dieser Kraft … (GDD §4)
+  tiredPenalty: 1          # … 1 Termin weniger je Runde
+  strengthStart: 100
+  strengthMax: 100         # Kapitel 1; sinkt mit dem Alter (90, 80, 70, 55) – kommt mit späteren Kapiteln

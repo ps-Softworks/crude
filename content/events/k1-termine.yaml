@@ -1,0 +1,115 @@
+# Kapitel 1 – feste Termine (2.3). Entwurf von Claude, bitte in eigener Stimme umschreiben.
+# Feste Termine (routine: true) werden nicht gewürfelt: Sie stehen jede Runde im
+# Terminkalender, solange die Bedingungen stimmen, und kosten Termine
+# (appointments). Bleibt einer liegen, passiert nichts. Zusammen mit den Ereignissen
+# gibt es mehr zu tun, als 5 Termine hergeben – Jacob muss wählen oder Überstunden
+# machen (kosten Kraft). Zahlen sind Platzhalter.
+
+- id: termin_ruth
+  routine: true
+  appointments: 1
+  title:
+    de: Ein Abend mit Ruth
+    en: An Evening with Ruth
+  text:
+    de: >-
+      Ruth hat Kaffee aufgesetzt und den Stuhl ans Fenster der Pension gerückt.
+      Das Kind tritt, sagt sie, und legt Jacobs Hand auf ihren Bauch.
+    en: >-
+      Ruth has put the coffee on and pulled the chair up to the boarding-house
+      window. The baby is kicking, she says, and puts Jacob's hand on her belly.
+  choices:
+    - id: bleiben
+      label: { de: "Den Abend bei ihr bleiben", en: "Stay the evening with her" }
+      result:
+        de: Jacob schläft zum ersten Mal seit Wochen, ohne vom Bohrseil zu träumen.
+        en: For the first time in weeks, Jacob sleeps without dreaming of the drilling cable.
+      effects: { strength: 5 }
+
+- id: termin_sonntag
+  routine: true
+  appointments: 2
+  title:
+    de: Ein Sonntag am Fluss
+    en: A Sunday by the River
+  text:
+    de: >-
+      Die Türme stehen sonntags still, nur die Pumpen nicht. Am Cordova-Fluss
+      angeln die Kinder der Bohrleute, und niemand will etwas von Jacob.
+    en: >-
+      The derricks stand still on Sundays, only the pumps don't. By the Cordova
+      river the drillers' children are fishing, and nobody wants anything from Jacob.
+  choices:
+    - id: ausspannen
+      label: { de: "Einen ganzen Tag ausspannen", en: "Take a whole day off" }
+      result:
+        de: Jacob kommt mit Sonnenbrand und leerem Kopf zurück.
+        en: Jacob comes back sunburnt and with an empty head.
+      effects: { strength: 15 }
+
+- id: termin_lohnbohren
+  routine: true
+  appointments: 2
+  title:
+    de: Auf fremden Türmen aushelfen
+    en: Hiring Out on Other Rigs
+  text:
+    de: >-
+      Solange die eigene Quelle nichts gibt, zahlen die Nachbarn gut für einen
+      Mann, der ein Bohrseil führen kann. Die Arbeit ist hart, das Geld bar.
+    en: >-
+      As long as his own well gives nothing, the neighbours pay well for a man
+      who can work a drilling cable. The work is hard, the money is cash.
+  conditions: { maxProducingWells: 0 }
+  choices:
+    - id: anheuern
+      label: { de: "Zwei Tage für einen Nachbarn bohren (+120 $)", en: "Drill two days for a neighbour (+120 $)" }
+      result:
+        de: Jacob bringt 120 $ und Blasen an beiden Händen nach Hause.
+        en: Jacob brings home 120 $ and blisters on both hands.
+      effects: { cash: 120, strength: -3 }
+
+- id: termin_rundgang
+  routine: true
+  appointments: 2
+  title:
+    de: Rundgang an den Quellen
+    en: Walking the Wells
+  text:
+    de: >-
+      Silas meint, an den Leitungen tropft es. Wer selbst hinsieht, findet die
+      Lecks, bevor das Öl im Boden versickert.
+    en: >-
+      Silas reckons the lines are dripping. A man who looks for himself finds the
+      leaks before the oil soaks into the ground.
+  conditions: { minProducingWells: 1 }
+  choices:
+    - id: abgehen
+      label: { de: "Mit Silas die Leitungen abgehen", en: "Walk the lines with Silas" }
+      result:
+        de: Drei Lecks geflickt – 40 Barrel, die sonst im Boden versickert wären.
+        en: Three leaks patched – 40 barrels that would otherwise have soaked away.
+      effects: { oilStock: 40, strength: -3 }
+
+- id: termin_port_ellis
+  routine: true
+  appointments: 3
+  title:
+    de: Reise nach Port Ellis
+    en: A Trip to Port Ellis
+  text:
+    de: >-
+      Im Bahnhofsbüro von Port Ellis sitzt Thornes Frachtagent hinter einem
+      Messinggitter. Wer persönlich kommt und lange genug wartet, bekommt
+      manchmal einen Cent Nachlass – Thorne mag es, wenn man ihn bittet.
+    en: >-
+      In the Port Ellis station office, Thorne's freight agent sits behind a brass
+      grille. A man who comes in person and waits long enough sometimes gets a cent
+      off – Thorne likes being asked.
+  choices:
+    - id: feilschen
+      label: { de: "Hinfahren und um den Bahntarif feilschen (−0,01 $ je Barrel)", en: "Go and haggle over the rail tariff (−0.01 $ per barrel)" }
+      result:
+        de: Nach zwei Tagen auf der Wartebank gibt der Agent einen Cent nach. Die Reise steckt Jacob in den Knochen.
+        en: After two days on the waiting bench the agent gives a cent. The trip stays in Jacob's bones.
+      effects: { railTariff: -0.01, strength: -3 }

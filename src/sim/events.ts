@@ -7,6 +7,7 @@
 // Der Weltzufall (state.rng) bleibt unberührt – Karte, Bohrungen und Markt sind
 // mit und ohne Ereignisse gleich.
 
+import { spendAppointments, timeReason, overtimeFor } from './agenda';
 import type { Balance } from './balance';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
@@ -23,12 +24,14 @@ export const CONDITION_KEYS = [
   'minProducingWells',
   'maxProducingWells',
   'minLeases',
+  'minStrength',
+  'maxStrength',
 ] as const;
 export type ConditionKey = (typeof CONDITION_KEYS)[number];
 export type Conditions = Partial<Record<ConditionKey, number>>;
 
 /** Effekte: Zahlen, die auf den Zustand addiert werden (negativ = abziehen). */
-export const EFFECT_KEYS = ['cash', 'oilStock', 'railTariff'] as const;
+export const EFFECT_KEYS = ['cash', 'oilStock', 'railTariff', 'strength'] as const;
 export type EffectKey = (typeof EFFECT_KEYS)[number];
 export type Effects = Partial<Record<EffectKey, number>>;
 
@@ -45,6 +48,8 @@ export interface EventChoice {
   default: boolean;
   /** Merkzeichen, die diese Wahl setzt – für Nachwirkungen in späteren Ereignissen (2.2). */
   marks: string[];
+  /** Termine, die diese Wahl kostet (2.3); fehlt die Angabe, gilt die des Ereignisses. */
+  appointments?: number;
 }
 
 export interface EventDef {
@@ -63,6 +68,14 @@ export interface EventDef {
   notMarked: string[];
   /** Frühestens so viele Runden, nachdem das letzte nötige Merkzeichen gesetzt wurde. */
   delay: number;
+  /**
+   * Fester Termin (2.3): wird nicht gewürfelt, sondern steht jede Runde im
+   * Terminkalender, solange die Bedingungen stimmen – einmal je Runde. Bleibt er
+   * liegen, passiert nichts.
+   */
+  routine: boolean;
+  /** Termine, die eine Antwort kostet (2.3), sofern die Wahl nichts anderes sagt. */
+  appointments: number;
   choices: EventChoice[];
 }
 
@@ -94,7 +107,7 @@ export function marksMet(state: Pick<GameState, 'round' | 'events'>, event: Pick
   return state.round >= zuletzt + event.delay;
 }
 
-type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases'>;
+type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength'>;
 
 /** Der Wert im Zustand, den eine Bedingung prüft. */
 function wertFuer(state: Lage, key: ConditionKey): number {
@@ -112,6 +125,9 @@ function wertFuer(state: Lage, key: ConditionKey): number {
       return state.wells.filter((w) => w.status === 'found').length;
     case 'minLeases':
       return state.leases.filter((l) => l.holder === 'jacob').length;
+    case 'minStrength':
+    case 'maxStrength':
+      return state.strength;
   }
 }
 
@@ -135,6 +151,8 @@ function grund(key: ConditionKey, grenze: number): string {
       return 'Dafür braucht es eine fördernde Quelle.';
     case 'minLeases':
       return 'Dafür braucht es eine eigene Pacht.';
+    case 'minStrength':
+      return 'Dafür fehlt Jacob die Kraft.';
     default:
       return 'Das geht gerade nicht.';
   }
@@ -151,9 +169,9 @@ function cents(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-/** Effekte auf den Zustand anwenden. Öl und Tarif fallen nie unter null. */
+/** Effekte auf den Zustand anwenden. Öl und Tarif fallen nie unter null, Kraft bleibt zwischen 0 und dem Höchstwert. */
 export function applyEffects(state: GameState, effects: Effects): GameState {
-  let { cash, oilStock, royaltyOil, railTariff } = state;
+  let { cash, oilStock, royaltyOil, railTariff, strength } = state;
   if (effects.cash !== undefined) cash += effects.cash;
   if (effects.oilStock !== undefined) {
     oilStock = Math.max(0, oilStock + effects.oilStock);
@@ -161,11 +179,33 @@ export function applyEffects(state: GameState, effects: Effects): GameState {
     royaltyOil = Math.min(royaltyOil, oilStock);
   }
   if (effects.railTariff !== undefined) railTariff = Math.max(0, cents(railTariff + effects.railTariff));
-  return { ...state, cash, oilStock, royaltyOil, railTariff };
+  if (effects.strength !== undefined) strength = Math.min(state.strengthMax, Math.max(0, strength + effects.strength));
+  return { ...state, cash, oilStock, royaltyOil, railTariff, strength };
 }
 
 function finde(catalog: readonly EventDef[], id: string): EventDef | undefined {
   return catalog.find((e) => e.id === id);
+}
+
+/** Termine, die eine Wahl kostet (2.3). */
+export function choiceCost(event: Pick<EventDef, 'appointments'>, choice: Pick<EventChoice, 'appointments'>): number {
+  return choice.appointments ?? event.appointments;
+}
+
+/** Steht dieser feste Termin gerade im Kalender? Bedingungen und Merkzeichen stimmen, diese Runde noch nicht wahrgenommen. */
+export function routineOffered(state: GameState, event: EventDef): boolean {
+  return (
+    event.routine &&
+    !state.finished &&
+    !state.agenda.done.includes(event.id) &&
+    conditionsMet(state, event.conditions) &&
+    marksMet(state, event)
+  );
+}
+
+/** Warum eine Wahl gerade nicht geht – Bedingung oder Zeit –, oder null. */
+export function choiceReason(state: GameState, balance: Balance, event: EventDef, choice: EventChoice): string | null {
+  return unmetReason(state, choice.requires) ?? timeReason(state, balance, choiceCost(event, choice));
 }
 
 /**
@@ -184,6 +224,8 @@ export function drawEvents(state: GameState, balance: Balance, catalog: readonly
   let neu = 0;
   for (const event of catalog) {
     if (neu >= balance.events.maxPerRound) break;
+    // Feste Termine (2.3) werden nicht gewürfelt.
+    if (event.routine) continue;
     if (pending.includes(event.id)) continue;
     if (event.once && seen.includes(event.id)) continue;
     if (!conditionsMet(state, event.conditions)) continue;
@@ -200,11 +242,14 @@ export function drawEvents(state: GameState, balance: Balance, catalog: readonly
 export type EventResult = { ok: true; state: GameState } | { ok: false; reason: string };
 
 /**
- * Jacob antwortet auf ein Ereignis: Die Wahl muss möglich sein, dann wirken
- * ihre Effekte, das Ergebnis kommt ins Protokoll und das Ereignis ist erledigt.
+ * Jacob antwortet auf ein Ereignis oder nimmt einen festen Termin wahr: Die
+ * Wahl muss möglich sein und es müssen genug Termine frei sein (2.3). Dann
+ * werden die Termine belegt (Überstunden kosten Kraft), die Effekte wirken,
+ * das Ergebnis kommt ins Protokoll und das Ereignis ist erledigt.
  */
 export function resolveEvent(
   state: GameState,
+  balance: Balance,
   catalog: readonly EventDef[],
   eventId: string,
   choiceId: string,
@@ -212,16 +257,20 @@ export function resolveEvent(
 ): EventResult {
   if (state.finished) return { ok: false, reason: 'Das Kapitel ist zu Ende.' };
   const event = finde(catalog, eventId);
-  if (!event || !state.events.pending.includes(eventId)) return { ok: false, reason: 'Dieses Ereignis liegt nicht auf dem Schreibtisch.' };
+  const daDa = event && (event.routine ? routineOffered(state, event) : state.events.pending.includes(eventId));
+  if (!event || !daDa) return { ok: false, reason: 'Dieses Ereignis liegt nicht auf dem Schreibtisch.' };
   const choice = event.choices.find((c) => c.id === choiceId);
   if (!choice) return { ok: false, reason: 'Diese Antwort gibt es nicht.' };
   const reason = unmetReason(state, choice.requires);
   if (reason) return { ok: false, reason };
-  return { ok: true, state: erledigen(state, event, choice, lang, '') };
+  const belegt = spendAppointments(state, balance, choiceCost(event, choice));
+  if (!belegt.ok) return belegt;
+  return { ok: true, state: erledigen(belegt.state, event, choice, lang, '') };
 }
 
 function erledigen(state: GameState, event: EventDef, choice: EventChoice, lang: Lang, vorsatz: string): GameState {
   const nach = applyEffects(state, choice.effects);
+  const agenda = event.routine ? { ...nach.agenda, done: [...nach.agenda.done, event.id] } : nach.agenda;
   // Merkzeichen behalten die Runde, in der sie zuerst gesetzt wurden.
   const marks = { ...nach.events.marks };
   for (const m of choice.marks) if (marks[m] === undefined) marks[m] = state.round;
@@ -229,6 +278,7 @@ function erledigen(state: GameState, event: EventDef, choice: EventChoice, lang:
     ...nach,
     log: [...nach.log, `${formatDate(state)}: ${vorsatz}${localize(event.title, lang)} – ${localize(choice.result, lang)}`],
     events: { ...nach.events, pending: nach.events.pending.filter((id) => id !== event.id), marks },
+    agenda,
   };
 }
 
@@ -236,6 +286,7 @@ function erledigen(state: GameState, event: EventDef, choice: EventChoice, lang:
  * Am Rundenende bleibt nichts liegen: Für jedes offene Ereignis gilt die
  * Standard-Wahl (default: true, sonst die erste). Ist sie gesperrt, die erste
  * mögliche. Geht gar keine oder fehlt das Ereignis im Katalog, verfällt es ohne Effekt.
+ * Die Standard-Wahl kostet keine Termine – sie ist ja gerade das, was ohne Jacob passiert.
  */
 export function autoResolve(state: GameState, catalog: readonly EventDef[], lang: Lang = DEFAULT_LANG): GameState {
   let out = state;
@@ -255,29 +306,49 @@ export function autoResolve(state: GameState, catalog: readonly EventDef[], lang
   return out;
 }
 
-/** Ein offenes Ereignis, wie der Schreibtisch es zeigt. */
+/** Eine Antwort, wie der Schreibtisch sie zeigt. */
+export interface DeskChoice {
+  id: string;
+  label: string;
+  /** Termine, die sie kostet (2.3). */
+  cost: number;
+  /** Wie viele davon Überstunden wären. */
+  overtime: number;
+  ok: boolean;
+  reason?: string;
+}
+
+/** Ein offenes Ereignis oder ein fester Termin, wie der Schreibtisch es zeigt. */
 export interface DeskEvent {
   id: string;
   title: string;
   text: string;
-  choices: { id: string; label: string; ok: boolean; reason?: string }[];
+  choices: DeskChoice[];
 }
 
-/** Die offenen Ereignisse mit Texten in der gewünschten Sprache und gesperrten Wahlen. */
-export function deskEvents(state: GameState, catalog: readonly EventDef[], lang: Lang = DEFAULT_LANG): DeskEvent[] {
+function zeigen(state: GameState, balance: Balance, event: EventDef, lang: Lang): DeskEvent {
+  return {
+    id: event.id,
+    title: localize(event.title, lang),
+    text: localize(event.text, lang),
+    choices: event.choices.map((c) => {
+      const cost = choiceCost(event, c);
+      const reason = choiceReason(state, balance, event, c);
+      const basis = { id: c.id, label: localize(c.label, lang), cost, overtime: overtimeFor(state, cost) };
+      return reason ? { ...basis, ok: false, reason } : { ...basis, ok: true };
+    }),
+  };
+}
+
+/** Die offenen Ereignisse mit Texten in der gewünschten Sprache, Kosten in Terminen und gesperrten Wahlen. */
+export function deskEvents(state: GameState, balance: Balance, catalog: readonly EventDef[], lang: Lang = DEFAULT_LANG): DeskEvent[] {
   return state.events.pending.flatMap((id) => {
     const event = finde(catalog, id);
-    if (!event) return [];
-    return [
-      {
-        id,
-        title: localize(event.title, lang),
-        text: localize(event.text, lang),
-        choices: event.choices.map((c) => {
-          const reason = unmetReason(state, c.requires);
-          return reason ? { id: c.id, label: localize(c.label, lang), ok: false, reason } : { id: c.id, label: localize(c.label, lang), ok: true };
-        }),
-      },
-    ];
+    return event ? [zeigen(state, balance, event, lang)] : [];
   });
+}
+
+/** Die festen Termine, die in dieser Runde noch im Kalender stehen (2.3). */
+export function deskRoutines(state: GameState, balance: Balance, catalog: readonly EventDef[], lang: Lang = DEFAULT_LANG): DeskEvent[] {
+  return catalog.filter((e) => routineOffered(state, e)).map((e) => zeigen(state, balance, e, lang));
 }

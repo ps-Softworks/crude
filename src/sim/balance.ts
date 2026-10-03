@@ -261,6 +261,26 @@ export interface Balance {
   empire: EmpireBalance;
   bots: BotsBalance;
   events: EventsBalance;
+  agenda: AgendaBalance;
+}
+
+/** Termine und Kraft (2.3, GDD §3 und §4). */
+export interface AgendaBalance {
+  /** Termine je Runde bei voller Kraft. */
+  appointments: number;
+  /** So viele Termine gehen zusätzlich als Überstunden. */
+  maxOvertime: number;
+  /** Kraft, die jede Überstunde kostet. */
+  overtimeCost: number;
+  /** Kraft zurück nach einer Runde ohne Überstunden. */
+  restBonus: number;
+  /** Unter dieser Kraft gibt es weniger Termine … */
+  tiredBelow: number;
+  /** … und zwar so viele weniger. */
+  tiredPenalty: number;
+  /** Kraft bei Spielbeginn und Höchstwert (Kapitel 1). */
+  strengthStart: number;
+  strengthMax: number;
 }
 
 /** Ereignis-System (2.1): wie viele neue Ereignisse höchstens je Runde kommen. */
@@ -708,6 +728,33 @@ function parseEvents(raw: unknown): EventsBalance {
   return { maxPerRound: positiveInt(raw, 'events.maxPerRound') };
 }
 
+function parseAgenda(raw: unknown): AgendaBalance {
+  const block = (raw as { agenda?: unknown })?.agenda;
+  if (!block || typeof block !== 'object') throw new BalanceError('balance.yaml: Block "agenda" fehlt');
+  const ganz = (path: string) => {
+    const value = nonNegative(raw, path);
+    if (!Number.isInteger(value)) throw new BalanceError(`balance.yaml: "${path}" muss eine ganze Zahl sein`);
+    return value;
+  };
+  const agenda: AgendaBalance = {
+    appointments: positiveInt(raw, 'agenda.appointments'),
+    maxOvertime: ganz('agenda.maxOvertime'),
+    overtimeCost: nonNegative(raw, 'agenda.overtimeCost'),
+    restBonus: nonNegative(raw, 'agenda.restBonus'),
+    tiredBelow: nonNegative(raw, 'agenda.tiredBelow'),
+    tiredPenalty: ganz('agenda.tiredPenalty'),
+    strengthStart: nonNegative(raw, 'agenda.strengthStart'),
+    strengthMax: positiveInt(raw, 'agenda.strengthMax'),
+  };
+  if (agenda.strengthStart > agenda.strengthMax) {
+    throw new BalanceError('balance.yaml: "agenda.strengthStart" darf nicht über "agenda.strengthMax" liegen');
+  }
+  if (agenda.tiredPenalty >= agenda.appointments) {
+    throw new BalanceError('balance.yaml: "agenda.tiredPenalty" muss kleiner als "agenda.appointments" sein');
+  }
+  return agenda;
+}
+
 export function parseBalance(raw: unknown): Balance {
   const zonesRaw = (raw as { geology?: { zones?: unknown } })?.geology?.zones;
   if (!Array.isArray(zonesRaw) || zonesRaw.length === 0) {
@@ -765,6 +812,7 @@ export function parseBalance(raw: unknown): Balance {
     empire: parseEmpire(raw),
     bots: parseBots(raw),
     events: parseEvents(raw),
+    agenda: parseAgenda(raw),
   };
 
   const { width, height, saltHill } = balance.map;

@@ -142,7 +142,7 @@ describe('Ein kaputter Spielstand wird abgelehnt', () => {
 
   it('Spielstand aus einer anderen Version', () => {
     const state = newGame('fremd', balance);
-    for (const format of [SAVE_FORMAT + 1, SAVE_FORMAT - 1, 0]) {
+    for (const format of [SAVE_FORMAT + 1, 1, 0]) {
       const geladen = deserializeGame(datei(state, format));
       expect(geladen.ok).toBe(false);
       expect(geladen.ok ? '' : geladen.reason).toBe('Spielstand stammt aus einer anderen Version.');

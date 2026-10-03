@@ -22,9 +22,9 @@ const GUT = `- id: brief
 `;
 
 describe('echte Inhalte in content/events/', () => {
-  it('sind fehlerfrei und enthalten die Probe-Ereignisse für Kapitel 1 (2.2)', () => {
+  it('sind fehlerfrei und enthalten die Probe-Ereignisse und festen Termine für Kapitel 1 (2.2, 2.3)', () => {
     const ids = loadEvents().map((e) => e.id);
-    expect(ids).toEqual(['ruth_buecher', 'silas_schnaps', 'moss_schulden', 'moss_wagenweg', 'moss_dank', 'nora_brand', 'vale_umschlag']);
+    expect(ids).toEqual(['ruth_buecher', 'silas_schnaps', 'moss_schulden', 'moss_wagenweg', 'moss_dank', 'nora_brand', 'vale_umschlag', 'ruth_sorge', 'termin_ruth', 'termin_sonntag', 'termin_lohnbohren', 'termin_rundgang', 'termin_port_ellis']);
   });
 
   it('jedes Probe-Ereignis hat 1–3 Wahlen und eine Standard-Wahl ohne Sperre', () => {
@@ -55,7 +55,7 @@ describe('Prüfung mit Datei und Zeilennummer', () => {
     expect(zeilen).toEqual([
       'src/sim/__fixtures__/events/kaputt.yaml:5: Ereignis „kaputtes_ereignis“: „title.en“ fehlt – darf leer sein (en: ""), muss aber da sein.',
       'src/sim/__fixtures__/events/kaputt.yaml:9: Ereignis „kaputtes_ereignis“: „chance“ fehlt oder liegt nicht zwischen 0 und 1.',
-      'src/sim/__fixtures__/events/kaputt.yaml:14: Ereignis „kaputtes_ereignis“, Wahl „weiter“: unbekannter Eintrag „cassh“ in „effects“ (erlaubt: cash, oilStock, railTariff).',
+      'src/sim/__fixtures__/events/kaputt.yaml:14: Ereignis „kaputtes_ereignis“, Wahl „weiter“: unbekannter Eintrag „cassh“ in „effects“ (erlaubt: cash, oilStock, railTariff, strength).',
     ]);
   });
 
@@ -86,7 +86,7 @@ describe('Prüfung mit Datei und Zeilennummer', () => {
   it('unbekannte Felder, fehlendes de und fremde Sprachen werden gemeldet', () => {
     const text = GUT.replace('  chance: 0.5', '  chanse: 0.5\n  chance: 0.5').replace('de: "Ein Brief", en: ""', 'en: "", fr: "Une lettre"');
     const meldungen = parseEventFile('a.yaml', text).errors.map((e) => `${e.line}: ${e.message}`);
-    expect(meldungen).toContain('4: Ereignis „brief“: unbekanntes Feld „chanse“ (erlaubt: id, title, text, conditions, marked, notMarked, delay, chance, once, choices).');
+    expect(meldungen).toContain('4: Ereignis „brief“: unbekanntes Feld „chanse“ (erlaubt: id, title, text, conditions, marked, notMarked, delay, chance, once, routine, appointments, choices).');
     expect(meldungen.some((m) => m.startsWith('2: ') && m.includes('unbekannte Sprache „fr“'))).toBe(true);
     expect(meldungen.some((m) => m.startsWith('2: ') && m.includes('„title.de“ fehlt'))).toBe(true);
   });
@@ -213,7 +213,7 @@ describe('Fertig-Kriterium 2.2: ein neues Ereignis kommt nur durch eine YAML-Dat
       // Nur das neue Ereignis kann in Runde 1 kommen (alle Probe-Ereignisse brauchen Runde 2+).
       const state = newGame('neu', balance, katalog);
       expect(state.events.pending).toEqual(['neu_aus_datei']);
-      const r = resolveEvent(state, katalog, 'neu_aus_datei', 'abholen');
+      const r = resolveEvent(state, balance, katalog, 'neu_aus_datei', 'abholen');
       if (!r.ok) throw new Error(r.reason);
       expect(r.state.cash).toBe(state.cash - 20);
       expect(r.state.events.marks).toEqual({ schwiegermutter_da: 1 });

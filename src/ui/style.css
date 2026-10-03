@@ -106,3 +106,12 @@ h1 button.neustart { font-size: 12px; font-weight: normal; letter-spacing: norma
   background: #fffaf0;
 }
 .event h2 { margin: 0 0 6px; font-size: 1.1rem; }
+
+/* Termine und Kraft (2.3) */
+.termine .punkte { letter-spacing: 2px; }
+.termine .punkte.extra { color: #8a6d3b; margin-left: 4px; }
+.kalender { margin-top: 8px; }
+.kalender > summary { cursor: pointer; font-weight: bold; margin-bottom: 8px; }
+.event.termin { border-style: dashed; background: #fbf8f1; }
+.event button .kosten { color: #666; font-size: 0.85em; }
+.event button.ueberstunde { border-color: #b3261e; }

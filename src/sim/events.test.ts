@@ -31,7 +31,7 @@ function wahl(id: string, extra: Partial<EventChoice> = {}): EventChoice {
 }
 
 function ereignis(id: string, extra: Partial<EventDef> = {}): EventDef {
-  return { id, title: t(`Titel ${id}`), text: t('Text'), conditions: {}, marked: [], notMarked: [], delay: 1, chance: 1, once: true, choices: [wahl('ja')], ...extra };
+  return { id, title: t(`Titel ${id}`), text: t('Text'), conditions: {}, marked: [], notMarked: [], delay: 1, chance: 1, once: true, routine: false, appointments: 1, choices: [wahl('ja')], ...extra };
 }
 
 const quelle = { status: 'found' } as Well;
@@ -152,7 +152,7 @@ describe('Antworten', () => {
   const start = drawEvents({ ...newGame('antwort', balance), cash: 1000 }, balance, katalog);
 
   it('eine Antwort wirkt, kommt ins Protokoll und erledigt das Ereignis', () => {
-    const r = resolveEvent(start, katalog, 'a', 'kaufen');
+    const r = resolveEvent(start, balance, katalog, 'a', 'kaufen');
     if (!r.ok) throw new Error(r.reason);
     expect(r.state.cash).toBe(900);
     expect(r.state.oilStock).toBe(start.oilStock + 50);
@@ -161,10 +161,10 @@ describe('Antworten', () => {
   });
 
   it('gesperrte, unbekannte und nicht offene Antworten gehen nicht', () => {
-    expect(resolveEvent(start, katalog, 'a', 'teuer')).toEqual({ ok: false, reason: 'Dafür fehlt das Geld (1.000.000 $ nötig).' });
-    expect(resolveEvent(start, katalog, 'a', 'vielleicht').ok).toBe(false);
-    expect(resolveEvent(start, katalog, 'b', 'nein').ok).toBe(false);
-    expect(resolveEvent({ ...start, finished: true }, katalog, 'a', 'nein').ok).toBe(false);
+    expect(resolveEvent(start, balance, katalog, 'a', 'teuer')).toEqual({ ok: false, reason: 'Dafür fehlt das Geld (1.000.000 $ nötig).' });
+    expect(resolveEvent(start, balance, katalog, 'a', 'vielleicht').ok).toBe(false);
+    expect(resolveEvent(start, balance, katalog, 'b', 'nein').ok).toBe(false);
+    expect(resolveEvent({ ...start, finished: true }, balance, katalog, 'a', 'nein').ok).toBe(false);
   });
 
   it('ohne Antwort gilt am Rundenende die Standard-Wahl', () => {
@@ -182,14 +182,14 @@ describe('Antworten', () => {
   });
 
   it('der Schreibtisch zeigt Texte und sagt, welche Wahl gesperrt ist', () => {
-    const [karte] = deskEvents(start, katalog);
+    const [karte] = deskEvents(start, balance, katalog);
     expect(karte).toMatchObject({ id: 'a', title: 'Titel a', text: 'Text' });
     expect(karte.choices.map((c) => [c.id, c.ok])).toEqual([
       ['teuer', false],
       ['kaufen', true],
       ['nein', true],
     ]);
-    expect(deskEvents(start, [])).toEqual([]);
+    expect(deskEvents(start, balance, [])).toEqual([]);
   });
 
   it('der nächste Schritt weist auf das offene Ereignis hin', () => {
@@ -220,7 +220,7 @@ describe('Nachwirkung: Merkzeichen (2.2)', () => {
   const start = { ...newGame('marken', balance), events: { ...newGame('marken', balance).events, pending: ['anlass'], seen: ['anlass'] } };
 
   it('eine Wahl setzt ihre Merkzeichen mit der Runde, verdeckt und nur beim ersten Mal', () => {
-    const r = resolveEvent({ ...start, round: 3 }, katalog, 'anlass', 'fair');
+    const r = resolveEvent({ ...start, round: 3 }, balance, katalog, 'anlass', 'fair');
     if (!r.ok) throw new Error(r.reason);
     expect(r.state.events.marks).toEqual({ fair: 3 });
     expect(r.state.log.at(-1)).not.toMatch(/fair:/);
@@ -230,7 +230,7 @@ describe('Nachwirkung: Merkzeichen (2.2)', () => {
 
   /** Dieselbe Wahl in einer späteren Runde noch einmal. */
   function applyMarksAgain(state: GameState): GameState {
-    const r = resolveEvent({ ...state, round: 7, events: { ...state.events, pending: ['anlass'] } }, katalog, 'anlass', 'fair');
+    const r = resolveEvent({ ...state, round: 7, events: { ...state.events, pending: ['anlass'] } }, balance, katalog, 'anlass', 'fair');
     if (!r.ok) throw new Error(r.reason);
     return r.state;
   }
@@ -296,8 +296,8 @@ describe('die Probe-Ereignisse für Kapitel 1 aus content/events/', () => {
 
   it('Moss: fair geholfen bringt später den Dank, betrogen den Zaun – nie beides', () => {
     let state: GameState = { ...newGame('moss', balance, katalog), round: 4, cash: 1000, events: { ...newGame('moss', balance).events, pending: ['moss_schulden'] } };
-    const fair = resolveEvent(state, katalog, 'moss_schulden', 'leihen');
-    const betrug = resolveEvent(state, katalog, 'moss_schulden', 'papier');
+    const fair = resolveEvent(state, balance, katalog, 'moss_schulden', 'leihen');
+    const betrug = resolveEvent(state, balance, katalog, 'moss_schulden', 'papier');
     if (!fair.ok || !betrug.ok) throw new Error('Wahl ging nicht');
     expect(fair.state.cash).toBe(700);
     expect(fair.state.events.marks).toEqual({ moss_fair: 4 });

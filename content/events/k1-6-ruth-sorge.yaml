@@ -1,0 +1,34 @@
+# Kapitel 1 – Ruth merkt, dass Jacob am Ende ist (2.3). Entwurf von Claude, bitte
+# in eigener Stimme umschreiben. Kraft ist nie als Zahl sichtbar (GDD §4) – Ruth
+# spricht es an. Kommt nur, wenn Jacob müde ist (maxStrength), und kann wiederkommen.
+
+- id: ruth_sorge
+  title:
+    de: Ruth stellt den Teller hin
+    en: Ruth Sets Down the Plate
+  text:
+    de: >-
+      Ruth stellt den Teller hin und setzt sich nicht dazu. „Du bist grau im
+      Gesicht, Jacob. Du schläfst am Tisch ein. Was nützt uns eine Quelle, wenn
+      du darüber umfällst?“
+    en: >-
+      Ruth sets down the plate and doesn't sit with him. "You're grey in the face,
+      Jacob. You fall asleep at the table. What good is a well to us if you drop
+      dead over it?"
+  conditions: { maxStrength: 60 }
+  chance: 0.5
+  once: false
+  choices:
+    - id: versprechen
+      label: { de: "Ihr versprechen, kürzerzutreten, und den Abend bleiben", en: "Promise her to slow down, and stay the evening" }
+      result:
+        de: Jacob bleibt. Ruth sagt nichts mehr, aber sie lässt ihn ausschlafen.
+        en: Jacob stays. Ruth says no more, but she lets him sleep late.
+      effects: { strength: 8 }
+    - id: abwinken
+      label: { de: "Abwinken – nach der nächsten Quelle wird es ruhiger", en: "Wave it off – it'll calm down after the next well" }
+      result:
+        de: Ruth räumt den Teller ab, halb voll.
+        en: Ruth clears the plate away, half full.
+      appointments: 0
+      default: true

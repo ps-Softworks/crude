@@ -23,8 +23,8 @@ export interface ParsedEvents {
   errors: ContentError[];
 }
 
-const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'choices'];
-const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default'];
+const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'routine', 'appointments', 'choices'];
+const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default', 'appointments'];
 const ID_MUSTER = /^[a-z0-9_]+$/;
 
 type Pfad = (string | number)[];
@@ -144,6 +144,17 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
     return ok ? (value as string[]) : null;
   }
 
+  /** Termine (2.3): eine ganze Zahl ab 0. Fehlt sie, gilt ersatz. */
+  function termine(obj: Record<string, unknown>, pfad: Pfad, wer: string, ersatz: number | undefined): number | undefined | null {
+    const value = obj.appointments;
+    if (value === undefined || value === null) return ersatz;
+    if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
+      fehler([...pfad, 'appointments'], `${wer}: „appointments“ muss eine ganze Zahl ab 0 sein (Termine).`);
+      return null;
+    }
+    return value;
+  }
+
   function unbekannt(obj: Record<string, unknown>, erlaubt: string[], pfad: Pfad, wer: string): boolean {
     let ok = true;
     for (const k of Object.keys(obj)) {
@@ -172,12 +183,16 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
     const requires = zahlen(raw, 'requires', CONDITION_KEYS, pfad, wer) as Conditions | null;
     const effects = zahlen(raw, 'effects', EFFECT_KEYS, pfad, wer) as Effects | null;
     const marks = namen(raw, 'marks', pfad, wer);
+    const appointments = termine(raw, pfad, wer, undefined);
+    if (appointments === null) ok = false;
     if (raw.default !== undefined && typeof raw.default !== 'boolean') {
       fehler([...pfad, 'default'], `${wer}: „default“ muss true oder false sein.`);
       ok = false;
     }
     if (!ok || !label || !result || !requires || !effects || !marks) return null;
-    return { id: id as string, label, result, requires, effects, default: raw.default === true, marks };
+    const choice: EventChoice = { id: id as string, label, result, requires, effects, default: raw.default === true, marks };
+    if (appointments !== undefined && appointments !== null) choice.appointments = appointments;
+    return choice;
   }
 
   function ereignis(raw: unknown, pfad: Pfad): EventDef | null {
@@ -202,7 +217,15 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
       fehler([...pfad, 'delay'], `${wer}: „delay“ muss eine ganze Zahl ab 0 sein (Runden nach dem Merkzeichen).`);
       ok = false;
     }
-    const chance = raw.chance;
+    if (raw.routine !== undefined && typeof raw.routine !== 'boolean') {
+      fehler([...pfad, 'routine'], `${wer}: „routine“ muss true oder false sein.`);
+      ok = false;
+    }
+    const routine = raw.routine === true;
+    const appointments = termine(raw, pfad, wer, 1);
+    if (appointments === null) ok = false;
+    // Feste Termine werden nicht gewürfelt: chance darf fehlen.
+    const chance = raw.chance ?? (routine ? 1 : undefined);
     if (typeof chance !== 'number' || chance < 0 || chance > 1) {
       fehler([...pfad, 'chance'], `${wer}: „chance“ fehlt oder liegt nicht zwischen 0 und 1.`);
       ok = false;
@@ -243,6 +266,8 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
       delay: delay as number,
       chance: chance as number,
       once: raw.once !== false,
+      routine,
+      appointments: appointments as number,
       choices,
     };
   }

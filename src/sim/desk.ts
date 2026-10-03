@@ -4,6 +4,7 @@
 // wird aus den vorhandenen Simulationsfunktionen abgeleitet – ein Probelauf, ein
 // Aufruf, kein zweiter Ort mit Spielregeln. Keine Oberfläche, kein Zufall.
 
+import { timeReason } from './agenda';
 import type { Balance } from './balance';
 import { TRANSPORT_MODES } from './balance';
 import {
@@ -161,8 +162,8 @@ function ort(stellen: string[]): string {
 export function nextStep(state: GameState, balance: Balance): NextStep | null {
   if (state.finished) return null;
 
-  // 0. Ein Ereignis wartet auf Antwort (2.1).
-  if (state.events.pending.length > 0) {
+  // 0. Ein Ereignis wartet auf Antwort (2.1) – und es ist noch Zeit dafür (2.3).
+  if (state.events.pending.length > 0 && timeReason(state, balance, 1) === null) {
     return { text: 'Auf dem Schreibtisch liegt etwas, das auf deine Antwort wartet.', parcelIds: [] };
   }
 

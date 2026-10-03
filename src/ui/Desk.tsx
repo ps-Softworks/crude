@@ -4,6 +4,7 @@
 // nichts entschieden: Zahlen, Texte, Preise und Gründe kommen aus src/sim.
 
 import { useState, type ReactNode } from 'react';
+import { agendaView } from '../sim/agenda';
 import { TRANSPORT_MODES } from '../sim/balance';
 import { debt, headroom, creditLimit, type LoanResult } from '../sim/credit';
 import type { NextStep } from '../sim/desk';
@@ -122,6 +123,7 @@ export function Desk({
           <span>
             Runde {game.round}/{game.totalRounds} · {formatDate(game)}
           </span>
+          <Termine game={game} debug={debug} />
           {game.bankruptcyDeadline > 0 && (
             <span className="warn">Bankrott droht – Frist bis Runde {game.bankruptcyDeadline}</span>
           )}
@@ -314,5 +316,19 @@ function SalePanel({ game, onSold }: { game: GameState; onSold: (state: GameStat
         })}
       </div>
     </div>
+  );
+}
+/** Termine der Runde als Punkte (● belegt, ○ frei, ◆ Überstunde) und Jacobs Zustand in einem Wort (2.3). */
+function Termine({ game, debug }: { game: GameState; debug: boolean }) {
+  const t = agendaView(game, balance);
+  const punkte = '●'.repeat(t.used) + '○'.repeat(t.budget - t.used);
+  const extra = '◆'.repeat(t.overtimeUsed) + '◇'.repeat(t.overtimeMax - t.overtimeUsed);
+  return (
+    <span className={t.left === 0 ? 'termine warn' : 'termine'} title="● belegt · ○ frei · ◇ mögliche Überstunde (kostet Kraft)">
+      Termine <span className="punkte">{punkte}</span>
+      <span className="punkte extra">{extra}</span> · Jacob wirkt {t.word}
+      {t.tired && ' (Müdigkeit kostet einen Termin)'}
+      {debug && <> · Kraft {game.strength}</>}
+    </span>
   );
 }
