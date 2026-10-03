@@ -1,0 +1,90 @@
+# Zeitung (2.6, GDD §7.2): Schlagzeilen zu Beginn jeder Runde.
+# Die Simulation sucht aus dem Spielzustand aus, WELCHE Schlagzeile erscheint;
+# hier steht nur, wie sie klingt. Jeder Text mit Sprachschlüssel de/en
+# (Englisch darf leer bleiben, dann erscheint Deutsch).
+# Regel aus dem GDD: keine Zahlen – die Zeitung deutet an, sie rechnet nicht vor.
+# ENTWURF: Texte und der Name der Zeitung sind Vorschläge.
+
+name:
+  de: Port Ellis Courier
+  en: Port Ellis Courier
+
+headlines:
+  # --- Titelseite: Aussicht für den Ölpreis (Frühwarnzeichen) ---
+  # Der Preis wird am Ende dieser Runde fallen – und zwar stark.
+  outlook_crash:
+    title:
+      de: Tanks in Port Ellis laufen über
+      en: Port Ellis tanks are overflowing
+    text:
+      de: Am Hafen stapeln sich die Fässer, die Händler winken ab. Wer jetzt noch Öl im Tank hat, sollte schnell verkaufen – der Trust wird den Preis kräftig drücken.
+      en: Barrels are piling up at the harbour and the traders wave them away. Anyone still holding oil had better sell quickly – the Trust will push the price down hard.
+  # Der Preis wird am Ende dieser Runde spürbar fallen.
+  outlook_fall:
+    title:
+      de: Volle Tanks am Hafen
+      en: Full tanks at the harbour
+    text:
+      de: Die Lagerhalter in Port Ellis klagen über Platzmangel. In den Kontoren des Trusts spricht man schon von einem niedrigeren Posted Price.
+      en: The storage men in Port Ellis complain about a lack of space. In the Trust's offices there is already talk of a lower posted price.
+  # Der Preis wird am Ende dieser Runde spürbar steigen.
+  outlook_rise:
+    title:
+      de: Leere Tanks, ungeduldige Käufer
+      en: Empty tanks, impatient buyers
+    text:
+      de: Die Raffinerien rufen nach Öl, doch am Salt Hill kommt weniger an als erwartet. Die Händler rechnen mit besseren Preisen.
+      en: The refineries are calling for oil, but less is arriving from Salt Hill than expected. Traders expect better prices.
+  # Keine große Bewegung in Sicht.
+  outlook_steady:
+    title:
+      de: Ruhiger Handel am Salt Hill
+      en: Quiet trading at Salt Hill
+    text:
+      de: Fässer kommen, Fässer gehen. Die Händler am Hafen sehen keinen Grund zur Aufregung.
+      en: Barrels come, barrels go. The traders at the harbour see no reason for excitement.
+
+  # --- Kurzmeldungen: was in der letzten Runde geschah ---
+  price_cut:
+    title:
+      de: Trust senkt den Posted Price
+      en: Trust cuts the posted price
+    text:
+      de: Der Crane Trust zahlt weniger je Barrel. Kleine Bohrfirmen rechnen nach.
+      en: The Crane Trust pays less per barrel. Small drillers are doing their sums.
+  price_raise:
+    title:
+      de: Trust zahlt mehr
+      en: Trust pays more
+    text:
+      de: Der Crane Trust hebt den Posted Price an – das Öl am Salt Hill ist gefragt.
+      en: The Crane Trust raises the posted price – Salt Hill oil is in demand.
+  rival_find:
+    title:
+      de: Bullard stößt auf Öl
+      en: Bullard strikes oil
+    text:
+      de: '„Big" Jim Bullard feiert einen neuen Fund. Seine Fuhrwerke rollen bald zum Hafen.'
+      en: '"Big" Jim Bullard celebrates a new strike. His wagons will soon be rolling to the harbour.'
+  jacob_gusher:
+    title:
+      de: Gusher! Neuling trifft ins Schwarze
+      en: Gusher! Newcomer hits the jackpot
+    text:
+      de: Eine Ölfontäne über dem Bohrturm von Jacob Harlan – ganz Port Ellis spricht davon.
+      en: A fountain of oil above Jacob Harlan's derrick – all of Port Ellis is talking about it.
+  jacob_find:
+    title:
+      de: Harlan findet Öl
+      en: Harlan finds oil
+    text:
+      de: Der Neuling Jacob Harlan hat eine fündige Quelle. Die alten Hasen am Salt Hill horchen auf.
+      en: The newcomer Jacob Harlan has a producing well. The old hands at Salt Hill take notice.
+  # Lückenfüller, wenn sonst nichts passiert ist.
+  classifieds:
+    title:
+      de: Kleinanzeigen
+      en: Classifieds
+    text:
+      de: Gebrauchter Bohrturm zu verkaufen, kaum benutzt. Zimmer frei in der Front Street, nur an ordentliche Herren.
+      en: Used derrick for sale, hardly used. Room to let on Front Street, respectable gentlemen only.

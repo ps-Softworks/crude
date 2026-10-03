@@ -262,6 +262,19 @@ export interface Balance {
   bots: BotsBalance;
   events: EventsBalance;
   agenda: AgendaBalance;
+  newspaper: NewspaperBalance;
+}
+
+/** Zeitung (2.6, GDD §7.2): ab welcher erwarteten Preisänderung welche Schlagzeile kommt. */
+export interface NewspaperBalance {
+  /** Erwarteter Preisverfall (Anteil) ab dem „Volle Tanks“ erscheint. */
+  fallFrom: number;
+  /** Erwarteter Preisverfall ab dem „Tanks laufen über“ erscheint (≥ fallFrom). */
+  crashFrom: number;
+  /** Erwarteter Preisanstieg ab dem „Leere Tanks“ erscheint. */
+  riseFrom: number;
+  /** Höchstens so viele Kurzmeldungen unter der Titelseite. */
+  maxItems: number;
 }
 
 /** Termine und Kraft (2.3, GDD §3 und §4). */
@@ -744,6 +757,21 @@ function parseBots(raw: unknown): BotsBalance {
   };
 }
 
+function parseNewspaper(raw: unknown): NewspaperBalance {
+  const block = (raw as { newspaper?: unknown })?.newspaper;
+  if (!block || typeof block !== 'object') throw new BalanceError('balance.yaml: Block "newspaper" fehlt');
+  const newspaper: NewspaperBalance = {
+    fallFrom: share(raw, 'newspaper.fallFrom'),
+    crashFrom: share(raw, 'newspaper.crashFrom'),
+    riseFrom: share(raw, 'newspaper.riseFrom'),
+    maxItems: positiveInt(raw, 'newspaper.maxItems'),
+  };
+  if (newspaper.crashFrom < newspaper.fallFrom) {
+    throw new BalanceError('balance.yaml: "newspaper.crashFrom" darf nicht unter "newspaper.fallFrom" liegen');
+  }
+  return newspaper;
+}
+
 function parseEvents(raw: unknown): EventsBalance {
   const block = (raw as { events?: unknown })?.events;
   if (!block || typeof block !== 'object') throw new BalanceError('balance.yaml: Block "events" fehlt');
@@ -853,6 +881,7 @@ export function parseBalance(raw: unknown): Balance {
     bots: parseBots(raw),
     events: parseEvents(raw),
     agenda: parseAgenda(raw),
+    newspaper: parseNewspaper(raw),
   };
 
   const { width, height, saltHill } = balance.map;

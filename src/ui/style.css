@@ -133,3 +133,11 @@ h1 button.neustart { font-size: 12px; font-weight: normal; letter-spacing: norma
 .dokument .lupe { padding: 2px 8px; font-size: 0.85em; }
 .befund.ok { color: #2e6b2e; }
 .befund.forged { color: #b3261e; font-weight: bold; }
+
+/* Zeitung (2.6): Titelseite und Kurzmeldungen. */
+.zeitung { margin-top: 16px; padding: 10px 14px; border: 1px solid #222; background: #fbfaf6; }
+.zeitung-kopf { text-align: center; font-size: 1.3rem; letter-spacing: 0.15em; font-variant: small-caps; border-bottom: 3px double #222; padding-bottom: 4px; margin-bottom: 8px; }
+.zeitung-titel h2 { font-size: 1.25rem; margin: 0 0 4px; }
+.zeitung-titel p { margin: 0 0 8px; }
+.zeitung-meldungen { margin: 0; padding: 6px 0 0; list-style: none; border-top: 1px solid #999; font-size: 0.95rem; columns: 2 280px; }
+.zeitung-meldungen li { margin-bottom: 4px; break-inside: avoid; }

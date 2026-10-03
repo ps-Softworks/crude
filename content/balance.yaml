@@ -277,3 +277,12 @@ agenda:
   tiredPenalty: 1          # … 1 Termin weniger je Runde
   strengthStart: 100
   strengthMax: 100         # Kapitel 1; sinkt mit dem Alter (90, 80, 70, 55) – kommt mit späteren Kapiteln
+
+# Zeitung (2.6, GDD §7.2): Frühwarnzeichen. Die Zeitung schätzt den Posted Price,
+# den der Trust am Ende der Runde festlegt, und zeigt nur eine Schlagzeile, nie die Zahl.
+# Texte stehen in content/newspaper.yaml.
+newspaper:
+  fallFrom: 0.05           # PLATZHALTER: erwarteter Preisverfall ab 5 % → „Volle Tanks“ (die Nachbarn allein drücken ~4 % je Runde)
+  crashFrom: 0.12          # PLATZHALTER: ab 12 % → „Tanks laufen über“
+  riseFrom: 0.05           # PLATZHALTER: erwarteter Anstieg ab 5 % → „Leere Tanks“
+  maxItems: 3              # Kurzmeldungen unter der Titelseite

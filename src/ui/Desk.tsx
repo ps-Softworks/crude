@@ -16,6 +16,7 @@ import { BankPanel } from './BankPanel';
 import { EventsPanel } from './EventsPanel';
 import { FeedbackLink } from './FeedbackLink';
 import { Map } from './Map';
+import { NewspaperPanel } from './NewspaperPanel';
 
 function money(value: number): string {
   return `${value.toLocaleString('de-DE')} $`;
@@ -136,6 +137,8 @@ export function Desk({
       {chapterEnd}
 
       <p className="nextstep">{step?.text ?? 'Das Kapitel ist zu Ende.'}</p>
+
+      {!game.finished && <NewspaperPanel game={game} />}
 
       <EventsPanel game={game} onResolved={onEvent} />
 
