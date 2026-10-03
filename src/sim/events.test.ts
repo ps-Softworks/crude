@@ -301,7 +301,7 @@ describe('die Probe-Ereignisse für Kapitel 1 aus content/events/', () => {
     if (!fair.ok || !betrug.ok) throw new Error('Wahl ging nicht');
     expect(fair.state.cash).toBe(700);
     expect(fair.state.events.marks).toEqual({ moss_fair: 4 });
-    expect(betrug.state.events.marks).toEqual({ moss_betrogen: 4 });
+    expect(betrug.state.events.marks).toEqual({ moss_betrogen: 4, moss_feind: 4 });
     const moss = katalog.filter((e) => e.id.startsWith('moss_'));
     const kommt = (s: GameState, round: number) =>
       moss.filter((e) => e.id !== 'moss_schulden' && conditionsMet({ ...s, round }, e.conditions) && marksMet({ ...s, round }, e)).map((e) => e.id);

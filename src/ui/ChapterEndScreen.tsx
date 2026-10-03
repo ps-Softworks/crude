@@ -1,10 +1,13 @@
 // Kapitelende (1.16): Runde 16 ist vorbei. Zeigt den Stand am Ende, den
 // Imperiumswert aus src/sim und lädt zum Feedback und zu einer neuen Partie ein.
+// 2.9: „Was aus ihnen wurde“ – wie die Story-Bögen Silas und Moss ausgegangen sind.
 // 2.8: Auch das frühe Ende „Der kluge Mann“ – Jacob hat an den Crane Trust verkauft.
 
+import { arcSummaries } from '../sim/arcs';
 import { debt } from '../sim/credit';
 import { empireValue } from '../sim/empire';
 import { formatDate, type GameState } from '../sim/game';
+import { arcContent } from './arcs';
 import { balance } from './balance';
 import { FeedbackLink } from './FeedbackLink';
 
@@ -48,6 +51,17 @@ export function ChapterEndScreen({ game, onRestart }: { game: GameState; onResta
         <dd>{barrels(quellen.reduce((s, w) => s + (w.production?.total ?? 0), 0))} bbl</dd>
         <dt>Rating</dt>
         <dd>{game.rating}</dd>
+      </dl>
+      <h3>Was aus ihnen wurde</h3>
+      <dl className="terms boegen">
+        {arcSummaries(game, arcContent).map((b) => (
+          <div key={b.arc} className="bogen">
+            <dt>
+              {b.name}: <em>{b.title}</em>
+            </dt>
+            <dd>{b.text}</dd>
+          </div>
+        ))}
       </dl>
       <div className="knoepfe">
         <FeedbackLink className="feedback gross" />

@@ -153,3 +153,7 @@ h1 button.neustart { font-size: 12px; font-weight: normal; letter-spacing: norma
 .krankmeldung { margin-top: 12px; padding: 8px 12px; border: 1px solid #b3261e; background: #fbeceb; color: #6b1510; }
 /* Erschöpft: Jacobs Handschrift wird zittrig (GDD §4). */
 .desk.erschoepft .log li, .desk.erschoepft .familie .jacob { font-style: italic; transform: skewX(-6deg); letter-spacing: 0.03em; color: #4a3f33; }
+/* Kapitelende (2.9): Was aus Silas und Moss wurde. */
+.terms.boegen { display: block; }
+.terms.boegen .bogen { margin-bottom: 6px; }
+.terms.boegen dt { color: #333; }

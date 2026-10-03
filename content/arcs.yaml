@@ -1,0 +1,85 @@
+# Story-Bögen (2.9, GDD §12): Wie ein Bogen ausgeht, liest die Simulation aus den
+# Merkzeichen ab, die die Ereignisse in content/events/ setzen.
+#
+# Je Bogen:
+#   name     – wer
+#   outcomes – mögliche Ausgänge, von oben nach unten geprüft: Der erste, dessen
+#              Merkzeichen (any: eins davon reicht) gesetzt ist, gilt.
+#   open     – Text, solange noch keine Entscheidung gefallen ist.
+#   draft    – true = Entwurf, Philipp überarbeitet die Texte noch.
+# Jeder Ausgang hat einen kurzen Titel und einen Satz für den Kapitelabschluss
+# („Was aus ihnen wurde“). Die Bögen selbst: k1-2-silas.yaml, k1-3-moss.yaml.
+#
+# Entwurf – Philipp überarbeitet.
+
+silas:
+  draft: true
+  name: { de: "Silas Brandt", en: "Silas Brandt" }
+  outcomes:
+    # Betrogen und reden lassen: der spätere Kronzeuge (Weltbibel).
+    - id: kronzeuge
+      any: [silas_kronzeuge]
+      title: { de: "Ein Mann mit einer Geschichte", en: "A Man with a Story" }
+      text:
+        de: Silas erzählt in jedem Saloon von Cordova, wie Jacob Harlan rechnet. Eine Reporterin hat alles mitgeschrieben.
+        en: Silas tells every saloon in Cordova how Jacob Harlan does his sums. A reporter has written it all down.
+    # Betrogen, aber spät doch bezahlt.
+    - id: versoehnt
+      any: [silas_versoehnt]
+      title: { de: "Spät bezahlt", en: "Paid Late" }
+      text:
+        de: Silas hat sein Geld bekommen, spät. Er grüßt Jacob noch, aber er setzt sich nicht mehr an seinen Tisch.
+        en: Silas got his money, late. He still greets Jacob, but he no longer sits at his table.
+    - id: freund
+      any: [silas_fair]
+      title: { de: "Partner", en: "Partner" }
+      text:
+        de: Silas steht jeden Morgen am Turm, trinkt nur noch sonntags und nennt Jacob vor allen Leuten „mein Junge“.
+        en: Silas is at the rig every morning, drinks only on Sundays and calls Jacob "my boy" in front of everyone.
+    - id: ausgekauft
+      any: [silas_ausgekauft]
+      title: { de: "Ausgezahlt", en: "Paid Off" }
+      text:
+        de: Silas bohrt mit Jacobs Geld auf eigene Rechnung am Salt Hill. Sie schulden einander nichts mehr – und sehen sich selten.
+        en: Silas drills on his own account at Salt Hill with Jacob's money. They owe each other nothing now – and rarely meet.
+    # Betrogen, der Saloon steht noch aus.
+    - id: verbittert
+      any: [silas_betrogen]
+      title: { de: "Betrogen", en: "Cheated" }
+      text:
+        de: Silas weiß, dass Jacob ihn betrogen hat. Noch schweigt er.
+        en: Silas knows that Jacob cheated him. For now he keeps quiet.
+  open:
+    title: { de: "Noch offen", en: "Still Open" }
+    text:
+      de: Silas wartet noch auf seine Abrechnung.
+      en: Silas is still waiting for his reckoning.
+
+moss:
+  draft: true
+  name: { de: "Ezekiel Moss", en: "Ezekiel Moss" }
+  outcomes:
+    # Betrogen oder vertrieben – Daniel kehrt in Kapitel 3 als Bezirksstaatsanwalt zurück.
+    - id: feind
+      any: [moss_feind]
+      title: { de: "Ein Sohn, der sich erinnert", en: "A Son Who Remembers" }
+      text:
+        de: Ezekiel Moss spricht Jacobs Namen nicht mehr aus. Sein Sohn Daniel studiert in Hallstead die Rechte.
+        en: Ezekiel Moss no longer says Jacob's name. His son Daniel is studying law in Hallstead.
+    - id: freund
+      any: [moss_fair]
+      title: { de: "Ein Nachbar", en: "A Neighbour" }
+      text:
+        de: Die Moss-Farm steht noch. Ezekiel schickt zu Weihnachten Honig, und Daniel schreibt aus Hallstead Briefe.
+        en: The Moss farm still stands. Ezekiel sends honey at Christmas, and Daniel writes letters from Hallstead.
+    - id: verloren
+      any: [moss_verloren]
+      title: { de: "Fortgezogen", en: "Moved Away" }
+      text:
+        de: Die Bank hat die Moss-Farm verkauft. Die Familie lebt jetzt bei Verwandten im Osten – niemand weiß genau, wo.
+        en: The bank sold the Moss farm. The family now lives with relatives in the East – nobody knows exactly where.
+  open:
+    title: { de: "Noch offen", en: "Still Open" }
+    text:
+      de: Ezekiel Moss bestellt sein Land und hofft auf einen guten Winter.
+      en: Ezekiel Moss works his land and hopes for a good winter.

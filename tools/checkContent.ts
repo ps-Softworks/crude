@@ -3,6 +3,7 @@
 // Anderer Ordner: npm run check:content -- src/sim/__fixtures__/events
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { checkArcMarks, parseArcContent } from '../src/sim/arcs';
 import { formatContentError, parseEventFiles } from '../src/sim/eventContent';
 import { parseFamilyContent } from '../src/sim/family';
 import { parseNewspaperContent } from '../src/sim/newspaper';
@@ -19,7 +20,10 @@ const zeitung = parseNewspaperContent(
 );
 // Familie (2.7): Zustandswörter und Sätze für den Familienbildschirm.
 const familie = parseFamilyContent('content/family.yaml', readFileSync(new URL('../content/family.yaml', import.meta.url), 'utf8'));
-const errors = [...parsed.errors, ...zeitung.errors, ...familie.errors];
+// Story-Bögen (2.9): Ausgänge und ihre Merkzeichen.
+const boegen = parseArcContent('content/arcs.yaml', readFileSync(new URL('../content/arcs.yaml', import.meta.url), 'utf8'));
+const bogenMarks = boegen.content && parsed.errors.length === 0 ? checkArcMarks('content/arcs.yaml', boegen.content, events) : [];
+const errors = [...parsed.errors, ...zeitung.errors, ...familie.errors, ...boegen.errors, ...bogenMarks];
 
 if (errors.length > 0) {
   for (const error of errors) console.error(formatContentError(error));

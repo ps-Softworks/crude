@@ -94,8 +94,8 @@ Zum Ausprobieren: `npm run dev`, dann im Browser `?seed=abc&debug=1`.
 | Datei | Ereignis | Nachwirkung |
 |---|---|---|
 | `k1-1-ruth-buecher` | Ruth will die Bücher führen | `ruth_buchhalterin` / `ruth_beiseite` (für später) |
-| `k1-2-silas-schnaps` | Silas betrunken, Seil gerissen | `silas_gedeckt` / `silas_gedemuetigt` (für später) |
-| `k1-3-moss-schulden` | Ezekiel Moss braucht 300 $ | `moss_wagenweg` (betrogen) oder `moss_dank` (fair) |
+| `k1-2-silas` | Story-Bogen Silas (2.9): Seil, Abrechnung, Folgen | Ausgang in `content/arcs.yaml`: Freund, ausgekauft, versöhnt, verbittert, Kronzeuge |
+| `k1-3-moss` | Story-Bogen Moss (2.9): Schulden, Bank, Daniel | Ausgang in `content/arcs.yaml`: Freund, Feind, Farm verloren |
 | `k1-4-nora-brand` | Nora Whitlock nach dem Brand | `nora_ehrlich` / `nora_bestechung` / `nora_abgewiesen` |
 | `k1-5-vale-umschlag` | 500 $ „von einem Freund“ | `vale_geld` / `vale_abgelehnt` (für später) |
 
