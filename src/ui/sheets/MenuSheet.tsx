@@ -23,6 +23,8 @@ import { previewInvestigation } from '../../sim/investigation';
 import { previewResearch } from '../../sim/research';
 // 4.15 Andockpunkt: Börse im Debug vorziehen.
 import { openExchange } from '../../sim/exchange';
+// 4.16 Andockpunkt: Hallstead (Beteiligungen, Lobbyist) im Debug vorziehen.
+import { HallsteadDebugButton } from './HallsteadSheet';
 
 export interface MenuProps {
   ctx: SheetContext;
@@ -230,6 +232,8 @@ export function MenuSheet(p: MenuProps) {
               </button>
             )}
             {ctx.game.exchange && <span className="muted klein">Börse ist geöffnet.</span>}
+            {/* 4.16 Andockpunkt: Hallstead-Mappe zum Ausprobieren öffnen (gehört sonst zu Kapitel 3). */}
+            <HallsteadDebugButton ctx={ctx} />
           </fieldset>
         </section>
       )}

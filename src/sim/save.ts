@@ -21,6 +21,8 @@ import { validResearch } from './research';
 import { isBrandState } from './brand';
 // 4.15 Andockpunkt: Börse (optional, erst ab Kapitel 3 im Spielstand).
 import { validExchange } from './exchange';
+// 4.16 Andockpunkt
+import { validHallstead } from './hallsteadState';
 
 /** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2), 11 = mit befristeten Nachwirkungen der Ereignisse (0.2.15+3), 12 = Karte mit Gebieten und Ranches statt Raster, mehrere Bohrlöcher je Ranch (0.2.15+5), 13 = Bohrtürme und Pumpen (0.2.15+7), 14 = mit Weltmodell (4.1), 15 = mit öffentlichem Handeln und Wahlergebnis im Weltmodell (4.2). */
 export const SAVE_FORMAT = 15;
@@ -172,6 +174,8 @@ export function validateState(value: unknown): LoadResult {
   ) {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
+  // 4.16 Andockpunkt: Hallstead ist optional (fehlt in Kapitel 1); wenn da, muss es vollständig sein.
+  if (!validHallstead(value.hallstead)) return { ok: false, reason: UNVOLLSTAENDIG };
   if (!isWorldState(value.worldModel)) return { ok: false, reason: UNVOLLSTAENDIG };
   // 4.6 Andockpunkt: Die Raffinerie ist optional (fehlt in Kapitel 1); wenn sie da ist, muss sie stimmen.
   if (value.refinery !== undefined && !isRefineryState(value.refinery)) return { ok: false, reason: UNVOLLSTAENDIG };

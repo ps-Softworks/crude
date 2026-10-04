@@ -19,6 +19,8 @@ import { parseResearchBalance, type ResearchBalance } from './research';
 
 // 4.14 Andockpunkt: Marke und Tankstellen – Zahlen liest src/sim/brand.ts selbst.
 import { parseBrandBalance, type BrandBalance } from './brand';
+// 4.16 Andockpunkt
+import { parseHallstead, type HallsteadBalance } from './hallsteadBalance';
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
 
@@ -641,6 +643,8 @@ export interface Balance {
   family: FamilyBalance;
   newspaper: NewspaperBalance;
   tutorial: TutorialBalance;
+  // 4.16 Andockpunkt: Nebeninvestments und Lobbyist in Hallstead.
+  hallstead: HallsteadBalance;
   worldModel: WorldModelBalance;
   /** 4.6 Andockpunkt: Raffinerie und Produktmix (ab Kapitel 2). */
   refinery: RefineryBalance;
@@ -1857,6 +1861,8 @@ export function parseBalance(raw: unknown): Balance {
     family: parseFamily(raw),
     newspaper: parseNewspaper(raw),
     tutorial: parseTutorial(raw),
+    // 4.16 Andockpunkt
+    hallstead: parseHallstead(raw),
     worldModel: parseWorldModel(raw),
     // 4.6 Andockpunkt: Raffinerie.
     refinery: parseRefinery(raw),

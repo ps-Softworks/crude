@@ -627,6 +627,96 @@ tutorial:
   deeperMinChance: 25        # PLATZHALTER: tiefer bohren nur raten, wenn der Geologe der nächsten Stufe mind. 25 % gibt
   loanRounding: 100          # vorgeschlagene Kredite auf 100 $ aufgerundet (mindestens credit.minLoan)
 
+# 4.16 Andockpunkt – Nebeninvestments und Lobbyist in Hallstead (GDD §8, §10, §11).
+# Erst ab Kapitel 3; in Kapitel 1 unsichtbar. Texte stehen in content/hallstead.yaml.
+# Alle Beträge sind PLATZHALTER im Maßstab eines Konzerns (Kapitel 3), Balance mit Phase 4.
+hallstead:
+  unlockChapter: 3           # ab Kapitel 3 liegt die Hallstead-Mappe auf dem Tisch
+  fallbackElectionEvery: 16  # ohne Weltmodell (4.1): Wahl alle 16 Runden (4 Jahre)
+  bankRateDiscount: 0.02     # eigene Bank: Bankzins 2 Punkte billiger (wie credit.collateralDiscount, wirkt in credit.ts)
+  holdings:
+    sellFee: 0.05            # Verkauf kostet 5 % des Werts (Makler, Abschlag)
+    # Wert je Runde: × (1 + drift + creditBeta·(Kreditklima − 50) + demandBeta·Nachfragewachstum ± noise)
+    # crashDrop: einmal, wenn ein Crash beginnt. shock: Schlag aus heiterem Himmel, je Runde gewürfelt
+    # (crashOnly: nur einmal je Crash gewürfelt, wenn er beginnt – höchstens ein Schlag je Krise).
+    kinds:
+      land:                  # Land in Boomtowns: steigt mit der Förderung, fällt, wenn das Feld versiegt
+        price: 20000
+        single: false
+        yield: 0.012         # Pacht und Mieten je Runde
+        drift: 0.015
+        creditBeta: 0.0005
+        demandBeta: 0.5
+        noise: 0.04
+        crashDrop: 0.15
+        shock: { chance: 0.04, drop: 0.7, crashOnly: false }   # Feld versiegt: −70 %
+      bahn:                  # Eisenbahnaktien: hohe Erträge im Boom, schwere Verluste im Crash
+        price: 50000
+        single: false
+        yield: 0.015
+        drift: 0.005
+        creditBeta: 0.002
+        demandBeta: 0.3
+        noise: 0.06
+        crashDrop: 0.35
+        shock: { chance: 0, drop: 0, crashOnly: false }
+      auto:                  # Autoaktien: wachsen mit der Nachfrage, stürzen im Crash am tiefsten
+        price: 50000
+        single: false
+        yield: 0.004
+        drift: 0.012
+        creditBeta: 0.003
+        demandBeta: 1.5
+        noise: 0.1
+        crashDrop: 0.45
+        shock: { chance: 0, drop: 0, crashOnly: false }
+      zeitung:               # eigene Zeitung: kostet eher, bringt Einfluss (Kampagnen)
+        price: 150000
+        single: true
+        yield: -0.004
+        drift: 0
+        creditBeta: 0
+        demandBeta: 0
+        noise: 0.02
+        crashDrop: 0.1
+        shock: { chance: 0, drop: 0, crashOnly: false }
+      bank:                  # eigene Bank: billige Kredite, Bankrun-Gefahr in jeder Kreditkrise
+        price: 500000
+        single: true
+        yield: 0.02
+        drift: 0.004
+        creditBeta: 0.001
+        demandBeta: 0
+        noise: 0.03
+        crashDrop: 0.2
+        shock: { chance: 0.35, drop: 0.6, crashOnly: true }    # Bankrun: 35 % je Kreditkrise (einmal gewürfelt, wenn sie beginnt), −60 %
+  newspaper:
+    credibilityStart: 80     # Glaubwürdigkeit der eigenen Zeitung (0–100)
+    campaignCost: 15         # jede Kampagne kostet so viel Glaubwürdigkeit
+    recovery: 4              # Runde ohne Kampagne: +4
+    moodPerCampaign: 3       # Stimmung (Weltmodell) +3 bei voller Glaubwürdigkeit
+    favorsPerCampaign: 1     # Gefallen bei voller Glaubwürdigkeit
+    scratchedBelow: 60       # Glaubwürdigkeit unter 60: „Die Leser werden misstrauisch“
+    lostBelow: 30            # unter 30: „Niemand glaubt dem Blatt mehr“
+  lobby:
+    favorsPerCompetence: 0.5 # Gefallen je Runde = Kompetenz × 0,5 × Regierungsfaktor
+    government: { handel: 1.25, volksbund: 0.75, provinz: 1.0 }
+    maxFavors: 20            # mehr Gefallen schuldet einem niemand
+    pushCost: 2              # Gesetz fordern oder verhindern: 2 Gefallen …
+    pushStep: 25             # … für 25 Punkte Druck (−100 bis +100)
+    waterCost: 3             # verwässern: 3 Gefallen …
+    waterStep: 0.2           # … für 20 % weniger Wirkung
+    maxWater: 0.6            # höchstens 60 % weniger Wirkung
+    decay: 0.1               # Druck und Verwässerung verlieren je Runde 10 %
+    maxShift: 0.3            # voller Druck ändert die Chance eines Gesetzes um höchstens 30 Punkte (Andockpunkt 4.3)
+    bribe: { cost: 10000, favors: 4, heat: 10 }          # Umschlag: Geld gegen Gefallen, macht Hitze
+    donation: { min: 10000, perFavor: 10000, winMultiplier: 2 }  # Wahlkampfspende: gewinnt die Partei, 2 Gefallen je 10.000 $
+    drunkChance: 0.2         # Trinker: Runde ohne Gefallen
+    genieSpread: 0.5         # Genie: Gefallen ±50 % je nach Laune
+    candidates:
+      pryce:  { competence: 4, hireCost: 15000, salary: 6000, trait: gewissenhaft }
+      lowell: { competence: 3, hireCost: 8000,  salary: 4000, trait: genie }
+      tibbs:  { competence: 2, hireCost: 2000,  salary: 2000, trait: trinker }
 # Weltmodell (4.1, GDD §7.1): neun Weltgrößen, je Runde (Quartal) fortgeschrieben
 # in src/sim/world.ts. Indizes: Nachfrage, Förderkapazität und Weltpreis starten
 # bei 1; Kreditklima, Stimmung, Außenspannung, Technik und Nationalismus laufen

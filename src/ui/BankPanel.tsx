@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import type { Rating } from '../sim/balance';
 import {
+  bankRateAdd,
   creditLimit,
   debt,
   freeCollateral,
@@ -22,7 +23,6 @@ import {
 } from '../sim/credit';
 import type { GameState } from '../sim/game';
 import { parcelLabel } from '../sim/lease';
-import { worldRateAdd } from '../sim/world';
 import { balance } from './balance';
 import { money, NBSP } from './format';
 
@@ -78,7 +78,8 @@ export function BankPanel({ game, onResult }: { game: GameState; onResult: (resu
   const [tilgPos, setTilgPos] = useState(Number.MAX_SAFE_INTEGER);
   const schuld = debt(game);
   // Kreditklima des Weltmodells (4.1): lockeres Geld macht den Zins billiger, ein Crash teurer.
-  const klima = worldRateAdd(game.worldModel, balance.worldModel);
+  // 4.16 Andockpunkt: bankRateAdd zieht den Rabatt der eigenen Bank in Hallstead schon ab.
+  const klima = bankRateAdd(game, balance);
   const rahmen = creditLimit(game, balance);
   const frei = headroom(game, balance);
   const pfandFrei = freeCollateral(game).length;

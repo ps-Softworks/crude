@@ -22,6 +22,8 @@ import { refineryAssets } from './refinery';
 import { bigPipelineAssets } from './bigPipeline';
 // 4.14 Andockpunkt: Tankstellen und Markenwert zählen mit (vor Kapitel 3: 0).
 import { brandAssets } from './brand';
+// 4.16 Andockpunkt
+import { hallsteadAssets } from './hallstead';
 
 function cents(value: number): number {
   return Math.round(value * 100) / 100;
@@ -51,6 +53,7 @@ export function empireValue(state: GameState, balance: Balance): number {
   // 4.7 Andockpunkt: plus Fernleitungen (Kapitel 2+; in Kapitel 1 immer 0).
   // 4.8 Andockpunkt: Anleihen sind Schulden wie Bankkredite.
   // 4.14 Andockpunkt: Tankstellen und Markenwert (vor Kapitel 3: 0).
+  // 4.16 Andockpunkt: Beteiligungen in Hallstead zählen mit ihrem Marktwert (Kapitel 1: 0).
   const anleihen = (state.stocks?.bonds ?? []).reduce((sum, b) => sum + b.principal, 0);
-  return cents(state.cash + tank + reserven + logisticsAssets(state, balance) + rigAssets(state, balance) + refineryAssets(state, balance) + bigPipelineAssets(state, balance) + brandAssets(state, balance) - debt(state) - anleihen);
+  return cents(state.cash + tank + reserven + logisticsAssets(state, balance) + rigAssets(state, balance) + refineryAssets(state, balance) + bigPipelineAssets(state, balance) + brandAssets(state, balance) + hallsteadAssets(state) - debt(state) - anleihen);
 }

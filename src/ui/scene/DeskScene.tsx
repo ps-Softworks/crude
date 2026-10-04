@@ -61,6 +61,8 @@ import { brandDeskBadge, brandDeskStatus } from '../sheets/BrandSheet';
 import { brandContent } from '../brand';
 // 4.15 Andockpunkt: Börsenticker (erscheint erst mit der Börse, Kapitel 3).
 import { ExchangeTicker } from './ExchangeTicker';
+// 4.16 Andockpunkt: Hallstead-Mappe (ab Kapitel 3 oder per Debug-Freischaltung).
+import { HallsteadDeskItem, hallsteadOnDesk } from '../sheets/HallsteadSheet';
 
 /** Wo was liegt, in Prozent der Bühne (unter der Kopfleiste). */
 const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte' | 'tuer', Placement> = {
@@ -89,6 +91,9 @@ const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte
   // Personalakten (ab Kapitel 2) und Vertrieb (ab Kapitel 3) beide da, teilen sie sich
   // die Spalte zwischen Tür und Glocke (RECHTE_SPALTE_GETEILT).
   marke: { left: 86, top: 47, width: 12, height: 21 },
+  // 4.16 Andockpunkt: Hallstead-Mappe in der unteren Reihe zwischen Kladde und Raffinerie-Plan,
+  // rechts neben der Schublade (unter dem Kassenbuch liegen schon Raffinerie und Börsenticker).
+  hallstead: { left: 59, top: 85, width: 11.5, height: 12 },
 };
 
 /**
@@ -106,6 +111,9 @@ const RECHTE_SPALTE_GETEILT: Record<'personal' | 'marke', Placement> = {
   personal: { left: 86.5, top: 44, width: 11.5, height: 12.5 },
   marke: { left: 86.5, top: 57, width: 11.5, height: 12.5 },
 };
+
+/** 4.16: Liegt die Hallstead-Mappe auf dem Tisch, rückt die Schublade (4.11) in die linke Hälfte ihrer Reihe. */
+const SCHUBLADE_GETEILT: Placement = { left: 47, top: 85, width: 11.5, height: 12 };
 
 export interface DeskSceneProps {
   game: GameState;
@@ -155,6 +163,8 @@ export function DeskScene(p: DeskSceneProps) {
   const zeitung = game.finished ? null : makeNewspaper(game, balance, newspaperContent);
   // 4.14 Andockpunkt: Schild am Gegenstand „Vertrieb“; null = vor Kapitel 3 unsichtbar.
   const vertrieb = brandDeskStatus(game);
+  // 4.16 Andockpunkt: Hallstead-Mappe auf dem Tisch? (ab Kapitel 3 oder per Debug-Freischaltung)
+  const mappe = hallsteadOnDesk(game);
 
   // Akte: was die Türme gerade tun, gezählt in src/sim (rigSummary).
   const tuerme = rigSummary(game);
@@ -390,6 +400,10 @@ export function DeskScene(p: DeskSceneProps) {
             { status: refineryObjectStatus(game), ...(game.exchange ? { at: UNTER_KASSENBUCH_GETEILT.raffinerie } : {}) },
             <RefineryShape running={refineryStatus(game) === 'running' || refineryStatus(game) === 'expanding'} />,
           )}
+        {/* 4.16 Andockpunkt: Hallstead-Mappe – erst ab Kapitel 3 (oder per Debug-Freischaltung im Menü). */}
+        {mappe && (
+          <HallsteadDeskItem game={game} at={AT.hallstead!} glow={p.glow === 'hallstead' || p.spotlight === 'hallstead'} onOpen={() => p.onOpen('hallstead')} />
+        )}
         {obj('protokoll', 'Kladde', { status: p.saved ? '✓ gesichert' : undefined }, <NotebookShape />)}
         {/* 4.9 Andockpunkt: Personalakten – erst ab Kapitel 2 (state.staff), in Kapitel 1 unsichtbar. */}
         {game.staff &&
@@ -405,7 +419,7 @@ export function DeskScene(p: DeskSceneProps) {
           )}
         {/* 4.11 Andockpunkt: Schattenbuch und Werkstatt – in Kapitel 1 nicht auf dem Tisch. */}
         {investigationUnlocked(game, balance) &&
-          obj('schattenbuch', 'Schublade', { status: `Hitze: ${localize(investigationContent.heat[heatWord(heat(game, balance), balance)])}` }, <DrawerShape />)}
+          obj('schattenbuch', 'Schublade', { status: `Hitze: ${localize(investigationContent.heat[heatWord(heat(game, balance), balance)])}`, ...(mappe ? { at: SCHUBLADE_GETEILT } : {}) }, <DrawerShape />)}
         {researchUnlocked(game, balance) &&
           obj(
             'werkstatt',

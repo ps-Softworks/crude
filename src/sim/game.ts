@@ -40,6 +40,9 @@ import { advanceInvestigation, type InvestigationState } from './investigation';
 import { advanceResearch, type ResearchState } from './research';
 // 4.15 Andockpunkt: Börse und Kauf auf Kredit (ab Kapitel 3).
 import { exchangeWorldInput, readClimate, settleExchange, type ExchangeState } from './exchange';
+// 4.16 Andockpunkt: Nebeninvestments und Lobbyist in Hallstead (ab Kapitel 3).
+import { hallsteadWorldInput, settleHallstead } from './hallstead';
+import type { HallsteadState } from './hallsteadState';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
@@ -111,6 +114,8 @@ export interface GameState {
   sick: number;
   /** Ruth und Thomas (2.7). */
   family: FamilyState;
+  /** 4.16 Andockpunkt: Hallstead (Beteiligungen, Lobbyist) – erst da, wenn Jacob dort etwas tut (ab Kapitel 3). */
+  hallstead?: HallsteadState;
   /** Weltmodell (4.1): die neun Weltgrößen, je Runde fortgeschrieben. */
   worldModel: WorldState;
   /** 4.7 Andockpunkt: Fernleitungen – fehlt in Kapitel 1 (erst ab balance.bigPipelines.fromChapter). */
@@ -210,7 +215,9 @@ function advanceWorldInGame(state: GameState, vorMarkt: GameState, balance: Bala
   if (!state.worldModel) return state;
   const angebot = saltHillSupply(vorMarkt, balance.market, balance.rivals.bullard.ratePerWell);
   // 4.15 Andockpunkt: Jacobs Kauf auf Kredit heizt das Kreditklima (ohne Börse unverändert).
-  const input = exchangeWorldInput(state, saltHillInput(angebot, balance.market.demand, balance.worldModel));
+  const salzHuegel = exchangeWorldInput(state, saltHillInput(angebot, balance.market.demand, balance.worldModel));
+  // 4.16 Andockpunkt: Die Kampagne von Jacobs eigener Zeitung in Hallstead hebt die Stimmung (sonst 0).
+  const input = { ...salzHuegel, moodShift: (salzHuegel.moodShift ?? 0) + hallsteadWorldInput(state, balance).moodShift };
   return { ...state, worldModel: advanceWorld(state.worldModel, balance.worldModel, input) };
 }
 
@@ -285,7 +292,9 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   if (diplomatie.finished) return { ...diplomatie, roundLogStart };
   // 4.11 Andockpunkt: Ermittler und Forschung – in Kapitel 1 kommt derselbe Zustand zurück.
   const ermittelt = advanceResearch(advanceInvestigation(diplomatie, balance), balance);
-  const state = { ...checkBankruptcy(ermittelt, balance), roundLogStart };
+  // 4.16 Andockpunkt: Beteiligungen und Lobby in Hallstead (ohne Hallstead-Zustand unverändert) – vor der Pleiteprüfung.
+  const hallstead = settleHallstead(ermittelt, balance);
+  const state = { ...checkBankruptcy(hallstead, balance), roundLogStart };
   if (state.ending === 'pleite') return state;
   if (state.round >= state.totalRounds) {
     // Kapitelprüfung (2.11): steht im Protokoll, der Ergebnisbildschirm zeigt die Einzelheiten.

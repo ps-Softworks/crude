@@ -33,6 +33,8 @@ export const SHEET_IDS = [
   'marke',
   // 4.15 Andockpunkt: Börsenticker (ab Kapitel 3).
   'boerse',
+  /** 4.16 Andockpunkt: Hallstead-Mappe – Beteiligungen und Lobbyist (ab Kapitel 3). */
+  'hallstead',
 ] as const;
 export type SheetId = (typeof SHEET_IDS)[number];
 

@@ -32,6 +32,8 @@ import { ShadowBookSheet } from './ShadowBookSheet';
 import { WorkshopSheet } from './WorkshopSheet';
 // 4.15 Andockpunkt: Börsenticker.
 import { ExchangeSheet } from './ExchangeSheet';
+// 4.16 Andockpunkt
+import { HallsteadSheet } from './HallsteadSheet';
 
 export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   zeitung: { title: 'Zeitung', size: 'brief' },
@@ -58,6 +60,8 @@ export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   marke: { title: localize(brandContent.object.title), size: 'mappe' },
   // 4.15 Andockpunkt: Börsenticker.
   boerse: { title: 'Börsenticker', size: 'mappe' },
+  // 4.16 Andockpunkt
+  hallstead: { title: 'Hallstead-Mappe', size: 'mappe' },
 };
 
 export interface SheetHostProps {
@@ -106,6 +110,8 @@ export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound
     marke: () => <BrandSheet ctx={ctx} />,
     // 4.15 Andockpunkt: Börsenticker.
     boerse: () => <ExchangeSheet ctx={ctx} />,
+    // 4.16 Andockpunkt
+    hallstead: () => <HallsteadSheet ctx={ctx} />,
   };
   return (
     <Sheet

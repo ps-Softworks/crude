@@ -11,6 +11,8 @@ import { parseDiplomacyContent } from '../src/sim/diplomacyContent'; // 4.10 And
 import { formatContentError, parseEventFiles } from '../src/sim/eventContent';
 import { analyzeRelevance, checkRelevanceMarks, parseRelevanceContent, readMarks, simReadMarks } from '../src/sim/eventRelevance';
 import { parseFamilyContent } from '../src/sim/family';
+// 4.16 Andockpunkt
+import { checkHallsteadContent, parseHallsteadContent } from '../src/sim/hallsteadContent';
 import { parseNewspaperContent } from '../src/sim/newspaper';
 import { parsePoliticsContent } from '../src/sim/politics';
 // 4.6 Andockpunkt: Texte der Raffinerie.
@@ -107,6 +109,10 @@ errors.push(...parsePipelineContent('content/pipelines.yaml', readFileSync(new U
 const marke = parseBrandContent('content/brand.yaml', readFileSync(new URL('../content/brand.yaml', import.meta.url), 'utf8'));
 errors.push(...marke.errors);
 if (marke.content) errors.push(...checkBrandRefs('content/brand.yaml', marke.content, loadBalance()));
+// 4.16 Andockpunkt: Texte der Hallstead-Mappe und ob sie zu balance.yaml passen.
+const hallstead = parseHallsteadContent('content/hallstead.yaml', readFileSync(new URL('../content/hallstead.yaml', import.meta.url), 'utf8'));
+errors.push(...hallstead.errors);
+if (hallstead.content) errors.push(...checkHallsteadContent('content/hallstead.yaml', hallstead.content, loadBalance()));
 if (errors.length > 0) {
   for (const error of errors) console.error(formatContentError(error));
   console.error(`\n${errors.length} Fehler in ${files.length} Datei(en). Inhalte nicht in Ordnung.`);
