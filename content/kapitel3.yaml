@@ -83,12 +83,12 @@ seismik:
   intro:
     de: >-
       Reflexionsseismik: Ein Spezialtrupp sprengt kleine Ladungen und horcht auf das
-      Echo der Schichten. Teuer, aber viel genauer als jeder Geologe. Das Patent hält
-      der Crane Trust.
+      Echo der Schichten. Teuer und genauer als jeder Geologe – aber auch ein Echo kann
+      täuschen, und trocken bohren kann man immer noch. Das Patent hält der Crane Trust.
     en: >-
       Reflection seismics: a specialist crew sets off small charges and listens to the
-      echo of the strata. Expensive, but far more precise than any geologist. The Crane
-      Trust holds the patent.
+      echo of the strata. Expensive and more precise than any geologist – but an echo can
+      deceive too, and a dry hole is still possible. The Crane Trust holds the patent.
   stage: { de: "Technikstufe der Föderation", en: "Federation tech level" }
   license: { de: "Lizenz kaufen", en: "Buy licence" }
   licenseFree: { de: "Lizenz annehmen (für Mitglieder umsonst)", en: "Accept licence (free for members)" }

@@ -96,6 +96,18 @@ export function loanRate(balance: Balance, rating: Rating, secured: boolean): nu
   return rateOf(Math.max(0, roh));
 }
 
+/**
+ * 4.17 Andockpunkt: Der Zins, den die Bank Jacob heute wirklich anbietet – für
+ * Kassenbuch (Anzeige) und takeLoan (Abschluss) aus einer Hand, damit Angebot und
+ * Vertrag nie auseinanderlaufen. Enthält den Rabatt der alten Banken nach Jacobs
+ * Stand in Hallstead (ab Kapitel 3, stand.ts).
+ * Beim Zusammenführen mit 4.1: das Kreditklima hier hineinnehmen, also
+ * loanRate(balance, state.rating, secured, worldRateAdd(state.worldModel, balance.worldModel)).
+ */
+export function bankRate(state: GameState, balance: Balance, secured: boolean): number {
+  return withStandDiscount(loanRate(balance, state.rating, secured), state, balance);
+}
+
 /** Zins für ein Quartal: ein Viertel des Jahreszinses auf die Restschuld. */
 export function quarterInterest(loan: Pick<Loan, 'principal' | 'rate'>): number {
   return cents((loan.principal * loan.rate) / 4);
@@ -149,8 +161,8 @@ export function takeLoan(state: GameState, balance: Balance, amount: number): Lo
   const blocked = loanBlocked(state, balance, amount);
   if (blocked) return { ok: false, reason: blocked };
   const pfand = freeCollateral(state)[0];
-  // 4.17 Andockpunkt: Stand in Hallstead – die alten Banken geben Rabatt (ab Kapitel 3).
-  const zins = withStandDiscount(loanRate(balance, state.rating, pfand !== undefined), state, balance);
+  // 4.17 Andockpunkt: bankRate = Zins nach Rating, Pfand und Stand – derselbe wie im Kassenbuch.
+  const zins = bankRate(state, balance, pfand !== undefined);
   const loan: Loan = {
     id: lastId(state.loans) + 1,
     source: 'bank',

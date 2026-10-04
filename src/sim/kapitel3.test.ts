@@ -7,7 +7,7 @@ import { chapterOf, ensureKapitel3, isKapitel3State, kapitel3Of, kapitel3Unlocke
 import { advanceKapitel3 } from './kapitel3Runde';
 import { deserializeGame, serializeGame } from './save';
 import { loadBalance, rawBalance } from './testBalance';
-import { k3Game, k3Rounds } from './testKapitel3';
+import { K3_TECH, k3Game, k3Rounds } from './testKapitel3';
 
 const balance = loadBalance();
 
@@ -52,8 +52,13 @@ describe('Freischaltung', () => {
 
 describe('Schnittstellen', () => {
   it('Weltgrößen: Ersatzwerte ohne Weltmodell, sonst die Werte aus state.worldModel', () => {
-    const s = k3Game('k3-welt', balance);
+    // Ohne Weltmodell im Spielstand (vor 4.1 oder alter Spielstand) – ausdrücklich entfernt,
+    // denn ab 4.1 legt newGame immer eines an.
+    const { worldModel: _welt, ...ohne } = k3Game('k3-welt', balance) as GameState & { worldModel?: unknown };
+    void _welt;
+    const s = ohne as GameState;
     expect(worldOf(s, balance)).toEqual(balance.kapitel3.world);
+    expect(worldOf(k3Game('k3-welt', balance), balance).tech).toBe(K3_TECH);
     const mitWelt = { ...s, worldModel: { tech: 80, credit: 70, tension: 10 } } as GameState;
     expect(worldOf(mitWelt, balance)).toEqual({ tech: 80, credit: 70, tension: 10, mood: balance.kapitel3.world.mood });
   });

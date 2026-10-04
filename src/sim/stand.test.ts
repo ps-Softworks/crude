@@ -1,7 +1,7 @@
 // Stand – Aufnahme in die Gesellschaft (4.17, GDD §12): Ränge, drei Wege
 // (erkaufen, erheiraten, brechen), Club, Verblassen, Zinsrabatt.
 import { describe, expect, it } from 'vitest';
-import { takeLoan } from './credit';
+import { bankRate, freeCollateral, takeLoan } from './credit';
 import type { GameState } from './game';
 import { newGame } from './game';
 import { kapitel3Of, type Kapitel3State } from './kapitel3';
@@ -129,5 +129,17 @@ describe('Verblassen und Zinsrabatt', () => {
     const normal = takeLoan(ohne, balance, 500);
     expect(mit.ok && normal.ok).toBe(true);
     if (mit.ok && normal.ok) expect(mit.loan.rate).toBeCloseTo(normal.loan.rate - S.rateDiscount[3], 6);
+  });
+
+  it('das Kassenbuch zeigt vorab genau den Zins, den der Kredit dann bekommt (bankRate)', () => {
+    const auf = mitAnsehen('z2', S.club.from, { admitted: true });
+    const ohne = { ...newGame('z2', balance), cash: auf.cash };
+    for (const s of [auf, ohne]) {
+      const secured = freeCollateral(s).length > 0;
+      const r = takeLoan(s, balance, 500);
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.loan.rate).toBe(bankRate(s, balance, secured));
+    }
+    expect(bankRate(auf, balance, false)).toBeCloseTo(bankRate(ohne, balance, false) - S.rateDiscount[3], 6);
   });
 });

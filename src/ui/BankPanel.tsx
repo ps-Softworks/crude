@@ -4,11 +4,11 @@
 import { useState } from 'react';
 import type { Rating } from '../sim/balance';
 import {
+  bankRate,
   creditLimit,
   debt,
   freeCollateral,
   headroom,
-  loanRate,
   loanSlider,
   quarterInterest,
   quarterInterestTotal,
@@ -117,8 +117,9 @@ export function BankPanel({ game, onResult }: { game: GameState; onResult: (resu
         </dd>
         <dt>Zins heute</dt>
         <dd>
-          {percent(loanRate(balance, game.rating, pfandFrei > 0))} mit Pfand ·{' '}
-          {percent(loanRate(balance, game.rating, false))} ohne
+          {/* 4.17 Andockpunkt: bankRate – derselbe Zins, den takeLoan berechnet (mit Stand-Rabatt). */}
+          {percent(bankRate(game, balance, pfandFrei > 0))} mit Pfand ·{' '}
+          {percent(bankRate(game, balance, false))} ohne
           {pfandFrei > 0 ? ` · ${pfandFrei} Quelle als Pfand frei` : ' · keine Quelle als Pfand frei'}
         </dd>
         <dt>Zins je Quartal</dt>

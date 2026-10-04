@@ -26,6 +26,7 @@ import { settleTakeover } from './trust';
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
 // 4.17 Andockpunkt: Kapitel 3 (Seismik, Konsortium, Projekte, Stand).
 import type { Kapitel3State } from './kapitel3';
+import type { Kapitel3Content } from './kapitel3Content';
 import { advanceKapitel3 } from './kapitel3Runde';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
@@ -192,7 +193,8 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
  * endet die Partie direkt nach den Antworten; zur neuen Runde bekommen die
  * neuen Nachbarquellen ihre Wildcatter.
  */
-export function endRound(input: GameState, balance: Balance, catalog: readonly EventDef[] = []): GameState {
+// 4.17 Andockpunkt: kapitel3 = Texte aus content/kapitel3.yaml, damit Kapitel 3 seine Ereignisse in die Kladde schreibt.
+export function endRound(input: GameState, balance: Balance, catalog: readonly EventDef[] = [], texts: { kapitel3?: Kapitel3Content } = {}): GameState {
   if (input.finished) return input;
   // Offene Ereignisse bekommen ihre Standard-Antwort, bevor die Runde abgerechnet wird.
   // Gebiete (0.2.15+5): Hat eine Antwort ein Gebiet freigeschaltet, bekommt es jetzt seine Ranches.
@@ -216,7 +218,7 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Türme und Pumpen (0.2.15+7): Turmmiete und Pumpenunterhalt, ebenfalls vor den Zinsen.
   const verzinst = settleLoans(settleRigs(advanceLogistics(rivale, balance), balance), balance);
   // 4.17 Andockpunkt: Kapitel 3 – Seismik-Berichte, Konsortium, Projekte, Stand (vor Kapitel 3 unverändert).
-  const konzern = advanceKapitel3(verzinst, balance);
+  const konzern = advanceKapitel3(verzinst, balance, texts.kapitel3);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   const gefahren = advanceTransport(konzern, balance);
   const state = { ...checkBankruptcy(gefahren, balance), roundLogStart };

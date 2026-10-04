@@ -1,8 +1,9 @@
 // Technikstufe III: Reflexionsseismik (4.17, GDD §5 „Informationsquellen“).
 // Sehr teuer, braucht einen Spezialtrupp und eine Lizenz beim Patentinhaber –
 // dafür eine viel schmalere Bandbreite als beim Geologen und ein Blick auf die
-// Größe der Falle. Die Messung sieht die wirkliche Geologie der Ranch (insight),
-// nicht nur die Zone – aber nie ganz: Auch eine Seismik irrt.
+// Größe der Falle. Die Messung sieht die wirkliche Geologie der Ranch zum Teil
+// (insight), den Rest schätzt sie aus der Zone – und sie kann sich täuschen
+// (falseTrap, missTrap). GDD §5: „gut“, nicht „sehr gut“ – das Bohrrisiko bleibt.
 //
 // Ablauf: Lizenz kaufen (Konsortium-Mitglieder bekommen sie umsonst) → Trupp auf
 // eine Ranch schicken → nach surveyRounds liegt der Bericht auf dem Tisch
@@ -13,20 +14,38 @@ import type { Balance } from './balance';
 import { trueChance, type Forecast } from './forecast';
 import type { GameState } from './game';
 import type { Parcel } from './geology';
-import { begin, clamp, kapitel3Of, note, withRng, type Kapitel3Reason, type Kapitel3Result, type Kapitel3State, type SeismikReport, worldOf } from './kapitel3';
+import { begin, chapterOf, clamp, kapitel3Of, note, withRng, type Kapitel3Reason, type Kapitel3Result, type Kapitel3State, type SeismikReport, worldOf } from './kapitel3';
 import type { Rng } from './rng';
 
-/**
- * Technikstufe I–V: aus dem Technikstand der Welt (4.1) oder – wenn höher – aus
- * eigener Forschung (state.research.stage, 4.11).
- */
-export function techStage(state: GameState, balance: Balance): number {
+/** Stufe I–V allein aus dem Technikstand der Welt (4.1, sonst Ersatzwert). */
+export function worldTechStage(state: GameState, balance: Balance): number {
   const tech = worldOf(state, balance).tech;
-  const stages = balance.kapitel3.seismik.techStages;
   let stage = 1;
-  stages.forEach((from, i) => {
+  balance.kapitel3.seismik.techStages.forEach((from, i) => {
     if (tech >= from) stage = i + 1;
   });
+  return stage;
+}
+
+/**
+ * Mindeststufe des Kapitels (GDD §13: Kapitel 3 bringt Stufe III). Die Debug-Probe
+ * zählt als Kapitel 3, damit man die Seismik auch in Kapitel 1 ausprobieren kann.
+ */
+export function chapterTechStage(state: GameState, balance: Balance): number {
+  const k = balance.kapitel3;
+  const chapter = state.kapitel3?.preview ? Math.max(chapterOf(state), k.fromChapter) : chapterOf(state);
+  const stages = k.seismik.chapterStages;
+  return stages[clamp(Math.floor(chapter), 1, stages.length) - 1];
+}
+
+/**
+ * Technikstufe I–V: das Höchste aus dem Technikstand der Welt (4.1), der
+ * Mindeststufe des Kapitels und eigener Forschung (state.research.stage, 4.11).
+ * Die Weltkurve kann eine Stufe früher bringen, das Kapitel garantiert sie –
+ * so hängt die Kernmechanik nicht davon ab, wie schnell eine Welt forscht.
+ */
+export function techStage(state: GameState, balance: Balance): number {
+  const stage = Math.max(worldTechStage(state, balance), chapterTechStage(state, balance));
   const research = (state as { research?: { stage?: unknown } }).research?.stage;
   return typeof research === 'number' && research > stage ? Math.min(5, research) : stage;
 }
@@ -116,17 +135,26 @@ export function sizeClassOf(balance: Balance, reserves: number): number {
 }
 
 /**
- * Der Bericht für eine Ranch. Zieht immer genau drei Zufallszahlen (Fehler der
- * Chance, Irrtum der Größe, Richtung des Irrtums), damit die Folge stabil bleibt.
+ * Der Bericht für eine Ranch. Die Messung sieht die wirkliche Falle nur zum Teil
+ * (insight), der Rest kommt aus der Zone – eine bessere Prognose, kein Orakel.
+ * Sie kann sich auch täuschen: Eine trockene Ranch zeigt mit falseTrap eine
+ * Struktur (Chance und Falle wie bei Öl), eine Falle mit Öl bleibt mit missTrap
+ * unsichtbar (Chance wie trocken, keine Falle). Zieht immer genau vier
+ * Zufallszahlen (Fehler der Chance, Fehlmessung, Irrtum der Größe, Richtung),
+ * damit die Folge stabil bleibt.
  */
 export function makeReport(balance: Balance, parcel: Parcel, round: number, rng: Rng): SeismikReport {
   const s = balance.kapitel3.seismik;
   const uError = rng.float();
+  const uRead = rng.float();
   const uMiss = rng.float();
   const uDir = rng.float();
   const zone = 100 * trueChance(balance, parcel);
   const oil = parcel.geology !== 'dry' && parcel.reserves > 0;
-  const center = zone * (1 - s.insight) + (oil ? 100 : 0) * s.insight + (uError * 2 - 1) * (s.width / 2);
+  // Was die Messung zu sehen glaubt.
+  const falseTrap = !oil && uRead < s.falseTrap;
+  const seen = oil ? uRead >= s.missTrap : falseTrap;
+  const center = zone * (1 - s.insight) + (seen ? 100 : 0) * s.insight + (uError * 2 - 1) * (s.width / 2);
   let low = clamp(roundTo(clamp(center - s.width / 2, 0, 100), s.rounding), 0, 100);
   let high = clamp(roundTo(clamp(center + s.width / 2, 0, 100), s.rounding), 0, 100);
   if (low === high) {
@@ -136,7 +164,7 @@ export function makeReport(balance: Balance, parcel: Parcel, round: number, rng:
   const last = s.sizeClasses.length - 1;
   let sizeLow: number | null = null;
   let sizeHigh: number | null = null;
-  if (oil) {
+  if (oil && seen) {
     const real = sizeClassOf(balance, parcel.reserves);
     sizeLow = sizeHigh = real;
     // Irrtum: die Spanne reicht eine Klasse daneben – die wahre liegt immer drin.
@@ -144,8 +172,8 @@ export function makeReport(balance: Balance, parcel: Parcel, round: number, rng:
       if ((uDir < 0.5 && real > 0) || real === last) sizeLow = real - 1;
       else sizeHigh = real + 1;
     }
-  } else if (uMiss < s.falseTrap) {
-    // Trockene Ranch, aber eine Struktur im Bild: Die Messung irrt (eine kleine Falle, die es nicht gibt).
+  } else if (falseTrap) {
+    // Trockene Ranch, aber eine Struktur im Bild: eine kleine Falle, die es nicht gibt.
     sizeLow = Math.min(last, 1 + (uDir < 0.5 ? 0 : 1)) - 1;
     sizeHigh = sizeLow + 1;
   }

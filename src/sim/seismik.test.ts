@@ -3,12 +3,12 @@
 import { describe, expect, it } from 'vitest';
 import type { GameState } from './game';
 import { newGame } from './game';
-import { kapitel3Of } from './kapitel3';
+import { kapitel3Of, previewKapitel3, worldOf, type SeismikReport } from './kapitel3';
 import { answerInvitation } from './konsortium';
 import { Rng } from './rng';
-import { bestForecast, buyLicense, hireCrew, licenseCost, makeReport, orderSurvey, sizeClassOf, surveyBlocker, techStage } from './seismik';
+import { bestForecast, buyLicense, chapterTechStage, hireCrew, licenseCost, makeReport, orderSurvey, sizeClassOf, surveyBlocker, techStage, worldTechStage } from './seismik';
 import { loadBalance } from './testBalance';
-import { k3Game, k3Round, ok, withK3 } from './testKapitel3';
+import { K3_TECH, k3Game, k3Round, ok, withK3, withTech } from './testKapitel3';
 
 const balance = loadBalance();
 const S = balance.kapitel3.seismik;
@@ -24,25 +24,55 @@ function ranch(s: GameState, oil: boolean) {
 }
 
 describe('Technikstufe', () => {
-  it('folgt dem Technikstand der Welt (Ersatzwert 50 = Stufe III)', () => {
-    const s = k3Game('stufe', balance);
-    expect(techStage(s, balance)).toBe(3);
-    expect(techStage({ ...s, worldModel: { tech: 10 } } as GameState, balance)).toBe(1);
-    expect(techStage({ ...s, worldModel: { tech: S.techStages[1] } } as GameState, balance)).toBe(2);
-    expect(techStage({ ...s, worldModel: { tech: 95 } } as GameState, balance)).toBe(5);
+  it('folgt dem Technikstand der Welt (techStages), wo das Kapitel nichts garantiert', () => {
+    const s = { ...withTech(newGame('stufe', balance), 0), chapter: 1 } as GameState;
+    expect(worldTechStage(s, balance)).toBe(1);
+    expect(worldTechStage(withTech(s, S.techStages[1]), balance)).toBe(2);
+    expect(worldTechStage(withTech(s, S.techStages[2]), balance)).toBe(3);
+    expect(worldTechStage(withTech(s, 95), balance)).toBe(5);
+    expect(techStage(withTech(s, S.techStages[2]), balance)).toBe(3);
+  });
+
+  it('Kapitel 3 garantiert Stufe III, auch wenn die Welt langsam forscht (4.1: Runde ~81 erst tech 20–30)', () => {
+    const s = k3Game('stufe3', balance);
+    expect(worldOf(s, balance).tech).toBe(K3_TECH);
+    expect(worldTechStage(s, balance)).toBeLessThan(S.stage);
+    expect(chapterTechStage(s, balance)).toBe(S.chapterStages[2]);
+    expect(techStage(s, balance)).toBe(S.stage);
+    expect(techStage(withTech(s, 0), balance)).toBe(S.stage);
+  });
+
+  it('die echte Weltkurve aus 4.1 (Start 6–10, +1,7 % logistisch) reicht vor Kapitel 3 nicht für Stufe III – erst das Kapitel', () => {
+    // Nachgerechnet wie nextTech in world.ts: die langsamste Welt zu Kapitel-3-Beginn (Runde 81).
+    let tech = 6;
+    for (let r = 0; r < 80; r++) tech += 0.017 * tech * (1 - tech / 100);
+    const langsam = { ...withTech(newGame('kurve', balance), tech), chapter: 3 } as GameState;
+    expect(worldTechStage(langsam, balance)).toBeLessThan(S.stage);
+    expect(ok(buyLicense({ ...langsam, cash: 1_000_000 } as GameState, balance)).kapitel3!.seismik.license).toBe(true);
+  });
+
+  it('Mindeststufe je Kapitel; spätere Kapitel nehmen die letzte, die Debug-Probe zählt als Kapitel 3', () => {
+    const s = withTech(newGame('kap', balance), 0);
+    expect(chapterTechStage({ ...s, chapter: 2 } as GameState, balance)).toBe(S.chapterStages[1]);
+    expect(chapterTechStage({ ...s, chapter: 99 } as GameState, balance)).toBe(S.chapterStages[S.chapterStages.length - 1]);
+    expect(chapterTechStage(s, balance)).toBe(S.chapterStages[0]);
+    expect(techStage(previewKapitel3(s, balance), balance)).toBe(S.stage);
   });
 
   it('eigene Forschung (4.11) hebt die Stufe, senkt sie nie', () => {
-    const s = { ...k3Game('forschung', balance), worldModel: { tech: 10 } } as GameState;
-    expect(techStage({ ...s, research: { stage: 3 } } as GameState, balance)).toBe(3);
+    const s = { ...withTech(newGame('forschung', balance), 0), chapter: 1 } as GameState;
+    expect(techStage({ ...s, research: { stage: 4 } } as GameState, balance)).toBe(4);
     expect(techStage({ ...k3Game('f2', balance), research: { stage: 1 } } as GameState, balance)).toBe(3);
   });
 });
 
 describe('Lizenz und Trupps', () => {
   it('ohne Stufe III keine Lizenz', () => {
-    const s = { ...k3Game('lz', balance), worldModel: { tech: 30 } } as GameState;
-    expect(buyLicense(s, balance)).toEqual({ ok: false, reason: 'technik' });
+    const b = withK3(balance, (k) => ({ ...k, seismik: { ...k.seismik, chapterStages: [1, 1, 2] } }));
+    const s = withTech(k3Game('lz', b), b.kapitel3.seismik.techStages[2] - 1);
+    expect(buyLicense(s, b)).toEqual({ ok: false, reason: 'technik' });
+    expect(surveyBlocker(s, b, s.parcels[0].id)).toBe('technik');
+    expect(buyLicense(withTech(s, b.kapitel3.seismik.techStages[2]), b).ok).toBe(true);
   });
 
   it('Kapitel 1: gesperrt', () => {
@@ -133,62 +163,63 @@ describe('Bericht (makeReport)', () => {
     }
   });
 
-  it('sieht die wirkliche Falle: Ranches mit Öl schätzt sie deutlich höher als trockene', () => {
-    let oel = 0;
-    let trocken = 0;
-    let nOel = 0;
-    let nTrocken = 0;
-    for (let i = 0; i < 20; i++) {
-      const s = newGame(`br-${i}`, balance);
-      const rng = new Rng(i);
+  /** Berichte für alle Ranches aus n Partien, getrennt nach Öl und trocken. */
+  function berichte(b = balance, n = 40) {
+    const oel: SeismikReport[] = [];
+    const trocken: SeismikReport[] = [];
+    for (let i = 0; i < n; i++) {
+      const s = newGame(`br-${i}`, b);
+      const rng = new Rng(i + 1);
       for (const p of s.parcels.filter((x) => !x.discovery)) {
-        const r = makeReport(balance, p, 1, rng);
-        if (p.geology === 'dry') {
-          trocken += (r.low + r.high) / 2;
-          nTrocken++;
-        } else {
-          oel += (r.low + r.high) / 2;
-          nOel++;
-        }
+        const r = makeReport(b, p, 1, rng);
+        (p.geology !== 'dry' && p.reserves > 0 ? oel : trocken).push(r);
       }
     }
-    expect(oel / nOel - trocken / nTrocken).toBeGreaterThan(40);
+    return { oel, trocken };
+  }
+  const mitte = (r: { low: number; high: number }) => (r.low + r.high) / 2;
+  const schnitt = (rs: { low: number; high: number }[]) => rs.reduce((a, r) => a + mitte(r), 0) / rs.length;
+
+  it('sieht die wirkliche Falle zum Teil: Ranches mit Öl schätzt sie im Schnitt höher als trockene', () => {
+    const { oel, trocken } = berichte();
+    expect(schnitt(oel) - schnitt(trocken)).toBeGreaterThan(10);
   });
 
-  it('Größe: die wahre Klasse liegt immer in der Spanne, höchstens zwei Klassen breit', () => {
-    const rng = new Rng(3);
-    for (let i = 0; i < 10; i++) {
-      const s = newGame(`gr-${i}`, balance);
-      for (const p of s.parcels.filter((x) => !x.discovery && x.geology !== 'dry' && x.reserves > 0)) {
-        const r = makeReport(balance, p, 1, rng);
-        const echt = sizeClassOf(balance, p.reserves);
-        expect(r.sizeLow).not.toBeNull();
-        expect(r.sizeLow!).toBeLessThanOrEqual(echt);
-        expect(r.sizeHigh!).toBeGreaterThanOrEqual(echt);
-        expect(r.sizeHigh! - r.sizeLow!).toBeLessThanOrEqual(1);
-      }
+  it('kein Orakel (GDD §5 „gut“): die Bänder von Öl- und trockenen Ranches überlappen deutlich', () => {
+    const { oel, trocken } = berichte();
+    const ueberlapp = (r: { low: number; high: number }, andere: { low: number; high: number }[]) => andere.some((o) => o.low < r.high && r.low < o.high);
+    // Ein nennenswerter Teil der trockenen Ranches bekommt ein Band, das auch eine Ranch mit Öl hätte bekommen können …
+    const trockenWieOel = trocken.filter((r) => ueberlapp(r, oel)).length / trocken.length;
+    expect(trockenWieOel).toBeGreaterThan(0.5);
+    // … und umgekehrt. Auch eine trockene Ranch kann höher geschätzt werden als eine mit Öl.
+    const oelWieTrocken = oel.filter((r) => ueberlapp(r, trocken)).length / oel.length;
+    expect(oelWieTrocken).toBeGreaterThan(0.5);
+    const hohesTrocken = trocken.filter((r) => mitte(r) >= 55).length / trocken.length;
+    const niedrigesOel = oel.filter((r) => mitte(r) < 55).length / oel.length;
+    expect(hohesTrocken).toBeGreaterThan(0.06);
+    expect(niedrigesOel).toBeGreaterThan(0.1);
+  });
+
+  it('Fehlmessung: falseTrap hebt bei trockenen Ranches auch die Chance, missTrap senkt sie bei Öl', () => {
+    const ohne = withK3(balance, (k) => ({ ...k, seismik: { ...k.seismik, falseTrap: 0, missTrap: 0 } }));
+    const immer = withK3(balance, (k) => ({ ...k, seismik: { ...k.seismik, falseTrap: 1, missTrap: 1 } }));
+    const a = berichte(ohne, 15);
+    const b = berichte(immer, 15);
+    expect(schnitt(b.trocken) - schnitt(a.trocken)).toBeGreaterThan(20);
+    expect(schnitt(a.oel) - schnitt(b.oel)).toBeGreaterThan(20);
+    // Übersehene Falle: keine Struktur im Bild.
+    expect(b.oel.every((r) => r.sizeLow === null)).toBe(true);
+  });
+
+  it('zieht genau vier Zufallszahlen – bei Öl wie bei trocken', () => {
+    const s = newGame('vier', balance);
+    for (const p of [ranch(s, true), ranch(s, false)]) {
+      const rng = new Rng(11);
+      makeReport(balance, p, 1, rng);
+      const ref = new Rng(11);
+      for (let i = 0; i < 4; i++) ref.float();
+      expect(rng.state).toBe(ref.state);
     }
-  });
-
-  it('trockene Ranch: meist keine Struktur, ohne falseTrap nie', () => {
-    const b = withK3(balance, (k) => ({ ...k, seismik: { ...k.seismik, falseTrap: 0 } }));
-    const s = newGame('tr', b);
-    const rng = new Rng(5);
-    for (const p of s.parcels.filter((x) => !x.discovery && x.geology === 'dry')) {
-      expect(makeReport(b, p, 1, rng).sizeLow).toBeNull();
-    }
-  });
-
-  it('zieht genau drei Zufallszahlen', () => {
-    const s = newGame('drei', balance);
-    const p = ranch(s, true);
-    const rng = new Rng(11);
-    makeReport(balance, p, 1, rng);
-    const ref = new Rng(11);
-    ref.float();
-    ref.float();
-    ref.float();
-    expect(rng.state).toBe(ref.state);
   });
 
   it('Größenklassen nach balance.yaml', () => {

@@ -18,7 +18,10 @@ export interface SizeClass {
 }
 
 export interface SeismikBalance {
+  /** Technikstand der Welt (0–100), ab dem Stufe I–V gilt. */
   techStages: number[];
+  /** Mindeststufe je Kapitel (Index 0 = Kapitel 1); das letzte gilt für alle späteren. */
+  chapterStages: number[];
   stage: number;
   licenseCost: number;
   surveyCost: number;
@@ -31,6 +34,7 @@ export interface SeismikBalance {
   rounding: number;
   sizeMiss: number;
   falseTrap: number;
+  missTrap: number;
   sizeClasses: SizeClass[];
 }
 
@@ -158,6 +162,8 @@ function parseSeismik(k: unknown): SeismikBalance {
   const techStages = liste(k, 'seismik.techStages').map((_, i) => skala(k, `seismik.techStages.${i}`));
   if (techStages.length !== 5) fail('seismik.techStages', 'braucht genau fünf Werte (Stufe I–V)');
   aufsteigend(techStages, 'seismik.techStages');
+  const chapterStages = liste(k, 'seismik.chapterStages').map((_, i) => num(k, `seismik.chapterStages.${i}`, { min: 1, max: 5, int: true }));
+  for (let i = 1; i < chapterStages.length; i++) if (chapterStages[i] < chapterStages[i - 1]) fail('seismik.chapterStages', 'darf nicht fallen');
   const sizeClasses = liste(k, 'seismik.sizeClasses').map((_, i) => ({ id: id(k, `seismik.sizeClasses.${i}.id`), from: num(k, `seismik.sizeClasses.${i}.from`, { min: 0 }) }));
   eindeutig(sizeClasses.map((c) => c.id), 'seismik.sizeClasses');
   aufsteigend(sizeClasses.map((c) => c.from), 'seismik.sizeClasses');
@@ -166,6 +172,7 @@ function parseSeismik(k: unknown): SeismikBalance {
   if (maxCrews < crews) fail('seismik.maxCrews', 'ist kleiner als "crews"');
   return {
     techStages,
+    chapterStages,
     stage: num(k, 'seismik.stage', { min: 1, max: 5, int: true }),
     licenseCost: geld(k, 'seismik.licenseCost'),
     surveyCost: geld(k, 'seismik.surveyCost'),
@@ -178,6 +185,7 @@ function parseSeismik(k: unknown): SeismikBalance {
     rounding: runden(k, 'seismik.rounding'),
     sizeMiss: anteil(k, 'seismik.sizeMiss'),
     falseTrap: anteil(k, 'seismik.falseTrap'),
+    missTrap: anteil(k, 'seismik.missTrap'),
     sizeClasses,
   };
 }

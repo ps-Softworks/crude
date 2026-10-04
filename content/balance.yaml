@@ -519,7 +519,11 @@ kapitel3:
   # Ersatzwerte, solange das Weltmodell (4.1) nicht im Spielstand steht (0–100 wie dort).
   world: { tech: 50, credit: 50, tension: 30, mood: 50 }
   seismik:
-    techStages: [0, 20, 45, 70, 90]  # Technikstand der Welt, ab dem Stufe I, II, III, IV, V gilt
+    # Technikstand der Welt (4.1: Start 6–10, logistisch +1,7 % je Runde), ab dem Stufe I–V gilt.
+    # Kurve: Runde 40 ≈ 11–18, Runde 80 ≈ 20–30, Runde 160 ≈ 49–63, Runde 256 ≈ 83–90.
+    # Schnelle Welten erreichen eine Stufe so etwas früher; garantiert ist sie über chapterStages.
+    techStages: [0, 15, 28, 55, 85]
+    chapterStages: [1, 2, 3, 3, 4, 4, 5]  # Mindeststufe je Kapitel 1–7 (GDD §13: II in Kap. 2, III in Kap. 3, IV in Kap. 5)
     stage: 3                 # Reflexionsseismik braucht Technikstufe III (GDD §5)
     licenseCost: 20000       # Lizenz beim Patentinhaber (einmalig); Konsortium-Mitglieder zahlen nichts
     surveyCost: 6000         # eine Vermessung je Ranch
@@ -528,10 +532,11 @@ kapitel3:
     crewCost: 15000          # jeder weitere Trupp
     maxCrews: 3
     width: 10                # Bandbreite der Fundchance in Prozentpunkten (Geologe: 10–50)
-    insight: 0.6             # so stark sieht die Messung die wirkliche Falle statt nur die Zone (0–1)
+    insight: 0.3             # so stark sieht die Messung die wirkliche Falle statt nur die Zone (0–1); GDD §5: „gut“, nicht „sehr gut“
     rounding: 5              # Raster der Prozentangabe
     sizeMiss: 0.2            # Chance, dass die Größe eine Klasse daneben liegt (dann zwei Klassen Spanne)
-    falseTrap: 0.25          # Chance, dass eine trockene Ranch trotzdem eine Struktur zeigt
+    falseTrap: 0.25          # Fehlmessung: eine trockene Ranch zeigt eine Struktur – Chance und Falle wirken wie bei Öl
+    missTrap: 0.15           # Fehlmessung: die Falle einer Ranch mit Öl bleibt unsichtbar – Chance wie bei einer trockenen
     sizeClasses:             # Größenklassen nach förderbarem Öl (GDD §5), aufsteigend
       - { id: tasche, from: 0 }
       - { id: klein, from: 50000 }
