@@ -9,6 +9,7 @@ import {
   defaultChoice,
   deskEvents,
   drawEvents,
+  marksIntoNextChapter,
   marksMet,
   resolveEvent,
   unmetReason,
@@ -61,6 +62,30 @@ describe('Bedingungen', () => {
     expect(conditionsMet(state, { minLeases: 1 })).toBe(false);
   });
 
+  it('Kapitel: ohne Angabe gilt Kapitel 1, minChapter/maxChapter grenzen ein', () => {
+    expect(state.chapter).toBeUndefined();
+    expect(conditionsMet(state, { minChapter: 1, maxChapter: 1 })).toBe(true);
+    expect(conditionsMet(state, { minChapter: 2 })).toBe(false);
+    expect(conditionsMet({ ...state, chapter: 2 }, { minChapter: 2, maxChapter: 2 })).toBe(true);
+    expect(conditionsMet({ ...state, chapter: 3 }, { minChapter: 2, maxChapter: 2 })).toBe(false);
+  });
+
+  it('kein Ereignis aus content/events/k2-* oder k3-* kann in Kapitel 1 kommen', () => {
+    const spaeter = loadEvents().filter((e) => /^k[23]_/.test(e.id));
+    for (const e of spaeter) {
+      // Integration: Die Ereignisse der Kapitel-2-Systeme (4.9 Personal, 4.10 Diplomatie, 4.11 Delaney)
+      // hängen an Merkzeichen, die nur die Simulation ab ihrem Kapitel setzt (oder der Debug-Knopf
+      // zur Probe) – sie brauchen kein minChapter. Alle anderen grenzen das Kapitel selbst ein.
+      if (e.conditions.minChapter === undefined) {
+        expect(e.marked.length, e.id).toBeGreaterThan(0);
+        expect(marksMet({ ...state, round: 8 }, e), e.id).toBe(false);
+        continue;
+      }
+      expect(e.conditions.minChapter, e.id).toBeGreaterThanOrEqual(2);
+      expect(conditionsMet({ ...state, round: 8, cash: 1e9, oilStock: 1e9, strength: 50 }, e.conditions), e.id).toBe(false);
+    }
+  });
+
   it('nennt den Grund, warum eine Wahl gesperrt ist', () => {
     expect(unmetReason(state, { minCash: 1000 })).toBe('Dafür fehlt das Geld (1.000 $ nötig).');
     expect(unmetReason(state, { minOilStock: 500 })).toBe('Dafür fehlt Öl im Tank (500 bbl nötig).');
@@ -106,6 +131,44 @@ describe('Ereignisse würfeln', () => {
     expect(nach.events.pending).toEqual(['a']);
     expect(nach.events.seen).toEqual(['a']);
     expect(nach.log.at(-1)).toMatch(/Auf dem Schreibtisch: Titel a\.$/);
+  });
+
+  it('ein Ereignis für Kapitel 2 kommt in Kapitel 1 nicht – auch nicht, wenn es sicher ist', () => {
+    const state = newGame('kap', balance);
+    const k2 = [ereignis('a', { conditions: { minChapter: 2 } }), ereignis('b', { conditions: { minChapter: 2 }, certain: true })];
+    expect(drawEvents(state, balance, k2).events.pending).toEqual([]);
+    expect(drawEvents({ ...state, chapter: 2 }, balance, k2).events.pending).toContain('b');
+  });
+
+  it('Kapitel-2-Story-Bögen (k2-story-*): Ruths Abend kommt in Kapitel 2 sicher, Ruths Wunsch je nach Kapitel-1-Merkzeichen in genau einer Fassung', () => {
+    const k2 = loadEvents().filter((e) => e.id.startsWith('k2_'));
+    const start = { ...newGame('k2', balance), chapter: 2 };
+    expect(drawEvents(start, balance, k2).events.pending).toContain('k2_ruth_abend');
+    const fassungen = ['k2_ruth_wunsch', 'k2_ruth_datum', 'k2_ruth_sitz'];
+    for (const [mark, erwartet] of [[null, 'k2_ruth_wunsch'], ['ruth_vertroestet', 'k2_ruth_datum'], ['ruth_teilhaberin', 'k2_ruth_sitz']] as const) {
+      const marks = mark ? { [mark]: 0 } : {};
+      const runde4 = { ...start, round: 4, events: { ...start.events, marks } };
+      const offen = drawEvents(runde4, balance, k2).events.pending.filter((id) => fassungen.includes(id));
+      expect(offen, String(mark)).toEqual([erwartet]);
+    }
+  });
+
+  it('Zeitsprung: späte Kapitel-1-Merkzeichen (Runde 12) gelten in Kapitel 2 ab Runde 1 als gesetzt', () => {
+    const k2 = loadEvents().filter((e) => e.id.startsWith('k2_'));
+    const start = { ...newGame('k2-spaet', balance), chapter: 2 };
+    const spaet = { ...start.events, marks: { silas_fair: 12, ruth_vertroestet: 12, nora_bestechung: 14 } };
+    // Ohne Übertrag zählte delay ab Kapitel-1-Runde 12 – die Szenen kämen erst spät oder nie.
+    const ohne = drawEvents({ ...start, round: 4, events: spaet }, balance, k2).events.pending;
+    expect(ohne).not.toContain('k2_silas_rat');
+    expect(ohne).not.toContain('k2_ruth_datum');
+    const uebertragen = marksIntoNextChapter(spaet);
+    expect(Object.values(uebertragen.marks)).toEqual([0, 0, 0]);
+    expect(Object.keys(uebertragen.marks)).toEqual(Object.keys(spaet.marks));
+    const mit = drawEvents({ ...start, round: 4, events: uebertragen }, balance, k2).events.pending;
+    expect(mit).toContain('k2_silas_rat');
+    expect(mit).toContain('k2_ruth_datum');
+    expect(mit).not.toContain('k2_ruth_wunsch');
+    expect(drawEvents({ ...start, round: 2, events: uebertragen }, balance, k2).events.pending).toContain('k2_nora_absatz');
   });
 
   it('Chance 0 kommt nie, gleicher Seed würfelt gleich', () => {

@@ -1,0 +1,575 @@
+# Kapitel 2 – Story-Bogen „Noras erster Artikel“ (GDD §13 Kapitel 2, Story-Bibel §3 und §6 A).
+# Entwurf – Philipp überarbeitet. Alle Texte hier sind Entwürfe von Claude.
+#
+# Jahr 11–14 (98–101 d. F.). Nora Whitlock ist 32–35 (V) und schreibt jetzt für den Hallstead
+# Ledger (V) – der Port Ellis Courier war ihr Lehrjahr. Ihr „erster Artikel“ ist der erste große in
+# Hallstead: eine Serie über den Crane Trust. Jedes Ereignis trägt { minChapter: 2, maxChapter: 2 }.
+# Runden zählen im Kapitel ab 1. Merkzeichen aus Kapitel 1 setzt der Zeitsprung mit
+# marksIntoNextChapter (src/sim/events.ts) auf Runde 0 – „vor Kapitelbeginn“ (Test in events.test.ts).
+#
+#   Runde 2+   k2_nora_besuch      Nora will Material über den Trust – Listen, Interview oder abweisen
+#              k2_nora_absatz      … mit nora_bestechung (K1): sie sagt den Courier-Absatz von damals auf
+#              k2_nora_ausschnitt  … mit courier_gekauft (K1): „Ein Mann der Zukunft“, Seite zwei
+#   +2         k2_nora_artikel     Schlüsselszene: „Wie der Trust Cordova melkt“
+#   Runde 9+   k2_nora_rivale      (nora_verbuendet) Bullards Frachtrabatt – bestätigen oder schweigen
+#   danach     k2_nora_harlan      (nora_feindin)    Teil fünf: Harlan Oil
+#   Runde 12+  k2_nora_silas       (silas_kronzeuge, K1) Das alte Notizbuch aus dem Saloon
+#              k2_nora_geopfert    (silas_k2_geopfert)   Der Mann, den der Rat brauchte
+#
+# Ausgänge des Bogens (für content/arcs.yaml – erster passender gilt):
+#   verbuendet   nora_verbuendet                       Nora hält Jacob für eine ehrliche Quelle
+#   gekauft      ledger_gekauft                        Jacob hat ihre Zeitung gekauft – sie schreibt woanders
+#   feindin      nora_feindin                          Nora schreibt gegen Jacob
+#   ohne         nora_ohne_jacob                       Nora schreibt ohne ihn
+#   quelle       nora_quelle, nora_interview_k2        Jacob ist Quelle oder Gesprächspartner, mehr nicht
+#
+# Merkzeichen aus Kapitel 1: nora_bestechung, courier_gekauft, silas_kronzeuge.
+# Neu, liest Kapitel 2: nora_k2_besucht, nora_verbuendet, nora_feindin.
+# Neu für Kapitel 3 (content/relevance.yaml): nora_quelle, nora_interview_k2, nora_ohne_jacob,
+#   ledger_gekauft, nora_k2_bestaetigt, nora_k2_dementiert, nora_silas_wahrheit,
+#   nora_silas_umschlag, nora_silas_gedruckt, nora_k2_rat_bloss, silas_k2_zurueckgeholt.
+
+# Entwurf – Philipp überarbeitet.
+- id: k2_nora_besuch
+  visitor: nora
+  title:
+    de: Nora Whitlock vom Hallstead Ledger
+    en: Nora Whitlock of the Hallstead Ledger
+  text:
+    de: >-
+      Nora Whitlock schreibt jetzt für den Hallstead Ledger, und in Hallstead
+      schneiden die Leute ihre Artikel aus. Sie trägt eine Brille, die sie vor zehn
+      Jahren noch nicht brauchte, und hat dasselbe Notizbuch – oder eins, das
+      genauso aussieht. Sie arbeitet an einer Serie über den Crane Trust:
+      Bahnrabatte, der Posted Price, Richter mit neuen Kutschen. „Sie verkaufen an
+      den Trust, Mr. Harlan. Sie wissen, wie er rechnet.“
+    en: >-
+      Nora Whitlock writes for the Hallstead Ledger now, and in Hallstead people
+      clip her articles. She wears spectacles she didn't need ten years ago and
+      carries the same notebook – or one just like it. She is working on a series
+      about the Crane Trust: railway rebates, the posted price, judges with new
+      carriages. "You sell to the Trust, Mr. Harlan. You know how it does its sums."
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  notMarked: [nora_bestechung, courier_gekauft]
+  certain: true
+  choices:
+    - id: material
+      label: { de: "Ihr Lusks alte Preislisten geben", en: "Give her Lusk's old price lists" }
+      result:
+        de: >-
+          Nora liest die Listen im Stehen, dann setzt sie sich. „Die sind echt“, sagt
+          sie, keine Frage. Sie verspricht, Jacobs Namen nicht zu nennen. Lusk zieht
+          trotzdem ab dem nächsten Monat zwei Cent je Barrel ab – er ahnt, woher die
+          Listen kommen.
+        en: >-
+          Nora reads the lists standing, then sits down. "These are genuine," she
+          says – not a question. She promises not to name Jacob. Lusk docks two cents
+          a barrel from next month anyway – he can guess where the lists came from.
+      # TODO-Effekt: rival: { crane: { relation: -10 } }, heat: +1 (Insiderwissen)
+      effects: { price: -0.02 }
+      marks: [nora_quelle, nora_k2_besucht]
+    - id: interview
+      label: { de: "Ihr ein Interview geben – mit Namen", en: "Give her an interview – on the record" }
+      result:
+        de: >-
+          Nora fragt zwei Stunden. Jacob antwortet auf alles, außer auf die Frage nach
+          den Rabatten der eigenen Firma. Sie notiert die Pause. Am Abend ist Jacob
+          müder als nach einer Ratssitzung.
+        en: >-
+          Nora asks questions for two hours. Jacob answers everything except the
+          question about his own company's rebates. She notes the pause. By evening
+          Jacob is more tired than after a board meeting.
+      # TODO-Effekt: reputation: { public: +4 }
+      effects: { strength: -4 }
+      marks: [nora_interview_k2, nora_k2_besucht]
+      appointments: 2
+    - id: abweisen
+      label: { de: "Sie nicht empfangen", en: "Don't receive her" }
+      result:
+        de: Nora wartet eine Stunde im Vorzimmer, dann geht sie. Sie schreibt die Serie trotzdem.
+        en: Nora waits an hour in the anteroom, then leaves. She writes the series anyway.
+      marks: [nora_ohne_jacob, nora_k2_besucht]
+      appointments: 0
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Mit nora_bestechung aus Kapitel 1: Jacob bot ihr nach dem Brand 50 $ an. Nora ließ das Geld liegen
+# (k1-4-nora-brand.yaml) – es hat nie den Besitzer gewechselt. Am Freitag stand im Courier ein Absatz
+# über „einen jungen Förderer, der glaubt, Reporter kaufen zu können“. Den kann sie noch auswendig.
+- id: k2_nora_absatz
+  visitor: nora
+  title:
+    de: Der Absatz vom Freitag
+    en: The Friday Paragraph
+  text:
+    de: >-
+      Nora Whitlock setzt sich, ohne dass Jacob es ihr anbietet, und sagt einen
+      Absatz auf, ohne ins Notizbuch zu sehen: „Ein junger Förderer am Salt Hill,
+      dessen Name hier nichts zur Sache tut, glaubt, Reporter kaufen zu können. Er
+      bietet fünfzig Dollar.“ Port Ellis Courier, vor zehn Jahren, ein Freitag. „Es
+      war der erste Absatz, den Bixby ungekürzt gedruckt hat. Ich schulde Ihnen
+      also etwas, Mr. Harlan.“ Sie schreibt jetzt für den Hallstead Ledger, eine
+      Serie über den Crane Trust. „Heute biete ich Ihnen etwas an: Ihre Seite der
+      Geschichte. Umsonst.“
+    en: >-
+      Nora Whitlock sits down without being asked and recites a paragraph without
+      looking at her notebook: "A young producer on Salt Hill, whose name does not
+      matter here, believes reporters can be bought. He offers fifty dollars." Port
+      Ellis Courier, ten years ago, a Friday. "It was the first paragraph Bixby
+      printed uncut. So I owe you something, Mr. Harlan." She writes for the
+      Hallstead Ledger now, a series on the Crane Trust. "Today I'm offering you
+      something: your side of the story. Free of charge."
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  marked: [nora_bestechung]
+  delay: 0
+  certain: true
+  choices:
+    - id: material
+      label: { de: "Ihr Lusks alte Preislisten geben", en: "Give her Lusk's old price lists" }
+      result:
+        de: >-
+          Nora liest die Listen und steckt sie ein. „Dafür hätte ich damals keine
+          fünfzig Dollar gebraucht“, sagt sie. „Nur eine Frage.“ Lusk zieht zwei Cent
+          je Barrel ab; er ahnt, woher die Listen kommen.
+        en: >-
+          Nora reads the lists and pockets them. "I wouldn't have needed fifty dollars
+          for that back then," she says. "Just a question." Lusk docks two cents a
+          barrel; he can guess where the lists came from.
+      # TODO-Effekt: rival: { crane: { relation: -10 } }, heat: +1
+      effects: { price: -0.02 }
+      marks: [nora_quelle, nora_k2_besucht]
+    - id: interview
+      label: { de: "Ihr ein Interview geben – mit Namen", en: "Give her an interview – on the record" }
+      result:
+        de: >-
+          Nora fragt zwei Stunden. Die erste Frage ist, ob Jacob noch immer glaube,
+          man könne Reporter kaufen. Jacob sagt Nein. Sie schreibt es auf, ohne
+          aufzusehen, und setzt ein Fragezeichen dahinter.
+        en: >-
+          Nora asks questions for two hours. The first is whether Jacob still believes
+          reporters can be bought. Jacob says no. She writes it down without looking
+          up, and puts a question mark after it.
+      # TODO-Effekt: reputation: { public: +3 }
+      effects: { strength: -4 }
+      marks: [nora_interview_k2, nora_k2_besucht]
+      appointments: 2
+    - id: abweisen
+      label: { de: "„Den Absatz habe ich damals schon gelesen“", en: "\"I read that paragraph at the time\"" }
+      result:
+        de: >-
+          Nora steht auf. „Dann kennen Sie den Ton“, sagt sie. Im zweiten Teil der
+          Serie steht derselbe Absatz noch einmal, diesmal mit Namen.
+        en: >-
+          Nora stands. "Then you know the tone," she says. Part two of the series
+          runs the same paragraph again, this time with the name.
+      marks: [nora_ohne_jacob, nora_k2_besucht]
+      appointments: 0
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Mit courier_gekauft aus Kapitel 1 (Jacob kaufte bei Bixby einen freundlichen Bericht für 120 $).
+- id: k2_nora_ausschnitt
+  visitor: nora
+  title:
+    de: Ein Mann der Zukunft, Seite zwei
+    en: A Man of the Future, Page Two
+  text:
+    de: >-
+      Nora Whitlock schlägt ihr Notizbuch auf und dreht es zu Jacob. Eingeklebt ist
+      ein vergilbter Ausschnitt aus dem Port Ellis Courier: „Ein Mann der Zukunft“,
+      Seite zwei. „Hundertzwanzig Dollar, sagt Bixby, wenn er getrunken hat.“ Sie
+      schreibt jetzt für den Ledger in Hallstead, über den Crane Trust. „Diesmal
+      frage ich Sie selbst, Mr. Harlan, bevor jemand anders für Sie antwortet.“
+    en: >-
+      Nora Whitlock opens her notebook and turns it toward Jacob. Pasted in is a
+      yellowed clipping from the Port Ellis Courier: "A Man of the Future", page
+      two. "A hundred and twenty dollars, Bixby says, when he's been drinking." She
+      writes for the Ledger in Hallstead now, about the Crane Trust. "This time I'm
+      asking you myself, Mr. Harlan, before someone else answers for you."
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  marked: [courier_gekauft]
+  notMarked: [nora_bestechung]
+  delay: 0
+  certain: true
+  choices:
+    - id: material
+      label: { de: "Ihr Lusks alte Preislisten geben", en: "Give her Lusk's old price lists" }
+      result:
+        de: >-
+          Nora vergleicht die Listen mit ihren eigenen Zahlen und nickt. „Das ist mehr
+          wert als Seite zwei“, sagt sie. Lusk zieht zwei Cent je Barrel ab; er ahnt,
+          woher die Listen kommen.
+        en: >-
+          Nora checks the lists against her own figures and nods. "That's worth more
+          than page two," she says. Lusk docks two cents a barrel; he can guess where
+          the lists came from.
+      # TODO-Effekt: rival: { crane: { relation: -10 } }, heat: +1
+      effects: { price: -0.02 }
+      marks: [nora_quelle, nora_k2_besucht]
+    - id: interview
+      label: { de: "Ihr ein Interview geben – mit Namen", en: "Give her an interview – on the record" }
+      result:
+        de: >-
+          Nora fragt zwei Stunden. Nach dem Courier fragt sie nicht. Sie muss nicht.
+          Der Ausschnitt liegt die ganze Zeit offen auf dem Tisch.
+        en: >-
+          Nora asks questions for two hours. She doesn't ask about the Courier. She
+          doesn't need to. The clipping lies open on the table the whole time.
+      # TODO-Effekt: reputation: { public: +3 }
+      effects: { strength: -4 }
+      marks: [nora_interview_k2, nora_k2_besucht]
+      appointments: 2
+    - id: abweisen
+      label: { de: "Sie nicht empfangen", en: "Don't receive her" }
+      result:
+        de: Nora klappt das Notizbuch zu. Den Ausschnitt lässt sie drin.
+        en: Nora closes the notebook. She leaves the clipping in it.
+      marks: [nora_ohne_jacob, nora_k2_besucht]
+      appointments: 0
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Schlüsselszene des Bogens: Noras erster großer Artikel in Hallstead.
+- id: k2_nora_artikel
+  draft: true
+  title:
+    de: Wie der Trust Cordova melkt
+    en: How the Trust Milks Cordova
+  text:
+    de: >-
+      „Wie der Trust Cordova melkt“ – erste Seite des Hallstead Ledger, drei
+      Spalten, Teil eins einer Serie. Nora hat alles: Bahnrabatte, Preislisten,
+      einen Richter in Port Ellis, der sein Haus mit Trustgeld gebaut hat. Harlan
+      Oil kommt in zwei Absätzen vor, als Beispiel dafür, was der Trust den
+      Förderern zahlt – und was die Förderer sich gefallen lassen. Lusk ruft dreimal
+      an. Der Volksbund druckt den Artikel als Flugblatt nach.
+    en: >-
+      "How the Trust Milks Cordova" – front page of the Hallstead Ledger, three
+      columns, part one of a series. Nora has everything: railway rebates, price
+      lists, a judge in Port Ellis who built his house with Trust money. Harlan Oil
+      appears in two paragraphs, as an example of what the Trust pays producers –
+      and what producers put up with. Lusk calls three times. The People's League
+      reprints the article as a leaflet.
+  conditions: { minChapter: 2, maxChapter: 2 }
+  marked: [nora_k2_besucht]
+  delay: 2
+  certain: true
+  choices:
+    - id: danken
+      label: { de: "Nora schreiben, dass es stimmt – mit Namen", en: "Write to Nora that it's true – signed" }
+      result:
+        de: >-
+          Nora druckt Jacobs Brief im zweiten Teil ab. Der Volksbund nennt ihn einen
+          ehrlichen Förderer. Lusk nennt ihn gar nichts mehr; er zahlt nur weniger.
+        en: >-
+          Nora prints Jacob's letter in part two. The People's League calls him an
+          honest producer. Lusk calls him nothing at all any more; he just pays less.
+      # TODO-Effekt: reputation: { public: +6, politics: +3 }, rival: { crane: { relation: -10 } }, party: { volksbund: +5 }
+      effects: { price: -0.03 }
+      marks: [nora_verbuendet]
+    - id: drohen
+      label: { de: "Dem Ledger mit dem Entzug aller Anzeigen drohen", en: "Threaten to pull all advertising from the Ledger" }
+      result:
+        de: >-
+          Der Verleger entschuldigt sich höflich und druckt Teil zwei trotzdem. Nora
+          bekommt eine eigene Spalte. Lusk schickt eine Kiste Zigarren und einen
+          besseren Preis.
+        en: >-
+          The publisher apologises politely and prints part two anyway. Nora gets a
+          column of her own. Lusk sends a box of cigars and a better price.
+      # TODO-Effekt: heat: +5, reputation: { public: -4 }
+      effects: { price: 0.02 }
+      marks: [nora_feindin]
+    - id: kaufen
+      label: { de: "Ein Viertel des Ledger kaufen (15.000 $)", en: "Buy a quarter of the Ledger (15,000 $)" }
+      result:
+        de: >-
+          Jacob gehört jetzt ein Viertel des Hallstead Ledger. Die Serie endet nach
+          Teil zwei, ohne Erklärung. Nora kündigt am selben Tag und geht zur
+          Konkurrenz auf der anderen Straßenseite – mit allen Notizbüchern.
+        en: >-
+          Jacob now owns a quarter of the Hallstead Ledger. The series ends after part
+          two, without explanation. Nora resigns the same day and crosses the street
+          to the competition – with all her notebooks.
+      # TODO-Effekt: investment: { newspaper: +1 }, influence: +2, heat: +2
+      requires: { minCash: 15000 }
+      effects: { cash: -15000 }
+      marks: [ledger_gekauft]
+    - id: schweigen
+      label: { de: "Nichts tun – Zeitungen vergilben", en: "Do nothing – newspapers yellow" }
+      result:
+        de: >-
+          Jacob sagt nichts, und Schweigen wird in Hallstead gelesen. Im zweiten Teil
+          steht: „Harlan Oil wollte sich nicht äußern.“ Lusk lässt den Preis, wie er
+          ist.
+        en: >-
+          Jacob says nothing, and in Hallstead silence gets read. Part two says:
+          "Harlan Oil declined to comment." Lusk leaves the price as it is.
+      appointments: 0
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Nachwirkung (nora_verbuendet): Nora braucht eine zweite Quelle – gegen Bullard.
+- id: k2_nora_rivale
+  visitor: nora
+  rival: bullard
+  title:
+    de: Eine zweite Quelle
+    en: A Second Source
+  text:
+    de: >-
+      Nora kommt am Abend, als im Vorzimmer schon das Licht aus ist. Sie hat
+      Belege, dass Bullard vom Trust einen geheimen Frachtrabatt bekommt – zehn Cent
+      je Barrel, die andere Förderer mitbezahlen. Ihr fehlt eine zweite Quelle. „Ich
+      frage nicht, ob es stimmt, Mr. Harlan. Ich frage, ob Sie es sagen.“ Bullard ist
+      auf dem Höhepunkt; seine Söhne Wade und Cole fahren schon die Wagen.
+    en: >-
+      Nora comes in the evening, when the anteroom light is already out. She has
+      evidence that Bullard gets a secret freight rebate from the Trust – ten cents
+      a barrel, which other producers pay for. She needs a second source. "I'm not
+      asking whether it's true, Mr. Harlan. I'm asking whether you'll say so."
+      Bullard is at his peak; his sons Wade and Cole already drive the wagons.
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 9 }
+  marked: [nora_verbuendet]
+  delay: 2
+  certain: true
+  choices:
+    - id: bestaetigen
+      label: { de: "Bestätigen – auf Ehre, ohne Namen", en: "Confirm it – on honour, no name" }
+      result:
+        de: >-
+          Teil vier der Serie bringt Bullards Rabatt auf die erste Seite. Die Bahn
+          kündigt den Vertrag, um nicht mit hineingezogen zu werden, und bietet Jacob
+          dieselben Waggons zu einem besseren Tarif an. Bullard weiß nicht, wer
+          geredet hat. Noch nicht.
+        en: >-
+          Part four of the series puts Bullard's rebate on the front page. The railway
+          cancels the contract to stay out of it and offers Jacob the same wagons at
+          a better rate. Bullard doesn't know who talked. Not yet.
+      # TODO-Effekt: rival: { bullard: { relation: -20, aggression: +10 } }
+      effects: { railTariff: -0.05 }
+      marks: [nora_k2_bestaetigt]
+    - id: schweigen
+      label: { de: "Nichts davon wissen", en: "Know nothing about it" }
+      result:
+        de: >-
+          Nora klappt das Notizbuch zu. „Dann eben ohne Sie“, sagt sie, ohne Vorwurf.
+          Der Rabatt bleibt – und mitbezahlt wird er weiter von allen anderen, auch
+          von Harlan Oil.
+        en: >-
+          Nora closes the notebook. "Then without you," she says, without reproach.
+          The rebate stays – and everyone else keeps paying for it, Harlan Oil
+          included.
+      # TODO-Effekt: rival: { bullard: { trust: +5 } }
+      effects: { railTariff: 0.03 }
+      marks: [nora_k2_dementiert]
+      appointments: 0
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Nachwirkung (nora_feindin): Nora schreibt jetzt über Harlan Oil.
+- id: k2_nora_harlan
+  title:
+    de: "Teil fünf: Harlan Oil"
+    en: "Part Five: Harlan Oil"
+  text:
+    de: >-
+      Teil fünf von Noras Serie trägt Jacobs Namen in der Überschrift. Sie hat die
+      Frachtbriefe der Harlan Oil, die Lohnlisten der Bohrtrupps und eine Zahl, die
+      nur jemand aus der Firma kennen kann. Am Ende steht ein Satz, den man in
+      Hallstead zitiert: „Wer dem Ledger mit Anzeigen droht, hat etwas zu verbergen,
+      das teurer ist als Anzeigen.“
+    en: >-
+      Part five of Nora's series has Jacob's name in the headline. She has Harlan
+      Oil's waybills, the crews' pay lists and a figure only someone inside the
+      company could know. At the end is a sentence people in Hallstead quote: "Whoever
+      threatens the Ledger with advertising has something to hide that costs more than
+      advertising."
+  conditions: { minChapter: 2, maxChapter: 2 }
+  marked: [nora_feindin]
+  delay: 3
+  certain: true
+  choices:
+    - id: stellung
+      label: { de: "Eine Stellungnahme schreiben – Zahl für Zahl", en: "Write a reply – figure by figure" }
+      result:
+        de: >-
+          Jacob schreibt drei Nächte. Der Ledger druckt die Stellungnahme
+          vollständig, daneben Noras Antwort, ebenfalls vollständig. Danach ist Jacob
+          so müde wie früher nach einer Bohrschicht.
+        en: >-
+          Jacob writes for three nights. The Ledger prints the reply in full, with
+          Nora's answer beside it, also in full. Afterwards Jacob is as tired as he
+          used to be after a drilling shift.
+      # TODO-Effekt: reputation: { public: +2 }, heat: -2
+      effects: { strength: -15 }
+    - id: leck
+      label: { de: "Herausfinden lassen, wer aus der Firma geredet hat (2.000 $)", en: "Find out who in the company talked (2,000 $)" }
+      result:
+        de: >-
+          Ein Detektiv aus Port Ellis findet einen Lohnschreiber, der für Nora Kopien
+          gemacht hat. Jacob entlässt ihn. Die Männer im Büro reden danach leiser –
+          und weniger.
+        en: >-
+          A detective from Port Ellis finds a pay clerk who made copies for Nora. Jacob
+          fires him. The men in the office talk more quietly after that – and less.
+      # TODO-Effekt: staffLoyalty: { buero: -10 }, fire: lohnschreiber, heat: +2
+      requires: { minCash: 2000 }
+      effects: { cash: -2000 }
+    - id: aussitzen
+      label: { de: "Aussitzen", en: "Sit it out" }
+      result:
+        de: >-
+          Die Serie läuft zwei Wochen weiter. Dann nimmt ein Kartellprozess in
+          Hallstead die erste Seite. Ein paar Farmer am Hügel wollen nicht mehr an
+          Harlan verpachten, oder nur noch teurer.
+        en: >-
+          The series runs for two more weeks. Then an antitrust trial in Hallstead
+          takes the front page. A few farmers on the hill no longer want to lease to
+          Harlan, or only at a higher price.
+      # TODO-Effekt: reputation: { public: -6 }
+      effects: { leaseCost: 0.15 }
+      appointments: 0
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Mit silas_kronzeuge aus Kapitel 1: Nora hat damals im Saloon alles mitgeschrieben.
+- id: k2_nora_silas
+  visitor: nora
+  draft: true
+  title:
+    de: Das alte Notizbuch
+    en: The Old Notebook
+  text:
+    de: >-
+      Nora legt ein altes Notizbuch neben das neue. Im alten steht, in ihrer jungen,
+      schnellen Schrift, was Silas Brandt vor zehn Jahren im Saloon am Salt Hill
+      erzählt hat – jedes Wort, bis zur Sperrstunde. „Ich habe es nie gedruckt“,
+      sagt sie. „Damals waren Sie niemand. Jetzt sind Sie jemand.“ Ein Bundesanwalt
+      namens Delaney, sagt sie, habe das Notizbuch auch schon sehen wollen. Silas,
+      heißt es, trinkt jetzt auch unter der Woche.
+    en: >-
+      Nora lays an old notebook beside the new one. In the old one, in her young,
+      quick hand, is what Silas Brandt told the saloon on Salt Hill ten years ago –
+      every word, until closing time. "I never printed it," she says. "Back then you
+      were nobody. Now you're somebody." A federal prosecutor named Delaney, she
+      says, has asked to see the notebook too. Silas, people say, drinks on weekdays
+      now as well.
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 12 }
+  marked: [silas_kronzeuge]
+  delay: 0
+  certain: true
+  choices:
+    - id: wahrheit
+      label: { de: "Ihr die Wahrheit sagen – auch die über die Bücher", en: "Tell her the truth – including about the books" }
+      result:
+        de: >-
+          Jacob erzählt es, wie es war. Nora schreibt mit, ohne aufzusehen. Der
+          Artikel erscheint, und er ist hart, aber genau – auch dort, wo er für Jacob
+          spricht. Silas schneidet ihn aus.
+        en: >-
+          Jacob tells it as it was. Nora writes without looking up. The article
+          appears, and it is hard but exact – including where it speaks for Jacob.
+          Silas clips it out.
+      # TODO-Effekt: reputation: { public: -2, workers: +3 }, investigation: { delaney: +1 } (Geständnis)
+      effects: { strength: -14 }
+      marks: [nora_silas_wahrheit]
+    - id: umschlag
+      label: { de: "Silas über einen Mittelsmann Geld bieten, damit er widerruft (4.000 $)", en: "Offer Silas money through a go-between to recant (4,000 $)" }
+      result:
+        de: >-
+          Silas nimmt das Geld nicht. Er gibt den Umschlag Nora, und Nora gibt ihn
+          einem Fotografen. Der Artikel hat jetzt zwei Teile, und der zweite ist der
+          Umschlag.
+        en: >-
+          Silas doesn't take the money. He gives the envelope to Nora, and Nora gives
+          it to a photographer. Now the article has two parts, and the second is the
+          envelope.
+      # TODO-Effekt: trace: { severity: 3, label: "Schweigegeld an einen Zeugen" }, heat: +5, evidence: { delaney: +1 }
+      requires: { minCash: 4000 }
+      effects: { cash: -4000 }
+      marks: [nora_silas_umschlag]
+    - id: nichts
+      label: { de: "Nichts sagen", en: "Say nothing" }
+      result:
+        de: >-
+          Der Artikel erscheint ohne Jacobs Seite: „Der Mann, der seinen Partner um
+          einen Bohrturm betrog.“ In Hallstead lacht man darüber, in Cordova nicht.
+          Zwei Bohrmeister kündigen.
+        en: >-
+          The article appears without Jacob's side: "The Man Who Cheated His Partner
+          Out of a Derrick." In Hallstead they laugh; in Cordova they don't. Two
+          drilling bosses quit.
+      # TODO-Effekt: reputation: { workers: -6, public: -4 }
+      effects: { production: -0.05 }
+      marks: [nora_silas_gedruckt]
+      appointments: 0
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Mit silas_k2_geopfert (k2-story-2-silas.yaml): Nora fragt nach dem Mann, den der Rat brauchte.
+- id: k2_nora_geopfert
+  visitor: nora
+  title:
+    de: Der Mann, den der Rat brauchte
+    en: The Man the Board Needed
+  text:
+    de: >-
+      Nora war am Grab des jungen Bohrarbeiters von Turm vier und bei seiner Witwe.
+      Dann war sie bei Silas, der jetzt in einer Pension in Port Ellis wohnt und
+      morgens nicht mehr weiß, wohin. „Er sagt, er war nüchtern“, sagt Nora. „Die
+      Männer sagen es auch. Ihr Rat hat einen Schuldigen gebraucht, Mr. Harlan, und
+      Sie haben ihn geliefert. Stimmt das?“
+    en: >-
+      Nora has been to the grave of the young driller from rig four, and to his
+      widow. Then to Silas, who lives in a boarding house in Port Ellis now and no
+      longer knows where to go in the mornings. "He says he was sober," Nora says.
+      "The men say so too. Your board needed someone to blame, Mr. Harlan, and you
+      delivered him. Is that true?"
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 12 }
+  marked: [silas_k2_geopfert]
+  delay: 3
+  certain: true
+  choices:
+    - id: zugeben
+      label: { de: "Zugeben, dass der Rat einen Schuldigen wollte", en: "Admit the board wanted someone to blame" }
+      result:
+        de: >-
+          Nora druckt es wörtlich. Pettibone beruft eine außerordentliche Sitzung ein
+          und lässt Jacob drei Abende lang jeden Satz erklären, den er Nora gesagt
+          hat. In Cordova sagen die Bohrtrupps zum ersten Mal seit Monaten wieder
+          „Mr. Harlan“ ohne Unterton.
+        en: >-
+          Nora prints it word for word. Pettibone calls an extraordinary meeting and
+          makes Jacob explain, three evenings running, every sentence he said to
+          Nora. In Cordova, for the first time in months, the crews say "Mr. Harlan"
+          without an edge.
+      # TODO-Effekt: boardLoyalty: { pettibone: -15 }, reputation: { workers: +5 }
+      effects: { production: 0.05, strength: -10 }
+      marks: [nora_k2_rat_bloss]
+    - id: zurueckholen
+      label: { de: "Silas zurückholen und es Nora selbst sagen lassen (3.000 $)", en: "Bring Silas back and let him tell Nora himself (3,000 $)" }
+      result:
+        de: >-
+          Silas kommt zurück, als „Berater“, wie es auf dem Papier heißt. Er sagt Nora,
+          der Junge habe ihn geholt. Der Artikel heißt: „Spät, aber nicht zu spät.“
+        en: >-
+          Silas comes back as an "adviser", as the paper puts it. He tells Nora the boy
+          fetched him. The article is headlined: "Late, but Not Too Late."
+      # TODO-Effekt: boardLoyalty: { pettibone: -10, silas: +15 }, reputation: { workers: +5 }
+      requires: { minCash: 3000 }
+      effects: { cash: -3000, production: 0.05 }
+      marks: [silas_k2_zurueckgeholt]
+    - id: nichts
+      label: { de: "Kein Kommentar", en: "No comment" }
+      result:
+        de: >-
+          Nora schreibt ohne Jacob. Der Artikel ist kurz und hat ein Foto: Silas vor
+          der Pension, den Hut in der Hand.
+        en: >-
+          Nora writes without Jacob. The article is short and has a photograph: Silas
+          outside the boarding house, hat in hand.
+      # TODO-Effekt: reputation: { workers: -5, public: -3 }
+      effects: { production: -0.05 }
+      appointments: 0
+      default: true

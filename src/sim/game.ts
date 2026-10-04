@@ -59,6 +59,12 @@ export interface GameState {
   rng: RngState;
   /** Aktuelle Runde, beginnt bei 1. */
   round: number;
+  /**
+   * Kapitel (1–7). Fehlt es, gilt Kapitel 1 – alte Spielstände und Kapitel 1 bleiben
+   * unverändert. Setzt später der Zeitsprung (Block A); Ereignisse fragen es mit
+   * minChapter/maxChapter ab.
+   */
+  chapter?: number;
   totalRounds: number;
   startYear: number;
   cash: number;
