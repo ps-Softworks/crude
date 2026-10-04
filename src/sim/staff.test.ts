@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parseBalance, type Balance } from './balance';
 import { parseEventFiles } from './eventContent';
-import type { EventChoice, EventDef, MailKind } from './events';
+import { choiceCost, type EventChoice, type EventDef, type MailKind } from './events';
 import { endRound, newGame, type GameState } from './game';
 import { sabotageChance } from './logistics';
 import { deserializeGame, serializeGame } from './save';
@@ -33,6 +33,7 @@ import {
   STAFF_EVENT_MARKS,
   STAFF_MARKS,
   STAFF_ROLES,
+  wageIndex,
   wageOf,
   type StaffMember,
   type StaffState,
@@ -82,7 +83,8 @@ function brief(id: string, mail: MailKind, choices: EventChoice[]): EventDef {
     chance: 0,
     once: true,
     routine: false,
-    appointments: 1,
+    // Antworten ohne Termin – nur die darf das Vorzimmer geben (Termin-Test: eigene Angabe je Wahl).
+    appointments: 0,
     choices,
     mail,
   };
@@ -116,6 +118,17 @@ describe('Kapitel 1: kein Personal (GDD §11: ab Kapitel 2)', () => {
       expect(state.staff).toBeUndefined();
     }
     expect(state.log.some((z) => z.includes('Bewerbung'))).toBe(false);
+  });
+
+  it('Weltschnittstelle liest das Kreditklima aus dem Weltmodell (state.worldModel.credit wie auf main ab 0.4.1)', () => {
+    const boom = { ...newGame('welt-boom', balance), worldModel: { credit: 80 } } as unknown as GameState;
+    expect(staffWorld(boom).credit).toBe(80);
+    expect(wageIndex(boom, balance)).toBeGreaterThan(1);
+    const krise = { ...newGame('welt-krise', balance), worldModel: { credit: 20 } } as unknown as GameState;
+    expect(wageIndex(krise, balance)).toBeLessThan(1);
+    // Ältere Form (state.world.credit) geht ersatzweise auch; worldModel hat Vorrang.
+    expect(staffWorld({ world: { credit: 70 } }).credit).toBe(70);
+    expect(staffWorld({ worldModel: { credit: 30 }, world: { credit: 70 } }).credit).toBe(30);
   });
 
   it('Ersatzwerte der Weltschnittstelle: Kapitel 1, Kreditklima 50', () => {
@@ -384,6 +397,46 @@ describe('Post nach Richtlinie', () => {
     expect(knapp.ok && delegateMail(knapp.state, balance, [kauf]).cash).toBe(basis.cash);
     const weit = setMailSpendLimit(basis, 1000);
     expect(weit.ok && delegateMail(weit.state, balance, [kauf]).cash).toBe(basis.cash - 300);
+  });
+
+  it('Antworten, die Jacob persönlich brauchen (Termin), gibt das Vorzimmer nie – auch wenn sie am meisten wert sind', () => {
+    const besuch = brief('b', 'personal', [
+      wahl('hinfahren', { appointments: 1, effects: { cash: 500, strength: 14 } }),
+      wahl('schreiben', { appointments: 0, effects: { cash: 10 } }),
+      wahl('liegen', { default: true, appointments: 0 }),
+    ]);
+    const s = imPosteingang(mitRegel(mitPersonal([person('secretary', { competence: 5 })]), 'personal'), 'b');
+    const out = delegateMail(s, balance, [besuch]);
+    expect(out.log.at(-1)).toContain('Ergebnis schreiben');
+    expect(out.cash).toBe(s.cash + 10);
+    expect(out.strength).toBe(s.strength);
+    // Bleibt nur die Termin-Antwort, erledigt das Vorzimmer den Brief gar nicht.
+    const nurBesuch = brief('c', 'personal', [wahl('hinfahren', { appointments: 1, effects: { strength: 14 } })]);
+    const s2 = imPosteingang(mitRegel(mitPersonal([person('secretary', { competence: 5 })]), 'personal'), 'c');
+    expect(delegateMail(s2, balance, [nurBesuch])).toBe(s2);
+    expect(delegatedMail(s2, [nurBesuch])).toEqual([]);
+  });
+
+  it('echte Briefe: Mutters Brief und die Reporterin – keine geschenkte Kraft, kein Empfang ohne Jacob', () => {
+    const katalog = loadEvents();
+    const mutter = katalog.find((e) => e.id === 'post_mutter')!;
+    const reporterin = katalog.find((e) => e.id === 'k2_hitze_reporterin')!;
+    for (const event of [mutter, reporterin]) {
+      expect(event.mail).toBe('personal');
+      const basis = imPosteingang(mitRegel(mitPersonal([person('secretary', { competence: 5 })]), 'personal'), event.id);
+      const r = setMailSpendLimit({ ...basis, strength: 20 }, 1000);
+      if (!r.ok) throw new Error(r.reason);
+      const out = delegateMail(r.state, balance, [event]);
+      const eintrag = out.log.at(-1)!;
+      const gewaehlt = event.choices.find((c) => eintrag.includes(c.result.de))!;
+      expect(gewaehlt).toBeDefined();
+      expect(choiceCost(event, gewaehlt)).toBe(0);
+    }
+    // Mutter: „antworten“ (Kraft +14, ein Termin) bleibt Jacob vorbehalten.
+    const basis = imPosteingang(mitRegel(mitPersonal([person('secretary', { competence: 5 })]), 'personal'), 'post_mutter');
+    const r = setMailSpendLimit({ ...basis, strength: 20 }, 1000);
+    if (!r.ok) throw new Error(r.reason);
+    expect(delegateMail(r.state, balance, [mutter]).strength).toBeLessThan(20 + 14);
   });
 
   it('am Rundenende ersetzt das Vorzimmer die Standard-Antwort', () => {

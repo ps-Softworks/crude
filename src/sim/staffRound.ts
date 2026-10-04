@@ -5,8 +5,9 @@
 //     deren Briefart laut Richtlinie das Vorzimmer erledigt, beantwortet die
 //     Sekretärin selbst – nach eigenem Urteil (Wert der Wirkungen in $, mit
 //     einem Schätzfehler, der mit der Kompetenz schrumpft) und nie teurer als
-//     mailSpendLimit. Verdeckte Folgen (Merkzeichen) kennt sie nicht – das ist
-//     das Risiko der Delegation.
+//     mailSpendLimit, und nur mit Antworten ohne Termin (was Jacob persönlich
+//     tun müsste, kann sie nicht für ihn tun). Verdeckte Folgen (Merkzeichen)
+//     kennt sie nicht – das ist das Risiko der Delegation.
 //
 //   settleStaff – nach den Terminen: Verkauf nach Regel, Aufträge des Fixers,
 //     Löhne, Loyalität, Abwerben und Verrat, Hitze und Skandal; dann die neue
@@ -18,7 +19,7 @@
 
 import { TRANSPORT_MODES, type Balance } from './balance';
 import { immediateValue } from './eventRelevance';
-import { choicePossible, dueRound, resolveDelegated, type EventChoice, type EventDef } from './events';
+import { choiceCost, choicePossible, dueRound, resolveDelegated, type EventChoice, type EventDef } from './events';
 import type { GameState } from './game';
 import { Rng } from './rng';
 import { buyerPrice, capacityLeft, modeUnavailable, netPrice, sellOil } from './transport';
@@ -98,10 +99,15 @@ export function choiceWorth(choice: Pick<EventChoice, 'effects'>, balance: Balan
   );
 }
 
-/** Darf das Vorzimmer diese Antwort selbst geben? Möglich und nicht teurer als die Richtlinie erlaubt. */
+/**
+ * Darf das Vorzimmer diese Antwort selbst geben? Möglich, nicht teurer als die
+ * Richtlinie erlaubt – und ohne Jacob: Antworten, die einen Termin kosten
+ * (Jacob muss selbst schreiben, empfangen, hinfahren), gibt nur er (GDD §3).
+ * Sonst schenkte die Delegation Kraft und Familie ohne Termin.
+ */
 export function delegable(state: GameState, event: EventDef, choice: EventChoice): boolean {
   const kosten = Math.max(0, -(choice.effects.cash ?? 0));
-  return choicePossible(state, event, choice) && kosten <= (state.staff?.policies.mailSpendLimit ?? 0);
+  return choiceCost(event, choice) === 0 && choicePossible(state, event, choice) && kosten <= (state.staff?.policies.mailSpendLimit ?? 0);
 }
 
 /** Die Briefe, die das Vorzimmer am Rundenende nach Richtlinie erledigen würde (für die Anzeige im Posteingang). */

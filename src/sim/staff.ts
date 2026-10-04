@@ -436,14 +436,16 @@ export const STAFF_WORLD_FALLBACK: StaffWorld = { chapter: 1, credit: 50 };
 
 /**
  * Liest Kapitel und Kreditklima aus dem Zustand, falls Block A sie liefert
- * (state.chapter als Zahl, state.world.credit als Zahl), sonst die Ersatzwerte.
+ * (state.chapter als Zahl; Kreditklima aus state.worldModel.credit wie auf main
+ * seit 0.4.1, ersatzweise state.world.credit), sonst die Ersatzwerte.
  * Bei der Zusammenführung nur diese Funktion anpassen.
  */
 export function staffWorld(state: object): StaffWorld {
-  const s = state as { chapter?: unknown; world?: { credit?: unknown } };
-  const chapter = typeof s.chapter === 'number' && Number.isFinite(s.chapter) ? s.chapter : STAFF_WORLD_FALLBACK.chapter;
-  const credit = typeof s.world?.credit === 'number' && Number.isFinite(s.world.credit) ? s.world.credit : STAFF_WORLD_FALLBACK.credit;
-  return { chapter, credit };
+  const s = state as { chapter?: unknown; worldModel?: { credit?: unknown }; world?: { credit?: unknown } };
+  const zahl = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+  const chapter = zahl(s.chapter) ? s.chapter : STAFF_WORLD_FALLBACK.chapter;
+  const roh = zahl(s.worldModel?.credit) ? s.worldModel.credit : zahl(s.world?.credit) ? s.world.credit : STAFF_WORLD_FALLBACK.credit;
+  return { chapter, credit: roh };
 }
 
 /** Ist das Personal in diesem Kapitel schon dran? */
