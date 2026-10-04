@@ -1,0 +1,82 @@
+# Raffinerie und Produktmix (4.6, GDD §6) – Texte für den Gegenstand am Schreibtisch
+# und sein Fenster. Ab Kapitel 2; in Kapitel 1 erscheint nichts davon.
+# Zahlen stehen in content/balance.yaml (Block refinery), die Logik in src/sim/refinery.ts.
+# Jeder Text mit Sprachschlüssel de/en (Englisch darf leer bleiben, dann erscheint Deutsch).
+# Platzhalter in geschweiften Klammern füllt die Oberfläche, z. B. {cost}.
+# ENTWURF: Ton und Wortwahl sind Vorschläge.
+
+object:
+  de: Raffinerie
+  en: Refinery
+
+sheetTitle:
+  de: Raffinerie
+  en: Refinery
+
+tabs:
+  plant: { de: "Anlage", en: "Plant" }
+  mix: { de: "Produktmix", en: "Product mix" }
+  compare: { de: "Verkaufen oder raffinieren", en: "Sell or refine" }
+
+intro:
+  de: Wer nur fördert, verkauft zu dem Preis, den andere diktieren. Eine eigene Raffinerie macht aus Rohöl Kerosin, Schmieröl, Heizöl – und ein wenig Benzin.
+  en: Whoever only pumps sells at the price others dictate. A refinery of your own turns crude into kerosene, lubricating oil, fuel oil – and a little gasoline.
+
+status:
+  none: { de: "Noch keine Raffinerie.", en: "No refinery yet." }
+  building: { de: "Im Bau – fertig in {rounds}.", en: "Under construction – ready in {rounds}." }
+  running: { de: "Läuft: {capacity} bbl Rohöl je Runde (Stufe {level}, {tech}).", en: "Running: {capacity} bbl of crude per round (stage {level}, {tech})." }
+  expanding: { de: "Läuft mit {capacity} bbl je Runde; der Ausbau ist fertig in {rounds}.", en: "Running at {capacity} bbl per round; the expansion is ready in {rounds}." }
+  damaged: { de: "Nach dem Brand steht die Anlage still – noch {rounds}.", en: "After the fire the plant stands idle – {rounds} to go." }
+  short:
+    none: { de: "nicht gebaut", en: "not built" }
+    building: { de: "im Bau", en: "under construction" }
+    running: { de: "läuft", en: "running" }
+    expanding: { de: "wird ausgebaut", en: "expanding" }
+    damaged: { de: "steht still", en: "idle" }
+
+actions:
+  build: { de: "Raffinerie bauen ({cost}, {rounds})", en: "Build refinery ({cost}, {rounds})" }
+  expand: { de: "Ausbauen: +{capacity} bbl ({cost}, {rounds})", en: "Expand: +{capacity} bbl ({cost}, {rounds})" }
+  intake: { de: "Anteil der Kapazität, der am Rundenende aus dem Tank in die Raffinerie geht", en: "Share of capacity taken from the tank into the refinery at the end of the round" }
+  apply: { de: "Mix übernehmen", en: "Apply mix" }
+
+hints:
+  intake:
+    de: Am Rundenende geht Rohöl, das dann noch im Tank steht, in die Raffinerie – bis zu dieser Menge. Was du vorher über die Fracht verkaufst, ist schon weg.
+    en: At the end of the round, crude still in the tank goes into the refinery – up to this amount. Whatever you sell through freight beforehand is already gone.
+  mix:
+    de: Den Mix stellst du innerhalb der Grenzen der Destillation ein. Benzin fällt als Nebenprodukt an. Jedes Produkt hat seine eigenen Käufer – wer zu viel von einem anbietet, drückt den Preis.
+    en: You set the mix within the limits of distillation. Gasoline comes out as a by-product. Each product has its own buyers – offer too much of one and its price drops.
+  planned: { de: "Am Rundenende gehen {crude} bbl aus dem Tank in die Raffinerie.", en: "At the end of the round {crude} bbl go from the tank into the refinery." }
+  noCrude: { de: "Der Tank ist leer – diese Runde gibt es nichts zu raffinieren.", en: "The tank is empty – there is nothing to refine this round." }
+  compare:
+    de: Je Barrel Rohöl, nach Fracht beziehungsweise nach Betriebskosten und Zufuhr. Förderzins und Fixkosten fallen auf beiden Wegen an.
+    en: Per barrel of crude, after freight or after operating and feed costs. Royalties and fixed costs apply either way.
+  refineBetter: { de: "Raffinieren bringt {diff} je Barrel mehr.", en: "Refining earns {diff} more per barrel." }
+  sellBetter: { de: "Rohöl verkaufen bringt {diff} je Barrel mehr – weniger in die Raffinerie geben oder den Mix ändern.", en: "Selling crude earns {diff} more per barrel – send less to the refinery or change the mix." }
+  lastRun: { de: "Letzte Runde: {crude} bbl verarbeitet, {revenue} Erlös, {net} nach allen Kosten.", en: "Last round: {crude} bbl processed, {revenue} revenue, {net} after all costs." }
+  unlockDebug: { de: "Raffinerie freischalten (Kapitel 2 vorab)", en: "Unlock refinery (chapter 2 preview)" }
+
+columns:
+  product: { de: "Produkt", en: "Product" }
+  share: { de: "Anteil", en: "Share" }
+  output: { de: "Menge", en: "Amount" }
+  demand: { de: "Nachfrage", en: "Demand" }
+  price: { de: "Preis je bbl", en: "Price per bbl" }
+  sellCrude: { de: "Rohöl verkaufen", en: "Sell crude" }
+  refine: { de: "Raffinieren", en: "Refine" }
+
+products:
+  kerosene:
+    name: { de: "Kerosin", en: "Kerosene" }
+    text: { de: "Lampenöl für jedes Haus. Noch das wichtigste Produkt – bis das elektrische Licht kommt.", en: "Lamp oil for every home. Still the main product – until electric light arrives." }
+  lubricant:
+    name: { de: "Schmieröl", en: "Lubricating oil" }
+    text: { de: "Für Maschinen, Lokomotiven und Mühlen. Kleine Mengen, guter Preis.", en: "For machines, locomotives and mills. Small amounts, good price." }
+  fuelOil:
+    name: { de: "Heizöl", en: "Fuel oil" }
+    text: { de: "Kessel in Fabriken und auf Schiffen. Die Marine fragt, sobald es Spannungen gibt.", en: "Boilers in factories and on ships. The navy asks for it whenever tensions rise." }
+  gasoline:
+    name: { de: "Benzin", en: "Gasoline" }
+    text: { de: "Ein lästiges Nebenprodukt – solange es kaum Automobile gibt.", en: "A troublesome by-product – as long as there are hardly any automobiles." }

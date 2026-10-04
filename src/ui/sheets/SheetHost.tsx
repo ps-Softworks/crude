@@ -14,6 +14,9 @@ import { LedgerSheet } from './LedgerSheet';
 import { MenuSheet, type MenuProps } from './MenuSheet';
 import { NewspaperSheet } from './NewspaperSheet';
 import { PostSheet } from './PostSheet';
+// 4.6 Andockpunkt: Raffinerie.
+import { RefinerySheet } from './RefinerySheet';
+import { rt } from '../refinery';
 import { ReportSheet, type RoundReport } from './ReportSheet';
 import { RigFileSheet } from './RigFileSheet';
 import { RivalsSheet } from './RivalsSheet';
@@ -35,6 +38,8 @@ export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   glocke: { title: 'Runde beenden', size: 'brief' },
   bericht: { title: 'Was diese Runde geschah', size: 'brief' },
   wartende: { title: 'Wer vor der Tür wartet', size: 'brief' },
+  // 4.6 Andockpunkt: Raffinerie.
+  raffinerie: { title: rt('sheetTitle'), size: 'mappe' },
 };
 
 export interface SheetHostProps {
@@ -73,6 +78,8 @@ export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound
     glocke: () => <BellSheet ctx={ctx} onEndRound={onEndRound} onGo={onGo} onChapterEnd={onChapterEnd} />,
     bericht: () => <ReportSheet report={report} onDone={onClose} next={open.then === 'zeitung'} onJournal={() => ctx.open('protokoll', { back: { sheet: 'bericht' } })} />,
     wartende: () => <WaitingSheet ctx={ctx} onVisitor={onVisitor} />,
+    // 4.6 Andockpunkt: Raffinerie.
+    raffinerie: () => <RefinerySheet ctx={ctx} />,
   };
   return (
     <Sheet

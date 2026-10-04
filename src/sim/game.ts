@@ -25,6 +25,8 @@ import { advanceLogistics, newLogistics, settleStorage, spillOver, type Logistic
 import { advanceTransport, noShipments } from './transport';
 import { settleTakeover } from './trust';
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
+// 4.6 Andockpunkt: Raffinerie (ab Kapitel 2).
+import { advanceRefinery, type RefineryState } from './refinery';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
@@ -101,6 +103,8 @@ export interface GameState {
   log: string[];
   /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
   roundLogStart: number;
+  /** 4.6 Andockpunkt: Raffinerie und Produktmix; undefined = noch nicht freigeschaltet (Kapitel 1). */
+  refinery?: RefineryState;
 }
 
 /**
@@ -212,7 +216,9 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Familie (2.7): Familienzeit gibt Kraft, Vernachlässigung kostet Beziehung.
   const familie = settleFamily(beantwortet, balance);
   // Termine (2.3): Krankheit (2.7), ruhige Runde gibt Kraft zurück, die nächste beginnt mit frischen Terminen.
-  const ausgeruht = settleAgenda(familie, balance);
+  const terminiert = settleAgenda(familie, balance);
+  // 4.6 Andockpunkt: Die Raffinerie nimmt, was nach den Verkäufen noch im Tank steht (ohne Raffinerie: unverändert).
+  const ausgeruht = advanceRefinery(terminiert, balance);
   // Lager (0.2.15+2): Kosten, Schwund und Brand für das Öl, das noch im Tank steht; neue Tanks sind fertig.
   // Nach der Förderung läuft aus, was nicht mehr in die Tanks passt.
   const gefoerdert = spillOver(advanceProduction(settleStorage(ausgeruht, balance), balance), balance);

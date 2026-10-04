@@ -40,6 +40,11 @@ import {
   WallMapShape,
 } from './objects/Shapes';
 import { RuthNote } from './RuthNote';
+// 4.6 Andockpunkt: Raffinerie (Gegenstand nur, wenn freigeschaltet).
+import { RefineryShape } from './objects/RefineryShape';
+import { refineryObjectStatus } from '../sheets/RefinerySheet';
+import { refineryStatus } from '../../sim/refinery';
+import { rt } from '../refinery';
 
 /** Wo was liegt, in Prozent der Bühne (unter der Kopfleiste). */
 const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte' | 'tuer', Placement> = {
@@ -56,6 +61,8 @@ const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte
   fracht: { left: 19, top: 75, width: 15, height: 22 },
   protokoll: { left: 36, top: 76, width: 9, height: 21 },
   glocke: { left: 86, top: 70, width: 12, height: 27 },
+  // 4.6 Andockpunkt: Raffinerie-Plan zwischen Ruths Zettel und Glocke (ab Kapitel 2).
+  raffinerie: { left: 72, top: 75, width: 13, height: 22 },
 };
 
 export interface DeskSceneProps {
@@ -318,6 +325,14 @@ export function DeskScene(p: DeskSceneProps) {
           },
           <FolderShape variant="fracht" />,
         )}
+        {/* 4.6 Andockpunkt: Raffinerie – in Kapitel 1 (ohne Freischaltung) gibt es den Gegenstand nicht. */}
+        {game.refinery &&
+          obj(
+            'raffinerie',
+            rt('object'),
+            { status: refineryObjectStatus(game) },
+            <RefineryShape running={refineryStatus(game) === 'running' || refineryStatus(game) === 'expanding'} />,
+          )}
         {obj('protokoll', 'Kladde', { status: p.saved ? '✓ gesichert' : undefined }, <NotebookShape />)}
         {obj(
           'glocke',

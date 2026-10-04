@@ -6,6 +6,10 @@ import { keyLabel, SHORTCUTS } from '../keys';
 import { Tabs, activeTab } from '../sheet/Tabs';
 import { tester } from '../tester';
 import type { SheetContext } from './types';
+// 4.6 Andockpunkt: Raffinerie im Debug-Reiter freischalten.
+import { unlockRefinery } from '../../sim/refinery';
+import { balance } from '../balance';
+import { rt } from '../refinery';
 
 export interface MenuProps {
   ctx: SheetContext;
@@ -165,6 +169,12 @@ export function MenuSheet(p: MenuProps) {
             </button>
           </form>
           <WorldDebug ctx={ctx} />
+          {/* 4.6 Andockpunkt: Raffinerie vorab ansehen, bis es Kapitel 2 gibt (4.5). */}
+          {!ctx.game.refinery && (
+            <button type="button" onClick={() => ctx.onGame(unlockRefinery(ctx.game, balance))}>
+              {rt('hints.unlockDebug')}
+            </button>
+          )}
         </section>
       )}
     </Tabs>

@@ -3,6 +3,8 @@
 // Seit 0.2.15+5 gehört die Karte (content/map.yaml) mit dazu: parseGameData.
 
 import { parseWorldMap, type WorldMap } from './worldMap';
+// 4.6 Andockpunkt: Raffinerie (Zahlen und Prüfung in refineryBalance.ts).
+import { parseRefineryBalance, type RefineryBalance } from './refineryBalance';
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
 
@@ -608,6 +610,8 @@ export interface Balance {
   newspaper: NewspaperBalance;
   tutorial: TutorialBalance;
   worldModel: WorldModelBalance;
+  /** 4.6 Andockpunkt: Raffinerie und Produktmix (ab Kapitel 2). */
+  refinery: RefineryBalance;
 }
 
 /** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
@@ -1702,6 +1706,15 @@ function parseWorld(raw: unknown): WorldMap {
   }
 }
 
+/** 4.6 Andockpunkt: Block „refinery“; Fehler kommen als BalanceError. */
+function parseRefinery(raw: unknown): RefineryBalance {
+  try {
+    return parseRefineryBalance((raw as { refinery?: unknown })?.refinery);
+  } catch (e) {
+    throw new BalanceError(e instanceof Error ? e.message : String(e));
+  }
+}
+
 /** Spielzahlen und Karte zusammen: balance.yaml und map.yaml als rohe YAML-Daten. */
 export function parseGameData(balanceRaw: unknown, mapRaw: unknown): Balance {
   return parseBalance({ ...(balanceRaw as object), world: mapRaw });
@@ -1767,6 +1780,8 @@ export function parseBalance(raw: unknown): Balance {
     newspaper: parseNewspaper(raw),
     tutorial: parseTutorial(raw),
     worldModel: parseWorldModel(raw),
+    // 4.6 Andockpunkt: Raffinerie.
+    refinery: parseRefinery(raw),
   };
 
   for (const r of balance.transport.pipeline.rights) {
