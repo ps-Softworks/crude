@@ -7,6 +7,7 @@ import {
   chapterOf,
   exchangeEquity,
   exchangeHeadline,
+  exchangeWorldInput,
   exchangeWarning,
   marginDebt,
   marginHeat,
@@ -26,6 +27,7 @@ import {
 } from './exchange';
 import { parseExchangeBalance } from './exchangeBalance';
 import { endRound, newGame, type GameState } from './game';
+import { effectiveDemand, worldRateAdd } from './world';
 import { loadBalance, rawBalance } from './testBalance';
 
 const balance = loadBalance();
@@ -84,7 +86,7 @@ describe('Freischaltung (Kapitel 3)', () => {
     // Ein Kauf mit vollem Hebel, dann kracht der Weltmarkt (4.4): Das Minus landet in der Pleiteprüfung.
     const gekauft = buyStock({ ...r1, cash: 5000 }, balance, 'motorwagen', 5000, 10);
     if (!gekauft.ok) throw new Error(gekauft.reason);
-    const krach = { ...gekauft.state, world: { credit: 30, crash: 3 } } as GameState;
+    const krach: GameState = { ...gekauft.state, worldModel: { ...gekauft.state.worldModel, credit: 30, crash: 3 } };
     const r2 = endRound(krach, balance);
     expect(r2.exchange!.events).toContain('crash');
     expect(r2.exchange!.events).toContain('liquidated');
@@ -110,13 +112,29 @@ describe('Freischaltung (Kapitel 3)', () => {
 });
 
 describe('Kreditklima (4.4-Schnittstelle)', () => {
-  it('ohne Weltmodell gilt das neutrale Klima', () => {
-    expect(readClimate(newGame('klima', balance))).toEqual(NEUTRAL_CLIMATE);
+  it('readClimate liest das Weltmodell des Spielstands (state.worldModel aus 4.1)', () => {
+    const s = newGame('klima', balance);
+    expect(readClimate(s)).toEqual({ credit: s.worldModel.credit, crash: s.worldModel.crash });
+    expect(readClimate({ worldModel: { ...s.worldModel, credit: 72, crash: 2 } })).toEqual({ credit: 72, crash: 2 });
   });
 
-  it('mit state.world zählen credit und crash', () => {
-    expect(readClimate({ world: { credit: 72, crash: 2, mood: 50 } })).toEqual({ credit: 72, crash: 2 });
-    expect(readClimate({ world: { credit: 'heiß' } })).toEqual(NEUTRAL_CLIMATE);
+  it('ohne Weltmodell (alte Teststände) gilt das neutrale Klima', () => {
+    expect(readClimate({})).toEqual(NEUTRAL_CLIMATE);
+    expect(readClimate({ worldModel: { credit: Number.NaN, crash: 0 } })).toEqual(NEUTRAL_CLIMATE);
+  });
+
+  it('mit echtem newGame(): worldModel.credit treibt Börsenfieber und Maklerzins', () => {
+    const s = setzeEx(mitBoerse(50000, 'echt'), { fever: 50 });
+    const gekauft = buyStock(s, balance, 'thorne_bahn', 10000, 5);
+    if (!gekauft.ok) throw new Error(gekauft.reason);
+    const mitKlima = (credit: number): GameState => ({ ...gekauft.state, worldModel: { ...gekauft.state.worldModel, credit, crash: 0 } });
+    const normal = settleExchange(mitKlima(50), balance);
+    const heiss = settleExchange(mitKlima(70), balance);
+    expect(heiss.exchange!.fever - normal.exchange!.fever).toBeCloseTo(EB.fever.climate * 20, 6);
+    // Gleiche Kurse und Dividenden, nur der Zins unterscheidet sich: heißes Klima, teures Geld.
+    const zinsDiff = (40000 * (marginRate(EB, { credit: 70, crash: 0 }) - marginRate(EB, NEUTRAL_CLIMATE))) / 4;
+    expect(zinsDiff).toBeGreaterThan(0);
+    expect(normal.cash - heiss.cash).toBeCloseTo(zinsDiff, 1);
   });
 
   it('der Maklerzins steigt mit dem Kreditklima', () => {
@@ -143,10 +161,72 @@ describe('Kreditklima (4.4-Schnittstelle)', () => {
     expect(danach.exchange!.events).not.toContain('crash');
   });
 
-  it('ein Börsencrash kühlt das Kreditklima (creditShift negativ)', () => {
-    const s = setzeEx(mitBoerse(), { fever: 50 });
-    const n = runde(s, balance, { credit: 40, crash: 1 });
-    expect(n.exchange!.creditShift).toBeCloseTo(-EB.crash.creditShock);
+  it('nur ein Kreditcrash: kracht die Börse aus eigenem Fieber, kracht auch das Weltmodell', () => {
+    const sicher = mit((eb) => ({ crash: { ...eb.crash, chance: 1, minWarnings: 1 } }));
+    const start = setzeEx(mitBoerse(10000, 'boerse', sicher), { fever: 95, warned: 1, events: [] });
+    const s: GameState = { ...start, worldModel: { ...start.worldModel, credit: 70, crash: 0, news: [] } };
+    const n = settleExchange(s, sicher);
+    expect(n.exchange!.events).toContain('crash');
+    const w = n.worldModel;
+    const c = balance.worldModel.credit;
+    expect(w.crash).toBe(Math.min(c.rounds.max, Math.max(c.rounds.min, n.exchange!.crash)));
+    expect(w.credit).toBeCloseTo(70 * c.after, 6);
+    expect(w.news).toContain('crash');
+    expect(w.counts.crashes).toBe(s.worldModel.counts.crashes + 1);
+    // Die Welt spürt ihn: weniger Nachfrage, teureres Bankgeld.
+    expect(effectiveDemand(w, balance.worldModel)).toBeLessThan(effectiveDemand(s.worldModel, balance.worldModel));
+    expect(worldRateAdd(w, balance.worldModel)).toBeGreaterThan(worldRateAdd(s.worldModel, balance.worldModel));
+    // Derselbe Crash zählt nicht doppelt: Die Börse kennt den Weltcrash schon.
+    expect(n.exchange!.lastClimateCrash).toBe(w.crash);
+    const danach = settleExchange({ ...n, round: n.round + 1 }, sicher);
+    expect(danach.exchange!.crashes).toBe(1);
+    expect(danach.worldModel.counts.crashes).toBe(w.counts.crashes);
+  });
+
+  it('läuft schon ein Weltcrash, ändert ein Börsencrash das Weltmodell nicht', () => {
+    const sicher = mit((eb) => ({ crash: { ...eb.crash, chance: 1, minWarnings: 1 } }));
+    const start = setzeEx(mitBoerse(10000, 'boerse', sicher), { fever: 95, warned: 1, events: [] });
+    const s: GameState = { ...start, worldModel: { ...start.worldModel, crash: 3 } };
+    const n = settleExchange(s, sicher);
+    expect(n.exchange!.events).toContain('crash');
+    expect(n.worldModel).toBe(s.worldModel);
+  });
+
+  it('exchangeWorldInput: ohne Börse oder ohne Kredit bleibt der Welt-Input unverändert', () => {
+    const input = { extraSupply: 0.01 };
+    expect(exchangeWorldInput({}, input)).toBe(input);
+    expect(exchangeWorldInput(mitBoerse(), input)).toBe(input);
+    const heiss = setzeEx(mitBoerse(), { creditShift: 4 });
+    expect(exchangeWorldInput(heiss, { ...input, creditShift: 1 })).toEqual({ extraSupply: 0.01, creditShift: 5 });
+  });
+
+  it('Kauf auf Kredit hebt über mehrere Runden das Weltkreditklima messbar an (endRound)', () => {
+    // Ohne Crashs (Börse und Welt), ruhiger Markt: Es zählt nur die Hitze aus dem Maklerkredit.
+    const ruhig: Balance = {
+      ...balance,
+      worldModel: { ...balance.worldModel, credit: { ...balance.worldModel.credit, crashChance: 0, crashSlope: 0, priceTrigger: 99 } },
+      exchange: {
+        ...EB,
+        crash: { ...EB.crash, chance: 0, slope: 0 },
+        market: { drift: 0.01, boom: 0, noise: 0 },
+        sectors: Object.fromEntries(Object.entries(EB.sectors).map(([k, v]) => [k, { ...v, idio: 0 }])) as Balance['exchange']['sectors'],
+      },
+    };
+    const k3 = { ...newGame('kredit-heizt', ruhig), chapter: 3, cash: 500000 } as GameState;
+    const offen = endRound(k3, ruhig);
+    expect(offen.exchange).toBeDefined();
+    const gekauft = buyStock(offen, ruhig, 'handelsbank', 50000, 5);
+    if (!gekauft.ok) throw new Error(gekauft.reason);
+    expect(marginHeat(gekauft.state, EB)).toBe(1);
+    let mit = gekauft.state;
+    let ohne = offen;
+    for (let i = 0; i < 4; i++) {
+      mit = endRound(mit, ruhig);
+      ohne = endRound(ohne, ruhig);
+    }
+    expect(mit.exchange!.positions).toHaveLength(1);
+    // Die erste Hitze wirkt ab der Folgerunde: drei Runden × creditShift, über 50 schaukelt es sich noch auf.
+    expect(mit.worldModel.credit - ohne.worldModel.credit).toBeGreaterThanOrEqual(3 * EB.margin.creditShift - 1e-6);
   });
 
   it('Kauf auf Kredit heizt Kreditklima und Börsenfieber an (GDD §8)', () => {
@@ -275,6 +355,27 @@ describe('Börsenfieber, Warnung und Crash', () => {
     expect(s.exchange!.fever).toBeLessThan(100 * EB.crash.after + 1e-9);
   });
 
+  it('gezählt wird nur die Warnung, die zu Rundenbeginn in der Zeitung stand (endRound mit echtem Weltmodell)', () => {
+    // Zu Rundenbeginn: Börse ruhig, Kreditklima normal – die Zeitung warnt nicht.
+    const k3 = { ...newGame('warnung-sichtbar', balance), chapter: 3 } as GameState;
+    const offen = endRound(k3, balance);
+    // Jacobs Maklerkredit der letzten Runde (creditShift) heizt das Weltklima in diesem Rundenende über warnCredit.
+    const start: GameState = {
+      ...setzeEx(offen, { fever: 50, warned: 0, events: [], creditShift: EB.warnCredit - 50 + 8 }),
+      worldModel: { ...offen.worldModel, credit: 50, crash: 0 },
+    };
+    expect(exchangeHeadline(start.exchange!, EB, readClimate(start))).toBe('quiet');
+    const n = endRound(start, balance);
+    // Das Klima ist im Rundenende über die Warnschwelle gestiegen (ohne Crash) …
+    expect(n.worldModel.credit).toBeGreaterThanOrEqual(EB.warnCredit);
+    expect(n.worldModel.crash).toBe(0);
+    // … gezählt wird trotzdem keine Warnung, denn in der Zeitung stand keine.
+    expect(n.exchange!.warned).toBe(0);
+    // Erst die nächste Zeitung warnt – und die zählt.
+    expect(WARNING_HEADLINES).toContain(exchangeHeadline(n.exchange!, EB, readClimate(n)));
+    expect(settleExchange(n, balance).exchange!.warned).toBe(1);
+  });
+
   it('unter crash.from kracht es nie, auch nach langer Warnung', () => {
     const sicher = mit((eb) => ({ crash: { ...eb.crash, chance: 1 } }));
     const s = setzeEx(mitBoerse(10000, 'boerse', sicher), { fever: EB.crash.from - 0.5, warned: 10 });
@@ -324,7 +425,7 @@ describe('Roadmap 4.15: Crash ruiniert Kauf auf Kredit, die Zeitung warnt vorher
     for (let i = 0; i < maxRunden; i++) {
       schlagzeilen.push(exchangeHeadline(s.exchange!, EB, readClimate(s)));
       const vorher = s;
-      s = checkBankruptcy(runde(s), balance);
+      s = checkBankruptcy(runde(s, balance, readClimate(s)), balance);
       if (s.exchange!.events.includes('crash')) return { state: s, schlagzeilen, vorher };
     }
     throw new Error('kein Crash');

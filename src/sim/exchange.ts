@@ -6,11 +6,13 @@
 //   – es folgt dem Kreditklima aus dem Weltmodell (4.4, Schnittstelle CreditClimate),
 //   – steigende Kurse heizen es an (Momentum), über 50 schaukelt es sich auf,
 //   – Jacobs Kauf auf Kredit heizt es zusätzlich an (GDD §8: „Wer so kauft,
-//     heizt das Kreditklima selbst an“) und gibt über creditShift Hitze an 4.4 zurück.
+//     heizt das Kreditklima selbst an“) und gibt über creditShift Hitze ans
+//     Weltmodell der Folgerunde (exchangeWorldInput).
 // Ab crash.from kann es krachen – aber nur, wenn die Zeitung vorher
-// crash.minWarnings Runden in Folge gewarnt hat (exchangeWarning). Ein Crash
-// im Weltmodell (4.4) reißt die Börse sofort mit; ein Börsencrash drückt das
-// Kreditklima (creditShift negativ).
+// crash.minWarnings Runden in Folge gewarnt hat (exchangeWarning, mit dem
+// Kreditklima vom Rundenbeginn). Es gibt nur einen Kreditcrash (GDD §7.2, §8):
+// Ein Crash im Weltmodell reißt die Börse sofort mit, und ein Börsencrash
+// kippt das Weltmodell in denselben Crash (crashWorld).
 //
 // Kauf auf Kredit: Jacob setzt Bargeld ein (stake), der Makler leiht den Rest
 // bis zum gewählten Hebel (loan). Zinsen gehen jede Runde von der Kasse ab.
@@ -29,6 +31,7 @@ import { formatDate } from './calendar';
 import type { ExchangeBalance } from './exchangeBalance';
 import type { GameState } from './game';
 import { Rng, seedFromString, type RngState } from './rng';
+import type { WorldInput, WorldState } from './world';
 
 // ---------------------------------------------------------------------------
 // 4.4 Andockpunkt: was die Börse vom Kreditklima braucht.
@@ -48,18 +51,13 @@ export interface CreditClimate {
 export const NEUTRAL_CLIMATE: CreditClimate = { credit: 50, crash: 0 };
 
 /**
- * 4.4 Andockpunkt: liest das Kreditklima aus dem Spielstand. Erwartet wird
- * `state.world` mit `credit` und `crash` (so wie WorldState aus 4.1); fehlt es,
- * gilt NEUTRAL_CLIMATE. Bei der Zusammenführung durch den echten Zugriff ersetzen.
+ * 4.4 Andockpunkt: liest das Kreditklima aus dem Weltmodell des Spielstands
+ * (`state.worldModel`, WorldState aus 4.1). Alte Teststände ohne Weltmodell
+ * bekommen NEUTRAL_CLIMATE.
  */
-export function readClimate(state: object): CreditClimate {
-  const world = (state as { world?: unknown }).world;
-  if (world && typeof world === 'object') {
-    const w = world as { credit?: unknown; crash?: unknown };
-    if (typeof w.credit === 'number' && Number.isFinite(w.credit)) {
-      return { credit: w.credit, crash: typeof w.crash === 'number' && Number.isFinite(w.crash) ? w.crash : 0 };
-    }
-  }
+export function readClimate(state: { worldModel?: Pick<WorldState, 'credit' | 'crash'> }): CreditClimate {
+  const w = state.worldModel;
+  if (w && Number.isFinite(w.credit)) return { credit: w.credit, crash: Number.isFinite(w.crash) ? w.crash : 0 };
   return NEUTRAL_CLIMATE;
 }
 
@@ -358,13 +356,55 @@ const FESTE_WUERFE = 5;
  * 4.15 Andockpunkt in endRound: Öffnet die Börse, sobald das Kapitel
  * balance.exchange.unlockChapter erreicht ist, und schreibt sie danach jede
  * Runde fort. In Kapitel 1 und 2 kommt der Zustand unverändert zurück (dasselbe Objekt).
+ *
+ * Zwei Klimastände: `shown` ist das Kreditklima vom Rundenbeginn – das stand in
+ * der Zeitung und am Maklerschalter, danach zählen Warnungen und Zins. Das
+ * fortgeschriebene Klima (readClimate(state), endRound ruft nach dem Weltmodell)
+ * treibt das Fieber und reißt die Börse bei einem neuen Weltcrash mit.
+ * Kracht die Börse aus eigenem Fieber, kracht auch die Welt (crashWorld) –
+ * es gibt nur einen Kreditcrash (GDD §7.2, §8).
  */
-export function settleExchange(state: GameState, balance: Balance, climate: CreditClimate = readClimate(state)): GameState {
+export function settleExchange(state: GameState, balance: Balance, shown: CreditClimate = readClimate(state)): GameState {
   if (state.finished) return state;
   if (!state.exchange) {
     return chapterOf(state) >= balance.exchange.unlockChapter ? openExchange(state, balance) : state;
   }
-  return advanceExchange(state, balance, climate);
+  return crashWorld(advanceExchange(state, balance, readClimate(state), shown), balance);
+}
+
+/**
+ * 4.4 Andockpunkt: Ein Börsencrash ist ein Kreditcrash der ganzen Welt. Ist die
+ * Börse in dieser Runde gekracht und das Weltmodell noch nicht im Crash, kippt
+ * es jetzt genauso, wie advanceWorld es täte (Kreditklima × credit.after, halbe
+ * Neubohrungen, Nachricht 'crash'); die Dauer folgt dem Börsencrash, begrenzt
+ * auf credit.rounds. Danach drücken Nachfrage, Bankzins und Stimmung wie bei
+ * jedem Weltcrash. Ohne Weltmodell (alte Teststände) bleibt alles, wie es ist.
+ */
+export function crashWorld(state: GameState, balance: Balance): GameState {
+  const ex = state.exchange;
+  const w = state.worldModel;
+  if (!ex || !w || !ex.events.includes('crash') || w.crash > 0) return state;
+  const c = balance.worldModel.credit;
+  const crash = clamp(ex.crash, Math.round(c.rounds.min), Math.round(c.rounds.max));
+  const worldModel: WorldState = {
+    ...w,
+    credit: w.credit * c.after,
+    crash,
+    pipeline: w.pipeline.map((x) => x * 0.5),
+    news: w.news.includes('crash') ? w.news : [...w.news, 'crash'],
+    counts: { ...w.counts, crashes: w.counts.crashes + 1 },
+  };
+  return { ...state, worldModel, exchange: { ...ex, lastClimateCrash: crash } };
+}
+
+/**
+ * 4.4 Andockpunkt für advanceWorldInGame: Jacobs Kauf auf Kredit heizt das
+ * Kreditklima der Folgerunde an (creditShift der letzten Börsenrunde). Ohne
+ * Börse kommt der Input unverändert zurück (dasselbe Objekt).
+ */
+export function exchangeWorldInput(state: Pick<GameState, 'exchange'>, input: WorldInput): WorldInput {
+  const shift = state.exchange?.creditShift ?? 0;
+  return shift === 0 ? input : { ...input, creditShift: (input.creditShift ?? 0) + shift };
 }
 
 /**
@@ -372,7 +412,7 @@ export function settleExchange(state: GameState, balance: Balance, climate: Cred
  * Fieber fortschreiben, Zinsen und Dividenden buchen, Nachschuss fordern oder
  * zwangsverkaufen. Reihenfolge und Zahl der Würfel sind fest.
  */
-export function advanceExchange(state: GameState, balance: Balance, climate: CreditClimate): GameState {
+export function advanceExchange(state: GameState, balance: Balance, climate: CreditClimate, shown: CreditClimate = climate): GameState {
   const eb = balance.exchange;
   const ex = state.exchange!;
   const date = formatDate(state);
@@ -381,8 +421,9 @@ export function advanceExchange(state: GameState, balance: Balance, climate: Cre
   const u = Array.from({ length: FESTE_WUERFE + eb.stocks.length }, () => rng.float());
   const events: ExchangeEvent[] = [];
 
-  // 1. Hat die Zeitung dieser Runde gewarnt? Das zählt, bevor gewürfelt wird.
-  const warned = exchangeWarning(ex, eb, climate) ? ex.warned + 1 : 0;
+  // 1. Hat die Zeitung dieser Runde gewarnt? Das zählt, bevor gewürfelt wird –
+  // mit dem Klima vom Rundenbeginn (shown), denn nur diese Zeitung hat Jacob gelesen.
+  const warned = exchangeWarning(ex, eb, shown) ? ex.warned + 1 : 0;
   // Hitze aus Jacobs Kauf auf Kredit (Stand vor den Zwangsverkäufen dieser Runde).
   const heat = marginHeat(state, eb);
 
@@ -444,7 +485,8 @@ export function advanceExchange(state: GameState, balance: Balance, climate: Cre
 
   // 5. Depot: Zinsen, Dividenden, Nachschuss oder Zwangsverkauf.
   const neuEx: ExchangeState = { ...ex, prices, history };
-  const rate = marginRate(eb, climate);
+  // Der Zins, der am Maklerschalter aushing (Klima vom Rundenbeginn).
+  const rate = marginRate(eb, shown);
   let cash = state.cash;
   const positions: Position[] = [];
   const liquidated: { stock: string; shortfall: number }[] = [];
@@ -480,8 +522,9 @@ export function advanceExchange(state: GameState, balance: Balance, climate: Cre
   if (events.includes('call')) log.push(`${date}: Telegramm vom Makler: Jacob soll Geld nachschießen, sonst wird verkauft.`);
   if (events.includes('recovery')) log.push(`${date}: An der Börse kehrt Ruhe ein.`);
 
-  // 6. 4.4 Andockpunkt: Hitze ans Kreditklima, ein Crash kühlt es schlagartig.
-  const creditShift = eb.margin.creditShift * heat - (crashed ? eb.crash.creditShock : 0);
+  // 6. 4.4 Andockpunkt: Hitze ans Kreditklima der Folgerunde (exchangeWorldInput).
+  // Abkühlen muss die Börse es nicht: Ein Börsencrash ist ein Weltcrash (crashWorld).
+  const creditShift = eb.margin.creditShift * heat;
 
   return {
     ...state,

@@ -26,7 +26,7 @@ import { advanceTransport, noShipments } from './transport';
 import { settleTakeover } from './trust';
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
 // 4.15 Andockpunkt: Börse und Kauf auf Kredit (ab Kapitel 3).
-import { settleExchange, type ExchangeState } from './exchange';
+import { exchangeWorldInput, readClimate, settleExchange, type ExchangeState } from './exchange';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
@@ -179,7 +179,8 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
 function advanceWorldInGame(state: GameState, vorMarkt: GameState, balance: Balance): GameState {
   if (!state.worldModel) return state;
   const angebot = saltHillSupply(vorMarkt, balance.market, balance.rivals.bullard.ratePerWell);
-  const input = saltHillInput(angebot, balance.market.demand, balance.worldModel);
+  // 4.15 Andockpunkt: Jacobs Kauf auf Kredit heizt das Kreditklima (ohne Börse unverändert).
+  const input = exchangeWorldInput(state, saltHillInput(angebot, balance.market.demand, balance.worldModel));
   return { ...state, worldModel: advanceWorld(state.worldModel, balance.worldModel, input) };
 }
 
@@ -235,7 +236,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Türme und Pumpen (0.2.15+7): Turmmiete und Pumpenunterhalt, ebenfalls vor den Zinsen.
   const verzinst = settleLoans(settleRigs(advanceLogistics(rivale, balance), balance), balance);
   // 4.15 Andockpunkt: Börse (ab Kapitel 3) – Kurse, Maklerzinsen, Zwangsverkäufe vor der Pleiteprüfung.
-  const gehandelt = settleExchange(verzinst, balance);
+  // Warnungen und Maklerzins zählen mit dem Kreditklima vom Rundenbeginn (das stand in der Zeitung).
+  const gehandelt = settleExchange(verzinst, balance, readClimate(input));
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   const gefahren = advanceTransport(gehandelt, balance);
   const state = { ...checkBankruptcy(gefahren, balance), roundLogStart };

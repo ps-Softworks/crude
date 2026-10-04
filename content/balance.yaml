@@ -625,7 +625,10 @@ worldModel:
 # Das Börsenfieber (0–100, 50 = normal) ist der Spiegel des Kreditklimas an der Börse: Es folgt dem
 # Kreditklima aus dem Weltmodell (4.4), steigenden Kursen und Jacobs Kauf auf Kredit. Über 50 schaukelt
 # es sich auf; ab crash.from kann es krachen – aber erst, wenn die Zeitung crash.minWarnings Runden
-# lang gewarnt hat. ALLES PLATZHALTER bis zur Balance von Kapitel 3.
+# lang gewarnt hat (gezählt wird das Kreditklima vom Rundenbeginn, so wie es in der Zeitung stand).
+# Es gibt nur einen Kreditcrash: Ein Weltcrash (worldModel.credit) reißt die Börse mit, ein Börsencrash
+# kippt auch das Weltmodell (Kreditklima × worldModel.credit.after, Dauer wie der Börsencrash).
+# ALLES PLATZHALTER bis zur Balance von Kapitel 3.
 exchange:
   unlockChapter: 3         # GDD §14: Börse und Kauf auf Kredit ab Kapitel 3
   startIndex: 100          # Börsenindex bei Öffnung (nur für den Ticker)
@@ -639,7 +642,7 @@ exchange:
     start: { min: 45, max: 55 }
     revert: 0.08           # zieht je Runde so viel zur 50 zurück
     speculation: 0.12      # über 50 heizt es sich um so viel selbst an (stärker als revert → Blase)
-    climate: 0.10          # je Punkt Kreditklima (4.4) über 50 so viele Punkte Fieber je Runde
+    climate: 0.10          # je Punkt Weltkreditklima (worldModel.credit) über 50 so viele Punkte Fieber je Runde
     momentum: 30           # steigende Kurse heizen an: Indexänderung × momentum
     margin: 8              # Jacobs geliehenes Geld (voll ab margin.heatScale) heizt so viele Punkte je Runde an
     noise: 3               # Zufall je Runde (±)
@@ -657,7 +660,6 @@ exchange:
     tail: 0.08             # weitere Verluste je Runde, solange der Crash nachwirkt
     rounds: { min: 2, max: 4 }       # so lange wirkt er nach
     after: 0.45            # Fieber nach dem Crash (× vorher)
-    creditShock: 15        # ein Börsencrash drückt das Kreditklima (4.4) um so viele Punkte
   margin:
     leverages: [1, 2, 5, 10]   # wählbarer Hebel beim Kauf
     maxLeverage: 10        # GDD §8: bis zu zehnfacher Hebel
@@ -667,7 +669,7 @@ exchange:
     rateClimate: 0.08      # Kreditklima 100 → so viel Zins zusätzlich (0 → so viel weniger)
     minBuy: 500            # kleinster Einsatz in $
     heatScale: 100000      # so viel geliehenes Geld heizt Börse und Kreditklima voll an
-    creditShift: 4         # volle Hitze → so viele Punkte Kreditklima je Runde (an 4.4)
+    creditShift: 4         # volle Hitze → so viele Punkte aufs Weltkreditklima der Folgerunde (worldModel.credit)
     fee: 0.01              # Maklergebühr bei Kauf und Verkauf
   sectors:
     rail: { beta: 1.0, idio: 0.03, dividend: 0.012 }

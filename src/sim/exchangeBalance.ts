@@ -64,7 +64,6 @@ export interface ExchangeBalance {
     tail: number;
     rounds: ExchangeRange;
     after: number;
-    creditShock: number;
   };
   margin: {
     leverages: number[];
@@ -189,7 +188,6 @@ export function parseExchangeBalance(raw: unknown): ExchangeBalance {
       tail: anteil(b, 'crash.tail'),
       rounds: bereich(b, 'crash.rounds'),
       after: anteil(b, 'crash.after'),
-      creditShock: nichtNegativ(b, 'crash.creditShock'),
     },
     margin: {
       leverages,
