@@ -5,77 +5,36 @@
 # Entscheidung. Jede verfehlte Probe hinterlässt ein Merkzeichen; der Wendepunkt liest sie.
 # Alle Ereignisse nur in Kapitel 3 (minChapter/maxChapter); Runden 1–16.
 #
-#   R2+    k3_ruth_datum       (ruth_vertroestet, Kapitel 1) Das Datum aus der Kiste
-#          k3_ruth_anteile     (ruth_teilhaberin, Kapitel 1) Pettibone will Ruths Anteile
-#          k3_ruth_hannah      (ruth_zurueckgewiesen, Kapitel 1) Ruth kauft mit Hannah Land
+#   R4–10  k3_ruth_anteile     (ruth_teilhaberin, Kapitel 1) Pettibone will Ruths Anteile
 #   R3–6   k3_ruth_ball        Probe 1 (Schlüsselszene): „früher in einem Laden gearbeitet?“
-#   R7–10  k3_ruth_vale        Probe 2: Mr. Vales Einladung – hätte Jacob sie gefragt?
-#   R9–13  k3_ruth_abwesend    Probe 3: sechs Wochen nicht zu Hause
+#   R7–12  k3_ruth_vale        Probe 2: Mr. Vales Einladung – hätte Jacob sie gefragt? Wartet auf die
+#                              Karte (vale_karte aus k3-story-4-vale.yaml, Runde 6–8), eine Runde danach
+#   R9–13  k3_ruth_abwesend    Probe 3: sechs Wochen nicht zu Hause – Story-Bibel: nur bei niedrigem
+#                              Beziehungswert. Bis es maxRuth gibt, steht dafür ein Merkzeichen:
+#                              _abwesend (ruth_riss: schon eine Probe verfehlt) · _abwesend_geburt
+#                              (geburt_verpasst aus Kapitel 1, ohne Riss). Eine intakte Ehe ohne
+#                              alte Wunde bekommt Probe 3 nicht. ruth_probe3 verhindert, dass beide kommen.
 #   R13–16 k3_ruth_wendepunkt  Schlüsselszene, vier Fassungen:
 #          _wendepunkt (keine Probe verfehlt) · _riss (ruth_riss) · _fern (ruth_sechs_wochen)
 #          · _fremd (beides) – Ausgänge ehe_partner / ehe_waffenstillstand / ehe_trennung
 #
-# ruth_riss: ein verfehlter Abend (Ball, Vale, Datum, Anteile, Grundbuch). ruth_sechs_wochen:
+# ruth_riss: ein verfehlter Abend (Ball, Vale, Anteile). ruth_sechs_wochen:
 # die lange Abwesenheit. Teure Umkehr bleibt in jeder Fassung möglich.
 # Ausgänge für Zeitsprung III und Kapitel 4 (content/relevance.yaml): ehe_partner,
 # ehe_waffenstillstand, ehe_trennung, ruth_gefragt.
 #
-# Anknüpfung (nach Merge nachtragen):
-#   phase4/inhalte-k2-story: ruth_aufsichtsrat / ruth_finanzen → k3_ruth_wendepunkt (sie sitzt schon
-#   im Rat); ruth_eigenes_geschaeft → k3_ruth_hannah auch ohne Kapitel-1-Zeichen; ruth_verboten → ruth_riss
-#   Vale-Bogen (k3_vale_karte): k3_ruth_vale sollte auf dessen Merkzeichen warten.
+# Kapitel 1 → Kapitel 2 → Kapitel 3: „Das Datum aus der Kiste“ (ruth_vertroestet) und der Grundbuch-Fund
+# (ruth_zurueckgewiesen) erzählt Kapitel 2 (phase4/inhalte-k2-story: k2_ruth_datum, k2_ruth_eigenes).
+# Story-Bibel §8: ruth_vertroestet hat in Kapitel 3 keinen eigenen Auftritt. Die Folge-Szenen hier
+# knüpfen an die Ausgänge aus Kapitel 2 an und liegen bis zu dessen Merge in
+# content/events/nach-k2/k3-story-3-ehe-k2.yaml (wird nicht geladen):
+#   k3_ruth_laden  (ruth_eigenes_geschaeft) Der Laden am Bahnhof Salt Hill, zehn Jahre später
+#   k3_ruth_kiste  (ruth_vertroestet_k2)    Die Kiste ist jetzt abgeschlossen
+#   k3_ruth_plaetze (ruth_verboten)         Die Bauplätze, die sie verkaufen musste
+# Nach dem Merge: Datei nach content/events/ verschieben; ruth_aufsichtsrat / ruth_finanzen
+# → k3_ruth_wendepunkt (sie sitzt schon im Rat) noch nachtragen.
 # WUNSCH (Story-Bibel §10): Effekte shares: { ruth: ±% }, control, boardLoyalty, standing;
 # Bedingung minRuth/maxRuth – dann braucht der Wendepunkt keine vier Fassungen mehr.
-
-# Kapitel 1: Jacob hat Ruth vertröstet – „Wenn die zweite Quelle fließt.“
-- id: k3_ruth_datum
-  visitor: ruth
-  title:
-    de: Das Datum aus der Kiste
-    en: The Date from the Box
-  text:
-    de: >-
-      Ruth legt einen vergilbten Zettel auf Jacobs Schreibtisch, mit Reißzweckenlöchern
-      in den Ecken. Ihre Handschrift, zwanzig Jahre jünger. „Ich habe das Datum
-      aufgeschrieben, Jacob. Du hast gesagt: wenn die zweite Quelle fließt.“ Sie zeigt
-      auf die Karte an der Wand, auf die vielen kleinen Fähnchen. „Ich habe aufgehört zu
-      zählen. Ich wollte nur, dass du es auch nicht vergisst.“
-    en: >-
-      Ruth lays a yellowed slip of paper on Jacob's desk, with drawing-pin holes in the
-      corners. Her handwriting, twenty years younger. "I wrote down the date, Jacob. You
-      said: when the second well flows." She points to the map on the wall, to all the
-      little flags. "I stopped counting. I only wanted you not to forget either."
-  conditions: { minChapter: 3, maxChapter: 3, minRound: 2, maxRound: 8 }
-  marked: [ruth_vertroestet]
-  certain: true
-  choices:
-    - id: einloesen
-      label: { de: "Es einlösen – heute, mit Notar und Anteilen", en: "Make good on it – today, with a notary and shares" }
-      result:
-        de: >-
-          Der Notar kommt am Nachmittag. Ruth liest jede Seite, bevor sie unterschreibt,
-          und korrigiert einen Rechenfehler auf Seite drei. Den Zettel steckt sie wieder
-          ein. „Den behalte ich“, sagt sie. „Als Quittung.“
-        en: >-
-          The notary comes in the afternoon. Ruth reads every page before she signs and
-          corrects an arithmetic error on page three. She pockets the slip again. "I'll
-          keep this," she says. "As a receipt."
-      effects: { ruth: 25, cash: -2000 } # TODO-Effekt: shares: { ruth: +5 }, control: -2
-      marks: [ruth_gefragt]
-    - id: vertroesten
-      label: { de: "„Nach der Hauptversammlung. Versprochen.“", en: "\"After the shareholders' meeting. I promise.\"" }
-      result:
-        de: >-
-          Ruth nickt. Sie nimmt den Zettel nicht wieder mit. Er liegt am nächsten Morgen
-          noch auf dem Tisch, und am übernächsten. Dann ist er weg, und Jacob weiß nicht,
-          wer ihn genommen hat.
-        en: >-
-          Ruth nods. She does not take the slip back. It is still on the desk the next
-          morning, and the morning after. Then it is gone, and Jacob does not know who
-          took it.
-      effects: { ruth: -20 }
-      marks: [ruth_riss]
-      default: true
 
 # Kapitel 1: Ruth ist Teilhaberin. Thornes Mann will ihre Anteile.
 - id: k3_ruth_anteile
@@ -139,65 +98,6 @@
       effects: { cash: -6000, ruth: -10 } # TODO-Effekt: shares: { ruth: -10, jacob: +10 }, control: +3
       marks: [ruth_riss]
 
-# Kapitel 1: Jacob hat Ruth zurückgewiesen („Das ist Männersache“). Sie hat sich etwas Eigenes gesucht.
-- id: k3_ruth_hannah
-  title:
-    de: Ein Eintrag im Grundbuch
-    en: An Entry in the Land Register
-  text:
-    de: >-
-      Jacobs Landagent bringt einen Auszug aus dem Grundbuch von Okara. Zwölf Bauplätze
-      an der neuen Hauptstraße, gekauft vor zwei Jahren von „R. Harlan und Schwester“. Hannah ist aus den Kohleprovinzen gekommen, mit grauem Haar und ihren
-      Ersparnissen. Ruth hat das Geld aus ihrem Haushaltsbuch dazugelegt, Monat für
-      Monat. Auf den Plätzen stehen inzwischen eine Pension und ein Laden.
-    en: >-
-      Jacob's land agent brings an extract from the Okara land register. Twelve building
-      plots on the new main street, bought two years ago by "R. Harlan and Sister". Hannah came from the coal provinces with grey hair and her savings. Ruth
-      added money from her housekeeping book, month by month. A boarding house and a
-      shop now stand on the plots.
-  conditions: { minChapter: 3, maxChapter: 3, minRound: 2, maxRound: 8 }
-  marked: [ruth_zurueckgewiesen]
-  certain: true
-  choices:
-    - id: hinfahren
-      label: { de: "Nach Okara fahren und sich den Laden zeigen lassen", en: "Drive to Okara and ask to be shown the shop" }
-      result:
-        de: >-
-          Ruth steht hinter dem Ladentisch, als Jacob eintritt, und verkauft einem Bohrer
-          Tabak. Sie zeigt ihm die Bücher. Sie sind besser geführt als seine. Er sagt es
-          ihr. Sie lächelt zum ersten Mal seit Langem.
-        en: >-
-          Ruth stands behind the counter when Jacob comes in, selling tobacco to a driller.
-          She shows him the books. They are better kept than his. He tells her so. She
-          smiles for the first time in a long while.
-      effects: { ruth: 20, strength: -10 }
-      appointments: 2
-      marks: [ruth_gefragt]
-    - id: aufkaufen
-      label: { de: "Die Nachbarplätze aufkaufen lassen, bevor sie es tut (3.000 $)", en: "Have the neighbouring plots bought up before she can (3,000 $)" }
-      result:
-        de: >-
-          Jacobs Agent kauft die Straße. Ruth erfährt es vom Notar. Sie sagt nichts. Sie
-          zieht für einen Monat zu Hannah in die Pension, „wegen der Buchhaltung“.
-        en: >-
-          Jacob's agent buys the street. Ruth hears of it from the notary. She says
-          nothing. She moves into Hannah's boarding house for a month, "for the accounts".
-      requires: { minCash: 3000 }
-      effects: { cash: -3000, ruth: -25 } # TODO-Effekt: investment: { boomtownLand: +1 }
-      marks: [ruth_riss]
-    - id: schweigen
-      label: { de: "Den Auszug in die Schublade legen", en: "Put the extract in the drawer" }
-      result:
-        de: >-
-          Jacob sagt nichts, und Ruth sagt nichts. Beim Abendessen fragt sie, wie sein Tag
-          war, und er sagt: gut. Beide wissen, dass der andere es weiß.
-        en: >-
-          Jacob says nothing, and Ruth says nothing. At dinner she asks how his day was,
-          and he says: fine. Both know that the other knows.
-      effects: { ruth: -10 }
-      marks: [ruth_riss]
-      default: true
-
 # Entwurf – Philipp überarbeitet.
 # Probe 1 (Schlüsselszene): der Ball bei den Vandermeers.
 - id: k3_ruth_ball
@@ -260,7 +160,7 @@
       effects: { ruth: -30 } # TODO-Effekt: standing: +2
       marks: [ruth_riss]
 
-# Probe 2: Mr. Vales Einladung. Ruth hat die Karte gefunden.
+# Probe 2: Mr. Vales Einladung. Ruth hat die Karte gefunden – frühestens eine Runde, nachdem sie kam.
 - id: k3_ruth_vale
   visitor: ruth
   title:
@@ -278,7 +178,9 @@
       invitation "as it is", for him alone. She lays it before him, writing up. "I'm not
       asking whether you'll do it, Jacob. I'm asking whether you would have asked me."
       Her reading glasses hang on a chain round her neck; she never used to need them.
-  conditions: { minChapter: 3, maxChapter: 3, minRound: 7, maxRound: 10 }
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 7, maxRound: 12 }
+  marked: [vale_karte]
+  delay: 1
   certain: true
   choices:
     - id: fragen
@@ -319,7 +221,7 @@
       effects: { ruth: -10 }
       marks: [ruth_riss]
 
-# Probe 3: sechs Wochen nicht zu Hause.
+# Probe 3: sechs Wochen nicht zu Hause. Fassung Riss: Jacob hat schon eine Probe verfehlt.
 - id: k3_ruth_abwesend
   title:
     de: Sechs Wochen
@@ -336,6 +238,8 @@
       a telegram from Ruth: it is Clara's birthday, Thomas is visiting, the roof in the
       east wing leaks. No reproach. Just the list. Jacob reads it twice.
   conditions: { minChapter: 3, maxChapter: 3, minRound: 9, maxRound: 13 }
+  marked: [ruth_riss]
+  notMarked: [ruth_probe3]
   certain: true
   choices:
     - id: heim
@@ -348,6 +252,7 @@
           Jacob is there for Clara's birthday. The contract goes to Crane Eastern, with a
           letter from Margaret: "Family is a luxury, Harlan. I don't begrudge you it."
       effects: { ruth: 20, price: -0.2 } # TODO-Effekt: clara: +10, rival: { margaret: { aggression: +5 } }
+      marks: [ruth_probe3]
     - id: bleiben
       label: { de: "Bleiben, bis der Vertrag steht", en: "Stay until the contract is signed" }
       result:
@@ -360,7 +265,7 @@
           the roof is repaired. Ruth arranged it herself, with her own money. She does not
           show him the bill.
       effects: { ruth: -20, price: 0.2 } # TODO-Effekt: clara: -10
-      marks: [ruth_sechs_wochen]
+      marks: [ruth_sechs_wochen, ruth_probe3]
       default: true
     - id: nachkommen
       label: { de: "Ruth und Clara nach Hallstead holen (1.000 $)", en: "Bring Ruth and Clara to Hallstead (1,000 $)" }
@@ -374,6 +279,73 @@
           Both times she is right. Clara has her birthday in the hotel and thinks it splendid.
       requires: { minCash: 1000 }
       effects: { cash: -1000, ruth: 15, strength: -10 }
+      marks: [ruth_probe3]
+
+# Probe 3 – Fassung alte Wunde: Jacob war in Kapitel 1 nicht bei Thomas' Geburt (geburt_verpasst).
+# Story-Bibel §3: Ruth erwähnt es nie direkt. Sie erwähnt es, wenn Jacob Claras Geburtstag verpasst.
+- id: k3_ruth_abwesend_geburt
+  title:
+    de: Ein Datum unter der Liste
+    en: A Date Below the List
+  text:
+    de: >-
+      Die Verhandlungen in Hallstead ziehen sich. Noch zwei Wochen, sagen die Anwälte,
+      dann steht der Vertrag, der Harlan Oil für zehn Jahre sichert. Aus Port Ellis kommt
+      ein Telegramm von Ruth: Clara hat Geburtstag, Thomas ist zu Besuch, das Dach im
+      Ostflügel ist undicht. Darunter, ohne ein Wort dazu, ein zweites Datum. Es ist der
+      Tag, an dem Thomas geboren wurde. Jacob war damals auch nicht da.
+    en: >-
+      The negotiations in Hallstead drag on. Two more weeks, say the lawyers, and the
+      contract that secures Harlan Oil for ten years will be done. From Port Ellis comes a
+      telegram from Ruth: it is Clara's birthday, Thomas is visiting, the roof in the east
+      wing leaks. Below it, without a word of comment, a second date. It is the day Thomas
+      was born. Jacob was not there then either.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 9, maxRound: 13 }
+  marked: [geburt_verpasst]
+  notMarked: [ruth_riss, ruth_probe3]
+  certain: true
+  choices:
+    - id: heim
+      label: { de: "Den Nachtzug nehmen – der Vertrag muss warten", en: "Take the night train – the contract must wait" }
+      result:
+        de: >-
+          Jacob steht um sieben Uhr morgens in der Küche, mit dem Staub der Reise auf dem
+          Mantel. Ruth sieht ihn an und stellt eine zweite Tasse hin. Der Vertrag geht an
+          Crane Eastern. Clara bekommt ein Geschenk, das er im Zug gekauft hat, und liebt es.
+        en: >-
+          Jacob is standing in the kitchen at seven in the morning, the dust of the journey on
+          his coat. Ruth looks at him and sets out a second cup. The contract goes to Crane
+          Eastern. Clara gets a present he bought on the train, and loves it.
+      effects: { ruth: 25, price: -0.2 } # TODO-Effekt: clara: +10, rival: { margaret: { aggression: +5 } }
+      marks: [ruth_probe3]
+      sharp: true
+    - id: bleiben
+      label: { de: "Bleiben, bis der Vertrag steht", en: "Stay until the contract is signed" }
+      result:
+        de: >-
+          Der Vertrag steht nach drei Wochen. Als Jacob heimkommt, ist das Dach repariert,
+          mit Ruths eigenem Geld. Das Telegramm liegt in der Schublade ihres Sekretärs, bei
+          einem zweiten, zwanzig Jahre älteren. Er sieht es zufällig. Er sagt nichts.
+        en: >-
+          The contract is signed after three weeks. When Jacob comes home the roof is mended,
+          with Ruth's own money. The telegram lies in the drawer of her writing desk, beside a
+          second one, twenty years older. He sees it by chance. He says nothing.
+      effects: { ruth: -25, price: 0.2 } # TODO-Effekt: clara: -10
+      marks: [ruth_sechs_wochen, ruth_probe3]
+      default: true
+    - id: telegramm
+      label: { de: "Zurücktelegrafieren: „Ich weiß, welcher Tag das war“", en: "Wire back: \"I know what day that was\"" }
+      result:
+        de: >-
+          Er bleibt in Hallstead, aber er schreibt jeden Abend, und am Geburtstag ruft er an,
+          über drei Vermittlungen. Clara erzählt ihm alles, Ruth sagt nur einen Satz: „Du
+          hast es also gewusst.“ Es klingt nicht wie ein Vorwurf. Nicht ganz.
+        en: >-
+          He stays in Hallstead, but he writes every evening, and on the birthday he
+          telephones, through three exchanges. Clara tells him everything; Ruth says only one
+          sentence: "So you did know." It does not sound like a reproach. Not quite.
+      effects: { ruth: 5, strength: -10, price: 0.1 }
+      marks: [ruth_probe3]
 
 # Entwurf – Philipp überarbeitet.
 # Der Wendepunkt – Fassung ohne verfehlte Probe.

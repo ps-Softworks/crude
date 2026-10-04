@@ -31,9 +31,9 @@ Zum Ausprobieren: `npm run dev`, dann im Browser `?seed=abc&debug=1`.
   statt „Er ist verzweifelt“.
 - `conditions` (optional, alle müssen stimmen):
   `minRound`/`maxRound` (Runde 1–16 in Kapitel 1), `minCash`/`maxCash` ($),
-  `minOilStock` (Barrel im Tank), `minProducingWells`/`maxProducingWells`, `minLeases`,
-  `minChapter`/`maxChapter` (Kapitel; ohne Kapitel im Spielstand gilt 1 – Ereignisse für spätere
-  Kapitel bekommen z. B. `minChapter: 3, maxChapter: 3`).
+  `minOilStock` (Barrel im Tank), `minProducingWells`/`maxProducingWells`, `minLeases`.
+  Ab Kapitel 2: `minChapter`/`maxChapter` – jedes Ereignis eines späteren Kapitels braucht sie,
+  sonst erscheint es schon in Kapitel 1 (fehlt das Kapitel im Spielstand, gilt Kapitel 1).
 - `chance`: Chance je Runde zwischen 0 und 1 (0.3 = 30 %), sobald die Bedingungen stimmen.
 - Ein Ereignis kommt höchstens einmal je Partie (`once: false` erlaubt Wiederholung –
   frühestens nach `cooldown` Runden, Standard aus balance.yaml). Varianten desselben Anlasses

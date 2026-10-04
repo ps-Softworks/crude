@@ -29,6 +29,8 @@ export const CONDITION_KEYS = [
   'minLeases',
   'minStrength',
   'maxStrength',
+  // Kapitel (Phase 4, Inhalte für Kapitel 2/3): Ereignisse späterer Kapitel tragen
+  // minChapter/maxChapter, damit sie nie in Kapitel 1 erscheinen. Fehlt state.chapter, gilt Kapitel 1.
   'minChapter',
   'maxChapter',
 ] as const;
@@ -268,17 +270,16 @@ export function marksMet(state: Pick<GameState, 'round' | 'events'>, event: Pick
 }
 
 /**
- * Kapitel (Phase 4, minimal): Ereignisse für Kapitel 2 und 3 stehen schon in
- * content/events, sollen aber nicht in Kapitel 1 erscheinen. minChapter/maxChapter
- * prüfen state.chapter – solange der Spielstand kein Kapitel kennt (bis die
- * Zeitsprünge kommen), gilt Kapitel 1. Kapitel 1 bleibt dadurch unverändert.
+ * Zeitsprung (Phase 4): Merkzeichen gehen ins nächste Kapitel mit, gelten dort aber als „vor
+ * Kapitelbeginn“ gesetzt (Runde 0). Ohne das zählte delay ab der Runde des alten Kapitels (bis 16),
+ * obwohl die Runden im neuen Kapitel wieder bei 1 beginnen – ein spätes Kapitel-1-Merkzeichen
+ * schöbe eine Kapitel-2-Szene weit nach hinten. Der Kapitelwechsel (Block A) ruft das auf.
  */
-type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength'> & { chapter?: number };
-
-/** Das laufende Kapitel (1, solange der Spielstand keins kennt). */
-export function currentChapter(state: { chapter?: number }): number {
-  return state.chapter ?? 1;
+export function marksIntoNextChapter(events: EventsState): EventsState {
+  return { ...events, marks: Object.fromEntries(Object.keys(events.marks).map((m) => [m, 0])) };
 }
+
+type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength'> & Partial<Pick<GameState, 'chapter'>>;
 
 /** Der Wert im Zustand, den eine Bedingung prüft. */
 function wertFuer(state: Lage, key: ConditionKey): number {
@@ -301,7 +302,7 @@ function wertFuer(state: Lage, key: ConditionKey): number {
       return state.strength;
     case 'minChapter':
     case 'maxChapter':
-      return currentChapter(state);
+      return state.chapter ?? 1;
   }
 }
 
@@ -327,8 +328,6 @@ function grund(key: ConditionKey, grenze: number): string {
       return 'Dafür braucht es eine eigene Pacht.';
     case 'minStrength':
       return 'Dafür fehlt Jacob die Kraft.';
-    case 'minChapter':
-      return 'Das kommt erst in einem späteren Kapitel.';
     default:
       return 'Das geht gerade nicht.';
   }

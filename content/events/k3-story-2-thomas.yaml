@@ -13,11 +13,13 @@
 #          k3_thomas_brief           (thomas_eigener_weg) Brief von Crane Eastern
 #          k3_thomas_gezwungen_folge (thomas_gezwungen) Der Rat misstraut dem Sohn
 #   R8+    k3_thomas_evelyn          Vandermeer-Ball: Evelyn Crane (Heiratssaat)
-#   R12+   k3_thomas_bruch           (thomas_gekraenkt) Thomas geht – Saat „Rivale“
+#   R12+   k3_thomas_bruch           (thomas_gekraenkt, bei Harlan Oil) Thomas geht – Saat „Rivale“
+#          k3_thomas_bruch_crane     (thomas_gekraenkt + thomas_eigener_weg) Er verlässt Crane Eastern
+#                                    und gründet selbst – ein Rivale beider Häuser
 #
 # Ausgänge für spätere Kapitel (content/relevance.yaml): thomas_firma, thomas_feld,
 # thomas_eigener_weg, thomas_gezwungen, thomas_bruch, thomas_versoehnt_k3, thomas_abteilung,
-# thomas_benutzt, heirat_crane_saat, heirat_crane_verboten.
+# thomas_benutzt, thomas_teilhaber, heirat_crane_saat, heirat_crane_verboten.
 #
 # Anknüpfung Kapitel 1: geburt_verpasst → k3_thomas_weg_fremd.
 # Anknüpfung Kapitel 2 (nach Merge von phase4/inhalte-k2-story nachtragen):
@@ -491,7 +493,8 @@
       default: true
 
 # Entwurf – Philipp überarbeitet.
-# Der Bruch: Thomas wurde zu oft gekränkt. Saat „Rivale“ für Kapitel 4.
+# Der Bruch: Thomas wurde zu oft gekränkt. Saat „Rivale“ für Kapitel 4. Nur, solange Thomas bei Harlan Oil
+# ist – wer bei Crane Eastern arbeitet (thomas_eigener_weg), bekommt k3_thomas_bruch_crane.
 - id: k3_thomas_bruch
   visitor: thomas
   draft: true
@@ -511,6 +514,7 @@
       taught me," he says. "That nobody gets anything for free. Not even a father."
   conditions: { minChapter: 3, maxChapter: 3, minRound: 12 }
   marked: [thomas_gekraenkt]
+  notMarked: [thomas_eigener_weg]
   certain: true
   choices:
     - id: gehen
@@ -553,3 +557,88 @@
       requires: { minCash: 5000 }
       effects: { cash: -5000, thomas: 10 } # TODO-Effekt: brand: { cordova: +1 }, boardLoyalty: { vandermeer: -5 }
       marks: [thomas_abteilung]
+
+# Entwurf – Philipp überarbeitet.
+# Der Bruch – Fassung Crane Eastern: Thomas arbeitet längst bei Margaret und wurde von Jacob gekränkt
+# (Brief zurückbefohlen). Er verlässt Crane Eastern und gründet selbst. Saat „Rivale“ für Kapitel 4.
+- id: k3_thomas_bruch_crane
+  visitor: thomas
+  draft: true
+  title:
+    de: Ein eigenes Zeichen
+    en: A Sign of His Own
+  text:
+    de: >-
+      Thomas kommt unangemeldet, im Reisemantel, den Hut in der Hand. Er hat bei Crane
+      Eastern gekündigt, gestern, vor Margaret, die gelacht und ihm Glück gewünscht hat. Er
+      wird Tankstellen bauen, eigene, unter eigenem Zeichen, mit Geld aus Hallstead von
+      Leuten ohne Namen. „Margaret wollte einen Harlan, der für sie arbeitet. Du wolltest
+      einen, der zurückkommt. Ich habe keinem von euch den Gefallen getan.“ An seiner
+      Weste hängt die Uhrkette seines Großvaters. Ruth hat sie ihm gegeben, nicht Jacob.
+    en: >-
+      Thomas arrives unannounced, in a travelling coat, hat in hand. He resigned from
+      Crane Eastern yesterday, in front of Margaret, who laughed and wished him luck. He
+      will build filling stations, his own, under his own sign, with money from Hallstead
+      from people with no names. "Margaret wanted a Harlan to work for her. You wanted one
+      who would come back. I have done neither of you the favour." On his waistcoat hangs
+      his grandfather's watch chain. Ruth gave it to him, not Jacob.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 12 }
+  marked: [thomas_gekraenkt, thomas_eigener_weg]
+  certain: true
+  choices:
+    - id: gehen
+      label: { de: "Ihm Glück wünschen und es dabei lassen", en: "Wish him luck and leave it at that" }
+      result:
+        de: >-
+          „Glück“, sagt Jacob, und es klingt wie ein Geschäftsbrief. Thomas setzt den Hut
+          auf. Im Herbst steht an der Straße nach Port Ellis eine Tankstelle mit einem
+          Zeichen, das keiner kennt, zwischen einer von Harlan und einer von Crane.
+        en: >-
+          "Luck," says Jacob, and it sounds like a business letter. Thomas puts his hat on.
+          By autumn a filling station stands on the Port Ellis road under a sign no one
+          knows, between one of Harlan's and one of Crane's.
+      effects: { thomas: -20, price: -0.1 } # TODO-Effekt: rival: { thomas: neu }, brand: { cordova: -1 }
+      marks: [thomas_bruch]
+      default: true
+    - id: verzeihung
+      label: { de: "Um Verzeihung bitten – für den Brief", en: "Ask his forgiveness – for the letter" }
+      result:
+        de: >-
+          Jacob sagt, dass er ihn nicht hätte zurückbefehlen dürfen. Er sagt es einmal und
+          ohne Ausrede. Thomas setzt sich. Er baut seine Tankstellen trotzdem. Aber zum
+          Richtfest der ersten lädt er seine Eltern ein, beide.
+        en: >-
+          Jacob says he should not have ordered him home. He says it once, without excuse.
+          Thomas sits down. He builds his stations all the same. But to the topping-out of
+          the first he invites his parents, both of them.
+      effects: { thomas: 20, strength: -20 }
+      marks: [thomas_versoehnt_k3]
+      sharp: true
+    - id: zurueckholen
+      label: { de: "Ihn zurückholen: die Marke von Harlan Oil, mit Budget (5.000 $)", en: "Bring him back: Harlan Oil's brand, with a budget (5,000 $)" }
+      result:
+        de: >-
+          Thomas denkt eine Nacht darüber nach. Dann kommt er, mit seinen Plänen und zwei
+          Leuten von Crane Eastern. „Jetzt schenkst du mir doch eine Abteilung“, sagt er.
+          Margaret schickt Jacob eine Karte: „Gut gekauft, Harlan.“
+        en: >-
+          Thomas thinks it over for a night. Then he comes, with his plans and two people from
+          Crane Eastern. "So you are giving me a department after all," he says. Margaret
+          sends Jacob a card: "Well bought, Harlan."
+      requires: { minCash: 5000 }
+      effects: { cash: -5000, thomas: 10 } # TODO-Effekt: brand: { cordova: +1 }, rival: { margaret: { relation: -10 } }
+      marks: [thomas_abteilung]
+    - id: teilhaber
+      label: { de: "Still mit einsteigen – Jacobs Geld, Thomas' Zeichen (4.000 $)", en: "Buy in quietly – Jacob's money, Thomas's sign (4,000 $)" }
+      result:
+        de: >-
+          Thomas nimmt das Geld, nachdem er den Vertrag zweimal gelesen hat. Jacobs Name
+          steht nirgends. „Wenn ich dich schlage“, sagt Thomas, „verdienst du daran. Das ist
+          das Netteste, was ich dir anbieten kann.“
+        en: >-
+          Thomas takes the money after reading the contract twice. Jacob's name appears
+          nowhere. "If I beat you," says Thomas, "you'll profit from it. That's the kindest
+          thing I can offer you."
+      requires: { minCash: 4000 }
+      effects: { cash: -4000, thomas: 10 } # TODO-Effekt: investment: { thomas_tankstellen: 4000 }, rival: { thomas: neu }
+      marks: [thomas_bruch, thomas_teilhaber]

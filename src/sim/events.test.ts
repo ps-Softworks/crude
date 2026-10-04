@@ -61,36 +61,26 @@ describe('Bedingungen', () => {
     expect(conditionsMet(state, { minLeases: 1 })).toBe(false);
   });
 
+  it('Kapitel: ohne Angabe gilt Kapitel 1, minChapter/maxChapter grenzen ein', () => {
+    expect(state.chapter).toBeUndefined();
+    expect(conditionsMet(state, { minChapter: 1, maxChapter: 1 })).toBe(true);
+    expect(conditionsMet(state, { minChapter: 2 })).toBe(false);
+    expect(conditionsMet({ ...state, chapter: 2 }, { minChapter: 2, maxChapter: 2 })).toBe(true);
+    expect(conditionsMet({ ...state, chapter: 3 }, { minChapter: 2, maxChapter: 2 })).toBe(false);
+  });
+
+  it('kein Ereignis aus content/events/k2-* oder k3-* kann in Kapitel 1 kommen', () => {
+    const spaeter = loadEvents().filter((e) => /^k[23]_/.test(e.id));
+    for (const e of spaeter) {
+      expect(e.conditions.minChapter, e.id).toBeGreaterThanOrEqual(2);
+      expect(conditionsMet({ ...state, round: 8, cash: 1e9, oilStock: 1e9, strength: 50 }, e.conditions), e.id).toBe(false);
+    }
+  });
+
   it('nennt den Grund, warum eine Wahl gesperrt ist', () => {
     expect(unmetReason(state, { minCash: 1000 })).toBe('Dafür fehlt das Geld (1.000 $ nötig).');
     expect(unmetReason(state, { minOilStock: 500 })).toBe('Dafür fehlt Öl im Tank (500 bbl nötig).');
     expect(unmetReason(state, { minCash: 100 })).toBeNull();
-  });
-
-  it('Kapitel (Phase 4): ohne Kapitel im Spielstand gilt Kapitel 1 – Ereignisse für Kapitel 3 kommen dort nie', () => {
-    expect(conditionsMet(state, { minChapter: 1, maxChapter: 1 })).toBe(true);
-    expect(conditionsMet(state, { minChapter: 2 })).toBe(false);
-    expect(conditionsMet(state, { minChapter: 3, maxChapter: 3 })).toBe(false);
-    expect(conditionsMet({ ...state, chapter: 3 }, { minChapter: 3, maxChapter: 3 })).toBe(true);
-    expect(conditionsMet({ ...state, chapter: 4 }, { maxChapter: 3 })).toBe(false);
-    expect(unmetReason(state, { minChapter: 3 })).toBe('Das kommt erst in einem späteren Kapitel.');
-  });
-
-  it('Kapitel (Phase 4): keine Partie in Kapitel 1 bringt ein Ereignis mit minChapter über 1 auf den Schreibtisch', () => {
-    const katalog = loadEvents();
-    const spaeter = new Set(katalog.filter((e) => (e.conditions.minChapter ?? 1) > 1).map((e) => e.id));
-    expect(spaeter.size).toBeGreaterThan(0);
-    for (const seed of ['k1', 'k2', 'k3', 'k4', 'k5']) {
-      let s: GameState = newGame(seed, balance);
-      // Alle Merkzeichen gesetzt: Nur die Kapitel-Bedingung hält die späteren Ereignisse zurück.
-      const alle = Object.fromEntries(katalog.flatMap((e) => e.choices.flatMap((c) => c.marks)).map((m) => [m, 0]));
-      s = { ...s, events: { ...s.events, marks: { ...s.events.marks, ...alle } } };
-      for (let r = 0; r < 16 && !s.finished; r++) {
-        for (const e of deskEvents(s, balance, katalog)) expect(spaeter.has(e.id)).toBe(false);
-        s = endRound(s, balance, katalog);
-      }
-      expect(s.events.seen.filter((id) => spaeter.has(id))).toEqual([]);
-    }
   });
 });
 

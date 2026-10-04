@@ -1,0 +1,230 @@
+# Kapitel 3 – Wendepunkt der Ehe: Folge-Szenen zu Ruths Bogen aus Kapitel 2 (Story-Bibel §7 C, §8).
+# Entwurf – Philipp überarbeitet. Alle Texte hier sind Entwürfe von Claude.
+#
+# WIRD NICHT GELADEN: Das Spiel und npm run check:content lesen nur content/events/*.yaml.
+# Diese Ereignisse warten auf Merkzeichen aus phase4/inhalte-k2-story (k2-story-3-ruth.yaml).
+# Nach dessen Merge: Datei nach content/events/ verschieben, npm run check:content laufen lassen.
+# Bis dahin prüft src/sim/k3Story.test.ts, dass hier nur diese Kapitel-2-Merkzeichen fehlen.
+#
+# Kapitel 2 erzählt schon „Das Datum aus der Kiste“ (k2_ruth_datum) und den Grundbuch-Fund
+# (k2_ruth_eigenes). Kapitel 3 erzählt sie nicht noch einmal, sondern was zehn Jahre daraus gemacht haben:
+#   k3_ruth_laden   (ruth_eigenes_geschaeft) Der Laden am Bahnhof Salt Hill ist ein Geschäft geworden – Ruth braucht
+#                   Kredit, Thornes Bank will ihre Anteile als Pfand
+#   k3_ruth_kiste   (ruth_vertroestet_k2)    Zweimal vertröstet: Die Kiste ist abgeschlossen, der Schlüssel
+#                   liegt auf Jacobs Tisch
+#   k3_ruth_plaetze (ruth_verboten)          Die Bauplätze, die Ruth verkaufen musste, sind jetzt die Bahnhofstraße
+# Jede verfehlte Szene setzt ruth_riss (k3_ruth_wendepunkt_riss/_fremd lesen es).
+
+# Entwurf – Philipp überarbeitet.
+# Kapitel 2: Ruth hat mit Hannah den Laden am Bahnhof Salt Hill gegründet, Jacob hat es geschehen lassen.
+- id: k3_ruth_laden
+  visitor: ruth
+  draft: true
+  title:
+    de: Harlan & Schwester
+    en: Harlan & Sister
+  text:
+    de: >-
+      Aus dem Laden am Bahnhof Salt Hill sind drei geworden und ein Kaufhaus mit zwei Stockwerken.
+      Über der Tür steht „Harlan & Schwester“, und gemeint ist nicht Jacob. Ruth will ein
+      viertes eröffnen, in Port Ellis. Die Trust-Bank gibt ihr den Kredit, aber nur gegen
+      ihre Anteile an Harlan Oil als Pfand. Sie legt den Vertrag vor Jacob hin, die
+      Lesebrille an der Kette. „Ich frage nicht um Erlaubnis. Ich sage es dir, bevor
+      Pettibone es tut.“
+    en: >-
+      The shop by Salt Hill station has become three, and a department store on two floors. Above
+      the door it says "Harlan & Sister", and it does not mean Jacob. Ruth wants to open a
+      fourth, in Port Ellis. The Trust Bank will give her the loan, but only against her
+      Harlan Oil shares as security. She lays the contract before Jacob, her reading
+      glasses on their chain. "I'm not asking permission. I'm telling you before Pettibone
+      does."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 2, maxRound: 8 }
+  marked: [ruth_eigenes_geschaeft]
+  certain: true
+  rival: thorne
+  choices:
+    - id: buergen
+      label: { de: "Selbst für sie bürgen – ohne Bedingungen (4.000 $)", en: "Stand surety for her himself – no conditions (4,000 $)" }
+      result:
+        de: >-
+          Ruth liest die Bürgschaft zweimal, wie alles. Dann unterschreibt sie den Kredit bei
+          einer anderen Bank. „Ohne Bedingungen“, wiederholt sie. „Das hast du noch nie
+          gesagt.“ Im Herbst eröffnet das vierte Haus.
+        en: >-
+          Ruth reads the guarantee twice, as she reads everything. Then she signs the loan
+          with another bank. "No conditions," she repeats. "You've never said that before."
+          The fourth store opens in the autumn.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000, ruth: 20 } # TODO-Effekt: shares: { ruth: gesichert }, rival: { thorne: { trust: -5 } }
+      marks: [ruth_gefragt]
+    - id: raten
+      label: { de: "Ihr sagen, was er von Thornes Bedingungen hält – und es ihr überlassen", en: "Tell her what he thinks of Thorne's terms – and leave it to her" }
+      result:
+        de: >-
+          Jacob redet zehn Minuten über Pfandklauseln, Ruth fünf. Am Ende streicht sie die
+          Klausel selbst durch und schickt den Vertrag zurück. Die Trust-Bank gibt nach. Sie
+          hat damit gerechnet. Er nicht.
+        en: >-
+          Jacob talks for ten minutes about pledge clauses, Ruth for five. In the end she
+          strikes the clause out herself and sends the contract back. The Trust Bank gives
+          way. She expected it. He did not.
+      effects: { ruth: 15, strength: -5 }
+      marks: [ruth_gefragt]
+      sharp: true
+    - id: sabotieren
+      label: { de: "Den Kredit über Pettibone platzen lassen (1.000 $)", en: "Have Pettibone sink the loan (1,000 $)" }
+      result:
+        de: >-
+          Der Kredit platzt, aus „formalen Gründen“. Ruth braucht drei Tage, um herauszufinden,
+          wer die Gründe geliefert hat. Sie sagt es ihm beim Frühstück, in einem Satz, und
+          isst dann weiter.
+        en: >-
+          The loan falls through, "on formal grounds". It takes Ruth three days to find out who
+          supplied the grounds. She tells him at breakfast, in one sentence, and goes on eating.
+      requires: { minCash: 1000 }
+      effects: { cash: -1000, ruth: -30 }
+      marks: [ruth_riss]
+    - id: heraushalten
+      label: { de: "Nichts dazu sagen", en: "Say nothing about it" }
+      result:
+        de: >-
+          Ruth wartet einen Moment, dann nimmt sie den Vertrag wieder an sich. Sie
+          unterschreibt ihn am Nachmittag, mit Thornes Klausel. Jacob erfährt es von Pettibone.
+        en: >-
+          Ruth waits a moment, then takes the contract back. She signs it that afternoon,
+          with Thorne's clause. Jacob hears of it from Pettibone.
+      effects: { ruth: -10 } # TODO-Effekt: shares: { ruth: verpfaendet_thorne }, control: -2
+      marks: [ruth_riss]
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Kapitel 1 und 2: Jacob hat Ruth zweimal vertröstet. Sie bringt das Datum nicht mehr.
+- id: k3_ruth_kiste
+  draft: true
+  title:
+    de: Ein Schlüssel ohne Zettel
+    en: A Key Without a Note
+  text:
+    de: >-
+      Auf Jacobs Schreibtisch liegt ein kleiner Messingschlüssel, ohne Zettel, ohne Wort.
+      Er gehört zu der Holzkiste, die seit zehn Jahren in Ruths Schrank steht, abgeschlossen.
+      Ruth schreibt keine Daten mehr auf. Beim Abendessen erzählt sie von Claras Zeugnis und
+      vom Wetter in Aldmark, freundlich und genau. Den Schlüssel erwähnt sie nicht. Ihr Haar
+      ist inzwischen ganz grau. Sie färbt es nicht.
+    en: >-
+      On Jacob's desk lies a small brass key, with no note, no word. It belongs to the
+      wooden box that has stood locked in Ruth's wardrobe for ten years. Ruth no longer
+      writes down dates. At dinner she talks about Clara's report card and the weather in
+      Aldmark, kindly and precisely. She does not mention the key. Her hair has gone
+      entirely grey now. She does not dye it.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 2, maxRound: 8 }
+  marked: [ruth_vertroestet_k2]
+  certain: true
+  choices:
+    - id: oeffnen
+      label: { de: "Mit Ruth zusammen die Kiste öffnen", en: "Open the box together with Ruth" }
+      result:
+        de: >-
+          In der Kiste liegt die alte Pachturkunde vom Salt Hill, ohne ihren Namen, und
+          darunter zwanzig Jahre Haushaltsbücher. Ruth zeigt ihm, wo das Geld geblieben ist,
+          das er nie vermisst hat. Sie reden bis nach Mitternacht. Unterschrieben wird nichts.
+        en: >-
+          In the box lies the old Salt Hill lease deed, without her name, and beneath it twenty
+          years of household books. Ruth shows him where the money went that he never missed.
+          They talk until past midnight. Nothing is signed.
+      effects: { ruth: 15, strength: -10 }
+      appointments: 2
+      marks: [ruth_gefragt]
+    - id: notar
+      label: { de: "Den Notar rufen – Name, Anteile und Sitz, noch heute (3.000 $)", en: "Call the notary – name, shares and seat, today (3,000 $)" }
+      result:
+        de: >-
+          Der Notar kommt am Abend. Ruth unterschreibt mit derselben Feder wie vor zwanzig
+          Jahren, als sie es nicht durfte. „Jetzt“, sagt sie nur. Den Schlüssel steckt sie
+          wieder ein. Die Kiste bleibt offen.
+        en: >-
+          The notary comes in the evening. Ruth signs with the same pen as twenty years ago,
+          when she was not allowed to. "Now," is all she says. She pockets the key again. The
+          box stays open.
+      requires: { minCash: 3000 }
+      effects: { cash: -3000, ruth: 25 } # TODO-Effekt: shares: { ruth: +5 }, boardMember: ruth, control: -1
+      marks: [ruth_gefragt]
+      sharp: true
+    - id: zuruecklegen
+      label: { de: "Den Schlüssel in ihre Kommode zurücklegen", en: "Put the key back in her chest of drawers" }
+      result:
+        de: >-
+          Jacob legt den Schlüssel zurück, als hätte er ihn nicht gesehen. Am nächsten Tag ist
+          er nicht mehr in der Kommode. Ruth hat ihn weggeworfen, oder sie trägt ihn bei sich.
+          Jacob fragt nicht, was davon schlimmer wäre.
+        en: >-
+          Jacob puts the key back as if he had not seen it. The next day it is no longer in the
+          drawer. Ruth has thrown it away, or she carries it with her. Jacob does not ask which
+          would be worse.
+      effects: { ruth: -20 }
+      marks: [ruth_riss]
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Kapitel 2: Jacob hat Ruths Bauplätze am Bahnhof Salt Hill über den Anwalt rückgängig machen lassen (ruth_verboten).
+- id: k3_ruth_plaetze
+  draft: true
+  title:
+    de: Die neue Bahnhofstraße
+    en: The New Station Street
+  text:
+    de: >-
+      Der Ledger bringt eine Seite über die neue Bahnhofstraße von Salt Hill, mit Foto: ein Hotel
+      mit vier Stockwerken, ein Kaufhaus, eine Bank. Gebaut auf zwei Bauplätzen, die Bullards
+      Landmann vor zehn Jahren billig gekauft hat, von einer Frau, die verkaufen musste. Ruth
+      hat die Zeitung beim Frühstück aufgeschlagen liegen lassen, an dieser Seite. Sie ist
+      schon aus dem Haus.
+    en: >-
+      The Ledger runs a page on Salt Hill's new station street, with a photograph: a hotel of four
+      storeys, a department store, a bank. Built on two plots that Bullard's land agent
+      bought cheap ten years ago, from a woman who had to sell. Ruth has left the paper open
+      at that page on the breakfast table. She has already gone out.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 2, maxRound: 8 }
+  marked: [ruth_verboten]
+  certain: true
+  rival: bullard
+  choices:
+    - id: entschuldigen
+      label: { de: "Ihr nachgehen und sich entschuldigen", en: "Go after her and apologise" }
+      result:
+        de: >-
+          Jacob findet sie am Bahnhof, auf dem Weg zu Hannah. Er sagt den Satz, den er seit
+          zehn Jahren nicht gesagt hat. Ruth hört zu und steigt trotzdem in den Zug. Aber am
+          Sonntag kommt sie zurück, einen Tag früher als angekündigt.
+        en: >-
+          Jacob finds her at the station, on her way to Hannah's. He says the sentence he has
+          not said for ten years. Ruth listens and boards the train all the same. But she comes
+          back on Sunday, a day earlier than she said.
+      effects: { ruth: 15, strength: -10 }
+      appointments: 2
+      sharp: true
+    - id: zurueckkaufen
+      label: { de: "Die Plätze von Bullard zurückkaufen und ihr schenken (5.000 $)", en: "Buy the plots back from Bullard and give them to her (5,000 $)" }
+      result:
+        de: >-
+          Bullards Söhne verkaufen, mit einem Lächeln und einem Aufschlag. Ruth nimmt die
+          Urkunde und legt sie in die Kiste zu den anderen Papieren. „Geschenkt ist nicht
+          dasselbe, Jacob“, sagt sie. „Aber es ist nicht nichts.“
+        en: >-
+          Bullard's sons sell, with a smile and a premium. Ruth takes the deed and lays it in
+          the box with the other papers. "A gift isn't the same, Jacob," she says. "But it isn't
+          nothing."
+      requires: { minCash: 5000 }
+      effects: { cash: -5000, ruth: 10 } # TODO-Effekt: rival: { bullard: { trust: +5 } }
+    - id: weglegen
+      label: { de: "Die Zeitung zusammenfalten", en: "Fold up the newspaper" }
+      result:
+        de: >-
+          Jacob faltet die Zeitung und legt sie auf den Stapel. Als Ruth am Abend heimkommt,
+          liegt sie noch dort. Sie sieht hin, dann ihn. Sie sagt nichts. Das hat sie gelernt.
+        en: >-
+          Jacob folds the paper and lays it on the pile. When Ruth comes home in the evening,
+          it is still there. She looks at it, then at him. She says nothing. She has learned that.
+      effects: { ruth: -15 }
+      marks: [ruth_riss]
+      default: true

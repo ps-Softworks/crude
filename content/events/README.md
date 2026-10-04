@@ -17,8 +17,7 @@ Kurzreferenz der Felder:
   schaltet ein gesperrtes Gebiet aus `content/map.yaml` frei; seine Ranches entstehen dann aus dem Seed.
 - Bedingungen: `minRound`, `maxRound`, `minCash`, `maxCash`, `minOilStock`,
   `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100),
-  `minChapter`, `maxChapter` (Phase 4: Kapitel; solange der Spielstand kein Kapitel kennt, gilt 1 –
-  Ereignisse mit `minChapter: 3` erscheinen also nie in Kapitel 1)
+  `minChapter`, `maxChapter` (Kapitel; ohne Angabe im Spielstand gilt Kapitel 1 – Phase 4)
 - Effekte: `cash`, `oilStock`, `railTariff`, `strength` (Kraft), `ruth`, `thomas` (Beziehung 0–100, 2.7),
   `teams` (eigene Gespanne +/−), `teamsIdle` (eigene Fuhrwerke stehen bis Runde jetzt+n still; 0.2.15+2),
   befristet für `events.timedRounds` Runden (0.2.15+3): `price` ($ je Barrel beim Trust), `production`
@@ -77,6 +76,13 @@ Kurzreferenz der Felder:
   ist das „Gegenstück“ und erlaubt. Merkzeichen für spätere Kapitel: `content/relevance.yaml` (mit Grund).
   Neue Folgen früher folgenloser Merkzeichen: `bullard_rache_folge`, `kerrigan_zusammenbruch`,
   `wegerecht_moss_versoehnt`; Schutz durch `notMarked` (Diebe, Seil, Streik, Lohn, Schlamm, Lager).
+- Kapitel 3, Story-Bögen (Phase 4): `k3-story-1-daniel.yaml` (Daniel Moss als Bezirksstaatsanwalt),
+  `k3-story-2-thomas.yaml` (Thomas im Unternehmen oder nicht), `k3-story-3-ehe.yaml` (Wendepunkt der Ehe),
+  `k3-story-4-vale.yaml` (Mr. Vales Karte – Auftakt Bogen D, auf sie wartet Ruths zweite Probe).
+  Alle mit `minChapter: 3, maxChapter: 3`; Runden zählen innerhalb des Kapitels. Gewünschte neue Wirkungen
+  stehen als `# TODO-Effekt:` neben einer vorläufigen. `content/events/nach-k2/` wird NICHT geladen: Dort
+  liegen Kapitel-3-Ereignisse, die auf Kapitel-2-Merkzeichen warten (Branch `phase4/inhalte-k2-story`) –
+  nach dessen Merge nach `content/events/` verschieben (Test: `src/sim/k3Story.test.ts`). ENTWURF – Philipp überarbeitet.
 - Auftritt (0.2.15+10): `visitor: silas` – das Ereignis kommt als Besuch an Jacobs Schreibtisch (Person
   klopft, tritt ein, redet); die Figur braucht in `content/figures.yaml` einen Namen
   (`silas: { form: muetze, name: Silas }`). `tableau: true` – kommt als Vollbild-Szene (Geburt, Brand,
@@ -86,7 +92,3 @@ Kurzreferenz der Felder:
   Nur wer wirklich ins Büro kommt, bekommt `visitor` (0.2.15+11): Spielt der Text woanders (Saloon,
   Bahnsteig, Veranda, Bohrturm, Bank), bleibt das Ereignis ein Vorfall – sonst widerspricht die Szene
   „Besuch · Silas“ dem eigenen Text. ENTWURF: Philipp segnet die Besetzung ab.
-- Kapitel 3, Story-Bögen (Phase 4): `k3-story-1-daniel.yaml` (Daniel Moss als Bezirksstaatsanwalt, 19),
-  `k3-story-2-thomas.yaml` (Thomas im Unternehmen oder nicht, 9), `k3-story-3-ehe.yaml` (Wendepunkt der Ehe, 10).
-  Alle mit `minChapter: 3, maxChapter: 3`; Runden zählen innerhalb des Kapitels. Gewünschte neue Wirkungen
-  stehen als `# TODO-Effekt:` neben einer vorläufigen. ENTWURF – Philipp überarbeitet.
