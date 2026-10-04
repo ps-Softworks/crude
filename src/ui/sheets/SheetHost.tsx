@@ -19,6 +19,8 @@ import { RigFileSheet } from './RigFileSheet';
 import { RivalsSheet } from './RivalsSheet';
 import type { SheetContext } from './types';
 import { WaitingSheet } from './WaitingSheet';
+// 4.15 Andockpunkt: Börsenticker.
+import { ExchangeSheet } from './ExchangeSheet';
 
 export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   zeitung: { title: 'Zeitung', size: 'brief' },
@@ -35,6 +37,8 @@ export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   glocke: { title: 'Runde beenden', size: 'brief' },
   bericht: { title: 'Was diese Runde geschah', size: 'brief' },
   wartende: { title: 'Wer vor der Tür wartet', size: 'brief' },
+  // 4.15 Andockpunkt: Börsenticker.
+  boerse: { title: 'Börsenticker', size: 'mappe' },
 };
 
 export interface SheetHostProps {
@@ -73,6 +77,8 @@ export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound
     glocke: () => <BellSheet ctx={ctx} onEndRound={onEndRound} onGo={onGo} onChapterEnd={onChapterEnd} />,
     bericht: () => <ReportSheet report={report} onDone={onClose} next={open.then === 'zeitung'} onJournal={() => ctx.open('protokoll', { back: { sheet: 'bericht' } })} />,
     wartende: () => <WaitingSheet ctx={ctx} onVisitor={onVisitor} />,
+    // 4.15 Andockpunkt: Börsenticker.
+    boerse: () => <ExchangeSheet ctx={ctx} />,
   };
   return (
     <Sheet

@@ -2,6 +2,8 @@
 // Objekt; parseBalance prüft es und meldet verständliche Fehler.
 // Seit 0.2.15+5 gehört die Karte (content/map.yaml) mit dazu: parseGameData.
 
+// 4.15 Andockpunkt: Börse und Kauf auf Kredit.
+import { parseExchangeBalance, type ExchangeBalance } from './exchangeBalance';
 import { parseWorldMap, type WorldMap } from './worldMap';
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
@@ -523,6 +525,8 @@ export interface Balance {
   family: FamilyBalance;
   newspaper: NewspaperBalance;
   tutorial: TutorialBalance;
+  // 4.15 Andockpunkt: Börse und Kauf auf Kredit (eigener Abschnitt, gelesen in exchangeBalance.ts).
+  exchange: ExchangeBalance;
 }
 
 /** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
@@ -1536,6 +1540,8 @@ export function parseBalance(raw: unknown): Balance {
     family: parseFamily(raw),
     newspaper: parseNewspaper(raw),
     tutorial: parseTutorial(raw),
+    // 4.15 Andockpunkt: Börse und Kauf auf Kredit.
+    exchange: parseExchangeBalance(raw),
   };
 
   for (const r of balance.transport.pipeline.rights) {

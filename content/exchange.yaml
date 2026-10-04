@@ -1,0 +1,142 @@
+# Börse und Kauf auf Kredit (4.15, GDD §8, §7.2): Texte für Börsenticker, Börsenseite der
+# Zeitung und Briefe des Maklers. Ab Kapitel 3. Zahlen (Kurse, Hebel, Schwellen) stehen in
+# content/balance.yaml unter „exchange“. Jeder Text mit Sprachschlüssel de/en
+# (Englisch darf leer bleiben, dann erscheint Deutsch).
+# Regel aus dem GDD: Die Zeitung nennt das Börsenfieber nie als Zahl – sie deutet an.
+# Platzhalter in Briefen: {aktie} = Name der Aktie, {betrag} = Geldbetrag.
+# ENTWURF: alle Texte sind Vorschläge.
+
+page:
+  de: Börsenbericht aus Hallstead
+  en: Market report from Hallstead
+
+# Die gehandelten Aktien (ids wie in balance.yaml, exchange.stocks).
+stocks:
+  thorne_bahn:
+    name:
+      de: Thorne Golfbahn
+      en: Thorne Gulf Railway
+    note:
+      de: Thornes Bahn von Salt Hill nach Port Ellis und weiter nach Norden. Solide, solange Fracht rollt.
+      en: Thorne's railway from Salt Hill to Port Ellis and on to the north. Solid as long as freight rolls.
+  handelsbank:
+    name:
+      de: Hallsteader Handelsbank
+      en: Hallstead Commercial Bank
+    note:
+      de: Die Bank der alten Familien. Zahlt gute Dividende – und fällt als Erste, wenn Kredite platzen.
+      en: The bank of the old families. Pays a good dividend – and falls first when loans go bad.
+  crane_trust:
+    name:
+      de: Crane Trust
+      en: Crane Trust
+    note:
+      de: Raffinerien, Tanks und Verträge am ganzen Golf. Schwankt weniger als der Markt.
+      en: Refineries, tanks and contracts all along the Gulf. Swings less than the market.
+  motorwagen:
+    name:
+      de: Föderale Motorwagen-Werke
+      en: Federal Motor Carriage Works
+    note:
+      de: Automobile für jedermann, sagt der Prospekt. Im Boom ein Rausch, im Krach ein Abgrund.
+      en: Motor cars for everyone, says the prospectus. A thrill in the boom, an abyss in the crash.
+  westmark_stahl:
+    name:
+      de: Westmark Stahl
+      en: Westmark Steel
+    note:
+      de: Schienen, Rohre, Kessel. Geht mit der Industrie auf und ab.
+      en: Rails, pipes, boilers. Rises and falls with industry.
+
+# Schlagzeile der Börsenseite zu Beginn jeder Runde.
+headlines:
+  # Die Börse ist gerade für Jacob aufgegangen.
+  opened:
+    title:
+      de: Ölgeld drängt an die Börse
+      en: Oil money crowds into the exchange
+    text:
+      de: Makler aus Hallstead eröffnen Büros in Port Ellis. Wer Öl hat, soll jetzt auch Aktien haben.
+      en: Brokers from Hallstead are opening offices in Port Ellis. Whoever has oil should now own shares as well.
+  quiet:
+    title:
+      de: Ruhiger Handel in Hallstead
+      en: Quiet trading in Hallstead
+    text:
+      de: Die Kurse bewegen sich kaum. Die Makler lesen Zeitung und warten.
+      en: Prices barely move. The brokers read the paper and wait.
+  boom:
+    title:
+      de: Die Kurse klettern
+      en: Prices keep climbing
+    text:
+      de: Bahn, Stahl und Motorwagen legen zu. In den Clubs von Hallstead redet man nur noch von Aktien.
+      en: Rail, steel and motor cars are rising. In Hallstead's clubs, people talk of nothing but shares.
+  gloom:
+    title:
+      de: Flaute an der Börse
+      en: Doldrums on the exchange
+    text:
+      de: Kaum jemand kauft, die Makler rauchen vor der Tür. Wer Geduld hat, findet Schnäppchen.
+      en: Hardly anyone is buying, the brokers smoke outside. The patient will find bargains.
+  # Erste Warnstufe: Das Fieber ist hoch oder das Kreditklima überhitzt (Frühwarnzeichen, GDD §7.2).
+  warning:
+    title:
+      de: Makler leihen jedem
+      en: Brokers lend to anyone
+    text:
+      de: Schuhputzer kaufen Motorwagen-Aktien auf Kredit, zehn Dollar Einsatz für hundert Dollar Papier. Ältere Bankiers schütteln den Kopf.
+      en: Shoeshine boys buy motor shares on credit, ten dollars down for a hundred dollars of paper. Older bankers shake their heads.
+  # Zweite Warnstufe: kurz vor dem Kippen.
+  alarm:
+    title:
+      de: Banken heben die Zinsen
+      en: Banks raise their rates
+    text:
+      de: Das Geld wird knapp, die Maklerkredite teurer. In Hallstead fragt man leise, wer eigentlich die Schulden all der Käufer trägt.
+      en: Money is getting tight and broker loans dearer. In Hallstead, people quietly ask who actually carries all those buyers' debts.
+  crash:
+    title:
+      de: Schwarzer Tag in Hallstead
+      en: Black day in Hallstead
+    text:
+      de: Die Kurse stürzen ins Bodenlose. Makler rufen ihre Kredite zurück, wer auf Pump gekauft hat, verliert alles – und mehr.
+      en: Prices plunge into the abyss. Brokers call in their loans; whoever bought on margin loses everything – and more.
+  slump:
+    title:
+      de: Kein Boden in Sicht
+      en: No bottom in sight
+    text:
+      de: Die Kurse fallen weiter. Banken kündigen Kredite, vor den Schaltern stehen Schlangen.
+      en: Prices keep falling. Banks call in loans, queues form at the counters.
+  recovery:
+    title:
+      de: Die Börse atmet auf
+      en: The exchange breathes again
+    text:
+      de: Zum ersten Mal seit dem Krach steigen einzelne Kurse. Wer Bargeld hat, geht jetzt einkaufen.
+      en: For the first time since the crash, some prices are rising. Whoever has cash goes shopping now.
+
+# Briefe und Telegramme des Maklers (im Börsenticker).
+letters:
+  call:
+    title:
+      de: Telegramm vom Makler
+      en: Telegram from the broker
+    text:
+      de: 'Kurs {aktie} gefallen. Sicherheit reicht nicht. Bitte {betrag} nachschießen, sonst Verkauf zum nächsten Termin.'
+      en: '{aktie} has fallen. Margin insufficient. Please remit {betrag}, otherwise sale at next settlement.'
+  liquidated:
+    title:
+      de: Zwangsverkauf
+      en: Forced sale
+    text:
+      de: 'Ihre Aktien {aktie} wurden verkauft. Der Erlös deckt den Kredit nicht: {betrag} gehen zu Ihren Lasten.'
+      en: 'Your {aktie} shares have been sold. The proceeds do not cover the loan: {betrag} is charged to your account.'
+  liquidated_even:
+    title:
+      de: Zwangsverkauf
+      en: Forced sale
+    text:
+      de: 'Ihre Aktien {aktie} wurden verkauft, um den Kredit zu decken.'
+      en: 'Your {aktie} shares have been sold to cover the loan.'

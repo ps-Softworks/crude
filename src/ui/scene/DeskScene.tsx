@@ -40,6 +40,8 @@ import {
   WallMapShape,
 } from './objects/Shapes';
 import { RuthNote } from './RuthNote';
+// 4.15 Andockpunkt: Börsenticker (erscheint erst mit der Börse, Kapitel 3).
+import { ExchangeTicker } from './ExchangeTicker';
 
 /** Wo was liegt, in Prozent der Bühne (unter der Kopfleiste). */
 const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte' | 'tuer', Placement> = {
@@ -319,6 +321,8 @@ export function DeskScene(p: DeskSceneProps) {
           <FolderShape variant="fracht" />,
         )}
         {obj('protokoll', 'Kladde', { status: p.saved ? '✓ gesichert' : undefined }, <NotebookShape />)}
+        {/* 4.15 Andockpunkt: Börsenticker – ohne Börse (Kapitel 1 und 2) nicht da. */}
+        <ExchangeTicker game={game} glow={p.glow === 'boerse' || p.spotlight === 'boerse'} onOpen={() => p.onOpen('boerse')} />
         {obj(
           'glocke',
           game.finished ? 'Kapitel beendet' : 'Runde beenden',

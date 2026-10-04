@@ -6,6 +6,9 @@ import { keyLabel, SHORTCUTS } from '../keys';
 import { Tabs, activeTab } from '../sheet/Tabs';
 import { tester } from '../tester';
 import type { SheetContext } from './types';
+// 4.15 Andockpunkt: Börse im Debug vorziehen.
+import { openExchange } from '../../sim/exchange';
+import { balance } from '../balance';
 
 export interface MenuProps {
   ctx: SheetContext;
@@ -110,6 +113,14 @@ export function MenuSheet(p: MenuProps) {
           <label>
             <input type="checkbox" checked={ctx.debug} onChange={(e) => p.onDebug(e.target.checked)} /> Verdeckte Geologie zeigen
           </label>
+          {/* 4.15 Andockpunkt: Börse zum Ausprobieren vorziehen (gehört sonst zu Kapitel 3). */}
+          {!ctx.game.exchange && !ctx.game.finished && (
+            <p>
+              <button type="button" onClick={() => ctx.onGame(openExchange(ctx.game, balance))}>
+                Börse öffnen (Kapitel 3 vorziehen)
+              </button>
+            </p>
+          )}
           <form
             onSubmit={(e) => {
               e.preventDefault();
