@@ -11,8 +11,8 @@ import { formatDate } from './calendar';
 import type { GameState } from './game';
 import { LOGISTICS_MARKS, pipelineWorks, teamsIdle, withMark } from './logistics';
 import { Rng } from './rng';
-// 4.7 Andockpunkt: Fernleitungen geben dem Weg „Pipeline“ Kapazität dazu.
-import { bigPipelineCapacity } from './bigPipeline';
+// 4.7 Andockpunkt: Fernleitungen geben den Wegen „Pipeline“ (Hafen) und „Bahn“ (Bahnhof) Kapazität dazu.
+import { bigPipelineCapacity, harborTrunkRunning } from './bigPipeline';
 import {
   exclusiveActive,
   hikeChance as thorneHikeChance,
@@ -59,13 +59,15 @@ export function modeCapacity(state: Partial<Pick<GameState, 'logistics' | 'round
   const lg = state.logistics;
   switch (mode) {
     case 'wagon':
+      return t.wagon.capacity;
     case 'rail':
-      return t[mode].capacity;
+      // 4.7 Andockpunkt: plus Fernleitungen zum Bahnhof – ihr Öl fährt mit Thornes Bahn, zu seinem Tarif.
+      return t.rail.capacity + bigPipelineCapacity(state, balance, 'rail');
     case 'teams':
       return !lg || teamsIdle({ round: state.round ?? 0, logistics: lg }) ? 0 : lg.teams * t.teams.capacity;
     case 'pipeline':
-      // 4.7 Andockpunkt: plus laufende Fernleitungen (Kapitel 2+; in Kapitel 1 immer 0).
-      return (lg && pipelineWorks({ logistics: lg }) ? t.pipeline.capacity : 0) + bigPipelineCapacity(state, balance);
+      // 4.7 Andockpunkt: plus laufende Fernleitungen zum Hafen (Kapitel 2+; in Kapitel 1 immer 0).
+      return (lg && pipelineWorks({ logistics: lg }) ? t.pipeline.capacity : 0) + bigPipelineCapacity(state, balance, 'pipeline');
   }
 }
 
@@ -81,8 +83,8 @@ export function modeUnavailable(state: Pick<GameState, 'round' | 'logistics'> & 
     if (lg.teams === 0) return 'Jacob hat keine eigenen Fuhrwerke.';
     if (teamsIdle(state)) return 'Die eigenen Fuhrwerke stehen still.';
   }
-  // 4.7 Andockpunkt: Eine laufende Fernleitung reicht für den Weg „Pipeline“.
-  if (mode === 'pipeline' && !state.bigPipelines?.projects.some((p) => p.status === 'ready')) {
+  // 4.7 Andockpunkt: Eine laufende Fernleitung zum Hafen reicht für den Weg „Pipeline“.
+  if (mode === 'pipeline' && !harborTrunkRunning(state)) {
     if (lg.pipeline === 'damaged') return 'Die Pipeline wird repariert.';
     if (lg.pipeline !== 'ready') return 'Es gibt noch keine Pipeline.';
   }

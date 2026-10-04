@@ -400,7 +400,8 @@ export function threatenThorne(state: GameState, balance: Balance): LogisticsRes
     };
     return { ok: true, state: withMark(out, RIVAL_MARKS.thorneRefused) };
   }
-  const neu = Math.max(th.minTariff, cents(state.railTariff - th.threatCut));
+  // 4.7 Andockpunkt: Liegt der Tarif schon unter minTariff (Fernleitung zum Hafen, Kapitel 2), hebt die Drohung ihn nicht an.
+  const neu = Math.min(state.railTariff, Math.max(th.minTariff, cents(state.railTariff - th.threatCut)));
   return {
     ok: true,
     state: {

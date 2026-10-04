@@ -9,7 +9,11 @@ export const OFFERS: readonly Offer[] = ['low', 'fair', 'generous'];
 export interface PipelineDestination {
   /** Landmarke aus content/map.yaml (Bahnhof oder Hafen). */
   id: string;
-  /** Umgeht die Leitung Thornes Bahn (Hafen)? Nur dann gerät Thorne unter Druck. */
+  /**
+   * Umgeht die Leitung Thornes Bahn (Hafen)? Dann fließt ihr Öl über den Weg „Pipeline“
+   * und Thorne gerät unter Druck. Sonst (Bahnhof) bringt sie das Öl nur zu Thornes
+   * Verladestelle: mehr Kapazität auf dem Weg „Bahn“, aber zu Thornes Tarif.
+   */
   bypassesRail: boolean;
 }
 
@@ -111,6 +115,11 @@ export interface SabotageBalance {
 export interface ThornePressureBalance {
   /** Tarifsenkung je Runde bei vollem Druck in $ je Barrel. */
   cut: number;
+  /**
+   * Eigener Boden für Kapitel 2: so tief senkt Thorne unter Druck (unter
+   * transport.thorne.minTariff aus Kapitel 1, damit die Senkung über mehrere Runden wirkt).
+   */
+  minTariff: number;
   /** Fertige Kapazität zum Hafen (bbl je Runde), ab der der Druck voll ist. */
   fullPressureCapacity: number;
 }
@@ -240,7 +249,7 @@ export function parseBigPipelineBalance(raw: unknown, landowners: readonly strin
     smallUpgradeCost: abNull(b, 'smallUpgradeCost'),
     rights,
     sabotage,
-    thorne: { cut: abNull(b, 'thorne.cut'), fullPressureCapacity },
+    thorne: { cut: abNull(b, 'thorne.cut'), minTariff: abNull(b, 'thorne.minTariff'), fullPressureCapacity },
     carrier: { fee: abNull(b, 'carrier.fee'), volume: abNull(b, 'carrier.volume') },
     assetShare: anteil(b, 'assetShare'),
   };

@@ -13,12 +13,14 @@
 //                     enteignen. Thorne verkauft die Kreuzung seiner Gleise nie freiwillig:
 //                     Forderung, Klage beim Bezirksrichter oder Enteignung. Eigene Pachten
 //                     und Wegerechte aus Kapitel 1 sind schon da.
-//   4. Bau            1–4 Runden je nach Länge, danach volle Kapazität (Transportweg
-//                     „Pipeline“ in transport.ts).
+//   4. Bau            1–4 Runden je nach Länge, danach volle Kapazität: Leitung zum Hafen
+//                     auf dem Transportweg „Pipeline“, Leitung zum Bahnhof auf dem Weg
+//                     „Bahn“ – deren Öl zahlt weiter Thornes Bahntarif (transport.ts).
 //   5. Betrieb        Unterhalt, Sabotage durch Thornes Leute und Rivalen, Wachleute.
 //   Thorne            Jede fertige Leitung zum Hafen nimmt seiner Bahn Fracht weg: Er senkt
-//                     je Runde den Tarif (bis transport.thorne.minTariff) und wagt keine
-//                     Erhöhung mehr – und er schickt Saboteure.
+//                     je Runde den Tarif (bis bigPipelines.thorne.minTariff, dem eigenen
+//                     Boden für Kapitel 2) und wagt keine Erhöhung mehr – er schickt
+//                     Saboteure und schreibt Jacob einen Brief (Ereignis auf thorne_unter_druck).
 //
 // Freischaltung: erst ab balance.bigPipelines.fromChapter (Kapitel 2). In Kapitel 1 gibt
 // es state.bigPipelines nicht – nichts wird gewürfelt, nichts angezeigt.
@@ -26,7 +28,7 @@
 // kleine Schnittstelle PipelineWorld mit Ersatzwerten.
 // Zufall nur aus dem eigenen Strom (Seed + ':fernleitung'). Reine Funktionen.
 
-import type { Balance, LandownerType } from './balance';
+import type { Balance, LandownerType, TransportMode } from './balance';
 import type { Offer } from './bigPipelineBalance';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
@@ -63,15 +65,23 @@ function zahlOder(v: unknown, ersatz: number): number {
 }
 
 /**
- * Liest die Weltgrößen aus dem Zustand, soweit es sie schon gibt (Feldnamen aus dem
- * Entwurf von 4.1: state.world.mood; 4.5: state.chapter). Fehlt etwas, gilt der
+ * Liest die Weltgrößen aus dem Zustand, soweit es sie schon gibt. Stimmung: 4.1 liegt
+ * auf main als state.worldModel.mood (WorldState aus world.ts); state.world.mood bleibt
+ * nur als Rückfall für den alten Entwurfsnamen. Kapitel (4.5): state.chapter. Einfluss
+ * (4.2) und Transportpflicht (4.3) sind noch Entwurfsnamen. Fehlt etwas, gilt der
  * Ersatzwert. 4.x Integration: hier die echten Felder eintragen.
  */
 export function pipelineWorldOf(state: object): PipelineWorld {
-  const s = state as { chapter?: unknown; world?: { mood?: unknown; influence?: unknown }; politics?: { influence?: unknown }; laws?: { commonCarrier?: unknown } };
+  const s = state as {
+    chapter?: unknown;
+    worldModel?: { mood?: unknown };
+    world?: { mood?: unknown; influence?: unknown };
+    politics?: { influence?: unknown };
+    laws?: { commonCarrier?: unknown };
+  };
   return {
     chapter: zahlOder(s.chapter, DEFAULT_PIPELINE_WORLD.chapter),
-    mood: zahlOder(s.world?.mood, DEFAULT_PIPELINE_WORLD.mood),
+    mood: zahlOder(s.worldModel?.mood ?? s.world?.mood, DEFAULT_PIPELINE_WORLD.mood),
     influence: zahlOder(s.politics?.influence ?? s.world?.influence, DEFAULT_PIPELINE_WORLD.influence),
     commonCarrier: s.laws?.commonCarrier === true,
   };
@@ -193,6 +203,8 @@ export const BIG_PIPELINE_READ_MARKS = {
   reputation: 'fernleitung_ruf_gut',
   /** Jacob hat die Querköpfe einschüchtern lassen: alle geben nach – Rache folgt. */
   intimidation: 'fernleitung_einschuechterung',
+  /** Abkommen mit Thorne (sein Brief auf thorne_unter_druck): keine weitere Leitung zum Hafen. */
+  thorneDeal: 'fernleitung_thorne_abkommen',
 } as const;
 
 export const BIG_PIPELINE_READ_MARK_LIST = Object.values(BIG_PIPELINE_READ_MARKS);
@@ -465,6 +477,9 @@ export function surveyRoute(state: GameState, balance: Balance, req: RouteReques
   const geplant = planRoute(state, balance, req);
   if (!geplant.ok) return geplant;
   const plan = geplant.plan;
+  if (plan.bypassesRail && markRound(state, BIG_PIPELINE_READ_MARKS.thorneDeal) !== undefined && bp.projects.some((p) => p.bypassesRail)) {
+    return { ok: false, reason: 'Jacob hat Thorne sein Wort gegeben: keine weitere Leitung zum Hafen.' };
+  }
   if (plan.surveyCost > state.cash) return { ok: false, reason: `Dafür fehlt das Geld (${dollars(plan.surveyCost)} $ nötig).` };
   const project: TrunkProject = {
     id: `fl${bp.nextId}`,
@@ -697,9 +712,23 @@ export function sabotageChanceOf(state: Pick<GameState, 'events'>, balance: Bala
   return Math.min(s.maxChance, chance);
 }
 
-/** Kapazität aller laufenden Fernleitungen (bbl je Runde) – kommt zum Transportweg „Pipeline“ dazu. */
-export function bigPipelineCapacity(state: Partial<Pick<GameState, 'bigPipelines'>>, balance: Balance): number {
-  return (state.bigPipelines?.projects ?? []).filter((p) => p.status === 'ready').length * balance.bigPipelines.capacity;
+/** Auf welchem Transportweg das Öl einer Fernleitung verkauft wird: Hafen → „Pipeline“, Bahnhof → „Bahn“ (Thornes Tarif). */
+export function trunkMode(project: Pick<TrunkProject, 'bypassesRail'>): TransportMode {
+  return project.bypassesRail ? 'pipeline' : 'rail';
+}
+
+/**
+ * Kapazität der laufenden Fernleitungen (bbl je Runde) für einen Transportweg. Leitungen
+ * zum Hafen geben dem Weg „Pipeline“ Kapazität, Leitungen zum Bahnhof dem Weg „Bahn“ –
+ * dort zahlt jedes Barrel weiter Thornes Bahntarif. Ohne Weg: alle laufenden Leitungen.
+ */
+export function bigPipelineCapacity(state: Partial<Pick<GameState, 'bigPipelines'>>, balance: Balance, mode?: TransportMode): number {
+  return (state.bigPipelines?.projects ?? []).filter((p) => p.status === 'ready' && (mode === undefined || trunkMode(p) === mode)).length * balance.bigPipelines.capacity;
+}
+
+/** Läuft eine Fernleitung zum Hafen? Dann geht der Weg „Pipeline“ auch ohne kleine Pipeline. */
+export function harborTrunkRunning(state: Partial<Pick<GameState, 'bigPipelines'>>): boolean {
+  return (state.bigPipelines?.projects ?? []).some((p) => p.status === 'ready' && p.bypassesRail);
 }
 
 /** Druck auf Thorne (0–1): fertige Kapazität zum Hafen im Verhältnis zu thorne.fullPressureCapacity. */
@@ -933,7 +962,8 @@ export function advanceBigPipelines(input: GameState, balance: Balance, opts: Ad
   let railTariff = state.railTariff;
   let thorneCut = state.bigPipelines.thorneCut;
   if (pressure > 0) {
-    const minTariff = balance.transport.thorne.minTariff;
+    // Kapitel 2 hat einen eigenen, tieferen Boden: die Senkung wirkt über mehrere Runden.
+    const minTariff = b.thorne.minTariff;
     const vorher = opts.railTariffBefore;
     if (vorher !== undefined && railTariff > vorher) {
       railTariff = vorher;

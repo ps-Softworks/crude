@@ -38,3 +38,6 @@ bankier: { form: zylinder, name: Mr. Pettibone }
 lusk: { form: zylinder, name: Lusk vom Trust }
 sheriff: { form: hut, name: Sheriff Tatum }
 prediger: { form: kopf, name: Bruder Abel }
+
+# 4.7 Fernleitungen (Kapitel 2): Thorne kommt selbst, wenn er unter Druck steht.
+thorne: { form: zylinder, name: Augustus Thorne }

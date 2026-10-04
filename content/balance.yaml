@@ -623,19 +623,21 @@ worldModel:
 # 4.7 Fernleitungen (GDD §6, Kapitel 2): große Pipelines vom Feld zum Hafen oder Bahnhof.
 # Route planen (gerade Trasse über die Karte) → vermessen → Wegerechte je Ranch verhandeln
 # (Briefe der Landbesitzer, Querköpfe, Stadtrat, Thornes Bahnkreuzung) → Bau über 1–4 Runden.
-# Eine fertige Leitung zum Hafen umgeht Thornes Bahn: Er senkt den Tarif (Druck) – und schickt
-# Saboteure. Code: src/sim/bigPipeline.ts. Alle Zahlen PLATZHALTER bis zur Balance von Kapitel 2.
+# Eine fertige Leitung zum Hafen umgeht Thornes Bahn: Ihr Öl fließt über den Weg „Pipeline“
+# (transport.pipeline.costPerBarrel), Thorne senkt den Tarif (Druck) – und schickt Saboteure.
+# Eine Leitung zum Bahnhof ist billiger und ruhiger, bringt das Öl aber nur auf Thornes Gleise:
+# Sie erhöht die Kapazität des Wegs „Bahn“, jedes Barrel zahlt weiter Thornes Bahntarif. Code: src/sim/bigPipeline.ts. Alle Zahlen PLATZHALTER bis zur Balance von Kapitel 2.
 bigPipelines:
   fromChapter: 2            # in Kapitel 1 unsichtbar
   destinations:             # Landmarken aus content/map.yaml
-    - { id: hafen, bypassesRail: true }              # Hafen Port Ellis: an Thornes Bahn vorbei
-    - { id: bahnhof_portellis, bypassesRail: false } # Bahnhof Port Ellis: Öl bleibt auf Thornes Gleisen
+    - { id: hafen, bypassesRail: true }              # Hafen Port Ellis: an Thornes Bahn vorbei – Weg „Pipeline“
+    - { id: bahnhof_portellis, bypassesRail: false } # Bahnhof Port Ellis: Öl bleibt auf Thornes Gleisen – Weg „Bahn“ zu seinem Tarif
   surveyPerUnit: 60         # Vermessung je Karteneinheit Trasse
   costPerUnit: 3000         # Bau je Karteneinheit (Salt Hill → Hafen ≈ 17 Einheiten ≈ 51.000 $)
   unitsPerRound: 5          # Baufortschritt je Runde …
   minRounds: 1              # … aber immer 1–4 Runden (GDD §6)
   maxRounds: 4
-  capacity: 120000          # bbl je Runde und fertiger Fernleitung
+  capacity: 120000          # bbl je Runde und fertiger Fernleitung (Hafen: Weg „Pipeline“, Bahnhof: Weg „Bahn“)
   upkeepPerUnit: 40         # Streckenwärter je Einheit und Runde
   maxProjects: 3
   smallUpgradeCost: 8000    # Anschluss an die kleine Pipeline aus Kapitel 1: ihre Strecke wird aufgeweitet (Wegerechte hat Jacob schon)
@@ -675,7 +677,8 @@ bigPipelines:
     repairRounds: 1         # so lange steht sie still (im Bau: eine Runde Verzug)
     maxChance: 0.6
   thorne:
-    cut: 0.10               # Tarifsenkung je Runde bei vollem Druck ($ je Barrel, nie unter transport.thorne.minTariff)
+    cut: 0.04               # Tarifsenkung je Runde bei vollem Druck ($ je Barrel): vom Starttarif 0,25 $ fünf Runden bis zum Boden
+    minTariff: 0.08         # eigener Boden in Kapitel 2 (tiefer als transport.thorne.minTariff aus Kapitel 1)
     fullPressureCapacity: 60000 # ab so viel fertiger Kapazität zum Hafen ist der Druck voll
   carrier:                  # Transportpflicht-Gesetz (4.3): fremdes Öl gegen Gebühr
     fee: 0.05

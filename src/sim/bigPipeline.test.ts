@@ -12,6 +12,7 @@ import {
   bigPipelineCapacity,
   bigPipelineCosts,
   bigPipelinesUnlocked,
+  harborTrunkRunning,
   buildRounds,
   cleared,
   DEFAULT_PIPELINE_WORLD,
@@ -29,6 +30,7 @@ import {
   sueRight,
   surveyRoute,
   thornePressure,
+  trunkMode,
   unlockBigPipelines,
   validBigPipelines,
   type PipelineWorld,
@@ -38,10 +40,12 @@ import {
 import { letterText, parsePipelineContent } from './bigPipelineContent';
 import { empireValue } from './empire';
 import { endRound, newGame, type GameState } from './game';
-import { deserializeGame, serializeGame } from './save';
+import { resolveEvent } from './events';
+import { threatenThorne, withMark } from './logistics';
+import { deserializeGame, SAVE_FORMAT, serializeGame } from './save';
 import { loadBalance, rawBalance, rawMap } from './testBalance';
 import { loadEvents } from './testEvents';
-import { capacityLeft, modeCapacity, modeUnavailable } from './transport';
+import { capacityLeft, modeCapacity, modeUnavailable, netPrice, quoteSale, sellOil, tariff } from './transport';
 
 const balance = loadBalance();
 const KAPITEL2: PipelineWorld = { ...DEFAULT_PIPELINE_WORLD, chapter: 2 };
@@ -111,12 +115,49 @@ describe('Fernleitungen: Freischaltung (Kapitel 2)', () => {
 
   it('liest Weltgrößen aus dem Zustand, sonst Ersatzwerte', () => {
     expect(pipelineWorldOf({})).toEqual(DEFAULT_PIPELINE_WORLD);
+    // 4.1 auf main: state.worldModel.mood geht vor dem alten Entwurfsnamen state.world.mood.
+    expect(pipelineWorldOf({ worldModel: { mood: 30 }, world: { mood: 70 } }).mood).toBe(30);
     expect(pipelineWorldOf({ chapter: 2, world: { mood: 70 }, politics: { influence: 65 }, laws: { commonCarrier: true } })).toEqual({
       chapter: 2,
       mood: 70,
       influence: 65,
       commonCarrier: true,
     });
+  });
+});
+
+describe('Fernleitungen: Stimmung aus dem Weltmodell (4.1)', () => {
+  it('eine echte Partie (newGame mit Weltmodell) liefert ihre Stimmung – nicht den Ersatzwert 50', () => {
+    const s = kapitel2('stimmung');
+    expect(s.worldModel).toBeDefined();
+    expect(pipelineWorldOf(s).mood).toBe(s.worldModel.mood);
+    expect(pipelineWorldOf(s).mood).not.toBe(DEFAULT_PIPELINE_WORLD.mood);
+  });
+
+  it('die Stimmung wirkt auf die Wegerechte: im Rundenende ohne vorgegebene Welt entscheidet state.worldModel.mood', () => {
+    const basis = ok(surveyRoute(kapitel2('stimmung2', OHNE_SABOTAGE), OHNE_SABOTAGE, HAFEN)).state;
+    const p = projekt(basis);
+    const r = p.rights.find((x) => x.kind === 'ranch')!;
+    const froh: GameState = { ...basis, worldModel: { ...basis.worldModel, mood: 100 } };
+    const wuetend: GameState = { ...basis, worldModel: { ...basis.worldModel, mood: 0 } };
+    const chance = (st: GameState) => acceptChance(st, OHNE_SABOTAGE, p, r, 'fair', pipelineWorldOf(st));
+    expect(chance(froh)).toBeGreaterThan(chance(wuetend));
+    expect(chance(froh) - chance(wuetend)).toBeCloseTo(Math.min(1, 100 * OHNE_SABOTAGE.bigPipelines.rights.moodWeight), 6);
+    // Über viele Partien: bei guter Stimmung unterschreiben mehr Landbesitzer als bei schlechter (Rundenende liest den Zustand selbst).
+    const zusagen = (mood: number) => {
+      let ja = 0;
+      for (let i = 0; i < 60; i++) {
+        let s = ok(surveyRoute(kapitel2(`stimmung-${i}`, OHNE_SABOTAGE), OHNE_SABOTAGE, HAFEN)).state;
+        s = { ...s, worldModel: { ...s.worldModel, mood } };
+        const recht = projekt(s).rights.find((x) => x.kind === 'ranch' && x.status === 'open');
+        if (!recht) continue;
+        s = ok(askRight(s, OHNE_SABOTAGE, projekt(s).id, recht.id, 'fair')).state;
+        s = advanceBigPipelines(s, OHNE_SABOTAGE);
+        if (projekt(s).rights.find((x) => x.id === recht.id)!.status === 'granted') ja++;
+      }
+      return ja;
+    };
+    expect(zusagen(100)).toBeGreaterThan(zusagen(0));
   });
 });
 
@@ -401,6 +442,41 @@ describe('Fernleitungen: Bau und Betrieb', () => {
     expect(modeCapacity(newGame('k1', balance), balance, 'pipeline')).toBe(0);
   });
 
+  it('eine Leitung zum Bahnhof bringt das Öl nur auf Thornes Gleise: Kapazität für den Weg „Bahn“, zu Thornes Tarif', () => {
+    const s: GameState = { ...fertigeLeitung('bahnhof_portellis'), railTariff: 0.5, oilStock: 200_000, royaltyOil: 0 };
+    const p = projekt(s);
+    expect(p.bypassesRail).toBe(false);
+    expect(trunkMode(p)).toBe('rail');
+    expect(harborTrunkRunning(s)).toBe(false);
+    // Kein billiger Weg „Pipeline“ …
+    expect(modeCapacity(s, balance, 'pipeline')).toBe(0);
+    expect(modeUnavailable(s, 'pipeline')).not.toBeNull();
+    // … sondern mehr Platz auf Thornes Bahn.
+    expect(modeCapacity(s, balance, 'rail')).toBe(balance.transport.rail.capacity + balance.bigPipelines.capacity);
+    expect(bigPipelineCapacity(s, balance, 'rail')).toBe(balance.bigPipelines.capacity);
+    const menge = balance.transport.rail.capacity + 50_000;
+    const verkauf = ok(sellOil(s, balance, 'rail', menge));
+    expect(verkauf.quote.transportCost).toBeCloseTo(menge * 0.5, 2);
+    expect(verkauf.state.shipped.rail).toBe(menge);
+    // Ohne Bahnhof-Leitung passt so viel nicht auf die Bahn.
+    expect(sellOil({ ...s, bigPipelines: undefined }, balance, 'rail', menge).ok).toBe(false);
+  });
+
+  it('Hafen gegen Bahnhof: dieselbe Menge bringt über den Hafen mehr, solange Thornes Tarif über den Pipeline-Kosten liegt', () => {
+    const lage = { oilStock: 200_000, royaltyOil: 0, railTariff: 0.4 };
+    const hafen: GameState = { ...fertigeLeitung('hafen'), ...lage };
+    const bahnhof: GameState = { ...fertigeLeitung('bahnhof_portellis'), ...lage };
+    const menge = 100_000;
+    const ueberHafen = quoteSale(hafen, balance, 'pipeline', menge);
+    const ueberBahnhof = quoteSale(bahnhof, balance, 'rail', menge);
+    expect(tariff(hafen, balance, 'pipeline')).toBe(balance.transport.pipeline.costPerBarrel);
+    expect(tariff(bahnhof, balance, 'rail')).toBe(0.4);
+    expect(netPrice(hafen, balance, 'pipeline')).toBeGreaterThan(netPrice(bahnhof, balance, 'rail'));
+    expect(ueberHafen.net - ueberBahnhof.net).toBeCloseTo(menge * (0.4 - balance.transport.pipeline.costPerBarrel), 2);
+    expect(capacityLeft(hafen, balance, 'pipeline')).toBeGreaterThanOrEqual(menge);
+    expect(capacityLeft(bahnhof, balance, 'rail')).toBeGreaterThanOrEqual(menge);
+  });
+
   it('Unterhalt und Wachleute kosten je Runde', () => {
     let s = fertigeLeitung('hafen', OHNE_SABOTAGE);
     const p = projekt(s);
@@ -408,7 +484,7 @@ describe('Fernleitungen: Bau und Betrieb', () => {
     s = ok(setTrunkGuards(s, p.id, true)).state;
     const k = bigPipelineCosts(s, OHNE_SABOTAGE);
     expect(k.guards).toBe(Math.round(p.length * OHNE_SABOTAGE.bigPipelines.sabotage.guardsPerUnit));
-    const n = advanceBigPipelines({ ...s, railTariff: balance.transport.thorne.minTariff }, OHNE_SABOTAGE, { world: KAPITEL2 });
+    const n = advanceBigPipelines({ ...s, railTariff: balance.bigPipelines.thorne.minTariff }, OHNE_SABOTAGE, { world: KAPITEL2 });
     expect(n.cash).toBe(s.cash - k.total);
   });
 
@@ -433,7 +509,7 @@ describe('Fernleitungen: Bau und Betrieb', () => {
       r.bigPipelines.sabotage.maxChance = 1;
     });
     let s = fertigeLeitung('hafen', immer);
-    s = { ...s, railTariff: immer.transport.thorne.minTariff };
+    s = { ...s, railTariff: immer.bigPipelines.thorne.minTariff };
     const n = advanceBigPipelines(s, immer, { world: KAPITEL2 });
     expect(projekt(n).status).toBe('damaged');
     expect(n.events.marks[BIG_PIPELINE_MARKS.sabotaged]).toBeDefined();
@@ -457,7 +533,7 @@ describe('Fernleitungen: Bau und Betrieb', () => {
   });
 
   it('Transportpflicht (4.3): fremdes Öl bringt Gebühren', () => {
-    const s = { ...fertigeLeitung('hafen', OHNE_SABOTAGE), railTariff: balance.transport.thorne.minTariff };
+    const s = { ...fertigeLeitung('hafen', OHNE_SABOTAGE), railTariff: balance.bigPipelines.thorne.minTariff };
     const ohne = advanceBigPipelines(s, OHNE_SABOTAGE, { world: KAPITEL2 });
     const mit = advanceBigPipelines(s, OHNE_SABOTAGE, { world: { ...KAPITEL2, commonCarrier: true } });
     const c = OHNE_SABOTAGE.bigPipelines.carrier;
@@ -474,8 +550,8 @@ describe('Fernleitungen: Bau und Betrieb', () => {
 });
 
 describe('Fernleitungen: Thorne unter Druck (Fertig-Kriterium 4.7)', () => {
-  it('eine fertige Leitung zum Hafen setzt Thorne unter Druck: Er senkt den Tarif jede Runde bis zum Mindesttarif', () => {
-    const th = balance.transport.thorne;
+  it('eine fertige Leitung zum Hafen setzt Thorne unter Druck: Er senkt den Tarif jede Runde bis zum Boden von Kapitel 2', () => {
+    const th = balance.bigPipelines.thorne;
     let s: GameState = { ...fertigeLeitung('hafen', OHNE_SABOTAGE), railTariff: 0.8 };
     expect(thornePressure(s, OHNE_SABOTAGE)).toBe(1);
     const n = advanceBigPipelines(s, OHNE_SABOTAGE, { world: KAPITEL2 });
@@ -487,6 +563,21 @@ describe('Fernleitungen: Thorne unter Druck (Fertig-Kriterium 4.7)', () => {
     expect(s.bigPipelines!.thorneCut).toBeCloseTo(0.8 - th.minTariff, 2);
   });
 
+  it('vom Starttarif aus wirkt die Senkung über mehrere Runden – der Boden liegt unter dem Mindesttarif aus Kapitel 1', () => {
+    const th = balance.bigPipelines.thorne;
+    expect(th.minTariff).toBeLessThan(balance.transport.thorne.minTariff);
+    let s: GameState = { ...fertigeLeitung('hafen', OHNE_SABOTAGE), railTariff: balance.transport.rail.costPerBarrel };
+    const tarife: number[] = [];
+    for (let i = 0; i < 10; i++) {
+      s = advanceBigPipelines(s, OHNE_SABOTAGE, { world: KAPITEL2 });
+      tarife.push(s.railTariff);
+    }
+    const senkungen = tarife.filter((t, i) => t < (i === 0 ? balance.transport.rail.costPerBarrel : tarife[i - 1])).length;
+    expect(senkungen).toBeGreaterThanOrEqual(4);
+    expect(s.railTariff).toBe(th.minTariff);
+    expect(s.bigPipelines!.letters.filter((l) => l.kind === 'thorneCut').length).toBe(senkungen);
+  });
+
   it('eine Leitung zum Bahnhof (Öl bleibt auf Thornes Gleisen) und eine Leitung im Bau setzen ihn nicht unter Druck', () => {
     const bahnhof: GameState = { ...fertigeLeitung('bahnhof_portellis', OHNE_SABOTAGE), railTariff: 0.8 };
     expect(thornePressure(bahnhof, OHNE_SABOTAGE)).toBe(0);
@@ -494,6 +585,13 @@ describe('Fernleitungen: Thorne unter Druck (Fertig-Kriterium 4.7)', () => {
     let bau = ok(surveyRoute(kapitel2('imbau', OHNE_SABOTAGE), OHNE_SABOTAGE, HAFEN)).state;
     bau = { ...ok(startConstruction(alleRechte(bau), OHNE_SABOTAGE, projekt(bau).id)).state, railTariff: 0.8 };
     expect(advanceBigPipelines(bau, OHNE_SABOTAGE, { world: KAPITEL2 }).railTariff).toBe(0.8);
+  });
+
+  it('Jacobs Drohung aus Kapitel 1 hebt einen Tarif unter dem Kapitel-1-Boden nicht wieder an', () => {
+    const s: GameState = { ...fertigeLeitung('hafen', OHNE_SABOTAGE), railTariff: OHNE_SABOTAGE.bigPipelines.thorne.minTariff };
+    const r = threatenThorne(s, OHNE_SABOTAGE);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.state.railTariff).toBe(OHNE_SABOTAGE.bigPipelines.thorne.minTariff);
   });
 
   it('halber Druck, halbe Senkung', () => {
@@ -526,10 +624,68 @@ describe('Fernleitungen: Thorne unter Druck (Fertig-Kriterium 4.7)', () => {
   });
 });
 
+describe('Fernleitungen: Thornes Antwort auf dem Schreibtisch', () => {
+  const katalog = loadEvents();
+  /** Eine fertige Leitung zum Hafen (Kapitel 2), Thorne beim Starttarif – das Rundenende mit allen Ereignissen. */
+  function druckRunde(seed = 'thorne-brief'): GameState {
+    const s = { ...fertigeLeitung('hafen', OHNE_SABOTAGE, seed), railTariff: balance.transport.rail.costPerBarrel, chapter: 2 } as GameState;
+    return endRound(s, OHNE_SABOTAGE, katalog);
+  }
+
+  it('sobald Thorne senkt, liegt sein Brief im Posteingang (Gegenangebot)', () => {
+    const n = druckRunde();
+    expect(n.events.marks[BIG_PIPELINE_MARKS.thornePressure]).toBeDefined();
+    expect(n.railTariff).toBeLessThan(balance.transport.rail.costPerBarrel);
+    expect(n.events.pending).toContain('fernleitung_thorne_gegenangebot');
+    const brief = katalog.find((e) => e.id === 'fernleitung_thorne_gegenangebot')!;
+    expect(brief.mail).toBe('offer');
+    expect(brief.rival).toBe('thorne');
+  });
+
+  it('Frachtvertrag: noch billiger und eine Weile keine Erhöhung', () => {
+    const n = druckRunde();
+    const r = ok(resolveEvent(n, OHNE_SABOTAGE, katalog, 'fernleitung_thorne_gegenangebot', 'frachtvertrag'));
+    expect(r.state.railTariff).toBeCloseTo(n.railTariff - 0.03, 2);
+    expect(r.state.events.marks.thorne_vertrag).toBeDefined();
+  });
+
+  it('Abkommen: Geld und Waffenstillstand – aber keine zweite Leitung zum Hafen (zum Bahnhof schon)', () => {
+    const n = druckRunde();
+    const r = ok(resolveEvent(n, OHNE_SABOTAGE, katalog, 'fernleitung_thorne_gegenangebot', 'abkommen')).state;
+    expect(r.cash).toBe(n.cash + 2000);
+    expect(r.events.marks[BIG_PIPELINE_READ_MARKS.thorneDeal]).toBeDefined();
+    expect(sabotageChanceOf(r, OHNE_SABOTAGE, projekt(r))).toBe(0);
+    const zweites = balance.world.regions.find((g) => g.kind === 'drillable' && g.geology && g.id !== 'salthill')!;
+    const mitGebiet: GameState = { ...r, regions: [...r.regions, zweites.id] };
+    const nein = surveyRoute(mitGebiet, OHNE_SABOTAGE, { origin: zweites.id, destination: 'hafen' });
+    expect(nein).toEqual({ ok: false, reason: 'Jacob hat Thorne sein Wort gegeben: keine weitere Leitung zum Hafen.' });
+    expect(surveyRoute(mitGebiet, OHNE_SABOTAGE, { origin: zweites.id, destination: 'bahnhof_portellis' }).ok).toBe(true);
+    // Ohne Abkommen ginge die zweite Hafen-Leitung.
+    expect(surveyRoute({ ...n, regions: [...n.regions, zweites.id] }, OHNE_SABOTAGE, { origin: zweites.id, destination: 'hafen' }).ok).toBe(true);
+  });
+
+  it('wer den Brief verbrennt, bekommt Besuch von Thorne selbst', () => {
+    const n = druckRunde();
+    expect(n.events.pending).not.toContain('fernleitung_thorne_besuch');
+    const feind = withMark(n, BIG_PIPELINE_READ_MARKS.thorneFeud);
+    const weiter = endRound({ ...feind, events: { ...feind.events, pending: [] } }, OHNE_SABOTAGE, katalog);
+    expect(weiter.events.pending).toContain('fernleitung_thorne_besuch');
+    const besuch = katalog.find((e) => e.id === 'fernleitung_thorne_besuch')!;
+    expect(besuch.visitor).toBe('thorne');
+    // Mit Waffenstillstand kommt er nicht.
+    const ruhig = withMark(feind, BIG_PIPELINE_READ_MARKS.truce);
+    expect(endRound({ ...ruhig, events: { ...ruhig.events, pending: [] } }, OHNE_SABOTAGE, katalog).events.pending).not.toContain('fernleitung_thorne_besuch');
+  });
+});
+
 describe('Fernleitungen: Spielstand, Balance, Inhalte', () => {
-  it('Spielstand mit Fernleitung lädt wieder; kaputte Fernleitung wird abgelehnt; ohne ist in Ordnung', () => {
+  it('Spielstand mit Fernleitung lädt wieder (Format 14 mit Weltmodell); kaputte Fernleitung wird abgelehnt; ohne ist in Ordnung', () => {
+    expect(SAVE_FORMAT).toBe(14);
     const s = fertigeLeitung();
-    const geladen = deserializeGame(serializeGame(s, 'test'));
+    const text = serializeGame(s, 'test');
+    expect(JSON.parse(text).format).toBe(14);
+    const geladen = deserializeGame(text);
+    expect(geladen.ok && geladen.state.worldModel).toEqual(s.worldModel);
     expect(geladen.ok && geladen.state.bigPipelines).toEqual(s.bigPipelines);
     expect(validBigPipelines(undefined)).toBe(true);
     expect(validBigPipelines({ ...s.bigPipelines, projects: [{ ...projekt(s), status: 'kaputt' }] })).toBe(false);
@@ -537,6 +693,18 @@ describe('Fernleitungen: Spielstand, Balance, Inhalte', () => {
     kaputt.state.bigPipelines.rng = 'x';
     expect(deserializeGame(JSON.stringify(kaputt)).ok).toBe(false);
     expect(deserializeGame(serializeGame(newGame('k1', balance), 'test')).ok).toBe(true);
+  });
+
+  it('alte Spielstände (Format 13, ohne Weltmodell und Fernleitungen) laden über die Migration von main weiter', () => {
+    const s = newGame('alt13', balance);
+    const alt = JSON.parse(serializeGame(s, 'test'));
+    alt.format = 13;
+    delete alt.state.worldModel;
+    delete alt.state.bigPipelines;
+    const geladen = deserializeGame(JSON.stringify(alt));
+    expect(geladen.ok).toBe(true);
+    expect(geladen.ok && geladen.state.bigPipelines).toBeUndefined();
+    expect(geladen.ok && geladen.state.worldModel).toBeDefined();
   });
 
   it('balance.yaml: fehlender Abschnitt und falsches Ziel sind Fehler', () => {
@@ -569,13 +737,22 @@ describe('Fernleitungen: Spielstand, Balance, Inhalte', () => {
 describe('Fernleitungen: Ereignisse (content/events/k2-fernleitung.yaml)', () => {
   it('kommen nur nach Merkzeichen der Fernleitung – also nie in Kapitel 1 – und setzen Merkzeichen, die die Simulation liest', () => {
     const k2 = loadEvents().filter((e) => e.id.startsWith('fernleitung_'));
-    expect(k2.map((e) => e.id)).toEqual(['fernleitung_thorne_unterhaendler', 'fernleitung_querkopf_veranda', 'fernleitung_sabotage_spuren']);
+    expect(k2.map((e) => e.id)).toEqual([
+      'fernleitung_thorne_unterhaendler',
+      'fernleitung_querkopf_veranda',
+      'fernleitung_sabotage_spuren',
+      'fernleitung_thorne_gegenangebot',
+      'fernleitung_thorne_besuch',
+    ]);
     const sim: readonly string[] = Object.values(BIG_PIPELINE_MARKS);
     const gelesen: readonly string[] = Object.values(BIG_PIPELINE_READ_MARKS);
     for (const e of k2) {
       expect(e.marked.length).toBeGreaterThan(0);
-      expect(e.marked.every((m) => sim.includes(m))).toBe(true);
-      for (const c of e.choices) expect(c.marks.every((m) => gelesen.includes(m))).toBe(true);
+      // Mindestens ein Merkzeichen setzt nur die Fernleitung selbst (also nie in Kapitel 1); dazu höchstens eigene Antworten.
+      expect(e.marked.some((m) => sim.includes(m))).toBe(true);
+      expect(e.marked.every((m) => sim.includes(m) || gelesen.includes(m))).toBe(true);
+      // Merkzeichen der Antworten: von der Fernleitung gelesen oder Thornes Frachtvertrag (trust.ts).
+      for (const c of e.choices) expect(c.marks.every((m) => gelesen.includes(m) || m === 'thorne_vertrag')).toBe(true);
     }
   });
 });

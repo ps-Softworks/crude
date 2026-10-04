@@ -178,9 +178,9 @@ function Planer({ game, onChange }: { game: GameState; onChange: (s: GameState) 
             {plan.plan.buildRounds === 1 ? 'Runde' : 'Runden'} · {plan.plan.rights.filter((r) => !cleared(r)).length} Wegerechte offen (fair etwa {money(plan.plan.rightsCost)})
           </p>
           {plan.plan.bypassesRail ? (
-            <p className="hint">Am Hafen vorbei an Thornes Bahn: Er wird den Tarif senken müssen – und sich wehren.</p>
+            <p className="hint">Am Hafen vorbei an Thornes Bahn: billig durch die eigene Leitung. Thorne wird den Tarif senken müssen – und sich wehren.</p>
           ) : (
-            <p className="klein">Das Öl bleibt auf Thornes Gleisen – er hat keinen Grund, nachzugeben.</p>
+            <p className="klein">Das Öl bleibt auf Thornes Gleisen: mehr Platz auf der Bahn, aber jedes Barrel zahlt seinen Tarif. Er hat keinen Grund, nachzugeben.</p>
           )}
           <Aktion result={surveyRoute(game, balance, req)} onDone={onChange}>
             {`Trasse vermessen (${money(plan.plan.surveyCost)})`}
@@ -263,7 +263,13 @@ function Projekt({ game, project, onChange }: { game: GameState; project: TrunkP
           Im Bau – noch {project.roundsLeft} {project.roundsLeft === 1 ? 'Runde' : 'Runden'}.
         </p>
       )}
-      {project.status === 'ready' && <p>Läuft: bis {B.capacity.toLocaleString('de-DE')} Barrel je Runde über den Weg „Pipeline“.</p>}
+      {project.status === 'ready' && (
+        <p>
+          {project.bypassesRail
+            ? `Läuft: bis ${B.capacity.toLocaleString('de-DE')} Barrel je Runde über den Weg „Pipeline“.`
+            : `Läuft: bis ${B.capacity.toLocaleString('de-DE')} Barrel je Runde mehr auf dem Weg „Bahn“ – zu Thornes Tarif.`}
+        </p>
+      )}
       {project.status === 'damaged' && <p className="warn">Sabotiert – wird repariert, noch {project.roundsLeft} {project.roundsLeft === 1 ? 'Runde' : 'Runden'}.</p>}
       {project.status === 'rights' && (
         <ul className="trasse-rechte">
