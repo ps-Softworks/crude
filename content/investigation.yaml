@@ -1,0 +1,96 @@
+# Ermittler (4.11, GDD §4 und §10): Texte fürs Schattenbuch in der Schreibtischschublade.
+# Entwurf von Claude – Philipp überarbeitet.
+#
+# traces   – je Spur ein Satz, so wie Jacob ihn ins Schattenbuch schreiben würde.
+#            Schlüssel = Merkzeichen aus balance.yaml (investigation.traces) oder die Art
+#            einer neuen Spur aus Kapitel 2 (vertuschung, zeugenkauf, einflussnahme).
+# stages   – wo Delaney gerade steht (Ruhe, Gerücht, Vorermittlung, Anklage, abgeschlossen).
+# heat     – die Hitze als Wort (Schwellen: balance.yaml investigation.heatWords).
+# verdicts – wie der letzte Fall ausging.
+# npm run check:content prüft, dass jede Spur aus balance.yaml hier einen Text hat.
+
+traces:
+  moss_betrogen:
+    de: "Ezekiel Moss' Pachtpapier für hundert Dollar. Er konnte nicht lesen, was er unterschrieb."
+    en: "Ezekiel Moss's lease paper for a hundred dollars. He couldn't read what he signed."
+  silas_betrogen:
+    de: "Bücher ohne Gewinn, gezeigt an Silas Brandt. Ruth weiß, wo die richtigen liegen."
+    en: "Books without profit, shown to Silas Brandt. Ruth knows where the real ones are."
+  silas_kronzeuge:
+    de: "Silas erzählt in jedem Saloon von Cordova, wie Jacob Harlan rechnet. Ein Zeuge, der nicht vergisst."
+    en: "Silas tells every saloon in Cordova how Jacob Harlan does his sums. A witness who does not forget."
+  sheriff_bezahlt:
+    de: "Fünfzig Dollar für Sheriff Tatum, damit er öfter vorbeischaut."
+    en: "Fifty dollars for Sheriff Tatum so he'd come by more often."
+  nora_bestechung:
+    de: "Geld für einen freundlichen Artikel, angeboten einer Reporterin, die alles aufschreibt."
+    en: "Money for a friendly article, offered to a reporter who writes everything down."
+  courier_gekauft:
+    de: "Ein gekaufter Bericht im Courier. Nora Whitlock hat ihn ausgeschnitten."
+    en: "A bought report in the Courier. Nora Whitlock clipped it out."
+  bullard_rache:
+    de: "Bullards Seil, nachts angeschnitten. Zwei Männer wissen, wer sie bezahlt hat."
+    en: "Bullard's cable, cut at night. Two men know who paid them."
+  vale_geld:
+    de: "Ein Umschlag von einem Herrn im grauen Mantel. Keine Quittung, kein Absender."
+    en: "An envelope from a gentleman in a grey coat. No receipt, no sender."
+  thorne_exklusiv:
+    de: "Ein Exklusivvertrag mit Thorne Rail, den kein anderer Förderer zu sehen bekam."
+    en: "An exclusive contract with Thorne Rail that no other producer got to see."
+  vertuschung:
+    de: "Papiere im Ofen – und jemand, der gesehen hat, wer sie hineinwarf."
+    en: "Papers in the stove – and someone who saw who threw them in."
+  zeugenkauf:
+    de: "Ein Zeuge, der sich gegen Geld an nichts mehr erinnert. Bis er Geld von jemand anderem bekommt."
+    en: "A witness who remembers nothing for money. Until someone else pays him."
+  einflussnahme:
+    de: "Telefonate nach Hallstead, um einen Bundesanwalt loszuwerden. Delaney kennt jeden Namen."
+    en: "Telephone calls to Hallstead to get rid of a federal prosecutor. Delaney knows every name."
+
+stages:
+  ruhe:
+    de: "Niemand stellt Fragen. Noch nicht."
+    en: "Nobody is asking questions. Not yet."
+  geruecht:
+    de: "In Cordova wird geredet. Delaney sitzt in seinem Büro und hört zu."
+    en: "People are talking in Cordova. Delaney sits in his office and listens."
+  vorermittlung:
+    de: "Delaney ermittelt. Er lädt Leute vor, liest Grundbücher und schreibt alles auf."
+    en: "Delaney is investigating. He summons people, reads land registers and writes everything down."
+  anklage:
+    de: "Die Anklage ist erhoben. Das Bundesgericht in Cordova hat einen Termin."
+    en: "Charges have been filed. The federal court in Cordova has set a date."
+  abgeschlossen:
+    de: "Der Fall ist abgeschlossen. Delaney hat die Akte ins Regal gestellt – nicht in den Ofen."
+    en: "The case is closed. Delaney has put the file on the shelf – not in the stove."
+
+heat:
+  kuehl:
+    de: "kühl"
+    en: "cool"
+  warm:
+    de: "warm"
+    en: "warm"
+  heiss:
+    de: "heiß"
+    en: "hot"
+  gluehend:
+    de: "glühend"
+    en: "red-hot"
+
+verdicts:
+  eingestellt:
+    de: "Delaney hat die Vorermittlung eingestellt."
+    en: "Delaney dropped the preliminary investigation."
+  freispruch:
+    de: "Die Geschworenen haben Jacob freigesprochen."
+    en: "The jury acquitted Jacob."
+  vergleich:
+    de: "Jacob hat sich mit dem Justizministerium verglichen."
+    en: "Jacob settled with the Department of Justice."
+  geldstrafe:
+    de: "Schuldig – eine Geldstrafe."
+    en: "Guilty – a fine."
+  schwere_strafe:
+    de: "Schuldig – eine hohe Strafe und ein Zwangsverkauf."
+    en: "Guilty – a heavy fine and a forced sale."

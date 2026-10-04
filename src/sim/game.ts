@@ -24,6 +24,9 @@ import { advanceLogistics, newLogistics, settleStorage, spillOver, type Logistic
 import { advanceTransport, noShipments } from './transport';
 import { settleTakeover } from './trust';
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
+// 4.11 Andockpunkt: Ermittler und Forschung (ab Kapitel 2).
+import { advanceInvestigation, type InvestigationState } from './investigation';
+import { advanceResearch, type ResearchState } from './research';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
@@ -98,6 +101,11 @@ export interface GameState {
   log: string[];
   /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
   roundLogStart: number;
+  // 4.11 Andockpunkt: entstehen erst ab Kapitel 2 (fehlen in Kapitel 1 und in älteren Spielständen).
+  /** Delaneys Ermittlungen, Spuren und Gegenmittel (src/sim/investigation.ts). */
+  investigation?: InvestigationState;
+  /** Versuchswerkstatt, Techniken, Patente (src/sim/research.ts). */
+  research?: ResearchState;
 }
 
 /**
@@ -211,7 +219,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Türme und Pumpen (0.2.15+7): Turmmiete und Pumpenunterhalt, ebenfalls vor den Zinsen.
   const verzinst = settleLoans(settleRigs(advanceLogistics(rivale, balance), balance), balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
-  const gefahren = advanceTransport(verzinst, balance);
+  // 4.11 Andockpunkt: Ermittler und Forschung – in Kapitel 1 kommt derselbe Zustand zurück.
+  const gefahren = advanceResearch(advanceInvestigation(advanceTransport(verzinst, balance), balance), balance);
   const state = { ...checkBankruptcy(gefahren, balance), roundLogStart };
   if (state.ending === 'pleite') return state;
   if (state.round >= state.totalRounds) {

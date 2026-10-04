@@ -1,0 +1,198 @@
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
+import { BalanceError, type Balance } from './balance';
+import { endRound, newGame, type GameState } from './game';
+import {
+  advanceResearch,
+  buildWorkshop,
+  buyLicense,
+  hasTech,
+  parseResearchBalance,
+  parseResearchContent,
+  rivalsHaveTech,
+  startResearch,
+  stopResearch,
+  techEffect,
+  techTier,
+  techViews,
+  toggleRefuse,
+  validResearch,
+  worldTech,
+  type ResearchState,
+} from './research';
+import { deserializeGame, serializeGame } from './save';
+import { loadBalance } from './testBalance';
+
+const balance = loadBalance();
+
+type K2 = GameState & { chapter?: number; research?: ResearchState; world?: unknown };
+
+function kapitel2(extra: Partial<K2> = {}): K2 {
+  return { ...newGame('forschung', balance), cash: 100000, chapter: 2, ...extra };
+}
+
+function ok(r: { ok: true; state: GameState } | { ok: false; reason: string }): K2 {
+  if (!r.ok) throw new Error(r.reason);
+  return r.state as K2;
+}
+
+function runden(state: GameState, n: number, b: Balance = balance): K2 {
+  let s = state;
+  for (let i = 0; i < n; i++) s = { ...advanceResearch(s, b), round: s.round + 1 };
+  return s as K2;
+}
+
+/** Ohne Zufall: jede Runde genau die Punkte der Förderstufe. */
+const fest: Balance = { ...balance, research: { ...balance.research, luck: { min: 1, max: 1 } } };
+
+describe('Forschung – Kapitel 1 bleibt unberührt (4.11)', () => {
+  it('in Kapitel 1 kommt derselbe Zustand zurück, Werkstatt und Lizenzen gibt es nicht', () => {
+    const g = newGame('k1', balance);
+    expect(advanceResearch(g, balance)).toBe(g);
+    expect(buildWorkshop(g, balance).ok).toBe(false);
+    expect((endRound(g, balance) as K2).research).toBeUndefined();
+  });
+
+  it('in Kapitel 2 ohne Werkstatt und Patente ändert die Abrechnung nichts', () => {
+    const g = kapitel2();
+    expect(advanceResearch(g, balance)).toBe(g);
+  });
+});
+
+describe('Werkstatt und Forschung (GDD §5, §6)', () => {
+  it('die Werkstatt kostet einmal research.workshop und ist Voraussetzung', () => {
+    const g = kapitel2();
+    expect(startResearch(g, balance, 'rotary', 0).ok).toBe(false);
+    const w = ok(buildWorkshop(g, balance));
+    expect(w.cash).toBe(g.cash - balance.research.workshop);
+    expect(buildWorkshop(w, balance).ok).toBe(false);
+    expect(startResearch(w, balance, 'rotary', 0).ok).toBe(true);
+  });
+
+  it('je Runde kostet die Förderstufe Geld und bringt Punkte; ist die Punktzahl erreicht, gehört Jacob die Technik', () => {
+    const t = fest.research.techs.find((x) => x.id === 'tanklaster')!;
+    const stufe = fest.research.funding[1];
+    let s = ok(startResearch(ok(buildWorkshop(kapitel2(), fest)), fest, 'tanklaster', 1));
+    const vorher = s.cash;
+    s = runden(s, 1, fest);
+    expect(s.cash).toBe(vorher - stufe.cost);
+    const n = Math.ceil(t.points / stufe.points);
+    s = runden(s, n - 1, fest);
+    expect(hasTech(s, 'tanklaster')).toBe(true);
+    expect(s.research!.project).toBeNull();
+    expect(techEffect(s, fest, 'trucks')).toBe(1);
+  });
+
+  it('erst die Voraussetzung: Rollenmeißel braucht Drehbohren', () => {
+    const w = ok(buildWorkshop(kapitel2(), balance));
+    expect(startResearch(w, balance, 'rollenmeissel', 0).ok).toBe(false);
+    const v = techViews(w, balance).find((x) => x.id === 'rollenmeissel')!;
+    expect(v.status).toBe('gesperrt');
+    expect(v.missing).toEqual(['rotary']);
+  });
+
+  it('anhalten behält den Fortschritt; ohne Geld wartet die Werkstatt', () => {
+    let s = ok(startResearch(ok(buildWorkshop(kapitel2(), fest)), fest, 'thermal_cracking', 0));
+    s = runden(s, 2, fest);
+    const stand = s.research!.progress.thermal_cracking;
+    expect(stand).toBe(2 * fest.research.funding[0].points);
+    s = ok(stopResearch(s, fest));
+    s = runden(s, 2, fest);
+    expect(s.research!.progress.thermal_cracking).toBe(stand);
+    s = { ...ok(startResearch(s, fest, 'thermal_cracking', 0)), cash: 10 };
+    const pleite = runden(s, 1, fest);
+    expect(pleite.research!.progress.thermal_cracking).toBe(stand);
+    expect(pleite.cash).toBe(10);
+  });
+
+  it('der Fortschritt schwankt mit dem Zufall, aber deterministisch', () => {
+    const start = ok(startResearch(ok(buildWorkshop(kapitel2(), balance)), balance, 'thermal_cracking', 0));
+    const a = runden(start, 3);
+    const b = runden(start, 3);
+    expect(a.research).toEqual(b.research);
+    const p = a.research!.progress.thermal_cracking;
+    const L = balance.research.luck;
+    expect(p).toBeGreaterThanOrEqual(3 * balance.research.funding[0].points * L.min - 0.01);
+    expect(p).toBeLessThanOrEqual(3 * balance.research.funding[0].points * L.max + 0.01);
+  });
+});
+
+describe('Patente und Lizenzen (GDD §5)', () => {
+  it('wer zuerst erfindet, hält das Patent; hat die Welt die Technik schon, gibt es nur „eigen“', () => {
+    const s = ok(startResearch(ok(buildWorkshop(kapitel2(), fest)), fest, 'tanklaster', 1));
+    const frueh = runden(s, 5, fest);
+    expect(frueh.research!.owned.tanklaster).toBe('patent');
+    const spaet = runden({ ...s, world: { tech: 90 } } as K2, 5, fest);
+    expect(spaet.research!.owned.tanklaster).toBe('eigen');
+  });
+
+  it('eine Lizenz gibt es erst, wenn andere die Technik haben', () => {
+    const g = kapitel2();
+    expect(worldTech(g, balance)).toBe(balance.research.worldFallback.tech);
+    expect(buyLicense(g, balance, 'thermal_cracking').ok).toBe(false);
+    const welt = { ...g, world: { tech: 60 } } as K2;
+    const l = ok(buyLicense(welt, balance, 'thermal_cracking'));
+    expect(l.research!.owned.thermal_cracking).toBe('lizenz');
+    expect(l.cash).toBe(welt.cash - balance.research.techs.find((t) => t.id === 'thermal_cracking')!.license);
+    expect(techTier(l, balance, 'raffinerie')).toBe(2);
+    expect(techTier(l, balance, 'bohren')).toBe(1);
+  });
+
+  it('Lizenzgebühren für eigene Patente, sobald die Welt so weit ist – außer Jacob verweigert sie', () => {
+    let s = ok(startResearch(ok(buildWorkshop(kapitel2(), fest)), fest, 'tanklaster', 1));
+    s = runden(s, 5, fest);
+    expect(s.research!.owned.tanklaster).toBe('patent');
+    const rueckstaendig = s;
+    expect(advanceResearch(rueckstaendig, fest)).toBe(rueckstaendig);
+    expect(rivalsHaveTech(rueckstaendig, fest, 'tanklaster')).toBe(false);
+    const weit = { ...s, world: { tech: 60 } } as K2;
+    expect(advanceResearch(weit, fest).cash).toBe(weit.cash + fest.research.patentIncome);
+    expect(rivalsHaveTech(weit, fest, 'tanklaster')).toBe(true);
+    const verweigert = ok(toggleRefuse(weit, fest, 'tanklaster'));
+    expect(advanceResearch(verweigert, fest).cash).toBe(verweigert.cash);
+    expect(rivalsHaveTech(verweigert, fest, 'tanklaster')).toBe(false);
+    expect(toggleRefuse(weit, fest, 'rotary').ok).toBe(false);
+  });
+
+  it('Kennzahlen summieren sich über alle eigenen Techniken', () => {
+    const welt = { ...kapitel2(), world: { tech: 60 } } as K2;
+    const s = ok(buyLicense(ok(buyLicense(welt, balance, 'rotary')), balance, 'rollenmeissel'));
+    const t = (id: string) => balance.research.techs.find((x) => x.id === id)!;
+    expect(techEffect(s, balance, 'drillTime')).toBeCloseTo((t('rotary').effects.drillTime ?? 0) + (t('rollenmeissel').effects.drillTime ?? 0), 6);
+    expect(techTier(s, balance)).toBe(2);
+    expect(hasTech(s, 'thermal_cracking')).toBe(false);
+  });
+});
+
+describe('Forschung – Spielstand, Inhalte, Spielzahlen', () => {
+  it('Spielstand mit Forschung lässt sich sichern und laden; kaputte Forschung wird abgelehnt', () => {
+    const s = runden(ok(startResearch(ok(buildWorkshop(kapitel2(), balance)), balance, 'rotary', 0)), 2);
+    expect(validResearch(s.research)).toBe(true);
+    const geladen = deserializeGame(serializeGame(s, 'test'));
+    expect(geladen.ok).toBe(true);
+    const kaputt = { ...s, research: { ...s.research!, owned: { rotary: 'geklaut' } } };
+    expect(deserializeGame(serializeGame(kaputt as GameState, 'test')).ok).toBe(false);
+  });
+
+  it('content/research.yaml hat zu jeder Technik und Förderstufe einen Text', () => {
+    const text = readFileSync(new URL('../../content/research.yaml', import.meta.url), 'utf8');
+    expect(parseResearchContent('content/research.yaml', text, balance).errors).toEqual([]);
+    const fehlt = parseResearchContent('x', 'techs: { rotary: { name: { de: a }, text: { de: b } } }\ndomains: { bohren: { de: a }, raffinerie: { de: a }, transport: { de: a } }\nfunding: [{ de: a }]', balance);
+    expect(fehlt.errors.length).toBeGreaterThan(0);
+  });
+
+  it('balance.yaml: Voraussetzungen stehen weiter oben, Kennzahlen sind bekannt', () => {
+    const roh = () => parse(readFileSync(new URL('../../content/balance.yaml', import.meta.url), 'utf8'));
+    expect(() => parseResearchBalance(roh())).not.toThrow();
+    const r1 = roh();
+    r1.research.techs[0].requires = ['rollenmeissel'];
+    expect(() => parseResearchBalance(r1)).toThrow(BalanceError);
+    const r2 = roh();
+    r2.research.techs[0].effects = { fliegen: 1 };
+    expect(() => parseResearchBalance(r2)).toThrow(BalanceError);
+    const r3 = roh();
+    r3.research.techs[1].domain = 'zauberei';
+    expect(() => parseResearchBalance(r3)).toThrow(BalanceError);
+  });
+});

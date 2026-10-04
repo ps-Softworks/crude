@@ -508,3 +508,127 @@ tutorial:
   endAfterProducedRounds: 2  # fertig, wenn die erste Quelle 2 Runden gefördert hat (die Verkaufsrunde ist vorbei)
   deeperMinChance: 25        # PLATZHALTER: tiefer bohren nur raten, wenn der Geologe der nächsten Stufe mind. 25 % gibt
   loanRounding: 100          # vorgeschlagene Kredite auf 100 $ aufgerundet (mindestens credit.minLoan)
+
+# 4.11 Ermittler (GDD §4 „Hitze & Schattenbuch“, §10 „Ermittlungen & Justiz“), ab Kapitel 2.
+# Spuren: Merkzeichen früherer schmutziger Entscheidungen mit Schwere 1–5; ihre Summe ist die Hitze.
+# witness: true = ein Zeuge – verblasst nie und bringt Delaney zu Beginn der Vorermittlung Beweise.
+# Texte im Schattenbuch: content/investigation.yaml. Delaneys Auftritte: content/events/k2-delaney.yaml.
+# PLATZHALTER Kapitel 2: Beträge grob geschätzt (Kapitel 2 rechnet mit größerem Geld), Balance klärt sich mit 4.x.
+investigation:
+  fromChapter: 2
+  traces:
+    - { mark: moss_betrogen, severity: 3 }                 # Moss' Pachtpapier für 100 $
+    - { mark: silas_betrogen, severity: 2 }                # frisierte Bücher für Silas
+    - { mark: silas_kronzeuge, severity: 2, witness: true } # Silas redet in jedem Saloon
+    - { mark: sheriff_bezahlt, severity: 2 }               # Schutzgeld an Sheriff Tatum
+    - { mark: nora_bestechung, severity: 2 }               # Bestechung der Presse
+    - { mark: courier_gekauft, severity: 1 }               # gekaufter Zeitungsbericht
+    - { mark: bullard_rache, severity: 3 }                 # Bullards Seil anschneiden lassen (Sabotage)
+    - { mark: vale_geld, severity: 1 }                     # Geld unbekannter Herkunft (Mr. Vale)
+    - { mark: thorne_exklusiv, severity: 1 }               # geheimer Exklusivvertrag mit der Bahn
+  goodMarks: [moss_fair, silas_fair, nora_ehrlich, sheriff_umgangen, eli_versorgt]  # Leumund vor Gericht
+  worldFallback: { mood: 50, government: null }  # Ersatz bis zum Weltmodell (4.1)
+  fadeEvery: 8           # GDD §4: −1 Schwere je Spur alle 8 Runden, solange niemand ermittelt
+  jumpFade: 1            # Zeitsprung vor Kapitel 2: so viele Stufen verblassen auf einmal (Zeugen nicht)
+  rumorAt: 3             # Hitze ab hier: Gerücht (Nora fragt nach)
+  rumorRounds: 2         # so viele Runden bleibt es mindestens beim Gerücht, bevor Delaney ermittelt
+  probeAt: 5             # Hitze ab hier: Vorermittlung (Delaney kommt)
+  chargeAt: 60           # Beweise (0–100) ab hier: Anklage
+  heatWords: { warm: 3, hot: 5, glowing: 9 }  # Hitze als Wort im Schattenbuch (darunter: kühl)
+  trialDelay: 2          # Runden von der Anklage bis zum Urteil
+  cooldown: 4            # Runden nach einem Fall, bevor ein neuer beginnen kann
+  evidence:
+    perHeat: 2.5         # Beweise je Runde je Hitzepunkt
+    perWitness: 15       # einmalig je Zeuge zu Beginn der Vorermittlung
+    lawyerCut: 3         # weniger Beweise je Runde je Anwaltsstufe
+    transferredDecay: 5  # Beweise, die je Runde verfallen, solange Delaney versetzt ist
+    hostileFactor: 1.3   # hinausgeworfen: Delaney gräbt schneller
+    divertedFactor: 0.75 # Nora schreibt über Crane: Delaney schaut auch dorthin
+    candid: 10           # offen geantwortet: sofort so viel mehr Beweise …
+    slipChance: 0.3      # Interview: Risiko eines Versprechers …
+    slip: 10             # … der Delaney zur Vorermittlung so viele Beweise bringt
+  trial:
+    base: 0.25           # Grundchance einer Verurteilung
+    perEvidence: 0.006   # + je Beweispunkt
+    perLawyer: 0.08      # − je Anwaltsstufe
+    perGood: 0.05        # − je Leumund-Merkzeichen
+    moodWeight: 0.004    # + je Punkt Stimmung unter 50 (− darüber)
+    interview: 0.08      # − nach einem Interview mit Nora
+    min: 0.05
+    max: 0.9
+  fine:
+    perHeat: 800         # $ Strafe je Hitzepunkt der offenen Spuren
+    candidFactor: 0.5    # offen geantwortet: halbe Strafe
+    heavyAt: 12          # Hitze ab hier: schwere Strafe (Zwangsverkauf) …
+    heavyFactor: 2       # … und doppelte Geldstrafe
+  lawyer:
+    costPerLevel: 150    # $ je Runde je Stufe
+    max: 5               # GDD §10: Anwälte Qualität 1–5
+    early: 1             # Anwalt auf Abruf (Antwort auf Delaneys Ankunft)
+    summoned: 2          # auf den Anwalt verwiesen (Antwort auf Delaneys Besuch)
+  destroy:
+    cost: 1500           # Spur vernichten
+    cut: 2               # so viele Stufen weniger
+    chance: 0.35         # Chance, dass jemand zusieht: neue Spur „Vertuschung“ …
+    severity: 2          # … mit dieser Schwere …
+    evidence: 10         # … und, wenn ermittelt wird, so viele Beweise mehr
+  witness:
+    cost: 3000           # Zeugen kaufen
+    evidenceCut: 25      # Beweise weniger
+    severity: 3          # neue Spur „Zeugenkauf“
+  scapegoat:
+    evidenceCut: 30      # einmal je Fall
+    strength: 10         # kostet Kraft
+  pressure:
+    cost: 5000           # Spenden und Telefonate in Hallstead
+    rounds: 4            # so lange ist Delaney versetzt
+    chance: { handel: 0.7, volksbund: 0.25, provinz: 0.5, none: 0.5 }  # je regierender Partei (none: ohne Weltmodell)
+    failEvidence: 15     # misslungen: so viele Beweise mehr …
+    severity: 2          # … und eine neue Spur „Einflussnahme“
+  crown:
+    evidenceCut: 40      # Kronzeuge gegen den Crane Trust
+
+# 4.11 Forschung bis Technikstufe II (GDD §5, §6, §7.1), ab Kapitel 2.
+# Texte: content/research.yaml. Wirkung lesen andere Systeme über techEffect/hasTech/techTier (src/sim/research.ts).
+# PLATZHALTER Kapitel 2.
+research:
+  fromChapter: 2
+  workshop: 3000         # Versuchswerkstatt einrichten (einmalig)
+  funding:               # Förderstufen: Kosten je Runde und Forschungspunkte je Runde
+    - { cost: 500, points: 1 }     # sparsam
+    - { cost: 1200, points: 2.5 }  # kräftig
+  luck: { min: 0.5, max: 1.5 }     # Fortschritt je Runde schwankt
+  patentIncome: 400      # $ Lizenzgebühren je Runde und Patent, sobald die Welt die Technik braucht
+  worldFallback: { tech: 25 }      # Technikstand der Welt (0–100) bis zum Weltmodell (4.1)
+  # worldAt: ab diesem Technikstand der Welt haben andere die Technik (Lizenz kaufbar, kein Patent mehr).
+  # Voraussetzungen (requires) müssen weiter oben stehen.
+  techs:
+    - id: rotary         # Drehbohren (Stufe I, GDD §5): schneller, tiefer
+      tier: 1
+      domain: bohren
+      points: 4
+      worldAt: 20
+      license: 2500
+      effects: { drillTime: -0.25, depth: 150 }
+    - id: rollenmeissel  # Rollenmeißel (Stufe II): harte Schichten
+      tier: 2
+      domain: bohren
+      points: 6
+      requires: [rotary]
+      worldAt: 40
+      license: 6000
+      effects: { drillTime: -0.15, drillCost: -0.15, depth: 150 }
+    - id: thermal_cracking  # Thermisches Cracken (Stufe II, GDD §6): Benzinausbeute 20 % → 40 % (Raffinerie 4.6)
+      tier: 2
+      domain: raffinerie
+      points: 8
+      worldAt: 45
+      license: 8000
+      effects: { gasolineYield: 0.2 }
+    - id: tanklaster     # Tanklaster (Stufe II, GDD §6): klein, flexibel, für Tankstellen
+      tier: 2
+      domain: transport
+      points: 5
+      worldAt: 35
+      license: 4000
+      effects: { trucks: 1 }

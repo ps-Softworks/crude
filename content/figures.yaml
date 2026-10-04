@@ -38,3 +38,5 @@ bankier: { form: zylinder, name: Mr. Pettibone }
 lusk: { form: zylinder, name: Lusk vom Trust }
 sheriff: { form: hut, name: Sheriff Tatum }
 prediger: { form: kopf, name: Bruder Abel }
+# 4.11 Andockpunkt: Bundesanwalt Delaney (ab Kapitel 2, content/events/k2-delaney.yaml).
+delaney: { form: hut, name: Bundesanwalt Delaney }

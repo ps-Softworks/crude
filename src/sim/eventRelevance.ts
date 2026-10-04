@@ -24,6 +24,7 @@ import type { Balance } from './balance';
 import type { ContentError } from './eventContent';
 import type { EventChoice, EventDef } from './events';
 import { RIVAL_MARKS } from './trust';
+import { DELANEY_READ_MARKS } from './investigation'; // 4.11 Andockpunkt
 
 export type Verdict = 'stark' | 'gegenstueck' | 'schwach' | 'termin';
 
@@ -54,7 +55,14 @@ export interface RelevanceReport {
 
 /** Merkzeichen, die die Simulation liest (Rivalen, Wegerechte der Pipeline). */
 export function simReadMarks(balance: Balance): string[] {
-  return [...Object.values(RIVAL_MARKS), ...balance.transport.pipeline.rights.map((r) => r.mark)];
+  return [
+    ...Object.values(RIVAL_MARKS),
+    ...balance.transport.pipeline.rights.map((r) => r.mark),
+    // 4.11 Andockpunkt: Delaney liest die Antworten auf seine Ereignisse, die Spuren und den Leumund.
+    ...DELANEY_READ_MARKS,
+    ...balance.investigation.traces.map((t) => t.mark),
+    ...balance.investigation.goodMarks,
+  ];
 }
 
 /**

@@ -40,6 +40,13 @@ import {
   WallMapShape,
 } from './objects/Shapes';
 import { RuthNote } from './RuthNote';
+// 4.11 Andockpunkt: Schublade (Schattenbuch) und Blaupause (Werkstatt), erst ab Kapitel 2.
+import { localize } from '../../sim/i18n';
+import { heat, heatWord, investigationUnlocked } from '../../sim/investigation';
+import { researchUnlocked } from '../../sim/research';
+import { investigationContent } from '../investigationContent';
+import { BlueprintShape } from './objects/BlueprintShape';
+import { DrawerShape } from './objects/Shapes';
 
 /** Wo was liegt, in Prozent der Bühne (unter der Kopfleiste). */
 const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte' | 'tuer', Placement> = {
@@ -56,6 +63,9 @@ const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte
   fracht: { left: 19, top: 75, width: 15, height: 22 },
   protokoll: { left: 36, top: 76, width: 9, height: 21 },
   glocke: { left: 86, top: 70, width: 12, height: 27 },
+  // 4.11 Andockpunkt: unter Ruths Zettel und neben dem Kassenbuch.
+  schattenbuch: { left: 47, top: 85, width: 22, height: 12 },
+  werkstatt: { left: 73, top: 75, width: 12, height: 22 },
 };
 
 export interface DeskSceneProps {
@@ -319,6 +329,16 @@ export function DeskScene(p: DeskSceneProps) {
           <FolderShape variant="fracht" />,
         )}
         {obj('protokoll', 'Kladde', { status: p.saved ? '✓ gesichert' : undefined }, <NotebookShape />)}
+        {/* 4.11 Andockpunkt: Schattenbuch und Werkstatt – in Kapitel 1 nicht auf dem Tisch. */}
+        {investigationUnlocked(game, balance) &&
+          obj('schattenbuch', 'Schublade', { status: `Hitze: ${localize(investigationContent.heat[heatWord(heat(game, balance), balance)])}` }, <DrawerShape />)}
+        {researchUnlocked(game, balance) &&
+          obj(
+            'werkstatt',
+            'Werkstatt',
+            { status: game.research?.project ? 'forscht' : undefined },
+            <BlueprintShape />,
+          )}
         {obj(
           'glocke',
           game.finished ? 'Kapitel beendet' : 'Runde beenden',

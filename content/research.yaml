@@ -1,0 +1,38 @@
+# Forschung bis Technikstufe II (4.11, GDD §5, §6): Texte für die Werkstatt-Mappe.
+# Entwurf von Claude – Philipp überarbeitet.
+#
+# techs   – je Technik aus balance.yaml (research.techs) ein Name und ein Satz.
+# domains – Bereiche, in denen eine Technik wirkt.
+# funding – je Förderstufe aus balance.yaml (research.funding) ein Name, in derselben Reihenfolge.
+# npm run check:content prüft, dass jede Technik und jede Förderstufe einen Text hat.
+
+techs:
+  rotary:
+    name: { de: "Drehbohren (Rotary)", en: "Rotary drilling" }
+    text:
+      de: "Ein drehender Meißel statt des Fallmeißels: schneller, tiefer, und er kommt auch durch weichen Sand, in dem das Seil versagt."
+      en: "A turning bit instead of the dropping one: faster, deeper, and it gets through soft sand where the cable fails."
+  rollenmeissel:
+    name: { de: "Rollenmeißel", en: "Roller cone bit" }
+    text:
+      de: "Zwei gezahnte Kegel, die sich durch harten Fels mahlen. Weniger Wechsel, weniger Stillstand am Turm."
+      en: "Two toothed cones that grind through hard rock. Fewer changes, less standing still at the rig."
+  thermal_cracking:
+    name: { de: "Thermisches Cracken", en: "Thermal cracking" }
+    text:
+      de: "Unter Druck und Hitze zerbricht schweres Öl in leichtes: doppelt so viel Benzin aus demselben Rohöl – für eine Raffinerie."
+      en: "Under pressure and heat, heavy oil breaks into light: twice the gasoline from the same crude – for a refinery."
+  tanklaster:
+    name: { de: "Tanklaster", en: "Tank truck" }
+    text:
+      de: "Ein Lastwagen mit Kessel: klein, aber er fährt dorthin, wo keine Schiene liegt."
+      en: "A truck with a tank: small, but it goes where no rail runs."
+
+domains:
+  bohren: { de: "Bohren", en: "Drilling" }
+  raffinerie: { de: "Raffinerie", en: "Refining" }
+  transport: { de: "Transport", en: "Transport" }
+
+funding:
+  - { de: "sparsam", en: "frugal" }
+  - { de: "kräftig", en: "generous" }

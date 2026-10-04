@@ -3,6 +3,9 @@
 // Seit 0.2.15+5 gehört die Karte (content/map.yaml) mit dazu: parseGameData.
 
 import { parseWorldMap, type WorldMap } from './worldMap';
+// 4.11 Andockpunkt: Ermittler und Forschung lesen ihre Abschnitte selbst.
+import { parseInvestigationBalance, type InvestigationBalance } from './investigation';
+import { parseResearchBalance, type ResearchBalance } from './research';
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
 
@@ -523,6 +526,9 @@ export interface Balance {
   family: FamilyBalance;
   newspaper: NewspaperBalance;
   tutorial: TutorialBalance;
+  // 4.11 Andockpunkt: Ermittler (Delaney, Hitze) und Forschung (Technikstufe II), ab Kapitel 2.
+  investigation: InvestigationBalance;
+  research: ResearchBalance;
 }
 
 /** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
@@ -1536,6 +1542,9 @@ export function parseBalance(raw: unknown): Balance {
     family: parseFamily(raw),
     newspaper: parseNewspaper(raw),
     tutorial: parseTutorial(raw),
+    // 4.11 Andockpunkt
+    investigation: parseInvestigationBalance(raw),
+    research: parseResearchBalance(raw),
   };
 
   for (const r of balance.transport.pipeline.rights) {

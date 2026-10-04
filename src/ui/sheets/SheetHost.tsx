@@ -19,6 +19,9 @@ import { RigFileSheet } from './RigFileSheet';
 import { RivalsSheet } from './RivalsSheet';
 import type { SheetContext } from './types';
 import { WaitingSheet } from './WaitingSheet';
+// 4.11 Andockpunkt: Schattenbuch (Ermittler) und Werkstatt (Forschung).
+import { ShadowBookSheet } from './ShadowBookSheet';
+import { WorkshopSheet } from './WorkshopSheet';
 
 export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   zeitung: { title: 'Zeitung', size: 'brief' },
@@ -35,6 +38,9 @@ export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   glocke: { title: 'Runde beenden', size: 'brief' },
   bericht: { title: 'Was diese Runde geschah', size: 'brief' },
   wartende: { title: 'Wer vor der Tür wartet', size: 'brief' },
+  // 4.11 Andockpunkt
+  schattenbuch: { title: 'Schattenbuch', size: 'brief' },
+  werkstatt: { title: 'Werkstatt', size: 'mappe' },
 };
 
 export interface SheetHostProps {
@@ -73,6 +79,9 @@ export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound
     glocke: () => <BellSheet ctx={ctx} onEndRound={onEndRound} onGo={onGo} onChapterEnd={onChapterEnd} />,
     bericht: () => <ReportSheet report={report} onDone={onClose} next={open.then === 'zeitung'} onJournal={() => ctx.open('protokoll', { back: { sheet: 'bericht' } })} />,
     wartende: () => <WaitingSheet ctx={ctx} onVisitor={onVisitor} />,
+    // 4.11 Andockpunkt
+    schattenbuch: () => <ShadowBookSheet ctx={ctx} />,
+    werkstatt: () => <WorkshopSheet ctx={ctx} />,
   };
   return (
     <Sheet

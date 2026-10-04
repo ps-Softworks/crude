@@ -22,6 +22,9 @@ export const SHEET_IDS = [
   'bericht',
   /** Wer vor der Tür wartet, wenn es mehrere sind (0.2.15+11). */
   'wartende',
+  // 4.11 Andockpunkt: Schattenbuch in der Schublade und Werkstatt-Mappe (beide erst ab Kapitel 2 auf dem Tisch).
+  'schattenbuch',
+  'werkstatt',
 ] as const;
 export type SheetId = (typeof SHEET_IDS)[number];
 
