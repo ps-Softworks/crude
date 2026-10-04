@@ -163,6 +163,16 @@ function freshBill(): BillState {
   return { stage: 'idle', pressure: 0, voteIn: 0, cooldown: 0, proposals: 0, passedRound: null, lastVote: null, weakened: false, lobbyVote: 0 };
 }
 
+/**
+ * Abstimmungsergebnis in ganzen Prozent, passend zum Ausgang: Angenommen ist ein
+ * Gesetz erst über 50 %, also zeigt die Zeitung dann mindestens 51 : 49; ein
+ * Gleichstand (50 : 50) ist abgelehnt.
+ */
+export function votePercent(yes: number, passed: boolean): number {
+  const ja = Math.round(yes * 100);
+  return passed ? Math.max(51, ja) : Math.min(50, ja);
+}
+
 /** Gesetze zu Kampagnenbeginn: nichts beschlossen, eigener Zufall, Marktanteil des Trusts aus dem Seed. */
 export function newLaws(seed: string, lb: LawsBalance, parties: Record<Party, number>): LawsState {
   const rng = new Rng(seedFromString(`${seed}:gesetze`));
@@ -220,6 +230,8 @@ export function advanceLaws(input: LawsState, view: LawView, catalog: readonly L
   const trustShare = clamp(
     input.trustShare +
       t.revert * (t.base - input.trustShare) +
+      t.government[view.government] +
+      (t.credit * (view.credit - 50)) / 50 +
       (round.crashing ? t.crash : 0) +
       (round.glut ? t.glut : 0) +
       t.noise * (2 * rng.float() - 1) +
@@ -335,7 +347,7 @@ export interface LawReport {
   kind: LawNewsKind;
   title: string;
   text: string;
-  /** Abstimmung: Ja/Nein in ganzen Prozent (Summe 100). */
+  /** Abstimmung: Ja/Nein in ganzen Prozent (Summe 100), gerundet passend zum Ausgang (angenommen ≥ 51). */
   vote: { title: string; yesLabel: string; noLabel: string; yes: number; no: number } | null;
 }
 
@@ -349,7 +361,7 @@ export function lawReport(laws: Pick<LawsState, 'news'> | undefined, catalog: re
     const t = content.laws;
     const text = localize(def.news[kind].text, lang);
     const ausblick = item.outlook ? ` ${localize(t.outlook[item.outlook], lang)}` : '';
-    const ja = item.yes === undefined ? null : Math.round(item.yes * 100);
+    const ja = item.yes === undefined ? null : votePercent(item.yes, kind === 'passed');
     return {
       law: def.id,
       kind,

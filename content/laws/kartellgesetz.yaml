@@ -11,17 +11,19 @@ summary:
 # Ab so viel Druck kann der Antrag kommen (Gleichgewicht eines Grundes = add ÷ 0,15).
 threshold: 11
 # Druckpunkte je Runde, solange der Grund stimmt (mehrere Gründe zählen zusammen).
+# Die Marktbeherrschung wiegt am schwersten: Volksbund-Regierung, Wut und starke
+# Fraktion zusammen (1,3 → Gleichgewicht 8,7) bleiben ohne mächtigen Trust unter der Schwelle.
 pressure:
   - when: { trustShare: { min: 0.4 } }      # der Trust beherrscht den Markt
-    add: 1
-  - when: { trustShare: { min: 0.5 } }      # … erdrückend
+    add: 1.2
+  - when: { trustShare: { min: 0.5 } }      # … erdrückend – dann reicht das allein, außer die Handelspartei hält die Hand darüber
     add: 1
   - when: { mood: { max: 45 } }             # die Leute sind wütend
-    add: 0.6
-  - when: { government: volksbund }         # die Partei gegen die Trusts regiert
-    add: 1
-  - when: { volksbund: { min: 0.38 } }      # starke Volksbund-Fraktion
     add: 0.4
+  - when: { government: volksbund }         # die Partei gegen die Trusts regiert
+    add: 0.6
+  - when: { volksbund: { min: 0.38 } }      # starke Volksbund-Fraktion
+    add: 0.3
   - when: { government: handel }            # die Handelspartei hält die Hand darüber
     add: -0.8
 
@@ -30,7 +32,7 @@ votes: { handel: 0.1, volksbund: 0.85, provinz: 0.5 }
 swing:
   - when: { mood: { max: 40 } }
     add: 0.04
-  - when: { trustShare: { min: 0.55 } }
+  - when: { trustShare: { min: 0.5 } }      # erdrückender Trust: auch Zögernde stimmen dafür
     add: 0.04
   - when: { crash: true }                   # nach dem Crash kauft der Trust die Pleitefirmen – Empörung
     add: 0.03
@@ -41,7 +43,7 @@ effects:
     moodShift: 1           # die Leute sehen, dass Hallstead handelt
   rules:
     cartelBan: 1           # Absprachen sind illegal (ab Kapitel 2: Preisabsprachen mit Rivalen strafbar)
-    breakupFrom: 0.5       # ab 50 % Marktanteil droht das Zerschlagungsverfahren
+    breakupFrom: 0.45      # ab 45 % Marktanteil droht das Zerschlagungsverfahren (in gut jeder dritten Welt liegt der Trust bei geltendem Gesetz einmal darüber)
 
 # VORBEREITET (ab Kapitel 2): was Jacob mit Gefallen im Parlament tun kann.
 lobby:
@@ -49,7 +51,7 @@ lobby:
   block: { label: { de: "Abgeordnete umstimmen", en: "Turn members of Parliament" } }
   weaken:
     label: { de: "Das Gesetz aufweichen", en: "Water the act down" }
-    rules: { cartelBan: 1, breakupFrom: 0.7 }
+    rules: { cartelBan: 1, breakupFrom: 0.6 }
   delay: { label: { de: "Die Debatte in die Länge ziehen", en: "Drag out the debate" } }
 
 news:

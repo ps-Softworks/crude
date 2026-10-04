@@ -619,6 +619,8 @@ worldModel:
       start: { min: 0.30, max: 0.46 }
       base: 0.38             # dahin kehrt der Anteil langsam zurück (Neue drängen nach, Alte versiegen)
       revert: 0.02
+      government: { handel: 0.0025, volksbund: -0.002, provinz: 0 }   # je Runde: unter der Handelspartei wachsen Trusts ungestört, unter dem Volksbund schrumpfen sie (Aufsicht)
+      credit: 0.001          # je Runde × (Kreditklima − 50) ÷ 50: billiges Geld → Übernahmen, knappes Geld → der Trust hält sich zurück
       crash: 0.006           # je Crash-Runde dazu: Pleitefirmen werden billig aufgekauft
       glut: 0.03             # Riesenfund → Ölschwemme → kleine Förderer gehen ein, der Trust kauft
       noise: 0.01

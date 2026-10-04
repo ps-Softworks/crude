@@ -4,6 +4,7 @@
 // Aufruf: npm run welt   (optional: npm run welt -- 500   für 500 Seeds)
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { loadBalance } from '../src/sim/testBalance';
+import { votePercent } from '../src/sim/laws';
 import { advanceWorld, newWorld, worldPriceFactor, worldRateAdd, type WorldNews } from '../src/sim/world';
 import {
   CAMPAIGN_ROUNDS,
@@ -160,7 +161,7 @@ function chronik(seed: string): string {
     const GESETZ = { proposed: 'Antrag', passed: 'beschlossen', failed: 'abgelehnt', debate: 'Debatte' };
     const text = [
       ...wichtig.map((n) => (n === 'election' ? `Wahl: ${PARTEI[w.government]} regiert` : NAMEN[n])),
-      ...parlament.map((n) => `${laws.find((l) => l.id === n.law)?.name.de ?? n.law} ${GESETZ[n.kind]}${n.yes !== undefined ? ` (${Math.round(n.yes * 100)} % Ja)` : ''}`),
+      ...parlament.map((n) => `${laws.find((l) => l.id === n.law)?.name.de ?? n.law} ${GESETZ[n.kind]}${n.yes !== undefined ? ` (${votePercent(n.yes, n.kind === 'passed')} % Ja)` : ''}`),
     ].join(', ');
     zeilen.push(`- Jahr ${jahr}: ${text} (Weltpreis ${zahl(w.price)}, Kreditklima ${zahl(w.credit, 0)}, Spannung ${zahl(w.tension, 0)})`);
   }

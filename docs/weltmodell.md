@@ -3,7 +3,7 @@
 Stand: 2026-10-04 · Version 0.4.3
 
 Erzeugt mit `npm run welt` (tools/weltlaeufe.ts, Regeln in src/sim/world.ts und src/sim/laws.ts, Zahlen in content/balance.yaml unter worldModel, Gesetze in content/laws/).
-300 Welten (Seeds `welt-0` bis `welt-299`) über eine ganze Kampagne: 292 Runden = 73 Spieljahre, **ohne Spieler**. Rechenzeit 0.3 s.
+300 Welten (Seeds `welt-0` bis `welt-299`) über eine ganze Kampagne: 292 Runden = 73 Spieljahre, **ohne Spieler**. Rechenzeit 0.2 s.
 
 - Alle Werte endlich: **ja** · Krisenzahlen in der Mehrheit der Welten im GDD-Ziel: **ja**
 
@@ -13,35 +13,35 @@ Je Zelle: 10 % · **Median** · 90 % der Welten am Ende des Spieljahres; Min/Max
 
 | Größe | Jahr 0 | Jahr 1 | Jahr 2 | Jahr 4 | Jahr 5 | Jahr 10 | Jahr 15 | Jahr 20 | Jahr 25 | Jahr 30 | Jahr 40 | Jahr 50 | Jahr 60 | Jahr 73 | Min | Max |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Weltpreis (Index) | 1,00 · **1,00** · 1,00 | 0,99 · **1,00** · 1,00 | 0,98 · **1,00** · 1,02 | 0,85 · **1,00** · 1,07 | 0,85 · **0,99** · 1,09 | 0,83 · **0,96** · 1,23 | 0,82 · **1,00** · 1,31 | 0,80 · **0,99** · 1,27 | 0,79 · **0,96** · 1,17 | 0,73 · **0,94** · 1,12 | 0,76 · **0,90** · 1,08 | 0,70 · **0,86** · 1,01 | 0,70 · **0,84** · 0,95 | 0,65 · **0,80** · 0,93 | 0,35 | 2,34 |
+| Weltpreis (Index) | 1,00 · **1,00** · 1,00 | 0,99 · **1,00** · 1,00 | 0,98 · **1,00** · 1,02 | 0,85 · **1,00** · 1,07 | 0,85 · **0,99** · 1,09 | 0,83 · **0,96** · 1,23 | 0,82 · **1,00** · 1,31 | 0,80 · **0,99** · 1,27 | 0,79 · **0,96** · 1,18 | 0,73 · **0,94** · 1,13 | 0,76 · **0,90** · 1,08 | 0,70 · **0,86** · 1,02 | 0,70 · **0,84** · 0,94 | 0,66 · **0,81** · 0,93 | 0,35 | 2,34 |
 | Nachfrage (Index) | 1,00 · **1,00** · 1,00 | 1,05 · **1,05** · 1,05 | 1,09 · **1,09** · 1,09 | 1,19 · **1,19** · 1,20 | 1,24 · **1,25** · 1,25 | 1,54 · **1,55** · 1,56 | 1,90 · **1,92** · 1,93 | 2,33 · **2,36** · 2,39 | 2,83 · **2,88** · 2,92 | 3,41 · **3,48** · 3,54 | 4,74 · **4,85** · 4,95 | 6,13 · **6,26** · 6,36 | 7,30 · **7,41** · 7,49 | 8,26 · **8,32** · 8,36 | 1,00 | 8,37 |
-| Förderkapazität (Index) | 1,18 · **1,19** · 1,19 | 1,24 · **1,24** · 1,25 | 1,28 · **1,30** · 1,31 | 1,37 · **1,42** · 1,49 | 1,41 · **1,48** · 1,58 | 1,68 · **1,86** · 1,97 | 2,05 · **2,26** · 2,43 | 2,55 · **2,77** · 3,03 | 3,14 · **3,41** · 3,69 | 3,85 · **4,11** · 4,49 | 5,33 · **5,72** · 6,20 | 7,00 · **7,42** · 8,12 | 8,28 · **8,74** · 9,33 | 9,35 · **9,90** · 10,88 | 1,18 | 13,23 |
-| Lager (Quartalsbedarf) | 0,25 · **0,25** · 0,25 | 0,25 · **0,25** · 0,25 | 0,25 · **0,25** · 0,25 | 0,23 · **0,25** · 0,29 | 0,23 · **0,25** · 0,29 | 0,20 · **0,26** · 0,30 | 0,19 · **0,24** · 0,30 | 0,19 · **0,24** · 0,30 | 0,20 · **0,25** · 0,30 | 0,21 · **0,24** · 0,31 | 0,20 · **0,24** · 0,29 | 0,21 · **0,25** · 0,30 | 0,21 · **0,24** · 0,29 | 0,21 · **0,25** · 0,30 | 0,00 | 0,98 |
-| Kreditklima (0–100) | 35 · **48** · 59 | 37 · **49** · 63 | 38 · **49** · 65 | 35 · **51** · 66 | 34 · **50** · 65 | 32 · **50** · 67 | 32 · **47** · 67 | 31 · **47** · 63 | 31 · **47** · 63 | 33 · **45** · 61 | 33 · **47** · 61 | 31 · **45** · 61 | 32 · **46** · 60 | 34 · **47** · 63 | 13 | 100 |
-| Stimmung (0–100) | 50 · **54** · 59 | 47 · **52** · 56 | 47 · **51** · 55 | 43 · **50** · 56 | 44 · **51** · 55 | 39 · **50** · 56 | 37 · **48** · 55 | 38 · **48** · 54 | 38 · **49** · 55 | 40 · **48** · 54 | 40 · **49** · 55 | 42 · **49** · 55 | 42 · **49** · 55 | 42 · **50** · 56 | 3 | 67 |
-| Außenspannung (0–100) | 12 · **18** · 26 | 12 · **19** · 25 | 12 · **19** · 25 | 12 · **19** · 25 | 12 · **18** · 26 | 11 · **19** · 60 | 13 · **21** · 84 | 15 · **23** · 75 | 15 · **24** · 68 | 15 · **24** · 79 | 15 · **24** · 68 | 17 · **26** · 63 | 20 · **29** · 56 | 20 · **30** · 58 | 2 | 100 |
+| Förderkapazität (Index) | 1,18 · **1,19** · 1,19 | 1,24 · **1,24** · 1,25 | 1,28 · **1,30** · 1,31 | 1,37 · **1,42** · 1,49 | 1,41 · **1,48** · 1,58 | 1,68 · **1,86** · 1,97 | 2,05 · **2,26** · 2,43 | 2,55 · **2,77** · 3,03 | 3,14 · **3,41** · 3,69 | 3,85 · **4,10** · 4,49 | 5,34 · **5,74** · 6,18 | 7,00 · **7,42** · 8,08 | 8,28 · **8,76** · 9,33 | 9,33 · **9,89** · 10,66 | 1,18 | 13,23 |
+| Lager (Quartalsbedarf) | 0,25 · **0,25** · 0,25 | 0,25 · **0,25** · 0,25 | 0,25 · **0,25** · 0,25 | 0,23 · **0,25** · 0,29 | 0,23 · **0,25** · 0,29 | 0,20 · **0,26** · 0,30 | 0,19 · **0,24** · 0,30 | 0,19 · **0,24** · 0,30 | 0,20 · **0,25** · 0,30 | 0,20 · **0,24** · 0,31 | 0,21 · **0,24** · 0,29 | 0,21 · **0,25** · 0,30 | 0,22 · **0,24** · 0,29 | 0,21 · **0,25** · 0,30 | 0,00 | 0,98 |
+| Kreditklima (0–100) | 35 · **48** · 59 | 37 · **49** · 63 | 38 · **49** · 65 | 35 · **51** · 66 | 34 · **50** · 65 | 32 · **50** · 67 | 32 · **47** · 67 | 31 · **47** · 63 | 31 · **47** · 63 | 33 · **45** · 61 | 34 · **47** · 62 | 31 · **45** · 61 | 33 · **46** · 61 | 33 · **47** · 63 | 13 | 100 |
+| Stimmung (0–100) | 50 · **54** · 59 | 47 · **52** · 56 | 47 · **51** · 55 | 43 · **50** · 56 | 44 · **51** · 55 | 39 · **50** · 56 | 37 · **48** · 55 | 38 · **48** · 54 | 38 · **49** · 55 | 39 · **48** · 54 | 40 · **49** · 55 | 42 · **49** · 55 | 42 · **49** · 55 | 42 · **50** · 55 | 4 | 66 |
+| Außenspannung (0–100) | 12 · **18** · 26 | 12 · **19** · 25 | 12 · **19** · 25 | 12 · **19** · 25 | 12 · **18** · 26 | 11 · **19** · 60 | 13 · **21** · 84 | 15 · **23** · 75 | 15 · **24** · 68 | 15 · **24** · 79 | 15 · **24** · 69 | 17 · **27** · 59 | 20 · **29** · 53 | 21 · **30** · 60 | 2 | 100 |
 | Technikstand (0–100) | 6 · **8** · 10 | 7 · **9** · 10 | 7 · **9** · 11 | 8 · **10** · 12 | 9 · **11** · 13 | 12 · **15** · 17 | 16 · **20** · 23 | 21 · **25** · 29 | 27 · **32** · 37 | 34 · **40** · 45 | 51 · **57** · 62 | 67 · **72** · 76 | 80 · **84** · 86 | 91 · **93** · 94 | 6 | 94 |
-| Nationalismus (0–100) | 9 · **14** · 19 | 11 · **15** · 20 | 12 · **17** · 23 | 15 · **20** · 26 | 16 · **21** · 27 | 20 · **28** · 37 | 25 · **34** · 46 | 29 · **39** · 54 | 33 · **45** · 60 | 38 · **48** · 66 | 45 · **56** · 71 | 52 · **63** · 75 | 54 · **69** · 78 | 47 · **70** · 83 | 5 | 100 |
+| Nationalismus (0–100) | 9 · **14** · 19 | 11 · **15** · 20 | 12 · **17** · 23 | 15 · **20** · 26 | 16 · **21** · 27 | 20 · **28** · 37 | 25 · **34** · 46 | 29 · **39** · 54 | 33 · **45** · 60 | 38 · **48** · 66 | 45 · **56** · 72 | 52 · **63** · 76 | 54 · **69** · 78 | 47 · **70** · 83 | 5 | 100 |
 
 Median je Spieljahr als Kurve (Jahr 0 bis 73):
 
 - Weltpreis (▁ 0,7 … █ 1,4): `▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂`
-- Weltpreis 90 % (▁ 0,7 … █ 2,0): `▃▃▃▃▃▃▃▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▂▂▂▂▂▂▂▂▂▂▃▃▂▂▂▂▂`
+- Weltpreis 90 % (▁ 0,7 … █ 2,0): `▃▃▃▃▃▃▃▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂`
 - Kreditklima (▁ 30 … █ 70): `▄▄▄▅▅▅▅▅▅▅▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄`
-- Außenspannung 90 % (▁ 0 … █ 100): `▃▃▃▃▃▃▃▃▄▄▅▅▅▆▆▇▆▆▇▆▆▆▆▆▆▆▆▆▆▆▆▆▆▅▅▅▆▆▆▅▆▆▅▆▅▅▅▅▅▆▅▆▅▆▆▅▅▅▄▅▅▅▅▅▅▆▆▆▆▆▆▅▅▅`
-- Stimmung (▁ 30 … █ 60): `▇▆▆▆▆▆▆▆▆▆▆▆▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▆▅▅▅▆▅▆▅▅▅▅▅▅▅▅▆▅▅▆▆▅▆▅▅▆▅▆▆▆▆`
+- Außenspannung 90 % (▁ 0 … █ 100): `▃▃▃▃▃▃▃▃▄▄▅▅▅▆▆▇▆▆▇▆▆▆▆▆▆▆▆▆▆▆▇▇▆▅▅▅▆▆▆▆▆▆▆▆▅▅▅▅▅▅▅▆▆▅▆▅▅▄▄▅▅▅▅▅▅▅▅▆▅▆▆▅▅▅`
+- Stimmung (▁ 30 … █ 60): `▇▆▆▆▆▆▆▆▆▆▆▆▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▆▅▅▅▆▅▅▅▅▅▅▅▅▅▅▆▅▅▆▆▅▆▆▆▆▅▆▆▆▆`
 
 ## Krisen je Kampagne
 
 | Krise | Ziel je Kampagne (GDD §15) | Ø | 10 % · 50 % · 90 % der Welten | Welten im Ziel | Ø in den ersten 20 Jahren |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Kreditkrisen (Crash) | 2–4 | 2,87 | 1 · 3 · 5 | 75,0 % | 0,95 |
+| Kreditkrisen (Crash) | 2–4 | 2,84 | 1 · 3 · 5 | 72,7 % | 0,95 |
 | Ölschwemmen (Riesenfund) | 1–3 | 2,08 | 0 · 2 · 4 | 69,3 % | 0,58 |
-| Kriege in Übersee | 0–2 | 1,37 | 0 · 1 · 3 | 85,3 % | 0,34 |
-| Verstaatlichungen | – | 0,77 | 0 · 1 · 2 | – | 0,00 |
-| Regierungswechsel (von 18 Wahlen) | – | 8,64 | 5 · 9 · 12 | – | 2,31 |
+| Kriege in Übersee | 0–2 | 1,36 | 0 · 1 · 3 | 85,0 % | 0,34 |
+| Verstaatlichungen | – | 0,75 | 0 · 1 · 2 | – | 0,00 |
+| Regierungswechsel (von 18 Wahlen) | – | 8,55 | 6 · 9 · 12 | – | 2,32 |
 
-Regierung: Handelspartei 22,9 %, Volksbund 36,7 %, Provinzliga 40,5 % der Regierungszeit.
+Regierung: Handelspartei 22,7 %, Volksbund 36,9 %, Provinzliga 40,4 % der Regierungszeit.
 
 ## Krisen über die Zeit
 
@@ -49,14 +49,14 @@ Jede Welt ist neu (GDD §7.2): Crashs und Kriege sollen nicht in allen Welten zu
 
 | je Welt | J. 0–4 | J. 5–9 | J. 10–14 | J. 15–19 | J. 20–24 | J. 25–29 | J. 30–34 | J. 35–39 | J. 40–44 | J. 45–49 | J. 50–54 | J. 55–59 | J. 60–64 | J. 65–69 | J. 70–72 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Crashs | 0,14 | 0,24 | 0,29 | 0,28 | 0,23 | 0,21 | 0,17 | 0,18 | 0,20 | 0,16 | 0,18 | 0,17 | 0,14 | 0,19 | 0,08 |
-| erster Crash (Anteil Welten) | 14,3 % | 19,3 % | 18,0 % | 8,7 % | 6,3 % | 5,3 % | 3,3 % | 4,7 % | 4,3 % | 2,3 % | 3,3 % | 1,0 % | 2,3 % | 0,3 % | 0,3 % |
-| Kriege | 0,00 | 0,07 | 0,11 | 0,15 | 0,11 | 0,13 | 0,10 | 0,11 | 0,09 | 0,09 | 0,11 | 0,07 | 0,06 | 0,12 | 0,05 |
+| Crashs | 0,14 | 0,24 | 0,29 | 0,28 | 0,23 | 0,21 | 0,17 | 0,18 | 0,21 | 0,16 | 0,18 | 0,15 | 0,12 | 0,18 | 0,08 |
+| erster Crash (Anteil Welten) | 14,3 % | 19,3 % | 18,0 % | 8,7 % | 6,3 % | 5,3 % | 3,3 % | 4,3 % | 4,7 % | 2,0 % | 3,0 % | 0,7 % | 2,7 % | 0,7 % | 0,3 % |
+| Kriege | 0,00 | 0,07 | 0,11 | 0,15 | 0,11 | 0,13 | 0,11 | 0,11 | 0,11 | 0,09 | 0,11 | 0,06 | 0,06 | 0,10 | 0,06 |
 
 ## Preisausschläge
 
-- Größter Preisrückgang binnen eines Jahres je Welt: Median 43,1 %, 90 % 56,8 %; Welten mit einem Einbruch von mindestens 40 %: 61,3 % (GDD §7.3: „fast −50 % in einem Jahr“ soll vorkommen).
-- Größter Preisanstieg binnen eines Jahres: Median 44,6 %, 90 % 61,2 %.
+- Größter Preisrückgang binnen eines Jahres je Welt: Median 42,8 %, 90 % 57,1 %; Welten mit einem Einbruch von mindestens 40 %: 59,0 % (GDD §7.3: „fast −50 % in einem Jahr“ soll vorkommen).
+- Größter Preisanstieg binnen eines Jahres: Median 44,7 %, 90 % 60,9 %.
 
 ## Kapitel 1 (Runde 1–16)
 
@@ -73,10 +73,10 @@ Kein Gesetz hat ein festes Jahr: Druck aus dem Weltzustand → Antrag → Debatt
 
 | Gesetz | Welten mit Beschluss | Jahr des Beschlusses 10 % · 50 % · 90 % | verschiedene Runden | Ø Anträge | Ø Niederlagen | beschlossen in Kapitel 1 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Einkommensteuer | 67,0 % | 12 · 25 · 60 | 137 | 0,95 | 0,28 | 0,0 % |
-| Kartellgesetz | 89,7 % | 10 · 26 · 59 | 155 | 1,22 | 0,32 | 0,0 % |
+| Einkommensteuer | 67,0 % | 12 · 25 · 59 | 137 | 0,93 | 0,26 | 0,0 % |
+| Kartellgesetz | 79,0 % | 11 · 24 · 54 | 138 | 1,11 | 0,32 | 0,0 % |
 
-Marktanteil des größten Konzerns (Crane Trust), 10 % · Median · 90 %: Jahr 0: 31,6 % · **38,2 %** · 44,5 %; Jahr 10: 34,5 % · **39,4 %** · 44,6 %; Jahr 20: 33,4 % · **39,3 %** · 44,7 %; Jahr 40: 25,4 % · **33,8 %** · 43,0 %; Jahr 73: 23,0 % · **27,5 %** · 37,3 %.
+Marktanteil des größten Konzerns (Crane Trust), 10 % · Median · 90 %: Jahr 0: 31,6 % · **38,2 %** · 44,5 %; Jahr 10: 35,3 % · **42,5 %** · 49,4 %; Jahr 20: 31,1 % · **40,2 %** · 48,4 %; Jahr 40: 20,5 % · **31,5 %** · 43,6 %; Jahr 73: 18,1 % · **26,3 %** · 38,8 %.
 
 ## Beispielwelt `welt-0`
 
@@ -189,12 +189,17 @@ Code: `src/sim/laws.ts` (Bedingungen, Ablauf, Wirkung, Zeitung, Prüfprogramm), 
 **Ablauf (GDD §10: kein festes Jahr).** Jedes Gesetz sammelt je Runde **Druck**: alter Druck × 0,85 plus die Punkte aller Gründe, die gerade stimmen (Weltgrößen wie Stimmung, Kreditklima, Spannung, Knappheit; Krieg, Crash; Regierung; Sitze je Fraktion; Marktanteil des Trusts). Über der Schwelle des Gesetzes kommt mit 20 % je Runde ein **Antrag** (höchstens einer zugleich im Parlament), danach 2–3 Runden **Debatte** (die Zeitung sagt in der letzten Runde, ob die Mehrheit steht, knapp ist oder fehlt) und die **Abstimmung**: Sitze × Haltung der Fraktionen (`votes`) plus Lage am Tag (`swing`, z. B. Krieg +10 Punkte für die Steuer) plus ±4 Punkte Zufall; über 50 % = beschlossen. Abgelehnt: 12 Runden Ruhe, Druck auf 30 %. Beschlossen bleibt beschlossen. Die Sitze sind das Ergebnis der letzten Wahl (vorher die Anteile zu Kampagnenbeginn).
 
 **Die ersten zwei Gesetze.**
-- *Kartellgesetz* (`antitrust`): Druck bei Trust-Anteil ab 40 % (+1) und ab 50 % (+1), Stimmung ≤ 45 (+0,6), Volksbund regiert (+1), Volksbund-Fraktion ≥ 38 % (+0,4), Handelspartei regiert (−0,8); Schwelle 11. Zustimmung Handel 10 %, Volksbund 85 %, Provinzliga 50 %. Wirkung: Trust-Anteil −0,003 je Runde, Stimmungsziel +1; Regeln `cartelBan` 1, `breakupFrom` 0,5.
+- *Kartellgesetz* (`antitrust`): Druck bei Trust-Anteil ab 40 % (+1,2) und ab 50 % (+1), Stimmung ≤ 45 (+0,4), Volksbund regiert (+0,6), Volksbund-Fraktion ≥ 38 % (+0,3), Handelspartei regiert (−0,8); Schwelle 11. Zustimmung Handel 10 %, Volksbund 85 %, Provinzliga 50 %, Trust ≥ 50 % +4 Punkte. Wirkung: Trust-Anteil −0,003 je Runde, Stimmungsziel +1; Regeln `cartelBan` 1, `breakupFrom` 0,45 (verwässert 0,6).
 - *Einkommensteuer* (`income_tax`): Druck bei Krieg (+2,2), Crash (+1,8), Spannung ≥ 60 (+0,6), Stimmung ≤ 40 (+0,4), Volksbund (+0,6), Handelspartei (−0,8); Schwelle 10. Zustimmung 15/80/40 %, Krieg +10, Crash +4, Kreditklima ≥ 65 −5 Punkte. Wirkung: Kreditklima −0,15 je Runde (Gleichgewicht ≈ −3 Punkte), Stimmungsziel +0,5; Regel `incomeTax` 0,07.
 
-**Marktanteil des Trusts** (`laws.trustShare`, Hilfsgröße für das Kartellgesetz, GDD §10 „eine Firma über 40 %“): startet je Welt bei 30–46 %, kehrt langsam zu 38 % zurück, steigt in jeder Crash-Runde (+0,6 Punkte, Pleitefirmen werden aufgekauft) und nach Riesenfunden (+3 Punkte). Würfelt mit dem Gesetzes-Zufall.
+**Marktanteil des Trusts** (`laws.trustShare`, Hilfsgröße für das Kartellgesetz, GDD §10 „eine Firma über 40 %“): startet je Welt bei 30–46 %, kehrt langsam zu 38 % zurück, wächst unter der Handelspartei (+0,25 Punkte je Runde, Weltbibel: „Trusts wachsen ungestört“), schrumpft unter dem Volksbund (−0,2, Aufsicht), wächst bei billigem Geld (Übernahmen: ±0,1 × (Kreditklima − 50) ÷ 50), steigt in jeder Crash-Runde (+0,6 Punkte, Pleitefirmen werden aufgekauft) und nach Riesenfunden (+3 Punkte). Würfelt mit dem Gesetzes-Zufall.
 
-**Gemessen (300 Welten, ganze Kampagne).** Kartellgesetz in ~90 % der Welten, Einkommensteuer in ~67 %, Beschlüsse zwischen Jahr ~10 und ~60 (Median Jahr 25/26), über 130 verschiedene Runden, rund jede dritte Abstimmung scheitert. In Kapitel 1 kommt ab und zu ein Antrag, beschlossen wird praktisch nie (0 von 300; 4 von 1000 beim Kartellgesetz). Test „Fertig-Kriterium 4.3“: je Gesetz mindestens 5 % der Welten ohne Beschluss, 10–90-%-Spanne mindestens 20 Jahre, keine Runde mit mehr als 5 % der Beschlüsse; Einkommensteuer fällt in über 85 % der Fälle in Krieg/Crash; ein Gesetz ohne erfüllbaren Grund kommt nie. Ohne beschlossenes Gesetz läuft die Welt Zahl für Zahl wie ohne Katalog (eigener Zufall); die Krisenzahlen oben bleiben im GDD-Ziel. `npm run bots`: alle 15 Zielwerte im Rahmen, Ergebnisse unverändert.
+**Gemessen (300 Welten, ganze Kampagne).** Kartellgesetz in ~79 % der Welten (nach Prüfung; vorher ~90 %), Einkommensteuer in ~67 %, Beschlüsse zwischen Jahr ~10 und ~60 (Median Jahr 25/26), über 130 verschiedene Runden, rund jede dritte Abstimmung scheitert. In Kapitel 1 kommt ab und zu ein Antrag, beschlossen wird praktisch nie (0 von 300; 4 von 1000 beim Kartellgesetz). Test „Fertig-Kriterium 4.3“: je Gesetz mindestens 5 % der Welten ohne Beschluss, 10–90-%-Spanne mindestens 20 Jahre, keine Runde mit mehr als 5 % der Beschlüsse; Einkommensteuer fällt in über 85 % der Fälle in Krieg/Crash; ein Gesetz ohne erfüllbaren Grund kommt nie. Ohne beschlossenes Gesetz läuft die Welt Zahl für Zahl wie ohne Katalog (eigener Zufall); die Krisenzahlen oben bleiben im GDD-Ziel. `npm run bots`: alle 15 Zielwerte im Rahmen, Ergebnisse unverändert.
+
+**Nach Prüfung (drei Befunde, alle echt, alle behoben).**
+1. *Abstimmung „50 : 50“ unter „beschlossen“.* Die Zeitung rundete auf ganze Prozent, angenommen ist aber erst über 50 % – knapp jede zehnte Abstimmung erschien als 50 : 50, mal beschlossen, mal abgelehnt. Jetzt rundet `votePercent` passend zum Ausgang: beschlossen mindestens 51 : 49, Gleichstand 50 : 50 heißt abgelehnt (auch in der Chronik von `npm run welt`).
+2. *Zerschlagung unerreichbar.* Der Trust lag nur in 0,2 % der Runden bei 50 % oder mehr; `breakupFrom` 0,5 und der Abstimmungszuschlag ab 55 % griffen praktisch nie. Jetzt: Trust ≥ 50 % in ~45 % der Welten zeitweise, `breakupFrom` 0,45, Zuschlag schon ab 50 %. Bei geltendem Gesetz liegt der Trust in gut jeder dritten Welt einmal über der Zerschlagungsschwelle (vorher 3 %) – „Kartellgesetz und Zerschlagung des Trusts“ (GDD Kap. 2) ist eine echte, aber keine sichere Weltlage.
+3. *Kartellgesetz = „Volksbund kommt dran“.* Der Trust-Anteil war Rauschen um 38 % und reagierte nicht auf die Regierung; Volksbund-Regierung, Wut und Fraktion reichten ohne Marktbeherrschung für die Schwelle (44 von 269 Beschlüssen unter 40 % Trust). Jetzt treibt die Regierung den Trust (siehe oben), und das Gesetz gewichtet die Marktbeherrschung stärker: Volksbund + Wut + Fraktion ohne mächtigen Trust bleiben unter der Schwelle, ein Trust ab 50 % reicht auch unter der Provinzliga. Ergebnis: ~90 % der Beschlüsse bei Trust ≥ 40 % (vorher 84 %, aber nur zufällig), Beschluss in ~79 % statt ~90 % der Welten. Typischer Verlauf: Unter der Handelspartei wächst der Trust, nach dem Machtwechsel kommt die Abrechnung. Tests: Regierungs- und Kreditwirkung auf den Trust, „Volksbund allein reicht nicht“, über 300 Welten > 80 % der Beschlüsse bei Trust ≥ 40 % und Zerschlagungsschwelle in 20–60 % der Welten, Rundung bei 0,5004/0,4996.
 
 **Spielstand.** Format 16 speichert `worldModel.laws`; Stände aus Format 12–15 bekommen „noch nichts beschlossen“ (`withLawDefaults`: Sitze = heutige Anteile, Trust 38 %).
 

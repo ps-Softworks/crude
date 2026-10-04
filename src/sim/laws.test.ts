@@ -20,6 +20,7 @@ import {
   newLaws,
   parseLawFile,
   parseLawFiles,
+  votePercent,
   type LawDef,
   type LawRoundInput,
   type LawsState,
@@ -171,10 +172,19 @@ describe('Bedingungen aus dem Weltzustand', () => {
 
   it('Kartellgesetz: Trust über 40 %, schlechte Stimmung und Volksbund an der Regierung bringen es über die Schwelle – ruhige Zeiten nicht', () => {
     const gleichgewicht = (view: LawView, trust: number) => {
-      const s = tagen(start(trust), view, [{ ...kartell, threshold: 999 }], 60, { ...sicher, trust: { ...sicher.trust, revert: 0 } });
+      // Trust-Anteil festhalten: kein Zurückkehren, keine Regierungs- oder Kreditwirkung.
+      const fest = { ...sicher.trust, revert: 0, credit: 0, government: { handel: 0, volksbund: 0, provinz: 0 } };
+      const s = tagen(start(trust), view, [{ ...kartell, threshold: 999 }], 60, { ...sicher, trust: fest });
       return s.at(-1)!.bills.antitrust.pressure;
     };
     expect(gleichgewicht(ruhig, 0.35)).toBeLessThan(kartell.threshold);
+    // Die Marktbeherrschung zählt mehr als die Regierung: Volksbund an der Macht, wütende Leute
+    // und starke Fraktion reichen ohne mächtigen Trust nicht (Befund zu 4.3).
+    const vbStark = { ...start(0.35), seats: { handel: 0.25, volksbund: 0.45, provinz: 0.3 } };
+    const vbAllein = tagen(vbStark, { ...ruhig, government: 'volksbund', mood: 30 }, [{ ...kartell, threshold: 999 }], 60, { ...sicher, trust: { ...sicher.trust, revert: 0, credit: 0, government: { handel: 0, volksbund: 0, provinz: 0 } } });
+    expect(vbAllein.at(-1)!.bills.antitrust.pressure).toBeLessThan(kartell.threshold);
+    // Ein erdrückender Trust bringt das Gesetz auch ohne Volksbund-Regierung über die Schwelle – nur die Handelspartei hält es auf.
+    expect(gleichgewicht({ ...ruhig, government: 'handel' }, 0.52)).toBeLessThan(kartell.threshold);
     expect(gleichgewicht({ ...ruhig, government: 'volksbund', mood: 40 }, 0.45)).toBeGreaterThan(kartell.threshold);
     expect(gleichgewicht({ ...ruhig, government: 'provinz' }, 0.52)).toBeGreaterThan(kartell.threshold);
   });
@@ -303,7 +313,7 @@ describe('Wirkung beschlossener Gesetze', () => {
   it('Regeln für spätere Kapitel: Steuersatz, Kartellverbot, Zerschlagung; ohne Gesetz keine', () => {
     const w = newWorld('regeln', wb);
     expect(lawRules(w.laws, laws)).toEqual({});
-    expect(lawRules(beschlossen(w, ['income_tax', 'antitrust']).laws, laws)).toEqual({ incomeTax: 0.07, cartelBan: 1, breakupFrom: 0.5 });
+    expect(lawRules(beschlossen(w, ['income_tax', 'antitrust']).laws, laws)).toEqual({ incomeTax: 0.07, cartelBan: 1, breakupFrom: kartell.effects.rules.breakupFrom });
   });
 
   it('Marktanteil des Trusts: Crash-Runden und Ölschwemmen treiben ihn hoch (Pleitefirmen werden aufgekauft)', () => {
@@ -312,6 +322,54 @@ describe('Wirkung beschlossener Gesetze', () => {
     const [schwemme] = tagen(start(0.38), ruhig, [], 1, sicher, { ...keineRunde, glut: true });
     expect(crash.trustShare - ruhe.trustShare).toBeCloseTo(lb.trust.crash, 9);
     expect(schwemme.trustShare - ruhe.trustShare).toBeCloseTo(lb.trust.glut, 9);
+  });
+
+  it('Marktanteil des Trusts: wächst unter der Handelspartei und bei billigem Geld (Übernahmen), schrumpft unter Volksbund-Aufsicht', () => {
+    const nachEinerRunde = (view: LawView) => tagen(start(0.38), view, [], 1)[0].trustShare;
+    const provinz = nachEinerRunde({ ...ruhig, government: 'provinz' });
+    expect(nachEinerRunde({ ...ruhig, government: 'handel' }) - provinz).toBeCloseTo(lb.trust.government.handel - lb.trust.government.provinz, 9);
+    expect(nachEinerRunde({ ...ruhig, government: 'volksbund' }) - provinz).toBeCloseTo(lb.trust.government.volksbund - lb.trust.government.provinz, 9);
+    expect(lb.trust.government.handel).toBeGreaterThan(0);
+    expect(lb.trust.government.volksbund).toBeLessThan(0);
+    expect(nachEinerRunde({ ...ruhig, government: 'provinz', credit: 100 }) - provinz).toBeCloseTo(lb.trust.credit, 9);
+    expect(nachEinerRunde({ ...ruhig, government: 'provinz', credit: 0 }) - provinz).toBeCloseTo(-lb.trust.credit, 9);
+    // Lange Handelsherrschaft treibt den Trust über 45 %, langer Volksbund drückt ihn unter 35 %.
+    expect(tagen(start(0.38), ruhig, [], 60).at(-1)!.trustShare).toBeGreaterThan(0.45);
+    expect(tagen(start(0.38), { ...ruhig, government: 'volksbund' }, [], 60).at(-1)!.trustShare).toBeLessThan(0.35);
+  });
+
+  it('über 300 Welten: Das Kartellgesetz fällt überwiegend bei einem Trust-Anteil ab 40 %, und die Zerschlagungsschwelle wird in einem nennenswerten Teil der Welten erreicht', () => {
+    const ab = kartell.effects.rules.breakupFrom!;
+    let beschluesse = 0;
+    let beherrscht = 0;
+    let unterHandel = 0;
+    let zerschlagbar = 0;
+    let ueber50 = 0;
+    for (let i = 0; i < 300; i++) {
+      let w = newWorld(`welt-${i}`, wb);
+      let droht = false;
+      let hoch = false;
+      for (let r = 0; r < CAMPAIGN_ROUNDS; r++) {
+        w = advanceWorld(w, wb, {}, laws);
+        if (w.laws.trustShare >= 0.5) hoch = true;
+        if (lawInForce(w.laws, 'antitrust') && w.laws.trustShare >= ab) droht = true;
+        if (w.laws.news.some((n) => n.law === 'antitrust' && n.kind === 'passed')) {
+          beschluesse += 1;
+          if (w.laws.trustShare >= 0.4) beherrscht += 1;
+          if (w.government === 'handel') unterHandel += 1;
+        }
+      }
+      if (droht) zerschlagbar += 1;
+      if (hoch) ueber50 += 1;
+    }
+    expect(beschluesse).toBeGreaterThan(100);
+    expect(beherrscht / beschluesse).toBeGreaterThan(0.8);
+    expect(unterHandel / beschluesse).toBeLessThan(0.05);
+    // „Kartellgesetz und Zerschlagung des Trusts“ (GDD Kap. 2) ist eine echte Weltlage, aber keine Pflicht.
+    expect(zerschlagbar).toBeGreaterThanOrEqual(300 * 0.2);
+    expect(zerschlagbar).toBeLessThanOrEqual(300 * 0.6);
+    // Ein Trust über 50 % kommt vor (Druckgrund und Abstimmungszuschlag sind kein toter Inhalt).
+    expect(ueber50).toBeGreaterThanOrEqual(300 * 0.25);
   });
 });
 
@@ -336,7 +394,7 @@ describe('Lobby (vorbereitet für Kapitel 2)', () => {
     const verwaessert = tagen(imParlament, ruhig, [test], 1, sicher, { ...keineRunde, lobby: [{ law: 'antitrust', action: 'weaken' }] })[0];
     expect(verwaessert.bills.antitrust.weakened).toBe(true);
     const gilt = { ...verwaessert, bills: { antitrust: { ...verwaessert.bills.antitrust, stage: 'passed' as const } } };
-    expect(lawRules(gilt, [test])).toEqual({ cartelBan: 1, breakupFrom: 0.7 });
+    expect(lawRules(gilt, [test])).toEqual({ cartelBan: 1, breakupFrom: kartell.lobby.weaken!.rules!.breakupFrom });
   });
 
   it('Züge, die ein Gesetz nicht anbietet, und unbekannte Gesetze bewirken nichts', () => {
@@ -371,6 +429,17 @@ describe('Zeitung: Meldungen aus dem Parlament', () => {
     expect(antrag.title).toBe(steuer.news.proposed.title.de);
     expect(antrag.vote).toBeNull();
     expect(lawReport({ news: [] }, laws, politik)).toBeNull();
+  });
+
+  it('Abstimmung knapp an 50 %: Die Prozentzahl passt zum Ausgang (angenommen mindestens 51 : 49, Gleichstand ist abgelehnt)', () => {
+    const knappJa = lawReport({ news: [{ law: 'antitrust', kind: 'passed', yes: 0.5004 }] }, laws, politik)!;
+    expect(knappJa.vote).toMatchObject({ yes: 51, no: 49 });
+    const knappNein = lawReport({ news: [{ law: 'antitrust', kind: 'failed', yes: 0.4996 }] }, laws, politik)!;
+    expect(knappNein.vote).toMatchObject({ yes: 50, no: 50 });
+    expect(votePercent(0.5049, true)).toBe(51);
+    expect(votePercent(0.537, true)).toBe(54);
+    expect(votePercent(0.5, false)).toBe(50);
+    expect(votePercent(0.44, false)).toBe(44);
   });
 
   it('Debatte: Text des Gesetzes und die Aussicht aus content/politics.yaml', () => {

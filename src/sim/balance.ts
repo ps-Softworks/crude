@@ -519,8 +519,12 @@ export interface LawsBalance {
   /** Nach einer Niederlage: so viele Runden kein neuer Antrag, Druck × failPressure. */
   cooldown: number;
   failPressure: number;
-  /** Marktanteil des größten Konzerns (Crane Trust). */
-  trust: { start: Range; base: number; revert: number; crash: number; glut: number; noise: number; min: number; max: number };
+  /**
+   * Marktanteil des größten Konzerns (Crane Trust). government = Verschiebung je Runde
+   * unter dieser Regierung (Handel lässt wachsen, Volksbund beaufsichtigt), credit =
+   * Übernahmen bei billigem Geld: × (Kreditklima − 50) ÷ 50 je Runde.
+   */
+  trust: { start: Range; base: number; revert: number; government: Record<Party, number>; credit: number; crash: number; glut: number; noise: number; min: number; max: number };
   /** Vorbereitet (ab Kapitel 2): Stärke der Lobby-Züge. */
   lobby: { demand: number; block: number; delay: number };
 }
@@ -1750,6 +1754,8 @@ function parseWorldModel(raw: unknown): WorldModelBalance {
         start: rng('laws.trust.start', 0, 1),
         base: sh('laws.trust.base'),
         revert: sh('laws.trust.revert'),
+        government: Object.fromEntries(PARTIES.map((p) => [p, free(`laws.trust.government.${p}`)])) as Record<Party, number>,
+        credit: free('laws.trust.credit'),
         crash: sh('laws.trust.crash'),
         glut: sh('laws.trust.glut'),
         noise: sh('laws.trust.noise'),
