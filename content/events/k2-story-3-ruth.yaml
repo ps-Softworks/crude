@@ -4,8 +4,12 @@
 # Jahr 11–14 (98–101 d. F.). Jacob 35–38, Ruth 33–36 (V), Thomas 10–13, Clara 5–8 (V: geb. Jahr 6).
 # Jedes Ereignis trägt { minChapter: 2, maxChapter: 2 } – in Kapitel 1 kommt keins davon.
 # Runden zählen hier im Kapitel ab 1 (Annahme für den Zeitsprung von Block A).
-# ACHTUNG Zeitsprung: Merkzeichen aus Kapitel 1 tragen ihre Runde aus Kapitel 1. Damit „delay“ in
-# Kapitel 2 stimmt, muss der Zeitsprung sie als „vor Kapitelbeginn“ werten (z. B. auf Runde 0 setzen).
+# Zeitsprung: Merkzeichen aus Kapitel 1 tragen ihre Runde aus Kapitel 1 (bis 16). Der Kapitelwechsel
+# setzt sie mit marksIntoNextChapter (src/sim/events.ts) auf Runde 0 – „vor Kapitelbeginn“. Sonst
+# schöbe ein spätes ruth_vertroestet k2_ruth_datum weit nach hinten (Test in events.test.ts).
+# Bank-Reaktionen auf Ruth im Rat wechseln ab (nie zweimal dieselbe Strafe in einer Partie):
+#   k2_ruth_wunsch/rat  Kreditlinie gekündigt     k2_ruth_datum/rat  Anleihe einen halben Punkt teurer
+#   k2_ruth_sitz/stuhl  Vandermeer boykottiert    k2_ruth_rat/weiter Vandermeers Brief an die Aktionäre
 #
 #   Runde 1–3  k2_ruth_abend      Ruth und Clara im neuen Büro – Abendessen oder Lusks Anruf
 #   Runde 4+   k2_ruth_wunsch     Schlüsselszene: Rat, Finanzen, vertrösten oder Nein
@@ -13,7 +17,7 @@
 #              k2_ruth_sitz       … dieselbe Szene mit ruth_teilhaberin (K1): sie fragt nur nach dem Stuhl
 #   Runde 3+   k2_ruth_schweigen  mit ruth_zurueckgewiesen (K1): Ruth fragt nicht mehr – die Feder in der Schublade
 #   danach     k2_ruth_rat        (ruth_aufsichtsrat)   Erste Sitzung: Vandermeer verlässt den Raum
-#   Runde 6+   k2_ruth_eigenes    (ruth_k2_abgewiesen)  Das Grundbuch: Ruth und Hannah kaufen Land am Okara
+#   Runde 6+   k2_ruth_eigenes    (ruth_k2_abgewiesen)  Das Grundbuch: Ruth und Hannah kaufen einen Laden am Bahnhof Salt Hill
 #   Runde 12+  k2_ruth_clara      Clara hat Fieber, der Rat tagt – wer fährt?
 #
 # Ausgänge des Bogens (für content/arcs.yaml, sobald Bögen je Kapitel gehen – erster passender gilt):
@@ -109,14 +113,15 @@
       result:
         de: >-
           Ruth nickt, als hätte sie nichts anderes erwartet. Pettibone schreibt am
-          selben Abend nach Hallstead. Ambrose Vandermeer lässt ausrichten, unter
-          diesen Umständen könne sein Bankhaus die nächste Anleihe nur zu einem
-          höheren Zins zeichnen.
+          selben Abend nach Hallstead. Eine Woche später kündigt Vandermeer & Co. die
+          Kreditlinie der Harlan Oil zum Quartalsende, ohne Begründung, mit
+          vorzüglicher Hochachtung.
         en: >-
           Ruth nods as if she had expected nothing else. Pettibone writes to
-          Hallstead that same evening. Ambrose Vandermeer sends word that under the
-          circumstances his bank can only underwrite the next bond at a higher rate.
-      # TODO-Effekt: boardLoyalty: { vandermeer: -10, pettibone: -5 }, control: +2 (Ruths Stimme) – vorläufig: teurere Anleihe
+          Hallstead that same evening. A week later Vandermeer & Co. cancels Harlan
+          Oil's line of credit as of quarter's end, without explanation, with the
+          most respectful regards.
+      # TODO-Effekt: boardLoyalty: { vandermeer: -10, pettibone: -5 }, control: +2 (Ruths Stimme), creditLine: gekündigt – vorläufig: Kassenabfluss
       effects: { ruth: 15, cash: -2000 }
       marks: [ruth_aufsichtsrat]
     - id: finanzen
@@ -253,12 +258,13 @@
       result:
         de: >-
           Pettibone legt sein Mandat nicht nieder, aber er rückt einen Platz weiter.
-          Vandermeer kommt zur nächsten Sitzung zu spät und lässt die Anleihe
-          teurer werden.
+          Vandermeer kommt zur nächsten Sitzung nicht, zur übernächsten auch nicht.
+          Ohne seine Unterschrift bleibt die Anleihe ein Quartal lang liegen.
         en: >-
           Pettibone doesn't resign his seat, but he moves one place down. Vandermeer
-          arrives late to the next meeting and lets the bond grow dearer.
-      # TODO-Effekt: boardLoyalty: { pettibone: -5, vandermeer: -10 }, control: +3
+          doesn't come to the next meeting, nor to the one after. Without his
+          signature the bond sits unsigned for a quarter.
+      # TODO-Effekt: boardLoyalty: { pettibone: -5, vandermeer: -10 }, control: +3, boardBoycott: vandermeer
       effects: { ruth: 15, cash: -1500 }
       marks: [ruth_aufsichtsrat]
     - id: anteil_reicht
@@ -353,13 +359,18 @@
       result:
         de: >-
           Ruth spricht zwanzig Minuten über Frachtkosten. Niemand unterbricht sie.
-          Am nächsten Morgen erhöht Vandermeer & Co. den Zins der Anleihe um einen
-          halben Punkt.
+          Eine Woche später bekommt jeder Aktionär in Hallstead einen Brief von
+          Vandermeer: Die Harlan Oil werde neuerdings „am Küchentisch geführt“. Jacob
+          beantwortet jeden einzeln, drei Wochen lang, und der Kurs erholt sich nur
+          langsam.
         en: >-
-          Ruth speaks for twenty minutes on freight costs. Nobody interrupts her. The
-          next morning Vandermeer & Co. raises the bond rate by half a point.
-      # TODO-Effekt: boardLoyalty: { vandermeer: -15 }, rating: -1
-      effects: { ruth: 10, cash: -3000 }
+          Ruth speaks for twenty minutes on freight costs. Nobody interrupts her. A
+          week later every shareholder in Hallstead receives a letter from
+          Vandermeer: Harlan Oil is now "run from the kitchen table". Jacob answers
+          each one personally, for three weeks, and the share price recovers only
+          slowly.
+      # TODO-Effekt: boardLoyalty: { vandermeer: -15 }, sharePrice: -0.05 (befristet)
+      effects: { ruth: 10, strength: -10 }
       marks: [ruth_rat_behauptet]
     - id: zurueckholen
       label: { de: "Vandermeer nachgehen – Ruth soll heute nur zuhören", en: "Go after Vandermeer – Ruth should only listen today" }
@@ -401,14 +412,16 @@
   text:
     de: >-
       Der Notar in Port Ellis schickt aus Gewohnheit eine Abschrift: Im Grundbuch
-      der neuen Bohrstadt am Okara stehen zwei Bauplätze und ein Laden auf Ruth
-      Harlan und ihre Schwester Hannah. Bezahlt hat Ruth mit Geld, das sie zehn
+      stehen zwei Bauplätze und ein Laden am Bahnhof Salt Hill, wo die Bohrstadt
+      jedes Jahr eine Straße weiter wächst, auf Ruth Harlan und ihre Schwester
+      Hannah. Bezahlt hat Ruth mit Geld, das sie zehn
       Jahre lang vom Haushaltsgeld zurückgelegt hat. Sie hat es Jacob nicht
       gesagt. Sie hat ihn auch nicht angelogen – er hat nie gefragt.
     en: >-
-      Out of habit the notary in Port Ellis sends a copy: in the land register of
-      the new oil town on the Okara, two building plots and a shop stand in the
-      names of Ruth Harlan and her sister Hannah. Ruth paid with money she put aside
+      Out of habit the notary in Port Ellis sends a copy: in the land register, two
+      building plots and a shop by Salt Hill station, where the oil town grows by
+      another street every year, stand in the names of Ruth Harlan and her sister
+      Hannah. Ruth paid with money she put aside
       from the housekeeping for ten years. She didn't tell Jacob. Nor did she lie
       to him – he never asked.
   conditions: { minChapter: 2, maxChapter: 2, minRound: 6 }
@@ -421,10 +434,10 @@
       result:
         de: >-
           Jacob sagt nichts. Ruth merkt, dass er es weiß, und sagt auch nichts. Der
-          Laden am Okara macht im ersten Quartal Gewinn.
+          Laden am Bahnhof macht im ersten Quartal Gewinn.
         en: >-
           Jacob says nothing. Ruth notices that he knows, and says nothing either.
-          The shop on the Okara turns a profit in its first quarter.
+          The shop by the station turns a profit in its first quarter.
       effects: { ruth: 8 }
       marks: [ruth_eigenes_geschaeft]
       appointments: 0
@@ -447,11 +460,11 @@
         de: >-
           Ruth denkt eine Woche nach. Dann bringt sie den Laden mit und die Bücher
           dazu. Die Firma kauft Hannahs Hälfte für 3.000 $; den Preis hat Ruth selbst
-          gemacht. Die Farmer am Okara verpachten seitdem lieber an Harlan.
+          gemacht. Die Farmer am Salt Hill, die dort einkaufen, verpachten seitdem lieber an Harlan.
         en: >-
           Ruth thinks it over for a week. Then she brings the shop and the books with
           her. The company buys Hannah's half for 3,000 $; Ruth set the price herself.
-          The farmers on the Okara have preferred leasing to Harlan ever since.
+          The Salt Hill farmers who shop there have preferred leasing to Harlan ever since.
       requires: { minCash: 3000 }
       effects: { ruth: 12, cash: -3000, leaseCost: -0.1 }
       marks: [ruth_finanzen]

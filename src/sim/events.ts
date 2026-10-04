@@ -269,6 +269,16 @@ export function marksMet(state: Pick<GameState, 'round' | 'events'>, event: Pick
   return state.round >= zuletzt + event.delay;
 }
 
+/**
+ * Zeitsprung (Phase 4): Merkzeichen gehen ins nächste Kapitel mit, gelten dort aber als „vor
+ * Kapitelbeginn“ gesetzt (Runde 0). Ohne das zählte delay ab der Runde des alten Kapitels (bis 16),
+ * obwohl die Runden im neuen Kapitel wieder bei 1 beginnen – ein spätes Kapitel-1-Merkzeichen
+ * schöbe eine Kapitel-2-Szene weit nach hinten. Der Kapitelwechsel (Block A) ruft das auf.
+ */
+export function marksIntoNextChapter(events: EventsState): EventsState {
+  return { ...events, marks: Object.fromEntries(Object.keys(events.marks).map((m) => [m, 0])) };
+}
+
 type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength'> & Partial<Pick<GameState, 'chapter'>>;
 
 /** Der Wert im Zustand, den eine Bedingung prüft. */

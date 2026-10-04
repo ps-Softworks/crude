@@ -88,5 +88,7 @@ Kurzreferenz der Felder:
 - Kapitel 2 (Phase 4): Jedes Ereignis eines späteren Kapitels trägt `minChapter`/`maxChapter`
   (z. B. `{ minChapter: 2, maxChapter: 2 }`) – in Kapitel 1 kommt es nie (Test in `src/sim/events.test.ts`).
   Story-Bögen Ruth, Silas, Nora: `k2-story-1-nora.yaml`, `k2-story-2-silas.yaml`, `k2-story-3-ruth.yaml`
-  (23 Ereignisse). Gewünschte neue Wirkungen stehen dort als Kommentar `# TODO-Effekt: …` neben einer
-  vorläufigen. Runden zählen im Kapitel ab 1 (Annahme für den Zeitsprung). ENTWURF – Philipp überarbeitet.
+  (30 Ereignisse). Gewünschte neue Wirkungen stehen dort als Kommentar `# TODO-Effekt: …` neben einer
+  vorläufigen. Runden zählen im Kapitel ab 1. Der Kapitelwechsel setzt alle Merkzeichen mit
+  `marksIntoNextChapter` (src/sim/events.ts) auf Runde 0, damit `delay` ab Kapitelbeginn zählt.
+  ENTWURF – Philipp überarbeitet.

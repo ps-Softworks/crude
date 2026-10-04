@@ -9,6 +9,7 @@ import {
   defaultChoice,
   deskEvents,
   drawEvents,
+  marksIntoNextChapter,
   marksMet,
   resolveEvent,
   unmetReason,
@@ -142,6 +143,24 @@ describe('Ereignisse würfeln', () => {
       const offen = drawEvents(runde4, balance, k2).events.pending.filter((id) => fassungen.includes(id));
       expect(offen, String(mark)).toEqual([erwartet]);
     }
+  });
+
+  it('Zeitsprung: späte Kapitel-1-Merkzeichen (Runde 12) gelten in Kapitel 2 ab Runde 1 als gesetzt', () => {
+    const k2 = loadEvents().filter((e) => e.id.startsWith('k2_'));
+    const start = { ...newGame('k2-spaet', balance), chapter: 2 };
+    const spaet = { ...start.events, marks: { silas_fair: 12, ruth_vertroestet: 12, nora_bestechung: 14 } };
+    // Ohne Übertrag zählte delay ab Kapitel-1-Runde 12 – die Szenen kämen erst spät oder nie.
+    const ohne = drawEvents({ ...start, round: 4, events: spaet }, balance, k2).events.pending;
+    expect(ohne).not.toContain('k2_silas_rat');
+    expect(ohne).not.toContain('k2_ruth_datum');
+    const uebertragen = marksIntoNextChapter(spaet);
+    expect(Object.values(uebertragen.marks)).toEqual([0, 0, 0]);
+    expect(Object.keys(uebertragen.marks)).toEqual(Object.keys(spaet.marks));
+    const mit = drawEvents({ ...start, round: 4, events: uebertragen }, balance, k2).events.pending;
+    expect(mit).toContain('k2_silas_rat');
+    expect(mit).toContain('k2_ruth_datum');
+    expect(mit).not.toContain('k2_ruth_wunsch');
+    expect(drawEvents({ ...start, round: 2, events: uebertragen }, balance, k2).events.pending).toContain('k2_nora_absatz');
   });
 
   it('Chance 0 kommt nie, gleicher Seed würfelt gleich', () => {
