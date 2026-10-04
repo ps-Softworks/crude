@@ -55,6 +55,10 @@ import { heat, heatWord, investigationUnlocked } from '../../sim/investigation';
 import { researchUnlocked } from '../../sim/research';
 import { investigationContent } from '../investigationContent';
 import { BlueprintShape } from './objects/BlueprintShape';
+// 4.14 Andockpunkt: Vertrieb (Marke und Tankstellen), erst ab Kapitel 3 auf dem Tisch.
+import { BrandShape } from './objects/BrandShape';
+import { brandDeskBadge, brandDeskStatus } from '../sheets/BrandSheet';
+import { brandContent } from '../brand';
 
 /** Wo was liegt, in Prozent der Bühne (unter der Kopfleiste). */
 const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte' | 'tuer', Placement> = {
@@ -78,6 +82,17 @@ const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte
   // 4.11 Andockpunkt: Schublade unter Ruths Zettel (zwischen Kladde und Raffinerie-Plan), Blaupause an der Wand zwischen Lampe und Kalender.
   schattenbuch: { left: 47, top: 85, width: 22, height: 12 },
   werkstatt: { left: 51.5, top: 8, width: 6, height: 24 },
+  // 4.14 Andockpunkt: rechts neben dem Kassenbuch, über der Glocke (der Platz unter dem
+  // Kassenbuch gehört der Raffinerie – Platzplan in docs/phase4/4.14.md). Liegen
+  // Personalakten (ab Kapitel 2) und Vertrieb (ab Kapitel 3) beide da, teilen sie sich
+  // die Spalte zwischen Tür und Glocke (RECHTE_SPALTE_GETEILT).
+  marke: { left: 86, top: 47, width: 12, height: 21 },
+};
+
+/** Personal und Vertrieb gleichzeitig auf dem Tisch: übereinander zwischen Tür (bis 42 %) und Glocke (ab 70 %). */
+const RECHTE_SPALTE_GETEILT: Record<'personal' | 'marke', Placement> = {
+  personal: { left: 86.5, top: 44, width: 11.5, height: 12.5 },
+  marke: { left: 86.5, top: 57, width: 11.5, height: 12.5 },
 };
 
 export interface DeskSceneProps {
@@ -126,6 +141,8 @@ export function DeskScene(p: DeskSceneProps) {
   const familieGanz = familyView(game, balance, familyContent);
   const familie = { ...familieGanz, members: familieGanz.members.filter((m) => !p.hideFamily.includes(m.id)) };
   const zeitung = game.finished ? null : makeNewspaper(game, balance, newspaperContent);
+  // 4.14 Andockpunkt: Schild am Gegenstand „Vertrieb“; null = vor Kapitel 3 unsichtbar.
+  const vertrieb = brandDeskStatus(game);
 
   // Akte: was die Türme gerade tun, gezählt in src/sim (rigSummary).
   const tuerme = rigSummary(game);
@@ -368,6 +385,7 @@ export function DeskScene(p: DeskSceneProps) {
             'personal',
             'Personal',
             {
+              ...(vertrieb !== null ? { at: RECHTE_SPALTE_GETEILT.personal } : {}),
               status: `${game.staff.hired.length} angestellt`,
               badge: game.staff.candidates.length > 0 ? { text: `${game.staff.candidates.length} Bewerbung${game.staff.candidates.length === 1 ? '' : 'en'}` } : null,
             },
@@ -383,6 +401,8 @@ export function DeskScene(p: DeskSceneProps) {
             { status: game.research?.project ? 'forscht' : undefined },
             <BlueprintShape />,
           )}
+        {/* 4.14 Andockpunkt: Vertrieb – nur sichtbar, wenn die Marke freigeschaltet ist (Kapitel 3). */}
+        {vertrieb !== null && obj('marke', localize(brandContent.object.name), { status: vertrieb, badge: brandDeskBadge(game), ...(game.staff ? { at: RECHTE_SPALTE_GETEILT.marke } : {}) }, <BrandShape />)}
         {obj(
           'glocke',
           game.finished ? 'Kapitel beendet' : 'Runde beenden',

@@ -4,6 +4,8 @@
 import { newAgenda, settleAgenda, type AgendaState } from './agenda';
 import type { Balance, Rating, TransportMode } from './balance';
 import { formatDate } from './calendar';
+// 4.14 Andockpunkt: Marke und Tankstellen (Kapitel 3).
+import { settleBrand, type BrandState } from './brand';
 import { checkBankruptcy, settleLoans, type Loan } from './credit';
 import { chapterCheck } from './chapter';
 import { advanceDrilling, type Well } from './drilling';
@@ -127,6 +129,8 @@ export interface GameState {
   investigation?: InvestigationState;
   /** Versuchswerkstatt, Techniken, Patente (src/sim/research.ts). */
   research?: ResearchState;
+  /** 4.14 Andockpunkt: Marke und Tankstellen – erst ab Kapitel 3 da, vorher undefined. */
+  brand?: BrandState;
 }
 
 /**
@@ -261,7 +265,9 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Eigene Fuhrwerke und Pipeline (0.2.15+2): Löhne, Unterhalt, Baufortschritt, Sabotage – vor den Zinsen.
   // Türme und Pumpen (0.2.15+7): Turmmiete und Pumpenunterhalt, ebenfalls vor den Zinsen.
   // 4.8 Andockpunkt: Anleihen, Kurs, Aufsichtsrat, Thorne – vor den Bankzinsen (ohne state.stocks wirkungslos).
-  const verzinst = settleLoans(settleStocks(settleRigs(advanceLogistics(rivale, balance), balance), balance), balance);
+  // 4.14 Andockpunkt: Tankstellen rechnen ab (vor den Zinsen); vor Kapitel 3 unverändert.
+  const vertrieb = settleBrand(rivale, balance);
+  const verzinst = settleLoans(settleStocks(settleRigs(advanceLogistics(vertrieb, balance), balance), balance), balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   // 4.7 Andockpunkt: Fernleitungen nach dem Transport – Thorne nimmt unter Druck eine Erhöhung zurück und senkt den Tarif.
   const gefahren = advanceBigPipelines(advanceTransport(verzinst, balance), balance, { railTariffBefore: verzinst.railTariff });

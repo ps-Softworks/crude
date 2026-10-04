@@ -29,6 +29,8 @@ export const SHEET_IDS = [
   // 4.11 Andockpunkt: Schattenbuch in der Schublade und Werkstatt-Mappe (beide erst ab Kapitel 2 auf dem Tisch).
   'schattenbuch',
   'werkstatt',
+  /** 4.14 Andockpunkt: Vertrieb – Marke und Tankstellen (erst ab Kapitel 3 auf dem Tisch). */
+  'marke',
 ] as const;
 export type SheetId = (typeof SHEET_IDS)[number];
 

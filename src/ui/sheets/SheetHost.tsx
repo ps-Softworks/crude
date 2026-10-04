@@ -5,6 +5,10 @@ import type { OpenItem } from '../inbox';
 import type { OpenSheet, SheetId } from '../sceneState';
 import { Sheet, type SheetSize } from '../sheet/Sheet';
 import { BellSheet } from './BellSheet';
+// 4.14 Andockpunkt: Marke und Tankstellen.
+import { BrandSheet } from './BrandSheet';
+import { brandContent } from '../brand';
+import { localize } from '../../sim/i18n';
 import { CalendarSheet } from './CalendarSheet';
 import { FamilySheet } from './FamilySheet';
 import { FreightSheet } from './FreightSheet';
@@ -48,6 +52,8 @@ export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   // 4.11 Andockpunkt
   schattenbuch: { title: 'Schattenbuch', size: 'brief' },
   werkstatt: { title: 'Werkstatt', size: 'mappe' },
+  // 4.14 Andockpunkt: Marke und Tankstellen.
+  marke: { title: localize(brandContent.object.title), size: 'mappe' },
 };
 
 export interface SheetHostProps {
@@ -92,6 +98,8 @@ export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound
     // 4.11 Andockpunkt
     schattenbuch: () => <ShadowBookSheet ctx={ctx} />,
     werkstatt: () => <WorkshopSheet ctx={ctx} />,
+    // 4.14 Andockpunkt: Marke und Tankstellen.
+    marke: () => <BrandSheet ctx={ctx} />,
   };
   return (
     <Sheet
