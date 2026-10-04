@@ -8,7 +8,7 @@
 #   open     – Text, solange noch keine Entscheidung gefallen ist.
 #   draft    – true = Entwurf, Philipp überarbeitet die Texte noch.
 # Jeder Ausgang hat einen kurzen Titel und einen Satz für den Kapitelabschluss
-# („Was aus ihnen wurde“). Die Bögen selbst: k1-2-silas.yaml, k1-3-moss.yaml.
+# („Was aus ihnen wurde“). Die Bögen selbst: k1-2-silas.yaml, k1-3-moss.yaml; Kapitel 2 (4.12) unten.
 #
 # Entwurf – Philipp überarbeitet.
 
@@ -83,3 +83,186 @@ moss:
     text:
       de: Ezekiel Moss bestellt sein Land und hofft auf einen guten Winter.
       en: Ezekiel Moss works his land and hopes for a good winter.
+
+# ---------------------------------------------------------------------------
+# Kapitel 2 „Der Herausforderer“ (4.12): Die Bögen aus content/events/k2-story-*.yaml und die
+# Nachfolge im Crane Trust (Merkzeichen setzt die Diplomatie, src/sim/diplomacyCore.ts).
+# Der Kapitelabschluss zeigt nur die Bögen des Kapitels (src/sim/arcs.ts, ARC_CHAPTER).
+
+nora_k2:
+  draft: true
+  name: { de: "Nora Whitlock", en: "Nora Whitlock" }
+  outcomes:
+    - id: verbuendet
+      any: [nora_verbuendet]
+      title: { de: "Eine ehrliche Quelle", en: "An Honest Source" }
+      text:
+        de: Nora hält Jacob für einen der wenigen in Cordova, der ihr nicht ins Gesicht lügt. Ihre Serie über den Trust trägt seine Zahlen.
+        en: Nora thinks Jacob is one of the few in Cordova who doesn't lie to her face. Her series on the Trust carries his figures.
+    - id: gekauft
+      any: [ledger_gekauft]
+      title: { de: "Die Zeitung gekauft", en: "The Paper Bought" }
+      text:
+        de: Jacob hat den Hallstead Ledger gekauft. Nora schreibt jetzt für eine andere Zeitung – und sie hat ein gutes Gedächtnis.
+        en: Jacob bought the Hallstead Ledger. Nora now writes for another paper – and she has a good memory.
+    - id: feindin
+      any: [nora_feindin]
+      title: { de: "Teil fünf: Harlan Oil", en: "Part Five: Harlan Oil" }
+      text:
+        de: Noras Serie über den Trust hat einen fünften Teil bekommen. Er handelt von Jacob Harlan.
+        en: Nora's series on the Trust has gained a fifth part. It is about Jacob Harlan.
+    - id: ohne
+      any: [nora_ohne_jacob]
+      title: { de: "Ohne ihn geschrieben", en: "Written Without Him" }
+      text:
+        de: Nora hat ihre Serie ohne Jacob geschrieben. Sein Name steht nur einmal darin, in einer Liste.
+        en: Nora wrote her series without Jacob. His name appears only once, in a list.
+    - id: quelle
+      any: [nora_quelle, nora_interview_k2]
+      title: { de: "Eine Quelle unter vielen", en: "One Source Among Many" }
+      text:
+        de: Jacob hat Nora geholfen, so weit es ihm nützte. Sie bedankt sich höflich und prüft jede seiner Zahlen zweimal.
+        en: Jacob helped Nora as far as it suited him. She thanks him politely and checks every one of his figures twice.
+  open:
+    title: { de: "Noch offen", en: "Still Open" }
+    text:
+      de: Nora Whitlock schreibt noch an ihrer Serie über den Crane Trust.
+      en: Nora Whitlock is still writing her series on the Crane Trust.
+
+silas_k2:
+  draft: true
+  name: { de: "Silas Brandt", en: "Silas Brandt" }
+  outcomes:
+    - id: gewarnt
+      any: [silas_k2_gewarnt]
+      title: { de: "Der Mann, der zählte", en: "The Man Who Counted" }
+      text:
+        de: Silas hat die Strohmänner vor allen anderen gesehen. Im Rat hört man jetzt zu, wenn der Alte mit den acht Fingern redet.
+        en: Silas spotted the straw men before anyone else. On the board they listen now when the old man with eight fingers speaks.
+    - id: geschuetzt
+      any: [silas_geschuetzt]
+      title: { de: "Gehalten", en: "Stood By" }
+      text:
+        de: Jacob hat Silas gegen den Aufsichtsrat gehalten. Pettibone hat es nicht vergessen – Silas auch nicht.
+        en: Jacob stood by Silas against the board. Pettibone hasn't forgotten – nor has Silas.
+    - id: recht
+      any: [silas_k2_recht_gegeben]
+      title: { de: "Er hatte recht", en: "He Was Right" }
+      text:
+        de: Silas hatte recht mit den Vollmachten, und Jacob hat es zugegeben. Das war mehr wert als der Sitz.
+        en: Silas was right about the proxies, and Jacob admitted it. That was worth more than the seat.
+    - id: geopfert
+      any: [silas_k2_geopfert]
+      title: { de: "Der Schuldige", en: "The Scapegoat" }
+      text:
+        de: Der Rat brauchte einen Schuldigen für den Toten an Turm vier, und Jacob hat ihm Silas gegeben. Silas trinkt jetzt nicht mehr nur sonntags.
+        en: The board needed someone to blame for the dead man at rig four, and Jacob gave them Silas. Silas no longer drinks only on Sundays.
+    - id: ausgezahlt
+      any: [silas_k2_ausgezahlt, silas_quellen_gekauft]
+      title: { de: "Ausgezahlt", en: "Bought Out" }
+      text:
+        de: Jacob hat Silas seinen Anteil abgekauft. Silas hat jetzt Geld und keinen Turm mehr – und weiß nicht recht, was er damit soll.
+        en: Jacob bought out Silas's share. Silas has money now and no rig – and doesn't quite know what to do with either.
+    - id: kunde
+      any: [silas_tarif_fair, silas_tarif_voll]
+      title: { de: "Ein Kunde", en: "A Customer" }
+      text:
+        de: Silas schickt sein Öl durch Jacobs Leitung und zahlt dafür. Sie reden über Tarife, nicht über früher.
+        en: Silas sends his oil through Jacob's line and pays for it. They talk about rates, not about the old days.
+    - id: nachgezahlt
+      any: [silas_k2_nachgezahlt]
+      title: { de: "Spät nachgezahlt", en: "Paid at Last" }
+      text:
+        de: Jacob hat Silas nachgezahlt, was ihm zustand – zehn Jahre zu spät, aber vor Zeugen.
+        en: Jacob paid Silas what he was owed – ten years late, but in front of witnesses.
+    - id: gekauft
+      any: [silas_schweigegeld]
+      title: { de: "Schweigegeld", en: "Hush Money" }
+      text:
+        de: Silas hat Geld genommen und schweigt. Im Schattenbuch steht jetzt sein Name.
+        en: Silas took money and keeps quiet. His name is now in the shadow book.
+    - id: hinaus
+      any: [silas_k2_hinausgeworfen]
+      title: { de: "Hinausgeworfen", en: "Thrown Out" }
+      text:
+        de: Jacob hat Silas aus der Hauptversammlung werfen lassen. Der Saloon erzählt die Geschichte jeden Abend, jedes Mal ein bisschen schlimmer.
+        en: Jacob had Silas thrown out of the shareholders' meeting. The saloon tells the story every night, a little worse each time.
+  open:
+    title: { de: "Noch offen", en: "Still Open" }
+    text:
+      de: Silas und die Herren vom Aufsichtsrat sind noch nicht miteinander fertig.
+      en: Silas and the gentlemen of the board are not done with each other yet.
+
+ruth_k2:
+  draft: true
+  name: { de: "Ruth Harlan", en: "Ruth Harlan" }
+  outcomes:
+    - id: partnerin
+      any: [ruth_rat_behauptet]
+      title: { de: "Eine Stimme im Rat", en: "A Voice on the Board" }
+      text:
+        de: Ruth sitzt im Aufsichtsrat, und wenn sie redet, schreiben die Herren mit. Vandermeer ist wiedergekommen.
+        en: Ruth sits on the board, and when she speaks the gentlemen take notes. Vandermeer came back.
+    - id: finanzen
+      any: [ruth_finanzen]
+      title: { de: "Die Bücher", en: "The Books" }
+      text:
+        de: Ruth führt die Finanzen von Harlan Oil, mit Titel und eigenem Schreibtisch. Die Bank fragt jetzt nach ihr, nicht nach Jacob.
+        en: Ruth runs Harlan Oil's finances, with a title and a desk of her own. The bank asks for her now, not for Jacob.
+    - id: still
+      any: [ruth_rat_stumm]
+      title: { de: "Ein Stuhl im Rat", en: "A Chair on the Board" }
+      text:
+        de: Ruth sitzt im Rat und schweigt. Jacob hat sie einmal nicht verteidigt; sie hat es sich gemerkt.
+        en: Ruth sits on the board and keeps silent. Once Jacob didn't defend her; she remembered.
+    - id: eigenes
+      any: [ruth_eigenes_geschaeft]
+      title: { de: "Harlan & Schwester", en: "Harlan & Sister" }
+      text:
+        de: Ruth und Hannah haben einen Laden am Bahnhof Salt Hill. Über der Tür steht Harlan – gemeint ist nicht Jacob.
+        en: Ruth and Hannah have a shop by Salt Hill station. Above the door it says Harlan – and it doesn't mean Jacob.
+    - id: verboten
+      any: [ruth_verboten]
+      title: { de: "Verhindert", en: "Prevented" }
+      text:
+        de: Jacob hat Ruths eigenes Geschäft verhindert. Die Bauplätze am Bahnhof gehören jetzt anderen. Ruth redet nicht mehr davon.
+        en: Jacob stopped Ruth's own business. The lots by the station belong to others now. Ruth no longer speaks of it.
+    - id: zuhause
+      any: [ruth_zuhause, ruth_vertroestet_k2]
+      title: { de: "Wieder vertröstet", en: "Put Off Again" }
+      text:
+        de: Ruth wartet – wieder. Die Kiste mit ihren Notizen steht jetzt auf dem Dachboden.
+        en: Ruth waits – again. The box with her notes is up in the attic now.
+  open:
+    title: { de: "Noch offen", en: "Still Open" }
+    text:
+      de: Ruth hat ihre Frage noch nicht gestellt – oder Jacob hat sie noch nicht beantwortet.
+      en: Ruth hasn't asked her question yet – or Jacob hasn't answered it.
+
+crane_k2:
+  draft: true
+  name: { de: "Der Crane Trust", en: "The Crane Trust" }
+  outcomes:
+    - id: zerschlagen
+      any: [k2_trust_zerschlagen]
+      title: { de: "Zerschlagen", en: "Broken Up" }
+      text:
+        de: Der Staat hat den Crane Trust zerschlagen. Crane Eastern und Crane Midland bieten jetzt gegeneinander – und um Jacobs Öl.
+        en: The state has broken up the Crane Trust. Crane Eastern and Crane Midland now bid against each other – and for Jacob's oil.
+    - id: margaret
+      any: [k2_nachfolge_margaret]
+      title: { de: "Margaret Crane", en: "Margaret Crane" }
+      text:
+        de: Margaret Crane hat den Aufsichtsrat ihres Vaters gewonnen. Sie belohnt ihre Partner – und vergisst ihre Gegner nicht.
+        en: Margaret Crane won her father's board. She rewards her partners – and doesn't forget her opponents.
+    - id: pruett
+      any: [k2_nachfolge_pruett]
+      title: { de: "Harold Pruett", en: "Harold Pruett" }
+      text:
+        de: Harold Pruett führt den Trust. Er kürzt allen den Preis und kauft in jeder Krise auf, was billig zu haben ist.
+        en: Harold Pruett runs the Trust. He cuts everyone's price and buys up whatever is cheap in every crisis.
+  open:
+    title: { de: "Noch nicht entschieden", en: "Not Yet Decided" }
+    text:
+      de: Margaret Crane und Harold Pruett ringen noch um den Trust.
+      en: Margaret Crane and Harold Pruett are still fighting over the Trust.

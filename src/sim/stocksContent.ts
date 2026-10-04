@@ -14,6 +14,8 @@ export interface BoardSeatContent extends BoardSeatDef {
 export interface StocksContent {
   draft: boolean;
   board: BoardSeatContent[];
+  /** Gäste (4.12), die eine Ereignis-Wirkung in den Rat holt (Agenda und Treue: balance.yaml → eventSystems.boardGuests). */
+  guests: { id: string; name: LocalizedText; role: LocalizedText }[];
   thorne: { name: LocalizedText; cover: LocalizedText; revealed: LocalizedText };
   straw: string[];
   agendas: Record<(typeof AGENDAS)[number], LocalizedText>;
@@ -80,6 +82,17 @@ export function parseStocksContent(file: string, text: string, minSeats = 9): { 
     if (board.length < minSeats) fehler(`board: mindestens ${minSeats} Räte nötig (so viele Sitze kann der Aufsichtsrat haben).`);
   }
 
+  const guests: StocksContent['guests'] = [];
+  if (raw.guests !== undefined && !Array.isArray(raw.guests)) fehler('guests: muss eine Liste sein.');
+  else if (Array.isArray(raw.guests)) {
+    raw.guests.forEach((g: unknown, i) => {
+      const wo = `guests[${i}]`;
+      if (!istObjekt(g) || typeof g.id !== 'string' || !/^[a-z0-9_]+$/.test(g.id)) return void fehler(`${wo}: braucht id, name und role.`);
+      if (board.some((b) => b.id === g.id) || guests.some((x) => x.id === g.id)) fehler(`${wo}.id: „${g.id}“ gibt es schon.`);
+      guests.push({ id: g.id, name: sprachtext(g.name, `${wo}.name`), role: sprachtext(g.role, `${wo}.role`) });
+    });
+  }
+
   const t = istObjekt(raw.thorne) ? raw.thorne : {};
   if (!istObjekt(raw.thorne)) fehler('Block „thorne“ fehlt.');
   const thorne = { name: sprachtext(t.name, 'thorne.name'), cover: sprachtext(t.cover, 'thorne.cover'), revealed: sprachtext(t.revealed, 'thorne.revealed') };
@@ -103,7 +116,7 @@ export function parseStocksContent(file: string, text: string, minSeats = 9): { 
   for (const k of MEMBER_MOODS) moods[k] = sprachtext(mo[k], `moods.${k}`);
 
   if (errors.length > 0) return { content: null, errors };
-  return { content: { draft: raw.draft === true, board, thorne, straw, agendas, demands, moods }, errors };
+  return { content: { draft: raw.draft === true, board, guests, thorne, straw, agendas, demands, moods }, errors };
 }
 
 /** Name des Strohmanns eines Blocks. */
@@ -118,7 +131,7 @@ export function memberLabel(content: StocksContent, member: BoardMember, isRevea
     const name = nr <= 1 ? localize(content.thorne.name, lang) : `${localize(content.thorne.name, lang).split(' ')[0]}s Partner ${nr - 1}`;
     return { name, role: localize(isRevealed ? content.thorne.revealed : content.thorne.cover, lang), agenda: isRevealed ? localize(content.thorne.revealed, lang) : localize(content.agendas.price, lang) };
   }
-  const def = content.board.find((b) => b.id === member.id);
+  const def = content.board.find((b) => b.id === member.id) ?? content.guests.find((g) => g.id === member.id);
   return {
     name: def ? localize(def.name, lang) : member.id,
     role: def ? localize(def.role, lang) : '',

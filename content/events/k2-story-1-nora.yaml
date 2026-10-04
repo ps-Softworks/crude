@@ -65,8 +65,7 @@
           Nora reads the lists standing, then sits down. "These are genuine," she
           says – not a question. She promises not to name Jacob. Lusk docks two cents
           a barrel from next month anyway – he can guess where the lists came from.
-      # TODO-Effekt: rival: { crane: { relation: -10 } }, heat: +1 (Insiderwissen)
-      effects: { price: -0.02 }
+      effects: { rival: { crane: { trust: -10 } }, heat: 1, price: -0.02 }
       marks: [nora_quelle, nora_k2_besucht]
     - id: interview
       label: { de: "Ihr ein Interview geben – mit Namen", en: "Give her an interview – on the record" }
@@ -79,8 +78,7 @@
           Nora asks questions for two hours. Jacob answers everything except the
           question about his own company's rebates. She notes the pause. By evening
           Jacob is more tired than after a board meeting.
-      # TODO-Effekt: reputation: { public: +4 }
-      effects: { strength: -4 }
+      effects: { strength: -4, reputation: { public: 4 } }
       marks: [nora_interview_k2, nora_k2_besucht]
       appointments: 2
     - id: abweisen
@@ -135,8 +133,7 @@
           Nora reads the lists and pockets them. "I wouldn't have needed fifty dollars
           for that back then," she says. "Just a question." Lusk docks two cents a
           barrel; he can guess where the lists came from.
-      # TODO-Effekt: rival: { crane: { relation: -10 } }, heat: +1
-      effects: { price: -0.02 }
+      effects: { rival: { crane: { trust: -10 } }, heat: 1, price: -0.02 }
       marks: [nora_quelle, nora_k2_besucht]
     - id: interview
       label: { de: "Ihr ein Interview geben – mit Namen", en: "Give her an interview – on the record" }
@@ -149,8 +146,7 @@
           Nora asks questions for two hours. The first is whether Jacob still believes
           reporters can be bought. Jacob says no. She writes it down without looking
           up, and puts a question mark after it.
-      # TODO-Effekt: reputation: { public: +3 }
-      effects: { strength: -4 }
+      effects: { strength: -4, reputation: { public: 3 } }
       marks: [nora_interview_k2, nora_k2_besucht]
       appointments: 2
     - id: abweisen
@@ -203,8 +199,7 @@
           Nora checks the lists against her own figures and nods. "That's worth more
           than page two," she says. Lusk docks two cents a barrel; he can guess where
           the lists came from.
-      # TODO-Effekt: rival: { crane: { relation: -10 } }, heat: +1
-      effects: { price: -0.02 }
+      effects: { rival: { crane: { trust: -10 } }, heat: 1, price: -0.02 }
       marks: [nora_quelle, nora_k2_besucht]
     - id: interview
       label: { de: "Ihr ein Interview geben – mit Namen", en: "Give her an interview – on the record" }
@@ -215,8 +210,7 @@
         en: >-
           Nora asks questions for two hours. She doesn't ask about the Courier. She
           doesn't need to. The clipping lies open on the table the whole time.
-      # TODO-Effekt: reputation: { public: +3 }
-      effects: { strength: -4 }
+      effects: { strength: -4, reputation: { public: 3 } }
       marks: [nora_interview_k2, nora_k2_besucht]
       appointments: 2
     - id: abweisen
@@ -264,8 +258,8 @@
         en: >-
           Nora prints Jacob's letter in part two. The People's League calls him an
           honest producer. Lusk calls him nothing at all any more; he just pays less.
-      # TODO-Effekt: reputation: { public: +6, politics: +3 }, rival: { crane: { relation: -10 } }, party: { volksbund: +5 }
-      effects: { price: -0.03 }
+      effects: { reputation: { public: 6, politics: 3 }, rival: { crane: { trust: -10 } }, price: -0.03 }
+      public: [support_volksbund]
       marks: [nora_verbuendet]
     - id: drohen
       label: { de: "Dem Ledger mit dem Entzug aller Anzeigen drohen", en: "Threaten to pull all advertising from the Ledger" }
@@ -277,8 +271,7 @@
         en: >-
           The publisher apologises politely and prints part two anyway. Nora gets a
           column of her own. Lusk sends a box of cigars and a better price.
-      # TODO-Effekt: heat: +5, reputation: { public: -4 }
-      effects: { price: 0.02 }
+      effects: { heat: 5, reputation: { public: -4 }, price: 0.02 }
       marks: [nora_feindin]
     - id: kaufen
       label: { de: "Ein Viertel des Ledger kaufen (15.000 $)", en: "Buy a quarter of the Ledger (15,000 $)" }
@@ -291,9 +284,8 @@
           Jacob now owns a quarter of the Hallstead Ledger. The series ends after part
           two, without explanation. Nora resigns the same day and crosses the street
           to the competition – with all her notebooks.
-      # TODO-Effekt: investment: { newspaper: +1 }, influence: +2, heat: +2
       requires: { minCash: 15000 }
-      effects: { cash: -15000 }
+      effects: { cash: -15000, reputation: { public: 4, politics: 10 }, heat: 2 }
       marks: [ledger_gekauft]
     - id: schweigen
       label: { de: "Nichts tun – Zeitungen vergilben", en: "Do nothing – newspapers yellow" }
@@ -346,8 +338,7 @@
           Part four of the series puts Bullard's rebate on the front page. The railway
           cancels the contract to stay out of it and offers Jacob the same wagons at
           a better rate. Bullard doesn't know who talked. Not yet.
-      # TODO-Effekt: rival: { bullard: { relation: -20, aggression: +10 } }
-      effects: { railTariff: -0.05 }
+      effects: { rival: { bullard: { trust: -20, grudge: 10 } }, railTariff: -0.05 }
       marks: [nora_k2_bestaetigt]
     - id: schweigen
       label: { de: "Nichts davon wissen", en: "Know nothing about it" }
@@ -360,8 +351,7 @@
           Nora closes the notebook. "Then without you," she says, without reproach.
           The rebate stays – and everyone else keeps paying for it, Harlan Oil
           included.
-      # TODO-Effekt: rival: { bullard: { trust: +5 } }
-      effects: { railTariff: 0.03 }
+      effects: { rival: { bullard: { trust: 5 } }, railTariff: 0.03 }
       marks: [nora_k2_dementiert]
       appointments: 0
       default: true
@@ -401,8 +391,7 @@
           Jacob writes for three nights. The Ledger prints the reply in full, with
           Nora's answer beside it, also in full. Afterwards Jacob is as tired as he
           used to be after a drilling shift.
-      # TODO-Effekt: reputation: { public: +2 }, heat: -2
-      effects: { strength: -15 }
+      effects: { strength: -15, reputation: { public: 2 }, heat: -2 }
     - id: leck
       label: { de: "Herausfinden lassen, wer aus der Firma geredet hat (2.000 $)", en: "Find out who in the company talked (2,000 $)" }
       result:
@@ -413,9 +402,8 @@
         en: >-
           A detective from Port Ellis finds a pay clerk who made copies for Nora. Jacob
           fires him. The men in the office talk more quietly after that – and less.
-      # TODO-Effekt: staffLoyalty: { buero: -10 }, fire: lohnschreiber, heat: +2
       requires: { minCash: 2000 }
-      effects: { cash: -2000 }
+      effects: { cash: -2000, staffLoyalty: { all: -10 }, heat: 2 }
     - id: aussitzen
       label: { de: "Aussitzen", en: "Sit it out" }
       result:
@@ -427,8 +415,7 @@
           The series runs for two more weeks. Then an antitrust trial in Hallstead
           takes the front page. A few farmers on the hill no longer want to lease to
           Harlan, or only at a higher price.
-      # TODO-Effekt: reputation: { public: -6 }
-      effects: { leaseCost: 0.15 }
+      effects: { reputation: { public: -6 } }
       appointments: 0
       default: true
 
@@ -471,8 +458,7 @@
           Jacob tells it as it was. Nora writes without looking up. The article
           appears, and it is hard but exact – including where it speaks for Jacob.
           Silas clips it out.
-      # TODO-Effekt: reputation: { public: -2, workers: +3 }, investigation: { delaney: +1 } (Geständnis)
-      effects: { strength: -14 }
+      effects: { strength: -14, reputation: { public: -2, workers: 3 }, evidence: 1 }
       marks: [nora_silas_wahrheit]
     - id: umschlag
       label: { de: "Silas über einen Mittelsmann Geld bieten, damit er widerruft (4.000 $)", en: "Offer Silas money through a go-between to recant (4,000 $)" }
@@ -485,9 +471,8 @@
           Silas doesn't take the money. He gives the envelope to Nora, and Nora gives
           it to a photographer. Now the article has two parts, and the second is the
           envelope.
-      # TODO-Effekt: trace: { severity: 3, label: "Schweigegeld an einen Zeugen" }, heat: +5, evidence: { delaney: +1 }
       requires: { minCash: 4000 }
-      effects: { cash: -4000 }
+      effects: { cash: -4000, trace: { severity: 5, label: "Schweigegeld an einen Zeugen" }, evidence: 1 }
       marks: [nora_silas_umschlag]
     - id: nichts
       label: { de: "Nichts sagen", en: "Say nothing" }
@@ -500,8 +485,7 @@
           The article appears without Jacob's side: "The Man Who Cheated His Partner
           Out of a Derrick." In Hallstead they laugh; in Cordova they don't. Two
           drilling bosses quit.
-      # TODO-Effekt: reputation: { workers: -6, public: -4 }
-      effects: { production: -0.05 }
+      effects: { reputation: { workers: -6, public: -4 } }
       marks: [nora_silas_gedruckt]
       appointments: 0
       default: true
@@ -544,8 +528,7 @@
           makes Jacob explain, three evenings running, every sentence he said to
           Nora. In Cordova, for the first time in months, the crews say "Mr. Harlan"
           without an edge.
-      # TODO-Effekt: boardLoyalty: { pettibone: -15 }, reputation: { workers: +5 }
-      effects: { production: 0.05, strength: -10 }
+      effects: { strength: -10, boardLoyalty: { bankier: -15 }, reputation: { workers: 5 } }
       marks: [nora_k2_rat_bloss]
     - id: zurueckholen
       label: { de: "Silas zurückholen und es Nora selbst sagen lassen (3.000 $)", en: "Bring Silas back and let him tell Nora himself (3,000 $)" }
@@ -556,9 +539,8 @@
         en: >-
           Silas comes back as an "adviser", as the paper puts it. He tells Nora the boy
           fetched him. The article is headlined: "Late, but Not Too Late."
-      # TODO-Effekt: boardLoyalty: { pettibone: -10, silas: +15 }, reputation: { workers: +5 }
       requires: { minCash: 3000 }
-      effects: { cash: -3000, production: 0.05 }
+      effects: { cash: -3000, boardLoyalty: { bankier: -10, silas: 15 }, reputation: { workers: 5 } }
       marks: [silas_k2_zurueckgeholt]
     - id: nichts
       label: { de: "Kein Kommentar", en: "No comment" }
@@ -569,7 +551,6 @@
         en: >-
           Nora writes without Jacob. The article is short and has a photograph: Silas
           outside the boarding house, hat in hand.
-      # TODO-Effekt: reputation: { workers: -5, public: -3 }
-      effects: { production: -0.05 }
+      effects: { reputation: { workers: -5, public: -3 } }
       appointments: 0
       default: true

@@ -230,7 +230,7 @@ export function App() {
   const kartenText = hint ? viewTutorial(hint, mapTutorialContent).text : (step?.text ?? null);
 
   const tableau =
-    ((game.ending === 'pleite' || game.ending === 'kapitel' || game.ending === 'verkauft') && !(peek && game.ending !== 'pleite')) || game.jump !== null || chronik !== null;
+    (game.ending !== null && !(peek && game.ending !== 'pleite')) || game.jump !== null || chronik !== null;
 
   // Besuch von selbst (Bauplan Abschnitt 4): nach der Zeitung höchstens einer je Runde – erst klopft es.
   const besetzt = wechselt || rundgang || tableau || zoom !== null;

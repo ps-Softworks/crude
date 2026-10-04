@@ -11,6 +11,7 @@ import { formatDate } from './calendar';
 import type { GameState } from './game';
 import { LOGISTICS_MARKS, pipelineWorks, teamsIdle, withMark } from './logistics';
 import { Rng } from './rng';
+import { timedEffect } from './events';
 // 4.7 Andockpunkt: Fernleitungen geben den Wegen „Pipeline“ (Hafen) und „Bahn“ (Bahnhof) Kapazität dazu.
 import { bigPipelineCapacity, harborTrunkRunning } from './bigPipeline';
 import {
@@ -54,20 +55,22 @@ export function tariff(state: Verkaufslage, balance: Balance, mode: TransportMod
 }
 
 /** Höchstmenge je Runde: eigene Fuhrwerke je Gespann (0, wenn sie stillstehen), Pipeline nur, wenn sie läuft. */
-export function modeCapacity(state: Partial<Pick<GameState, 'logistics' | 'round' | 'bigPipelines'>>, balance: Balance, mode: TransportMode): number {
+export function modeCapacity(state: Partial<Pick<GameState, 'logistics' | 'round' | 'bigPipelines' | 'events'>>, balance: Balance, mode: TransportMode): number {
   const t = balance.transport;
   const lg = state.logistics;
+  // 4.12: befristete Systemwirkung pipelineThroughput – mehr (weniger) Durchsatz in den eigenen Leitungen.
+  const durchsatz = state.round !== undefined && state.events ? Math.max(0, 1 + timedEffect({ round: state.round, events: state.events }, 'pipelineThroughput')) : 1;
   switch (mode) {
     case 'wagon':
       return t.wagon.capacity;
     case 'rail':
       // 4.7 Andockpunkt: plus Fernleitungen zum Bahnhof – ihr Öl fährt mit Thornes Bahn, zu seinem Tarif.
-      return t.rail.capacity + bigPipelineCapacity(state, balance, 'rail');
+      return t.rail.capacity + Math.round(bigPipelineCapacity(state, balance, 'rail') * durchsatz);
     case 'teams':
       return !lg || teamsIdle({ round: state.round ?? 0, logistics: lg }) ? 0 : lg.teams * t.teams.capacity;
     case 'pipeline':
       // 4.7 Andockpunkt: plus laufende Fernleitungen zum Hafen (Kapitel 2+; in Kapitel 1 immer 0).
-      return (lg && pipelineWorks({ logistics: lg }) ? t.pipeline.capacity : 0) + bigPipelineCapacity(state, balance, 'pipeline');
+      return Math.round(((lg && pipelineWorks({ logistics: lg }) ? t.pipeline.capacity : 0) + bigPipelineCapacity(state, balance, 'pipeline')) * durchsatz);
   }
 }
 

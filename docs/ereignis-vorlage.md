@@ -59,6 +59,13 @@ Zum Ausprobieren: `npm run dev`, dann im Browser `?seed=abc&debug=1`.
   `ruth`/`thomas`/`clara` (Beziehung; `clara` wirkt erst ab Claras Geburt im Zeitsprung I), `teams`/`teamsIdle` (eigene Fuhrwerke). Befristet für
   `events.timedRounds` Runden (0.2.15+3): `price` ($ je Barrel beim Trust), `production`
   (Anteil der eigenen Förderung, 0,1 = +10 %), `leaseCost` (Anteil am Pachtbonus, −0,2 = 20 % billiger).
+- Ab Kapitel 2 dazu die Systemwirkungen (4.12), ebenfalls unter `effects`: Ruf (`reputation`), Rivalen
+  (`rival`), Schattenbuch (`heat`, `trace`, `evidence`), Aufsichtsrat und Aktien (`boardLoyalty`, `boardMember`,
+  `control`, `rivalStake`, `sharePrice`, `dividendPressure`), Personal (`staffLoyalty`, `hire`, `fire`),
+  Raffinerie (`refineryDown`, `refineryOutput`, `productYield`, `productPrice`), Leitungen (`pipelineDown`,
+  `pipelineThroughput`, `transportFee`), Welt (`mood`, `tension`, `lawPressure`), Forschung (`research`), Bank
+  (`rating`, `loan`), `appointmentsNext` und `heirValues`. Genaue Schreibweise: `content/events/README.md`.
+  Eine Wirkung „in Geld“ nur dann, wenn der Text Geld nennt – der Preis eines Ratssitzes ist Treue oder Kontrolle.
 - Jede Antwort soll spürbar sein (0.2.15+3): `npm run check:events` listet alle Antworten mit
   ihrer Wirkung und meldet schwache – unter 200 $ Wirkung, ohne dauerhafte Folge und ohne
   Merkzeichen, das später etwas abfragt. Eine einzelne „lieber nicht“-Antwort neben einer

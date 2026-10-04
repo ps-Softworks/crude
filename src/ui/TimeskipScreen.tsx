@@ -203,6 +203,8 @@ export function ChronicleScreen({ game, record, onContinue }: { game: GameState;
           {zeile('Ruth', wort(v.ruth), wort(n.ruth))}
           {zeile('Kinder', String(v.children), String(n.children))}
         </dl>
+        {/* 4.12: Ausgangslage und Ziel von Kapitel 2 – der Spieler weiß vor der ersten Runde, worum es geht. */}
+        {game.ending !== 'pleite' && <p className="bogen-text sprung-ziel">{fillTimeskipText(T.chapter2.text, {})}</p>}
       </div>
       <div className="bogen-fuss">
         {game.ending === 'pleite' ? (

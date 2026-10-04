@@ -58,6 +58,16 @@ board:
     name: { de: Cornelius Pike, en: Cornelius Pike }
     role: { de: Reeder in Port Ellis, en: shipowner in Port Ellis }
 
+# Gäste (4.12): Ereignisse können sie in den Aufsichtsrat holen (Wirkung boardMember).
+# Agenda und Treue zu Beginn stehen in content/balance.yaml → eventSystems.boardGuests.
+guests:
+  - id: silas
+    name: { de: Silas Brandt, en: Silas Brandt }
+    role: { de: "Bohrmeister, Gründer der ersten Stunde", en: "drilling boss, there from the first day" }
+  - id: vandermeer
+    name: { de: Ambrose Vandermeer, en: Ambrose Vandermeer }
+    role: { de: "Bankhaus Vandermeer & Co., Hallstead", en: "Vandermeer & Co. bank, Hallstead" }
+
 thorne:
   name: { de: Lucius Vance, en: Lucius Vance }
   cover: { de: vertritt eine Treuhandgesellschaft aus Hallstead, en: represents a trust company from Hallstead }

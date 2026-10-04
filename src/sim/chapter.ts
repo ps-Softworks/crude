@@ -12,6 +12,13 @@
 // bleibt Familienfirma. Die Entscheidung steht in state.ipo (null = noch offen,
 // sonst Anteil und Erlös; Anteil 0 = Familienfirma). Reine Funktionen, kein Zufall.
 // Texte: content/chapter.yaml.
+//
+// Kapitel 2 „Der Herausforderer“ (4.12, GDD §13): geschafft mit eigener Raffinerie ODER eigener
+// Fernleitung zum Hafen, Kontrolle ≥ chapter.chapter2.goalControl (Familienfirma: immer) UND
+// Imperiumswert ≥ chapter.chapter2.goalValue. Frühe Enden ab Kapitel 2 (GDD §14): „Abgesetzt“
+// (Stellvertreterkampf verloren, stocks.ousted), „Geschluckt“ (Thorne hält mehr Aktien als Jacob und
+// Jacobs Kontrolle liegt unter swallowedControl) und „Hinter Gittern“ (Delaney: Verurteilung zu langer
+// Haft, Merkzeichen delaney_haft). Der Verkauf an Pruett (4.10) ist dort „Der kluge Mann“.
 
 import { parseDocument } from 'yaml';
 import { arcOutcome, type ArcContent } from './arcs';
@@ -25,9 +32,14 @@ import type { GameState } from './game';
 import { LANGUAGES, localize, type Lang, type LocalizedText } from './i18n';
 import { producingWells } from './production';
 import { LOGISTICS_SIM_MARKS } from './logistics';
+import { ownsRefinery } from './refinery';
+import { ownsHarborPipeline } from './bigPipeline';
+import { control, ownStake, thorneStake } from './stocks';
+import { DELANEY_MARKS } from './investigation';
+import { REPUTATION_AXES, REPUTATION_WORDS, type ReputationAxis, type ReputationWord } from './reputation';
 
-/** Wie Kapitel 1 ausgegangen ist, oder null, solange es läuft. */
-export type ChapterResult = 'erreicht' | 'verfehlt' | 'verkauft' | 'pleite' | null;
+/** Wie das Kapitel ausgegangen ist, oder null, solange es läuft. */
+export type ChapterResult = 'erreicht' | 'verfehlt' | 'verkauft' | 'pleite' | 'abgesetzt' | 'geschluckt' | 'haft' | null;
 
 export interface ChapterCheck {
   /** Kasse nicht im Minus und nicht pleite. */
@@ -49,18 +61,83 @@ export function chapterCheck(state: GameState, balance: Balance): ChapterCheck {
   return { solvent, value, wells, valueReached, wellsReached, passed: solvent && (valueReached || wellsReached) };
 }
 
+/** Kapitelprüfung Kapitel 2 (4.12, GDD §13). */
+export interface Chapter2Check {
+  refinery: boolean;
+  harbor: boolean;
+  /** Eigene Raffinerie oder Fernleitung zum Hafen. */
+  transport: boolean;
+  /** Kontrolle 0–1 (Familienfirma: 1). */
+  control: number;
+  controlReached: boolean;
+  value: number;
+  valueReached: boolean;
+  passed: boolean;
+}
+
+/** Kontrolle über Harlan Oil (GDD §4, §8): ohne Aktienbuch oder als Familienfirma 1. */
+export function companyControl(state: Pick<GameState, 'stocks'>, balance: Balance): number {
+  return state.stocks ? control(state.stocks, balance) : 1;
+}
+
+/** Die Kapitelprüfung von Kapitel 2 zum aktuellen Stand. */
+export function chapter2Check(state: GameState, balance: Balance): Chapter2Check {
+  const b = balance.chapter.chapter2;
+  const refinery = ownsRefinery(state);
+  const harbor = ownsHarborPipeline(state);
+  const kontrolle = companyControl(state, balance);
+  const value = empireValue(state, balance);
+  const controlReached = kontrolle >= b.goalControl - 1e-9;
+  const valueReached = value >= b.goalValue;
+  return { refinery, harbor, transport: refinery || harbor, control: kontrolle, controlReached, value, valueReached, passed: (refinery || harbor) && controlReached && valueReached };
+}
+
+/** Hat Jacob die Prüfung seines Kapitels bestanden (Kapitel 1 oder 2)? */
+export function chapterPassed(state: GameState, balance: Balance): boolean {
+  return chapterOf(state) >= 2 ? chapter2Check(state, balance).passed : chapterCheck(state, balance).passed;
+}
+
 /** Ausgang des Kapitels: erst am Ende (ending gesetzt), vorher null. */
 export function chapterResult(state: GameState, balance: Balance): ChapterResult {
   switch (state.ending) {
     case null:
       return null;
-    case 'pleite':
-      return 'pleite';
-    case 'verkauft':
-      return 'verkauft';
     case 'kapitel':
-      return chapterCheck(state, balance).passed ? 'erreicht' : 'verfehlt';
+      return chapterPassed(state, balance) ? 'erreicht' : 'verfehlt';
+    default:
+      return state.ending;
   }
+}
+
+/** Frühe Enden ab Kapitel 2 (GDD §14), die nicht schon ihr System auslöst. */
+export type EarlyEnding = 'abgesetzt' | 'geschluckt' | 'haft';
+
+/**
+ * Prüft nach der Rundenabrechnung, ob Kapitel 2 vorzeitig endet: abgesetzt (stocks.ousted),
+ * hinter Gittern (Merkzeichen delaney_haft) oder geschluckt (Thorne hält mehr Aktien als Jacob
+ * und Jacobs Kontrolle liegt unter swallowedControl). In Kapitel 1 nie.
+ */
+export function earlyEnding(state: GameState, balance: Balance): EarlyEnding | null {
+  if (chapterOf(state) < 2) return null;
+  if (state.events.marks[DELANEY_MARKS.prison] !== undefined) return 'haft';
+  const s = state.stocks;
+  if (s && s.ousted > 0) return 'abgesetzt';
+  if (s && s.public && s.ousted === 0 && thorneStake(s) > ownStake(s) && control(s, balance) < balance.chapter.chapter2.swallowedControl) return 'geschluckt';
+  return null;
+}
+
+const EARLY_LOG: Record<EarlyEnding, string> = {
+  abgesetzt: 'Der Aufsichtsrat hat Jacob Harlan abgesetzt. Ein anderer sitzt jetzt an seinem Schreibtisch.',
+  geschluckt: 'Augustus Thorne hält mehr Aktien von Harlan Oil als Jacob. Die Firma gehört jetzt zu Thorne Rail.',
+  haft: 'Jacob Harlan muss ins Bundesgefängnis. Die Firma führt ein Verwalter.',
+};
+
+/** Beendet die Partie mit einem frühen Ende, wenn eins eingetreten ist (4.12 Andockpunkt am Rundenende). */
+export function applyEarlyEnding(state: GameState, balance: Balance): GameState {
+  if (state.finished) return state;
+  const ende = earlyEnding(state, balance);
+  if (!ende) return state;
+  return { ...state, finished: true, ending: ende, log: [...state.log, `${formatDate(state)}: ${EARLY_LOG[ende]}`] };
 }
 
 /** Boni der Kapitelprüfung – nur zur Anzeige. */
@@ -127,6 +204,9 @@ export function ownShare(state: Pick<GameState, 'ipo'>): number {
 
 const ENDING_IDS = ['erreicht', 'verfehlt', 'verkauft'] as const;
 type EndingId = (typeof ENDING_IDS)[number];
+/** Ausgänge von Kapitel 2 (4.12): Prüfung, Verkauf an Pruett und die frühen Enden (GDD §14). */
+export const CHAPTER2_ENDING_IDS = ['erreicht', 'verfehlt', 'verkauft', 'abgesetzt', 'geschluckt', 'haft'] as const;
+export type Chapter2EndingId = (typeof CHAPTER2_ENDING_IDS)[number];
 
 export interface ChapterContent {
   draft: boolean;
@@ -141,6 +221,14 @@ export interface ChapterContent {
     sold: LocalizedText;
     kept: LocalizedText;
     blocked: LocalizedText;
+  };
+  /** Kapitel 2 (4.12): Ausgänge, Prüfung, Ausblick auf Kapitel 3. */
+  chapter2: {
+    endings: Record<Chapter2EndingId, { title: LocalizedText; text: LocalizedText }>;
+    goals: { transport: LocalizedText; control: LocalizedText; value: LocalizedText };
+    /** Ruf (GDD §4): Achsen und Wörter. */
+    reputation: { title: LocalizedText; axes: Record<ReputationAxis, LocalizedText>; words: Record<ReputationWord, LocalizedText> };
+    next: { title: LocalizedText; text: LocalizedText };
   };
 }
 
@@ -231,6 +319,33 @@ export function parseChapterContent(file: string, text: string): { content: Chap
     kept: sprachtext(i.kept, 'ipo.kept'),
     blocked: sprachtext(i.blocked, 'ipo.blocked'),
   };
+  const k2 = block('chapter2');
+  const k2e = istObjekt(k2.endings) ? k2.endings : {};
+  if (!istObjekt(k2.endings)) fehler('chapter2.endings fehlt.');
+  const endings2 = {} as ChapterContent['chapter2']['endings'];
+  for (const id of CHAPTER2_ENDING_IDS) {
+    const x = istObjekt(k2e[id]) ? k2e[id] : {};
+    if (!istObjekt(k2e[id])) fehler(`chapter2.endings.${id} fehlt.`);
+    endings2[id] = { title: sprachtext(x.title, `chapter2.endings.${id}.title`), text: sprachtext(x.text, `chapter2.endings.${id}.text`) };
+  }
+  const k2g = istObjekt(k2.goals) ? k2.goals : {};
+  if (!istObjekt(k2.goals)) fehler('chapter2.goals fehlt.');
+  const k2n = istObjekt(k2.next) ? k2.next : {};
+  if (!istObjekt(k2.next)) fehler('chapter2.next fehlt.');
+  const k2r = istObjekt(k2.reputation) ? k2.reputation : {};
+  if (!istObjekt(k2.reputation)) fehler('chapter2.reputation fehlt.');
+  const k2ra = istObjekt(k2r.axes) ? k2r.axes : {};
+  const k2rw = istObjekt(k2r.words) ? k2r.words : {};
+  const axes = {} as Record<ReputationAxis, LocalizedText>;
+  for (const a of REPUTATION_AXES) axes[a] = sprachtext(k2ra[a], `chapter2.reputation.axes.${a}`);
+  const words = {} as Record<ReputationWord, LocalizedText>;
+  for (const w of REPUTATION_WORDS) words[w] = sprachtext(k2rw[w], `chapter2.reputation.words.${w}`);
+  const chapter2 = {
+    endings: endings2,
+    reputation: { title: sprachtext(k2r.title, 'chapter2.reputation.title'), axes, words },
+    goals: { transport: sprachtext(k2g.transport, 'chapter2.goals.transport'), control: sprachtext(k2g.control, 'chapter2.goals.control'), value: sprachtext(k2g.value, 'chapter2.goals.value') },
+    next: { title: sprachtext(k2n.title, 'chapter2.next.title'), text: sprachtext(k2n.text, 'chapter2.next.text') },
+  };
   if (errors.length > 0) return { content: null, errors };
-  return { content: { draft: raw.draft === true, endings, goals, bonus, ipo }, errors };
+  return { content: { draft: raw.draft === true, endings, goals, bonus, ipo, chapter2 }, errors };
 }

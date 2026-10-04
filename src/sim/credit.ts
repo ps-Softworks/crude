@@ -140,7 +140,7 @@ function lastId(loans: readonly Loan[]): number {
  * Kapitel 1 gibt es kein A: ohne Cashflow-Historie und ohne Ruf bleibt es beim
  * Startrating – das Rating kann nur schlechter werden.
  */
-function ratingOf(state: Pick<GameState, 'loans' | 'wells' | 'missedPayments'>, balance: Balance): Rating {
+function ratingOf(state: Pick<GameState, 'loans' | 'wells' | 'missedPayments'> & Partial<Pick<GameState, 'consequences'>>, balance: Balance): Rating {
   const { startRating, usageC, usageD, missedC, missedD } = balance.credit;
   // Das Rating misst die Schulden an den Sicherheiten, nicht an der Laune der Banken (4.4).
   const rahmen = baseCreditLimit(state, balance);
@@ -150,7 +150,10 @@ function ratingOf(state: Pick<GameState, 'loans' | 'wells' | 'missedPayments'>, 
   else if (state.missedPayments >= missedC && rating === 'B') rating = 'C';
   // Schlechter als das Startrating geht es nie, besser erst mit Cashflow und Ruf.
   const schlechter = RATINGS.indexOf(rating) > RATINGS.indexOf(startRating) ? rating : startRating;
-  return schlechter;
+  // 4.12: Ereignisse können das Rating dauerhaft verschieben (Systemwirkung rating, + = besser).
+  const shift = state.consequences?.ratingShift ?? 0;
+  if (shift === 0) return schlechter;
+  return RATINGS[Math.min(RATINGS.length - 1, Math.max(0, RATINGS.indexOf(schlechter) - shift))];
 }
 
 /** Warum ein Kredit gerade nicht geht. */

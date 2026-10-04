@@ -105,7 +105,8 @@ describe('Inhalte: content/timeskip.yaml', () => {
     expect(content).not.toBeNull();
     for (const id of SWITCH_IDS) for (const c of SWITCH_CHOICES[id]) expect(content!.switches[id].choices[c].de).not.toBe('');
     for (const k of CHRONICLE_KINDS) expect(content!.chronicle.entries[k].de).not.toBe('');
-    expect(content!.chapter2.badge.de).toMatch(/im Bau/);
+    expect(content!.chapter2.badge.de).toMatch(/Kapitel 2/);
+    expect(content!.chapter3.badge.de).toMatch(/im Bau/);
     expect(content!.chronicle.one.wells_found?.de).toMatch(/eine neue Quelle/);
   });
 
@@ -382,7 +383,7 @@ describe('Spielstand übersteht den Kapitelwechsel', () => {
   });
 
   it('ein Spielstand aus Format 18 (0.4.5, Kapitel 2 ohne die neuen Systeme) lädt weiter', () => {
-    expect(SAVE_FORMAT).toBe(19);
+    expect(SAVE_FORMAT).toBe(20);
     const { state } = springen(kapitelEnde('sprung-format18'));
     const alt: Record<string, unknown> = { ...state };
     for (const k of ['refinery', 'bigPipelines', 'stocks', 'staff', 'diplomacy', 'investigation', 'research']) delete alt[k];

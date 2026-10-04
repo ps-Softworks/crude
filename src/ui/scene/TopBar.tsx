@@ -61,8 +61,8 @@ export function TopBar({
         <Bohrturm size={22} />
         CRUDE <span className="version">v{__APP_VERSION__}</span>
         {chapterUnderConstruction(game) && (
-          <span className="kapitel-im-bau" title={fillTimeskipText(timeskipContent.chapter2.text, {})}>
-            {fillTimeskipText(timeskipContent.chapter2.badge, {})}
+          <span className="kapitel-im-bau" title={fillTimeskipText(timeskipContent.chapter3.text, {})}>
+            {fillTimeskipText(timeskipContent.chapter3.badge, {})}
           </span>
         )}
       </span>

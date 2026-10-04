@@ -7,7 +7,7 @@
 # Alle Ereignisse nur in Kapitel 2: conditions { minChapter: 2, maxChapter: 2 }.
 # Die großen Rivalen-Szenen (Cranes Tod, Margarets und Pruetts Angebote, Zerschlagung, Thornes
 # Strohmänner) gehören zu den Story-Bögen (k2-4-crane u. a.) – hier nur der Alltag am Rand.
-# Neue Rivalen-Werte (Vertrauen, Aggression) als „# TODO-Effekt: rival: …“.
+# Vertrauen und Groll der Rivalen ändert die Systemwirkung rival (4.12: trust, grudge, strength).
 #
 # Merkzeichen aus Kapitel 1, die hier gelesen werden (nur gelesen, nie gesetzt – die Simulation
 # liest einige davon selbst):
@@ -53,16 +53,14 @@
       result:
         de: "Lusk schreibt den Bericht noch im Vorzimmer. Zwei Wochen später schickt Crane Eastern eine Bestellung über Rohöl zum Winter, zu einem Preis, der Pruett nicht gefallen wird."
         en: "Lusk writes the report in the anteroom. Two weeks later Crane Eastern sends a winter order for crude at a price Pruett won't like."
-      # TODO-Effekt: rival: { margaret: { trust: 10 }, pruett: { trust: -5 } }
-      effects: { price: 0.05 }
+      effects: { rival: { margaret: { trust: 10 }, pruett: { trust: -5 } }, price: 0.05 }
       marks: [k2_margaret_zahlen]
     - id: pruett
       label: { de: "Die echten Zahlen – für Harold Pruett", en: "The real figures – for Harold Pruett" }
       result:
         de: "Pruett antwortet mit einer Abnahmegarantie für ein Jahr, ohne Begeisterung und ohne Lücke. Margaret Crane grüßt Jacob beim nächsten Empfang eine Spur zu höflich."
         en: "Pruett replies with a one-year purchase guarantee, without enthusiasm and without loopholes. At the next reception Margaret Crane greets Jacob a shade too politely."
-      # TODO-Effekt: rival: { pruett: { trust: 10 }, margaret: { trust: -5 } }
-      effects: { price: 0.04, production: 0.03 }
+      effects: { rival: { pruett: { trust: 10 }, margaret: { trust: -5 } }, price: 0.04 }
       marks: [k2_pruett_zahlen]
     - id: keiner
       label: { de: "„Meine Zahlen bekommt der Trust nicht mehr umsonst“", en: "“The Trust doesn't get my figures for free any more”" }
@@ -106,8 +104,7 @@
       result:
         de: "Die Kesselwagen fahren jetzt bis Hallstead, vier Tage statt einen. Thorne freut sich über jeden Wagen. Margaret Crane schreibt einen Dankesbrief, zwei Zeilen, ohne Unterschrift ihres Vaters."
         en: "The tank cars now run all the way to Hallstead, four days instead of one. Thorne is glad of every car. Margaret Crane writes a thank-you note, two lines, without her father's signature."
-      # TODO-Effekt: rival: { margaret: { trust: 5 }, pruett: { trust: -5 } }
-      effects: { railTariff: 0.03, price: 0.02 }
+      effects: { rival: { margaret: { trust: 5 }, pruett: { trust: -5 } }, railTariff: 0.03, price: 0.02 }
       appointments: 2
     - id: tanks
       label: { de: "Einlagern und Pruett warten lassen (eigene Tanks, 3.000 $)", en: "Store it and keep Pruett waiting (own tanks, 3,000 $)" }
@@ -141,8 +138,7 @@
       result:
         de: "Ein Jahr später steht in jeder Küche zwischen Port Ellis und Hallstead ein blauer Kanister mit Harlans Namen darauf. Er gehört Margaret Crane."
         en: "A year later there is a blue can with Harlan's name on it in every kitchen between Port Ellis and Hallstead. It belongs to Margaret Crane."
-      # TODO-Effekt: brand: { osten: -1 }, rival: { margaret: { trust: 10 } }
-      effects: { cash: 5000 }
+      effects: { cash: 5000, reputation: { public: -3 }, rival: { margaret: { trust: 10 } } }
       marks: [k2_margaret_marke]
     - id: eigene
       label: { de: "Ablehnen und eigene Kanister drucken lassen (4.000 $)", en: "Decline and print his own cans (4,000 $)" }
@@ -150,8 +146,7 @@
         de: "Harlans Kanister sind rot, weil Blau schon vergeben ist. Sie verkaufen sich in Cordova gut und in Hallstead gar nicht. Margaret Crane lässt ausrichten, Rot sei mutig."
         en: "Harlan's cans are red, because blue is taken. They sell well in Cordova and not at all in Hallstead. Margaret Crane sends word that red is brave."
       requires: { minCash: 4000 }
-      # TODO-Effekt: brand: { cordova: 1 }, rival: { margaret: { trust: -5, aggression: 5 } }
-      effects: { cash: -4000, price: 0.03 }
+      effects: { cash: -4000, reputation: { public: 3 }, rival: { margaret: { trust: -5, grudge: 5 } } }
     - id: nein
       label: { de: "Ablehnen", en: "Decline" }
       result:
@@ -189,8 +184,7 @@
       result:
         de: "Mr. Sayles erscheint am nächsten Montag pünktlich, mit leerem Notizbuch. Er bekommt einen Stuhl in Ruths Kontor. Er sagt nichts. Er schreibt viel."
         en: "Mr. Sayles arrives punctually the next Monday with an empty notebook. He is given a chair in Ruth's counting house. He says nothing. He writes a great deal."
-      # TODO-Effekt: boardMember: sayles (mit AG, Bedingung ipo; ohne AG: Einsicht in die Bücher), control: -2, rivalStake: { thorne: 2 }
-      effects: { strength: -3, railTariff: -0.02 }
+      effects: { strength: -3, boardMember: thorne, control: -2, rivalStake: { thorne: 2 } }
       marks: [k2_thorne_ratssitz]
     - id: zurueckzahlen
       label: { de: "Den Kredit sofort zurückzahlen (20.000 $)", en: "Repay the credit at once (20,000 $)" }
@@ -204,8 +198,7 @@
       result:
         de: "Ambrose Vandermeer empfängt Jacob in einem Raum mit Ahnenbildern und nimmt das Geschäft, zu einem halben Prozent mehr. Die Ahnen schauen zu."
         en: "Ambrose Vandermeer receives Jacob in a room full of ancestral portraits and takes the business, at half a per cent more. The ancestors look on."
-      # TODO-Effekt: credit: Vandermeer, rival: { thorne: { aggression: 10 } }
-      effects: { cash: -3000, strength: -6 }
+      effects: { cash: -3000, strength: -6, rival: { thorne: { grudge: 10 } } }
       appointments: 3
       default: true
 
@@ -236,8 +229,7 @@
         de: "Thorne isst wenig und fragt Ruth nach Zinsen, als wäre sie die Einzige am Tisch, die davon etwas versteht. Auf der Heimfahrt sagt sie: Er will nicht deine Firma. Er will, dass du ihn brauchst."
         en: "Thorne eats little and asks Ruth about interest rates as if she were the only one at the table who understood them. On the way home she says: he doesn't want your company. He wants you to need him."
       requires: { minCash: 1500 }
-      # TODO-Effekt: rival: { thorne: { trust: 5 } }, standing: 2
-      effects: { cash: -1500, ruth: 6, strength: -5, railTariff: -0.02 }
+      effects: { cash: -1500, ruth: 6, strength: -5, rival: { thorne: { trust: 5 } }, reputation: { standing: 2 } }
       appointments: 3
     - id: absagen
       label: { de: "Höflich absagen", en: "Decline politely" }
@@ -277,16 +269,14 @@
         de: "Der Gutachter lässt einen Messkopf in Bullards Loch. Bullard lässt ihn nicht wieder heraus. Das Verfahren wird Jahre dauern. Bis dahin pumpt Bullard weiter, nur langsamer."
         en: "The surveyor lowers a gauge into Bullard's hole. Bullard doesn't let it back out. The case will take years. Until then Bullard keeps pumping, only slower."
       requires: { minCash: 4000 }
-      # TODO-Effekt: rival: { bullard: { aggression: 5 } }
-      effects: { cash: -4000, strength: -4, production: 0.03 }
+      effects: { cash: -4000, strength: -4, rival: { bullard: { grudge: 5 } } }
     - id: gegenbohren
       label: { de: "Selbst am Zaun nachbohren, schneller als er (8.000 $)", en: "Drill at the fence himself, faster than him (8,000 $)" }
       result:
         de: "Zwei neue Türme, so dicht an Bullards Zaun, dass sich die Männer über den Draht hinweg beschimpfen können. Wer zuerst leerpumpt, gewinnt. Diesmal Harlan."
         en: "Two new derricks, so close to Bullard's fence that the men can curse each other over the wire. Whoever pumps it dry first wins. This time Harlan."
       requires: { minCash: 8000 }
-      # TODO-Effekt: rival: { bullard: { aggression: 10 } }
-      effects: { cash: -8000, production: 0.08 }
+      effects: { cash: -8000, rival: { bullard: { grudge: 10 } } }
       appointments: 2
     - id: hinnehmen
       label: { de: "Hinnehmen – das Feld ist groß genug", en: "Let it go – the field is big enough" }
@@ -325,22 +315,19 @@
       result:
         de: "Bullard spuckt in die Hand und hält sie hin. Die Quelle fördert für beide. In Salt Hill heißt sie ab jetzt die Brüderquelle, nicht ganz ohne Spott."
         en: "Bullard spits in his palm and holds it out. The well produces for both. In Salt Hill it's called the Brothers' Well from now on, not entirely without mockery."
-      # TODO-Effekt: rival: { bullard: { trust: 10 } }
-      effects: { production: 0.04, strength: 3 }
+      effects: { strength: 3, rival: { bullard: { trust: 10 } } }
     - id: entschaedigung
       label: { de: "Volle Entschädigung verlangen (+7.000 $)", en: "Demand full compensation (+7,000 $)" }
       result:
         de: "Bullard zahlt, ohne zu handeln, in bar, aus der Westentasche. Er steht auf und sagt: Zehn Jahre, Harlan. Du hast Bankiers, ich hab Söhne. Dann geht er."
         en: "Bullard pays without haggling, in cash, from his waistcoat pocket. He stands and says: Ten years, Harlan. You've got bankers, I've got sons. Then he leaves."
-      # TODO-Effekt: rival: { bullard: { trust: -15 } }
-      effects: { cash: 7000 }
+      effects: { cash: 7000, rival: { bullard: { trust: -15 } } }
     - id: schenken
       label: { de: "„Lass es laufen, Jim. Ich hab genug.“", en: "“Let it run, Jim. I've got enough.”" }
       result:
         de: "Bullard sieht Jacob lange an, als suche er den Haken. Dann lacht er, zu laut. Im Winter schickt er zwei seiner Trupps, als Harlan einen Brand am Nordhang nicht in den Griff bekommt."
         en: "Bullard looks at Jacob a long time, as if searching for the catch. Then he laughs, too loudly. In winter he sends two of his crews when Harlan can't get a fire on the north slope under control."
-      # TODO-Effekt: rival: { bullard: { trust: 20 } }
-      effects: { production: -0.04, strength: 2 }
+      effects: { strength: 2, rival: { bullard: { trust: 20 } } }
       appointments: 0
       default: true
 
@@ -368,16 +355,14 @@
       result:
         de: "Bullard hört zu, mit verschränkten Armen. Dann ruft er Cutler herein und lässt ihn sich entschuldigen, vor Jacob und vor seinem Sohn. Cutler sieht dabei auf den Boden. Wade nicht."
         en: "Bullard listens, arms folded. Then he calls Cutler in and makes him apologise, in front of Jacob and in front of his son. Cutler looks at the floor. Wade doesn't."
-      # TODO-Effekt: rival: { bullard: { trust: 5 } }
-      effects: { strength: -6, production: 0.03 }
+      effects: { strength: -6, rival: { bullard: { trust: 5 } } }
       appointments: 2
     - id: zurueckschlagen
       label: { de: "Die Männer machen lassen", en: "Let the men handle it" }
       result:
         de: "Am Samstag darauf brennt in Salt Hill ein Schuppen, der Bullard gehört. Die Männer arbeiten die Woche darauf, als hätten sie etwas gewonnen. Der junge Wade Bullard merkt sich Gesichter."
         en: "The following Saturday a shed belonging to Bullard burns down in Salt Hill. The next week the men work as though they'd won something. Young Wade Bullard remembers faces."
-      # TODO-Effekt: heat: 1, rival: { bullard: { aggression: 10 } }
-      effects: { production: 0.05, strength: -2 }
+      effects: { strength: -2, heat: 1, rival: { bullard: { grudge: 10 } } }
     - id: arzt
       label: { de: "Den Arzt zahlen und schweigen (600 $)", en: "Pay the doctor and keep quiet (600 $)" }
       result:
@@ -418,8 +403,7 @@
         de: "Thomas spielt mit Bullards Jüngstem, Cole, der so alt ist wie er, im Garten Fangen, bis beide Hemden schwarz sind. Ruth und Mrs. Bullard reden über Schulen. Bullard hält eine Rede und weint am Ende."
         en: "Thomas plays tag in the garden with Bullard's youngest, Cole, who is his age, until both shirts are black. Ruth and Mrs. Bullard talk about schools. Bullard gives a speech and weeps at the end."
       requires: { minCash: 1500 }
-      # TODO-Effekt: rival: { bullard: { trust: 10 } }
-      effects: { cash: -1500, ruth: 6, thomas: 8, strength: 2 }
+      effects: { cash: -1500, ruth: 6, thomas: 8, strength: 2, rival: { bullard: { trust: 10 } } }
       appointments: 3
     - id: geschenk
       label: { de: "Nur ein Geschenk schicken (2.500 $)", en: "Only send a gift (2,500 $)" }
@@ -433,7 +417,7 @@
       result:
         de: "Bullard schickt die Einladung zurück, ohne Brief. Auf der Rückseite steht nur: Schon gut."
         en: "Bullard sends the invitation back, with no letter. On the back it says only: Never mind."
-      # TODO-Effekt: rival: { bullard: { trust: -10 } }
+      effects: { rival: { bullard: { trust: -10 } } }
       appointments: 0
       default: true
 
@@ -467,16 +451,15 @@
         de: "Jacobs Name steht auf der Gründungsurkunde an dritter Stelle. Delgado schickt eine Abschrift, gerahmt. Pruett schickt einen Brief, ungerahmt."
         en: "Jacob's name is third on the founding charter. Delgado sends a copy, framed. Pruett sends a letter, unframed."
       requires: { minCash: 3000 }
-      # TODO-Effekt: rival: { delgado: { trust: 10 } }, party: { provinz: 2 }
-      effects: { cash: -3000 }
+      effects: { cash: -3000, rival: { delgado: { trust: 10 } } }
+      public: [support_provinz]
       marks: [k2_delgado_mitglied]
     - id: fern
       label: { de: "„Ich bin kein kleiner Produzent mehr“", en: "“I'm not a small producer any more”" }
       result:
         de: "Delgado antwortet mit einem einzigen Satz: Das habe sie befürchtet. Der Verband wählt einen Vorstand ohne Harlan."
         en: "Delgado replies with a single sentence: she had feared as much. The Association elects a board without Harlan."
-      # TODO-Effekt: rival: { delgado: { trust: -10 } }
-      effects: { strength: -2 }
+      effects: { strength: -2, rival: { delgado: { trust: -10 } } }
       marks: [k2_delgado_fern]
       appointments: 0
       default: true
@@ -507,8 +490,7 @@
         de: "Delgado nimmt das Geld und gibt Jacob einen Platz am Ende des Tisches. Bei der ersten Versammlung wird er nicht angesprochen. Bei der zweiten schon."
         en: "Delgado takes the money and gives Jacob a seat at the end of the table. At the first meeting nobody speaks to him. At the second, they do."
       requires: { minCash: 8000 }
-      # TODO-Effekt: rival: { delgado: { trust: 5 } }
-      effects: { cash: -8000 }
+      effects: { cash: -8000, rival: { delgado: { trust: 5 } } }
       marks: [k2_delgado_mitglied]
     - id: nein
       label: { de: "Ablehnen", en: "Decline" }
@@ -544,8 +526,8 @@
       result:
         de: "Jacob spricht sieben Minuten, ohne Zettel, über seinen Vater und die Grube. Es wird still auf dem Platz. Am nächsten Tag steht er auf der ersten Seite, und Pruett senkt den Preis für Harlans Öl um einen Cent."
         en: "Jacob speaks for seven minutes without notes, about his father and the pit. The square goes quiet. Next day he's on the front page, and Pruett cuts the price for Harlan's oil by a cent."
-      # TODO-Effekt: reputation: { public: 8, politics: 3 }, party: { volksbund: 2 }, rival: { pruett: { aggression: 5 } }
-      effects: { strength: -8, price: -0.03 }
+      effects: { strength: -8, reputation: { public: 8, politics: 3 }, rival: { pruett: { grudge: 5 } }, price: -0.03 }
+      public: [support_volksbund]
       appointments: 3
     - id: spenden
       label: { de: "Nicht sprechen, aber die Kundgebung bezahlen (4.000 $)", en: "Not speak, but pay for the rally (4,000 $)" }
@@ -559,7 +541,7 @@
       result:
         de: "Die Kundgebung findet ohne Jacob statt. Delgado erwähnt ihn nicht. Das ist auch eine Art, über jemanden zu sprechen."
         en: "The rally goes ahead without Jacob. Delgado doesn't mention him. That too is a way of talking about someone."
-      # TODO-Effekt: rival: { delgado: { trust: -5 } }
+      effects: { rival: { delgado: { trust: -5 } } }
       appointments: 0
       default: true
 
@@ -587,8 +569,7 @@
       result:
         de: "Der Satz sinkt. Die Kleinen schicken ihr Öl wieder durch Harlans Leitung, und Delgado lässt in der nächsten Rede einen Absatz weg."
         en: "The rate comes down. The small men send their oil through Harlan's line again, and Delgado drops a paragraph from her next speech."
-      # TODO-Effekt: transportFee: niedriger, lawPressure: { transportpflicht: -1 }
-      effects: { price: -0.05 }
+      effects: { transportFee: -100 }
     - id: antworten
       label: { de: "Im Courier antworten (Anzeige, 1.500 $)", en: "Reply in the Courier (an advert, 1,500 $)" }
       result:
@@ -601,7 +582,6 @@
       result:
         de: "Im Landtag von Cordova gewinnt der Entwurf zum Transportgesetz Stimmen. Der Abgeordnete aus Salt Hill zitiert Delgado wörtlich."
         en: "In the Cordova assembly the transport bill gains votes. The member for Salt Hill quotes Delgado word for word."
-      # TODO-Effekt: lawPressure: { transportpflicht: 2 } – ob das Gesetz kommt, entscheidet das Gesetze-System (Block A)
       effects: { strength: -3 }
       appointments: 0
       default: true
@@ -631,8 +611,7 @@
       result:
         de: "Harlans Tanks füllen sich mit fremdem Öl. Pruett verliert in Cordova neun Lieferanten auf einmal. Er schickt keinen Brief. Er schickt einen Prüfer."
         en: "Harlan's tanks fill with other men's oil. Pruett loses nine suppliers in Cordova at a stroke. He sends no letter. He sends an inspector."
-      # TODO-Effekt: rival: { pruett: { aggression: 10 } }, reputation: { industryRespect: 5 }
-      effects: { production: 0.1, price: -0.03 }
+      effects: { rival: { pruett: { grudge: 10 } }, reputation: { industryRespect: 5 }, production: 0.1, price: -0.03 }
     - id: ablehnen
       label: { de: "Danken und ablehnen", en: "Thank her and decline" }
       result:
@@ -678,8 +657,7 @@
       result:
         de: "Crane Midland hat jetzt zwei Türme am Nordhang, direkt neben Harlans Pachten. Pruetts Männer zählen von dort aus Harlans Wagen."
         en: "Crane Midland now has two derricks on the north slope, right beside Harlan's leases. From there Pruett's men count Harlan's wagons."
-      # TODO-Effekt: rival: { pruett: { power: 1 } }
-      effects: { leaseCost: 0.15 }
+      effects: { rival: { pruett: { strength: 1 } } }
       appointments: 0
       default: true
 
@@ -707,15 +685,13 @@
       result:
         de: "Zwei Monate lang halten sich alle daran. Der Preis steigt. Dann bohrt einer der Nordhang-Männer heimlich nach, und alle wissen es, und keiner sagt etwas."
         en: "For two months everyone keeps to it. The price rises. Then one of the north-slope men secretly drills again, and everyone knows, and nobody says anything."
-      # TODO-Effekt: heat: 1, rival: { bullard: { trust: 5 } }
-      effects: { production: -0.1, price: 0.12 }
+      effects: { heat: 1, rival: { bullard: { trust: 5 } }, production: -0.1, price: 0.12 }
     - id: unterlaufen
       label: { de: "Zusagen und heimlich mehr fördern", en: "Agree and secretly produce more" }
       result:
         de: "Harlan verkauft in den zwei guten Monaten mehr als alle anderen. Bullard braucht drei Wochen, um es herauszufinden. Er sagt nichts. Er notiert es."
         en: "Harlan sells more than anyone in the two good months. It takes Bullard three weeks to find out. He says nothing. He makes a note."
-      # TODO-Effekt: rival: { bullard: { trust: -15, aggression: 10 } }
-      effects: { production: 0.05, price: 0.06, strength: -2 }
+      effects: { strength: -2, rival: { bullard: { trust: -15, grudge: 10 } }, production: 0.05, price: 0.06 }
     - id: ablehnen
       label: { de: "Ablehnen und gehen", en: "Refuse and leave" }
       result:

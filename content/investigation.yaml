@@ -50,6 +50,11 @@ traces:
   absprache:
     de: "Ein Handschlag mit einem Rivalen über Preise und Gebiete. Das Kartellgesetz nennt das Verschwörung."
     en: "A handshake with a rival over prices and territories. The antitrust law calls that conspiracy."
+  # 4.12: Spur aus einer Antwort auf ein Ereignis – das Schattenbuch zeigt die Beschriftung der Spur
+  # (trace.label) oder den Titel des Ereignisses; dieser Text steht nur, wenn beides fehlt.
+  ereignis:
+    de: "Eine Entscheidung, die besser niemand nachliest."
+    en: "A decision nobody had better look up."
 
 stages:
   ruhe:

@@ -86,7 +86,7 @@ export function ShadowBookSheet({ ctx }: { ctx: SheetContext }) {
                 <li key={t.id} className={t.current === 0 ? 'spur verblasst' : 'spur'}>
                   <Punkte current={t.current} severity={t.severity} />
                   <span className="spur-text">
-                    {T.traces[t.key] ? localize(T.traces[t.key]) : t.key}
+                    {t.label ? t.label : T.traces[t.key] ? localize(T.traces[t.key]) : t.key}
                     {t.witness && <em> – ein Zeuge</em>}
                     {!t.witness && t.current === 0 && <em> – verblasst</em>}
                   </span>

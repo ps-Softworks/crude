@@ -3,8 +3,8 @@
 // fest (Haltung, Familie); unterwegs unterbrechen Weichen-Telegramme den Sprung,
 // wenn die Welt sie hergibt (Bankenpanik bei überhitztem Kreditklima, erste
 // Automobile, Öl in Okara, Claras Geburt). Danach zeigt die Chronik „Die Jahre
-// dazwischen“, und Kapitel 2 beginnt – vorerst als Platzhalter mit den Systemen
-// aus Kapitel 1.
+// dazwischen“, und Kapitel 2 „Der Herausforderer“ beginnt (4.12) – mit Quellen, Kasse,
+// Firma bzw. Aktiengesellschaft und Familie aus dem Sprung und allen Kapitel-2-Systemen.
 //
 // Vereinfachte Regeln je Quartal: Förderung (wie im Spiel, mit Druck und
 // Erschöpfung der Felder), Posted Price aus Salt-Hill-Angebot und Weltpreis,
@@ -204,9 +204,9 @@ export function chapterRounds(state: Pick<GameState, 'totalRounds' | 'chapterSta
   return state.totalRounds - (state.chapterStart ?? 1) + 1;
 }
 
-/** Ist Kapitel 2 der Platzhalter („im Bau“)? Solange es Kapitel 2 nicht gibt: immer. */
+/** Ist das Kapitel noch im Bau? Kapitel 2 ist seit 4.12 spielbar; Kapitel 3 gibt es nur als Vorschau. */
 export function chapterUnderConstruction(state: Pick<GameState, 'chapter'>): boolean {
-  return chapterOf(state) >= 2;
+  return chapterOf(state) >= 3;
 }
 
 // ---------------------------------------------------------------------------
@@ -214,7 +214,7 @@ export function chapterUnderConstruction(state: Pick<GameState, 'chapter'>): boo
 
 /** Warum der Sprung (noch) nicht geht; undefined = er geht. */
 export function timeskipBlocked(state: GameState, balance: Balance): string | undefined {
-  if (chapterOf(state) !== 1) return 'Kapitel 2 ist noch im Bau – weiter geht es noch nicht.';
+  if (chapterOf(state) !== 1) return 'Zeitsprung II und Kapitel 3 sind noch im Bau – weiter geht es noch nicht.';
   if (state.ending !== 'kapitel') return 'Der Zeitsprung kommt erst am Ende des Kapitels.';
   if (state.jump) return 'Der Zeitsprung läuft schon.';
   if (canGoPublic(state, balance) && state.ipo === null) return 'Erst über die Aktiengesellschaft entscheiden.';
@@ -986,7 +986,7 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
     return { status: 'done', state: { ...pleite, timeskips: [...(start.timeskips ?? []), r] }, record: r };
   }
 
-  // Kapitel 2 beginnt (Platzhalter): Jahr 11, Jacob 35.
+  // Kapitel 2 beginnt: Jahr 11, Jacob 35.
   const round = start.round + t.rounds + 1;
   const ziel = Math.max(0, Math.round(l.nb));
   // Wer aufgibt, steht noch im letzten Jahr des Sprungs in der Chronik.
@@ -1017,7 +1017,7 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
     log: [
       ...start.log,
       `${formatDate(start)}: Jacob übergibt das Tagesgeschäft für sechs Jahre an einen Verwalter.`,
-      `${date}: Kapitel 2 beginnt – Jacob ist ${jacobAge({ round })}. (Kapitel 2 ist noch im Bau.)`,
+      `${date}: Kapitel 2 „Der Herausforderer“ beginnt – Jacob ist ${jacobAge({ round })}.`,
     ],
     roundLogStart: start.log.length,
   };
@@ -1055,7 +1055,10 @@ export interface TimeskipContent {
     /** Einzahl, wenn {n} = 1 ist (z. B. „eine neue Quelle“); fehlt sie, gilt der Text aus entries. */
     one: Partial<Record<ChronicleKind, LocalizedText>>;
   };
-  chapter2: Texte<'badge' | 'title' | 'text' | 'endTitle' | 'endText'>;
+  /** Kapitel 2 (4.12): Stempel unter der Chronik, Überschrift und Ziel zum Kapitelstart. */
+  chapter2: Texte<'badge' | 'title' | 'text'>;
+  /** Kapitel 3 ist noch im Bau (Kopfleiste in der Vorschau). */
+  chapter3: Texte<'badge' | 'text'>;
 }
 
 /** Setzt Platzhalter wie {betrag} in einen Text ein. */
@@ -1078,7 +1081,7 @@ export function parseTimeskipContent(file: string, text: string): { content: Tim
   }
   const raw: unknown = doc.toJS();
   if (!istObjekt(raw)) {
-    fehler('Die Datei braucht start, directives, switches, chronicle und chapter2.');
+    fehler('Die Datei braucht start, directives, switches, chronicle, chapter2 und chapter3.');
     return { content: null, errors };
   }
   const leer: LocalizedText = { de: '', en: '' };
@@ -1152,7 +1155,8 @@ export function parseTimeskipContent(file: string, text: string): { content: Tim
     entries: texte(e, CHRONICLE_KINDS, 'chronicle.entries'),
     one: Object.fromEntries(Object.keys(o).filter((k) => !fremd.includes(k)).map((k) => [k, sprachtext(o[k], `chronicle.one.${k}`)])) as Partial<Record<ChronicleKind, LocalizedText>>,
   };
-  const chapter2 = texte(block(raw, 'chapter2', 'chapter2'), ['badge', 'title', 'text', 'endTitle', 'endText'] as const, 'chapter2');
+  const chapter2 = texte(block(raw, 'chapter2', 'chapter2'), ['badge', 'title', 'text'] as const, 'chapter2');
+  const chapter3 = texte(block(raw, 'chapter3', 'chapter3'), ['badge', 'text'] as const, 'chapter3');
   if (errors.length > 0) return { content: null, errors };
-  return { content: { draft: raw.draft === true, start, directives, switches, chronicle, chapter2 }, errors };
+  return { content: { draft: raw.draft === true, start, directives, switches, chronicle, chapter2, chapter3 }, errors };
 }

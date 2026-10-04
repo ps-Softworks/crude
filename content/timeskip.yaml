@@ -136,14 +136,17 @@ chronicle:
     fire_sale: { de: "Notverkauf: Eine Quelle geht für {betrag} an den Trust.", en: "Fire sale: one well goes to the Trust for {betrag}." }
     bullard_wells: { de: "Bullard bohrt weiter: eine neue Quelle.", en: "Bullard keeps drilling: one new well." }
 
-# Kapitel 2 gibt es noch nicht: Nach dem Sprung geht es mit den Kapitel-1-Systemen weiter.
+# Kapitel 2 „Der Herausforderer“ (4.12): Stempel unter der Chronik, Überschrift zum Kapitelstart.
 chapter2:
-  badge: { de: "Kapitel 2 · im Bau", en: "Chapter 2 · under construction" }
-  title: { de: "Kapitel 2 – Der Herausforderer (im Bau)", en: "Chapter 2 – The Challenger (under construction)" }
+  badge: { de: "Kapitel 2 · Der Herausforderer", en: "Chapter 2 · The Challenger" }
+  title: { de: "Kapitel 2 – Der Herausforderer", en: "Chapter 2 – The Challenger" }
   text:
-    de: Kapitel 2 ist noch im Bau. Bis dahin geht es mit den Werkzeugen aus Kapitel 1 weiter – Raffinerie, Aktien und Pipelines zum Hafen kommen später.
-    en: Chapter 2 is still under construction. Until then, play on with the tools from chapter 1 – refinery, shares and pipelines to the harbour come later.
-  endTitle: { de: "Ende der Probefahrt", en: "End of the Test Run" }
-  endText:
-    de: Hier endet, was von Kapitel 2 schon steht. Danke fürs Weiterspielen!
-    en: This is as far as chapter 2 goes for now. Thanks for playing on!
+    de: Harlan Oil ist eine ernstzunehmende Firma, aber der Crane Trust beherrscht Raffinerien und Pipelines. Ziel bis Jahr 14 – eigene Raffinerie oder Pipeline zum Hafen, Kontrolle über die Firma, ein Imperium von einer Million Dollar.
+    en: Harlan Oil is a company to be reckoned with, but the Crane Trust controls the refineries and pipelines. Goal by year 14 – your own refinery or pipeline to the harbour, control of the company, an empire worth a million dollars.
+
+# Kapitel 3 gibt es noch nicht als Spiel (nur die Systeme zum Vorab-Freischalten im Debug-Menü).
+chapter3:
+  badge: { de: "Kapitel 3 · im Bau", en: "Chapter 3 · under construction" }
+  text:
+    de: Kapitel 3 ist noch im Bau. Was hier läuft, ist eine Vorschau mit den Systemen aus Kapitel 2 und 3.
+    en: Chapter 3 is still under construction. What runs here is a preview with the systems from chapters 2 and 3.

@@ -26,6 +26,7 @@ import { Rng, seedFromString, type RngState } from './rng';
 import { PRODUCTS, type MixBound, type Product, type ProductMix, type RefineryTech } from './refineryBalance';
 import { capacityLeft, modeCapacity, modeUnavailable, netPrice, tariff } from './transport';
 import { effectiveDemand } from './world';
+import { timedEffect } from './events';
 
 export { PRODUCTS, type Product, type ProductMix } from './refineryBalance';
 
@@ -268,10 +269,12 @@ export function ownsRefinery(state: Pick<GameState, 'refinery'>): boolean {
 }
 
 /** Kapazität in bbl Rohöl je Runde; 0, solange gebaut oder repariert wird. */
-export function refineryCapacity(state: Pick<GameState, 'refinery'>, balance: Balance): number {
+export function refineryCapacity(state: Pick<GameState, 'refinery'> & Partial<Pick<GameState, 'round' | 'events'>>, balance: Balance): number {
   const r = state.refinery;
   if (!r || r.repairLeft > 0) return 0;
-  return r.level * balance.refinery.unitCapacity;
+  // 4.12: befristete Systemwirkung refineryOutput (Kessel undicht, neue Brenner …).
+  const faktor = state.round !== undefined && state.events ? Math.max(0, 1 + timedEffect({ round: state.round, events: state.events }, 'refineryOutput')) : 1;
+  return Math.round(r.level * balance.refinery.unitCapacity * faktor);
 }
 
 function sperre(state: GameState): string | null {
@@ -481,8 +484,9 @@ export function planRun(
   const prices = {} as Record<Product, number>;
   let revenue = 0;
   for (const p of PRODUCTS) {
-    output[p] = Math.round(ausbeute * mix[p]);
-    prices[p] = productPrice(p, output[p], state.postedPrice, world, balance);
+    // 4.12: befristete Systemwirkungen productYield/productPrice (Anteil je Produkt).
+    output[p] = Math.round(ausbeute * mix[p] * Math.max(0, 1 + timedEffect(state, `productYield:${p}`)));
+    prices[p] = cents(productPrice(p, output[p], state.postedPrice, world, balance) * Math.max(0, 1 + timedEffect(state, `productPrice:${p}`)));
     revenue += output[p] * prices[p];
   }
   const royaltyBarrels = state.oilStock > 0 ? (menge * state.royaltyOil) / state.oilStock : 0;

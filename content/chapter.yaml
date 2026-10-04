@@ -1,4 +1,5 @@
-# Kapitelende (2.11, GDD §13, §14): Texte für den Ergebnisbildschirm von Kapitel 1.
+# Kapitelende (2.11, GDD §13, §14): Texte für den Ergebnisbildschirm von Kapitel 1 (oben) und
+# Kapitel 2 (4.12, Block chapter2 unten).
 # Die Zahlen der Kapitelprüfung (Imperiumswert, Quellen, Börsengang) stehen in
 # content/balance.yaml unter chapter. Die Regeln in src/sim/chapter.ts.
 #
@@ -85,3 +86,94 @@ ipo:
   blocked:
     de: Für eine so kleine Firma interessiert sich kein Anleger. Die Firma bleibt in der Familie.
     en: No investor is interested in such a small company. It stays in the family.
+
+# Kapitel 2 „Der Herausforderer“ (4.12, GDD §13/§14). Die Zahlen der Prüfung stehen in
+# content/balance.yaml unter chapter.chapter2, die Regeln in src/sim/chapter.ts.
+# Platzhalter in goals: {ziel} = Zielwert.
+chapter2:
+  endings:
+    erreicht:
+      title: { de: "Kapitel 2 geschafft", en: "Chapter 2 Complete" }
+      text:
+        de: >-
+          Vier Jahre gegen den Crane Trust. Harlan Oil hat eigene Wege zum Markt, Jacob hält
+          die Zügel seiner Firma noch selbst, und in Hallstead nennt man seinen Namen im selben
+          Atemzug wie die alten Familien – nicht immer freundlich.
+        en: >-
+          Four years against the Crane Trust. Harlan Oil has its own roads to market, Jacob still
+          holds the reins of his company, and in Hallstead his name is spoken in the same breath
+          as the old families – not always kindly.
+    verfehlt:
+      title: { de: "Kapitel 2 verfehlt", en: "Chapter 2 Missed" }
+      text:
+        de: >-
+          Vier Jahre Kampf, und der Trust sitzt noch immer zwischen Jacobs Quellen und dem Markt.
+          Harlan Oil lebt – aber als Herausforderer, den niemand mehr fürchtet.
+        en: >-
+          Four years of fighting, and the Trust still sits between Jacob's wells and the market.
+          Harlan Oil lives on – but as a challenger nobody fears any more.
+    verkauft:
+      title: { de: "Der kluge Mann", en: "The Wise Man" }
+      text:
+        de: >-
+          Jacob Harlan hat seine Firma an Harold Pruett verkauft. Pruett zahlt bar und lächelt
+          dabei nicht. Jacob ist ein reicher Mann – und Harlan Oil heißt ab Montag anders.
+        en: >-
+          Jacob Harlan has sold his company to Harold Pruett. Pruett pays in cash and doesn't smile
+          while doing it. Jacob is a rich man – and from Monday Harlan Oil has another name.
+    abgesetzt:
+      title: { de: "Abgesetzt", en: "Ousted" }
+      text:
+        de: >-
+          Der Aufsichtsrat hat Jacob Harlan abgesetzt. Die Herren danken ihm für seine Verdienste
+          und bitten um den Schlüssel zum Büro. Seine Aktien darf er behalten – seine Firma nicht.
+        en: >-
+          The board has ousted Jacob Harlan. The gentlemen thank him for his services and ask for
+          the key to the office. He may keep his shares – not his company.
+    geschluckt:
+      title: { de: "Geschluckt", en: "Swallowed" }
+      text:
+        de: >-
+          Hinter den Strohmännern stand die ganze Zeit Augustus Thorne. Er hält jetzt mehr Aktien
+          als Jacob, und Harlan Oil fährt ab sofort für Thorne Rail.
+        en: >-
+          Behind the straw men stood Augustus Thorne all along. He now holds more shares than Jacob,
+          and Harlan Oil runs for Thorne Rail from now on.
+    haft:
+      title: { de: "Hinter Gittern", en: "Behind Bars" }
+      text:
+        de: >-
+          Die Geschworenen haben gesprochen, und der Richter hat sich Zeit gelassen mit dem Strafmaß.
+          Jacob Harlan geht für Jahre ins Bundesgefängnis. Ruth bringt sonntags Zeitungen.
+        en: >-
+          The jury has spoken, and the judge took his time with the sentence. Jacob Harlan goes to
+          federal prison for years. Ruth brings newspapers on Sundays.
+  goals:
+    transport: { de: "Eigene Raffinerie oder eigene Fernleitung zum Hafen", en: "Own refinery or own pipeline to the harbour" }
+    control: { de: "Kontrolle über Harlan Oil mindestens {ziel}", en: "Control of Harlan Oil at least {ziel}" }
+    value: { de: "Imperiumswert mindestens {ziel}", en: "Empire value at least {ziel}" }
+  # Ruf (GDD §4, 4.12): Achsen und Wörter für Kassenbuch und Kapitelabschluss.
+  reputation:
+    title: { de: "Ruf", en: "Reputation" }
+    axes:
+      public: { de: "Öffentlichkeit", en: "Public" }
+      politics: { de: "Politik", en: "Politics" }
+      workers: { de: "Arbeiter", en: "Workers" }
+      industryRespect: { de: "Branche (Respekt)", en: "Industry (respect)" }
+      industryFear: { de: "Branche (Furcht)", en: "Industry (fear)" }
+      standing: { de: "Gesellschaft", en: "Society" }
+    words:
+      verhasst: { de: "verhasst", en: "hated" }
+      misstrauisch: { de: "misstrauisch", en: "distrusted" }
+      neutral: { de: "neutral", en: "neutral" }
+      geachtet: { de: "geachtet", en: "respected" }
+      verehrt: { de: "verehrt", en: "revered" }
+  next:
+    title: { de: "Kapitel 3 – Der Konzernherr", en: "Chapter 3 – The Magnate" }
+    text:
+      de: >-
+        Zeitsprung II und Kapitel 3 sind noch im Bau. Bis dahin endet die Geschichte hier – danke
+        fürs Spielen!
+      en: >-
+        Time skip II and chapter 3 are still under construction. Until then the story ends here –
+        thanks for playing!

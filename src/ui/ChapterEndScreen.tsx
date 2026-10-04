@@ -4,11 +4,15 @@
 // 2.8: Auch das frühe Ende „Der kluge Mann“ – Jacob hat an den Crane Trust verkauft.
 // 2.11: Kapitelprüfung (erreicht/verfehlt) mit Boni und die Entscheidung zur
 // Aktiengesellschaft. Regeln in src/sim/chapter.ts, Texte in content/chapter.yaml.
-// 4.5: Weiter in den Zeitsprung bis Kapitel 2; am Ende des Platzhalter-Kapitels 2 ein eigener Text.
+// 4.5: Weiter in den Zeitsprung bis Kapitel 2.
+// 4.12: Kapitel 2 „Der Herausforderer“ – eigene Prüfung (Raffinerie oder Hafen-Pipeline, Kontrolle,
+// Imperiumswert), Verkauf an Pruett und die frühen Enden (abgesetzt, geschluckt, hinter Gittern),
+// Story-Bögen des Kapitels, Ausblick auf Kapitel 3 (noch im Bau).
 
 import { useEffect, useRef } from 'react';
 import { arcSummaries } from '../sim/arcs';
-import { canGoPublic, chapterBonuses, chapterCheck, chapterResult, fillText, ipoProceeds } from '../sim/chapter';
+import { canGoPublic, chapter2Check, chapterBonuses, chapterCheck, chapterResult, fillText, ipoProceeds, type Chapter2EndingId } from '../sim/chapter';
+import { chapterOf } from '../sim/chapterOf';
 import { debt } from '../sim/credit';
 import { empireValue } from '../sim/empire';
 import { formatDate, type GameState } from '../sim/game';
@@ -18,7 +22,8 @@ import { chapterContent } from './chapter';
 import { FeedbackLink } from './FeedbackLink';
 import { barrels, money, NBSP } from './format';
 import { Silhouette } from './Silhouette';
-import { chapterUnderConstruction, fillTimeskipText, timeskipBlocked } from '../sim/timeskip';
+import { ReputationLine } from './Reputation';
+import { fillTimeskipText, timeskipBlocked } from '../sim/timeskip';
 import { timeskipContent } from './timeskip';
 
 
@@ -56,15 +61,17 @@ export function ChapterEndScreen({
   }, [game.ipo === null]);
   const ergebnis = chapterResult(game, balance);
   const verkauft = ergebnis === 'verkauft';
-  // Kapitel 2 ist noch Platzhalter (4.5): eigener Abschluss, keine Prüfung, keine Aktien.
-  const imBau = chapterUnderConstruction(game);
-  const k2 = timeskipContent.chapter2;
-  const ende = imBau
-    ? { title: k2.endTitle, text: k2.endText }
-    : chapterContent.endings[ergebnis === 'erreicht' || ergebnis === 'verkauft' ? ergebnis : 'verfehlt'];
+  // Kapitel 2 (4.12): eigene Ausgänge, eigene Prüfung, keine Aktiengesellschaft und (noch) kein Zeitsprung II.
+  const k2 = chapterOf(game) >= 2;
+  const k2Text = chapterContent.chapter2;
+  const k2Ende: Chapter2EndingId = ergebnis === null || ergebnis === 'pleite' ? 'verfehlt' : ergebnis;
+  const ende = k2 ? k2Text.endings[k2Ende] : chapterContent.endings[ergebnis === 'erreicht' || ergebnis === 'verkauft' ? ergebnis : 'verfehlt'];
+  const k1 = !k2;
+  const imBau = k2;
+  const pruefung2 = chapter2Check(game, balance);
   const sprung = timeskipContent.start;
   const sprungGesperrt = timeskipBlocked(game, balance);
-  const sprungMoeglich = !imBau && !verkauft && game.ending === 'kapitel';
+  const sprungMoeglich = k1 && !verkauft && game.ending === 'kapitel';
   const quellen = game.wells.filter((w) => w.status === 'found');
   const pruefung = chapterCheck(game, balance);
   const boni = chapterBonuses(game, chapterContent, arcContent);
@@ -85,6 +92,23 @@ export function ChapterEndScreen({
         </div>
         <div className="bogen-spalten">
           <div>
+            {k2 && game.ending === 'kapitel' && (
+              <>
+                <h3>Kapitelprüfung</h3>
+                <ul className="pruefung">
+                  <li>
+                    <Haken ok={pruefung2.transport} /> {fillText(k2Text.goals.transport, {})}
+                    {pruefung2.refinery ? ' (Raffinerie)' : pruefung2.harbor ? ' (Fernleitung zum Hafen)' : ''}
+                  </li>
+                  <li>
+                    <Haken ok={pruefung2.controlReached} /> {fillText(k2Text.goals.control, { ziel: prozent(balance.chapter.chapter2.goalControl) })} ({prozent(pruefung2.control)})
+                  </li>
+                  <li>
+                    <Haken ok={pruefung2.valueReached} /> {fillText(k2Text.goals.value, { ziel: money(balance.chapter.chapter2.goalValue) })} ({money(pruefung2.value)})
+                  </li>
+                </ul>
+              </>
+            )}
             {!verkauft && !imBau && (
               <>
                 <h3>Kapitelprüfung</h3>
@@ -123,7 +147,14 @@ export function ChapterEndScreen({
               <dd>{barrels(quellen.reduce((s, w) => s + (w.production?.total ?? 0), 0))} bbl</dd>
               <dt>Rating</dt>
               <dd>{game.rating}</dd>
+              {k2 && (
+                <>
+                  <dt>Kontrolle</dt>
+                  <dd>{prozent(pruefung2.control)}</dd>
+                </>
+              )}
             </dl>
+            {k2 && <ReputationLine game={game} />}
           </div>
           <div>
             {!verkauft && !imBau && (
@@ -150,6 +181,12 @@ export function ChapterEndScreen({
                 )}
               </div>
             )}
+            {k2 && (
+              <div className="ipo sprung-angebot">
+                <h3>{fillText(k2Text.next.title, {})}</h3>
+                <p>{fillText(k2Text.next.text, {})}</p>
+              </div>
+            )}
             {sprungMoeglich && onTimeskip && (
               <div className="ipo sprung-angebot">
                 <h3>{fillTimeskipText(sprung.title, {})}</h3>
@@ -161,7 +198,8 @@ export function ChapterEndScreen({
             <ul className="boegen">
               {arcSummaries(game, arcContent).map((b) => (
                 <li key={b.arc} className="person">
-                  <Silhouette id={b.arc} name={b.name} size={36} />
+                  {/* Bögen späterer Kapitel (nora_k2 …) zeigen die Figur ohne Kapitel-Endung. */}
+                  <Silhouette id={b.arc.replace(/_k\d+$/, '')} name={b.name} size={36} />
                   <div>
                     <strong>{b.name}:</strong> <em>{b.title}</em>
                     <br />

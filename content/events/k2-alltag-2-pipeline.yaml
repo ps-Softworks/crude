@@ -52,7 +52,6 @@
       result:
         de: "Agnes Pruitt unterschreibt mit einer Feder, die sie selbst mitgebracht hat. Bei jedem Abrechnungstag sitzt jetzt ihr Neffe im Kontor und zählt mit."
         en: "Agnes Pruitt signs with a pen she brought herself. Every settlement day her nephew now sits in the counting house, counting along."
-      # TODO-Effekt: transportFee: +0.0025 je Barrel, rightOfWay: { pruitt: true }
       effects: { price: -0.05 }
       default: true
     - id: einmal
@@ -145,8 +144,7 @@
       result:
         de: "Der Richter gibt Jacob recht, nach sechs Wochen. In dieser Zeit fließt durch die Leitung nichts. Moss legt den Zaun selbst nieder, Pfahl für Pfahl, und schaut Jacob dabei nicht an."
         en: "The judge rules for Jacob, after six weeks. In that time nothing flows through the line. Moss takes the fence down himself, post by post, and never looks at Jacob."
-      # TODO-Effekt: pipelineDown: 1
-      effects: { cash: -2000, strength: -5, production: -0.15 }
+      effects: { cash: -2000, strength: -5, pipelineDown: 1 }
       appointments: 2
     - id: angebot
       label: { de: "Ein neues Angebot machen, großzügig (8.000 $)", en: "Make a new, generous offer (8,000 $)" }
@@ -160,8 +158,7 @@
       result:
         de: "Am Morgen liegt der Draht im Graben. Einer der Knechte hat eine Platzwunde. Ezekiel Moss schreibt einen Brief nach Hallstead, an seinen Sohn. Was darin steht, erfährt Jacob nicht."
         en: "In the morning the wire lies in the ditch. One of the hands has a split scalp. Ezekiel Moss writes a letter to Hallstead, to his son. Jacob never learns what it says."
-      # TODO-Effekt: heat: 1, trace: { severity: 2, label: Moss-Zaun }
-      effects: { strength: -3 }
+      effects: { strength: -3, trace: { severity: 2, label: "Moss-Zaun" } }
       appointments: 0
       default: true
 
@@ -213,8 +210,7 @@
       result:
         de: "Harlans Anwälte antworten in drei Sätzen: Das Wegerecht sei rechtmäßig erworben, die Arbeiten genehmigt. Beides stimmt. In Hallstead wird der Brief abgeheftet, zu den anderen."
         en: "Harlan's lawyers reply in three sentences: the right of way was lawfully acquired, the works approved. Both are true. In Hallstead the letter is filed, with the others."
-      # TODO-Effekt: trace: { severity: 1, label: Moss-Grab }
-      effects: { cash: -400, strength: -2 }
+      effects: { cash: -400, strength: -2, trace: { severity: 1, label: "Moss-Grab" } }
       appointments: 0
       default: true
 
@@ -343,8 +339,7 @@
       result:
         de: "Alle Muffen auf zwanzig Meilen werden geprüft, drei weitere getauscht. In der Zeit fährt das Öl wieder mit der Bahn, zu Thornes Preisen."
         en: "Every coupling for twenty miles is checked, three more replaced. Meanwhile the oil goes by rail again, at Thorne's prices."
-      # TODO-Effekt: pipelineDown: 1
-      effects: { cash: -1500, production: -0.1 }
+      effects: { cash: -1500, pipelineDown: 1 }
     - id: leugnen
       label: { de: "Nachts abdichten, sonst nichts", en: "Seal it at night, nothing else" }
       result:
@@ -387,8 +382,7 @@
       result:
         de: "Der Prozess dauert ein Jahr. Harlans Anwälte gewinnen, weil die Muffe frisch gestrichen war. Die Fotografie erscheint im Hallstead Ledger."
         en: "The trial lasts a year. Harlan's lawyers win, because the coupling was freshly painted. The photograph appears in the Hallstead Ledger."
-      # TODO-Effekt: reputation: { public: -8 }, heat: 1
-      effects: { cash: -3000, strength: -6 }
+      effects: { cash: -3000, strength: -6, reputation: { public: -8 }, heat: 1 }
       appointments: 2
       default: true
 
@@ -418,23 +412,21 @@
       result:
         de: "Die Leitung läuft voller, die Marge je Barrel wird dünner. Die kleinen Produzenten nennen Jacob in Salt Hill wieder einen von ihnen. Pruett schreibt ihm einen spöttischen Brief."
         en: "The line runs fuller, the margin per barrel thinner. In Salt Hill the small producers call Jacob one of their own again. Pruett writes him a mocking letter."
-      # TODO-Effekt: transportFee: niedrig, reputation: { industryRespect: 5 }, party: { provinz: 2 }
-      effects: { cash: 3000, price: -0.05 }
+      effects: { cash: 3000, transportFee: 150, reputation: { industryRespect: 5 }, price: -0.05 }
+      public: [support_provinz]
       marks: [k2_pipeline_offen]
     - id: teuer
       label: { de: "Transportieren, aber zu Harlans Preis", en: "Carry it, but at Harlan's price" }
       result:
         de: "Die Kleinen zahlen, weil die Bahn noch teurer ist. Sie zahlen und merken es sich. Delgado nennt den Satz in einer Rede „den Harlan-Zoll“."
         en: "The small men pay, because the railway costs even more. They pay and remember. In a speech Delgado calls the rate “the Harlan toll”."
-      # TODO-Effekt: transportFee: hoch, reputation: { industryFear: 5 }, lawPressure: { transportpflicht: 1 }
-      effects: { cash: 8000 }
+      effects: { cash: 8000, transportFee: 400, reputation: { industryFear: 5 } }
       marks: [k2_pipeline_wucher]
     - id: ablehnen
       label: { de: "Ablehnen – die Leitung gehört Harlan Oil", en: "Refuse – the line belongs to Harlan Oil" }
       result:
         de: "Delgado antwortet nicht. Drei Monate später steht ihr Name unter dem Gesetzentwurf, gleich neben dem des Abgeordneten aus Salt Hill."
         en: "Delgado does not reply. Three months later her name stands under the bill, right beside the member for Salt Hill."
-      # TODO-Effekt: lawPressure: { transportpflicht: 2 }
       effects: { strength: -2 }
       marks: [k2_pipeline_wucher]
       appointments: 0
@@ -467,7 +459,7 @@
       result:
         de: "Thornes Sekretär holt den Vertrag persönlich ab und bedankt sich für die lange Freundschaft. Die Frachtkosten sinken. Die Pläne für eine eigene Leitung an die Küste wandern in den Schrank."
         en: "Thorne's secretary collects the contract in person and gives thanks for the long friendship. Freight costs fall. The plans for a line of his own to the coast go into the cupboard."
-      # TODO-Effekt (4.7 Pipelines): Bau einer eigenen Leitung zu einem anderen Hafen sperren – oder als Vertragsbruch werten (Thorne erhöht, klagt)
+      # Seite neun (4.12): k2_thorne_klausel sperrt jede eigene Fernleitung zum Hafen (src/sim/bigPipeline.ts).
       effects: { railTariff: -0.04 }
       marks: [k2_thorne_klausel]
     - id: streichen

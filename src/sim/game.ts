@@ -7,7 +7,7 @@ import { formatDate } from './calendar';
 // 4.14 Andockpunkt: Marke und Tankstellen (Kapitel 3).
 import { settleBrand, type BrandState } from './brand';
 import { checkBankruptcy, settleLoans, type Loan } from './credit';
-import { chapterCheck } from './chapter';
+import { applyEarlyEnding, chapterPassed } from './chapter';
 import { chapterOf } from './chapterOf';
 import { advanceDrilling, type Well } from './drilling';
 import { assignFields, buildFields, type Field } from './field';
@@ -48,14 +48,23 @@ import { hallsteadWorldInput, settleHallstead } from './hallstead';
 import type { HallsteadState } from './hallsteadState';
 // 4.17 Andockpunkt: Kapitel 3 (Seismik, Konsortium, Projekte, Stand).
 import type { Kapitel3State } from './kapitel3';
+import type { Reputation } from './reputation';
+import { settleEventSystems, type EventConsequences } from './eventSystems';
 import type { Kapitel3Content } from './kapitel3Content';
 import { advanceKapitel3 } from './kapitel3Runde';
 import { konsortiumWorldInput } from './konsortium';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
-/** Wie das Spiel ausgeht: gar nicht, mit Ende des Kapitels, mit Pleite oder mit dem Verkauf an den Crane Trust (2.8). */
-export type Ending = 'kapitel' | 'pleite' | 'verkauft' | null;
+/**
+ * Wie das Spiel ausgeht: gar nicht, mit Ende des Kapitels, mit Pleite oder mit dem Verkauf an den Crane Trust (2.8)
+ * bzw. an Pruett (4.10). Ab Kapitel 2 die frühen Enden aus GDD §14 (4.12): abgesetzt (Stellvertreterkampf verloren),
+ * geschluckt (feindliche Übernahme durch Thorne), haft (Verurteilung zu langer Haft).
+ */
+export type Ending = 'kapitel' | 'pleite' | 'verkauft' | 'abgesetzt' | 'geschluckt' | 'haft' | null;
+
+/** Alle Enden außer null – für Spielstand und Oberfläche. */
+export const ENDINGS = ['kapitel', 'pleite', 'verkauft', 'abgesetzt', 'geschluckt', 'haft'] as const;
 
 export interface GameState {
   seed: string;
@@ -148,6 +157,10 @@ export interface GameState {
   staff?: StaffState;
   /** 4.17 Andockpunkt: Kapitel 3 (src/sim/kapitel3.ts) – fehlt, bis Kapitel 3 beginnt. */
   kapitel3?: Kapitel3State;
+  /** Ruf (4.12, GDD §4, src/sim/reputation.ts): fehlt, bis ein Ereignis ihn ändert (dann −100…100 je Achse). */
+  reputation?: Partial<Reputation>;
+  /** 4.12: Was Systemwirkungen der Ereignisse dauerhaft hinterlassen (Durchleitungsgebühr, Rating, Termine, Erben). */
+  consequences?: EventConsequences;
   log: string[];
   /** Rivalen-Diplomatie und Crane-Nachfolge (4.10): erst ab Kapitel 2, in Kapitel 1 fehlt sie. */
   diplomacy?: DiplomacyState; // 4.10 Andockpunkt
@@ -282,7 +295,7 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Offene Ereignisse bekommen ihre Standard-Antwort, bevor die Runde abgerechnet wird.
   // Gebiete (0.2.15+5): Hat eine Antwort ein Gebiet freigeschaltet, bekommt es jetzt seine Ranches.
   // 4.9 Andockpunkt: Das Vorzimmer erledigt ablaufende Briefe nach Richtlinie, bevor die Standard-Antworten gelten.
-  const beantwortet = openRegions(autoResolve(delegateMail(input, balance, catalog), catalog, undefined, balance.events.timedRounds), balance);
+  const beantwortet = openRegions(autoResolve(delegateMail(input, balance, catalog), catalog, undefined, balance.events.timedRounds, balance), balance);
   const roundLogStart = beantwortet.log.length;
   // Crane-Übernahme (2.8): Hat Jacob verkauft, endet die Partie hier – ohne weitere Abrechnung.
   const verkauft = settleTakeover(beantwortet, balance);
@@ -292,7 +305,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Termine (2.3): Krankheit (2.7), ruhige Runde gibt Kraft zurück, die nächste beginnt mit frischen Terminen.
   const terminiert = settleAgenda(familie, balance);
   // 4.9 Andockpunkt: Personal – Verkauf nach Regel, Aufträge, Löhne, Loyalität, Hitze, Extra-Termine der nächsten Runde.
-  const besetzt = settleStaff(terminiert, balance);
+  // 4.12 Andockpunkt: Folgen der Ereignisse – Durchleitungsgebühr, Termine der nächsten Runde (nach dem Personal).
+  const besetzt = settleEventSystems(settleStaff(terminiert, balance));
   // 4.6 Andockpunkt: Die Raffinerie nimmt, was nach den Verkäufen (auch denen des Vorzimmers) noch im Tank steht (ohne Raffinerie: unverändert).
   const ausgeruht = advanceRefinery(besetzt, balance);
   // Lager (0.2.15+2): Kosten, Schwund und Brand für das Öl, das noch im Tank steht; neue Tanks sind fertig.
@@ -334,12 +348,14 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const hallstead = settleHallstead(ermittelt, balance);
   const state = { ...checkBankruptcy(hallstead, balance), roundLogStart };
   if (state.ending === 'pleite') return state;
+  // 4.12 Andockpunkt: frühe Enden ab Kapitel 2 (abgesetzt, geschluckt, hinter Gittern – GDD §14).
+  const frueh = applyEarlyEnding(state, balance);
+  if (frueh.finished) return frueh;
   if (state.round >= state.totalRounds) {
-    // Kapitelprüfung (2.11): steht im Protokoll, der Ergebnisbildschirm zeigt die Einzelheiten.
+    // Kapitelprüfung (2.11, Kapitel 2: 4.12): steht im Protokoll, der Ergebnisbildschirm zeigt die Einzelheiten.
     const ende: GameState = { ...state, finished: true, ending: 'kapitel' };
-    // Kapitel 2 ist noch ein Platzhalter (4.5): keine eigene Prüfung.
     const kapitel = chapterOf(state);
-    const pruefung = kapitel > 1 ? 'Weiter geht es, sobald Kapitel 2 fertig ist.' : chapterCheck(ende, balance).passed ? 'Das Ziel ist erreicht.' : 'Das Ziel ist verfehlt.';
+    const pruefung = chapterPassed(ende, balance) ? 'Das Ziel ist erreicht.' : 'Das Ziel ist verfehlt.';
     return { ...ende, log: [...state.log, `${formatDate(state)}: Kapitel ${kapitel} ist zu Ende. ${pruefung}`] };
   }
   const next = { ...state, round: state.round + 1 };

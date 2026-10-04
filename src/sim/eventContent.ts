@@ -4,6 +4,7 @@
 // benutzt sowohl das Spiel beim Laden als auch npm run check:content.
 
 import { LineCounter, parseDocument, type Document } from 'yaml';
+import { hasSystemEffects, parseSystemEffects, SYSTEM_EFFECT_KEYS, type SystemEffects } from './eventSystems';
 import { CONDITION_KEYS, EFFECT_KEYS, MAIL_KINDS, RIVAL_IDS, type Conditions, type EventChoice, type EventDef, type Effects, type MailKind, type RivalId } from './events';
 import type { DocumentDef, DocumentField } from './documents';
 import { SIM_MARKS } from './family';
@@ -194,7 +195,19 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
     const label = sprachtext(raw, 'label', pfad, wer);
     const result = sprachtext(raw, 'result', pfad, wer);
     const requires = zahlen(raw, 'requires', CONDITION_KEYS, pfad, wer) as Conditions | null;
-    const effects = zahlen(raw, 'effects', EFFECT_KEYS, pfad, wer) as Effects | null;
+    // Systemwirkungen (4.12) stehen mit unter effects: Zahlen aus Kapitel 1 → effects, der Rest → system.
+    const effRaw = raw.effects;
+    let effects: Effects | null;
+    let system: SystemEffects | null = {};
+    if (istObjekt(effRaw)) {
+      const istSystem = (k: string) => (SYSTEM_EFFECT_KEYS as readonly string[]).includes(k);
+      const zahlTeil = Object.fromEntries(Object.entries(effRaw).filter(([k]) => !istSystem(k)));
+      const sysTeil = Object.fromEntries(Object.entries(effRaw).filter(([k]) => istSystem(k)));
+      effects = zahlen({ effects: zahlTeil }, 'effects', EFFECT_KEYS, pfad, wer) as Effects | null;
+      system = parseSystemEffects(sysTeil, (key, text) => fehler([...pfad, 'effects', key], `${wer}: ${text}`));
+    } else {
+      effects = zahlen(raw, 'effects', EFFECT_KEYS, pfad, wer) as Effects | null;
+    }
     const marks = namen(raw, 'marks', pfad, wer);
     const appointments = termine(raw, pfad, wer, undefined);
     if (appointments === null) ok = false;
@@ -222,7 +235,7 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
         ok = false;
       }
     }
-    if (!ok || !label || !result || !requires || !effects || !marks || !marksIfForged || !unlocks || !oeffentlich) return null;
+    if (!ok || !label || !result || !requires || !effects || !system || !marks || !marksIfForged || !unlocks || !oeffentlich) return null;
     const choice: EventChoice = { id: id as string, label, result, requires, effects, default: raw.default === true, marks };
     if (appointments !== undefined && appointments !== null) choice.appointments = appointments;
     if (raw.requiresFound === true) choice.requiresFound = true;
@@ -230,6 +243,7 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
     if (raw.sharp === true) choice.sharp = true;
     if (unlocks.length > 0) choice.unlocks = unlocks;
     if (oeffentlich.length > 0) choice.public = oeffentlich as PublicAct[];
+    if (hasSystemEffects(system)) choice.system = system;
     return choice;
   }
 

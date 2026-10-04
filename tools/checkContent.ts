@@ -9,6 +9,7 @@ import { checkBrandRefs, parseBrandContent } from '../src/sim/brandContent';
 import { checkChapterMarks, parseChapterContent } from '../src/sim/chapter';
 import { parseDiplomacyContent } from '../src/sim/diplomacyContent'; // 4.10 Andockpunkt
 import { formatContentError, parseEventFiles } from '../src/sim/eventContent';
+import { checkSystemEffects } from '../src/sim/eventSystems'; // 4.12
 import { analyzeRelevance, checkRelevanceMarks, parseRelevanceContent, readMarks, simReadMarks } from '../src/sim/eventRelevance';
 import { parseFamilyContent } from '../src/sim/family';
 // 4.16 Andockpunkt
@@ -58,7 +59,7 @@ const bogenMarks = boegen.content && parsed.errors.length === 0 ? checkArcMarks(
 // Kapitelende (2.11): Texte des Ergebnisbildschirms und Merkzeichen der Boni.
 const kapitel = parseChapterContent('content/chapter.yaml', readFileSync(new URL('../content/chapter.yaml', import.meta.url), 'utf8'));
 const kapitelMarks = kapitel.content && parsed.errors.length === 0 ? checkChapterMarks('content/chapter.yaml', kapitel.content, events) : [];
-// Zeitsprünge (4.5): Direktiven, Weichen, Chronik, Kapitel-2-Platzhalter.
+// Zeitsprünge (4.5): Direktiven, Weichen, Chronik, Kapitel-2-Überschrift (4.12).
 const sprung = parseTimeskipContent('content/timeskip.yaml', readFileSync(new URL('../content/timeskip.yaml', import.meta.url), 'utf8'));
 // Einstieg (2.13): Hinweistexte des Tutorials.
 const einstieg = parseTutorialContent('content/tutorial.yaml', readFileSync(new URL('../content/tutorial.yaml', import.meta.url), 'utf8'));
@@ -70,6 +71,16 @@ const aktien = parseStocksContent('content/stocks.yaml', readFileSync(new URL('.
 // Rivalen-Diplomatie (4.10): Texte der Pinnwand ab Kapitel 2. // 4.10 Andockpunkt
 const diplomatie = parseDiplomacyContent('content/diplomacy.yaml', readFileSync(new URL('../content/diplomacy.yaml', import.meta.url), 'utf8'));
 const errors = [...aktien.errors, ...diplomatie.errors, ...wirkung.errors, ...wirkungMarks, ...einstieg.errors, ...parsed.errors, ...zeitung.errors, ...politik.errors, ...gesetze.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks, ...sprung.errors];
+
+// 4.12: Systemwirkungen der Ereignisse – Räte (content/stocks.yaml und Gäste aus balance.yaml), Gesetze und Techniken müssen es geben;
+// jeder Gast braucht einen Namen in content/stocks.yaml → guests.
+{
+  const balance = loadBalance();
+  const gaeste = Object.keys(balance.eventSystems.boardGuests);
+  const raete = [...(aktien.content?.board.map((b) => b.id) ?? []), ...gaeste];
+  if (parsed.errors.length === 0) errors.push(...checkSystemEffects('content/events', events, { boardIds: raete, laws: gesetze.laws, techs: balance.research.techs.map((t) => t.id) }));
+  for (const g of gaeste) if (aktien.content && !aktien.content.guests.some((x) => x.id === g)) errors.push({ file: 'content/stocks.yaml', line: 1, message: `guests: Der Gast „${g}“ aus balance.yaml (eventSystems.boardGuests) hat keinen Namen.` });
+}
 
 // 4.9 Andockpunkt – Personal: Namen, Merkmale und Wörter der Personalakten, passend zu balance.yaml (staff).
 const personal = parseStaffContent('content/staff.yaml', readFileSync(new URL('../content/staff.yaml', import.meta.url), 'utf8'));

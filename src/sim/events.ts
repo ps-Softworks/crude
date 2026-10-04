@@ -19,6 +19,7 @@ import { openRegions, unlockRegion } from './regions';
 import type { PublicAct } from './world';
 import { Rng, seedFromString, type RngState } from './rng';
 import { chapterOf } from './chapterOf'; // gemeinsamer Kapitel-Helfer aller Phase-4-Systeme (state.chapter, sonst 1)
+import { applySystemEffects, type SystemEffects } from './eventSystems';
 
 /**
  * Bedingungen: jede ist eine Untergrenze (min…) oder Obergrenze (max…).
@@ -68,7 +69,12 @@ export type Effects = Partial<Record<EffectKey, number>>;
  *   leaseCost   Anteil am Pachtbonus mehr (+0,2 = 20 % teurer) oder weniger
  */
 export const TIMED_KEYS = ['price', 'production', 'leaseCost'] as const;
-export type TimedKey = (typeof TIMED_KEYS)[number];
+/**
+ * Befristete Systemwirkungen (4.12, src/sim/eventSystems.ts): Raffinerie-Kapazität, Kapazität der
+ * eigenen Leitungen, Ausbeute und Preis je Produkt („productYield:gasoline“ …) als Anteil.
+ */
+export type SystemTimedKey = 'refineryOutput' | 'pipelineThroughput' | `productYield:${string}` | `productPrice:${string}`;
+export type TimedKey = (typeof TIMED_KEYS)[number] | SystemTimedKey;
 
 export interface TimedEffect {
   key: TimedKey;
@@ -116,6 +122,8 @@ export interface EventChoice {
   unlocks?: string[];
   /** Öffentliches Handeln (4.2): Darüber redet das Land – verschiebt am Rundenende Stimmung und Parteien. */
   public?: PublicAct[];
+  /** Systemwirkungen (4.12): stehen in YAML mit unter effects, wirken auf Ruf, Rivalen, Aufsichtsrat … (eventSystems.ts). */
+  system?: SystemEffects;
 }
 
 export interface EventDef {
@@ -225,7 +233,7 @@ function addTimed(state: GameState, effects: Effects, source: string, rounds: nu
   const neu = TIMED_KEYS.filter((k) => effects[k] !== undefined && effects[k] !== 0);
   if (neu.length === 0) return state;
   const until = state.round + rounds - 1;
-  const behalten = (state.events.timed ?? []).filter((t) => t.until >= state.round && !(t.source === source && neu.includes(t.key)));
+  const behalten = (state.events.timed ?? []).filter((t) => t.until >= state.round && !(t.source === source && (neu as readonly string[]).includes(t.key)));
   const timed = [...behalten, ...neu.map((key) => ({ key, value: effects[key]!, until, source }))];
   return { ...state, events: { ...state.events, timed } };
 }
@@ -620,7 +628,7 @@ export function resolveEvent(
   if (reason) return { ok: false, reason };
   const belegt = spendAppointments(state, balance, choiceCost(event, choice));
   if (!belegt.ok) return belegt;
-  return { ok: true, state: openRegions(erledigen(belegt.state, event, choice, lang, '', balance.events.timedRounds), balance) };
+  return { ok: true, state: openRegions(erledigen(belegt.state, event, choice, lang, '', balance.events.timedRounds, balance), balance) };
 }
 
 // 4.9 Andockpunkt: Personal (src/sim/staffRound.ts) erledigt Briefe nach Richtlinie –
@@ -644,15 +652,17 @@ export function resolveDelegated(
   if (!event || event.routine || !state.events.pending.includes(eventId)) return { ok: false, reason: 'Dieses Ereignis liegt nicht auf dem Schreibtisch.' };
   const choice = event.choices.find((c) => c.id === choiceId);
   if (!choice || !waehlbar(state, event, choice)) return { ok: false, reason: 'Diese Antwort geht gerade nicht.' };
-  return { ok: true, state: openRegions(erledigen(state, event, choice, lang, vorsatz, balance.events.timedRounds), balance) };
+  return { ok: true, state: openRegions(erledigen(state, event, choice, lang, vorsatz, balance.events.timedRounds, balance), balance) };
 }
 
-function erledigen(state: GameState, event: EventDef, choice: EventChoice, lang: Lang, vorsatz: string, timedRounds: number): GameState {
+function erledigen(state: GameState, event: EventDef, choice: EventChoice, lang: Lang, vorsatz: string, timedRounds: number, balance?: Balance): GameState {
   // Gebiete (0.2.15+5): nur den Schalter umlegen – die Ranches kommen mit openRegions.
   const offen = (choice.unlocks ?? []).reduce(unlockRegion, state);
   // Öffentliches Handeln (4.2): wirkt am Rundenende im Weltmodell.
   const bekannt = (choice.public ?? []).reduce(recordAct, offen);
-  const nach = applyEffects(bekannt, choice.effects, event.id, timedRounds);
+  // Systemwirkungen (4.12) brauchen die Spielzahlen; ohne balance (alte Aufrufe, nur Kapitel 1) entfallen sie.
+  const systemisch = balance ? applySystemEffects(bekannt, choice.system, balance, event.id, localize(event.title, lang)) : bekannt;
+  const nach = applyEffects(systemisch, choice.effects, event.id, timedRounds);
   const agenda = event.routine ? { ...nach.agenda, done: [...nach.agenda.done, event.id] } : nach.agenda;
   // Merkzeichen behalten die Runde, in der sie zuerst gesetzt wurden.
   const marks = { ...nach.events.marks };
@@ -692,9 +702,9 @@ function ohne(due: Record<string, number>, id: string): Record<string, number> {
  * Standard-Wahl (default: true, sonst die erste). Ist sie gesperrt, die erste
  * mögliche. Geht gar keine oder fehlt das Ereignis im Katalog, verfällt es ohne Effekt.
  * Die Standard-Wahl kostet keine Termine – sie ist ja gerade das, was ohne Jacob passiert.
- * timedRounds: Dauer befristeter Nachwirkungen (balance.events.timedRounds).
+ * timedRounds: Dauer befristeter Nachwirkungen (balance.events.timedRounds); balance: für die Systemwirkungen (4.12).
  */
-export function autoResolve(state: GameState, catalog: readonly EventDef[], lang: Lang = DEFAULT_LANG, timedRounds = 1): GameState {
+export function autoResolve(state: GameState, catalog: readonly EventDef[], lang: Lang = DEFAULT_LANG, timedRounds = 1, balance?: Balance): GameState {
   let out = state;
   for (const id of state.events.pending) {
     const event = finde(catalog, id);
@@ -702,7 +712,7 @@ export function autoResolve(state: GameState, catalog: readonly EventDef[], lang
     if (event && dueRound(out, id) > out.round) continue;
     const choice = event ? defaultChoice(out, event) : undefined;
     if (event && choice) {
-      out = erledigen(out, event, choice, lang, 'Ohne Antwort: ', timedRounds);
+      out = erledigen(out, event, choice, lang, 'Ohne Antwort: ', timedRounds, balance);
     } else {
       out = {
         ...out,

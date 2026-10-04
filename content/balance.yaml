@@ -324,6 +324,65 @@ chapter:
   ipo:
     shares: [0.2, 0.33, 0.49]  # GDD §8: zur Wahl stehende Anteile, die Jacob verkaufen kann (typisch 20–49 %)
     priceFactor: 0.8           # PLATZHALTER: Anleger zahlen Imperiumswert × Anteil × 0,8 (Abschlag für Risiko und Bankprovision)
+  # Kapitel 2 „Der Herausforderer“ (4.12, GDD §13/§14). Texte: content/chapter.yaml → chapter2.
+  chapter2:
+    goalValue: 1000000         # GDD §13: Imperiumswert ≥ 1 Mio. $ …
+    goalControl: 0.5           # … Kontrolle ≥ 50 % (Familienfirma: immer) und eigene Raffinerie oder Fernleitung zum Hafen
+    swallowedControl: 0.5      # Ende „Geschluckt“: Thorne hält mehr Aktien als Jacob und Jacobs Kontrolle liegt darunter
+
+# Systemwirkungen der Ereignisse (4.12): Antworten ab Kapitel 2 greifen in Ruf, Rivalen,
+# Schattenbuch, Aufsichtsrat, Personal, Raffinerie, Leitungen, Gesetze und Familie ein
+# (src/sim/eventSystems.ts, Beschreibung in content/events/README.md). Alle Werte PLATZHALTER.
+eventSystems:
+  evidenceStep: 10            # evidence ±1 = so viele Beweispunkte bei Delaney (0–100; Anklage ab investigation.chargeAt)
+  lawPressureStep: 4          # lawPressure ±1 = so viel Druck auf ein Gesetz (Schwellen in content/laws/)
+  bullardStrength: 2500       # rival.bullard.strength ±1 = so viel $ mehr (weniger) in Bullards Kasse
+  successionStep: 0.04        # rival.margaret/pruett.strength ±1 = so viel Anteil im Crane-Aufsichtsrat (vor der Entscheidung)
+  sharePrice: 1               # sharePrice ±0,05 wirkt × dies auf die Stimmung der Börse (zieht von selbst zur 1 zurück)
+  dividendPressure: 5         # dividendPressure +1 = Treue −5 bei allen Räten, die Dividende wollen
+  heirMax: 10                 # Werte der Erben bleiben zwischen −10 und 10
+  # Gäste, die ein Ereignis in den Aufsichtsrat holen kann (boardMember); Namen in content/stocks.yaml → guests.
+  boardGuests:
+    silas: { agenda: growth, loyalty: 65 }        # Silas will Bohrtrupps und Quellen
+    vandermeer: { agenda: dividend, loyalty: 45 }  # Ambrose Vandermeer, Bankhaus Vandermeer & Co. (Hallstead)
+  boardStartGuests: [vandermeer]  # sitzen ab Kapitelbeginn im Rat, wenn Harlan Oil eine AG ist (Anleger aus Hallstead, Bibel §5)
+  # Was der Ruf (−100…100, GDD §4) bewirkt – je Punkt:
+  reputation:
+    jury: 0.002               # Öffentlichkeit: Verurteilungschance vor Gericht − 0,2 Punkte je Rufpunkt
+    pressure: 0.003           # Politik: Chance, Delaney versetzen zu lassen, + 0,3 Punkte je Rufpunkt
+    production: 0.001         # Arbeiter: eigene Förderung + 0,1 % je Rufpunkt (Moral, Unfälle, Streiks)
+    revenge: 0.3              # Furcht: Rivalen schlagen erst bei Groll ≥ revengeGrudge + 0,3 × Furcht zurück
+  # check:events: so viel $ ist ein Punkt der Wirkung wert (Prozentwerte wie sharePrice je Prozentpunkt).
+  relevance:
+    reputation: 40
+    rival: 25
+    heat: 400
+    trace: 400
+    evidence: 400
+    boardLoyalty: 40
+    boardMember: 2000
+    control: 1500
+    sharePrice: 300
+    rivalStake: 1500
+    dividendPressure: 300
+    staffLoyalty: 30
+    hire: 1500
+    fire: 1500
+    research: 600
+    refineryDown: 1500
+    refineryOutput: 100
+    productYield: 100
+    productPrice: 100
+    pipelineDown: 1500
+    pipelineThroughput: 100
+    transportFee: 8
+    lawPressure: 150
+    mood: 150
+    tension: 150
+    rating: 2000
+    loan: 0.05
+    appointmentsNext: 300
+    heirValues: 250
 
 # Zeitsprünge (4.5, GDD §2/§13): Zwischen den Kapiteln rechnet die Welt die Jahre weiter –
 # mit vereinfachten Regeln (src/sim/timeskip.ts), Texte in content/timeskip.yaml. Vor dem Sprung
@@ -331,7 +390,7 @@ chapter:
 # Haltung: aggressive / balanced / cautious; Familie: little / some / much. Alle Werte PLATZHALTER.
 timeskip:
   rounds: 24                  # Zeitsprung I: Jahr 5–10 = 24 Quartale
-  nextChapterRounds: 16       # Kapitel 2 (vorerst Platzhalter): Jahr 11–14
+  nextChapterRounds: 16       # Kapitel 2 „Der Herausforderer“: Jahr 11–14
   # Haltung (GDD §2: bestimmt Ertrag und Streuung). Wagemutig bohrt mehr und riskanter, erschließt
   # Nachbarbezirke und leiht – trifft ihn eine Kreditkrise, kündigt die Bank mehr (crisis) und er
   # muss Quellen billig verkaufen. Vorsichtig tilgt, hält Rücklage und bohrt nur Sicheres.
@@ -1375,6 +1434,7 @@ investigation:
     candidFactor: 0.5    # offen geantwortet: halbe Strafe
     heavyAt: 12          # Hitze ab hier: schwere Strafe (Zwangsverkauf) …
     heavyFactor: 2       # … und doppelte Geldstrafe
+    prisonAt: 16         # Hitze ab hier: lange Haft – frühes Ende „Hinter Gittern“ (GDD §14, 4.12)
   lawyer:
     costPerLevel: 150    # $ je Runde je Stufe
     max: 5               # GDD §10: Anwälte Qualität 1–5

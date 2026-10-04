@@ -159,7 +159,8 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function freshBill(): BillState {
+/** Ein Gesetz, das noch nie im Parlament war (auch für Druck aus Ereignissen, 4.12). */
+export function freshBill(): BillState {
   return { stage: 'idle', pressure: 0, voteIn: 0, cooldown: 0, proposals: 0, passedRound: null, lastVote: null, weakened: false, lobbyVote: 0 };
 }
 

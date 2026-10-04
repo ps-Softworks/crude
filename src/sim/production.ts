@@ -10,6 +10,7 @@ import type { Find, Well } from './drilling';
 import { fieldLabel, fieldOf, type Field } from './field';
 import type { GameState } from './game';
 import { areaFactor } from './geology';
+import { reputationOf } from './reputation';
 import { timedEffect } from './events';
 import { leaseOf, parcelLabel } from './lease';
 
@@ -166,7 +167,8 @@ export function advanceProduction(input: GameState, balance: Balance): GameState
     gruppen.set(key, [...(gruppen.get(key) ?? []), well]);
   }
 
-  const faktor = Math.max(0, 1 + timedEffect(input, 'production'));
+  // 4.12: Ruf bei den Arbeitern (GDD §4: Moral, Unfälle, Streiks) hebt oder senkt die Förderung dauerhaft.
+  const faktor = Math.max(0, 1 + timedEffect(input, 'production') + reputationOf(input, 'workers') * balance.eventSystems.reputation.production);
   const neuenStand = new Map<string, { lastRate: number; total: number }>();
   const hoechststand = new Map<string, number>();
   let gefoerdert = 0;

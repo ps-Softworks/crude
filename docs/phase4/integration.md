@@ -33,7 +33,12 @@ Was beim Zusammenstecken entschieden wurde:
 Noch offen aus „Zusammenführung mit main“: 4.14 `brandAntitrust` → `breakupFrom`, 4.16 Lobby auf die Gesetz-ids und
 Lobby-Aktionen von main (`LAWS_CONNECTED` bleibt `false`), 4.7 Transportpflicht (`commonCarrier` gibt es nicht),
 4.15 `crashWorld` auf eine gemeinsame Crash-Funktion in world.ts (heute Nachbau ohne Bankpanik), Maklerkredite
-und Anleihen im Rating. Kapitelziele/Enden für Kapitel 2/3 und der Zeitsprung II fehlen weiter.
+und Anleihen im Rating. Kapitelziele/Enden für Kapitel 3 und der Zeitsprung II fehlen weiter.
+
+**Seit 0.4.12 (4.12, docs/phase4/4.12.md):** Kapitel 2 ist spielbar – Kapitelprüfung, frühe Enden (abgesetzt,
+geschluckt, hinter Gittern), Bögen `nora_k2`/`silas_k2`/`ruth_k2`/`crane_k2`, Ruf und die Systemwirkungen der
+Kapitel-2-Ereignisse (offene Fragen 1 und 2 unten und die TODO-Effekte von Kapitel 2 sind damit erledigt; die
+TODO-Effekte von Kapitel 3 stehen weiter als Kommentar).
 
 ## Kurz
 

@@ -5,8 +5,9 @@
 #
 # Alle Ereignisse nur in Kapitel 2: conditions { minChapter: 2, maxChapter: 2 }.
 # Aktien-Ereignisse setzen eine Aktiengesellschaft voraus: `minPublicShare: 1` (seit der Integration mit
-# 4.8; vorher „# TODO-Bedingung: ipo“). Die Wirkungen auf Kontrolle, Kurs und Rat stehen als
-# „# TODO-Effekt: …“ neben einer vorläufigen Wirkung in Geld, Kraft oder Förderung.
+# 4.8; vorher „# TODO-Bedingung: ipo“). Kontrolle, Kurs, Rat und Personal ändern Systemwirkungen
+# (4.12: control, sharePrice, boardLoyalty, boardMember, rivalStake, hire, fire, staffLoyalty – content/events/README.md).
+# Räte: bankier = Mr. Pettibone, witwe = Martha Hale, Gäste silas und vandermeer (balance.yaml → eventSystems.boardGuests).
 #
 # Merkzeichen aus Kapitel 1, die hier gelesen werden:
 #   sheriff_bezahlt   → k2_fixer_tatum (der abgewählte Sheriff bietet seine Dienste an)
@@ -55,23 +56,20 @@
         de: "In Hallstead steigt der Kurs um zwei Punkte. Pettibone schüttelt Jacob die Hand mit beiden Händen. Am Feld fehlt der neue Turm, den der Bohrmeister wollte."
         en: "In Hallstead the share price rises two points. Pettibone shakes Jacob's hand with both of his. At the field the new derrick the head driller wanted is missing."
       requires: { minCash: 15000 }
-      # TODO-Effekt: sharePrice: 0.05 (befristet), boardLoyalty: { bank: 10, vandermeer: 10 } (bank = Pettibone oder Sayles, Bibel §5)
-      effects: { cash: -15000 }
+      effects: { cash: -15000, sharePrice: 0.05, boardLoyalty: { bankier: 10, vandermeer: 10 } }
     - id: haelfte
       label: { de: "Die Hälfte zahlen, die Hälfte bohren (7.000 $)", en: "Pay half, drill with half (7,000 $)" }
       result:
         de: "Pettibone nennt es einen vernünftigen Anfang. Vandermeer nennt es nichts, er schickt nur einen Brief mit seiner Unterschrift und ohne Gruß."
         en: "Pettibone calls it a sensible beginning. Vandermeer calls it nothing; he only sends a letter with his signature and no greeting."
       requires: { minCash: 7000 }
-      # TODO-Effekt: boardLoyalty: { vandermeer: -3 }
-      effects: { cash: -7000, production: 0.05 }
+      effects: { cash: -7000, boardLoyalty: { vandermeer: -3 } }
     - id: bohren
       label: { de: "Alles in neue Quellen stecken", en: "Put everything into new wells" }
       result:
         de: "Pettibone nickt langsam und schreibt etwas in sein kleines Buch. Der Kurs fällt um einen Punkt. Der Bohrmeister bekommt seinen Turm und klopft Jacob auf die Schulter, dass es wehtut."
         en: "Pettibone nods slowly and writes something in his little book. The share price drops a point. The head driller gets his derrick and claps Jacob on the shoulder hard enough to hurt."
-      # TODO-Effekt: sharePrice: -0.05 (befristet), boardLoyalty: { bank: -10, vandermeer: -10 }, control: -1
-      effects: { production: 0.1, strength: -3 }
+      effects: { strength: -3, sharePrice: -0.05, boardLoyalty: { bankier: -10, vandermeer: -10 }, control: -1 }
       appointments: 0
       default: true
 
@@ -102,8 +100,7 @@
         de: "Pell weint ein wenig, als er unterschreibt, und schämt sich dafür. Die vierzig Aktien liegen jetzt in Jacobs Tresor."
         en: "Pell weeps a little as he signs and is ashamed of it. The forty shares now lie in Jacob's safe."
       requires: { minCash: 4000 }
-      # TODO-Effekt: shares: { jacob: 0.4 }, control: 0.4
-      effects: { cash: -4000 }
+      effects: { cash: -4000, control: 0.4 }
     - id: kredit
       label: { de: "Ihm Geld leihen, damit er die Aktien behält (2.500 $)", en: "Lend him money so he can keep the shares (2,500 $)" }
       result:
@@ -116,8 +113,7 @@
       result:
         de: "Mr. Sayles zahlt bar und mehr als der Kurs. Niemand in Port Ellis hat ihn je gesehen. Seine Adresse ist ein Postfach in Hallstead, gleich neben der Thorne-Bank."
         en: "Mr. Sayles pays cash and above market. Nobody in Port Ellis has ever seen him. His address is a post-office box in Hallstead, right next to the Thorne bank."
-      # TODO-Effekt: shares: { sayles: 0.4 }, rivalStake: { thorne: 0.4 }
-      effects: { strength: -1 }
+      effects: { strength: -1, rivalStake: { thorne: 0.4 } }
       marks: [k2_sayles_aktien]
       appointments: 0
       default: true
@@ -148,8 +144,7 @@
         de: "Jacob steht zwei Tage in Hallsteads Börsensaal und lässt sich ansehen. Der Kurs erholt sich. Er sieht in den Spiegeln der Säle älter aus, als er sich fühlt."
         en: "Jacob stands two days in Hallstead's exchange hall and lets himself be looked at. The price recovers. In the hall mirrors he looks older than he feels."
       requires: { minCash: 1500 }
-      # TODO-Effekt: sharePrice: 0.05 (befristet)
-      effects: { cash: -1500, strength: -8 }
+      effects: { cash: -1500, strength: -8, sharePrice: 0.05 }
       appointments: 3
     - id: zukaufen
       label: { de: "Billig eigene Aktien zukaufen (10.000 $)", en: "Buy his own shares cheaply (10,000 $)" }
@@ -157,15 +152,13 @@
         de: "Jacobs Makler kauft still, drei Tage lang. Als das Gerücht zerfällt, gehört Harlan wieder ein Stück mehr von Harlan Oil."
         en: "Jacob's broker buys quietly for three days. When the rumour falls apart, Harlan owns a bit more of Harlan Oil again."
       requires: { minCash: 10000 }
-      # TODO-Effekt: control: 1, shares: { jacob: 1 }
-      effects: { cash: -10000 }
+      effects: { cash: -10000, control: 1 }
     - id: aussitzen
       label: { de: "Aussitzen", en: "Sit it out" }
       result:
         de: "Nach drei Wochen ist der Kurs wieder, wo er war. Vandermeer hat in dieser Zeit zweimal angerufen. Jacob ist beide Male nicht ans Telefon gegangen."
         en: "After three weeks the price is back where it was. Vandermeer rang twice in that time. Jacob did not come to the telephone either time."
-      # TODO-Effekt: boardLoyalty: { vandermeer: -5 }
-      effects: { strength: -2 }
+      effects: { strength: -2, boardLoyalty: { vandermeer: -5 } }
       appointments: 0
       default: true
 
@@ -196,8 +189,7 @@
       result:
         de: "Das Geld ist da, bevor die Tinte trocken ist. Wer die Aktien gekauft hat, steht auf einer Liste, die Jacob nie ganz zu sehen bekommt."
         en: "The money arrives before the ink is dry. Who bought the shares is on a list Jacob never quite gets to see."
-      # TODO-Effekt: shares: { jacob: -3 }, control: -3
-      effects: { cash: 18000 }
+      effects: { cash: 18000, control: -3 }
       marks: [k2_sayles_aktien]
     - id: halten
       label: { de: "Halten – Ruths Zettel bleibt auf dem Tisch", en: "Hold – Ruth's note stays on the desk" }
@@ -233,8 +225,7 @@
       result:
         de: "Das Geld kommt mit der Bahn in einer verplombten Kiste. Vandermeer & Co. verkauft die Papiere an Witwen und Pfarrer in Hallstead, die Harlan Oil nie gesehen haben."
         en: "The money comes by train in a sealed box. Vandermeer & Co. sells the paper to widows and pastors in Hallstead who have never seen Harlan Oil."
-      # TODO-Effekt: credit: 40000, rating: 0
-      effects: { cash: 40000 }
+      effects: { loan: 40000 }
       marks: [k2_anleihe]
     - id: ablehnen
       label: { de: "Höflich ablehnen", en: "Decline politely" }
@@ -278,8 +269,7 @@
       result:
         de: "Der Aufschub wird gewährt, mit einem Aufschlag. Im Ledger steht eine kleine Meldung auf Seite sechs: Harlan Oil bittet um Geduld."
         en: "The delay is granted, with a surcharge. On page six of the Ledger there is a small item: Harlan Oil asks for patience."
-      # TODO-Effekt: rating: -1, sharePrice: -0.05 (befristet)
-      effects: { cash: -600, strength: -3 }
+      effects: { cash: -600, strength: -3, rating: -1, sharePrice: -0.05 }
       marks: [k2_anleihe_verzug]
       appointments: 0
       default: true
@@ -311,23 +301,20 @@
         de: "Die Schmiede in Salt Hill arbeiten zwei Monate nur an Geländern. Die Männer spotten über die Leinen, eine Woche lang, dann tragen sie sie. Martha Hale fährt die Türme ab und rüttelt an jedem Geländer selbst."
         en: "The Salt Hill smithies work two months on nothing but railings. The men mock the lines for a week, then wear them. Martha Hale drives round the derricks and shakes every railing herself."
       requires: { minCash: 6000 }
-      # TODO-Effekt: boardLoyalty: { hale: 10 }, reputation: { workers: 3 }
-      effects: { cash: -6000, production: 0.03 }
+      effects: { cash: -6000, boardLoyalty: { witwe: 10 }, reputation: { workers: 3 } }
     - id: rat
       label: { de: "Ihr einen Sitz im Aufsichtsrat geben (Sitzungsgeld 1.000 $)", en: "Give her a seat on the board (1,000 $ in fees)" }
       result:
         de: "Der Vertreter der Bank verlässt bei ihrer ersten Sitzung den Raum für zehn Minuten. Martha Hale stellt in dieser Zeit drei Fragen zur Sicherheit, die niemand beantworten kann."
         en: "The bank's man leaves the room for ten minutes at her first meeting. In that time Martha Hale asks three questions about safety that nobody can answer."
-      # TODO-Effekt: boardMember: hale, boardLoyalty: { hale: 15, bank: -5 }
-      effects: { cash: -1000 }
+      effects: { cash: -1000, boardLoyalty: { witwe: 15, bankier: -5 } }
       marks: [k2_hale_rat]
     - id: vertroesten
       label: { de: "„Nächstes Jahr, Mrs. Hale“", en: "“Next year, Mrs. Hale”" }
       result:
         de: "Martha Hale steht auf und streicht das Kleid glatt. Auf der Hauptversammlung stimmt sie mit der Bank, zum ersten Mal."
         en: "Martha Hale stands and smooths her dress. At the shareholders' meeting she votes with the bank, for the first time."
-      # TODO-Effekt: boardLoyalty: { hale: -10 }
-      effects: { strength: -2 }
+      effects: { strength: -2, boardLoyalty: { witwe: -10 } }
       appointments: 0
       default: true
 
@@ -357,8 +344,7 @@
         de: "Am ersten Tag sortiert Ada Pell die Ablage neu. Am zweiten weiß sie, welcher Bankier welchen Kaffee trinkt. Jacob hat zum ersten Mal seit Jahren einen freien Nachmittag."
         en: "On her first day Ada Pell re-sorts the files. On the second she knows which banker takes which coffee. Jacob has a free afternoon for the first time in years."
       requires: { minCash: 1500 }
-      # TODO-Effekt: hire: sekretaerin, appointmentsNext: 1
-      effects: { cash: -1500, strength: 6 }
+      effects: { cash: -1500, hire: secretary, appointmentsNext: 1 }
       marks: [k2_ada_pell]
     - id: hallstead
       label: { de: "Lieber einen Sekretär aus Hallstead (3.000 $ im Jahr)", en: "Rather a secretary from Hallstead (3,000 $ a year)" }
@@ -366,8 +352,7 @@
         de: "Mr. Purvis kommt mit Empfehlungen von zwei Senatoren. Er ist gründlich und langsam und schreibt jeden Abend einen Brief nach Hallstead. An wen, weiß niemand."
         en: "Mr. Purvis arrives with references from two senators. He is thorough and slow, and every evening he writes a letter to Hallstead. Nobody knows to whom."
       requires: { minCash: 3000 }
-      # TODO-Effekt: hire: sekretaerin, appointmentsNext: 1, trace: { severity: 0, label: Purvis }
-      effects: { cash: -3000, strength: 4 }
+      effects: { cash: -3000, hire: secretary, appointmentsNext: 1 }
       marks: [k2_sekretaer_hallstead]
     - id: nein
       label: { de: "„Ich schreibe meine Briefe selbst“", en: "“I write my own letters”" }
@@ -403,15 +388,13 @@
         de: "Ada Pell steckt den Schlüssel an ihre Uhrkette. Ab jetzt sieht sie jeden Brief, auch die mit dem roten Siegel. Sie spricht nie darüber. Jacob muss nichts mehr selbst ablegen."
         en: "Ada Pell hangs the key on her watch chain. From now on she sees every letter, even those with the red seal. She never speaks of it. Jacob no longer has to file anything himself."
       requires: { minCash: 1500 }
-      # TODO-Effekt: staffLoyalty: { sekretaerin: 15 }, appointmentsNext: 1
-      effects: { cash: -1500, strength: 5 }
+      effects: { cash: -1500, strength: 5, staffLoyalty: { secretary: 15 }, appointmentsNext: 1 }
     - id: mitnehmen
       label: { de: "Die Schublade ausräumen und die Briefe mit nach Hause nehmen", en: "Clear the drawer and take the letters home" }
       result:
         de: "Die Briefe liegen jetzt in einer Hutschachtel im Kleiderschrank, neben Ruths Sachen. Ada Pell sagt nichts. Sie zählt nur die Hutschachteln nicht mit."
         en: "The letters now lie in a hatbox in the wardrobe, next to Ruth's things. Ada Pell says nothing. She simply doesn't count the hatboxes."
-      # TODO-Effekt: staffLoyalty: { sekretaerin: -5 }
-      effects: { strength: -2 }
+      effects: { strength: -2, staffLoyalty: { secretary: -5 } }
       appointments: 0
       default: true
     - id: entlassen
@@ -419,8 +402,7 @@
       result:
         de: "Ada Pell nimmt das Zeugnis und das Geld und bedankt sich für beides. Sie weiß jetzt, dass es etwas zu verbergen gibt. Jacob weiß, dass sie es weiß."
         en: "Ada Pell takes the reference and the money and thanks him for both. She now knows there is something to hide. Jacob knows that she knows."
-      # TODO-Effekt: fire: sekretaerin, trace: { severity: 1, label: Ada Pell }
-      effects: { cash: -2000, strength: -3 }
+      effects: { cash: -2000, strength: -3, fire: secretary, trace: { severity: 1, label: "Ada Pell" } }
 
 - id: k2_unterschlagung
   group: k2_unterschlagung
@@ -447,8 +429,7 @@
       result:
         de: "Haines wird vor seinem Haus abgeführt, die Kinder stehen am Fenster. Das Gericht holt dreitausend Dollar zurück. Der Ledger meldet, bei Harlan Oil fehle Geld."
         en: "Haines is led away outside his house, the children at the window. The court recovers three thousand dollars. The Ledger reports that money is missing at Harlan Oil."
-      # TODO-Effekt: sharePrice: -0.03 (befristet)
-      effects: { cash: 3000, strength: -4 }
+      effects: { cash: 3000, strength: -4, sharePrice: -0.03 }
       appointments: 2
     - id: still
       label: { de: "Still entlassen, er zahlt zurück, was er kann", en: "Dismiss him quietly; he repays what he can" }
@@ -530,8 +511,7 @@
       result:
         de: "Lindqvist packt seine Rechenschieber in eine Zigarrenkiste. Sein Nachfolger dreht das Ventil am selben Nachmittag. Die Leitung schafft ein Fünftel mehr."
         en: "Lindqvist packs his slide rules into a cigar box. His successor turns the valve the same afternoon. The line carries a fifth more."
-      # TODO-Effekt: pipelineThroughput: 0.2
-      effects: { production: 0.12 }
+      effects: { pipelineThroughput: 0.2 }
       marks: [k2_druck_erhoeht]
     - id: zuhoeren
       label: { de: "Auf ihn hören", en: "Listen to him" }
@@ -547,8 +527,7 @@
         de: "Lindqvist bekommt ein eigenes Büro und vier Wochen später neue Rohre aus Hallstead. Dann dreht er das Ventil selbst, ein halbes Fünftel weit."
         en: "Lindqvist gets an office of his own and, four weeks later, new pipes from Hallstead. Then he turns the valve himself, half a fifth."
       requires: { minCash: 9000 }
-      # TODO-Effekt: staffLoyalty: { ingenieur: 15 }, pipelineThroughput: 0.1
-      effects: { cash: -9000, production: 0.06 }
+      effects: { cash: -9000, staffLoyalty: { all: 15 }, pipelineThroughput: 0.1 }
       marks: [k2_lindqvist]
       appointments: 2
 
@@ -579,16 +558,14 @@
         de: "Lindqvist kommt zurück, ohne Triumph. Er verlangt, dass der Druck auf den alten Wert gesenkt wird, und Jacob unterschreibt. Die Schule bekommt ein neues Dach."
         en: "Lindqvist comes back, without triumph. He demands the pressure go back to the old figure, and Jacob signs. The school gets a new roof."
       requires: { minCash: 14000 }
-      # TODO-Effekt: pipelineDown: 1, reputation: { public: 3 }
-      effects: { cash: -14000, production: -0.12 }
+      effects: { cash: -14000, pipelineDown: 1, reputation: { public: 3 } }
       appointments: 2
     - id: flicken
       label: { de: "Flicken und weiterpumpen (3.000 $)", en: "Patch it and keep pumping (3,000 $)" }
       result:
         de: "In drei Tagen fließt wieder Öl. Der Farmer mit dem gebrochenen Arm erzählt jedem, der zuhört, dass ein Ingenieur das vorhergesagt hat. Er kennt sogar den Namen."
         en: "In three days oil flows again. The farmer with the broken arm tells anyone who will listen that an engineer predicted it. He even knows the name."
-      # TODO-Effekt: heat: 1, trace: { severity: 2, label: Lindqvist }
-      effects: { cash: -3000, oilStock: -1500, strength: -5 }
+      effects: { cash: -3000, oilStock: -1500, strength: -5, trace: { severity: 2, label: "Lindqvist" } }
       appointments: 0
       default: true
 
@@ -621,8 +598,7 @@
         de: "Greaves bleibt und lässt Jacob merken, dass er es für Geld tut. Er arbeitet trotzdem bis Mitternacht."
         en: "Greaves stays and lets Jacob know he does it for the money. He still works until midnight."
       requires: { minCash: 6000 }
-      # TODO-Effekt: staffLoyalty: { greaves: 5 }
-      effects: { cash: -6000 }
+      effects: { cash: -6000, staffLoyalty: { all: 5 } }
       marks: [k2_pruett_abwerbung]
     - id: patent
       label: { de: "Ihm ein Zehntel an jedem Patent bieten (2.000 $ jetzt)", en: "Offer him a tenth of every patent (2,000 $ now)" }
@@ -630,16 +606,14 @@
         de: "Greaves liest den Vertrag zweimal, dann lacht er zum ersten Mal, seit Jacob ihn kennt. Er schreibt Pruett eine Absage auf der Rückseite von Pruetts eigenem Brief."
         en: "Greaves reads the contract twice, then laughs for the first time since Jacob has known him. He writes Pruett a refusal on the back of Pruett's own letter."
       requires: { minCash: 2000 }
-      # TODO-Effekt: research: { cracking: 1 }, staffLoyalty: { greaves: 15 }
-      effects: { cash: -2000, strength: -2 }
+      effects: { cash: -2000, strength: -2, research: { thermal_cracking: 1 }, staffLoyalty: { all: 15 } }
       marks: [k2_greaves_beteiligt, k2_pruett_abwerbung]
     - id: gehen_lassen
       label: { de: "Gehen lassen – Chemiker gibt es genug", en: "Let him go – there are plenty of chemists" }
       result:
         de: "Greaves geht am Freitag. Am Montag stellt der neue Direktor die Kolonne auf Werte zurück, die Greaves vor zwei Jahren verworfen hat. Pruett schickt eine Karte mit Dank."
         en: "Greaves leaves on Friday. On Monday the new director resets the column to figures Greaves rejected two years ago. Pruett sends a card of thanks."
-      # TODO-Effekt: fire: greaves, rivalStake: { pruett: research }
-      effects: { production: -0.08 }
+      effects: { research: { thermal_cracking: -2 } }
       marks: [k2_greaves_weg, k2_pruett_abwerbung]
       appointments: 0
       default: true
@@ -673,16 +647,14 @@
         de: "Das Labor steht im Frühjahr. Greaves wohnt praktisch darin. Im Sommer explodiert eine Retorte und nimmt ihm die Augenbrauen. Er notiert die Temperatur."
         en: "The laboratory stands by spring. Greaves practically lives in it. In summer a retort explodes and takes his eyebrows. He writes down the temperature."
       requires: { minCash: 8000 }
-      # TODO-Effekt: research: { cracking: 2 }
-      effects: { cash: -8000, price: 0.04 }
+      effects: { cash: -8000, research: { thermal_cracking: 2 } }
       marks: [k2_greaves_beteiligt, k2_pruett_abwerbung]
     - id: spaeter
       label: { de: "„Nächstes Jahr, Greaves“", en: "“Next year, Greaves”" }
       result:
         de: "Greaves nickt und nimmt Pruetts Brief wieder mit. Er geht nicht. Aber er arbeitet wieder nur bis sechs."
         en: "Greaves nods and takes Pruett's letter back with him. He doesn't leave. But he works only until six again."
-      # TODO-Effekt: staffLoyalty: { greaves: -10 }
-      effects: { production: -0.04 }
+      effects: { staffLoyalty: { all: -10 } }
       marks: [k2_pruett_abwerbung]
       appointments: 0
       default: true
@@ -713,8 +685,7 @@
         de: "Tatum bekommt ein Büro im Lagerhaus, ohne Schild an der Tür. Der Farmer in Hollins verlängert seine Pacht nach einem Besuch. Wie der Besuch verlief, steht nirgends."
         en: "Tatum gets an office in the warehouse with no sign on the door. The Hollins farmer renews his lease after a visit. How the visit went is written down nowhere."
       requires: { minCash: 3000 }
-      # TODO-Effekt: hire: fixer, heat: 1
-      effects: { cash: -3000, leaseCost: -0.2 }
+      effects: { cash: -3000, hire: fixer, heat: 1 }
       marks: [k2_tatum_fixer]
     - id: einmal
       label: { de: "Nur diesen einen Auftrag (800 $)", en: "Just this one job (800 $)" }
@@ -722,8 +693,7 @@
         de: "Tatum erledigt es in einer Nacht. Der Farmer unterschreibt am Morgen, die Hand verbunden. Tatum zählt das Geld vor Jacob, Schein für Schein."
         en: "Tatum handles it in one night. The farmer signs in the morning, his hand bandaged. Tatum counts the money in front of Jacob, note by note."
       requires: { minCash: 800 }
-      # TODO-Effekt: heat: 1, trace: { severity: 2, label: Hollins-Farmer }
-      effects: { cash: -800, leaseCost: -0.15, strength: -2 }
+      effects: { cash: -800, strength: -2, trace: { severity: 2, label: "Hollins-Farmer" } }
     - id: nein
       label: { de: "„Die Zeiten sind vorbei, Tatum“", en: "“Those days are over, Tatum”" }
       result:

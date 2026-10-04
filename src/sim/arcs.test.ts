@@ -4,7 +4,8 @@
 
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { ARC_IDS, arcOutcome, arcSummaries, checkArcMarks, parseArcContent, type ArcContent, type ArcId } from './arcs';
+import { ARC_IDS, ARC_SIM_MARKS, arcOutcome, arcsOfChapter, arcSummaries, checkArcMarks, parseArcContent, type ArcContent, type ArcId } from './arcs';
+import { DIPLO_MARKS } from './diplomacyCore';
 import { resolveEvent } from './events';
 import { endRound, newGame, type GameState } from './game';
 import { loadBalance } from './testBalance';
@@ -49,7 +50,14 @@ describe('content/arcs.yaml', () => {
   it('meldet fehlende Bögen, zu wenige Ausgänge und kaputte Merkzeichen-Listen', () => {
     const fehlt = parseArcContent(ARCS_FILE, 'silas:\n  name: { de: Silas, en: "" }\n  open: { title: { de: a, en: "" }, text: { de: b, en: "" } }\n  outcomes:\n    - id: a\n      any: [x]\n      title: { de: a, en: "" }\n      text: { de: a, en: "" }\n');
     expect(fehlt.content).toBeNull();
-    expect(fehlt.errors.map((e) => e.message)).toEqual(['silas.outcomes: Ein Bogen braucht mindestens zwei Ausgänge.', 'Bogen „moss“ fehlt.']);
+    expect(fehlt.errors.map((e) => e.message)).toEqual([
+      'silas.outcomes: Ein Bogen braucht mindestens zwei Ausgänge.',
+      'Bogen „moss“ fehlt.',
+      'Bogen „nora_k2“ fehlt.',
+      'Bogen „silas_k2“ fehlt.',
+      'Bogen „ruth_k2“ fehlt.',
+      'Bogen „crane_k2“ fehlt.',
+    ]);
     const anyKaputt = parseArcContent(ARCS_FILE, arcsText.replace('any: [silas_fair]', 'any: silas_fair'));
     expect(anyKaputt.errors.map((e) => e.message)).toEqual(['silas.outcomes[2]: „any“ muss eine Liste von Merkzeichen sein, z. B. any: [silas_fair].']);
     expect(parseArcContent(ARCS_FILE, `${arcsText}\nruth: {}\n`).errors[0].message).toMatch(/Unbekannte\(r\) Bogen: ruth/);
@@ -73,6 +81,22 @@ describe('Ausgang eines Bogens', () => {
     expect(arcOutcome(mitMarks({ silas_betrogen: 8, silas_versoehnt: 10 }), content.silas)).toBe('versoehnt');
     expect(arcOutcome(mitMarks({ moss_abgewiesen: 5, moss_vertrieben: 7, moss_feind: 7 }), content.moss)).toBe('feind');
     expect(arcOutcome(mitMarks({ moss_abgewiesen: 5, moss_fair: 7 }), content.moss)).toBe('freund');
+  });
+
+  it('der Kapitelabschluss zeigt nur die Bögen seines Kapitels (4.12)', () => {
+    expect(arcsOfChapter(1)).toEqual(['silas', 'moss']);
+    expect(arcsOfChapter(2)).toEqual(['nora_k2', 'silas_k2', 'ruth_k2', 'crane_k2']);
+    const k2 = { ...mitMarks({ silas_fair: 1, silas_geschuetzt: 44, ruth_finanzen: 45, k2_nachfolge_pruett: 50 }), chapter: 2 };
+    expect(arcSummaries(k2, content).map((s) => [s.arc, s.outcome])).toEqual([
+      ['nora_k2', null],
+      ['silas_k2', 'geschuetzt'],
+      ['ruth_k2', 'finanzen'],
+      ['crane_k2', 'pruett'],
+    ]);
+  });
+
+  it('die Ausgänge der Crane-Nachfolge sind Merkzeichen der Diplomatie (dieselben Namen)', () => {
+    expect([...ARC_SIM_MARKS]).toEqual([DIPLO_MARKS.heirMargaret, DIPLO_MARKS.heirPruett, DIPLO_MARKS.breakup]);
   });
 
   it('Texte kommen in der gewünschten Sprache', () => {

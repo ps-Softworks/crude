@@ -10,10 +10,29 @@ import type { ContentError } from './eventContent';
 import type { EventDef } from './events';
 import type { GameState } from './game';
 import { LANGUAGES, localize, type Lang, type LocalizedText } from './i18n';
+import { chapterOf } from './chapterOf';
 
-/** Die Story-Bögen von Kapitel 1. */
-export const ARC_IDS = ['silas', 'moss'] as const;
+/**
+ * Merkzeichen, die die Simulation setzt und die ein Bogen lesen darf: Ausgang der Crane-Nachfolge
+ * (DIPLO_MARKS in diplomacyCore.ts, 4.10 – wörtlich, damit arcs.ts beim Laden nichts Fremdes liest; ein Test vergleicht).
+ */
+export const ARC_SIM_MARKS: readonly string[] = ['k2_nachfolge_margaret', 'k2_nachfolge_pruett', 'k2_trust_zerschlagen'];
+
+/**
+ * Die Story-Bögen je Kapitel. Kapitel 1: Silas und Moss. Kapitel 2 (4.12): Noras erster Artikel,
+ * Silas gegen den Aufsichtsrat, Ruths Wunsch mitzuarbeiten (content/events/k2-story-*.yaml) und die
+ * Crane-Nachfolge (Merkzeichen der Diplomatie, 4.10).
+ */
+export const ARC_IDS = ['silas', 'moss', 'nora_k2', 'silas_k2', 'ruth_k2', 'crane_k2'] as const;
 export type ArcId = (typeof ARC_IDS)[number];
+
+/** In welchem Kapitel ein Bogen spielt – der Kapitelabschluss zeigt nur die Bögen seines Kapitels. */
+export const ARC_CHAPTER: Record<ArcId, number> = { silas: 1, moss: 1, nora_k2: 2, silas_k2: 2, ruth_k2: 2, crane_k2: 2 };
+
+/** Die Bögen eines Kapitels. */
+export function arcsOfChapter(chapter: number): ArcId[] {
+  return ARC_IDS.filter((id) => ARC_CHAPTER[id] === chapter);
+}
 
 export interface ArcOutcomeDef {
   id: string;
@@ -51,9 +70,9 @@ export interface ArcSummary {
   text: string;
 }
 
-/** Alle Bögen mit ihrem Ausgang in der gewünschten Sprache. */
-export function arcSummaries(state: Pick<GameState, 'events'>, content: ArcContent, lang?: Lang): ArcSummary[] {
-  return ARC_IDS.map((id) => {
+/** Die Bögen des laufenden Kapitels (state.chapter, sonst Kapitel 1) mit ihrem Ausgang in der gewünschten Sprache. */
+export function arcSummaries(state: Pick<GameState, 'events'> & Partial<Pick<GameState, 'chapter'>>, content: ArcContent, lang?: Lang): ArcSummary[] {
+  return arcsOfChapter(chapterOf(state)).map((id) => {
     const arc = content[id];
     const outcome = arcOutcome(state, arc);
     const def = outcome === null ? arc.open : arc.outcomes.find((o) => o.id === outcome)!;
@@ -65,8 +84,8 @@ export function arcSummaries(state: Pick<GameState, 'events'>, content: ArcConte
  * Inhaltsprüfung: Jedes Merkzeichen eines Ausgangs muss von einer Wahl in
  * content/events/ gesetzt werden – sonst ist es fast sicher ein Tippfehler.
  */
-export function checkArcMarks(file: string, content: ArcContent, catalog: readonly EventDef[]): ContentError[] {
-  const gesetzt = new Set(catalog.flatMap((e) => e.choices.flatMap((c) => [...c.marks, ...(c.marksIfForged ?? [])])));
+export function checkArcMarks(file: string, content: ArcContent, catalog: readonly EventDef[], simMarks: Iterable<string> = ARC_SIM_MARKS): ContentError[] {
+  const gesetzt = new Set([...simMarks, ...catalog.flatMap((e) => e.choices.flatMap((c) => [...c.marks, ...(c.marksIfForged ?? [])]))]);
   const errors: ContentError[] = [];
   for (const id of ARC_IDS) {
     for (const o of content[id].outcomes) {

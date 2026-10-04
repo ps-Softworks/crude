@@ -205,6 +205,8 @@ export const BIG_PIPELINE_READ_MARKS = {
   intimidation: 'fernleitung_einschuechterung',
   /** Abkommen mit Thorne (sein Brief auf thorne_unter_druck): keine weitere Leitung zum Hafen. */
   thorneDeal: 'fernleitung_thorne_abkommen',
+  /** 4.12: Thornes Frachtvertrag mit Seite neun unterschrieben (k2_thorne_vertrag): gar keine eigene Leitung zum Hafen. */
+  thorneClause: 'k2_thorne_klausel',
 } as const;
 
 export const BIG_PIPELINE_READ_MARK_LIST = Object.values(BIG_PIPELINE_READ_MARKS);
@@ -479,6 +481,9 @@ export function surveyRoute(state: GameState, balance: Balance, req: RouteReques
   const plan = geplant.plan;
   if (plan.bypassesRail && markRound(state, BIG_PIPELINE_READ_MARKS.thorneDeal) !== undefined && bp.projects.some((p) => p.bypassesRail)) {
     return { ok: false, reason: 'Jacob hat Thorne sein Wort gegeben: keine weitere Leitung zum Hafen.' };
+  }
+  if (plan.bypassesRail && markRound(state, BIG_PIPELINE_READ_MARKS.thorneClause) !== undefined) {
+    return { ok: false, reason: 'Seite neun des Frachtvertrags mit Thorne Rail: Harlan Oil baut keine eigene Leitung zum Hafen.' };
   }
   if (plan.surveyCost > state.cash) return { ok: false, reason: `Dafür fehlt das Geld (${dollars(plan.surveyCost)} $ nötig).` };
   const project: TrunkProject = {

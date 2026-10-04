@@ -24,6 +24,7 @@ import { parseBrandBalance, type BrandBalance } from './brand';
 import { parseHallstead, type HallsteadBalance } from './hallsteadBalance';
 // 4.17 Andockpunkt: Kapitel 3 (Seismik, Konsortium, Projekte, Stand) prüft seinen Block selbst.
 import { parseKapitel3Balance, type Kapitel3Balance } from './kapitel3Balance';
+import { parseEventSystemsBalance, type EventSystemsBalance } from './eventSystems'; // 4.12
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
 
@@ -387,6 +388,12 @@ export interface ChapterBalance {
     shares: number[];
     /** Anleger zahlen Imperiumswert × Anteil × priceFactor. */
     priceFactor: number;
+  };
+  /** Kapitel 2 (4.12, GDD §13/§14): Kapitelprüfung und frühes Ende „Geschluckt“. */
+  chapter2: {
+    goalValue: number;
+    goalControl: number;
+    swallowedControl: number;
   };
 }
 
@@ -815,6 +822,8 @@ export interface Balance {
   exchange: ExchangeBalance;
   /** 4.17 Andockpunkt: Kapitel 3 – Seismik, Konsortium, Projekte, Stand (src/sim/kapitel3Balance.ts). */
   kapitel3: Kapitel3Balance;
+  /** 4.12: Systemwirkungen der Ereignisse (src/sim/eventSystems.ts). */
+  eventSystems: EventSystemsBalance;
 }
 
 /** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
@@ -1504,6 +1513,11 @@ function parseChapter(raw: unknown): ChapterBalance {
     goalValue: num(raw, 'chapter.goalValue'),
     goalWells: positiveInt(raw, 'chapter.goalWells'),
     ipo: { shares: shares as number[], priceFactor: share(raw, 'chapter.ipo.priceFactor') },
+    chapter2: {
+      goalValue: num(raw, 'chapter.chapter2.goalValue'),
+      goalControl: share(raw, 'chapter.chapter2.goalControl'),
+      swallowedControl: share(raw, 'chapter.chapter2.swallowedControl'),
+    },
   };
 }
 
@@ -2215,6 +2229,7 @@ export function parseBalance(raw: unknown): Balance {
     // 4.15 Andockpunkt: Börse und Kauf auf Kredit.
     exchange: parseExchangeBalance(raw),
     kapitel3: parseKapitel3Balance(raw), // 4.17 Andockpunkt
+    eventSystems: parseEventSystemsBalance(raw), // 4.12
   };
 
   for (const r of balance.transport.pipeline.rights) {

@@ -5,7 +5,9 @@
 // vollständig ist.
 
 import { validDiplomacy } from './diplomacy'; // 4.10 Andockpunkt
-import type { GameState } from './game';
+import { ENDINGS, type GameState } from './game';
+import { validConsequences } from './eventSystems';
+import { validReputation } from './reputation';
 import { newLogistics } from './logistics';
 import { isWorldState, neutralWorld, withCreditForeignDefaults, withLawDefaults, withPoliticsDefaults } from './world';
 // 4.6 Andockpunkt: Raffinerie.
@@ -25,17 +27,17 @@ import { validExchange } from './exchange';
 import { validHallstead } from './hallsteadState';
 import { isKapitel3State } from './kapitel3'; // 4.17 Andockpunkt
 
-/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2), 11 = mit befristeten Nachwirkungen der Ereignisse (0.2.15+3), 12 = Karte mit Gebieten und Ranches statt Raster, mehrere Bohrlöcher je Ranch (0.2.15+5), 13 = Bohrtürme und Pumpen (0.2.15+7), 14 = mit Weltmodell (4.1), 15 = mit öffentlichem Handeln und Wahlergebnis im Weltmodell (4.2), 16 = mit Gesetzgebung im Weltmodell (4.3), 17 = mit Kreditzyklus (Verschuldung, Bankpanik) und Ausland (Costa Negra, Qasir) im Weltmodell (4.4), 18 = mit Kapitel, Zeitsprung und Chronik (4.5; Beteiligungen `ventures` sind freiwillig – fehlen sie, gibt es keine), 19 = mit den Systemen der Kapitel 2 und 3 (4.6–4.17: refinery, bigPipelines, stocks, staff, diplomacy, investigation, research, brand, exchange, hallstead, kapitel3 – alle freiwillig, fehlen sie, ist das System noch nicht offen). */
-export const SAVE_FORMAT = 19;
+/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2), 11 = mit befristeten Nachwirkungen der Ereignisse (0.2.15+3), 12 = Karte mit Gebieten und Ranches statt Raster, mehrere Bohrlöcher je Ranch (0.2.15+5), 13 = Bohrtürme und Pumpen (0.2.15+7), 14 = mit Weltmodell (4.1), 15 = mit öffentlichem Handeln und Wahlergebnis im Weltmodell (4.2), 16 = mit Gesetzgebung im Weltmodell (4.3), 17 = mit Kreditzyklus (Verschuldung, Bankpanik) und Ausland (Costa Negra, Qasir) im Weltmodell (4.4), 18 = mit Kapitel, Zeitsprung und Chronik (4.5; Beteiligungen `ventures` sind freiwillig – fehlen sie, gibt es keine), 19 = mit den Systemen der Kapitel 2 und 3 (4.6–4.17: refinery, bigPipelines, stocks, staff, diplomacy, investigation, research, brand, exchange, hallstead, kapitel3 – alle freiwillig, fehlen sie, ist das System noch nicht offen), 20 = Kapitel 2 spielbar (4.12): frühe Enden abgesetzt/geschluckt/haft, Ruf (reputation) und Folgen der Ereignisse (consequences) – beide freiwillig, fehlen sie, ist noch nichts geschehen; Spuren aus Ereignissen mit Beschriftung. */
+export const SAVE_FORMAT = 20;
 
 /**
  * Ältere Formate, die mit Ersatzwerten noch geladen werden. Vor Format 12 keins
  * mehr: Die Rasterparzellen der alten Stände passen nicht auf die neue Karte.
  * Format 12 bekommt Silas' Turm (0.2.15+7), Format 12 und 13 eine ruhige Durchschnittswelt (4.1), Format 14 leere Listen für öffentliches Handeln und keine gemerkte Wahl (4.2),
- * bis Format 17 Kapitel 1 ohne Zeitsprung (4.5).
+ * bis Format 17 Kapitel 1 ohne Zeitsprung (4.5). Format 19 lädt unverändert: Ruf und Folgen fehlen dort noch (= nichts geschehen).
  * Die Umrisse der Ranches stehen nie im Spielstand – sie kommen aus dem Seed.
  */
-const ALTE_FORMATE: number[] = [12, 13, 14, 15, 16, 17, 18];
+const ALTE_FORMATE: number[] = [12, 13, 14, 15, 16, 17, 18, 19];
 
 export interface SaveFile {
   format: number;
@@ -157,9 +159,11 @@ export function validateState(value: unknown): LoadResult {
   if (ipo !== null && !(istObjekt(ipo) && istZahl(ipo.share) && ipo.share >= 0 && ipo.share < 1 && istZahl(ipo.proceeds))) {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
-  if (value.ending !== null && value.ending !== 'kapitel' && value.ending !== 'pleite' && value.ending !== 'verkauft') {
+  if (value.ending !== null && !(ENDINGS as readonly unknown[]).includes(value.ending)) {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
+  // 4.12: Ruf und Folgen der Ereignisse sind freiwillig – wenn da, müssen sie stimmen.
+  if (!validReputation(value.reputation) || !validConsequences(value.consequences)) return { ok: false, reason: UNVOLLSTAENDIG };
   const lg = value.logistics;
   const PIPELINE = ['none', 'surveyed', 'building', 'ready', 'damaged'];
   if (

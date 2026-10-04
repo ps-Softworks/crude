@@ -7,6 +7,7 @@ import { creditLimit, debt, headroom } from '../../sim/credit';
 import { startStocks, stocksAttention } from '../../sim/stocks';
 import { balance } from '../balance';
 import { BankPanel } from '../BankPanel';
+import { ReputationLine } from '../Reputation';
 import { money } from '../format';
 import { Tabs, activeTab } from '../sheet/Tabs';
 import { stocksContent } from '../stocks';
@@ -16,10 +17,14 @@ import type { SheetContext } from './types';
 export function LedgerSheet({ ctx }: { ctx: SheetContext }) {
   const { game } = ctx;
   const kopf = (
-    <p className="kassenbuch-kopf">
-      Kasse <strong>{money(game.cash)}</strong> · Schulden {money(debt(game))} · Rahmen frei {money(headroom(game, balance))} von{' '}
-      {money(creditLimit(game, balance))} · Rating {game.rating}
-    </p>
+    <>
+      <p className="kassenbuch-kopf">
+        Kasse <strong>{money(game.cash)}</strong> · Schulden {money(debt(game))} · Rahmen frei {money(headroom(game, balance))} von{' '}
+        {money(creditLimit(game, balance))} · Rating {game.rating}
+      </p>
+      {/* 4.12: Ruf als Wörter, sobald Ereignisse ihn bewegt haben. */}
+      <ReputationLine game={game} className="klein kassenbuch-ruf" />
+    </>
   );
   // 4.8 Andockpunkt: ohne Aktienbuch (Kapitel 1) nur die Bank. Der Debug-Knopf zum Anlegen steht im Menü → Debug → „Vorab freischalten“.
   if (!game.stocks) {

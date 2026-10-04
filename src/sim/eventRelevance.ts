@@ -9,6 +9,8 @@
 //     Standard-Bots). Beträge, weil auch „Kraft gegen Familie“ eine spürbare Abwägung ist.
 //   - Sie hat eine dauerhafte Wirkung (Bahntarif, eigene Fuhrwerke, Preis, Förderung, Pacht),
 //     deren Wert in $ (über relevance.refBarrels bzw. refLeaseSpend) die Schwelle erreicht.
+//   - Ihre Systemwirkungen (4.12: Ruf, Rivalen, Aufsichtsrat, Schattenbuch …) erreichen in $ die
+//     Schwelle – je Punkt bewertet mit balance.yaml → eventSystems.relevance (systemImpact).
 //   - Sie setzt ein Merkzeichen, das später etwas abfragt (ein Ereignis, ein Story-Bogen,
 //     das Kapitelende oder die Simulation selbst).
 // Eine schwache Antwort ist als GEGENSTÜCK in Ordnung, wenn sie die einzige schwache ihres
@@ -24,6 +26,7 @@ import { parseDocument } from 'yaml';
 import type { Balance } from './balance';
 import type { ContentError } from './eventContent';
 import type { EventChoice, EventDef } from './events';
+import { systemImpact } from './eventSystems';
 import { RIVAL_MARKS } from './trust';
 // 4.7 Andockpunkt: Fernleitungen.
 import { BIG_PIPELINE_READ_MARK_LIST } from './bigPipeline';
@@ -41,6 +44,8 @@ export interface ChoiceRelevance {
   impact: number;
   /** Wert der dauerhaften Wirkungen in $ (Tarif, Fuhrwerke, Preis, Förderung, Pacht). */
   lasting: number;
+  /** Systemwirkungen (4.12) in $ nach eventSystems.relevance. */
+  system: number;
   /** Merkzeichen, die später etwas abfragen. */
   consequences: string[];
   /** Merkzeichen, die nichts abfragt. */
@@ -155,11 +160,12 @@ export function analyzeRelevance(
       const value = Math.round(immediateValue(c, balance));
       const impact = Math.round(immediateImpact(c, balance));
       const lasting = Math.round(lastingValue(c, balance));
+      const system = systemImpact(c.system, balance);
       const consequences = marks.filter((m) => read.has(m));
       const laterMarks = marks.filter((m) => !read.has(m) && later.has(m));
       const deadMarks = marks.filter((m) => !read.has(m) && !later.has(m));
-      const strong = impact >= threshold || lasting >= threshold || consequences.length > 0;
-      return { event: event.id, choice: c.id, value, impact, lasting, consequences, deadMarks, laterMarks, strong };
+      const strong = impact >= threshold || lasting >= threshold || system >= threshold || consequences.length > 0;
+      return { event: event.id, choice: c.id, value, impact, lasting, system, consequences, deadMarks, laterMarks, strong };
     });
     const schwache = roh.filter((r) => !r.strong).length;
     const einStarker = roh.some((r) => r.strong);
@@ -176,6 +182,7 @@ export function analyzeRelevance(
 export function formatRelevance(c: ChoiceRelevance): string {
   const teile = [c.impact === Math.abs(c.value) ? `${c.value} $` : `${c.value} $ (Wirkung ${c.impact} $)`];
   if (c.lasting > 0) teile.push(`dauerhaft ~${c.lasting} $`);
+  if (c.system > 0) teile.push(`System ~${c.system} $`);
   if (c.consequences.length > 0) teile.push(`Folge: ${c.consequences.join(', ')}`);
   if (c.laterMarks.length > 0) teile.push(`späteres Kapitel: ${c.laterMarks.join(', ')}`);
   if (c.deadMarks.length > 0) teile.push(`FOLGENLOS: ${c.deadMarks.join(', ')}`);

@@ -19,6 +19,7 @@ import type { GameState } from './game';
 import { investigationUnlocked, newInvestigation } from './investigation';
 import { ensureKapitel3 } from './kapitel3';
 import { refineryUnlockedFor, unlockRefinery } from './refinery';
+import { seatStartGuests } from './eventSystems';
 import { newResearch, researchUnlocked } from './research';
 import { openStaff, staffUnlocked } from './staff';
 import { chapterOf, startStocks, type BoardSeatDef } from './stocks';
@@ -39,7 +40,7 @@ export function openChapterSystems(state: GameState, balance: Balance, texts: Ch
   // Kapitel 2 (4.6–4.11)
   if (refineryUnlockedFor(kapitel, balance)) s = unlockRefinery(s, balance);
   s = unlockBigPipelines(s, balance);
-  if (texts.stocksBoard) s = startStocks(s, balance, texts.stocksBoard);
+  if (texts.stocksBoard && !s.stocks) s = seatStartGuests(startStocks(s, balance, texts.stocksBoard), balance);
   if (staffUnlocked(s, balance)) s = openStaff(s, balance);
   if (diplomacyUnlocked(balance, kapitel)) s = startDiplomacy(s, balance, kapitel);
   if (!s.investigation && investigationUnlocked(s, balance)) s = { ...s, investigation: newInvestigation(s, balance) };

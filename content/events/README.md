@@ -36,9 +36,8 @@ Kurzreferenz der Felder:
 - Kapitel 2 – Alltag (Phase 4, Entwurf): `k2-alltag-1` (Raffinerie, Geschäft), `-2` (Pipeline, Wegerechte,
   Fracht), `-3` (Aktionäre, Anleihen, Personal), `-4` (Rivalen: Crane-Nachfolge, Thorne, Bullard, Delgado),
   `-5` (Presse, Politik, Familie, Unglücke). Raffinerie-, Pipeline- und Aktien-Ereignisse prüfen seit der
-  Integration `minRefineryLevel`, `minPipelines` und `minPublicShare` (siehe Bedingungen). Noch fehlende
-  Wirkungen (Aktien, Rat, Ruf, Rivalen …) stehen als `# TODO-Effekt` neben den Ereignissen (Liste in
-  `docs/phase4/integration.md`).
+  Integration `minRefineryLevel`, `minPipelines` und `minPublicShare` (siehe Bedingungen). Wirkungen auf
+  Aktien, Rat, Ruf, Rivalen usw. sind seit 4.12 echte Systemwirkungen (siehe unten).
   Regeln für die Texte: Okara gibt es erst mit der Zeitsprung-Weiche (`okara_pachten` = Jacob
   pachtet, `okara_bullard` = Bullard bohrt dort; sonst Salt Hill/Cordova),
   Häfen liegen am Golf (Port Ellis); Bullards Söhne sind in Kapitel 2 noch Kinder (Wade 14–17, Cole 10–13);
@@ -49,6 +48,36 @@ Kurzreferenz der Felder:
   `teams` (eigene Gespanne +/−), `teamsIdle` (eigene Fuhrwerke stehen bis Runde jetzt+n still; 0.2.15+2),
   befristet für `events.timedRounds` Runden (0.2.15+3): `price` ($ je Barrel beim Trust), `production`
   (Anteil der Förderung), `leaseCost` (Anteil am Pachtbonus); dasselbe Ereignis stapelt sich nicht
+- Systemwirkungen (4.12, ab Kapitel 2; Regeln `src/sim/eventSystems.ts`, Zahlen `balance.yaml → eventSystems`).
+  Sie stehen mit unter `effects:`, z. B. `effects: { cash: -2500, boardLoyalty: { bankier: -10 }, reputation: { workers: 5 } }`.
+  Fehlt das System (Kapitel 1, Familienfirma ohne Rat, keine Raffinerie …), verpufft diese eine Wirkung.
+  - `reputation: { public, politics, workers, industryRespect, industryFear, standing }` – Ruf ±n (−100…100, GDD §4).
+    Öffentlichkeit hilft vor Gericht (und bei der Marke), Politik beim Druck auf Delaney, Arbeiter heben oder senken die
+    Förderung, Respekt ist der Branchen-Respekt der Diplomatie, Furcht hält Rivalen von der Rache ab. Kassenbuch und
+    Kapitelabschluss zeigen ihn als Wort.
+  - `rival: { margaret | pruett | bullard | thorne | delgado | crane: { trust, grudge, strength } }` – Vertrauen und Groll (4.10);
+    `crane` trifft vor der Nachfolge beide Erben, danach den Sieger. `strength`: Bullards Kasse (× `bullardStrength`),
+    bei Margaret/Pruett ihr Anteil im Crane-Aufsichtsrat.
+  - `heat: n` – neue Spur im Schattenbuch mit dem Titel des Ereignisses (Schwere n); `trace: { severity, label }` – Spur mit
+    eigener Beschriftung. Negativ: die offenen Spuren verblassen um so viele Stufen. `evidence: ±n` – Delaneys Beweise (× `evidenceStep`).
+  - Aktien (4.8): `boardLoyalty: { rat: ±n }` (Räte aus `content/stocks.yaml`: `bankier` = Pettibone, `witwe` = Martha Hale …,
+    Gäste `silas`, `vandermeer`), `boardMember: silas | vandermeer | thorne` (zieht in den Rat; Vandermeer sitzt in der AG ab
+    Kapitelbeginn), `control: ±n` (Prozentpunkte Aktien zwischen Jacob und Kleinaktionären), `rivalStake: { thorne: ±n }`
+    (Strohmänner), `sharePrice: ±x` (Stimmung der Börse, zieht von selbst zurück), `dividendPressure: n`.
+  - Personal (4.9): `staffLoyalty: { secretary | fixer | all: ±n }`, `hire: secretary | fixer` (erster Bewerber, ohne Termin),
+    `fire: secretary | fixer`.
+  - Raffinerie (4.6): `refineryDown: n` (Runden Stillstand); befristet `refineryOutput: ±x`, `productYield: { gasoline: x, … }`,
+    `productPrice: { kerosene: x, … }` (Anteile; Produkte `kerosene`, `lubricant`, `fuelOil`, `gasoline`).
+  - Leitungen (4.7): `pipelineDown: n` (erst eine Fernleitung, sonst die kleine Pipeline); befristet `pipelineThroughput: ±x`;
+    `transportFee: ±n` – Durchleitungsgebühr in $ je Runde, solange eine eigene Leitung läuft (bis Kapitelende).
+  - Welt (4.1–4.3): `mood: ±n`, `tension: ±n`, `lawPressure: { income_tax | antitrust: ±n }` (Gesetze aus `content/laws/`).
+    Parteien bewegt man mit `public: [support_handel]` (siehe Öffentliches Handeln).
+  - Forschung (4.11): `research: { thermal_cracking: ±n }` (Punkte; erreicht die Technik ihre Punkte, ist sie fertig).
+  - Bank: `rating: ±n` (Stufen, + = besser, gilt ab der nächsten Abrechnung), `loan: n` (die Bank leiht n $ zum üblichen Zins).
+  - `appointmentsNext: ±n` – Termine in der nächsten Runde; `heirValues: { thomas | clara: { business, moral, loyalty, ambition } }`
+    – Werte der Erben (±, höchstens `heirMax`; lesen spätere Kapitel).
+  `npm run check:content` prüft Räte, Gesetze und Techniken; `npm run check:events` bewertet die Systemwirkungen in $
+  (`eventSystems.relevance`).
 - Termine (2.3): `appointments` = Termine, die eine Antwort kostet (Standard 1; an einer Wahl
   überschreibt es den Wert des Ereignisses, z. B. `appointments: 0` für „abwinken“).
   Bleibt ein Ereignis liegen, gilt die Standard-Wahl und kostet keine Termine.
@@ -128,8 +157,9 @@ Kurzreferenz der Felder:
 - Kapitel 2 (Phase 4): Jedes Ereignis eines späteren Kapitels trägt `minChapter`/`maxChapter`
   (z. B. `{ minChapter: 2, maxChapter: 2 }`) – in Kapitel 1 kommt es nie (Test in `src/sim/events.test.ts`).
   Story-Bögen Ruth, Silas, Nora: `k2-story-1-nora.yaml`, `k2-story-2-silas.yaml`, `k2-story-3-ruth.yaml`
-  (30 Ereignisse). Gewünschte neue Wirkungen stehen dort als Kommentar `# TODO-Effekt: …` neben einer
-  vorläufigen. Runden zählen im Kapitel ab 1. Der Kapitelwechsel setzt alle Merkzeichen mit
+  (30 Ereignisse). Ihre Wirkungen auf Rat, Ruf, Rivalen und Schattenbuch sind seit 4.12 Systemwirkungen;
+  wie die Bögen ausgehen, steht in `content/arcs.yaml` (`nora_k2`, `silas_k2`, `ruth_k2`, dazu `crane_k2` aus den
+  Merkzeichen der Diplomatie) – der Kapitelabschluss von Kapitel 2 zeigt nur sie. Runden zählen im Kapitel ab 1. Der Kapitelwechsel setzt alle Merkzeichen mit
   `marksIntoNextChapter` (src/sim/events.ts) auf Runde 0, damit `delay` ab Kapitelbeginn zählt.
   ENTWURF – Philipp überarbeitet.
 - Kapitel 3 – Alltag (Phase 4, ENTWURF – Philipp überarbeitet): `k3-alltag-1-marke` (Marke, Tankstellen,

@@ -35,6 +35,7 @@ import type { GameState } from './game';
 import { LANGUAGES, type LocalizedText } from './i18n';
 import { Rng, seedFromString, type RngState } from './rng';
 import { chapterOf, PORT_PARTIES, worldPort, type PortParty, type WorldPort } from './worldPort';
+import { reputationOf } from './reputation';
 
 // --- Spielzahlen (balance.yaml, Abschnitt investigation) ------------------------
 
@@ -77,7 +78,7 @@ export interface InvestigationBalance {
     slip: number;
   };
   trial: { base: number; perEvidence: number; perLawyer: number; perGood: number; moodWeight: number; interview: number; min: number; max: number };
-  fine: { perHeat: number; candidFactor: number; heavyAt: number; heavyFactor: number };
+  fine: { perHeat: number; candidFactor: number; heavyAt: number; heavyFactor: number; prisonAt: number };
   lawyer: { costPerLevel: number; max: number; early: number; summoned: number };
   destroy: { cost: number; cut: number; chance: number; severity: number; evidence: number };
   witness: { cost: number; evidenceCut: number; severity: number };
@@ -166,6 +167,7 @@ export function parseInvestigationBalance(raw: unknown): InvestigationBalance {
       candidFactor: zahl(raw, `${p}.fine.candidFactor`, 0),
       heavyAt: ganz(raw, `${p}.fine.heavyAt`, 1),
       heavyFactor: zahl(raw, `${p}.fine.heavyFactor`, 1),
+      prisonAt: ganz(raw, `${p}.fine.prisonAt`, 1),
     },
     lawyer: {
       costPerLevel: zahl(raw, `${p}.lawyer.costPerLevel`, 0),
@@ -202,6 +204,7 @@ export function parseInvestigationBalance(raw: unknown): InvestigationBalance {
   };
   if (b.probeAt < b.rumorAt) throw new BalanceError(`balance.yaml: "${p}.probeAt" darf nicht unter "${p}.rumorAt" liegen`);
   if (b.trial.min > b.trial.max) throw new BalanceError(`balance.yaml: "${p}.trial" hat min > max`);
+  if (b.fine.prisonAt < b.fine.heavyAt) throw new BalanceError(`balance.yaml: "${p}.fine.prisonAt" muss mindestens heavyAt sein`);
   if (b.lawyer.early > b.lawyer.max || b.lawyer.summoned > b.lawyer.max) throw new BalanceError(`balance.yaml: "${p}.lawyer" early/summoned über max`);
   return b;
 }
@@ -220,6 +223,8 @@ export const DELANEY_MARKS = {
   convicted: 'delaney_verurteilt',
   /** Schwere Strafe: Zwangsverkauf (4.x: noch ohne Wirkung auf die Pachten, siehe docs/phase4/4.11.md). */
   forcedSale: 'delaney_zwangsverkauf',
+  /** Verurteilung zu langer Haft (Hitze der offenen Spuren ≥ fine.prisonAt): frühes Ende „Hinter Gittern“ (GDD §14, 4.12). */
+  prison: 'delaney_haft',
   /** Jacob hat einen Sündenbock geopfert. */
   scapegoat: 'delaney_suendenbock',
 } as const;
@@ -257,7 +262,8 @@ export const VERDICTS = ['eingestellt', 'freispruch', 'vergleich', 'geldstrafe',
 export type Verdict = (typeof VERDICTS)[number];
 
 /** Neue Spuren aus Kapitel 2 – Gegenmittel hinterlassen selbst Spuren. */
-export const EXTRA_KINDS = ['vertuschung', 'zeugenkauf', 'einflussnahme'] as const;
+/** ereignis (4.12): Spur aus einer Antwort auf ein Ereignis (Systemwirkung heat/trace, mit Beschriftung). */
+export const EXTRA_KINDS = ['vertuschung', 'zeugenkauf', 'einflussnahme', 'ereignis'] as const;
 
 /** Spuren aus der Rivalen-Diplomatie (4.10: Kartell- und Gebietsabsprachen unter dem Kartellgesetz) – Schlüssel für den Text. // 4.10/4.11 Andockpunkt */
 export const DIPLOMACY_TRACE_KIND = 'absprache';
@@ -268,6 +274,8 @@ export interface ExtraTrace {
   kind: ExtraKind;
   severity: number;
   round: number;
+  /** Beschriftung im Schattenbuch (4.12: Spuren aus Ereignissen, z. B. „Schweigegeld an Silas Brandt“). */
+  label?: string;
 }
 
 export interface InvestigationState {
@@ -357,6 +365,8 @@ export interface TraceView {
   current: number;
   witness: boolean;
   closed: boolean;
+  /** Eigene Beschriftung (Spuren aus Ereignissen, 4.12) statt des Texts zum Schlüssel. */
+  label?: string;
 }
 
 /** Alle Spuren, die Jacob hat: frühere Merkzeichen und neue Spuren aus Kapitel 2. */
@@ -369,7 +379,7 @@ export function traces(state: GameState, balance: Balance): TraceView[] {
   const alte = balance.investigation.traces
     .filter((t) => marks[t.mark] !== undefined)
     .map((t) => ({ id: t.mark, key: t.mark, severity: t.severity, witness: t.witness, fade: t.witness ? 0 : (faded[t.mark] ?? 0) }));
-  const neue = (inv?.extra ?? []).map((e) => ({ id: e.id, key: e.kind, severity: e.severity, witness: false, fade: faded[e.id] ?? 0 }));
+  const neue = (inv?.extra ?? []).map((e) => ({ id: e.id, key: e.kind, severity: e.severity, witness: false, fade: faded[e.id] ?? 0, ...(e.label ? { label: e.label } : {}) }));
   // Absprachen mit Rivalen (4.10, state.diplomacy.traces) – hier verblassen sie, hier kann man sie vernichten.
   const absprachen = (state.diplomacy?.traces ?? []).map((d, i) => {
     const id = `${DIPLOMACY_TRACE_KIND}_${i + 1}`;
@@ -382,6 +392,7 @@ export function traces(state: GameState, balance: Balance): TraceView[] {
     current: closed.includes(t.id) ? 0 : Math.max(0, t.severity - t.fade - (cut[t.id] ?? 0)),
     witness: t.witness,
     closed: closed.includes(t.id),
+    ...('label' in t && typeof t.label === 'string' ? { label: t.label } : {}),
   }));
 }
 
@@ -427,17 +438,20 @@ export function convictionChance(state: GameState, balance: Balance): number {
   const anwalt = inv.lawyer + (marks[DELANEY_CHOICE_MARKS.fight] !== undefined ? 1 : 0);
   const leumund = balance.investigation.goodMarks.filter((m) => marks[m] !== undefined).length;
   const interview = marks[DELANEY_CHOICE_MARKS.interview] !== undefined ? t.interview : 0;
-  const p = t.base + t.perEvidence * inv.evidence - t.perLawyer * anwalt - t.perGood * leumund + t.moodWeight * (50 - welt.mood) - interview;
+  // 4.12: Der Ruf in der Öffentlichkeit sitzt mit auf der Geschworenenbank (GDD §4).
+  const geschworene = balance.eventSystems.reputation.jury * reputationOf(state, 'public');
+  const p = t.base + t.perEvidence * inv.evidence - t.perLawyer * anwalt - t.perGood * leumund + t.moodWeight * (50 - welt.mood) - interview - geschworene;
   return clamp(p, t.min, t.max);
 }
 
 /** Geldstrafe bei Verurteilung, aus der Hitze der offenen Spuren. */
-export function fineFor(state: GameState, balance: Balance): { amount: number; heavy: boolean } {
+export function fineFor(state: GameState, balance: Balance): { amount: number; heavy: boolean; prison: boolean } {
   const f = balance.investigation.fine;
   const h = offeneSpuren(state, balance).reduce((s, t) => s + t.current, 0);
   const heavy = h >= f.heavyAt;
   const offen = state.events.marks[DELANEY_CHOICE_MARKS.candid] !== undefined ? f.candidFactor : 1;
-  return { amount: Math.round(h * f.perHeat * (heavy ? f.heavyFactor : 1) * offen), heavy };
+  // 4.12: Ab prisonAt wiegt es so schwer, dass das Gericht Haft verhängt (frühes Ende „Hinter Gittern“).
+  return { amount: Math.round(h * f.perHeat * (heavy ? f.heavyFactor : 1) * offen), heavy, prison: h >= f.prisonAt };
 }
 
 /** Schließt den laufenden Fall ab: offene Spuren gelten als erledigt, der Anwalt wird entlassen (kostet nichts mehr). */
@@ -608,10 +622,13 @@ export function advanceInvestigation(input: GameState, balance: Balance): GameSt
         inv = abschliessen(state, inv, strafe.heavy ? 'schwere_strafe' : 'geldstrafe', balance);
         marks = setMark(marks, DELANEY_MARKS.convicted, runde);
         if (strafe.heavy) marks = setMark(marks, DELANEY_MARKS.forcedSale, runde);
+        if (strafe.prison) marks = setMark(marks, DELANEY_MARKS.prison, runde);
         log.push(
           zeile(
             input,
-            strafe.heavy
+            strafe.prison
+              ? `Schuldig. Das Gericht verhängt ${strafe.amount.toLocaleString('de-DE')} $ Strafe – und schickt Jacob Harlan für Jahre ins Bundesgefängnis.`
+              : strafe.heavy
               ? `Schuldig. Das Gericht verhängt ${strafe.amount.toLocaleString('de-DE')} $ Strafe und ordnet einen Zwangsverkauf an.`
               : `Schuldig. Das Gericht verhängt ${strafe.amount.toLocaleString('de-DE')} $ Strafe.`,
           ),
@@ -744,7 +761,9 @@ export function sacrificeScapegoat(state: GameState, balance: Balance): Investig
 /** Chance, dass politischer Druck Delaney versetzt – hängt von der Regierung ab (Weltmodell 4.1). */
 export function pressureChance(state: GameState, balance: Balance): number {
   const welt = worldPort(state, balance.investigation.worldFallback);
-  return balance.investigation.pressure.chance[welt.government ?? 'none'];
+  // 4.12: Ruf in der Politik (GDD §4) – wer Freunde in Hallstead hat, wird eher gehört.
+  const freunde = balance.eventSystems.reputation.pressure * reputationOf(state, 'politics');
+  return clamp(balance.investigation.pressure.chance[welt.government ?? 'none'] + freunde, 0, 1);
 }
 
 /** Politischen Druck machen: Delaney wird für pressure.rounds Runden versetzt – oder es geht schief. */
@@ -829,7 +848,7 @@ export function validInvestigation(v: unknown): boolean {
   if (v.preview !== undefined && typeof v.preview !== 'boolean') return false;
   return (
     Array.isArray(v.extra) &&
-    v.extra.every((e) => istObjekt(e) && typeof e.id === 'string' && (EXTRA_KINDS as readonly unknown[]).includes(e.kind) && istZahl(e.severity) && istZahl(e.round))
+    v.extra.every((e) => istObjekt(e) && typeof e.id === 'string' && (EXTRA_KINDS as readonly unknown[]).includes(e.kind) && istZahl(e.severity) && istZahl(e.round) && (e.label === undefined || typeof e.label === 'string'))
   );
 }
 

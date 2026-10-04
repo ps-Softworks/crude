@@ -33,7 +33,7 @@
 # Neu für Kapitel 3 (content/relevance.yaml): ruth_finanzen, ruth_vertroestet_k2, ruth_zuhause,
 #   ruth_eigenes_geschaeft, ruth_verboten, ruth_rat_behauptet, ruth_rat_stumm, clara_k2_vater_da,
 #   clara_k2_vater_fehlte.
-# TODO-Effekt: Gewünschte neue Wirkungen stehen als Kommentar neben der vorläufigen.
+# Wirkungen auf Rat, Kontrolle, Rating und Clara sind Systemwirkungen (4.12, content/events/README.md).
 
 # Entwurf – Philipp überarbeitet.
 - id: k2_ruth_abend
@@ -121,8 +121,7 @@
           Hallstead that same evening. A week later Vandermeer & Co. cancels Harlan
           Oil's line of credit as of quarter's end, without explanation, with the
           most respectful regards.
-      # TODO-Effekt: boardLoyalty: { vandermeer: -10, pettibone: -5 }, control: +2 (Ruths Stimme), creditLine: gekündigt – vorläufig: Kassenabfluss
-      effects: { ruth: 15, cash: -2000 }
+      effects: { ruth: 15, boardLoyalty: { vandermeer: -10, bankier: -5 }, control: 2, rating: -1 }
       marks: [ruth_aufsichtsrat]
     - id: finanzen
       label: { de: "Sie zur Finanzchefin machen – mit Titel und Unterschrift", en: "Make her head of finance – with title and signature" }
@@ -135,8 +134,7 @@
           On Monday a second plate hangs beside Jacob's name: R. Harlan, Finance. In
           her first week Ruth finds freight bills paid twice, 2,000 $ worth. The
           bookkeeper resigns.
-      # TODO-Effekt: hire: finanzchefin, staffLoyalty: { buchhaltung: -10 }
-      effects: { ruth: 12, cash: 2000 }
+      effects: { ruth: 12, rating: 1, staffLoyalty: { all: -10 } }
       marks: [ruth_finanzen]
     - id: vertroesten
       label: { de: "„Wenn die Raffinerie steht“", en: "\"When the refinery is running\"" }
@@ -199,8 +197,7 @@
         en: >-
           Ruth signs the old deed first, then the new one. She takes the box home,
           empty. Vandermeer & Co. raises the rate on the next bond by half a point.
-      # TODO-Effekt: boardLoyalty: { vandermeer: -10 }, control: +2 – vorläufig: teurere Anleihe
-      effects: { ruth: 20, cash: -2000 }
+      effects: { ruth: 20, boardLoyalty: { vandermeer: -10 }, control: 2 }
       marks: [ruth_aufsichtsrat]
     - id: finanzen
       label: { de: "Ihr die Finanzen geben – den Rat noch nicht", en: "Give her the finances – not the board yet" }
@@ -211,8 +208,7 @@
         en: >-
           "Not yet," Ruth repeats, and takes the key to the cash box anyway. By the
           end of the month she has found 2,000 $ nobody had missed.
-      # TODO-Effekt: hire: finanzchefin
-      effects: { ruth: 8, cash: 2000 }
+      effects: { ruth: 8, rating: 1 }
       marks: [ruth_finanzen]
     - id: vertroesten
       label: { de: "„Nächstes Jahr, Ruth. Ganz sicher.“", en: "\"Next year, Ruth. For certain.\"" }
@@ -264,8 +260,7 @@
           Pettibone doesn't resign his seat, but he moves one place down. Vandermeer
           doesn't come to the next meeting, nor to the one after. Without his
           signature the bond sits unsigned for a quarter.
-      # TODO-Effekt: boardLoyalty: { pettibone: -5, vandermeer: -10 }, control: +3, boardBoycott: vandermeer
-      effects: { ruth: 15, cash: -1500 }
+      effects: { ruth: 15, cash: -1500, boardLoyalty: { bankier: -5, vandermeer: -25 }, control: 3 }
       marks: [ruth_aufsichtsrat]
     - id: anteil_reicht
       label: { de: "„Dein Anteil spricht für dich – der Stuhl muss nicht sein“", en: "\"Your share speaks for you – the chair isn't needed\"" }
@@ -278,8 +273,7 @@
           Ruth does a quick sum. "My share speaks for me when I sell it," she says.
           Then she smiles, which is worse than any quarrel. Vandermeer underwrites
           the bond at the old rate.
-      # TODO-Effekt: boardLoyalty: { vandermeer: +5 }
-      effects: { ruth: -15, cash: 1500 }
+      effects: { ruth: -15, cash: 1500, boardLoyalty: { vandermeer: 5 } }
       marks: [ruth_vertroestet_k2, ruth_k2_abgewiesen]
       default: true
 
@@ -319,8 +313,7 @@
           Ruth turns the pen between her fingers for a long time. "Ten years," she
           says. Then she accepts. On Monday she sits over the company books as if she
           had never stopped, and by Friday she has found 1,500 $.
-      # TODO-Effekt: hire: finanzchefin
-      effects: { ruth: 20, cash: 1500 }
+      effects: { ruth: 20, rating: 1 }
       marks: [ruth_finanzen]
     - id: liegen_lassen
       label: { de: "Die Feder zurück in die Schublade legen", en: "Put the pen back in the drawer" }
@@ -369,8 +362,7 @@
           Vandermeer: Harlan Oil is now "run from the kitchen table". Jacob answers
           each one personally, for three weeks, and the share price recovers only
           slowly.
-      # TODO-Effekt: boardLoyalty: { vandermeer: -15 }, sharePrice: -0.05 (befristet)
-      effects: { ruth: 10, strength: -10 }
+      effects: { ruth: 10, strength: -10, boardLoyalty: { vandermeer: -15 }, sharePrice: -0.05 }
       marks: [ruth_rat_behauptet]
     - id: zurueckholen
       label: { de: "Vandermeer nachgehen – Ruth soll heute nur zuhören", en: "Go after Vandermeer – Ruth should only listen today" }
@@ -382,8 +374,7 @@
         en: >-
           Vandermeer comes back with a cigar and a smile. Ruth takes notes for the
           whole meeting and says not a word. On the way home she says none either.
-      # TODO-Effekt: boardLoyalty: { vandermeer: +5 }
-      effects: { ruth: -20 }
+      effects: { ruth: -20, boardLoyalty: { vandermeer: 5 } }
       marks: [ruth_rat_stumm]
       default: true
     - id: vorrechnen
@@ -397,8 +388,7 @@
           Ruth works out aloud what Vandermeer & Co. earns on the bond and what the
           bank in Port Ellis would offer. Vandermeer stops in the doorway, comes back
           and lowers the rate before the meeting is over.
-      # TODO-Effekt: boardLoyalty: { vandermeer: -5 }, control: +2
-      effects: { ruth: 15, cash: 2500 }
+      effects: { ruth: 15, cash: 2500, boardLoyalty: { vandermeer: -5 }, control: 2 }
       marks: [ruth_rat_behauptet]
       sharp: true
 
@@ -500,8 +490,7 @@
           Jacob sits by the bed all night. Clara holds his thumb, even in her sleep.
           Without him the board votes a high dividend; the money is missing from the
           till next quarter.
-      # TODO-Effekt: clara: +15, control: -1, dividendPressure: +1
-      effects: { ruth: 10, cash: -4000, strength: -5 }
+      effects: { ruth: 10, cash: -4000, strength: -5, clara: 15, control: -1, dividendPressure: 1 }
       marks: [clara_k2_vater_da]
     - id: ruth_faehrt
       label: { de: "Ruth fahren lassen und in die Sitzung gehen", en: "Let Ruth drive and go to the meeting" }
@@ -514,7 +503,6 @@
           Jacob pushes the reinvestment through, narrowly. At midnight Ruth calls
           from Port Ellis: it's her lungs, she'll be fine. The next morning Clara
           asks where Papa was.
-      # TODO-Effekt: clara: -10
-      effects: { ruth: -10, cash: 2000 }
+      effects: { ruth: -10, cash: 2000, clara: -10 }
       marks: [clara_k2_vater_fehlte]
       default: true

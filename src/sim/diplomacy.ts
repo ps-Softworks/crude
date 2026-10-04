@@ -20,6 +20,7 @@
 //   8. Vertrauen und Groll verblassen; Wirkung für die nächste Runde nach events.timed
 // Der Zufall läuft in genau dieser Reihenfolge über einen eigenen Strom.
 
+import { reputationOf } from './reputation';
 import type { Balance } from './balance';
 import { formatDate } from './calendar';
 import {
@@ -248,8 +249,10 @@ function advanceRevenge(state: DiploGame, balance: Balance, rng: Rng): DiploGame
   let railTariff = state.railTariff;
   const log = [...state.log];
   const anlaesse: string[] = [];
+  // 4.12: Furcht der Branche (GDD §4) hält Rivalen zurück – sie schlagen erst bei mehr Groll zu.
+  const schwelle = b.revengeGrudge + Math.max(0, reputationOf(state, 'industryFear')) * balance.eventSystems.reputation.revenge;
   for (const rival of DIPLO_RIVALS) {
-    if (d.relations[rival].grudge < b.revengeGrudge) continue;
+    if (d.relations[rival].grudge < schwelle) continue;
     if (rng.float() >= (b.revengeChance * personality(balance, rival).aggression) / 5) continue;
     const from = state.round + 1;
     const until = state.round + b.revengeRounds;
