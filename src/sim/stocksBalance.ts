@@ -45,8 +45,14 @@ export interface StocksBalance {
     buybackShare: number;
     issueShare: number;
     fulfillGain: number;
+    /** Erfüllt, ohne zugesagt zu haben. */
+    quietGain: number;
     failLoss: number;
     rejectLoss: number;
+    /** Chance je Runde auf eine Forderung von Thornes Mann. */
+    spyChance: number;
+    /** Stimmung der Börse − so viel, wenn sie abgelehnt oder ignoriert wird. */
+    spyPenalty: number;
   };
   thorne: {
     minOutside: number;
@@ -60,6 +66,10 @@ export interface StocksBalance {
     seatPer: number;
     maxSeats: number;
     investigateCost: number;
+    /** Treueverlust je Runde für jeden Rat, je Mann Thornes im Rat. */
+    pressure: number;
+    /** Sperrminorität: ab diesem Anteil blockiert Thorne Rückkäufe. */
+    blockFrom: number;
   };
   vote: { lookback: number; dropFrom: number; moodBelow: number; proxyRounds: number; pressCost: number; pressBonus: number };
   bonds: {
@@ -70,6 +80,14 @@ export interface StocksBalance {
     climateSpread: number;
     minRate: number;
     fee: number;
+    /** Höchstens so viele neue Anleihen je Runde. */
+    perRound: number;
+    /** Rahmen aller Anleihen: Anteil am Imperiumswert … */
+    limitShare: number;
+    /** … aber mindestens so viel $. */
+    limitMin: number;
+    /** Zinsaufschlag je voll ausgeschöpftem Rahmen. */
+    loadSpread: number;
   };
 }
 
@@ -156,8 +174,11 @@ export function parseStocksBalance(raw: unknown, makeError: (message: string) =>
       buybackShare: share('demands.buybackShare'),
       issueShare: share('demands.issueShare'),
       fulfillGain: nonNeg('demands.fulfillGain'),
+      quietGain: nonNeg('demands.quietGain'),
       failLoss: nonNeg('demands.failLoss'),
       rejectLoss: nonNeg('demands.rejectLoss'),
+      spyChance: share('demands.spyChance'),
+      spyPenalty: share('demands.spyPenalty'),
     },
     thorne: {
       minOutside: share('thorne.minOutside'),
@@ -171,6 +192,8 @@ export function parseStocksBalance(raw: unknown, makeError: (message: string) =>
       seatPer: share('thorne.seatPer'),
       maxSeats: int('thorne.maxSeats', 0),
       investigateCost: nonNeg('thorne.investigateCost'),
+      pressure: nonNeg('thorne.pressure'),
+      blockFrom: share('thorne.blockFrom'),
     },
     vote: {
       lookback: int('vote.lookback'),
@@ -188,10 +211,15 @@ export function parseStocksBalance(raw: unknown, makeError: (message: string) =>
       climateSpread: share('bonds.climateSpread'),
       minRate: share('bonds.minRate'),
       fee: share('bonds.fee'),
+      perRound: int('bonds.perRound'),
+      limitShare: nonNeg('bonds.limitShare'),
+      limitMin: nonNeg('bonds.limitMin'),
+      loadSpread: share('bonds.loadSpread'),
     },
   };
   if (s.board.seatsMin > s.board.seatsMax) fail('"stocks.board.seatsMin" ist größer als seatsMax');
   if (s.price.sentimentMin > 1 || s.price.sentimentMax < 1) fail('"stocks.price" – die faire Stimmung 1 muss zwischen sentimentMin und sentimentMax liegen');
+  if (s.demands.quietGain > s.demands.fulfillGain) fail('"stocks.demands.quietGain" darf nicht größer als fulfillGain sein – sonst lohnt Zusagen nicht');
   if (s.thorne.minOutside <= 0) fail('"stocks.thorne.minOutside" muss über 0 liegen');
   return s;
 }

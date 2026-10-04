@@ -560,9 +560,13 @@ stocks:
     debtCut: 0.25            # Forderung Schulden: um ein Viertel senken
     buybackShare: 0.03       # Forderung Rückkauf: so viele Aktien
     issueShare: 0.1          # Thornes Mann fordert so viele neue Aktien
-    fulfillGain: 15          # erfüllt: Treue +15
-    failLoss: 20             # zugesagt, aber nicht erfüllt: −20
+    fulfillGain: 15          # zugesagt und erfüllt: Treue +15
+    quietGain: 5             # erfüllt, ohne vorher zuzusagen: nur +5 (die Zusage zählt)
+    failLoss: 20             # zugesagt, aber nicht erfüllt – oder die Zusage zurückgezogen: −20
     rejectLoss: 10           # abgelehnt oder ignoriert: −10
+    # Thornes Mann fordert eigens (nicht als „unzufriedenster Rat“, seine Treue ist immer 0):
+    spyChance: 0.15          # Chance je Runde ohne offene Forderung, solange Thorne im Rat sitzt
+    spyPenalty: 0.08         # abgelehnt oder ignoriert: Thornes Zeitungen streuen Gerüchte, Stimmung der Börse −0,08
   # Thorne und die Strohmänner (GDD §8, §13: „zu viele Aktien verkauft – Thorne kauft sich über Strohmänner ein“).
   thorne:
     minOutside: 0.4          # erst wenn mindestens 40 % der Aktien nicht bei Jacob liegen, kann Thorne unbemerkt kaufen
@@ -576,6 +580,8 @@ stocks:
     seatPer: 0.1             # je 10 % Anteil bekommt Thorne einen Sitz im Aufsichtsrat (sein Mann)
     maxSeats: 3
     investigateCost: 1500    # Detektei durchleuchtet das Aktienbuch: alle Strohmänner fliegen auf
+    pressure: 2              # je Runde und je Mann Thornes im Rat verliert jeder andere Rat so viel Treue (er bearbeitet sie)
+    blockFrom: 0.25          # Sperrminorität: ab diesem Anteil blockiert Thorne Rückkäufe (Jacobs Mittel im Stellvertreterkampf)
   # Misstrauensvotum und Stellvertreterkampf (GDD §8): nur wenn die Kontrolle unter 50 % liegt.
   vote:
     lookback: 2              # Kurs der letzten 2 Runden …
@@ -593,3 +599,7 @@ stocks:
     climateSpread: 0.03      # … plus bis zu 3 Punkte in der Kreditklemme (credit 0), minus bis zu 3 im Boom (credit 100)
     minRate: 0.03
     fee: 0.02                # Bankprovision beim Ausgeben
+    perRound: 1              # höchstens so viele neue Anleihen je Runde
+    limitShare: 0.5          # Rahmen: alle Anleihen zusammen höchstens 50 % des Imperiumswerts …
+    limitMin: 25000          # … aber mindestens so viel (damit auch eine kleine Firma eine Anleihe bekommt)
+    loadSpread: 0.03         # Zinsaufschlag: je voll ausgeschöpftem Rahmen +3 Punkte (Anleihen-Quote nach der neuen Anleihe)

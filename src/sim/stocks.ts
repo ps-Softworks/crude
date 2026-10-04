@@ -11,18 +11,24 @@
 //                 4.1 über StocksWorld, mit Ersatzwerten) und ein wenig Gerüchten.
 //   Aufsichtsrat  5–9 Räte mit Agenda (Dividende, Sicherheit, Kurs, Wachstum).
 //                 Treue steigt, wenn die Agenda erfüllt ist, sonst fällt sie. Der
-//                 unzufriedenste Rat stellt Forderungen mit Frist. Neue Aktien und
-//                 große Anleihen brauchen die Mehrheit loyaler Räte.
+//                 unzufriedenste echte Rat stellt Forderungen mit Frist; Zusagen
+//                 lohnt (volle Belohnung nur mit Zusage), Zurückziehen ist Wortbruch.
+//                 Große Anleihen brauchen die Mehrheit loyaler Räte, neue Aktien
+//                 auch – dafür stimmen Thornes Leute mit.
 //   Kontrolle ... eigene Anteile + der Teil des Streubesitzes, den loyale Räte
 //                 mitbringen (board.weight). Thornes Aktien zählen nie für Jacob.
 //                 Unter 50 % kann ein Misstrauensvotum kommen; hält der Rat nicht
 //                 zu Jacob, folgt ein Stellvertreterkampf – verloren = abgesetzt.
 //   Thorne ...... kauft erst, wenn mindestens thorne.minOutside der Aktien nicht bei
 //                 Jacob liegen („zu viele Aktien verkauft“), dann über Strohmänner
-//                 aus dem Streubesitz. Je seatPer Anteil bekommt er einen Sitz.
-//   Anleihen .... große Summen zu festem Zins (Rating + Kreditklima), Kupon jede
-//                 Runde – auch in Krisen –, am Ende der Laufzeit die ganze Summe.
-//                 Gibt es auch für die Familienfirma.
+//                 aus dem Streubesitz. Je seatPer Anteil bekommt er einen Sitz; seine
+//                 Leute bearbeiten die anderen Räte (Treue −pressure je Runde), fordern
+//                 eigens neue Aktien (Ablehnen kostet Kurs), und ab blockFrom hat er
+//                 die Sperrminorität gegen Rückkäufe.
+//   Anleihen .... große Summen zu festem Zins (Rating + Kreditklima + Anleihen-
+//                 Quote), Kupon jede Runde – auch in Krisen –, am Ende der Laufzeit
+//                 die ganze Summe. Rahmen für alle zusammen, eine je Runde. Gibt es
+//                 auch für die Familienfirma.
 //
 // Reine Funktionen, Zufall nur über den eigenen Rng (Seed + ":aktien").
 // Namen und Texte: content/stocks.yaml (stocksContent.ts), Zahlen: balance.yaml → stocks.
@@ -220,6 +226,15 @@ export function memberMood(member: BoardMember, balance: Balance): MemberMood {
   return 'dagegen';
 }
 
+/**
+ * Mehrheit für neue Aktien: loyale Räte und Thornes Leute – die stimmen gern
+ * dafür, denn neue Aktien verwässern Jacob und öffnen Thorne die Tür.
+ */
+export function issueMajority(s: StocksState, balance: Balance): boolean {
+  const spione = s.board.filter((m) => m.agenda === 'spy').length;
+  return s.board.length === 0 || (loyalSeats(s, balance) + spione) * 2 > s.board.length;
+}
+
 /** Hat Jacob die Mehrheit im Aufsichtsrat? Ohne Rat (Familienfirma) immer. */
 export function boardMajority(s: StocksState, balance: Balance): boolean {
   return s.board.length === 0 || loyalSeats(s, balance) * 2 > s.board.length;
@@ -265,12 +280,42 @@ export function totalDebt(state: GameState): number {
   return debt(state) + bondDebt(state.stocks);
 }
 
-/** Jahreszins einer neuen Anleihe; null = niemand zeichnet (Rating D). */
-export function bondRate(balance: Balance, rating: Rating, world: StocksWorld = STOCKS_WORLD_DEFAULT): number | null {
+/**
+ * Jahreszins einer neuen Anleihe; null = niemand zeichnet (Rating D).
+ * load: Anleihen-Quote nach der neuen Anleihe (alle Anleihen / Rahmen, 0–1) –
+ * wer schon viele Anleihen laufen hat, zahlt mehr. Das Rating (credit.ts) kennt
+ * die Anleihen noch nicht (docs/phase4/4.8.md, offene Frage 4).
+ */
+export function bondRate(balance: Balance, rating: Rating, world: StocksWorld = STOCKS_WORLD_DEFAULT, load = 0): number | null {
   if (rating === 'D') return null;
   const b = balance.stocks.bonds;
   const klima = ((50 - clamp(world.credit, 0, 100)) / 50) * b.climateSpread;
-  return Math.round(Math.max(b.minRate, b.baseRate + b.spreads[rating] + klima) * 10000) / 10000;
+  const quote = clamp(load, 0, 1) * b.loadSpread;
+  return Math.round(Math.max(b.minRate, b.baseRate + b.spreads[rating] + klima + quote) * 10000) / 10000;
+}
+
+/** Rahmen für alle Anleihen zusammen: limitShare des Imperiumswerts, mindestens limitMin. */
+export function bondLimit(state: GameState, balance: Balance): number {
+  const b = balance.stocks.bonds;
+  return Math.round(Math.max(b.limitMin, b.limitShare * Math.max(0, empireValue(state, balance))));
+}
+
+/** Wie viele Anleihen diese Runde schon ausgegeben wurden. */
+export function bondsThisRound(s: Pick<StocksState, 'bonds'>, round: number): number {
+  return s.bonds.filter((b) => b.issued === round).length;
+}
+
+/** Angebot für eine neue Anleihe über principal: Zins (mit Anleihen-Quote) und Rahmen. */
+export function bondOffer(
+  state: GameState,
+  balance: Balance,
+  principal: number,
+  world: StocksWorld = stocksWorldOf(state),
+): { rate: number | null; limit: number; total: number; load: number } {
+  const limit = bondLimit(state, balance);
+  const total = bondDebt(state.stocks) + principal;
+  const load = limit > 0 ? total / limit : 1;
+  return { rate: bondRate(balance, state.rating, world, load), limit, total, load };
 }
 
 function hostile(state: GameState, balance: Balance): boolean {
@@ -389,7 +434,7 @@ export function issueShares(state: GameState, balance: Balance, count: number): 
   const { s } = a;
   if (!Number.isInteger(count) || count < 1) return { ok: false, reason: 'Mindestens eine Aktie.' };
   if (count > maxIssue(s, balance)) return { ok: false, reason: `Mehr als ${maxIssue(s, balance)} neue Aktien auf einmal nimmt der Markt nicht.` };
-  if (!boardMajority(s, balance)) return { ok: false, reason: 'Der Aufsichtsrat stimmt dagegen – Jacob fehlt die Mehrheit.' };
+  if (!issueMajority(s, balance)) return { ok: false, reason: 'Der Aufsichtsrat stimmt dagegen – Jacob fehlt die Mehrheit.' };
   const erloes = issueProceeds(s, balance, count);
   const total = totalShares(s) + count;
   const neu: StocksState = {
@@ -404,6 +449,14 @@ export function issueShares(state: GameState, balance: Balance, count: number): 
   };
 }
 
+/**
+ * Sperrminorität: Ab thorne.blockFrom kann Thorne Rückkäufe (Kapitalherabsetzung,
+ * Dreiviertelmehrheit) blockieren – genau Jacobs Mittel, seinen Anteil zu heben.
+ */
+export function thorneBlocks(s: StocksState, balance: Balance): boolean {
+  return thorneStake(s) >= balance.stocks.thorne.blockFrom - 1e-9;
+}
+
 export function buybackCost(s: StocksState, balance: Balance, count: number): number {
   return Math.round(count * s.price * (1 + balance.stocks.buyback.premium));
 }
@@ -415,6 +468,7 @@ export function buyBack(state: GameState, balance: Balance, count: number): Stoc
   const { s } = a;
   if (!Number.isInteger(count) || count < 1) return { ok: false, reason: 'Mindestens eine Aktie.' };
   if (count > s.float) return { ok: false, reason: `Die Kleinaktionäre haben nur noch ${s.float} Aktien.` };
+  if (thorneBlocks(s, balance)) return { ok: false, reason: 'Die Hauptversammlung lehnt den Rückkauf ab – ein Block von Aktionären stimmt geschlossen dagegen.' };
   const kosten = buybackCost(s, balance, count);
   if (state.cash < kosten) return { ok: false, reason: 'Dafür reicht die Kasse nicht.' };
   const total = totalShares(s);
@@ -477,15 +531,20 @@ export function acceptDemand(state: GameState): StocksResult {
   return { ok: true, state: mit(state, { ...s, demand: { ...s.demand, accepted: true } }, state.cash, 'Jacob sagt dem Aufsichtsrat zu, die Forderung zu erfüllen.') };
 }
 
-/** Forderung ablehnen: Der Rat ist verärgert. */
+/**
+ * Forderung ablehnen: Der Rat ist verärgert (rejectLoss). Nach einer Zusage ist
+ * das Wortbruch und kostet so viel wie eine gebrochene Zusage (failLoss).
+ * Forderungen von Thornes Mann: Thornes Zeitungen streuen Gerüchte (spyPenalty).
+ */
 export function rejectDemand(state: GameState, balance: Balance): StocksResult {
   const a = ag(state);
   if (!a.ok) return a;
   const { s } = a;
   if (!s.demand) return { ok: false, reason: 'Es liegt keine Forderung vor.' };
-  const wer = s.demand.member;
-  const neu: StocksState = { ...s, demand: null, board: treue(s.board, wer, -balance.stocks.demands.rejectLoss) };
-  return { ok: true, state: mit(state, neu, state.cash, 'Jacob lehnt die Forderung des Aufsichtsrats ab.') };
+  const d = s.demand;
+  const neu: StocksState = { ...verfehlt(s, d, balance), demand: null };
+  const text = d.accepted ? 'Jacob zieht seine Zusage an den Aufsichtsrat zurück – ein Wortbruch.' : 'Jacob lehnt die Forderung des Aufsichtsrats ab.';
+  return { ok: true, state: mit(state, neu, state.cash, text) };
 }
 
 /** Kleinaktionäre über die Presse mobilisieren – nur im Stellvertreterkampf, einmal je Runde. */
@@ -509,10 +568,16 @@ export function issueBond(state: GameState, balance: Balance, principal: number,
   const B = balance.stocks.bonds;
   if (!B.sizes.includes(principal)) return { ok: false, reason: 'Diese Summe bietet das Bankhaus nicht an.' };
   if (!B.terms.includes(term)) return { ok: false, reason: 'Diese Laufzeit gibt es nicht.' };
-  const rate = bondRate(balance, state.rating, world);
-  if (rate === null) return { ok: false, reason: 'Mit Rating D zeichnet niemand eine Anleihe.' };
-  if (s.public && principal > balance.stocks.board.bigDecision * Math.max(0, empireValue(state, balance)) && !boardMajority(s, balance)) {
-    return { ok: false, reason: 'Eine so große Anleihe braucht die Mehrheit im Aufsichtsrat.' };
+  if (bondsThisRound(s, state.round) >= B.perRound) return { ok: false, reason: 'Diese Runde hat Harlan Oil schon eine Anleihe ausgegeben – das Bankhaus wartet ab, wie sie sich hält.' };
+  const offer = bondOffer(state, balance, principal, world);
+  if (offer.rate === null) return { ok: false, reason: 'Mit Rating D zeichnet niemand eine Anleihe.' };
+  const rate = offer.rate;
+  // Rahmen und Mehrheit rechnen alle laufenden Anleihen mit – nicht nur die neue.
+  if (offer.total > offer.limit) {
+    return { ok: false, reason: `Mehr Anleihen nimmt der Markt nicht: Zusammen dürfen es höchstens ${money(offer.limit)} sein, es laufen schon ${money(bondDebt(s))}.` };
+  }
+  if (s.public && offer.total > balance.stocks.board.bigDecision * Math.max(0, empireValue(state, balance)) && !boardMajority(s, balance)) {
+    return { ok: false, reason: 'So viele Anleihen braucht die Mehrheit im Aufsichtsrat.' };
   }
   const erloes = Math.round(principal * (1 - B.fee));
   const bond: Bond = { id: s.nextBond, principal, rate, issued: state.round, maturity: state.round + term - 1 };
@@ -530,6 +595,26 @@ function treue(board: BoardMember[], id: string, delta: number): BoardMember[] {
   return board.map((m) => (m.id === id && m.agenda !== 'spy' ? { ...m, loyalty: clamp(m.loyalty + delta, 0, 100) } : m));
 }
 
+function istSpion(s: StocksState, id: string): boolean {
+  return s.board.find((m) => m.id === id)?.agenda === 'spy';
+}
+
+/** Forderung abgelehnt, ignoriert oder Zusage gebrochen: Folgen für den Rat (Thornes Mann: für den Kurs). */
+function verfehlt(s: StocksState, d: Demand, balance: Balance): StocksState {
+  const D = balance.stocks.demands;
+  if (istSpion(s, d.member)) {
+    const P = balance.stocks.price;
+    return { ...s, sentiment: clamp(s.sentiment - D.spyPenalty, P.sentimentMin, P.sentimentMax) };
+  }
+  return { ...s, board: treue(s.board, d.member, -(d.accepted ? D.failLoss : D.rejectLoss)) };
+}
+
+/** Forderung erfüllt: volle Belohnung nur nach einer Zusage, sonst quietGain. */
+function belohnt(s: StocksState, d: Demand, balance: Balance): StocksState {
+  const D = balance.stocks.demands;
+  return { ...s, board: treue(s.board, d.member, d.accepted ? D.fulfillGain : D.quietGain) };
+}
+
 function erfuellt(state: GameState, s: StocksState, d: Demand): boolean {
   switch (d.kind) {
     case 'dividend':
@@ -545,11 +630,17 @@ function erfuellt(state: GameState, s: StocksState, d: Demand): boolean {
   }
 }
 
-/** Neue Forderung des unzufriedensten Rats – oder null, wenn er nichts Sinnvolles verlangen kann. */
+/**
+ * Neue Forderung des unzufriedensten echten Rats – oder null, wenn er nichts
+ * Sinnvolles verlangen kann. Thornes Leute zählen hier nicht (ihre Treue ist
+ * immer 0, sie würden sonst jede Forderung an sich ziehen); sie fordern über
+ * spionForderung.
+ */
 function neueForderung(state: GameState, balance: Balance, s: StocksState): Demand | null {
-  if (s.board.length === 0) return null;
+  const echte = s.board.filter((m) => m.agenda !== 'spy');
+  if (echte.length === 0) return null;
   const D = balance.stocks.demands;
-  const wer = s.board.reduce((a, b) => (b.loyalty < a.loyalty ? b : a));
+  const wer = echte.reduce((a, b) => (b.loyalty < a.loyalty ? b : a));
   const due = state.round + D.dueRounds;
   const total = totalShares(s);
   switch (wer.agenda) {
@@ -568,8 +659,17 @@ function neueForderung(state: GameState, balance: Balance, s: StocksState): Dema
     case 'growth':
       return { member: wer.id, kind: 'wells', target: producingWells(state).length + 1, baseline: 0, due, accepted: false };
     case 'spy':
-      return { member: wer.id, kind: 'issue', target: Math.max(1, Math.round(total * D.issueShare)), baseline: s.issuedTotal, due, accepted: false };
+      return null;
   }
+}
+
+/** Thornes Mann fordert neue Aktien („frisches Kapital“) – sie verwässern Jacob und öffnen Thorne die Tür. */
+function spionForderung(state: GameState, balance: Balance, s: StocksState): Demand | null {
+  const spion = s.board.find((m) => m.agenda === 'spy');
+  if (!spion) return null;
+  const D = balance.stocks.demands;
+  const target = Math.min(maxIssue(s, balance), Math.max(1, Math.round(totalShares(s) * D.issueShare)));
+  return target > 0 ? { member: spion.id, kind: 'issue', target, baseline: s.issuedTotal, due: state.round + D.dueRounds, accepted: false } : null;
 }
 
 /**
@@ -662,19 +762,31 @@ export function settleStocks(input: GameState, balance: Balance, world: StocksWo
     }
   }
 
+  // Thornes Leute bearbeiten die übrigen Räte: je Mann und Runde −pressure Treue.
+  const spionSitze = s.board.filter((m) => m.agenda === 'spy').length;
+  if (spionSitze > 0 && B.thorne.pressure > 0) {
+    s = { ...s, board: s.board.map((m) => (m.agenda === 'spy' ? m : { ...m, loyalty: clamp(m.loyalty - spionSitze * B.thorne.pressure, 0, 100) })) };
+  }
+
   // Forderungen: offene prüfen, dann vielleicht eine neue.
   state = { ...state, stocks: s };
   if (s.demand) {
     const d = s.demand;
     if (erfuellt(state, s, d)) {
-      s = { ...s, demand: null, board: treue(s.board, d.member, B.demands.fulfillGain) };
+      s = { ...belohnt(s, d, balance), demand: null };
       log.push(`${datum}: Der Aufsichtsrat ist zufrieden: Die Forderung ist erfüllt.`);
     } else if (state.round >= d.due) {
-      s = { ...s, demand: null, board: treue(s.board, d.member, -(d.accepted ? B.demands.failLoss : B.demands.rejectLoss)) };
+      const spion = istSpion(s, d.member);
+      s = { ...verfehlt(s, d, balance), demand: null };
       log.push(`${datum}: Die Frist des Aufsichtsrats ist verstrichen${d.accepted ? ' – Jacob hat sein Wort nicht gehalten' : ''}.`);
+      if (spion) log.push(`${datum}: In den Zeitungen tauchen Gerüchte über Harlan Oil auf – die Aktie gibt nach.`);
     }
-  } else if (rng.float() < B.demands.chance) {
-    const d = neueForderung(state, balance, s);
+  } else {
+    // Thornes Mann fordert eigens und seltener; sonst der unzufriedenste echte Rat.
+    const spione = s.board.some((m) => m.agenda === 'spy');
+    let d: Demand | null = null;
+    if (spione && rng.float() < B.demands.spyChance) d = spionForderung(state, balance, s);
+    else if (rng.float() < B.demands.chance) d = neueForderung(state, balance, s);
     if (d) {
       s = { ...s, demand: d };
       log.push(`${datum}: Der Aufsichtsrat stellt eine Forderung (Frist bis Runde ${d.due}).`);

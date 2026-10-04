@@ -8,8 +8,10 @@ import {
   acceptDemand,
   boardMajority,
   bondCoupons,
-  bondRate,
+  bondDebt,
+  bondOffer,
   buyBack,
+  thorneBlocks,
   buybackCost,
   control,
   courtMember,
@@ -126,6 +128,7 @@ export function SharesPanel({ game, onChange, debug = false }: Props) {
 
       <h3>Aktien zurückkaufen</h3>
       <p className="klein">Von den Kleinaktionären, mit Aufschlag. Hebt Jacobs Anteil und stützt den Kurs. Strohmänner verkaufen nicht.</p>
+      {thorneBlocks(s, balance) && <p className="hint">Ein Block von Aktionären stimmt in der Hauptversammlung gegen jeden Rückkauf (Sperrminorität).</p>}
       <div className="actions zeile">
         {rueckkauf.map((n) => (
           <Aktion key={n} result={buyBack(game, balance, n)} onDone={onChange}>
@@ -183,7 +186,12 @@ export function BoardPanel({ game, onChange, debug = false }: Props) {
         <div className="hint">
           <p>{demandText(stocksContent, s.demand, memberLabel(stocksContent, forderer, revealed(s, forderer.since)).name)}</p>
           {s.demand.accepted ? (
-            <p className="klein">Jacob hat zugesagt.</p>
+            <div className="actions zeile">
+              <span className="klein">Jacob hat zugesagt – erfüllt bringt das mehr Treue, gebrochen kostet es mehr.</span>
+              <Aktion result={rejectDemand(game, balance)} onDone={onChange}>
+                Zusage zurückziehen (Wortbruch)
+              </Aktion>
+            </div>
           ) : (
             <div className="actions zeile">
               <Aktion result={acceptDemand(game)} onDone={onChange}>
@@ -224,7 +232,8 @@ export function BondsPanel({ game, onChange }: Props) {
   const [laufzeit, setLaufzeit] = useState(B.terms[0]);
   const s = game.stocks;
   if (!s) return null;
-  const zins = bondRate(balance, game.rating, stocksWorldOf(game));
+  const angebot = bondOffer(game, balance, summe, stocksWorldOf(game));
+  const zins = angebot.rate;
   const probe = issueBond(game, balance, summe, laufzeit);
   return (
     <div className="anleihen-panel">
@@ -233,7 +242,9 @@ export function BondsPanel({ game, onChange }: Props) {
       </p>
       <dl className="terms">
         <dt>Zins heute</dt>
-        <dd>{zins === null ? 'Mit Rating D zeichnet niemand.' : `${percent(zins)} pro Jahr (Rating ${game.rating}, Kreditklima)`}</dd>
+        <dd>{zins === null ? 'Mit Rating D zeichnet niemand.' : `${percent(zins)} pro Jahr für ${money(summe)} (Rating ${game.rating}, Kreditklima, laufende Anleihen)`}</dd>
+        <dt>Rahmen</dt>
+        <dd>{`${money(bondDebt(s))} von höchstens ${money(angebot.limit)} · eine neue Anleihe je Runde`}</dd>
         <dt>Zins je Quartal</dt>
         <dd>{money(bondCoupons(s))}</dd>
       </dl>

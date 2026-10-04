@@ -13,6 +13,9 @@ import {
   acceptDemand,
   boardMajority,
   bondCoupons,
+  bondDebt,
+  bondLimit,
+  bondOffer,
   bondRate,
   buyBack,
   chapterOf,
@@ -23,6 +26,7 @@ import {
   isStocksState,
   issueBond,
   issueShares,
+  issueMajority,
   loyalSeats,
   memberMood,
   ownStake,
@@ -35,6 +39,7 @@ import {
   startStocks,
   stocksUnlocked,
   stocksWorldOf,
+  thorneBlocks,
   thorneShares,
   thorneStake,
   totalShares,
@@ -206,6 +211,68 @@ describe('Thorne und die Strohmänner (Fertig-Kriterium 4.8)', () => {
     // Thornes Mann lässt sich nicht umstimmen.
     expect(courtMember(g, b, spione[0].id).ok).toBe(false);
   });
+
+  it('Thornes Mann bearbeitet den Rat: Jacob verliert die Mehrheit, die er ohne Thorne behält', () => {
+    // Agenden ohne Wirkung (gain/loss 0): Was die Räte verlieren, kommt nur von Thornes Mann.
+    const b = mit({ thorne: { buyChance: 1, buyShare: 0.12 }, demands: { chance: 0, spyChance: 0 }, board: { gain: 0, loss: 0 } });
+    const ohne = mit({ thorne: { buyChance: 0 }, demands: { chance: 0, spyChance: 0 }, board: { gain: 0, loss: 0 } });
+    const g0 = ag(0.49, 'druck', b);
+    expect(boardMajority(st(g0), b)).toBe(true);
+    const mitThorne = runden(g0, 12, b);
+    const ohneThorne = runden(g0, 12, ohne);
+    expect(st(mitThorne).board.some((m) => m.agenda === 'spy')).toBe(true);
+    expect(boardMajority(st(ohneThorne), ohne)).toBe(true);
+    expect(boardMajority(st(mitThorne), b)).toBe(false);
+  });
+
+  it('bei neuen Aktien stimmen Thornes Leute mit Jacob – sie wollen die Verwässerung', () => {
+    const g0 = ag(0.49, 'verwaesserung');
+    // 7 echte Räte, davon 3 loyal, dazu 2 Männer Thornes: keine Mehrheit für Jacob, aber für neue Aktien.
+    const board = [
+      ...st(g0).board.map((m, i) => ({ ...m, loyalty: i < 3 ? 90 : 10 })),
+      { id: 'thorne-1', agenda: 'spy' as const, loyalty: 0, since: g0.round },
+      { id: 'thorne-2', agenda: 'spy' as const, loyalty: 0, since: g0.round },
+    ];
+    const g = { ...g0, stocks: { ...st(g0), board } };
+    expect(boardMajority(st(g), balance)).toBe(false);
+    expect(issueMajority(st(g), balance)).toBe(true);
+    expect(issueShares(g, balance, 10).ok).toBe(true);
+  });
+
+  it('Sperrminorität: ab blockFrom blockiert Thorne Rückkäufe', () => {
+    const b = mit({ thorne: { buyChance: 1, buyShare: 0.15 } });
+    const g0 = ag(0.49, 'sperre', b);
+    expect(buyBack(g0, b, 1).ok).toBe(true);
+    const g = runden(g0, 2, b);
+    expect(thorneStake(st(g))).toBeGreaterThanOrEqual(b.stocks.thorne.blockFrom);
+    expect(thorneBlocks(st(g), b)).toBe(true);
+    expect(buyBack(g, b, 1).ok).toBe(false);
+  });
+
+  it('die typische Falle schnappt zu: 49 % verkauft, Thornes Forderung erfüllt – Jacob wird abgesetzt; ohne Thorne nicht', () => {
+    const ruhig = { price: { noise: 0, reversion: 0, profitWeight: 0 }, demands: { chance: 0, spyChance: 0 }, board: { gain: 0, loss: 0 } };
+    const b = mit({ ...ruhig, thorne: { buyChance: 1, buyShare: 0.26 } });
+    const ohne = mit({ ...ruhig, thorne: { buyChance: 0 } });
+    const krise = { credit: 50, mood: 10 };
+    /** Börsengang 49 %, eine Runde, dann 150 neue Aktien (Thornes Mann stimmt dafür) und eine Krise. */
+    function verlauf(bal: Balance): GameState {
+      let g = runden(ag(0.49, 'falle', bal), 1, bal);
+      g = ok(issueShares(g, bal, 150));
+      g = runden(g, 1, bal, krise);
+      expect(st(g).proxy !== null).toBe(bal === b);
+      if (st(g).proxy) {
+        // Jacob versucht es mit Rückkäufen – die Sperrminorität hält dagegen.
+        expect(buyBack(g, bal, 10).ok).toBe(false);
+        g = ok(pressCampaign(g, bal));
+      }
+      return runden(g, bal.stocks.vote.proxyRounds + 1, bal, krise);
+    }
+    const mitThorne = verlauf(b);
+    expect(thorneStake(st(mitThorne))).toBeGreaterThanOrEqual(b.stocks.thorne.blockFrom);
+    expect(st(mitThorne).ousted).toBeGreaterThan(0);
+    const ohneThorne = verlauf(ohne);
+    expect(st(ohneThorne).ousted).toBe(0);
+  });
 });
 
 describe('Kontrolle und Aktienbuch', () => {
@@ -361,6 +428,74 @@ describe('Forderungen des Aufsichtsrats', () => {
     expect(st(g).board.find((m) => m.id === d.member)!.loyalty).toBe(Math.min(100, vorher + balance.stocks.board.gain + balance.stocks.demands.fulfillGain));
   });
 
+  it('Zusagen lohnt sich: zugesagt und erfüllt bringt mehr als still erfüllt', () => {
+    const g = runden(unzufrieden('dividend'), 1, immer);
+    const d = st(g).demand!;
+    const ruhig = mit({ demands: { chance: 0 } });
+    const zugesagt = runden(ok(payDividend(ok(acceptDemand(g)), immer, 1)), 1, ruhig);
+    const still = runden(ok(payDividend(g, immer, 1)), 1, ruhig);
+    const treue = (x: GameState) => st(x).board.find((m) => m.id === d.member)!.loyalty;
+    expect(st(zugesagt).demand).toBeNull();
+    expect(st(still).demand).toBeNull();
+    expect(treue(zugesagt)).toBeGreaterThan(treue(still));
+    expect(treue(zugesagt) - treue(still)).toBe(balance.stocks.demands.fulfillGain - balance.stocks.demands.quietGain);
+  });
+
+  it('nach einer Zusage abzulehnen ist Wortbruch – so teuer wie eine verpasste Frist', () => {
+    const g = runden(unzufrieden('dividend'), 1, immer);
+    const d = st(g).demand!;
+    const vorher = st(g).board.find((m) => m.id === d.member)!.loyalty;
+    const n = ok(rejectDemand(ok(acceptDemand(g)), immer));
+    expect(st(n).demand).toBeNull();
+    expect(st(n).board.find((m) => m.id === d.member)!.loyalty).toBe(Math.max(0, vorher - immer.stocks.demands.failLoss));
+    expect(n.log.at(-1)).toContain('Wortbruch');
+  });
+
+  it('mit Thornes Mann im Rat kommen weiterhin Forderungen der echten Räte', () => {
+    const b = mit({ demands: { chance: 1, spyChance: 0 } });
+    let g = unzufrieden('dividend', b, 40);
+    const spion = { id: 'thorne-1', agenda: 'spy' as const, loyalty: 0, since: g.round };
+    g = { ...g, stocks: { ...st(g), board: [...st(g).board, spion] } };
+    const n = runden(g, 1, b);
+    expect(st(n).demand?.member).not.toBe('thorne-1');
+    expect(st(n).demand?.kind).toBe('dividend');
+    // Über viele Seeds und Runden mit gewöhnlicher Chance: echte Räte fordern öfter als Thornes Mann.
+    let echte = 0;
+    let seine = 0;
+    for (let i = 0; i < 12; i++) {
+      let x = ag(0.49, `spion-${i}`);
+      x = { ...x, stocks: { ...st(x), board: [...st(x).board, { ...spion, since: x.round }] } };
+      for (let r = 0; r < 12; r++) {
+        x = runden(x, 1);
+        const d = st(x).demand;
+        // Nur neu gestellte Forderungen zählen (jede wird gleich abgelehnt).
+        if (d && d.due === x.round - 1 + balance.stocks.demands.dueRounds) {
+          if (st(x).board.find((m) => m.id === d.member)?.agenda === 'spy') seine++;
+          else echte++;
+        }
+        if (d) x = ok(rejectDemand(x, balance));
+      }
+    }
+    expect(echte).toBeGreaterThan(seine);
+    expect(seine).toBeGreaterThan(0);
+  });
+
+  it('Thornes Mann fordert neue Aktien; wer ablehnt, spürt es am Kurs', () => {
+    const b = mit({ demands: { chance: 0, spyChance: 1 }, price: { noise: 0, profitWeight: 0, reversion: 0, creditWeight: 0, moodWeight: 0 }, dividend: { graceRounds: 99 } });
+    let g = ag(0.49, 'spionforderung', b);
+    g = { ...g, stocks: { ...st(g), board: [...st(g).board, { id: 'thorne-1', agenda: 'spy', loyalty: 0, since: g.round }] } };
+    g = runden(g, 1, b);
+    const d = st(g).demand!;
+    expect(d.member).toBe('thorne-1');
+    expect(d.kind).toBe('issue');
+    const vorher = st(g).sentiment;
+    const n = ok(rejectDemand(g, b));
+    expect(st(n).sentiment).toBeCloseTo(vorher - b.stocks.demands.spyPenalty, 6);
+    // Ignorieren bis zur Frist kostet dasselbe.
+    const ignoriert = runden(g, b.stocks.demands.dueRounds, mit({ demands: { chance: 0, spyChance: 0 }, price: { noise: 0, profitWeight: 0, reversion: 0, creditWeight: 0, moodWeight: 0 }, dividend: { graceRounds: 99 } }));
+    expect(st(ignoriert).sentiment).toBeLessThan(vorher - b.stocks.demands.spyPenalty + 1e-6);
+  });
+
   it('zugesagt und Frist verstrichen: Treue fällt stärker, als wenn Jacob nur geschwiegen hätte', () => {
     let g = runden(unzufrieden('price', immer, 60), 1, immer);
     const d = st(g).demand!;
@@ -477,12 +612,63 @@ describe('Anleihen', () => {
   });
 
   it('eine große Anleihe braucht bei der AG die Mehrheit im Rat', () => {
-    const g = ag(0.2, 'gross', balance, 1000);
+    // Imperiumswert 150.000 $: Rahmen 75.000 $, Mehrheit ab 37.500 $.
+    const g = ag(0.2, 'gross', balance, 150000);
     const untreu = { ...g, stocks: { ...st(g), board: st(g).board.map((m) => ({ ...m, loyalty: 0 })) } };
     const gross = Math.max(...balance.stocks.bonds.sizes);
     expect(gross).toBeGreaterThan(balance.stocks.board.bigDecision * empireValue(g, balance));
     expect(issueBond(untreu, balance, gross, balance.stocks.bonds.terms[0]).ok).toBe(false);
     expect(issueBond(g, balance, gross, balance.stocks.bonds.terms[0]).ok).toBe(true);
+  });
+
+  it('höchstens eine Anleihe je Runde – zwanzig Klicks bringen nicht zwanzig Anleihen', () => {
+    const B = balance.stocks.bonds;
+    let g = ag(0.2, 'serie', balance, 400000);
+    g = ok(issueBond(g, balance, B.sizes[0], B.terms[0]));
+    const zweite = issueBond(g, balance, B.sizes[0], B.terms[0]);
+    expect(zweite.ok).toBe(false);
+    if (!zweite.ok) expect(zweite.reason).toContain('Diese Runde');
+    // In der nächsten Runde geht es wieder.
+    expect(issueBond({ ...g, round: g.round + 1 }, balance, B.sizes[0], B.terms[0]).ok).toBe(true);
+  });
+
+  it('der Rahmen rechnet alle laufenden Anleihen mit; darüber wird abgelehnt', () => {
+    const B = balance.stocks.bonds;
+    // Imperiumswert 101.000 $ → Rahmen 50.500 $ (die Provision drückt ihn leicht): zweimal 25.000 $ geht, die dritte nicht.
+    let g = ag(0.2, 'rahmen', balance, 101000);
+    expect(bondLimit(g, balance)).toBe(Math.round(B.limitShare * 101000));
+    g = ok(issueBond(g, balance, 25000, B.terms[0]));
+    g = ok(issueBond({ ...g, round: g.round + 1 }, balance, 25000, B.terms[0]));
+    expect(bondDebt(st(g))).toBe(50000);
+    const dritte = issueBond({ ...g, round: g.round + 2 }, balance, B.sizes[0], B.terms[0]);
+    expect(dritte.ok).toBe(false);
+    if (!dritte.ok) expect(dritte.reason).toContain('höchstens');
+    // Familienfirma: kein Rat, aber derselbe Rahmen.
+    let f = startStocks(kapitel2(0, 'familie-rahmen', 10000), balance, inhalt.board);
+    expect(bondLimit(f, balance)).toBe(B.limitMin);
+    f = ok(issueBond(f, balance, 25000, B.terms[0]));
+    expect(issueBond({ ...f, round: f.round + 1 }, balance, B.sizes[0], B.terms[0]).ok).toBe(false);
+  });
+
+  it('die Mehrheitsprüfung gilt für die Summe aller Anleihen, nicht nur für die neue', () => {
+    const B = balance.stocks.bonds;
+    // Imperiumswert 150.000 $: Mehrheit ab 37.500 $. Zwei Anleihen über 25.000 $ sind zusammen 50.000 $.
+    let g = ag(0.2, 'summe', balance, 150000);
+    g = ok(issueBond(g, balance, 25000, B.terms[0]));
+    const untreu = { ...g, round: g.round + 1, stocks: { ...st(g), board: st(g).board.map((m) => ({ ...m, loyalty: 0 })) } };
+    expect(issueBond(untreu, balance, 25000, B.terms[0]).ok).toBe(false);
+    expect(issueBond({ ...g, round: g.round + 1 }, balance, 25000, B.terms[0]).ok).toBe(true);
+  });
+
+  it('je mehr Anleihen laufen, desto höher der Zins', () => {
+    const B = balance.stocks.bonds;
+    let g = ag(0.2, 'quote', balance, 200000);
+    const erste = bondOffer(g, balance, 25000);
+    g = ok(issueBond(g, balance, 25000, B.terms[0]));
+    expect(st(g).bonds[0].rate).toBe(erste.rate);
+    const zweite = bondOffer({ ...g, round: g.round + 1 }, balance, 25000);
+    expect(zweite.rate!).toBeGreaterThan(erste.rate!);
+    expect(zweite.rate! - bondRate(balance, g.rating)!).toBeCloseTo(B.loadSpread * zweite.load, 4);
   });
 });
 
