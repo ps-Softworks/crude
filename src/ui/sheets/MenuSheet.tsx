@@ -12,6 +12,8 @@ import type { SheetContext } from './types';
 import { unlockRefinery } from '../../sim/refinery';
 import { balance } from '../balance';
 import { rt } from '../refinery';
+// 4.7 Andockpunkt: Debug-Knopf für die Fernleitungen.
+import { TrunkDebugButton } from './TrunkPipelineTab';
 
 export interface MenuProps {
   ctx: SheetContext;
@@ -186,6 +188,8 @@ export function MenuSheet(p: MenuProps) {
               </button>
             )}
             {ctx.game.refinery && <span className="muted klein">Raffinerie ist freigeschaltet.</span>}
+            {/* 4.7 Andockpunkt: Fernleitungen zum Ausprobieren schon in Kapitel 1 freischalten. */}
+            <TrunkDebugButton ctx={ctx} />
           </fieldset>
         </section>
       )}

@@ -392,7 +392,8 @@ export interface RefineryFeed {
   cost: number;
 }
 
-type FeedLage = Pick<GameState, 'round' | 'logistics' | 'shipped' | 'railTariff' | 'postedPrice'> & Partial<Pick<GameState, 'events'>>;
+// 4.7 Andockpunkt: Fernleitungen geben den Wegen Kapazität dazu (transport.modeCapacity) – auch für die Zufuhr.
+type FeedLage = Pick<GameState, 'round' | 'logistics' | 'shipped' | 'railTariff' | 'postedPrice'> & Partial<Pick<GameState, 'events' | 'bigPipelines'>>;
 
 /** Die Wege, die diese Runde noch Rohöl zur Raffinerie bringen können, billigster zuerst. */
 function feedModes(state: FeedLage, balance: Balance): TransportMode[] {

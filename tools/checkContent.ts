@@ -19,6 +19,8 @@ import { mapRefErrors } from '../src/sim/regions';
 import { parseFigureCatalog } from '../src/ui/figures';
 import { parseMapHints } from '../src/ui/tutorialMap';
 import { visitorErrors } from '../src/ui/visitors';
+// 4.7 Andockpunkt: Briefe der Fernleitungen.
+import { parsePipelineContent } from '../src/sim/bigPipelineContent';
 
 const dir = process.argv[2] ? resolve(process.argv[2]) : EVENTS_DIR;
 const files = readEventFiles(dir);
@@ -64,6 +66,8 @@ try {
 }
 // 4.6 Andockpunkt: Raffinerie (content/refinery.yaml).
 errors.push(...parseRefineryContent('content/refinery.yaml', readFileSync(new URL('../content/refinery.yaml', import.meta.url), 'utf8')).errors);
+// 4.7 Andockpunkt: Fernleitungen (Kapitel 2) – Briefe in content/pipelines.yaml.
+errors.push(...parsePipelineContent('content/pipelines.yaml', readFileSync(new URL('../content/pipelines.yaml', import.meta.url), 'utf8')).errors);
 if (errors.length > 0) {
   for (const error of errors) console.error(formatContentError(error));
   console.error(`\n${errors.length} Fehler in ${files.length} Datei(en). Inhalte nicht in Ordnung.`);

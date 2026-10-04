@@ -23,6 +23,8 @@ import { advanceWorld, newWorld, saltHillInput, worldPriceFactor, type WorldStat
 import { newRival, advanceRival, type RivalState } from './rival';
 import { advanceLogistics, newLogistics, settleStorage, spillOver, type LogisticsState } from './logistics';
 import { advanceTransport, noShipments } from './transport';
+// 4.7 Andockpunkt: Fernleitungen (Kapitel 2+).
+import { advanceBigPipelines, type BigPipelineState } from './bigPipeline';
 import { settleTakeover } from './trust';
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
 // 4.6 Andockpunkt: Raffinerie (ab Kapitel 2).
@@ -100,6 +102,8 @@ export interface GameState {
   family: FamilyState;
   /** Weltmodell (4.1): die neun Weltgrößen, je Runde fortgeschrieben. */
   worldModel: WorldState;
+  /** 4.7 Andockpunkt: Fernleitungen – fehlt in Kapitel 1 (erst ab balance.bigPipelines.fromChapter). */
+  bigPipelines?: BigPipelineState;
   log: string[];
   /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
   roundLogStart: number;
@@ -237,7 +241,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Türme und Pumpen (0.2.15+7): Turmmiete und Pumpenunterhalt, ebenfalls vor den Zinsen.
   const verzinst = settleLoans(settleRigs(advanceLogistics(rivale, balance), balance), balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
-  const gefahren = advanceTransport(verzinst, balance);
+  // 4.7 Andockpunkt: Fernleitungen nach dem Transport – Thorne nimmt unter Druck eine Erhöhung zurück und senkt den Tarif.
+  const gefahren = advanceBigPipelines(advanceTransport(verzinst, balance), balance, { railTariffBefore: verzinst.railTariff });
   const state = { ...checkBankruptcy(gefahren, balance), roundLogStart };
   if (state.ending === 'pleite') return state;
   if (state.round >= state.totalRounds) {

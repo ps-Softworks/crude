@@ -11,6 +11,8 @@ import { formatDate } from './calendar';
 import type { GameState } from './game';
 import { LOGISTICS_MARKS, pipelineWorks, teamsIdle, withMark } from './logistics';
 import { Rng } from './rng';
+// 4.7 Andockpunkt: Fernleitungen geben den Wegen „Pipeline“ (Hafen) und „Bahn“ (Bahnhof) Kapazität dazu.
+import { bigPipelineCapacity, harborTrunkRunning } from './bigPipeline';
 import {
   exclusiveActive,
   hikeChance as thorneHikeChance,
@@ -52,33 +54,37 @@ export function tariff(state: Verkaufslage, balance: Balance, mode: TransportMod
 }
 
 /** Höchstmenge je Runde: eigene Fuhrwerke je Gespann (0, wenn sie stillstehen), Pipeline nur, wenn sie läuft. */
-export function modeCapacity(state: Partial<Pick<GameState, 'logistics' | 'round'>>, balance: Balance, mode: TransportMode): number {
+export function modeCapacity(state: Partial<Pick<GameState, 'logistics' | 'round' | 'bigPipelines'>>, balance: Balance, mode: TransportMode): number {
   const t = balance.transport;
   const lg = state.logistics;
   switch (mode) {
     case 'wagon':
+      return t.wagon.capacity;
     case 'rail':
-      return t[mode].capacity;
+      // 4.7 Andockpunkt: plus Fernleitungen zum Bahnhof – ihr Öl fährt mit Thornes Bahn, zu seinem Tarif.
+      return t.rail.capacity + bigPipelineCapacity(state, balance, 'rail');
     case 'teams':
       return !lg || teamsIdle({ round: state.round ?? 0, logistics: lg }) ? 0 : lg.teams * t.teams.capacity;
     case 'pipeline':
-      return lg && pipelineWorks({ logistics: lg }) ? t.pipeline.capacity : 0;
+      // 4.7 Andockpunkt: plus laufende Fernleitungen zum Hafen (Kapitel 2+; in Kapitel 1 immer 0).
+      return (lg && pipelineWorks({ logistics: lg }) ? t.pipeline.capacity : 0) + bigPipelineCapacity(state, balance, 'pipeline');
   }
 }
 
 /** Wie viele Barrel dieses Transportmittel in dieser Runde noch schafft. */
-export function capacityLeft(state: Pick<GameState, 'shipped'> & Partial<Pick<GameState, 'logistics' | 'round'>>, balance: Balance, mode: TransportMode): number {
+export function capacityLeft(state: Pick<GameState, 'shipped'> & Partial<Pick<GameState, 'logistics' | 'round' | 'bigPipelines'>>, balance: Balance, mode: TransportMode): number {
   return Math.max(0, modeCapacity(state, balance, mode) - (state.shipped[mode] ?? 0));
 }
 
 /** Warum ein Weg gar nicht geht (keine Gespanne, keine Pipeline), oder null. */
-export function modeUnavailable(state: Pick<GameState, 'round' | 'logistics'>, mode: TransportMode): string | null {
+export function modeUnavailable(state: Pick<GameState, 'round' | 'logistics'> & Partial<Pick<GameState, 'bigPipelines'>>, mode: TransportMode): string | null {
   const lg = state.logistics;
   if (mode === 'teams') {
     if (lg.teams === 0) return 'Jacob hat keine eigenen Fuhrwerke.';
     if (teamsIdle(state)) return 'Die eigenen Fuhrwerke stehen still.';
   }
-  if (mode === 'pipeline') {
+  // 4.7 Andockpunkt: Eine laufende Fernleitung zum Hafen reicht für den Weg „Pipeline“.
+  if (mode === 'pipeline' && !harborTrunkRunning(state)) {
     if (lg.pipeline === 'damaged') return 'Die Pipeline wird repariert.';
     if (lg.pipeline !== 'ready') return 'Es gibt noch keine Pipeline.';
   }

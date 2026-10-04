@@ -726,3 +726,68 @@ refinery:
       floor: 0.3
       ceiling: 1.2
       trend: { refYear: 98, perYear: 0.08, tech: 0.30, tension: 0, war: 0.3, demand: 1, min: 0.2 }
+
+# 4.7 Fernleitungen (GDD §6, Kapitel 2): große Pipelines vom Feld zum Hafen oder Bahnhof.
+# Route planen (gerade Trasse über die Karte) → vermessen → Wegerechte je Ranch verhandeln
+# (Briefe der Landbesitzer, Querköpfe, Stadtrat, Thornes Bahnkreuzung) → Bau über 1–4 Runden.
+# Eine fertige Leitung zum Hafen umgeht Thornes Bahn: Ihr Öl fließt über den Weg „Pipeline“
+# (transport.pipeline.costPerBarrel), Thorne senkt den Tarif (Druck) – und schickt Saboteure.
+# Eine Leitung zum Bahnhof ist billiger und ruhiger, bringt das Öl aber nur auf Thornes Gleise:
+# Sie erhöht die Kapazität des Wegs „Bahn“, jedes Barrel zahlt weiter Thornes Bahntarif. Code: src/sim/bigPipeline.ts. Alle Zahlen PLATZHALTER bis zur Balance von Kapitel 2.
+bigPipelines:
+  fromChapter: 2            # in Kapitel 1 unsichtbar
+  destinations:             # Landmarken aus content/map.yaml
+    - { id: hafen, bypassesRail: true }              # Hafen Port Ellis: an Thornes Bahn vorbei – Weg „Pipeline“
+    - { id: bahnhof_portellis, bypassesRail: false } # Bahnhof Port Ellis: Öl bleibt auf Thornes Gleisen – Weg „Bahn“ zu seinem Tarif
+  surveyPerUnit: 60         # Vermessung je Karteneinheit Trasse
+  costPerUnit: 3000         # Bau je Karteneinheit (Salt Hill → Hafen ≈ 17 Einheiten ≈ 51.000 $)
+  unitsPerRound: 5          # Baufortschritt je Runde …
+  minRounds: 1              # … aber immer 1–4 Runden (GDD §6)
+  maxRounds: 4
+  capacity: 120000          # bbl je Runde und fertiger Fernleitung (Hafen: Weg „Pipeline“, Bahnhof: Weg „Bahn“)
+  upkeepPerUnit: 40         # Streckenwärter je Einheit und Runde
+  maxProjects: 3
+  smallUpgradeCost: 8000    # Anschluss an die kleine Pipeline aus Kapitel 1: ihre Strecke wird aufgeweitet (Wegerechte hat Jacob schon)
+  rights:
+    pricePerArea: 400       # fairer Preis eines Wegerechts je Einheit² Ranchfläche …
+    minPrice: 500           # … mindestens so viel
+    acceptBase: 0.55        # Grundchance, dass ein faires Angebot angenommen wird
+    offerFactor: { low: 0.7, fair: 1.0, generous: 1.6 }
+    offerBonus: { low: -0.25, fair: 0, generous: 0.25 }
+    landowner: { neutral: 0, gierig: -0.10, verschuldet: 0.15, misstrauisch: -0.15, fromm: -0.05 }
+    moodWeight: 0.005       # je Punkt öffentlicher Stimmung über/unter 50 (Weltmodell 4.1)
+    reputationBonus: 0.10   # Jacob gilt als anständiger Verhandler (Ereignis „Querkopf“)
+    thorneMeddling: 0.10    # Thorne hetzt die Landbesitzer gegen eine Leitung zum Hafen auf
+    holdoutAfter: 2         # nach so vielen Absagen (oder einer Absage auf ein großzügiges Angebot) stellt er sich quer
+    holdoutDemand: 3        # der Querkopf verlangt das Dreifache
+    detourLength: 2         # Umweg um eine Ranch: so viele Einheiten mehr Trasse
+    townPrice: 3000         # Stadtrat Port Ellis: Durchleitung durch die Stadt
+    townAccept: 0.6
+    railDemand: 25000       # Thornes Preis für die Kreuzung seiner Gleise
+    courtCost: 3000         # Klage auf Kreuzungsrecht beim Bezirksrichter …
+    courtRounds: 2          # … dauert so lange …
+    courtChance: 0.5        # … und geht so oft gut aus (+ politischer Einfluss / 200)
+    expropriateInfluence: 60 # Enteignung nur mit politischem Einfluss ab 60 (GDD §6, §10)
+    expropriateShare: 0.5   # Entschädigung: halber fairer Preis
+  sabotage:
+    building: 0.06          # Chance je Runde im Bau …
+    ready: 0.08             # … und im Betrieb …
+    perUnit: 0.003          # … plus so viel je Einheit Trasse
+    thorneFactor: 1.5       # Leitung zum Hafen: Thorne schickt Leute
+    thorneFeudFactor: 1.5   # … noch mehr, wenn Jacob seinen Unterhändler hinausgeworfen hat
+    truceFactor: 0.5        # Waffenstillstand mit Thorne
+    rivalFactor: 1.5        # Fehde mit Bullard
+    revengeFactor: 1.5      # nach Einschüchterung der Landbesitzer
+    guardsPerUnit: 15       # Wachleute je Einheit und Runde …
+    guardsFactor: 0.3       # … senken die Chance auf 30 %
+    repairShare: 0.04       # Reparatur: Anteil der Baukosten
+    repairRounds: 1         # so lange steht sie still (im Bau: eine Runde Verzug)
+    maxChance: 0.6
+  thorne:
+    cut: 0.04               # Tarifsenkung je Runde bei vollem Druck ($ je Barrel): vom Starttarif 0,25 $ fünf Runden bis zum Boden
+    minTariff: 0.08         # eigener Boden in Kapitel 2 (tiefer als transport.thorne.minTariff aus Kapitel 1)
+    fullPressureCapacity: 60000 # ab so viel fertiger Kapazität zum Hafen ist der Druck voll
+  carrier:                  # Transportpflicht-Gesetz (4.3): fremdes Öl gegen Gebühr
+    fee: 0.05
+    volume: 20000
+  assetShare: 0.5           # Fernleitungen zählen mit diesem Anteil ihrer Baukosten zum Imperiumswert

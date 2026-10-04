@@ -1,0 +1,85 @@
+# 4.7 Fernleitungen (Kapitel 2, GDD §6): Briefe, die mit der Post kommen –
+# Antworten der Landbesitzer auf Jacobs Angebote, Querköpfe, Urteile, Sabotage,
+# Thornes Reaktion. Code: src/sim/bigPipeline.ts (welcher Brief), src/sim/bigPipelineContent.ts (Prüfung).
+# ENTWURF von Claude – Philipp schreibt in eigener Stimme um.
+#
+# Aufbau: letters.<Art>.<Absender>
+#   Art       accepted, refused, holdout, courtWon, courtLost, thorneCut, sabotage, ready, intimidated
+#   Absender  default (Pflicht) oder eine Landbesitzer-Art (neutral, gierig, verschuldet,
+#             misstrauisch, fromm), stadt (Stadtrat) oder thorne – fehlt sie, gilt default.
+# Platzhalter: {owner} Absender, {ranch} Ranch/Recht, {amount} Betrag in $.
+# Jede Art braucht default mit de; en darf vorerst fehlen.
+
+letters:
+  accepted:
+    default:
+      de: "{owner} unterschreibt beim Notar. Das Wegerecht über {ranch} gehört Jacob – {amount} $ wechseln den Besitzer."
+      en: "{owner} signs at the notary's. The right of way across {ranch} is Jacob's – {amount} $ change hands."
+    verschuldet:
+      de: "„Die Bank sitzt mir im Nacken“, schreibt {owner}. „Nehmen Sie das Recht über {ranch} und Gott segne Ihr Rohr.“ {amount} $ sind gezahlt."
+      en: "\"The bank is breathing down my neck,\" writes {owner}. \"Take the right across {ranch}, and God bless your pipe.\" {amount} $ paid."
+    gierig:
+      de: "{owner} nimmt das Geld, ohne zu danken. Das Wegerecht über {ranch} ist unterschrieben ({amount} $)."
+      en: "{owner} takes the money without a word of thanks. The right of way across {ranch} is signed ({amount} $)."
+    stadt:
+      de: "Der Stadtrat von Port Ellis stimmt mit vier zu drei Stimmen für die Durchleitung. {amount} $ gehen an die Stadtkasse."
+      en: "The Port Ellis town council votes four to three for the pipeline. {amount} $ go to the town treasury."
+  refused:
+    default:
+      de: "{owner} schickt das Angebot zurück. Durch {ranch} kommt kein Rohr – nicht für {amount} $. Der Notar zahlt das Geld zurück."
+      en: "{owner} sends the offer back. No pipe goes through {ranch} – not for {amount} $. The notary returns the money."
+    gierig:
+      de: "„{amount} $? Lachhaft.“ {owner} wartet auf ein besseres Angebot für {ranch}."
+      en: "\"{amount} $? Laughable.\" {owner} is waiting for a better offer for {ranch}."
+    misstrauisch:
+      de: "{owner} traut keinem Ölmann. „Erst das Rohr, dann das Gift im Brunnen.“ Kein Wegerecht über {ranch}."
+      en: "{owner} trusts no oil man. \"First the pipe, then poison in the well.\" No right of way across {ranch}."
+    fromm:
+      de: "{owner} schreibt, auf {ranch} liegen die Gräber der Familie. Darüber werde gebetet, nicht gegraben."
+      en: "{owner} writes that the family graves lie on {ranch}. One prays over them; one does not dig."
+    stadt:
+      de: "Der Stadtrat vertagt sich. Ein Ratsherr fragt, wer eigentlich die Straßen flickt, wenn Jacobs Leute sie aufreißen."
+      en: "The town council adjourns. One alderman asks who will mend the streets once Jacob's men have dug them up."
+  holdout:
+    default:
+      de: "{owner} stellt sich quer: Pfähle raus, Gewehr auf der Veranda. Für {ranch} will er {amount} $ – oder Jacob baut drumherum."
+      en: "{owner} digs in: stakes pulled, rifle on the porch. For {ranch} he wants {amount} $ – or Jacob can build around it."
+    gierig:
+      de: "{owner} hat begriffen, dass die Trasse ohne {ranch} einen Bogen machen muss. Der Preis: {amount} $."
+      en: "{owner} has understood that the route must bend without {ranch}. The price: {amount} $."
+    misstrauisch:
+      de: "{owner} hat einen Anwalt aus Hallstead geholt. Unter {amount} $ gibt es für {ranch} nicht einmal ein Gespräch."
+      en: "{owner} has hired a lawyer from Hallstead. Below {amount} $ there is not even a conversation about {ranch}."
+    fromm:
+      de: "Der Prediger steht mit {owner} an den Pfählen und singt. Für {ranch} nennt er eine Summe für die neue Kirche: {amount} $."
+      en: "The preacher stands with {owner} by the stakes, singing. For {ranch} he names a sum for the new church: {amount} $."
+    stadt:
+      de: "Der Bürgermeister lässt ausrichten, eine Durchleitung koste die Stadt Nerven. Und Jacob {amount} $."
+      en: "The mayor sends word that a pipeline costs the town its nerves. And Jacob {amount} $."
+    thorne:
+      de: "Augustus Thorne lässt wissen: Über seine Gleise geht kein fremdes Rohr. Es sei denn, Jacob legt {amount} $ auf den Tisch."
+      en: "Augustus Thorne lets it be known: no foreign pipe crosses his tracks. Unless Jacob puts {amount} $ on the table."
+  courtWon:
+    default:
+      de: "Der Bezirksrichter gibt Jacob recht: Thornes Gleise dürfen gekreuzt werden. Thornes Anwalt verlässt den Saal ohne Gruß."
+      en: "The district judge rules for Jacob: Thorne's tracks may be crossed. Thorne's lawyer leaves the courtroom without a word."
+  courtLost:
+    default:
+      de: "Der Bezirksrichter weist die Klage ab. Thorne lächelt in der Zeitung. Seine Forderung steht weiter: {amount} $."
+      en: "The district judge dismisses the suit. Thorne smiles in the newspaper. His demand still stands: {amount} $."
+  thorneCut:
+    default:
+      de: "Ein Brief von Thorne Rail, kühl und kurz: Der Tarif für Kesselwagen sinkt ab sofort auf {amount} $ je Barrel. Man hoffe auf weitere gute Zusammenarbeit."
+      en: "A letter from Thorne Rail, cool and brief: the tank-car rate falls, effective at once, to {amount} $ per barrel. One hopes for continued good cooperation."
+  sabotage:
+    default:
+      de: "Nachts hat jemand die Fernleitung aufgesprengt. Am Graben liegen Stiefelspuren und eine leere Dynamitkiste. Reparatur: {amount} $."
+      en: "Someone blew open the trunk line at night. Boot prints by the trench and an empty dynamite crate. Repairs: {amount} $."
+  ready:
+    default:
+      de: "Der Vorarbeiter meldet: Die letzte Schweißnaht ist gesetzt, das Öl fließt. Am Ende der Leitung warten die Tanks."
+      en: "The foreman reports: the last weld is done, the oil is flowing. The tanks wait at the end of the line."
+  intimidated:
+    default:
+      de: "{owner} hat Besuch von Jacobs Männern bekommen. Am nächsten Morgen liegt das unterschriebene Wegerecht über {ranch} auf dem Schreibtisch."
+      en: "{owner} had a visit from Jacob's men. The next morning the signed right of way across {ranch} lies on the desk."
