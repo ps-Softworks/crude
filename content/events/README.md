@@ -17,6 +17,13 @@ Kurzreferenz der Felder:
   schaltet ein gesperrtes Gebiet aus `content/map.yaml` frei; seine Ranches entstehen dann aus dem Seed.
 - Bedingungen: `minRound`, `maxRound`, `minCash`, `maxCash`, `minOilStock`,
   `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100)
+- Kapitel (Phase 4): `minChapter`, `maxChapter` – ein Spielstand ohne Kapitelangabe ist in Kapitel 1.
+  Ereignisse ohne Kapitel-Bedingung kommen in jedem Kapitel; Ereignisse für Kapitel 2 tragen
+  `conditions: { minChapter: 2, maxChapter: 2 }` und erscheinen so nie in Kapitel 1.
+- Kapitel 2 – Alltag (Phase 4, Entwurf): `k2-alltag-1` (Raffinerie, Geschäft), `-2` (Pipeline, Wegerechte,
+  Fracht), `-3` (Aktionäre, Anleihen, Personal), `-4` (Rivalen: Crane-Nachfolge, Thorne, Bullard, Delgado),
+  `-5` (Presse, Politik, Familie, Unglücke). Fehlende Bedingungen (`hasRefinery`, `hasPipeline`, `ipo`) und
+  Wirkungen (Aktien, Rat, Ruf, Rivalen …) stehen als `# TODO-Bedingung` / `# TODO-Effekt` neben den Ereignissen.
 - Effekte: `cash`, `oilStock`, `railTariff`, `strength` (Kraft), `ruth`, `thomas` (Beziehung 0–100, 2.7),
   `teams` (eigene Gespanne +/−), `teamsIdle` (eigene Fuhrwerke stehen bis Runde jetzt+n still; 0.2.15+2),
   befristet für `events.timedRounds` Runden (0.2.15+3): `price` ($ je Barrel beim Trust), `production`

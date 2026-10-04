@@ -1,0 +1,716 @@
+# Kapitel 2 – Alltag, Paket 4: Rivalen (Phase 4). Entwurf – Philipp überarbeitet.
+# Grundlage: Story-Bibel Kapitel 2/3 §3 (Margaret Crane, Harold Pruett, Lusk, Bullard und seine
+# Söhne Wade und Cole, Thorne und Pettibone, Rosa Delgado), §9 (K2: Diplomatie – Kartell, Übernahme
+# kleiner Wildcatter, Preisabsprache), GDD §9.2 und §13 (Crane-Nachfolge, Bullard auf dem Höhepunkt,
+# Delgado gründet den Produzentenverband, Thorne: Fracht-, dann Kreditdruck).
+#
+# Alle Ereignisse nur in Kapitel 2: conditions { minChapter: 2, maxChapter: 2 }.
+# Die großen Rivalen-Szenen (Cranes Tod, Margarets und Pruetts Angebote, Zerschlagung, Thornes
+# Strohmänner) gehören zu den Story-Bögen (k2-4-crane u. a.) – hier nur der Alltag am Rand.
+# Neue Rivalen-Werte (Vertrauen, Aggression) als „# TODO-Effekt: rival: …“.
+#
+# Merkzeichen aus Kapitel 1, die hier gelesen werden (nur gelesen, nie gesetzt – die Simulation
+# liest einige davon selbst):
+#   bullard_handschlag → k2_bullard_grenze_freund, k2_bullard_saeulenhaus
+#   (ohne bullard_handschlag) → k2_bullard_grenze
+#   delgado_verband    → k2_delgado_gruendung (als Gründungsmitglied) / ohne: k2_delgado_einkauf
+# Aus Paket 2: k2_pipeline_wucher → k2_delgado_rede; k2_pipeline_offen → k2_kleine_produzenten.
+# Neue Merkzeichen:
+#   k2_delgado_mitglied → k2_delgado_kundgebung (hier) und content/relevance.yaml (Kapitel 3: Delgado mit Clara)
+#   k2_margaret_zahlen, k2_pruett_zahlen, k2_margaret_marke, k2_thorne_ratssitz, k2_delgado_fern,
+#   k2_tilly_gekauft → content/relevance.yaml
+
+# --- Crane: der Nachfolgekampf am Rand --------------------------------------------
+
+- id: k2_lusk_zahlen
+  visitor: lusk
+  rival: crane
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 10 }
+  chance: 0.15
+  title:
+    de: Lusk braucht Zahlen
+    en: Lusk Needs Figures
+  text:
+    de: >-
+      Lusk vom Trust ist dünner geworden, und sein Kragen sitzt nicht mehr. Margaret Crane
+      und Harold Pruett wollen beide wissen, wie viel Harlan Oil im Winter liefern kann. Er
+      muss einem von beiden einen Bericht schreiben, sagt er, und wem er schreibt, auf dessen
+      Seite steht er dann. „Helfen Sie mir zu wählen, Mr. Harlan.“
+    en: >-
+      Lusk from the Trust has grown thinner, and his collar no longer fits. Margaret Crane and
+      Harold Pruett both want to know how much Harlan Oil can deliver this winter. He has to
+      write one of them a report, he says, and whoever he writes to, that's the side he's on.
+      “Help me choose, Mr. Harlan.”
+  choices:
+    - id: margaret
+      label: { de: "Die echten Zahlen – für Margaret Crane", en: "The real figures – for Margaret Crane" }
+      result:
+        de: "Lusk schreibt den Bericht noch im Vorzimmer. Zwei Wochen später schickt Crane Eastern eine Bestellung über Rohöl zum Winter, zu einem Preis, der Pruett nicht gefallen wird."
+        en: "Lusk writes the report in the anteroom. Two weeks later Crane Eastern sends a winter order for crude at a price Pruett won't like."
+      # TODO-Effekt: rival: { margaret: { trust: 10 }, pruett: { trust: -5 } }
+      effects: { price: 0.05 }
+      marks: [k2_margaret_zahlen]
+    - id: pruett
+      label: { de: "Die echten Zahlen – für Harold Pruett", en: "The real figures – for Harold Pruett" }
+      result:
+        de: "Pruett antwortet mit einer Abnahmegarantie für ein Jahr, ohne Begeisterung und ohne Lücke. Margaret Crane grüßt Jacob beim nächsten Empfang eine Spur zu höflich."
+        en: "Pruett replies with a one-year purchase guarantee, without enthusiasm and without loopholes. At the next reception Margaret Crane greets Jacob a shade too politely."
+      # TODO-Effekt: rival: { pruett: { trust: 10 }, margaret: { trust: -5 } }
+      effects: { price: 0.04, production: 0.03 }
+      marks: [k2_pruett_zahlen]
+    - id: keiner
+      label: { de: "„Meine Zahlen bekommt der Trust nicht mehr umsonst“", en: "“The Trust doesn't get my figures for free any more”" }
+      result:
+        de: "Lusk lächelt schief und geht. Am nächsten Tag liegen auf seinem Schreibtisch im Trust geschätzte Zahlen. Sie sind zu niedrig. Beide Seiten halten Harlan Oil jetzt für kleiner, als es ist."
+        en: "Lusk smiles crookedly and leaves. The next day estimated figures lie on his desk at the Trust. They are too low. Both sides now think Harlan Oil is smaller than it is."
+      appointments: 0
+      default: true
+
+- id: k2_pruett_preis
+  mail: info
+  rival: crane
+  deadline: 2
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, maxRound: 14 }
+  chance: 0.12
+  title:
+    de: Crane Midland senkt den Preis
+    en: Crane Midland Cuts the Price
+  text:
+    de: >-
+      Ein gedrucktes Rundschreiben, unterschrieben von Harold Pruett, Generalbevollmächtigter:
+      Der Posted Price für Rohöl aus Cordova sinkt um acht Cent, „zur Verstetigung der Märkte“.
+      Am selben Tag ein handgeschriebener Zettel von Margaret Crane: Crane Eastern zahle den
+      alten Preis. Ab Hallstead. Die Fracht dorthin trage der Lieferant.
+    en: >-
+      A printed circular signed by Harold Pruett, general manager: the posted price for
+      Cordova crude falls by eight cents, “for the steadying of markets”. The same day, a
+      handwritten note from Margaret Crane: Crane Eastern will pay the old price. Delivered
+      to Hallstead. The supplier bears the freight.
+  choices:
+    - id: hinnehmen
+      label: { de: "Pruetts Preis hinnehmen", en: "Accept Pruett's price" }
+      result:
+        de: "Das Öl geht weiter nach Port Ellis, in die alten Tanks des Trusts. Ruth rechnet aus, was acht Cent im Jahr sind, und legt Jacob die Zahl unter den Kaffee."
+        en: "The oil keeps going to Port Ellis, into the Trust's old tanks. Ruth works out what eight cents come to in a year and slips the figure under Jacob's coffee."
+      effects: { price: -0.08 }
+      appointments: 0
+      default: true
+    - id: osten
+      label: { de: "Nach Osten an Margaret liefern (Bahnfracht steigt)", en: "Deliver east to Margaret (rail freight rises)" }
+      result:
+        de: "Die Kesselwagen fahren jetzt bis Hallstead, vier Tage statt einen. Thorne freut sich über jeden Wagen. Margaret Crane schreibt einen Dankesbrief, zwei Zeilen, ohne Unterschrift ihres Vaters."
+        en: "The tank cars now run all the way to Hallstead, four days instead of one. Thorne is glad of every car. Margaret Crane writes a thank-you note, two lines, without her father's signature."
+      # TODO-Effekt: rival: { margaret: { trust: 5 }, pruett: { trust: -5 } }
+      effects: { railTariff: 0.03, price: 0.02 }
+      appointments: 2
+    - id: tanks
+      label: { de: "Einlagern und Pruett warten lassen (eigene Tanks, 3.000 $)", en: "Store it and keep Pruett waiting (own tanks, 3,000 $)" }
+      result:
+        de: "Zwei neue Tanks am Hafen, genietet in drei Wochen. Pruett wartet einen Monat, dann nimmt er den alten Preis wieder, ohne ein Wort darüber zu verlieren."
+        en: "Two new tanks at the harbour, riveted in three weeks. Pruett waits a month, then quietly goes back to the old price without a word."
+      requires: { minCash: 3000 }
+      effects: { cash: -3000, price: 0.01 }
+
+- id: k2_margaret_kanister
+  mail: offer
+  rival: crane
+  deadline: 3
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 5 }
+  chance: 0.1
+  title:
+    de: Margaret Crane will Harlans Namen
+    en: Margaret Crane Wants Harlan's Name
+  text:
+    de: >-
+      Margaret Crane verkauft Kerosin jetzt in blauen Blechkanistern mit weißer Schrift.
+      Sie schlägt vor, darauf zu drucken: „Aus bestem Cordova-Rohöl von Harlan Oil“. Sie zahlt
+      dafür. „Vater kaufte Raffinerien, Mr. Harlan. Ich kaufe Gewohnheiten. Die rosten nicht.“
+    en: >-
+      Margaret Crane now sells kerosene in blue tin cans with white lettering. She proposes
+      printing on them: “From the finest Cordova crude by Harlan Oil”. She will pay for it.
+      “Father bought refineries, Mr. Harlan. I buy habits. They don't rust.”
+  choices:
+    - id: annehmen
+      label: { de: "Den Namen verkaufen (+5.000 $)", en: "Sell the name (+5,000 $)" }
+      result:
+        de: "Ein Jahr später steht in jeder Küche zwischen Port Ellis und Hallstead ein blauer Kanister mit Harlans Namen darauf. Er gehört Margaret Crane."
+        en: "A year later there is a blue can with Harlan's name on it in every kitchen between Port Ellis and Hallstead. It belongs to Margaret Crane."
+      # TODO-Effekt: brand: { osten: -1 }, rival: { margaret: { trust: 10 } }
+      effects: { cash: 5000 }
+      marks: [k2_margaret_marke]
+    - id: eigene
+      label: { de: "Ablehnen und eigene Kanister drucken lassen (4.000 $)", en: "Decline and print his own cans (4,000 $)" }
+      result:
+        de: "Harlans Kanister sind rot, weil Blau schon vergeben ist. Sie verkaufen sich in Cordova gut und in Hallstead gar nicht. Margaret Crane lässt ausrichten, Rot sei mutig."
+        en: "Harlan's cans are red, because blue is taken. They sell well in Cordova and not at all in Hallstead. Margaret Crane sends word that red is brave."
+      requires: { minCash: 4000 }
+      # TODO-Effekt: brand: { cordova: 1 }, rival: { margaret: { trust: -5, aggression: 5 } }
+      effects: { cash: -4000, price: 0.03 }
+    - id: nein
+      label: { de: "Ablehnen", en: "Decline" }
+      result:
+        de: "Margaret Crane antwortet nicht. Auf ihren Kanistern steht jetzt: „Aus bestem Cordova-Rohöl“. Ohne Namen. Er fehlt niemandem."
+        en: "Margaret Crane does not reply. Her cans now say: “From the finest Cordova crude”. No name. Nobody misses it."
+      appointments: 0
+      default: true
+
+# --- Thorne: vom Frachtdruck zum Kreditdruck --------------------------------------
+
+- id: k2_thorne_kredit
+  visitor: bankier
+  rival: thorne
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4, maxRound: 13 }
+  chance: 0.1
+  title:
+    de: Pettibone kündigt den Kreditrahmen
+    en: Pettibone Calls In the Credit Line
+  text:
+    de: >-
+      Pettibone kommt in seiner Eigenschaft als Bankier, nicht als Ratsmitglied, und betont
+      das zweimal. Die Thorne-Bank wolle den Kreditrahmen von Harlan Oil zum Quartalsende
+      kündigen. Es sei denn, ein Herr aus Hallstead, ein Vertrauter von Mr. Thorne, bekäme
+      einen Sitz im Aufsichtsrat. „Ich kaufe keine Firmen“, zitiert Pettibone seinen Herrn.
+      „Ich kaufe Zeit.“
+    en: >-
+      Pettibone comes in his capacity as banker, not board member, and stresses it twice. The
+      Thorne bank intends to cancel Harlan Oil's credit line at the end of the quarter. Unless
+      a gentleman from Hallstead, a confidant of Mr. Thorne's, were given a seat on the board.
+      “I don't buy companies,” Pettibone quotes his master. “I buy time.”
+  choices:
+    - id: sitz
+      label: { de: "Den Sitz geben – der Kredit bleibt", en: "Give the seat – the credit stays" }
+      result:
+        de: "Mr. Sayles erscheint zur nächsten Sitzung pünktlich, mit leerem Notizbuch. Er sagt nichts. Er schreibt viel."
+        en: "Mr. Sayles arrives punctually for the next meeting with an empty notebook. He says nothing. He writes a great deal."
+      # TODO-Effekt: boardMember: sayles, control: -2, rivalStake: { thorne: 2 }
+      effects: { strength: -3, railTariff: -0.02 }
+      marks: [k2_thorne_ratssitz]
+    - id: zurueckzahlen
+      label: { de: "Den Kredit sofort zurückzahlen (20.000 $)", en: "Repay the credit at once (20,000 $)" }
+      result:
+        de: "Ruth zählt das Geld zweimal, dann unterschreibt Jacob. Pettibone nimmt den Scheck mit Bedauern, das echt aussieht. In der Kasse ist es danach sehr still."
+        en: "Ruth counts the money twice, then Jacob signs. Pettibone takes the cheque with regret that looks genuine. Afterwards the cash box is very quiet."
+      requires: { minCash: 20000 }
+      effects: { cash: -20000 }
+    - id: vandermeer
+      label: { de: "Zu Vandermeer & Co. wechseln (Gebühren, eine Reise)", en: "Move to Vandermeer & Co. (fees, a journey)" }
+      result:
+        de: "Ambrose Vandermeer empfängt Jacob in einem Raum mit Ahnenbildern und nimmt das Geschäft, zu einem halben Prozent mehr. Die Ahnen schauen zu."
+        en: "Ambrose Vandermeer receives Jacob in a room full of ancestral portraits and takes the business, at half a per cent more. The ancestors look on."
+      # TODO-Effekt: credit: Vandermeer, rival: { thorne: { aggression: 10 } }
+      effects: { cash: -3000, strength: -6 }
+      appointments: 3
+      default: true
+
+- id: k2_thorne_dinner
+  mail: personal
+  rival: thorne
+  deadline: 2
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 6 }
+  chance: 0.08
+  title:
+    de: Eine Einladung von Augustus Thorne
+    en: An Invitation from Augustus Thorne
+  text:
+    de: >-
+      Augustus Thorne bittet Mr. und Mrs. Harlan zu einem Abendessen in sein Haus in
+      Hallstead. Die Karte ist von Hand geschrieben, die Schrift klein und gerade. Darunter,
+      in derselben Schrift: „Wir haben zehn Jahre Geschäfte gemacht, ohne uns je zu setzen.
+      Das ist unhöflich von uns beiden.“
+    en: >-
+      Augustus Thorne requests the pleasure of Mr. and Mrs. Harlan's company at dinner at his
+      house in Hallstead. The card is handwritten, the script small and straight. Beneath it,
+      in the same hand: “We have done business for ten years without ever sitting down. That
+      is discourteous of us both.”
+  choices:
+    - id: hinfahren
+      label: { de: "Mit Ruth hinfahren (drei Termine, 1.500 $)", en: "Go with Ruth (three appointments, 1,500 $)" }
+      result:
+        de: "Thorne isst wenig und fragt Ruth nach Zinsen, als wäre sie die Einzige am Tisch, die davon etwas versteht. Auf der Heimfahrt sagt sie: Er will nicht deine Firma. Er will, dass du ihn brauchst."
+        en: "Thorne eats little and asks Ruth about interest rates as if she were the only one at the table who understood them. On the way home she says: he doesn't want your company. He wants you to need him."
+      requires: { minCash: 1500 }
+      # TODO-Effekt: rival: { thorne: { trust: 5 } }, standing: 2
+      effects: { cash: -1500, ruth: 6, strength: -5, railTariff: -0.02 }
+      appointments: 3
+    - id: absagen
+      label: { de: "Höflich absagen", en: "Decline politely" }
+      result:
+        de: "Thorne antwortet mit einer Karte: Er bedauere. Die nächste Tariferhöhung kommt einen Monat früher als erwartet."
+        en: "Thorne replies with a card: he regrets it. The next tariff rise comes a month earlier than expected."
+      effects: { railTariff: 0.02 }
+      appointments: 0
+      default: true
+
+# --- Bullard auf dem Höhepunkt ------------------------------------------------------
+
+- id: k2_bullard_grenze
+  rival: bullard
+  group: k2_bullard_grenze
+  notMarked: [bullard_handschlag]
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, maxRound: 14 }
+  chance: 0.12
+  title:
+    de: Bullard bohrt schräg
+    en: Bullard Is Drilling Crooked
+  text:
+    de: >-
+      Harlans neue Quelle in Okara verliert Druck, und Bullards Turm am Zaun fördert mehr
+      als jeder andere im Feld. Ein Bohrmeister, der für beide gearbeitet hat, zeichnet es
+      auf eine Serviette: Bullards Bohrloch knickt in neunhundert Fuß Tiefe ab, unter Harlans
+      Land. Zehn Jahre, und Bullard bohrt noch immer, wo er will.
+    en: >-
+      Harlan's new well at Okara is losing pressure, and Bullard's derrick at the fence brings
+      up more than any other in the field. A driller who has worked for both sketches it on a
+      napkin: Bullard's hole bends at nine hundred feet, under Harlan's land. Ten years, and
+      Bullard still drills wherever he likes.
+  choices:
+    - id: klage
+      label: { de: "Klagen (Anwälte, Gutachter, 4.000 $)", en: "Sue (lawyers, surveyors, 4,000 $)" }
+      result:
+        de: "Der Gutachter lässt einen Messkopf in Bullards Loch. Bullard lässt ihn nicht wieder heraus. Das Verfahren wird Jahre dauern. Bis dahin pumpt Bullard weiter, nur langsamer."
+        en: "The surveyor lowers a gauge into Bullard's hole. Bullard doesn't let it back out. The case will take years. Until then Bullard keeps pumping, only slower."
+      requires: { minCash: 4000 }
+      # TODO-Effekt: rival: { bullard: { aggression: 5 } }
+      effects: { cash: -4000, strength: -4, production: 0.03 }
+    - id: gegenbohren
+      label: { de: "Selbst am Zaun nachbohren, schneller als er (8.000 $)", en: "Drill at the fence himself, faster than him (8,000 $)" }
+      result:
+        de: "Zwei neue Türme, so dicht an Bullards Zaun, dass sich die Männer über den Draht hinweg beschimpfen können. Wer zuerst leerpumpt, gewinnt. Diesmal Harlan."
+        en: "Two new derricks, so close to Bullard's fence that the men can curse each other over the wire. Whoever pumps it dry first wins. This time Harlan."
+      requires: { minCash: 8000 }
+      # TODO-Effekt: rival: { bullard: { aggression: 10 } }
+      effects: { cash: -8000, production: 0.08 }
+      appointments: 2
+    - id: hinnehmen
+      label: { de: "Hinnehmen – das Feld ist groß genug", en: "Let it go – the field is big enough" }
+      result:
+        de: "Die Quelle wird schwächer. In Okara erzählt man, Harlan sei weich geworden in seinem Büro mit dem Telefon. Bullard lacht am lautesten."
+        en: "The well weakens. In Okara they say Harlan has gone soft in his office with the telephone. Bullard laughs loudest."
+      effects: { production: -0.06 }
+      appointments: 0
+      default: true
+
+- id: k2_bullard_grenze_freund
+  visitor: bullard
+  rival: bullard
+  group: k2_bullard_grenze
+  marked: [bullard_handschlag]
+  delay: 0
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, maxRound: 14 }
+  chance: 0.12
+  title:
+    de: Bullard kommt selbst
+    en: Bullard Comes in Person
+  text:
+    de: >-
+      Bullard ist breiter geworden und grauer, die Stimme ist dieselbe. Er setzt sich, ohne
+      zu fragen, und legt eine Bohrliste auf Jacobs Tisch. Sein Loch am Zaun in Okara ist
+      abgeknickt, unter Harlans Land. „Meine Jungs schwören, sie haben's nicht gemerkt.
+      Ich glaub's ihnen halb. Was machen wir, Harlan? Zehn Jahre Handschlag.“
+    en: >-
+      Bullard has grown broader and greyer; the voice is the same. He sits down without asking
+      and lays a drilling log on Jacob's desk. His hole at the Okara fence has bent, under
+      Harlan's land. “My boys swear they didn't notice. I half believe 'em. What do we do,
+      Harlan? Ten years of a handshake.”
+  choices:
+    - id: teilen
+      label: { de: "Die Quelle teilen, halbe-halbe", en: "Share the well, half and half" }
+      result:
+        de: "Bullard spuckt in die Hand und hält sie hin. Die Quelle fördert für beide. In Okara heißt sie ab jetzt die Brüderquelle, nicht ganz ohne Spott."
+        en: "Bullard spits in his palm and holds it out. The well produces for both. In Okara it's called the Brothers' Well from now on, not entirely without mockery."
+      # TODO-Effekt: rival: { bullard: { trust: 10 } }
+      effects: { production: 0.04, strength: 3 }
+    - id: entschaedigung
+      label: { de: "Volle Entschädigung verlangen (+7.000 $)", en: "Demand full compensation (+7,000 $)" }
+      result:
+        de: "Bullard zahlt, ohne zu handeln, in bar, aus der Westentasche. Er steht auf und sagt: Zehn Jahre, Harlan. Du hast Aktien, ich hab Söhne. Dann geht er."
+        en: "Bullard pays without haggling, in cash, from his waistcoat pocket. He stands and says: Ten years, Harlan. You've got shares, I've got sons. Then he leaves."
+      # TODO-Effekt: rival: { bullard: { trust: -15 } }
+      effects: { cash: 7000 }
+    - id: schenken
+      label: { de: "„Lass es laufen, Jim. Ich hab genug.“", en: "“Let it run, Jim. I've got enough.”" }
+      result:
+        de: "Bullard sieht Jacob lange an, als suche er den Haken. Dann lacht er, zu laut. Im Winter schickt er zwei seiner Trupps, als Harlan einen Brand in Okara nicht in den Griff bekommt."
+        en: "Bullard looks at Jacob a long time, as if searching for the catch. Then he laughs, too loudly. In winter he sends two of his crews when Harlan can't get a fire at Okara under control."
+      # TODO-Effekt: rival: { bullard: { trust: 20 } }
+      effects: { production: -0.04, strength: 2 }
+      appointments: 0
+      default: true
+
+- id: k2_bullard_soehne
+  rival: bullard
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  chance: 0.1
+  title:
+    de: Wade und Cole
+    en: Wade and Cole
+  text:
+    de: >-
+      Bullards Söhne Wade und Cole haben im Saloon von Okara zwei von Harlans Bohrarbeitern
+      zusammengeschlagen. Einer hat einen Schnitt über dem Auge, der genäht werden musste.
+      Wade ist vierundzwanzig und sieht aus wie sein Vater vor zwanzig Jahren, nur ohne den
+      Ehrenkodex.
+    en: >-
+      Bullard's sons Wade and Cole have beaten up two of Harlan's roughnecks in the Okara
+      saloon. One has a cut over the eye that needed stitches. Wade is twenty-four and looks
+      like his father twenty years ago, only without the code of honour.
+  choices:
+    - id: bullard_reden
+      label: { de: "Zu Bullard fahren und es unter Vätern klären", en: "Drive to Bullard and settle it father to father" }
+      result:
+        de: "Bullard hört zu, mit verschränkten Armen. Dann ruft er seine Söhne herein und lässt sie sich entschuldigen, vor Jacob. Cole sieht dabei auf den Boden. Wade nicht."
+        en: "Bullard listens, arms folded. Then he calls his sons in and makes them apologise, in front of Jacob. Cole looks at the floor. Wade doesn't."
+      # TODO-Effekt: rival: { bullard: { trust: 5 } }
+      effects: { strength: -6, production: 0.03 }
+      appointments: 2
+    - id: zurueckschlagen
+      label: { de: "Die Männer machen lassen", en: "Let the men handle it" }
+      result:
+        de: "Am Samstag darauf brennt in Okara ein Schuppen, der Bullard gehört. Die Männer arbeiten die Woche darauf, als hätten sie etwas gewonnen. Wade Bullard merkt sich Gesichter."
+        en: "The following Saturday a shed belonging to Bullard burns down in Okara. The next week the men work as though they'd won something. Wade Bullard remembers faces."
+      # TODO-Effekt: heat: 1, rival: { bullard: { aggression: 10 } }
+      effects: { production: 0.05, strength: -2 }
+    - id: arzt
+      label: { de: "Den Arzt zahlen und schweigen (600 $)", en: "Pay the doctor and keep quiet (600 $)" }
+      result:
+        de: "Die Wunde heilt. Im Saloon von Okara sitzen Harlans Männer jetzt an der Wand, nicht mehr an der Theke."
+        en: "The wound heals. In the Okara saloon Harlan's men now sit by the wall, no longer at the bar."
+      effects: { cash: -600 }
+      appointments: 0
+      default: true
+
+- id: k2_bullard_saeulenhaus
+  mail: personal
+  rival: bullard
+  marked: [bullard_handschlag]
+  delay: 0
+  deadline: 2
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 5 }
+  chance: 0.1
+  title:
+    de: Bullards Säulenhaus
+    en: Bullard's House of Columns
+  text:
+    de: >-
+      Bullard hat in Okara ein Haus mit acht weißen Säulen gebaut, größer als das Gericht.
+      Die Einladung zur Einweihung ist auf Büttenpapier gedruckt, die Rechtschreibung nicht
+      ganz. Unten hat er von Hand dazugeschrieben: „Bring Ruth mit. Und den Jungen. Meine
+      Frau will sehen, ob er dir ähnlich sieht.“
+    en: >-
+      Bullard has built a house in Okara with eight white columns, bigger than the courthouse.
+      The invitation to the housewarming is printed on deckle-edged paper, the spelling not
+      quite right. At the bottom he's added by hand: “Bring Ruth. And the boy. My wife wants to
+      see if he looks like you.”
+  choices:
+    - id: hinfahren
+      label: { de: "Mit der Familie hinfahren (drei Termine, Geschenk 1.500 $)", en: "Go with the family (three appointments, a 1,500 $ gift)" }
+      result:
+        de: "Thomas spielt mit Bullards Jüngstem im Garten Fangen, bis beide Hemden schwarz sind. Ruth und Mrs. Bullard reden über Schulen. Bullard hält eine Rede und weint am Ende."
+        en: "Thomas plays tag in the garden with Bullard's youngest until both shirts are black. Ruth and Mrs. Bullard talk about schools. Bullard gives a speech and weeps at the end."
+      requires: { minCash: 1500 }
+      # TODO-Effekt: rival: { bullard: { trust: 10 } }
+      effects: { cash: -1500, ruth: 6, thomas: 8, strength: 2 }
+      appointments: 3
+    - id: geschenk
+      label: { de: "Nur ein Geschenk schicken (2.500 $)", en: "Only send a gift (2,500 $)" }
+      result:
+        de: "Eine Standuhr aus Hallstead, die schönste im Katalog. Bullard stellt sie in die Halle. Er erzählt jedem Gast, von wem sie ist, und jedes Mal ein bisschen kürzer."
+        en: "A grandfather clock from Hallstead, the finest in the catalogue. Bullard puts it in the hall. He tells every guest who sent it, a little more briefly each time."
+      requires: { minCash: 2500 }
+      effects: { cash: -2500 }
+    - id: absagen
+      label: { de: "Absagen", en: "Decline" }
+      result:
+        de: "Bullard schickt die Einladung zurück, ohne Brief. Auf der Rückseite steht nur: Schon gut."
+        en: "Bullard sends the invitation back, with no letter. On the back it says only: Never mind."
+      # TODO-Effekt: rival: { bullard: { trust: -10 } }
+      appointments: 0
+      default: true
+
+# --- Delgado und die Kleinen --------------------------------------------------------
+
+- id: k2_delgado_gruendung
+  mail: demand
+  marked: [delgado_verband]
+  delay: 0
+  deadline: 3
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 1, maxRound: 8 }
+  chance: 0.2
+  title:
+    de: Delgados Verband wird offiziell
+    en: Delgado's Association Goes Official
+  text:
+    de: >-
+      Rosa Delgado gründet den Verband unabhängiger Produzenten jetzt mit Satzung, Siegel und
+      Eintrag in Hallstead. Jacob war vor zehn Jahren einer der Ersten. Sie bittet um den
+      Jahresbeitrag eines großen Mitglieds und schreibt dazu: „Ich weiß, dass Sie inzwischen
+      ein großer Mann sind. Ich frage trotzdem den Mann, der damals bei uns saß.“
+    en: >-
+      Rosa Delgado is founding the Association of Independent Producers properly now, with
+      articles, seal and registration in Hallstead. Ten years ago Jacob was one of the first.
+      She asks for a large member's annual dues and adds: “I know you're a big man now.
+      I'm asking the man who sat with us back then anyway.”
+  choices:
+    - id: beitreten
+      label: { de: "Beitreten (3.000 $ im Jahr)", en: "Join (3,000 $ a year)" }
+      result:
+        de: "Jacobs Name steht auf der Gründungsurkunde an dritter Stelle. Delgado schickt eine Abschrift, gerahmt. Pruett schickt einen Brief, ungerahmt."
+        en: "Jacob's name is third on the founding charter. Delgado sends a copy, framed. Pruett sends a letter, unframed."
+      requires: { minCash: 3000 }
+      # TODO-Effekt: rival: { delgado: { trust: 10 } }, party: { provinz: 2 }
+      effects: { cash: -3000 }
+      marks: [k2_delgado_mitglied]
+    - id: fern
+      label: { de: "„Ich bin kein kleiner Produzent mehr“", en: "“I'm not a small producer any more”" }
+      result:
+        de: "Delgado antwortet mit einem einzigen Satz: Das habe sie befürchtet. Der Verband wählt einen Vorstand ohne Harlan."
+        en: "Delgado replies with a single sentence: she had feared as much. The Association elects a board without Harlan."
+      # TODO-Effekt: rival: { delgado: { trust: -10 } }
+      effects: { strength: -2 }
+      marks: [k2_delgado_fern]
+      appointments: 0
+      default: true
+
+- id: k2_delgado_einkauf
+  mail: offer
+  notMarked: [delgado_verband]
+  deadline: 3
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 10 }
+  chance: 0.15
+  title:
+    de: Der Verband nimmt neue Mitglieder
+    en: The Association Takes New Members
+  text:
+    de: >-
+      Rosa Delgados Verband unabhängiger Produzenten hat jetzt eine Satzung und ein Büro in
+      Port Ellis. Wer vor zehn Jahren nicht dabei war, kann sich einkaufen, schreibt sie,
+      mit der Aufnahmegebühr eines großen Mitglieds. „Gegen den Trust waren wir uns einig. Wo
+      waren Sie damals, Mr. Harlan?“
+    en: >-
+      Rosa Delgado's Association of Independent Producers now has articles and an office in
+      Port Ellis. Whoever wasn't there ten years ago can buy in, she writes, for a large
+      member's admission fee. “Against the Trust we agreed. Where were you back then, Mr. Harlan?”
+  choices:
+    - id: einkaufen
+      label: { de: "Sich einkaufen (8.000 $)", en: "Buy in (8,000 $)" }
+      result:
+        de: "Delgado nimmt das Geld und gibt Jacob einen Platz am Ende des Tisches. Bei der ersten Versammlung wird er nicht angesprochen. Bei der zweiten schon."
+        en: "Delgado takes the money and gives Jacob a seat at the end of the table. At the first meeting nobody speaks to him. At the second, they do."
+      requires: { minCash: 8000 }
+      # TODO-Effekt: rival: { delgado: { trust: 5 } }
+      effects: { cash: -8000 }
+      marks: [k2_delgado_mitglied]
+    - id: nein
+      label: { de: "Ablehnen", en: "Decline" }
+      result:
+        de: "Delgado schreibt nicht zurück. Ihr Verband wächst trotzdem, nur ohne Harlan, und bald gegen ihn."
+        en: "Delgado doesn't write back. Her Association grows anyway, only without Harlan, and soon against him."
+      marks: [k2_delgado_fern]
+      appointments: 0
+      default: true
+
+- id: k2_delgado_kundgebung
+  marked: [k2_delgado_mitglied]
+  delay: 2
+  conditions: { minChapter: 2, maxChapter: 2, maxRound: 15 }
+  chance: 0.2
+  title:
+    de: Delgado will, dass Jacob spricht
+    en: Delgado Wants Jacob to Speak
+  text:
+    de: >-
+      Der Verband hält in Hallstead eine Kundgebung gegen die Preise des Trusts, vor dem
+      Parlament. Rosa Delgado will, dass Jacob spricht: ein Mann, der mit einem geliehenen
+      Turm angefangen hat. Der Volksbund wird klatschen. Pruett und Margaret Crane werden
+      zuhören, und Thorne liest am nächsten Morgen die Zeitung.
+    en: >-
+      The Association is holding a rally in Hallstead against the Trust's prices, in front of
+      Parliament. Rosa Delgado wants Jacob to speak: a man who started with a borrowed derrick.
+      The People's League will applaud. Pruett and Margaret Crane will listen, and Thorne will
+      read the paper next morning.
+  choices:
+    - id: sprechen
+      label: { de: "Sprechen (eine Reise, drei Termine)", en: "Speak (a journey, three appointments)" }
+      result:
+        de: "Jacob spricht sieben Minuten, ohne Zettel, über seinen Vater und die Grube. Es wird still auf dem Platz. Am nächsten Tag steht er auf der ersten Seite, und Pruett senkt den Preis für Harlans Öl um einen Cent."
+        en: "Jacob speaks for seven minutes without notes, about his father and the pit. The square goes quiet. Next day he's on the front page, and Pruett cuts the price for Harlan's oil by a cent."
+      # TODO-Effekt: reputation: { public: 8, politics: 3 }, party: { volksbund: 2 }, rival: { pruett: { aggression: 5 } }
+      effects: { strength: -8, price: -0.03 }
+      appointments: 3
+    - id: spenden
+      label: { de: "Nicht sprechen, aber die Kundgebung bezahlen (4.000 $)", en: "Not speak, but pay for the rally (4,000 $)" }
+      result:
+        de: "Die Fahnen, die Kapelle und das Bier für die Farmer bezahlt Harlan Oil. Niemand sagt es laut. Delgado dankt in ihrer Rede einem Freund, der lieber ungenannt bleibe."
+        en: "The flags, the band and the farmers' beer are paid for by Harlan Oil. Nobody says so aloud. In her speech Delgado thanks a friend who prefers to remain unnamed."
+      requires: { minCash: 4000 }
+      effects: { cash: -4000 }
+    - id: fernbleiben
+      label: { de: "Fernbleiben", en: "Stay away" }
+      result:
+        de: "Die Kundgebung findet ohne Jacob statt. Delgado erwähnt ihn nicht. Das ist auch eine Art, über jemanden zu sprechen."
+        en: "The rally goes ahead without Jacob. Delgado doesn't mention him. That too is a way of talking about someone."
+      # TODO-Effekt: rival: { delgado: { trust: -5 } }
+      appointments: 0
+      default: true
+
+- id: k2_delgado_rede
+  marked: [k2_pipeline_wucher]
+  delay: 1
+  conditions: { minChapter: 2, maxChapter: 2 }
+  chance: 0.3
+  title:
+    de: „Der Harlan-Zoll“
+    en: “The Harlan Toll”
+  text:
+    de: >-
+      Rosa Delgado spricht in Salt Hill vor dreihundert Farmern und kleinen Produzenten. Sie
+      nennt keinen Namen, sie muss es nicht. „Gegen den Trust waren wir uns einig“, sagt sie.
+      „Jetzt baut einer von uns seine eigene Mautstelle.“ Der Courier druckt die Rede
+      vollständig, auf Seite eins.
+    en: >-
+      Rosa Delgado speaks in Salt Hill to three hundred farmers and small producers. She names
+      no names; she doesn't have to. “Against the Trust we agreed,” she says. “Now one of our
+      own is building his own toll gate.” The Courier prints the speech in full, on page one.
+  choices:
+    - id: senken
+      label: { de: "Den Transportsatz senken", en: "Lower the transport rate" }
+      result:
+        de: "Der Satz sinkt. Die Kleinen schicken ihr Öl wieder durch Harlans Leitung, und Delgado lässt in der nächsten Rede einen Absatz weg."
+        en: "The rate comes down. The small men send their oil through Harlan's line again, and Delgado drops a paragraph from her next speech."
+      # TODO-Effekt: transportFee: niedriger, lawPressure: { transportpflicht: -1 }
+      effects: { price: -0.05 }
+    - id: antworten
+      label: { de: "Im Courier antworten (Anzeige, 1.500 $)", en: "Reply in the Courier (an advert, 1,500 $)" }
+      result:
+        de: "Harlans Antwort ist eine halbe Seite voller Zahlen über Rohre, Muffen und Wachleute. Sie stimmen alle. Gelesen werden sie nicht."
+        en: "Harlan's reply is half a page of figures about pipes, couplings and guards. They are all correct. Nobody reads them."
+      requires: { minCash: 1500 }
+      effects: { cash: -1500, strength: -2 }
+    - id: schweigen
+      label: { de: "Schweigen", en: "Say nothing" }
+      result:
+        de: "Der Landtag von Cordova nimmt das Transportgesetz in die nächste Lesung. Der Abgeordnete aus Salt Hill zitiert Delgado wörtlich."
+        en: "The Cordova assembly takes the transport bill to its next reading. The member for Salt Hill quotes Delgado word for word."
+      # TODO-Effekt: lawPressure: { transportpflicht: 2 }
+      effects: { strength: -3 }
+      appointments: 0
+      default: true
+
+- id: k2_kleine_produzenten
+  marked: [k2_pipeline_offen]
+  delay: 2
+  conditions: { minChapter: 2, maxChapter: 2 }
+  chance: 0.25
+  title:
+    de: Die Kleinen bieten ihr Öl an
+    en: The Small Men Offer Their Oil
+  text:
+    de: >-
+      Seit die kleinen Produzenten ihr Öl durch Harlans Leitung schicken dürfen, kommt Two-Rig
+      Tilly mit einem Vorschlag, im Namen von neun Wildcattern: Sie verkaufen ihr ganzes Öl an
+      Harlan statt an den Trust, zwei Jahre lang, zu einem Preis knapp über Pruetts. Tilly ist
+      grau geworden und raucht dieselbe Pfeife.
+    en: >-
+      Since the small producers have been allowed to send their oil through Harlan's line,
+      Two-Rig Tilly comes with a proposal on behalf of nine wildcatters: they'll sell all their
+      oil to Harlan instead of the Trust, for two years, at a price just above Pruett's. Tilly
+      has gone grey and smokes the same pipe.
+  choices:
+    - id: annehmen
+      label: { de: "Annehmen – mehr Öl, dünnere Marge", en: "Accept – more oil, thinner margin" }
+      result:
+        de: "Harlans Tanks füllen sich mit fremdem Öl. Pruett verliert in Cordova neun Lieferanten auf einmal. Er schickt keinen Brief. Er schickt einen Prüfer."
+        en: "Harlan's tanks fill with other men's oil. Pruett loses nine suppliers in Cordova at a stroke. He sends no letter. He sends an inspector."
+      # TODO-Effekt: rival: { pruett: { aggression: 10 } }, reputation: { industryRespect: 5 }
+      effects: { production: 0.1, price: -0.03 }
+    - id: ablehnen
+      label: { de: "Danken und ablehnen", en: "Thank her and decline" }
+      result:
+        de: "Tilly klopft die Pfeife aus. „Allein bist du billiger zu kaufen, Harlan. Das hab ich dir vor zehn Jahren schon gesagt.“"
+        en: "Tilly knocks out her pipe. “Alone you're cheaper to buy, Harlan. I told you that ten years ago.”"
+      appointments: 0
+      default: true
+
+- id: k2_tilly_verkauf
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 6 }
+  chance: 0.08
+  title:
+    de: Two-Rig Tilly will verkaufen
+    en: Two-Rig Tilly Wants to Sell
+  text:
+    de: >-
+      Tilly hat Rheuma in den Händen und keinen Sohn. Ihre zwei Türme am Nordhang fördern noch
+      ordentlich. Pruett hat ihr ein Angebot gemacht, sagt sie, und Bullard auch, ein
+      schlechteres. Sie würde lieber an Harlan verkaufen. „Aber nicht billiger, Harlan. Nur
+      lieber.“
+    en: >-
+      Tilly has rheumatism in her hands and no son. Her two derricks on the north slope still
+      produce decently. Pruett has made her an offer, she says, and Bullard too, a worse one.
+      She'd rather sell to Harlan. “But not cheaper, Harlan. Just rather.”
+  choices:
+    - id: kaufen
+      label: { de: "Kaufen (22.000 $)", en: "Buy (22,000 $)" }
+      result:
+        de: "Tilly unterschreibt und geht noch am selben Abend zum ersten Mal seit zwanzig Jahren nicht zum Turm. Harlans Männer übernehmen ihre Trupps. Die Trupps übernehmen ihre Lieder."
+        en: "Tilly signs and that same evening, for the first time in twenty years, doesn't go to the derrick. Harlan's men take over her crews. The crews take over her songs."
+      requires: { minCash: 22000 }
+      effects: { cash: -22000, production: 0.15 }
+      marks: [k2_tilly_gekauft]
+    - id: rente
+      label: { de: "Ihr eine Rente zahlen, sie behält die Türme bis zum Tod (6.000 $ jetzt)", en: "Pay her a pension; she keeps the derricks until she dies (6,000 $ now)" }
+      result:
+        de: "Tilly lacht, bis sie husten muss. Dann nimmt sie an. Die Türme gehen später an Harlan, wann genau, entscheidet ihr Herz."
+        en: "Tilly laughs until she coughs. Then she accepts. The derricks will pass to Harlan later; exactly when is up to her heart."
+      requires: { minCash: 6000 }
+      effects: { cash: -6000, production: 0.04, strength: 2 }
+    - id: pruett
+      label: { de: "„Verkauf an Pruett, Tilly“", en: "“Sell to Pruett, Tilly”" }
+      result:
+        de: "Crane Midland hat jetzt zwei Türme am Nordhang, direkt neben Harlans Pachten. Pruetts Männer zählen von dort aus Harlans Wagen."
+        en: "Crane Midland now has two derricks on the north slope, right beside Harlan's leases. From there Pruett's men count Harlan's wagons."
+      # TODO-Effekt: rival: { pruett: { power: 1 } }
+      effects: { leaseCost: 0.15 }
+      appointments: 0
+      default: true
+
+- id: k2_preisabsprache
+  rival: bullard
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4 }
+  chance: 0.1
+  title:
+    de: Ein Abend im Hinterzimmer
+    en: An Evening in the Back Room
+  text:
+    de: >-
+      Im Hinterzimmer des Gulf Hotel sitzen Bullard, zwei Wildcatter aus Okara und ein Mann
+      von Crane Eastern, der sich nicht vorstellt. Der Preis fällt seit einem Jahr. Wenn alle
+      ein Zehntel weniger fördern, sagt Bullard, steigt er wieder. Es müssen nur alle
+      mitmachen. Und niemand darf es aufschreiben.
+    en: >-
+      In the back room of the Gulf Hotel sit Bullard, two wildcatters from Okara and a man from
+      Crane Eastern who doesn't introduce himself. The price has been falling for a year. If
+      everyone produces a tenth less, Bullard says, it will rise again. Everyone just has to
+      join in. And nobody may write it down.
+  choices:
+    - id: mitmachen
+      label: { de: "Mitmachen – ein Zehntel weniger", en: "Join in – a tenth less" }
+      result:
+        de: "Zwei Monate lang halten sich alle daran. Der Preis steigt. Dann bohrt einer der Okara-Männer heimlich nach, und alle wissen es, und keiner sagt etwas."
+        en: "For two months everyone keeps to it. The price rises. Then one of the Okara men secretly drills again, and everyone knows, and nobody says anything."
+      # TODO-Effekt: heat: 1, rival: { bullard: { trust: 5 } }
+      effects: { production: -0.1, price: 0.12 }
+    - id: unterlaufen
+      label: { de: "Zusagen und heimlich mehr fördern", en: "Agree and secretly produce more" }
+      result:
+        de: "Harlan verkauft in den zwei guten Monaten mehr als alle anderen. Bullard braucht drei Wochen, um es herauszufinden. Er sagt nichts. Er notiert es."
+        en: "Harlan sells more than anyone in the two good months. It takes Bullard three weeks to find out. He says nothing. He makes a note."
+      # TODO-Effekt: rival: { bullard: { trust: -15, aggression: 10 } }
+      effects: { production: 0.05, price: 0.06, strength: -2 }
+    - id: ablehnen
+      label: { de: "Ablehnen und gehen", en: "Refuse and leave" }
+      result:
+        de: "Ohne Harlan hält die Absprache keinen Monat. Der Preis fällt weiter. Bullard sagt im Saloon, Harlan sei zu fein geworden, um mit Bohrleuten an einem Tisch zu sitzen."
+        en: "Without Harlan the agreement doesn't last a month. The price keeps falling. Bullard says in the saloon that Harlan has got too grand to sit at a table with drillers."
+      effects: { price: -0.04 }
+      appointments: 0
+      default: true

@@ -17,7 +17,11 @@ import { DEFAULT_LANG, localize, type Lang, type LocalizedText } from './i18n';
 import { openRegions, unlockRegion } from './regions';
 import { Rng, seedFromString, type RngState } from './rng';
 
-/** Bedingungen: jede ist eine Untergrenze (min…) oder Obergrenze (max…). */
+/**
+ * Bedingungen: jede ist eine Untergrenze (min…) oder Obergrenze (max…).
+ * minChapter/maxChapter (Phase 4): Kapitel 1–5; ein Spielstand ohne Kapitelangabe ist in Kapitel 1.
+ * Ereignisse ohne Kapitel-Bedingung kommen in jedem Kapitel.
+ */
 export const CONDITION_KEYS = [
   'minRound',
   'maxRound',
@@ -29,6 +33,8 @@ export const CONDITION_KEYS = [
   'minLeases',
   'minStrength',
   'maxStrength',
+  'minChapter',
+  'maxChapter',
 ] as const;
 export type ConditionKey = (typeof CONDITION_KEYS)[number];
 export type Conditions = Partial<Record<ConditionKey, number>>;
@@ -265,7 +271,12 @@ export function marksMet(state: Pick<GameState, 'round' | 'events'>, event: Pick
   return state.round >= zuletzt + event.delay;
 }
 
-type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength'>;
+type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength'> & Partial<Pick<GameState, 'chapter'>>;
+
+/** Kapitel des Spielstands (Phase 4); fehlt die Angabe, ist es Kapitel 1. */
+export function chapterOf(state: Partial<Pick<GameState, 'chapter'>>): number {
+  return state.chapter ?? 1;
+}
 
 /** Der Wert im Zustand, den eine Bedingung prüft. */
 function wertFuer(state: Lage, key: ConditionKey): number {
@@ -286,12 +297,25 @@ function wertFuer(state: Lage, key: ConditionKey): number {
     case 'minStrength':
     case 'maxStrength':
       return state.strength;
+    case 'minChapter':
+    case 'maxChapter':
+      return chapterOf(state);
   }
 }
 
 function erfuellt(state: Lage, key: ConditionKey, grenze: number): boolean {
   const wert = wertFuer(state, key);
   return key.startsWith('min') ? wert >= grenze : wert <= grenze;
+}
+
+/**
+ * Passt das Ereignis ins Kapitel des Spielstands (minChapter/maxChapter)? drawEvents sortiert
+ * Ereignisse anderer Kapitel aus, bevor gemischt wird – so würfelt Kapitel 1 genau wie vorher,
+ * egal wie viele Ereignisse für spätere Kapitel dazukommen.
+ */
+export function chapterFits(state: Partial<Pick<GameState, 'chapter'>>, conditions: Conditions): boolean {
+  const kapitel = chapterOf(state);
+  return (conditions.minChapter === undefined || kapitel >= conditions.minChapter) && (conditions.maxChapter === undefined || kapitel <= conditions.maxChapter);
 }
 
 /** Stimmen alle Bedingungen? Keine Bedingung = immer. */
@@ -423,10 +447,11 @@ export function drawEvents(state: GameState, balance: Balance, catalog: readonly
   const log = [...state.log];
   let neu = 0;
   // Sichere Ereignisse (2.8) zuerst: ohne Würfel, ohne Platz in maxPerRound.
-  const sicher = catalog.filter((e) => e.certain && !e.routine && !e.mail);
+  const imKapitel = catalog.filter((e) => chapterFits(state, e.conditions));
+  const sicher = imKapitel.filter((e) => e.certain && !e.routine && !e.mail);
   // Gewürfelte Ereignisse (2.10b) in zufälliger Reihenfolge: Sonst gewinnen bei maxPerRound
   // immer die Dateien vorn im Alphabet, und späte Ereignisse kämen kaum je vor.
-  const gewuerfelt = rng.shuffle(catalog.filter((e) => !e.certain && !e.routine && !e.mail));
+  const gewuerfelt = rng.shuffle(imKapitel.filter((e) => !e.certain && !e.routine && !e.mail));
   for (const event of [...sicher, ...gewuerfelt]) {
     if (!event.certain && neu >= balance.events.maxPerRound) break;
     // Feste Termine (2.3) werden nicht gewürfelt, Briefe kommen mit der Post (2.4).

@@ -29,3 +29,27 @@ later:
   - { mark: vale_geld, reason: "Mr. Vales Einladung (GDD Kapitel 3)" }
   - { mark: vale_abgelehnt, reason: "Mr. Vales Einladung (GDD Kapitel 3)" }
   - { mark: crane_abgelehnt, reason: "Crane merkt sich die Absage (GDD: Rivalen merken sich Gefallen und Verrat)" }
+
+  # Kapitel 2 – Alltag (Phase 4, Entwurf – Philipp überarbeitet): Saat für die Story-Bögen von
+  # Kapitel 2 (k2-*-Story-Dateien, Systeme 4.6–4.11) und für Kapitel 3. Jede dieser Antworten hat
+  # schon eine spürbare Wirkung in Geld, Förderung, Preis oder Fracht.
+  - { mark: k2_werksarzt, reason: "Arbeiterschutz-Akte und Arbeiter-Ruf (Story-Bibel §8: kerrigan_*/trupp_* → Gewerkschaftssaat, Kapitel 3)" }
+  - { mark: k2_benzin_frueh, reason: "Greaves' Benzin-Kolonne: Thomas' Ideen zu Marke und Automobil in Kapitel 3 (Story-Bibel §7 B)" }
+  - { mark: k2_marine_vertrag, reason: "Heizöl für die Marine – Weiche zs2_marine_vertrag im Zeitsprung II (Story-Bibel §2)" }
+  - { mark: k2_quill_detektiv, reason: "Mr. Quill aus Thornes Detektei kennt Harlans Mengen – Fixer-Ersatz und Thornes Strohmänner (Story-Bibel §4, §6)" }
+  - { mark: k2_sayles_aktien, reason: "Mr. Sayles kauft Aktien – Thornes Strohmann-Falle k2_thorne_strohmann (Story-Bibel §6, Rivalen am Rand)" }
+  - { mark: k2_anleihe_verzug, reason: "Rating bei Vandermeer & Co. und Pettibone (Story-Bibel §8: bank_kredit/wechsel_gehalten → Rating), Kapitel 3" }
+  - { mark: k2_hale_rat, reason: "Martha Hale im Aufsichtsrat (Story-Bibel §5) – Rats-Ereignisse von 4.8" }
+  - { mark: k2_sekretaer_hallstead, reason: "Mr. Purvis statt Ada Pell: wer die Briefe liest (Story-Bibel §4, Personal 4.9)" }
+  - { mark: k2_lindqvist, reason: "Der gewissenhafte Ingenieur (Story-Bibel §9: Personal 4.9 – Gewissenhafter verweigert)" }
+  - { mark: k2_greaves_beteiligt, reason: "Greaves' Cracken-Forschung (Story-Bibel §4, Forschung 4.11: Spionage gegen Greaves)" }
+  - { mark: k2_tatum_fixer, reason: "Boyd Tatum als Fixer (Story-Bibel §4) – Daniels Akte in Kapitel 3 (§7 A)" }
+  - { mark: k2_margaret_zahlen, reason: "Crane-Nachfolge: Jacob stand mit Lusks Bericht auf Margarets Seite (Story-Bibel §6 D, margaret_partner)" }
+  - { mark: k2_pruett_zahlen, reason: "Crane-Nachfolge: Jacob stand auf Pruetts Seite (Story-Bibel §6 D, pruett_partner)" }
+  - { mark: k2_margaret_marke, reason: "Harlans Name auf Margarets Kanistern – Kampf um die Marke in Kapitel 3 (Story-Bibel §3, §9 K3 Marke)" }
+  - { mark: k2_thorne_ratssitz, reason: "Thornes Mann im Aufsichtsrat (Story-Bibel §5: Strohmann Mr. Sayles) – Kontrolle in Kapitel 2/3" }
+  - { mark: k2_delgado_fern, reason: "Delgado ohne Harlan: delgado_k2_gegner, in Kapitel 3 mit Clara auf der anderen Seite (Story-Bibel §3)" }
+  - { mark: k2_tilly_gekauft, reason: "Übernahme kleiner Wildcatter (Story-Bibel §9: Diplomatie 4.10) – Industrie-Ruf" }
+  - { mark: k2_courier_anteil, reason: "Harlan am Courier beteiligt – Bixby als Pressesprecher in Kapitel 3 (Story-Bibel §3, §8)" }
+  - { mark: k2_grady_spende, reason: "Senator Grady schuldet einen Gefallen – Reserveland im Zeitsprung II (zs2_grady_*, Story-Bibel §2)" }
+  - { mark: k2_thomas_turm_sommer, reason: "Thomas am Turm (Story-Bibel §6 G: thomas_felder) – Weg in Kapitel 3 (thomas_feld, §7 B)" }
