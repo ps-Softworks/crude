@@ -627,7 +627,7 @@ worldModel:
 # Alle Werte PLATZHALTER bis zu den Bot-Läufen für Kapitel 2.
 refinery:
   unlockChapter: 2         # GDD §13: Raffinerie und Produktmix sind neue Mechanik in Kapitel 2
-  buildCost: 150000        # $ für die erste Destillationsanlage (bei Stufe I und Nachfrage 98 in ~5 Runden bezahlt)
+  buildCost: 150000        # $ für die erste Destillationsanlage (gut eingestellt in ~10 Runden bezahlt, achtlos in ~30; tools/raffinerieLaeufe.ts)
   buildRounds: 3           # Bauzeit in Runden
   unitCapacity: 25000      # bbl Rohöl je Runde und Ausbaustufe
   maxLevel: 4              # höchstens so viele Ausbaustufen
@@ -635,8 +635,6 @@ refinery:
   expandRounds: 2          # Bauzeit je Ausbau (die alte Anlage läuft weiter)
   upkeepPerLevel: 2500     # Fixkosten je fertiger Ausbaustufe und Runde (Löhne, Kessel, Wache)
   operatingCost: 0.40      # $ je verarbeitetem Barrel Rohöl (Kohle, Chemikalien, Fässer)
-  feedCost: 0.15           # $ je Barrel vom Tank zur Raffinerie (Fuhrwerk/Bahn)
-  feedCostPipeline: 0.03   # … mit eigener Pipeline
   assetShare: 0.6          # Buchwert der Anlage im Imperiumswert (Anteil der Baukosten)
   fire:                    # GDD §6: Raffinerien brennen
     chance: 0.03           # je Runde, in der die Anlage läuft
@@ -646,10 +644,11 @@ refinery:
     yieldLoss: 0.05        # zusätzlicher Verlust bei 100 % saurem Öl
     costAdd: 0.15          # $ je Barrel mehr bei 100 % saurem Öl
   crudeRef: 1.00           # Bezugs-Rohölpreis: Produktpreise hängen zu crudeLink am Posted Price
-  worldDefaults:           # Ersatzwerte, solange es kein Weltmodell gibt (4.1)
-    tech: 50               # Technikstand 0–100
-    tension: 30            # Außenspannung 0–100
-    demand: 1              # Nachfrage-Index (1 = normal)
+  worldDefaults:           # Bezugswelt: typische Welt zu Beginn von Kapitel 2 (Median aus 300 Welten nach 40 Runden,
+                           # npm run welt); gilt auch, solange es kein Weltmodell gibt. Skalen wie state.worldModel (4.1).
+    tech: 15               # Technikstand 0–100 (Kampagnenstart 6–10, nach 40 Runden ~12–17)
+    tension: 20            # Außenspannung 0–100
+    demand: 1.55           # Nachfrage-Index der Welt (effectiveDemand; Start 1, nach 40 Runden ~1,55)
   techs:                   # GDD §6: Technikstufen; Kapitel 2 kennt nur Stufe I
     - stage: 1
       label: Destillation
@@ -660,40 +659,46 @@ refinery:
         fuelOil: { min: 0.10, max: 0.35 }
         gasoline: { min: 0.15, max: 0.20 }
   startMix: { kerosene: 0.55, lubricant: 0.10, fuelOil: 0.15, gasoline: 0.20 }
-  # Je Produkt: Grundpreis in $ je Barrel, Nachfrage des Großhandels in bbl je Runde,
+  # Je Produkt: Grundpreis in $ je Barrel, Nachfrage des Großhandels in bbl je Runde (in der Bezugswelt),
   # Preiselastizität, Bindung an den Rohölpreis, Preisgrenzen (Anteil am Grundpreis).
-  # trend verschiebt die Nachfrage: je Jahr ab refYear, je Technikstand und Außenspannung
-  # (relativ zu worldDefaults), im Krieg, und mit dem Nachfrage-Index hoch demand.
+  # Die Nachfrage aller Produkte zusammen (23.000 bbl) entspricht etwa der Ausbeute EINER
+  # Ausbaustufe (25.000 bbl Rohöl − 5 % Verlust): Schon in Stufe I drückt ein schiefer Mix
+  # oder zu viel Menge den Preis; erst wenn die Welt mehr Öl braucht, lohnt der Ausbau.
+  # Der Startmix (viel Kerosin, viel Benzin) liegt bewusst daneben.
+  # Wachstum: Das allgemeine Wachstum trägt der Nachfrage-Index der Welt (trend.demand =
+  # Exponent auf Welt-Nachfrage / worldDefaults.demand). perYear ist nur die Verschiebung
+  # des Produkts gegenüber dieser allgemeinen Ölnachfrage (Kerosin verliert Anteile,
+  # Benzin gewinnt); tech und tension wirken je 50 bzw. 100 Punkte über der Bezugswelt.
   products:
-    kerosene:              # dominiert zu Beginn, verliert mit der Elektrifizierung
-      basePrice: 2.60
-      demand: 20000
-      elasticity: 0.7
+    kerosene:              # dominiert zu Beginn, verliert mit der Elektrifizierung Anteile
+      basePrice: 2.20
+      demand: 11000
+      elasticity: 1.0
       crudeLink: 0.3
       floor: 0.4
-      ceiling: 1.25
-      trend: { refYear: 98, perYear: -0.03, tech: -0.15, tension: 0, war: 0, demand: 1, min: 0.2 }
-    lubricant:             # Maschinen und Eisenbahn: kleine Menge, guter Preis
-      basePrice: 4.00
-      demand: 3500
-      elasticity: 1.0
+      ceiling: 1.2
+      trend: { refYear: 98, perYear: -0.02, tech: -0.15, tension: 0, war: 0, demand: 1, min: 0.2 }
+    lubricant:             # Maschinen und Eisenbahn: kleine Menge, guter Preis, schnell gesättigt
+      basePrice: 3.60
+      demand: 3000
+      elasticity: 1.2
       crudeLink: 0.2
       floor: 0.4
-      ceiling: 1.25
-      trend: { refYear: 98, perYear: 0.03, tech: 0.10, tension: 0, war: 0.1, demand: 1, min: 0.2 }
+      ceiling: 1.2
+      trend: { refYear: 98, perYear: 0.0, tech: 0.10, tension: 0, war: 0.1, demand: 1, min: 0.2 }
     fuelOil:               # Marine, Eisenbahn, Industrie
-      basePrice: 1.15
-      demand: 9000
-      elasticity: 0.9
+      basePrice: 1.10
+      demand: 5500
+      elasticity: 1.0
       crudeLink: 0.5
       floor: 0.4
-      ceiling: 1.3
-      trend: { refYear: 98, perYear: 0.04, tech: 0.05, tension: 0.8, war: 0.6, demand: 1, min: 0.2 }
-    gasoline:              # wächst mit der Automobilisierung
-      basePrice: 1.10
-      demand: 4500
-      elasticity: 1.1
+      ceiling: 1.2
+      trend: { refYear: 98, perYear: 0.0, tech: 0.05, tension: 0.8, war: 0.6, demand: 1, min: 0.2 }
+    gasoline:              # Nebenprodukt; gewinnt mit der Automobilisierung Anteile
+      basePrice: 1.00
+      demand: 3500
+      elasticity: 1.3
       crudeLink: 0.3
       floor: 0.3
-      ceiling: 1.4
-      trend: { refYear: 98, perYear: 0.12, tech: 0.30, tension: 0, war: 0.3, demand: 1, min: 0.2 }
+      ceiling: 1.2
+      trend: { refYear: 98, perYear: 0.08, tech: 0.30, tension: 0, war: 0.3, demand: 1, min: 0.2 }

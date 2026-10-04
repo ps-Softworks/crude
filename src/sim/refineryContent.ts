@@ -30,6 +30,8 @@ export const REFINERY_TEXT_KEYS = [
   'actions.intake',
   'actions.apply',
   'hints.intake',
+  'hints.feedLimited',
+  'hints.lessIntake',
   'hints.mix',
   'hints.planned',
   'hints.noCrude',

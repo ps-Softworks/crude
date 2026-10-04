@@ -9,6 +9,8 @@ import {
   buildRefinery,
   crudeVsRefined,
   expandRefinery,
+  feedCapacity,
+  feedLimited,
   normalizeMix,
   planRun,
   plannedCrude,
@@ -119,6 +121,7 @@ function PlantPanel({ ctx }: { ctx: SheetContext }) {
           </label>
           <p className="klein">{rt('hints.intake')}</p>
           <p>{geplant > 0 ? rt('hints.planned', { crude: barrels(geplant) }) : rt('hints.noCrude')}</p>
+          {feedLimited(game, balance) && <p className="klein">{rt('hints.feedLimited', { crude: barrels(feedCapacity(game, balance)) })}</p>}
         </>
       )}
       {r.last && (
@@ -208,6 +211,9 @@ function ComparePanel({ ctx }: { ctx: SheetContext }) {
         </tbody>
       </table>
       <p>{v.advantage >= 0 ? rt('hints.refineBetter', { diff }) : rt('hints.sellBetter', { diff })}</p>
+      {v.advantage >= 0 && v.marginalNet < v.crudeNet && (
+        <p>{rt('hints.lessIntake', { marginal: price(v.marginalNet), crude: price(v.crudeNet) })}</p>
+      )}
       <p className="klein">{rt('hints.compare')}</p>
     </div>
   );

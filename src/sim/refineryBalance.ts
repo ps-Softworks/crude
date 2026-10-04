@@ -28,11 +28,15 @@ export interface RefineryTech {
 export interface ProductTrend {
   /** Bezugsjahr: hier ist der Jahreseinfluss 0. */
   refYear: number;
-  /** Nachfrage je Jahr seit refYear (Anteil, z. B. 0,12 = +12 %). */
+  /**
+   * Verschiebung je Jahr seit refYear gegenüber der allgemeinen Ölnachfrage
+   * (Anteil, z. B. 0,08 = +8 %). Das allgemeine Wachstum trägt der
+   * Nachfrage-Index der Welt (Exponent demand), nicht dieser Wert.
+   */
   perYear: number;
-  /** Je 50 Punkte Technikstand über dem Ersatzwert. */
+  /** Je 50 Punkte Technikstand über der Bezugswelt. */
   tech: number;
-  /** Je 100 Punkte Außenspannung über dem Ersatzwert. */
+  /** Je 100 Punkte Außenspannung über der Bezugswelt. */
   tension: number;
   /** Zuschlag im Krieg. */
   war: number;
@@ -66,8 +70,6 @@ export interface RefineryBalance {
   expandRounds: number;
   upkeepPerLevel: number;
   operatingCost: number;
-  feedCost: number;
-  feedCostPipeline: number;
   assetShare: number;
   fire: { chance: number; repairCost: number; repairRounds: number };
   sour: { yieldLoss: number; costAdd: number };
@@ -190,8 +192,6 @@ export function parseRefineryBalance(raw: unknown): RefineryBalance {
     expandRounds: int(raw, 'expandRounds', 1),
     upkeepPerLevel: nonNeg(raw, 'upkeepPerLevel'),
     operatingCost: nonNeg(raw, 'operatingCost'),
-    feedCost: nonNeg(raw, 'feedCost'),
-    feedCostPipeline: nonNeg(raw, 'feedCostPipeline'),
     assetShare: share(raw, 'assetShare'),
     fire: { chance: share(raw, 'fire.chance'), repairCost: nonNeg(raw, 'fire.repairCost'), repairRounds: int(raw, 'fire.repairRounds', 1) },
     sour: { yieldLoss: share(raw, 'sour.yieldLoss'), costAdd: nonNeg(raw, 'sour.costAdd') },

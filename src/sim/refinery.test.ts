@@ -20,7 +20,9 @@ import {
   PRODUCTS,
   refineryAssets,
   refineryCapacity,
-  refineryFeedCost,
+  feedCapacity,
+  feedLimited,
+  planFeed,
   refineryStatus,
   refineryTech,
   refineryUnlockedFor,
@@ -32,6 +34,8 @@ import {
   type RefineryWorld,
 } from './refinery';
 import { deserializeGame, serializeGame } from './save';
+import { sellOil } from './transport';
+import { effectiveDemand, newWorld, skipWorld } from './world';
 import { loadBalance, rawBalance } from './testBalance';
 
 const balance = loadBalance();
@@ -54,7 +58,18 @@ function fertig(level = 1, extra: Partial<GameState> = {}): GameState {
   return { ...s, refinery: { ...s.refinery!, level } };
 }
 
-const welt: RefineryWorld = { year: R.products.kerosene.trend.refYear, tech: R.worldDefaults.tech, tension: R.worldDefaults.tension, war: false, demand: 1 };
+const welt: RefineryWorld = {
+  year: R.products.kerosene.trend.refYear,
+  tech: R.worldDefaults.tech,
+  tension: R.worldDefaults.tension,
+  war: false,
+  demand: R.worldDefaults.demand,
+};
+
+/** Mit fertiger eigener Pipeline (dann bremsen die Wege eine Ausbaustufe nicht). */
+function mitPipeline(s: GameState): GameState {
+  return { ...s, logistics: { ...s.logistics, pipeline: 'ready' } };
+}
 
 describe('Raffinerie: Spielzahlen (balance.yaml)', () => {
   it('lädt den Block refinery mit Stufe I Destillation', () => {
@@ -216,18 +231,113 @@ describe('Raffinerie: Preise und Absatz', () => {
     expect(demandFactor('kerosene', { ...welt, year: welt.year + 100 }, balance)).toBeCloseTo(R.products.kerosene.trend.min, 6);
   });
 
-  it('liest Weltgrößen aus state.world (4.1), sonst Ersatzwerte', () => {
+  it('liest Weltgrößen aus state.worldModel (4.1), ohne Weltmodell die Bezugswelt', () => {
     const s = newGame('welt', balance);
-    const ersatz = refineryWorld(s, balance);
-    expect(ersatz).toMatchObject({ tech: R.worldDefaults.tech, tension: R.worldDefaults.tension, war: false, demand: R.worldDefaults.demand });
-    const mitWelt = refineryWorld({ ...s, world: { tech: 70, tension: 80, war: 3, demand: 1.2 } } as GameState, balance);
-    expect(mitWelt).toMatchObject({ tech: 70, tension: 80, war: true, demand: 1.2 });
+    const w = s.worldModel;
+    expect(refineryWorld(s, balance)).toMatchObject({
+      tech: w.tech,
+      tension: w.tension,
+      war: false,
+      demand: effectiveDemand(w, balance.worldModel),
+    });
+    const ohne = refineryWorld({ ...s, worldModel: undefined }, balance);
+    expect(ohne).toMatchObject({ tech: R.worldDefaults.tech, tension: R.worldDefaults.tension, war: false, demand: R.worldDefaults.demand });
+    const krieg = refineryWorld({ ...s, worldModel: { ...w, tech: 70, tension: 80, war: 3, crash: 0, demand: 1.2 } }, balance);
+    expect(krieg).toMatchObject({ tech: 70, tension: 80, war: true });
+    // Nachfrage = effectiveDemand: Aufrüstung und Krieg heben sie über die Grundnachfrage.
+    expect(krieg.demand).toBeCloseTo(effectiveDemand({ demand: 1.2, tension: 80, crash: 0, war: 3 }, balance.worldModel), 9);
+    expect(krieg.demand).toBeGreaterThan(1.2);
+  });
+
+  it('passt zur Skala des Weltmodells: zu Beginn von Kapitel 2 liegt jede Produktnachfrage nahe am Bezugswert', () => {
+    // 40 Runden nach Kampagnenstart (Kapitel 1 + Zeitsprung) im Bezugsjahr: weder
+    // Technik noch Nachfrage-Index dürfen die Produkte stark verschieben.
+    for (const seed of ['a', 'b', 'c', 'd', 'e', 'f']) {
+      const wm = skipWorld(newWorld(seed, balance.worldModel), balance.worldModel, 40);
+      if (wm.crash > 0 || wm.war > 0) continue;
+      const s = { ...newGame(seed, balance), startYear: R.products.kerosene.trend.refYear, round: 1, worldModel: wm };
+      const w = refineryWorld(s, balance);
+      for (const p of PRODUCTS) {
+        expect(demandFactor(p, { ...w, tension: R.worldDefaults.tension }, balance)).toBeGreaterThan(0.85);
+        expect(demandFactor(p, { ...w, tension: R.worldDefaults.tension }, balance)).toBeLessThan(1.15);
+      }
+    }
+  });
+
+  it('das Wachstum zählt einmal: der Nachfrage-Index der Welt trägt es, perYear verschiebt nur Anteile', () => {
+    // Doppelte Welt-Nachfrage → doppelte Produktnachfrage (Exponent 1), ohne Jahreszuschlag.
+    for (const p of PRODUCTS) {
+      expect(demandFactor(p, { ...welt, demand: 2 * welt.demand }, balance)).toBeCloseTo(2, 6);
+    }
+    // Die Jahrestrends heben sich über die Produkte ungefähr auf (Anteile, kein eigenes Wachstum):
+    // im Mittel über die Nachfrage gewichtet höchstens ±3 % je Jahr.
+    const gesamt = PRODUCTS.reduce((a, p) => a + R.products[p].demand, 0);
+    const mittel = PRODUCTS.reduce((a, p) => a + R.products[p].demand * R.products[p].trend.perYear, 0) / gesamt;
+    expect(Math.abs(mittel)).toBeLessThanOrEqual(0.03);
+  });
+});
+
+describe('Raffinerie: Zufuhr über die Transportwege (GDD §6)', () => {
+  it('nimmt den billigsten freien Weg zuerst und zahlt dessen Tarif', () => {
+    const s = fertig(1, { oilStock: 60_000 });
+    const t = balance.transport;
+    const f = planFeed(s, balance, 22_000);
+    expect(f.byMode.rail).toBe(t.rail.capacity);
+    expect(f.byMode.wagon).toBe(22_000 - t.rail.capacity);
+    expect(f.cost).toBeCloseTo(t.rail.capacity * s.railTariff + (22_000 - t.rail.capacity) * t.wagon.costPerBarrel, 2);
+    const p = planFeed(mitPipeline(s), balance, 22_000);
+    expect(p.byMode.pipeline).toBe(22_000);
+    expect(p.cost).toBeCloseTo(22_000 * t.pipeline.costPerBarrel, 2);
+  });
+
+  it('die Wege begrenzen die Menge: ohne Pipeline schaffen Bahn und Fuhrwerk keine volle Ausbaustufe', () => {
+    const s = fertig(1, { oilStock: 60_000 });
+    const t = balance.transport;
+    expect(feedCapacity(s, balance)).toBe(t.rail.capacity + t.wagon.capacity);
+    expect(plannedCrude(s, balance)).toBe(Math.min(R.unitCapacity, t.rail.capacity + t.wagon.capacity));
+    expect(feedLimited(s, balance)).toBe(R.unitCapacity > t.rail.capacity + t.wagon.capacity);
+    expect(plannedCrude(mitPipeline(s), balance)).toBe(R.unitCapacity);
+  });
+
+  it('teilt sich die Kapazität mit den Verkäufen der Runde', () => {
+    const s = fertig(1, { oilStock: 60_000 });
+    const verkauft = ok(sellOil(s, balance, 'rail', balance.transport.rail.capacity) as RefineryResult);
+    expect(feedCapacity(verkauft, balance)).toBe(balance.transport.wagon.capacity);
+    expect(plannedCrude(verkauft, balance)).toBe(balance.transport.wagon.capacity);
+  });
+
+  it('belegt die Wege wie eine Lieferung: Bahnfracht zählt für Thorne, endRound gibt sie wieder frei', () => {
+    const s = fertig(1, { oilStock: 10_000 });
+    const n = advanceRefinery(s, balance);
+    expect(n.shipped.rail).toBe(10_000);
+    expect(n.refinery!.last!.feed).toBeCloseTo(10_000 * s.railTariff, 2);
+    const runde = endRound(s, balance);
+    expect(runde.shipped.rail).toBe(0);
+  });
+
+  it('eine sabotierte Pipeline fällt weg', () => {
+    const s = fertig(1, { oilStock: 60_000 });
+    const kaputt = { ...s, logistics: { ...s.logistics, pipeline: 'damaged' as const } };
+    expect(planFeed(kaputt, balance, 10_000).byMode.pipeline).toBe(0);
+  });
+
+  it('während Thornes Exklusivvertrag kostet jeder andere Weg die Strafe – dann fährt die Bahn zuerst', () => {
+    const s = mitPipeline(fertig(1, { oilStock: 60_000 }));
+    const strafe = balance.transport.thorne.exclusivePenalty;
+    const exklusiv: GameState = { ...s, railTariff: 0.2, events: { ...s.events, marks: { ...s.events.marks, thorne_exklusiv: s.round } } };
+    expect(balance.transport.pipeline.costPerBarrel + strafe).toBeGreaterThan(0.2);
+    const f = planFeed(exklusiv, balance, 5_000);
+    expect(f.byMode.rail).toBe(5_000);
+    expect(f.byMode.pipeline).toBe(0);
+    // Reicht die Bahn nicht, zahlt der Rest die Strafe.
+    const viel = planFeed(exklusiv, balance, balance.transport.rail.capacity + 1_000);
+    expect(viel.cost).toBeCloseTo(balance.transport.rail.capacity * 0.2 + 1_000 * (balance.transport.pipeline.costPerBarrel + strafe), 2);
   });
 });
 
 describe('Raffinerie: eine Runde', () => {
   it('verarbeitet Öl aus dem Tank bis zur Kapazität × Anteil, verkauft die Produkte', () => {
-    const s = fertig(1, { oilStock: 60_000, royaltyOil: 6_000 });
+    const s = mitPipeline(fertig(1, { oilStock: 60_000, royaltyOil: 6_000 }));
     expect(plannedCrude(s, balance)).toBe(R.unitCapacity);
     const plan = planRun(s, balance, R.unitCapacity);
     const n = advanceRefinery(s, balance);
@@ -248,12 +358,6 @@ describe('Raffinerie: eine Runde', () => {
     const n = advanceRefinery(aus, balance);
     expect(n.oilStock).toBe(50_000);
     expect(n.cash).toBe(aus.cash - R.upkeepPerLevel);
-  });
-
-  it('mit eigener Pipeline ist die Zufuhr billiger', () => {
-    const s = fertig(1);
-    expect(refineryFeedCost(s, balance)).toBe(R.feedCost);
-    expect(refineryFeedCost({ logistics: { ...s.logistics, pipeline: 'ready' } }, balance)).toBe(R.feedCostPipeline);
   });
 
   it('saures Rohöl bringt weniger und kostet mehr', () => {
@@ -320,6 +424,56 @@ describe('Raffinerie: Abwägung Rohöl verkaufen oder raffinieren', () => {
 
   it('bei sehr hohem Rohölpreis und Überangebot an Produkten kann Rohöl besser sein', () => {
     const s = fertig(R.maxLevel, { oilStock: 500_000, postedPrice: balance.market.priceMax * 3 });
+    const v = crudeVsRefined(s, balance, welt);
+    expect(v.advantage).toBeLessThan(0);
+  });
+});
+
+describe('Raffinerie: Balance in Stufe I (Bezugswelt, Rohöl zum Bezugspreis)', () => {
+  /** Stufe I mit Pipeline, Bezugsjahr, Rohöl zum Bezugspreis, Tank voll. */
+  function stufe1(mix: Partial<Record<(typeof PRODUCTS)[number], number>>, intake: number): GameState {
+    const s = mitPipeline(fertig(1, { oilStock: 100_000, royaltyOil: 0, postedPrice: R.crudeRef, startYear: welt.year, round: 1 }));
+    return ok(setRefineryIntake(ok(setRefineryMix(s, balance, mix)), intake));
+  }
+  /** Mehrerlös gegenüber dem Verkauf derselben Menge Rohöl (ohne Fixkosten). */
+  function gewinn(s: GameState): number {
+    const crude = plannedCrude(s, balance);
+    const run = planRun(s, balance, crude, { world: welt });
+    return run.revenue - run.operating - run.feed - crude * crudeVsRefined(s, balance, welt).crudeNet;
+  }
+  const guterMix = { kerosene: 0.5, lubricant: 0.15, fuelOil: 0.2, gasoline: 0.15 };
+
+  it('die Nachfrage aller Produkte entspricht etwa der Ausbeute einer Ausbaustufe', () => {
+    const nachfrage = PRODUCTS.reduce((a, p) => a + productDemand(p, welt, balance), 0);
+    const ausbeute = R.unitCapacity * (1 - R.techs[0].loss);
+    expect(nachfrage / ausbeute).toBeGreaterThan(0.8);
+    expect(nachfrage / ausbeute).toBeLessThan(1.1);
+  });
+
+  it('ein schiefer Mix kostet schon in Stufe I spürbar', () => {
+    const schief = gewinn(stufe1(R.startMix, 0.75));
+    const gut = gewinn(stufe1(guterMix, 0.75));
+    expect(gut).toBeGreaterThan(schief * 1.2);
+  });
+
+  it('zu viel Menge drückt die Preise: bei voller Menge bringen die letzten Barrel weniger als der Verkauf', () => {
+    const voll = crudeVsRefined(stufe1(guterMix, 1), balance, welt);
+    expect(voll.marginalNet).toBeLessThan(voll.crudeNet);
+    const halb = crudeVsRefined(stufe1(guterMix, 0.5), balance, welt);
+    expect(halb.marginalNet).toBeGreaterThan(halb.crudeNet);
+    expect(gewinn(stufe1(guterMix, 0.75))).toBeGreaterThan(gewinn(stufe1(guterMix, 1)));
+  });
+
+  it('gut eingestellt lohnt das Raffinieren, aber ohne Preisobergrenze für alles', () => {
+    const s = stufe1(guterMix, 0.75);
+    expect(gewinn(s)).toBeGreaterThan(0);
+    const run = planRun(s, balance, plannedCrude(s, balance), { world: welt });
+    const amDeckel = PRODUCTS.filter((p) => run.prices[p] >= productPrice(p, 1, R.crudeRef, welt, balance) - 0.005);
+    expect(amDeckel.length).toBeLessThan(PRODUCTS.length);
+  });
+
+  it('eine zweite Ausbaustufe bei voller Menge drückt in der Bezugswelt unter den Rohölverkauf', () => {
+    const s = mitPipeline(fertig(2, { oilStock: 100_000, royaltyOil: 0, postedPrice: R.crudeRef, startYear: welt.year, round: 1 }));
     const v = crudeVsRefined(s, balance, welt);
     expect(v.advantage).toBeLessThan(0);
   });

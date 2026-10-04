@@ -3,10 +3,12 @@
 //   Leistung = Kapazität × Technikstufe × Produktmix
 //
 // Jacob baut eine Destillationsanlage (Technikstufe I) und baut sie in Stufen aus.
-// Am Rundenende geht Rohöl, das noch im Tank steht, bis zur eingestellten Menge
-// in die Raffinerie – was Jacob in der Runde verkauft hat, ist schon weg. Das ist
-// die Abwägung: Rohöl verkaufen (Posted Price minus Fracht) oder raffinieren
-// (Produktpreise minus Betriebskosten). Aus dem Rohöl werden Kerosin, Schmieröl,
+// Sie steht am Bahnhof (am Ende der kleinen Pipeline). Am Rundenende geht Rohöl,
+// das noch im Tank steht, bis zur eingestellten Menge in die Raffinerie – über
+// dieselben Transportwege wie beim Verkauf, mit deren freier Kapazität und Tarif.
+// Was Jacob in der Runde verkauft hat, ist schon weg. Das ist die Abwägung:
+// Rohöl verkaufen (Posted Price minus Fracht) oder raffinieren (Produktpreise
+// minus Betriebskosten und Fracht). Aus dem Rohöl werden Kerosin, Schmieröl,
 // Heizöl und – als Nebenprodukt, ca. 20 % – Benzin. Den Mix stellt Jacob
 // innerhalb der Grenzen der Technikstufe ein. Der Großhandel nimmt alles ab,
 // aber jedes Produkt hat eine eigene Nachfragekurve: Wer mehr anbietet, als
@@ -22,7 +24,8 @@ import { dateOf, formatDate } from './calendar';
 import type { GameState } from './game';
 import { Rng, seedFromString, type RngState } from './rng';
 import { PRODUCTS, type MixBound, type Product, type ProductMix, type RefineryTech } from './refineryBalance';
-import { modeCapacity, modeUnavailable, netPrice } from './transport';
+import { capacityLeft, modeCapacity, modeUnavailable, netPrice, tariff } from './transport';
+import { effectiveDemand } from './world';
 
 export { PRODUCTS, type Product, type ProductMix } from './refineryBalance';
 
@@ -40,7 +43,7 @@ export interface RefineryRun {
   revenue: number;
   /** Betriebskosten (mit Zuschlag für saures Öl). */
   operating: number;
-  /** Fracht vom Tank zur Raffinerie. */
+  /** Fracht vom Tank zur Raffinerie über die Transportwege. */
   feed: number;
   /** Förderzins für das raffinierte Öl der Landbesitzer (zum Posted Price). */
   royalty: number;
@@ -79,19 +82,20 @@ export type RefineryStatus = 'locked' | 'none' | 'building' | 'running' | 'expan
 // --- Schnittstelle zur Welt (4.1) ---------------------------------------------
 
 /**
- * Was die Raffinerie vom Weltmodell braucht. Solange es 4.1 noch nicht gibt,
- * kommen die Ersatzwerte aus balance.refinery.worldDefaults.
+ * Was die Raffinerie vom Weltmodell (state.worldModel, src/sim/world.ts) braucht.
+ * Fehlt das Weltmodell, gelten die Werte der Bezugswelt aus
+ * balance.refinery.worldDefaults (typische Welt zu Beginn von Kapitel 2).
  */
 export interface RefineryWorld {
   /** Jahr der Föderation. */
   year: number;
-  /** Technikstand 0–100. */
+  /** Technikstand 0–100 (Skala wie worldModel.tech: Start 6–10, logistisch bis ~100). */
   tech: number;
   /** Außenspannung 0–100. */
   tension: number;
   /** Krieg in Übersee. */
   war: boolean;
-  /** Nachfrage-Index (1 = normal). */
+  /** Ölnachfrage der Welt als Index (Skala wie worldModel: Start 1, wächst bis zur Sättigung). */
   demand: number;
 }
 
@@ -100,21 +104,28 @@ function zahl(v: unknown): v is number {
 }
 
 /**
- * 4.1 Andockpunkt: liest die Weltgrößen aus state.world, wenn es das gibt
- * (Felder tech, tension, war, demand wie in src/sim/world.ts aus Block A),
- * sonst die Ersatzwerte. Fehlende oder kaputte Felder nehmen einzeln den Ersatzwert.
+ * 4.1 Andockpunkt: liest die Weltgrößen aus state.worldModel (Block A). Die
+ * Nachfrage ist effectiveDemand() – Grundnachfrage samt Aufrüstung, Crash und
+ * Krieg; sie trägt das allgemeine Wachstum der Ölnachfrage. Ohne Weltmodell
+ * (oder bei kaputten Feldern, je Feld) gelten die Werte der Bezugswelt.
  */
-export function refineryWorld(state: Pick<GameState, 'round' | 'startYear'>, balance: Balance): RefineryWorld {
+export function refineryWorld(state: Pick<GameState, 'round' | 'startYear'> & { worldModel?: unknown }, balance: Balance): RefineryWorld {
   const d = balance.refinery.worldDefaults;
-  const w = (state as { world?: unknown }).world;
+  const w = state.worldModel;
   const o = w && typeof w === 'object' ? (w as Record<string, unknown>) : {};
   const war = typeof o.war === 'boolean' ? o.war : zahl(o.war) ? o.war > 0 : false;
+  let demand = d.demand;
+  if (zahl(o.demand) && o.demand > 0) {
+    const tension = zahl(o.tension) ? o.tension : 0;
+    const crash = zahl(o.crash) ? o.crash : 0;
+    demand = effectiveDemand({ demand: o.demand, tension, crash, war: war ? 1 : 0 }, balance.worldModel);
+  }
   return {
     year: dateOf(state).year,
     tech: zahl(o.tech) ? o.tech : d.tech,
     tension: zahl(o.tension) ? o.tension : d.tension,
     war,
-    demand: zahl(o.demand) && o.demand > 0 ? o.demand : d.demand,
+    demand,
   };
 }
 
@@ -329,8 +340,12 @@ export function setRefineryIntake(state: GameState, intake: number): RefineryRes
 // --- Preise und Absatz ----------------------------------------------------------
 
 /**
- * Nachfrage-Faktor eines Produkts aus der Welt (1 = wie im Bezugsjahr bei den
- * Ersatzwerten): Jahr, Technikstand, Außenspannung, Krieg, Nachfrage-Index.
+ * Nachfrage-Faktor eines Produkts aus der Welt (1 = im Bezugsjahr in der
+ * Bezugswelt). Das allgemeine Wachstum kommt allein über den Nachfrage-Index
+ * der Welt (hoch trend.demand); perYear verschiebt nur den Anteil des Produkts
+ * an dieser Ölnachfrage (Kerosin verliert, Benzin gewinnt), damit das Wachstum
+ * nicht doppelt zählt. Dazu Technikstand, Außenspannung und Krieg gegenüber
+ * der Bezugswelt.
  */
 export function demandFactor(product: Product, world: RefineryWorld, balance: Balance): number {
   const t = balance.refinery.products[product].trend;
@@ -362,16 +377,85 @@ export function productPrice(product: Product, sold: number, postedPrice: number
   return cents(p.basePrice * bindung * clamp(knapp, p.floor, p.ceiling));
 }
 
-/** Fracht je Barrel vom Tank zur Raffinerie: mit laufender eigener Pipeline billiger. */
-export function refineryFeedCost(state: Pick<GameState, 'logistics'>, balance: Balance): number {
-  return state.logistics.pipeline === 'ready' ? balance.refinery.feedCostPipeline : balance.refinery.feedCost;
+// --- Zufuhr über die Transportwege (GDD §6: Felder → Raffinerie) ----------------
+
+/** Die Wege aus Kapitel 1, in dieser Reihenfolge bei gleichem Tarif. */
+const FEED_MODES: readonly TransportMode[] = ['pipeline', 'teams', 'rail', 'wagon'];
+
+/** Wie das Rohöl einer Runde zur Raffinerie kommt. */
+export interface RefineryFeed {
+  /** Barrel je Weg. */
+  byMode: Record<TransportMode, number>;
+  /** Barrel insgesamt (≤ gewünschte Menge, begrenzt durch die freie Kapazität der Wege). */
+  barrels: number;
+  /** Fracht in $ (Tarife wie beim Verkauf, mit Bahntarif, Mengenrabatt und Thornes Exklusivstrafe). */
+  cost: number;
 }
 
-/** Barrel Rohöl, die am Ende dieser Runde in die Raffinerie gehen würden. */
-export function plannedCrude(state: Pick<GameState, 'refinery' | 'oilStock'>, balance: Balance): number {
+type FeedLage = Pick<GameState, 'round' | 'logistics' | 'shipped' | 'railTariff' | 'postedPrice'> & Partial<Pick<GameState, 'events'>>;
+
+/** Die Wege, die diese Runde noch Rohöl zur Raffinerie bringen können, billigster zuerst. */
+function feedModes(state: FeedLage, balance: Balance): TransportMode[] {
+  return FEED_MODES.filter((m) => !modeUnavailable(state, m) && capacityLeft(state, balance, m) > 0)
+    .map((m, i) => ({ m, i, t: tariff(state, balance, m) }))
+    .sort((x, y) => x.t - y.t || x.i - y.i)
+    .map((x) => x.m);
+}
+
+/**
+ * Die Raffinerie steht am Bahnhof, am Ende der kleinen Pipeline – dort, wo sonst
+ * Crane das Rohöl abnimmt. Das Öl vom Feld muss also über dieselben Wege wie
+ * beim Verkauf: Es teilt sich die Kapazität dieser Runde mit den Verkäufen und
+ * zahlt denselben Tarif (billigster freier Weg zuerst). Gesperrte Wege
+ * (Pipeline nach Sabotage, stillstehende Fuhrwerke) fallen weg.
+ */
+export function planFeed(state: FeedLage, balance: Balance, wanted: number): RefineryFeed {
+  const byMode: Record<TransportMode, number> = { wagon: 0, rail: 0, teams: 0, pipeline: 0 };
+  let rest = Math.max(0, Math.floor(wanted));
+  let cost = 0;
+  for (const m of feedModes(state, balance)) {
+    if (rest <= 0) break;
+    const n = Math.min(rest, capacityLeft(state, balance, m));
+    byMode[m] = n;
+    cost += n * tariff(state, balance, m);
+    rest -= n;
+  }
+  const barrels = FEED_MODES.reduce((s, m) => s + byMode[m], 0);
+  return { byMode, barrels, cost: cents(cost) };
+}
+
+/** Wie viele Barrel die Wege diese Runde noch zur Raffinerie bringen können. */
+export function feedCapacity(state: FeedLage, balance: Balance): number {
+  return feedModes(state, balance).reduce((s, m) => s + capacityLeft(state, balance, m), 0);
+}
+
+/**
+ * Fracht für `crude` Barrel zur Raffinerie. Passt die Menge nicht mehr auf die
+ * Wege (nur in Vorschauen, etwa bei leerem Tank), zählt der Rest zum teuersten
+ * Tarif der Wege – dann ist die Vorschau eher vorsichtig.
+ */
+function feedCost(state: FeedLage, balance: Balance, crude: number): number {
+  const feed = planFeed(state, balance, crude);
+  const rest = Math.max(0, Math.floor(crude) - feed.barrels);
+  if (rest === 0) return feed.cost;
+  const tarife = FEED_MODES.filter((m) => !modeUnavailable(state, m) && modeCapacity(state, balance, m) > 0).map((m) => tariff(state, balance, m));
+  return cents(feed.cost + rest * (tarife.length > 0 ? Math.max(...tarife) : tariff(state, balance, 'wagon')));
+}
+
+/** Barrel Rohöl, die am Ende dieser Runde in die Raffinerie gehen würden: Einstellung, Tank und freie Wege. */
+export function plannedCrude(state: Pick<GameState, 'refinery' | 'oilStock'> & FeedLage, balance: Balance): number {
   const r = state.refinery;
   if (!r) return 0;
-  return Math.max(0, Math.min(Math.floor(r.intake * refineryCapacity(state, balance) + 1e-9), Math.floor(state.oilStock + 1e-9)));
+  const wunsch = Math.min(Math.floor(r.intake * refineryCapacity(state, balance) + 1e-9), Math.floor(state.oilStock + 1e-9));
+  return Math.max(0, Math.min(wunsch, feedCapacity(state, balance)));
+}
+
+/** Begrenzen die Wege die Zufuhr? (Mehr eingestellt und im Tank, als die Wege noch schaffen.) */
+export function feedLimited(state: Pick<GameState, 'refinery' | 'oilStock'> & FeedLage, balance: Balance): boolean {
+  const r = state.refinery;
+  if (!r) return false;
+  const wunsch = Math.min(Math.floor(r.intake * refineryCapacity(state, balance) + 1e-9), Math.floor(state.oilStock + 1e-9));
+  return wunsch > feedCapacity(state, balance);
 }
 
 /**
@@ -408,7 +492,7 @@ export function planRun(
     prices,
     revenue: cents(revenue),
     operating: cents(menge * (b.operatingCost + sour * b.sour.costAdd)),
-    feed: cents(menge * refineryFeedCost(state, balance)),
+    feed: feedCost(state, balance, menge),
     royalty: cents(royaltyBarrels * state.postedPrice),
     upkeep: cents((r?.level ?? 0) * b.upkeepPerLevel),
     net: 0,
@@ -429,6 +513,12 @@ export interface CrudeVsRefined {
   crude: number;
   /** refinedNet − crudeNet: positiv = raffinieren lohnt. */
   advantage: number;
+  /**
+   * Was die letzten Barrel (die letzten 5 % der Kapazität) in der Raffinerie
+   * bringen, nach Betriebskosten und Fracht. Liegt das unter crudeNet, drückt
+   * die Menge die Produktpreise so sehr, dass Verkaufen für diese Barrel besser ist.
+   */
+  marginalNet: number;
 }
 
 /**
@@ -449,18 +539,25 @@ export function crudeVsRefined(state: GameState, balance: Balance, world?: Refin
     }
   }
   const geplant = plannedCrude(state, balance);
-  const crude = geplant > 0 ? geplant : Math.max(refineryCapacity(state, balance), balance.refinery.unitCapacity);
+  const voll = Math.max(refineryCapacity(state, balance), balance.refinery.unitCapacity);
+  const frei = feedCapacity(state, balance);
+  const crude = geplant > 0 ? geplant : frei > 0 ? Math.min(voll, frei) : voll;
   const run = planRun(state, balance, crude, { world });
   const refinedNet = crude > 0 ? cents((run.revenue - run.operating - run.feed) / crude) : 0;
+  const schritt = Math.min(crude, Math.max(1, Math.round(0.05 * Math.max(refineryCapacity(state, balance), balance.refinery.unitCapacity))));
+  const weniger = planRun(state, balance, crude - schritt, { world });
+  const marginalNet =
+    schritt > 0 ? cents((run.revenue - run.operating - run.feed - (weniger.revenue - weniger.operating - weniger.feed)) / schritt) : 0;
   const cn = crudeMode ? crudeNet : 0;
-  return { crudeNet: cn, crudeMode, refinedNet, crude, advantage: cents(refinedNet - cn) };
+  return { crudeNet: cn, crudeMode, refinedNet, crude, advantage: cents(refinedNet - cn), marginalNet };
 }
 
 // --- Rundenende -----------------------------------------------------------------
 
 /**
  * Rundenende (4.6 Andockpunkt in endRound, vor dem Lager): Erst raffiniert die
- * Anlage, was aus dem Tank kommt, und verkauft die Produkte an den Großhandel;
+ * Anlage, was aus dem Tank über die freien Transportwege kommt (planFeed), und
+ * verkauft die Produkte an den Großhandel;
  * Fixkosten fallen für jede fertige Stufe an. Dann kann sie brennen (nur wenn
  * sie lief; gewürfelt wird jede Runde mit fertiger Anlage, damit der Zufall
  * gleich bleibt). Dann laufen Reparatur und Baustelle weiter. Ohne Raffinerie
@@ -476,11 +573,17 @@ export function advanceRefinery(input: GameState, balance: Balance, world?: Refi
 
   if (r.level > 0) {
     const crude = plannedCrude(state, balance);
+    const feed = planFeed(state, balance, crude);
     const run = planRun(state, balance, crude, { world });
     const royaltyBarrels = state.oilStock > 0 ? (crude * state.royaltyOil) / state.oilStock : 0;
     lief = crude > 0;
+    // Die Zufuhr belegt die Wege wie eine Lieferung: Bahnfracht zählt für Thornes
+    // Tariferhöhung und die Mindestabnahme (advanceTransport läuft danach).
+    const shipped = { ...state.shipped };
+    for (const m of FEED_MODES) shipped[m] = (shipped[m] ?? 0) + feed.byMode[m];
     state = {
       ...state,
+      shipped,
       oilStock: Math.max(0, state.oilStock - crude),
       royaltyOil: Math.max(0, state.royaltyOil - royaltyBarrels),
       cash: cents(state.cash + run.net),
