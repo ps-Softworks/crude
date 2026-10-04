@@ -6,6 +6,7 @@ import { keyLabel, SHORTCUTS } from '../keys';
 import { Tabs, activeTab } from '../sheet/Tabs';
 import { tester } from '../tester';
 import type { SheetContext } from './types';
+import { DiplomacyDebug } from './DiplomacySheet'; // 4.10 Andockpunkt
 
 export interface MenuProps {
   ctx: SheetContext;
@@ -165,6 +166,7 @@ export function MenuSheet(p: MenuProps) {
             </button>
           </form>
           <WorldDebug ctx={ctx} />
+          <DiplomacyDebug ctx={ctx} /* 4.10 Andockpunkt */ />
         </section>
       )}
     </Tabs>

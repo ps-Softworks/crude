@@ -40,6 +40,7 @@ import {
   WallMapShape,
 } from './objects/Shapes';
 import { RuthNote } from './RuthNote';
+import { diplomacyPin } from '../sheets/DiplomacySheet'; // 4.10 Andockpunkt
 
 /** Wo was liegt, in Prozent der Bühne (unter der Kopfleiste). */
 const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte' | 'tuer', Placement> = {
@@ -177,6 +178,7 @@ export function DeskScene(p: DeskSceneProps) {
               <span className="pinnwand-zettel">
                 <span>{lage.bullard}</span>
                 {lage.wildcatter && <span>{lage.wildcatter}</span>}
+                {diplomacyPin(game) && <span>{diplomacyPin(game)}</span> /* 4.10 Andockpunkt */}
               </span>
             ),
           },

@@ -1,0 +1,389 @@
+# Kapitel 2 – Rivalen-Diplomatie und Crane-Nachfolge (4.10, GDD §9, §13). Entwurf von Claude,
+# bitte in eigener Stimme umschreiben. Vorlage und Erklärung: docs/ereignis-vorlage.md
+#
+# Diese Ereignisse kommen erst, wenn die Simulation die Diplomatie startet (Kapitel 2):
+# Sie hängen alle an Merkzeichen, die nur src/sim/diplomacy*.ts setzt. In Kapitel 1
+# erscheint keins davon.
+#
+# Merkzeichen der Simulation (src/sim/diplomacyCore.ts, DIPLO_MARKS – Namen nicht ändern):
+#   k2_diplomatie          die Diplomatie hat begonnen (Kapitelstart)
+#   k2_nachfolge_margaret  Margaret Crane hat den Aufsichtsrat gewonnen
+#   k2_nachfolge_pruett    Harold Pruett hat den Aufsichtsrat gewonnen
+#   k2_trust_zerschlagen   das Gericht hat den Crane Trust zerschlagen
+#   k2_verband_gegruendet  Rosa Delgado hat den Produzentenverband gegründet
+#   k2_verband_zu_gross    Harlan Oil ist für Delgado selbst ein Trust geworden
+#   k2_verrat              Jacob hat zum ersten Mal eine Absprache gebrochen
+#   k2_hintergangen        ein Rivale hat zum ersten Mal eine Absprache mit Jacob gebrochen
+#
+# Merkzeichen aus Antworten, die die Simulation liest (je genau einmal):
+#   k2_crane_abschied      beide Erben trauen Jacob mehr (diplomacy.succession.farewellTrust)
+#   k2_rueckhalt_margaret  Zusage an Margaret: ihr Anteil im Aufsichtsrat steigt (visitShift)
+#   k2_rueckhalt_pruett    Zusage an Pruett – beiden zugesagt = doppeltes Spiel (doubleGameTrust)
+#   k2_gratuliert          die neue Führung traut Jacob mehr (congratsTrust)
+#   k2_verband_beitritt    Jacob tritt dem Verband bei (Beitrag je Runde: guild.dues)
+#   k2_verband_abgelehnt   Delgado traut Jacob weniger (guild.leaveTrust)
+#   k2_verband_austritt    Jacob tritt freiwillig aus (ohne Groll)
+#   k2_verband_streit      Delgado schließt Jacob aus (Groll: guild.fightGrudge)
+#   k2_entschuldigt        Branchen-Respekt kommt zur Hälfte zurück (relations.betrayalRespect / 2)
+#   k2_angeprangert        Respekt + betrayalRespect / 3; wer zuletzt gebrochen hat: Groll + 10
+
+# --- Nachfolge im Crane Trust -------------------------------------------------
+
+- id: k2_crane_rueckzug
+  visitor: crane
+  certain: true
+  marked: [k2_diplomatie]
+  draft: true                # Schlüsselszene: Cornelius Crane tritt ab, der Nachfolgekampf beginnt
+  title:
+    de: Cornelius Crane nimmt Abschied
+    en: Cornelius Crane Takes His Leave
+  text:
+    de: >-
+      Cornelius Crane ist alt geworden. Er setzt sich unaufgefordert, legt den
+      Zylinder auf Jacobs Schreibtisch und sieht lange aus dem Fenster. „Ich höre
+      auf, Harlan. Der Aufsichtsrat wählt meinen Nachfolger – Margaret oder Pruett.
+      Beide werden an Ihre Tür klopfen. Ich wollte, dass Sie es von mir hören.“
+    en: >-
+      Cornelius Crane has grown old. He sits down without being asked, sets his top
+      hat on Jacob's desk and looks out of the window for a long time. "I'm stepping
+      down, Harlan. The board will choose my successor – Margaret or Pruett. Both
+      will come knocking at your door. I wanted you to hear it from me."
+  choices:
+    - id: zuhoeren
+      label: { de: "Ihm zuhören und zum Abschied die Hand geben", en: "Listen to him and shake his hand in farewell" }
+      result:
+        de: >-
+          Crane erzählt eine Stunde lang von Port Ellis, als es noch drei Tanks gab.
+          Beim Gehen sagt er: „Sie waren ein würdiger Gegner.“ Margaret und Pruett
+          werden davon hören.
+        en: >-
+          For an hour Crane talks about Port Ellis when it had only three tanks. As
+          he leaves he says: "You were a worthy opponent." Margaret and Pruett will
+          hear about it.
+      marks: [k2_crane_abschied]
+      appointments: 1
+    - id: kurz
+      label: { de: "Ihn höflich zur Tür bringen", en: "Politely see him to the door" }
+      result:
+        de: Crane nickt, als hätte er nichts anderes erwartet, und geht.
+        en: Crane nods as if he had expected nothing else, and leaves.
+      appointments: 0
+      default: true
+
+- id: k2_margaret_besuch
+  visitor: margaret
+  certain: true
+  marked: [k2_diplomatie]
+  delay: 1
+  title:
+    de: Margaret Crane
+    en: Margaret Crane
+  text:
+    de: >-
+      Margaret Crane kommt ohne Anmeldung und ohne Begleitung. Sie führt das
+      Ostküstengeschäft des Trusts: Tankstellen, Werbung, Kunden. „Pruett will den
+      Trust zu einer Buchhaltung machen. Ich will ihn zu einer Marke machen. Dafür
+      brauche ich Öl – und Leute im Aufsichtsrat, die wissen, wer es liefert.“
+    en: >-
+      Margaret Crane arrives unannounced and alone. She runs the Trust's East Coast
+      business: filling stations, advertising, customers. "Pruett wants to turn the
+      Trust into a ledger. I want to turn it into a brand. For that I need oil – and
+      people on the board who know who supplies it."
+  choices:
+    - id: zusagen
+      label: { de: "Ihr Rückhalt im Aufsichtsrat zusagen", en: "Promise her support on the board" }
+      result:
+        de: Margaret lächelt knapp. „Ich merke mir, wer früh an meiner Seite stand.“
+        en: Margaret smiles briefly. "I remember who stood by me early."
+      marks: [k2_rueckhalt_margaret]
+    - id: unverbindlich
+      label: { de: "Freundlich, aber unverbindlich bleiben", en: "Stay friendly but noncommittal" }
+      result:
+        de: „Wie Sie meinen.“ Sie zieht die Handschuhe wieder an. „Die Entscheidung fällt ohne Sie, Mr. Harlan.“
+        en: '"As you wish." She pulls her gloves back on. "The decision will be made without you, Mr. Harlan."'
+      appointments: 0
+      default: true
+
+- id: k2_pruett_besuch
+  visitor: pruett
+  certain: true
+  marked: [k2_diplomatie]
+  delay: 2
+  title:
+    de: Harold Pruett
+    en: Harold Pruett
+  text:
+    de: >-
+      Harold Pruett aus dem Mittleren Westen legt eine Mappe mit Kostentabellen auf
+      den Tisch, bevor er Guten Tag sagt. „Margaret gibt Geld für Plakate aus. Ich
+      spare es. Wer mit mir rechnet, Mr. Harlan, kann mit stabilen Preisen rechnen.“
+    en: >-
+      Harold Pruett from the Midwest puts a folder of cost tables on the desk before
+      he says good day. "Margaret spends money on billboards. I save it. Whoever
+      counts on me, Mr. Harlan, can count on stable prices."
+  choices:
+    - id: zusagen
+      label: { de: "Ihm Rückhalt im Aufsichtsrat zusagen", en: "Promise him support on the board" }
+      result:
+        de: Pruett notiert etwas in seiner Mappe. „Gut. Ich vergesse keine Zahl und keinen Namen.“
+        en: Pruett writes something in his folder. "Good. I never forget a number or a name."
+      marks: [k2_rueckhalt_pruett]
+    - id: unverbindlich
+      label: { de: "Die Mappe zurückgeben, ohne etwas zu versprechen", en: "Hand back the folder without promising anything" }
+      result:
+        de: Pruett nimmt die Mappe, als wäre nichts gewesen. Man sieht ihm nicht an, ob er gekränkt ist.
+        en: Pruett takes the folder as if nothing had happened. You can't tell whether he is offended.
+      appointments: 0
+      default: true
+
+- id: k2_nachfolge_margaret
+  visitor: margaret
+  certain: true
+  marked: [k2_nachfolge_margaret]
+  title:
+    de: Margaret Crane führt den Trust
+    en: Margaret Crane Leads the Trust
+  text:
+    de: >-
+      Der Aufsichtsrat hat gewählt. Margaret Crane kommt in einem neuen Automobil
+      vorgefahren, mit dem Wappen des Trusts auf der Tür. „Ab jetzt zahlt der Trust
+      seinen Partnern mehr als den anderen. Die Frage ist, Mr. Harlan, was Sie sind.“
+    en: >-
+      The board has voted. Margaret Crane pulls up in a new automobile with the
+      Trust's crest on the door. "From now on the Trust pays its partners more than
+      the others. The question, Mr. Harlan, is which you are."
+  choices:
+    - id: gratulieren
+      label: { de: "Gratulieren und Blumen schicken lassen (50 $)", en: "Congratulate her and have flowers sent (50 $)" }
+      result:
+        de: Am nächsten Tag kommt eine Karte zurück, mit Tinte statt Schreibmaschine. Das ist bei ihr viel.
+        en: The next day a card comes back, written in ink rather than typed. With her, that means a lot.
+      requires: { minCash: 50 }
+      effects: { cash: -50 }
+      marks: [k2_gratuliert]
+    - id: abwarten
+      label: { de: "Abwarten, was sie daraus macht", en: "Wait and see what she makes of it" }
+      result:
+        de: Margaret steigt wieder ein. Der Motor läuft noch.
+        en: Margaret gets back in. The engine is still running.
+      appointments: 0
+      default: true
+
+- id: k2_nachfolge_pruett
+  visitor: pruett
+  certain: true
+  marked: [k2_nachfolge_pruett]
+  title:
+    de: Harold Pruett führt den Trust
+    en: Harold Pruett Leads the Trust
+  text:
+    de: >-
+      Pruett hat gewonnen. Er kommt mit derselben Mappe wie damals, nur dicker.
+      „Der Trust spart jetzt. Auch beim Posted Price. Wer mit mir eine Absprache
+      hat, spürt es nicht. Die anderen schon.“
+    en: >-
+      Pruett has won. He arrives with the same folder as before, only thicker. "The
+      Trust is economizing now. Including on the posted price. Those who have an
+      agreement with me won't feel it. The others will."
+  choices:
+    - id: gratulieren
+      label: { de: "Ihm förmlich gratulieren (50 $ für ein Essen im Hotel)", en: "Congratulate him formally (50 $ for a hotel dinner)" }
+      result:
+        de: Pruett isst wenig und bezahlt sein Getränk selbst. Aber er bleibt bis zum Kaffee.
+        en: Pruett eats little and pays for his own drink. But he stays for coffee.
+      requires: { minCash: 50 }
+      effects: { cash: -50 }
+      marks: [k2_gratuliert]
+    - id: abwarten
+      label: { de: "Nur nicken", en: "Just nod" }
+      result:
+        de: Pruett nickt zurück. Ein Mann, der Zahlen versteht, braucht keine Worte.
+        en: Pruett nods back. A man who understands numbers needs no words.
+      appointments: 0
+      default: true
+
+- id: k2_trust_zerschlagen
+  mail: info
+  certain: true
+  marked: [k2_trust_zerschlagen]
+  deadline: 2
+  title:
+    de: Der Crane Trust wird zerschlagen
+    en: The Crane Trust Is Broken Up
+  text:
+    de: >-
+      Sonderausgabe, noch druckfeucht: Das Gericht in Hallstead zerschlägt den Crane
+      Trust. Margaret Crane behält die Ostküste als Crane Eastern, Harold Pruett die
+      Pipelines im Mittleren Westen als Crane Midland. Beide brauchen jetzt Öl –
+      und bieten gegeneinander.
+    en: >-
+      Special edition, ink still wet: the court in Hallstead breaks up the Crane
+      Trust. Margaret Crane keeps the East Coast as Crane Eastern, Harold Pruett the
+      Midwest pipelines as Crane Midland. Both now need oil – and are bidding
+      against each other.
+  choices:
+    - id: gratulieren
+      label: { de: "Beiden zum neuen Anfang schreiben (50 $ Telegramme)", en: "Write to both on their fresh start (50 $ in telegrams)" }
+      result:
+        de: Zwei Antworten, beide höflich, beide kühl. Aber beide haben geantwortet.
+        en: Two replies, both polite, both cool. But both replied.
+      requires: { minCash: 50 }
+      effects: { cash: -50 }
+      marks: [k2_gratuliert]
+      appointments: 0
+    - id: weglegen
+      label: { de: "Die Zeitung weglegen", en: "Put the paper down" }
+      result:
+        de: Draußen hupt ein Automobil. Die Welt ist eine andere als heute Morgen.
+        en: Outside an automobile honks. The world is different from this morning.
+      appointments: 0
+      default: true
+
+# --- Delgados Produzentenverband ---------------------------------------------
+
+- id: k2_verband_gruendung
+  visitor: delgado
+  certain: true
+  marked: [k2_verband_gegruendet]
+  draft: true                # Schlüsselszene: Rosa Delgado gründet den Verband (GDD §13 Kapitel 2)
+  title:
+    de: Rosa Delgado gründet den Verband
+    en: Rosa Delgado Founds the Association
+  text:
+    de: >-
+      Rosa Delgado trägt ein Bündel Unterschriften unter dem Arm, an den Ecken
+      ölverschmiert. „Ein Dutzend Unabhängige, Harlan. Gemeinsam verhandeln wir
+      gegen den Posted Price, gemeinsam vor Gericht. Wir brauchen Leute wie Sie –
+      und Ihren Beitrag, jedes Quartal.“
+    en: >-
+      Rosa Delgado carries a bundle of signatures under her arm, oil-stained at the
+      corners. "A dozen independents, Harlan. Together we bargain against the posted
+      price, together we go to court. We need people like you – and your dues, every
+      quarter."
+  choices:
+    - id: beitreten
+      label: { de: "Beitreten (Beitrag jedes Quartal)", en: "Join (dues every quarter)" }
+      result:
+        de: >-
+          Jacob unterschreibt unter einem Farmer aus Hollow Creek. Delgado faltet das
+          Blatt sorgfältig. „Jetzt sind wir mehr als der Trust denkt.“
+        en: >-
+          Jacob signs below a farmer from Hollow Creek. Delgado folds the sheet
+          carefully. "Now there are more of us than the Trust thinks."
+      marks: [k2_verband_beitritt]
+    - id: ablehnen
+      label: { de: "Ablehnen – Harlan Oil verhandelt allein", en: "Decline – Harlan Oil negotiates alone" }
+      result:
+        de: „Allein ist man schnell, Harlan. Zusammen kommt man weiter.“ Sie geht zur nächsten Tür.
+        en: '"Alone you move fast, Harlan. Together you get further." She goes on to the next door.'
+      marks: [k2_verband_abgelehnt]
+      appointments: 0
+      default: true
+
+- id: k2_verband_zu_gross
+  visitor: delgado
+  certain: true
+  marked: [k2_verband_zu_gross]
+  title:
+    de: Delgado stellt Jacob zur Rede
+    en: Delgado Confronts Jacob
+  text:
+    de: >-
+      Rosa Delgado bleibt in der Tür stehen. „Im Verband sagen sie, Harlan Oil sei
+      selbst schon ein Trust. Ich habe sie verteidigt. Jetzt frage ich Sie: Gegen
+      wen kämpfen wir eigentlich noch?“
+    en: >-
+      Rosa Delgado stays standing in the doorway. "In the association they say
+      Harlan Oil is a trust itself already. I defended you. Now I'm asking you: who
+      are we still fighting against?"
+  choices:
+    - id: austreten
+      label: { de: "Freiwillig austreten, im Guten", en: "Leave voluntarily, on good terms" }
+      result:
+        de: Delgado nickt langsam. „Das rechne ich Ihnen an. Mehr nicht.“
+        en: Delgado nods slowly. "I'll give you credit for that. Nothing more."
+      marks: [k2_verband_austritt]
+    - id: wehren
+      label: { de: "Sich wehren – der Verband braucht Harlan Oil", en: "Push back – the association needs Harlan Oil" }
+      result:
+        de: >-
+          Die Versammlung stimmt ab. Jacob ist draußen, und die Unabhängigen reden
+          über ihn wie früher über Crane.
+        en: >-
+          The assembly votes. Jacob is out, and the independents talk about him the
+          way they used to talk about Crane.
+      marks: [k2_verband_streit]
+      appointments: 0
+      default: true
+
+# --- Verrat ---------------------------------------------------------------------
+
+- id: k2_verrat_gerede
+  mail: info
+  certain: true
+  marked: [k2_verrat]
+  deadline: 2
+  title:
+    de: Harlans Wort
+    en: Harlan's Word
+  text:
+    de: >-
+      In der Börse von Port Ellis erzählt man sich, Harlan halte keine Absprache.
+      Eine Notiz von Nora Whitlock liegt bei: „Ich schreibe darüber nächste Woche.
+      Möchten Sie etwas dazu sagen?“
+    en: >-
+      At the Port Ellis exchange they're saying Harlan keeps no agreement. A note
+      from Nora Whitlock is enclosed: "I'm writing about it next week. Would you
+      like to comment?"
+  choices:
+    - id: entschuldigen
+      label: { de: "Eine Entschuldigung abdrucken lassen und Schaden ersetzen (500 $)", en: "Have an apology printed and make good the damage (500 $)" }
+      result:
+        de: Die Anzeige steht auf Seite zwei. Manche lachen. Andere nehmen Jacobs Brief wieder an.
+        en: The notice runs on page two. Some laugh. Others start accepting Jacob's letters again.
+      requires: { minCash: 500 }
+      effects: { cash: -500 }
+      marks: [k2_entschuldigt]
+    - id: schweigen
+      label: { de: "Schweigen", en: "Say nothing" }
+      result:
+        de: Noras Artikel erscheint. Er ist kurz und sachlich – und deshalb umso schlimmer.
+        en: Nora's article appears. It is short and factual – and all the worse for it.
+      appointments: 0
+      default: true
+
+- id: k2_hintergangen_brief
+  mail: personal
+  certain: true
+  marked: [k2_hintergangen]
+  deadline: 2
+  title:
+    de: Die Absprache ist gebrochen
+    en: The Agreement Is Broken
+  text:
+    de: >-
+      Ruth legt Jacob den Brief hin, ohne ein Wort. Ein knapper Satz auf teurem
+      Papier: Man sehe sich „aus geschäftlichen Gründen“ nicht mehr an die
+      Absprache gebunden. Unterschrift, kein Gruß.
+    en: >-
+      Ruth puts the letter in front of Jacob without a word. A curt sentence on
+      expensive paper: for "business reasons" the sender no longer considers
+      himself bound by the agreement. A signature, no regards.
+  choices:
+    - id: anprangern
+      label: { de: "Den Bruch in der Börse und bei Nora Whitlock öffentlich machen", en: "Make the breach public at the exchange and to Nora Whitlock" }
+      result:
+        de: >-
+          Am nächsten Tag weiß ganz Port Ellis, wer sein Wort gebrochen hat. Jacob
+          steht gut da. Der andere wird es ihm nicht danken.
+        en: >-
+          The next day all of Port Ellis knows who broke his word. Jacob looks good.
+          The other side won't thank him for it.
+      marks: [k2_angeprangert]
+    - id: schweigen
+      label: { de: "Schweigen und es sich merken", en: "Say nothing and remember it" }
+      result:
+        de: Jacob legt den Brief in die Schublade. Ganz unten, aber nicht weg.
+        en: Jacob puts the letter in the drawer. At the bottom, but not gone.
+      appointments: 0
+      default: true

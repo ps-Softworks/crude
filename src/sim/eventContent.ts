@@ -10,6 +10,7 @@ import { SIM_MARKS } from './family';
 import { LANGUAGES, type LocalizedText } from './i18n';
 import { RIVAL_SIM_MARKS } from './trust';
 import { LOGISTICS_SIM_MARKS } from './logistics';
+import { DIPLOMACY_SIM_MARKS } from './diplomacyCore'; // 4.10 Andockpunkt
 
 export interface ContentError {
   file: string;
@@ -494,7 +495,7 @@ export function parseEventFiles(files: readonly { file: string; text: string }[]
   // Ein Merkzeichen, das keine Wahl setzt, ist fast immer ein Tippfehler – das
   // Ereignis käme sonst nie (bzw. würde nie gesperrt).
   // Merkzeichen der Simulation selbst (2.7: thomas_geboren, 2.8: bullard_verraten) zählen auch als gesetzt.
-  const gesetzt = new Set<string>([...SIM_MARKS, ...RIVAL_SIM_MARKS, ...LOGISTICS_SIM_MARKS, ...events.flatMap((e) => e.choices.flatMap((c) => [...c.marks, ...(c.marksIfForged ?? [])]))]);
+  const gesetzt = new Set<string>([...SIM_MARKS, ...RIVAL_SIM_MARKS, ...LOGISTICS_SIM_MARKS, ...DIPLOMACY_SIM_MARKS /* 4.10 Andockpunkt */, ...events.flatMap((e) => e.choices.flatMap((c) => [...c.marks, ...(c.marksIfForged ?? [])]))]);
   for (const event of events) {
     for (const m of [...event.marked, ...event.notMarked]) {
       if (gesetzt.has(m)) continue;

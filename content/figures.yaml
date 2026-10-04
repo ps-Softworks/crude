@@ -38,3 +38,7 @@ bankier: { form: zylinder, name: Mr. Pettibone }
 lusk: { form: zylinder, name: Lusk vom Trust }
 sheriff: { form: hut, name: Sheriff Tatum }
 prediger: { form: kopf, name: Bruder Abel }
+# 4.10 Andockpunkt: Rivalen aus Kapitel 2 (content/events/k2-diplomatie.yaml).
+margaret: { form: frau, name: Margaret Crane }
+pruett: { form: zylinder, name: Harold Pruett }
+delgado: { form: frau, name: Rosa Delgado }

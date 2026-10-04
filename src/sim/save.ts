@@ -4,6 +4,7 @@
 // verworfen. Keine Spielregeln hier, nur sichern und prüfen, ob der Zustand
 // vollständig ist.
 
+import { validDiplomacy } from './diplomacy'; // 4.10 Andockpunkt
 import type { GameState } from './game';
 import { newLogistics } from './logistics';
 import { isWorldState, neutralWorld } from './world';
@@ -137,6 +138,10 @@ export function validateState(value: unknown): LoadResult {
   if (value.ending !== null && value.ending !== 'kapitel' && value.ending !== 'pleite' && value.ending !== 'verkauft') {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
+  // --- Kapitel-2-Systeme (Phase 4): eigener Block, nicht hinter der letzten Prüfung ---
+  // Rivalen-Diplomatie (4.10): fehlt in Kapitel 1 (und in älteren Ständen) – dann nichts zu prüfen. // 4.10 Andockpunkt
+  if (value.diplomacy !== undefined && !validDiplomacy(value.diplomacy)) return { ok: false, reason: UNVOLLSTAENDIG };
+  // --- Ende Kapitel-2-Systeme ---
   const lg = value.logistics;
   const PIPELINE = ['none', 'surveyed', 'building', 'ready', 'damaged'];
   if (

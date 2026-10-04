@@ -25,6 +25,7 @@ import { advanceLogistics, newLogistics, settleStorage, spillOver, type Logistic
 import { advanceTransport, noShipments } from './transport';
 import { settleTakeover } from './trust';
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
+import { advanceDiplomacy, type DiplomacyState } from './diplomacy'; // 4.10 Andockpunkt
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
@@ -99,6 +100,8 @@ export interface GameState {
   /** Weltmodell (4.1): die neun Weltgrößen, je Runde fortgeschrieben. */
   worldModel: WorldState;
   log: string[];
+  /** Rivalen-Diplomatie und Crane-Nachfolge (4.10): erst ab Kapitel 2, in Kapitel 1 fehlt sie. */
+  diplomacy?: DiplomacyState; // 4.10 Andockpunkt
   /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
   roundLogStart: number;
 }
@@ -232,7 +235,9 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const verzinst = settleLoans(settleRigs(advanceLogistics(rivale, balance), balance), balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   const gefahren = advanceTransport(verzinst, balance);
-  const state = { ...checkBankruptcy(gefahren, balance), roundLogStart };
+  // Rivalen-Diplomatie (4.10): ohne state.diplomacy (Kapitel 1) passiert nichts. // 4.10 Andockpunkt
+  const diplomatie = advanceDiplomacy(gefahren, balance);
+  const state = { ...checkBankruptcy(diplomatie, balance), roundLogStart };
   if (state.ending === 'pleite') return state;
   if (state.round >= state.totalRounds) {
     // Kapitelprüfung (2.11): steht im Protokoll, der Ergebnisbildschirm zeigt die Einzelheiten.

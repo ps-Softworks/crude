@@ -434,6 +434,120 @@ rivals:
       - O'Rourke Drilling
       - Amos Fairweather
 
+# --- 4.10 Andockpunkt: eigener Block diplomacy, bewusst neben rivals statt am Dateiende ---
+# 4.10 Rivalen-Diplomatie und Crane-Nachfolge (GDD §9, §13 Kapitel 2). Eigenes Modul:
+# src/sim/diplomacy*.ts. Erst ab Kapitel unlockChapter; in Kapitel 1 unsichtbar.
+# Texte: content/diplomacy.yaml und content/events/k2-diplomatie.yaml.
+# Alle Zahlen PLATZHALTER, bis Kapitel 2 spielbar ist und Bots darüber laufen.
+diplomacy:
+  unlockChapter: 2
+  # Beziehungen (GDD §9.3): Vertrauen −100…+100 und Groll 0…100 getrennt; Verrat verfällt nie.
+  relations:
+    trustDrift: 2            # Vertrauen wandert je Runde so viele Punkte Richtung 0
+    grudgeDecay: 4           # Groll verblasst je Runde um grudgeDecay × (6 − Nachtragen) / 5
+    respectStart: 50         # Branchen-Respekt 0–100: wie sehr die Rivalen Jacobs Wort trauen
+    betrayalTrust: 60        # Verrat: Vertrauen −60 beim Betrogenen …
+    betrayalGrudge: 50       # … Groll +50 …
+    betrayalRespect: 15      # … und Branchen-Respekt −15 bei allen
+    revengeGrudge: 60        # ab diesem Groll schlägt ein Rivale zurück (GDD §9.5) …
+    revengeChance: 0.3       # … je Runde mit dieser Chance × Aggressivität / 5
+    revengeRounds: 2         # Rache wirkt so viele Runden
+    revengePrice: 0.05       # Margaret/Pruett: Trust zahlt so viel $ je Barrel weniger
+    revengeLeaseCost: 0.15   # Bullard/Delgado: Pachten so viel teurer (Anteil am Bonus)
+    revengeRail: 0.03        # Thorne: Bahntarif dauerhaft so viel $ je Barrel höher
+    revengeRelief: 25        # nach der Rache sinkt der Groll um so viel
+  # Persönlichkeiten (GDD §9.2, Skala 1–5); Bullard steht unter rivals.bullard.
+  # kinds: welche Absprachen der Rivale überhaupt eingeht (price, territory, supply, cross).
+  rivals:
+    margaret: { personality: { risk: 4, aggression: 3, loyalty: 2, grudge: 3, patience: 4 }, kinds: [supply, cross] }
+    pruett:   { personality: { risk: 1, aggression: 2, loyalty: 4, grudge: 3, patience: 5 }, kinds: [price, territory, cross] }
+    bullard:  { kinds: [price, territory, cross] }
+    thorne:   { personality: { risk: 3, aggression: 4, loyalty: 1, grudge: 4, patience: 4 }, kinds: [cross] }
+    delgado:  { personality: { risk: 2, aggression: 2, loyalty: 5, grudge: 2, patience: 3 }, kinds: [] }
+  # Startbeziehung aus Kapitel 1 (Merkzeichen aus content/events/k1-rivalen.yaml).
+  carryOver:
+    bullardPactTrust: 40     # Handschlag mit Bullard
+    bullardFeudGrudge: 50    # Fehde
+    craneLoyalTrust: 15      # Treueerklärung an Cornelius: beide Erben trauen Jacob etwas mehr
+    delgadoMemberTrust: 30   # schon in Kapitel 1 in Delgados Verband
+    thorneContractTrust: 15  # Frachtvertrag mit Thorne
+    thorneRefusedGrudge: 20  # Frachtvertrag abgelehnt
+  # Nachfolge im Crane Trust (GDD §13 Kapitel 2): Margaret Crane gegen Harold Pruett.
+  succession:
+    rounds: 8                # so viele Runden ringen beide um den Aufsichtsrat
+    boardSeats: 12           # Sitze im Aufsichtsrat (nur Anzeige: Anteil × Sitze)
+    startShare: 0.5          # Margarets Anteil im Aufsichtsrat zu Beginn
+    creditDrift: 0.04        # Boom hilft Margaret, Krise Pruett: Anteil += creditDrift × (Kreditklima − 50) / 50
+    noise: 0.06              # Zufall je Runde (± noise / 2)
+    backCost: 1500           # Jacob stellt sich öffentlich hinter einen Erben: kostet so viel $ …
+    backShift: 0.08          # … und verschiebt den Anteil um so viel (× Respekt-Faktor) …
+    backAppointments: 1      # … und so viele Termine; einmal je Runde
+    visitShift: 0.05         # Zusage beim Besuch (Ereignis) verschiebt den Anteil einmalig
+    farewellTrust: 10        # Abschiedsbesuch bei Cornelius: beide Erben trauen Jacob mehr
+    winnerTrust: 25          # Wer gewinnt, vergisst Jacobs Rückhalt nicht …
+    loserGrudge: 20          # … wer verliert, auch nicht
+    doubleGameTrust: 30      # beiden zugesagt: beide trauen Jacob danach so viel weniger
+    congratsTrust: 10        # Glückwunsch an die Siegerin / den Sieger
+    partnerTrust: 20         # Margaret führt: Partneraufschlag nur ab diesem Vertrauen
+    margaretPremium: 0.06    # $ je Barrel, die Margarets Trust ihren Partnern mehr zahlt
+    pruettCut: 0.05          # $ je Barrel, die Pruetts Trust allen weniger zahlt (Kostenkürzer) – außer Partnern einer Preisabsprache
+    breakupPremium: 0.04     # zerschlagen: Crane Eastern und Crane Midland bieten gegeneinander, so viel $ je Barrel mehr
+    # Zerschlagung (GDD §7.2): Druck sammelt sich je Runde; ab 1 wird der Trust zerschlagen.
+    breakup:
+      law: 0.2               # je Runde mit Kartellgesetz
+      volksbund: 0.1         # je Runde, in der der Volksbund regiert
+      mood: 0.15             # × (50 − Stimmung) / 50, nur bei Unmut
+      decay: 0.05            # ohne Anlass sinkt der Druck je Runde
+      push: 0.15             # Jacob schiebt an (Unterlagen an die Presse) oder bremst (Freunde in Hallstead)
+      pushCost: 2000         # kostet so viel $ und einen Termin; einmal je Runde
+      maxWithoutLaw: 0.9     # ohne Kartellgesetz keine Zerschlagung
+  # Absprachen (GDD §9.4 Kooperation).
+  pacts:
+    appointments: 1          # ein Vorschlag am Schreibtisch kostet so viele Termine
+    acceptThreshold: 15      # Zusage, wenn Vertrauen + Respekt-Bonus + Treue-Bonus − Groll ≥ diese Zahl
+    respectWeight: 0.5       # Respekt-Bonus = respectWeight × (Respekt − 50)
+    loyaltyWeight: 6         # Treue-Bonus = loyaltyWeight × (Vertragstreue − 3)
+    acceptTrust: 5           # angenommenes Angebot: Vertrauen + so viel
+    declineGrudge: 5         # abgelehntes Angebot: Groll + so viel
+    rounds: 6                # eine Absprache gilt so viele Runden
+    pricePremium: 0.08       # Preisabsprache: so viel $ je Barrel mehr
+    territoryLeaseCost: 0.15 # Gebietsabsprache: Pachten so viel billiger (Anteil am Bonus)
+    supplyPremium: 0.10      # Exklusiver Liefervertrag mit Crane Eastern: so viel $ je Barrel mehr …
+    supplyBullardGrudge: 25  # … aber Bullard verliert seinen Abnehmer (GDD §9.7)
+    crossCost: 3000          # Kreuzbeteiligung: so viel $ für die Aktien des anderen …
+    crossShield: 0.25        # … und so viel Schutz vor Übernahmen (für 4.8)
+    cartelHeat: 3            # Preis- und Gebietsabsprachen mit Kartellgesetz: Spur der Schwere 3
+    cartelMood: 2            # jede laufende Kartellabsprache drückt die Stimmung um so viel (für 4.2)
+    breakChance: 0.03        # Rivale bricht je Runde mit Chance breakChance × (6 − Vertragstreue) + Groll / 1000
+    breakRounds: 2           # wer zuerst bricht, kassiert so viele Runden doppelt
+    offerChance: 0.35        # je Runde schlägt ein Rivale mit dieser Chance selbst etwas vor …
+    offerMaxGrudge: 40       # … aber nur, wenn sein Groll darunter liegt
+    offerRounds: 2           # ein Angebot liegt so viele Runden auf dem Tisch
+  # Übernahmen (GDD §9.4, §9.6): kleine Wildcatter kaufen; Pruett kauft in Krisen auf.
+  takeovers:
+    appointments: 1
+    pricePerWell: 2500       # Kaufpreis je Quelle der Firma …
+    premium: 0.2             # … plus Aufschlag
+    barrelsPerWell: 300      # gekaufte Firma: Förderung je Quelle und Runde …
+    costPerBarrel: 0.45      # … abzüglich Kosten je Barrel; der Rest geht an Jacob
+    crisisCredit: 35         # Krise: Kreditklima unter diesem Wert
+    pruettBuyChance: 0.3     # in der Krise kauft Pruett je Runde mit dieser Chance eine Firma (als Trustchef doppelt)
+    distressPremium: 0.6     # Steht Jacob vor der Pleite, bietet Pruett Imperiumswert × 0,6 …
+    distressMin: 5000        # … mindestens so viel $
+  # Delgados Produzentenverband (GDD §9.2, §13 Kapitel 2).
+  guild:
+    foundDelay: 2            # Delgado gründet den Verband so viele Runden nach Kapitelbeginn
+    startMembers: 12         # Mitglieder bei der Gründung
+    fullMembers: 40          # ab so vielen Mitgliedern verhandelt der Verband mit voller Kraft
+    growChance: 0.5          # je Runde kommt mit dieser Chance ein Mitglied dazu (mit Jacob zwei)
+    dues: 150                # Beitrag je Runde
+    premium: 0.06            # $ je Barrel mehr bei voller Kraft (gemeinsam gegen den Posted Price)
+    leaveTrust: 10           # Austritt: Delgado traut Jacob so viel weniger
+    tooBigValue: 600000      # ab diesem Imperiumswert ist Jacob für Delgado selbst ein Trust
+    fightGrudge: 30          # Ausschluss im Streit: Delgados Groll + so viel
+    outsiderLeaseCost: 0.1   # zu groß und nicht (mehr) im Verband: Unabhängige verpachten nur teurer
+# --- Ende 4.10 Andockpunkt (Block diplomacy) ---
+
 # Ereignis-System (2.1): Ereignisse stehen in content/events/, hier nur die Taktung.
 events:
   maxPerRound: 1           # PLATZHALTER: höchstens so viele neue Ereignisse je Runde

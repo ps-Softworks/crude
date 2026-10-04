@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { checkArcMarks, parseArcContent } from '../src/sim/arcs';
 import { checkChapterMarks, parseChapterContent } from '../src/sim/chapter';
+import { parseDiplomacyContent } from '../src/sim/diplomacyContent'; // 4.10 Andockpunkt
 import { formatContentError, parseEventFiles } from '../src/sim/eventContent';
 import { analyzeRelevance, checkRelevanceMarks, parseRelevanceContent, readMarks, simReadMarks } from '../src/sim/eventRelevance';
 import { parseFamilyContent } from '../src/sim/family';
@@ -39,7 +40,9 @@ const einstieg = parseTutorialContent('content/tutorial.yaml', readFileSync(new 
 // Wirkung der Antworten (0.2.15+3): begründete Ausnahmen.
 const wirkung = parseRelevanceContent('content/relevance.yaml', readFileSync(new URL('../content/relevance.yaml', import.meta.url), 'utf8'));
 const wirkungMarks = wirkung.content && parsed.errors.length === 0 ? checkRelevanceMarks('content/relevance.yaml', wirkung.content, events) : [];
-const errors = [...wirkung.errors, ...wirkungMarks, ...einstieg.errors, ...parsed.errors, ...zeitung.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks];
+// Rivalen-Diplomatie (4.10): Texte der Pinnwand ab Kapitel 2. // 4.10 Andockpunkt
+const diplomatie = parseDiplomacyContent('content/diplomacy.yaml', readFileSync(new URL('../content/diplomacy.yaml', import.meta.url), 'utf8'));
+const errors = [...diplomatie.errors, ...wirkung.errors, ...wirkungMarks, ...einstieg.errors, ...parsed.errors, ...zeitung.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks];
 
 // Karte (0.2.15+5): ranch und unlocks in den Ereignissen müssen auf content/map.yaml zeigen.
 const karte = parsed.errors.length === 0 ? mapRefErrors(events, loadBalance().world) : [];
