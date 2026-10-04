@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import type { GameState } from '../../sim/game';
 import { balance } from '../balance';
-import { Map } from '../Map';
+import { Map, type MapMarker } from '../Map';
 import { rivalsLines } from '../sheets/RivalsSheet';
 
 export function MapView({
@@ -24,6 +24,9 @@ export function MapView({
   onDesk,
   onPipeline,
   onBell,
+  markers,
+  onMarker,
+  stamp,
 }: {
   game: GameState;
   debug: boolean;
@@ -37,6 +40,11 @@ export function MapView({
   onDesk: () => void;
   onPipeline: () => void;
   onBell: () => void;
+  /** Pflöcke und Briefe auf den Ranches (0.2.15+10). */
+  markers: readonly MapMarker[];
+  onMarker: (marker: MapMarker) => void;
+  /** Stempel nach einer Ranch-Aktion („Gepachtet“), kurz über der Karte. */
+  stamp: { text: string; n: number } | null;
 }) {
   const [legende, setLegende] = useState(false);
   const kartenRef = useRef<HTMLDivElement>(null);
@@ -68,7 +76,7 @@ export function MapView({
   function klickDaneben(e: MouseEvent<HTMLDivElement>) {
     if (ranch === null) return;
     const t = e.target as Element;
-    if (t.closest('.karte-ranch, .karte-gebiet, button, .karte-legende')) return;
+    if (t.closest('.karte-ranch, .karte-gebiet, .karte-marke, button, .karte-legende')) return;
     onCloseRanch();
   }
 
@@ -106,7 +114,12 @@ export function MapView({
           onKeyDownCapture={escZuerst}
           onClick={klickDaneben}
         >
-          <Map balance={balance} game={game} debug={debug} selected={ranch} highlight={highlight} onSelect={onSelect} />
+          <Map balance={balance} game={game} debug={debug} selected={ranch} highlight={highlight} onSelect={onSelect} markers={markers} onMarker={onMarker} />
+          {stamp && (
+            <span key={stamp.n} className="stempel" role="status">
+              {stamp.text}
+            </span>
+          )}
         </div>
         {ranchSheet}
       </div>

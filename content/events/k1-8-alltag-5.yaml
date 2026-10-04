@@ -326,6 +326,7 @@
 # --- Unglücke -----------------------------------------------------------------
 
 - id: blitz_tank
+  tableau: true
   group: unglueck
   title:
     de: Der Blitz schlägt in den Tank
@@ -367,6 +368,7 @@
       default: true
 
 - id: sturm_golf
+  tableau: true
   group: unglueck
   title:
     de: Ein Sturm vom Golf

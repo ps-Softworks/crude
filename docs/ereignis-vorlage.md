@@ -80,6 +80,17 @@ Zum Ausprobieren: `npm run dev`, dann im Browser `?seed=abc&debug=1`.
 - `routine: true` macht einen **festen Termin**: kein Würfeln, er steht jede Runde im
   Terminkalender (Beispiele in `content/events/k1-termine.yaml`).
 
+### Auftritt am Schreibtisch (ab 0.2.15+10)
+- `visitor: silas` lässt das Ereignis als **Besuch** kommen: Die Person klopft an die Tür,
+  tritt als Silhouette vor Jacobs Schreibtisch und redet mit ihm (Antworten wie immer).
+  Die Figur muss in `content/figures.yaml` mit Namen stehen, z. B.
+  `silas: { form: muetze, name: Silas }` – der Name steht an der Tür („Silas wartet“).
+- `tableau: true` lässt es als **Vollbild-Szene** kommen (Geburt, Brand, Blitz, Sturm).
+- Beides nur für Ereignisse ohne `mail` und ohne `routine` – Briefe liegen im Posteingang,
+  feste Termine im Kalender. Alles andere hängt als Vorfall am Notizspieß.
+- Das ist reine Darstellung: Was die Antworten bewirken, ändert sich dadurch nicht.
+  `npm run check:content` prüft, dass jede Figur aus `visitor` einen Namen hat.
+
 ### Nachwirkung
 - `marks: [name]` an einer Wahl setzt ein **Merkzeichen**. Der Spieler sieht es nicht.
 - Ein späteres Ereignis mit `marked: [name]` kommt **nur**, wenn das Merkzeichen gesetzt

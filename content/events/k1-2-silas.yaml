@@ -17,6 +17,7 @@
 
 # Entwurf – Philipp überarbeitet.
 - id: silas_schnaps
+  visitor: silas
   title:
     de: Das gerissene Seil
     en: The Snapped Cable
@@ -53,6 +54,7 @@
 # Die Schlüsselentscheidung des Bogens. Ohne Antwort hält Jacob Silas hin – das
 # zählt als Betrug.
 - id: silas_abrechnung
+  visitor: silas
   title:
     de: Die Abrechnung
     en: The Reckoning
@@ -109,6 +111,7 @@
 # Entwurf – Philipp überarbeitet.
 # Nachwirkung (fair): Silas übernimmt die Nachtschicht – Jacob schläft wieder.
 - id: silas_nachtschicht
+  visitor: silas
   title:
     de: Silas übernimmt die Nacht
     en: Silas Takes the Night
@@ -142,6 +145,7 @@
 # Entwurf – Philipp überarbeitet.
 # Nachwirkung (ausgekauft): Silas zieht mit seinem Geld weiter nach Salt Hill.
 - id: silas_abschied
+  visitor: silas
   title:
     de: Silas zieht weiter
     en: Silas Moves On
@@ -177,6 +181,7 @@
 # Nachwirkung (betrogen): Silas redet im Saloon. Letzte Chance, es geradezurücken –
 # sonst merkt sich das Spiel den späteren Kronzeugen (Weltbibel).
 - id: silas_saloon
+  visitor: silas
   title:
     de: Silas redet
     en: Silas Talks

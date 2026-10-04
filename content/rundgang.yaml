@@ -1,0 +1,55 @@
+# Rundgang (0.2.15+10): Beim ersten Start zeigt die Einstiegshilfe jeden
+# Gegenstand auf dem Schreibtisch einmal kurz. Reihenfolge = Reihenfolge hier.
+# „objekt“ ist der Gegenstand (karte, konkurrenz, termine, familie, tuer, zeitung,
+# post, vorfaelle, ruth, kassenbuch, akte, fracht, protokoll, menu, glocke).
+# Jeder Text mit Sprachschlüssel de/en. ENTWURF: Ton und Wortwahl sind Vorschläge.
+
+schritte:
+  - objekt: ruth
+    text:
+      de: Ruths Zettel sagt dir, was als Nächstes dran ist. Ein Klick führt hin.
+      en: Ruth's note tells you what to do next. Click it to go there.
+  - objekt: karte
+    text:
+      de: Die Wandkarte (K) öffnet die Karte von Cordova. Dort pachtest du Land und bohrst.
+      en: The wall map (K) opens the map of Cordova. That is where you lease land and drill.
+  - objekt: post
+    text:
+      de: Die Briefe (B). Ein rotes Siegel heißt, die Frist läuft in dieser Runde ab.
+      en: Letters (B). A red seal means the deadline runs out this round.
+  - objekt: tuer
+    text:
+      de: An der Tür (W) warten Besucher. Bitte sie herein, wenn es dir passt.
+      en: Visitors wait at the door (W). Ask them in when it suits you.
+  - objekt: vorfaelle
+    text:
+      de: Am Notizspieß (N) hängen Vorfälle von der Bohrstelle und aus der Stadt.
+      en: The spike (N) holds incidents from the rig and from town.
+  - objekt: zeitung
+    text:
+      de: Die Zeitung (Z) kommt jede Runde – Preise, Gerüchte, die Konkurrenz.
+      en: The newspaper (Z) arrives every round – prices, rumours, the competition.
+  - objekt: kassenbuch
+    text:
+      de: Im Kassenbuch (G) leihst du dir Geld bei der Bank – und zahlst es zurück.
+      en: In the ledger (G) you borrow money from the bank – and pay it back.
+  - objekt: akte
+    text:
+      de: Die Bohrturm-Akte (A) zeigt deine Türme und Quellen.
+      en: The rig file (A) shows your rigs and wells.
+  - objekt: fracht
+    text:
+      de: In der Frachtmappe (F, V) verkaufst du Öl und planst den Transport.
+      en: In the freight folder (F, V) you sell oil and plan transport.
+  - objekt: termine
+    text:
+      de: Der Kalender (T) zählt Jacobs Termine. Zu viele kosten Kraft.
+      en: The calendar (T) counts Jacob's appointments. Too many cost strength.
+  - objekt: familie
+    text:
+      de: Das Familienfoto (H) – Ruth und bald Thomas. Vergiss sie nicht.
+      en: The family photo (H) – Ruth and soon Thomas. Don't forget them.
+  - objekt: glocke
+    text:
+      de: Mit der Glocke (E) beendest du die Runde. Sie sagt dir vorher, was noch offen liegt.
+      en: The bell (E) ends the round. It tells you first what is still open.

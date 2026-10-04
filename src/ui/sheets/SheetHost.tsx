@@ -44,9 +44,11 @@ export interface SheetHostProps {
   onEndRound: () => void;
   onGo: (item: OpenItem) => void;
   onChapterEnd: (() => void) | null;
+  /** Geht gerade zu (0.2.15+10: kurzer Übergang). */
+  closing?: boolean;
 }
 
-export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound, onGo, onChapterEnd }: SheetHostProps) {
+export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound, onGo, onChapterEnd, closing = false }: SheetHostProps) {
   const info = SHEET_INFO[open.id];
   const inhalt: Record<SheetId, () => ReactNode> = {
     zeitung: () => <NewspaperSheet ctx={ctx} />,
@@ -67,6 +69,8 @@ export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound
       title={info.title}
       size={info.size}
       className={`sheet-${open.id}`}
+      origin={`.objekt[data-sheet="${open.id}"]`}
+      closing={closing}
       onClose={onClose}
       back={open.back ? { label: SHEET_INFO[open.back.sheet].title, onBack } : undefined}
       note={notice}

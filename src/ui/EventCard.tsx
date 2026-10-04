@@ -1,6 +1,6 @@
 // Ein Ereignis als Karte (2.1, ab 0.2.15+9 eigene Datei): Titel, Text und die
 // Antworten als Knöpfe mit dem, was sie an Terminen kosten. Genutzt für Briefe,
-// Vorfälle, Termine (und ab Etappe 2 Besucher). Was eine Antwort bewirkt und ob
+// Vorfälle, Termine, Besucher und Szenen. Was eine Antwort bewirkt und ob
 // sie geht, entscheidet src/sim. Briefe (2.4) zeigen Briefart, Frist und rotes
 // Siegel; die Dokumentenprüfung (2.5) legt das Dokument neben das Vergleichsstück.
 
@@ -78,19 +78,23 @@ export function EventCard({
   onResolved,
   className,
   hotkeys = false,
+  hideTitle = false,
 }: {
   game: GameState;
   event: DeskEvent;
-  onResolved: (state: GameState) => void;
+  /** Neuer Spielstand nach der Antwort – und welche Antwort es war (für den Nachsatz beim Besuch; '' nach der Lupe). */
+  onResolved: (state: GameState, choiceId: string) => void;
   className: string;
   /** Tasten 1–4 wählen eine Antwort (nur für die Karte, die gerade vorn liegt). */
   hotkeys?: boolean;
+  /** Titel weglassen (der Besuch zeigt ihn schon oben). */
+  hideTitle?: boolean;
 }) {
   const gesperrt = event.choices.find((c) => !c.ok);
 
   function antworte(choiceId: string) {
     const r = resolveEvent(game, balance, events, event.id, choiceId);
-    if (r.ok) onResolved(r.state);
+    if (r.ok) onResolved(r.state, choiceId);
   }
 
   useEffect(() => {
@@ -121,9 +125,9 @@ export function EventCard({
           <span className="siegel" aria-hidden="true" /> Frist läuft ab – sonst gilt die Standardantwort
         </p>
       )}
-      <h3 className="event-titel">{event.title}</h3>
+      {!hideTitle && <h3 className="event-titel">{event.title}</h3>}
       <p>{event.text}</p>
-      {event.document && <Dokument game={game} eventId={event.id} doc={event.document} onResolved={onResolved} />}
+      {event.document && <Dokument game={game} eventId={event.id} doc={event.document} onResolved={(st) => onResolved(st, '')} />}
       <div className="actions">
         {event.choices.map((choice, i) => (
           <button

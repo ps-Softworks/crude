@@ -86,7 +86,7 @@ export function isTypingTarget(target: KeyInput['target']): boolean {
 export interface KeyContext {
   view: 'desk' | 'map';
   sheetOpen: boolean;
-  /** Besucher-Dialog offen (ab Etappe 2). */
+  /** Besucher oder Szene im Raum. */
   visitorOpen?: boolean;
   debugTools: boolean;
 }

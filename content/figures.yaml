@@ -13,10 +13,28 @@
 #
 # Schlüssel = die Kennung der Person, wie sie in family.yaml (ruth, thomas) und
 # arcs.yaml (silas, moss) steht.
+#
+# Besucher (0.2.15+10): Ein Ereignis mit „visitor: silas“ (content/events) lässt
+# diese Person vor Jacobs Schreibtisch treten. Dafür braucht sie einen Namen:
+#   silas: { form: muetze, name: Silas }
+# Der Name steht an der Tür („Silas wartet“) und über dem Gespräch.
+# npm run check:content prüft, dass jede Figur aus „visitor“ hier steht.
 
-jacob: hut
-ruth: frau
-thomas: kind
-silas: muetze
-moss: strohhut
-crane: zylinder
+jacob: { form: hut, name: Jacob }
+ruth: { form: frau, name: Ruth }
+thomas: { form: kind, name: Thomas }
+silas: { form: muetze, name: Silas }
+moss: { form: strohhut, name: Ezekiel Moss }
+crane: { form: zylinder, name: Mr. Crane }
+
+# Besucher am Schreibtisch (0.2.15+10) – ENTWURF, Namen aus den Ereignistexten.
+daniel: { form: kopf, name: Daniel Moss }
+spekulant: { form: zylinder, name: Ein Herr aus Hallstead }
+arzt: { form: kopf, name: Doktor Haskell }
+nora: { form: frau, name: Nora Whitlock }
+bullard: { form: hut, name: Bullard }
+vormann: { form: muetze, name: Der Sprecher der Fuhrleute }
+bankier: { form: zylinder, name: Mr. Pettibone }
+lusk: { form: zylinder, name: Lusk vom Trust }
+sheriff: { form: hut, name: Sheriff Tatum }
+prediger: { form: kopf, name: Bruder Abel }

@@ -9,7 +9,7 @@ ohne Codeänderung. Prüfen: `npm run check:content` (meldet Fehler mit Datei un
 Kurzreferenz der Felder:
 - Ereignis: `id`, `title`, `text`, `conditions`, `marked`, `notMarked`, `delay`, `chance`, `once`,
   `routine`, `appointments`, `mail`, `deadline`, `document`, `certain`, `rival`, `cooldown`, `group`,
-  `draft`, `ranch`, `choices`
+  `draft`, `ranch`, `visitor`, `tableau`, `choices`
 - Wahl: `id`, `label`, `result`, `requires`, `effects`, `marks`, `default`, `appointments`,
   `requiresFound`, `marksIfForged`, `sharp`, `unlocks`
 - Karte (0.2.15+5): `ranch: moss` sagt, um wessen Ranch es geht (Figuren unter `figures` in
@@ -75,3 +75,9 @@ Kurzreferenz der Felder:
   ist das „Gegenstück“ und erlaubt. Merkzeichen für spätere Kapitel: `content/relevance.yaml` (mit Grund).
   Neue Folgen früher folgenloser Merkzeichen: `bullard_rache_folge`, `kerrigan_zusammenbruch`,
   `wegerecht_moss_versoehnt`; Schutz durch `notMarked` (Diebe, Seil, Streik, Lohn, Schlamm, Lager).
+- Auftritt (0.2.15+10): `visitor: silas` – das Ereignis kommt als Besuch an Jacobs Schreibtisch (Person
+  klopft, tritt ein, redet); die Figur braucht in `content/figures.yaml` einen Namen
+  (`silas: { form: muetze, name: Silas }`). `tableau: true` – kommt als Vollbild-Szene (Geburt, Brand,
+  Blitz, Sturm). Nicht für Briefe (`mail`) und feste Termine (`routine`); ohne Auftritt hängt ein
+  Ereignis als Vorfall am Notizspieß. Reine Darstellung, ändert keine Regel. Besetzt sind die Bögen von
+  Silas, Moss und Ruth, dazu Arzt, Nora, Bullard, Fuhrleute, Bank, Prüfer, Sheriff und Prediger.

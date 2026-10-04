@@ -3,16 +3,21 @@
 Kurzanleitung für Philipp: vom ZIP zur privaten itch.io-Seite, Fragebogen anlegen, Tester einladen.
 Die Bezeichnungen auf itch.io können sich leicht ändern – sinngemäß ist es immer dasselbe.
 
-> **Oberfläche im Umbau (ab 0.2.15+9):** Statt einer langen Seite gibt es jetzt einen Schreibtisch, auf dem man
-> Gegenstände anklickt (Briefe, Zeitung, Kassenbuch, Wandkarte …), und eine Kartenansicht mit Ranch-Fenster.
-> Die Seite scrollt nicht mehr. Screenshots und Teile dieser Anleitung werden mit Etappe 2 nachgezogen.
+> **Neue Oberfläche (ab 0.2.15+10):** Statt einer langen Seite gibt es einen Schreibtisch, auf dem man
+> Gegenstände anklickt (Briefe, Zeitung, Kassenbuch, Wandkarte, Glocke …) – jeder mit Namensschild und Taste.
+> Besucher klopfen an die Tür und reden mit Jacob, große Momente (Geburt, Brand) kommen als Vollbild-Szene.
+> Die Karte öffnet sich über die Wandkarte (Taste K), rechts daneben das Ranch-Fenster. Beim ersten Start
+> zeigt ein kurzer Rundgang jeden Gegenstand einmal (im Menü wiederholbar). Die Seite scrollt nicht.
+> Aktuelle Bilder: `npm run screenshots` legt sie in `docs/screenshots/` ab und prüft dabei, dass bei
+> 1280×800, 1440×900 und 1920×1080 nichts scrollt.
 
 ## 1. Fragebogen anlegen (zuerst, damit der Link ins Spiel kann)
 
 1. Auf <https://forms.google.com> ein neues Formular anlegen, Titel z. B. „CRUDE – Feedback zum Tester-Build“.
-2. Den Hinweistext und die 5 Fragen aus `docs/tester-fragebogen.md` übernehmen
-   (Frage 1: Multiple Choice, Frage 2: „Linearer Maßstab“ 1–5 plus Absatz, Fragen 3–5: Absatz).
-3. Einen zweiten **Abschnitt** anlegen für die Einwilligung (Ja/Nein) und das Kontaktfeld – getrennt von den 5 Fragen.
+2. Den Hinweistext und die 6 Fragen aus `docs/tester-fragebogen.md` übernehmen
+   (Frage 1: Multiple Choice, Frage 2: „Linearer Maßstab“ 1–5 plus Absatz, Fragen 3–5: Absatz,
+   Frage 6: Multiple Choice plus Absatz).
+3. Einen zweiten **Abschnitt** anlegen für die Einwilligung (Ja/Nein) und das Kontaktfeld – getrennt von den 6 Fragen.
 4. In den Formular-Einstellungen **„E-Mail-Adressen erfassen“ ausschalten**, sonst ist die Umfrage nicht mehr anonym.
 5. Oben auf „Senden“ → Link-Symbol → Link kopieren (z. B. `https://forms.gle/…`).
 6. Den Link in `content/tester.yaml` eintragen:
@@ -58,7 +63,7 @@ Link (und ggf. Passwort) an 3–5 Leute schicken. Vorlage:
 >
 > ich baue gerade ein Spiel: **CRUDE**, ein Wirtschaftsspiel über einen Öl-Wildcatter in den 1880ern – Land pachten, bohren, hoffen, die Bank im Nacken und einen Rivalen, der dir die besten Parzellen wegschnappt.
 >
-> Es ist ein früher Test (graue Kästen, keine Grafik). Hättest du Lust, das erste Kapitel zu spielen? Das sind 16 Runden, geschätzt 30–60 Minuten, am besten am Stück und am Computer.
+> Es ist ein früher Test (schlichte Platzhaltergrafik). Hättest du Lust, das erste Kapitel zu spielen? Das sind 16 Runden, geschätzt 30–60 Minuten, am besten am Stück und am Computer.
 >
 > Link: [itch.io-Link]  
 > Passwort: [Passwort]

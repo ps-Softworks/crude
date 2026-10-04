@@ -18,6 +18,16 @@ import { landmarkById, polygonCentroid, type Landmark, type Polygon, type Region
 import { boundsOf, fitBounds, overview, panBy, sameView, tween, zoomAt, type Limits, type View } from './mapCamera';
 import { innerRadius, labelFits, ranchStatus, slotPositions, STATUS_LABEL, type RanchStatus } from './mapShapes';
 
+/** Zeichen auf einer Ranch (0.2.15+10): Pflock = hier geht etwas, Brief = ein offenes Ereignis betrifft sie. */
+export interface MapMarker {
+  parcelId: string;
+  kind: 'pflock' | 'brief';
+  /** Für Vorleser und Tooltip, z. B. „Bohren möglich“ oder der Titel des Ereignisses. */
+  label: string;
+  /** Nur für Briefe: Ereignis-id, auf die ein Klick führt. */
+  eventId?: string;
+}
+
 interface Props {
   balance: Balance;
   game: GameState;
@@ -26,6 +36,8 @@ interface Props {
   /** Ranches, die der Hinweis auf dem Schreibtisch meint. */
   highlight: string[];
   onSelect: (id: string) => void;
+  markers?: readonly MapMarker[];
+  onMarker?: (marker: MapMarker) => void;
 }
 
 /** Höhe : Breite des Kartenbilds. */
@@ -149,7 +161,7 @@ const BLOECKE: readonly [number, number, number, number][] = [
   [-0.9, 0.85, 1.1, 0.45],
 ];
 
-export function Map({ balance, game, debug, selected, highlight, onSelect }: Props) {
+export function Map({ balance, game, debug, selected, highlight, onSelect, markers = [], onMarker }: Props) {
   const world = balance.world;
   const limits: Limits = useMemo(() => ({ world: world.size, aspect: ASPECT, minW: 3.5, margin: 1.5 }), [world.size]);
 
@@ -714,6 +726,45 @@ export function Map({ balance, game, debug, selected, highlight, onSelect }: Pro
             ))}
         </g>
 
+        {/* Zeichen (0.2.15+10): Pflock = hier kann Jacob etwas tun, Brief = ein offenes Ereignis. */}
+        {markers.map((m, i) => {
+          const r = ranches.find((x) => x.p.id === m.parcelId);
+          if (!r) return null;
+          const [cx, cy] = r.shape.center;
+          if (m.kind === 'pflock') {
+            const x = cx - u(14);
+            const y = cy - u(4);
+            return (
+              <g key={`m${i}`} className="karte-marke pflock" pointerEvents="none" aria-hidden="true">
+                <title>{m.label}</title>
+                <line x1={x} y1={y} x2={x} y2={y - u(20)} strokeWidth={u(2.4)} />
+                <path d={`M${x},${y - u(20)} L${x + u(11)},${y - u(16)} L${x},${y - u(12)} Z`} />
+              </g>
+            );
+          }
+          const x = cx + u(6);
+          const y = cy - u(26);
+          return (
+            <g
+              key={`m${i}`}
+              className="karte-marke brief"
+              role="button"
+              tabIndex={0}
+              aria-label={`Offen: ${m.label}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMarker?.(m);
+              }}
+              onKeyDown={(e) => aktiv(e, () => onMarker?.(m))}
+            >
+              <title>{m.label}</title>
+              <rect x={x} y={y} width={u(22)} height={u(15)} strokeWidth={u(1.4)} />
+              <path d={`M${x},${y} L${x + u(11)},${y + u(8)} L${x + u(22)},${y}`} strokeWidth={u(1.2)} fill="none" />
+              <circle cx={x + u(11)} cy={y + u(8)} r={u(3)} className="karte-marke-siegel" />
+            </g>
+          );
+        })}
+
         <rect x={view.x} y={view.y} width={view.w} height={view.h} fill="url(#karte-vignette)" pointerEvents="none" />
       </svg>
 
@@ -865,6 +916,20 @@ function Legende() {
           <circle cx={0} cy={-4} r={3} className="karte-platz" strokeWidth={0.9} strokeDasharray="1.4 1.2" />
         </svg>
         freier Bohrplatz
+      </li>
+      <li>
+        <svg viewBox="-2 -12 14 14" className="legende-symbol karte-marke pflock" aria-hidden="true">
+          <line x1={0} y1={0} x2={0} y2={-10} strokeWidth={1.4} />
+          <path d="M0,-10 L6,-8 L0,-6 Z" />
+        </svg>
+        hier kannst du etwas tun
+      </li>
+      <li>
+        <svg viewBox="-1 -1 14 10" className="legende-symbol karte-marke brief" aria-hidden="true">
+          <rect x={0} y={0} width={12} height={8} strokeWidth={0.8} />
+          <path d="M0,0 L6,4 L12,0" strokeWidth={0.7} fill="none" />
+        </svg>
+        offenes Ereignis (Klick öffnet es)
       </li>
     </ul>
   );

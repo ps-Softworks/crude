@@ -27,7 +27,7 @@ export interface ParsedEvents {
   errors: ContentError[];
 }
 
-const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'routine', 'appointments', 'choices', 'mail', 'deadline', 'document', 'certain', 'rival', 'cooldown', 'group', 'draft', 'ranch'];
+const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'routine', 'appointments', 'choices', 'mail', 'deadline', 'document', 'certain', 'rival', 'cooldown', 'group', 'draft', 'ranch', 'visitor', 'tableau'];
 const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default', 'appointments', 'requiresFound', 'marksIfForged', 'sharp', 'unlocks'];
 const DOCUMENT_KEYS = ['title', 'reference', 'forgeryChance', 'fields'];
 const FIELD_KEYS = ['id', 'label', 'value', 'reference', 'forged'];
@@ -367,6 +367,26 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
       fehler([...pfad, 'ranch'], `${wer}: „ranch“ muss die id einer Figur aus content/map.yaml sein (z. B. moss).`);
       ok = false;
     }
+    // Auftritt (0.2.15+10): wer am Schreibtisch vorspricht (Figur aus content/figures.yaml)
+    // oder ob das Ereignis als Vollbild-Szene kommt. Nur Darstellung – die Simulation
+    // liest es nicht. Briefe und feste Termine haben ihren eigenen Platz.
+    const visitor = raw.visitor;
+    if (visitor !== undefined && (typeof visitor !== 'string' || !ID_MUSTER.test(visitor))) {
+      fehler([...pfad, 'visitor'], `${wer}: „visitor“ muss die id einer Figur aus content/figures.yaml sein (z. B. silas).`);
+      ok = false;
+    }
+    if (raw.tableau !== undefined && typeof raw.tableau !== 'boolean') {
+      fehler([...pfad, 'tableau'], `${wer}: „tableau“ muss true oder false sein.`);
+      ok = false;
+    }
+    if ((visitor !== undefined || raw.tableau === true) && (mail !== undefined || routine)) {
+      fehler([...pfad, visitor !== undefined ? 'visitor' : 'tableau'], `${wer}: Briefe (mail) und feste Termine (routine) haben keinen Auftritt (visitor, tableau).`);
+      ok = false;
+    }
+    if (visitor !== undefined && raw.tableau === true) {
+      fehler([...pfad, 'tableau'], `${wer}: Entweder „visitor“ oder „tableau“ – nicht beides.`);
+      ok = false;
+    }
     if (raw.draft !== undefined && typeof raw.draft !== 'boolean') {
       fehler([...pfad, 'draft'], `${wer}: „draft“ muss true oder false sein.`);
       ok = false;
@@ -428,6 +448,8 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
     if (raw.certain === true) def.certain = true;
     if (rival !== undefined) def.rival = rival as RivalId;
     if (ranch !== undefined) def.ranch = ranch as string;
+    if (visitor !== undefined) def.visitor = visitor as string;
+    if (raw.tableau === true) def.tableau = true;
     if (cooldown !== undefined) def.cooldown = cooldown as number;
     if (group !== undefined) def.group = group as string;
     if (raw.draft === true) def.draft = true;

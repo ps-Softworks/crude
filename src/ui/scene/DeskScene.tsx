@@ -17,16 +17,17 @@ import { balance } from '../balance';
 import { familyContent } from '../family';
 import { barrels } from '../format';
 import type { InboxBadges } from '../inbox';
+import type { SilhouetteKind } from '../figures';
 import { keyForSheet } from '../keys';
 import { newspaperContent } from '../newspaper';
 import type { SheetId } from '../sceneState';
 import { Silhouette } from '../Silhouette';
 import { rivalsLines } from '../sheets/RivalsSheet';
 import { DeskObject, type Placement } from './DeskObject';
+import { Door } from './Door';
 import {
   BellShape,
   CorkShape,
-  DoorShape,
   DrawerShape,
   FolderShape,
   LampShape,
@@ -71,7 +72,14 @@ export interface DeskSceneProps {
   tutorialOffer: boolean;
   onTutorial: (on: boolean) => void;
   /** Gegenstand, auf den Ruths Zettel zeigt (leuchtet). */
-  glow: SheetId | 'karte' | null;
+  glow: SheetId | 'karte' | 'tuer' | null;
+  /** Der Rundgang zeigt gerade hierher (0.2.15+10). */
+  spotlight: string | null;
+  /** Wer vor der Tür wartet, der Erste vorn. */
+  waiting: { names: readonly string[]; figure: SilhouetteKind | null };
+  /** Jemand Neues ist gekommen – es klopft. */
+  knock: boolean;
+  onDoor: () => void;
   onRuth: (() => void) | null;
   onOpen: (sheet: SheetId, tab?: string) => void;
   onMap: () => void;
@@ -98,6 +106,10 @@ export function DeskScene(p: DeskSceneProps) {
   const leases = game.leases.filter((l) => l.holder === 'jacob').length;
   const options = game.options.filter((o) => o.holder === 'jacob').length;
 
+  // Familienfoto: je kälter das Wort, desto blasser das Bild (nur Wörter, keine Zahl).
+  const RANG = { content: 0, neglected: 1, bitter: 2, estranged: 3 } as const;
+  const kaelteste = familie.members.reduce<keyof typeof RANG>((w, m) => (RANG[m.word] > RANG[w] ? m.word : w), 'content');
+
   const obj = (id: SheetId, name: string, extra: Partial<Parameters<typeof DeskObject>[0]>, bild: ReactNode) => (
     <DeskObject
       id={id}
@@ -105,7 +117,7 @@ export function DeskScene(p: DeskSceneProps) {
       shortcut={keyForSheet(id)}
       at={AT[id]}
       sheet={id}
-      glow={p.glow === id}
+      glow={p.glow === id || p.spotlight === id}
       onOpen={() => p.onOpen(id)}
       {...extra}
     >
@@ -126,7 +138,7 @@ export function DeskScene(p: DeskSceneProps) {
           name="Wandkarte"
           shortcut="K"
           at={AT.karte}
-          glow={p.glow === 'karte'}
+          glow={p.glow === 'karte' || p.spotlight === 'karte'}
           onOpen={p.onMap}
           status={`Pachten ${leases} · Optionen ${options}`}
         >
@@ -151,7 +163,7 @@ export function DeskScene(p: DeskSceneProps) {
         {obj(
           'termine',
           'Kalender',
-          { badge: badges.termine.count > 0 ? { text: `${badges.termine.count} Termin${badges.termine.count === 1 ? '' : 'e'}` } : null },
+          { badge: badges.termine.count > 0 ? { text: `${badges.termine.count} Termin${badges.termine.count === 1 ? '' : 'e'}` } : null, fresh: badges.termine.fresh },
           <span className="kalenderblatt">
             <span className="kalender-band" />
             <span className="kalender-zeit">{formatDate(game)}</span>
@@ -175,23 +187,28 @@ export function DeskScene(p: DeskSceneProps) {
               </span>
             ),
           },
-          <span className="foto">
+          <span className={`foto foto-${kaelteste}`}>
             <PhotoFrameShape />
             <span className="foto-figur">
               <Silhouette id="ruth" name="Ruth" size={46} />
             </span>
           </span>,
         )}
-        <div className="tuer" style={{ left: `${AT.tuer.left}%`, top: `${AT.tuer.top}%`, width: `${AT.tuer.width}%`, height: `${AT.tuer.height}%` }}>
-          <DoorShape />
-          <span className="tuer-plakette">{badges.tuer.count > 0 ? `${badges.tuer.count} warten` : 'Niemand wartet'}</span>
-        </div>
+        <Door
+          at={AT.tuer}
+          names={p.waiting.names}
+          figure={p.waiting.figure}
+          urgent={badges.tuer.urgent}
+          knock={p.knock}
+          glow={p.glow === 'tuer' || p.spotlight === 'tuer'}
+          onEnter={p.onDoor}
+        />
 
         {/* Tisch */}
         {obj(
           'zeitung',
           'Zeitung',
-          { badge: p.newspaperNew && zeitung ? { text: 'neu' } : null },
+          { badge: p.newspaperNew && zeitung ? { text: 'neu' } : null, fresh: p.newspaperNew && !!zeitung },
           <span className="zeitung-gefaltet">
             <span className="zeitung-name">{zeitung?.name ?? 'Zeitung'}</span>
             <span className="zeitung-schlagzeile">{zeitung?.front.title ?? 'Keine neue Ausgabe'}</span>
@@ -201,7 +218,11 @@ export function DeskScene(p: DeskSceneProps) {
         {obj(
           'post',
           'Briefe',
-          { badge: badges.post.count > 0 ? { text: String(badges.post.count), urgent: badges.post.urgent } : null, status: badges.post.count === 0 ? 'leer' : undefined },
+          {
+            badge: badges.post.count > 0 ? { text: String(badges.post.count), urgent: badges.post.urgent } : null,
+            status: badges.post.count === 0 ? 'leer' : undefined,
+            fresh: badges.post.fresh,
+          },
           <LetterStackShape count={badges.post.count} urgent={badges.post.urgent} />,
         )}
         {obj(
@@ -210,10 +231,11 @@ export function DeskScene(p: DeskSceneProps) {
           {
             badge: badges.vorfaelle.count > 0 ? { text: String(badges.vorfaelle.count), urgent: badges.vorfaelle.urgent } : null,
             status: badges.vorfaelle.count === 0 ? 'leer' : undefined,
+            fresh: badges.vorfaelle.fresh,
           },
           <SpikeShape count={badges.vorfaelle.count} urgent={badges.vorfaelle.urgent} />,
         )}
-        <div className="unterlage-platz" style={{ left: '44%', top: '45%', width: '27%', height: '38%' }}>
+        <div className={p.spotlight === 'ruth' ? 'unterlage-platz rundgang-ziel' : 'unterlage-platz'} style={{ left: '44%', top: '45%', width: '27%', height: '38%' }}>
           <RuthNote
             step={p.step}
             tutorial={p.tutorial}

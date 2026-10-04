@@ -19,6 +19,7 @@
 
 # Entwurf – Philipp überarbeitet.
 - id: moss_schulden
+  visitor: moss
   ranch: moss
   title:
     de: Ezekiel Moss hält den Hut in der Hand
@@ -68,6 +69,7 @@
 # Entwurf – Philipp überarbeitet.
 # Nachwirkung: nur wenn Jacob Moss betrogen hat, 2 Runden danach.
 - id: moss_wagenweg
+  visitor: moss
   ranch: moss
   title:
     de: Ein Zaun über dem Wagenweg
@@ -103,6 +105,7 @@
 # Entwurf – Philipp überarbeitet.
 # Nachwirkung: nur wenn Jacob Moss fair geholfen hat, 3 Runden danach.
 - id: moss_dank
+  visitor: moss
   ranch: moss
   title:
     de: Ein Glas Honig
@@ -191,6 +194,7 @@
 # Entwurf – Philipp überarbeitet.
 # Nachwirkung (Druck): Das ersteigerte Land lässt sich weiterverkaufen.
 - id: moss_spekulant
+  visitor: spekulant
   ranch: moss
   title:
     de: Ein Herr mit Spazierstock
@@ -225,6 +229,7 @@
 # Abschluss des Bogens in Kapitel 1: Daniel geht zum Studium nach Hallstead
 # (Kapitel 3: Bezirksstaatsanwalt). Zwei Fassungen je nach Ausgang.
 - id: moss_daniel_dank
+  visitor: daniel
   ranch: moss
   title:
     de: Daniel geht nach Hallstead
@@ -260,6 +265,7 @@
 
 # Entwurf – Philipp überarbeitet.
 - id: moss_daniel_zorn
+  visitor: daniel
   ranch: moss
   title:
     de: Daniel geht nach Hallstead

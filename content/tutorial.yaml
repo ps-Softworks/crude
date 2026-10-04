@@ -6,6 +6,8 @@
 #   {kosten}  Betrag in $
 #   {chance}  Schätzung des Geologen, z. B. 35–60 % Fundchance
 #   {weg}     Fuhrwerk oder Bahn
+# Ab 0.2.15+10 nennen die Texte die Gegenstände am Schreibtisch mit Kürzel
+# (Wandkarte K, Kassenbuch G, Frachtmappe V, Glocke E).
 # ENTWURF: Ton und Wortwahl sind Vorschläge.
 
 title:
@@ -26,31 +28,31 @@ steps:
 hints:
   # Schritt 1: Land sichern.
   lease_option:
-    de: Ohne Land kein Öl. Du hast eine kostenlose Option auf {ort} – der Geologe schätzt {chance}. Klick die Ranch auf der Karte an und wähle „Option einlösen“. Das kostet nichts, danach gehört dir die Pacht.
-    en: No land, no oil. You hold a free option on {ort} – the geologist estimates {chance}. Click the ranch on the map and choose “Exercise option”. It costs nothing, and the lease is yours.
+    de: Ohne Land kein Öl. Du hast eine kostenlose Option auf {ort} – der Geologe schätzt {chance}. Öffne die Wandkarte (K), klick die Ranch an und wähle „Option einlösen“. Das kostet nichts, danach gehört dir die Pacht.
+    en: No land, no oil. You hold a free option on {ort} – the geologist estimates {chance}. Open the wall map (K), click the ranch and choose “Exercise option”. It costs nothing, and the lease is yours.
   lease_buy:
-    de: Ohne Land kein Öl. {ort} sieht gut aus – der Geologe schätzt {chance}. Klick sie auf der Karte an und wähle „Pacht kaufen“ ({kosten}). Behalte Geld für die Bohrung übrig.
-    en: No land, no oil. {ort} looks promising – the geologist estimates {chance}. Click it on the map and choose “Buy lease” ({kosten}). Keep money aside for the drilling.
+    de: Ohne Land kein Öl. {ort} sieht gut aus – der Geologe schätzt {chance}. Öffne die Wandkarte (K), klick sie an und wähle „Pacht kaufen“ ({kosten}). Behalte Geld für die Bohrung übrig.
+    en: No land, no oil. {ort} looks promising – the geologist estimates {chance}. Open the wall map (K), click it and choose “Buy lease” ({kosten}). Keep money aside for the drilling.
   lease_none:
-    de: Für Pacht und Bohrung reicht das Geld gerade nicht. Die Bank leiht dir etwas – oder du beendest die Runde und wartest auf Einnahmen.
-    en: There is not enough money for a lease and a well right now. The bank will lend you some – or end the round and wait for income.
+    de: Für Pacht und Bohrung reicht das Geld gerade nicht. Die Bank leiht dir etwas (Kassenbuch, G) – oder du läutest die Glocke (E) und wartest auf Einnahmen.
+    en: There is not enough money for a lease and a well right now. The bank will lend you some (ledger, G) – or ring the bell (E) and wait for income.
   loan_lease:
-    de: Für Pacht und Bohrung reicht die Kasse nicht mehr. Kein Wildcatter bohrt mit eigenem Geld – leih dir unter „Bank“ {kosten}, dann pachte {ort}.
-    en: Your cash no longer covers a lease and a well. No wildcatter drills with his own money – borrow {kosten} under “Bank”, then lease {ort}.
+    de: Für Pacht und Bohrung reicht die Kasse nicht mehr. Kein Wildcatter bohrt mit eigenem Geld – leih dir im Kassenbuch (G) {kosten}, dann pachte {ort}.
+    en: Your cash no longer covers a lease and a well. No wildcatter drills with his own money – borrow {kosten} in the ledger (G), then lease {ort}.
 
   # Schritt 2: bohren.
   drill:
-    de: Deine Pacht auf {ort} ist bereit. Klick die Ranch an und wähle „Bohren“ ({kosten}). Der Turm braucht eine Runde für die erste Stufe.
-    en: Your lease on {ort} is ready. Click the ranch and choose “Drill” ({kosten}). The rig needs one round for the first stage.
+    de: Deine Pacht auf {ort} ist bereit. Klick sie auf der Wandkarte (K) an und wähle „Bohren“ ({kosten}). Der Turm braucht eine Runde für die erste Stufe.
+    en: Your lease on {ort} is ready. Click it on the wall map (K) and choose “Drill” ({kosten}). The rig needs one round for the first stage.
   drill_no_money:
-    de: Deine Pacht auf {ort} wartet, aber die Bohrung kostet {kosten}. Hol dir das Geld bei der Bank, sonst verfällt die Pacht ungenutzt.
-    en: Your lease on {ort} is waiting, but drilling costs {kosten}. Get the money from the bank, or the lease will lapse unused.
+    de: Deine Pacht auf {ort} wartet, aber die Bohrung kostet {kosten}. Hol dir das Geld im Kassenbuch (G), sonst verfällt die Pacht ungenutzt.
+    en: Your lease on {ort} is waiting, but drilling costs {kosten}. Get the money in the ledger (G), or the lease will lapse unused.
   loan_drill:
-    de: Deine Pacht auf {ort} wartet, aber für die Bohrung fehlt Geld. Leih dir unter „Bank“ {kosten} – sonst verfällt die Pacht ungenutzt.
-    en: Your lease on {ort} is waiting, but there is no money for the drilling. Borrow {kosten} under “Bank” – or the lease will lapse unused.
+    de: Deine Pacht auf {ort} wartet, aber für die Bohrung fehlt Geld. Leih dir im Kassenbuch (G) {kosten} – sonst verfällt die Pacht ungenutzt.
+    en: Your lease on {ort} is waiting, but there is no money for the drilling. Borrow {kosten} in the ledger (G) – or the lease will lapse unused.
   drill_wait:
-    de: Der Turm bohrt. Beende die Runde – erst danach zeigt sich, ob in der Tiefe Öl liegt.
-    en: The rig is drilling. End the round – only then will you know whether there is oil down there.
+    de: Der Turm bohrt. Läute die Glocke (E) – erst danach zeigt sich, ob in der Tiefe Öl liegt.
+    en: The rig is drilling. Ring the bell (E) – only then will you know whether there is oil down there.
   deeper:
     de: Auf {ort} war in dieser Tiefe nichts. Der Geologe gibt der nächsten Stufe noch {chance}. Das ist es wert – wähle „Tiefer bohren“ ({kosten}).
     en: Nothing at this depth on {ort}. The geologist still gives the next stage {chance}. It is worth it – choose “Drill deeper” ({kosten}).
@@ -64,13 +66,13 @@ hints:
     de: Auf {ort} klemmt das Werkzeug, und für die Bergung fehlt das Geld. Wähle „Aufgeben“ – dann ist der Turm wieder frei.
     en: The tool is stuck on {ort} and there is no money to recover it. Choose “Abandon” – then the rig is free again.
   found_wait:
-    de: Öl auf {ort}! Die Quelle fördert ab jetzt jede Runde in deinen Tank. Beende die Runde, dann kannst du verkaufen.
-    en: Oil on {ort}! From now on the well pumps into your tank every round. End the round, then you can sell.
+    de: Öl auf {ort}! Die Quelle fördert ab jetzt jede Runde in deinen Tank. Läute die Glocke (E), dann kannst du verkaufen.
+    en: Oil on {ort}! From now on the well pumps into your tank every round. Ring the bell (E), then you can sell.
 
   # Schritt 3: verkaufen.
   sell:
-    de: Im Tank liegt Öl. Unter „Tank & Verkauf“ kauft der Crane Trust es dir ab – per {weg} bleibt dir am meisten je Barrel. Wähle „Per {weg} verkaufen“.
-    en: There is oil in your tank. Under “Tank & sale” the Crane Trust buys it – by {weg} you keep the most per barrel. Choose “Sell by {weg}”.
+    de: Im Tank liegt Öl. In der Frachtmappe unter „Verkauf“ (V) kauft der Crane Trust es dir ab – per {weg} bleibt dir am meisten je Barrel. Wähle „Per {weg} verkaufen“.
+    en: There is oil in your tank. In the freight folder under “Sale” (V) the Crane Trust buys it – by {weg} you keep the most per barrel. Choose “Sell by {weg}”.
   sold:
-    de: Verkauft! Pacht, Bohrung, Verkauf – das ist der Kreislauf am Salt Hill. Beende die Runde. Ab jetzt sagt dir nur noch die kurze Zeile oben, was ansteht.
-    en: Sold! Lease, drill, sell – that is the cycle at Salt Hill. End the round. From now on only the short line at the top tells you what is next.
+    de: Verkauft! Pacht, Bohrung, Verkauf – das ist der Kreislauf am Salt Hill. Läute die Glocke (E). Ab jetzt sagt dir Ruths Zettel auf der Schreibunterlage, was ansteht.
+    en: Sold! Lease, drill, sell – that is the cycle at Salt Hill. Ring the bell (E). From now on Ruth's note on the blotter tells you what is next.

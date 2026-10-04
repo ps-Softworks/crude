@@ -148,6 +148,10 @@ export interface EventDef {
   group?: string;
   /** Entwurf (2.10a): Schlüsselszene, die Philipp noch überarbeiten soll. Ändert nichts am Spiel. */
   draft?: boolean;
+  /** Auftritt (0.2.15+10): Figur aus content/figures.yaml, die am Schreibtisch vorspricht. Nur Darstellung. */
+  visitor?: string;
+  /** Auftritt (0.2.15+10): kommt als Vollbild-Szene (Geburt, Brand …). Nur Darstellung. */
+  tableau?: boolean;
 }
 
 export interface EventsState {

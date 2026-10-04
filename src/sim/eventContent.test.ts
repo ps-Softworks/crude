@@ -87,7 +87,7 @@ describe('Prüfung mit Datei und Zeilennummer', () => {
   it('unbekannte Felder, fehlendes de und fremde Sprachen werden gemeldet', () => {
     const text = GUT.replace('  chance: 0.5', '  chanse: 0.5\n  chance: 0.5').replace('de: "Ein Brief", en: ""', 'en: "", fr: "Une lettre"');
     const meldungen = parseEventFile('a.yaml', text).errors.map((e) => `${e.line}: ${e.message}`);
-    expect(meldungen).toContain('4: Ereignis „brief“: unbekanntes Feld „chanse“ (erlaubt: id, title, text, conditions, marked, notMarked, delay, chance, once, routine, appointments, choices, mail, deadline, document, certain, rival, cooldown, group, draft, ranch).');
+    expect(meldungen).toContain('4: Ereignis „brief“: unbekanntes Feld „chanse“ (erlaubt: id, title, text, conditions, marked, notMarked, delay, chance, once, routine, appointments, choices, mail, deadline, document, certain, rival, cooldown, group, draft, ranch, visitor, tableau).');
     expect(meldungen.some((m) => m.startsWith('2: ') && m.includes('unbekannte Sprache „fr“'))).toBe(true);
     expect(meldungen.some((m) => m.startsWith('2: ') && m.includes('„title.de“ fehlt'))).toBe(true);
   });
@@ -120,6 +120,21 @@ describe('Prüfung mit Datei und Zeilennummer', () => {
     ]);
     expect(errors).toEqual([{ file: 'b.yaml', line: 2, message: 'Ereignis „brief“ gibt es schon in a.yaml.' }]);
     expect(parseEventFile('a.yaml', GUT + GUT).errors[0]).toMatchObject({ line: 9, message: 'Ereignis „brief“ gibt es in dieser Datei doppelt.' });
+  });
+
+  it('Auftritt (0.2.15+10): visitor und tableau werden gelesen, aber nicht bei Briefen, Terminen oder beidem zugleich', () => {
+    const besuch = parseEventFile('a.yaml', GUT.replace('  chance: 0.5', '  chance: 0.5\n  visitor: silas'));
+    expect(besuch.errors).toEqual([]);
+    expect(besuch.events[0]).toMatchObject({ id: 'brief', visitor: 'silas' });
+    expect(besuch.events[0].tableau).toBeUndefined();
+    const szene = parseEventFile('a.yaml', GUT.replace('  chance: 0.5', '  chance: 0.5\n  tableau: true'));
+    expect(szene.events[0]).toMatchObject({ tableau: true });
+    const meldungen = (zusatz: string) => parseEventFile('a.yaml', GUT.replace('  chance: 0.5', `  chance: 0.5\n${zusatz}`)).errors.map((e) => e.message);
+    expect(meldungen('  visitor: Silas Crabb')).toContain('Ereignis „brief“: „visitor“ muss die id einer Figur aus content/figures.yaml sein (z. B. silas).');
+    expect(meldungen('  tableau: ja')).toContain('Ereignis „brief“: „tableau“ muss true oder false sein.');
+    expect(meldungen('  mail: info\n  visitor: silas')).toContain('Ereignis „brief“: Briefe (mail) und feste Termine (routine) haben keinen Auftritt (visitor, tableau).');
+    expect(meldungen('  routine: true\n  tableau: true')).toContain('Ereignis „brief“: Briefe (mail) und feste Termine (routine) haben keinen Auftritt (visitor, tableau).');
+    expect(meldungen('  visitor: silas\n  tableau: true')).toContain('Ereignis „brief“: Entweder „visitor“ oder „tableau“ – nicht beides.');
   });
 
   it('eine leere Datei ist kein Fehler', () => {

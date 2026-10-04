@@ -1,20 +1,24 @@
-// Screenshots (2.12): fünf Bildschirme des Spiels (ab 0.2.15+6 dazu vier Kartenausschnitte) nach docs/screenshots/, um zu
-// prüfen, ob die Platzhaltergrafik wie aus einem Guss wirkt.
+// Screenshots (2.12, ab 0.2.15+10 für Schreibtisch, Fenster, Karte und Besuch):
+// Bildschirme des Spiels nach docs/screenshots/, um zu prüfen, ob die
+// Platzhaltergrafik wie aus einem Guss wirkt. Dazu prüft es, dass die Seite bei
+// 1280×800, 1440×900 und 1920×1080 nie scrollt (Schreibtisch und Karte).
 // Aufruf: npm run screenshots  (braucht Google Chrome; startet einen eigenen
 // Vite-Server auf Port 5199 und beendet ihn danach wieder).
 //
 // Die Spielstände entstehen wie in den Bot-Läufen: ein Bot spielt mit allen
-// Ereignissen, der Stand landet im Autosave des Browsers, dann wird die Seite geladen.
+// Ereignissen, der Stand landet im Autosave des Browsers, dann wird die Seite
+// geladen. Klicks und Tasten gehen wie beim Spieler über das DevTools-Protokoll.
 import { spawn } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServer } from 'vite';
-import { loadBalance } from '../src/sim/testBalance';
 import { botTurn } from '../src/sim/bots';
+import { deskEvents, deskMail } from '../src/sim/events';
 import { endRound, newGame, type GameState } from '../src/sim/game';
 import { Rng, seedFromString } from '../src/sim/rng';
 import { serializeGame } from '../src/sim/save';
+import { loadBalance } from '../src/sim/testBalance';
 import { loadEvents } from '../src/sim/testEvents';
 
 const root = new URL('../', import.meta.url);
@@ -25,6 +29,8 @@ const CHROME = process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/M
 const PORT = 5199;
 const DEBUG_PORT = 9333;
 const OUT = new URL('docs/screenshots/', root);
+const BREIT = 1280;
+const HOCH = 800;
 
 /** Bot „gierig“ spielt bis Runde `bis` (oder bis zum Ende). */
 function spiele(seed: string, bis: number): GameState {
@@ -36,20 +42,65 @@ function spiele(seed: string, bis: number): GameState {
   return state;
 }
 
-function suche(pruef: (s: GameState) => boolean, bis = 99): GameState {
+/** Sucht über Seeds und Runden einen Spielstand, der passt. */
+function suche(pruef: (s: GameState) => boolean, runden: readonly number[] = [99]): GameState {
   for (let i = 0; i < 200; i++) {
-    const s = spiele(`stil-${i}`, bis);
-    if (pruef(s)) return s;
+    for (const bis of runden) {
+      const s = spiele(`stil-${i}`, bis);
+      if (pruef(s)) return s;
+    }
   }
   throw new Error('Kein passender Spielstand gefunden.');
 }
 
-const bilder: { name: string; state: GameState }[] = [
-  { name: '1-schreibtisch-start', state: newGame('stil-0', balance, events) },
-  { name: '2-schreibtisch-mitte', state: suche((s) => s.round === 6 && s.wells.length > 0, 6) },
-  { name: '3-schreibtisch-spaet', state: suche((s) => s.round === 12 && s.wells.some((w) => w.status === 'found'), 12) },
-  { name: '4-kapitelende', state: suche((s) => s.ending === 'kapitel') },
-  { name: '5-pleite', state: suche((s) => s.ending === 'pleite') },
+const offen = (s: GameState) => deskEvents(s, balance, events);
+const def = (id: string) => events.find((e) => e.id === id);
+const mitBesuch = (s: GameState) => !s.finished && offen(s).some((e) => def(e.id)?.visitor);
+const mitSzene = (s: GameState) => !s.finished && offen(s).some((e) => def(e.id)?.tableau);
+const mitDokument = (s: GameState) => !s.finished && deskMail(s, balance, events).some((e) => e.document);
+
+const start = newGame('stil-0', balance, events);
+const mitte = suche((s) => s.round === 6 && s.wells.length > 0, [6]);
+const spaet = suche((s) => s.round === 12 && s.wells.some((w) => w.status === 'found'), [12]);
+const besuch = suche(mitBesuch, [3, 4, 5, 6, 7, 8]);
+const szene = suche(mitSzene, [2, 3, 4, 5, 6, 7, 8, 9]);
+const dokument = suche(mitDokument, [3, 4, 5, 6, 7, 8, 9, 10]);
+const kapitel = suche((s) => s.ending === 'kapitel');
+const pleite = suche((s) => s.ending === 'pleite');
+
+interface Bild {
+  name: string;
+  state: GameState;
+  /** Vorlieben im Browser: Zeitung, Rundgang, Einstiegshilfe, Reiter. */
+  prefs?: Record<string, string>;
+  /** Was in dieser Runde schon gesehen ist (ohne „auto-besuch“ kommt ein Besuch von selbst). */
+  gesehen?: string[];
+  /** Tasten der Reihe nach (z. B. ['k']). */
+  tasten?: string[];
+  /** JavaScript nach den Tasten (z. B. ein Klick). */
+  dann?: string;
+  warte?: number;
+}
+
+const RUHE: Record<string, string> = { 'crude.zeitung': 'aus', 'crude.rundgang': 'gesehen' };
+const JACOBS_RANCH = `(() => { const r = [...document.querySelectorAll('.karte-ranch')].find((g) => /Jacobs (Pacht|Option)/.test(g.getAttribute('aria-label'))) ?? document.querySelector('.karte-ranch'); r.dispatchEvent(new MouseEvent('click', { bubbles: true })); })()`;
+const DOKUMENT_VORN = `(() => { const b = [...document.querySelectorAll('.stapel-liste button')].find((x) => x.textContent.includes('mit Dokument')); b?.click(); })()`;
+
+const bilder: Bild[] = [
+  { name: '01-schreibtisch-start', state: start },
+  { name: '02-schreibtisch-mitte', state: mitte },
+  { name: '03-schreibtisch-spaet', state: spaet },
+  { name: '04-post-dokument', state: dokument, tasten: ['b'], dann: DOKUMENT_VORN },
+  { name: '05-fracht-wege', state: mitte, prefs: { 'crude.reiter.fracht': 'wege' }, tasten: ['f'] },
+  { name: '06-kassenbuch', state: mitte, tasten: ['g'] },
+  { name: '07-karte-ranch', state: mitte, tasten: ['k'], dann: JACOBS_RANCH, warte: 900 },
+  { name: '08-besuch', state: besuch, tasten: ['w'], warte: 700 },
+  { name: '09-szene', state: szene, gesehen: ['zeitung'], warte: 1400 },
+  { name: '10-zeitung', state: mitte, prefs: { 'crude.zeitung': 'an' }, gesehen: [], warte: 500 },
+  { name: '11-glocke', state: mitte, tasten: ['e'] },
+  { name: '12-rundgang', state: start, prefs: { 'crude.rundgang': 'nein' }, warte: 1200 },
+  { name: '13-kapitelende', state: kapitel },
+  { name: '14-pleite', state: pleite },
 ];
 
 // --- Chrome über das DevTools-Protokoll steuern ---
@@ -63,6 +114,8 @@ async function warte<T>(f: () => Promise<T>, versuche = 50): Promise<T> {
     }
   }
 }
+
+const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 class Cdp {
   private id = 0;
@@ -91,6 +144,16 @@ class Cdp {
       this.ereignisse.push(f);
     });
   }
+  async js<T = unknown>(expression: string): Promise<T> {
+    const { result } = await this.send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
+    return result?.value as T;
+  }
+  /** Eine Taste wie vom Spieler: keydown, char, keyup an das Element mit dem Fokus. */
+  async taste(key: string) {
+    const code = key.length === 1 ? key.toUpperCase().charCodeAt(0) : 0;
+    await this.send('Input.dispatchKeyEvent', { type: 'keyDown', key, text: key.length === 1 ? key : undefined, windowsVirtualKeyCode: code });
+    await this.send('Input.dispatchKeyEvent', { type: 'keyUp', key, windowsVirtualKeyCode: code });
+  }
 }
 
 const server = await createServer({ root: new URL('.', root).pathname, server: { port: PORT, strictPort: true }, logLevel: 'error' });
@@ -99,6 +162,7 @@ const profil = mkdtempSync(join(tmpdir(), 'crude-chrome-'));
 const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${DEBUG_PORT}`, `--user-data-dir=${profil}`, '--hide-scrollbars', 'about:blank'], {
   stdio: 'ignore',
 });
+let fehler = 0;
 try {
   const ziele = await warte(async () => (await fetch(`http://127.0.0.1:${DEBUG_PORT}/json/list`)).json());
   const seite = (ziele as { type: string; webSocketDebuggerUrl: string }[]).find((z) => z.type === 'page')!;
@@ -106,70 +170,80 @@ try {
   await new Promise((r) => ws.addEventListener('open', r));
   const cdp = new Cdp(ws);
   await cdp.send('Page.enable');
-  await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1400, height: 1000, deviceScaleFactor: 1, mobile: false });
   const url = `http://localhost:${PORT}/`;
-  let geladen = cdp.einmal('Page.loadEventFired');
-  await cdp.send('Page.navigate', { url });
-  await geladen;
-  mkdirSync(OUT, { recursive: true });
-  for (const bild of bilder) {
-    const text = serializeGame(bild.state, version);
-    await cdp.send('Runtime.evaluate', { expression: `localStorage.setItem('crude.autosave', ${JSON.stringify(text)})` });
-    geladen = cdp.einmal('Page.loadEventFired');
+
+  async function groesse(w: number, h: number) {
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: false });
+  }
+
+  async function lade(state: GameState, prefs: Record<string, string>, gesehen: string[] | undefined) {
+    const szene = gesehen ?? ['zeitung', 'auto-besuch'];
+    const setzen = {
+      'crude.autosave': serializeGame(state, version),
+      'crude.szene': JSON.stringify({ key: `${state.seed}:${state.round}`, round: state.round, seen: szene }),
+      ...RUHE,
+      ...prefs,
+    };
+    await cdp.js(`(() => { localStorage.clear(); for (const [k, v] of Object.entries(${JSON.stringify(setzen)})) localStorage.setItem(k, v); })()`);
+    const geladen = cdp.einmal('Page.loadEventFired');
     await cdp.send('Page.navigate', { url });
     await geladen;
-    await cdp.send('Runtime.evaluate', { expression: 'document.fonts.ready', awaitPromise: true });
-    await new Promise((r) => setTimeout(r, 400));
-    const { cssContentSize } = await cdp.send('Page.getLayoutMetrics');
-    const hoehe = Math.min(Math.ceil(cssContentSize.height), 2600);
-    const { data } = await cdp.send('Page.captureScreenshot', {
-      format: 'png',
-      captureBeyondViewport: true,
-      clip: { x: 0, y: 0, width: 1400, height: hoehe, scale: 1 },
-    });
+    await cdp.js('document.fonts.ready.then(() => true)');
+    await pause(400);
+  }
+
+  await groesse(BREIT, HOCH);
+  const erst = cdp.einmal('Page.loadEventFired');
+  await cdp.send('Page.navigate', { url });
+  await erst;
+
+  // Alte Bilder weg, damit nichts Veraltetes liegen bleibt.
+  mkdirSync(OUT, { recursive: true });
+  for (const f of readdirSync(OUT)) if (f.endsWith('.png')) rmSync(new URL(f, OUT));
+
+  for (const bild of bilder) {
+    await lade(bild.state, bild.prefs ?? {}, bild.gesehen);
+    for (const t of bild.tasten ?? []) {
+      await cdp.taste(t);
+      await pause(250);
+    }
+    if (bild.dann) {
+      await pause(600);
+      await cdp.js(bild.dann);
+    }
+    await pause(bild.warte ?? 500);
+    const { data } = await cdp.send('Page.captureScreenshot', { format: 'png', clip: { x: 0, y: 0, width: BREIT, height: HOCH, scale: 1 } });
     writeFileSync(new URL(`${bild.name}.png`, OUT), Buffer.from(data, 'base64'));
     console.log(`docs/screenshots/${bild.name}.png (Runde ${bild.state.round}${bild.state.ending ? `, ${bild.state.ending}` : ''})`);
   }
-  // Karte (0.2.15+6): Ausschnitte nur der Karte – Salt Hill, Übersicht, Hinweis beim Darüberfahren.
-  const karten: { name: string; state: GameState; vorher?: string }[] = [
-    { name: '6-karte-salthill', state: bilder[2].state },
-    { name: '9-karte-start', state: bilder[0].state },
-    { name: '7-karte-uebersicht', state: bilder[1].state, vorher: `[...document.querySelectorAll('.karte-knoepfe button')].find((b) => b.textContent.includes('Übersicht')).click()` },
-    {
-      name: '8-karte-hinweis',
-      state: bilder[1].state,
-      vorher: `(() => { const r = document.querySelector('.karte-ranch'); const b = r.getBoundingClientRect(); r.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: b.x + b.width / 2, clientY: b.y + b.height / 2 })); })()`,
-    },
-  ];
-  for (const karte of karten) {
-    await cdp.send('Runtime.evaluate', { expression: `localStorage.setItem('crude.autosave', ${JSON.stringify(serializeGame(karte.state, version))})` });
-    geladen = cdp.einmal('Page.loadEventFired');
-    await cdp.send('Page.navigate', { url });
-    await geladen;
-    await cdp.send('Runtime.evaluate', { expression: 'document.fonts.ready', awaitPromise: true });
-    await new Promise((r) => setTimeout(r, 300));
-    // Ab 0.2.15+9 liegt die Karte hinter der Wandkarte: Zeitung zu (Esc), dann K.
-    await cdp.send('Runtime.evaluate', {
-      expression: `window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); setTimeout(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k' })), 50)`,
-    });
-    await new Promise((r) => setTimeout(r, 300));
-    if (karte.vorher) await cdp.send('Runtime.evaluate', { expression: karte.vorher });
-    await new Promise((r) => setTimeout(r, 900));
-    const { result } = await cdp.send('Runtime.evaluate', {
-      expression: `(() => { const k = document.querySelector('.karte'); k.scrollIntoView(); const r = k.getBoundingClientRect(); return JSON.stringify({ x: r.x + scrollX, y: r.y + scrollY, w: r.width, h: r.height }); })()`,
-      returnByValue: true,
-    });
-    const box = JSON.parse(result.value) as { x: number; y: number; w: number; h: number };
-    const { data } = await cdp.send('Page.captureScreenshot', {
-      format: 'png',
-      captureBeyondViewport: true,
-      clip: { x: box.x - 4, y: box.y - 4, width: box.w + 8, height: box.h + 8, scale: 1 },
-    });
-    writeFileSync(new URL(`${karte.name}.png`, OUT), Buffer.from(data, 'base64'));
-    console.log(`docs/screenshots/${karte.name}.png (Runde ${karte.state.round})`);
+
+  // Kein Seiten-Scroll (Abnahme A1): Schreibtisch und Karte in drei Größen.
+  for (const [w, h] of [
+    [1280, 800],
+    [1440, 900],
+    [1920, 1080],
+  ] as const) {
+    await groesse(w, h);
+    for (const ansicht of ['Schreibtisch', 'Karte'] as const) {
+      await lade(spaet, {}, undefined);
+      if (ansicht === 'Karte') {
+        await cdp.taste('k');
+        await pause(700);
+      }
+      const m = await cdp.js<{ sh: number; sw: number; ih: number; iw: number; klein: number }>(
+        `(() => { const e = document.documentElement; const klein = [...document.querySelectorAll('.namensschild, .objekt-status, .kopfleiste, .sheet')].filter((x) => parseFloat(getComputedStyle(x).fontSize) < 15).length; return { sh: e.scrollHeight, sw: e.scrollWidth, ih: innerHeight, iw: innerWidth, klein }; })()`,
+      );
+      const ok = m.sh <= m.ih && m.sw <= m.iw;
+      if (!ok) fehler++;
+      console.log(`${ok ? 'ok    ' : 'FEHLER'} ${w}×${h} ${ansicht}: Seite ${m.sw}×${m.sh}${m.klein > 0 ? ` · ${m.klein} Schrift unter 15 px` : ''}`);
+    }
   }
   ws.close();
 } finally {
   chrome.kill();
   await server.close();
+}
+if (fehler > 0) {
+  console.error(`${fehler} Ansicht(en) scrollen – das darf nicht sein.`);
+  process.exit(1);
 }

@@ -11,11 +11,11 @@ Vorlage für ein Online-Formular (z. B. Google Forms). Pflichtfelder sind mit * 
 
 > Danke, dass du CRUDE ausprobierst! Der Fragebogen dauert etwa 5 Minuten. Es gibt keine falschen Antworten – gerade was dich gestört hat, hilft am meisten.
 >
-> **Datenschutz:** Deine Antworten liest nur Philipp Singer, um das Spiel zu verbessern. Sie werden nicht weitergegeben und nicht veröffentlicht. Die Fragen 1–5 kannst du anonym beantworten. Eine Kontaktadresse ist freiwillig und wird nur gespeichert, wenn du unten ausdrücklich zustimmst; sie wird nur für Nachfragen zu CRUDE genutzt und gelöscht, sobald du darum bittest (eine kurze Nachricht an Philipp genügt) oder spätestens, wenn die Testphase vorbei ist.
+> **Datenschutz:** Deine Antworten liest nur Philipp Singer, um das Spiel zu verbessern. Sie werden nicht weitergegeben und nicht veröffentlicht. Die Fragen 1–6 kannst du anonym beantworten. Eine Kontaktadresse ist freiwillig und wird nur gespeichert, wenn du unten ausdrücklich zustimmst; sie wird nur für Nachfragen zu CRUDE genutzt und gelöscht, sobald du darum bittest (eine kurze Nachricht an Philipp genügt) oder spätestens, wenn die Testphase vorbei ist.
 
 ---
 
-## Die 5 Fragen
+## Die 6 Fragen
 
 **1. Bis wohin hast du gespielt?** *
 (Auswahl, eine Antwort)
@@ -41,11 +41,15 @@ Und warum? (Freitext) *
 **5. Gab es Abstürze, Fehler oder Seltsames?**
 (Auswahl: Nein / Ja) – wenn ja: Was ist passiert, in welcher Runde, welcher Browser? Ein Bildschirmfoto hilft sehr. Die Versionsnummer steht oben neben „CRUDE“.
 
+**6. Hast du auf dem Schreibtisch alles gefunden, was du gesucht hast?** (ab 0.2.15+10)
+(Auswahl: Ja, sofort / Nach etwas Suchen / Manches nie gefunden) – wenn nicht sofort: Was hast du gesucht, und wo hättest du es erwartet?
+(Freitext – z. B. „Wo verkaufe ich Öl?“, „Wie komme ich zur Karte?“, „Ich habe nicht gemerkt, dass jemand an der Tür wartet.“)
+
 ---
 
 ## Getrennt: Darf ich dich wieder anschreiben?
 
-(Eigener Abschnitt nach den 5 Fragen, freiwillig)
+(Eigener Abschnitt nach den 6 Fragen, freiwillig)
 
 **Darf Philipp dich später wieder kontaktieren – z. B. für Nachfragen oder wenn eine neue Version zum Testen bereit ist?**
 

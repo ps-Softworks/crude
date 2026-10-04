@@ -6,9 +6,10 @@
 import type { AgendaView } from '../sim/agenda';
 import type { DeskEvent } from '../sim/events';
 import type { SheetId } from './sceneState';
+import { waitingText } from './visitors';
 
-/** Wie ein Ereignis ohne Brief auftritt (ab Etappe 2 aus content/visitors.yaml). */
-export type Appearance = { kind: 'visitor'; figure: string } | { kind: 'tableau' };
+/** Wie ein Ereignis ohne Brief auftritt (Feld „visitor“ bzw. „tableau“ in content/events, ab 0.2.15+10). */
+export type Appearance = { kind: 'visitor'; figure: string; name: string } | { kind: 'tableau' };
 
 export interface Inbox {
   /** Briefe, dringende zuerst (Reihenfolge aus deskMail). */
@@ -20,6 +21,8 @@ export interface Inbox {
   incidents: DeskEvent[];
   /** Feste Termine, die diese Runde noch gingen. */
   routines: DeskEvent[];
+  /** Die Besetzung, nach der verteilt wurde (Name und Figur der Besucher). */
+  appearances: Readonly<Record<string, Appearance>>;
 }
 
 export function sortInbox(
@@ -35,17 +38,30 @@ export function sortInbox(
     tableaus: ohneBrief.filter((e) => appearances[e.id]?.kind === 'tableau'),
     incidents: ohneBrief.filter((e) => !appearances[e.id]),
     routines: [...routines],
+    appearances,
   };
+}
+
+/** Der Schlüssel, unter dem ein Ereignis in der „gesehen“-Liste der Szene steht. */
+export function seenKey(eventId: string): string {
+  return `ev:${eventId}`;
+}
+
+/** Ereignisse, die in dieser Runde noch niemand angesehen hat. */
+export function unseen(list: readonly DeskEvent[], seen: readonly string[]): DeskEvent[] {
+  return list.filter((e) => !seen.includes(seenKey(e.id)));
 }
 
 export interface Badge {
   count: number;
   /** Mindestens eine Frist läuft in dieser Runde ab. */
   urgent: boolean;
+  /** Mindestens eins ist neu (noch nicht angesehen). */
+  fresh: boolean;
 }
 
-function badge(list: readonly DeskEvent[]): Badge {
-  return { count: list.length, urgent: list.some((e) => e.urgent) };
+function badge(list: readonly DeskEvent[], seen: readonly string[] | null): Badge {
+  return { count: list.length, urgent: list.some((e) => e.urgent), fresh: seen !== null && unseen(list, seen).length > 0 };
 }
 
 export interface InboxBadges {
@@ -55,13 +71,30 @@ export interface InboxBadges {
   tuer: Badge;
 }
 
-export function inboxBadges(inbox: Inbox): InboxBadges {
+/** Zahlen für die Abzeichen; mit `seen` auch, ob etwas neu ist. */
+export function inboxBadges(inbox: Inbox, seen: readonly string[] | null = null): InboxBadges {
   return {
-    post: badge(inbox.letters),
-    vorfaelle: badge([...inbox.incidents, ...inbox.tableaus]),
-    termine: badge(inbox.routines),
-    tuer: badge(inbox.visitors),
+    post: badge(inbox.letters, seen),
+    vorfaelle: badge([...inbox.incidents, ...inbox.tableaus], seen),
+    termine: badge(inbox.routines, seen),
+    tuer: badge(inbox.visitors, seen),
   };
+}
+
+/** Welche Ereignisse ein Fenster zeigt – sie gelten mit dem Öffnen als gesehen. */
+export function eventsShownIn(inbox: Inbox, sheet: SheetId): DeskEvent[] {
+  if (sheet === 'post') return inbox.letters;
+  if (sheet === 'vorfaelle') return [...inbox.incidents, ...inbox.tableaus];
+  if (sheet === 'termine') return inbox.routines;
+  return [];
+}
+
+/** Die Namen der Wartenden, in ihrer Reihenfolge. */
+export function visitorNames(inbox: Inbox): string[] {
+  return inbox.visitors.map((e) => {
+    const a = inbox.appearances[e.id];
+    return a?.kind === 'visitor' ? a.name : e.title;
+  });
 }
 
 /** Eine Zeile in „Noch offen“ an der Glocke. */
@@ -82,7 +115,7 @@ export function openItems(inbox: Inbox, agenda: Pick<AgendaView, 'left'>): OpenI
   if (inbox.visitors.length > 0) {
     items.push({
       target: 'tuer',
-      text: `${anzahl(inbox.visitors.length, 'Besucher wartet', 'Besucher warten')} vor der Tür`,
+      text: `${waitingText(visitorNames(inbox))} vor der Tür`,
       urgent: inbox.visitors.some((e) => e.urgent),
     });
   }

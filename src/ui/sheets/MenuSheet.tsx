@@ -1,5 +1,5 @@
 // Fenster „Menü“ (Schublade, ☰): Neues Spiel, Feedback, Einstiegshilfe,
-// Zeitung, Tastenhilfe – und mit Debug-Bereich (?debug=1) der Reiter „Debug“.
+// Zeitung, Rundgang, Tastenhilfe – und mit Debug-Bereich (?debug=1) der Reiter „Debug“.
 
 import { FeedbackLink } from '../FeedbackLink';
 import { keyLabel, SHORTCUTS } from '../keys';
@@ -14,6 +14,8 @@ export interface MenuProps {
   onTutorial: (on: boolean) => void;
   autoNewspaper: boolean;
   onAutoNewspaper: (on: boolean) => void;
+  /** Rundgang über den Schreibtisch noch einmal zeigen (0.2.15+10). */
+  onTour: () => void;
   onRestart: () => void;
   onDebug: (debug: boolean) => void;
   onSeed: (seed: string) => void;
@@ -39,13 +41,13 @@ export function KeyHelp({ debugTools }: { debugTools: boolean }) {
           <dt>
             <kbd>1</kbd>–<kbd>4</kbd>
           </dt>
-          <dd>Antwort im Brief, Vorfall oder Termin wählen</dd>
+          <dd>Antwort im Brief, Vorfall, Termin oder beim Besuch wählen</dd>
         </div>
         <div>
           <dt>
             <kbd>Esc</kbd>
           </dt>
-          <dd>Fenster schließen · Ranch-Fenster schließen · Karte zurück zur Provinz · zurück zum Schreibtisch</dd>
+          <dd>Besuch warten lassen · Fenster schließen · Ranch-Fenster schließen · Karte zurück zur Provinz · zurück zum Schreibtisch</dd>
         </div>
         <div>
           <dt>
@@ -85,6 +87,11 @@ export function MenuSheet(p: MenuProps) {
             <input type="checkbox" checked={p.tutorialOn} onChange={(e) => p.onTutorial(e.target.checked)} /> Einstiegshilfe (Ruths Zettel
             führt durch die ersten Runden)
           </label>
+          <p>
+            <button type="button" onClick={p.onTour}>
+              Rundgang über den Schreibtisch zeigen
+            </button>
+          </p>
           <label>
             <input type="checkbox" checked={p.autoNewspaper} onChange={(e) => p.onAutoNewspaper(e.target.checked)} /> Zeitung zu
             Rundenbeginn von selbst aufschlagen

@@ -7,6 +7,7 @@
 /* Die Bühne: ein 16:10-Kasten, so groß wie es geht. */
 .buehne {
   position: relative;
+  container-type: size;
   width: min(100vw, 160vh);
   height: min(100vh, 62.5vw);
   overflow: hidden;
@@ -120,6 +121,18 @@
 }
 .abzeichen.dringend { color: var(--rot); border-color: var(--rot); }
 
+/* Neu (0.2.15+10): Stempel „neu“ und einmal sanft pulsieren, bis man hineingeschaut hat. */
+.neu-stempel {
+  position: absolute; top: 22px; right: -6px; z-index: 1;
+  font-size: 15px; font-variant: small-caps; font-weight: 700; letter-spacing: 0.06em; line-height: 1.1;
+  padding: 0 6px; color: var(--rost); background: var(--papier-hell);
+  border: 2px solid var(--rost); border-radius: 3px; transform: rotate(-8deg);
+}
+.objekt.frisch .abzeichen, .objekt.frisch .neu-stempel { animation: puls 0.9s ease-in-out 2; }
+@keyframes puls { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+.objekt.frisch .neu-stempel { animation-name: puls-gedreht; }
+@keyframes puls-gedreht { 0%, 100% { transform: rotate(-8deg) scale(1); } 50% { transform: rotate(-8deg) scale(1.18); } }
+
 /* Der Einstieg zeigt hierher: ein ruhiges Ocker-Leuchten. */
 .objekt.tutorial-ziel { border-color: var(--ocker); }
 .objekt.tutorial-ziel::after {
@@ -127,9 +140,15 @@
   animation: leuchten 1.6s ease-in-out infinite;
 }
 @keyframes leuchten { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+.unterlage-platz.rundgang-ziel::after {
+  content: ''; position: absolute; inset: -6px; border: 3px solid var(--ocker); border-radius: 8px; pointer-events: none;
+  animation: leuchten 1.6s ease-in-out infinite;
+}
 @media (prefers-reduced-motion: reduce) {
   .objekt, .zettel { transition: none; }
-  .objekt.tutorial-ziel::after { animation: none; }
+  .objekt.tutorial-ziel::after, .unterlage-platz.rundgang-ziel::after { animation: none; }
+  .objekt.frisch .abzeichen, .objekt.frisch .neu-stempel, .tuer.klopft .objekt-bild { animation: none; }
+  .klopf { animation: none; transform: translateX(-50%); }
 }
 
 /* Formen (SVG): Farben als Klassen. */
@@ -178,6 +197,11 @@
 .foto > svg { width: 100%; height: 100%; }
 .foto-figur { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
 .foto-worte { display: flex; flex-direction: column; }
+/* Je kälter das Familienwort, desto blasser das Bild (0.2.15+10). */
+.foto-neglected .foto-figur { opacity: 0.8; }
+.foto-bitter .foto-figur { opacity: 0.55; }
+.foto-estranged .foto-figur { opacity: 0.3; }
+.foto-bitter > svg, .foto-estranged > svg { filter: grayscale(0.6); }
 .objekt-familie .objekt-status { white-space: normal; text-align: center; }
 
 /* Lampe – nur Stimmung. Erschöpft: dunkler, krank: aus. */
@@ -189,14 +213,29 @@
 .schreibtisch.erschoepft .lampe-schein { opacity: 0.2; }
 .schreibtisch.krank .lampe-schein, .schreibtisch.krank .lampe-flamme { opacity: 0; }
 
-/* Tür (Besucher kommen mit Etappe 2) */
-.tuer { position: absolute; display: flex; flex-direction: column; align-items: center; }
-.tuer > svg { width: 100%; height: 100%; }
+/* Tür (0.2.15+10): Plakette mit Namen, Schatten hinter dem Glas, klopft einmal. */
+.tuer-bild { position: relative; }
+.tuer-schatten { position: absolute; top: 9%; left: 50%; height: 34%; transform: translateX(-50%); opacity: 0.4; pointer-events: none; }
+.tuer-schatten svg { height: 100%; width: auto; }
+.tuer-schatten .silhouette-grund, .tuer-schatten .silhouette-rahmen { fill: none; stroke: none; }
 .tuer-plakette {
   position: absolute; top: 47%; left: 50%; transform: translateX(-50%);
+  max-width: 96%; overflow: hidden; text-overflow: ellipsis;
   font-size: 15px; white-space: nowrap; padding: 0 8px;
   background: var(--messing); border: 1px solid var(--messing-dunkel); color: var(--tinte);
 }
+.tuer.besetzt .tuer-plakette { font-weight: 700; }
+.tuer[aria-disabled='true'] { cursor: default; }
+.tuer.klopft .objekt-bild { animation: klopfen 150ms ease-in-out 3; transform-origin: 50% 100%; }
+@keyframes klopfen { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(1.6deg); } }
+.klopf {
+  position: absolute; top: 64%; left: 50%; white-space: nowrap;
+  font-size: 16px; font-style: italic; color: var(--tinte); padding: 1px 8px;
+  background: var(--papier-hell); border: 1px solid var(--linie); border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(20, 10, 0, 0.3);
+  animation: klopf-text 2.4s ease forwards;
+}
+@keyframes klopf-text { 0% { opacity: 0; transform: translateX(-50%) scale(0.9); } 10%, 75% { opacity: 1; transform: translateX(-50%); } 100% { opacity: 0; transform: translateX(-50%); } }
 
 /* Zeitung, gefaltet auf dem Tisch */
 .zeitung-gefaltet {
@@ -365,3 +404,155 @@ button.klein-primary { padding: 2px 12px; font-size: 15px; }
 }
 .tableau-flaeche .gameover { margin-top: 0; }
 .tableau-flaeche > p .link { color: var(--papier-hell); }
+
+/* ------------------------------------------------------------------ Übergänge (0.2.15+10)
+   Nur transform und opacity; bei „weniger Bewegung“ nur Einblenden. */
+@keyframes einblenden { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ausblenden { from { opacity: 1; } to { opacity: 0; } }
+@keyframes sheet-auf { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes sheet-zu { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(0.98); } }
+.sheet-dunkel { animation: einblenden 160ms ease-out; }
+.sheet-dunkel .sheet { animation: sheet-auf 160ms ease-out; }
+.sheet-dunkel.schliesst { animation: ausblenden 120ms ease-in forwards; pointer-events: none; }
+.sheet-dunkel.schliesst .sheet { animation: sheet-zu 120ms ease-in forwards; }
+
+/* Zoom Wandkarte ⇄ Karte */
+.karten-zoom { position: absolute; inset: 0; z-index: 30; transform-origin: 0 0; pointer-events: none; }
+.karten-zoom > svg { width: 100%; height: 100%; display: block; }
+
+/* Rundenwechsel: Kalenderblatt reißt ab, neues Datum, Rückblick. */
+.rundenwechsel {
+  position: absolute; inset: 0; z-index: 60;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  color: var(--papier-hell); background: rgba(30, 20, 12, 0.82);
+  cursor: pointer;
+  animation: ausblenden 200ms ease-in 750ms forwards;
+}
+.rw-kalender { position: relative; width: 190px; height: 150px; }
+.rw-blatt {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  padding-top: 14px; color: var(--tinte);
+  background: var(--papier-hell); border: 1px solid var(--linie); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+.rw-datum { font-size: 20px; font-variant: small-caps; letter-spacing: 0.05em; text-align: center; }
+.rw-runde { font-size: 30px; font-weight: 700; font-variant-numeric: lining-nums; }
+.rw-alt { transform-origin: 8% 0; animation: blatt-reisst 380ms ease-in 120ms forwards; }
+@keyframes blatt-reisst { to { transform: translate(70px, 160px) rotate(26deg); opacity: 0; } }
+.rw-zeile { margin: 0; font-size: 24px; font-variant: small-caps; letter-spacing: 0.08em; animation: einblenden 220ms ease-out 300ms both; }
+.rw-rueckblick { list-style: none; margin: 0; padding: 0; max-width: 680px; text-align: center; font-size: 16px; font-style: italic; color: var(--papier-dunkel); }
+.rw-rueckblick li { animation: einblenden 220ms ease-out both; }
+.rw-hinweis { position: absolute; bottom: 14px; right: 18px; font-size: 15px; color: var(--grau-hell); }
+
+/* Stempel nach einer Aktion auf der Karte */
+.stempel {
+  position: absolute; top: 16%; left: 50%; z-index: 5; pointer-events: none;
+  padding: 4px 18px; font-size: 30px; font-weight: 700; font-variant: small-caps; letter-spacing: 0.08em;
+  color: var(--rot); background: rgba(248, 241, 223, 0.88); border: 4px double var(--rot); border-radius: 4px;
+  animation: stempeln 800ms ease-out forwards;
+}
+@keyframes stempeln {
+  0% { opacity: 0; transform: translateX(-50%) rotate(-8deg) scale(1.6); }
+  18% { opacity: 1; transform: translateX(-50%) rotate(-8deg) scale(1); }
+  75% { opacity: 1; transform: translateX(-50%) rotate(-8deg) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) rotate(-8deg) scale(1); }
+}
+
+/* Zeichen auf der Karte: Pflock (hier geht etwas) und Brief (offenes Ereignis) */
+.karte-marke.pflock line { stroke: var(--ocker); }
+.karte-marke.pflock path { fill: var(--ocker); }
+.karte-marke.brief { cursor: pointer; }
+.karte-marke.brief rect { fill: var(--papier-hell); stroke: var(--tinte); }
+.karte-marke.brief path { stroke: var(--tinte); }
+.karte-marke-siegel { fill: var(--rot); }
+.karte-marke.brief:hover rect, .karte-marke.brief:focus-visible rect { fill: var(--ocker-hell); stroke: var(--ocker); }
+.karte-marke.brief:focus { outline: none; }
+
+/* ------------------------------------------------------------------ Besuch (0.2.15+10) */
+.besuch {
+  position: absolute; inset: 0; z-index: 45;
+  background: linear-gradient(180deg, rgba(20, 12, 6, 0.3) 0%, rgba(20, 12, 6, 0.6) 100%);
+  animation: einblenden 200ms ease-out;
+}
+.besuch:focus { outline: none; }
+.besuch-figur {
+  position: absolute; left: 50%; top: 4%;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  transform: translateX(-50%);
+  animation: besucher-kommt 400ms cubic-bezier(0.3, 0.7, 0.3, 1) both;
+}
+.besuch-figur .silhouette { width: auto; height: min(34cqh, 290px); filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.5)); }
+@keyframes besucher-kommt {
+  from { opacity: 0; transform: translateX(calc(-50% + 40cqw)) scale(0.55); }
+  to { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+@keyframes besucher-geht {
+  from { opacity: 1; transform: translateX(-50%) scale(1); }
+  to { opacity: 0; transform: translateX(calc(-50% + 40cqw)) scale(0.55); }
+}
+.besuch-name {
+  font-size: 17px; font-weight: 700; padding: 1px 12px;
+  background: var(--messing); border: 1px solid var(--messing-dunkel); color: var(--tinte);
+}
+.sprechblatt {
+  position: absolute; left: 50%; bottom: 3%; transform: translateX(-50%);
+  width: min(780px, 92%); max-height: 55%; overflow: auto;
+  padding: 14px 22px 12px; font-size: 17px;
+  background: radial-gradient(ellipse at 15% 10%, rgba(255, 250, 235, 0.55), transparent 60%), var(--papier);
+  border: 1px solid var(--tinte-weich); outline: 1px solid var(--linie); outline-offset: -6px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  animation: blatt-auf 240ms ease-out 140ms both;
+}
+@keyframes blatt-auf { from { opacity: 0; transform: translate(-50%, 18px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.sprechblatt-wer { margin: 0; font-size: 15px; font-variant: small-caps; letter-spacing: 0.05em; color: var(--tinte-weich); }
+.sprechblatt-titel { margin: 2px 0 6px; font-size: 1.35rem; font-variant: normal; letter-spacing: normal; }
+.sprechblatt .event { margin: 0; padding: 0; border: none; background: none; box-shadow: none; }
+.sprechblatt-fuss { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0 0; }
+.sprechblatt-fuss .primary { margin-left: auto; }
+.nachsatz { margin: 6px 0 4px; padding: 6px 12px; font-style: italic; border-left: 4px solid var(--ocker); background: var(--papier-hell); }
+.besuch.geht .besuch-figur { animation: besucher-geht 260ms ease-in forwards; }
+.besuch.geht .sprechblatt { animation: ausblenden 200ms ease-in forwards; }
+.besuch.geht { animation: ausblenden 260ms ease-in forwards; }
+
+/* Szene im Vollbild (Geburt, Brand, Blitz, Sturm) */
+.besuch.als-szene { background: radial-gradient(ellipse at 50% 28%, var(--holz-hell), var(--tisch-dunkel) 75%); }
+.szene-bild { position: absolute; left: 50%; top: 4%; transform: translateX(-50%); width: min(560px, 62%); height: 38%; display: flex; justify-content: center; align-items: flex-end; animation: einblenden 400ms ease-out both; }
+.szene-bild svg.tb { width: 100%; height: 100%; }
+.tb-geburt { display: flex; align-items: flex-end; gap: 18px; height: 100%; }
+.tb-geburt .silhouette { height: 100%; width: auto; }
+.tb-geburt .silhouette:last-child { height: 62%; }
+.tb-boden { fill: var(--tisch-dunkel); }
+.tb-flamme { fill: var(--ocker); }
+.tb-flamme-innen { fill: var(--ocker-hell); }
+.tb-strich { fill: none; stroke: var(--papier-dunkel); stroke-width: 4; stroke-linecap: round; }
+.tb-rauch { fill: none; stroke: var(--grau); stroke-width: 7; stroke-linecap: round; opacity: 0.6; }
+.tb-tank { fill: var(--tinte-weich); stroke: var(--papier-dunkel); stroke-width: 2; }
+.tb-blitz { fill: var(--ocker-hell); stroke: var(--ocker); stroke-width: 2; }
+.tb-welle { fill: var(--blau); }
+.tb-regen { stroke: var(--blau-hell); stroke-width: 2; stroke-linecap: round; }
+
+/* ------------------------------------------------------------------ Rundgang (0.2.15+10) */
+.rundgang { position: absolute; inset: 0; z-index: 55; background: rgba(20, 12, 6, 0.22); pointer-events: none; }
+.rundgang-blase {
+  position: absolute; left: 50%; top: 40%; pointer-events: auto;
+  padding: 10px 16px 8px; font-size: 17px;
+  background: var(--papier-hell); border: 2px solid var(--ocker); border-radius: 4px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  animation: einblenden 180ms ease-out;
+}
+.rundgang-zaehler { margin: 0; font-size: 15px; font-variant: small-caps; color: var(--tinte-weich); }
+.rundgang-text { margin: 4px 0 8px; }
+.rundgang-blase .knoepfe { display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin: 0; }
+.rundgang-blase .knoepfe .link { margin-right: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-dunkel .sheet, .sheet-dunkel.schliesst .sheet { animation-name: einblenden; }
+  .sheet-dunkel.schliesst .sheet { animation-name: ausblenden; }
+  .rw-alt { animation: none; opacity: 0; }
+  .rw-rueckblick li, .rw-zeile { animation: none; }
+  .rundenwechsel { animation: ausblenden 150ms ease-in 150ms forwards; }
+  .besuch-figur { animation: einblenden 150ms ease-out both; }
+  .besuch.geht .besuch-figur { animation: none; }
+  .sprechblatt { animation: einblenden 150ms ease-out both; }
+  .stempel { animation: none; transform: translateX(-50%) rotate(-8deg); }
+  .szene-bild { animation: none; }
+}

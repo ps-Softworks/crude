@@ -3,7 +3,9 @@ import { deskEvents, deskMail, deskRoutines, type DeskEvent } from '../sim/event
 import { newGame } from '../sim/game';
 import { loadBalance } from '../sim/testBalance';
 import { loadEvents } from '../sim/testEvents';
-import { inboxBadges, openItems, sortInbox } from './inbox';
+import { figureCatalog } from './figureCatalog.node';
+import { eventsShownIn, inboxBadges, openItems, seenKey, sortInbox, unseen } from './inbox';
+import { appearancesOf } from './visitors';
 
 function ereignis(id: string, extra: Partial<DeskEvent> = {}): DeskEvent {
   return { id, title: id, text: '', choices: [], roundsLeft: 2, urgent: false, ...extra };
@@ -28,7 +30,7 @@ describe('Was auf dem Schreibtisch liegt', () => {
   });
 
   it('verteilt nach Besetzung auf Besucher und Tableaus', () => {
-    const inbox = sortInbox(pending, mail, [], { silas_schnaps: { kind: 'visitor', figure: 'silas' }, brand_nachbar: { kind: 'tableau' } });
+    const inbox = sortInbox(pending, mail, [], { silas_schnaps: { kind: 'visitor', figure: 'silas', name: 'Silas' }, brand_nachbar: { kind: 'tableau' } });
     expect(inbox.visitors.map((e) => e.id)).toEqual(['silas_schnaps']);
     expect(inbox.tableaus.map((e) => e.id)).toEqual(['brand_nachbar']);
     expect(inbox.incidents.map((e) => e.id)).toEqual(['streit']);
@@ -36,16 +38,17 @@ describe('Was auf dem Schreibtisch liegt', () => {
 
   it('zählt für die Abzeichen und merkt sich Fristen', () => {
     const b = inboxBadges(sortInbox(pending, mail, [termin]));
-    expect(b.post).toEqual({ count: 2, urgent: true });
-    expect(b.vorfaelle).toEqual({ count: 3, urgent: true });
-    expect(b.termine).toEqual({ count: 1, urgent: false });
-    expect(b.tuer).toEqual({ count: 0, urgent: false });
+    expect(b.post).toEqual({ count: 2, urgent: true, fresh: false });
+    expect(b.vorfaelle).toEqual({ count: 3, urgent: true, fresh: false });
+    expect(b.termine).toEqual({ count: 1, urgent: false, fresh: false });
+    expect(b.tuer).toEqual({ count: 0, urgent: false, fresh: false });
   });
 
   it('listet an der Glocke, was noch offen ist', () => {
-    const inbox = sortInbox(pending, mail, [termin], { silas_schnaps: { kind: 'visitor', figure: 'silas' } });
+    const inbox = sortInbox(pending, mail, [termin], { silas_schnaps: { kind: 'visitor', figure: 'silas', name: 'Silas' } });
     const items = openItems(inbox, { left: 3 });
     expect(items.map((i) => i.target)).toEqual(['tuer', 'post', 'vorfaelle', 'termine']);
+    expect(items[0].text).toBe('Silas wartet vor der Tür');
     expect(items[1]).toMatchObject({ urgent: true, text: '2 Briefe unbeantwortet – einer mit Frist in dieser Runde' });
     expect(items[3].text).toBe('3 Termine frei – 1 fester Termin im Kalender');
     // Ohne freie Termine ist der Kalender kein offener Punkt.
@@ -53,12 +56,31 @@ describe('Was auf dem Schreibtisch liegt', () => {
     expect(openItems(sortInbox([], [], []), { left: 5 })).toEqual([]);
   });
 
+  it('merkt sich, was neu ist (2b): ein Abzeichen ist „neu“, bis das Fenster offen war', () => {
+    const inbox = sortInbox(pending, mail, [termin]);
+    expect(inboxBadges(inbox, []).post.fresh).toBe(true);
+    const gesehen = eventsShownIn(inbox, 'post').map((e) => seenKey(e.id));
+    expect(gesehen).toEqual(['ev:mahnung', 'ev:brief']);
+    expect(inboxBadges(inbox, gesehen).post.fresh).toBe(false);
+    expect(inboxBadges(inbox, gesehen).vorfaelle.fresh).toBe(true);
+    expect(unseen(inbox.incidents, ['ev:streit']).map((e) => e.id)).toEqual(['silas_schnaps', 'brand_nachbar']);
+    expect(eventsShownIn(inbox, 'kassenbuch')).toEqual([]);
+  });
+
+  it('nennt die Wartenden an der Tür beim Namen', () => {
+    const zwei = sortInbox([silas, ereignis('ruth_sorge')], [], [], {
+      silas_schnaps: { kind: 'visitor', figure: 'silas', name: 'Silas' },
+      ruth_sorge: { kind: 'visitor', figure: 'ruth', name: 'Ruth' },
+    });
+    expect(openItems(zwei, { left: 0 })[0].text).toBe('Silas und ein weiterer warten vor der Tür');
+  });
+
   it('zählt im echten Spiel genau die Ereignisse aus der Simulation', () => {
     const balance = loadBalance();
     const events = loadEvents();
     const game = newGame('inbox-test', balance, events);
     const alle = deskEvents(game, balance, events);
-    const inbox = sortInbox(alle, deskMail(game, balance, events), deskRoutines(game, balance, events));
-    expect(inbox.letters.length + inbox.incidents.length).toBe(alle.length);
+    const inbox = sortInbox(alle, deskMail(game, balance, events), deskRoutines(game, balance, events), appearancesOf(events, figureCatalog));
+    expect(inbox.letters.length + inbox.incidents.length + inbox.visitors.length + inbox.tableaus.length).toBe(alle.length);
   });
 });

@@ -23,6 +23,7 @@
 # --- Bullard ----------------------------------------------------------------
 
 - id: bullard_saloon
+  visitor: bullard
   rival: bullard
   certain: true
   title:
@@ -75,6 +76,7 @@
       default: true
 
 - id: bullard_verrat
+  visitor: bullard
   rival: bullard
   certain: true
   marked: [bullard_verraten]
@@ -173,6 +175,7 @@
       default: true
 
 - id: bullard_treue
+  visitor: bullard
   rival: bullard
   certain: true
   marked: [crane_treue]

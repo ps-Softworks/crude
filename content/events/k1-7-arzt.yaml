@@ -4,6 +4,7 @@
 # (maxStrength 29 = unter agenda.errorsBelow).
 
 - id: arzt_besuch
+  visitor: arzt
   title:
     de: Doktor Haskell klopft
     en: Doctor Haskell Knocks

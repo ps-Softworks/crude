@@ -15,6 +15,7 @@
 # --- Familie ------------------------------------------------------------------
 
 - id: ruth_anteil
+  visitor: ruth
   marked: [ruth_buchhalterin]
   delay: 3
   chance: 0.3

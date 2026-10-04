@@ -1,5 +1,5 @@
 // Fenster „Vorfälle“ (N): die Zettel am Notizspieß – Ereignisse ohne Brief und
-// (ab Etappe 2) ohne Besucher.
+// ohne Besucher (die warten an der Tür). Szenen, die man auf „später“ legt, hängen auch hier.
 
 import { EventStack } from './EventStack';
 import type { SheetContext } from './types';

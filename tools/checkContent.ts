@@ -13,6 +13,8 @@ import { loadBalance } from '../src/sim/testBalance';
 import { EVENTS_DIR, readEventFiles } from '../src/sim/testEvents';
 import { parseTutorialContent } from '../src/sim/tutorial';
 import { mapRefErrors } from '../src/sim/regions';
+import { parseFigureCatalog } from '../src/ui/figures';
+import { visitorErrors } from '../src/ui/visitors';
 
 const dir = process.argv[2] ? resolve(process.argv[2]) : EVENTS_DIR;
 const files = readEventFiles(dir);
@@ -41,6 +43,13 @@ const errors = [...wirkung.errors, ...wirkungMarks, ...einstieg.errors, ...parse
 // Karte (0.2.15+5): ranch und unlocks in den Ereignissen müssen auf content/map.yaml zeigen.
 const karte = parsed.errors.length === 0 ? mapRefErrors(events, loadBalance().world) : [];
 for (const m of karte) errors.push({ file: 'content/map.yaml', line: 1, message: m });
+// Besucher (0.2.15+10): „visitor“ in den Ereignissen muss auf eine Figur mit Namen in content/figures.yaml zeigen.
+try {
+  const figuren = parseFigureCatalog('content/figures.yaml', readFileSync(new URL('../content/figures.yaml', import.meta.url), 'utf8'));
+  if (parsed.errors.length === 0) for (const m of visitorErrors(events, figuren)) errors.push({ file: 'content/figures.yaml', line: 1, message: m });
+} catch (e) {
+  errors.push({ file: 'content/figures.yaml', line: 1, message: (e as Error).message });
+}
 if (errors.length > 0) {
   for (const error of errors) console.error(formatContentError(error));
   console.error(`\n${errors.length} Fehler in ${files.length} Datei(en). Inhalte nicht in Ordnung.`);
@@ -48,6 +57,7 @@ if (errors.length > 0) {
 }
 const ohneEnglisch = events.filter((e) => e.title.en.trim() === '').length;
 console.log(`Inhalte in Ordnung: ${events.length} Ereignisse in ${files.length} Datei(en).`);
+console.log(`Auftritte: ${events.filter((e) => e.visitor).length} Besuche am Schreibtisch, ${events.filter((e) => e.tableau).length} Vollbild-Szenen.`);
 if (ohneEnglisch > 0) console.log(`Hinweis: ${ohneEnglisch} Ereignisse haben noch keinen englischen Text.`);
 // Entwürfe (2.10a): Schlüsselszenen, die Philipp noch überarbeiten soll.
 const entwuerfe = events.filter((e) => e.draft).map((e) => e.id);

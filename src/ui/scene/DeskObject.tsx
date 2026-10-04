@@ -26,6 +26,7 @@ export function DeskObject({
   badge,
   status,
   glow,
+  fresh,
   sheet,
   onOpen,
   children,
@@ -40,6 +41,8 @@ export function DeskObject({
   status?: ReactNode;
   /** Der Einstieg zeigt hierher. */
   glow?: boolean;
+  /** Etwas Neues liegt da, das noch niemand angesehen hat (Stempel „neu“, pulsiert einmal). */
+  fresh?: boolean;
   /** Welches Fenster der Gegenstand öffnet – dorthin kehrt der Fokus zurück. */
   sheet?: string;
   onOpen: () => void;
@@ -50,6 +53,7 @@ export function DeskObject({
     name,
     shortcut ? `Taste ${shortcut}` : null,
     badge ? `${badge.text}${badge.urgent ? ', Frist läuft ab' : ''}` : null,
+    fresh ? 'neu' : null,
     typeof status === 'string' ? status : null,
   ]
     .filter(Boolean)
@@ -57,7 +61,7 @@ export function DeskObject({
   return (
     <button
       type="button"
-      className={`objekt objekt-${id}${glow ? ' tutorial-ziel' : ''}${className ? ` ${className}` : ''}`}
+      className={`objekt objekt-${id}${glow ? ' tutorial-ziel' : ''}${fresh ? ' frisch' : ''}${className ? ` ${className}` : ''}`}
       style={{ left: `${at.left}%`, top: `${at.top}%`, width: `${at.width}%`, height: `${at.height}%` }}
       onClick={onOpen}
       data-sheet={sheet}
@@ -70,6 +74,11 @@ export function DeskObject({
         {name}
         {shortcut && <kbd>{shortcut}</kbd>}
       </span>
+      {fresh && badge?.text !== 'neu' && (
+        <span className="neu-stempel" aria-hidden="true">
+          neu
+        </span>
+      )}
       {badge && (
         <span className={badge.urgent ? 'abzeichen dringend' : 'abzeichen'}>
           {badge.urgent && <span className="siegel" aria-hidden="true" />}

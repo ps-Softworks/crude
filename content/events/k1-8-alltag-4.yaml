@@ -15,6 +15,7 @@
 # --- Bank und Geld ---------------------------------------------------------------
 
 - id: bank_kredit
+  visitor: bankier
   rival: thorne
   title:
     de: Ein Kredit von Thornes Bank
@@ -272,6 +273,7 @@
       default: true
 
 - id: crane_pruefer
+  visitor: lusk
   rival: crane
   title:
     de: Der Prüfer findet Wasser

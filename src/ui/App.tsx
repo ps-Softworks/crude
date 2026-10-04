@@ -2,33 +2,57 @@
 // jeder Aktion und zeigt Schreibtisch, Karte oder – am Ende – das Tableau mit
 // Kapitelende oder Pleite. Was offen ist (Fenster, Ranch, Ansicht), steht in
 // sceneState. Spielregeln und alle Texte kommen aus src/sim – hier wird nur geklickt.
+// Ab 0.2.15+10 dazu: Besucher an der Tür, „neu“-Hinweise, Übergänge (Fenster,
+// Wandkarte ⇄ Karte, Rundenwechsel) und der Rundgang beim ersten Start.
 
 import { useEffect, useReducer, useRef, useState } from 'react';
 import { agendaView } from '../sim/agenda';
 import { decideIpo } from '../sim/chapter';
 import type { LoanResult } from '../sim/credit';
-import { applyAction, nextStep, type DeskActionKind } from '../sim/desk';
+import { applyAction, nextStep, parcelActions, roundLog, type DeskActionKind } from '../sim/desk';
 import { deskEvents, deskMail, deskRoutines } from '../sim/events';
-import { endRound, newGame, type GameState } from '../sim/game';
+import { endRound, formatDate, newGame, type GameState } from '../sim/game';
+import { ranchOfFigure } from '../sim/geology';
 import { tutorialActive, tutorialHint, viewTutorial } from '../sim/tutorial';
 import { clearAutosave, loadAutosave, writeAutosave } from './autosave';
 import { balance } from './balance';
 import { ChapterEndScreen } from './ChapterEndScreen';
 import { events } from './events';
 import { GameOverScreen } from './GameOverScreen';
-import { inboxBadges, openItems, sortInbox, type OpenItem } from './inbox';
+import { figures } from './figureContent';
+import { figureOf } from './figures';
+import { eventsShownIn, inboxBadges, openItems, seenKey, sortInbox, unseen, visitorNames, type OpenItem } from './inbox';
 import { keyInput, keyToAction } from './keys';
+import type { MapMarker } from './Map';
 import { MapView } from './map/MapView';
 import { RanchSheet } from './map/RanchSheet';
 import { DeskScene } from './scene/DeskScene';
+import { IntroTour } from './scene/IntroTour';
+import { MapZoom } from './scene/MapZoom';
+import { RoundTransition } from './scene/RoundTransition';
 import { TopBar } from './scene/TopBar';
-import { initialScene, ruthTarget, sceneReducer, seen, targetObject, type RuthTarget, type SheetBack, type SheetId } from './sceneState';
+import {
+  autoVisitor,
+  restoreScene,
+  ruthTarget,
+  sceneReducer,
+  seen,
+  storeScene,
+  targetObject,
+  type OpenSheet,
+  type RuthTarget,
+  type SheetBack,
+  type SheetId,
+} from './sceneState';
 import { useFocusReturn } from './sheet/useFocusReturn';
 import { SheetHost } from './sheets/SheetHost';
 import type { SheetContext } from './sheets/types';
 import { readPref, writePref } from './storage';
 import { debugToolsVisible } from './testerConfig';
+import { tourSteps } from './tourContent';
 import { loadTutorialOn, saveTutorialOn, tutorialContent } from './tutorial';
+import { VisitorScene } from './visitor/VisitorScene';
+import { appearances } from './visitorContent';
 
 function randomSeed(): string {
   return Math.random().toString(36).slice(2, 8);
@@ -40,6 +64,30 @@ const params = new URLSearchParams(window.location.search);
 const debugTools = debugToolsVisible(import.meta.env.DEV, window.location.search);
 
 const ZEITUNG_PREF = 'crude.zeitung';
+/** Was in dieser Runde schon angesehen wurde (für „neu“), über ein Neuladen hinweg. */
+const SZENE_PREF = 'crude.szene';
+/** Der Rundgang der Einstiegshilfe lief schon einmal. */
+const RUNDGANG_PREF = 'crude.rundgang';
+/** So lange geht ein Fenster zu (Übergang). */
+const ZU_MS = 120;
+/** So lange klopft es, bevor der Besuch von selbst hereinkommt. */
+const KLOPF_MS = 700;
+
+/** Stempel nach einer Aktion auf der Karte – nur die Beschriftung, was geschah, sagt src/sim. */
+const STEMPEL: Record<DeskActionKind, string> = {
+  lease: 'Gepachtet',
+  option: 'Option gesichert',
+  exercise: 'Option eingelöst',
+  drill: 'Bohrung begonnen',
+  deeper: 'Es geht tiefer',
+  fish: 'Wird geborgen',
+  abandon: 'Aufgegeben',
+  pump: 'Pumpe bestellt',
+};
+
+function wenigBewegung(): boolean {
+  return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+}
 
 /**
  * Womit das Spiel anfängt: mit dem Seed aus der Adresse (immer eine frische
@@ -68,18 +116,55 @@ export function App() {
   const [autoNewspaper, setAutoNewspaper] = useState(() => readPref(ZEITUNG_PREF) !== 'aus');
   // Am Kapitelende darf man noch einmal auf den Schreibtisch schauen.
   const [peek, setPeek] = useState(false);
-  const [ui, dispatch] = useReducer(sceneReducer, initialScene);
+  // Was in dieser Runde schon angesehen wurde, gilt nach dem Neuladen weiter (gleiche Partie, gleiche Runde).
+  const [ui, dispatch] = useReducer(sceneReducer, null, () => restoreScene(readPref(SZENE_PREF), `${anfang.game.seed}:${anfang.game.round}`));
+  // Rundenwechsel (2c): das Kalenderblatt reißt ab, bevor der neue Tag beginnt.
+  const [uebergang, setUebergang] = useState<{ from: string; to: string; round: number; lines: string[] } | null>(null);
+  // Fenster geht zu: noch kurz sichtbar (2c).
+  const [nachlauf, setNachlauf] = useState<OpenSheet | null>(null);
+  // Zoom Wandkarte ⇄ Karte (2c): erst danach baut sich die Karte auf.
+  const [zoom, setZoom] = useState<'in' | 'out' | null>(null);
+  const [letzteAnsicht, setLetzteAnsicht] = useState(ui.view);
+  if (letzteAnsicht !== ui.view) {
+    setLetzteAnsicht(ui.view);
+    setZoom(ui.view === 'map' ? 'in' : 'out');
+  }
+  // Stempel nach einer Aktion auf der Karte (2b).
+  const [stempel, setStempel] = useState<{ text: string; n: number } | null>(null);
+  // Rundgang der Einstiegshilfe beim ersten Start (2d) und welcher Gegenstand gerade leuchtet.
+  const [rundgang, setRundgang] = useState(false);
+  const [spot, setSpot] = useState<string | null>(null);
   // Zählt neue Spiele, damit auch ein neues Spiel in Runde 1 die Zeitung aufschlägt.
   const [spielNr, setSpielNr] = useState(0);
 
   // Nach jeder Runde und jeder Aktion wird der Spielstand neu geschrieben.
   useEffect(() => setSaved(writeAutosave(game)), [game]);
 
-  // Neue Runde: „schon gesehen“ vergessen, die Zeitung schlägt sich auf.
-  // Nur beim Rundenwechsel (oder neuen Spiel) – die Vorliebe allein öffnet nichts.
+  // Neue Runde: „schon gesehen“ vergessen, die Zeitung schlägt sich auf – erst,
+  // wenn das Kalenderblatt abgerissen ist. Nur beim Rundenwechsel (oder neuen
+  // Spiel) – die Vorliebe allein öffnet nichts.
+  const wechselt = uebergang !== null;
   useEffect(() => {
+    if (wechselt) return;
     dispatch({ type: 'round', round: game.round, autoNewspaper: autoNewspaper && !game.finished });
-  }, [game.round, spielNr]);
+  }, [game.round, spielNr, wechselt]);
+
+  // „Gesehen“ merken, damit „neu“ nach dem Neuladen nicht wieder aufleuchtet.
+  useEffect(() => writePref(SZENE_PREF, storeScene(ui, `${game.seed}:${ui.round}`)), [ui.seen, ui.round, game.seed]);
+
+  // Fenster zu: noch 120 ms sichtbar, dann weg (bei „weniger Bewegung“ sofort).
+  const offenesFenster = useRef<OpenSheet | null>(ui.sheet);
+  useEffect(() => {
+    const war = offenesFenster.current;
+    offenesFenster.current = ui.sheet;
+    if (ui.sheet || !war || wenigBewegung()) {
+      setNachlauf(null);
+      return;
+    }
+    setNachlauf(war);
+    const t = window.setTimeout(() => setNachlauf(null), ZU_MS);
+    return () => window.clearTimeout(t);
+  }, [ui.sheet]);
 
   // Fenster zu: Fokus zurück zum Gegenstand.
   useFocusReturn(ui.sheet?.id ?? null);
@@ -88,9 +173,21 @@ export function App() {
   useEffect(() => setNotice(null), [ui.sheet?.id, ui.ranch]);
 
   // Was auf dem Tisch liegt – nur gefiltert und gezählt aus src/sim.
-  const inbox = sortInbox(deskEvents(game, balance, events), deskMail(game, balance, events), deskRoutines(game, balance, events));
-  const badges = inboxBadges(inbox);
+  const inbox = sortInbox(deskEvents(game, balance, events), deskMail(game, balance, events), deskRoutines(game, balance, events), appearances);
+  const badges = inboxBadges(inbox, ui.seen);
   const offen = openItems(inbox, agendaView(game, balance));
+  // Wer im Raum steht, wartet nicht mehr vor der Tür.
+  const draussen = { ...inbox, visitors: inbox.visitors.filter((e) => e.id !== ui.visitor) };
+  const wartende = visitorNames(draussen);
+  const ersterBesuch = draussen.visitors[0];
+  const ersteFigur = ersterBesuch && appearances[ersterBesuch.id]?.kind === 'visitor' ? (appearances[ersterBesuch.id] as { figure: string }).figure : null;
+
+  // Wer ein Fenster mit Ereignissen öffnet, hat sie gesehen (für „neu“).
+  const gezeigt = ui.sheet ? eventsShownIn(inbox, ui.sheet.id).map((e) => seenKey(e.id)) : [];
+  const gezeigtKey = gezeigt.join(',');
+  useEffect(() => {
+    if (gezeigt.length > 0) dispatch({ type: 'seen', keys: gezeigt });
+  }, [gezeigtKey]);
 
   // Der Schreibtisch sagt, was als Nächstes dran ist; danach richtet sich Ruths Zettel.
   const step = nextStep(game, balance);
@@ -106,18 +203,56 @@ export function App() {
 
   const tableau = (game.ending === 'pleite' || game.ending === 'kapitel' || game.ending === 'verkauft') && !(peek && game.ending !== 'pleite');
 
+  // Besuch von selbst (Bauplan Abschnitt 4): nach der Zeitung höchstens einer je Runde – erst klopft es.
+  const besetzt = wechselt || rundgang || tableau || zoom !== null;
+  const vonSelbst = autoVisitor(ui, {
+    tableaus: inbox.tableaus.map((e) => e.id),
+    visitors: inbox.visitors.map((e) => e.id),
+    autoNewspaper,
+    newspaper: !game.finished,
+    busy: besetzt,
+  });
+  useEffect(() => {
+    if (!vonSelbst) return;
+    const t = window.setTimeout(() => dispatch({ type: 'visitor', id: vonSelbst }), KLOPF_MS);
+    return () => window.clearTimeout(t);
+  }, [vonSelbst]);
+
+  // Rundgang beim allerersten Start, sobald der Tisch frei ist.
+  // Erst wenn die Runde angekommen ist und die Zeitung (falls sie von selbst kommt) gelesen wurde.
+  const zeitungOffen = autoNewspaper && !game.finished && !seen(ui, 'zeitung');
+  useEffect(() => {
+    if (rundgang || !tutorialOn || besetzt || game.finished || ui.view !== 'desk' || ui.sheet || ui.visitor) return;
+    if (ui.round !== game.round || zeitungOffen) return;
+    if (readPref(RUNDGANG_PREF) === 'gesehen') return;
+    setRundgang(true);
+  }, [tutorialOn, besetzt, game.finished, game.round, ui.round, zeitungOffen, ui.view, ui.sheet, ui.visitor, rundgang]);
+
+  function endeRundgang() {
+    setRundgang(false);
+    setSpot(null);
+    writePref(RUNDGANG_PREF, 'gesehen');
+    // Weiter geht es bei Ruths Zettel.
+    window.setTimeout(() => document.querySelector<HTMLElement>('.zettel')?.focus({ preventScroll: true }), 0);
+  }
+
+  function bitteHerein() {
+    if (ersterBesuch) dispatch({ type: 'visitor', id: ersterBesuch.id });
+  }
+
   function open(sheet: SheetId, opts: { tab?: string; back?: SheetBack } = {}) {
     dispatch({ type: 'open', sheet, ...opts });
   }
 
   function goTo(target: RuthTarget) {
     if (target.kind === 'ranch') dispatch({ type: 'showOnMap', id: target.parcelId });
+    else if (target.kind === 'tuer') bitteHerein();
     else open(target.sheet, { tab: target.tab });
   }
 
   function goToItem(item: OpenItem) {
-    // Ab Etappe 2 kommt hier der Besucher herein; bis dahin liegen alle Besuche am Notizspieß.
-    open(item.target === 'tuer' ? 'vorfaelle' : item.target, { back: { sheet: 'glocke' } });
+    if (item.target === 'tuer') bitteHerein();
+    else open(item.target, { back: { sheet: 'glocke' } });
   }
 
   function toggleTutorial(on: boolean) {
@@ -137,9 +272,18 @@ export function App() {
 
   function act(kind: DeskActionKind, parcelId: string) {
     const result = applyAction(game, balance, parcelId, kind);
-    if (result.ok) onGame(result.state);
-    else setNotice(result.reason);
+    if (result.ok) {
+      onGame(result.state);
+      setStempel((alt) => ({ text: STEMPEL[kind], n: (alt?.n ?? 0) + 1 }));
+    } else setNotice(result.reason);
   }
+
+  // Der Stempel steht 800 ms.
+  useEffect(() => {
+    if (!stempel) return;
+    const t = window.setTimeout(() => setStempel(null), 800);
+    return () => window.clearTimeout(t);
+  }, [stempel]);
 
   function apply(result: LoanResult) {
     if (result.ok) onGame(result.state);
@@ -148,7 +292,10 @@ export function App() {
 
   function end() {
     if (game.finished) return;
-    setGame(endRound(game, balance, events));
+    const next = endRound(game, balance, events);
+    // Rundenwechsel (2c): Kalenderblatt, neues Datum, ein Blick zurück. Am Kapitelende kommt das Tableau.
+    if (!next.ending) setUebergang({ from: formatDate(game), to: formatDate(next), round: next.round, lines: roundLog(next).slice(-3) });
+    setGame(next);
     setNotice(null);
     dispatch({ type: 'close' });
   }
@@ -165,6 +312,7 @@ export function App() {
     setGame(newGame(neuerSeed, balance, events));
     setNotice(null);
     setPeek(false);
+    setUebergang(null);
     dispatch({ type: 'reset' });
     setSpielNr((n) => n + 1);
   }
@@ -178,7 +326,7 @@ export function App() {
   // Tastatur: Kürzel am Schreibtisch, Esc in fester Reihenfolge (sceneState.escape).
   useEffect(() => {
     const taste = (e: KeyboardEvent) => {
-      if (tableau) return;
+      if (tableau || wechselt || rundgang) return;
       if (e.key === 'Escape') {
         // Was ein Fenster oder die Karte schon behandelt hat, bleibt behandelt.
         if (e.defaultPrevented) return;
@@ -186,7 +334,7 @@ export function App() {
         return;
       }
       if (e.defaultPrevented) return;
-      const action = keyToAction(keyInput(e), { view: ui.view, sheetOpen: ui.sheet !== null, visitorOpen: ui.visitor !== null, debugTools });
+      const action = keyToAction(keyInput(e), { view: zoom ? 'map' : ui.view, sheetOpen: ui.sheet !== null, visitorOpen: ui.visitor !== null, debugTools });
       if (!action) return;
       e.preventDefault();
       switch (action.kind) {
@@ -203,11 +351,7 @@ export function App() {
           open('menu', { tab: 'debug' });
           break;
         case 'visitor':
-          // Besucher kommen mit Etappe 2; bis dahin wartet niemand vor der Tür.
-          {
-            const tuer = offen.find((o) => o.target === 'tuer');
-            if (tuer) goToItem(tuer);
-          }
+          bitteHerein();
           break;
       }
     };
@@ -216,11 +360,45 @@ export function App() {
   });
 
   // Zurück von der Karte: Fokus auf die Wandkarte (nicht beim ersten Aufbau).
-  const letzteAnsicht = useRef(ui.view);
+  const vorigeAnsicht = useRef(ui.view);
   useEffect(() => {
-    if (letzteAnsicht.current === 'map' && ui.view === 'desk') document.querySelector<HTMLElement>('.objekt-karte')?.focus({ preventScroll: true });
-    letzteAnsicht.current = ui.view;
+    if (vorigeAnsicht.current === 'map' && ui.view === 'desk') document.querySelector<HTMLElement>('.objekt-karte')?.focus({ preventScroll: true });
+    vorigeAnsicht.current = ui.view;
   }, [ui.view]);
+
+  // Besuch gegangen: Fokus zurück an die Tür (oder auf den Tisch, wenn er von der Karte kam).
+  const vorigerBesuch = useRef(ui.visitor);
+  useEffect(() => {
+    if (vorigerBesuch.current !== null && ui.visitor === null && ui.view === 'desk') {
+      document.querySelector<HTMLElement>('.objekt-tuer')?.focus({ preventScroll: true });
+    }
+    vorigerBesuch.current = ui.visitor;
+  }, [ui.visitor, ui.view]);
+
+  // Zeichen auf der Karte (2b): Pflock, wo Jacob etwas tun kann; Brief, wo ein offenes Ereignis liegt.
+  function kartenZeichen(): MapMarker[] {
+    const zeichen: MapMarker[] = [];
+    for (const p of game.parcels) {
+      const eigen = game.leases.some((l) => l.parcelId === p.id && l.holder === 'jacob') || game.options.some((o) => o.parcelId === p.id && o.holder === 'jacob');
+      if (!eigen) continue;
+      const geht = parcelActions(game, balance, p.id).filter((a) => a.ok);
+      if (geht.length > 0) zeichen.push({ parcelId: p.id, kind: 'pflock', label: geht.map((a) => a.label).join(' · ') });
+    }
+    for (const e of [...inbox.letters, ...inbox.visitors, ...inbox.tableaus, ...inbox.incidents]) {
+      const figur = events.find((d) => d.id === e.id)?.ranch;
+      const ranch = figur ? ranchOfFigure(game, figur) : undefined;
+      if (ranch) zeichen.push({ parcelId: ranch.id, kind: 'brief', label: e.title, eventId: e.id });
+    }
+    return zeichen;
+  }
+
+  function zumZeichen(m: MapMarker) {
+    const id = m.eventId;
+    if (!id) return;
+    if (inbox.letters.some((e) => e.id === id)) open('post');
+    else if (inbox.visitors.some((e) => e.id === id) || inbox.tableaus.some((e) => e.id === id)) dispatch({ type: 'visitor', id });
+    else open('vorfaelle');
+  }
 
   const ctx: SheetContext = {
     game,
@@ -237,9 +415,12 @@ export function App() {
 
   const topBar = <TopBar game={game} debug={debug} saved={saved} onMenu={() => open('menu')} onLedger={() => open('kassenbuch')} />;
 
-  const sheets = ui.sheet && (
+  const fenster = ui.sheet ?? nachlauf;
+  const sheets = fenster && (
     <SheetHost
-      open={ui.sheet}
+      key={fenster.id}
+      open={fenster}
+      closing={ui.sheet === null}
       ctx={ctx}
       notice={notice}
       onClose={() => dispatch({ type: 'close' })}
@@ -260,6 +441,11 @@ export function App() {
         onTutorial: toggleTutorial,
         autoNewspaper,
         onAutoNewspaper: toggleAutoNewspaper,
+        onTour: () => {
+          dispatch({ type: 'close' });
+          dispatch({ type: 'view', view: 'desk' });
+          setRundgang(true);
+        },
         onRestart: forget,
         onDebug: setDebug,
         onSeed: setSeed,
@@ -300,15 +486,57 @@ export function App() {
   const zeit = agendaView(game, balance);
   const erschoepft = !game.finished && (zeit.exhausted || zeit.sickRounds > 0);
 
+  // Wer gerade im Raum steht (Besucher oder Szene).
+  const imRaum = ui.visitor ? appearances[ui.visitor] : undefined;
+  const besuchEvent = ui.visitor ? ([...inbox.visitors, ...inbox.tableaus].find((e) => e.id === ui.visitor) ?? null) : null;
+  const besuch = ui.visitor && imRaum && (
+    <VisitorScene
+      key={ui.visitor}
+      game={game}
+      eventId={ui.visitor}
+      event={besuchEvent}
+      appearance={imRaum}
+      onGame={onGame}
+      onWait={() => dispatch({ type: 'visitor', id: null })}
+      onLeave={() => dispatch({ type: 'visitor', id: null })}
+    />
+  );
+
+  const schreibtisch = (
+    <DeskScene
+      game={game}
+      badges={badges}
+      debug={debug}
+      topBar={topBar}
+      newspaperNew={!seen(ui, 'zeitung')}
+      saved={saved}
+      step={step}
+      tutorial={tutorialView}
+      tutorialOffer={!tutorialOn && tutorialActive(game, balance)}
+      onTutorial={toggleTutorial}
+      glow={targetObject(ziel)}
+      spotlight={spot}
+      waiting={{ names: wartende, figure: ersteFigur ? figureOf(figures, ersteFigur) : null }}
+      knock={unseen(draussen.visitors, ui.seen).length > 0}
+      onDoor={bitteHerein}
+      onRuth={ziel ? () => goTo(ziel) : null}
+      onOpen={(sheet, tab) => open(sheet, { tab })}
+      onMap={() => dispatch({ type: 'view', view: 'map' })}
+    />
+  );
+
   return (
     <div className={erschoepft ? 'buehne erschoepft' : 'buehne'}>
-      {ui.view === 'map' ? (
+      {ui.view === 'map' && zoom === null ? (
         <MapView
           game={game}
           debug={debug}
           ranch={ui.ranch}
           highlight={heroisch}
           topBar={topBar}
+          markers={kartenZeichen()}
+          onMarker={zumZeichen}
+          stamp={stempel}
           ranchSheet={
             parcel ? (
               <RanchSheet
@@ -330,24 +558,13 @@ export function App() {
           onBell={() => open('glocke')}
         />
       ) : (
-        <DeskScene
-          game={game}
-          badges={badges}
-          debug={debug}
-          topBar={topBar}
-          newspaperNew={!seen(ui, 'zeitung')}
-          saved={saved}
-          step={step}
-          tutorial={tutorialView}
-          tutorialOffer={!tutorialOn && tutorialActive(game, balance)}
-          onTutorial={toggleTutorial}
-          glow={targetObject(ziel)}
-          onRuth={ziel ? () => goTo(ziel) : null}
-          onOpen={(sheet, tab) => open(sheet, { tab })}
-          onMap={() => dispatch({ type: 'view', view: 'map' })}
-        />
+        schreibtisch
       )}
+      {zoom && <MapZoom dir={zoom} onDone={() => setZoom(null)} />}
+      {besuch}
       {sheets}
+      {rundgang && ui.view === 'desk' && <IntroTour steps={tourSteps} onStep={setSpot} onEnd={endeRundgang} />}
+      {uebergang && <RoundTransition {...uebergang} onDone={() => setUebergang(null)} />}
     </div>
   );
 }

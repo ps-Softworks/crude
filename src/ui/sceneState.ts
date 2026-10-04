@@ -1,5 +1,7 @@
 // Szenenzustand (0.2.15+9): Was gerade zu sehen ist – Schreibtisch oder Karte,
 // welches Fenster offen ist (mit Reiter und Rücksprung), welche Ranch gewählt ist.
+// Ab 0.2.15+10 auch: wer im Raum steht (Besucher oder Szene) und was in dieser
+// Runde schon angesehen wurde (für „neu“) – gemerkt über ein Neuladen hinweg.
 // Reine Logik ohne React und ohne Spielregeln: Hier wird nur geblättert, nie gespielt.
 
 /** Die Fenster, die man am Schreibtisch öffnen kann. */
@@ -39,7 +41,7 @@ export interface SceneState {
   sheet: OpenSheet | null;
   /** Gewählte Ranch auf der Karte – ihr Fenster ist offen. */
   ranch: string | null;
-  /** Besucher im Raum (ab Etappe 2): die id des Ereignisses. */
+  /** Besucher im Raum oder Szene im Vollbild: die id des Ereignisses. */
   visitor: string | null;
   /** Runde, auf die sich `seen` bezieht. */
   round: number;
@@ -56,7 +58,10 @@ export type SceneAction =
   | { type: 'ranch'; id: string | null }
   /** Akte/Quellen „Auf Karte zeigen“: Karte auf, Ranch gewählt, Fenster zu. */
   | { type: 'showOnMap'; id: string }
+  /** Besucher herein (id) oder wieder hinaus (null). Herein zählt als gesehen. */
   | { type: 'visitor'; id: string | null }
+  /** Diese Dinge gelten ab jetzt als gesehen (z. B. Briefe beim Öffnen der Post). */
+  | { type: 'seen'; keys: readonly string[] }
   | { type: 'escape' }
   /** Die Runde des Spiels hat sich geändert (oder das Spiel ist neu geladen). */
   | { type: 'round'; round: number; autoNewspaper: boolean }
@@ -111,7 +116,13 @@ export function sceneReducer(state: SceneState, action: SceneAction): SceneState
     case 'showOnMap':
       return { ...state, view: 'map', sheet: null, ranch: action.id };
     case 'visitor':
-      return { ...state, visitor: action.id };
+      if (action.id === null) return { ...state, visitor: null };
+      // Wer jemanden hereinbittet, braucht keinen Besuch von selbst mehr in dieser Runde.
+      return { ...state, visitor: action.id, sheet: null, seen: merke(merke(state.seen, `ev:${action.id}`), AUTO_BESUCH) };
+    case 'seen': {
+      const neu = action.keys.filter((k) => !state.seen.includes(k));
+      return neu.length === 0 ? state : { ...state, seen: [...state.seen, ...neu] };
+    }
     case 'escape':
       return escape(state);
     case 'round': {
@@ -126,13 +137,62 @@ export function sceneReducer(state: SceneState, action: SceneAction): SceneState
   }
 }
 
+/** Merkzeichen in `seen`: In dieser Runde kam schon ein Besucher (von selbst oder gerufen). */
+export const AUTO_BESUCH = 'auto-besuch';
+
+/**
+ * Gegen eine Flut von Fenstern (Bauplan Abschnitt 4): Pro Runde schlägt sich erst
+ * die Zeitung auf; ist sie zu, kommt höchstens der Erste von der Wartebank von
+ * selbst herein – eine Szene (Geburt, Brand …) vor einem Besucher. Alles andere
+ * wartet still. Gibt die id zurück, die jetzt hereinkommt, sonst null.
+ */
+export function autoVisitor(
+  state: SceneState,
+  input: {
+    /** Szenen und Besucher dieser Runde, in ihrer Reihenfolge. */
+    tableaus: readonly string[];
+    visitors: readonly string[];
+    autoNewspaper: boolean;
+    /** Es gibt eine Ausgabe (am Kapitelende nicht). */
+    newspaper: boolean;
+    /** Gerade läuft etwas anderes (Rundenwechsel, Rundgang, Kapitelende). */
+    busy: boolean;
+  },
+): string | null {
+  if (input.busy || state.view !== 'desk' || state.sheet !== null || state.visitor !== null) return null;
+  if (state.seen.includes(AUTO_BESUCH)) return null;
+  if (input.autoNewspaper && input.newspaper && !state.seen.includes('zeitung')) return null;
+  return input.tableaus[0] ?? input.visitors[0] ?? null;
+}
+
+/** Was über ein Neuladen hinweg gemerkt wird: die „gesehen“-Liste dieser Runde. */
+export function storeScene(state: SceneState, key: string): string {
+  return JSON.stringify({ key, round: state.round, seen: state.seen });
+}
+
+/**
+ * Der Szenenzustand nach dem Neuladen: gehört das Gemerkte zu dieser Partie und
+ * Runde (`key`), gilt es weiter – sonst fängt die Runde frisch an (und die Zeitung
+ * schlägt sich auf). Kaputtes oder fehlendes Gemerktes ist kein Fehler.
+ */
+export function restoreScene(text: string | null, key: string): SceneState {
+  if (!text) return initialScene;
+  try {
+    const d = JSON.parse(text) as { key?: unknown; round?: unknown; seen?: unknown };
+    if (d.key !== key || typeof d.round !== 'number' || !Array.isArray(d.seen)) return initialScene;
+    return { ...initialScene, round: d.round, seen: d.seen.filter((x): x is string => typeof x === 'string') };
+  } catch {
+    return initialScene;
+  }
+}
+
 /** Ist in dieser Runde schon hineingeschaut worden? */
 export function seen(state: SceneState, key: string): boolean {
   return state.seen.includes(key);
 }
 
 /** Wohin Ruths Zettel führt. */
-export type RuthTarget = { kind: 'ranch'; parcelId: string } | { kind: 'sheet'; sheet: SheetId; tab?: string };
+export type RuthTarget = { kind: 'ranch'; parcelId: string } | { kind: 'sheet'; sheet: SheetId; tab?: string } | { kind: 'tuer' };
 
 /**
  * Das Ziel von Ruths Zettel: zuerst das, worauf der Einstieg zeigt, sonst die
@@ -155,12 +215,14 @@ export function ruthTarget(input: {
   }
   if (input.stepParcelIds.length > 0) return { kind: 'ranch', parcelId: input.stepParcelIds[0] };
   if (input.finished) return null;
-  const offen = input.openTargets.find((x): x is SheetId => x !== 'tuer');
+  const offen = input.openTargets[0];
+  if (offen === 'tuer') return { kind: 'tuer' };
   return { kind: 'sheet', sheet: offen ?? 'glocke' };
 }
 
 /** Welcher Gegenstand am Schreibtisch für dieses Ziel leuchtet. */
-export function targetObject(target: RuthTarget | null): SheetId | 'karte' | null {
+export function targetObject(target: RuthTarget | null): SheetId | 'karte' | 'tuer' | null {
   if (!target) return null;
+  if (target.kind === 'tuer') return 'tuer';
   return target.kind === 'ranch' ? 'karte' : target.sheet;
 }

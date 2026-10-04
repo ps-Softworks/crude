@@ -7,6 +7,7 @@
 #   geburt_verpasst -> Jacob war auf dem Bohrplatz (Ruth vergisst es nicht)
 
 - id: thomas_geburt
+  tableau: true
   title:
     de: Ein Sohn
     en: A Son

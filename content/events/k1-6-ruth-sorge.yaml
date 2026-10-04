@@ -3,6 +3,7 @@
 # spricht es an. Kommt nur, wenn Jacob müde ist (maxStrength), und kann wiederkommen.
 
 - id: ruth_sorge
+  visitor: ruth
   title:
     de: Ruth stellt den Teller hin
     en: Ruth Sets Down the Plate

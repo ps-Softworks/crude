@@ -3,7 +3,7 @@
 // Der Fokus springt hinein und bleibt drin (Tab läuft im Kreis); zurück zum
 // auslösenden Gegenstand bringt ihn useFocusReturn.
 
-import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
 
 const FOKUSSIERBAR =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
@@ -21,6 +21,10 @@ export interface SheetProps {
   /** Für Querverweise neben der Randnotiz, z. B. „zum Kassenbuch“. */
   noteExtra?: ReactNode;
   className?: string;
+  /** Aus welchem Gegenstand das Fenster aufgeht (CSS-Selektor) – dort ist der Ursprung der Bewegung. */
+  origin?: string;
+  /** Das Fenster geht gerade zu (kurz noch sichtbar, nicht mehr bedienbar). */
+  closing?: boolean;
   children: ReactNode;
 }
 
@@ -28,9 +32,20 @@ function fokussierbare(root: HTMLElement): HTMLElement[] {
   return [...root.querySelectorAll<HTMLElement>(FOKUSSIERBAR)].filter((el) => el.offsetParent !== null || el === document.activeElement);
 }
 
-export function Sheet({ title, size, onClose, back, note, noteExtra, className, children }: SheetProps) {
+export function Sheet({ title, size, onClose, back, note, noteExtra, className, origin, closing = false, children }: SheetProps) {
   const titelId = useId();
   const ref = useRef<HTMLDivElement>(null);
+
+  // Übergang (0.2.15+10): Das Fenster wächst aus dem Gegenstand heraus, der es geöffnet hat.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const quelle = origin ? document.querySelector(origin) : null;
+    if (!el || !quelle) return;
+    const q = quelle.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    el.style.transformOrigin = `${q.left + q.width / 2 - r.left}px ${q.top + q.height / 2 - r.top}px`;
+    // Nur beim Öffnen.
+  }, [title]);
 
   // Beim Öffnen: Fokus ins Fenster – auf das, was data-autofocus trägt, sonst auf den ersten Knopf im Inhalt.
   useEffect(() => {
@@ -47,6 +62,7 @@ export function Sheet({ title, size, onClose, back, note, noteExtra, className, 
 
   // Verschwindet der Knopf mit dem Fokus (z. B. ein beantworteter Brief), bleibt der Fokus im Fenster.
   useEffect(() => {
+    if (closing) return;
     const aktiv = document.activeElement;
     if (ref.current && (!aktiv || aktiv === document.body)) ref.current.focus({ preventScroll: true });
   });
@@ -78,7 +94,8 @@ export function Sheet({ title, size, onClose, back, note, noteExtra, className, 
 
   return (
     <div
-      className="sheet-dunkel"
+      className={closing ? 'sheet-dunkel schliesst' : 'sheet-dunkel'}
+      inert={closing}
       onMouseDown={(e) => {
         // Klick daneben schließt – nicht aber ein Ziehen, das im Fenster begann.
         if (e.target === e.currentTarget) onClose();

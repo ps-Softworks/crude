@@ -342,6 +342,7 @@
       default: true
 
 - id: brand_nachbar
+  tableau: true
   draft: true                # Schlüsselszene: erster Feldbrand am Salt Hill (GDD §13)
   title:
     de: Feuer am Salt Hill

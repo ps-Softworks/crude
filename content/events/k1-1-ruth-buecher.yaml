@@ -3,6 +3,7 @@
 # Ruth will die Bücher führen. Setzt ein Merkzeichen für spätere Kapitel (Ruths Anteile).
 
 - id: ruth_buecher
+  visitor: ruth
   title:
     de: Ruth und die Quittungen
     en: Ruth and the Receipts

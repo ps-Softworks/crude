@@ -39,6 +39,7 @@
       default: true
 
 - id: prediger
+  visitor: prediger
   title:
     de: Der Prediger vom Hafen
     en: The Preacher from the Harbour
@@ -78,6 +79,7 @@
       default: true
 
 - id: sheriff_schutz
+  visitor: sheriff
   draft: true                # Schlüsselszene: erste Begegnung mit der käuflichen Ordnung Cordovas
   title:
     de: Der Sheriff bietet Schutz an
@@ -121,6 +123,7 @@
       default: true
 
 - id: nora_interview
+  visitor: nora
   draft: true                # Schlüsselszene: Noras erstes Gespräch mit Jacob (Weltbibel: sie verfolgt seinen Aufstieg)
   title:
     de: Nora Whitlock will ein Gespräch
