@@ -46,6 +46,7 @@ import { RefineryShape } from './objects/RefineryShape';
 import { refineryObjectStatus } from '../sheets/RefinerySheet';
 import { refineryStatus } from '../../sim/refinery';
 import { rt } from '../refinery';
+import { StaffFileShape } from '../sheets/StaffSheet'; // 4.9 Andockpunkt
 
 /** Wo was liegt, in Prozent der Bühne (unter der Kopfleiste). */
 const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte' | 'tuer', Placement> = {
@@ -64,6 +65,8 @@ const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte
   glocke: { left: 86, top: 70, width: 12, height: 27 },
   // 4.6 Andockpunkt: Raffinerie-Plan zwischen Ruths Zettel und Glocke (ab Kapitel 2).
   raffinerie: { left: 72, top: 75, width: 13, height: 22 },
+  // 4.9 Andockpunkt: Personalakten rechts neben dem Kassenbuch, zwischen Tür und Glocke (der Platz unter dem Kassenbuch gehört der Raffinerie).
+  personal: { left: 86.5, top: 46, width: 11.5, height: 22 },
 };
 
 export interface DeskSceneProps {
@@ -347,6 +350,17 @@ export function DeskScene(p: DeskSceneProps) {
             <RefineryShape running={refineryStatus(game) === 'running' || refineryStatus(game) === 'expanding'} />,
           )}
         {obj('protokoll', 'Kladde', { status: p.saved ? '✓ gesichert' : undefined }, <NotebookShape />)}
+        {/* 4.9 Andockpunkt: Personalakten – erst ab Kapitel 2 (state.staff), in Kapitel 1 unsichtbar. */}
+        {game.staff &&
+          obj(
+            'personal',
+            'Personal',
+            {
+              status: `${game.staff.hired.length} angestellt`,
+              badge: game.staff.candidates.length > 0 ? { text: `${game.staff.candidates.length} Bewerbung${game.staff.candidates.length === 1 ? '' : 'en'}` } : null,
+            },
+            <StaffFileShape />,
+          )}
         {obj(
           'glocke',
           game.finished ? 'Kapitel beendet' : 'Runde beenden',

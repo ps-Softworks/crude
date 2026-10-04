@@ -1,0 +1,31 @@
+/* Fenster „Personal“ (4.9): Personalakten wie Karteikarten. Nur Farben aus style.css. */
+.personal-liste { list-style: none; padding: 0; margin: 0 0 10px; }
+.personal-akte {
+  border: 1px solid var(--linie);
+  background: var(--papier-hell);
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  border-left: 5px solid var(--gruen);
+}
+.personal-akte.bewerbung { border-left-color: var(--ocker); }
+.personal-akte.loyal-unzufrieden { border-left-color: var(--ocker); }
+.personal-akte.loyal-abtruennig { border-left-color: var(--rot); }
+.personal-name { margin: 0 0 2px; font-size: 1.05rem; }
+.personal-bio { margin: 0 0 4px; font-style: italic; color: var(--tinte-weich); }
+.personal-werte { margin: 0 0 4px; }
+.personal-merkmale { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.personal-merkmal {
+  border: 1px solid var(--linie);
+  background: var(--papier-dunkel);
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: help;
+}
+.personal-knoepfe { margin: 4px 0 0; }
+.personal-journal { padding-left: 18px; margin: 0; color: var(--tinte-weich); }
+.personal-tabelle th { text-align: left; font-weight: normal; padding-right: 12px; }
+.personal-richtlinien label { display: inline-block; margin: 4px 0; }
+.personal-richtlinien form { margin: 4px 0; }
+.personal-richtlinien input[type='number'] { width: 6em; }
+.personal-bericht { border-top: 1px dashed var(--linie); padding-top: 6px; }

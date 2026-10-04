@@ -20,6 +20,7 @@ import { rt } from '../refinery';
 import { ReportSheet, type RoundReport } from './ReportSheet';
 import { RigFileSheet } from './RigFileSheet';
 import { RivalsSheet } from './RivalsSheet';
+import { StaffSheet } from './StaffSheet'; // 4.9 Andockpunkt
 import type { SheetContext } from './types';
 import { WaitingSheet } from './WaitingSheet';
 
@@ -40,6 +41,7 @@ export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   wartende: { title: 'Wer vor der Tür wartet', size: 'brief' },
   // 4.6 Andockpunkt: Raffinerie.
   raffinerie: { title: rt('sheetTitle'), size: 'mappe' },
+  personal: { title: 'Personal', size: 'mappe' }, // 4.9 Andockpunkt
 };
 
 export interface SheetHostProps {
@@ -80,6 +82,7 @@ export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound
     wartende: () => <WaitingSheet ctx={ctx} onVisitor={onVisitor} />,
     // 4.6 Andockpunkt: Raffinerie.
     raffinerie: () => <RefinerySheet ctx={ctx} />,
+    personal: () => <StaffSheet ctx={ctx} />, // 4.9 Andockpunkt
   };
   return (
     <Sheet

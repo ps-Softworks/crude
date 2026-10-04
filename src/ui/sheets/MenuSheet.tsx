@@ -16,6 +16,7 @@ import { rt } from '../refinery';
 import { TrunkDebugButton } from './TrunkPipelineTab';
 // 4.8 Andockpunkt: Debug-Knopf für Aktienbuch, Aufsichtsrat und Anleihen.
 import { StocksDebugButton } from './LedgerSheet';
+import { openStaff } from '../../sim/staff'; // 4.9 Andockpunkt
 
 export interface MenuProps {
   ctx: SheetContext;
@@ -194,6 +195,13 @@ export function MenuSheet(p: MenuProps) {
             <TrunkDebugButton ctx={ctx} />
             {/* 4.8 Andockpunkt: Aktienbuch wie in Kapitel 2 anlegen. */}
             <StocksDebugButton ctx={ctx} />
+            {/* 4.9 Andockpunkt: Personal vorab ansehen, solange es Kapitel 2 noch nicht gibt. */}
+            {!ctx.game.staff && (
+              <button type="button" onClick={() => ctx.onGame(openStaff(ctx.game, balance))}>
+                Personal freischalten (Vorschau Kapitel 2)
+              </button>
+            )}
+            {ctx.game.staff && <span className="muted klein">Personal ist freigeschaltet.</span>}
           </fieldset>
         </section>
       )}

@@ -13,6 +13,7 @@ import { parsePoliticsContent } from '../src/sim/politics';
 // 4.6 Andockpunkt: Texte der Raffinerie.
 import { parseRefineryContent } from '../src/sim/refineryContent';
 import { parseStocksContent } from '../src/sim/stocksContent'; // 4.8 Andockpunkt
+import { checkStaffContent, parseStaffContent } from '../src/sim/staffContent'; // 4.9 Andockpunkt
 import { loadBalance } from '../src/sim/testBalance';
 import { EVENTS_DIR, readEventFiles } from '../src/sim/testEvents';
 import { parseTutorialContent } from '../src/sim/tutorial';
@@ -50,6 +51,11 @@ const wirkungMarks = wirkung.content && parsed.errors.length === 0 ? checkReleva
 // 4.8 Andockpunkt: Aufsichtsrat, Strohmänner und Forderungen (Kapitel 2).
 const aktien = parseStocksContent('content/stocks.yaml', readFileSync(new URL('../content/stocks.yaml', import.meta.url), 'utf8'), loadBalance().stocks.board.seatsMax);
 const errors = [...aktien.errors, ...wirkung.errors, ...wirkungMarks, ...einstieg.errors, ...parsed.errors, ...zeitung.errors, ...politik.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks];
+
+// 4.9 Andockpunkt – Personal: Namen, Merkmale und Wörter der Personalakten, passend zu balance.yaml (staff).
+const personal = parseStaffContent('content/staff.yaml', readFileSync(new URL('../content/staff.yaml', import.meta.url), 'utf8'));
+errors.push(...personal.errors);
+if (personal.content) errors.push(...checkStaffContent('content/staff.yaml', personal.content, loadBalance()));
 
 // Karte (0.2.15+5): ranch und unlocks in den Ereignissen müssen auf content/map.yaml zeigen.
 const karte = parsed.errors.length === 0 ? mapRefErrors(events, loadBalance().world) : [];

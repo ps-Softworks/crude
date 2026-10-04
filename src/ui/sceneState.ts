@@ -24,6 +24,8 @@ export const SHEET_IDS = [
   'wartende',
   /** 4.6 Andockpunkt: Raffinerie (nur sichtbar, wenn freigeschaltet – ab Kapitel 2). */
   'raffinerie',
+  /** 4.9 Andockpunkt: Personalakten (ab Kapitel 2). */
+  'personal',
 ] as const;
 export type SheetId = (typeof SHEET_IDS)[number];
 

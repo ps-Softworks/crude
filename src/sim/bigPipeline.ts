@@ -34,6 +34,7 @@ import { formatDate } from './calendar';
 import type { GameState } from './game';
 import { withMark } from './logistics';
 import { generateWorld } from './ranches';
+import { fixerDefense } from './staff'; // 4.9 Andockpunkt: Der Fixer schützt auch die Fernleitungen.
 import type { RanchShape } from './ranches';
 import { Rng, seedFromString, type RngState } from './rng';
 import { markRound, RIVAL_MARKS } from './trust';
@@ -694,7 +695,7 @@ export function setTrunkGuards(state: GameState, projectId: string, on: boolean)
 // ------------------------------------------------------------- Kennzahlen
 
 /** Chance je Runde, dass diese Fernleitung sabotiert wird (im Bau oder im Betrieb). */
-export function sabotageChanceOf(state: Pick<GameState, 'events'>, balance: Balance, project: TrunkProject): number {
+export function sabotageChanceOf(state: Pick<GameState, 'events'> & Partial<Pick<GameState, 'staff'>>, balance: Balance, project: TrunkProject): number {
   const s = balance.bigPipelines.sabotage;
   if (project.status !== 'building' && project.status !== 'ready') return 0;
   let chance = (project.status === 'building' ? s.building : s.ready) + project.length * s.perUnit;
@@ -708,6 +709,8 @@ export function sabotageChanceOf(state: Pick<GameState, 'events'>, balance: Bala
   if (markRound(state, RIVAL_MARKS.bullardFeud) !== undefined || markRound(state, RIVAL_MARKS.bullardBetrayed) !== undefined) chance *= s.rivalFactor;
   if (markRound(state, BIG_PIPELINE_READ_MARKS.intimidation) !== undefined) chance *= s.revengeFactor;
   if (project.guards) chance *= s.guardsFactor;
+  // 4.9 Andockpunkt: Ein Fixer im Dienst hält Saboteure auch von den Fernleitungen fern (1 ohne Fixer).
+  chance *= fixerDefense(state, balance);
   return Math.min(s.maxChance, chance);
 }
 

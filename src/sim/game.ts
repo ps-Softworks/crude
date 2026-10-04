@@ -30,6 +30,8 @@ import { settleStocks, type StocksState } from './stocks'; // 4.8 Andockpunkt
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
 // 4.6 Andockpunkt: Raffinerie (ab Kapitel 2).
 import { advanceRefinery, type RefineryState } from './refinery';
+import type { StaffState } from './staff'; // 4.9 Andockpunkt: Personal
+import { delegateMail, settleStaff } from './staffRound'; // 4.9 Andockpunkt: Personal
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
@@ -105,6 +107,8 @@ export interface GameState {
   worldModel: WorldState;
   /** 4.7 Andockpunkt: Fernleitungen – fehlt in Kapitel 1 (erst ab balance.bigPipelines.fromChapter). */
   bigPipelines?: BigPipelineState;
+  /** 4.9 Andockpunkt: Personal (Sekretärin, Fixer, Richtlinien) – erst ab Kapitel 2, in Kapitel 1 undefined. */
+  staff?: StaffState;
   log: string[];
   /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
   roundLogStart: number;
@@ -215,7 +219,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   if (input.finished) return input;
   // Offene Ereignisse bekommen ihre Standard-Antwort, bevor die Runde abgerechnet wird.
   // Gebiete (0.2.15+5): Hat eine Antwort ein Gebiet freigeschaltet, bekommt es jetzt seine Ranches.
-  const beantwortet = openRegions(autoResolve(input, catalog, undefined, balance.events.timedRounds), balance);
+  // 4.9 Andockpunkt: Das Vorzimmer erledigt ablaufende Briefe nach Richtlinie, bevor die Standard-Antworten gelten.
+  const beantwortet = openRegions(autoResolve(delegateMail(input, balance, catalog), catalog, undefined, balance.events.timedRounds), balance);
   const roundLogStart = beantwortet.log.length;
   // Crane-Übernahme (2.8): Hat Jacob verkauft, endet die Partie hier – ohne weitere Abrechnung.
   const verkauft = settleTakeover(beantwortet, balance);
@@ -224,8 +229,10 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const familie = settleFamily(beantwortet, balance);
   // Termine (2.3): Krankheit (2.7), ruhige Runde gibt Kraft zurück, die nächste beginnt mit frischen Terminen.
   const terminiert = settleAgenda(familie, balance);
-  // 4.6 Andockpunkt: Die Raffinerie nimmt, was nach den Verkäufen noch im Tank steht (ohne Raffinerie: unverändert).
-  const ausgeruht = advanceRefinery(terminiert, balance);
+  // 4.9 Andockpunkt: Personal – Verkauf nach Regel, Aufträge, Löhne, Loyalität, Hitze, Extra-Termine der nächsten Runde.
+  const besetzt = settleStaff(terminiert, balance);
+  // 4.6 Andockpunkt: Die Raffinerie nimmt, was nach den Verkäufen (auch denen des Vorzimmers) noch im Tank steht (ohne Raffinerie: unverändert).
+  const ausgeruht = advanceRefinery(besetzt, balance);
   // Lager (0.2.15+2): Kosten, Schwund und Brand für das Öl, das noch im Tank steht; neue Tanks sind fertig.
   // Nach der Förderung läuft aus, was nicht mehr in die Tanks passt.
   const gefoerdert = spillOver(advanceProduction(settleStorage(ausgeruht, balance), balance), balance);

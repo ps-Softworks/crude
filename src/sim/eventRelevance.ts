@@ -26,6 +26,7 @@ import type { EventChoice, EventDef } from './events';
 import { RIVAL_MARKS } from './trust';
 // 4.7 Andockpunkt: Fernleitungen.
 import { BIG_PIPELINE_READ_MARK_LIST } from './bigPipeline';
+import { STAFF_EVENT_MARKS } from './staff'; // 4.9 Andockpunkt
 
 export type Verdict = 'stark' | 'gegenstueck' | 'schwach' | 'termin';
 
@@ -57,7 +58,8 @@ export interface RelevanceReport {
 /** Merkzeichen, die die Simulation liest (Rivalen, Wegerechte der Pipeline). */
 export function simReadMarks(balance: Balance): string[] {
   // 4.7 Andockpunkt: Merkzeichen, die die Fernleitungen lesen.
-  return [...Object.values(RIVAL_MARKS), ...balance.transport.pipeline.rights.map((r) => r.mark), ...BIG_PIPELINE_READ_MARK_LIST];
+  // 4.9 Andockpunkt: Merkzeichen, die das Personal liest (STAFF_EVENT_MARKS).
+  return [...Object.values(RIVAL_MARKS), ...balance.transport.pipeline.rights.map((r) => r.mark), ...BIG_PIPELINE_READ_MARK_LIST, ...Object.values(STAFF_EVENT_MARKS)];
 }
 
 /**

@@ -9,6 +9,7 @@ import { PARTIES, PUBLIC_ACTS, type Party, type PublicAct } from './world';
 import { parseRefineryBalance, type RefineryBalance } from './refineryBalance';
 // 4.7 Andockpunkt: Fernleitungen.
 import { parseBigPipelineBalance, type BigPipelineBalance } from './bigPipelineBalance';
+import { parseStaff, type StaffBalance } from './staff'; // 4.9 Andockpunkt: Personal
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
 
@@ -636,6 +637,8 @@ export interface Balance {
   bigPipelines: BigPipelineBalance;
   /** Aktien, Aufsichtsrat, Anleihen ab Kapitel 2 (GDD §8). */
   stocks: StocksBalance; // 4.8 Andockpunkt
+  /** 4.9 Andockpunkt: Personal (Kapitel 2). */
+  staff: StaffBalance;
 }
 
 /** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
@@ -1832,6 +1835,7 @@ export function parseBalance(raw: unknown): Balance {
     // 4.7 Andockpunkt: Fernleitungen – eigener Parser in bigPipelineBalance.ts.
     bigPipelines: parseBigPipelines(raw),
     stocks: parseStocksBalance(raw, (m) => new BalanceError(m)), // 4.8 Andockpunkt
+    staff: parseStaff(raw), // 4.9 Andockpunkt
   };
 
   for (const r of balance.transport.pipeline.rights) {
