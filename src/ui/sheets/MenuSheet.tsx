@@ -27,6 +27,43 @@ export interface MenuProps {
   onForget: () => void;
 }
 
+/** Weltmodell (4.1) als Zahlen – nur im Debug-Reiter; im Spiel deutet nur die Zeitung an. */
+function WorldDebug({ ctx }: { ctx: SheetContext }) {
+  const w = ctx.game.worldModel;
+  if (!w) return null;
+  const z = (x: number, st = 0) => x.toLocaleString('de-DE', { minimumFractionDigits: st, maximumFractionDigits: st });
+  const PARTEI = { handel: 'Handelspartei', volksbund: 'Volksbund', provinz: 'Provinzliga' };
+  return (
+    <dl className="terms">
+      <dt>Weltpreis</dt>
+      <dd>
+        {z(w.price, 2)} · Nachfrage {z(w.demand, 2)} · Kapazität {z(w.capacity, 2)} · Lager {z(w.stock, 2)}
+      </dd>
+      <dt>Kreditklima</dt>
+      <dd>
+        {z(w.credit)}
+        {w.crash > 0 ? ` · Crash noch ${w.crash} Runden` : ''}
+      </dd>
+      <dt>Stimmung</dt>
+      <dd>{z(w.mood)}</dd>
+      <dt>Politik</dt>
+      <dd>
+        {PARTEI[w.government]} regiert · Wahl in {w.electionIn} Runden · H {z(w.parties.handel * 100)} % / V {z(w.parties.volksbund * 100)} % / P{' '}
+        {z(w.parties.provinz * 100)} %
+      </dd>
+      <dt>Außenspannung</dt>
+      <dd>
+        {z(w.tension)}
+        {w.war > 0 ? ` · Krieg noch ${w.war} Runden` : ''}
+      </dd>
+      <dt>Technik / Nationalismus</dt>
+      <dd>
+        {z(w.tech)} / {z(w.nationalism)}
+      </dd>
+    </dl>
+  );
+}
+
 /** Die Tastenhilfe – aus denselben Daten wie die Kürzel selbst. */
 export function KeyHelp({ debugTools }: { debugTools: boolean }) {
   return (
@@ -138,6 +175,7 @@ export function MenuSheet(p: MenuProps) {
               Spielstand löschen
             </button>
           </form>
+          <WorldDebug ctx={ctx} />
         </section>
       )}
     </Tabs>

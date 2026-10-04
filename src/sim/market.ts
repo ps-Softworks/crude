@@ -27,6 +27,11 @@ export function rivalSupply(state: Pick<GameState, 'rival'>, ratePerWell: number
   return state.rival.wells.filter((w) => w.status === 'found').reduce((sum, w) => sum + (w.rate ?? ratePerWell), 0);
 }
 
+/** Gesamtangebot am Salt Hill in dieser Runde: Jacob, Nachbarn, Bullard. */
+export function saltHillSupply(state: Pick<GameState, 'wells' | 'rival' | 'round'>, balance: MarketBalance, rivalRatePerWell: number): number {
+  return jacobSupply(state) + neighbourSupply(balance, state.round) + rivalSupply(state, rivalRatePerWell);
+}
+
 /** Jacobs Förderung der letzten Runde: Summe über alle fündigen Quellen. */
 export function jacobSupply(state: Pick<GameState, 'wells'>): number {
   return state.wells
@@ -34,11 +39,14 @@ export function jacobSupply(state: Pick<GameState, 'wells'>): number {
     .reduce((sum, w) => sum + (w.production?.lastRate ?? 0), 0);
 }
 
-/** Posted Price für ein Gesamtangebot in Barrel je Runde. */
-export function computePrice(balance: MarketBalance, supply: number): number {
+/**
+ * Posted Price für ein Gesamtangebot in Barrel je Runde. trend ist der Faktor
+ * des Weltmodells auf den Trendpreis T (4.1, worldPriceFactor); 1 = ohne Welt.
+ */
+export function computePrice(balance: MarketBalance, supply: number, trend = 1): number {
   const { basePrice, demand, elasticity, shock, regionalDiscount, priceMin, priceMax } = balance;
   const angebot = Math.max(supply, 1);
-  const roh = basePrice * (demand / angebot) ** elasticity * shock - regionalDiscount;
+  const roh = basePrice * trend * (demand / angebot) ** elasticity * shock - regionalDiscount;
   return cents(Math.min(priceMax, Math.max(priceMin, roh)));
 }
 
@@ -51,11 +59,12 @@ function formatPrice(value: number): string {
  * Rundenende: Aus Jacobs Förderung, der Förderung der Nachbarn und Bullards
  * Förderung (rivalRatePerWell je fündiger Quelle) wird der
  * Posted Price für die nächste Runde. Große Sprünge kommen ins Protokoll.
+ * trend: Faktor des Weltmodells auf den Trendpreis (4.1).
  */
-export function advanceMarket(input: GameState, marketBalance: MarketBalance, rivalRatePerWell = 0): GameState {
-  const supply = jacobSupply(input) + neighbourSupply(marketBalance, input.round) + rivalSupply(input, rivalRatePerWell);
+export function advanceMarket(input: GameState, marketBalance: MarketBalance, rivalRatePerWell = 0, trend = 1): GameState {
+  const supply = saltHillSupply(input, marketBalance, rivalRatePerWell);
   const oldPrice = input.postedPrice;
-  const newPrice = computePrice(marketBalance, supply);
+  const newPrice = computePrice(marketBalance, supply, trend);
 
   let log = input.log;
   const change = Math.abs(newPrice - oldPrice) / oldPrice;

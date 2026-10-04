@@ -13,6 +13,7 @@ import type { Well } from './drilling';
 import type { GameState } from './game';
 import { parcelLabel } from './lease';
 import { producingWells } from './production';
+import { worldRateAdd } from './world';
 
 /** Woher das Geld kommt: von der Bank oder als Notkredit vom Geldverleiher. */
 export type LoanSource = 'bank' | 'lender';
@@ -87,11 +88,12 @@ export function freeCollateral(state: Pick<GameState, 'loans' | 'wells'>): Well[
 
 /**
  * Jahreszins, den ein neuer Kredit bekäme: Grundzins nach Rating, mit Pfand
- * zwei Punkte weniger, ohne Sicherheit drei mehr.
+ * zwei Punkte weniger, ohne Sicherheit drei mehr. climate ist der Aufschlag
+ * aus dem Kreditklima des Weltmodells (4.1, worldRateAdd), auch negativ.
  */
-export function loanRate(balance: Balance, rating: Rating, secured: boolean): number {
+export function loanRate(balance: Balance, rating: Rating, secured: boolean, climate = 0): number {
   const { collateralDiscount, unsecuredAdd, rates } = balance.credit;
-  const roh = secured ? rates[rating] - collateralDiscount : rates[rating] + unsecuredAdd;
+  const roh = (secured ? rates[rating] - collateralDiscount : rates[rating] + unsecuredAdd) + climate;
   return rateOf(Math.max(0, roh));
 }
 
@@ -148,7 +150,7 @@ export function takeLoan(state: GameState, balance: Balance, amount: number): Lo
   const blocked = loanBlocked(state, balance, amount);
   if (blocked) return { ok: false, reason: blocked };
   const pfand = freeCollateral(state)[0];
-  const zins = loanRate(balance, state.rating, pfand !== undefined);
+  const zins = loanRate(balance, state.rating, pfand !== undefined, worldRateAdd(state.worldModel, balance.worldModel));
   const loan: Loan = {
     id: lastId(state.loans) + 1,
     source: 'bank',
