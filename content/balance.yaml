@@ -574,10 +574,27 @@ worldModel:
     pipelineCut: 0.5         # im Crash wird so viel der Bohrungen im Bau weitergebaut (Rest gestoppt)
     investCut: 0.5           # solange der Crash nachwirkt, wird nur so viel neu gebohrt
     rounds: { min: 4, max: 8 }   # so lange wirkt ein Crash nach
+    # 4.4 Kreditzyklus (GDD §7.2): Boom → Überhitzung → Auslöser → Bankpanik oder Crash.
+    boomFrom: 60             # ab hier „Boom“: die Banken leihen großzügiger
+    tightFrom: 30            # bis hier „knapp“: die Banken leihen weniger
+    panicAfter: 0.5          # Bankpanik (Auslöser ohne große Verschuldung): Klima × panicAfter …
+    panicRounds: { min: 3, max: 5 }   # … so lange wirkt sie nach
+    panicPipelineCut: 0.5    # so viel der Bohrungen im Bau wird in der Panik weitergebaut (die Banken drehen den Hahn zu wie im Crash)
+    panicInvestCut: 0.5      # solange die Panik nachwirkt, wird nur so viel neu gebohrt
+    leverage:                # Verschuldung der Firmen und Spekulation auf Kredit (0–100): wächst in langen Booms
+      base: 25               # dahin baut sie sich ab
+      build: 5               # je Runde × (Klima − 50) ÷ 50, nur über 50
+      decay: 0.04            # Abbau je Runde: decay × (Verschuldung − base); Gleichgewicht = base + build ÷ decay × (Klima − 50) ÷ 50
+      start: 0.5             # neue Welt: so viel des Gleichgewichts zum Start-Kreditklima – passend zur Phase, aber noch ohne Blase
+      bubbleFrom: 45         # ab hier überhitzt: Banken heben die Zinsen, die Zeitung warnt vor der Blase
+      crashFrom: 56          # ab hier wird ein Auslöser zum Crash, darunter nur zur Bankpanik (Crash in ~15 % der 20-Jahres-Welten)
+      crashAfter: 0.4        # Verschuldung nach dem Crash = × crashAfter (Pleiten, Kredite gekündigt)
+      panicAfter: 0.8        # … nach einer Bankpanik
   mood:
     speed: 0.2               # wie schnell die Stimmung ihrem Ziel folgt
     price: 25                # doppelte Knappheit → −25 Punkte (teures Benzin, teures Heizöl)
     crash: 18                # Arbeitslosigkeit im Crash
+    panic: 6                 # 4.4: Bankpanik – Schlangen vor den Schaltern, aber kaum Entlassungen
     war: 6
     boom: 8                  # Kreditklima 100 → +8 (Wohlstand)
     noise: 3
@@ -633,7 +650,7 @@ worldModel:
   tension:                   # Schleife 3: Außenspannung
     base: 18                 # Ruhe-Niveau der Diplomatie
     revert: 0.04
-    scarcity: 20             # Knappheit (Weltpreis ÷ Trendpreis) über scarcityFrom → Spannung steigt
+    scarcity: 35             # Knappheit (Weltpreis ÷ Trendpreis) über scarcityFrom → Spannung steigt
     scarcityFrom: 1.1
     arms: 0.08               # Aufrüstung: + arms × (Spannung − armsFrom); ab gut 60 stärker als die Diplomatie
     armsFrom: 40
@@ -655,17 +672,65 @@ worldModel:
     nationalizeChance: 0.06
     nationalizeLoss: 0.06    # so viel Förderkapazität geht bei einer Verstaatlichung verloren
     after: 40
+  foreign:                   # 4.4 Außenspannung jenseits von Aldmark–Varenhold (das ist tension oben): Förderländer im Süden und in der Ferne
+    costaNegra:              # instabile Republik im Süden: Unruhe 0–100 → Aufstand → Förderausfall
+      start: { min: 15, max: 40 }
+      base: 25
+      revert: 0.06
+      poverty: 25            # billiges Öl macht arm: × (povertyFrom − Knappheit)
+      povertyFrom: 0.95
+      nationalism: 0.04      # × (Nationalismus − nationalismFrom)
+      nationalismFrom: 40
+      meddling: 0.05         # Großmächte mischen sich ein: × (Spannung − meddlingFrom)
+      meddlingFrom: 40
+      noise: 4
+      uprisingFrom: 65
+      uprisingChance: 0.08
+      uprisingSlope: 0.4
+      rounds: { min: 2, max: 6 }
+      after: 35
+      share: 0.06            # Anteil Costa Negras an der Weltförderung
+      loss: 0.7              # so viel davon fällt im Aufstand aus
+    qasir:                   # Wüstenkönigreich in der Ferne: Unmut 0–100 → Ölembargo; sein Anteil wächst mit dem Ölhunger der Welt
+      start: { min: 5, max: 20 }
+      base: 15
+      revert: 0.04
+      courting: 0.04         # die Großmächte werben um Qasir: × (Spannung − courtingFrom)
+      courtingFrom: 40
+      war: 1.5               # je Kriegsrunde in Übersee
+      nationalism: 0.05      # × (Nationalismus − nationalismFrom)
+      nationalismFrom: 50
+      noise: 3
+      embargoFrom: 70
+      embargoChance: 0.06
+      embargoSlope: 0.3
+      rounds: { min: 3, max: 6 }
+      after: 40
+      shareBase: 0.02        # Anteil Qasirs an der Weltförderung zu Beginn …
+      shareGrowth: 0.03      # … plus so viel je Punkt Nachfrage über 1 …
+      shareMax: 0.25         # … höchstens so viel
   chapter1:                  # wie sanft Kapitel 1 die Welt spürt
     priceWeight: 0.5         # Posted Price-Trend: 1 + 0,5 × (Weltpreis − 1) …
     priceMaxDev: 0.15        # … höchstens ±15 %
     rateWeight: 0.01         # Kreditklima 0/100 → Zins +1/−1 Punkt
     crashRate: 0.02          # im Crash zwei Punkte mehr
+    panicRate: 0.01          # 4.4: in der Bankpanik einen Punkt mehr
+    bubbleRate: 0.005        # 4.4: überhitzt – die Banken heben die Zinsen schon vorher (Frühwarnzeichen)
     rateMaxAdd: 0.03
+    limit:                   # 4.4: Faktor auf den Bankrahmen je Phase des Kreditzyklus (auf 100 $ gerundet)
+      crash: 0.5             # Banken kürzen die Rahmen
+      panic: 0.7
+      tight: 0.85
+      normal: 1
+      boom: 1.15
+      overheated: 1.25       # in der Blase leihen die Banken am freigiebigsten – genau dann ist es am gefährlichsten
     nationalBarrels: 5000000 # Barrel je Runde, die der Weltindex 1 bedeutet (Salt Hill ist ein Bruchteil)
   news:                      # wann die Zeitung Zustände andeutet (keine Zahlen)
     creditEasy: 70
     creditTight: 30
     moodAngry: 32
     tensionHigh: 60
+    unrestHigh: 55           # 4.4: Costa Negra so unruhig → Meldung „Unruhen in Costa Negra“
+    qasirHigh: 55            # 4.4: Qasir so verstimmt → Meldung „Gesandte aus Qasir“
     pollFrom: 2              # 4.2: so viele Runden vor der Wahl druckt die Zeitung eine Umfrage
     pollClose: 0.015         # liegen die beiden Ersten näher als 1,5 Prozentpunkte: „Kopf an Kopf“ (gut jede vierte Umfrage; dann kippt eine einzelne Tat die Wahl am ehesten)

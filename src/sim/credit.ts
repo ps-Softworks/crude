@@ -13,7 +13,7 @@ import type { Well } from './drilling';
 import type { GameState } from './game';
 import { parcelLabel } from './lease';
 import { producingWells } from './production';
-import { worldRateAdd } from './world';
+import { worldLimitFactor, worldRateAdd } from './world';
 
 /** Woher das Geld kommt: von der Bank oder als Notkredit vom Geldverleiher. */
 export type LoanSource = 'bank' | 'lender';
@@ -68,14 +68,23 @@ export function debt(state: Pick<GameState, 'loans'>): number {
   return cents(state.loans.reduce((sum, loan) => sum + loan.principal, 0));
 }
 
-/** Bankrahmen: limitBase plus limitPerWell für jede fördernde Quelle. */
-export function creditLimit(state: Pick<GameState, 'wells'>, balance: Balance): number {
+/** Grundrahmen aus den Sicherheiten: limitBase plus limitPerWell für jede fördernde Quelle. Daran misst sich das Rating. */
+export function baseCreditLimit(state: Pick<GameState, 'wells'>, balance: Balance): number {
   const { limitBase, limitPerWell } = balance.credit;
   return limitBase + limitPerWell * producingWells(state).length;
 }
 
+/**
+ * Bankrahmen: Grundrahmen × Faktor aus dem Kreditzyklus (4.4, worldLimitFactor) –
+ * im Boom mehr, in Panik und Crash weniger –, auf 100 $ gerundet. Ohne Weltmodell der Grundrahmen.
+ */
+export function creditLimit(state: Pick<GameState, 'wells'> & Partial<Pick<GameState, 'worldModel'>>, balance: Balance): number {
+  const faktor = worldLimitFactor(state.worldModel, balance.worldModel);
+  return Math.round((baseCreditLimit(state, balance) * faktor) / 100) * 100;
+}
+
 /** Wie viel die Bank noch gibt: Rahmen minus das, was er ihr schon schuldet. */
-export function headroom(state: Pick<GameState, 'loans' | 'wells'>, balance: Balance): number {
+export function headroom(state: Pick<GameState, 'loans' | 'wells'> & Partial<Pick<GameState, 'worldModel'>>, balance: Balance): number {
   const offen = state.loans.filter((l) => l.source === 'bank').reduce((sum, l) => sum + l.principal, 0);
   return Math.max(0, creditLimit(state, balance) - offen);
 }
@@ -119,7 +128,8 @@ function lastId(loans: readonly Loan[]): number {
  */
 function ratingOf(state: Pick<GameState, 'loans' | 'wells' | 'missedPayments'>, balance: Balance): Rating {
   const { startRating, usageC, usageD, missedC, missedD } = balance.credit;
-  const rahmen = creditLimit(state, balance);
+  // Das Rating misst die Schulden an den Sicherheiten, nicht an der Laune der Banken (4.4).
+  const rahmen = baseCreditLimit(state, balance);
   const anteil = rahmen > 0 ? debt(state) / rahmen : 0;
   let rating: Rating = anteil <= usageC ? 'B' : anteil <= usageD ? 'C' : 'D';
   if (state.missedPayments >= missedD) rating = 'D';

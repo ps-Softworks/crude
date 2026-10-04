@@ -1,9 +1,9 @@
 # Weltmodell
 
-Stand: 2026-10-04 · Version 0.4.3
+Stand: 2026-10-04 · Version 0.4.4
 
 Erzeugt mit `npm run welt` (tools/weltlaeufe.ts, Regeln in src/sim/world.ts und src/sim/laws.ts, Zahlen in content/balance.yaml unter worldModel, Gesetze in content/laws/).
-300 Welten (Seeds `welt-0` bis `welt-299`) über eine ganze Kampagne: 292 Runden = 73 Spieljahre, **ohne Spieler**. Rechenzeit 0.2 s.
+300 Welten (Seeds `welt-0` bis `welt-299`) über eine ganze Kampagne: 292 Runden = 73 Spieljahre, **ohne Spieler**. Rechenzeit 0.3 s.
 
 - Alle Werte endlich: **ja** · Krisenzahlen in der Mehrheit der Welten im GDD-Ziel: **ja**
 
@@ -13,58 +13,67 @@ Je Zelle: 10 % · **Median** · 90 % der Welten am Ende des Spieljahres; Min/Max
 
 | Größe | Jahr 0 | Jahr 1 | Jahr 2 | Jahr 4 | Jahr 5 | Jahr 10 | Jahr 15 | Jahr 20 | Jahr 25 | Jahr 30 | Jahr 40 | Jahr 50 | Jahr 60 | Jahr 73 | Min | Max |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Weltpreis (Index) | 1,00 · **1,00** · 1,00 | 0,99 · **1,00** · 1,00 | 0,98 · **1,00** · 1,02 | 0,85 · **1,00** · 1,07 | 0,85 · **0,99** · 1,09 | 0,83 · **0,96** · 1,23 | 0,82 · **1,00** · 1,31 | 0,80 · **0,99** · 1,27 | 0,79 · **0,96** · 1,18 | 0,73 · **0,94** · 1,13 | 0,76 · **0,90** · 1,08 | 0,70 · **0,86** · 1,02 | 0,70 · **0,84** · 0,94 | 0,66 · **0,81** · 0,93 | 0,35 | 2,34 |
+| Weltpreis (Index) | 1,00 · **1,00** · 1,00 | 0,99 · **1,00** · 1,00 | 0,98 · **1,00** · 1,01 | 0,90 · **1,00** · 1,08 | 0,87 · **1,00** · 1,10 | 0,85 · **1,00** · 1,17 | 0,85 · **0,97** · 1,17 | 0,83 · **0,94** · 1,12 | 0,79 · **0,94** · 1,14 | 0,80 · **0,95** · 1,13 | 0,77 · **0,89** · 1,03 | 0,72 · **0,86** · 0,96 | 0,69 · **0,82** · 0,95 | 0,66 · **0,81** · 0,96 | 0,35 | 2,37 |
 | Nachfrage (Index) | 1,00 · **1,00** · 1,00 | 1,05 · **1,05** · 1,05 | 1,09 · **1,09** · 1,09 | 1,19 · **1,19** · 1,20 | 1,24 · **1,25** · 1,25 | 1,54 · **1,55** · 1,56 | 1,90 · **1,92** · 1,93 | 2,33 · **2,36** · 2,39 | 2,83 · **2,88** · 2,92 | 3,41 · **3,48** · 3,54 | 4,74 · **4,85** · 4,95 | 6,13 · **6,26** · 6,36 | 7,30 · **7,41** · 7,49 | 8,26 · **8,32** · 8,36 | 1,00 | 8,37 |
-| Förderkapazität (Index) | 1,18 · **1,19** · 1,19 | 1,24 · **1,24** · 1,25 | 1,28 · **1,30** · 1,31 | 1,37 · **1,42** · 1,49 | 1,41 · **1,48** · 1,58 | 1,68 · **1,86** · 1,97 | 2,05 · **2,26** · 2,43 | 2,55 · **2,77** · 3,03 | 3,14 · **3,41** · 3,69 | 3,85 · **4,10** · 4,49 | 5,34 · **5,74** · 6,18 | 7,00 · **7,42** · 8,08 | 8,28 · **8,76** · 9,33 | 9,33 · **9,89** · 10,66 | 1,18 | 13,23 |
-| Lager (Quartalsbedarf) | 0,25 · **0,25** · 0,25 | 0,25 · **0,25** · 0,25 | 0,25 · **0,25** · 0,25 | 0,23 · **0,25** · 0,29 | 0,23 · **0,25** · 0,29 | 0,20 · **0,26** · 0,30 | 0,19 · **0,24** · 0,30 | 0,19 · **0,24** · 0,30 | 0,20 · **0,25** · 0,30 | 0,20 · **0,24** · 0,31 | 0,21 · **0,24** · 0,29 | 0,21 · **0,25** · 0,30 | 0,22 · **0,24** · 0,29 | 0,21 · **0,25** · 0,30 | 0,00 | 0,98 |
-| Kreditklima (0–100) | 35 · **48** · 59 | 37 · **49** · 63 | 38 · **49** · 65 | 35 · **51** · 66 | 34 · **50** · 65 | 32 · **50** · 67 | 32 · **47** · 67 | 31 · **47** · 63 | 31 · **47** · 63 | 33 · **45** · 61 | 34 · **47** · 62 | 31 · **45** · 61 | 33 · **46** · 61 | 33 · **47** · 63 | 13 | 100 |
-| Stimmung (0–100) | 50 · **54** · 59 | 47 · **52** · 56 | 47 · **51** · 55 | 43 · **50** · 56 | 44 · **51** · 55 | 39 · **50** · 56 | 37 · **48** · 55 | 38 · **48** · 54 | 38 · **49** · 55 | 39 · **48** · 54 | 40 · **49** · 55 | 42 · **49** · 55 | 42 · **49** · 55 | 42 · **50** · 55 | 4 | 66 |
-| Außenspannung (0–100) | 12 · **18** · 26 | 12 · **19** · 25 | 12 · **19** · 25 | 12 · **19** · 25 | 12 · **18** · 26 | 11 · **19** · 60 | 13 · **21** · 84 | 15 · **23** · 75 | 15 · **24** · 68 | 15 · **24** · 79 | 15 · **24** · 69 | 17 · **27** · 59 | 20 · **29** · 53 | 21 · **30** · 60 | 2 | 100 |
+| Förderkapazität (Index) | 1,18 · **1,19** · 1,19 | 1,24 · **1,24** · 1,25 | 1,29 · **1,30** · 1,31 | 1,36 · **1,41** · 1,49 | 1,41 · **1,48** · 1,58 | 1,71 · **1,84** · 1,97 | 2,14 · **2,29** · 2,46 | 2,64 · **2,84** · 3,02 | 3,24 · **3,43** · 3,71 | 3,87 · **4,12** · 4,47 | 5,47 · **5,77** · 6,21 | 7,07 · **7,46** · 8,11 | 8,36 · **8,82** · 9,78 | 9,43 · **9,88** · 11,19 | 1,18 | 13,42 |
+| Lager (Quartalsbedarf) | 0,25 · **0,25** · 0,25 | 0,25 · **0,25** · 0,25 | 0,25 · **0,25** · 0,25 | 0,23 · **0,25** · 0,28 | 0,23 · **0,25** · 0,28 | 0,21 · **0,25** · 0,29 | 0,21 · **0,25** · 0,29 | 0,22 · **0,25** · 0,29 | 0,21 · **0,25** · 0,30 | 0,21 · **0,24** · 0,29 | 0,21 · **0,25** · 0,28 | 0,22 · **0,25** · 0,29 | 0,22 · **0,25** · 0,29 | 0,21 · **0,24** · 0,30 | 0,00 | 0,89 |
+| Kreditklima (0–100) | 35 · **48** · 59 | 37 · **48** · 63 | 38 · **50** · 65 | 40 · **50** · 65 | 40 · **50** · 65 | 39 · **50** · 64 | 36 · **50** · 66 | 35 · **48** · 67 | 33 · **47** · 64 | 37 · **47** · 64 | 36 · **47** · 62 | 34 · **46** · 62 | 34 · **47** · 63 | 36 · **46** · 62 | 13 | 93 |
+| Verschuldung (0–100) | 25 · **25** · 37 | 25 · **25** · 39 | 25 · **26** · 41 | 25 · **28** · 44 | 25 · **28** · 43 | 25 · **31** · 41 | 26 · **31** · 44 | 26 · **31** · 44 | 25 · **29** · 43 | 25 · **29** · 41 | 25 · **28** · 39 | 25 · **28** · 40 | 25 · **27** · 41 | 25 · **28** · 38 | 20 | 78 |
+| Stimmung (0–100) | 50 · **54** · 59 | 48 · **52** · 56 | 46 · **51** · 55 | 46 · **51** · 55 | 45 · **50** · 55 | 43 · **49** · 55 | 42 · **49** · 55 | 44 · **50** · 55 | 43 · **49** · 56 | 42 · **49** · 54 | 41 · **49** · 55 | 43 · **50** · 56 | 42 · **49** · 55 | 42 · **49** · 55 | 10 | 70 |
+| Außenspannung (0–100) | 12 · **18** · 26 | 12 · **19** · 25 | 11 · **18** · 25 | 12 · **19** · 25 | 12 · **19** · 27 | 13 · **20** · 48 | 14 · **22** · 67 | 13 · **22** · 49 | 14 · **21** · 60 | 14 · **23** · 64 | 15 · **25** · 60 | 16 · **26** · 56 | 19 · **29** · 72 | 21 · **31** · 80 | 0 | 100 |
 | Technikstand (0–100) | 6 · **8** · 10 | 7 · **9** · 10 | 7 · **9** · 11 | 8 · **10** · 12 | 9 · **11** · 13 | 12 · **15** · 17 | 16 · **20** · 23 | 21 · **25** · 29 | 27 · **32** · 37 | 34 · **40** · 45 | 51 · **57** · 62 | 67 · **72** · 76 | 80 · **84** · 86 | 91 · **93** · 94 | 6 | 94 |
-| Nationalismus (0–100) | 9 · **14** · 19 | 11 · **15** · 20 | 12 · **17** · 23 | 15 · **20** · 26 | 16 · **21** · 27 | 20 · **28** · 37 | 25 · **34** · 46 | 29 · **39** · 54 | 33 · **45** · 60 | 38 · **48** · 66 | 45 · **56** · 72 | 52 · **63** · 76 | 54 · **69** · 78 | 47 · **70** · 83 | 5 | 100 |
+| Nationalismus (0–100) | 9 · **14** · 19 | 11 · **15** · 21 | 12 · **17** · 23 | 13 · **20** · 26 | 14 · **21** · 27 | 19 · **27** · 36 | 24 · **33** · 44 | 29 · **38** · 51 | 31 · **42** · 56 | 35 · **47** · 62 | 44 · **55** · 69 | 52 · **62** · 75 | 52 · **68** · 81 | 50 · **71** · 81 | 3 | 100 |
 
 Median je Spieljahr als Kurve (Jahr 0 bis 73):
 
-- Weltpreis (▁ 0,7 … █ 1,4): `▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂`
-- Weltpreis 90 % (▁ 0,7 … █ 2,0): `▃▃▃▃▃▃▃▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂`
-- Kreditklima (▁ 30 … █ 70): `▄▄▄▅▅▅▅▅▅▅▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄`
-- Außenspannung 90 % (▁ 0 … █ 100): `▃▃▃▃▃▃▃▃▄▄▅▅▅▆▆▇▆▆▇▆▆▆▆▆▆▆▆▆▆▆▇▇▆▅▅▅▆▆▆▆▆▆▆▆▅▅▅▅▅▅▅▆▆▅▆▅▅▄▄▅▅▅▅▅▅▅▅▆▅▆▆▅▅▅`
-- Stimmung (▁ 30 … █ 60): `▇▆▆▆▆▆▆▆▆▆▆▆▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▆▅▅▅▆▅▅▅▅▅▅▅▅▅▅▆▅▅▆▆▅▆▆▆▆▅▆▆▆▆`
+- Weltpreis (▁ 0,7 … █ 1,4): `▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▃▃▃▃▃▃▃▄▄▄▄▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂`
+- Weltpreis 90 % (▁ 0,7 … █ 2,0): `▃▃▃▃▃▃▃▃▄▄▄▄▄▄▄▄▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▂▃▂▃▂▂▂▂▂▂▂▂▂▂▂▃▂▂▂▂▂▂▂▂▂▂`
+- Kreditklima (▁ 30 … █ 70): `▄▄▄▄▄▅▅▄▄▄▅▅▅▅▄▄▄▅▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄`
+- Verschuldung 90 % (▁ 20 … █ 60): `▄▄▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▆▆▅▅▅▅▅▅▅▅▅▅▄▄▄▄▄▅▄▄▄▄▄▄▅▄▅▅▅▅▄▄▄▄▄▄▅▅▅▅▅▅▄▅▅▅▅▄▄▄▄▄▄`
+- Außenspannung 90 % (▁ 0 … █ 100): `▃▃▃▃▃▃▃▃▄▄▄▅▅▅▅▆▅▅▅▅▄▅▅▅▅▅▅▆▆▆▅▅▅▅▅▅▅▆▆▆▅▅▆▆▆▅▅▅▅▅▅▅▅▅▅▅▆▆▆▆▆▆▆▆▅▅▅▅▅▅▆▆▆▇`
+- Stimmung (▁ 30 … █ 60): `▇▆▆▆▆▆▆▆▆▅▅▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▆▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▅▆▅▆▅▅▅▅▅▆▆▆▆▆▆▅▅▅`
 
 ## Krisen je Kampagne
 
 | Krise | Ziel je Kampagne (GDD §15) | Ø | 10 % · 50 % · 90 % der Welten | Welten im Ziel | Ø in den ersten 20 Jahren |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Kreditkrisen (Crash) | 2–4 | 2,84 | 1 · 3 · 5 | 72,7 % | 0,95 |
-| Ölschwemmen (Riesenfund) | 1–3 | 2,08 | 0 · 2 · 4 | 69,3 % | 0,58 |
-| Kriege in Übersee | 0–2 | 1,36 | 0 · 1 · 3 | 85,0 % | 0,34 |
-| Verstaatlichungen | – | 0,75 | 0 · 1 · 2 | – | 0,00 |
-| Regierungswechsel (von 18 Wahlen) | – | 8,55 | 6 · 9 · 12 | – | 2,32 |
+| Kreditkrisen (Bankpanik + Crash) | 2–4 | 3,04 | 1 · 3 · 5 | 66,3 % | 0,87 |
+| Ölschwemmen (Riesenfund) | 1–3 | 2,06 | 0 · 2 · 4 | 68,7 % | 0,57 |
+| Kriege in Übersee | 0–2 | 1,31 | 0 · 1 · 3 | 86,0 % | 0,24 |
+| davon große Crashs | – | 0,43 | 0 · 0 · 1 | – | 0,10 |
+| davon Bankpaniken | – | 2,60 | 1 · 2 · 5 | – | 0,77 |
+| Aufstände in Costa Negra | – | 2,89 | 1 · 3 · 5 | – | 0,32 |
+| Ölembargos aus Qasir | – | 0,55 | 0 · 0 · 2 | – | 0,00 |
+| Verstaatlichungen | – | 0,70 | 0 · 1 · 1 | – | 0,00 |
+| Regierungswechsel (von 18 Wahlen) | – | 9,26 | 6 · 9 · 12 | – | 2,43 |
 
-Regierung: Handelspartei 22,7 %, Volksbund 36,9 %, Provinzliga 40,4 % der Regierungszeit.
+Regierung: Handelspartei 25,6 %, Volksbund 32,5 %, Provinzliga 41,9 % der Regierungszeit.
+
+Kreditzyklus (4.4): Welten mit großem Crash in den ersten 20 Jahren: **9,3 %** (Fertig-Kriterium 5–25 %). Vor 100,0 % der 130 Crashs warnte die Zeitung in den 8 Runden davor vor der Blase; die Warnung steht in 4,9 % aller Runden.
 
 ## Krisen über die Zeit
 
-Jede Welt ist neu (GDD §7.2): Crashs und Kriege sollen nicht in allen Welten zur selben Zeit kommen. Je Fenster von 5 Spieljahren: Ø Krisen je Welt und Anteil der Welten, deren erster Crash dort liegt (der Rest: ohne Crash).
+Jede Welt ist neu (GDD §7.2): Kreditkrisen und Kriege sollen nicht in allen Welten zur selben Zeit kommen. Je Fenster von 5 Spieljahren: Ø Krisen je Welt und Anteil der Welten, deren erste Kreditkrise dort liegt (der Rest: ohne).
 
 | je Welt | J. 0–4 | J. 5–9 | J. 10–14 | J. 15–19 | J. 20–24 | J. 25–29 | J. 30–34 | J. 35–39 | J. 40–44 | J. 45–49 | J. 50–54 | J. 55–59 | J. 60–64 | J. 65–69 | J. 70–72 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Crashs | 0,14 | 0,24 | 0,29 | 0,28 | 0,23 | 0,21 | 0,17 | 0,18 | 0,21 | 0,16 | 0,18 | 0,15 | 0,12 | 0,18 | 0,08 |
-| erster Crash (Anteil Welten) | 14,3 % | 19,3 % | 18,0 % | 8,7 % | 6,3 % | 5,3 % | 3,3 % | 4,3 % | 4,7 % | 2,0 % | 3,0 % | 0,7 % | 2,7 % | 0,7 % | 0,3 % |
-| Kriege | 0,00 | 0,07 | 0,11 | 0,15 | 0,11 | 0,13 | 0,11 | 0,11 | 0,11 | 0,09 | 0,11 | 0,06 | 0,06 | 0,10 | 0,06 |
+| Kreditkrisen | 0,14 | 0,26 | 0,23 | 0,23 | 0,25 | 0,22 | 0,22 | 0,20 | 0,18 | 0,22 | 0,16 | 0,19 | 0,21 | 0,22 | 0,11 |
+| erste Kreditkrise (Anteil Welten) | 14,3 % | 20,7 % | 11,3 % | 7,7 % | 11,0 % | 6,3 % | 6,0 % | 3,3 % | 2,3 % | 2,3 % | 2,3 % | 1,3 % | 2,3 % | 2,3 % | 0,7 % |
+| davon große Crashs | 0,01 | 0,03 | 0,03 | 0,03 | 0,05 | 0,03 | 0,05 | 0,02 | 0,01 | 0,03 | 0,03 | 0,03 | 0,03 | 0,04 | 0,02 |
+| Kriege | 0,00 | 0,06 | 0,10 | 0,08 | 0,08 | 0,10 | 0,09 | 0,10 | 0,10 | 0,08 | 0,08 | 0,12 | 0,11 | 0,10 | 0,10 |
 
 ## Preisausschläge
 
-- Größter Preisrückgang binnen eines Jahres je Welt: Median 42,8 %, 90 % 57,1 %; Welten mit einem Einbruch von mindestens 40 %: 59,0 % (GDD §7.3: „fast −50 % in einem Jahr“ soll vorkommen).
-- Größter Preisanstieg binnen eines Jahres: Median 44,7 %, 90 % 60,9 %.
+- Größter Preisrückgang binnen eines Jahres je Welt: Median 44,0 %, 90 % 59,3 %; Welten mit einem Einbruch von mindestens 40 %: 59,0 % (GDD §7.3: „fast −50 % in einem Jahr“ soll vorkommen).
+- Größter Preisanstieg binnen eines Jahres: Median 42,2 %, 90 % 83,4 %.
 
 ## Kapitel 1 (Runde 1–16)
 
-- Faktor auf den Trendpreis am Salt Hill nach 16 Runden: 10 % 0,924 · Median 0,998 · 90 % 1,034 (Grenze ±15,0 %).
+- Faktor auf den Trendpreis am Salt Hill nach 16 Runden: 10 % 0,948 · Median 1,001 · 90 % 1,040 (Grenze ±15,0 %).
 - Zinsaufschlag der Bank je Runde: 10 % -0,25 · Median 0,00 · 90 % 0,25 Prozentpunkte (Grenze ±3,00).
-- Runden, in denen der Faktor höchstens ±2 % vom Neutralwert abweicht: 79,6 %; Zins billiger: 27,6 %, teurer: 28,4 % der Runden.
-- Wahlen in Kapitel 1: 300; es siegt Handelspartei 68,7 %, Volksbund 17,3 %, Provinzliga 14,0 %; Wiederwahl 75,7 %.
-- Welten mit einem Crash in Kapitel 1: 10,0 %; mit einem Krieg: 0,0 %.
+- Runden, in denen der Faktor höchstens ±2 % vom Neutralwert abweicht: 80,1 %; Zins billiger: 24,7 %, teurer: 30,4 % der Runden.
+- Wahlen in Kapitel 1: 300; es siegt Handelspartei 69,7 %, Volksbund 16,3 %, Provinzliga 14,0 %; Wiederwahl 74,0 %.
+- Welten mit einer Kreditkrise in Kapitel 1: 10,7 % (davon großer Crash: 0,0 %); mit einem Krieg: 0,0 %.
 - Ob die Kapitel-1-Balance hält, zeigt `npm run bots` (docs/botlaeufe.md) – die Bots spielen mit Weltmodell.
 
 ## Gesetze (4.3)
@@ -73,33 +82,52 @@ Kein Gesetz hat ein festes Jahr: Druck aus dem Weltzustand → Antrag → Debatt
 
 | Gesetz | Welten mit Beschluss | Jahr des Beschlusses 10 % · 50 % · 90 % | verschiedene Runden | Ø Anträge | Ø Niederlagen | beschlossen in Kapitel 1 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Einkommensteuer | 67,0 % | 12 · 25 · 59 | 137 | 0,93 | 0,26 | 0,0 % |
-| Kartellgesetz | 79,0 % | 11 · 24 · 54 | 138 | 1,11 | 0,32 | 0,0 % |
+| Einkommensteuer | 59,3 % | 14 · 31 · 61 | 131 | 0,81 | 0,21 | 0,0 % |
+| Kartellgesetz | 65,0 % | 13 · 28 · 55 | 133 | 1,00 | 0,35 | 0,0 % |
 
-Marktanteil des größten Konzerns (Crane Trust), 10 % · Median · 90 %: Jahr 0: 31,6 % · **38,2 %** · 44,5 %; Jahr 10: 35,3 % · **42,5 %** · 49,4 %; Jahr 20: 31,1 % · **40,2 %** · 48,4 %; Jahr 40: 20,5 % · **31,5 %** · 43,6 %; Jahr 73: 18,1 % · **26,3 %** · 38,8 %.
+Marktanteil des größten Konzerns (Crane Trust), 10 % · Median · 90 %: Jahr 0: 31,6 % · **38,2 %** · 44,5 %; Jahr 10: 36,0 % · **42,4 %** · 48,8 %; Jahr 20: 33,3 % · **40,6 %** · 48,0 %; Jahr 40: 24,4 % · **35,0 %** · 45,5 %; Jahr 73: 18,9 % · **29,2 %** · 42,4 %.
 
 ## Beispielwelt `welt-0`
 
-- Jahr 14: Riesenfund (Weltpreis 0,75, Kreditklima 57, Spannung 15)
-- Jahr 15: Wahl: Provinzliga regiert (Weltpreis 0,69, Kreditklima 53, Spannung 14)
-- Jahr 23: Wahl: Handelspartei regiert (Weltpreis 1,02, Kreditklima 38, Spannung 16)
-- Jahr 27: Wahl: Provinzliga regiert (Weltpreis 0,95, Kreditklima 65, Spannung 18)
-- Jahr 31: Crash (Weltpreis 0,81, Kreditklima 27, Spannung 20)
-- Jahr 32: Banken erholt (Weltpreis 0,81, Kreditklima 41, Spannung 16)
-- Jahr 37: Crash (Weltpreis 0,94, Kreditklima 28, Spannung 60)
-- Jahr 39: Banken erholt (Weltpreis 0,83, Kreditklima 38, Spannung 57)
-- Jahr 41: Krieg (Weltpreis 1,19, Kreditklima 43, Spannung 87)
-- Jahr 43: Einkommensteuer Antrag (Weltpreis 1,61, Kreditklima 74, Spannung 100)
-- Jahr 43: Einkommensteuer abgelehnt (50 % Ja) (Weltpreis 1,46, Kreditklima 82, Spannung 100)
-- Jahr 44: Crash (Weltpreis 0,93, Kreditklima 30, Spannung 100)
-- Jahr 44: Frieden (Weltpreis 0,74, Kreditklima 32, Spannung 22)
-- Jahr 46: Banken erholt (Weltpreis 0,50, Kreditklima 36, Spannung 19)
-- Jahr 47: Wahl: Volksbund regiert (Weltpreis 0,75, Kreditklima 32, Spannung 17)
-- Jahr 51: Wahl: Provinzliga regiert (Weltpreis 0,95, Kreditklima 47, Spannung 19)
-- Jahr 59: Wahl: Volksbund regiert (Weltpreis 0,85, Kreditklima 45, Spannung 23)
-- Jahr 63: Wahl: Provinzliga regiert (Weltpreis 0,83, Kreditklima 48, Spannung 24)
-- Jahr 67: Wahl: Volksbund regiert (Weltpreis 0,81, Kreditklima 52, Spannung 32)
-- Jahr 71: Wahl: Provinzliga regiert (Weltpreis 0,79, Kreditklima 53, Spannung 37)
+- Jahr 11: Wahl: Provinzliga regiert (Weltpreis 0,83, Kreditklima 69, Verschuldung 53, Spannung 18)
+- Jahr 14: Crash (Weltpreis 0,82, Kreditklima 26, Verschuldung 25, Spannung 22)
+- Jahr 15: Banken erholt, Wahl: Handelspartei regiert (Weltpreis 0,76, Kreditklima 30, Verschuldung 25, Spannung 22)
+- Jahr 19: Wahl: Provinzliga regiert (Weltpreis 1,20, Kreditklima 53, Verschuldung 26, Spannung 74)
+- Jahr 22: Krieg (Weltpreis 0,94, Kreditklima 76, Verschuldung 46, Spannung 99)
+- Jahr 23: Bankpanik (Weltpreis 1,10, Kreditklima 44, Verschuldung 41, Spannung 100)
+- Jahr 23: Aufstand in Costa Negra (Weltpreis 1,13, Kreditklima 49, Verschuldung 39, Spannung 100)
+- Jahr 24: Einkommensteuer Antrag (Weltpreis 1,22, Kreditklima 51, Verschuldung 39, Spannung 100)
+- Jahr 24: Banken erholt (Weltpreis 1,26, Kreditklima 48, Verschuldung 38, Spannung 100)
+- Jahr 24: Einkommensteuer beschlossen (55 % Ja) (Weltpreis 1,30, Kreditklima 57, Verschuldung 38, Spannung 100)
+- Jahr 25: Costa Negra fördert wieder (Weltpreis 1,33, Kreditklima 57, Verschuldung 38, Spannung 100)
+- Jahr 25: Embargo aus Qasir (Weltpreis 1,29, Kreditklima 60, Verschuldung 39, Spannung 100)
+- Jahr 26: Frieden (Weltpreis 1,48, Kreditklima 64, Verschuldung 40, Spannung 22)
+- Jahr 26: Embargo aufgehoben (Weltpreis 0,96, Kreditklima 72, Verschuldung 44, Spannung 27)
+- Jahr 28: Aufstand in Costa Negra (Weltpreis 0,61, Kreditklima 65, Verschuldung 51, Spannung 25)
+- Jahr 29: Costa Negra fördert wieder (Weltpreis 0,70, Kreditklima 68, Verschuldung 54, Spannung 25)
+- Jahr 30: Aufstand in Costa Negra (Weltpreis 0,68, Kreditklima 64, Verschuldung 55, Spannung 22)
+- Jahr 31: Costa Negra fördert wieder (Weltpreis 0,79, Kreditklima 66, Verschuldung 56, Spannung 21)
+- Jahr 35: Crash (Weltpreis 0,74, Kreditklima 24, Verschuldung 26, Spannung 17)
+- Jahr 35: Aufstand in Costa Negra (Weltpreis 0,66, Kreditklima 25, Verschuldung 26, Spannung 19)
+- Jahr 36: Banken erholt (Weltpreis 0,76, Kreditklima 29, Verschuldung 26, Spannung 21)
+- Jahr 36: Costa Negra fördert wieder (Weltpreis 0,90, Kreditklima 30, Verschuldung 26, Spannung 19)
+- Jahr 41: Krieg (Weltpreis 1,06, Kreditklima 54, Verschuldung 28, Spannung 100)
+- Jahr 43: Wahl: Volksbund regiert (Weltpreis 1,20, Kreditklima 81, Verschuldung 38, Spannung 100)
+- Jahr 43: Bankpanik (Weltpreis 1,05, Kreditklima 43, Verschuldung 33, Spannung 100)
+- Jahr 44: Banken erholt, Kartellgesetz Antrag (Weltpreis 1,03, Kreditklima 45, Verschuldung 32, Spannung 100)
+- Jahr 44: Aufstand in Costa Negra (Weltpreis 1,03, Kreditklima 49, Verschuldung 31, Spannung 100)
+- Jahr 45: Kartellgesetz beschlossen (52 % Ja) (Weltpreis 1,12, Kreditklima 51, Verschuldung 31, Spannung 100)
+- Jahr 45: Frieden (Weltpreis 1,14, Kreditklima 51, Verschuldung 31, Spannung 22)
+- Jahr 45: Costa Negra fördert wieder (Weltpreis 0,93, Kreditklima 50, Verschuldung 31, Spannung 24)
+- Jahr 46: Embargo aus Qasir (Weltpreis 0,75, Kreditklima 47, Verschuldung 30, Spannung 23)
+- Jahr 47: Wahl: Provinzliga regiert (Weltpreis 1,01, Kreditklima 44, Verschuldung 30, Spannung 28)
+- Jahr 48: Embargo aufgehoben (Weltpreis 1,05, Kreditklima 50, Verschuldung 29, Spannung 40)
+- Jahr 49: Aufstand in Costa Negra (Weltpreis 0,66, Kreditklima 51, Verschuldung 29, Spannung 40)
+- Jahr 51: Costa Negra fördert wieder (Weltpreis 0,77, Kreditklima 50, Verschuldung 29, Spannung 37)
+- Jahr 53: Verstaatlichung (Weltpreis 0,81, Kreditklima 42, Verschuldung 28, Spannung 36)
+- Jahr 67: Wahl: Handelspartei regiert (Weltpreis 0,82, Kreditklima 55, Verschuldung 28, Spannung 27)
+- Jahr 72: Bankpanik (Weltpreis 0,75, Kreditklima 34, Verschuldung 34, Spannung 33)
+- Jahr 73: Banken erholt (Weltpreis 0,79, Kreditklima 36, Verschuldung 33, Spannung 32)
 
 <!-- Ab hier von Hand geschrieben: npm run welt lässt den Rest stehen. -->
 
@@ -211,3 +239,34 @@ Code: `src/sim/laws.ts` (Bedingungen, Ablauf, Wirkung, Zeitung, Prüfprogramm), 
 - Lobby nur vorbereitet: `WorldInput.lobby` mit fordern (+3 Druck), verhindern (−6 Punkte Zustimmung), verzögern (+2 Runden Debatte), verwässern (Regeln aus `lobby.weaken.rules`); welche Züge ein Gesetz anbietet, steht in seiner Datei. Keine Oberfläche, keine Gefallen-Währung.
 
 **Offen / Entwurf.** Alle Zahlen und Zeitungstexte der zwei Gesetze sind Entwürfe von Claude (`draft: true`). Aufheben von Gesetzen (z. B. Steuer nach dem Krieg senken), Gesetze der Provinz (Ölkommission, Quoten) vs. Bund, die übrigen acht Gesetze aus GDD §10 (Transportpflicht, Steuerabzug, Quoten, Gewerkschaft, Bankaufsicht, Kriegswirtschaft, Importquoten, Umwelt), Gefallen als Währung und Lobby-Oberfläche (Senator Grady), Abrechnung von `incomeTax`/`cartelBan`/`breakupFrom` ab Kapitel 2, `trustShare` aus dem echten Markt, ein Brief oder Besuch, wenn ein Gesetz Jacob betrifft.
+
+## Kreditklima und Außenspannung (4.4, Version 0.4.4)
+
+Code: `src/sim/world.ts` (`creditPhase`, `steadyLeverage`, `worldRateAdd`, `worldLimitFactor`, `qasirShare`, `foreignOffline`, Ausland in `advanceWorld`), Bank `src/sim/credit.ts` (`creditLimit` mit Faktor, `baseCreditLimit` fürs Rating), Zeitung `src/sim/worldNews.ts`, Zahlen `content/balance.yaml` → `worldModel.credit` (Zyklus, `leverage`), `worldModel.foreign`, `worldModel.chapter1` (`panicRate`, `bubbleRate`, `limit`), `worldModel.news` (`unrestHigh`, `qasirHigh`), Texte `content/newspaper.yaml` (`world_panic`, `world_credit_bubble`, `world_uprising…`, `world_embargo…`, `world_costa_negra_unrest`, `world_qasir_unrest`). Tests: `src/sim/creditCycle.test.ts`.
+
+**Kreditzyklus (GDD §7.2).** Neue Größe **Verschuldung** (`leverage`, 0–100): wächst, solange die Banken mutig sind (Klima über 50, `build` 5 × (Klima − 50) ÷ 50 je Runde), baut sich sonst langsam zur Basis 25 ab (`decay` 0,04). Erst ein *langer* Boom treibt sie hoch. Phasen (`creditPhase`): knapp (Klima ≤ 30) · normal · Boom (≥ 60) · **überhitzt** (Verschuldung ≥ 45 bei Klima ≥ 50) · Panik · Crash. Der Auslöser (Klima ab 68 mit Würfel oder Preissturz, wie 4.1) entscheidet nichts mehr allein – die Verschuldung entscheidet, wie schlimm es wird:
+- Verschuldung ≥ 56 → **großer Crash** wie bisher (Klima × 0,35, 4–8 Runden, Nachfrage −8 %, halbe Bohrungen, Stimmung −18), Verschuldung × 0,4.
+- sonst → **Bankpanik** (Klima × 0,5, 3–5 Runden, halbe Bohrungen wie im Crash – die Banken drehen den Hahn zu –, aber kein Nachfrageeinbruch, Stimmung −6), Verschuldung × 0,8.
+Eine neue Welt startet mit halber Gleichgewichts-Verschuldung zu ihrem Kreditklima (`leverage.start`): passend zur Phase, aber nie schon in der Blase.
+
+**Wirkung auf die Bank (Kapitel 1 schon spürbar).** Zins: wie 4.1, dazu überhitzt +½ Punkt (Frühwarnzeichen „steigende Zinsen“), Panik +1, Crash +2 (höchstens ±3). Bankrahmen × Faktor je Phase: Crash 0,5 · Panik 0,7 · knapp 0,85 · normal 1 · Boom 1,15 · überhitzt 1,25 (auf 100 $ gerundet). In der Blase leihen die Banken am freigiebigsten – genau dann ist es am gefährlichsten. Das Rating misst die Schulden weiter am Grundrahmen aus den Sicherheiten (`baseCreditLimit`), damit ein Crash nicht von selbst das Rating ruiniert; er nimmt „nur“ den freien Rahmen. Das Bankfenster sagt dazu „die Banken kürzen gerade die Rahmen“ bzw. „leihen gerade großzügig“. *Aktien:* vorbereitet über `WorldInput.leverageShift` (Kauf auf Kredit ab Kapitel 3 heizt die Verschuldung) und `creditPhase` (Kurse später je Phase).
+
+**Außenspannung.** Aldmark–Varenhold bleibt `tension`/`war` (Aufrüstung → Nachfrage, Krieg +12 %). Neu `worldModel.foreign`:
+- **Costa Negra** (Unruhe 0–100): steigt bei billigem Öl (Armut, Knappheit unter 0,95), Nationalismus über 40 und Einmischung der Großmächte (Spannung über 40). Ab 65 droht ein **Aufstand** (2–6 Runden): 70 % seiner Förderung (6 % der Welt) fallen aus → Preis steigt.
+- **Qasir** (Unmut 0–100): steigt, wenn die Großmächte um sein Öl werben (Spannung über 40), in jeder Kriegsrunde und bei Nationalismus über 50. Ab 70 droht ein **Ölembargo** (3–6 Runden): Qasirs ganzer Anteil fehlt der Welt. Der Anteil wächst mit dem Ölhunger der Welt (2 % + 3 % je Nachfragepunkt über 1, höchstens 25 %) – früh harmlos, spät ein Schock (passend zum Finale „Embargo der Förderländer“, GDD §13).
+- Wirkung auf die Ölnachfrage über Aufrüstung/Krieg (schon 4.1), auf den Preis über den Förderausfall (`foreignOffline`). `tension.scarcity` 20 → 35: Weil große Crashs seltener sind, fehlten sonst Preisspitzen, und Kriege wären fast verschwunden (0,4 statt 1,3 je Kampagne).
+
+**Frühwarnzeichen in der Zeitung (eine Weltmeldung je Runde, nie eine Zahl).** Ereignisse: Krach (Crash), „Ansturm auf die Banken“ (Panik), Embargo, Aufstand – groß, stehen vorn; Ende von Embargo/Aufstand, Erholung – klein. Zustände: Banken vorsichtig (knapp oder Panik/Crash wirkt nach), **„Ganz Hallstead kauft auf Pump“** (überhitzt – die Warnung vor dem Crash), Geld billig, diplomatische Noten, „Verstimmung in Qasir“, „Unruhen in Costa Negra“, Unmut.
+
+**Gemessen (300–400 Welten).** Großer Crash in ~9–15 % der 20-Jahres-Welten (je nach Seeds; Fertig-Kriterium 5–25 %, Test mit 400 Welten), 0 % in Kapitel 1; Kreditkrisen (Panik + Crash) je Kampagne Ø ~3, ~66–72 % der Welten im GDD-Ziel 2–4 (§15 „Kreditkrisen“). Vor praktisch jedem Crash stand die Blasen-Warnung in den 8 Runden davor in der Zeitung; sie steht in ~5 % aller Runden. Aufstände Ø ~2,9 je Kampagne (in fast 90 % der Welten), Embargos Ø ~0,5 (in ~30 % der Welten, in den ersten 20 Jahren praktisch nie). Kriege Ø ~1,3, Preiseinbrüche ≥ 40 % in ~59 % der Welten. `npm run bots`: alle 15 Zielwerte im Rahmen (Pleitequote ausgewogen 0,8 %, gierig 15,3 %).
+
+**Spielstand.** Format 17; Stände aus Format 12–16 bekommen `withCreditForeignDefaults`: keine Panik, Verschuldung passend zum gespeicherten Kreditklima, ruhiges Ausland, neue Zähler bei 0.
+
+**Entscheidungen (ohne Rückfrage).**
+- *Widerspruch Roadmap ↔ GDD §15:* Die Roadmap will Crashs in 5–25 % der 20-Jahres-Welten, das GDD 2–4 Kreditkrisen je Kampagne (bisher ~60 % der Welten mit Crash in 20 Jahren). Gelöst mit zwei Stufen: „Kreditkrise“ (GDD) = Bankpanik oder Crash, „Kreditcrash“ (Roadmap) = nur der große. Passt zum GDD („Zinssprung, Bankpanik, Crash“; Zeitsprung I: „eine Bankenpanik, falls das Kreditklima überhitzt ist“).
+- Für Gesetze zählt auch eine Bankpanik als Krise (`crash` im Blick des Parlaments, Trust kauft Pleitefirmen) – sonst hätte die Einkommensteuer mit den selteneren Crashs ihren wichtigsten Grund verloren.
+- Kein Kündigen bestehender Kredite in Kapitel 1: Der Crash kürzt den Rahmen für neue Kredite, bestehende behalten ihren Zins. Kündigen (GDD §8 „hoch Verschuldete brechen binnen zwei Runden zusammen“) kommt mit Kapitel 2/3.
+- Die Weltbibel sagt über Costa Negra und Qasir nur je einen Satz; Mechanik (Aufstand, Embargo), Treiber und Zeitungstexte sind Entwürfe von Claude. Verstaatlichung bleibt allgemein (nicht an ein Land gebunden).
+- Jede Runde zieht jetzt 20 statt 14 Zufallszahlen (gleich viele in jeder Runde) – alle Welten sind dadurch neu gewürfelt, die Statistik oben ist neu gemessen.
+
+**Offen / Entwurf.** Alle neuen Zahlen und Zeitungstexte sind Platzhalter bzw. Entwürfe. Aktienkurse je Phase und Kauf auf Kredit (Kapitel 3), Kündigung von Krediten im Crash, eigene Bank mit Bankrun, Volkswirt im Personal (genauere Schätzung), Konzessionen in Costa Negra/Qasir (Kapitel 4) und wer dort verstaatlicht, Spielereingriffe (Öl an eine Seite liefern, Lobby für/gegen Kriegseintritt), Bankaufsicht als Gesetz (drückt die Verschuldung), Welt-Einstellungen ruhig/stürmisch. Seed-Streuung beim Crash-Anteil (9–15 %) liegt komfortabel im Rahmen, aber nicht genau in der Mitte.

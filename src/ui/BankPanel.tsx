@@ -22,7 +22,7 @@ import {
 } from '../sim/credit';
 import type { GameState } from '../sim/game';
 import { parcelLabel } from '../sim/lease';
-import { worldRateAdd } from '../sim/world';
+import { worldLimitFactor, worldRateAdd } from '../sim/world';
 import { balance } from './balance';
 import { money, NBSP } from './format';
 
@@ -80,6 +80,8 @@ export function BankPanel({ game, onResult }: { game: GameState; onResult: (resu
   // Kreditklima des Weltmodells (4.1): lockeres Geld macht den Zins billiger, ein Crash teurer.
   const klima = worldRateAdd(game.worldModel, balance.worldModel);
   const rahmen = creditLimit(game, balance);
+  // Kreditzyklus (4.4): Im Boom leihen die Banken mehr, in Panik und Crash kürzen sie den Rahmen.
+  const laune = worldLimitFactor(game.worldModel, balance.worldModel);
   const frei = headroom(game, balance);
   const pfandFrei = freeCollateral(game).length;
   const zinsZeile = quarterInterestTotal(game);
@@ -117,6 +119,7 @@ export function BankPanel({ game, onResult }: { game: GameState; onResult: (resu
         <dt>Bankrahmen</dt>
         <dd>
           {money(rahmen)} · frei {money(frei)}
+          {laune < 1 ? ' · die Banken kürzen gerade die Rahmen' : laune > 1 ? ' · die Banken leihen gerade großzügig' : ''}
         </dd>
         <dt>Zins heute</dt>
         <dd>

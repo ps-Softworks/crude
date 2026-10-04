@@ -9,6 +9,7 @@ import { advanceWorld, newWorld, worldPriceFactor, worldRateAdd, type WorldNews 
 import {
   CAMPAIGN_ROUNDS,
   CAMPAIGN_TARGETS,
+  creditCrises,
   crisisStats,
   crisisWindows,
   extremes,
@@ -52,7 +53,7 @@ function verlaufTabelle(): string {
 }
 
 /** Textkurve des Median-Weltpreises je Spieljahr (▁ = 0,7, █ = 1,4). */
-function kurve(key: 'price' | 'credit' | 'tension' | 'mood', lo: number, hi: number, band: 'p10' | 'p50' | 'p90' = 'p50'): string {
+function kurve(key: 'price' | 'credit' | 'leverage' | 'tension' | 'mood', lo: number, hi: number, band: 'p10' | 'p50' | 'p90' = 'p50'): string {
   const STUFEN = '▁▂▃▄▅▆▇█';
   return yearBands(runs, key)
     .map((b) => STUFEN[Math.max(0, Math.min(7, Math.round(((b[band] - lo) / (hi - lo)) * 7)))])
@@ -62,16 +63,26 @@ function kurve(key: 'price' | 'credit' | 'tension' | 'mood', lo: number, hi: num
 // --- Krisen -----------------------------------------------------------------
 function krisenTabelle(): string {
   const zeilen: string[] = ['| Krise | Ziel je Kampagne (GDD §15) | Ø | 10 % · 50 % · 90 % der Welten | Welten im Ziel | Ø in den ersten 20 Jahren |', '| --- | ---: | ---: | ---: | ---: | ---: |'];
-  const zwanzig = (r: WorldRun, k: 'crashes' | 'gluts' | 'wars') => r.years[20].counts[k];
-  const reihen: [string, 'crashes' | 'gluts' | 'wars'][] = [
-    ['Kreditkrisen (Crash)', 'crashes'],
-    ['Ölschwemmen (Riesenfund)', 'gluts'],
-    ['Kriege in Übersee', 'wars'],
+  const reihen: [string, 'crashes' | 'gluts' | 'wars', (w: WorldRun['final']) => number][] = [
+    ['Kreditkrisen (Bankpanik + Crash)', 'crashes', creditCrises],
+    ['Ölschwemmen (Riesenfund)', 'gluts', (w) => w.counts.gluts],
+    ['Kriege in Übersee', 'wars', (w) => w.counts.wars],
   ];
-  for (const [name, k] of reihen) {
-    const s = crisisStats(runs, (r) => r.final.counts[k], CAMPAIGN_TARGETS[k]);
-    const z = runs.reduce((sum, r) => sum + zwanzig(r, k), 0) / runs.length;
+  for (const [name, k, f] of reihen) {
+    const s = crisisStats(runs, (r) => f(r.final), CAMPAIGN_TARGETS[k]);
+    const z = runs.reduce((sum, r) => sum + f(r.years[20]), 0) / runs.length;
     zeilen.push(`| ${name} | ${CAMPAIGN_TARGETS[k][0]}–${CAMPAIGN_TARGETS[k][1]} | ${zahl(s.mean)} | ${Math.round(s.p10)} · ${Math.round(s.p50)} · ${Math.round(s.p90)} | ${prozent(s.inTarget)} | ${zahl(z)} |`);
+  }
+  // 4.4: ohne Ziel aus GDD §15 – gemessen, damit man sieht, wie oft sie kommen.
+  const ohneZiel: [string, (w: WorldRun['final']) => number][] = [
+    ['davon große Crashs', (w) => w.counts.crashes],
+    ['davon Bankpaniken', (w) => w.counts.panics],
+    ['Aufstände in Costa Negra', (w) => w.counts.uprisings],
+    ['Ölembargos aus Qasir', (w) => w.counts.embargoes],
+  ];
+  for (const [name, f] of ohneZiel) {
+    const s = crisisStats(runs, (r) => f(r.final), [0, 99]);
+    zeilen.push(`| ${name} | – | ${zahl(s.mean)} | ${Math.round(s.p10)} · ${Math.round(s.p50)} · ${Math.round(s.p90)} | – | ${zahl(runs.reduce((sum, r) => sum + f(r.years[20]), 0) / runs.length)} |`);
   }
   const nat = crisisStats(runs, (r) => r.final.counts.nationalizations, [0, 99]);
   zeilen.push(`| Verstaatlichungen | – | ${zahl(nat.mean)} | ${Math.round(nat.p10)} · ${Math.round(nat.p50)} · ${Math.round(nat.p90)} | – | ${zahl(runs.reduce((s, r) => s + r.years[20].counts.nationalizations, 0) / runs.length)} |`);
@@ -83,7 +94,8 @@ function krisenTabelle(): string {
 // --- Krisen über die Zeit ---------------------------------------------------
 const FENSTER = 5;
 function zeitTabelle(): string {
-  const crash = crisisWindows(runs, (r) => r.crashStarts, FENSTER);
+  const crash = crisisWindows(runs, (r) => r.crisisStarts, FENSTER);
+  const gross = crisisWindows(runs, (r) => r.crashStarts, FENSTER);
   const krieg = crisisWindows(runs, (r) => r.warStarts, FENSTER);
   const kopf = `| je Welt | ${crash.rate.map((_, i) => `J. ${i * FENSTER}–${Math.min(72, i * FENSTER + FENSTER - 1)}`).join(' | ')} |`;
   const linie = `| --- | ${crash.rate.map(() => '---:').join(' | ')} |`;
@@ -91,8 +103,9 @@ function zeitTabelle(): string {
   return [
     kopf,
     linie,
-    reihe('Crashs', crash.rate, (x) => zahl(x)),
-    reihe('erster Crash (Anteil Welten)', crash.first, (x) => prozent(x)),
+    reihe('Kreditkrisen', crash.rate, (x) => zahl(x)),
+    reihe('erste Kreditkrise (Anteil Welten)', crash.first, (x) => prozent(x)),
+    reihe('davon große Crashs', gross.rate, (x) => zahl(x)),
     reihe('Kriege', krieg.rate, (x) => zahl(x)),
   ].join('\n');
 }
@@ -135,11 +148,23 @@ for (const r of kapitel1) {
   }
 }
 const crashKapitel1 = kapitel1.filter((r) => r.final.counts.crashes > 0).length / kapitel1.length;
+const kriseKapitel1 = kapitel1.filter((r) => creditCrises(r.final) > 0).length / kapitel1.length;
+// Fertig-Kriterium 4.4: großer Crash in 5–25 % der 20-Jahres-Welten; Frühwarnung davor.
+const crash20 = runs.filter((r) => r.years[20].counts.crashes > 0).length / runs.length;
+let crashsAlle = 0;
+let gewarnt = 0;
+for (const r of runs) for (const c of r.crashStarts) { crashsAlle += 1; if (r.bubbleWarnings.some((b) => b < c && b >= c - 8)) gewarnt += 1; }
+const warnAnteil = runs.reduce((s, r) => s + r.bubbleWarnings.length, 0) / (runs.length * CAMPAIGN_ROUNDS);
 const kriegKapitel1 = kapitel1.filter((r) => r.final.counts.wars > 0).length / kapitel1.length;
 
 // --- Beispielwelt -----------------------------------------------------------
 const NAMEN: Record<WorldNews, string> = {
   crash: 'Crash',
+  panic: 'Bankpanik',
+  uprising: 'Aufstand in Costa Negra',
+  uprising_end: 'Costa Negra fördert wieder',
+  embargo: 'Embargo aus Qasir',
+  embargo_end: 'Embargo aufgehoben',
   recovery: 'Banken erholt',
   war: 'Krieg',
   peace: 'Frieden',
@@ -163,7 +188,7 @@ function chronik(seed: string): string {
       ...wichtig.map((n) => (n === 'election' ? `Wahl: ${PARTEI[w.government]} regiert` : NAMEN[n])),
       ...parlament.map((n) => `${laws.find((l) => l.id === n.law)?.name.de ?? n.law} ${GESETZ[n.kind]}${n.yes !== undefined ? ` (${votePercent(n.yes, n.kind === 'passed')} % Ja)` : ''}`),
     ].join(', ');
-    zeilen.push(`- Jahr ${jahr}: ${text} (Weltpreis ${zahl(w.price)}, Kreditklima ${zahl(w.credit, 0)}, Spannung ${zahl(w.tension, 0)})`);
+    zeilen.push(`- Jahr ${jahr}: ${text} (Weltpreis ${zahl(w.price)}, Kreditklima ${zahl(w.credit, 0)}, Verschuldung ${zahl(w.leverage, 0)}, Spannung ${zahl(w.tension, 0)})`);
   }
   return zeilen.join('\n');
 }
@@ -193,7 +218,9 @@ function trustZeile(): string {
   }).join('; ');
 }
 
-const zielOk = (['crashes', 'gluts', 'wars'] as const).every((k) => crisisStats(runs, (r) => r.final.counts[k], CAMPAIGN_TARGETS[k]).inTarget > 0.6);
+const zielOk = (['crashes', 'gluts', 'wars'] as const).every(
+  (k) => crisisStats(runs, (r) => (k === 'crashes' ? creditCrises(r.final) : r.final.counts[k]), CAMPAIGN_TARGETS[k]).inTarget > 0.6,
+);
 const endlich = runs.every((r) => r.years.every((y) => TRACKED.every((k) => Number.isFinite(y[k]))));
 
 const auto = `# Weltmodell
@@ -216,6 +243,7 @@ Median je Spieljahr als Kurve (Jahr 0 bis 73):
 - Weltpreis (▁ 0,7 … █ 1,4): \`${kurve('price', 0.7, 1.4)}\`
 - Weltpreis 90 % (▁ 0,7 … █ 2,0): \`${kurve('price', 0.7, 2.0, 'p90')}\`
 - Kreditklima (▁ 30 … █ 70): \`${kurve('credit', 30, 70)}\`
+- Verschuldung 90 % (▁ 20 … █ 60): \`${kurve('leverage', 20, 60, 'p90')}\`
 - Außenspannung 90 % (▁ 0 … █ 100): \`${kurve('tension', 0, 100, 'p90')}\`
 - Stimmung (▁ 30 … █ 60): \`${kurve('mood', 30, 60)}\`
 
@@ -225,9 +253,11 @@ ${krisenTabelle()}
 
 Regierung: ${regierungZeile()}.
 
+Kreditzyklus (4.4): Welten mit großem Crash in den ersten 20 Jahren: **${prozent(crash20)}** (Fertig-Kriterium 5–25 %). Vor ${prozent(gewarnt / Math.max(1, crashsAlle))} der ${crashsAlle} Crashs warnte die Zeitung in den 8 Runden davor vor der Blase; die Warnung steht in ${prozent(warnAnteil)} aller Runden.
+
 ## Krisen über die Zeit
 
-Jede Welt ist neu (GDD §7.2): Crashs und Kriege sollen nicht in allen Welten zur selben Zeit kommen. Je Fenster von ${FENSTER} Spieljahren: Ø Krisen je Welt und Anteil der Welten, deren erster Crash dort liegt (der Rest: ohne Crash).
+Jede Welt ist neu (GDD §7.2): Kreditkrisen und Kriege sollen nicht in allen Welten zur selben Zeit kommen. Je Fenster von ${FENSTER} Spieljahren: Ø Krisen je Welt und Anteil der Welten, deren erste Kreditkrise dort liegt (der Rest: ohne).
 
 ${zeitTabelle()}
 
@@ -242,7 +272,7 @@ ${zeitTabelle()}
 - Zinsaufschlag der Bank je Runde: 10 % ${zahl(percentile(zinsen, 0.1) * 100)} · Median ${zahl(percentile(zinsen, 0.5) * 100)} · 90 % ${zahl(percentile(zinsen, 0.9) * 100)} Prozentpunkte (Grenze ±${zahl(wb.chapter1.rateMaxAdd * 100)}).
 - Runden, in denen der Faktor höchstens ±2 % vom Neutralwert abweicht: ${prozent(nahe.filter((x) => x <= 0.02 + 1e-9).length / Math.max(1, nahe.length))}; Zins billiger: ${prozent(zinsen.filter((x) => x < 0).length / zinsen.length)}, teurer: ${prozent(zinsen.filter((x) => x > 0).length / zinsen.length)} der Runden.
 - Wahlen in Kapitel 1: ${wahlen1.alle}; es siegt Handelspartei ${prozent(wahlen1.handel / Math.max(1, wahlen1.alle))}, Volksbund ${prozent(wahlen1.volksbund / Math.max(1, wahlen1.alle))}, Provinzliga ${prozent(wahlen1.provinz / Math.max(1, wahlen1.alle))}; Wiederwahl ${prozent(wahlen1.wieder / Math.max(1, wahlen1.alle))}.
-- Welten mit einem Crash in Kapitel 1: ${prozent(crashKapitel1)}; mit einem Krieg: ${prozent(kriegKapitel1)}.
+- Welten mit einer Kreditkrise in Kapitel 1: ${prozent(kriseKapitel1)} (davon großer Crash: ${prozent(crashKapitel1)}); mit einem Krieg: ${prozent(kriegKapitel1)}.
 - Ob die Kapitel-1-Balance hält, zeigt \`npm run bots\` (docs/botlaeufe.md) – die Bots spielen mit Weltmodell.
 
 ## Gesetze (4.3)

@@ -1,7 +1,7 @@
 // Fenster „Menü“ (☰ in der Kopfleiste; die Schublade bleibt fürs Schattenbuch frei): Neues Spiel, Feedback, Einstiegshilfe,
 // Zeitung, Rundgang, Tastenhilfe – und mit Debug-Bereich (?debug=1) der Reiter „Debug“.
 
-import type { Party } from '../../sim/world';
+import { creditPhase, foreignOffline, type Party } from '../../sim/world';
 import { balance } from '../balance';
 import { FeedbackLink } from '../FeedbackLink';
 import { politicsContent } from '../politics';
@@ -41,8 +41,10 @@ function WorldDebug({ ctx }: { ctx: SheetContext }) {
       </dd>
       <dt>Kreditklima</dt>
       <dd>
-        {z(w.credit)}
+        {z(w.credit)} · Phase {creditPhase(w, balance.worldModel)} · Verschuldung {z(w.leverage)}
         {w.crash > 0 ? ` · Crash noch ${w.crash} Runden` : ''}
+        {w.panic > 0 ? ` · Bankpanik noch ${w.panic} Runden` : ''}
+        {` · Kreditkrisen bisher ${w.counts.crashes + w.counts.panics} (${w.counts.crashes} Crash)`}
       </dd>
       <dt>Stimmung</dt>
       <dd>{z(w.mood)}</dd>
@@ -60,6 +62,12 @@ function WorldDebug({ ctx }: { ctx: SheetContext }) {
       <dd>
         {z(w.tension)}
         {w.war > 0 ? ` · Krieg noch ${w.war} Runden` : ''}
+      </dd>
+      <dt>Costa Negra / Qasir</dt>
+      <dd>
+        Unruhe {z(w.foreign.costaNegra)}
+        {w.foreign.uprising > 0 ? ` · Aufstand noch ${w.foreign.uprising} Runden` : ''} · Unmut {z(w.foreign.qasir)}
+        {w.foreign.embargo > 0 ? ` · Embargo noch ${w.foreign.embargo} Runden` : ''} · Förderausfall {z(foreignOffline(w, balance.worldModel) * 100, 1)} %
       </dd>
       <dt>Technik / Nationalismus</dt>
       <dd>

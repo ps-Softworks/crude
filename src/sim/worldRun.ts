@@ -5,6 +5,7 @@
 import type { WorldModelBalance } from './balance';
 import type { LawDef } from './laws';
 import { advanceWorld, effectiveDemand, newWorld, PARTIES, type WorldState } from './world';
+import { worldHeadline } from './worldNews';
 
 /** Runden je Spieljahr (Quartale). */
 export const ROUNDS_PER_YEAR = 4;
@@ -12,7 +13,7 @@ export const ROUNDS_PER_YEAR = 4;
 export const CAMPAIGN_ROUNDS = 73 * ROUNDS_PER_YEAR;
 
 /** Größen, deren Verlauf aufgezeichnet wird. */
-export const TRACKED = ['price', 'demand', 'capacity', 'stock', 'credit', 'mood', 'tension', 'tech', 'nationalism'] as const;
+export const TRACKED = ['price', 'demand', 'capacity', 'stock', 'credit', 'leverage', 'mood', 'tension', 'tech', 'nationalism'] as const;
 export type Tracked = (typeof TRACKED)[number];
 
 export const TRACKED_LABEL: Record<Tracked, string> = {
@@ -21,6 +22,7 @@ export const TRACKED_LABEL: Record<Tracked, string> = {
   capacity: 'Förderkapazität (Index)',
   stock: 'Lager (Quartalsbedarf)',
   credit: 'Kreditklima (0–100)',
+  leverage: 'Verschuldung (0–100)',
   mood: 'Stimmung (0–100)',
   tension: 'Außenspannung (0–100)',
   tech: 'Technikstand (0–100)',
@@ -46,6 +48,10 @@ export interface WorldRun {
   /** Runden (ab 1), in denen ein Crash bzw. ein Krieg begann. */
   crashStarts: number[];
   warStarts: number[];
+  /** Runden (ab 1), in denen eine Kreditkrise (Crash oder Bankpanik, 4.4) begann. */
+  crisisStarts: number[];
+  /** Runden, in denen die Zeitung vor der Blase warnt (worldHeadline = world_credit_bubble). */
+  bubbleWarnings: number[];
   /** Gesetze (4.3): Runde des Beschlusses je Gesetz (null = in diesem Lauf nie), Anträge und Niederlagen. */
   lawPassed: Record<string, number | null>;
   lawProposals: Record<string, number>;
@@ -63,11 +69,15 @@ export function runWorld(seed: string, wb: WorldModelBalance, rounds: number, la
   const governmentRounds = { handel: 0, volksbund: 0, provinz: 0 };
   const crashStarts: number[] = [];
   const warStarts: number[] = [];
+  const crisisStarts: number[] = [];
+  const bubbleWarnings: number[] = [];
   const lawFailures: Record<string, number> = Object.fromEntries(laws.map((l) => [l.id, 0]));
   for (let r = 1; r <= rounds; r++) {
     w = advanceWorld(w, wb, {}, laws);
     for (const n of w.laws.news) if (n.kind === 'failed') lawFailures[n.law] = (lawFailures[n.law] ?? 0) + 1;
     if (w.news.includes('crash')) crashStarts.push(r);
+    if (w.news.includes('crash') || w.news.includes('panic')) crisisStarts.push(r);
+    if (worldHeadline(w, wb) === 'world_credit_bubble') bubbleWarnings.push(r);
     if (w.news.includes('war')) warStarts.push(r);
     prices.push(w.price);
     if (w.war > 0) warRounds += 1;
@@ -88,7 +98,7 @@ export function runWorld(seed: string, wb: WorldModelBalance, rounds: number, la
   }
   const lawPassed = Object.fromEntries(laws.map((l) => [l.id, w.laws.bills[l.id]?.passedRound ?? null]));
   const lawProposals = Object.fromEntries(laws.map((l) => [l.id, w.laws.bills[l.id]?.proposals ?? 0]));
-  return { seed, years, final: w, maxYearDrop, maxYearRise, warRounds, crashRounds, maxImbalance, governmentRounds, crashStarts, warStarts, lawPassed, lawProposals, lawFailures };
+  return { seed, years, final: w, maxYearDrop, maxYearRise, warRounds, crashRounds, maxImbalance, governmentRounds, crashStarts, warStarts, crisisStarts, bubbleWarnings, lawPassed, lawProposals, lawFailures };
 }
 
 /** Viele Welten: Seeds `${prefix}-0` … `${prefix}-${count-1}`. */
@@ -154,6 +164,7 @@ export function crisisStats(runs: readonly WorldRun[], pick: (r: WorldRun) => nu
 
 /** Zielbereiche aus GDD §15 je Kampagne (73 Jahre), ohne Eingreifen des Spielers. */
 export const CAMPAIGN_TARGETS = {
+  /** Kreditkrisen = Crashs + Bankpaniken (4.4). */
   crashes: [2, 4] as [number, number],
   gluts: [1, 3] as [number, number],
   wars: [0, 2] as [number, number],
@@ -180,4 +191,9 @@ export function crisisWindows(runs: readonly WorldRun[], pick: (r: WorldRun) => 
     if (starts.length > 0) first[Math.floor(yearOfRound(starts[0]) / years)] += 1 / runs.length;
   }
   return { rate, first };
+}
+
+/** Kreditkrisen einer Welt (4.4, GDD §15 „Kreditkrisen“): große Crashs und Bankpaniken zusammen. */
+export function creditCrises(w: Pick<WorldState, 'counts'>): number {
+  return w.counts.crashes + (w.counts.panics ?? 0);
 }

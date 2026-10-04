@@ -576,8 +576,16 @@ export interface WorldModelBalance {
     pipelineCut: number;
     investCut: number;
     rounds: Range;
+    /** 4.4 Kreditzyklus: Phasen-Schwellen, Bankpanik und Verschuldung (leverage). */
+    boomFrom: number;
+    tightFrom: number;
+    panicAfter: number;
+    panicRounds: Range;
+    panicPipelineCut: number;
+    panicInvestCut: number;
+    leverage: { base: number; build: number; decay: number; start: number; bubbleFrom: number; crashFrom: number; crashAfter: number; panicAfter: number };
   };
-  mood: { speed: number; price: number; crash: number; war: number; boom: number; noise: number };
+  mood: { speed: number; price: number; crash: number; panic: number; war: number; boom: number; noise: number };
   politics: { drift: number; noise: number; minShare: number; fatigue: number; revert: number; electionEvery: number };
   /**
    * Öffentliches Handeln (4.2): je Tat Stimmungspunkte und Verschiebung der
@@ -615,19 +623,70 @@ export interface WorldModelBalance {
     nationalizeLoss: number;
     after: number;
   };
+  /** 4.4 Außenspannung jenseits von Aldmark–Varenhold: Costa Negra (Aufstand) und Qasir (Embargo). */
+  foreign: { costaNegra: CostaNegraBalance; qasir: QasirBalance };
   chapter1: {
     priceWeight: number;
     priceMaxDev: number;
     rateWeight: number;
     crashRate: number;
+    /** 4.4: Zinsaufschlag in der Bankpanik und bei Überhitzung. */
+    panicRate: number;
+    bubbleRate: number;
     rateMaxAdd: number;
+    /** 4.4: Faktor auf den Bankrahmen je Phase des Kreditzyklus. */
+    limit: Record<CreditPhase, number>;
     nationalBarrels: number;
   };
   /**
    * pollFrom (4.2): so viele Runden vor der Wahl bringt die Zeitung eine Umfrage;
    * pollClose: Liegen die beiden Ersten näher als so viel Anteil beieinander, meldet sie „Kopf an Kopf“.
    */
-  news: { creditEasy: number; creditTight: number; moodAngry: number; tensionHigh: number; pollFrom: number; pollClose: number };
+  news: { creditEasy: number; creditTight: number; moodAngry: number; tensionHigh: number; unrestHigh: number; qasirHigh: number; pollFrom: number; pollClose: number };
+}
+
+/** Phasen des Kreditzyklus (4.4, GDD §7.2): Boom → Überhitzung → Panik oder Crash. */
+export const CREDIT_PHASES = ['crash', 'panic', 'tight', 'normal', 'boom', 'overheated'] as const;
+export type CreditPhase = (typeof CREDIT_PHASES)[number];
+
+export interface CostaNegraBalance {
+  start: Range;
+  base: number;
+  revert: number;
+  poverty: number;
+  povertyFrom: number;
+  nationalism: number;
+  nationalismFrom: number;
+  meddling: number;
+  meddlingFrom: number;
+  noise: number;
+  uprisingFrom: number;
+  uprisingChance: number;
+  uprisingSlope: number;
+  rounds: Range;
+  after: number;
+  share: number;
+  loss: number;
+}
+
+export interface QasirBalance {
+  start: Range;
+  base: number;
+  revert: number;
+  courting: number;
+  courtingFrom: number;
+  war: number;
+  nationalism: number;
+  nationalismFrom: number;
+  noise: number;
+  embargoFrom: number;
+  embargoChance: number;
+  embargoSlope: number;
+  rounds: Range;
+  after: number;
+  shareBase: number;
+  shareGrowth: number;
+  shareMax: number;
 }
 
 export interface Balance {
@@ -1673,11 +1732,28 @@ function parseWorldModel(raw: unknown): WorldModelBalance {
       pipelineCut: sh('credit.pipelineCut'),
       investCut: sh('credit.investCut'),
       rounds: rng('credit.rounds', 1, 1000),
+      boomFrom: scale('credit.boomFrom'),
+      tightFrom: scale('credit.tightFrom'),
+      panicAfter: sh('credit.panicAfter'),
+      panicRounds: rng('credit.panicRounds', 1, 1000),
+      panicPipelineCut: sh('credit.panicPipelineCut'),
+      panicInvestCut: sh('credit.panicInvestCut'),
+      leverage: {
+        base: scale('credit.leverage.base'),
+        build: nn('credit.leverage.build'),
+        decay: sh('credit.leverage.decay'),
+        start: sh('credit.leverage.start'),
+        bubbleFrom: scale('credit.leverage.bubbleFrom'),
+        crashFrom: scale('credit.leverage.crashFrom'),
+        crashAfter: sh('credit.leverage.crashAfter'),
+        panicAfter: sh('credit.leverage.panicAfter'),
+      },
     },
     mood: {
       speed: sh('mood.speed'),
       price: nn('mood.price'),
       crash: nn('mood.crash'),
+      panic: nn('mood.panic'),
       war: nn('mood.war'),
       boom: nn('mood.boom'),
       noise: nn('mood.noise'),
@@ -1706,6 +1782,46 @@ function parseWorldModel(raw: unknown): WorldModelBalance {
       warRounds: rng('tension.warRounds', 1, 1000),
       afterWar: scale('tension.afterWar'),
     },
+    foreign: {
+      costaNegra: {
+        start: rng('foreign.costaNegra.start', 0, 100),
+        base: scale('foreign.costaNegra.base'),
+        revert: sh('foreign.costaNegra.revert'),
+        poverty: nn('foreign.costaNegra.poverty'),
+        povertyFrom: nn('foreign.costaNegra.povertyFrom'),
+        nationalism: sh('foreign.costaNegra.nationalism'),
+        nationalismFrom: scale('foreign.costaNegra.nationalismFrom'),
+        meddling: sh('foreign.costaNegra.meddling'),
+        meddlingFrom: scale('foreign.costaNegra.meddlingFrom'),
+        noise: nn('foreign.costaNegra.noise'),
+        uprisingFrom: scale('foreign.costaNegra.uprisingFrom'),
+        uprisingChance: sh('foreign.costaNegra.uprisingChance'),
+        uprisingSlope: sh('foreign.costaNegra.uprisingSlope'),
+        rounds: rng('foreign.costaNegra.rounds', 1, 1000),
+        after: scale('foreign.costaNegra.after'),
+        share: sh('foreign.costaNegra.share'),
+        loss: sh('foreign.costaNegra.loss'),
+      },
+      qasir: {
+        start: rng('foreign.qasir.start', 0, 100),
+        base: scale('foreign.qasir.base'),
+        revert: sh('foreign.qasir.revert'),
+        courting: sh('foreign.qasir.courting'),
+        courtingFrom: scale('foreign.qasir.courtingFrom'),
+        war: nn('foreign.qasir.war'),
+        nationalism: sh('foreign.qasir.nationalism'),
+        nationalismFrom: scale('foreign.qasir.nationalismFrom'),
+        noise: nn('foreign.qasir.noise'),
+        embargoFrom: scale('foreign.qasir.embargoFrom'),
+        embargoChance: sh('foreign.qasir.embargoChance'),
+        embargoSlope: sh('foreign.qasir.embargoSlope'),
+        rounds: rng('foreign.qasir.rounds', 1, 1000),
+        after: scale('foreign.qasir.after'),
+        shareBase: sh('foreign.qasir.shareBase'),
+        shareGrowth: sh('foreign.qasir.shareGrowth'),
+        shareMax: sh('foreign.qasir.shareMax'),
+      },
+    },
     nationalism: {
       base: scale('nationalism.base'),
       revert: sh('nationalism.revert'),
@@ -1722,7 +1838,10 @@ function parseWorldModel(raw: unknown): WorldModelBalance {
       priceMaxDev: sh('chapter1.priceMaxDev'),
       rateWeight: sh('chapter1.rateWeight'),
       crashRate: sh('chapter1.crashRate'),
+      panicRate: sh('chapter1.panicRate'),
+      bubbleRate: sh('chapter1.bubbleRate'),
       rateMaxAdd: sh('chapter1.rateMaxAdd'),
+      limit: Object.fromEntries(CREDIT_PHASES.map((p) => [p, nn(`chapter1.limit.${p}`)])) as Record<CreditPhase, number>,
       nationalBarrels: nn('chapter1.nationalBarrels'),
     },
     news: {
@@ -1730,6 +1849,8 @@ function parseWorldModel(raw: unknown): WorldModelBalance {
       creditTight: scale('news.creditTight'),
       moodAngry: scale('news.moodAngry'),
       tensionHigh: scale('news.tensionHigh'),
+      unrestHigh: scale('news.unrestHigh'),
+      qasirHigh: scale('news.qasirHigh'),
       pollFrom: integerInRange(raw, `${w}.news.pollFrom`, 0, 1000),
       pollClose: sh('news.pollClose'),
     },
@@ -1781,6 +1902,13 @@ function parseWorldModel(raw: unknown): WorldModelBalance {
   if (wm.demand.cap <= 1) throw new BalanceError('balance.yaml: "worldModel.demand.cap" muss über 1 liegen');
   if (wm.chapter1.nationalBarrels <= 0) throw new BalanceError('balance.yaml: "worldModel.chapter1.nationalBarrels" muss über 0 liegen');
   if (wm.politics.minShare * 3 >= 1) throw new BalanceError('balance.yaml: "worldModel.politics.minShare" muss unter 1/3 liegen');
+  if (wm.credit.tightFrom >= wm.credit.boomFrom) throw new BalanceError('balance.yaml: "worldModel.credit.tightFrom" muss unter boomFrom liegen');
+  if (wm.credit.leverage.bubbleFrom > wm.credit.leverage.crashFrom) {
+    throw new BalanceError('balance.yaml: "worldModel.credit.leverage.bubbleFrom" darf nicht über crashFrom liegen – sonst kommt der Crash ohne Frühwarnung');
+  }
+  for (const r of [wm.credit.panicRounds, wm.foreign.costaNegra.rounds, wm.foreign.qasir.rounds]) {
+    if (!Number.isInteger(r.min) || !Number.isInteger(r.max)) throw new BalanceError('balance.yaml: Rundenbereiche im Weltmodell (panicRounds, foreign.*.rounds) brauchen ganze Runden');
+  }
   return wm;
 }
 

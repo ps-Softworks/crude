@@ -24,7 +24,7 @@ import {
   type WorldState,
 } from './world';
 import { worldHeadline } from './worldNews';
-import { CAMPAIGN_ROUNDS, crisisStats, crisisWindows, CAMPAIGN_TARGETS, percentile, runWorld, runWorlds, ROUNDS_PER_YEAR } from './worldRun';
+import { CAMPAIGN_ROUNDS, creditCrises, crisisStats, crisisWindows, CAMPAIGN_TARGETS, percentile, runWorld, runWorlds, ROUNDS_PER_YEAR } from './worldRun';
 import { parse } from 'yaml';
 import { readFileSync } from 'node:fs';
 
@@ -36,8 +36,15 @@ function mit<K extends keyof WorldModelBalance>(key: K, werte: Partial<WorldMode
   return { ...basis, [key]: { ...basis[key], ...werte } };
 }
 
-/** Ohne Zufallsereignisse (kein Fund, keine Verstaatlichung, kein Crash, kein Krieg) und ohne Rauschen. */
-const still: WorldModelBalance = mit(
+/** Ohne Zufallsereignisse (kein Fund, keine Verstaatlichung, kein Crash, kein Krieg, kein Aufstand, kein Embargo) und ohne Rauschen. */
+const stillAusland = (basis: WorldModelBalance): WorldModelBalance => ({
+  ...basis,
+  foreign: {
+    costaNegra: { ...basis.foreign.costaNegra, noise: 0, uprisingChance: 0, uprisingSlope: 0 },
+    qasir: { ...basis.foreign.qasir, noise: 0, embargoChance: 0, embargoSlope: 0 },
+  },
+});
+const still: WorldModelBalance = stillAusland(mit(
   'tension',
   { noise: 0, warChance: 0, warSlope: 0 },
   mit(
@@ -45,7 +52,7 @@ const still: WorldModelBalance = mit(
     { noise: 0, crashChance: 0, crashSlope: 0, priceTrigger: 1 },
     mit('supply', { findChance: 0 }, mit('nationalism', { noise: 0, nationalizeChance: 0 }, mit('mood', { noise: 0 }, mit('politics', { noise: 0 })))),
   ),
-);
+));
 
 function zahlen(w: WorldState): number[] {
   return [w.demand, w.capacity, w.output, w.stock, w.price, w.credit, w.mood, w.tension, w.tech, w.nationalism, ...w.pipeline, ...PARTIES.map((p) => w.parties[p])];
@@ -253,7 +260,8 @@ describe('Schleife 2: Kreditklima schaukelt sich auf und kippt', () => {
 
   it('ein überhitztes Klima kippt: Crash, Zinssprung, weniger Neubohrungen', () => {
     const kippt = mit('credit', { crashChance: 1 }, still);
-    const w = { ...newWorld('crash', wb), credit: 90 };
+    // Nach langem Boom: Verschuldung über leverage.crashFrom (4.4).
+    const w = { ...newWorld('crash', wb), credit: 90, leverage: wb.credit.leverage.crashFrom + 5 };
     const n = advanceWorld(w, kippt);
     expect(n.news).toContain('crash');
     expect(n.counts.crashes).toBe(1);
@@ -270,13 +278,13 @@ describe('Schleife 2: Kreditklima schaukelt sich auf und kippt', () => {
 
   it('ein Preissturz kippt ein heißes Klima auch ohne Würfelglück – ab credit.priceTriggerFrom', () => {
     const trigger = mit('credit', { priceTrigger: 0.2 }, still);
-    const w = { ...newWorld('sturz', wb), credit: 70, price: 2 };
+    const w = { ...newWorld('sturz', wb), credit: 70, price: 2, leverage: 90 };
     expect(advanceWorld(w, trigger).news).toContain('crash');
     expect(advanceWorld(w, mit('credit', { priceTrigger: 0.2, priceTriggerFrom: 90 }, still)).news).not.toContain('crash');
   });
 
   it('im Crash stoppen Bohrungen im Bau (pipelineCut) und es wird weniger neu gebohrt (investCut)', () => {
-    const w = { ...newWorld('crash-bohren', wb), credit: 90 };
+    const w = { ...newWorld('crash-bohren', wb), credit: 90, leverage: 90 };
     const zahlen = (pipelineCut: number, investCut: number) => advanceWorld(w, mit('credit', { crashChance: 1, pipelineCut, investCut }, still)).pipeline;
     const voll = zahlen(1, 1);
     const halb = zahlen(0.5, 1);
@@ -413,7 +421,8 @@ describe('Grenzen über viele Seeds (Fertig-Kriterium 4.1)', () => {
         pruefe(w.stock >= 0 && w.stock <= wb.supply.stockMax, `${wo}: Lager ${w.stock}`);
         pruefe(w.demand > 0 && w.demand <= wb.demand.cap, `${wo}: Nachfrage ${w.demand}`);
         pruefe(w.capacity > 0 && w.capacity < 50, `${wo}: Kapazität ${w.capacity}`);
-        for (const k of ['credit', 'mood', 'tension', 'tech', 'nationalism'] as const) pruefe(w[k] >= 0 && w[k] <= 100, `${wo}: ${k} ${w[k]}`);
+        for (const k of ['credit', 'leverage', 'mood', 'tension', 'tech', 'nationalism'] as const) pruefe(w[k] >= 0 && w[k] <= 100, `${wo}: ${k} ${w[k]}`);
+        pruefe(w.foreign.costaNegra >= 0 && w.foreign.costaNegra <= 100 && w.foreign.qasir >= 0 && w.foreign.qasir <= 100, `${wo}: Ausland`);
         pruefe(Math.abs(PARTIES.reduce((s, p) => s + w.parties[p], 0) - 1) < 1e-9, `${wo}: Parteien ≠ 1`);
         pruefe(PARTIES.every((p) => w.parties[p] >= wb.politics.minShare - 1e-9), `${wo}: Partei unter minShare`);
         pruefe(w.pipeline.length === wb.supply.delay, `${wo}: Pipeline ${w.pipeline.length}`);
@@ -444,7 +453,8 @@ describe('Grenzen über viele Seeds (Fertig-Kriterium 4.1)', () => {
   });
 
   it('Krisen kommen so oft wie im GDD §15 vorgesehen (Mehrheit der Welten im Zielbereich)', () => {
-    const crashs = crisisStats(runs, (r) => r.final.counts.crashes, CAMPAIGN_TARGETS.crashes);
+    // Kreditkrisen = Crashs + Bankpaniken (4.4).
+    const crashs = crisisStats(runs, (r) => creditCrises(r.final), CAMPAIGN_TARGETS.crashes);
     const schwemmen = crisisStats(runs, (r) => r.final.counts.gluts, CAMPAIGN_TARGETS.gluts);
     const kriege = crisisStats(runs, (r) => r.final.counts.wars, CAMPAIGN_TARGETS.wars);
     for (const s of [crashs, schwemmen, kriege]) expect(s.inTarget).toBeGreaterThan(0.6);
@@ -472,7 +482,7 @@ describe('Grenzen über viele Seeds (Fertig-Kriterium 4.1)', () => {
   });
 
   it('jede Welt ist neu: Krisen klumpen nicht in einem Zeitfenster (GDD §7.2)', () => {
-    const crash = crisisWindows(runs, (r) => r.crashStarts, 5);
+    const crash = crisisWindows(runs, (r) => r.crisisStarts, 5);
     const mittel = crash.rate.reduce((a, b) => a + b, 0) / crash.rate.length;
     // Kein 5-Jahres-Fenster hat mehr als doppelt so viele Crashs wie der Schnitt …
     expect(Math.max(...crash.rate)).toBeLessThan(2 * mittel);

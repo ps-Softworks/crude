@@ -183,11 +183,70 @@ headlines:
   # sonst ein Frühwarnzeichen (Schwellen in balance.yaml, worldModel.news). ---
   world_crash:
     title:
-      de: Panik an der Börse von Hallstead
-      en: Panic on the Hallstead exchange
+      de: Der große Krach von Hallstead
+      en: The great Hallstead crash
     text:
-      de: Eine große Bank schließt ihre Schalter, die Kurse stürzen. Überall im Land kündigen Banken Kredite und verlangen höhere Zinsen.
-      en: A large bank has closed its doors and prices are tumbling. All over the country banks are calling in loans and demanding higher interest.
+      de: Eine große Bank schließt ihre Schalter, die Kurse stürzen. Wer auf Pump gekauft hat, ist ruiniert. Überall im Land kündigen Banken Kredite, kürzen die Rahmen und verlangen höhere Zinsen.
+      en: A large bank has closed its doors and prices are tumbling. Whoever bought on margin is ruined. All over the country banks are calling in loans, cutting credit lines and demanding higher interest.
+  # 4.4: Bankpanik – ein Auslöser ohne große Verschuldung: Schreck, Zinssprung, aber kein Zusammenbruch.
+  world_panic:
+    title:
+      de: Ansturm auf die Banken
+      en: A run on the banks
+    text:
+      de: Ein Gerücht, eine Pleite – und schon stehen die Sparer Schlange vor den Schaltern. Die Banken heben die Zinsen und leihen vorerst weniger. Die alten Bankiers sagen, das gehe vorüber.
+      en: A rumour, a failure – and the savers are queuing at the counters. The banks raise their rates and lend less for now. The old bankers say it will pass.
+  # 4.4: Frühwarnzeichen vor dem Crash – Verschuldung hoch, Banken heben schon die Zinsen.
+  world_credit_bubble:
+    title:
+      de: Ganz Hallstead kauft auf Pump
+      en: All of Hallstead is buying on margin
+    text:
+      de: Schuhputzer geben Börsentipps, Firmen leihen, um Aktien anderer Firmen zu kaufen. Die Banken leihen noch immer großzügig, heben aber still die Zinsen. Ein alter Bankier warnt, es brauche nur einen Funken.
+      en: Bootblacks are giving stock tips, companies borrow to buy other companies' shares. The banks still lend freely but are quietly raising their rates. An old banker warns that a single spark is all it would take.
+  # 4.4: Ausland – Costa Negra (Aufstand, Förderausfall) und Qasir (Ölembargo).
+  world_costa_negra_unrest:
+    title:
+      de: Unruhen in Costa Negra
+      en: Unrest in Costa Negra
+    text:
+      de: In der Hauptstadt im Süden marschieren Arbeiter und Soldaten gegen die Regierung. Die Ölfelder an der Küste sollen schon bewacht werden.
+      en: In the southern capital workers and soldiers are marching against the government. The coastal oil fields are said to be under guard already.
+  world_uprising:
+    title:
+      de: Aufstand in Costa Negra – die Ölfelder stehen still
+      en: Uprising in Costa Negra – the oil fields fall silent
+    text:
+      de: Aufständische besetzen die Förderanlagen an der Küste, Tanker laufen leer aus. Händler in Port Ellis rechnen mit teurerem Öl, bis wieder Ruhe herrscht.
+      en: Rebels have occupied the coastal oil works and tankers sail empty. Traders in Port Ellis expect dearer oil until order returns.
+  world_uprising_end:
+    title:
+      de: Costa Negra fördert wieder
+      en: Costa Negra pumps again
+    text:
+      de: Die neue Regierung im Süden lässt die Ölfelder wieder öffnen. Die ersten Tanker sind unterwegs nach Norden.
+      en: The new government in the south has reopened the oil fields. The first tankers are on their way north.
+  world_qasir_unrest:
+    title:
+      de: Verstimmung in Qasir
+      en: Displeasure in Qasir
+    text:
+      de: Gesandte aus Aldmark und Varenhold drängen sich am Hof des Wüstenkönigs. Der König lässt ausrichten, sein Öl sei nicht jedermanns Öl.
+      en: Envoys from Aldmark and Varenhold crowd the desert king's court. The king lets it be known that his oil is not everybody's oil.
+  world_embargo:
+    title:
+      de: Qasir stoppt die Ölausfuhr
+      en: Qasir halts its oil exports
+    text:
+      de: Der Wüstenkönig verhängt ein Embargo, kein Tanker verlässt mehr seine Häfen. In aller Welt steigen die Ölpreise.
+      en: The desert king has declared an embargo; no tanker leaves his ports. Oil prices are rising all over the world.
+  world_embargo_end:
+    title:
+      de: Qasir hebt das Embargo auf
+      en: Qasir lifts its embargo
+    text:
+      de: Nach zähen Verhandlungen öffnet der Wüstenkönig seine Häfen wieder. Die Händler erwarten, dass der Ölpreis nachgibt.
+      en: After hard negotiations the desert king reopens his ports. Traders expect the oil price to ease.
   world_recovery:
     title:
       de: Die Banken atmen auf
