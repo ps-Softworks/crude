@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { checkArcMarks, parseArcContent } from '../src/sim/arcs';
 import { checkChapterMarks, parseChapterContent } from '../src/sim/chapter';
+import { parseDiplomacyContent } from '../src/sim/diplomacyContent'; // 4.10 Andockpunkt
 import { formatContentError, parseEventFiles } from '../src/sim/eventContent';
 import { analyzeRelevance, checkRelevanceMarks, parseRelevanceContent, readMarks, simReadMarks } from '../src/sim/eventRelevance';
 import { parseFamilyContent } from '../src/sim/family';
@@ -50,7 +51,9 @@ const wirkung = parseRelevanceContent('content/relevance.yaml', readFileSync(new
 const wirkungMarks = wirkung.content && parsed.errors.length === 0 ? checkRelevanceMarks('content/relevance.yaml', wirkung.content, events) : [];
 // 4.8 Andockpunkt: Aufsichtsrat, Strohmänner und Forderungen (Kapitel 2).
 const aktien = parseStocksContent('content/stocks.yaml', readFileSync(new URL('../content/stocks.yaml', import.meta.url), 'utf8'), loadBalance().stocks.board.seatsMax);
-const errors = [...aktien.errors, ...wirkung.errors, ...wirkungMarks, ...einstieg.errors, ...parsed.errors, ...zeitung.errors, ...politik.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks];
+// Rivalen-Diplomatie (4.10): Texte der Pinnwand ab Kapitel 2. // 4.10 Andockpunkt
+const diplomatie = parseDiplomacyContent('content/diplomacy.yaml', readFileSync(new URL('../content/diplomacy.yaml', import.meta.url), 'utf8'));
+const errors = [...aktien.errors, ...diplomatie.errors, ...wirkung.errors, ...wirkungMarks, ...einstieg.errors, ...parsed.errors, ...zeitung.errors, ...politik.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks];
 
 // 4.9 Andockpunkt – Personal: Namen, Merkmale und Wörter der Personalakten, passend zu balance.yaml (staff).
 const personal = parseStaffContent('content/staff.yaml', readFileSync(new URL('../content/staff.yaml', import.meta.url), 'utf8'));

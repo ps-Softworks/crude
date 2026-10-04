@@ -4,6 +4,7 @@
 // verworfen. Keine Spielregeln hier, nur sichern und prüfen, ob der Zustand
 // vollständig ist.
 
+import { validDiplomacy } from './diplomacy'; // 4.10 Andockpunkt
 import type { GameState } from './game';
 import { newLogistics } from './logistics';
 import { isWorldState, neutralWorld, withPoliticsDefaults } from './world';
@@ -173,6 +174,8 @@ export function validateState(value: unknown): LoadResult {
   if (value.stocks !== undefined && !isStocksState(value.stocks)) return { ok: false, reason: UNVOLLSTAENDIG };
   // 4.9 Andockpunkt: Personal ist freiwillig (Kapitel 1 ohne) – wenn da, muss es vollständig sein.
   if (value.staff !== undefined && !isStaffState(value.staff)) return { ok: false, reason: UNVOLLSTAENDIG };
+  // 4.10 Andockpunkt: Rivalen-Diplomatie fehlt in Kapitel 1 (und in älteren Ständen) – dann nichts zu prüfen.
+  if (value.diplomacy !== undefined && !validDiplomacy(value.diplomacy)) return { ok: false, reason: UNVOLLSTAENDIG };
   const round = value.round as number;
   const totalRounds = value.totalRounds as number;
   return round >= 1 && round <= totalRounds ? { ok: true, state: value as unknown as GameState } : { ok: false, reason: UNVOLLSTAENDIG };

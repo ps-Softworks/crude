@@ -19,6 +19,7 @@
 // Feste Termine (routine) haben nur eine Antwort: Ihre Abwägung ist der Termin selbst –
 // sie werden aufgelistet, aber nicht bewertet.
 
+import { DIPLOMACY_READ_MARKS } from './diplomacyCore'; // 4.10 Andockpunkt
 import { parseDocument } from 'yaml';
 import type { Balance } from './balance';
 import type { ContentError } from './eventContent';
@@ -59,7 +60,8 @@ export interface RelevanceReport {
 export function simReadMarks(balance: Balance): string[] {
   // 4.7 Andockpunkt: Merkzeichen, die die Fernleitungen lesen.
   // 4.9 Andockpunkt: Merkzeichen, die das Personal liest (STAFF_EVENT_MARKS).
-  return [...Object.values(RIVAL_MARKS), ...balance.transport.pipeline.rights.map((r) => r.mark), ...BIG_PIPELINE_READ_MARK_LIST, ...Object.values(STAFF_EVENT_MARKS)];
+  // 4.10 Andockpunkt: Merkzeichen, die die Diplomatie liest (DIPLOMACY_READ_MARKS).
+  return [...Object.values(RIVAL_MARKS), ...balance.transport.pipeline.rights.map((r) => r.mark), ...BIG_PIPELINE_READ_MARK_LIST, ...Object.values(STAFF_EVENT_MARKS), ...DIPLOMACY_READ_MARKS];
 }
 
 /**

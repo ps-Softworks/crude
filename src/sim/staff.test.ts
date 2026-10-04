@@ -656,7 +656,9 @@ describe('Briefe zum Personal (STAFF_EVENT_MARKS, content/events/k2-personal.yam
   });
 
   it('die Briefe kommen erst mit Personal – ihre Merkzeichen setzt nur die Simulation', () => {
-    const katalog = loadEvents().filter((e) => e.id.startsWith('k2_'));
+    // Nur die Briefe aus k2-personal.yaml – andere Kapitel-2-Ereignisse (z. B. 4.10 Diplomatie) haben eigene Merkzeichen.
+    const personalIds = new Set([...readFileSync(new URL('../../content/events/k2-personal.yaml', import.meta.url), 'utf8').matchAll(/^- id: (\S+)/gm)].map((m) => m[1]));
+    const katalog = loadEvents().filter((e) => personalIds.has(e.id));
     expect(katalog.length).toBeGreaterThan(0);
     for (const e of katalog) {
       expect(e.mail).toBeDefined();

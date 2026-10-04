@@ -17,6 +17,7 @@ import { TrunkDebugButton } from './TrunkPipelineTab';
 // 4.8 Andockpunkt: Debug-Knopf für Aktienbuch, Aufsichtsrat und Anleihen.
 import { StocksDebugButton } from './LedgerSheet';
 import { openStaff } from '../../sim/staff'; // 4.9 Andockpunkt
+import { DiplomacyDebug } from './DiplomacySheet'; // 4.10 Andockpunkt
 
 export interface MenuProps {
   ctx: SheetContext;
@@ -202,6 +203,8 @@ export function MenuSheet(p: MenuProps) {
               </button>
             )}
             {ctx.game.staff && <span className="muted klein">Personal ist freigeschaltet.</span>}
+            {/* 4.10 Andockpunkt: Rivalen-Diplomatie aus Kapitel 2 vorab einschalten. */}
+            <DiplomacyDebug ctx={ctx} />
           </fieldset>
         </section>
       )}

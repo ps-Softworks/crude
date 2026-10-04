@@ -3,6 +3,7 @@
 // Seit 0.2.15+5 gehört die Karte (content/map.yaml) mit dazu: parseGameData.
 
 import { parseStocksBalance, type StocksBalance } from './stocksBalance'; // 4.8 Andockpunkt
+import { parseDiplomacy, type DiplomacyBalance } from './diplomacyBalance'; // 4.10 Andockpunkt
 import { parseWorldMap, type WorldMap } from './worldMap';
 import { PARTIES, PUBLIC_ACTS, type Party, type PublicAct } from './world';
 // 4.6 Andockpunkt: Raffinerie (Zahlen und Prüfung in refineryBalance.ts).
@@ -606,6 +607,8 @@ export interface WorldModelBalance {
 
 export interface Balance {
   rivals: RivalsBalance;
+  /** Rivalen-Diplomatie und Crane-Nachfolge (4.10, src/sim/diplomacyBalance.ts). */
+  diplomacy: DiplomacyBalance; // 4.10 Andockpunkt
   start: { cash: number; year: number; rounds: number };
   /** Karte aus content/map.yaml (beim Laden als raw.world übergeben). */
   world: WorldMap;
@@ -1821,6 +1824,7 @@ export function parseBalance(raw: unknown): Balance {
     credit: parseCredit(raw),
     bankruptcy: parseBankruptcy(raw),
     rivals: parseRivals(raw),
+    diplomacy: parseDiplomacy(raw), // 4.10 Andockpunkt
     empire: parseEmpire(raw),
     chapter: parseChapter(raw),
     bots: parseBots(raw),

@@ -32,6 +32,7 @@ import { advanceWildcatters, newWildcatters, type WildcattersState } from './wil
 import { advanceRefinery, type RefineryState } from './refinery';
 import type { StaffState } from './staff'; // 4.9 Andockpunkt: Personal
 import { delegateMail, settleStaff } from './staffRound'; // 4.9 Andockpunkt: Personal
+import { advanceDiplomacy, type DiplomacyState } from './diplomacy'; // 4.10 Andockpunkt
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
@@ -110,6 +111,8 @@ export interface GameState {
   /** 4.9 Andockpunkt: Personal (Sekretärin, Fixer, Richtlinien) – erst ab Kapitel 2, in Kapitel 1 undefined. */
   staff?: StaffState;
   log: string[];
+  /** Rivalen-Diplomatie und Crane-Nachfolge (4.10): erst ab Kapitel 2, in Kapitel 1 fehlt sie. */
+  diplomacy?: DiplomacyState; // 4.10 Andockpunkt
   /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
   roundLogStart: number;
   /** 4.6 Andockpunkt: Raffinerie und Produktmix; undefined = noch nicht freigeschaltet (Kapitel 1). */
@@ -254,7 +257,11 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   // 4.7 Andockpunkt: Fernleitungen nach dem Transport – Thorne nimmt unter Druck eine Erhöhung zurück und senkt den Tarif.
   const gefahren = advanceBigPipelines(advanceTransport(verzinst, balance), balance, { railTariffBefore: verzinst.railTariff });
-  const state = { ...checkBankruptcy(gefahren, balance), roundLogStart };
+  // Rivalen-Diplomatie (4.10): ohne state.diplomacy (Kapitel 1) passiert nichts. // 4.10 Andockpunkt
+  const diplomatie = advanceDiplomacy(gefahren, balance);
+  // 4.10 Andockpunkt: Verkauf an Pruett (Antwort auf seinen Besuch) beendet die Partie ohne weitere Abrechnung.
+  if (diplomatie.finished) return { ...diplomatie, roundLogStart };
+  const state = { ...checkBankruptcy(diplomatie, balance), roundLogStart };
   if (state.ending === 'pleite') return state;
   if (state.round >= state.totalRounds) {
     // Kapitelprüfung (2.11): steht im Protokoll, der Ergebnisbildschirm zeigt die Einzelheiten.

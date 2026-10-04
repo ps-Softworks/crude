@@ -25,6 +25,7 @@ describe('echte Inhalte in content/events/', () => {
   it('sind fehlerfrei und enthalten die Probe-Ereignisse, festen Termine und Alltagsereignisse 1–67 für Kapitel 1 (2.2–2.10b)', () => {
     // 4.7 Andockpunkt: Die Kapitel-2-Ereignisse der Fernleitungen (k2-fernleitung.yaml) prüft bigPipeline.test.ts.
     // 4.9 Andockpunkt: Briefe für Kapitel 2 (k2-*.yaml) gehören nicht zur Liste von Kapitel 1.
+    // 4.10 Andockpunkt: Ereignisse späterer Kapitel (k2_…) prüfen ihre eigenen Tests.
     const ids = loadEvents()
       .map((e) => e.id)
       .filter((id) => !id.startsWith('fernleitung_') && !id.startsWith('k2_'));

@@ -6,6 +6,8 @@ import { balance } from '../balance';
 import { money } from '../format';
 import type { SheetContext } from './types';
 import type { GameState } from '../../sim/game';
+import { Tabs, activeTab } from '../sheet/Tabs';
+import { DiplomacyTab, diplomacyTabs, revierTabLabel } from './DiplomacySheet'; // 4.10 Andockpunkt
 
 /** Kurzform für Pinnwand und Kartenleiste. */
 export function rivalsLines(game: GameState): { jacob: string; bullard: string; wildcatter: string | null } {
@@ -24,6 +26,21 @@ export function rivalsLines(game: GameState): { jacob: string; bullard: string; 
 }
 
 export function RivalsSheet({ ctx }: { ctx: SheetContext }) {
+  // 4.10 Andockpunkt: Ab Kapitel 2 (state.diplomacy) bekommt die Pinnwand Reiter für die Diplomatie.
+  const diplo = diplomacyTabs(ctx.game);
+  if (diplo.length > 0) {
+    const tabs = [{ id: 'revier', label: revierTabLabel() }, ...diplo];
+    const tab = activeTab('konkurrenz', tabs, ctx.tab);
+    return (
+      <Tabs sheet="konkurrenz" tabs={tabs} active={tab} onChange={ctx.onTab}>
+        {tab === 'revier' ? <Revier ctx={ctx} /> : <DiplomacyTab tab={tab} ctx={ctx} />}
+      </Tabs>
+    );
+  }
+  return <Revier ctx={ctx} />;
+}
+
+function Revier({ ctx }: { ctx: SheetContext }) {
   const { game } = ctx;
   const z = rivalsLines(game);
   return (
