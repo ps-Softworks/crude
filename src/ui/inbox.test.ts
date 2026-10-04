@@ -4,7 +4,7 @@ import { newGame } from '../sim/game';
 import { loadBalance } from '../sim/testBalance';
 import { loadEvents } from '../sim/testEvents';
 import { figureCatalog } from './figureCatalog.node';
-import { eventsShownIn, inboxBadges, openItems, seenKey, sortInbox, unseen, visitorNames } from './inbox';
+import { eventsShownIn, inboxBadges, landDeadlines, openItems, seenKey, sortInbox, unseen, visitorNames } from './inbox';
 import { appearancesOf } from './visitors';
 
 function ereignis(id: string, extra: Partial<DeskEvent> = {}): DeskEvent {
@@ -54,6 +54,33 @@ describe('Was auf dem Schreibtisch liegt', () => {
     // Ohne freie Termine ist der Kalender kein offener Punkt.
     expect(openItems(inbox, { left: 0 }).map((i) => i.target)).not.toContain('termine');
     expect(openItems(sortInbox([], [], []), { left: 5 })).toEqual([]);
+  });
+
+  it('warnt an der Glocke vor Land, das nach dieser Runde verfällt (0.2.15+12)', () => {
+    const balance = loadBalance();
+    const events = loadEvents();
+    const game = newGame('frist-test', balance, events);
+    const eigene = game.options.filter((o) => o.holder === 'jacob');
+    expect(eigene.length).toBeGreaterThan(0);
+    // Am Start ist noch Zeit: nichts verfällt.
+    expect(landDeadlines(game).options).toBe(0);
+    // In der letzten Runde der Optionen zählt jede mit, die erste Ranch ist das Ziel.
+    const spaet = { ...game, round: Math.max(...eigene.map((o) => o.expiresAfterRound)) };
+    const land = landDeadlines(spaet);
+    expect(land.options).toBe(eigene.filter((o) => o.expiresAfterRound <= spaet.round).length);
+    expect(land.parcelId).not.toBeNull();
+    const items = openItems(sortInbox([], [], []), { left: 0 }, land);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ target: 'karte', urgent: true, parcelId: land.parcelId });
+    expect(items[0].text).toMatch(/Option(en)? verf(ällt|allen) nach dieser Runde → Wandkarte/);
+    // Gebohrte Pachten verfallen nie; ungebohrte in ihrer letzten Runde schon.
+    const pacht = { parcelId: 'p1', holder: 'jacob' as const, bonus: 0, royalty: 0.125, startRound: 1, expiresAfterRound: 3, drilled: false };
+    expect(landDeadlines({ round: 3, options: [], leases: [pacht] })).toEqual({ options: 0, leases: 1, parcelId: 'p1' });
+    expect(landDeadlines({ round: 2, options: [], leases: [pacht] }).leases).toBe(0);
+    expect(landDeadlines({ round: 3, options: [], leases: [{ ...pacht, drilled: true }] }).leases).toBe(0);
+    expect(openItems(sortInbox([], [], []), { left: 0 }, { options: 1, leases: 1, parcelId: 'p1' })[0].text).toBe(
+      '1 Option und 1 ungebohrte Pacht verfallen nach dieser Runde → Wandkarte',
+    );
   });
 
   it('merkt sich, was neu ist (2b): ein Abzeichen ist „neu“, bis das Fenster offen war', () => {

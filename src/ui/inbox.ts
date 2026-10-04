@@ -5,6 +5,8 @@
 
 import type { AgendaView } from '../sim/agenda';
 import type { DeskEvent } from '../sim/events';
+import type { GameState } from '../sim/game';
+import { roundsLeft } from '../sim/lease';
 import type { SheetId } from './sceneState';
 import { waitingText } from './visitors';
 
@@ -102,9 +104,26 @@ export function visitorNames(inbox: Inbox): string[] {
 /** Eine Zeile in „Noch offen“ an der Glocke. */
 export interface OpenItem {
   /** Wohin „Hingehen“ führt. */
-  target: SheetId | 'tuer';
+  target: SheetId | 'tuer' | 'karte';
   text: string;
   urgent: boolean;
+  /** Bei target 'karte': diese Ranch zeigen. */
+  parcelId?: string;
+}
+
+/** Land, das nach dieser Runde verfällt (0.2.15+12): Jacobs Optionen und ungebohrte Pachten mit nur noch einer Runde. */
+export interface LandDeadlines {
+  options: number;
+  leases: number;
+  /** Die erste betroffene Ranch (für „Hingehen“), sonst null. */
+  parcelId: string | null;
+}
+
+/** Nur gezählt – wann etwas verfällt, steht in src/sim (expiresAfterRound, roundsLeft). */
+export function landDeadlines(game: Pick<GameState, 'round' | 'options' | 'leases'>): LandDeadlines {
+  const optionen = game.options.filter((o) => o.holder === 'jacob' && roundsLeft(game, o) <= 1);
+  const pachten = game.leases.filter((l) => l.holder === 'jacob' && !l.drilled && roundsLeft(game, l) <= 1);
+  return { options: optionen.length, leases: pachten.length, parcelId: optionen[0]?.parcelId ?? pachten[0]?.parcelId ?? null };
 }
 
 function anzahl(n: number, eins: string, viele: string): string {
@@ -112,7 +131,7 @@ function anzahl(n: number, eins: string, viele: string): string {
 }
 
 /** Was vor dem Rundenende noch offen liegt. Gesperrt wird nichts. */
-export function openItems(inbox: Inbox, agenda: Pick<AgendaView, 'left'>): OpenItem[] {
+export function openItems(inbox: Inbox, agenda: Pick<AgendaView, 'left'>, land: LandDeadlines | null = null): OpenItem[] {
   const items: OpenItem[] = [];
   if (inbox.visitors.length > 0) {
     items.push({
@@ -127,6 +146,19 @@ export function openItems(inbox: Inbox, agenda: Pick<AgendaView, 'left'>): OpenI
       target: 'post',
       text: `${anzahl(inbox.letters.length, 'Brief', 'Briefe')} unbeantwortet${dringend > 0 ? ` – ${dringend === 1 ? 'einer' : dringend} mit Frist in dieser Runde` : ''}`,
       urgent: dringend > 0,
+    });
+  }
+  if (land && land.parcelId && land.options + land.leases > 0) {
+    const teile = [
+      land.options > 0 && anzahl(land.options, 'Option', 'Optionen'),
+      land.leases > 0 && anzahl(land.leases, 'ungebohrte Pacht', 'ungebohrte Pachten'),
+    ].filter(Boolean);
+    const n = land.options + land.leases;
+    items.push({
+      target: 'karte',
+      parcelId: land.parcelId,
+      text: `${teile.join(' und ')} ${n === 1 ? 'verfällt' : 'verfallen'} nach dieser Runde → Wandkarte`,
+      urgent: true,
     });
   }
   const vorfaelle = [...inbox.incidents, ...inbox.tableaus];

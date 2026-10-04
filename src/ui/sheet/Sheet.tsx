@@ -29,8 +29,11 @@ export interface SheetProps {
   children: ReactNode;
 }
 
-function fokussierbare(root: HTMLElement): HTMLElement[] {
-  return [...root.querySelectorAll<HTMLElement>(FOKUSSIERBAR)].filter((el) => el.offsetParent !== null || el === document.activeElement);
+/** Was Tab der Reihe nach erreicht – ohne tabindex="-1" (z. B. inaktive Reiter), sonst bricht die Fokusfalle. */
+export function fokussierbare(root: HTMLElement): HTMLElement[] {
+  return [...root.querySelectorAll<HTMLElement>(FOKUSSIERBAR)].filter(
+    (el) => el.tabIndex >= 0 && (el.offsetParent !== null || el === document.activeElement),
+  );
 }
 
 export function Sheet({ title, size, onClose, back, note, noteExtra, className, origin, closing = false, children }: SheetProps) {
@@ -49,15 +52,13 @@ export function Sheet({ title, size, onClose, back, note, noteExtra, className, 
     // Nur beim Öffnen.
   }, [title]);
 
-  // Beim Öffnen: Fokus ins Fenster – auf das, was data-autofocus trägt, sonst auf den ersten Knopf im Inhalt.
+  // Beim Öffnen: Fokus ins Fenster – auf das, was data-autofocus trägt, sonst auf den
+  // aktiven Reiter, sonst auf das Fenster selbst. Nie von selbst auf einen Knopf im
+  // Inhalt (0.2.15+12): ein zweites Enter würde sonst ungelesen kaufen oder antworten.
   useEffect(() => {
     const root = ref.current;
     if (!root) return;
-    const ziel =
-      root.querySelector<HTMLElement>('[data-autofocus]') ??
-      root.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]') ??
-      fokussierbare(root.querySelector<HTMLElement>('.sheet-inhalt') ?? root)[0] ??
-      root;
+    const ziel = root.querySelector<HTMLElement>('[data-autofocus]') ?? root.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]') ?? root;
     ziel.focus({ preventScroll: true });
     // Nur beim Öffnen (oder Wechsel zu einem anderen Fenster); ein Reiterwechsel verschiebt den Fokus nicht.
   }, [title]);

@@ -45,12 +45,14 @@ export function EventStack({
   }, [ergebnis]);
 
   // Enter oder Leertaste auf „Weiter“ reichen; eine Ziffer soll hier nichts beantworten.
+  // Danach liegt der Fokus auf der Überschrift der nächsten Karte, nicht auf einer
+  // Antwort (0.2.15+12): Ein zweites Enter soll nichts ungelesen entscheiden.
   function weiter() {
     setErgebnis(null);
     setGewaehlt(null);
     window.setTimeout(() => {
       const root = kartenRef.current;
-      (root?.querySelector<HTMLElement>('.actions button:not(:disabled)') ?? root?.closest<HTMLElement>('[role="dialog"]'))?.focus({ preventScroll: true });
+      (root?.querySelector<HTMLElement>('.event-titel') ?? root?.closest<HTMLElement>('[role="dialog"]'))?.focus({ preventScroll: true });
     }, 0);
   }
 

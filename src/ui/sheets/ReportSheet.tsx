@@ -46,7 +46,10 @@ function bohrzeile(game: GameState, vorher: Well | undefined, well: Well): { tex
   }
 }
 
-export function ReportSheet({ report, onDone, next }: { report: RoundReport | null; onDone: () => void; next: boolean }) {
+/** So viele Kladde-Zeilen stehen im Bericht, der Rest in der Kladde (0.2.15+12). */
+export const BERICHT_ZEILEN = 5;
+
+export function ReportSheet({ report, onDone, next, onJournal }: { report: RoundReport | null; onDone: () => void; next: boolean; onJournal?: () => void }) {
   const knopf = useRef<HTMLButtonElement>(null);
   useEffect(() => knopf.current?.focus({ preventScroll: true }), []);
   if (!report) {
@@ -68,6 +71,8 @@ export function ReportSheet({ report, onDone, next }: { report: RoundReport | nu
   });
   // Alles seit dem Läuten – auch die Standardantworten auf liegen gebliebene Ereignisse.
   const zeilen = after.log.slice(before.log.length);
+  const kurz = zeilen.slice(0, BERICHT_ZEILEN);
+  const mehr = zeilen.length - kurz.length;
 
   return (
     <div className="bericht">
@@ -103,15 +108,27 @@ export function ReportSheet({ report, onDone, next }: { report: RoundReport | nu
       {zeilen.length === 0 ? (
         <p className="muted">Eine ruhige Nacht.</p>
       ) : (
-        <ul className="log bericht-log">
-          {zeilen.map((z, i) => (
-            <li key={i}>{z}</li>
-          ))}
-        </ul>
+        <>
+          <ul className="log bericht-log">
+            {kurz.map((z, i) => (
+              <li key={i}>{z}</li>
+            ))}
+          </ul>
+          {(mehr > 0 || onJournal) && (
+            <p className="bericht-mehr">
+              {mehr > 0 && <span className="muted">… und {mehr === 1 ? 'ein weiterer Eintrag' : `${mehr} weitere Einträge`}. </span>}
+              {onJournal && (
+                <button type="button" className="link" onClick={onJournal}>
+                  Ganze Kladde (P)
+                </button>
+              )}
+            </p>
+          )}
+        </>
       )}
       <p className="knoepfe bericht-fuss">
         <button type="button" className="primary" ref={knopf} onClick={onDone} data-autofocus>
-          {next ? 'Weiter zur Zeitung' : 'Weiter'}
+          {next ? 'Weiter zur Zeitung (Enter)' : 'Weiter (Enter)'}
         </button>
       </p>
     </div>

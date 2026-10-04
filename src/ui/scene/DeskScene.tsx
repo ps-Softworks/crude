@@ -18,7 +18,7 @@ import type { TutorialView } from '../../sim/tutorial';
 import { balance } from '../balance';
 import { familyContent } from '../family';
 import { barrels } from '../format';
-import type { InboxBadges, OpenItem } from '../inbox';
+import { landDeadlines, type InboxBadges, type OpenItem } from '../inbox';
 import type { SilhouetteKind } from '../figures';
 import { keyForSheet } from '../keys';
 import { newspaperContent } from '../newspaper';
@@ -107,10 +107,11 @@ export function DeskScene(p: DeskSceneProps) {
 
   // Akte: was die Türme gerade tun, gezählt in src/sim (rigSummary).
   const tuerme = rigSummary(game);
-  // Wartet ein Turm auf Jacobs Entscheidung, steht genau das da – nicht „bohrt“.
+  // Wartet ein Turm auf Jacobs Entscheidung, sagt das das Abzeichen („1 wartet“); das
+  // Schild nennt nur den Rest, damit es nicht abgeschnitten wird (0.2.15+12).
   const akteStatus =
     tuerme.waiting > 0
-      ? [`${tuerme.waiting} wartet auf Entscheidung`, tuerme.drilling > 0 && `${tuerme.drilling} bohrt`, tuerme.idle > 0 && `${tuerme.idle} frei`].filter(Boolean).join(' · ')
+      ? [tuerme.drilling > 0 && `${tuerme.drilling} bohrt`, tuerme.idle > 0 && `${tuerme.idle} frei`].filter(Boolean).join(' · ') || 'Entscheidung offen'
       : [
           tuerme.drilling > 0 && `${tuerme.drilling} bohr${tuerme.drilling === 1 ? 't' : 'en'}`,
           `${tuerme.idle} frei`,
@@ -125,6 +126,9 @@ export function DeskScene(p: DeskSceneProps) {
 
   const leases = game.leases.filter((l) => l.holder === 'jacob').length;
   const options = game.options.filter((o) => o.holder === 'jacob').length;
+  // Verfällt nach dieser Runde Land, trägt die Wandkarte eine Frist wie ein Brief (0.2.15+12).
+  const frist = landDeadlines(game);
+  const verfaellt = frist.options + frist.leases;
 
   // Familienfoto: je kälter das Wort, desto blasser das Bild (nur Wörter, keine Zahl).
   const RANG = { content: 0, neglected: 1, bitter: 2, estranged: 3 } as const;
@@ -161,6 +165,7 @@ export function DeskScene(p: DeskSceneProps) {
           glow={p.glow === 'karte' || p.spotlight === 'karte'}
           onOpen={p.onMap}
           status={`Pachten ${leases} · Optionen ${options}`}
+          badge={!game.finished && verfaellt > 0 ? { text: verfaellt === 1 ? '1 verfällt' : `${verfaellt} verfallen`, urgent: true } : null}
         >
           <WallMapShape />
         </DeskObject>
@@ -183,7 +188,9 @@ export function DeskScene(p: DeskSceneProps) {
         {obj(
           'termine',
           'Kalender',
-          { badge: badges.termine.count > 0 ? { text: `${badges.termine.count} Termin${badges.termine.count === 1 ? '' : 'e'}` } : null, fresh: badges.termine.fresh },
+          // Feste Termine kommen jede Runde wieder – kein „neu“, und ein eigenes Wort, damit
+          // sie nicht mit den freien Terminen oben in der Leiste verwechselt werden (0.2.15+12).
+          { status: badges.termine.count > 0 ? `${badges.termine.count} feste${badges.termine.count === 1 ? 'r' : ''} Termin${badges.termine.count === 1 ? '' : 'e'}` : undefined },
           <span className="kalenderblatt">
             <span className="kalender-band" />
             <span className="kalender-zeit">{formatDate(game)}</span>
@@ -289,6 +296,8 @@ export function DeskScene(p: DeskSceneProps) {
           {
             status: akteStatus,
             badge: tuerme.waiting > 0 ? { text: `${tuerme.waiting} wartet` } : null,
+            // Wartet eine Entscheidung, geht die Akte bei den Türmen auf – dort stehen die Knöpfe (0.2.15+12).
+            onOpen: () => p.onOpen('akte', tuerme.waiting > 0 ? 'tuerme' : undefined),
           },
           <FolderShape variant="akte" />,
         )}

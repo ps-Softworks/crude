@@ -2,6 +2,7 @@
 // tun, nachrüsten, kaufen, mieten, zurückgeben. Kosten, Ersparnis und Gründe
 // kommen aus src/sim/rigs – hier wird nichts gerechnet und nichts entschieden.
 
+import { applyAction, parcelActions } from '../sim/desk';
 import type { GameState } from '../sim/game';
 import { parcelLabel } from '../sim/lease';
 import {
@@ -50,7 +51,41 @@ function lage(game: GameState, rig: Rig): string {
   return `bohrt auf ${ort}`;
 }
 
-export function RigsPanel({ game, onChange }: { game: GameState; onChange: (s: GameState) => void }) {
+/**
+ * Wartet die Bohrung dieses Turms auf Jacob, stehen die Knöpfe gleich daneben
+ * (0.2.15+12) – dieselben, die das Ranch-Fenster aus parcelActions anbietet – und
+ * der Weg zur Karte, wo Chance und Risiko stehen.
+ */
+function Entscheidung({ game, rig, onChange, onShow }: { game: GameState; rig: Rig; onChange: (s: GameState) => void; onShow?: (parcelId: string) => void }) {
+  const well = rigReady(game, rig) ? rigWell(game, rig.id) : undefined;
+  if (!well || (well.status !== 'decision' && well.status !== 'stuck')) return null;
+  const knoepfe = parcelActions(game, balance, well.parcelId).filter((a) => a.kind === 'deeper' || a.kind === 'fish' || a.kind === 'abandon');
+  return (
+    <div className="actions entscheidung">
+      {knoepfe.map((a) => (
+        <button
+          key={a.kind}
+          type="button"
+          disabled={!a.ok}
+          title={a.reason}
+          onClick={() => {
+            const r = applyAction(game, balance, well.parcelId, a.kind);
+            if (r.ok) onChange(r.state);
+          }}
+        >
+          {a.label}
+        </button>
+      ))}
+      {onShow && (
+        <button type="button" className="link" onClick={() => onShow(well.parcelId)}>
+          Auf Karte zeigen (Chance und Risiko)
+        </button>
+      )}
+    </div>
+  );
+}
+
+export function RigsPanel({ game, onChange, onShow }: { game: GameState; onChange: (s: GameState) => void; onShow?: (parcelId: string) => void }) {
   const dampf = steamPayback(balance);
   const gestaenge = rodsPayback(balance);
   const kaufAb = buyVsRentRounds(balance);
@@ -62,6 +97,7 @@ export function RigsPanel({ game, onChange }: { game: GameState; onChange: (s: G
         {game.rigs.map((rig) => (
           <li key={rig.id}>
             <strong>{rigLabel(rig)}</strong> · {lage(game, rig)}
+            <Entscheidung game={game} rig={rig} onChange={onChange} onShow={onShow} />
             {(rig.steam || rig.rods) && (
               <span className="muted">
                 {' '}

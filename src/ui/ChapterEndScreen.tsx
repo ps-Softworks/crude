@@ -43,10 +43,10 @@ export function ChapterEndScreen({
   onPeek?: () => void;
 }) {
   const ref = useRef<HTMLElement>(null);
-  // Fokus auf die erste Entscheidung (Börsengang), sonst auf „Neues Spiel“ (0.2.15+11).
+  // Fokus auf die Überschrift des Bogens (0.2.15+12) – nicht auf den Börsengang oder
+  // „Neues Spiel“: Beides gilt endgültig, ein nachgedrücktes Enter darf es nicht auslösen.
   useEffect(() => {
-    const root = ref.current;
-    (root?.querySelector<HTMLElement>('.ipo button') ?? root?.querySelector<HTMLElement>('.bogen-fuss .primary'))?.focus({ preventScroll: true });
+    ref.current?.querySelector<HTMLElement>('#bogen-titel')?.focus({ preventScroll: true });
   }, [game.ipo === null]);
   const ergebnis = chapterResult(game, balance);
   const verkauft = ergebnis === 'verkauft';
@@ -61,7 +61,9 @@ export function ChapterEndScreen({
         <div className="ergebnis-kopf">
           <Silhouette id="jacob" name="Jacob Harlan" size={44} />
           <div>
-            <h2 id="bogen-titel">{fillText(ende.title, {})}</h2>
+            <h2 id="bogen-titel" tabIndex={-1}>
+              {fillText(ende.title, {})}
+            </h2>
             <p className="bogen-text">
               {formatDate(game)}: {fillText(ende.text, {})}
             </p>

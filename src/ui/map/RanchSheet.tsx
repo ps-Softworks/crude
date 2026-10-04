@@ -57,23 +57,24 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
   const weg = notice ? null : sperre?.reasonKind;
 
   const ref = useRef<HTMLElement>(null);
-  // Neue Ranch gewählt: Fokus ins Fenster, damit es mit der Tastatur weitergeht.
+  // Neue Ranch gewählt: Fokus auf den Namen der Ranch, damit es mit der Tastatur
+  // weitergeht – nicht auf „Pacht kaufen“ (0.2.15+12): Ein zweites Enter soll nichts kaufen.
   useEffect(() => {
-    const root = ref.current;
-    (root?.querySelector<HTMLElement>('.ranch-aktionen button:not(:disabled)') ?? root?.querySelector<HTMLElement>('.sheet-zu'))?.focus({ preventScroll: true });
+    ref.current?.querySelector<HTMLElement>('#ranch-titel')?.focus({ preventScroll: true });
   }, [id]);
   // Nach einer Aktion verschwindet oft der Knopf mit dem Fokus (Pachten → Bohren): Fokus bleibt im Fenster.
   useEffect(() => {
     const aktiv = document.activeElement;
     if (aktiv && aktiv !== document.body) return;
-    const root = ref.current;
-    (root?.querySelector<HTMLElement>('.ranch-aktionen button:not(:disabled)') ?? root?.querySelector<HTMLElement>('.sheet-zu'))?.focus({ preventScroll: true });
+    ref.current?.querySelector<HTMLElement>('#ranch-titel')?.focus({ preventScroll: true });
   });
 
   return (
     <aside ref={ref} className="ranch-fenster" aria-labelledby="ranch-titel">
       <div className="ranch-kopf">
-        <h2 id="ranch-titel">{parcel.name}</h2>
+        <h2 id="ranch-titel" tabIndex={-1}>
+          {parcel.name}
+        </h2>
         <button type="button" className="sheet-zu" onClick={onClose} aria-label="Ranch-Fenster schließen (Esc)" title="Schließen (Esc)">
           ×
         </button>
@@ -149,9 +150,11 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
           </div>
         )}
 
+        {/* Gehört die Ranch schon Jacob, ist das Kleingedruckte erledigt: zugeklappt, damit
+            Bohrungen und Förderung oben stehen (0.2.15+12). */}
         {terms && (
-          <section>
-            <h3>Prognose und Konditionen</h3>
+          <details key={id} className="ausbau-klappe konditionen" open={lease?.holder !== 'jacob'}>
+            <summary>Prognose und Konditionen</summary>
             <dl className="terms">
               <dt>Geologe</dt>
               <dd>
@@ -169,7 +172,7 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
               <dt>Optionsgebühr</dt>
               <dd>{money(terms.optionFee)}</dd>
             </dl>
-          </section>
+          </details>
         )}
 
         {wells.length > 0 && (

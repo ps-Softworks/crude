@@ -9,15 +9,15 @@
     en: Ruth and the Receipts
   text:
     de: >-
-      Ruth sitzt nachts am Küchentisch der Pension, vor sich Jacobs Quittungen.
-      Drei Rechnungen hat der Holzhändler doppelt gestellt – 80 $, die einfach
-      weg gewesen wären. „Lass mich die Bücher führen, Jacob“, sagt sie. „Ich
-      habe das für Krämer Pell zehn Jahre gemacht.“
+      Ruth kommt mit einem Packen von Jacobs Quittungen ins Büro und legt ihn auf
+      den Schreibtisch. Drei Rechnungen hat der Holzhändler doppelt gestellt –
+      80 $, die einfach weg gewesen wären. „Lass mich die Bücher führen, Jacob“,
+      sagt sie. „Ich habe das für Krämer Pell zehn Jahre gemacht.“
     en: >-
-      Ruth sits at the boarding-house kitchen table late at night, Jacob's receipts
-      spread before her. The lumber dealer billed three of them twice – 80 $ that
-      would simply have vanished. "Let me keep the books, Jacob," she says. "I did
-      it for Pell the grocer for ten years."
+      Ruth comes into the office with a bundle of Jacob's receipts and sets it on
+      his desk. The lumber dealer billed three of them twice – 80 $ that would
+      simply have vanished. "Let me keep the books, Jacob," she says. "I did it
+      for Pell the grocer for ten years."
   conditions: { minRound: 2, maxRound: 6 }
   chance: 0.35
   choices:

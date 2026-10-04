@@ -24,7 +24,7 @@ import { events } from './events';
 import { GameOverScreen } from './GameOverScreen';
 import { figures } from './figureContent';
 import { figureOf } from './figures';
-import { eventsShownIn, inboxBadges, openItems, seenKey, sortInbox, unseen, visitorNames, type OpenItem } from './inbox';
+import { eventsShownIn, inboxBadges, landDeadlines, openItems, seenKey, sortInbox, unseen, visitorNames, type OpenItem } from './inbox';
 import { keyInput, keyToAction } from './keys';
 import type { MapMarker } from './Map';
 import { MapView } from './map/MapView';
@@ -181,7 +181,7 @@ export function App() {
   // Was auf dem Tisch liegt – nur gefiltert und gezählt aus src/sim.
   const inbox = sortInbox(deskEvents(game, balance, events), deskMail(game, balance, events), deskRoutines(game, balance, events), appearances);
   const badges = inboxBadges(inbox, ui.seen);
-  const offen = openItems(inbox, agendaView(game, balance));
+  const offen = openItems(inbox, agendaView(game, balance), landDeadlines(game));
   // Wer im Raum steht, wartet nicht mehr vor der Tür.
   const draussen = { ...inbox, visitors: inbox.visitors.filter((e) => e.id !== ui.visitor) };
   const wartende = visitorNames(draussen);
@@ -203,7 +203,7 @@ export function App() {
   const ziel = ruthTarget({
     tutorial: hint ? { kind: hint.action.kind, parcelId: 'parcelId' in hint.action ? hint.action.parcelId : undefined } : null,
     stepParcelIds: step?.parcelIds ?? [],
-    openTargets: offen.map((o) => o.target),
+    openTargets: offen.map((o) => (o.target === 'karte' ? { parcelId: o.parcelId ?? '' } : o.target)),
     finished: game.finished,
   });
   const heroisch = hint?.parcelIds ?? step?.parcelIds ?? [];
@@ -264,7 +264,10 @@ export function App() {
   }
 
   function goToItem(item: OpenItem, fromBell = true) {
-    if (item.target === 'tuer') bitteHerein(fromBell ? { sheet: 'glocke' } : undefined);
+    if (item.target === 'karte') {
+      if (item.parcelId) dispatch({ type: 'showOnMap', id: item.parcelId });
+      else dispatch({ type: 'view', view: 'map' });
+    } else if (item.target === 'tuer') bitteHerein(fromBell ? { sheet: 'glocke' } : undefined);
     else open(item.target, fromBell ? { back: { sheet: 'glocke' } } : {});
   }
 

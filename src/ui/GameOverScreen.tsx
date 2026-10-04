@@ -12,16 +12,18 @@ import { Silhouette } from './Silhouette';
 export function GameOverScreen({ game, onRestart }: { game: GameState; onRestart: () => void }) {
   const schuld = debt(game);
   const ergebnis = game.cash - schuld;
-  const knopf = useRef<HTMLButtonElement>(null);
-  // Fokus auf „Neues Spiel“ (0.2.15+11).
-  useEffect(() => knopf.current?.focus({ preventScroll: true }), []);
+  const titel = useRef<HTMLHeadingElement>(null);
+  // Fokus auf die Überschrift (0.2.15+12) – ein zweites Enter wirft das Ergebnis nicht ungesehen weg.
+  useEffect(() => titel.current?.focus({ preventScroll: true }), []);
   return (
     <section className="gameover bogen" aria-labelledby="bogen-titel">
       <div className="bogen-inhalt">
         <div className="ergebnis-kopf">
           <Silhouette id="jacob" name="Jacob Harlan" size={44} />
           <div>
-            <h2 id="bogen-titel">Pleite</h2>
+            <h2 id="bogen-titel" ref={titel} tabIndex={-1}>
+              Pleite
+            </h2>
             <p className="bogen-text">
               {formatDate(game)}, Runde {game.round} von {game.totalRounds}: Jacob Harlan hat die Rechnung nicht bezahlen können. Die Bank nimmt
               die Firma in Zwangsverwaltung – der Bohrturm, die Pachten und die fördernden Quellen werden zwangsversteigert.
@@ -69,7 +71,7 @@ export function GameOverScreen({ game, onRestart }: { game: GameState; onRestart
       </div>
       <div className="bogen-fuss">
         <FeedbackLink className="feedback gross" />
-        <button className="primary" ref={knopf} onClick={onRestart}>
+        <button className="primary" onClick={onRestart}>
           Neues Spiel
         </button>
       </div>

@@ -64,11 +64,12 @@ export function VisitorScene({
     if (!event && nachsatz === null) onLeave();
   }, [event, nachsatz, onLeave]);
 
-  // Beim Eintreten: Fokus auf die erste mögliche Antwort; nach der Antwort auf „Weiter“.
+  // Beim Eintreten: Fokus auf die Überschrift – geantwortet wird mit 1–4 oder nach
+  // einem gezielten Tab, nie mit einem verirrten Enter (0.2.15+12). Nach der Antwort auf „Weiter“.
   useLayoutEffect(() => {
     const root = ref.current;
     if (!root) return;
-    const ziel = root.querySelector<HTMLElement>('[data-autofocus]') ?? root.querySelector<HTMLElement>('.actions button:not(:disabled)') ?? root;
+    const ziel = root.querySelector<HTMLElement>('[data-autofocus]') ?? root.querySelector<HTMLElement>('.sprechblatt-titel') ?? root;
     ziel.focus({ preventScroll: true });
   }, [nachsatz]);
 
@@ -86,11 +87,12 @@ export function VisitorScene({
 
   function tasten(e: KeyboardEvent<HTMLDivElement>) {
     if (e.key !== 'Tab' || !ref.current) return;
-    const liste = [...ref.current.querySelectorAll<HTMLElement>(FOKUSSIERBAR)];
+    const liste = [...ref.current.querySelectorAll<HTMLElement>(FOKUSSIERBAR)].filter((el) => el.tabIndex >= 0);
     if (liste.length === 0) return;
     const erstes = liste[0];
     const letztes = liste[liste.length - 1];
-    if (e.shiftKey && (document.activeElement === erstes || document.activeElement === ref.current)) {
+    const aussen = document.activeElement === ref.current || !liste.includes(document.activeElement as HTMLElement);
+    if (e.shiftKey && (document.activeElement === erstes || aussen)) {
       e.preventDefault();
       letztes.focus();
     } else if (!e.shiftKey && document.activeElement === letztes) {
@@ -124,7 +126,7 @@ export function VisitorScene({
       {besuch && <div className="besuch-tischkante" aria-hidden="true" />}
       <div className="sprechblatt">
         <p className="sprechblatt-wer">{besuch ? `Besuch · ${name}` : 'Ein Augenblick, den keiner vergisst'}</p>
-        <h2 id={titelId} className="sprechblatt-titel">
+        <h2 id={titelId} className="sprechblatt-titel" tabIndex={-1}>
           {zeigen.title}
         </h2>
         {nachsatz === null ? (

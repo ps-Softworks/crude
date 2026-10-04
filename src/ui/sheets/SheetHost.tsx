@@ -71,7 +71,7 @@ export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound
     konkurrenz: () => <RivalsSheet ctx={ctx} />,
     menu: () => <MenuSheet ctx={ctx} {...menu} />,
     glocke: () => <BellSheet ctx={ctx} onEndRound={onEndRound} onGo={onGo} onChapterEnd={onChapterEnd} />,
-    bericht: () => <ReportSheet report={report} onDone={onClose} next={open.then === 'zeitung'} />,
+    bericht: () => <ReportSheet report={report} onDone={onClose} next={open.then === 'zeitung'} onJournal={() => ctx.open('protokoll', { back: { sheet: 'bericht' } })} />,
     wartende: () => <WaitingSheet ctx={ctx} onVisitor={onVisitor} />,
   };
   return (

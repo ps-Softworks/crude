@@ -137,6 +137,7 @@ describe('Ruths Zettel', () => {
     expect(ruthTarget({ ...leer, stepParcelIds: ['p2', 'p3'] })).toEqual({ kind: 'ranch', parcelId: 'p2' });
     expect(ruthTarget({ ...leer, openTargets: ['post', 'tuer'] })).toEqual({ kind: 'sheet', sheet: 'post' });
     expect(ruthTarget({ ...leer, openTargets: ['tuer', 'post'] })).toEqual({ kind: 'tuer' });
+    expect(ruthTarget({ ...leer, openTargets: [{ parcelId: 'p4' }, 'post'] })).toEqual({ kind: 'ranch', parcelId: 'p4' });
     expect(ruthTarget(leer)).toEqual({ kind: 'sheet', sheet: 'glocke' });
     expect(ruthTarget({ ...leer, finished: true })).toBeNull();
   });

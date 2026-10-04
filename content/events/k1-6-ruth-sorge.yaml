@@ -5,26 +5,28 @@
 - id: ruth_sorge
   visitor: ruth
   title:
-    de: Ruth stellt den Teller hin
-    en: Ruth Sets Down the Plate
+    de: Ruth bringt das Abendessen
+    en: Ruth Brings Supper
   text:
     de: >-
-      Ruth stellt den Teller hin und setzt sich nicht dazu. „Du bist grau im
-      Gesicht, Jacob. Du schläfst am Tisch ein. Was nützt uns eine Quelle, wenn
-      du darüber umfällst?“
+      Ruth bringt einen Teller ins Büro, weil Jacob wieder nicht zum Essen
+      gekommen ist. Sie stellt ihn auf die Papiere und bleibt stehen. „Du bist
+      grau im Gesicht, Jacob. Du schläfst über den Büchern ein. Was nützt uns eine
+      Quelle, wenn du darüber umfällst?“
     en: >-
-      Ruth sets down the plate and doesn't sit with him. "You're grey in the face,
-      Jacob. You fall asleep at the table. What good is a well to us if you drop
+      Ruth brings a plate to the office because Jacob missed supper again. She
+      sets it down on the papers and stays standing. "You're grey in the face,
+      Jacob. You fall asleep over the books. What good is a well to us if you drop
       dead over it?"
   conditions: { maxStrength: 60 }
   chance: 0.5
   once: false
   choices:
     - id: versprechen
-      label: { de: "Ihr versprechen, kürzerzutreten, und den Abend bleiben", en: "Promise her to slow down, and stay the evening" }
+      label: { de: "Ihr versprechen, kürzerzutreten, und mit ihr nach Hause gehen", en: "Promise her to slow down, and walk home with her" }
       result:
-        de: Jacob bleibt. Ruth sagt nichts mehr, aber sie lässt ihn ausschlafen.
-        en: Jacob stays. Ruth says no more, but she lets him sleep late.
+        de: Jacob schließt das Büro ab und geht mit ihr. Ruth sagt nichts mehr, aber sie lässt ihn ausschlafen.
+        en: Jacob locks up the office and goes with her. Ruth says no more, but she lets him sleep late.
       effects: { strength: 12, ruth: 4 }
     - id: abwinken
       label: { de: "Abwinken – nach der nächsten Quelle wird es ruhiger", en: "Wave it off – it'll calm down after the next well" }

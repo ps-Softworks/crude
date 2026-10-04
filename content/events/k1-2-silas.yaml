@@ -116,11 +116,14 @@
     en: Silas Takes the Night
   text:
     de: >-
-      Silas hat aufgehört zu trinken, sagt er, jedenfalls unter der Woche. Er
-      schickt Jacob nach Hause: „Den Turm halte ich, du hältst deine Frau.“
+      Silas kommt vom Turm herüber ins Büro, nüchtern und frisch rasiert. Er hat
+      aufgehört zu trinken, sagt er, jedenfalls unter der Woche. Dann nimmt er
+      Jacob den Stift aus der Hand: „Geh nach Hause, Junge. Den Turm halte ich,
+      du hältst deine Frau.“
     en: >-
-      Silas has stopped drinking, he says, at least on weekdays. He sends Jacob
-      home: "I'll hold the rig, you hold your wife."
+      Silas comes over from the rig to the office, sober and freshly shaved. He
+      has stopped drinking, he says, at least on weekdays. Then he takes the pen
+      out of Jacob's hand: "Go home, boy. I'll hold the rig, you hold your wife."
   marked: [silas_fair]
   delay: 3
   certain: true

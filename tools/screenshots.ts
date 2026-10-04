@@ -4,6 +4,10 @@
 // 1280×800, 1440×900 und 1920×1080 nie scrollt (Schreibtisch und Karte) und dass
 // die Ergebnisbögen (Kapitelende, Pleite) ohne inneres Scrollen ganz zu sehen sind
 // – samt „Neues Spiel“ (0.2.15+11).
+// Ab 0.2.15+12 auch mit Browserleisten (1280×680, 1366×650): Schilder am Tisch
+// dürfen sich nicht überdecken, ein großes Fenster liegt ganz im Bild, das Menü
+// in der Kopfleiste bleibt sichtbar (auch mit Banderole), die Blase des Rundgangs
+// ragt nicht hinaus.
 // Aufruf: npm run screenshots  (braucht Google Chrome; startet einen eigenen
 // Vite-Server auf Port 5199 und beendet ihn danach wieder).
 //
@@ -68,6 +72,12 @@ const besuch = suche(mitBesuch, [3, 4, 5, 6, 7, 8]);
 const szene = suche(mitSzene, [2, 3, 4, 5, 6, 7, 8, 9]);
 const dokument = suche(mitDokument, [3, 4, 5, 6, 7, 8, 9, 10]);
 const kapitel = suche((s) => s.ending === 'kapitel');
+let bankrott: GameState | null = null;
+try {
+  bankrott = suche((s) => !s.finished && s.bankruptcyDeadline > 0, [4, 6, 8, 10, 12, 14]);
+} catch {
+  bankrott = null;
+}
 const pleite = suche((s) => s.ending === 'pleite');
 
 interface Bild {
@@ -200,6 +210,8 @@ try {
   const erst = cdp.einmal('Page.loadEventFired');
   await cdp.send('Page.navigate', { url });
   await erst;
+  // Der erste Aufbau schreibt noch einen eigenen Autosave – erst danach den Spielstand setzen.
+  await pause(800);
 
   // Alte Bilder weg, damit nichts Veraltetes liegen bleibt.
   mkdirSync(OUT, { recursive: true });
@@ -221,12 +233,44 @@ try {
     console.log(`docs/screenshots/${bild.name}.png (Runde ${bild.state.round}${bild.state.ending ? `, ${bild.state.ending}` : ''})`);
   }
 
-  // Kein Seiten-Scroll (Abnahme A1): Schreibtisch und Karte in drei Größen.
-  for (const [w, h] of [
+  // Kein Seiten-Scroll (Abnahme A1): Schreibtisch und Karte in fünf Größen – zwei davon wie im Browser mit Leisten.
+  const GROESSEN = [
     [1280, 800],
     [1440, 900],
     [1920, 1080],
-  ] as const) {
+    [1280, 680],
+    [1366, 650],
+  ] as const;
+  // Schilder am Tisch: kein Schild über einem anderen Gegenstand oder Ruths Zettel, kein abgeschnittener Text.
+  const UEBERLAPPUNG = `(() => {
+    const kasten = (el) => el.getBoundingClientRect();
+    const teile = [];
+    for (const o of document.querySelectorAll('.szene .objekt')) {
+      for (const t of o.querySelectorAll('.namensschild, .objekt-status')) teile.push({ el: t, owner: o });
+    }
+    const zettel = document.querySelector('.unterlage-platz');
+    if (zettel) teile.push({ el: zettel, owner: zettel });
+    const fehler = [];
+    for (let i = 0; i < teile.length; i++) for (let j = i + 1; j < teile.length; j++) {
+      if (teile[i].owner === teile[j].owner) continue;
+      const a = kasten(teile[i].el), b = kasten(teile[j].el);
+      const x = Math.min(a.right, b.right) - Math.max(a.left, b.left), y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+      if (x > 2 && y > 2) fehler.push((teile[i].el.textContent || '').trim().slice(0, 24) + ' ↔ ' + (teile[j].el.textContent || '').trim().slice(0, 24));
+    }
+    for (const t of document.querySelectorAll('.szene .namensschild, .szene .objekt-status')) {
+      if (t.scrollWidth > t.clientWidth + 1) fehler.push('abgeschnitten: ' + (t.textContent || '').trim().slice(0, 30));
+    }
+    const vw = innerWidth, vh = innerHeight;
+    for (const t of document.querySelectorAll('.szene .objekt, .unterlage-platz')) {
+      const r = kasten(t);
+      if (r.left < -1 || r.top < -1 || r.right > vw + 1 || r.bottom > vh + 1) fehler.push('außerhalb: ' + (t.getAttribute('aria-label') || t.className).slice(0, 30));
+    }
+    return fehler;
+  })()`;
+  // Ein Fenster ganz im Bild (Titel, X und unterer Rand) und das Menü in der Kopfleiste sichtbar.
+  const IM_BILD = (sel: string) =>
+    `(() => { const el = document.querySelector(${JSON.stringify(sel)}); if (!el) return 'fehlt'; const r = el.getBoundingClientRect(); return r.top >= -1 && r.left >= -1 && r.bottom <= innerHeight + 1 && r.right <= innerWidth + 1 ? 'ok' : Math.round(r.left) + ',' + Math.round(r.top) + '–' + Math.round(r.right) + ',' + Math.round(r.bottom); })()`;
+  for (const [w, h] of GROESSEN) {
     await groesse(w, h);
     for (const ansicht of ['Schreibtisch', 'Karte'] as const) {
       await lade(spaet, {}, undefined);
@@ -240,7 +284,44 @@ try {
       const ok = m.sh <= m.ih && m.sw <= m.iw;
       if (!ok) fehler++;
       console.log(`${ok ? 'ok    ' : 'FEHLER'} ${w}×${h} ${ansicht}: Seite ${m.sw}×${m.sh}${m.klein > 0 ? ` · ${m.klein} Schrift unter 15 px` : ''}`);
+      if (ansicht === 'Schreibtisch') {
+        const ueber = await cdp.js<string[]>(UEBERLAPPUNG);
+        if (ueber.length > 0) fehler++;
+        console.log(`${ueber.length === 0 ? 'ok    ' : 'FEHLER'} ${w}×${h} Schilder: ${ueber.length === 0 ? 'nichts überdeckt' : ueber.join(' · ')}`);
+        const menue = await cdp.js<string>(IM_BILD('.menue-knopf'));
+        if (menue !== 'ok') fehler++;
+        console.log(`${menue === 'ok' ? 'ok    ' : 'FEHLER'} ${w}×${h} Menü-Knopf: ${menue}`);
+        // Ein großes Fenster (Kassenbuch) liegt ganz im Bild.
+        await cdp.taste('g');
+        await pause(400);
+        const fenster = await cdp.js<string>(IM_BILD('.sheet'));
+        if (fenster !== 'ok') fehler++;
+        console.log(`${fenster === 'ok' ? 'ok    ' : 'FEHLER'} ${w}×${h} Fenster Kassenbuch: ${fenster}`);
+      }
     }
+    // Banderole „Bankrott droht“: das Menü bleibt sichtbar (mit Debug-Anzeige erst recht eng).
+    if (bankrott) {
+      await lade(bankrott, {}, undefined);
+      const b = await cdp.js<string>(IM_BILD('.menue-knopf'));
+      if (b !== 'ok') fehler++;
+      console.log(`${b === 'ok' ? 'ok    ' : 'FEHLER'} ${w}×${h} Menü-Knopf mit Banderole: ${b}`);
+    }
+  }
+  // Rundgang: die Blase des letzten Schritts (Glocke) liegt ganz im Bild.
+  for (const [w, h] of [GROESSEN[0], GROESSEN[3]]) {
+    await groesse(w, h);
+    await lade(start, { 'crude.rundgang': 'nein' }, undefined);
+    await pause(900);
+    for (let i = 0; i < 20; i++) {
+      const fertig = await cdp.js<boolean>(`[...document.querySelectorAll('.rundgang-blase button')].some((b) => b.textContent.includes('Fertig'))`);
+      if (fertig) break;
+      await cdp.taste('ArrowRight');
+      await pause(150);
+    }
+    await pause(300);
+    const r = await cdp.js<string>(IM_BILD('.rundgang-blase'));
+    if (r !== 'ok') fehler++;
+    console.log(`${r === 'ok' ? 'ok    ' : 'FEHLER'} ${w}×${h} Rundgang, letzte Blase: ${r}`);
   }
   // Ergebnisbögen (0.2.15+11): kein inneres Scrollen, „Neues Spiel“ sichtbar.
   for (const [w, h] of [

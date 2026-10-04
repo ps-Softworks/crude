@@ -4,7 +4,7 @@
 // sie geht, entscheidet src/sim. Briefe (2.4) zeigen Briefart, Frist und rotes
 // Siegel; die Dokumentenprüfung (2.5) legt das Dokument neben das Vergleichsstück.
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { costLabel } from '../sim/agenda';
 import { inspectField, type DeskDocument } from '../sim/documents';
 import { resolveEvent, type DeskEvent, type MailKind } from '../sim/events';
@@ -53,15 +53,14 @@ function Dokument({ game, eventId, doc, onResolved }: { game: GameState; eventId
                     onClick={(e) => {
                       const r = inspectField(game, balance, events, eventId, f.id);
                       if (!r.ok) return;
-                      // Der Knopf verschwindet gleich: Fokus danach auf die nächste Lupe oder die erste Antwort.
+                      // Der Knopf verschwindet gleich: Fokus danach auf die nächste Lupe, sonst auf den
+                      // Hinweis darunter – nie auf eine Antwort, die ein zweites Enter ungelesen wählen würde.
                       const karte = e.currentTarget.closest('article');
                       onResolved(r.state);
                       window.setTimeout(() => {
                         if (!karte?.isConnected) return;
                         const ziel =
-                          karte.querySelector<HTMLElement>('.lupe:not(:disabled)') ??
-                          karte.querySelector<HTMLElement>('.actions button:not(:disabled)') ??
-                          karte.querySelector<HTMLElement>('.dokument .hint');
+                          karte.querySelector<HTMLElement>('.lupe:not(:disabled)') ?? karte.querySelector<HTMLElement>('.dokument .hint');
                         ziel?.focus({ preventScroll: true });
                       }, 0);
                     }}
@@ -83,6 +82,19 @@ function Dokument({ game, eventId, doc, onResolved }: { game: GameState; eventId
   );
 }
 
+/**
+ * Liegt diese Karte im obersten offenen Fenster? Nein, wenn die Taste aus einem
+ * anderen Dialog kommt oder ein Fenster (.sheet-dunkel) offen ist, in dem die Karte nicht liegt.
+ */
+export function obenauf(karte: Element | null, target: EventTarget | null): boolean {
+  if (!karte) return false;
+  const eigenes = karte.closest('[role="dialog"]');
+  const quelle = target instanceof Element ? target.closest('[role="dialog"]') : null;
+  if (quelle && quelle !== eigenes) return false;
+  const fenster = [...document.querySelectorAll('.sheet-dunkel:not(.schliesst) [role="dialog"]')];
+  return fenster.length === 0 || (eigenes !== null && fenster[fenster.length - 1] === eigenes);
+}
+
 export function EventCard({
   game,
   event,
@@ -102,6 +114,7 @@ export function EventCard({
   hideTitle?: boolean;
 }) {
   const gesperrt = event.choices.find((c) => !c.ok);
+  const ref = useRef<HTMLElement>(null);
 
   function antworte(choiceId: string) {
     const r = resolveEvent(game, balance, events, event.id, choiceId);
@@ -113,6 +126,9 @@ export function EventCard({
     const taste = (e: KeyboardEvent) => {
       const i = choiceIndex(keyInput(e));
       if (i === null) return;
+      // Nur die Karte im obersten Fenster antwortet (0.2.15+12): Liegt das Menü oder
+      // ein anderes Fenster über dem Besuch, wählt eine Ziffer dahinter nichts aus.
+      if (!obenauf(ref.current, e.target)) return;
       const choice = event.choices[i];
       // Gesperrte Antworten lassen sich auch per Taste nicht wählen.
       if (!choice || !choice.ok) return;
@@ -124,7 +140,7 @@ export function EventCard({
   });
 
   return (
-    <article className={className}>
+    <article className={className} ref={ref}>
       {event.mail && (
         <p className="briefkopf">
           {event.urgent && <span className="siegel" title="Dringend" aria-label="Rotes Siegel" />}
@@ -136,7 +152,11 @@ export function EventCard({
           <span className="siegel" aria-hidden="true" /> {frist(event)}
         </p>
       )}
-      {!hideTitle && <h3 className="event-titel">{event.title}</h3>}
+      {!hideTitle && (
+        <h3 className="event-titel" tabIndex={-1}>
+          {event.title}
+        </h3>
+      )}
       <p>{event.text}</p>
       {event.document && <Dokument game={game} eventId={event.id} doc={event.document} onResolved={(st) => onResolved(st, '')} />}
       <div className="actions">

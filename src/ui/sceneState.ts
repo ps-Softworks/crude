@@ -220,8 +220,8 @@ export type RuthTarget = { kind: 'ranch'; parcelId: string } | { kind: 'sheet'; 
 export function ruthTarget(input: {
   tutorial: { kind: string; parcelId?: string } | null;
   stepParcelIds: readonly string[];
-  /** Ziele aus „Noch offen“ (openItems), in ihrer Reihenfolge. */
-  openTargets: readonly (SheetId | 'tuer')[];
+  /** Ziele aus „Noch offen“ (openItems), in ihrer Reihenfolge; eine Ranch für verfallendes Land (0.2.15+12). */
+  openTargets: readonly (SheetId | 'tuer' | { parcelId: string })[];
   finished: boolean;
 }): RuthTarget | null {
   const t = input.tutorial;
@@ -235,6 +235,7 @@ export function ruthTarget(input: {
   if (input.finished) return null;
   const offen = input.openTargets[0];
   if (offen === 'tuer') return { kind: 'tuer' };
+  if (typeof offen === 'object') return { kind: 'ranch', parcelId: offen.parcelId };
   return { kind: 'sheet', sheet: offen ?? 'glocke' };
 }
 

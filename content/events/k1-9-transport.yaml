@@ -24,24 +24,25 @@
     en: Jacob's Teamsters Put Down Their Whips
   text:
     de: >-
-      Die Männer, die Jacob für seine eigenen Gespanne angestellt hat, sitzen auf
-      den Deichseln und rauchen. Die Mietkutscher am Hafen verdienen mehr, sagt
-      ihr Sprecher – und die fahren nicht jeden Tag durch Bullards Land.
+      Der Vormann von Jacobs Fuhrleuten steht im Büro, die Mütze in der Hand.
+      Draußen sitzen seine Männer auf den Deichseln und rauchen. Die Mietkutscher
+      am Hafen verdienen mehr, sagt er – und die fahren nicht jeden Tag durch
+      Bullards Land.
     en: >-
-      The men Jacob hired for his own teams sit on the wagon tongues and smoke.
-      The hired drivers at the harbour earn more, says their spokesman – and they
-      don't drive through Bullard's land every day.
+      The foreman of Jacob's teamsters stands in the office, cap in hand. Outside,
+      his men sit on the wagon tongues and smoke. The hired drivers at the harbour
+      earn more, he says – and they don't drive through Bullard's land every day.
   choices:
     - id: zahlen
       label: { de: "Den Lohn aufbessern (200 $)", en: "Raise their pay (200 $)" }
       result:
-        de: Die Peitschen knallen wieder. Der Sprecher nickt Jacob zu, als wäre nichts gewesen.
-        en: The whips crack again. The spokesman nods to Jacob as if nothing had happened.
+        de: Die Peitschen knallen wieder. Der Vormann nickt Jacob zu, als wäre nichts gewesen.
+        en: The whips crack again. The foreman nods to Jacob as if nothing had happened.
       requires: { minCash: 200 }
       effects: { cash: -200 }
       appointments: 0
     - id: reden
-      label: { de: "Sich zu ihnen setzen und reden", en: "Sit down with them and talk" }
+      label: { de: "Mit hinausgehen, sich zu ihnen setzen und reden", en: "Go out, sit down with them and talk" }
       result:
         de: Ein Abend, eine Flasche, ein kleiner Zuschlag. Am Morgen sind die Ochsen angespannt.
         en: One evening, one bottle, a small bonus. In the morning the oxen are yoked.

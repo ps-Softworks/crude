@@ -43,7 +43,7 @@ export function RigFileSheet({ ctx }: { ctx: SheetContext }) {
   const tab = activeTab('akte', tabs, ctx.tab);
   return (
     <Tabs sheet="akte" tabs={tabs} active={tab} onChange={ctx.onTab}>
-      {tab === 'tuerme' ? <RigsPanel game={ctx.game} onChange={ctx.onGame} /> : <SourcesPanel game={ctx.game} onShow={ctx.showOnMap} />}
+      {tab === 'tuerme' ? <RigsPanel game={ctx.game} onChange={ctx.onGame} onShow={ctx.showOnMap} /> : <SourcesPanel game={ctx.game} onShow={ctx.showOnMap} />}
     </Tabs>
   );
 }
