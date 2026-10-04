@@ -684,7 +684,11 @@ describe('Bohrloch-Kennungen im Sprung', () => {
       timeskip: { ...ts, crisis: { ...(ts.crisis as object), callShare: 1 } },
     });
     let notverkauf = 0;
-    for (const end of chapterEnds(hart, 8, catalog)) {
+    for (const end0 of chapterEnds(hart, 8, catalog)) {
+      // Seit „Frühes Öl“ (mehr Quellen, wenig Schulden) zahlen die Bot-Firmen eine Kündigung meist aus der Kasse.
+      // Darum ein großer, schon ausgegebener Bankkredit: Die Kündigung erzwingt Notverkäufe.
+      const id = end0.loans.reduce((m, x) => Math.max(m, x.id), 0) + 1;
+      const end: GameState = { ...end0, loans: [...end0.loans, { id, source: 'bank', principal: 60000, rate: 0.08, takenRound: end0.round, collateral: null }] };
       for (const stance of ['aggressive', 'balanced'] as const) {
         const r = springen({ ...end, worldModel: { ...end.worldModel, credit: 80 } }, { stance, family: 'some' }, ZWEITE, hart);
         const ids = r.state.wells.map((w) => w.id);

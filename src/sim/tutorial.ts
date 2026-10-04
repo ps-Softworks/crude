@@ -7,8 +7,8 @@
 // Datei. Texte: content/tutorial.yaml, Zahlen: balance.yaml unter tutorial.
 //
 // Damit ein neuer Spieler ohne Hilfe seine erste Quelle findet, empfiehlt der
-// Hinweis die Parzelle mit der besten Schätzung des Geologen, die er sich samt
-// erster Bohrstufe leisten kann – und rät nur dann tiefer zu bohren, wenn die
+// Hinweis die Parzelle mit der besten Schätzung des Geologen (abzüglich eines
+// Abschlags für teure Pachten), die er sich samt erster Bohrstufe leisten kann – und rät nur dann tiefer zu bohren, wenn die
 // neue Schätzung für die nächste Stufe gut genug ist.
 
 import { parseDocument } from 'yaml';
@@ -17,7 +17,7 @@ import { headroom, takeLoan } from './credit';
 import type { DeskActionKind } from './desk';
 import { drillDeeper, fishWell, stageCost, startDrilling, wellOf, type Well } from './drilling';
 import type { ContentError } from './eventContent';
-import { formatForecast } from './forecast';
+import { forecastMid, formatForecast } from './forecast';
 import type { GameState } from './game';
 import { LANGUAGES, localize, type Lang, type LocalizedText } from './i18n';
 import { buyLease, exerciseOption, leaseTerms, optionOf, parcelLabel } from './lease';
@@ -84,7 +84,7 @@ function labelOf(state: GameState, parcelId: string): string {
 /** Was der Spieler beim Geologen liest: die Mitte der angezeigten Bandbreite in %. */
 export function shownChance(state: Pick<GameState, 'forecasts'>, parcelId: string): number {
   const f = state.forecasts[parcelId];
-  return f ? (f.low + f.high) / 2 : 0;
+  return f ? forecastMid(f) : 0;
 }
 
 function chanceText(state: GameState, parcelId: string): string {
@@ -106,9 +106,19 @@ export function tutorialActive(state: GameState, balance: Balance): boolean {
 }
 
 /**
+ * Wie der Einstieg eine Parzelle bewertet: Schätzung des Geologen (Mitte, in %)
+ * minus Kosten, je tutorial.dollarsPerPoint $ ein Prozentpunkt. So rät er nicht
+ * zu einer teuren Pacht, die kaum besser aussieht – das gesparte Geld reicht
+ * für eine weitere Bohrung (Frühes Öl, 0.4.4+).
+ */
+export function recommendScore(state: Pick<GameState, 'forecasts'>, balance: Balance, parcelId: string, cost: number): number {
+  return shownChance(state, parcelId) - cost / balance.tutorial.dollarsPerPoint;
+}
+
+/**
  * Die Parzelle, die der Einstieg empfiehlt: eigene Optionen (Bonus) und freie
  * Parzellen (Pachtbonus), die sich zusammen mit der ersten Bohrstufe bezahlen
- * lassen – davon die beste Schätzung des Geologen, bei Gleichstand die
+ * lassen – davon die beste Wertung (recommendScore), bei Gleichstand die
  * billigere, dann die Option, dann nach Name.
  */
 export function recommendedParcel(
@@ -137,7 +147,7 @@ export function recommendedParcel(
   }
   kandidaten.sort(
     (a, b) =>
-      shownChance(state, b.parcelId) - shownChance(state, a.parcelId) ||
+      recommendScore(state, balance, b.parcelId, b.cost) - recommendScore(state, balance, a.parcelId, a.cost) ||
       a.cost - b.cost ||
       (a.kind === b.kind ? 0 : a.kind === 'exercise' ? -1 : 1) ||
       a.parcelId.localeCompare(b.parcelId),

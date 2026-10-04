@@ -825,6 +825,8 @@ export interface TutorialBalance {
   endAfterProducedRounds: number;
   /** Tiefer bohren rät der Hinweis nur, wenn der Geologe der nächsten Stufe mindestens so viel % gibt. */
   deeperMinChance: number;
+  /** So viele $ Pacht ist dem Hinweis ein Prozentpunkt Schätzung wert (teure Pacht nur, wenn sie deutlich besser aussieht). */
+  dollarsPerPoint: number;
   /** Kredite, die der Hinweis vorschlägt, werden auf so viele $ aufgerundet. */
   loanRounding: number;
 }
@@ -1691,6 +1693,7 @@ function parseTutorial(raw: unknown): TutorialBalance {
     lastRound: positiveInt(raw, 'tutorial.lastRound'),
     endAfterProducedRounds: positiveInt(raw, 'tutorial.endAfterProducedRounds'),
     deeperMinChance: integerInRange(raw, 'tutorial.deeperMinChance', 0, 100),
+    dollarsPerPoint: positiveInt(raw, 'tutorial.dollarsPerPoint'),
     loanRounding: positiveInt(raw, 'tutorial.loanRounding'),
   };
 }

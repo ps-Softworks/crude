@@ -5,7 +5,7 @@
 
 import type { Balance, DrillStage } from './balance';
 import { formatDate } from './calendar';
-import { makeForecast, trueChance } from './forecast';
+import { forecastMid, makeForecast, trueChance } from './forecast';
 import { initialRate } from './production';
 import type { GameState } from './game';
 import type { Parcel } from './geology';
@@ -142,6 +142,47 @@ export function deeperChance(balance: Balance, parcel: Parcel, stage: number): n
   const passed = stages.slice(0, stage).reduce((s, st) => s + st.oilShare, 0);
   const rest = 1 - q * passed;
   return rest <= 0 ? 0 : (q * stages[stage].oilShare) / rest;
+}
+
+/** Was die Prognose für die nächste Bohrstufe bedeutet (Frühes Öl, 0.4.4+). */
+export interface StageOutlook {
+  /** Stufe, um die es geht, ab 1 gezählt. */
+  stage: number;
+  /** Tiefe dieser Stufe in Metern. */
+  depth: number;
+  /** Chance auf Öl in genau dieser Stufe, in ganzen Prozent. */
+  chance: number;
+}
+
+/**
+ * Chance „in 300 m“ bzw. in der nächsten Stufe, so wie der Spieler sie aus der
+ * Prognose ablesen kann – aus der Mitte der angezeigten Bandbreite, nie aus den
+ * wahren Werten. Vor der ersten Stufe nennt der Geologe die Gesamtchance; davon
+ * liegt nur der Anteil oilShare der ersten Stufe so flach. Nach einer trockenen
+ * Stufe schätzt er schon die nächste Stufe (siehe advanceDrilling), dann gilt die
+ * Mitte direkt. null, wenn es nichts mehr zu bohren gibt (Fund, aufgegeben,
+ * letzte Stufe) oder keine Prognose da ist.
+ */
+export function stageOutlook(
+  state: Pick<GameState, 'forecasts' | 'wells'>,
+  balance: Balance,
+  parcelId: string,
+): StageOutlook | null {
+  const forecast = state.forecasts[parcelId];
+  if (!forecast) return null;
+  const stages = balance.drilling.stages;
+  const auf = wellsOn(state, parcelId);
+  if (auf.some((w) => w.status === 'found')) return null;
+  const well = wellOf(state, parcelId);
+  const mid = forecastMid(forecast);
+  let stage: number;
+  if (!well) stage = 1;
+  else if (well.status === 'decision') stage = well.stage + 1;
+  else if (well.status === 'drilling' || well.status === 'stuck') stage = well.stage;
+  else return null;
+  if (stage > stages.length) return null;
+  const chance = stage === 1 ? mid * stages[0].oilShare : mid;
+  return { stage, depth: stages[stage - 1].depth, chance: Math.round(chance) };
 }
 
 function replaceWell(state: GameState, well: Well): Well[] {

@@ -146,7 +146,7 @@ describe('Spielzahlen (balance.yaml)', () => {
     it('liest die Förderungs-Zahlen aus der echten Datei', () => {
       const { production } = loadBalance();
       expect(production.initialRateShare).toEqual({ small: 0.25, gusher: 0.3 });
-      expect(production.decline).toBe(0.1);
+      expect(production.decline).toBe(0.09);
       expect(production.freeWells).toBe(4);
       expect(production.pressureLossPerWell).toBe(0.15);
       expect(production.pressureMin).toBe(0.4);

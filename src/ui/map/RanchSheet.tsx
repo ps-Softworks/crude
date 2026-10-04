@@ -5,7 +5,7 @@
 
 import { useEffect, useRef } from 'react';
 import { drillBlocker, parcelActions, parcelOutlooks, paybackText, type DeskActionKind, type ParcelOutlook } from '../../sim/desk';
-import { deeperChance, deeperQuote, wellOf, wellsOn, type Well } from '../../sim/drilling';
+import { deeperChance, deeperQuote, stageOutlook, wellOf, wellsOn, type StageOutlook, type Well } from '../../sim/drilling';
 import { fieldLabel, fieldOf } from '../../sim/field';
 import { formatForecast, trueChance } from '../../sim/forecast';
 import type { GameState } from '../../sim/game';
@@ -45,6 +45,8 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
   const forecast = parcel.discovery ? undefined : game.forecasts[id];
   const well = wellOf(game, id);
   const wells = wellsOn(game, id);
+  // Frühes Öl (0.4.4+): die Chance in der nächsten Tiefe, aus der Prognose berechnet (src/sim).
+  const stufe = parcel.discovery ? null : stageOutlook(game, balance, id);
   const outlooks = lease?.holder === 'jacob' ? parcelOutlooks(game, balance, id) : [];
 
   // Probelauf aus der Simulation: sie sagt, welche Knöpfe es gibt und ob sie gehen.
@@ -114,6 +116,12 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
                     Verzögerungszins {money(balance.lease.delayRental)} je Runde, solange ungebohrt
                   </>
                 )}
+                {lease.holder === 'jacob' && !lease.drilled && forecast && stufe && (
+                  <>
+                    <br />
+                    Geologe: {formatForecast(forecast)}, davon {outlookText(stufe)}
+                  </>
+                )}
               </>
             ) : option ? (
               <>
@@ -164,6 +172,14 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
                 {forecast ? formatForecast(forecast) : '–'}
                 {debug && ` · wirklich ${percent(trueChance(balance, parcel))}`}
               </dd>
+              {stufe && (
+                <>
+                  <dt>{stufe.stage === 1 ? `In ${stufe.depth} m` : `Nächste Stufe`}</dt>
+                  <dd title={OUTLOOK_TITLE}>
+                    etwa {stufe.chance}&nbsp;%{stufe.stage > 1 && ` (${stufe.depth} m)`}
+                  </dd>
+                </>
+              )}
               <SeismikZeile game={game} parcelId={id} onGame={onGame} />
               <dt>Lage</dt>
               <dd>{terms.location.label}</dd>
@@ -272,9 +288,18 @@ function OutlookInfo({ outlooks }: { outlooks: ParcelOutlook[] }) {
 }
 
 /** Bohrstatus in Worten. */
+const OUTLOOK_TITLE =
+  'Die Prognose des Geologen ist die Chance über alle Tiefen. Das meiste Öl liegt flach, ein Teil erst tiefer – darum kann sich Tieferbohren lohnen.';
+
+/** „in 300 m etwa 40 %“ – vor der ersten Stufe der flache Anteil der Gesamtchance. */
+function outlookText(outlook: StageOutlook): string {
+  return `in ${outlook.depth}\u00a0m etwa ${outlook.chance}\u00a0%`;
+}
+
 function WellInfo({ game, well }: { game: GameState; well: Well }) {
   const depth = balance.drilling.stages[well.stage - 1].depth;
   const turm = game.rigs.length > 1 && well.status !== 'found' && well.status !== 'dry' ? findRig(game, well.rigId) : undefined;
+  const deeper = well.status === 'decision' ? stageOutlook(game, balance, well.parcelId) : null;
   const head = `Stufe ${well.stage}/${balance.drilling.stages.length} (${depth} m) · bisher ${money(well.spent)}${turm ? ` · ${rigLabel(turm)}` : ''}${well.pump ? ' · mit Pumpe' : ''}`;
   switch (well.status) {
     case 'drilling':
@@ -290,7 +315,8 @@ function WellInfo({ game, well }: { game: GameState; well: Well }) {
         <>
           {head}
           <br />
-          In {depth} m trocken. Tiefer bohren oder aufgeben?
+          In {depth} m trocken.
+          {deeper && <> Der Geologe gibt {deeper.depth} m noch etwa {deeper.chance}&nbsp;%.</>} Tiefer bohren oder aufgeben?
         </>
       );
     case 'stuck':
