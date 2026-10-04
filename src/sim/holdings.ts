@@ -8,13 +8,14 @@
 // - Rundenende, für jede Beteiligung:
 //     Wert × (1 + drift + creditBeta·(Kreditklima − 50) + demandBeta·Nachfragewachstum ± noise)
 //   Beginnt ein Crash, bricht der Wert einmal um crashDrop ein. Ein Schlag (shock)
-//   trifft mit chance: das Feld unter dem Land versiegt, bei der Bank ein Bankrun
-//   (crashOnly: nur während eines Crashs). Danach zahlt jede Beteiligung yield ×
+//   trifft mit chance: das Feld unter dem Land versiegt (je Runde gewürfelt), bei
+//   der Bank ein Bankrun (crashOnly: einmal je Kreditkrise gewürfelt, wenn sie
+//   beginnt – GDD §8 „Bankrun-Gefahr in jeder Kreditkrise“). Danach zahlt jede Beteiligung yield ×
 //   Wert in die Kasse (negativ: die Zeitung kostet Zuschuss).
 // - Eigene Zeitung: Eine Kampagne je Runde kostet campaignCost Glaubwürdigkeit
 //   und bringt Gefallen und Stimmung im Verhältnis zur Glaubwürdigkeit; jede
 //   Runde ohne Kampagne erholt sie sich um recovery.
-// - Eigene Bank: Bankzins bankRateDiscount Punkte billiger (Andockpunkt Kredit).
+// - Eigene Bank: Bankzins um bankRateDiscount billiger (credit.ts liest bankRateDiscount).
 // Zufall nur über den Hallstead-Rng, Würfel in fester Reihenfolge (HOLDING_KINDS).
 
 import type { Balance } from './balance';
@@ -129,8 +130,8 @@ export function campaignMoodShift(state: GameState, balance: Balance): number {
   return (balance.hallstead.newspaper.moodPerCampaign * vorher) / 100;
 }
 
-/** Zinspunkte, um die der Bankzins sinkt (eigene Bank; Andockpunkt credit.ts). */
-export function bankRateDiscount(state: GameState, balance: Balance): number {
+/** Um so viel sinkt der Jahreszins der Bank (eigene Bank; 0.02 = zwei Punkte). credit.ts zieht es vom Zins ab. */
+export function bankRateDiscount(state: Pick<GameState, 'hallstead'>, balance: Balance): number {
   return state.hallstead?.holdings.positions.bank ? balance.hallstead.bankRateDiscount : 0;
 }
 
@@ -169,7 +170,9 @@ export function settleHoldings(state: GameState, balance: Balance, h: HallsteadS
       value -= verlust;
       news.push({ key: 'crash', kind, amount: cents(verlust) });
     }
-    if (kb.shock.chance > 0 && (!kb.shock.crashOnly || welt.crash) && uShock < kb.shock.chance) {
+    // crashOnly: nur in der Runde, in der die Krise beginnt – höchstens ein Schlag je Krise, egal wie lange sie dauert.
+    const darfTreffen = kb.shock.crashOnly ? crashBeginnt : true;
+    if (kb.shock.chance > 0 && darfTreffen && uShock < kb.shock.chance) {
       const verlust = value * kb.shock.drop;
       value -= verlust;
       news.push({ key: 'shock', kind, amount: cents(verlust) });

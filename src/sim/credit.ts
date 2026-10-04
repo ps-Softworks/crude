@@ -14,6 +14,8 @@ import type { GameState } from './game';
 import { parcelLabel } from './lease';
 import { producingWells } from './production';
 import { worldRateAdd } from './world';
+// 4.16 Andockpunkt: eigene Bank in Hallstead.
+import { bankRateDiscount } from './holdings';
 
 /** Woher das Geld kommt: von der Bank oder als Notkredit vom Geldverleiher. */
 export type LoanSource = 'bank' | 'lender';
@@ -142,6 +144,15 @@ function loanBlocked(state: GameState, balance: Balance, amount: number): string
 }
 
 /**
+ * Zinsaufschlag für einen neuen Bankkredit (auch negativ): Kreditklima des
+ * Weltmodells (4.1) minus den Rabatt der eigenen Bank in Hallstead (4.16).
+ */
+export function bankRateAdd(state: Pick<GameState, 'worldModel' | 'hallstead'>, balance: Balance): number {
+  // 4.16 Andockpunkt: bankRateDiscount (0, solange Jacob keine eigene Bank hat).
+  return worldRateAdd(state.worldModel, balance.worldModel) - bankRateDiscount(state, balance);
+}
+
+/**
  * Kredit bei der Bank aufnehmen. Das Geld kommt sofort in die Kasse. Eine
  * fördernde Quelle, die noch nicht verpfändet ist, dient als Pfand und senkt den
  * Zins; sonst zahlt Jacob den Aufschlag für die fehlende Sicherheit.
@@ -150,7 +161,7 @@ export function takeLoan(state: GameState, balance: Balance, amount: number): Lo
   const blocked = loanBlocked(state, balance, amount);
   if (blocked) return { ok: false, reason: blocked };
   const pfand = freeCollateral(state)[0];
-  const zins = loanRate(balance, state.rating, pfand !== undefined, worldRateAdd(state.worldModel, balance.worldModel));
+  const zins = loanRate(balance, state.rating, pfand !== undefined, bankRateAdd(state, balance));
   const loan: Loan = {
     id: lastId(state.loans) + 1,
     source: 'bank',

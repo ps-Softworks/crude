@@ -105,9 +105,17 @@ export function newHallstead(seed: string, balance: Balance): HallsteadState {
   };
 }
 
-/** Der Hallstead-Zustand – oder ein frischer, wenn Jacob noch nie dort war. */
+/**
+ * Der Hallstead-Zustand – oder ein frischer, wenn Jacob noch nie dort war. Ein
+ * frischer Zustand übernimmt die Welt von heute (Crash, Nachfrage): Ein Crash, der
+ * schon läuft, „beginnt“ nicht noch einmal, sonst träfe der einmalige Einbruch
+ * ausgerechnet den Kauf im Tief.
+ */
 export function hallsteadOf(state: GameState, balance: Balance): HallsteadState {
-  return state.hallstead ?? newHallstead(state.seed, balance);
+  if (state.hallstead) return state.hallstead;
+  const frisch = newHallstead(state.seed, balance);
+  const welt = worldView(state, balance);
+  return { ...frisch, holdings: { ...frisch.holdings, crashSeen: welt.crash, demandSeen: welt.demand } };
 }
 
 // --- Kapitel (Andockpunkt 4.5) ---
@@ -163,7 +171,8 @@ function zahl(v: unknown): number | undefined {
  */
 export function worldView(state: GameState, balance: Balance): WorldView {
   const fb = fallbackWorld(state.round, balance);
-  const w = (state as { worldModel?: Record<string, unknown> }).worldModel;
+  // Über unknown gelesen: Alte Teststände haben kein Weltmodell, und jedes Feld wird einzeln geprüft.
+  const w = (state as unknown as { worldModel?: Record<string, unknown> }).worldModel;
   if (!w || typeof w !== 'object') return fb;
   const crash = zahl(w.crash);
   const gov = w.government;

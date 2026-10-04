@@ -34,9 +34,11 @@ import {
   lobbyLawShift,
   lobbyWaterDown,
   pushLaw,
+  LAWS_CONNECTED,
   spendFavors,
   waterDownLaw,
 } from './lobby';
+import { bankRateAdd, takeLoan } from './credit';
 import { deserializeGame, serializeGame } from './save';
 import { loadBalance, rawBalance } from './testBalance';
 
@@ -58,9 +60,15 @@ function ruhig(h: Record<string, any>) {
   }
 }
 
-/** Partie in Kapitel 3 mit viel Geld. */
+/**
+ * Partie in Kapitel 3 mit viel Geld. Das Weltmodell (4.1) würfelt Kreditklima und
+ * Regierung je Seed – die Tests setzen eine ausdrückliche Durchschnittswelt:
+ * Kredit 50, kein Crash, Nachfrage 1, Stimmung 50, Handelspartei, Wahl in 16 Runden.
+ */
 function kapitel3(seed = 'hallstead', cash = 2_000_000, b: Balance = balance): GameState {
-  return { ...newGame(seed, b), chapter: 3, cash } as GameState;
+  const g = newGame(seed, b);
+  const worldModel = { ...g.worldModel, credit: 50, crash: 0, demand: 1, mood: 50, government: 'handel' as const, electionIn: 16 };
+  return { ...g, worldModel, chapter: 3, cash } as GameState;
 }
 
 function ok(r: HallsteadResult): GameState {
@@ -68,8 +76,15 @@ function ok(r: HallsteadResult): GameState {
   return r.state;
 }
 
+/** Ersetzt das Weltmodell durch ein Teilstück (nur für settleHallstead/worldView – endRound braucht das ganze). */
 function mitWelt(state: GameState, welt: Record<string, unknown>): GameState {
-  return { ...state, worldModel: welt } as GameState;
+  return { ...state, worldModel: welt } as unknown as GameState;
+}
+
+/** Partie ganz ohne Weltmodell (alte Teststände). */
+function ohneWelt(state: GameState): GameState {
+  const { worldModel: _, ...rest } = state;
+  return rest as unknown as GameState;
 }
 
 describe('Hallstead: Spielzahlen (4.16)', () => {
@@ -117,7 +132,7 @@ describe('Hallstead: Kapitel-Tor', () => {
 
 describe('Hallstead: Weltgrößen (Andockpunkt 4.1)', () => {
   it('nimmt ohne Weltmodell die Durchschnittswelt mit festen Wahlterminen', () => {
-    const g = kapitel3();
+    const g = ohneWelt(kapitel3());
     expect(worldView(g, balance)).toEqual(fallbackWorld(1, balance));
     expect(fallbackWorld(1, balance).electionIn).toBe(16);
     expect(fallbackWorld(16, balance).electionIn).toBe(1);
@@ -132,6 +147,15 @@ describe('Hallstead: Weltgrößen (Andockpunkt 4.1)', () => {
     expect(halb.credit).toBe(50);
     expect(halb.government).toBe('handel');
     expect(halb.crash).toBe(false);
+  });
+
+  it('liest das echte Weltmodell von main (newGame), nicht die Durchschnittswelt', () => {
+    const g = { ...newGame('echt', balance), chapter: 3 } as GameState;
+    const w = worldView(g, balance);
+    expect(w.credit).toBe(g.worldModel.credit);
+    expect(w.government).toBe(g.worldModel.government);
+    expect(w.crash).toBe(g.worldModel.crash > 0);
+    expect(w.electionIn).toBe(g.worldModel.electionIn);
   });
 });
 
@@ -222,6 +246,43 @@ describe('Nebeninvestments: Rundenende', () => {
     expect(g.hallstead!.holdings.positions.bank!.value).toBeCloseTo(b.hallstead.holdings.kinds.bank.price * 0.4, 2);
   });
 
+  it('ein langer Crash bringt höchstens einen Bankrun (Gefahr je Krise, nicht je Runde)', () => {
+    const b = bal((h) => {
+      ruhig(h);
+      h.holdings.kinds.bank.shock = { chance: 1, drop: 0.6, crashOnly: true };
+      h.holdings.kinds.bank.crashDrop = 0;
+    });
+    const preis = b.hallstead.holdings.kinds.bank.price;
+    let g = ok(buyHolding(kapitel3('lang', 2_000_000, b), b, 'bank'));
+    let laeufe = 0;
+    for (const crash of [8, 7, 6, 5, 4, 3, 2, 1]) {
+      g = settleHallstead(mitWelt(g, { crash }), b);
+      laeufe += g.hallstead!.news.filter((n) => n.key === 'shock').length;
+    }
+    expect(laeufe).toBe(1);
+    expect(g.hallstead!.holdings.positions.bank!.value).toBeCloseTo(preis * 0.4, 2);
+    // Nach dem Crash: Ruhe, dann die nächste Krise – wieder höchstens ein Ansturm.
+    g = settleHallstead(mitWelt(g, { crash: 0 }), b);
+    g = settleHallstead(mitWelt(g, { crash: 5 }), b);
+    g = settleHallstead(mitWelt(g, { crash: 4 }), b);
+    expect(g.hallstead!.holdings.positions.bank!.value).toBeCloseTo(preis * 0.4 * 0.4, 2);
+  });
+
+  it('wer mitten im Crash kauft, bekommt keinen Einbruch und keinen Bankrun hinterher', () => {
+    const b = bal((h) => {
+      ruhig(h);
+      h.holdings.kinds.bank.shock = { chance: 1, drop: 0.6, crashOnly: true };
+    });
+    const krise = mitWelt(kapitel3('tief', 2_000_000, b), { crash: 3, demand: 0.9 });
+    let g = ok(buyHolding(ok(buyHolding(krise, b, 'auto')), b, 'bank'));
+    expect(g.hallstead!.holdings.crashSeen).toBe(true);
+    expect(g.hallstead!.holdings.demandSeen).toBe(0.9);
+    g = settleHallstead(mitWelt(g, { crash: 2, demand: 0.9 }), b);
+    expect(g.hallstead!.holdings.positions.auto!.value).toBe(b.hallstead.holdings.kinds.auto.price);
+    expect(g.hallstead!.holdings.positions.bank!.value).toBe(b.hallstead.holdings.kinds.bank.price);
+    expect(g.hallstead!.news.some((n) => n.key === 'crash' || n.key === 'shock')).toBe(false);
+  });
+
   it('ist bei gleichem Seed gleich (eigener Zufall)', () => {
     const lauf = (seed: string) => {
       let g = ok(buyHolding(ok(buyHolding(kapitel3(seed), balance, 'auto')), balance, 'land'));
@@ -265,9 +326,25 @@ describe('Eigene Zeitung und eigene Bank', () => {
     expect(credibilityWord(g.hallstead!.holdings.credibility, balance)).toBe('lost');
   });
 
-  it('die eigene Bank macht den Kredit billiger (Andockpunkt Kredit)', () => {
+  it('die eigene Bank macht den Kredit billiger (credit.ts)', () => {
     expect(bankRateDiscount(kapitel3(), balance)).toBe(0);
-    expect(bankRateDiscount(ok(buyHolding(kapitel3(), balance, 'bank')), balance)).toBe(balance.hallstead.bankRateDiscount);
+    const mitBank = ok(buyHolding(kapitel3(), balance, 'bank'));
+    expect(bankRateDiscount(mitBank, balance)).toBe(balance.hallstead.bankRateDiscount);
+    expect(bankRateAdd(mitBank, balance)).toBeCloseTo(bankRateAdd(kapitel3(), balance) - balance.hallstead.bankRateDiscount, 6);
+    const ohne = takeLoan(kapitel3(), balance, balance.credit.minLoan);
+    const mit = takeLoan(mitBank, balance, balance.credit.minLoan);
+    if (!ohne.ok || !mit.ok) throw new Error('Kredit abgelehnt');
+    expect(mit.state.loans.at(-1)!.rate).toBeCloseTo(ohne.state.loans.at(-1)!.rate - balance.hallstead.bankRateDiscount, 6);
+  });
+
+  it('die Kampagne hebt im echten Rundenende die Stimmung im Weltmodell', () => {
+    const g = ok(buyHolding(kapitel3('stimmung'), balance, 'zeitung'));
+    const kampagne = ok(runCampaign(g, balance));
+    const schub = campaignMoodShift(kampagne, balance);
+    expect(schub).toBeGreaterThan(0);
+    const ohne = endRound(g, balance).worldModel.mood;
+    const mit = endRound(kampagne, balance).worldModel.mood;
+    expect(mit - ohne).toBeCloseTo(balance.worldModel.mood.speed * schub, 6);
   });
 });
 
@@ -447,12 +524,14 @@ describe('Texte der Hallstead-Mappe (content/hallstead.yaml)', () => {
     const v = hallsteadView(g, balance, content);
     expect(v.unlocked).toBe(true);
     expect(v.holdings.find((h) => h.kind === 'bank')!.owned).toBe(true);
-    expect(v.bankDiscount).toContain(String(balance.hallstead.bankRateDiscount));
+    expect(v.bankDiscount).toContain(`${Math.round(balance.hallstead.bankRateDiscount * 100)} Punkte`);
     expect(v.lobbyist!.name).toBe('Warren Tibbs');
     expect(v.canBribe).toBe(true);
     expect(v.government).toContain('Handelspartei');
     expect(v.donations[0]).toContain('Handelspartei');
     expect(v.laws.length).toBe(content.laws.length);
+    // Solange kein Gesetzessystem (4.3) den Druck liest, sagt die Mappe das.
+    expect(v.lawsPending).toBe(LAWS_CONNECTED ? null : content.ui.lawsPending.de);
     expect(v.telegram.length).toBeGreaterThan(0);
     expect(v.telegram.join(' ')).not.toMatch(/\{\w+\}/);
     expect(v.telegramNews).toBe(false);

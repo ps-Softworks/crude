@@ -515,11 +515,12 @@ tutorial:
 hallstead:
   unlockChapter: 3           # ab Kapitel 3 liegt die Hallstead-Mappe auf dem Tisch
   fallbackElectionEvery: 16  # ohne Weltmodell (4.1): Wahl alle 16 Runden (4 Jahre)
-  bankRateDiscount: 2        # eigene Bank: Bankzins 2 Punkte billiger (Andockpunkt Kredit)
+  bankRateDiscount: 0.02     # eigene Bank: Bankzins 2 Punkte billiger (wie credit.collateralDiscount, wirkt in credit.ts)
   holdings:
     sellFee: 0.05            # Verkauf kostet 5 % des Werts (Makler, Abschlag)
     # Wert je Runde: × (1 + drift + creditBeta·(Kreditklima − 50) + demandBeta·Nachfragewachstum ± noise)
-    # crashDrop: einmal, wenn ein Crash beginnt. shock: Schlag aus heiterem Himmel (crashOnly: nur im Crash).
+    # crashDrop: einmal, wenn ein Crash beginnt. shock: Schlag aus heiterem Himmel, je Runde gewürfelt
+    # (crashOnly: nur einmal je Crash gewürfelt, wenn er beginnt – höchstens ein Schlag je Krise).
     kinds:
       land:                  # Land in Boomtowns: steigt mit der Förderung, fällt, wenn das Feld versiegt
         price: 20000
@@ -570,7 +571,7 @@ hallstead:
         demandBeta: 0
         noise: 0.03
         crashDrop: 0.2
-        shock: { chance: 0.35, drop: 0.6, crashOnly: true }    # Bankrun je Crash-Runde: −60 %
+        shock: { chance: 0.35, drop: 0.6, crashOnly: true }    # Bankrun: 35 % je Kreditkrise (einmal gewürfelt, wenn sie beginnt), −60 %
   newspaper:
     credibilityStart: 80     # Glaubwürdigkeit der eigenen Zeitung (0–100)
     campaignCost: 15         # jede Kampagne kostet so viel Glaubwürdigkeit

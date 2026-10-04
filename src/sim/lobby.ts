@@ -143,6 +143,13 @@ export function donate(state: GameState, balance: Balance, party: PartyId, amoun
   return { ok: true, state: mitLobby(state, h, { ...h.lobby, donations }, -amount, `Jacob spendet ${Math.round(amount)} $ für den Wahlkampf.`) };
 }
 
+/**
+ * Liest ein Gesetzessystem lobbyLawShift und lobbyWaterDown? Solange nicht, zeigt
+ * die Mappe einen Hinweis, dass der Druck nur vorgemerkt ist.
+ * 4.3 Andockpunkt: auf true setzen, sobald 4.3 beides auf Beschlusschance und Wirkung anwendet.
+ */
+export const LAWS_CONNECTED = false;
+
 /** Änderung der Chance eines Gesetzes durch Jacobs Druck, −maxShift bis +maxShift (Andockpunkt 4.3). */
 export function lobbyLawShift(state: Pick<GameState, 'hallstead'>, balance: Balance, lawId: string): number {
   const p = state.hallstead?.lobby.pressure[lawId] ?? 0;

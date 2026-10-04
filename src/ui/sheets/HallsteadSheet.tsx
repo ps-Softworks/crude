@@ -201,6 +201,7 @@ export function HallsteadSheet({ ctx }: { ctx: SheetContext }) {
 
         {aktiv === 'gesetze' && (
           <div className="hallstead-gesetze">
+            {v.lawsPending && <p className="hint">{v.lawsPending}</p>}
             {!v.lobbyist && <p className="hint">{L(C.ui.needLobbyist)}</p>}
             <ul className="hallstead-liste">
               {v.laws.map((law) => (

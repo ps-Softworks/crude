@@ -126,6 +126,7 @@ ui:
   pressureAgainst: { de: "Jacobs Leute bremsen.", en: "Jacob's people are stalling it." }
   watered: { de: "Schon verwässert.", en: "Already watered down." }
   needLobbyist: { de: "Ohne Lobbyisten in Hallstead hört dort niemand zu.", en: "Without a lobbyist in Hallstead, nobody there listens." }
+  lawsPending: { de: "Noch steht keines dieser Gesetze zur Abstimmung. Was Jacobs Leute jetzt fordern, bremsen oder verwässern, ist nur vorgemerkt – und verblasst, bis das Parlament darüber berät.", en: "None of these bills is up for a vote yet. Whatever Jacob's people push, block or water down now is only noted – and fades until parliament takes them up." }
   telegram: { de: "Telegramm aus Hallstead", en: "Telegram from Hallstead" }
   nothing: { de: "Noch keine Beteiligungen.", en: "No holdings yet." }
   debugUnlock: { de: "Debug: Hallstead jetzt öffnen", en: "Debug: open Hallstead now" }

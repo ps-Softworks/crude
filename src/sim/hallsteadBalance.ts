@@ -54,7 +54,7 @@ export interface HallsteadBalance {
     sellFee: number;
     kinds: Record<HoldingKind, HoldingKindBalance>;
   };
-  /** Eigene Bank: so viele Zinspunkte billiger (Andockpunkt Kredit). */
+  /** Eigene Bank: Jahreszins um so viel billiger (0.02 = zwei Punkte, wie credit.collateralDiscount). */
   bankRateDiscount: number;
   newspaper: {
     credibilityStart: number;
@@ -160,7 +160,7 @@ export function parseHallstead(raw: unknown): HallsteadBalance {
     unlockChapter: posInt(raw, 'hallstead.unlockChapter'),
     fallbackElectionEvery: posInt(raw, 'hallstead.fallbackElectionEvery'),
     holdings: { sellFee: share(raw, 'hallstead.holdings.sellFee'), kinds },
-    bankRateDiscount: nonNeg(raw, 'hallstead.bankRateDiscount'),
+    bankRateDiscount: share(raw, 'hallstead.bankRateDiscount'),
     newspaper: {
       credibilityStart: nonNeg(raw, 'hallstead.newspaper.credibilityStart'),
       campaignCost: nonNeg(raw, 'hallstead.newspaper.campaignCost'),

@@ -26,7 +26,7 @@ import { advanceTransport, noShipments } from './transport';
 import { settleTakeover } from './trust';
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
 // 4.16 Andockpunkt: Nebeninvestments und Lobbyist in Hallstead (ab Kapitel 3).
-import { settleHallstead } from './hallstead';
+import { hallsteadWorldInput, settleHallstead } from './hallstead';
 import type { HallsteadState } from './hallsteadState';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
@@ -180,7 +180,9 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
 function advanceWorldInGame(state: GameState, vorMarkt: GameState, balance: Balance): GameState {
   if (!state.worldModel) return state;
   const angebot = saltHillSupply(vorMarkt, balance.market, balance.rivals.bullard.ratePerWell);
-  const input = saltHillInput(angebot, balance.market.demand, balance.worldModel);
+  const salzHuegel = saltHillInput(angebot, balance.market.demand, balance.worldModel);
+  // 4.16 Andockpunkt: Die Kampagne von Jacobs eigener Zeitung in Hallstead hebt die Stimmung (sonst 0).
+  const input = { ...salzHuegel, moodShift: (salzHuegel.moodShift ?? 0) + hallsteadWorldInput(state, balance).moodShift };
   return { ...state, worldModel: advanceWorld(state.worldModel, balance.worldModel, input) };
 }
 

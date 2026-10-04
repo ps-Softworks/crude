@@ -9,7 +9,7 @@ import type { GameState } from './game';
 import { HOLDING_KINDS, LOBBY_TRAITS, PARTY_IDS, type HoldingKind, type LobbyTrait, type PartyId } from './hallsteadBalance';
 import { hallsteadUnlocked, worldView, type HallsteadNews, type HallsteadReason } from './hallsteadState';
 import { saleProceeds } from './holdings';
-import { availableFavors, currentLobbyist } from './lobby';
+import { availableFavors, currentLobbyist, LAWS_CONNECTED } from './lobby';
 import { LANGUAGES, localize, type Lang, type LocalizedText } from './i18n';
 
 const OBJECT_KEYS = ['name', 'hint', 'locked'] as const;
@@ -19,7 +19,7 @@ const COMPETENCE_KEYS = ['low', 'mid', 'high'] as const;
 export const UI_KEYS = [
   'value', 'invested', 'buy', 'buyMore', 'sell', 'hire', 'fire', 'salary', 'favors', 'favorsHint', 'bribe', 'bribeHint',
   'donate', 'donateHint', 'donationPending', 'government', 'push', 'block', 'water', 'oilFor', 'oilAgainst',
-  'pressureFor', 'pressureAgainst', 'watered', 'needLobbyist', 'telegram', 'nothing', 'debugUnlock',
+  'pressureFor', 'pressureAgainst', 'watered', 'needLobbyist', 'lawsPending', 'telegram', 'nothing', 'debugUnlock',
 ] as const;
 export const NEWS_KEYS = ['crash', 'yieldPlus', 'yieldMinus', 'donationWon', 'donationLost', 'lobbyFavors', 'lobbyDrunk', 'salary'] as const;
 export const REASON_KEYS: readonly HallsteadReason[] = [
@@ -253,6 +253,8 @@ export interface HallsteadView {
   government: string;
   donations: string[];
   laws: LawRow[];
+  /** Hinweis im Reiter Gesetze, solange kein Gesetzessystem (4.3) den Druck liest; sonst null. */
+  lawsPending: string | null;
   telegram: string[];
   /** Steht im Telegramm etwas Besonderes (Crash, Schlag, Wahlausgang, Ausfall) – nicht nur Gehalt und Ertrag? */
   telegramNews: boolean;
@@ -344,7 +346,7 @@ export function hallsteadView(state: GameState, balance: Balance, c: HallsteadCo
       credibility: L(c.newspaper.credibility[credibilityWord(credibility, balance)]),
       campaignDone: h?.holdings.campaignRound === state.round,
     },
-    bankDiscount: h?.holdings.positions.bank ? fillText(L(c.bank.discount), { amount: hb.bankRateDiscount }) : null,
+    bankDiscount: h?.holdings.positions.bank ? fillText(L(c.bank.discount), { amount: Math.round(hb.bankRateDiscount * 1000) / 10 }) : null,
     lobbyist: wer ? cand(wer.id) : null,
     candidates: Object.keys(hb.lobby.candidates).map(cand),
     favors: availableFavors(state),
@@ -354,6 +356,8 @@ export function hallsteadView(state: GameState, balance: Balance, c: HallsteadCo
       fillText(L(c.ui.donationPending), { amount: geld(d.amount), party: L(c.parties[d.party]), rounds: rundenText(Math.max(1, d.electionRound - state.round + 1), lang) }),
     ),
     laws,
+    /** Hinweis im Reiter Gesetze, solange kein Gesetzessystem (4.3) den Druck liest; sonst null. */
+    lawsPending: LAWS_CONNECTED ? null : L(c.ui.lawsPending),
     telegram: (h?.news ?? []).map((n) => newsLine(n, c, lang)),
     telegramNews: (h?.news ?? []).some((n) => n.key !== 'salary' && n.key !== 'yield' && n.key !== 'lobbyFavors'),
   };
