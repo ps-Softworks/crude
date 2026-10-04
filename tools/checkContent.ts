@@ -10,6 +10,8 @@ import { analyzeRelevance, checkRelevanceMarks, parseRelevanceContent, readMarks
 import { parseFamilyContent } from '../src/sim/family';
 import { parseNewspaperContent } from '../src/sim/newspaper';
 import { parsePoliticsContent } from '../src/sim/politics';
+// 4.6 Andockpunkt: Texte der Raffinerie.
+import { parseRefineryContent } from '../src/sim/refineryContent';
 import { loadBalance } from '../src/sim/testBalance';
 import { EVENTS_DIR, readEventFiles } from '../src/sim/testEvents';
 import { parseTutorialContent } from '../src/sim/tutorial';
@@ -60,6 +62,8 @@ try {
 } catch (e) {
   errors.push({ file: 'content/tutorial.yaml', line: 1, message: (e as Error).message });
 }
+// 4.6 Andockpunkt: Raffinerie (content/refinery.yaml).
+errors.push(...parseRefineryContent('content/refinery.yaml', readFileSync(new URL('../content/refinery.yaml', import.meta.url), 'utf8')).errors);
 if (errors.length > 0) {
   for (const error of errors) console.error(formatContentError(error));
   console.error(`\n${errors.length} Fehler in ${files.length} Datei(en). Inhalte nicht in Ordnung.`);
