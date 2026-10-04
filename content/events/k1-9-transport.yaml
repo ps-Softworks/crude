@@ -50,6 +50,7 @@
       appointments: 2
       sharp: true
     - id: hart
+      public: [strike]
       label: { de: "Hart bleiben", en: "Stand firm" }
       result:
         de: Die Gespanne bleiben stehen – diese und die nächste Runde. Den Lohn will Jacob trotzdem zahlen müssen.

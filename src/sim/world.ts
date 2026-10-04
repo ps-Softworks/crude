@@ -35,6 +35,35 @@ export const PARTIES = ['handel', 'volksbund', 'provinz'] as const;
 /** Handelspartei, Volksbund, Provinzliga (GDD §7.1). */
 export type Party = (typeof PARTIES)[number];
 
+/**
+ * Öffentliches Handeln (4.2, GDD §7.1/§10): was Jacob (später auch Rivalen) tut und
+ * die Zeitung berichtet. Jede Tat verschiebt am Rundenende Stimmung und Parteien
+ * (worldModel.acts in balance.yaml). Namen wie in den Ereignissen (public: [field_fire]).
+ */
+export const PUBLIC_ACTS = [
+  'price_war',
+  'field_fire',
+  'strike',
+  'strike_break',
+  'charity',
+  'support_handel',
+  'support_volksbund',
+  'support_provinz',
+  'press_praise',
+  'press_scandal',
+] as const;
+export type PublicAct = (typeof PUBLIC_ACTS)[number];
+
+/** Ergebnis einer Wahl (4.2): Stimmenanteile = Parteianteile am Wahltag, also aus dem Weltzustand. */
+export interface ElectionResult {
+  /** Weltrunde, in der gewählt wurde. */
+  round: number;
+  shares: Record<Party, number>;
+  winner: Party;
+  /** Wer vorher regierte. */
+  previous: Party;
+}
+
 /** Was in einer Runde in der Welt geschah – für Zeitung und Auswertung. election = eine andere Partei regiert jetzt, reelection = die regierende Partei bleibt. */
 export type WorldNews = 'crash' | 'recovery' | 'war' | 'peace' | 'election' | 'reelection' | 'glut' | 'nationalization';
 
@@ -84,6 +113,12 @@ export interface WorldState {
   /** Was in der letzten fortgeschriebenen Runde geschah. */
   news: WorldNews[];
   counts: WorldCounts;
+  /** Öffentliches Handeln dieser Runde (4.2), wirkt am Rundenende. */
+  acts: PublicAct[];
+  /** Was in der letzten fortgeschriebenen Runde gewirkt hat – für die Zeitung. */
+  actsDone: PublicAct[];
+  /** Letzte Wahl (4.2); null = in dieser Kampagne noch keine. */
+  lastElection: ElectionResult | null;
 }
 
 /**
@@ -93,7 +128,10 @@ export interface WorldState {
 export interface WorldInput {
   extraSupply?: number;
   creditShift?: number;
+  /** Stimmungspunkte, sofort auf die Stimmung (danach kehrt sie mit mood.speed zu ihrem Ziel zurück). */
   moodShift?: number;
+  /** Verschiebung der Parteianteile vor dem Normieren (4.2). */
+  partyShift?: Partial<Record<Party, number>>;
   tensionShift?: number;
   nationalismShift?: number;
 }
@@ -226,6 +264,9 @@ function startState(rng: RngState, wb: StartBalance, v: StartValues): WorldState
     war: 0,
     news: [],
     counts: noCounts(),
+    acts: [],
+    actsDone: [],
+    lastElection: null,
   };
 }
 
@@ -295,10 +336,54 @@ export function worldPrice(demand: number, supply: number, stock: number, trend:
 }
 
 /**
+ * Was öffentliches Handeln in die Welt gibt (4.2): Stimmung und Parteianteile laut
+ * worldModel.acts. Das Programm der Regierung gewichtet Verfehlungen (Stimmung
+ * nach unten) mit scrutiny – unter dem Volksbund wiegt ein Feldbrand schwerer als
+ * unter der Handelspartei. Je Runde höchstens ± acts.maxMood bzw. ± acts.maxParty.
+ */
+export function actsInput(acts: readonly PublicAct[], government: Party, wb: Pick<WorldModelBalance, 'acts' | 'programs'>): WorldInput {
+  if (acts.length === 0) return {};
+  const a = wb.acts;
+  const scrutiny = wb.programs[government].scrutiny;
+  let mood = 0;
+  const parties: Record<Party, number> = { handel: 0, volksbund: 0, provinz: 0 };
+  for (const act of acts) {
+    const e = a[act];
+    mood += e.mood < 0 ? e.mood * scrutiny : e.mood;
+    for (const p of PARTIES) parties[p] += e[p];
+  }
+  const partyShift = Object.fromEntries(PARTIES.map((p) => [p, clamp(parties[p], -a.maxParty, a.maxParty)])) as Record<Party, number>;
+  return { moodShift: clamp(mood, -a.maxMood, a.maxMood), partyShift };
+}
+
+/** Zwei Eingriffe zusammenlegen (Salt Hill und öffentliches Handeln). */
+export function mergeInput(a: WorldInput, b: WorldInput): WorldInput {
+  const sum = (x?: number, y?: number) => (x === undefined && y === undefined ? undefined : (x ?? 0) + (y ?? 0));
+  const out: WorldInput = {};
+  const extraSupply = sum(a.extraSupply, b.extraSupply);
+  const creditShift = sum(a.creditShift, b.creditShift);
+  const moodShift = sum(a.moodShift, b.moodShift);
+  const tensionShift = sum(a.tensionShift, b.tensionShift);
+  const nationalismShift = sum(a.nationalismShift, b.nationalismShift);
+  if (extraSupply !== undefined) out.extraSupply = extraSupply;
+  if (creditShift !== undefined) out.creditShift = creditShift;
+  if (moodShift !== undefined) out.moodShift = moodShift;
+  if (tensionShift !== undefined) out.tensionShift = tensionShift;
+  if (nationalismShift !== undefined) out.nationalismShift = nationalismShift;
+  if (a.partyShift || b.partyShift) {
+    out.partyShift = Object.fromEntries(PARTIES.map((p) => [p, (a.partyShift?.[p] ?? 0) + (b.partyShift?.[p] ?? 0)])) as Record<Party, number>;
+  }
+  return out;
+}
+
+/**
  * Eine Runde Welt. Jede Runde zieht genau gleich viele Zufallszahlen, damit ein
  * Krieg nicht den Würfel für die nächste Wahl verschiebt.
  */
-export function advanceWorld(input: WorldState, wb: WorldModelBalance, extern: WorldInput = {}): WorldState {
+export function advanceWorld(input: WorldState, wb: WorldModelBalance, externIn: WorldInput = {}): WorldState {
+  // Öffentliches Handeln dieser Runde (4.2) wirkt jetzt und steht danach in actsDone.
+  const taten = input.acts ?? [];
+  const extern = mergeInput(externIn, actsInput(taten, input.government, wb));
   const rng = new Rng(input.rng);
   const u = Array.from({ length: 14 }, () => rng.float());
   const sym = (i: number) => 2 * u[i] - 1;
@@ -384,8 +469,9 @@ export function advanceWorld(input: WorldState, wb: WorldModelBalance, extern: W
 
   // Stimmung: teures Öl, Arbeitslosigkeit im Crash und Krieg drücken, Wohlstand hebt.
   const m = wb.mood;
-  const ziel = 50 - m.price * (knapp - 1) - (crash > 0 ? m.crash : 0) - (input.war > 0 ? m.war : 0) + (m.boom * (credit - 50)) / 50 + (extern.moodShift ?? 0);
-  const mood = clamp(input.mood + m.speed * (ziel - input.mood) + m.noise * sym(7), 0, 100);
+  const ziel = 50 - m.price * (knapp - 1) - (crash > 0 ? m.crash : 0) - (input.war > 0 ? m.war : 0) + (m.boom * (credit - 50)) / 50;
+  // Eingriffe (Jacobs Handeln, 4.2) verschieben die Stimmung sofort; danach zieht das Ziel sie langsam zurück.
+  const mood = clamp(input.mood + m.speed * (ziel - input.mood) + m.noise * sym(7) + (extern.moodShift ?? 0), 0, 100);
 
   // Politik: Unzufriedene wählen Volksbund, Zufriedene die Handelspartei, billiges Öl treibt kleine Förderer zur Provinzliga.
   const pol = wb.politics;
@@ -397,13 +483,17 @@ export function advanceWorld(input: WorldState, wb: WorldModelBalance, extern: W
     provinz: input.parties.provinz + pol.drift * billig + pol.noise * sym(10) + pol.revert * (1 / 3 - input.parties.provinz),
   };
   roh[input.government] -= pol.fatigue;
+  for (const p of PARTIES) roh[p] += extern.partyShift?.[p] ?? 0;
   const parties = normalizeParties(roh, pol.minShare);
   let government = input.government;
   let electionIn = input.electionIn - 1;
+  let lastElection = input.lastElection ?? null;
   if (electionIn <= 0) {
+    // Wahltag (4.2): Die Stimmen sind die Parteianteile dieser Runde – Stimmung, Ölpreis und Jacobs Handeln stecken darin.
     const sieger = leadingParty(parties);
     if (sieger !== government) counts.changes += 1;
     news.push(sieger !== government ? 'election' : 'reelection');
+    lastElection = { round: input.round + 1, shares: parties, winner: sieger, previous: government };
     government = sieger;
     electionIn = pol.electionEvery;
     counts.elections += 1;
@@ -461,6 +551,9 @@ export function advanceWorld(input: WorldState, wb: WorldModelBalance, extern: W
     war,
     news,
     counts,
+    acts: [],
+    actsDone: [...taten],
+    lastElection,
   };
 }
 
@@ -511,5 +604,26 @@ export function isWorldState(value: unknown): value is WorldState {
   if (typeof p !== 'object' || p === null || !PARTIES.every((k) => zahl(p[k]))) return false;
   if (!PARTIES.includes(w.government as Party)) return false;
   const c = w.counts as Record<string, unknown> | undefined;
-  return typeof c === 'object' && c !== null && Object.keys(noCounts()).every((k) => zahl(c[k]));
+  if (typeof c !== 'object' || c === null || !Object.keys(noCounts()).every((k) => zahl(c[k]))) return false;
+  const taten = (x: unknown) => Array.isArray(x) && x.every((a) => PUBLIC_ACTS.includes(a as PublicAct));
+  if (!taten(w.acts) || !taten(w.actsDone)) return false;
+  const e = w.lastElection as Record<string, unknown> | null | undefined;
+  if (e === null) return true;
+  if (typeof e !== 'object' || e === undefined) return false;
+  const s = e.shares as Record<string, unknown> | undefined;
+  return (
+    zahl(e.round) &&
+    typeof s === 'object' &&
+    s !== null &&
+    PARTIES.every((k) => zahl(s[k])) &&
+    PARTIES.includes(e.winner as Party) &&
+    PARTIES.includes(e.previous as Party)
+  );
+}
+
+/** Ersatzwerte (4.2) für Weltzustände aus Format 14: noch kein öffentliches Handeln, keine Wahl gemerkt. */
+export function withPoliticsDefaults(value: unknown): unknown {
+  if (typeof value !== 'object' || value === null) return value;
+  const w = value as Record<string, unknown>;
+  return { ...w, acts: w.acts ?? [], actsDone: w.actsDone ?? [], lastElection: w.lastElection === undefined ? null : w.lastElection };
 }

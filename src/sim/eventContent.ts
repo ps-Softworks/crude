@@ -10,6 +10,7 @@ import { SIM_MARKS } from './family';
 import { LANGUAGES, type LocalizedText } from './i18n';
 import { RIVAL_SIM_MARKS } from './trust';
 import { LOGISTICS_SIM_MARKS } from './logistics';
+import { PUBLIC_ACTS, type PublicAct } from './world';
 
 export interface ContentError {
   file: string;
@@ -28,7 +29,7 @@ export interface ParsedEvents {
 }
 
 const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'routine', 'appointments', 'choices', 'mail', 'deadline', 'document', 'certain', 'rival', 'cooldown', 'group', 'draft', 'ranch', 'visitor', 'tableau'];
-const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default', 'appointments', 'requiresFound', 'marksIfForged', 'sharp', 'unlocks'];
+const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default', 'appointments', 'requiresFound', 'marksIfForged', 'sharp', 'unlocks', 'public'];
 const DOCUMENT_KEYS = ['title', 'reference', 'forgeryChance', 'fields'];
 const FIELD_KEYS = ['id', 'label', 'value', 'reference', 'forged'];
 const ID_MUSTER = /^[a-z0-9_]+$/;
@@ -206,13 +207,23 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
     const marksIfForged = namen(raw, 'marksIfForged', pfad, wer);
     // Gebiete (0.2.15+5): Diese Wahl schaltet Gebiete aus content/map.yaml frei.
     const unlocks = namen(raw, 'unlocks', pfad, wer);
-    if (!ok || !label || !result || !requires || !effects || !marks || !marksIfForged || !unlocks) return null;
+    // Öffentliches Handeln (4.2): Namen aus PUBLIC_ACTS (Zahlen in balance.yaml, worldModel.acts).
+    const oeffentlich = namen(raw, 'public', pfad, wer);
+    if (oeffentlich) {
+      const fremd = oeffentlich.filter((a) => !(PUBLIC_ACTS as readonly string[]).includes(a));
+      if (fremd.length > 0) {
+        fehler([...pfad, 'public'], `${wer}: unbekannte Tat ${fremd.map((a) => `„${a}“`).join(', ')} in „public“ (erlaubt: ${liste(PUBLIC_ACTS)}).`);
+        ok = false;
+      }
+    }
+    if (!ok || !label || !result || !requires || !effects || !marks || !marksIfForged || !unlocks || !oeffentlich) return null;
     const choice: EventChoice = { id: id as string, label, result, requires, effects, default: raw.default === true, marks };
     if (appointments !== undefined && appointments !== null) choice.appointments = appointments;
     if (raw.requiresFound === true) choice.requiresFound = true;
     if (marksIfForged.length > 0) choice.marksIfForged = marksIfForged;
     if (raw.sharp === true) choice.sharp = true;
     if (unlocks.length > 0) choice.unlocks = unlocks;
+    if (oeffentlich.length > 0) choice.public = oeffentlich as PublicAct[];
     return choice;
   }
 

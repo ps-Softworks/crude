@@ -57,6 +57,7 @@
   chance: 0.08
   choices:
     - id: spenden
+      public: [charity]
       label: { de: "100 $ für die Bretterkirche", en: "100 $ for the plank church" }
       result:
         de: "Bruder Abel nennt Jacobs Namen am Sonntag von der Kanzel. Ruth sitzt in der ersten Reihe und tut, als höre sie es nicht. Die Bohrarbeiter sitzen sonntags in Jacobs Kirche und montags pünktlich am Turm."
@@ -143,6 +144,7 @@
   chance: 0.1
   choices:
     - id: erzaehlen
+      public: [press_praise]
       label: { de: "Von der Kohlengrube und dem Vater erzählen", en: "Tell her about the coal pit and his father" }
       result:
         de: Nora schreibt drei Seiten mit. Im Courier steht am Samstag ein Bergmannssohn, der es allen zeigen will. Die Leute am Hafen grüßen Jacob anders.

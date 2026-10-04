@@ -588,6 +588,23 @@ worldModel:
     fatigue: 0.002           # Regierungsmüdigkeit: die regierende Partei verliert je Runde so viel
     revert: 0.01             # Anteile kehren langsam zur Mitte zurück (keine Partei verschwindet für immer)
     electionEvery: 16        # GDD §7.1: Wahlen alle 4 Jahre
+  acts:                      # 4.2: Jacobs öffentliches Handeln, wirkt am Rundenende auf Stimmung (Punkte) und Parteianteile
+    maxMood: 6               # je Runde höchstens ± so viele Stimmungspunkte aus Jacobs Handeln
+    maxParty: 0.015          # … und höchstens so viel Anteil je Partei
+    price_war:         { mood: -2.5, handel: -0.004, volksbund: 0.002, provinz: 0.006 }  # Preiskampf am Salt Hill: kleine Förderer rufen nach der Provinzliga
+    field_fire:        { mood: -3,   handel: -0.003, volksbund: 0.006, provinz: 0 }      # Feldbrand: Rauch bis Port Ellis, Ruf nach Aufsicht
+    strike:            { mood: -1.5, handel: -0.002, volksbund: 0.004, provinz: 0 }
+    strike_break:      { mood: -3,   handel: 0,      volksbund: 0.008, provinz: 0 }      # Streikbrecher
+    charity:           { mood: 1,    handel: 0,      volksbund: 0,     provinz: 0 }      # Spende für Kirche, Schule, Witwen
+    support_handel:    { mood: 0,    handel: 0.006,  volksbund: 0,     provinz: 0 }      # Spende/Stimmen für eine Partei
+    support_volksbund: { mood: 0,    handel: 0,      volksbund: 0.006, provinz: 0 }
+    support_provinz:   { mood: 0,    handel: 0,      volksbund: 0,     provinz: 0.006 }
+    press_praise:      { mood: 1,    handel: 0.002,  volksbund: 0,     provinz: 0 }      # freundliche Presse
+    press_scandal:     { mood: -2,   handel: -0.003, volksbund: 0.003, provinz: 0 }      # Skandal in der Zeitung
+  programs:                  # 4.2: wie streng die Regierung auf Verfehlungen schaut (Faktor auf Stimmung nach unten)
+    handel: { scrutiny: 0.75 }    # niedrige Steuern, wenig Regulierung – man drückt ein Auge zu
+    volksbund: { scrutiny: 1.5 }  # gegen Trusts, für Aufsicht – jeder Brand wird zum Thema
+    provinz: { scrutiny: 1 }
   tension:                   # Schleife 3: Außenspannung
     base: 18                 # Ruhe-Niveau der Diplomatie
     revert: 0.04
@@ -625,3 +642,4 @@ worldModel:
     creditTight: 30
     moodAngry: 32
     tensionHigh: 60
+    pollFrom: 2              # 4.2: so viele Runden vor der Wahl druckt die Zeitung eine Umfrage

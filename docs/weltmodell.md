@@ -1,9 +1,9 @@
 # Weltmodell
 
-Stand: 2026-10-04 · Version 0.4.1
+Stand: 2026-10-04 · Version 0.4.2
 
 Erzeugt mit `npm run welt` (tools/weltlaeufe.ts, Regeln in src/sim/world.ts, Zahlen in content/balance.yaml unter worldModel).
-300 Welten (Seeds `welt-0` bis `welt-299`) über eine ganze Kampagne: 292 Runden = 73 Spieljahre, **ohne Spieler**. Rechenzeit 0.4 s.
+300 Welten (Seeds `welt-0` bis `welt-299`) über eine ganze Kampagne: 292 Runden = 73 Spieljahre, **ohne Spieler**. Rechenzeit 0.3 s.
 
 - Alle Werte endlich: **ja** · Krisenzahlen in der Mehrheit der Welten im GDD-Ziel: **ja**
 
@@ -139,3 +139,25 @@ Ein Prüfer hat sechs Befunde gemeldet; alle nachgemessen (1000 Welten) und echt
 Nebenbei: Die langen Monte-Carlo-Tests bekommen mehr Zeit (vite.config `testTimeout` 30 s, Bot-Test 10 min) – auf einem ausgelasteten Rechner liefen sie sonst in Zeitüberschreitungen, ohne dass etwas falsch war.
 
 **Offen.** Über die ganze Kampagne regiert die Handelspartei jetzt seltener (gut 20 % der Zeit, Volksbund und Provinzliga je knapp 40 %), weil die Stimmung im Schnitt leicht unter 50 liegt (Crashs) und billiges Öl nach Riesenfunden die Provinzliga stärkt. Ob das so bleiben soll, klärt sich mit den Politik-Schritten (§10).
+
+## Parteien, Stimmung, Wahlen (4.2, Version 0.4.2)
+
+Code: `src/sim/politics.ts` (Taten aufzeichnen, Umfrage, Wahlergebnis, Inhalte lesen), Regeln in `src/sim/world.ts` (`actsInput`, Wahltag in `advanceWorld`), Zahlen `content/balance.yaml` → `worldModel.acts`, `worldModel.programs`, `worldModel.news.pollFrom`, Texte `content/politics.yaml` (Parteinamen, Programme) und `content/newspaper.yaml` (`public_…`, `world_poll_…`). Tests: `src/sim/politics.test.ts`.
+
+**Öffentliches Handeln.** Zehn Taten (`PUBLIC_ACTS`): Preiskampf, Feldbrand, Streik, Streikbrecher, Spende für die Stadt, Unterstützung je Partei (3), gute Presse, Skandal. Eine Antwort in einem Ereignis trägt sie mit `public: [field_fire]`; ein Tankbrand im Lager zählt von selbst als Feldbrand. Die Tat wartet in `worldModel.acts` und wirkt am Rundenende: Stimmungspunkte **sofort** auf die Stimmung (danach zieht `mood.speed` sie langsam zum Ziel zurück), dazu Anteile je Partei vor dem Normieren. Je Runde höchstens ±6 Stimmungspunkte und ±1,5 Prozentpunkte je Partei. Die Zeitung der nächsten Runde berichtet über die lauteste Tat (`actsDone`). Getaggt sind 15 Antworten in Kapitel 1, u. a. Delgados Verband gegen Cranes Abschlag (Preiskampf), „Das ist Bullards Feuer“ und „Brennen lassen“ (Feldbrand), Streikbrecher/Aussitzen, Bretterkirche, Noras Interview, Spenden an Teague/Harrow, Liga-Petition.
+
+**Parteiprogramme.** Jede Partei hat ein Programm (Texte in politics.yaml) und regiert spürbar anders: beim Kreditklima (schon 4.1: Handel lockert, Volksbund bremst) und neu mit der **Strenge** (`programs.*.scrutiny`), mit der Verfehlungen die Stimmung drücken – unter dem Volksbund wiegt ein Feldbrand doppelt so schwer wie unter der Handelspartei (1,5 gegen 0,75). Gutes wird nicht gewichtet.
+
+**Wahlen.** Weiter alle 16 Runden; die Stimmen sind die Parteianteile am Wahltag – Stimmung, Ölpreis, Regierungsmüdigkeit und Jacobs Taten stecken darin. Das Ergebnis wird gemerkt (`lastElection`: Anteile, Sieger, Vorgänger). Zwei Runden vorher (`news.pollFrom`) bringt die Zeitung eine Umfrage, wer vorn liegt. In der Ausgabe nach der Wahl druckt sie das Ergebnis in Prozent mit Balken und das Programm der Sieger.
+
+**Spielstand.** Format 15; Stände aus Format 14 bekommen leere Taten und keine gemerkte Wahl (`withPoliticsDefaults`), 12/13 wie bisher eine Durchschnittswelt.
+
+**Wirkung (gemessen).** Ohne Spieler ist die Welt unverändert (gleiche Zahlen wie oben, Taten ziehen keinen Zufall). Test: Feldbrand verschiebt die Stimmung genau um −3 × Strenge, Preiskampf um −2,5 × Strenge, beides klingt in den Folgerunden ab; eine Streikbrecher-Tat kippt eine knappe Wahl. `npm run bots`: alle 15 Zielwerte im Rahmen, Ergebnisse gleich wie vorher – Bots lösen kaum Taten aus, und ein paar Stimmungspunkte ändern den Zins in Kapitel 1 nur, wenn sie eine Wahl kippen.
+
+**Entscheidungen (ohne Rückfrage).**
+- Ein amtliches Wahlergebnis ist eine öffentliche Zahl und steht darum als Prozent in der Zeitung; Stimmung, Kreditklima und Parteianteile zwischen den Wahlen bleiben weiter nur angedeutet (die Umfrage nennt nur, wer vorn liegt).
+- Kapitel 1 kennt keinen eigenen Preiskampf des Spielers; als Preiskampf zählt, wenn Jacob sich mit Delgados Verband öffentlich gegen Cranes Abschlag stellt. Ab Kapitel 2 (Marktmacht, GDD §7.3) kann `price_war` vom echten Preiskrieg kommen – `recordAct` ist dafür da.
+- Ein Ölmann in Cordova bewegt das ganze Land nur wenig: 1–3 Stimmungspunkte je Tat, weniger als das Rauschen einer Runde (3). Spürbar wird es über mehrere Taten, eine knappe Wahl oder ein strenges Programm.
+- `moodShift` im `WorldInput` wirkt jetzt direkt auf die Stimmung statt auf ihr Ziel (war ungenutzt) – so ist eine Tat sofort messbar und klingt danach ab.
+
+**Offen / Entwurf.** Programmpunkte und Zeitungstexte sind Entwürfe von Claude. Gesetze (§10) aus Programm + Regierung, Lobby/Gefallen als Währung, Ermittlungen, Briefe oder Besuche von Wahlkämpfern kurz vor der Wahl (bräuchte eine Ereignis-Bedingung „Wahl in höchstens n Runden“), Taten der Rivalen (Crane, Thorne) und wie stark Presse (Nora, eigene Zeitung ab Kapitel 2) Taten verstärkt.

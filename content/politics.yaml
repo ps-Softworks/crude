@@ -1,0 +1,34 @@
+# Parteien der Föderation (4.2, GDD §7.1, Weltbibel „Parteien“).
+# Hier stehen nur Namen und Programme – wie die Parteien wachsen und was eine
+# Regierung bewirkt, steht in balance.yaml (worldModel.politics, worldModel.programs,
+# worldModel.acts). Die Zeitung druckt nach jeder Wahl das Ergebnis und das
+# Programm der Sieger.
+# Jeder Text mit Sprachschlüssel de/en (Englisch darf leer bleiben).
+# ENTWURF: Programmpunkte sind Vorschläge von Claude.
+
+electionTitle:
+  de: Wahl zum Parlament in Hallstead
+  en: Election to the Parliament in Hallstead
+programTitle:
+  de: Was die Sieger versprechen
+  en: What the winners promise
+
+parties:
+  handel:
+    name: { de: Handelspartei, en: Commerce Party }
+    program:
+      - { de: "Niedrige Steuern für Industrie und Eisenbahnen", en: "Low taxes for industry and the railways" }
+      - { de: "Wenig Regulierung – freie Hand für große Unternehmen", en: "Little regulation – a free hand for big business" }
+      - { de: "Leichter Kredit durch die Banken in Hallstead", en: "Easy credit from the Hallstead banks" }
+  volksbund:
+    name: { de: Volksbund, en: People's League }
+    program:
+      - { de: "Aufsicht über Banken und Trusts", en: "Supervision of banks and trusts" }
+      - { de: "Schutz für Farmer und Arbeiter, Recht auf Gewerkschaften", en: "Protection for farmers and workers, the right to unions" }
+      - { de: "Wer Felder brennen lässt oder Streikbrecher holt, steht vor dem Parlament", en: "Whoever lets fields burn or brings in strikebreakers answers to Parliament" }
+  provinz:
+    name: { de: Provinzliga, en: Provincial League }
+    program:
+      - { de: "Rechte der Provinzen gegen Hallstead", en: "The rights of the provinces against Hallstead" }
+      - { de: "Schutz für kleine Produzenten, Zölle auf fremdes Öl", en: "Protection for small producers, tariffs on foreign oil" }
+      - { de: "Rohre und Gleise müssen jedes Öl zum selben Preis befördern", en: "Pipes and rails must carry all oil at the same price" }

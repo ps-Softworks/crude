@@ -80,6 +80,7 @@
       requires: { minCash: 150 }
       effects: { cash: -150, production: 0.05 }
     - id: ersetzen
+      public: [strike_break]
       label: { de: "Neue Männer vom Hafen holen (120 $)", en: "Bring new men from the docks (120 $)" }
       result:
         de: Die neuen Männer sind billig und ungeschickt. Die alten stehen am Zaun und schauen zu, wie einer sich die Hand quetscht.
@@ -88,6 +89,7 @@
       effects: { cash: -120, strength: -4, production: -0.1 }
       appointments: 2
     - id: aussitzen
+      public: [strike]
       label: { de: "Aussitzen", en: "Sit it out" }
       result:
         de: Zehn Tage Stillstand. Dann kommen sie zurück, weil sie Hunger haben. Vergessen tun sie es nicht.
@@ -359,6 +361,7 @@
       requires: { minCash: 60 }
       effects: { cash: -60, oilStock: -250 }
     - id: brennen
+      public: [field_fire]
       label: { de: "Brennen lassen", en: "Let it burn" }
       result:
         de: Der Tank brennt drei Tage. Das Öl ist weg, und das Bohrhaus daneben auch.

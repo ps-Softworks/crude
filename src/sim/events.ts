@@ -14,7 +14,9 @@ import { deskDocument, forgeryFound, isForged, rollDocument, type DeskDocument, 
 import { applyFamilyEffects } from './family';
 import type { GameState } from './game';
 import { DEFAULT_LANG, localize, type Lang, type LocalizedText } from './i18n';
+import { recordAct } from './politics';
 import { openRegions, unlockRegion } from './regions';
+import type { PublicAct } from './world';
 import { Rng, seedFromString, type RngState } from './rng';
 
 /** Bedingungen: jede ist eine Untergrenze (min…) oder Obergrenze (max…). */
@@ -92,6 +94,8 @@ export interface EventChoice {
   sharp?: boolean;
   /** Gebiete (0.2.15+5): Diese Wahl schaltet Gebiete aus content/map.yaml frei. */
   unlocks?: string[];
+  /** Öffentliches Handeln (4.2): Darüber redet das Land – verschiebt am Rundenende Stimmung und Parteien. */
+  public?: PublicAct[];
 }
 
 export interface EventDef {
@@ -551,7 +555,9 @@ export function resolveEvent(
 function erledigen(state: GameState, event: EventDef, choice: EventChoice, lang: Lang, vorsatz: string, timedRounds: number): GameState {
   // Gebiete (0.2.15+5): nur den Schalter umlegen – die Ranches kommen mit openRegions.
   const offen = (choice.unlocks ?? []).reduce(unlockRegion, state);
-  const nach = applyEffects(offen, choice.effects, event.id, timedRounds);
+  // Öffentliches Handeln (4.2): wirkt am Rundenende im Weltmodell.
+  const bekannt = (choice.public ?? []).reduce(recordAct, offen);
+  const nach = applyEffects(bekannt, choice.effects, event.id, timedRounds);
   const agenda = event.routine ? { ...nach.agenda, done: [...nach.agenda.done, event.id] } : nach.agenda;
   // Merkzeichen behalten die Runde, in der sie zuerst gesetzt wurden.
   const marks = { ...nach.events.marks };

@@ -9,6 +9,7 @@ import { formatContentError, parseEventFiles } from '../src/sim/eventContent';
 import { analyzeRelevance, checkRelevanceMarks, parseRelevanceContent, readMarks, simReadMarks } from '../src/sim/eventRelevance';
 import { parseFamilyContent } from '../src/sim/family';
 import { parseNewspaperContent } from '../src/sim/newspaper';
+import { parsePoliticsContent } from '../src/sim/politics';
 import { loadBalance } from '../src/sim/testBalance';
 import { EVENTS_DIR, readEventFiles } from '../src/sim/testEvents';
 import { parseTutorialContent } from '../src/sim/tutorial';
@@ -26,6 +27,8 @@ const zeitung = parseNewspaperContent(
   'content/newspaper.yaml',
   readFileSync(new URL('../content/newspaper.yaml', import.meta.url), 'utf8'),
 );
+// Parteien (4.2): Namen und Programme für Wahlergebnis und Zeitung.
+const politik = parsePoliticsContent('content/politics.yaml', readFileSync(new URL('../content/politics.yaml', import.meta.url), 'utf8'));
 // Familie (2.7): Zustandswörter und Sätze für den Familienbildschirm.
 const familie = parseFamilyContent('content/family.yaml', readFileSync(new URL('../content/family.yaml', import.meta.url), 'utf8'));
 // Story-Bögen (2.9): Ausgänge und ihre Merkzeichen.
@@ -39,7 +42,7 @@ const einstieg = parseTutorialContent('content/tutorial.yaml', readFileSync(new 
 // Wirkung der Antworten (0.2.15+3): begründete Ausnahmen.
 const wirkung = parseRelevanceContent('content/relevance.yaml', readFileSync(new URL('../content/relevance.yaml', import.meta.url), 'utf8'));
 const wirkungMarks = wirkung.content && parsed.errors.length === 0 ? checkRelevanceMarks('content/relevance.yaml', wirkung.content, events) : [];
-const errors = [...wirkung.errors, ...wirkungMarks, ...einstieg.errors, ...parsed.errors, ...zeitung.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks];
+const errors = [...wirkung.errors, ...wirkungMarks, ...einstieg.errors, ...parsed.errors, ...zeitung.errors, ...politik.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks];
 
 // Karte (0.2.15+5): ranch und unlocks in den Ereignissen müssen auf content/map.yaml zeigen.
 const karte = parsed.errors.length === 0 ? mapRefErrors(events, loadBalance().world) : [];

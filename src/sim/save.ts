@@ -6,18 +6,18 @@
 
 import type { GameState } from './game';
 import { newLogistics } from './logistics';
-import { isWorldState, neutralWorld } from './world';
+import { isWorldState, neutralWorld, withPoliticsDefaults } from './world';
 
-/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2), 11 = mit befristeten Nachwirkungen der Ereignisse (0.2.15+3), 12 = Karte mit Gebieten und Ranches statt Raster, mehrere Bohrlöcher je Ranch (0.2.15+5), 13 = Bohrtürme und Pumpen (0.2.15+7), 14 = mit Weltmodell (4.1). */
-export const SAVE_FORMAT = 14;
+/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2), 11 = mit befristeten Nachwirkungen der Ereignisse (0.2.15+3), 12 = Karte mit Gebieten und Ranches statt Raster, mehrere Bohrlöcher je Ranch (0.2.15+5), 13 = Bohrtürme und Pumpen (0.2.15+7), 14 = mit Weltmodell (4.1), 15 = mit öffentlichem Handeln und Wahlergebnis im Weltmodell (4.2). */
+export const SAVE_FORMAT = 15;
 
 /**
  * Ältere Formate, die mit Ersatzwerten noch geladen werden. Vor Format 12 keins
  * mehr: Die Rasterparzellen der alten Stände passen nicht auf die neue Karte.
- * Format 12 bekommt Silas' Turm (0.2.15+7), Format 12 und 13 eine ruhige Durchschnittswelt (4.1).
+ * Format 12 bekommt Silas' Turm (0.2.15+7), Format 12 und 13 eine ruhige Durchschnittswelt (4.1), Format 14 leere Listen für öffentliches Handeln und keine gemerkte Wahl (4.2).
  * Die Umrisse der Ranches stehen nie im Spielstand – sie kommen aus dem Seed.
  */
-const ALTE_FORMATE: number[] = [12, 13];
+const ALTE_FORMATE: number[] = [12, 13, 14];
 
 export interface SaveFile {
   format: number;
@@ -232,5 +232,7 @@ export function deserializeGame(text: string): LoadResult {
   if (state.rigs === undefined) state = { ...state, rigs: [{ id: 'silas', kind: 'lent', readyRound: 1, steam: false, rods: false }] };
   // Ersatzwert (4.1): Spielstände bis Format 13 kennen kein Weltmodell – eine ruhige Durchschnittswelt aus dem Seed.
   if (state.worldModel === undefined && istText(state.seed)) state = { ...state, worldModel: neutralWorld(state.seed) };
+  // Ersatzwerte (4.2): Weltzustände aus Format 14 kennen kein öffentliches Handeln und keine gemerkte Wahl.
+  if (state.worldModel !== undefined) state = { ...state, worldModel: withPoliticsDefaults(state.worldModel) };
   return validateState(state);
 }

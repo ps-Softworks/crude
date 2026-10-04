@@ -12,8 +12,12 @@ import { LANGUAGES, localize, type Lang, type LocalizedText } from './i18n';
 import { computePrice, jacobSupply, neighbourSupply, rivalSupply } from './market';
 import { advanceProduction } from './production';
 import { craneCut, markRound, RIVAL_MARKS } from './trust';
-import { worldPriceFactor } from './world';
+import { electionReport, loudestAct, type ElectionReport, type PoliticsContent } from './politics';
+import { PUBLIC_ACTS, worldPriceFactor } from './world';
 import { MAJOR_WORLD_HEADLINES, worldHeadline, WORLD_HEADLINES } from './worldNews';
+
+/** Meldungen über Jacobs öffentliches Handeln (4.2): eine je Tat, Schlüssel public_<tat>. */
+export const PUBLIC_HEADLINES = PUBLIC_ACTS.map((a) => `public_${a}` as const);
 
 /** Aussicht für den Ölpreis bis zum Rundenende. */
 export type Outlook = 'crash' | 'fall' | 'steady' | 'rise';
@@ -31,6 +35,7 @@ export const HEADLINE_IDS = [
   'jacob_gusher',
   'jacob_find',
   'classifieds',
+  ...PUBLIC_HEADLINES,
   ...WORLD_HEADLINES,
 ] as const;
 export type HeadlineId = (typeof HEADLINE_IDS)[number];
@@ -58,6 +63,8 @@ export interface Newspaper {
   front: Headline;
   /** Kurzmeldungen zur letzten Runde, höchstens newspaper.maxItems. */
   items: Headline[];
+  /** Wahlergebnis (4.2), nur in der Ausgabe direkt nach einer Wahl. */
+  election: ElectionReport | null;
 }
 
 /**
@@ -111,6 +118,9 @@ export function newsItems(state: GameState, balance: Balance): HeadlineId[] {
   if (state.rival.wells.some((w) => w.status === 'found' && w.rate === ratePerWell)) {
     ids.push('rival_find');
   }
+  // Öffentliches Handeln (4.2): Worüber man über Jacob redet – die lauteste Tat der letzten Runde.
+  const tat = loudestAct(state.worldModel);
+  if (tat) ids.push(`public_${tat}`);
   // Weltmodell (4.1): höchstens eine Meldung aus der Welt – was geschah, sonst ein Frühwarnzeichen.
   // Große Ereignisse (Crash, Krieg, Verstaatlichung, Riesenfund) stehen ganz vorn, alles andere hinten an.
   const welt = worldHeadline(state.worldModel, balance.worldModel);
@@ -128,7 +138,7 @@ const FRONT: Record<Outlook, HeadlineId> = {
 };
 
 /** Die Zeitung zu Beginn der laufenden Runde. */
-export function makeNewspaper(state: GameState, balance: Balance, content: NewspaperContent, lang?: Lang): Newspaper {
+export function makeNewspaper(state: GameState, balance: Balance, content: NewspaperContent, lang?: Lang, politics?: PoliticsContent): Newspaper {
   const headline = (id: HeadlineId): Headline => ({
     id,
     title: localize(content.headlines[id].title, lang),
@@ -138,6 +148,7 @@ export function makeNewspaper(state: GameState, balance: Balance, content: Newsp
     name: localize(content.name, lang),
     front: headline(FRONT[marketOutlook(state, balance)]),
     items: newsItems(state, balance).map(headline),
+    election: politics ? electionReport(state.worldModel, politics, lang) : null,
   };
 }
 

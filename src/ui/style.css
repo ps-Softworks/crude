@@ -297,6 +297,15 @@ a.feedback.gross { font-size: 1.05rem; }
 .zeitung-titel p { margin: 0 0 8px; }
 .zeitung-meldungen { margin: 0; padding: 6px 0 0; list-style: none; border-top: 1px solid var(--tinte-weich); font-size: 0.97rem; columns: 2 280px; column-rule: 1px solid var(--linie); column-gap: 24px; }
 .zeitung-meldungen li { margin-bottom: 4px; break-inside: avoid; }
+.zeitung-wahl { margin-top: 8px; padding-top: 6px; border-top: 3px double var(--tinte); }
+.zeitung-wahl h3 { margin: 0 0 4px; font-size: 1.05rem; text-align: center; font-variant: small-caps; letter-spacing: 0.06em; }
+.zeitung-wahl-ergebnis { margin: 0; padding: 0; list-style: none; }
+.zeitung-wahl-ergebnis li { display: grid; grid-template-columns: 8.5em 1fr 3.5em; align-items: center; gap: 8px; font-size: 0.95rem; }
+.zeitung-wahl-ergebnis li .balken { height: 0.6em; background: var(--tinte-weich); justify-self: start; max-width: 100%; }
+.zeitung-wahl-ergebnis li.sieger { font-weight: 700; }
+.zeitung-wahl-ergebnis li.sieger .balken { background: var(--tinte); }
+.zeitung-wahl-ergebnis li .anteil { text-align: right; }
+.zeitung-wahl-programm { margin: 6px 0 0; font-size: 0.93rem; }
 
 /* Silhouetten (2.12): Scherenschnitt im Oval statt Porträt. */
 .silhouette { flex: none; display: block; }

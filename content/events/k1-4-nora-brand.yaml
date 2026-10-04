@@ -29,6 +29,7 @@
       marks: [nora_ehrlich]
       effects: { strength: 5, price: -0.03 }
     - id: bestechen
+      public: [press_scandal]
       label: { de: "Ihr 50 $ für einen freundlichen Artikel anbieten", en: "Offer her 50 $ for a friendly article" }
       result:
         de: >-

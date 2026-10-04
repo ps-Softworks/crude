@@ -97,6 +97,80 @@ headlines:
       de: Gebrauchter Bohrturm zu verkaufen, kaum benutzt. Zimmer frei in der Front Street, nur an ordentliche Herren.
       en: Used derrick for sale, hardly used. Room to let on Front Street, respectable gentlemen only.
 
+  # --- Öffentliches Handeln (4.2): Worüber man in der letzten Runde über Jacob
+  # redete – höchstens eine Meldung, die lauteste zuerst. Die Tat verschiebt am
+  # Rundenende die Stimmung im Land und die Parteien (balance.yaml, worldModel.acts). ---
+  public_price_war:
+    title:
+      de: Preiskampf am Salt Hill
+      en: Price war at Salt Hill
+    text:
+      de: Die Unabhängigen wehren sich gegen den Trust, Harlan vorneweg. In Cordova fragt man, wer die kleinen Förderer schützt – die Provinzliga hat eine Antwort.
+      en: The independents are fighting back against the Trust, Harlan in the lead. In Cordova people ask who protects the small producers – the Provincial League has an answer.
+  public_field_fire:
+    title:
+      de: Feuer bei Harlan
+      en: Fire at Harlan's
+    text:
+      de: Schwarzer Rauch über dem Salt Hill, bis Port Ellis zu sehen. Die Leser fragen, wer die Felder beaufsichtigt. Der Volksbund fordert Gesetze.
+      en: Black smoke over Salt Hill, visible from Port Ellis. Readers ask who supervises the fields. The People's League is calling for laws.
+  public_strike:
+    title:
+      de: Stillstand bei Harlan
+      en: Standstill at Harlan's
+    text:
+      de: Harlans Männer haben die Arbeit niedergelegt. In den Versammlungen des Volksbunds wird ihr Name genannt.
+      en: Harlan's men have laid down their tools. Their name is spoken at the People's League meetings.
+  public_strike_break:
+    title:
+      de: Streikbrecher am Salt Hill
+      en: Strikebreakers at Salt Hill
+    text:
+      de: Harlan holt neue Männer vom Hafen, die alten stehen am Zaun. Der Courier druckt ein Bild davon. Der Volksbund hat seinen Fall.
+      en: Harlan brings new men from the docks while the old ones stand at the fence. The Courier prints a picture of it. The People's League has its case.
+  public_charity:
+    title:
+      de: Ein Ölmann gibt
+      en: An oilman gives
+    text:
+      de: Jacob Harlan spendet für die Stadt. Am Sonntag wird sein Name von der Kanzel genannt, und die Leute am Hafen nicken.
+      en: Jacob Harlan has given to the town. On Sunday his name is read from the pulpit, and the men at the harbour nod.
+  public_support_handel:
+    title:
+      de: Harlan hilft der Handelspartei
+      en: Harlan helps the Commerce Party
+    text:
+      de: Der junge Förderer steht auf der Liste der Freunde der Handelspartei. In den Kontoren des Trusts zählt man solche Namen.
+      en: The young producer is on the Commerce Party's list of friends. In the Trust's offices such names are counted.
+  public_support_volksbund:
+    title:
+      de: Harlan gibt dem Volksbund
+      en: Harlan gives to the People's League
+    text:
+      de: Flugblätter gegen die Tarife, mit Harlans Namen darunter. Am Bahnhof sieht man das nicht gern.
+      en: Handbills against the tariffs, with Harlan's name at the bottom. At the railway station they don't like it.
+  public_support_provinz:
+    title:
+      de: Harlan steht zur Provinzliga
+      en: Harlan stands with the Provincial League
+    text:
+      de: Sein Name steht unter der Petition der Liga, gleich unter den Farmern. Cordova merkt sich, wer zu den Kleinen hält.
+      en: His name is on the League's petition, just below the farmers. Cordova remembers who stands with the little men.
+  public_press_praise:
+    title:
+      de: Ein Mann der Zukunft?
+      en: A man of the future?
+    text:
+      de: Der Courier schreibt freundlich über Jacob Harlan. Wer Zeitung liest, glaubt an das Öl – und ein wenig an den Fortschritt.
+      en: The Courier writes kindly of Jacob Harlan. Whoever reads the paper believes in oil – and a little in progress.
+  public_press_scandal:
+    title:
+      de: Skandal am Salt Hill
+      en: Scandal at Salt Hill
+    text:
+      de: Was der Courier über Harlan schreibt, wird im Saloon vorgelesen. Die Ölmänner seien alle gleich, sagen die Farmer.
+      en: What the Courier writes about Harlan is read aloud in the saloon. The oilmen are all the same, the farmers say.
+
   # --- Weltmodell (4.1): höchstens eine Meldung je Runde. Erst, was geschah,
   # sonst ein Frühwarnzeichen (Schwellen in balance.yaml, worldModel.news). ---
   world_crash:
@@ -211,3 +285,25 @@ headlines:
     text:
       de: Beide Mächte rüsten ihre Flotten auf und kaufen Öl, wo sie es kriegen. Die Zeitungen in Übersee sprechen schon vom Krieg.
       en: Both powers are building up their fleets and buying oil wherever they can get it. The papers overseas are already talking of war.
+  # 4.2: Umfrage kurz vor der Wahl (worldModel.news.pollFrom Runden vorher): wer vorn liegt.
+  world_poll_handel:
+    title:
+      de: Umfrage sieht Handelspartei vorn
+      en: Poll puts the Commerce Party ahead
+    text:
+      de: Vor der Wahl in Hallstead geben sich die Banken zuversichtlich. Die Wettbüros zahlen auf die Handelspartei am wenigsten.
+      en: Ahead of the Hallstead election the banks are confident. The betting shops pay least on the Commerce Party.
+  world_poll_volksbund:
+    title:
+      de: Volksbund liegt vor der Wahl vorn
+      en: People's League leads before the election
+    text:
+      de: Die Säle des Volksbunds sind voll, die Wettbüros setzen auf Farmer und Arbeiter. In den Trusts denkt man über Anwälte nach.
+      en: The People's League halls are full, the betting shops back the farmers and workers. In the trusts people are thinking about lawyers.
+  world_poll_provinz:
+    title:
+      de: Provinzliga hofft auf den Sieg
+      en: Provincial League hopes for victory
+    text:
+      de: Von Cordova bis an die Grenze hängen die Plakate der Liga. Die Wettbüros halten einen Sieg der Provinzen für möglich.
+      en: From Cordova to the border hang the League's posters. The betting shops think a victory for the provinces is possible.

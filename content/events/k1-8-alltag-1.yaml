@@ -360,6 +360,7 @@
   chance: 0.08
   choices:
     - id: helfen
+      public: [press_praise]
       label: { de: "Den ganzen Trupp zum Löschen schicken", en: "Send the whole crew to fight the fire" }
       result:
         de: Bis zum Morgen werfen Jacobs Männer Erde ins Feuer. Bullard steht rußschwarz daneben und gibt Jacob wortlos die Hand.
@@ -374,6 +375,7 @@
         en: Jacob's derricks stand. Bullard's burns to the ground. By morning everyone on the hill knows where Jacob stood.
       effects: { strength: -3 }
     - id: schlafen
+      public: [field_fire]
       label: { de: "Das ist Bullards Feuer", en: "That's Bullard's fire" }
       result:
         de: Das Feuer springt auf Jacobs Öltank über. Bullards Männer sehen zu.

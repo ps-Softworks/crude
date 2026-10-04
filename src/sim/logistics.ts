@@ -14,6 +14,7 @@
 import type { Balance, TransportMode } from './balance';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
+import { recordAct } from './politics';
 import { Rng, seedFromString, type RngState } from './rng';
 import { markRound, RIVAL_MARKS } from './trust';
 
@@ -171,7 +172,8 @@ export function settleStorage(input: GameState, balance: Balance): GameState {
   if (rng.float() < s.fireChance) {
     const weg = state.oilStock * s.fireLoss;
     state = lose(state, weg);
-    state = { ...state, log: logged(state, `Ein Tank brennt! ${bbl(weg)} Barrel Öl gehen in Rauch auf.`) };
+    // Öffentliches Handeln (4.2): Ein Feldbrand bei Jacob drückt am Rundenende die Stimmung im Land.
+    state = recordAct({ ...state, log: logged(state, `Ein Tank brennt! ${bbl(weg)} Barrel Öl gehen in Rauch auf.`) }, 'field_fire');
   }
   return { ...state, logistics: { ...state.logistics, rng: rng.state } };
 }

@@ -304,6 +304,7 @@
       appointments: 0
       default: true
     - id: verband
+      public: [price_war]
       label: { de: "Delgados Verband beitreten (100 $)", en: "Join Delgado's association (100 $)" }
       result:
         de: >-

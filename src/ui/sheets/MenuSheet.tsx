@@ -1,7 +1,9 @@
 // Fenster „Menü“ (☰ in der Kopfleiste; die Schublade bleibt fürs Schattenbuch frei): Neues Spiel, Feedback, Einstiegshilfe,
 // Zeitung, Rundgang, Tastenhilfe – und mit Debug-Bereich (?debug=1) der Reiter „Debug“.
 
+import type { Party } from '../../sim/world';
 import { FeedbackLink } from '../FeedbackLink';
+import { politicsContent } from '../politics';
 import { keyLabel, SHORTCUTS } from '../keys';
 import { Tabs, activeTab } from '../sheet/Tabs';
 import { tester } from '../tester';
@@ -29,7 +31,7 @@ function WorldDebug({ ctx }: { ctx: SheetContext }) {
   const w = ctx.game.worldModel;
   if (!w) return null;
   const z = (x: number, st = 0) => x.toLocaleString('de-DE', { minimumFractionDigits: st, maximumFractionDigits: st });
-  const PARTEI = { handel: 'Handelspartei', volksbund: 'Volksbund', provinz: 'Provinzliga' };
+  const PARTEI = (p: Party) => politicsContent.parties[p].name.de;
   return (
     <dl className="terms">
       <dt>Weltpreis</dt>
@@ -45,8 +47,13 @@ function WorldDebug({ ctx }: { ctx: SheetContext }) {
       <dd>{z(w.mood)}</dd>
       <dt>Politik</dt>
       <dd>
-        {PARTEI[w.government]} regiert · Wahl in {w.electionIn} Runden · H {z(w.parties.handel * 100)} % / V {z(w.parties.volksbund * 100)} % / P{' '}
+        {PARTEI(w.government)} regiert · Wahl in {w.electionIn} Runden · H {z(w.parties.handel * 100)} % / V {z(w.parties.volksbund * 100)} % / P{' '}
         {z(w.parties.provinz * 100)} %
+      </dd>
+      <dt>Letzte Wahl / Handeln</dt>
+      <dd>
+        {w.lastElection ? `Weltrunde ${w.lastElection.round}: ${PARTEI(w.lastElection.winner)} (vorher ${PARTEI(w.lastElection.previous)})` : 'noch keine'} · diese Runde:{' '}
+        {w.acts.length > 0 ? w.acts.join(', ') : '–'} · zuletzt: {w.actsDone.length > 0 ? w.actsDone.join(', ') : '–'}
       </dd>
       <dt>Außenspannung</dt>
       <dd>

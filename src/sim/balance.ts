@@ -3,6 +3,7 @@
 // Seit 0.2.15+5 gehört die Karte (content/map.yaml) mit dazu: parseGameData.
 
 import { parseWorldMap, type WorldMap } from './worldMap';
+import { PARTIES, PUBLIC_ACTS, type Party, type PublicAct } from './world';
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
 
@@ -498,6 +499,9 @@ export interface RivalsBalance {
   wildcatters: WildcattersBalance;
 }
 /** Weltmodell (4.1, GDD §7.1): Zahlen der neun Weltgrößen, Details in content/balance.yaml. */
+/** Wirkung einer öffentlichen Tat (4.2): Stimmungspunkte und Anteile je Partei (vor dem Normieren). */
+export type ActEffect = { mood: number } & Record<Party, number>;
+
 export interface WorldModelBalance {
   start: {
     tech: Range;
@@ -548,6 +552,13 @@ export interface WorldModelBalance {
   };
   mood: { speed: number; price: number; crash: number; war: number; boom: number; noise: number };
   politics: { drift: number; noise: number; minShare: number; fatigue: number; revert: number; electionEvery: number };
+  /**
+   * Öffentliches Handeln (4.2): je Tat Stimmungspunkte und Verschiebung der
+   * Parteianteile; je Runde höchstens ± maxMood bzw. ± maxParty je Partei.
+   */
+  acts: { maxMood: number; maxParty: number } & Record<PublicAct, ActEffect>;
+  /** Parteiprogramme (4.2): scrutiny = Gewicht der Verfehlungen (Stimmung nach unten), solange die Partei regiert. */
+  programs: Record<Party, { scrutiny: number }>;
   tension: {
     base: number;
     revert: number;
@@ -583,7 +594,8 @@ export interface WorldModelBalance {
     rateMaxAdd: number;
     nationalBarrels: number;
   };
-  news: { creditEasy: number; creditTight: number; moodAngry: number; tensionHigh: number };
+  /** pollFrom (4.2): so viele Runden vor der Wahl bringt die Zeitung eine Umfrage. */
+  news: { creditEasy: number; creditTight: number; moodAngry: number; tensionHigh: number; pollFrom: number };
 }
 
 export interface Balance {
@@ -1554,7 +1566,7 @@ function parseRanches(raw: unknown): RanchBalance {
 /**
  * Weltmodell (4.1): Alle Zahlen eines Blocks sind Pflicht. Grundregel: nicht
  * negativ; Anteile (Chancen, Rückkehr, Gewichte) zwischen 0 und 1; Skalen 0–100.
- * Vorzeichen frei sind nur die Regierungswirkungen aufs Kreditklima.
+ * Vorzeichen frei sind nur die Regierungswirkungen aufs Kreditklima und die Wirkungen öffentlichen Handelns (acts, 4.2).
  */
 function parseWorldModel(raw: unknown): WorldModelBalance {
   const w = 'worldModel';
@@ -1684,7 +1696,16 @@ function parseWorldModel(raw: unknown): WorldModelBalance {
       creditTight: scale('news.creditTight'),
       moodAngry: scale('news.moodAngry'),
       tensionHigh: scale('news.tensionHigh'),
+      pollFrom: integerInRange(raw, `${w}.news.pollFrom`, 0, 1000),
     },
+    acts: {
+      maxMood: nn('acts.maxMood'),
+      maxParty: sh('acts.maxParty'),
+      ...(Object.fromEntries(
+        PUBLIC_ACTS.map((a) => [a, { mood: free(`acts.${a}.mood`), ...Object.fromEntries(PARTIES.map((p) => [p, free(`acts.${a}.${p}`)])) }]),
+      ) as Record<PublicAct, ActEffect>),
+    },
+    programs: Object.fromEntries(PARTIES.map((p) => [p, { scrutiny: nn(`programs.${p}.scrutiny`) }])) as Record<Party, { scrutiny: number }>,
   };
   if (wm.price.min <= 0 || wm.price.min > 1 || wm.price.max < 1) {
     throw new BalanceError('balance.yaml: "worldModel.price" – min muss in (0, 1] liegen, max mindestens 1');

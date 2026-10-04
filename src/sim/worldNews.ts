@@ -3,6 +3,7 @@
 // steht in content/newspaper.yaml (Schlüssel world_…).
 
 import type { WorldModelBalance } from './balance';
+import { pollLeader } from './politics';
 import type { Party, WorldState } from './world';
 
 export const WORLD_HEADLINES = [
@@ -22,6 +23,9 @@ export const WORLD_HEADLINES = [
   'world_credit_easy',
   'world_mood_angry',
   'world_tension',
+  'world_poll_handel',
+  'world_poll_volksbund',
+  'world_poll_provinz',
 ] as const;
 export type WorldHeadline = (typeof WORLD_HEADLINES)[number];
 
@@ -29,6 +33,12 @@ const ELECTION: Record<Party, WorldHeadline> = {
   handel: 'world_election_handel',
   volksbund: 'world_election_volksbund',
   provinz: 'world_election_provinz',
+};
+
+const POLL: Record<Party, WorldHeadline> = {
+  handel: 'world_poll_handel',
+  volksbund: 'world_poll_volksbund',
+  provinz: 'world_poll_provinz',
 };
 
 const REELECTED: Record<Party, WorldHeadline> = {
@@ -45,8 +55,8 @@ export const MAJOR_WORLD_HEADLINES: readonly WorldHeadline[] = ['world_crash', '
 
 /**
  * Höchstens eine Meldung aus der Welt: zuerst, was in der letzten Runde geschah
- * (Crash vor Krieg vor Verstaatlichung vor Riesenfund vor Frieden …), sonst ein Zustand jenseits der Schwellen aus
- * balance.yaml (worldModel.news). Ruhige Welt → keine Meldung.
+ * (Crash vor Krieg vor Verstaatlichung vor Riesenfund vor Frieden …), sonst kurz vor der Wahl eine Umfrage (4.2),
+ * sonst ein Zustand jenseits der Schwellen aus balance.yaml (worldModel.news). Ruhige Welt → keine Meldung.
  */
 export function worldHeadline(world: WorldState | undefined, wb: WorldModelBalance): WorldHeadline | null {
   if (!world) return null;
@@ -60,6 +70,9 @@ export function worldHeadline(world: WorldState | undefined, wb: WorldModelBalan
   if (n.includes('reelection')) return REELECTED[world.government];
   if (n.includes('recovery')) return 'world_recovery';
   const s = wb.news;
+  // Umfrage (4.2): kurz vor der Wahl, wer vorn liegt – ein Frühwarnzeichen wie volle Tanks.
+  const umfrage = pollLeader(world, s.pollFrom);
+  if (umfrage) return POLL[umfrage];
   if (world.crash > 0 || world.credit <= s.creditTight) return 'world_credit_tight';
   if (world.credit >= s.creditEasy) return 'world_credit_easy';
   if (world.tension >= s.tensionHigh) return 'world_tension';
