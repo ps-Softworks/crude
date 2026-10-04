@@ -4,7 +4,7 @@
 // Aufruf: npm run bots
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { loadBalance } from '../src/sim/testBalance';
-import { blindWildcatChance, botTable, buildTable, checkTargets, investVariant, pipelineLine, runBots, runInvestVariant, targetTable, transportTable } from '../src/sim/bots';
+import { blindWildcatChance, botTable, buildTable, checkTargets, crisisTable, investVariant, pipelineLine, runBots, runInvestVariant, targetTable, transportTable } from '../src/sim/bots';
 import { loadEvents } from '../src/sim/testEvents';
 
 const root = new URL('../', import.meta.url);
@@ -26,12 +26,14 @@ const variants = {
 const ausbau = buildTable(rows, variants);
 const targets = checkTargets(rows, blindWildcatChance(balance), balance, variants);
 const zielTabelle = targetTable(targets);
+const krisen = crisisTable(rows);
 const ohneSieger = Math.max(0, 1 - rows.reduce((s, r) => s + r.winRate, 0));
 const sekunden = ((Date.now() - start) / 1000).toFixed(1);
 
 console.log(table);
 console.log(`\n${wege}\nPipeline: ${pipelineLine(rows)}`);
 console.log(`\n${ausbau}\n„alles ausbauen“ schlägt den Standard-Bot in ${prozent(variants.all.beatsStandard)}, „nie ausbauen“ in ${prozent(variants.none.beatsStandard)} der Seeds mit unterschiedlichem Ausgang.`);
+console.log(`\nKreditzyklus (Bankpanik oder Crash im Kapitel):\n${krisen}`);
 console.log(`\n${zielTabelle}`);
 console.log(`\n${balance.bots.games} Partien je Strategie in ${sekunden} s.`);
 const verfehlt = targets.filter((t) => !t.ok);
@@ -86,6 +88,12 @@ ${ausbau}
 „Alles ausbauen“ schlägt den Standard-Bot in ${prozent(variants.all.beatsStandard)}, „nie ausbauen“ in ${prozent(variants.none.beatsStandard)} der Seeds mit unterschiedlichem Ausgang.
 
 - **Ausbau-Charakter** (balance.yaml bots.invest): vorsichtig ${JSON.stringify(balance.bots.invest.cautious)}; gierig ${JSON.stringify(balance.bots.invest.greedy)}; ausgewogen ${JSON.stringify(balance.bots.invest.balanced)}.
+
+## Kreditzyklus
+
+Bankrottquote je Strategie, getrennt nach Seeds, in deren Welt während des Kapitels eine Kreditkrise (Bankpanik oder Crash, 4.4) kommt, und Seeds ohne. Eingeteilt wird an der Welt allein (ohne Jacobs Handeln), damit eine frühe Pleite die Einteilung nicht verzerrt. In Kapitel 1 ist es fast immer eine Bankpanik; Crash und Embargo kommen erst in späteren Kapiteln (docs/weltmodell.md). Kein Zielwert, nur Kennzahl.
+
+${krisen}
 
 ## Zielwerte Kapitel 1
 

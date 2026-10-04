@@ -155,6 +155,15 @@ let crashsAlle = 0;
 let gewarnt = 0;
 for (const r of runs) for (const c of r.crashStarts) { crashsAlle += 1; if (r.bubbleWarnings.some((b) => b < c && b >= c - 8)) gewarnt += 1; }
 const warnAnteil = runs.reduce((s, r) => s + r.bubbleWarnings.length, 0) / (runs.length * CAMPAIGN_ROUNDS);
+/** Ausland (4.4): Anteil der Aufstände bzw. Embargos mit Warnung in den 8 Runden davor, und wie oft die Warnung steht. */
+function auslandWarnung(starts: (r: (typeof runs)[number]) => number[], warn: (r: (typeof runs)[number]) => number[]): { n: number; anteil: number; runden: number } {
+  let n = 0;
+  let ja = 0;
+  for (const r of runs) for (const s of starts(r)) { n += 1; if (warn(r).some((b) => b < s && b >= s - 8)) ja += 1; }
+  return { n, anteil: ja / Math.max(1, n), runden: runs.reduce((s, r) => s + warn(r).length, 0) / (runs.length * CAMPAIGN_ROUNDS) };
+}
+const warnAufstand = auslandWarnung((r) => r.uprisingStarts, (r) => r.unrestWarnings);
+const warnEmbargo = auslandWarnung((r) => r.embargoStarts, (r) => r.qasirWarnings);
 const kriegKapitel1 = kapitel1.filter((r) => r.final.counts.wars > 0).length / kapitel1.length;
 
 // --- Beispielwelt -----------------------------------------------------------
@@ -253,7 +262,7 @@ ${krisenTabelle()}
 
 Regierung: ${regierungZeile()}.
 
-Kreditzyklus (4.4): Welten mit großem Crash in den ersten 20 Jahren: **${prozent(crash20)}** (Fertig-Kriterium 5–25 %). Vor ${prozent(gewarnt / Math.max(1, crashsAlle))} der ${crashsAlle} Crashs warnte die Zeitung in den 8 Runden davor vor der Blase; die Warnung steht in ${prozent(warnAnteil)} aller Runden.
+Kreditzyklus (4.4): Welten mit großem Crash in den ersten 20 Jahren: **${prozent(crash20)}** (Fertig-Kriterium 5–25 %). Vor ${prozent(gewarnt / Math.max(1, crashsAlle))} der ${crashsAlle} Crashs warnte die Zeitung in den 8 Runden davor vor der Blase; die Warnung steht in ${prozent(warnAnteil)} aller Runden. Ausland: Vor ${prozent(warnAufstand.anteil)} der ${warnAufstand.n} Aufstände stand „Unruhen in Costa Negra“ (in ${prozent(warnAufstand.runden)} aller Runden), vor ${prozent(warnEmbargo.anteil)} der ${warnEmbargo.n} Embargos „Verstimmung in Qasir“ (in ${prozent(warnEmbargo.runden)} aller Runden).
 
 ## Krisen über die Zeit
 

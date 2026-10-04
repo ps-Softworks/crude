@@ -3,7 +3,7 @@
 Stand: 2026-10-04 · Version 0.4.4
 
 Erzeugt mit `npm run welt` (tools/weltlaeufe.ts, Regeln in src/sim/world.ts und src/sim/laws.ts, Zahlen in content/balance.yaml unter worldModel, Gesetze in content/laws/).
-300 Welten (Seeds `welt-0` bis `welt-299`) über eine ganze Kampagne: 292 Runden = 73 Spieljahre, **ohne Spieler**. Rechenzeit 0.3 s.
+300 Welten (Seeds `welt-0` bis `welt-299`) über eine ganze Kampagne: 292 Runden = 73 Spieljahre, **ohne Spieler**. Rechenzeit 1.8 s.
 
 - Alle Werte endlich: **ja** · Krisenzahlen in der Mehrheit der Welten im GDD-Ziel: **ja**
 
@@ -49,7 +49,7 @@ Median je Spieljahr als Kurve (Jahr 0 bis 73):
 
 Regierung: Handelspartei 25,6 %, Volksbund 32,5 %, Provinzliga 41,9 % der Regierungszeit.
 
-Kreditzyklus (4.4): Welten mit großem Crash in den ersten 20 Jahren: **9,3 %** (Fertig-Kriterium 5–25 %). Vor 100,0 % der 130 Crashs warnte die Zeitung in den 8 Runden davor vor der Blase; die Warnung steht in 4,9 % aller Runden.
+Kreditzyklus (4.4): Welten mit großem Crash in den ersten 20 Jahren: **9,3 %** (Fertig-Kriterium 5–25 %). Vor 100,0 % der 130 Crashs warnte die Zeitung in den 8 Runden davor vor der Blase; die Warnung steht in 4,9 % aller Runden. Ausland: Vor 76,1 % der 866 Aufstände stand „Unruhen in Costa Negra“ (in 4,2 % aller Runden), vor 95,2 % der 165 Embargos „Verstimmung in Qasir“ (in 1,8 % aller Runden).
 
 ## Krisen über die Zeit
 
@@ -256,11 +256,11 @@ Eine neue Welt startet mit halber Gleichgewichts-Verschuldung zu ihrem Kreditkli
 - **Qasir** (Unmut 0–100): steigt, wenn die Großmächte um sein Öl werben (Spannung über 40), in jeder Kriegsrunde und bei Nationalismus über 50. Ab 70 droht ein **Ölembargo** (3–6 Runden): Qasirs ganzer Anteil fehlt der Welt. Der Anteil wächst mit dem Ölhunger der Welt (2 % + 3 % je Nachfragepunkt über 1, höchstens 25 %) – früh harmlos, spät ein Schock (passend zum Finale „Embargo der Förderländer“, GDD §13).
 - Wirkung auf die Ölnachfrage über Aufrüstung/Krieg (schon 4.1), auf den Preis über den Förderausfall (`foreignOffline`). `tension.scarcity` 20 → 35: Weil große Crashs seltener sind, fehlten sonst Preisspitzen, und Kriege wären fast verschwunden (0,4 statt 1,3 je Kampagne).
 
-**Frühwarnzeichen in der Zeitung (eine Weltmeldung je Runde, nie eine Zahl).** Ereignisse: Krach (Crash), „Ansturm auf die Banken“ (Panik), Embargo, Aufstand – groß, stehen vorn; Ende von Embargo/Aufstand, Erholung – klein. Zustände: Banken vorsichtig (knapp oder Panik/Crash wirkt nach), **„Ganz Hallstead kauft auf Pump“** (überhitzt – die Warnung vor dem Crash), Geld billig, diplomatische Noten, „Verstimmung in Qasir“, „Unruhen in Costa Negra“, Unmut.
+**Frühwarnzeichen in der Zeitung (eine Weltmeldung je Runde, nie eine Zahl).** Ereignisse: Krach (Crash), „Ansturm auf die Banken“ (Panik), Embargo, Aufstand – groß, stehen vorn; Ende von Embargo/Aufstand, Erholung – klein. Zustände in dieser Rangfolge: **„Ganz Hallstead kauft auf Pump“** (überhitzt – die Warnung vor dem Crash), „Verstimmung in Qasir“ (Unmut ab 62, Embargo ab 70), „Unruhen in Costa Negra“ (Unruhe ab 62, Aufstand ab 65), Banken vorsichtig (knapp oder Panik/Crash wirkt nach), Geld billig, diplomatische Noten, Unmut.
 
 **Gemessen (300–400 Welten).** Großer Crash in ~9–15 % der 20-Jahres-Welten (je nach Seeds; Fertig-Kriterium 5–25 %, Test mit 400 Welten), 0 % in Kapitel 1; Kreditkrisen (Panik + Crash) je Kampagne Ø ~3, ~66–72 % der Welten im GDD-Ziel 2–4 (§15 „Kreditkrisen“). Vor praktisch jedem Crash stand die Blasen-Warnung in den 8 Runden davor in der Zeitung; sie steht in ~5 % aller Runden. Aufstände Ø ~2,9 je Kampagne (in fast 90 % der Welten), Embargos Ø ~0,5 (in ~30 % der Welten, in den ersten 20 Jahren praktisch nie). Kriege Ø ~1,3, Preiseinbrüche ≥ 40 % in ~59 % der Welten. `npm run bots`: alle 15 Zielwerte im Rahmen (Pleitequote ausgewogen 0,8 %, gierig 15,3 %).
 
-**Spielstand.** Format 17; Stände aus Format 12–16 bekommen `withCreditForeignDefaults`: keine Panik, Verschuldung passend zum gespeicherten Kreditklima, ruhiges Ausland, neue Zähler bei 0.
+**Spielstand.** Format 17; Stände aus Format 12–16 bekommen `withCreditForeignDefaults`: keine Panik, Verschuldung passend zum gespeicherten Kreditklima (aber höchstens knapp unter der Blasen-Schwelle, `startLeverage`), ruhiges Ausland, neue Zähler bei 0.
 
 **Entscheidungen (ohne Rückfrage).**
 - *Widerspruch Roadmap ↔ GDD §15:* Die Roadmap will Crashs in 5–25 % der 20-Jahres-Welten, das GDD 2–4 Kreditkrisen je Kampagne (bisher ~60 % der Welten mit Crash in 20 Jahren). Gelöst mit zwei Stufen: „Kreditkrise“ (GDD) = Bankpanik oder Crash, „Kreditcrash“ (Roadmap) = nur der große. Passt zum GDD („Zinssprung, Bankpanik, Crash“; Zeitsprung I: „eine Bankenpanik, falls das Kreditklima überhitzt ist“).
@@ -270,3 +270,10 @@ Eine neue Welt startet mit halber Gleichgewichts-Verschuldung zu ihrem Kreditkli
 - Jede Runde zieht jetzt 20 statt 14 Zufallszahlen (gleich viele in jeder Runde) – alle Welten sind dadurch neu gewürfelt, die Statistik oben ist neu gemessen.
 
 **Offen / Entwurf.** Alle neuen Zahlen und Zeitungstexte sind Platzhalter bzw. Entwürfe. Aktienkurse je Phase und Kauf auf Kredit (Kapitel 3), Kündigung von Krediten im Crash, eigene Bank mit Bankrun, Volkswirt im Personal (genauere Schätzung), Konzessionen in Costa Negra/Qasir (Kapitel 4) und wer dort verstaatlicht, Spielereingriffe (Öl an eine Seite liefern, Lobby für/gegen Kriegseintritt), Bankaufsicht als Gesetz (drückt die Verschuldung), Welt-Einstellungen ruhig/stürmisch. Seed-Streuung beim Crash-Anteil (9–15 %) liegt komfortabel im Rahmen, aber nicht genau in der Mitte.
+
+## Nachprüfung 4.4 (gleiche Version 0.4.4)
+
+- **Alter Spielstand mitten im Boom** (bestätigt): Der Ersatzwert rechnete aus Klima 90 eine Verschuldung von 75 – die Welt war sofort nach dem Laden überhitzt, und der nächste Auslöser wäre ohne Boomverlauf ein großer Crash gewesen. Jetzt `startLeverage`: höchstens `bubbleFrom − 1` (gilt auch für neue Welten; dort ändert sich mit den heutigen Zahlen nichts, sie kommen höchstens auf ~40). Test mit einem Format-16-Stand bei Klima 90.
+- **Frühwarnung Ausland** (bestätigt): Nur rund die Hälfte der Aufstände hatte „Unruhen in Costa Negra“ vorher, weil die Meldung schon ab 55 kam (häufigste Weltmeldung, ~6 % der Runden) und hinter Spannung, Geld und Nachwirkung der Panik stand; „Verstimmung in Qasir“ ging im Krieg hinter den diplomatischen Noten unter. Jetzt: Schwellen 62/62 (knapp unter Aufstand 65/Embargo 70, `worldModel.news`), Rang direkt nach der Blase. Gemessen (300 Kampagnen): ~75 % der Aufstände und ~95 % der Embargos gewarnt; „Unruhen in Costa Negra“ steht in ~4 %, „Verstimmung in Qasir“ in ~2 % der Runden. balance.yaml prüft, dass die Warn-Schwellen nicht über den Auslöse-Schwellen liegen. Test analog zur Blasenwarnung. Rest-Lücke bei Aufständen: Unruhe springt manchmal in einer Runde über 65, oder eine Umfrage/ein Ereignis belegt die eine Weltmeldung der Runde.
+- **Kreditzyklus in Kapitel 1 kaum spürbar** (bestätigt, bewusst so gelassen): Kapitel 1 hat 16 Runden; dort gibt es Bankpaniken (in ~11 % der Welten), Bankrahmen und Zinsaufschlag je Phase und die Zeitungsmeldungen – aber keinen großen Crash (0 %) und kein Embargo (das erste kommt in aller Regel erst Jahrzehnte später). Das ist gewollt: Crash, Kündigung von Krediten und Embargo sind Stoff ab Kapitel 2/3 (Zeitsprünge, GDD §13), Kapitel 1 ist der Einstieg. Neue Kennzahl in `npm run bots` (docs/botlaeufe.md, Abschnitt „Kreditzyklus“): Bankrottquote je Strategie in Seeds mit/ohne Kreditkrise im Kapitel, eingeteilt an der Welt ohne Spieler. Ergebnis 0.4.4: gierig 17,3 % mit Krise gegenüber 15,1 % ohne (81 von 1000 Seeds mit Krise) – ein kleiner, aber sichtbarer Unterschied. Kein Zielwert; ob Kapitel 1 mehr Zyklus braucht, klärt das Balancing (GDD §15).
+

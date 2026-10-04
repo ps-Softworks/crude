@@ -295,6 +295,32 @@ describe('Fertig-Kriterium 4.4: Kreditcrash selten, aber möglich', () => {
     expect(runden).toBeLessThan(0.15);
   });
 
+  /** Anteil der Ereignisse, vor denen die Warnung in den 8 Runden davor stand. */
+  function gewarnt(starts: (r: (typeof kampagnen)[number]) => number[], warnings: (r: (typeof kampagnen)[number]) => number[]): { n: number; share: number } {
+    let n = 0;
+    let ja = 0;
+    for (const r of kampagnen) {
+      for (const s of starts(r)) {
+        n += 1;
+        if (warnings(r).some((b) => b < s && b >= s - 8)) ja += 1;
+      }
+    }
+    return { n, share: n > 0 ? ja / n : 0 };
+  }
+
+  it('vor den meisten Aufständen und Embargos warnt die Zeitung – ohne Dauerkulisse zu werden', () => {
+    const aufstand = gewarnt((r) => r.uprisingStarts, (r) => r.unrestWarnings);
+    expect(aufstand.n).toBeGreaterThan(300);
+    expect(aufstand.share).toBeGreaterThan(0.7);
+    // Die meisten Embargos fallen in Kriegszeiten – die Note aus Qasir darf hinter der Spannung nicht untergehen.
+    const embargo = gewarnt((r) => r.embargoStarts, (r) => r.qasirWarnings);
+    expect(embargo.n).toBeGreaterThan(50);
+    expect(embargo.share).toBeGreaterThan(0.8);
+    const runden = kampagnen.length * CAMPAIGN_ROUNDS;
+    expect(kampagnen.reduce((s, r) => s + r.unrestWarnings.length, 0) / runden).toBeLessThan(0.05);
+    expect(kampagnen.reduce((s, r) => s + r.qasirWarnings.length, 0) / runden).toBeLessThan(0.05);
+  });
+
   it('Aufstände in Costa Negra kommen in den meisten Welten vor, Embargos aus Qasir selten und spät', () => {
     const aufstand = kampagnen.filter((r) => r.final.counts.uprisings > 0).length / kampagnen.length;
     expect(aufstand).toBeGreaterThan(0.5);
@@ -374,6 +400,19 @@ describe('4.4 Spielstand (Format 17)', () => {
     expect(withCreditForeignDefaults(s.worldModel)).toEqual(s.worldModel);
   });
 
+  it('ein alter Stand mitten im Boom (Format 16, Klima 90) lädt nicht schon überhitzt', () => {
+    const s = newGame('altboom44', balance);
+    const { panic: _p, leverage: _l, foreign: _f, ...alt } = s.worldModel;
+    const text = JSON.stringify({ format: 16, appVersion: '0.4.3', savedRound: 1, state: { ...s, worldModel: { ...alt, credit: 90 } } });
+    const g = deserializeGame(text);
+    if (!g.ok) throw new Error(g.reason);
+    const w = g.state.worldModel;
+    expect(w.leverage).toBeLessThan(L.bubbleFrom);
+    expect(w.leverage).toBeLessThan(L.crashFrom);
+    expect(creditPhase(w, wb)).not.toBe('overheated');
+    expect(creditPhase(w, wb)).toBe('boom');
+  });
+
   it('ein Weltzustand ohne Ausland ist kaputt', () => {
     const { foreign: _f, ...ohne } = newWorld('kaputt44', wb);
     expect(isWorldState(ohne)).toBe(false);
@@ -392,6 +431,8 @@ describe('4.4 balance.yaml wird geprüft', () => {
   it('fehlende oder unsinnige Werte melden einen verständlichen Fehler', () => {
     expect(() => parseBalance(mitWert(['credit', 'leverage', 'bubbleFrom'], 90))).toThrow(/bubbleFrom/);
     expect(() => parseBalance(mitWert(['credit', 'tightFrom'], 70))).toThrow(/tightFrom/);
+    expect(() => parseBalance(mitWert(['news', 'unrestHigh'], 90))).toThrow(/unrestHigh/);
+    expect(() => parseBalance(mitWert(['news', 'qasirHigh'], 90))).toThrow(/qasirHigh/);
     expect(() => parseBalance(mitWert(['foreign', 'qasir', 'shareMax'], 2))).toThrow(BalanceError);
     expect(() => parseBalance(mitWert(['foreign', 'costaNegra', 'rounds'], { min: 1.5, max: 3 }))).toThrow(/ganze Runden/);
     expect(() => parseBalance(mitWert(['chapter1', 'limit', 'crash'], undefined))).toThrow(/limit.crash/);

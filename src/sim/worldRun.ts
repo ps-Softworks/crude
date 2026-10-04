@@ -52,6 +52,12 @@ export interface WorldRun {
   crisisStarts: number[];
   /** Runden, in denen die Zeitung vor der Blase warnt (worldHeadline = world_credit_bubble). */
   bubbleWarnings: number[];
+  /** Runden (ab 1), in denen ein Aufstand in Costa Negra bzw. ein Embargo aus Qasir begann (4.4). */
+  uprisingStarts: number[];
+  embargoStarts: number[];
+  /** Runden, in denen die Zeitung „Unruhen in Costa Negra“ bzw. „Verstimmung in Qasir“ meldet. */
+  unrestWarnings: number[];
+  qasirWarnings: number[];
   /** Gesetze (4.3): Runde des Beschlusses je Gesetz (null = in diesem Lauf nie), Anträge und Niederlagen. */
   lawPassed: Record<string, number | null>;
   lawProposals: Record<string, number>;
@@ -71,13 +77,22 @@ export function runWorld(seed: string, wb: WorldModelBalance, rounds: number, la
   const warStarts: number[] = [];
   const crisisStarts: number[] = [];
   const bubbleWarnings: number[] = [];
+  const uprisingStarts: number[] = [];
+  const embargoStarts: number[] = [];
+  const unrestWarnings: number[] = [];
+  const qasirWarnings: number[] = [];
   const lawFailures: Record<string, number> = Object.fromEntries(laws.map((l) => [l.id, 0]));
   for (let r = 1; r <= rounds; r++) {
     w = advanceWorld(w, wb, {}, laws);
     for (const n of w.laws.news) if (n.kind === 'failed') lawFailures[n.law] = (lawFailures[n.law] ?? 0) + 1;
     if (w.news.includes('crash')) crashStarts.push(r);
     if (w.news.includes('crash') || w.news.includes('panic')) crisisStarts.push(r);
-    if (worldHeadline(w, wb) === 'world_credit_bubble') bubbleWarnings.push(r);
+    const schlagzeile = worldHeadline(w, wb);
+    if (schlagzeile === 'world_credit_bubble') bubbleWarnings.push(r);
+    if (schlagzeile === 'world_costa_negra_unrest') unrestWarnings.push(r);
+    if (schlagzeile === 'world_qasir_unrest') qasirWarnings.push(r);
+    if (w.news.includes('uprising')) uprisingStarts.push(r);
+    if (w.news.includes('embargo')) embargoStarts.push(r);
     if (w.news.includes('war')) warStarts.push(r);
     prices.push(w.price);
     if (w.war > 0) warRounds += 1;
@@ -98,7 +113,7 @@ export function runWorld(seed: string, wb: WorldModelBalance, rounds: number, la
   }
   const lawPassed = Object.fromEntries(laws.map((l) => [l.id, w.laws.bills[l.id]?.passedRound ?? null]));
   const lawProposals = Object.fromEntries(laws.map((l) => [l.id, w.laws.bills[l.id]?.proposals ?? 0]));
-  return { seed, years, final: w, maxYearDrop, maxYearRise, warRounds, crashRounds, maxImbalance, governmentRounds, crashStarts, warStarts, crisisStarts, bubbleWarnings, lawPassed, lawProposals, lawFailures };
+  return { seed, years, final: w, maxYearDrop, maxYearRise, warRounds, crashRounds, maxImbalance, governmentRounds, crashStarts, warStarts, crisisStarts, bubbleWarnings, uprisingStarts, embargoStarts, unrestWarnings, qasirWarnings, lawPassed, lawProposals, lawFailures };
 }
 
 /** Viele Welten: Seeds `${prefix}-0` … `${prefix}-${count-1}`. */

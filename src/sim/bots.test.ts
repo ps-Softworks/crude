@@ -14,6 +14,8 @@ import {
   choiceValue,
   eventPolicy,
   bookRound,
+  creditCrisisInChapter,
+  crisisTable,
   measuredDecline,
   newLedger,
   pipelineWorth,
@@ -169,6 +171,27 @@ describe('Bot-Läufe', () => {
   it('Gate 1: keine Strategie gewinnt immer', () => {
     for (const r of runBots(balance, 100)) expect(r.winRate).toBeLessThan(1);
   }, 60_000);
+
+  it('Kreditzyklus (4.4): Pleiten werden nach Seeds mit und ohne Kreditkrise im Kapitel aufgeteilt', () => {
+    const rows = runBots(balance, 20);
+    const krisen = Array.from({ length: 20 }, (_, i) => creditCrisisInChapter(`${balance.bots.seedPrefix}-${i}`, balance)).filter(Boolean).length;
+    for (const r of rows) {
+      expect(r.crisis.games).toBe(krisen);
+      expect(r.crisis.games + r.calm.games).toBe(r.games);
+      expect(r.crisis.bankrupt + r.calm.bankrupt).toBe(Math.round(r.bankruptRate * r.games));
+    }
+    const tabelle = crisisTable(rows);
+    expect(tabelle).toContain('Kreditkrise');
+    expect(tabelle.split('\n')).toHaveLength(2 + rows.length);
+  }, 60_000);
+
+  it('Kreditkrise im Kapitel: deterministisch je Seed, in manchen Welten ja, in den meisten nein', () => {
+    const seeds = Array.from({ length: 150 }, (_, i) => `krise-${i}`);
+    const ja = seeds.filter((s) => creditCrisisInChapter(s, balance));
+    expect(seeds.filter((s) => creditCrisisInChapter(s, balance))).toEqual(ja);
+    expect(ja.length).toBeGreaterThan(0);
+    expect(ja.length / seeds.length).toBeLessThan(0.4);
+  });
 
   it('die Siegquoten aller Strategien ergeben zusammen höchstens 100 % (Seeds ohne Sieger zählen für keinen)', () => {
     const rows = runBots(balance, 20);
@@ -336,6 +359,8 @@ describe('Bot-Läufe mit Ereignissen (2.15)', () => {
       pipelineGoalGames: 0,
       build: { rigs: 10, pumps: 0, extraWells: 0, producing: 0, expanded: 0 },
       seeds: [],
+      crisis: { games: 0, bankrupt: 0 },
+      calm: { games: 10, bankrupt: 0 },
       ...o,
     });
     const tag = balance.bots.daysPerRound;

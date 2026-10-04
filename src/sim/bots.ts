@@ -44,6 +44,7 @@ import { jacobSupply } from './market';
 import { buyerCapacityLeft, capacityLeft, modeCapacity, netPrice, quoteSale, sellOil, tariff } from './transport';
 import { grudgeCut, RIVAL_MARKS, volumeObligation } from './trust';
 import { tutorialHint } from './tutorial';
+import { advanceWorld, newWorld } from './world';
 import { choiceCost, choiceReason, resolveEvent, routineOffered, type EventChoice, type EventDef } from './events';
 
 export type Strategy = 'vorsichtig' | 'gierig' | 'ausgewogen' | 'zufaellig';
@@ -1051,6 +1052,23 @@ export interface BotRow {
   build: BuildStats;
   /** Je Seed (in Reihenfolge): Imperiumswert und Pleite – für die Gegenprobe „alles ausbauen“. */
   seeds: { empire: number; bankrupt: boolean }[];
+  /** Kreditzyklus (4.4): Partien auf Seeds mit bzw. ohne Kreditkrise im Kapitel – und wie viele davon pleite. */
+  crisis: { games: number; bankrupt: number };
+  calm: { games: number; bankrupt: number };
+}
+
+/**
+ * Kommt in der Welt dieses Seeds während des Kapitels eine Kreditkrise (Bankpanik
+ * oder Crash, 4.4)? Gemessen an der Welt allein (ohne Jacobs Handeln), damit eine
+ * frühe Pleite die Einteilung nicht verzerrt – sonst sähe, wer früh aufgibt, keine Panik mehr.
+ */
+export function creditCrisisInChapter(seed: string, balance: Balance): boolean {
+  let w = newWorld(seed, balance.worldModel);
+  for (let r = 0; r < balance.start.rounds; r++) {
+    w = advanceWorld(w, balance.worldModel, {}, balance.laws);
+    if (w.news.includes('panic') || w.news.includes('crash')) return true;
+  }
+  return false;
 }
 
 /**
@@ -1127,14 +1145,20 @@ export function runBots(balance: Balance, games = balance.bots.games, catalog: r
         pipelineZiel: 0,
         build: { rigs: 0, pumps: 0, extraWells: 0, producing: 0, expanded: 0 } as BuildStats,
         seeds: [] as { empire: number; bankrupt: boolean }[],
+        crisis: { games: 0, bankrupt: 0 },
+        calm: { games: 0, bankrupt: 0 },
       },
     ]),
   );
   for (let i = 0; i < games; i++) {
     const seed = `${balance.bots.seedPrefix}-${i}`;
+    const krise = creditCrisisInChapter(seed, balance);
     const results = STRATEGIES.map((strategy) => {
       const r = playGame(seed, balance, strategy, catalog);
       const s = summe.get(strategy)!;
+      const gruppe = krise ? s.crisis : s.calm;
+      gruppe.games++;
+      if (r.bankrupt) gruppe.bankrupt++;
       if (r.bankrupt) s.pleiten++;
       if (r.goal) s.ziel++;
       s.wert += r.empire;
@@ -1177,8 +1201,18 @@ export function runBots(balance: Balance, games = balance.bots.games, catalog: r
       pipelineGoalGames: s.pipelineZiel,
       build: s.build,
       seeds: s.seeds,
+      crisis: s.crisis,
+      calm: s.calm,
     };
   });
+}
+
+/** Kennzahl Kreditzyklus (4.4): Pleitequote je Strategie in Welten mit und ohne Kreditkrise im Kapitel. */
+export function crisisTable(rows: readonly BotRow[]): string {
+  const quote = (g: { games: number; bankrupt: number }) => (g.games > 0 ? prozent(g.bankrupt / g.games) : '–');
+  const kopf = '| Strategie | Seeds mit Kreditkrise | Bankrottquote dort | Seeds ohne | Bankrottquote dort |\n| --- | ---: | ---: | ---: | ---: |';
+  const zeilen = rows.map((r) => `| ${r.strategy} | ${r.crisis.games.toLocaleString('de-DE')} | ${quote(r.crisis)} | ${r.calm.games.toLocaleString('de-DE')} | ${quote(r.calm)} |`);
+  return [kopf, ...zeilen].join('\n');
 }
 
 // --- Gegenproben Ausbau (0.2.15+8) ---------------------------------------------

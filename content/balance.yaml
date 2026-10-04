@@ -730,7 +730,7 @@ worldModel:
     creditTight: 30
     moodAngry: 32
     tensionHigh: 60
-    unrestHigh: 55           # 4.4: Costa Negra so unruhig → Meldung „Unruhen in Costa Negra“
-    qasirHigh: 55            # 4.4: Qasir so verstimmt → Meldung „Gesandte aus Qasir“
+    unrestHigh: 62           # 4.4: Costa Negra so unruhig → Meldung „Unruhen in Costa Negra“ (knapp unter foreign.costaNegra.uprisingFrom: ein Zeichen, keine Dauerkulisse)
+    qasirHigh: 62            # 4.4: Qasir so verstimmt → Meldung „Verstimmung in Qasir“ (knapp unter foreign.qasir.embargoFrom)
     pollFrom: 2              # 4.2: so viele Runden vor der Wahl druckt die Zeitung eine Umfrage
     pollClose: 0.015         # liegen die beiden Ersten näher als 1,5 Prozentpunkte: „Kopf an Kopf“ (gut jede vierte Umfrage; dann kippt eine einzelne Tat die Wahl am ehesten)

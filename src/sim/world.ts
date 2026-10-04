@@ -254,7 +254,7 @@ function steadyInvest(growth: number, wb: WorldModelBalance): number {
 /** Die Spielzahlen, die eine Ausgangslage braucht. */
 type StartBalance = Pick<WorldModelBalance, 'demand' | 'tech'> & {
   supply: Pick<WorldModelBalance['supply'], 'utilBase' | 'depletion' | 'delay' | 'stockNorm'>;
-  credit: { leverage: Pick<WorldModelBalance['credit']['leverage'], 'base' | 'build' | 'decay' | 'start'> };
+  credit: { leverage: Pick<WorldModelBalance['credit']['leverage'], 'base' | 'build' | 'decay' | 'start' | 'bubbleFrom'> };
 };
 
 /** Was sich eine Ausgangslage aussucht; der Rest (Angebot, Lager, Pipeline) folgt daraus im Gleichgewicht. */
@@ -278,6 +278,15 @@ interface StartValues {
 export function steadyLeverage(credit: number, lev: Pick<WorldModelBalance['credit']['leverage'], 'base' | 'build' | 'decay'>, share = 1): number {
   if (lev.decay <= 0) return lev.base;
   return clamp(lev.base + (share * (lev.build * Math.max(0, credit - 50))) / 50 / lev.decay, 0, 100);
+}
+
+/**
+ * Verschuldung beim Start (neue Welt, alter Spielstand): leverage.start des
+ * Gleichgewichts, aber immer knapp unter leverage.bubbleFrom – eine Blase muss
+ * sich erst im Spiel aufbauen, sonst käme der nächste Auslöser sofort als Crash.
+ */
+export function startLeverage(credit: number, lev: Pick<WorldModelBalance['credit']['leverage'], 'base' | 'build' | 'decay' | 'start' | 'bubbleFrom'>): number {
+  return Math.min(steadyLeverage(credit, lev, lev.start), Math.max(lev.base, lev.bubbleFrom - 1));
 }
 
 /** Ausgangslage einer Kampagne: Jede Welt ist neu (GDD §7.2), der Preis startet im Gleichgewicht bei 1. */
@@ -333,7 +342,7 @@ function startState(rng: RngState, wb: StartBalance, v: StartValues): Omit<World
     electionIn: v.electionIn,
     crash: 0,
     panic: 0,
-    leverage: steadyLeverage(v.credit, wb.credit.leverage, wb.credit.leverage.start),
+    leverage: startLeverage(v.credit, wb.credit.leverage),
     foreign: { costaNegra: v.costaNegra, qasir: v.qasir, uprising: 0, embargo: 0 },
     war: 0,
     news: [],
@@ -345,7 +354,7 @@ function startState(rng: RngState, wb: StartBalance, v: StartValues): Omit<World
 }
 
 /** Momentaufnahme (Stand 0.4.4) für Ersatzwerte: Verschuldung und Ausland einer ruhigen Welt. */
-const NEUTRAL_LEVERAGE = { base: 25, build: 5, decay: 0.04, start: 0.5 };
+const NEUTRAL_LEVERAGE = { base: 25, build: 5, decay: 0.04, start: 0.5, bubbleFrom: 45 };
 const NEUTRAL_FOREIGN: ForeignState = { costaNegra: 25, qasir: 15, uprising: 0, embargo: 0 };
 
 /**
@@ -896,7 +905,8 @@ export function withLawDefaults(value: unknown, seed: string): unknown {
 
 /**
  * Ersatzwerte (4.4) für Weltzustände aus Format 14–16: keine Bankpanik, Verschuldung
- * passend zum gespeicherten Kreditklima, ein ruhiges Ausland, neue Zähler bei 0.
+ * passend zum gespeicherten Kreditklima (aber nie schon überhitzt, siehe startLeverage),
+ * ein ruhiges Ausland, neue Zähler bei 0.
  * Das Laden kennt balance.yaml nicht – darum eine Momentaufnahme der Spielzahlen.
  */
 export function withCreditForeignDefaults(value: unknown): unknown {
@@ -907,7 +917,7 @@ export function withCreditForeignDefaults(value: unknown): unknown {
   return {
     ...w,
     panic: w.panic ?? 0,
-    leverage: w.leverage ?? steadyLeverage(credit, NEUTRAL_LEVERAGE, NEUTRAL_LEVERAGE.start),
+    leverage: w.leverage ?? startLeverage(credit, NEUTRAL_LEVERAGE),
     foreign: w.foreign ?? { ...NEUTRAL_FOREIGN },
     counts: { ...counts, panics: counts.panics ?? 0, uprisings: counts.uprisings ?? 0, embargoes: counts.embargoes ?? 0 },
   };

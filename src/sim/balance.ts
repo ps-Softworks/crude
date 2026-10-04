@@ -1906,6 +1906,12 @@ function parseWorldModel(raw: unknown): WorldModelBalance {
   if (wm.credit.leverage.bubbleFrom > wm.credit.leverage.crashFrom) {
     throw new BalanceError('balance.yaml: "worldModel.credit.leverage.bubbleFrom" darf nicht über crashFrom liegen – sonst kommt der Crash ohne Frühwarnung');
   }
+  if (wm.news.unrestHigh > wm.foreign.costaNegra.uprisingFrom) {
+    throw new BalanceError('balance.yaml: "worldModel.news.unrestHigh" darf nicht über foreign.costaNegra.uprisingFrom liegen – sonst kommt der Aufstand ohne Frühwarnung');
+  }
+  if (wm.news.qasirHigh > wm.foreign.qasir.embargoFrom) {
+    throw new BalanceError('balance.yaml: "worldModel.news.qasirHigh" darf nicht über foreign.qasir.embargoFrom liegen – sonst kommt das Embargo ohne Frühwarnung');
+  }
   for (const r of [wm.credit.panicRounds, wm.foreign.costaNegra.rounds, wm.foreign.qasir.rounds]) {
     if (!Number.isInteger(r.min) || !Number.isInteger(r.max)) throw new BalanceError('balance.yaml: Rundenbereiche im Weltmodell (panicRounds, foreign.*.rounds) brauchen ganze Runden');
   }

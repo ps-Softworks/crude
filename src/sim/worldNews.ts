@@ -73,9 +73,9 @@ export const MAJOR_WORLD_HEADLINES: readonly WorldHeadline[] = ['world_crash', '
 /**
  * Höchstens eine Meldung aus der Welt: zuerst, was in der letzten Runde geschah
  * (Crash vor Bankpanik vor Krieg vor Embargo vor Aufstand vor Verstaatlichung vor Riesenfund vor Frieden …),
- * sonst kurz vor der Wahl eine Umfrage (4.2), sonst ein Frühwarnzeichen: die Phase des
- * Kreditzyklus (4.4: knapp, überhitzt, lockeres Geld) oder ein Zustand jenseits der
- * Schwellen aus balance.yaml (worldModel.news). Ruhige Welt → keine Meldung.
+ * sonst kurz vor der Wahl eine Umfrage (4.2), sonst ein Frühwarnzeichen: Blase, Ausland
+ * kurz vor Embargo/Aufstand, knappes oder lockeres Geld, Spannung,
+ * Wut – jeweils jenseits der Schwellen aus balance.yaml (worldModel.news). Ruhige Welt → keine Meldung.
  */
 export function worldHeadline(world: WorldState | undefined, wb: WorldModelBalance): WorldHeadline | null {
   if (!world) return null;
@@ -100,13 +100,16 @@ export function worldHeadline(world: WorldState | undefined, wb: WorldModelBalan
   if (umfrage) return pollIsClose(world.parties, s.pollClose) ? POLL_CLOSE[umfrage] : POLL[umfrage];
   // Kreditzyklus (4.4): Panik und Crash wirken nach, die Blase warnt (steigende Zinsen, Kauf auf Pump).
   const phase = creditPhase(world, wb);
-  if (phase === 'crash' || phase === 'panic' || world.credit <= s.creditTight) return 'world_credit_tight';
   if (phase === 'overheated') return 'world_credit_bubble';
-  if (world.credit >= s.creditEasy) return 'world_credit_easy';
-  if (world.tension >= s.tensionHigh) return 'world_tension';
+  // Ausland (4.4): erst kurz vor der Auslöse-Schwelle, dann aber vor knappem und lockerem
+  // Geld und vor der Spannung – sonst ginge die Note aus Qasir im Krieg unter (dort fallen
+  // die meisten Embargos) und die Unruhe im Süden hinter der Nachwirkung einer Panik.
   const ausland = world.foreign;
   if (ausland && ausland.embargo === 0 && ausland.qasir >= s.qasirHigh) return 'world_qasir_unrest';
   if (ausland && ausland.uprising === 0 && ausland.costaNegra >= s.unrestHigh) return 'world_costa_negra_unrest';
+  if (phase === 'crash' || phase === 'panic' || world.credit <= s.creditTight) return 'world_credit_tight';
+  if (world.credit >= s.creditEasy) return 'world_credit_easy';
+  if (world.tension >= s.tensionHigh) return 'world_tension';
   if (world.mood <= s.moodAngry) return 'world_mood_angry';
   return null;
 }
