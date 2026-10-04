@@ -185,6 +185,13 @@
         de: 'Ruth nimmt die Abrechnung wieder mit. In der Tür sagt sie: „Ich habe das Datum aufgeschrieben.“ Sie sagt nicht, welches.'
         en: Ruth takes the statement back with her. At the door she says, "I have written down the date." She doesn't say which.
       effects: { ruth: -12, cash: 1500 }  # TODO-Effekt: margin bleibt, Kurs steigt vorerst
+    - id: schweigen
+      label: { de: "Darüber schweigen", en: "Say nothing about it" }
+      result:
+        de: Jacob sagt nichts. Ruth wartet eine Weile, dann legt sie die Abrechnung zu den anderen Papieren. Beim Abendessen spricht sie über Clara und nicht über Geld.
+        en: Jacob says nothing. Ruth waits a while, then puts the statement with the other papers. At supper she talks about Clara, not about money.
+      effects: { ruth: -6 }  # TODO-Effekt: margin bleibt
+      appointments: 0
       default: true
 
 - id: k3_aktienpflege
@@ -203,6 +210,9 @@
       says, tends the shares of good customers: it buys when the price weakens and sells
       when it stands. A price that only rises calms shareholders. "Let's call it
       gardening, Mr. Harlan. Not manipulation."
+  # WUNSCH: conditions: hasShares – Harlan Oil ist nur nach dem Börsengang am Ende von Kapitel 1
+  # eine Aktiengesellschaft (state.ipo.share > 0, Story-Bibel §2). Ohne Börsengang gibt es keine
+  # Harlan-Aktie, kein Aktienbuch und keinen Aufsichtsrat – bis dahin läuft die Szene sonst ins Leere.
   conditions: { minChapter: 3, maxChapter: 3 }
   chance: 0.25
   choices:
@@ -226,6 +236,9 @@
   marked: [k3_aktienpflege]
   delay: 2
   chance: 0.5
+  # WUNSCH: conditions: hasShares – Harlan Oil ist nur nach dem Börsengang am Ende von Kapitel 1
+  # eine Aktiengesellschaft (state.ipo.share > 0, Story-Bibel §2). Ohne Börsengang gibt es keine
+  # Harlan-Aktie, kein Aktienbuch und keinen Aufsichtsrat – bis dahin läuft die Szene sonst ins Leere.
   conditions: { minChapter: 3, maxChapter: 3 }
   title:
     de: Ein Kurs, der jeden Freitag steigt
@@ -275,6 +288,9 @@
       Thorne wants Jacob's name on the first page, as adviser. The issue price is a third
       above the market. The covering letter: "I don't buy companies, Mr. Harlan. I buy
       time."
+  # WUNSCH: conditions: hasShares – Harlan Oil ist nur nach dem Börsengang am Ende von Kapitel 1
+  # eine Aktiengesellschaft (state.ipo.share > 0, Story-Bibel §2). Ohne Börsengang gibt es keine
+  # Harlan-Aktie, kein Aktienbuch und keinen Aufsichtsrat – bis dahin läuft die Szene sonst ins Leere.
   conditions: { minChapter: 3, maxChapter: 3 }
   chance: 0.25
   choices:
@@ -303,6 +319,7 @@
   marked: [k3_thorne_prospekt]
   delay: 3
   chance: 0.5
+  # WUNSCH: hasShares wie bei k3_thorne_prospekt – folgt nur auf dessen Merkzeichen, braucht es also nicht eigens.
   conditions: { minChapter: 3, maxChapter: 3 }
   rival: thorne
   title:
@@ -341,17 +358,20 @@
     en: Martha Hale Asks about Her Shares
   text:
     de: >-
-      Martha Hale hat für ihre Ranch Harlan-Aktien statt Pacht genommen. Jetzt sitzt
+      Martha Hale hat beim Börsengang für ihre Ranch Harlan-Aktien statt Pacht genommen. Jetzt sitzt
       sie im schwarzen Witwenkleid, das sie trägt, seit ihr Mann am Salt Hill vom Turm
       fiel, vor Jacobs Sekretärin und lässt fragen, ob sie verkaufen soll. Der Kurs
       steht so hoch wie nie, ihr Neffe drängt. „Mein Mann hat Ihnen vertraut,
       Mr. Harlan. Ich weiß nicht, ob ich es soll. Ich frage trotzdem.“
     en: >-
-      Martha Hale took Harlan shares instead of royalties for her ranch. Now she sits
+      At the flotation Martha Hale took Harlan shares instead of royalties for her ranch. Now she sits
       in the black widow's dress she has worn since her husband fell from a derrick at
       Salt Hill, in front of Jacob's secretary, and asks whether she should sell. The
       price is higher than ever, her nephew is pressing. "My husband trusted you,
       Mr. Harlan. I don't know whether I should. I'm asking anyway."
+  # WUNSCH: conditions: hasShares – Harlan Oil ist nur nach dem Börsengang am Ende von Kapitel 1
+  # eine Aktiengesellschaft (state.ipo.share > 0, Story-Bibel §2). Ohne Börsengang gibt es keine
+  # Harlan-Aktie, kein Aktienbuch und keinen Aufsichtsrat – bis dahin läuft die Szene sonst ins Leere.
   conditions: { minChapter: 3, maxChapter: 3 }
   chance: 0.25
   choices:

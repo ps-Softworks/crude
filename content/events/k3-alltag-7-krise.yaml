@@ -143,6 +143,9 @@
   marked: [k3_hale_aktien_gehalten]
   delay: 3
   chance: 0.6
+  # WUNSCH: conditions: hasShares – Harlan Oil ist nur nach dem Börsengang am Ende von Kapitel 1
+  # eine Aktiengesellschaft (state.ipo.share > 0, Story-Bibel §2). Ohne Börsengang gibt es keine
+  # Harlan-Aktie, kein Aktienbuch und keinen Aufsichtsrat – bis dahin läuft die Szene sonst ins Leere.
   conditions: { minChapter: 3, maxChapter: 3 }
   title:
     de: Martha Hale hat gehalten
@@ -297,12 +300,12 @@
       effects: { production: 0.05, strength: -10 }  # TODO-Effekt: reputation: { workers: -6 }, fire: eli, heat: +1
       default: true
     - id: nachgeben
-      label: { de: "Den Achtstundentag für die Raffinerie zugestehen (3.000 $)", en: "Grant the eight-hour day at the refinery (3,000 $)" }
+      label: { de: "Den Achtstundentag für die Werke zugestehen (3.000 $)", en: "Grant the eight-hour day at the works (3,000 $)" }
       result:
-        de: Die Männer jubeln, die Aktionäre nicht. Margaret Crane schreibt, Jacob habe einen Präzedenzfall geschaffen. Es klingt nicht wie ein Vorwurf. Eher wie Neid.
-        en: The men cheer, the shareholders don't. Margaret Crane writes that Jacob has set a precedent. It doesn't sound like a reproach. More like envy.
+        de: Die Männer jubeln, die Buchhalter nicht. Margaret Crane schreibt, Jacob habe einen Präzedenzfall geschaffen. Es klingt nicht wie ein Vorwurf. Eher wie Neid.
+        en: The men cheer, the bookkeepers don't. Margaret Crane writes that Jacob has set a precedent. It doesn't sound like a reproach. More like envy.
       requires: { minCash: 3000 }
-      effects: { cash: -3000, production: -0.1 }  # TODO-Effekt: reputation: { workers: +6 }, sharePrice: -3, dividendPressure: +1
+      effects: { cash: -3000, production: -0.1 }  # TODO-Effekt: reputation: { workers: +6 }, sharePrice: -3 und dividendPressure: +1 (nur mit Börsengang)
 
 - id: k3_witwe_okara
   title:

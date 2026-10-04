@@ -17,7 +17,11 @@ Kurzreferenz der Felder:
   schaltet ein gesperrtes Gebiet aus `content/map.yaml` frei; seine Ranches entstehen dann aus dem Seed.
 - Bedingungen: `minRound`, `maxRound`, `minCash`, `maxCash`, `minOilStock`,
   `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100),
-  `minChapter`, `maxChapter` (Kapitel; ohne Angabe im Spielstand gilt Kapitel 1 – Phase 4)
+  `minChapter`, `maxChapter` (Kapitel; ohne Angabe im Spielstand gilt Kapitel 1 – Phase 4). Für das
+  ganze Ereignis gilt: Fehlt `minChapter`, ist es ein Kapitel-1-Ereignis – es kommt nur in Kapitel 1
+  (bzw. bis `maxChapter`, falls angegeben). Mit `minChapter` und ohne `maxChapter` kommt es ab diesem
+  Kapitel in jedem späteren. Das gilt für gewürfelte und sichere Ereignisse, Briefe und feste Termine.
+  An einer Wahl prüfen `minChapter`/`maxChapter` nur, was dasteht.
 - Effekte: `cash`, `oilStock`, `railTariff`, `strength` (Kraft), `ruth`, `thomas` (Beziehung 0–100, 2.7),
   `teams` (eigene Gespanne +/−), `teamsIdle` (eigene Fuhrwerke stehen bis Runde jetzt+n still; 0.2.15+2),
   befristet für `events.timedRounds` Runden (0.2.15+3): `price` ($ je Barrel beim Trust), `production`
@@ -89,9 +93,11 @@ Kurzreferenz der Felder:
   Margaret Crane), `-2-boerse` (Börse, Kauf auf Kredit, Thornes Kurspflege), `-3-lobby` (Dunmore, Grady,
   Steuerabzug, Courier), `-4-seismik` (Dr. Hale, Konsortium, Ashcombe), `-5-stand` (Club, Kirche, Ball,
   Stiftung), `-6-rivalen` (Bullard verschuldet, Thorne, Pruett), `-7-krise` (volle Tanks, Zinsen,
-  Flugblätter, Bankrun), `-8-familie` (Haskell, Silberhochzeit, Thomas, Clara, Silas) – 57 Ereignisse.
+  Flugblätter, Bankrun), `-8-familie` (Haskell, Silberhochzeit, Thomas, Clara, Silas) – 59 Ereignisse.
   Alle mit `conditions: { minChapter: 3, maxChapter: 3 }`; kommen also nie in Kapitel 1 und ändern dort
-  auch keinen Wurf (gemischt werden nur Ereignisse des laufenden Kapitels). Wirkungen, die es noch nicht
+  auch keinen Wurf (gemischt werden nur Ereignisse des laufenden Kapitels). Umgekehrt kommen die
+  Kapitel-1-Ereignisse (ohne `minChapter`) nach dem Zeitsprung nicht mehr – auch nicht als Brief oder
+  fester Termin; Kapitel 3 braucht also eigene feste Termine (Abend mit Ruth usw.), falls gewünscht. Wirkungen, die es noch nicht
   gibt (Marke, Aktien, Ruf, Stand, Clara …), stehen als `# TODO-Effekt: …` neben einer Ersatzwirkung.
   Offen für den Zeitsprung (Block A): Er muss `chapter` im Spielstand setzen. Fängt die Rundenzählung je
   Kapitel neu an, braucht `delay` bei Kapitel-1-Merkzeichen eine Lösung (Merkzeichen tragen die Runde,

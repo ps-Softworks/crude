@@ -70,7 +70,7 @@ describe('Fertig-Kriterium 2.4: jede Briefart kommt mindestens einmal pro Partie
       expect(state.ending, `Seed post-${i}`).toBe('kapitel');
       expect([...artenGesehen(state, inhalte)].sort(), `Seed post-${i}`).toEqual([...MAIL_KINDS].sort());
     }
-  });
+  }, 30_000); // viele Partien: unter Last (mehrere Testläufe parallel) über 5 s
 
   it('über 200 Seeds, Jacob beantwortet jeden Brief sofort mit der ersten möglichen Antwort', () => {
     for (let i = 0; i < 200; i++) {
@@ -86,7 +86,7 @@ describe('Fertig-Kriterium 2.4: jede Briefart kommt mindestens einmal pro Partie
       }
       expect([...artenGesehen(state, inhalte)].sort(), `Seed antwort-${i}`).toEqual([...MAIL_KINDS].sort());
     }
-  });
+  }, 30_000);
 
   it('jede Briefart hat in content/ einen Alltagsbrief ohne Bedingungen, der öfter kommen darf', () => {
     for (const kind of MAIL_KINDS) {

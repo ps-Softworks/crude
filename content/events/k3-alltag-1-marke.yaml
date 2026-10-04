@@ -12,7 +12,8 @@
 #   k3_marke_familienname → k3_marke_skandal (der Name auf dem Schild)
 #   k3_preiskampf_unterboten → k3_margaret_waffenstillstand (Margaret kommt selbst)
 #   k3_margaret_absprache → k3_absprache_beamter (Paket 6)
-#   k3_tanklaster_anwalt → k3_tanklaster_artikel
+#   k3_tanklaster_anwalt → k3_tanklaster_artikel (die 200 $ der Anwälte)
+#   k3_tanklaster_fahrer → k3_tanklaster_fahrer_artikel (der entlassene Fahrer erzählt)
 # Kein neuer Name: Pächter, Fahrer und Werbeleute bleiben ohne Namen (Namen nur aus der Bibel).
 
 - id: k3_marke_name
@@ -265,7 +266,7 @@
         de: Der Fahrer war elf Jahre bei Harlan. Er sagt im Saloon, die Bremsen seien seit dem Frühjahr gemeldet. Die Fahrer hören zu.
         en: The driver had been with Harlan eleven years. He tells the saloon the brakes had been reported since spring. The drivers listen.
       effects: { cash: -300, production: -0.05 }  # TODO-Effekt: reputation: { workers: -4 }, staffLoyalty: { fahrer: -10 }
-      marks: [k3_tanklaster_anwalt]
+      marks: [k3_tanklaster_fahrer]
 
 - id: k3_tanklaster_artikel
   marked: [k3_tanklaster_anwalt]
@@ -299,6 +300,51 @@
         de: Der Ledger druckt am nächsten Tag die Kündigung der Anzeigen im Wortlaut ab, gleich neben dem Foto.
         en: The next day the Ledger prints the cancellation of the advertising word for word, right next to the photograph.
       effects: { price: -0.3, strength: -5 }  # TODO-Effekt: brand: { hallstead: -8 }, rival: { nora: hostile }
+      default: true
+
+- id: k3_tanklaster_fahrer_artikel
+  marked: [k3_tanklaster_fahrer]
+  delay: 2
+  chance: 0.5
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: „Die Bremsen waren gemeldet“
+    en: '"The Brakes Had Been Reported"'
+  text:
+    de: >-
+      Der Hallstead Ledger bringt eine halbe Seite über den Jungen aus Port Ellis und
+      über den Fahrer, den Harlan nach elf Jahren entlassen hat. Der Fahrer erzählt es
+      genau: wann er die Bremsen gemeldet hat, bei wem, und dass niemand kam. Für den
+      Jungen hat bis heute keiner gezahlt. Die Verfasserin ist nicht genannt. Jacob
+      erkennt den Satzbau trotzdem.
+    en: >-
+      The Hallstead Ledger runs half a page on the boy from Port Ellis and on the driver
+      Harlan dismissed after eleven years. The driver tells it precisely: when he reported
+      the brakes, to whom, and that nobody came. Nobody has paid anything for the boy to
+      this day. The author isn't named. Jacob recognises the sentences anyway.
+  choices:
+    - id: nachzahlen
+      label: { de: "Für den Jungen zahlen und die Flotte prüfen lassen (4.000 $)", en: "Pay for the boy and have the fleet inspected (4,000 $)" }
+      result:
+        de: Die zweite Meldung ist klein und steht auf Seite sechs. Die Mechaniker finden an elf Wagen dieselben Bremsen. Der Fahrer liest es im Saloon vor, laut.
+        en: The second item is small and on page six. The mechanics find the same brakes on eleven trucks. The driver reads it out in the saloon, loudly.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000 }  # TODO-Effekt: reputation: { public: +2, workers: +2 }, brand: +2
+    - id: zurueckholen
+      label: { de: "Den Fahrer zurückholen und die Bremsen reparieren lassen (1.500 $)", en: "Take the driver back and have the brakes repaired (1,500 $)" }
+      result:
+        de: Der Fahrer kommt am Montag wieder und sagt kein Wort zu Jacob. Er fährt jetzt den Wagen mit den neuen Bremsen. Die anderen Fahrer grüßen ihn zuerst.
+        en: The driver comes back on Monday and says not a word to Jacob. He now drives the truck with the new brakes. The other drivers greet him first.
+      requires: { minCash: 1500 }
+      effects: { cash: -1500, strength: -5 }  # TODO-Effekt: reputation: { workers: +4 }, staffLoyalty: { fahrer: +10 }
+      appointments: 2
+    - id: schweigen
+      label: { de: "Nicht antworten", en: "Don't reply" }
+      result:
+        de: Harlan schweigt. Der Ledger druckt eine Woche später einen Leserbrief der Mutter, von jemandem im Krankenhaus aufgeschrieben.
+        en: Harlan stays silent. A week later the Ledger prints a letter from the mother, written down by someone at the hospital.
+      effects: { price: -0.2 }  # TODO-Effekt: brand: { hallstead: -5 }, reputation: { workers: -2 }
+      appointments: 0
       default: true
 
 - id: k3_marke_skandal

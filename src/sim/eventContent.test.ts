@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ContentLoadError, formatContentError, loadEventCatalog, parseEventFile, parseEventFiles } from './eventContent';
+import { ContentLoadError, formatContentError, loadEventCatalog, parseEventFile, parseEventFiles, ZEITSPRUNG_MARKS } from './eventContent';
 import { resolveEvent } from './events';
 import { newGame } from './game';
 import { loadBalance } from './testBalance';
@@ -181,6 +181,14 @@ describe('Nachwirkung im YAML (2.2)', () => {
     expect(errors.map(formatContentError)).toEqual([
       'a.yaml:14: Ereignis „folge“: Das Merkzeichen „nie“ setzt keine Wahl (marks: [nie]) – Tippfehler?',
     ]);
+  });
+
+  it('Merkzeichen des Zeitsprungs (Block A) zählen als gesetzt – aber nur die aus der Liste', () => {
+    for (const m of ZEITSPRUNG_MARKS) {
+      expect(parseEventFiles([{ file: 'a.yaml', text: MIT_MARKE.replace('notMarked: [nie]', `notMarked: [${m}]`) }]).errors, m).toEqual([]);
+    }
+    const tippfehler = parseEventFiles([{ file: 'a.yaml', text: MIT_MARKE.replace('notMarked: [nie]', 'notMarked: [zs2_grady_reservland]') }]);
+    expect(tippfehler.errors).toHaveLength(1);
   });
 
   it('kaputte Merkzeichen und delay werden gemeldet', () => {

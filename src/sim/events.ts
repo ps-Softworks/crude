@@ -295,10 +295,17 @@ function wertFuer(state: Lage, key: ConditionKey): number {
   }
 }
 
-/** Passt das laufende Kapitel zu minChapter/maxChapter (Phase 4)? Ohne Angabe: jedes Kapitel. */
+/**
+ * Gehört ein Ereignis ins laufende Kapitel (Phase 4)? Fehlt minChapter, ist es ein Kapitel-1-Ereignis:
+ * Es gilt dann von Kapitel 1 bis maxChapter, ohne maxChapter nur in Kapitel 1. So kommen die vielen
+ * Kapitel-1-Ereignisse ohne Kapitel-Angabe nach dem Zeitsprung nicht mehr. Mit minChapter und ohne
+ * maxChapter gilt es ab minChapter in jedem späteren Kapitel. Nur für ganze Ereignisse, nicht für Wahlen.
+ */
 export function chapterMet(state: Partial<Pick<GameState, 'chapter'>>, conditions: Conditions): boolean {
   const k = chapterOf(state);
-  return (conditions.minChapter === undefined || k >= conditions.minChapter) && (conditions.maxChapter === undefined || k <= conditions.maxChapter);
+  const min = conditions.minChapter ?? 1;
+  const max = conditions.maxChapter ?? (conditions.minChapter === undefined ? 1 : Infinity);
+  return k >= min && k <= max;
 }
 
 /** Laufendes Kapitel (Phase 4); fehlt die Angabe, ist es Kapitel 1. */
@@ -388,6 +395,7 @@ export function routineOffered(state: GameState, event: EventDef): boolean {
     event.routine &&
     !state.finished &&
     !state.agenda.done.includes(event.id) &&
+    chapterMet(state, event.conditions) &&
     conditionsMet(state, event.conditions) &&
     marksMet(state, event)
   );
@@ -440,11 +448,12 @@ export function drawEvents(state: GameState, balance: Balance, catalog: readonly
   const log = [...state.log];
   let neu = 0;
   // Sichere Ereignisse (2.8) zuerst: ohne Würfel, ohne Platz in maxPerRound.
-  const sicher = catalog.filter((e) => e.certain && !e.routine && !e.mail);
+  const sicher = catalog.filter((e) => e.certain && !e.routine && !e.mail && chapterMet(state, e.conditions));
   // Gewürfelte Ereignisse (2.10b) in zufälliger Reihenfolge: Sonst gewinnen bei maxPerRound
   // immer die Dateien vorn im Alphabet, und späte Ereignisse kämen kaum je vor.
-  // Nur Ereignisse des laufenden Kapitels mischen (Phase 4): So bleibt die Reihenfolge – und
-  // damit jede Partie zum selben Seed – in Kapitel 1 dieselbe wie ohne spätere Kapitel.
+  // Nur Ereignisse des laufenden Kapitels mischen (Phase 4, chapterMet – auch für sichere Ereignisse):
+  // So bleibt die Reihenfolge – und damit jede Partie zum selben Seed – in Kapitel 1 dieselbe wie
+  // ohne spätere Kapitel, und Kapitel-1-Ereignisse kommen nach dem Zeitsprung nicht mehr.
   const gewuerfelt = rng.shuffle(catalog.filter((e) => !e.certain && !e.routine && !e.mail && chapterMet(state, e.conditions)));
   for (const event of [...sicher, ...gewuerfelt]) {
     if (!event.certain && neu >= balance.events.maxPerRound) break;

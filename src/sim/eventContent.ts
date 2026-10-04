@@ -494,7 +494,8 @@ export function parseEventFiles(files: readonly { file: string; text: string }[]
   // Ein Merkzeichen, das keine Wahl setzt, ist fast immer ein Tippfehler – das
   // Ereignis käme sonst nie (bzw. würde nie gesperrt).
   // Merkzeichen der Simulation selbst (2.7: thomas_geboren, 2.8: bullard_verraten) zählen auch als gesetzt.
-  const gesetzt = new Set<string>([...SIM_MARKS, ...RIVAL_SIM_MARKS, ...LOGISTICS_SIM_MARKS, ...events.flatMap((e) => e.choices.flatMap((c) => [...c.marks, ...(c.marksIfForged ?? [])]))]);
+  // Ebenso die Merkzeichen des Zeitsprungs (Block A), solange er nicht auf diesem Stand ist.
+  const gesetzt = new Set<string>([...SIM_MARKS, ...RIVAL_SIM_MARKS, ...LOGISTICS_SIM_MARKS, ...ZEITSPRUNG_MARKS, ...events.flatMap((e) => e.choices.flatMap((c) => [...c.marks, ...(c.marksIfForged ?? [])]))]);
   for (const event of events) {
     for (const m of [...event.marked, ...event.notMarked]) {
       if (gesetzt.has(m)) continue;
@@ -510,6 +511,14 @@ export function parseEventFiles(files: readonly { file: string; text: string }[]
   }
   return errors.length > 0 ? { events: [], errors } : { events, errors };
 }
+
+/**
+ * Merkzeichen, die der Zeitsprung (Block A, Story-Bibel §2) setzt, aber auf diesem Stand noch keine
+ * Wahl: Kapitel-3-Ereignisse fragen sie schon ab (k3_reserveland, k3_reserveland_folge). Eine feste
+ * Liste statt eines Präfixes, damit Tippfehler weiter auffallen. Sobald die Zeitsprung-Ereignisse
+ * die Merkzeichen selbst setzen, kann der Eintrag weg.
+ */
+export const ZEITSPRUNG_MARKS: readonly string[] = ['zs2_grady_reserveland', 'zs2_grady_abgelehnt'];
 
 export class ContentLoadError extends Error {
   constructor(public errors: ContentError[]) {

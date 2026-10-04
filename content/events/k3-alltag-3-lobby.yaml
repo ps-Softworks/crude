@@ -12,8 +12,11 @@
 # Merkzeichen dieses Pakets:
 #   k3_dunmore_angestellt → k3_dunmore_schulden, k3_steuerabzug_dunmore
 #   k3_dunmore_entlassen, k3_dunmore_gedeckt, k3_reserveland → content/relevance.yaml (Kapitel 4)
+#   (k3_reserveland setzen k3_reserveland/zugreifen und k3_reserveland_folge/verlaengern)
 #   k3_courier_besitz → k3_courier_redaktion
 # Merkzeichen aus Kapitel 1: courier_gekauft (Redakteur Bixby erinnert sich).
+# Merkzeichen aus Zeitsprung II (Block A, noch nicht auf diesem Branch): zs2_grady_reserveland,
+# zs2_grady_abgelehnt – k3_reserveland nur ohne beide, k3_reserveland_folge nach dem Zugriff.
 
 - id: k3_dunmore_vorstellung
   visitor: dunmore
@@ -183,9 +186,13 @@
       appointments: 0
       default: true
 
+# Reserveland: Grady bietet es schon in Zeitsprung II an (zs2_grady_reserveland / zs2_grady_abgelehnt,
+# Story-Bibel §2/§9). k3_reserveland ist das Angebot nur für Partien, in denen der Zeitsprung es nicht
+# gebracht hat; k3_reserveland_folge knüpft an den Zugriff im Zeitsprung an.
 - id: k3_reserveland
+  notMarked: [zs2_grady_reserveland, zs2_grady_abgelehnt]
   title:
-    de: Bundesland ohne Ausschreibung
+    de: Staatsland ohne Ausschreibung
     en: Federal Land without Tender
   text:
     de: >-
@@ -214,6 +221,47 @@
       result:
         de: Der Beamte steckt das Wechselgeld ein. Beim Hinausgehen sieht Jacob Harold Pruett am Nachbartisch. Pruett hebt nicht einmal den Kopf.
         en: The official pockets the change. On the way out Jacob sees Harold Pruett at the next table. Pruett doesn't even raise his head.
+      appointments: 0
+      default: true
+
+- id: k3_reserveland_folge
+  marked: [zs2_grady_reserveland]
+  mail: demand
+  deadline: 2
+  once: true
+  title:
+    de: Die Stempel laufen ab
+    en: The Stamps Expire
+  text:
+    de: >-
+      Ein Umschlag ohne Absender, darin ein einziger Bogen mit dem Kopf des Marineamts:
+      Die Erprobungspacht auf dem Reserveland, die Senator Grady damals vermittelt hat,
+      läuft zum Quartalsende aus. Eine Verlängerung sei möglich. Die Gebühren seien
+      gestiegen, schreibt der Beamte, „wie alles in diesen Zeiten“. Unten, mit Bleistift:
+      Eine Zeitung in Port Ellis habe im Grundbuchamt nach dem Land gefragt.
+    en: >-
+      An envelope with no sender, inside a single sheet headed by the Naval Office: the
+      trial lease on the reserve land that Senator Grady arranged back then expires at
+      the end of the quarter. An extension is possible. The fees have risen, the
+      official writes, "like everything these days". At the bottom, in pencil: a
+      newspaper in Port Ellis has been asking about the land at the land registry.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.5
+  choices:
+    - id: verlaengern
+      label: { de: "Verlängern (4.000 $ „Gebühren“)", en: "Extend (4,000 $ in \"fees\")" }
+      result:
+        de: Der neue Vertrag trägt vier Stempel statt drei. Die Bohrtrupps fahren weiter nachts hinaus. Wer im Grundbuchamt gefragt hat, erfährt Jacob nicht.
+        en: The new contract carries four stamps instead of three. The crews keep driving out at night. Jacob never learns who asked at the land registry.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000, production: 0.15 }  # TODO-Effekt: heat: +2, trace: { severity: 3, label: "Reserveland" }, favors: -1
+      marks: [k3_reserveland]
+    - id: auslaufen
+      label: { de: "Die Pacht auslaufen lassen", en: "Let the lease run out" }
+      result:
+        de: Am Quartalsende ziehen die Bohrtrupps ab und lassen die Türme stehen. Das Land ist wieder Reserve. Die alten Stempel bleiben in den Akten des Marineamts.
+        en: At the end of the quarter the crews pull out and leave the derricks standing. The land is reserve again. The old stamps stay in the Naval Office's files.
+      effects: { production: -0.05 }  # TODO-Effekt: trace bleibt (zs2_grady_reserveland), heat: -1
       appointments: 0
       default: true
 

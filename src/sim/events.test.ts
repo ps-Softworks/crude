@@ -5,9 +5,11 @@ import type { Well } from './drilling';
 import {
   applyEffects,
   autoResolve,
+  chapterMet,
   conditionsMet,
   defaultChoice,
   deskEvents,
+  deskRoutines,
   drawEvents,
   marksMet,
   resolveEvent,
@@ -80,9 +82,39 @@ describe('Bedingungen', () => {
       expect(e.conditions.maxChapter, e.id).toBe(3);
       for (let round = 1; round <= balance.start.rounds; round++) expect(conditionsMet({ ...state, round }, e.conditions), e.id).toBe(false);
     }
-    // Kapitel-1-Ereignisse fragen das Kapitel nicht ab.
-    for (const e of katalog.filter((x) => !x.id.startsWith('k2_') && !x.id.startsWith('k3_'))) {
+    // Kapitel-1-Ereignisse brauchen keine Kapitel-Angabe: Ohne minChapter gelten sie nur in Kapitel 1.
+    const k1 = katalog.filter((x) => !/^k[2-9]_/.test(x.id));
+    expect(k1.length).toBeGreaterThan(0);
+    for (const e of k1) {
       expect(e.conditions.minChapter, e.id).toBeUndefined();
+      expect(chapterMet(state, e.conditions), e.id).toBe(true);
+      expect(chapterMet({ chapter: 3 }, e.conditions), e.id).toBe(false);
+    }
+  });
+
+  it('chapterMet: ohne minChapter nur Kapitel 1 (bis maxChapter), mit minChapter offen nach oben (Phase 4)', () => {
+    expect(chapterMet({}, {})).toBe(true);
+    expect(chapterMet({ chapter: 2 }, {})).toBe(false);
+    expect(chapterMet({ chapter: 3 }, {})).toBe(false);
+    expect(chapterMet({ chapter: 2 }, { maxChapter: 2 })).toBe(true);
+    expect(chapterMet({ chapter: 3 }, { maxChapter: 2 })).toBe(false);
+    expect(chapterMet({ chapter: 1 }, { minChapter: 3 })).toBe(false);
+    expect(chapterMet({ chapter: 4 }, { minChapter: 3 })).toBe(true);
+    expect(chapterMet({ chapter: 4 }, { minChapter: 3, maxChapter: 3 })).toBe(false);
+  });
+
+  it('nach dem Zeitsprung in Kapitel 3 kommen keine Kapitel-1-Ereignisse und -Briefe mehr (Phase 4)', () => {
+    const alle = loadEvents();
+    for (const seed of ['k3-a', 'k3-b', 'k3-c']) {
+      const g = newGame(seed, balance, alle);
+      let s: GameState = { ...g, chapter: 3, events: { ...g.events, pending: [], due: {}, docs: {} } };
+      for (let r = 0; r < 12 && !s.finished; r++) {
+        s = drawEvents({ ...autoResolve(s, alle), round: s.round + 1 }, balance, alle);
+        for (const id of s.events.pending) expect(id, seed).toMatch(/^k3_/);
+        expect(deskRoutines(s, balance, alle).map((e) => e.id).filter((id) => !/^k[2-9]_/.test(id)), seed).toEqual([]);
+      }
+      // Nicht leer geprüft: Kapitel-3-Ereignisse kommen tatsächlich.
+      expect(s.events.seen.some((id) => id.startsWith('k3_')), seed).toBe(true);
     }
   });
 
