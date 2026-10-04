@@ -4,6 +4,9 @@
 
 import { parseWorldMap, type WorldMap } from './worldMap';
 
+// 4.14 Andockpunkt: Marke und Tankstellen – Zahlen liest src/sim/brand.ts selbst.
+import { parseBrandBalance, type BrandBalance } from './brand';
+
 export type GeologyType = 'dry' | 'small' | 'gusher';
 
 export interface Zone {
@@ -523,6 +526,8 @@ export interface Balance {
   family: FamilyBalance;
   newspaper: NewspaperBalance;
   tutorial: TutorialBalance;
+  /** 4.14 Andockpunkt: Marke und Tankstellen (Kapitel 3). */
+  brand: BrandBalance;
 }
 
 /** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
@@ -1472,6 +1477,15 @@ function parseWorld(raw: unknown): WorldMap {
   }
 }
 
+/** 4.14 Andockpunkt: Fehler im Block „brand“ kommen wie alle anderen als BalanceError. */
+function parseBrand(raw: unknown): BrandBalance {
+  try {
+    return parseBrandBalance(raw);
+  } catch (e) {
+    throw new BalanceError(e instanceof Error ? e.message : String(e));
+  }
+}
+
 /** Spielzahlen und Karte zusammen: balance.yaml und map.yaml als rohe YAML-Daten. */
 export function parseGameData(balanceRaw: unknown, mapRaw: unknown): Balance {
   return parseBalance({ ...(balanceRaw as object), world: mapRaw });
@@ -1536,6 +1550,8 @@ export function parseBalance(raw: unknown): Balance {
     family: parseFamily(raw),
     newspaper: parseNewspaper(raw),
     tutorial: parseTutorial(raw),
+    // 4.14 Andockpunkt: Marke und Tankstellen (Kapitel 3).
+    brand: parseBrand(raw),
   };
 
   for (const r of balance.transport.pipeline.rights) {

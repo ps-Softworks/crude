@@ -4,6 +4,8 @@
 import { newAgenda, settleAgenda, type AgendaState } from './agenda';
 import type { Balance, Rating, TransportMode } from './balance';
 import { formatDate } from './calendar';
+// 4.14 Andockpunkt: Marke und Tankstellen (Kapitel 3).
+import { settleBrand, type BrandState } from './brand';
 import { checkBankruptcy, settleLoans, type Loan } from './credit';
 import { chapterCheck } from './chapter';
 import { advanceDrilling, type Well } from './drilling';
@@ -98,6 +100,8 @@ export interface GameState {
   log: string[];
   /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
   roundLogStart: number;
+  /** 4.14 Andockpunkt: Marke und Tankstellen – erst ab Kapitel 3 da, vorher undefined. */
+  brand?: BrandState;
 }
 
 /**
@@ -209,7 +213,9 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const rivale = advanceRival(gepachtet, balance, gebohrt, input.postedPrice);
   // Eigene Fuhrwerke und Pipeline (0.2.15+2): Löhne, Unterhalt, Baufortschritt, Sabotage – vor den Zinsen.
   // Türme und Pumpen (0.2.15+7): Turmmiete und Pumpenunterhalt, ebenfalls vor den Zinsen.
-  const verzinst = settleLoans(settleRigs(advanceLogistics(rivale, balance), balance), balance);
+  // 4.14 Andockpunkt: Tankstellen rechnen ab (vor den Zinsen); vor Kapitel 3 unverändert.
+  const vertrieb = settleBrand(rivale, balance);
+  const verzinst = settleLoans(settleRigs(advanceLogistics(vertrieb, balance), balance), balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   const gefahren = advanceTransport(verzinst, balance);
   const state = { ...checkBankruptcy(gefahren, balance), roundLogStart };

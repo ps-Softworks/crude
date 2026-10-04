@@ -4,6 +4,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { checkArcMarks, parseArcContent } from '../src/sim/arcs';
+// 4.14 Andockpunkt: Marke und Tankstellen.
+import { checkBrandRefs, parseBrandContent } from '../src/sim/brandContent';
 import { checkChapterMarks, parseChapterContent } from '../src/sim/chapter';
 import { formatContentError, parseEventFiles } from '../src/sim/eventContent';
 import { analyzeRelevance, checkRelevanceMarks, parseRelevanceContent, readMarks, simReadMarks } from '../src/sim/eventRelevance';
@@ -57,6 +59,10 @@ try {
 } catch (e) {
   errors.push({ file: 'content/tutorial.yaml', line: 1, message: (e as Error).message });
 }
+// 4.14 Andockpunkt: Marke und Tankstellen – Texte und Querprüfung gegen balance.yaml (brand).
+const marke = parseBrandContent('content/brand.yaml', readFileSync(new URL('../content/brand.yaml', import.meta.url), 'utf8'));
+errors.push(...marke.errors);
+if (marke.content) errors.push(...checkBrandRefs('content/brand.yaml', marke.content, loadBalance()));
 if (errors.length > 0) {
   for (const error of errors) console.error(formatContentError(error));
   console.error(`\n${errors.length} Fehler in ${files.length} Datei(en). Inhalte nicht in Ordnung.`);

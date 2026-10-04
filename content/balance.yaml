@@ -508,3 +508,68 @@ tutorial:
   endAfterProducedRounds: 2  # fertig, wenn die erste Quelle 2 Runden gefördert hat (die Verkaufsrunde ist vorbei)
   deeperMinChance: 25        # PLATZHALTER: tiefer bohren nur raten, wenn der Geologe der nächsten Stufe mind. 25 % gibt
   loanRounding: 100          # vorgeschlagene Kredite auf 100 $ aufgerundet (mindestens credit.minLoan)
+
+# 4.14 Andockpunkt – Marke und Tankstellen (Kapitel 3, GDD §6 Vertrieb, §13 Kapitel 3).
+# Eigene Marke, Tankstellennetz je Region, Marktanteil, Markenwert, Konkurrenz mit
+# Margaret Cranes Marke. Rechnung in src/sim/brand.ts, Texte in content/brand.yaml.
+# Alles PLATZHALTER bis zu den Bot-Läufen für Kapitel 3. Mengen in Barrel Benzin je Runde.
+brand:
+  unlockChapter: 3          # GDD §13: Marke und Tankstellen sind neu in Kapitel 3
+  foundCost: 20000          # $ für Name, Schilder, Lackierung der ersten Zapfsäulen
+  station:
+    cost: 6000              # $ je Tankstelle (× costFactor der Region)
+    buildRounds: 1          # so viele Runden dauert der Bau
+    buildMax: 5             # höchstens so viele auf einmal in Auftrag geben
+    upkeep: 300             # $ je Tankstelle und Runde (Pächter, Pumpe, Lieferwagen)
+    resale: 0.5             # Anteil der Baukosten beim Verkauf einer Tankstelle
+    capacity: 4000          # bbl Benzin, die eine Tankstelle je Runde höchstens verkauft
+    maxPerRegion: 40        # so viele Tankstellen je Marke und Region höchstens
+  share:                    # Anziehung = Stationen^stationExponent × (awarenessBase + Bekanntheit/100) × Preisfaktor × Ruf
+    stationExponent: 0.8    # unter 1: die zwanzigste Tankstelle bringt weniger als die erste
+    awarenessBase: 0.3      # auch eine unbekannte Marke verkauft etwas – wer vorbeifährt, tankt
+    reputationWeight: 0.4   # Ruf in der Öffentlichkeit ±100 → Anziehung ±40 % (GDD §6: ein Skandal senkt den Absatz sofort)
+    independentAwareness: 0.2  # freie Tankstellen gelten als so bekannt (Bekanntheit 20)
+  prices:                   # Preis an der Zapfsäule: Anziehung und Marge in $ je bbl
+    billig: { attract: 1.4, margin: 0.2 }
+    normal: { attract: 1.0, margin: 0.4 }
+    teuer: { attract: 0.7, margin: 0.6 }
+  priceWar:
+    marginFactor: 0.5       # beide Marken billig in einer Region: Preiskampf, die Marge halbiert sich noch einmal
+  awareness:
+    decay: 0.08             # Anteil der Bekanntheit, der je Runde verblasst
+    perStation: 1.2         # Bekanntheit je Runde × Wurzel der Tankstellen (Schilder an der Straße)
+    scandalLoss: 6          # Bekanntheit weniger je Schwere eines Skandals (1–5), in jeder Region
+  campaigns:                # Werbung (GDD §6): Kosten, Dauer in Runden, Bekanntheit je Runde
+    - { id: plakate, cost: 3000, rounds: 2, gain: 6 }
+    - { id: radio, cost: 8000, rounds: 2, gain: 12 }
+    - { id: strassenkarten, cost: 5000, rounds: 4, gain: 4 }
+  demand:
+    growth: 0.03            # Automobilisierung: Benzinnachfrage wächst je Runde um 3 % (bis 4.1 sie liefert)
+    crashDrop: 0.25         # im Kreditcrash (Weltmodell 4.1) tanken die Leute ein Viertel weniger
+  supply:
+    boughtCost: 0.15        # $ je bbl, wenn die eigene Raffinerie (4.13) nicht genug Benzin liefert und zugekauft wird
+  crane:                    # Margaret Crane (Crane Eastern) führt den Kampf um die Marke (GDD §13)
+    reactShare: 0.15        # ab so viel Marktanteil Jacobs in einer Region denkt sie über einen Preiskampf nach …
+    warChance: 0.5          # … und beginnt ihn mit dieser Chance je Runde (auch, wenn Jacob billig verkauft)
+    warRounds: 3            # so lange hält sie den Preiskampf durch
+    cooldown: 2             # danach so viele Runden Ruhe in der Region
+    expandChance: 0.35      # Chance je Runde und Region, neue Tankstellen zu bauen, solange ihr Anteil unter targetShare liegt
+    expandStations: 2       # so viele auf einmal
+    targetShare: 0.45       # so viel Marktanteil will sie je Region halten
+    adGain: 2               # Bekanntheit je Runde durch ihre ständige Werbung
+  value:
+    goodwillPerBarrel: 0.6  # Markenwert = Σ Bekanntheit × Nachfrage × goodwillPerBarrel × Ruf (Anleger zahlen für den Namen)
+    assetShare: 0.5         # Tankstellen zählen im Imperiumswert mit diesem Anteil ihrer Baukosten
+  goal:                     # Kapitelprüfung Kapitel 3 (GDD §13): Marke in ≥ 3 Regionen oder ≥ 10 % Marktanteil
+    regions: 3
+    share: 0.10
+    presenceStations: 3     # ab so vielen Tankstellen gilt die Marke in einer Region als vertreten
+  antitrust:                # GDD §15: Kartellbehörde ab 25 % regionalem oder 15 % nationalem Marktanteil (für 4.3 Gesetze)
+    regional: 0.25
+    national: 0.15
+  regions:                  # Absatzgebiete; Namen in content/brand.yaml. demand in bbl Benzin je Runde zu Kapitelbeginn
+    - { id: cordova, demand: 60000, costFactor: 0.8, independents: 6, craneStations: 6, craneAwareness: 35, fromChapter: 3 }
+    - { id: okara, demand: 40000, costFactor: 0.9, independents: 5, craneStations: 4, craneAwareness: 25, fromChapter: 3 }
+    - { id: mittelland, demand: 70000, costFactor: 1.0, independents: 8, craneStations: 10, craneAwareness: 45, fromChapter: 3 }
+    - { id: ostkueste, demand: 110000, costFactor: 1.4, independents: 10, craneStations: 18, craneAwareness: 65, fromChapter: 3 }
+    - { id: sierra_alta, demand: 50000, costFactor: 1.2, independents: 6, craneStations: 3, craneAwareness: 20, fromChapter: 4 }

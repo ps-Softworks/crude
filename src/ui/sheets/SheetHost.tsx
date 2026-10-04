@@ -5,6 +5,10 @@ import type { OpenItem } from '../inbox';
 import type { OpenSheet, SheetId } from '../sceneState';
 import { Sheet, type SheetSize } from '../sheet/Sheet';
 import { BellSheet } from './BellSheet';
+// 4.14 Andockpunkt: Marke und Tankstellen.
+import { BrandSheet } from './BrandSheet';
+import { brandContent } from '../brand';
+import { localize } from '../../sim/i18n';
 import { CalendarSheet } from './CalendarSheet';
 import { FamilySheet } from './FamilySheet';
 import { FreightSheet } from './FreightSheet';
@@ -35,6 +39,8 @@ export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   glocke: { title: 'Runde beenden', size: 'brief' },
   bericht: { title: 'Was diese Runde geschah', size: 'brief' },
   wartende: { title: 'Wer vor der Tür wartet', size: 'brief' },
+  // 4.14 Andockpunkt: Marke und Tankstellen.
+  marke: { title: localize(brandContent.object.title), size: 'mappe' },
 };
 
 export interface SheetHostProps {
@@ -73,6 +79,8 @@ export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound
     glocke: () => <BellSheet ctx={ctx} onEndRound={onEndRound} onGo={onGo} onChapterEnd={onChapterEnd} />,
     bericht: () => <ReportSheet report={report} onDone={onClose} next={open.then === 'zeitung'} onJournal={() => ctx.open('protokoll', { back: { sheet: 'bericht' } })} />,
     wartende: () => <WaitingSheet ctx={ctx} onVisitor={onVisitor} />,
+    // 4.14 Andockpunkt: Marke und Tankstellen.
+    marke: () => <BrandSheet ctx={ctx} />,
   };
   return (
     <Sheet

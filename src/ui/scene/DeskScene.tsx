@@ -40,6 +40,11 @@ import {
   WallMapShape,
 } from './objects/Shapes';
 import { RuthNote } from './RuthNote';
+// 4.14 Andockpunkt: Vertrieb (Marke und Tankstellen), erst ab Kapitel 3 auf dem Tisch.
+import { BrandShape } from './objects/BrandShape';
+import { brandDeskStatus } from '../sheets/BrandSheet';
+import { brandContent } from '../brand';
+import { localize } from '../../sim/i18n';
 
 /** Wo was liegt, in Prozent der Bühne (unter der Kopfleiste). */
 const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte' | 'tuer', Placement> = {
@@ -56,6 +61,8 @@ const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte
   fracht: { left: 19, top: 75, width: 15, height: 22 },
   protokoll: { left: 36, top: 76, width: 9, height: 21 },
   glocke: { left: 86, top: 70, width: 12, height: 27 },
+  // 4.14 Andockpunkt: zwischen Kassenbuch und Glocke.
+  marke: { left: 73, top: 75, width: 12, height: 22 },
 };
 
 export interface DeskSceneProps {
@@ -104,6 +111,8 @@ export function DeskScene(p: DeskSceneProps) {
   const familieGanz = familyView(game, balance, familyContent);
   const familie = { ...familieGanz, members: familieGanz.members.filter((m) => !p.hideFamily.includes(m.id)) };
   const zeitung = game.finished ? null : makeNewspaper(game, balance, newspaperContent);
+  // 4.14 Andockpunkt: Schild am Gegenstand „Vertrieb“; null = vor Kapitel 3 unsichtbar.
+  const vertrieb = brandDeskStatus(game);
 
   // Akte: was die Türme gerade tun, gezählt in src/sim (rigSummary).
   const tuerme = rigSummary(game);
@@ -319,6 +328,8 @@ export function DeskScene(p: DeskSceneProps) {
           <FolderShape variant="fracht" />,
         )}
         {obj('protokoll', 'Kladde', { status: p.saved ? '✓ gesichert' : undefined }, <NotebookShape />)}
+        {/* 4.14 Andockpunkt: Vertrieb – nur sichtbar, wenn die Marke freigeschaltet ist (Kapitel 3). */}
+        {vertrieb !== null && obj('marke', localize(brandContent.object.name), { status: vertrieb }, <BrandShape />)}
         {obj(
           'glocke',
           game.finished ? 'Kapitel beendet' : 'Runde beenden',

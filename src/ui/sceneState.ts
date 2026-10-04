@@ -22,6 +22,8 @@ export const SHEET_IDS = [
   'bericht',
   /** Wer vor der Tür wartet, wenn es mehrere sind (0.2.15+11). */
   'wartende',
+  /** 4.14 Andockpunkt: Vertrieb – Marke und Tankstellen (erst ab Kapitel 3 auf dem Tisch). */
+  'marke',
 ] as const;
 export type SheetId = (typeof SHEET_IDS)[number];
 

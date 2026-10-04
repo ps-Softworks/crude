@@ -1,0 +1,37 @@
+/* Fenster „Vertrieb“ (4.14): Marke und Tankstellen. Eigene Datei, damit die
+   Zusammenführung mit anderen Phase-4-Systemen scene.css nicht anfassen muss. */
+
+.marke-brief { max-width: 62ch; }
+.marke-brieftext { font-style: italic; color: var(--tinte-weich); line-height: 1.45; }
+.marke-namen { border: 1px solid var(--linie); padding: 8px 12px; margin: 10px 0 12px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.marke-namen legend { padding: 0 4px; color: var(--tinte-weich); }
+
+.marke-bericht { border-left: 3px solid var(--ocker); padding: 2px 10px; margin-bottom: 10px; background: var(--papier-hell); }
+.marke-bericht h3 { margin: 4px 0; font-size: 1rem; }
+.marke-bericht ul { margin: 4px 0 6px; padding-left: 18px; }
+
+.marke-kennzahlen { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 6px 0 2px; }
+
+.marke-tabelle { border-collapse: collapse; width: 100%; margin-top: 8px; font-variant-numeric: lining-nums tabular-nums; }
+.marke-tabelle th, .marke-tabelle td { text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--linie-hell); vertical-align: top; }
+.marke-tabelle thead th { font-weight: normal; color: var(--tinte-weich); font-size: 0.9rem; border-bottom: 1px solid var(--linie); }
+.marke-tabelle tr.zu th { color: var(--tinte-blass); }
+
+.marke-preise { display: inline-flex; gap: 2px; }
+.marke-preise button { padding: 1px 6px; font-size: 0.85rem; }
+.marke-preise button.gewaehlt { background: var(--ocker-hell); border-color: var(--ocker); color: var(--tinte); opacity: 1; }
+.marke-krieg { color: var(--rot); font-weight: bold; white-space: nowrap; }
+
+.marke-aktionen { display: flex; flex-wrap: wrap; gap: 4px; }
+.marke-aktionen button { font-size: 0.85rem; padding: 2px 6px; }
+
+.marke-werbung section { margin-bottom: 12px; }
+.marke-werbung h3 { margin: 6px 0 2px; }
+.marke-laeuft { align-self: center; }
+
+@media (max-width: 720px) {
+  .marke-tabelle thead { display: none; }
+  .marke-tabelle tr { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--linie); }
+  .marke-tabelle th, .marke-tabelle td { border-bottom: none; }
+  .marke-aktionen { grid-column: 1 / -1; }
+}
