@@ -111,8 +111,8 @@ export function FolderShape({ variant }: { variant: 'akte' | 'fracht' }) {
       <path d="M6,16 L40,16 L46,8 L76,8 L82,16 L104,16 L104,76 L6,76 Z" className={variant === 'akte' ? 'f-mappe' : 'f-mappe-gruen'} />
       <rect x="10" y="22" width="90" height="50" className="f-papier" />
       {variant === 'akte' ? (
-        <g transform="translate(55 64)">
-          <Bohrturm x={0} y={0} s={20} />
+        <g transform="translate(55 68)">
+          <Bohrturm x={0} y={0} s={28} />
         </g>
       ) : (
         <g className="s-tinte">
@@ -125,13 +125,32 @@ export function FolderShape({ variant }: { variant: 'akte' | 'fracht' }) {
   );
 }
 
-/** Kleiner Bohrturm im Ordner, als Strichzeichnung. */
+/**
+ * Kleiner Bohrturm im Ordner (0.2.15+11): Gitterturm wie das Zeichen in der
+ * Kopfleiste – zwei Beine, Querstreben, Kreuzverbände, oben die Rolle, unten der Boden.
+ */
 function Bohrturm({ x, y, s }: { x: number; y: number; s: number }) {
+  const h = s * 1.5;
+  const top = y - h;
+  // Breite des Turms auf Höhe t (0 = Boden, 1 = Spitze).
+  const bei = (t: number) => (s / 2) * (1 - t * 0.82);
+  const hoehe = (t: number) => y - h * t;
+  const ebenen = [0.28, 0.54, 0.76];
+  const streben = ebenen.map((t) => `M${x - bei(t)},${hoehe(t)} L${x + bei(t)},${hoehe(t)}`).join(' ');
+  const kreuze = [0, ...ebenen]
+    .slice(0, -1)
+    .map((t, i) => {
+      const t2 = ebenen[i];
+      return `M${x - bei(t)},${hoehe(t)} L${x + bei(t2)},${hoehe(t2)} M${x + bei(t)},${hoehe(t)} L${x - bei(t2)},${hoehe(t2)}`;
+    })
+    .join(' ');
   return (
-    <path
-      d={`M${x - s / 2},${y} L${x},${y - s * 1.2} L${x + s / 2},${y} M${x - s / 3},${y - s * 0.4} L${x + s / 3},${y - s * 0.4} M${x - s / 5},${y - s * 0.8} L${x + s / 5},${y - s * 0.8}`}
-      className="s-tinte-dick"
-    />
+    <g>
+      <path d={`M${x - bei(0)},${y} L${x - bei(1)},${top} L${x + bei(1)},${top} L${x + bei(0)},${y}`} className="s-tinte-dick" />
+      <path d={`${streben} ${kreuze}`} className="s-tinte" />
+      <path d={`M${x - s * 0.62},${y} L${x + s * 0.62},${y}`} className="s-tinte-dick" />
+      <circle cx={x} cy={top - s * 0.06} r={s * 0.08} className="s-tinte-dick" />
+    </g>
   );
 }
 

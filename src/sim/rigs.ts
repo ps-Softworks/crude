@@ -92,6 +92,33 @@ export function freeRig(state: Pick<GameState, 'rigs' | 'wells' | 'round'>): Rig
     .sort((a, b) => ausstattung(b) - ausstattung(a))[0];
 }
 
+/** Was die Türme gerade tun – gezählt für die Akte am Schreibtisch (0.2.15+11). */
+export interface RigSummary {
+  /** Der Turm bohrt (die Bohrung läuft). */
+  drilling: number;
+  /** Die Bohrung steht und wartet auf Jacob: trocken (tiefer oder aufgeben) oder Werkzeug klemmt. */
+  waiting: number;
+  /** Frei für eine neue Bohrung – genau die Türme, aus denen freeRig wählt. */
+  idle: number;
+  /** Gekauft, aber noch nicht geliefert. */
+  delivering: number;
+}
+
+export function rigSummary(state: Pick<GameState, 'rigs' | 'wells' | 'round'>): RigSummary {
+  const out: RigSummary = { drilling: 0, waiting: 0, idle: 0, delivering: 0 };
+  for (const rig of state.rigs) {
+    if (!rigReady(state, rig)) {
+      out.delivering++;
+      continue;
+    }
+    const well = rigWell(state, rig.id);
+    if (!well) out.idle++;
+    else if (well.status === 'drilling') out.drilling++;
+    else out.waiting++;
+  }
+  return out;
+}
+
 /** Warum gerade kein Turm frei ist, in einem Satz. */
 export function noRigReason(state: Pick<GameState, 'rigs' | 'round'>): string {
   const unterwegs = state.rigs.filter((r) => !rigReady(state, r));

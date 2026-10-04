@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Balance } from './balance';
 import { takeLoan } from './credit';
-import { applyAction, nextStep, parcelActions, roundLog, sourceRows } from './desk';
+import { applyAction, drillBlocker, nextStep, parcelActions, roundLog, sourceRows } from './desk';
 import { abandonWell, drillDeeper, fishWell, stageCost, startDrilling, type Well, type WellStatus } from './drilling';
 import { endRound, newGame, type GameState } from './game';
 import { buyLease, buyOption, exerciseOption, leaseTerms, type Lease } from './lease';
@@ -174,6 +174,49 @@ describe('Aktionen auf einer Parzelle (parcelActions)', () => {
   it('eine unbekannte Parzelle bleibt ohne Aktion', () => {
     const state = newGame('schreibtisch', balance);
     expect(parcelActions(state, balance, 'gibtsnicht')).toEqual([]);
+  });
+
+  it('gesperrte Knöpfe sagen, woran es liegt: Geld oder Turm (0.2.15+11)', () => {
+    const state = newGame('schreibtisch', balance);
+    const id = state.options[0].parcelId;
+    const pacht = ok(exerciseOption(state, balance, id));
+    const [arm] = parcelActions({ ...pacht, cash: 0 }, balance, id);
+    expect(arm.reasonKind).toBe('money');
+    // Turm schon im Einsatz: Geld hilft nicht – der Weg führt zur Bohrturm-Akte.
+    const zweite = state.parcels.find((p) => !p.discovery && p.id !== id && !state.options.some((o) => o.parcelId === p.id))!;
+    const reich = { ...pacht, cash: 100000 };
+    const beide = ok(buyLease(ok(startDrilling(reich, sicher, id)), balance, zweite.id));
+    const [bohren] = parcelActions(beide, balance, zweite.id);
+    expect(bohren.ok).toBe(false);
+    expect(bohren.reasonKind).toBe('rig');
+    // Was geht, hat keinen Grund.
+    expect(parcelActions(reich, balance, id)[0].reasonKind).toBeUndefined();
+  });
+});
+
+describe('Warum kein Bohren-Knopf (drillBlocker, 0.2.15+11)', () => {
+  it('trocken aufgegeben: weitere Löcher erst auf fündigem Land', () => {
+    const roh = mitBohrung('dry');
+    const id = roh.wells[0].parcelId;
+    const state = { ...roh, parcels: roh.parcels.map((p) => (p.id === id ? { ...p, slots: 3 } : p)) };
+    expect(drillBlocker(state, balance, id)).toMatch(/erst, wenn .* Öl gefunden/);
+  });
+
+  it('der Turm bohrt hier schon: mit Restlaufzeit', () => {
+    const state = mitBohrung('drilling', { roundsLeft: 2 });
+    expect(drillBlocker(state, balance, state.wells[0].parcelId)).toMatch(/bohrt der Turm schon – fertig in 2 Runden/);
+  });
+
+  it('alle Plätze belegt; und kein Grund, wenn es einen Knopf gibt oder eine Entscheidung wartet', () => {
+    const roh = mitBohrung('found', GEFUNDEN);
+    const id = roh.wells[0].parcelId;
+    const mit = (slots: number) => ({ ...roh, parcels: roh.parcels.map((p) => (p.id === id ? { ...p, slots } : p)) });
+    expect(drillBlocker(mit(1), balance, id)).toMatch(/Bohrplätze .* belegt/);
+    expect(drillBlocker(mit(3), balance, id)).toBeNull();
+    const wartet = mitBohrung('decision');
+    expect(drillBlocker(wartet, balance, wartet.wells[0].parcelId)).toBeNull();
+    const frisch = mitPacht('blocker');
+    expect(drillBlocker(frisch, balance, frisch.leases[0].parcelId)).toBeNull();
   });
 });
 

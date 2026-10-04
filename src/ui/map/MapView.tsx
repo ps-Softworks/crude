@@ -3,8 +3,9 @@
 // angedockt das Ranch-Fenster. Die Kopfleiste bleibt stehen.
 //
 // Esc-Reihenfolge: Ein offenes Ranch-Fenster schließt zuerst (hier, noch bevor
-// die Karte das Esc sieht), dann zoomt die Karte zur Provinz, dann geht es zurück
-// zum Schreibtisch (App, nur für ein Esc, das niemand behandelt hat).
+// die Karte das Esc sieht); hat der Spieler selbst gezoomt oder verschoben, fährt
+// die Karte zurück; sonst geht es zurück zum Schreibtisch (App, nur für ein Esc,
+// das niemand behandelt hat). Ohne Ranch-Fenster steht unten der nächste Schritt.
 
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import type { GameState } from '../../sim/game';
@@ -27,6 +28,7 @@ export function MapView({
   markers,
   onMarker,
   stamp,
+  hint = null,
 }: {
   game: GameState;
   debug: boolean;
@@ -45,6 +47,8 @@ export function MapView({
   onMarker: (marker: MapMarker) => void;
   /** Stempel nach einer Ranch-Aktion („Gepachtet“), kurz über der Karte. */
   stamp: { text: string; n: number } | null;
+  /** Einstieg bzw. nächster Schritt (Kartenfassung) – steht unten, solange kein Ranch-Fenster offen ist. */
+  hint?: string | null;
 }) {
   const [legende, setLegende] = useState(false);
   const kartenRef = useRef<HTMLDivElement>(null);
@@ -84,7 +88,7 @@ export function MapView({
     <div className="kartenansicht">
       {topBar}
       <div className="kartenleiste">
-        <button type="button" onClick={onDesk}>
+        <button type="button" onClick={onDesk} title="Zurück zum Schreibtisch (Esc – ist ein Ranch-Fenster offen, schließt das erste Esc dieses)">
           ‹ Schreibtisch <span className="taste-hinweis">(Esc)</span>
         </button>
         <span className="lage-revier" aria-label="Lage im Revier">
@@ -119,6 +123,11 @@ export function MapView({
             <span key={stamp.n} className="stempel" role="status">
               {stamp.text}
             </span>
+          )}
+          {ranch === null && hint && (
+            <p className="karte-hinweis" role="status">
+              <span className="karte-hinweis-kopf">Ruths Zettel</span> {hint}
+            </p>
           )}
         </div>
         {ranchSheet}

@@ -20,13 +20,11 @@ import {
   type RigResult,
 } from '../sim/rigs';
 import { balance } from './balance';
+import { money, NBSP } from './format';
 
 const R = balance.drilling.rigs;
 const ERSTE = `${balance.drilling.stages[0].depth} m`;
 
-function money(value: number): string {
-  return `${value.toLocaleString('de-DE', { maximumFractionDigits: 2 })} $`;
-}
 
 function runden(n: number): string {
   return n === 1 ? '1 Runde' : `${n} Runden`;
@@ -46,7 +44,10 @@ function lage(game: GameState, rig: Rig): string {
   const well = rigWell(game, rig.id);
   if (!well) return 'frei';
   const parcel = game.parcels.find((p) => p.id === well.parcelId);
-  return `bohrt auf ${parcel ? parcelLabel(parcel) : well.parcelId}`;
+  const ort = parcel ? parcelLabel(parcel) : well.parcelId;
+  if (well.status === 'decision') return `wartet auf ${ort}: trocken – tiefer bohren oder aufgeben?`;
+  if (well.status === 'stuck') return `wartet auf ${ort}: Werkzeug klemmt`;
+  return `bohrt auf ${ort}`;
 }
 
 export function RigsPanel({ game, onChange }: { game: GameState; onChange: (s: GameState) => void }) {
@@ -87,12 +88,12 @@ export function RigsPanel({ game, onChange }: { game: GameState; onChange: (s: G
           </li>
         ))}
       </ul>
-      <p className="hint">
-        Dampfmaschine: jede Bohrstufe {Math.round((1 - R.steam.costFactor) * 100)} % billiger
+      <p className="erklaerung">
+        Dampfmaschine: jede Bohrstufe {Math.round((1 - R.steam.costFactor) * 100)}{NBSP}% billiger
         {R.steam.roundsLess > 0 && ' und eine Runde schneller (mindestens eine)'} – spart {money(dampf.savingPerStage)} auf {ERSTE},
         {dampf.stages !== null ? ` bezahlt nach etwa ${dampf.stages} Bohrstufen.` : ' spart nichts.'}
         <br />
-        Stahlgestänge: {Math.round((1 - R.rods.riskFactor) * 100)} % weniger Unfälle und klemmendes Werkzeug – spart im Schnitt{' '}
+        Stahlgestänge: {Math.round((1 - R.rods.riskFactor) * 100)}{NBSP}% weniger Unfälle und klemmendes Werkzeug – spart im Schnitt{' '}
         {money(gestaenge.savingPerStage)} je Stufe auf {ERSTE}, in der Tiefe mehr
         {gestaenge.stages !== null ? ` (bezahlt nach etwa ${gestaenge.stages} Stufen auf ${ERSTE}).` : '.'}
       </p>
@@ -105,7 +106,7 @@ export function RigsPanel({ game, onChange }: { game: GameState; onChange: (s: G
         </Aktion>
       </div>
       <p className="muted">
-        Je Turm läuft eine Bohrung zugleich. Ein gekaufter Turm zählt mit {Math.round(R.assetShare * 100)} % des Preises zum Firmenwert
+        Je Turm läuft eine Bohrung zugleich. Ein gekaufter Turm zählt mit {Math.round(R.assetShare * 100)}{NBSP}% des Preises zum Firmenwert
         {kaufAb !== null && ` und ist ab ${runden(kaufAb)} Nutzung billiger als die Miete`}.
         {(kosten.rent > 0 || kosten.pumps > 0) && (
           <>

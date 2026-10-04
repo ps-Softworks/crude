@@ -6,6 +6,7 @@ import {
   applyEffects,
   autoResolve,
   conditionsMet,
+  defaultChoice,
   deskEvents,
   drawEvents,
   marksMet,
@@ -200,6 +201,16 @@ describe('Antworten', () => {
       ['nein', true],
     ]);
     expect(deskEvents(start, balance, [])).toEqual([]);
+  });
+
+  it('die Standardantwort ist markiert – default, sonst die erste mögliche (0.2.15+11)', () => {
+    const [karte] = deskEvents(start, balance, katalog);
+    expect(karte.choices.filter((c) => c.fallback).map((c) => c.id)).toEqual(['nein']);
+    expect(defaultChoice(start, katalog[0])?.id).toBe('nein');
+    // Ohne default: die erste mögliche – die teure ist gesperrt.
+    const ohne = ereignis('a', { choices: [wahl('teuer', { requires: { minCash: 1_000_000 } }), wahl('kaufen')] });
+    expect(defaultChoice(start, ohne)?.id).toBe('kaufen');
+    expect(deskEvents(start, balance, [ohne])[0].choices.filter((c) => c.fallback).map((c) => c.id)).toEqual(['kaufen']);
   });
 
   it('der nächste Schritt weist auf das offene Ereignis hin', () => {

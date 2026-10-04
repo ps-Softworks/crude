@@ -54,6 +54,7 @@ export function DeskObject({
     shortcut ? `Taste ${shortcut}` : null,
     badge ? `${badge.text}${badge.urgent ? ', Frist läuft ab' : ''}` : null,
     fresh ? 'neu' : null,
+    glow ? 'hier geht es weiter' : null,
     typeof status === 'string' ? status : null,
   ]
     .filter(Boolean)
@@ -74,6 +75,11 @@ export function DeskObject({
         {name}
         {shortcut && <kbd>{shortcut}</kbd>}
       </span>
+      {glow && (
+        <span className="hier-fahne" aria-hidden="true">
+          hier
+        </span>
+      )}
       {fresh && badge?.text !== 'neu' && (
         <span className="neu-stempel" aria-hidden="true">
           neu

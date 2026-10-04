@@ -58,7 +58,6 @@
       default: true
 
 - id: fuhrleute_bestochen
-  visitor: vormann
   rival: thorne
   marked: [fuhrleute_eigen]
   once: false
@@ -106,7 +105,6 @@
 
 # Moss, wenn noch nichts zwischen ihnen steht.
 - id: wegerecht_moss
-  visitor: moss
   ranch: moss
   certain: true
   once: false

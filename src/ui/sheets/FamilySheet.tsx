@@ -4,5 +4,6 @@ import { FamilyPanel } from '../FamilyPanel';
 import type { SheetContext } from './types';
 
 export function FamilySheet({ ctx }: { ctx: SheetContext }) {
-  return <FamilyPanel game={ctx.game} debug={ctx.debug} />;
+  // Der Fensterkopf heißt schon „Familie“ – kein zweiter Titel darunter.
+  return <FamilyPanel game={ctx.game} debug={ctx.debug} hideTitle />;
 }

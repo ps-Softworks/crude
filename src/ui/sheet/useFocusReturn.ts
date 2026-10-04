@@ -26,6 +26,8 @@ export function useFocusReturn(openId: string | null): void {
       const ziel = opener && !opener.classList.contains('objekt') ? opener : (gegenstand ?? opener);
       vorher.current = null;
       erstes.current = null;
+      // Ist gerade ein Besuch hereingekommen (Fenster „Wer wartet“), gehört der Fokus ihm.
+      if ((document.activeElement as HTMLElement | null)?.closest('.besuch')) return;
       ziel?.focus({ preventScroll: true });
     }
   }, [openId]);

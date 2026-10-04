@@ -28,11 +28,11 @@ steps:
 hints:
   # Schritt 1: Land sichern.
   lease_option:
-    de: Ohne Land kein Öl. Du hast eine kostenlose Option auf {ort} – der Geologe schätzt {chance}. Öffne die Wandkarte (K), klick die Ranch an und wähle „Option einlösen“. Das kostet nichts, danach gehört dir die Pacht.
+    de: Ohne Land kein Öl. Du hast eine kostenlose Option auf {ort} – der Geologe schätzt {chance}. Öffne die Wandkarte (K), klick die golden umrandete Ranch mit dem Fähnchen „hier“ an und wähle „Option einlösen“. Das kostet nichts, danach gehört dir die Pacht.
     en: No land, no oil. You hold a free option on {ort} – the geologist estimates {chance}. Open the wall map (K), click the ranch and choose “Exercise option”. It costs nothing, and the lease is yours.
   lease_buy:
-    de: Ohne Land kein Öl. {ort} sieht gut aus – der Geologe schätzt {chance}. Öffne die Wandkarte (K), klick sie an und wähle „Pacht kaufen“ ({kosten}). Behalte Geld für die Bohrung übrig.
-    en: No land, no oil. {ort} looks promising – the geologist estimates {chance}. Open the wall map (K), click it and choose “Buy lease” ({kosten}). Keep money aside for the drilling.
+    de: Ohne Land kein Öl. {ort} sieht gut aus – der Geologe schätzt {chance}. Öffne die Wandkarte (K) – die Ranch ist dort golden umrandet und trägt ein Fähnchen „hier“. Klick sie an und wähle „Pacht kaufen“ ({kosten}). Behalte Geld für die Bohrung übrig.
+    en: No land, no oil. {ort} looks promising – the geologist estimates {chance}. Open the wall map (K) – the ranch has a gold frame and a “here” flag. Click it and choose “Buy lease” ({kosten}). Keep money aside for the drilling.
   lease_none:
     de: Für Pacht und Bohrung reicht das Geld gerade nicht. Die Bank leiht dir etwas (Kassenbuch, G) – oder du läutest die Glocke (E) und wartest auf Einnahmen.
     en: There is not enough money for a lease and a well right now. The bank will lend you some (ledger, G) – or ring the bell (E) and wait for income.
@@ -76,3 +76,17 @@ hints:
   sold:
     de: Verkauft! Pacht, Bohrung, Verkauf – das ist der Kreislauf am Salt Hill. Läute die Glocke (E). Ab jetzt sagt dir Ruths Zettel auf der Schreibunterlage, was ansteht.
     en: Sold! Lease, drill, sell – that is the cycle at Salt Hill. Ring the bell (E). From now on Ruth's note on the blotter tells you what is next.
+
+# Fassungen für die Karte (0.2.15+11): Im Ranch-Fenster und am Kartenrand ist man
+# schon auf der Karte – dort fällt der Weg („Öffne die Wandkarte …“) weg. Fehlt
+# ein Hinweis hier, gilt der Text oben. Gleiche Platzhalter wie oben.
+onMap:
+  lease_option:
+    de: Ohne Land kein Öl. Du hast eine kostenlose Option auf {ort} – der Geologe schätzt {chance}. Klick die Ranch an und wähle „Option einlösen“. Das kostet nichts.
+    en: No land, no oil. You hold a free option on {ort} – the geologist estimates {chance}. Click the ranch and choose “Exercise option”. It costs nothing.
+  lease_buy:
+    de: Ohne Land kein Öl. {ort} sieht gut aus – der Geologe schätzt {chance}. Klick die Ranch (goldener Rahmen, Fähnchen „hier“) an und wähle „Pacht kaufen“ ({kosten}).
+    en: No land, no oil. {ort} looks promising – the geologist estimates {chance}. Click the ranch (gold frame, “here” flag) and choose “Buy lease” ({kosten}).
+  drill:
+    de: Deine Pacht auf {ort} ist bereit. Wähle „Bohren“ ({kosten}). Der Turm braucht eine Runde für die erste Stufe.
+    en: Your lease on {ort} is ready. Choose “Drill” ({kosten}). The rig needs one round for the first stage.

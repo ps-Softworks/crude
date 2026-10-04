@@ -32,6 +32,7 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
         empty="Diese Runde stehen keine festen Termine mehr im Kalender."
         onResolved={ctx.onGame}
         listLabel="Feste Termine"
+        next="nächster Termin"
         cardClass={() => 'event termin'}
       />
     </>

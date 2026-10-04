@@ -69,7 +69,6 @@
 # Entwurf – Philipp überarbeitet.
 # Nachwirkung: nur wenn Jacob Moss betrogen hat, 2 Runden danach.
 - id: moss_wagenweg
-  visitor: moss
   ranch: moss
   title:
     de: Ein Zaun über dem Wagenweg
@@ -265,7 +264,6 @@
 
 # Entwurf – Philipp überarbeitet.
 - id: moss_daniel_zorn
-  visitor: daniel
   ranch: moss
   title:
     de: Daniel geht nach Hallstead

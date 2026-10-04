@@ -15,12 +15,16 @@ export function Termine({ game, debug, lang = false }: { game: GameState; debug:
   const t = agendaView(game, balance);
   const punkte = '●'.repeat(t.used) + '○'.repeat(Math.max(0, t.budget - t.used));
   const extra = t.sickRounds > 0 ? '' : '◆'.repeat(t.overtimeUsed) + '◇'.repeat(Math.max(0, t.overtimeMax - t.overtimeUsed));
+  const frei = Math.max(0, t.budget - t.used);
+  const reserve = t.sickRounds > 0 ? 0 : Math.max(0, t.overtimeMax - t.overtimeUsed);
+  const erklaerung = `Termine dieser Runde: ${frei} von ${t.budget} frei (○ frei, ● belegt)${reserve > 0 ? `, dazu ${reserve} als Überstunde (◇) – die kosten Kraft` : ''}.`;
   return (
-    <span className={t.left === 0 ? 'termine warn' : 'termine'} title="● belegt · ○ frei · ◇ mögliche Überstunde (kostet Kraft)">
+    <span className={t.left === 0 ? 'termine warn' : 'termine'} title={erklaerung} aria-label={`${erklaerung} Jacob wirkt ${t.word}.`}>
       Termine <span className="punkte">{punkte}</span>
       <span className="punkte extra">{extra}</span> · wirkt {t.word}
       {lang && t.tired && ' (Müdigkeit kostet einen Termin)'}
       {lang && t.exhausted && ' (Fehler schleichen sich ein)'}
+      {lang && <span className="termine-legende"> ○ frei · ● belegt · ◇ Überstunde (kostet Kraft) · ◆ genommen</span>}
       {debug && (
         <>
           {' '}
@@ -63,9 +67,9 @@ export function TopBar({
       </span>
       <span>Tank {barrels(game.oilStock)} bbl</span>
       <Termine game={game} debug={debug} />
-      {game.bankruptcyDeadline > 0 && (
-        <button type="button" className="banderole" onClick={onLedger}>
-          Bankrott droht – Frist bis Runde {game.bankruptcyDeadline}
+      {game.bankruptcyDeadline > 0 && !game.finished && !game.ending && (
+        <button type="button" className="banderole" onClick={onLedger} title={`Bankrott droht – die Frist läuft bis Runde ${game.bankruptcyDeadline}. Klick öffnet das Kassenbuch.`}>
+          Bankrott droht · Runde {game.bankruptcyDeadline}
         </button>
       )}
       <span className="kopf-rechts">

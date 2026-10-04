@@ -18,6 +18,10 @@ export const SHEET_IDS = [
   'konkurrenz',
   'menu',
   'glocke',
+  /** Rundenbericht nach der Glocke: was über Nacht geschah (0.2.15+11). */
+  'bericht',
+  /** Wer vor der Tür wartet, wenn es mehrere sind (0.2.15+11). */
+  'wartende',
 ] as const;
 export type SheetId = (typeof SHEET_IDS)[number];
 
@@ -34,6 +38,10 @@ export interface OpenSheet {
   /** Gewählter Reiter; ohne Angabe gilt der zuletzt benutzte. */
   tab?: string;
   back?: SheetBack;
+  /** Dieses Ereignis liegt beim Öffnen vorn (0.2.15+11). */
+  focus?: string;
+  /** Geht dieses Fenster zu, schlägt sich danach jenes auf (Rundenbericht → Zeitung). */
+  then?: SheetId;
 }
 
 export interface SceneState {
@@ -50,7 +58,7 @@ export interface SceneState {
 }
 
 export type SceneAction =
-  | { type: 'open'; sheet: SheetId; tab?: string; back?: SheetBack }
+  | { type: 'open'; sheet: SheetId; tab?: string; back?: SheetBack; focus?: string }
   | { type: 'close' }
   | { type: 'back' }
   | { type: 'tab'; tab: string }
@@ -63,8 +71,8 @@ export type SceneAction =
   /** Diese Dinge gelten ab jetzt als gesehen (z. B. Briefe beim Öffnen der Post). */
   | { type: 'seen'; keys: readonly string[] }
   | { type: 'escape' }
-  /** Die Runde des Spiels hat sich geändert (oder das Spiel ist neu geladen). */
-  | { type: 'round'; round: number; autoNewspaper: boolean }
+  /** Die Runde des Spiels hat sich geändert (oder das Spiel ist neu geladen). report: der Rundenbericht kommt zuerst. */
+  | { type: 'round'; round: number; autoNewspaper: boolean; report?: boolean }
   | { type: 'reset' };
 
 export const initialScene: SceneState = { view: 'desk', sheet: null, ranch: null, visitor: null, round: 0, seen: [] };
@@ -77,6 +85,13 @@ function oeffne(state: SceneState, sheet: OpenSheet): SceneState {
   return { ...state, sheet, seen: merke(state.seen, sheet.id) };
 }
 
+/** Fenster zu – oder, wenn es ein „danach“ hat (Rundenbericht), das nächste auf. */
+function schliesse(state: SceneState): SceneState {
+  const then = state.sheet?.then;
+  if (then && !state.seen.includes(then)) return oeffne(state, { id: then });
+  return { ...state, sheet: null };
+}
+
 /**
  * Esc-Reihenfolge (Bauplan Abschnitt 3): erst der Besucher (er wartet draußen,
  * das Ereignis bleibt offen), dann das Fenster, dann das Ranch-Fenster, dann
@@ -85,7 +100,7 @@ function oeffne(state: SceneState, sheet: OpenSheet): SceneState {
  */
 export function escape(state: SceneState): SceneState {
   if (state.visitor !== null) return { ...state, visitor: null };
-  if (state.sheet !== null) return { ...state, sheet: null };
+  if (state.sheet !== null) return schliesse(state);
   if (state.view === 'map' && state.ranch !== null) return { ...state, ranch: null };
   if (state.view === 'map') return { ...state, view: 'desk' };
   return state;
@@ -98,9 +113,10 @@ export function sceneReducer(state: SceneState, action: SceneAction): SceneState
         id: action.sheet,
         ...(action.tab !== undefined ? { tab: action.tab } : {}),
         ...(action.back ? { back: action.back } : {}),
+        ...(action.focus !== undefined ? { focus: action.focus } : {}),
       });
     case 'close':
-      return { ...state, sheet: null };
+      return schliesse(state);
     case 'back': {
       const back = state.sheet?.back;
       if (!back) return { ...state, sheet: null };
@@ -128,9 +144,11 @@ export function sceneReducer(state: SceneState, action: SceneAction): SceneState
     case 'round': {
       if (action.round === state.round) return state;
       const neu: SceneState = { ...state, round: action.round, seen: [] };
-      // Rundenbeginn: höchstens die Zeitung schlägt sich von selbst auf – und nur,
-      // wenn gerade nichts anderes offen ist.
-      return action.autoNewspaper && neu.sheet === null && neu.visitor === null ? oeffne(neu, { id: 'zeitung' }) : neu;
+      // Rundenbeginn: höchstens der Rundenbericht und die Zeitung schlagen sich von
+      // selbst auf – erst der Bericht, dann die Zeitung – und nur, wenn gerade nichts anderes offen ist.
+      if (neu.sheet !== null || neu.visitor !== null) return neu;
+      if (action.report) return oeffne(neu, { id: 'bericht', ...(action.autoNewspaper ? { then: 'zeitung' as const } : {}) });
+      return action.autoNewspaper ? oeffne(neu, { id: 'zeitung' }) : neu;
     }
     case 'reset':
       return { ...initialScene };

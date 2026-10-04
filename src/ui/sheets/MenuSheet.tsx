@@ -1,4 +1,4 @@
-// Fenster „Menü“ (Schublade, ☰): Neues Spiel, Feedback, Einstiegshilfe,
+// Fenster „Menü“ (☰ in der Kopfleiste; die Schublade bleibt fürs Schattenbuch frei): Neues Spiel, Feedback, Einstiegshilfe,
 // Zeitung, Rundgang, Tastenhilfe – und mit Debug-Bereich (?debug=1) der Reiter „Debug“.
 
 import { FeedbackLink } from '../FeedbackLink';
@@ -47,7 +47,7 @@ export function KeyHelp({ debugTools }: { debugTools: boolean }) {
           <dt>
             <kbd>Esc</kbd>
           </dt>
-          <dd>Besuch warten lassen · Fenster schließen · Ranch-Fenster schließen · Karte zurück zur Provinz · zurück zum Schreibtisch</dd>
+          <dd>Besuch warten lassen · Fenster schließen · Ranch-Fenster schließen · Karte zurück zur Startansicht · zurück zum Schreibtisch</dd>
         </div>
         <div>
           <dt>

@@ -5,12 +5,15 @@
 import tutorialText from '../../content/tutorial.yaml?raw';
 import { formatContentError } from '../sim/eventContent';
 import { parseTutorialContent } from '../sim/tutorial';
+import { parseMapHints, withMapHints } from './tutorialMap';
 import { saveStore } from './storage';
 
 const { content, errors } = parseTutorialContent('content/tutorial.yaml', tutorialText);
 if (!content) throw new Error(errors.map(formatContentError).join('\n'));
 
 export const tutorialContent = content;
+
+export const mapTutorialContent = withMapHints(content, parseMapHints('content/tutorial.yaml', tutorialText));
 
 const KEY = 'crude.tutorial';
 

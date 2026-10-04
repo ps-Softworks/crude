@@ -22,6 +22,7 @@
   --rot-hell: #f0d5c8;
   /* Kennfarben der Karte, gedämpft wie kolorierte Stiche */
   --gruen: #4c6a38;
+  --gruen-dunkel: #2f4a22;
   --gruen-hell: #d3dbbb;
   --blau: #3c5872;
   --blau-hell: #cfd6d6;
@@ -147,7 +148,7 @@ a { color: var(--tinte); }
 .karte-anker { stroke: var(--tinte); }
 .karte-ranchname { font-family: var(--schrift); fill: var(--tinte); text-anchor: middle; stroke: var(--papier-hell); stroke-opacity: 0.75; stroke-linejoin: round; }
 .karte-ranchname.fund { font-weight: 700; }
-.karte-klein { font-family: var(--schrift); fill: var(--tinte-weich); text-anchor: middle; stroke: var(--papier-hell); stroke-opacity: 0.7; stroke-linejoin: round; font-variant-numeric: lining-nums; }
+.karte-klein { font-family: var(--schrift); fill: var(--tinte); text-anchor: middle; stroke: var(--papier-hell); stroke-opacity: 0.7; stroke-linejoin: round; font-variant-numeric: lining-nums; }
 .karte-ort { font-family: var(--schrift); font-style: italic; fill: var(--tinte); stroke: var(--papier-hell); stroke-opacity: 0.8; stroke-linejoin: round; }
 .karte-gebietsname { font-family: var(--schrift); font-variant: small-caps; font-weight: 600; fill: var(--tinte-weich); text-anchor: middle; stroke: var(--papier); stroke-opacity: 0.85; stroke-linejoin: round; }
 .karte-gebietsname.gesperrt { fill: var(--tinte-blass); }

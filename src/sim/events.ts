@@ -397,6 +397,15 @@ function waehlbar(state: GameState, event: EventDef, choice: EventChoice): boole
 }
 
 /**
+ * Die Standardantwort (2.4): Was gilt, wenn die Frist ohne Antwort abläuft – die
+ * Wahl mit default: true, sonst die erste; ist sie gesperrt, die erste mögliche.
+ * undefined, wenn keine geht (dann verfällt das Ereignis ohne Effekt).
+ */
+export function defaultChoice(state: GameState, event: EventDef): EventChoice | undefined {
+  return [event.choices.find((c) => c.default) ?? event.choices[0], ...event.choices].find((c) => c && waehlbar(state, event, c));
+}
+
+/**
  * Würfelt die Ereignisse der laufenden Runde: Jedes Ereignis, dessen
  * Bedingungen stimmen, das nicht schon wartet und (bei once) noch nicht kam,
  * kommt mit seiner Chance – in der Reihenfolge des Katalogs, höchstens
@@ -590,11 +599,7 @@ export function autoResolve(state: GameState, catalog: readonly EventDef[], lang
     const event = finde(catalog, id);
     // Frist läuft noch: der Brief bleibt liegen.
     if (event && dueRound(out, id) > out.round) continue;
-    const choice = event
-      ? [event.choices.find((c) => c.default) ?? event.choices[0], ...event.choices].find(
-          (c) => c && waehlbar(out, event, c),
-        )
-      : undefined;
+    const choice = event ? defaultChoice(out, event) : undefined;
     if (event && choice) {
       out = erledigen(out, event, choice, lang, 'Ohne Antwort: ', timedRounds);
     } else {
@@ -622,6 +627,8 @@ export interface DeskChoice {
   overtime: number;
   ok: boolean;
   reason?: string;
+  /** Diese Antwort gilt, wenn die Frist ohne Antwort abläuft (nach jetzigem Stand; feste Termine haben keine). */
+  fallback?: true;
 }
 
 /** Ein offenes Ereignis oder ein fester Termin, wie der Schreibtisch es zeigt. */
@@ -642,6 +649,8 @@ export interface DeskEvent {
 
 function zeigen(state: GameState, balance: Balance, event: EventDef, lang: Lang): DeskEvent {
   const document = deskDocument(state, balance, event, lang);
+  // Feste Termine haben keine Standardantwort – bleiben sie liegen, passiert nichts.
+  const standard = event.routine ? undefined : defaultChoice(state, event)?.id;
   return {
     ...(document ? { document } : {}),
     id: event.id,
@@ -653,7 +662,7 @@ function zeigen(state: GameState, balance: Balance, event: EventDef, lang: Lang)
     choices: event.choices.map((c) => {
       const cost = choiceCost(event, c);
       const reason = choiceReason(state, balance, event, c);
-      const basis = { id: c.id, label: localize(c.label, lang), cost, overtime: overtimeFor(state, cost) };
+      const basis = { id: c.id, label: localize(c.label, lang), cost, overtime: overtimeFor(state, cost), ...(c.id === standard ? { fallback: true as const } : {}) };
       return reason ? { ...basis, ok: false, reason } : { ...basis, ok: true };
     }),
   };

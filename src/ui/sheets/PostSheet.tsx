@@ -13,6 +13,8 @@ export function PostSheet({ ctx }: { ctx: SheetContext }) {
       empty="Der Posteingang ist leer."
       onResolved={ctx.onGame}
       listLabel="Briefe"
+      focus={ctx.focus}
+      next="nächster Brief"
       cardClass={(e) => (e.urgent ? 'event brief dringend' : 'event brief')}
       itemMeta={(e) => (
         <>

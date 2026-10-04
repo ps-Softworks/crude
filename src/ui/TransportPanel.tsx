@@ -29,19 +29,13 @@ import { buyerCapacityLeft, buyerPrice, capacityLeft, exclusiveSurcharge, modeUn
 import { timedEffect, timedRoundsLeft } from '../sim/events';
 import { cartelCut, craneCutRoundsLeft, exclusiveActive, grudgeCut, railFrozen, volumeDealActive, volumeObligation } from '../sim/trust';
 import { balance } from './balance';
+import { barrels, money, NBSP } from './format';
 
 const T = balance.transport;
 
-function money(value: number): string {
-  return `${value.toLocaleString('de-DE', { maximumFractionDigits: 2 })} $`;
-}
-
+/** Preis je Barrel mit Cent, z. B. „0,76 $“. */
 function price(value: number): string {
-  return `${value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $`;
-}
-
-function barrels(value: number): string {
-  return Math.round(value).toLocaleString('de-DE');
+  return `${value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${NBSP}$`;
 }
 
 const BUYER_LABEL: Record<Buyer, string> = { crane: 'Crane Trust', trader: T.trader.label };
@@ -59,6 +53,8 @@ function Aktion({ result, onDone, children }: { result: LogisticsResult; onDone:
 export function SalePanel({ game, onSold }: { game: GameState; onSold: (state: GameState) => void }) {
   const [amount, setAmount] = useState<string>('');
   const [buyer, setBuyer] = useState<Buyer>('crane');
+  // Quittung des letzten Verkaufs (0.2.15+11): steht im Fenster, nicht nur auf Ruths Zettel.
+  const [quittung, setQuittung] = useState<string | null>(null);
   const tank = Math.floor(game.oilStock);
   const nimmt = buyerCapacityLeft(game, balance, buyer);
   const vorschlag = Math.min(nimmt, Math.max(0, ...TRANSPORT_MODES.map((m) => Math.min(tank, capacityLeft(game, balance, m)))));
@@ -106,25 +102,41 @@ export function SalePanel({ game, onSold }: { game: GameState; onSold: (state: G
         Menge (bbl){' '}
         <input type="number" min={1} step={1} value={amount === '' ? vorschlag : amount} onChange={(e) => setAmount(e.target.value)} />
       </label>
-      <table className="wege">
+      {!(menge >= 1) && (
+        <p className="weg-grund">{tank < 1 ? 'Der Tank ist leer – nach der nächsten Förderung gibt es wieder etwas zu verkaufen.' : 'Gib eine Menge ein.'}</p>
+      )}
+      <table className="wege verkauf">
         <thead>
           <tr>
             <th>Weg</th>
             <th>Fracht je bbl</th>
             <th>netto je bbl</th>
             <th>frei</th>
-            <th>Erlös für {barrels(menge || 0)} bbl</th>
+            <th>Verkaufen ({barrels(menge || 0)} bbl)</th>
           </tr>
         </thead>
         <tbody>
           {TRANSPORT_MODES.map((mode) => (
-            <WegZeile key={mode} game={game} mode={mode} buyer={buyer} menge={menge} onSold={(s) => {
+            <WegZeile
+              key={mode}
+              game={game}
+              mode={mode}
+              buyer={buyer}
+              menge={menge}
+              onSold={(s, text) => {
                 onSold(s);
                 setAmount('');
-              }} />
+                setQuittung(text);
+              }}
+            />
           ))}
         </tbody>
       </table>
+      {quittung && (
+        <p className="quittung" role="status">
+          {quittung}
+        </p>
+      )}
     </div>
   );
 }
@@ -140,26 +152,45 @@ function WegZeile({
   mode: TransportMode;
   buyer: Buyer;
   menge: number;
-  onSold: (s: GameState) => void;
+  /** Neuer Stand und die Quittung in Worten. */
+  onSold: (s: GameState, text: string) => void;
 }) {
   const fehlt = modeUnavailable(game, mode);
   const probe = sellOil(game, balance, mode, menge, buyer);
   const strafe = exclusiveSurcharge(game, balance, mode);
   const fracht = tariff(game, balance, mode);
+  const name = T[mode].label;
   return (
-    <tr className={fehlt ? 'gesperrt' : undefined}>
-      <td>
-        <button type="button" disabled={!probe.ok} title={probe.ok ? undefined : probe.reason} onClick={() => probe.ok && onSold(probe.state)}>
-          {T[mode].label}
-        </button>
-      </td>
+    <tr className={probe.ok ? undefined : 'gesperrt'}>
+      <th scope="row">{name}</th>
       <td>
         {price(fracht)}
         {strafe > 0 && <span className="klein"> (inkl. {price(strafe)} Strafe)</span>}
       </td>
       <td>{fehlt ? '–' : price(netPrice(game, balance, mode, buyer))}</td>
-      <td>{fehlt ? <span className="klein">{fehlt}</span> : barrels(capacityLeft(game, balance, mode))}</td>
-      <td>{probe.ok ? money(probe.quote.net) : '–'}</td>
+      <td>{fehlt ? '–' : barrels(capacityLeft(game, balance, mode))}</td>
+      <td>
+        {probe.ok ? (
+          <button
+            type="button"
+            className="verkaufen"
+            onClick={() => onSold(probe.state, `${barrels(menge)} bbl per ${name} verkauft für ${money(probe.quote.net)} (nach Fracht und Förderzins).`)}
+          >
+            Per {name} verkaufen ({money(probe.quote.net)})
+          </button>
+        ) : (
+          <>
+            <button type="button" className="verkaufen" disabled aria-describedby={menge >= 1 ? `grund-${mode}` : undefined}>
+              Per {name} verkaufen
+            </button>
+            {menge >= 1 && (
+              <span className="weg-grund" id={`grund-${mode}`}>
+                {probe.reason}
+              </span>
+            )}
+          </>
+        )}
+      </td>
     </tr>
   );
 }
@@ -261,7 +292,7 @@ export function PipelinePanel({ game, onChange }: { game: GameState; onChange: (
           </Aktion>
         )}
       </div>
-      {laeuft && <p className="klein">Sabotage-Risiko je Runde: {Math.round(sabotageChance(game, balance) * 100)} %.</p>}
+      {laeuft && <p className="klein">Sabotage-Risiko je Runde: {Math.round(sabotageChance(game, balance) * 100)}{NBSP}%.</p>}
 
       <h3>Thorne Rail</h3>
       <p>Bahntarif {price(game.railTariff)} je bbl.</p>

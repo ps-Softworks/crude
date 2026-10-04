@@ -21,7 +21,7 @@ export const BRIEFART: Record<MailKind, string> = {
 };
 
 export function frist(event: DeskEvent): string {
-  return event.urgent ? 'Frist läuft ab – sonst gilt die Standardantwort' : `noch ${event.roundsLeft} Runden Zeit`;
+  return event.urgent ? 'Frist läuft ab – sonst gilt die Standardantwort (markiert)' : `noch ${event.roundsLeft} Runden Zeit`;
 }
 
 const BEFUND = { unchecked: '', ok: 'stimmt', forged: 'Fälschung!' } as const;
@@ -50,9 +50,20 @@ function Dokument({ game, eventId, doc, onResolved }: { game: GameState; eventId
                     className="lupe"
                     disabled={doc.checksLeft === 0}
                     title="Dieses Feld mit der Lupe prüfen"
-                    onClick={() => {
+                    onClick={(e) => {
                       const r = inspectField(game, balance, events, eventId, f.id);
-                      if (r.ok) onResolved(r.state);
+                      if (!r.ok) return;
+                      // Der Knopf verschwindet gleich: Fokus danach auf die nächste Lupe oder die erste Antwort.
+                      const karte = e.currentTarget.closest('article');
+                      onResolved(r.state);
+                      window.setTimeout(() => {
+                        if (!karte?.isConnected) return;
+                        const ziel =
+                          karte.querySelector<HTMLElement>('.lupe:not(:disabled)') ??
+                          karte.querySelector<HTMLElement>('.actions button:not(:disabled)') ??
+                          karte.querySelector<HTMLElement>('.dokument .hint');
+                        ziel?.focus({ preventScroll: true });
+                      }, 0);
                     }}
                   >
                     Lupe
@@ -65,7 +76,7 @@ function Dokument({ game, eventId, doc, onResolved }: { game: GameState; eventId
           ))}
         </tbody>
       </table>
-      <p className="hint">
+      <p className="hint" tabIndex={-1}>
         {doc.checksLeft > 0 ? `Die Lupe reicht noch für ${doc.checksLeft === 1 ? 'ein Feld' : `${doc.checksLeft} Felder`}.` : 'Für weitere Prüfungen fehlt die Zeit.'}
       </p>
     </div>
@@ -122,7 +133,7 @@ export function EventCard({
       )}
       {!event.mail && event.urgent && (
         <p className="briefkopf">
-          <span className="siegel" aria-hidden="true" /> Frist läuft ab – sonst gilt die Standardantwort
+          <span className="siegel" aria-hidden="true" /> {frist(event)}
         </p>
       )}
       {!hideTitle && <h3 className="event-titel">{event.title}</h3>}
@@ -139,6 +150,11 @@ export function EventCard({
           >
             {hotkeys && i < 4 && <span className="taste">{i + 1}</span>}
             {choice.label} <span className="kosten">· {costLabel(choice.cost, choice.overtime)}</span>
+            {choice.fallback && (
+              <span className="standard" title="Diese Antwort gilt, wenn die Frist ohne Antwort abläuft.">
+                Standard
+              </span>
+            )}
           </button>
         ))}
       </div>

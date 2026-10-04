@@ -8,11 +8,11 @@ import { balance } from './balance';
 import { familyContent } from './family';
 import { Silhouette } from './Silhouette';
 
-export function FamilyPanel({ game, debug }: { game: GameState; debug: boolean }) {
+export function FamilyPanel({ game, debug, hideTitle = false }: { game: GameState; debug: boolean; hideTitle?: boolean }) {
   const f = familyView(game, balance, familyContent);
   return (
     <section className={f.sick ? 'familie krank' : 'familie'} aria-label="Familie">
-      <h2>Familie</h2>
+      {!hideTitle && <h2>Familie</h2>}
       <ul>
         {f.members.map((m) => (
           <li key={m.id}>

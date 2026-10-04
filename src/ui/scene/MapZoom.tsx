@@ -4,6 +4,7 @@
 // „weniger Bewegung“ blendet er nur kurz.
 
 import { useLayoutEffect, useRef } from 'react';
+import { stageScale } from '../stage';
 import { WallMapShape } from './objects/Shapes';
 
 export const ZOOM_MS = 380;
@@ -24,7 +25,8 @@ export function MapZoom({ dir, onDone }: { dir: 'in' | 'out'; onDone: () => void
     }
     const b = buehne.getBoundingClientRect();
     const w = wand.getBoundingClientRect();
-    const klein = `translate(${w.left - b.left}px, ${w.top - b.top}px) scale(${w.width / b.width}, ${w.height / b.height})`;
+    const f = stageScale(el);
+    const klein = `translate(${(w.left - b.left) / f}px, ${(w.top - b.top) / f}px) scale(${w.width / b.width}, ${w.height / b.height})`;
     const gross = 'translate(0px, 0px) scale(1, 1)';
     const ruhig = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     const frames = ruhig

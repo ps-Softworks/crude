@@ -14,6 +14,7 @@ import { EVENTS_DIR, readEventFiles } from '../src/sim/testEvents';
 import { parseTutorialContent } from '../src/sim/tutorial';
 import { mapRefErrors } from '../src/sim/regions';
 import { parseFigureCatalog } from '../src/ui/figures';
+import { parseMapHints } from '../src/ui/tutorialMap';
 import { visitorErrors } from '../src/ui/visitors';
 
 const dir = process.argv[2] ? resolve(process.argv[2]) : EVENTS_DIR;
@@ -49,6 +50,12 @@ try {
   if (parsed.errors.length === 0) for (const m of visitorErrors(events, figuren)) errors.push({ file: 'content/figures.yaml', line: 1, message: m });
 } catch (e) {
   errors.push({ file: 'content/figures.yaml', line: 1, message: (e as Error).message });
+}
+// Einstieg auf der Karte (0.2.15+11): Block „onMap“ in content/tutorial.yaml.
+try {
+  parseMapHints('content/tutorial.yaml', readFileSync(new URL('../content/tutorial.yaml', import.meta.url), 'utf8'));
+} catch (e) {
+  errors.push({ file: 'content/tutorial.yaml', line: 1, message: (e as Error).message });
 }
 if (errors.length > 0) {
   for (const error of errors) console.error(formatContentError(error));

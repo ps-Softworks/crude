@@ -15,6 +15,7 @@ import {
   rentRig,
   returnRig,
   rigRisk,
+  rigSummary,
   rigStageCost,
   rigStageRounds,
   settleRigs,
@@ -91,6 +92,23 @@ describe('Bohrtürme (0.2.15+7)', () => {
     const beide = ok(startDrilling(gemietet, SICHER, b));
     expect(wellOf(beide, b)!.rigId).toBe('turm-2');
     expect(freeRig(beide)).toBeUndefined();
+  });
+
+  it('rigSummary zählt bohrend, wartend, frei und unterwegs – frei wie freeRig (0.2.15+11)', () => {
+    const { state, a, b } = spiel();
+    expect(rigSummary(state)).toEqual({ drilling: 0, waiting: 0, idle: 1, delivering: 0 });
+    const eine = ok(startDrilling(state, SICHER, a));
+    expect(rigSummary(eine)).toEqual({ drilling: 1, waiting: 0, idle: 0, delivering: 0 });
+    // Trocken in dieser Stufe: Der Turm bohrt nicht, er wartet auf Jacob – und ist nicht frei.
+    const trocken = { ...eine, wells: eine.wells.map((w) => ({ ...w, status: 'decision' as const })) };
+    expect(rigSummary(trocken)).toEqual({ drilling: 0, waiting: 1, idle: 0, delivering: 0 });
+    expect(freeRig(trocken)).toBeUndefined();
+    const gekauft = ok(buyRig({ ...eine, cash: 1_000_000 }, balance));
+    const neu = rigSummary(gekauft);
+    expect(neu.drilling).toBe(1);
+    expect(neu.idle + neu.delivering).toBe(1);
+    expect(neu.idle).toBe(freeRig(gekauft) ? 1 : 0);
+    void b;
   });
 
   it('Miete kostet am Rundenende, Rückgabe nur, wenn der Turm nicht bohrt', () => {

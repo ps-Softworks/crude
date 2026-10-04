@@ -47,6 +47,26 @@ describe('Szenenzustand', () => {
     expect(nach({ type: 'round', round: 2, autoNewspaper: false }).sheet).toBeNull();
   });
 
+  it('nach der Glocke: erst der Rundenbericht, dann die Zeitung, dann ein Besuch (0.2.15+11)', () => {
+    const s = nach({ type: 'round', round: 3, autoNewspaper: true, report: true });
+    expect(s.sheet).toEqual({ id: 'bericht', then: 'zeitung' });
+    expect(autoVisitor(s, { tableaus: [], visitors: ['silas'], autoNewspaper: true, newspaper: true, busy: false })).toBeNull();
+    const zeitung = sceneReducer(s, { type: 'close' });
+    expect(zeitung.sheet?.id).toBe('zeitung');
+    expect(seen(zeitung, 'zeitung')).toBe(true);
+    const frei = sceneReducer(zeitung, { type: 'escape' });
+    expect(frei.sheet).toBeNull();
+    expect(autoVisitor(frei, { tableaus: [], visitors: ['silas'], autoNewspaper: true, newspaper: true, busy: false })).toBe('silas');
+    // Ohne Zeitung: nur der Bericht; Esc schließt ihn ganz.
+    const ohne = nach({ type: 'round', round: 3, autoNewspaper: false, report: true });
+    expect(ohne.sheet).toEqual({ id: 'bericht' });
+    expect(sceneReducer(ohne, { type: 'escape' }).sheet).toBeNull();
+  });
+
+  it('ein Fenster kann mit einer bestimmten Karte vorn aufgehen (0.2.15+11)', () => {
+    expect(nach({ type: 'open', sheet: 'post', focus: 'witwe' }).sheet).toEqual({ id: 'post', focus: 'witwe' });
+  });
+
   it('drängt die Zeitung nicht über ein offenes Fenster', () => {
     const s = nach({ type: 'open', sheet: 'kassenbuch' }, { type: 'round', round: 5, autoNewspaper: true });
     expect(s.sheet?.id).toBe('kassenbuch');

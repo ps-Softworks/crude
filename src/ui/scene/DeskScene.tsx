@@ -1,8 +1,10 @@
 // Der Schreibtisch als Szene (0.2.15+9): ein Bild, kein Scrollen. Oben die Wand
 // mit Wandkarte, Pinnwand, Kalender, Familienfoto und Tür, darunter der Tisch
 // mit Zeitung, Briefen, Notizspieß, Ruths Zettel, Kassenbuch, Akte, Fracht,
-// Kladde, Schublade und Glocke. Jeder Gegenstand ist ein Knopf und öffnet ein
-// Fenster. Zahlen und Abzeichen sind nur gezählt – entschieden wird in src/sim.
+// Kladde und Glocke. Jeder Gegenstand ist ein Knopf und öffnet ein Fenster.
+// Zahlen und Abzeichen sind nur gezählt – entschieden wird in src/sim.
+// Das Menü liegt ab 0.2.15+11 nur noch im Knopf ☰ der Kopfleiste: Die Schublade
+// bleibt für das Schattenbuch frei (GDD §16).
 
 import type { ReactNode } from 'react';
 import { agendaView } from '../../sim/agenda';
@@ -11,12 +13,12 @@ import { familyView } from '../../sim/family';
 import { formatDate, type GameState } from '../../sim/game';
 import { storageCapacity } from '../../sim/logistics';
 import { makeNewspaper } from '../../sim/newspaper';
-import { rigReady, rigWell } from '../../sim/rigs';
+import { rigSummary } from '../../sim/rigs';
 import type { TutorialView } from '../../sim/tutorial';
 import { balance } from '../balance';
 import { familyContent } from '../family';
 import { barrels } from '../format';
-import type { InboxBadges } from '../inbox';
+import type { InboxBadges, OpenItem } from '../inbox';
 import type { SilhouetteKind } from '../figures';
 import { keyForSheet } from '../keys';
 import { newspaperContent } from '../newspaper';
@@ -28,7 +30,6 @@ import { Door } from './Door';
 import {
   BellShape,
   CorkShape,
-  DrawerShape,
   FolderShape,
   LampShape,
   LedgerShape,
@@ -41,11 +42,11 @@ import {
 import { RuthNote } from './RuthNote';
 
 /** Wo was liegt, in Prozent der Bühne (unter der Kopfleiste). */
-const AT: Record<SheetId | 'karte' | 'tuer', Placement> = {
+const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte' | 'tuer', Placement> = {
   karte: { left: 2, top: 4, width: 22, height: 34 },
   konkurrenz: { left: 26, top: 6, width: 15, height: 28 },
-  termine: { left: 64.5, top: 4, width: 9.5, height: 30 },
-  familie: { left: 75.5, top: 6, width: 8.5, height: 28 },
+  termine: { left: 58, top: 4, width: 10, height: 30 },
+  familie: { left: 70.5, top: 6, width: 13, height: 28 },
   tuer: { left: 86, top: 0, width: 12, height: 42 },
   zeitung: { left: 2.5, top: 48, width: 15, height: 24 },
   post: { left: 19, top: 47, width: 13, height: 25 },
@@ -54,7 +55,6 @@ const AT: Record<SheetId | 'karte' | 'tuer', Placement> = {
   akte: { left: 3, top: 75, width: 14, height: 22 },
   fracht: { left: 19, top: 75, width: 15, height: 22 },
   protokoll: { left: 36, top: 76, width: 9, height: 21 },
-  menu: { left: 51, top: 86, width: 15, height: 12 },
   glocke: { left: 86, top: 70, width: 12, height: 27 },
 };
 
@@ -77,6 +77,16 @@ export interface DeskSceneProps {
   spotlight: string | null;
   /** Wer vor der Tür wartet, der Erste vorn. */
   waiting: { names: readonly string[]; figure: SilhouetteKind | null };
+  /** Wer gerade im Raum steht (Name) – dann steht die Tür offen. */
+  inRoom: string | null;
+  /** Familienmitglieder, die das Foto noch nicht zeigt (Thomas, solange die Geburtsszene offen ist). */
+  hideFamily: readonly string[];
+  /** Was offen liegt, für Ruths Zettel (0.2.15+11). */
+  open: readonly OpenItem[];
+  /** Bohrungen, die auf eine Entscheidung warten: Ranch und Satz. */
+  wellsWaiting: readonly { parcelId: string; text: string }[];
+  onItem: (item: OpenItem) => void;
+  onWell: (parcelId: string) => void;
   /** Jemand Neues ist gekommen – es klopft. */
   knock: boolean;
   onDoor: () => void;
@@ -91,13 +101,23 @@ export function DeskScene(p: DeskSceneProps) {
   const krank = !game.finished && zeit.sickRounds > 0;
   const erschoepft = zeit.exhausted || krank;
   const lage = rivalsLines(game);
-  const familie = familyView(game, balance, familyContent);
+  const familieGanz = familyView(game, balance, familyContent);
+  const familie = { ...familieGanz, members: familieGanz.members.filter((m) => !p.hideFamily.includes(m.id)) };
   const zeitung = game.finished ? null : makeNewspaper(game, balance, newspaperContent);
 
-  // Akte: nur zählen, was die Türme gerade tun.
-  const bohren = game.rigs.filter((r) => rigWell(game, r.id)).length;
-  const frei = game.rigs.filter((r) => rigReady(game, r) && !rigWell(game, r.id)).length;
-  const warten = game.wells.filter((w) => w.status === 'decision' || w.status === 'stuck').length;
+  // Akte: was die Türme gerade tun, gezählt in src/sim (rigSummary).
+  const tuerme = rigSummary(game);
+  // Wartet ein Turm auf Jacobs Entscheidung, steht genau das da – nicht „bohrt“.
+  const akteStatus =
+    tuerme.waiting > 0
+      ? [`${tuerme.waiting} wartet auf Entscheidung`, tuerme.drilling > 0 && `${tuerme.drilling} bohrt`, tuerme.idle > 0 && `${tuerme.idle} frei`].filter(Boolean).join(' · ')
+      : [
+          tuerme.drilling > 0 && `${tuerme.drilling} bohr${tuerme.drilling === 1 ? 't' : 'en'}`,
+          `${tuerme.idle} frei`,
+          tuerme.delivering > 0 && `${tuerme.delivering} unterwegs`,
+        ]
+          .filter(Boolean)
+          .join(' · ');
 
   // Fracht: Füllstand des Tanks gegen die Lagergrenze, nur als Anteil.
   const kapazitaet = storageCapacity(game, balance);
@@ -115,7 +135,7 @@ export function DeskScene(p: DeskSceneProps) {
       id={id}
       name={name}
       shortcut={keyForSheet(id)}
-      at={AT[id]}
+      at={AT[id]!}
       sheet={id}
       glow={p.glow === id || p.spotlight === id}
       onOpen={() => p.onOpen(id)}
@@ -189,8 +209,13 @@ export function DeskScene(p: DeskSceneProps) {
           },
           <span className={`foto foto-${kaelteste}`}>
             <PhotoFrameShape />
+            {/* Jede Person im Bild, so wie es um sie steht: wer sich entfremdet, wird blass und wendet sich ab (GDD §3). */}
             <span className="foto-figur">
-              <Silhouette id="ruth" name="Ruth" size={46} />
+              {familie.members.map((m) => (
+                <span key={m.id} className={`foto-person ${m.id} ${m.word}`}>
+                  <Silhouette id={m.id} name={m.name} size={m.id === 'thomas' ? 30 : 44} />
+                </span>
+              ))}
             </span>
           </span>,
         )}
@@ -200,6 +225,7 @@ export function DeskScene(p: DeskSceneProps) {
           figure={p.waiting.figure}
           urgent={badges.tuer.urgent}
           knock={p.knock}
+          inRoom={p.inRoom}
           glow={p.glow === 'tuer' || p.spotlight === 'tuer'}
           onEnter={p.onDoor}
         />
@@ -235,7 +261,7 @@ export function DeskScene(p: DeskSceneProps) {
           },
           <SpikeShape count={badges.vorfaelle.count} urgent={badges.vorfaelle.urgent} />,
         )}
-        <div className={p.spotlight === 'ruth' ? 'unterlage-platz rundgang-ziel' : 'unterlage-platz'} style={{ left: '44%', top: '45%', width: '27%', height: '38%' }}>
+        <div className={p.spotlight === 'ruth' ? 'unterlage-platz rundgang-ziel' : 'unterlage-platz'} style={{ left: '45%', top: '47%', width: '26%', height: '36%' }}>
           <RuthNote
             step={p.step}
             tutorial={p.tutorial}
@@ -243,7 +269,11 @@ export function DeskScene(p: DeskSceneProps) {
             exhausted={zeit.exhausted}
             finished={game.finished}
             tutorialOffer={p.tutorialOffer}
+            open={p.open}
+            wellsWaiting={p.wellsWaiting}
             onGo={p.onRuth}
+            onItem={p.onItem}
+            onWell={p.onWell}
             onTutorial={p.onTutorial}
           />
         </div>
@@ -257,8 +287,8 @@ export function DeskScene(p: DeskSceneProps) {
           'akte',
           'Bohrturm-Akte',
           {
-            status: `${bohren} bohr${bohren === 1 ? 't' : 'en'} · ${frei} frei`,
-            badge: warten > 0 ? { text: `${warten} wartet` } : null,
+            status: akteStatus,
+            badge: tuerme.waiting > 0 ? { text: `${tuerme.waiting} wartet` } : null,
           },
           <FolderShape variant="akte" />,
         )}
@@ -280,7 +310,6 @@ export function DeskScene(p: DeskSceneProps) {
           <FolderShape variant="fracht" />,
         )}
         {obj('protokoll', 'Kladde', { status: p.saved ? '✓ gesichert' : undefined }, <NotebookShape />)}
-        {obj('menu', 'Schublade · Menü', {}, <DrawerShape />)}
         {obj(
           'glocke',
           game.finished ? 'Kapitel beendet' : 'Runde beenden',

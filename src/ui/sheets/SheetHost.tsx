@@ -14,9 +14,11 @@ import { LedgerSheet } from './LedgerSheet';
 import { MenuSheet, type MenuProps } from './MenuSheet';
 import { NewspaperSheet } from './NewspaperSheet';
 import { PostSheet } from './PostSheet';
+import { ReportSheet, type RoundReport } from './ReportSheet';
 import { RigFileSheet } from './RigFileSheet';
 import { RivalsSheet } from './RivalsSheet';
 import type { SheetContext } from './types';
+import { WaitingSheet } from './WaitingSheet';
 
 export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   zeitung: { title: 'Zeitung', size: 'brief' },
@@ -31,6 +33,8 @@ export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   konkurrenz: { title: 'Konkurrenz', size: 'brief' },
   menu: { title: 'Menü', size: 'brief' },
   glocke: { title: 'Runde beenden', size: 'brief' },
+  bericht: { title: 'Was diese Runde geschah', size: 'brief' },
+  wartende: { title: 'Wer vor der Tür wartet', size: 'brief' },
 };
 
 export interface SheetHostProps {
@@ -46,9 +50,13 @@ export interface SheetHostProps {
   onChapterEnd: (() => void) | null;
   /** Geht gerade zu (0.2.15+10: kurzer Übergang). */
   closing?: boolean;
+  /** Rundenbericht der letzten Glocke (0.2.15+11). */
+  report: RoundReport | null;
+  /** Besucher hereinbitten (Fenster „Wer wartet“). */
+  onVisitor: (eventId: string) => void;
 }
 
-export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound, onGo, onChapterEnd, closing = false }: SheetHostProps) {
+export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound, onGo, onChapterEnd, closing = false, report, onVisitor }: SheetHostProps) {
   const info = SHEET_INFO[open.id];
   const inhalt: Record<SheetId, () => ReactNode> = {
     zeitung: () => <NewspaperSheet ctx={ctx} />,
@@ -63,13 +71,15 @@ export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound
     konkurrenz: () => <RivalsSheet ctx={ctx} />,
     menu: () => <MenuSheet ctx={ctx} {...menu} />,
     glocke: () => <BellSheet ctx={ctx} onEndRound={onEndRound} onGo={onGo} onChapterEnd={onChapterEnd} />,
+    bericht: () => <ReportSheet report={report} onDone={onClose} next={open.then === 'zeitung'} />,
+    wartende: () => <WaitingSheet ctx={ctx} onVisitor={onVisitor} />,
   };
   return (
     <Sheet
       title={info.title}
       size={info.size}
       className={`sheet-${open.id}`}
-      origin={`.objekt[data-sheet="${open.id}"]`}
+      origin={open.id === 'wartende' ? '.objekt-tuer' : `.objekt[data-sheet="${open.id}"]`}
       closing={closing}
       onClose={onClose}
       back={open.back ? { label: SHEET_INFO[open.back.sheet].title, onBack } : undefined}

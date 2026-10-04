@@ -84,7 +84,16 @@ export function Silhouette({ id, name, size = 56 }: { id: string; name: string; 
   return <SilhouetteForm kind={figureOf(figures, id)} name={name} size={size} />;
 }
 
-export function SilhouetteForm({ kind, name, size = 56 }: { kind: SilhouetteKind; name: string; size?: number }) {
+export function SilhouetteForm({ kind, name, size = 56, bare = false }: { kind: SilhouetteKind; name: string; size?: number; bare?: boolean }) {
+  // bare (0.2.15+11): ohne Oval und Rahmen – eine Person, die im Raum steht, kein Medaillon.
+  if (bare) {
+    return (
+      <svg className="silhouette frei" viewBox="2 2 56 72" width={size} height={(size * 72) / 56} role="img" aria-label={name}>
+        <title>{name}</title>
+        <g className="silhouette-figur">{FORMEN[kind]}</g>
+      </svg>
+    );
+  }
   return (
     <svg className="silhouette" viewBox="0 0 60 74" width={size} height={(size * 74) / 60} role="img" aria-label={name}>
       <title>{name}</title>

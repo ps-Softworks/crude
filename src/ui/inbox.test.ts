@@ -4,7 +4,7 @@ import { newGame } from '../sim/game';
 import { loadBalance } from '../sim/testBalance';
 import { loadEvents } from '../sim/testEvents';
 import { figureCatalog } from './figureCatalog.node';
-import { eventsShownIn, inboxBadges, openItems, seenKey, sortInbox, unseen } from './inbox';
+import { eventsShownIn, inboxBadges, openItems, seenKey, sortInbox, unseen, visitorNames } from './inbox';
 import { appearancesOf } from './visitors';
 
 function ereignis(id: string, extra: Partial<DeskEvent> = {}): DeskEvent {
@@ -50,7 +50,7 @@ describe('Was auf dem Schreibtisch liegt', () => {
     expect(items.map((i) => i.target)).toEqual(['tuer', 'post', 'vorfaelle', 'termine']);
     expect(items[0].text).toBe('Silas wartet vor der Tür');
     expect(items[1]).toMatchObject({ urgent: true, text: '2 Briefe unbeantwortet – einer mit Frist in dieser Runde' });
-    expect(items[3].text).toBe('3 Termine frei – 1 fester Termin im Kalender');
+    expect(items[3].text).toBe('1 fester Termin im Kalender wartet noch (freiwillig, 3 Termine frei)');
     // Ohne freie Termine ist der Kalender kein offener Punkt.
     expect(openItems(inbox, { left: 0 }).map((i) => i.target)).not.toContain('termine');
     expect(openItems(sortInbox([], [], []), { left: 5 })).toEqual([]);
@@ -73,6 +73,20 @@ describe('Was auf dem Schreibtisch liegt', () => {
       ruth_sorge: { kind: 'visitor', figure: 'ruth', name: 'Ruth' },
     });
     expect(openItems(zwei, { left: 0 })[0].text).toBe('Silas und ein weiterer warten vor der Tür');
+  });
+
+  it('wessen Frist abläuft, steht an der Tür vorn – sonst bleibt die Reihenfolge (0.2.15+11)', () => {
+    const besetzung = {
+      silas_schnaps: { kind: 'visitor', figure: 'silas', name: 'Silas' },
+      ruth_sorge: { kind: 'visitor', figure: 'ruth', name: 'Ruth' },
+      moss_dank: { kind: 'visitor', figure: 'moss', name: 'Moss' },
+    } as const;
+    const silas2 = ereignis('silas_schnaps', { roundsLeft: 2 });
+    const ruth = ereignis('ruth_sorge', { roundsLeft: 1, urgent: true });
+    const moss = ereignis('moss_dank', { roundsLeft: 2 });
+    const inbox = sortInbox([silas2, moss, ruth], [], [], besetzung);
+    expect(inbox.visitors.map((e) => e.id)).toEqual(['ruth_sorge', 'silas_schnaps', 'moss_dank']);
+    expect(visitorNames(inbox)).toEqual(['Ruth', 'Silas', 'Moss']);
   });
 
   it('zählt im echten Spiel genau die Ereignisse aus der Simulation', () => {

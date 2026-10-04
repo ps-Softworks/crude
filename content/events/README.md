@@ -80,4 +80,7 @@ Kurzreferenz der Felder:
   (`silas: { form: muetze, name: Silas }`). `tableau: true` – kommt als Vollbild-Szene (Geburt, Brand,
   Blitz, Sturm). Nicht für Briefe (`mail`) und feste Termine (`routine`); ohne Auftritt hängt ein
   Ereignis als Vorfall am Notizspieß. Reine Darstellung, ändert keine Regel. Besetzt sind die Bögen von
-  Silas, Moss und Ruth, dazu Arzt, Nora, Bullard, Fuhrleute, Bank, Prüfer, Sheriff und Prediger.
+  Silas, Moss und Ruth, dazu Arzt, Nora, Bullard, Fuhrleute, Sheriff und Prediger.
+  Nur wer wirklich ins Büro kommt, bekommt `visitor` (0.2.15+11): Spielt der Text woanders (Saloon,
+  Bahnsteig, Veranda, Bohrturm, Bank), bleibt das Ereignis ein Vorfall – sonst widerspricht die Szene
+  „Besuch · Silas“ dem eigenen Text. ENTWURF: Philipp segnet die Besetzung ab.

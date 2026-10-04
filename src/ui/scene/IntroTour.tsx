@@ -1,9 +1,11 @@
 // Rundgang (0.2.15+10): Beim ersten Start zeigt die Einstiegshilfe jeden
 // Gegenstand einmal kurz – er leuchtet, daneben steht ein Satz, wozu er da ist.
 // Läuft von selbst weiter; Enter/→ weiter, ← zurück, Esc beendet. Texte aus
-// content/rundgang.yaml.
+// content/rundgang.yaml. Solange er läuft, fängt eine Glasscheibe alle Klicks auf
+// den Tisch ab (0.2.15+11) – sonst ginge ein Fenster unter der Blase auf.
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { stageScale } from '../stage';
 import type { TourStep } from '../tour';
 
 const SCHRITT_MS = 2600;
@@ -16,6 +18,13 @@ function ziel(object: string): Element | null {
 export function IntroTour({ steps, onStep, onEnd }: { steps: readonly TourStep[]; onStep: (object: string | null) => void; onEnd: () => void }) {
   const [i, setI] = useState(0);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+  // Fenstergröße geändert: Blase neu setzen.
+  const [groesse, setGroesse] = useState(0);
+  useEffect(() => {
+    const neu = () => setGroesse((n) => n + 1);
+    window.addEventListener('resize', neu);
+    return () => window.removeEventListener('resize', neu);
+  }, []);
   const box = useRef<HTMLDivElement>(null);
   const schritt = steps[i];
   const ende = useRef(onEnd);
@@ -33,8 +42,12 @@ export function IntroTour({ steps, onStep, onEnd }: { steps: readonly TourStep[]
     const el = ziel(schritt.object);
     const buehne = box.current?.closest('.buehne');
     if (!el || !buehne) return setPos(null);
-    const r = el.getBoundingClientRect();
-    const b = buehne.getBoundingClientRect();
+    // Alles in CSS-Pixeln der Bühne (auf großen Bildschirmen ist sie vergrößert).
+    const f = stageScale(buehne);
+    const sr = el.getBoundingClientRect();
+    const sb = buehne.getBoundingClientRect();
+    const r = { left: sr.left / f, top: sr.top / f, width: sr.width / f, height: sr.height / f, bottom: sr.bottom / f };
+    const b = { left: sb.left / f, top: sb.top / f, width: sb.width / f, height: sb.height / f };
     const hoehe = box.current?.offsetHeight ?? 140;
     const x = r.left - b.left;
     const y = r.top - b.top;
@@ -50,7 +63,7 @@ export function IntroTour({ steps, onStep, onEnd }: { steps: readonly TourStep[]
       left = x + r.width + 14 + BREITE <= b.width - 8 ? x + r.width + 14 : Math.max(8, x - BREITE - 14);
     }
     setPos({ left, top });
-  }, [schritt]);
+  }, [schritt, groesse]);
 
   useEffect(() => () => zeige.current(null), []);
 
@@ -83,7 +96,16 @@ export function IntroTour({ steps, onStep, onEnd }: { steps: readonly TourStep[]
 
   if (!schritt) return null;
   return (
-    <div className="rundgang" role="dialog" aria-modal="false" aria-label="Rundgang über den Schreibtisch">
+    <div
+      className="rundgang"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Rundgang über den Schreibtisch"
+      onMouseDown={(e) => {
+        // Klicks auf den Tisch landen auf der Scheibe – nichts geht darunter auf.
+        if (e.target === e.currentTarget) e.preventDefault();
+      }}
+    >
       <div ref={box} className="rundgang-blase" style={pos ? { left: pos.left, top: pos.top, width: BREITE } : { width: BREITE }} aria-live="polite">
         <p className="rundgang-zaehler">
           Rundgang · {i + 1} von {steps.length}

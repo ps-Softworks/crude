@@ -4,7 +4,7 @@
 // entscheidet parcelActions aus src/sim – hier steht keine einzige Spielregel.
 
 import { useEffect, useRef } from 'react';
-import { parcelActions, parcelOutlooks, paybackText, type DeskActionKind, type ParcelOutlook } from '../../sim/desk';
+import { drillBlocker, parcelActions, parcelOutlooks, paybackText, type DeskActionKind, type ParcelOutlook } from '../../sim/desk';
 import { deeperChance, deeperQuote, wellOf, wellsOn, type Well } from '../../sim/drilling';
 import { fieldLabel, fieldOf } from '../../sim/field';
 import { formatForecast, trueChance } from '../../sim/forecast';
@@ -14,7 +14,7 @@ import { leaseOf, leaseTerms, optionOf, roundsLeft } from '../../sim/lease';
 import { fieldStatus } from '../../sim/production';
 import { findRig, rigLabel } from '../../sim/rigs';
 import { balance } from '../balance';
-import { barrels, money, percent, rounds } from '../format';
+import { barrels, money, percent, rounds, units } from '../format';
 import { STATUS_LABEL, ranchStatus } from '../mapShapes';
 
 const GEOLOGY_LABEL = { dry: 'trocken', small: 'klein', gusher: 'Gusher' } as const;
@@ -30,9 +30,11 @@ export interface RanchSheetProps {
   onAction: (kind: DeskActionKind, parcelId: string) => void;
   onClose: () => void;
   onLedger: () => void;
+  /** Zur Bohrturm-Akte (Turm kaufen oder mieten). */
+  onRigs: () => void;
 }
 
-export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, onClose, onLedger }: RanchSheetProps) {
+export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, onClose, onLedger, onRigs }: RanchSheetProps) {
   const id = parcel.id;
   const lease = leaseOf(game, id);
   const option = optionOf(game, id);
@@ -44,10 +46,15 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
 
   // Probelauf aus der Simulation: sie sagt, welche Knöpfe es gibt und ob sie gehen.
   const actions = parcelActions(game, balance, id);
-  const gesperrt = actions.find((a) => !a.ok)?.reason;
+  const sperre = actions.find((a) => !a.ok);
+  const gesperrt = sperre?.reason;
+  // Kein Bohren-Knopf? Dann ein gesperrter mit Grund, damit niemand denkt, das Spiel hängt (0.2.15+11).
+  const ohneBohren = drillBlocker(game, balance, id);
   // Was der Spieler liest: der Fehler der letzten Aktion, sonst der Grund, warum
   // ein Knopf gesperrt ist, sonst der nächste Schritt.
   const hinweis = notice ?? gesperrt ?? stepText;
+  // Der Weg zur Abhilfe – nur, wenn die Simulation sagt, woran es liegt.
+  const weg = notice ? null : sperre?.reasonKind;
 
   const ref = useRef<HTMLElement>(null);
   // Neue Ranch gewählt: Fokus ins Fenster, damit es mit der Tastatur weitergeht.
@@ -77,7 +84,7 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
           {wells.length > 0 && <> ({wells.length} belegt)</>} · Zone {parcel.zone}
           <br />
           <span className="muted">
-            {parcel.area.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Einheiten Land ·{' '}
+            {units(parcel.area)} Land ·{' '}
             {parcel.discovery ? 'Entdeckungsquelle' : STATUS_LABEL[ranchStatus(game, id)]}
           </span>
         </p>
@@ -116,7 +123,7 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
           </p>
         )}
 
-        {actions.length > 0 && (
+        {(actions.length > 0 || ohneBohren) && (
           <div className="actions ranch-aktionen">
             {actions.map((action) => (
               <button key={action.kind} disabled={!action.ok} title={action.reason} onClick={() => onAction(action.kind, id)}>
@@ -129,6 +136,16 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
                 )}
               </button>
             ))}
+            {ohneBohren && (
+              <>
+                <button type="button" disabled aria-describedby="ohne-bohren">
+                  Bohren
+                </button>
+                <span className="weg-grund" id="ohne-bohren">
+                  {ohneBohren}
+                </span>
+              </>
+            )}
           </div>
         )}
 
@@ -197,11 +214,19 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
       {hinweis && (
         <p className={notice || gesperrt ? 'randnotiz warn' : 'randnotiz'} role="status">
           {hinweis}
-          {(notice || gesperrt) && (
+          {weg === 'money' && (
             <>
               {' '}
               <button type="button" className="link" onClick={onLedger}>
-                zum Kassenbuch
+                zum Kassenbuch (G)
+              </button>
+            </>
+          )}
+          {weg === 'rig' && (
+            <>
+              {' '}
+              <button type="button" className="link" onClick={onRigs}>
+                zur Bohrturm-Akte – Turm kaufen oder mieten
               </button>
             </>
           )}

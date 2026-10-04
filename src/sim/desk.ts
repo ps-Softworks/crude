@@ -34,7 +34,7 @@ import {
 } from './lease';
 import { sellOil } from './transport';
 import { pumpOutlook, wellOutlook, type Outlook } from './invest';
-import { installPump, pumpTarget, type RigResult } from './rigs';
+import { freeRig, installPump, pumpTarget, type RigResult } from './rigs';
 
 function money(value: number): string {
   return `${value.toLocaleString('de-DE')} $`;
@@ -51,11 +51,27 @@ export interface DeskAction {
   ok: boolean;
   /** Warum nicht, mit Worten aus der Simulation. */
   reason?: string;
+  /**
+   * Woran es liegt (0.2.15+11), damit die Oberfläche den passenden Weg zeigt:
+   * money = mit genug Geld ginge es (Kassenbuch), rig = kein Turm frei (Bohrturm-Akte).
+   */
+  reasonKind?: 'money' | 'rig';
 }
 
+type Probe = LeaseResult | DrillResult | RigResult;
+
+/** Sehr viel Geld für den Probelauf „ginge es mit genug Geld?“. */
+const REICH = 1e12;
+
 /** Aus einem Probelauf der Simulation eine Knopfzeile machen. */
-function knopf(kind: DeskActionKind, label: string, probe: LeaseResult | DrillResult | RigResult): DeskAction {
-  return probe.ok ? { kind, label, ok: true } : { kind, label, ok: false, reason: probe.reason };
+function knopf(state: GameState, kind: DeskActionKind, label: string, run: (s: GameState) => Probe): DeskAction {
+  const probe = run(state);
+  if (probe.ok) return { kind, label, ok: true };
+  const action: DeskAction = { kind, label, ok: false, reason: probe.reason };
+  // Derselbe Probelauf mit voller Kasse: geht es dann, fehlt nur Geld.
+  if (run({ ...state, cash: REICH }).ok) action.reasonKind = 'money';
+  else if (kind === 'drill' && !freeRig(state)) action.reasonKind = 'rig';
+  return action;
 }
 
 /**
@@ -73,14 +89,14 @@ export function parcelActions(state: GameState, balance: Balance, parcelId: stri
 
   // Jacobs Option: einlösen ist der einzige Schritt, danach ist es eine Pacht.
   if (option?.holder === 'jacob') {
-    return [knopf('exercise', `Option einlösen (${money(option.bonus)})`, exerciseOption(state, balance, parcelId))];
+    return [knopf(state, 'exercise', `Option einlösen (${money(option.bonus)})`, (s) => exerciseOption(s, balance, parcelId))];
   }
 
   if (lease?.holder === 'jacob') {
     const actions: DeskAction[] = [];
     const quote = drillQuote(state, balance, parcelId);
     if (!well) {
-      actions.push(knopf('drill', `Bohren (${money(quote.cost)})`, startDrilling(state, balance, parcelId)));
+      actions.push(knopf(state, 'drill', `Bohren (${money(quote.cost)})`, (s) => startDrilling(s, balance, parcelId)));
     } else if (
       (well.status === 'found' || well.status === 'dry') &&
       wellsOn(state, parcelId).some((w) => w.status === 'found') &&
@@ -89,27 +105,28 @@ export function parcelActions(state: GameState, balance: Balance, parcelId: stri
       // Weitere Bohrlöcher (0.2.15+5): auf fündigem Land, solange Bohrplätze frei sind.
       actions.push(
         knopf(
+          state,
           'drill',
           `Weiteres Bohrloch (${money(quote.cost)}, direkt auf ${balance.drilling.stages[quote.stage - 1].depth} m, noch ${freeSlots(state, parcelId)} frei)`,
-          startDrilling(state, balance, parcelId),
+          (s) => startDrilling(s, balance, parcelId),
         ),
       );
     }
     // Pumpe nachrüsten (0.2.15+7) an der stärksten Quelle ohne Pumpe.
     if (pumpTarget(state, parcelId)) {
-      actions.push(knopf('pump', `Pumpe nachrüsten (${money(balance.production.pump.cost)})`, installPump(state, balance, parcelId)));
+      actions.push(knopf(state, 'pump', `Pumpe nachrüsten (${money(balance.production.pump.cost)})`, (s) => installPump(s, balance, parcelId)));
     }
     // Nach einer trockenen Stufe geht es tiefer weiter, bei klemmendem Werkzeug
     // muss es erst bergen – beides kann man aufgeben.
     const tiefer = well?.status === 'decision' ? deeperQuote(state, balance, well) : null;
     if (well?.status === 'decision' && tiefer) {
-      actions.push(knopf('deeper', `Tiefer bohren (${money(tiefer.cost)})`, drillDeeper(state, balance, parcelId)));
+      actions.push(knopf(state, 'deeper', `Tiefer bohren (${money(tiefer.cost)})`, (s) => drillDeeper(s, balance, parcelId)));
     }
     if (well?.status === 'stuck') {
-      actions.push(knopf('fish', 'Fischen', fishWell(state, balance, parcelId)));
+      actions.push(knopf(state, 'fish', 'Fischen', (s) => fishWell(s, balance, parcelId)));
     }
     if (well?.status === 'decision' || well?.status === 'stuck') {
-      actions.push(knopf('abandon', 'Aufgeben', abandonWell(state, balance, parcelId)));
+      actions.push(knopf(state, 'abandon', 'Aufgeben', (s) => abandonWell(s, balance, parcelId)));
     }
     return actions;
   }
@@ -120,9 +137,26 @@ export function parcelActions(state: GameState, balance: Balance, parcelId: stri
   // Freie Parzelle: Pacht zahlt den Bonus, Option nur die kleine Gebühr.
   const terms = leaseTerms(state, balance, parcelId);
   return [
-    knopf('lease', `Pacht kaufen (${money(terms.bonus)})`, buyLease(state, balance, parcelId)),
-    knopf('option', `Option kaufen (${money(terms.optionFee)})`, buyOption(state, balance, parcelId)),
+    knopf(state, 'lease', `Pacht kaufen (${money(terms.bonus)})`, (s) => buyLease(s, balance, parcelId)),
+    knopf(state, 'option', `Option kaufen (${money(terms.optionFee)})`, (s) => buyOption(s, balance, parcelId)),
   ];
+}
+
+/**
+ * Warum es auf Jacobs Pacht gerade keinen Bohren-Knopf gibt (0.2.15+11) – damit
+ * das Ranch-Fenster einen gesperrten Knopf mit Grund zeigen kann statt gar keinen.
+ * null, wenn es einen Bohren-Knopf gibt oder die Bohrung auf eine Entscheidung wartet.
+ */
+export function drillBlocker(state: GameState, balance: Balance, parcelId: string): string | null {
+  if (leaseOf(state, parcelId)?.holder !== 'jacob') return null;
+  if (parcelActions(state, balance, parcelId).some((a) => a.kind === 'drill')) return null;
+  const wells = wellsOn(state, parcelId);
+  const laeuft = wells.find((w) => w.status === 'drilling');
+  if (laeuft) return `Hier bohrt der Turm schon – fertig in ${laeuft.roundsLeft === 1 ? '1 Runde' : `${laeuft.roundsLeft} Runden`}.`;
+  if (wells.some((w) => w.status === 'decision' || w.status === 'stuck')) return null;
+  if (!wells.some((w) => w.status === 'found')) return 'Weitere Bohrlöcher erst, wenn auf dieser Ranch Öl gefunden ist.';
+  if (freeSlots(state, parcelId) <= 0) return 'Alle Bohrplätze dieser Ranch sind belegt.';
+  return null;
 }
 
 export type ActionResult = { ok: true; state: GameState } | { ok: false; reason: string };

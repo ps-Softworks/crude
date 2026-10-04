@@ -4,6 +4,7 @@
 // auslösenden Gegenstand bringt ihn useFocusReturn.
 
 import { useEffect, useId, useLayoutEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { stageScale } from '../stage';
 
 const FOKUSSIERBAR =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
@@ -43,7 +44,8 @@ export function Sheet({ title, size, onClose, back, note, noteExtra, className, 
     if (!el || !quelle) return;
     const q = quelle.getBoundingClientRect();
     const r = el.getBoundingClientRect();
-    el.style.transformOrigin = `${q.left + q.width / 2 - r.left}px ${q.top + q.height / 2 - r.top}px`;
+    const f = stageScale(el);
+    el.style.transformOrigin = `${(q.left + q.width / 2 - r.left) / f}px ${(q.top + q.height / 2 - r.top) / f}px`;
     // Nur beim Öffnen.
   }, [title]);
 
@@ -98,7 +100,11 @@ export function Sheet({ title, size, onClose, back, note, noteExtra, className, 
       inert={closing}
       onMouseDown={(e) => {
         // Klick daneben schließt – nicht aber ein Ziehen, das im Fenster begann.
-        if (e.target === e.currentTarget) onClose();
+        // preventDefault: sonst zieht der Mausklick den Fokus auf <body>, nachdem er schon zum Gegenstand zurückgekehrt ist.
+        if (e.target === e.currentTarget) {
+          e.preventDefault();
+          onClose();
+        }
       }}
     >
       <div

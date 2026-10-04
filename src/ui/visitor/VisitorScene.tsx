@@ -1,8 +1,10 @@
 // Besuch am Schreibtisch (0.2.15+10): Eine Person tritt durch die Tür vor Jacobs
 // Tisch (Silhouette gleitet herein und wird größer), darunter liegt das Sprechblatt
 // mit Text und Antwortkarten (Tasten 1–4). Nach der Antwort steht das Ergebnis als
-// Nachsatz da, mit „Weiter“ geht die Figur. Esc oder „Bitten Sie zu warten“ schickt
-// sie zurück vor die Tür – das Ereignis bleibt offen.
+// Nachsatz da (ab 0.2.15+11 mit Kasse und Tank), mit „Weiter“ geht die Figur. Esc
+// oder „Bitten Sie zu warten“ schickt sie zurück vor die Tür – das Ereignis bleibt offen.
+// Ab 0.2.15+11 steht die Person frei vor der Wand (kein Medaillon), die Tischkante
+// verdeckt ihren unteren Teil; die Kopfleiste mit Terminen bleibt sichtbar.
 //
 // Szenen (Geburt, Brand, Blitz, Sturm) kommen genauso, nur als Vollbild statt Person.
 // Die Antworten laufen über dieselbe EventCard und resolveEvent wie Briefe.
@@ -11,12 +13,12 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent
 import type { DeskEvent } from '../../sim/events';
 import type { GameState } from '../../sim/game';
 import { EventCard } from '../EventCard';
-import { events } from '../events';
 import { figures } from '../figureContent';
 import { figureOf } from '../figures';
+import { keyRange } from '../format';
 import type { Appearance } from '../inbox';
+import { Outcome, outcomeOf, type OutcomeData } from '../Outcome';
 import { SilhouetteForm } from '../Silhouette';
-import { resultText } from '../visitors';
 import { TableauBild } from './TableauBild';
 
 const FOKUSSIERBAR = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -51,7 +53,7 @@ export function VisitorScene({
   const letzte = useRef<DeskEvent | null>(event);
   if (event) letzte.current = event;
   const zeigen = event ?? letzte.current;
-  const [nachsatz, setNachsatz] = useState<string | null>(null);
+  const [nachsatz, setNachsatz] = useState<OutcomeData | null>(null);
   const [geht, setGeht] = useState(false);
 
   const besuch = appearance.kind === 'visitor';
@@ -77,10 +79,9 @@ export function VisitorScene({
   }
 
   function antwort(state: GameState, choiceId: string) {
-    onGame(state);
     // Nach der Lupe (ohne Wahl) bleibt das Gespräch offen.
-    if (choiceId === '') return;
-    setNachsatz(resultText(events, eventId, choiceId) ?? '');
+    if (choiceId !== '' && zeigen) setNachsatz(outcomeOf(game, state, eventId, choiceId, zeigen.title));
+    onGame(state);
   }
 
   function tasten(e: KeyboardEvent<HTMLDivElement>) {
@@ -112,7 +113,7 @@ export function VisitorScene({
     >
       {besuch ? (
         <div className="besuch-figur" aria-hidden="true">
-          <SilhouetteForm kind={figureOf(figures, appearance.kind === 'visitor' ? appearance.figure : '')} name="" size={230} />
+          <SilhouetteForm kind={figureOf(figures, appearance.kind === 'visitor' ? appearance.figure : '')} name="" size={230} bare />
           <span className="besuch-name">{name}</span>
         </div>
       ) : (
@@ -120,8 +121,9 @@ export function VisitorScene({
           <TableauBild eventId={eventId} />
         </div>
       )}
+      {besuch && <div className="besuch-tischkante" aria-hidden="true" />}
       <div className="sprechblatt">
-        <p className="sprechblatt-wer">{besuch ? `${name} steht vor dem Schreibtisch` : 'Ein Augenblick, den keiner vergisst'}</p>
+        <p className="sprechblatt-wer">{besuch ? `Besuch · ${name}` : 'Ein Augenblick, den keiner vergisst'}</p>
         <h2 id={titelId} className="sprechblatt-titel">
           {zeigen.title}
         </h2>
@@ -129,7 +131,7 @@ export function VisitorScene({
           <>
             <EventCard game={game} event={zeigen} onResolved={antwort} className="event besuch-karte" hotkeys hideTitle />
             <p className="sprechblatt-fuss">
-              <span className="muted klein">Tasten 1–4 antworten.</span>
+              <span className="muted klein">{keyRange(zeigen.choices.length)} {zeigen.choices.length === 1 ? 'antwortet' : 'antworten'}.</span>
               <button type="button" className="link" onClick={onWait}>
                 {besuch ? 'Bitten Sie zu warten (Esc)' : 'Später – zum Notizspieß (Esc)'}
               </button>
@@ -137,7 +139,7 @@ export function VisitorScene({
           </>
         ) : (
           <>
-            {nachsatz && <p className="nachsatz">{nachsatz}</p>}
+            <Outcome data={nachsatz} />
             <p className="sprechblatt-fuss">
               <button type="button" className="primary" onClick={gehen} data-autofocus>
                 Weiter

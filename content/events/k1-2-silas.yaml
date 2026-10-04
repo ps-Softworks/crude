@@ -17,7 +17,6 @@
 
 # Entwurf – Philipp überarbeitet.
 - id: silas_schnaps
-  visitor: silas
   title:
     de: Das gerissene Seil
     en: The Snapped Cable
@@ -145,7 +144,6 @@
 # Entwurf – Philipp überarbeitet.
 # Nachwirkung (ausgekauft): Silas zieht mit seinem Geld weiter nach Salt Hill.
 - id: silas_abschied
-  visitor: silas
   title:
     de: Silas zieht weiter
     en: Silas Moves On
@@ -181,7 +179,6 @@
 # Nachwirkung (betrogen): Silas redet im Saloon. Letzte Chance, es geradezurücken –
 # sonst merkt sich das Spiel den späteren Kronzeugen (Weltbibel).
 - id: silas_saloon
-  visitor: silas
   title:
     de: Silas redet
     en: Silas Talks

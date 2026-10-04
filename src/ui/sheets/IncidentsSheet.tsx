@@ -12,6 +12,8 @@ export function IncidentsSheet({ ctx }: { ctx: SheetContext }) {
       empty="Am Notizspieß hängt nichts."
       onResolved={ctx.onGame}
       listLabel="Vorfälle"
+      focus={ctx.focus}
+      next="nächster Vorfall"
       cardClass={() => 'event'}
       itemMeta={(e) => (e.urgent ? 'Frist läuft ab' : `noch ${e.roundsLeft} Runden`)}
     />

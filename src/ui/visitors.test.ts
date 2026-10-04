@@ -22,7 +22,7 @@ describe('Besucher am Schreibtisch', () => {
 
   it('besetzt die Story-Bögen und die vier großen Szenen', () => {
     const a = appearancesOf(events, figureCatalog);
-    expect(a.silas_schnaps).toEqual({ kind: 'visitor', figure: 'silas', name: 'Silas' });
+    expect(a.silas_abrechnung).toEqual({ kind: 'visitor', figure: 'silas', name: 'Silas' });
     expect(a.moss_schulden).toMatchObject({ kind: 'visitor', figure: 'moss', name: 'Ezekiel Moss' });
     expect(a.ruth_buecher).toMatchObject({ kind: 'visitor', figure: 'ruth' });
     for (const id of ['thomas_geburt', 'brand_nachbar', 'blitz_tank', 'sturm_golf']) expect(a[id], id).toEqual({ kind: 'tableau' });
@@ -31,12 +31,21 @@ describe('Besucher am Schreibtisch', () => {
     expect(a.panne_meissel).toBeUndefined();
   });
 
+  it('wer nicht ins Büro kommt, ist kein Besuch, sondern ein Vorfall (0.2.15+11)', () => {
+    const a = appearancesOf(events, figureCatalog);
+    // Saloon, Bahnsteig, Veranda, Bohrturm, Bank: Der Text spielt woanders.
+    for (const id of ['silas_schnaps', 'silas_abschied', 'silas_saloon', 'moss_wagenweg', 'moss_daniel_zorn', 'wegerecht_moss', 'bullard_saloon', 'bullard_treue', 'bank_kredit', 'crane_pruefer', 'fuhrleute_bestochen', 'nora_brand']) {
+      expect(events.some((e) => e.id === id), id).toBe(true);
+      expect(a[id], id).toBeUndefined();
+    }
+  });
+
   it('meldet fehlende Figuren und Namen', () => {
     const ohneNamen = parseFigureCatalog('x.yaml', 'silas: muetze');
-    const silas = events.filter((e) => e.id === 'silas_schnaps');
+    const silas = events.filter((e) => e.id === 'silas_abrechnung');
     expect(visitorErrors(silas, ohneNamen)[0]).toMatch(/braucht in content\/figures.yaml einen Namen/);
     expect(visitorErrors(silas, parseFigureCatalog('x.yaml', 'ruth: frau'))[0]).toMatch(/fehlt in content\/figures.yaml/);
-    expect(visitorErrors([{ ...silas[0], mail: 'info' }], figureCatalog)).toContain('Ereignis „silas_schnaps“: Briefe und feste Termine haben keinen Auftritt.');
+    expect(visitorErrors([{ ...silas[0], mail: 'info' }], figureCatalog)).toContain('Ereignis „silas_abrechnung“: Briefe und feste Termine haben keinen Auftritt.');
   });
 
   it('liest Figuren mit und ohne Namen und lehnt Fremdes ab', () => {

@@ -8,8 +8,10 @@
 .buehne {
   position: relative;
   container-type: size;
-  width: min(100vw, 160vh);
-  height: min(100vh, 62.5vw);
+  /* Große Bildschirme (0.2.15+11): die Bühne behält ihre Arbeitsgröße und wird als Ganzes vergrößert (--skala aus stage.ts). */
+  width: calc(min(100vw, 160vh) / var(--skala, 1));
+  height: calc(min(100vh, 62.5vw) / var(--skala, 1));
+  transform: scale(var(--skala, 1));
   overflow: hidden;
   background: var(--tapete);
   box-shadow: 0 0 0 1px var(--tisch-dunkel), 0 10px 40px rgba(0, 0, 0, 0.45);
@@ -20,9 +22,12 @@
 .kopfleiste {
   flex: none;
   display: flex;
-  flex-wrap: wrap;
+  /* Immer eine Zeile (0.2.15+11): lange Teile werden gekürzt, die Leiste springt nie auf zwei Zeilen. */
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow: hidden;
   align-items: center;
-  gap: 2px 18px;
+  gap: 2px 14px;
   padding: 5px 14px;
   font-size: 15px;
   font-variant-numeric: lining-nums tabular-nums;
@@ -31,14 +36,16 @@
   border-bottom: 2px solid var(--tisch-dunkel);
   box-shadow: inset 0 1px 0 rgba(255, 245, 210, 0.6);
   position: relative;
-  z-index: 3;
+  /* Über Besuch und Szene (z 45), unter den Fenstern (z 50): Kasse und Termine bleiben im Blick. */
+  z-index: 46;
 }
 .kopf-titel { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; letter-spacing: 0.2em; font-size: 17px; }
 .kopf-titel .version { font-size: 13px; font-weight: normal; letter-spacing: normal; color: var(--tinte-weich); }
 .kopfleiste .klein { font-size: 13px; color: var(--tinte-weich); }
 .kopfleiste .termine.warn { color: var(--rot); }
 .kopf-rechts { margin-left: auto; display: inline-flex; align-items: center; gap: 12px; }
-.kopfleiste .gesichert { color: var(--gruen); font-size: 14px; }
+.kopfleiste .gesichert { color: var(--gruen-dunkel); font-size: 15px; font-weight: 600; }
+.kopfleiste .termine .punkte, .kopfleiste .termine .punkte.extra { color: var(--tinte); }
 .kopfleiste a.feedback.kopf { color: var(--tinte); font-size: 14px; }
 .menue-knopf { padding: 1px 10px; font-size: 15px; }
 .banderole { padding: 1px 10px; font-size: 15px; font-weight: 600; color: var(--papier-hell); background: var(--rot); border-color: var(--rot); }
@@ -77,13 +84,14 @@
   color: var(--tinte);
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
 }
-.objekt:hover:not(:disabled), .objekt:focus-visible {
+/* Hover und Fokus (0.2.15+11): dünn und dunkel – Gold bleibt allein dem Hinweis „hier handeln“. */
+.objekt:not([aria-disabled='true']):hover:not(:disabled), .objekt:focus-visible {
   transform: translateY(-2px);
   background: rgba(236, 217, 166, 0.14);
-  border-color: var(--ocker);
+  border-color: var(--tinte-blass);
   box-shadow: 0 10px 18px rgba(20, 10, 0, 0.28);
 }
-.objekt:focus-visible { outline: 3px solid var(--ocker); outline-offset: 2px; }
+.objekt:focus-visible { outline: 2px dashed var(--tinte); outline-offset: 3px; }
 .objekt-bild { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
 .objekt-bild > svg.form { width: 100%; height: 100%; filter: drop-shadow(0 3px 3px rgba(20, 10, 0, 0.3)); }
 .namensschild {
@@ -133,8 +141,14 @@
 .objekt.frisch .neu-stempel { animation-name: puls-gedreht; }
 @keyframes puls-gedreht { 0%, 100% { transform: rotate(-8deg) scale(1); } 50% { transform: rotate(-8deg) scale(1.18); } }
 
-/* Der Einstieg zeigt hierher: ein ruhiges Ocker-Leuchten. */
+/* Der Einstieg zeigt hierher: ein ruhiges Ocker-Leuchten und ein Fähnchen „hier“. */
 .objekt.tutorial-ziel { border-color: var(--ocker); }
+.hier-fahne {
+  position: absolute; top: -12px; left: -8px; z-index: 1;
+  padding: 0 8px; font-size: 15px; font-weight: 700; font-variant: small-caps; letter-spacing: 0.06em;
+  color: var(--tinte); background: var(--ocker-hell); border: 2px solid var(--ocker); border-radius: 3px 10px 10px 3px;
+  box-shadow: 0 2px 4px rgba(20, 10, 0, 0.3);
+}
 .objekt.tutorial-ziel::after {
   content: ''; position: absolute; inset: -6px; border: 3px solid var(--ocker); border-radius: 8px; pointer-events: none;
   animation: leuchten 1.6s ease-in-out infinite;
@@ -195,14 +209,15 @@
 /* Familienfoto */
 .foto { position: relative; width: 100%; height: 100%; display: block; }
 .foto > svg { width: 100%; height: 100%; }
-.foto-figur { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.foto-figur { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; gap: 2px; padding-bottom: 16%; }
 .foto-worte { display: flex; flex-direction: column; }
-/* Je kälter das Familienwort, desto blasser das Bild (0.2.15+10). */
-.foto-neglected .foto-figur { opacity: 0.8; }
-.foto-bitter .foto-figur { opacity: 0.55; }
-.foto-estranged .foto-figur { opacity: 0.3; }
+/* Jede Person für sich (0.2.15+11): wer sich vernachlässigt fühlt, verblasst; wer verbittert ist, wendet sich ab. */
+.foto-person { display: block; transition: opacity 0.3s, transform 0.3s; }
+.foto-person.neglected { opacity: 0.75; }
+.foto-person.bitter { opacity: 0.5; transform: scaleX(-1); }
+.foto-person.estranged { opacity: 0.25; transform: scaleX(-1); }
 .foto-bitter > svg, .foto-estranged > svg { filter: grayscale(0.6); }
-.objekt-familie .objekt-status { white-space: normal; text-align: center; }
+.objekt-familie .objekt-status { white-space: nowrap; text-align: center; max-width: none; overflow: visible; }
 
 /* Lampe – nur Stimmung. Erschöpft: dunkler, krank: aus. */
 .lampe { position: absolute; pointer-events: none; }
@@ -226,6 +241,7 @@
 }
 .tuer.besetzt .tuer-plakette { font-weight: 700; }
 .tuer[aria-disabled='true'] { cursor: default; }
+.tuer.offen .tuer-plakette { font-style: italic; }
 .tuer.klopft .objekt-bild { animation: klopfen 150ms ease-in-out 3; transform-origin: 50% 100%; }
 @keyframes klopfen { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(1.6deg); } }
 .klopf {
@@ -250,10 +266,13 @@
 /* Ruths Zettel auf der Schreibunterlage */
 .unterlage-platz { position: absolute; }
 .unterlage {
-  width: 100%; height: 100%; padding: 10px 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  box-sizing: border-box;
+  /* So hoch wie der Zettel braucht (0.2.15+11) – kein leeres Papier mitten auf dem Tisch. */
+  width: 100%; height: auto; max-height: 100%; min-height: 50%; padding: 10px 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 4px;
   background: var(--filz); border: 6px solid var(--leder); border-radius: 3px; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
 }
 .zettel {
+  box-sizing: border-box;
   flex: 1 1 auto; min-height: 0; width: 100%;
   display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left;
   padding: 10px 14px; font-size: 16px; line-height: 1.35;
@@ -269,7 +288,19 @@
 .zettel-kopf { font-size: 15px; font-variant: small-caps; letter-spacing: 0.04em; color: var(--tinte-weich); }
 .zettel-text { font-style: italic; }
 .zettel-ps { font-size: 15px; color: var(--rot); }
-.zettel-hin { margin-top: auto; align-self: flex-end; font-size: 15px; color: var(--ocker); font-weight: 600; }
+.zettel-hin { margin-top: auto; align-self: flex-end; font-size: 15px; color: var(--tinte-weich); font-weight: 600; }
+/* Zettel mit Liste (0.2.15+11): jeder offene Punkt mit eigenem Weg. */
+.zettel.zettel-liste { cursor: default; gap: 2px; padding: 8px 12px; }
+.zettel-punkte { list-style: none; margin: 2px 0 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 3px; }
+.zettel-punkt {
+  width: 100%; display: flex; align-items: center; gap: 6px; text-align: left;
+  padding: 2px 6px; font-size: 15px; line-height: 1.25; font-style: normal;
+  background: transparent; border: 1px solid transparent; box-shadow: none; border-left: 3px solid var(--linie);
+}
+.zettel-punkt > span:nth-child(1):not(.siegel), .zettel-punkt > span:nth-last-child(2) { flex: 1; }
+.zettel-punkt.dringend { border-left-color: var(--rot); }
+.zettel-punkt:hover:not(:disabled) { background: var(--ocker-hell); border-color: var(--linie); border-left-color: var(--tinte-weich); }
+.zettel-pfeil { color: var(--tinte-weich); font-weight: 700; }
 .unterlage-links .link { color: var(--papier-hell); font-size: 15px; text-decoration-color: var(--papier-dunkel); }
 .unterlage-links .link:hover:not(:disabled) { color: var(--ocker-hell); }
 
@@ -288,7 +319,9 @@
 .sheet-dunkel {
   position: fixed; inset: 0; z-index: 50;
   display: flex; align-items: center; justify-content: center; padding: 16px;
-  background: rgba(20, 12, 6, 0.55);
+  /* Deutlich dunkler und leicht unscharf (0.2.15+11): Fenster und Tisch verschwimmen nicht. */
+  background: rgba(20, 12, 6, 0.7);
+  backdrop-filter: blur(2px) saturate(0.7);
 }
 .sheet {
   display: flex; flex-direction: column;
@@ -424,7 +457,9 @@ button.klein-primary { padding: 2px 12px; font-size: 15px; }
 .rundenwechsel {
   position: absolute; inset: 0; z-index: 60;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
-  color: var(--papier-hell); background: rgba(30, 20, 12, 0.82);
+  /* Fast deckend (0.2.15+11): der neue Stand dahinter wird erst im Rundenbericht verraten. */
+  color: var(--papier-hell); background: rgba(30, 20, 12, 0.96);
+  backdrop-filter: blur(6px);
   cursor: pointer;
   animation: ausblenden 200ms ease-in 750ms forwards;
 }
@@ -441,7 +476,7 @@ button.klein-primary { padding: 2px 12px; font-size: 15px; }
 .rw-zeile { margin: 0; font-size: 24px; font-variant: small-caps; letter-spacing: 0.08em; animation: einblenden 220ms ease-out 300ms both; }
 .rw-rueckblick { list-style: none; margin: 0; padding: 0; max-width: 680px; text-align: center; font-size: 16px; font-style: italic; color: var(--papier-dunkel); }
 .rw-rueckblick li { animation: einblenden 220ms ease-out both; }
-.rw-hinweis { position: absolute; bottom: 14px; right: 18px; font-size: 15px; color: var(--grau-hell); }
+.rw-hinweis { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); font-size: 15px; color: var(--grau-hell); }
 
 /* Stempel nach einer Aktion auf der Karte */
 .stempel {
@@ -470,17 +505,28 @@ button.klein-primary { padding: 2px 12px; font-size: 15px; }
 /* ------------------------------------------------------------------ Besuch (0.2.15+10) */
 .besuch {
   position: absolute; inset: 0; z-index: 45;
-  background: linear-gradient(180deg, rgba(20, 12, 6, 0.3) 0%, rgba(20, 12, 6, 0.6) 100%);
+  /* Der ganze Tisch tritt zurück (0.2.15+11), Plaketten und Abzeichen liegen darunter. */
+  background: linear-gradient(180deg, rgba(20, 12, 6, 0.45) 0%, rgba(20, 12, 6, 0.72) 100%);
+  backdrop-filter: blur(1.5px) saturate(0.75);
   animation: einblenden 200ms ease-out;
 }
 .besuch:focus { outline: none; }
+/* Die Person steht vor dem Tisch (0.2.15+11): frei vor der Wand, groß, unten von der Tischkante verdeckt. */
 .besuch-figur {
-  position: absolute; left: 50%; top: 4%;
+  position: absolute; left: 50%; bottom: 52%;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   transform: translateX(-50%);
   animation: besucher-kommt 400ms cubic-bezier(0.3, 0.7, 0.3, 1) both;
 }
-.besuch-figur .silhouette { width: auto; height: min(34cqh, 290px); filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.5)); }
+.besuch-figur .silhouette { width: auto; height: min(46cqh, 400px); margin-bottom: -6cqh; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.55)); }
+.besuch-figur .silhouette.frei .silhouette-figur { fill: var(--tinte); }
+.besuch-figur .besuch-name { position: absolute; left: calc(100% + 10px); top: 30%; white-space: nowrap; }
+.besuch-tischkante {
+  position: absolute; left: 0; right: 0; top: 46%; height: 7%;
+  background: linear-gradient(180deg, var(--tisch-dunkel), var(--holz) 40%, var(--tisch) 100%);
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.45);
+  animation: einblenden 200ms ease-out;
+}
 @keyframes besucher-kommt {
   from { opacity: 0; transform: translateX(calc(-50% + 40cqw)) scale(0.55); }
   to { opacity: 1; transform: translateX(-50%) scale(1); }
@@ -515,7 +561,7 @@ button.klein-primary { padding: 2px 12px; font-size: 15px; }
 
 /* Szene im Vollbild (Geburt, Brand, Blitz, Sturm) */
 .besuch.als-szene { background: radial-gradient(ellipse at 50% 28%, var(--holz-hell), var(--tisch-dunkel) 75%); }
-.szene-bild { position: absolute; left: 50%; top: 4%; transform: translateX(-50%); width: min(560px, 62%); height: 38%; display: flex; justify-content: center; align-items: flex-end; animation: einblenden 400ms ease-out both; }
+.szene-bild { position: absolute; left: 50%; top: 9%; transform: translateX(-50%); width: min(560px, 62%); height: 38%; display: flex; justify-content: center; align-items: flex-end; animation: einblenden 400ms ease-out both; }
 .szene-bild svg.tb { width: 100%; height: 100%; }
 .tb-geburt { display: flex; align-items: flex-end; gap: 18px; height: 100%; }
 .tb-geburt .silhouette { height: 100%; width: auto; }
@@ -531,7 +577,8 @@ button.klein-primary { padding: 2px 12px; font-size: 15px; }
 .tb-regen { stroke: var(--blau-hell); stroke-width: 2; stroke-linecap: round; }
 
 /* ------------------------------------------------------------------ Rundgang (0.2.15+10) */
-.rundgang { position: absolute; inset: 0; z-index: 55; background: rgba(20, 12, 6, 0.22); pointer-events: none; }
+/* Glasscheibe (0.2.15+11): fängt Klicks auf den Tisch ab, solange der Rundgang läuft. */
+.rundgang { position: absolute; inset: 0; z-index: 55; background: rgba(20, 12, 6, 0.22); pointer-events: auto; cursor: default; }
 .rundgang-blase {
   position: absolute; left: 50%; top: 40%; pointer-events: auto;
   padding: 10px 16px 8px; font-size: 17px;
@@ -556,3 +603,101 @@ button.klein-primary { padding: 2px 12px; font-size: 15px; }
   .stempel { animation: none; transform: translateX(-50%) rotate(-8deg); }
   .szene-bild { animation: none; }
 }
+
+/* ------------------------------------------------------------------ 0.2.15+11 */
+
+/* Karte: Hinweis unten, solange kein Ranch-Fenster offen ist. */
+.karte-hinweis {
+  position: absolute; right: 10px; bottom: 10px; max-width: min(46%, 460px); margin: 0; z-index: 4;
+  padding: 6px 12px; font-size: 16px; line-height: 1.35;
+  background: var(--papier-hell); border: 1px solid var(--linie); border-left: 5px solid var(--ocker);
+  box-shadow: var(--schatten);
+}
+.karte-hinweis-kopf { display: block; font-size: 15px; font-variant: small-caps; letter-spacing: 0.04em; color: var(--tinte-weich); }
+.karte-fahne-mast { stroke: var(--tinte); }
+.karte-fahne { fill: var(--ocker-hell); stroke: var(--ocker); }
+.karte-fahne-text { font-family: var(--schrift); font-weight: 700; fill: var(--tinte); text-anchor: middle; dominant-baseline: middle; }
+.karte-ziel-name { font-weight: 700; }
+.karte-ziel { pointer-events: none; }
+
+/* Verkauf: klare Knöpfe, gesperrte Wege grau mit Grund. */
+.wege.verkauf th[scope='row'] { font-weight: 600; color: var(--tinte); }
+.wege.verkauf button.verkaufen { padding: 3px 10px; }
+.wege.verkauf tr.gesperrt th, .wege.verkauf tr.gesperrt td { color: var(--tinte-blass); background: var(--papier-dunkel); }
+.weg-grund, .ranch-aktionen .weg-grund { display: block; font-size: 15px; font-style: italic; color: var(--tinte-weich); white-space: normal; }
+.quittung { margin: 8px 0 0; padding: 6px 12px; border-left: 4px solid var(--gruen); background: var(--gruen-hell); font-weight: 600; }
+
+/* Standardantwort: ein kleines Siegel an der Antwort, die ohne Antwort gilt. */
+.event button .standard {
+  margin-left: 8px; padding: 0 6px; font-size: 14px; font-variant: small-caps; letter-spacing: 0.04em;
+  color: var(--tinte-weich); border: 1px solid var(--tinte-blass); border-radius: 8px; white-space: nowrap;
+}
+
+/* Ergebnis einer Antwort (Brief, Vorfall, Termin, Besuch). */
+.ergebnis-karte { max-width: 680px; }
+.ergebnis-zahlen { display: flex; gap: 14px; margin: 6px 0 0; font-weight: 700; font-variant-numeric: lining-nums tabular-nums; }
+.geld.minus { color: var(--rot); }
+.geld.plus { color: var(--gruen-dunkel); }
+.ergebnis-fuss { display: flex; align-items: center; gap: 14px; margin: 12px 0 0; }
+.stapel-ergebnis { grid-template-columns: minmax(0, 1fr); }
+
+/* Wer vor der Tür wartet. */
+.wartende-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.wartende-liste li { display: flex; align-items: center; gap: 12px; padding: 6px 10px; background: var(--papier-hell); border-left: 4px solid var(--tinte-blass); }
+.wartende-liste li.dringend { border-left-color: var(--rot); }
+.wartende-text { flex: 1; display: flex; flex-direction: column; }
+.wartende-figur .silhouette { display: block; }
+
+/* Rundenbericht. */
+.bericht-datum { margin: 0 0 6px; font-variant-numeric: lining-nums; }
+.bericht-zahlen dd .geld { margin-left: 6px; font-weight: 700; }
+.bericht-bohrungen { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.bericht-bohrungen li { padding: 3px 10px; border-left: 4px solid var(--grau); background: var(--papier-hell); }
+.bericht-bohrungen li.gut { border-left-color: var(--oel); background: var(--ocker-hell); font-weight: 600; }
+.bericht-bohrungen li.warn { border-left-color: var(--ocker); }
+.bericht-log { max-height: none; }
+.bericht-fuss { justify-content: flex-end; }
+
+/* Erklärungen in normaler, gedämpfter Schrift – Rot nur für echte Warnungen. */
+.erklaerung { margin: 6px 0 0; font-size: 0.95rem; color: var(--tinte-weich); }
+.termine-legende { display: block; font-size: 15px; color: var(--tinte-weich); }
+
+/* Regler im Kassenbuch im Papierstil, Fokus golden wie überall. */
+input[type='range'].regler { -webkit-appearance: none; appearance: none; height: 22px; background: transparent; accent-color: auto; }
+input[type='range'].regler::-webkit-slider-runnable-track { height: 6px; background: var(--linie); border: 1px solid var(--tinte-blass); border-radius: 3px; }
+input[type='range'].regler::-moz-range-track { height: 6px; background: var(--linie); border: 1px solid var(--tinte-blass); border-radius: 3px; }
+input[type='range'].regler::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 16px; height: 20px; margin-top: -8px;
+  background: var(--tinte); border: 2px solid var(--papier-hell); border-radius: 3px; box-shadow: 0 1px 3px rgba(20, 10, 0, 0.4);
+}
+input[type='range'].regler::-moz-range-thumb { width: 16px; height: 20px; background: var(--tinte); border: 2px solid var(--papier-hell); border-radius: 3px; }
+input[type='range'].regler:focus { outline: none; }
+input[type='range'].regler:focus-visible { outline: 2px solid var(--ocker); outline-offset: 3px; }
+input:focus-visible { outline: 2px solid var(--ocker); outline-offset: 1px; }
+
+/* Ergebnisbögen (Kapitelende, Pleite): zweispaltig, die Knöpfe stehen fest unten – kein Scrollen bei 1280×800. */
+.tableau-flaeche { justify-content: center; padding: 14px 20px; }
+.gameover.bogen {
+  box-sizing: border-box; margin: 0; width: min(1180px, 100%); max-width: none; max-height: 100%;
+  display: flex; flex-direction: column; padding: 0; font-size: 16px;
+}
+.bogen-inhalt { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 14px 22px 6px; }
+.bogen .ergebnis-kopf { align-items: flex-start; }
+.bogen .ergebnis-kopf h2 { font-size: 1.6rem; margin: 0; }
+.bogen-text { margin: 2px 0 0; }
+.bogen-spalten { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 28px; }
+.bogen h3 { margin: 10px 0 4px; }
+.bogen .pruefung { margin: 4px 0; }
+.bogen .ipo { margin: 8px 0; padding: 8px 12px; }
+.bogen .ipo p { margin: 0 0 6px; }
+.bogen .ipo .knoepfe { margin-top: 6px; gap: 6px 10px; }
+.bogen .boegen { gap: 6px; font-size: 15px; }
+.bogen .log { max-height: none; font-size: 15px; }
+.terms.zweispaltig { grid-template-columns: auto 1fr auto 1fr; }
+.bogen-fuss {
+  flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px 20px;
+  padding: 10px 22px 12px; border-top: 1px solid var(--linie); background: var(--papier);
+}
+.bogen-fuss .randnotiz { flex-basis: 100%; border: none; padding: 0; background: none; }
+.bogen-fuss a.feedback { margin-right: auto; }
+.tableau-flaeche .bogen-fuss .link { color: var(--tinte); }

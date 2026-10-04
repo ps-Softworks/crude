@@ -16,7 +16,9 @@ import { generateWorld, type RanchShape } from '../sim/ranches';
 import type { RivalWell } from '../sim/rival';
 import { landmarkById, polygonCentroid, type Landmark, type Polygon, type Region, type Vec } from '../sim/worldMap';
 import { boundsOf, fitBounds, overview, panBy, sameView, tween, zoomAt, type Limits, type View } from './mapCamera';
-import { innerRadius, labelFits, ranchStatus, slotPositions, STATUS_LABEL, type RanchStatus } from './mapShapes';
+import { units } from './format';
+import { stageScale } from './stage';
+import { labelFits, ranchStatus, slotPositions, STATUS_LABEL, type RanchStatus } from './mapShapes';
 
 /** Zeichen auf einer Ranch (0.2.15+10): Pflock = hier geht etwas, Brief = ein offenes Ereignis betrifft sie. */
 export interface MapMarker {
@@ -176,6 +178,8 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
   // Zu Beginn liegt Salt Hill vor Jacob – das erste offene bohrbare Gebiet.
   const startRegion = world.regions.find((r) => r.kind === 'drillable' && game.regions.includes(r.id));
   const [view, setViewState] = useState<View>(() => (startRegion ? regionView(startRegion) : overview(limits)));
+  // Die Startansicht ist „zu Hause“ (0.2.15+11): Esc fährt nur zurück, wenn der Spieler selbst gezoomt oder verschoben hat.
+  const [home] = useState<View>(view);
   const [focus, setFocus] = useState<string | null>(startRegion?.id ?? null);
   const [hover, setHover] = useState<Hover | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -224,7 +228,8 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
-    const messen = () => setBreite(svg.getBoundingClientRect().width || 800);
+    // In CSS-Pixeln der Bühne: Wächst die Bühne auf großen Bildschirmen, wächst die Schrift auf der Karte mit.
+    const messen = () => setBreite(svg.getBoundingClientRect().width / stageScale(svg) || 800);
     messen();
     if (typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(messen);
@@ -330,10 +335,15 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
     } else if (e.key === '-') {
       e.preventDefault();
       zoomKnopf(1 / 0.7);
-    } else if (e.key === 'Escape' && (!sameView(v, overview(limits), 0.05) || notice)) {
-      // Nur wenn die Karte selbst etwas zu tun hat; sonst geht das Esc weiter (zurück zum Schreibtisch).
+    } else if (e.key === 'Escape' && notice) {
       e.preventDefault();
-      zurUebersicht();
+      setNotice(null);
+    } else if (e.key === 'Escape' && !sameView(v, home, 0.05) && !sameView(v, overview(limits), 0.05)) {
+      // Nur wenn der Spieler selbst gezoomt oder verschoben hat: zurück zur Startansicht.
+      // Sonst geht das Esc weiter – zurück zum Schreibtisch.
+      e.preventDefault();
+      setFocus(startRegion?.id ?? null);
+      fahre(home);
     }
   }
 
@@ -345,7 +355,8 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
   function hoverMaus(kind: Hover['kind'], id: string, e: { clientX: number; clientY: number }) {
     if (zug.current?.moved) return;
     const r = svgRef.current!.getBoundingClientRect();
-    setHover({ kind, id, x: e.clientX - r.left, y: e.clientY - r.top });
+    const f = stageScale(svgRef.current);
+    setHover({ kind, id, x: (e.clientX - r.left) / f, y: (e.clientY - r.top) / f });
   }
 
   function aktiv(e: KeyboardEvent, tun: () => void) {
@@ -394,7 +405,7 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
         className="karte-bild"
         viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
         role="application"
-        aria-label="Karte von Cordova. Pfeiltasten verschieben, Plus und Minus zoomen, Escape zeigt die ganze Provinz."
+        aria-label="Karte von Cordova. Pfeiltasten verschieben, Plus und Minus zoomen, Escape fährt zurück zur Startansicht und von dort zum Schreibtisch."
         tabIndex={0}
         onPointerDown={runter}
         onPointerMove={bewegen}
@@ -578,7 +589,7 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
                   x={(r.von[0] + r.nach[0]) / 2 + u(8)}
                   y={(r.von[1] + r.nach[1]) / 2}
                   className="karte-klein"
-                  style={{ fontSize: u(11) }}
+                  style={{ fontSize: u(12.5) }}
                   paintOrder="stroke"
                   {...halo}
                 >
@@ -603,7 +614,7 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
               if (p.discovery) return <Bohrturm key={p.id} x={shape.center[0]} y={shape.center[1] + u(4)} s={u(5)} className="karte-turm found" />;
               return funde.length > 0 ? <circle key={p.id} cx={shape.center[0]} cy={shape.center[1]} r={u(2.6)} className="karte-punkt" /> : null;
             }
-            const schrift = u(12);
+            const schrift = u(13);
             const passt = labelFits(shape.polygon, shape.center, p.name.length, schrift);
             const option = optionOf(game, p.id);
             const lease = leaseOf(game, p.id);
@@ -628,7 +639,7 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
                     );
                   })
                 )}
-                {passt && (
+                {passt && !highlight.includes(p.id) && (
                   <text x={shape.center[0]} y={p.discovery ? shape.center[1] - u(16) : nameY} className={`karte-ranchname${p.discovery ? ' fund' : ''}`} style={{ fontSize: schrift }} paintOrder="stroke" {...halo}>
                     {p.name}
                   </text>
@@ -638,18 +649,18 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
                     {Math.round(p.reserves / 1000)}k
                   </text>
                 )}
-                {passt && (frist !== undefined || rate > 0) && innerRadius(shape.polygon, shape.center) >= u(34) && (
-                  <text
-                    x={shape.center[0]}
-                    y={shape.center[1] + u(28)}
-                    className="karte-klein"
-                    style={{ fontSize: u(10.5), fill: MARK[status] }}
-                    paintOrder="stroke"
-                    {...halo}
-                  >
-                    {rate > 0 ? `${zahl(rate)} Barrel` : `${status === 'option' || status === 'bullardOption' ? 'Option' : 'Pacht'} · noch ${frist} ${frist === 1 ? 'Runde' : 'Runden'}`}
-                  </text>
-                )}
+                {passt && (frist !== undefined || rate > 0) && (() => {
+                  // Statuszeile unter den Bohrplätzen – nur, wenn sie dort ganz in die Ranch passt (sonst ragt sie in den Namen der Nachbarn).
+                  const text = rate > 0 ? `${zahl(rate)} Barrel` : `${status === 'option' || status === 'bullardOption' ? 'Option' : 'Pacht'} · noch ${frist} ${frist === 1 ? 'Runde' : 'Runden'}`;
+                  const klein = u(12);
+                  const y = shape.center[1] + u(30);
+                  if (!labelFits(shape.polygon, [shape.center[0], y + klein * 0.6], text.length, klein)) return null;
+                  return (
+                    <text x={shape.center[0]} y={y} className="karte-klein karte-status" style={{ fontSize: klein, fill: MARK[status] }} paintOrder="stroke" {...halo}>
+                      {text}
+                    </text>
+                  );
+                })()}
               </g>
             );
           })}
@@ -716,9 +727,26 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
         <g pointerEvents="none">
           {ranches
             .filter(({ p }) => highlight.includes(p.id))
-            .map(({ p, shape }) => (
-              <polygon key={p.id} points={pts(shape.polygon)} fill="none" strokeWidth={u(5)} className="highlight" strokeLinejoin="round" />
-            ))}
+            .map(({ p, shape }) => {
+              // Ziel des Einstiegs (0.2.15+11): pulsierender Rahmen, immer mit Namen und einem Fähnchen „hier“.
+              const oben = Math.min(...shape.polygon.map((q) => q[1]));
+              const [cx] = shape.center;
+              const mast = oben - u(4);
+              const fahne = u(13);
+              return (
+                <g key={p.id} className="karte-ziel">
+                  <polygon points={pts(shape.polygon)} fill="none" strokeWidth={u(5)} className="highlight" strokeLinejoin="round" />
+                  <line x1={cx} y1={mast + u(4)} x2={cx} y2={mast - u(30)} className="karte-fahne-mast" strokeWidth={u(2)} />
+                  <rect x={cx} y={mast - u(30)} width={u(36)} height={u(17)} className="karte-fahne" strokeWidth={u(1)} />
+                  <text x={cx + u(18)} y={mast - u(17.5)} className="karte-fahne-text" style={{ fontSize: fahne }}>
+                    hier
+                  </text>
+                  <text x={cx} y={mast - u(36)} className="karte-ranchname karte-ziel-name" style={{ fontSize: u(14) }} paintOrder="stroke" {...halo}>
+                    {p.name}
+                  </text>
+                </g>
+              );
+            })}
           {ranches
             .filter(({ p }) => p.id === selected)
             .map(({ p, shape }) => (
@@ -742,8 +770,10 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
               </g>
             );
           }
-          const x = cx + u(6);
-          const y = cy - u(26);
+          // Neben den Namen, nicht darauf (0.2.15+11).
+          const halb = labelFits(r.shape.polygon, r.shape.center, r.p.name.length, u(13)) ? r.p.name.length * u(13) * 0.27 : u(4);
+          const x = cx + halb + u(4);
+          const y = cy - u(10) - u(14);
           return (
             <g
               key={`m${i}`}
@@ -770,7 +800,7 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
 
       <div className="karte-knoepfe">
         {!sameView(view, ganz, 0.05) && (
-          <button type="button" onClick={zurUebersicht} title="Ganze Provinz zeigen (Escape)">
+          <button type="button" onClick={zurUebersicht} title="Ganze Provinz zeigen">
             ← Übersicht
           </button>
         )}
@@ -825,7 +855,7 @@ function RanchTipp({ game, id, debug }: { game: GameState; id: string; debug: bo
           {frist !== undefined && ` · noch ${frist} ${frist === 1 ? 'Runde' : 'Runden'}`}
         </dd>
         <dt>Fläche</dt>
-        <dd>{zahl(p.area, 1)} Einheiten</dd>
+        <dd>{units(p.area)}</dd>
         <dt>Bohrplätze</dt>
         <dd>
           {p.slots}

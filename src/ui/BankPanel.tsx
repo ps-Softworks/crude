@@ -23,6 +23,7 @@ import {
 import type { GameState } from '../sim/game';
 import { parcelLabel } from '../sim/lease';
 import { balance } from './balance';
+import { money, NBSP } from './format';
 
 /** Was das Rating über Jacobs Ruf bei der Bank sagt. */
 const RATING_TEXT: Record<Rating, string> = {
@@ -32,13 +33,9 @@ const RATING_TEXT: Record<Rating, string> = {
   D: 'keine neuen Kredite',
 };
 
-function money(value: number) {
-  return `${value.toLocaleString('de-DE')} $`;
-}
-
 /** Zins als Prozent, z. B. 0.07 -> "7 %". */
 function percent(value: number) {
-  return `${(value * 100).toLocaleString('de-DE', { maximumFractionDigits: 2 })} %`;
+  return `${(value * 100).toLocaleString('de-DE', { maximumFractionDigits: 2 })}${NBSP}%`;
 }
 
 function parcelName(game: GameState, parcelId: string | null) {

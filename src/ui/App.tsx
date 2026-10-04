@@ -4,16 +4,19 @@
 // sceneState. Spielregeln und alle Texte kommen aus src/sim – hier wird nur geklickt.
 // Ab 0.2.15+10 dazu: Besucher an der Tür, „neu“-Hinweise, Übergänge (Fenster,
 // Wandkarte ⇄ Karte, Rundenwechsel) und der Rundgang beim ersten Start.
+// Ab 0.2.15+11: Rundenbericht nach der Glocke, Auswahl „Wer wartet“ an der Tür,
+// Ruths Zettel mit den offenen Punkten, Hinweise auf der Karte.
 
 import { useEffect, useReducer, useRef, useState } from 'react';
 import { agendaView } from '../sim/agenda';
 import { decideIpo } from '../sim/chapter';
 import type { LoanResult } from '../sim/credit';
-import { applyAction, nextStep, parcelActions, roundLog, type DeskActionKind } from '../sim/desk';
+import { applyAction, nextStep, parcelActions, type DeskActionKind } from '../sim/desk';
 import { deskEvents, deskMail, deskRoutines } from '../sim/events';
 import { endRound, formatDate, newGame, type GameState } from '../sim/game';
 import { ranchOfFigure } from '../sim/geology';
 import { tutorialActive, tutorialHint, viewTutorial } from '../sim/tutorial';
+import { parcelLabel } from '../sim/lease';
 import { clearAutosave, loadAutosave, writeAutosave } from './autosave';
 import { balance } from './balance';
 import { ChapterEndScreen } from './ChapterEndScreen';
@@ -45,12 +48,13 @@ import {
   type SheetId,
 } from './sceneState';
 import { useFocusReturn } from './sheet/useFocusReturn';
+import type { RoundReport } from './sheets/ReportSheet';
 import { SheetHost } from './sheets/SheetHost';
 import type { SheetContext } from './sheets/types';
 import { readPref, writePref } from './storage';
 import { debugToolsVisible } from './testerConfig';
 import { tourSteps } from './tourContent';
-import { loadTutorialOn, saveTutorialOn, tutorialContent } from './tutorial';
+import { loadTutorialOn, mapTutorialContent, saveTutorialOn, tutorialContent } from './tutorial';
 import { VisitorScene } from './visitor/VisitorScene';
 import { appearances } from './visitorContent';
 
@@ -120,6 +124,8 @@ export function App() {
   const [ui, dispatch] = useReducer(sceneReducer, null, () => restoreScene(readPref(SZENE_PREF), `${anfang.game.seed}:${anfang.game.round}`));
   // Rundenwechsel (2c): das Kalenderblatt reißt ab, bevor der neue Tag beginnt.
   const [uebergang, setUebergang] = useState<{ from: string; to: string; round: number; lines: string[] } | null>(null);
+  // Rundenbericht (0.2.15+11): was über Nacht geschah – liegt vor der Zeitung auf dem Tisch.
+  const [bericht, setBericht] = useState<RoundReport | null>(null);
   // Fenster geht zu: noch kurz sichtbar (2c).
   const [nachlauf, setNachlauf] = useState<OpenSheet | null>(null);
   // Zoom Wandkarte ⇄ Karte (2c): erst danach baut sich die Karte auf.
@@ -146,7 +152,7 @@ export function App() {
   const wechselt = uebergang !== null;
   useEffect(() => {
     if (wechselt) return;
-    dispatch({ type: 'round', round: game.round, autoNewspaper: autoNewspaper && !game.finished });
+    dispatch({ type: 'round', round: game.round, autoNewspaper: autoNewspaper && !game.finished, report: bericht?.round === game.round && !game.finished });
   }, [game.round, spielNr, wechselt]);
 
   // „Gesehen“ merken, damit „neu“ nach dem Neuladen nicht wieder aufleuchtet.
@@ -179,6 +185,7 @@ export function App() {
   // Wer im Raum steht, wartet nicht mehr vor der Tür.
   const draussen = { ...inbox, visitors: inbox.visitors.filter((e) => e.id !== ui.visitor) };
   const wartende = visitorNames(draussen);
+  // Wessen Frist zuerst abläuft, steht vorn (inbox.ts sortiert).
   const ersterBesuch = draussen.visitors[0];
   const ersteFigur = ersterBesuch && appearances[ersterBesuch.id]?.kind === 'visitor' ? (appearances[ersterBesuch.id] as { figure: string }).figure : null;
 
@@ -200,6 +207,8 @@ export function App() {
     finished: game.finished,
   });
   const heroisch = hint?.parcelIds ?? step?.parcelIds ?? [];
+  // Auf der Karte ohne den Weg dorthin („Öffne die Wandkarte …“) – man ist ja schon da.
+  const kartenText = hint ? viewTutorial(hint, mapTutorialContent).text : (step?.text ?? null);
 
   const tableau = (game.ending === 'pleite' || game.ending === 'kapitel' || game.ending === 'verkauft') && !(peek && game.ending !== 'pleite');
 
@@ -236,11 +245,15 @@ export function App() {
     window.setTimeout(() => document.querySelector<HTMLElement>('.zettel')?.focus({ preventScroll: true }), 0);
   }
 
-  function bitteHerein() {
-    if (ersterBesuch) dispatch({ type: 'visitor', id: ersterBesuch.id });
+  // Wartet einer, kommt er herein; warten mehrere, fragt Jacob erst, wer (0.2.15+11).
+  function bitteHerein(back?: SheetBack) {
+    if (draussen.visitors.length > 1) open('wartende', back ? { back } : {});
+    else if (ersterBesuch) dispatch({ type: 'visitor', id: ersterBesuch.id });
   }
 
-  function open(sheet: SheetId, opts: { tab?: string; back?: SheetBack } = {}) {
+  function open(sheet: SheetId, opts: { tab?: string; back?: SheetBack; focus?: string } = {}) {
+    // Während des Rundgangs bleibt der Tisch zu (die Blase liegt darüber).
+    if (rundgang) return;
     dispatch({ type: 'open', sheet, ...opts });
   }
 
@@ -250,9 +263,9 @@ export function App() {
     else open(target.sheet, { tab: target.tab });
   }
 
-  function goToItem(item: OpenItem) {
-    if (item.target === 'tuer') bitteHerein();
-    else open(item.target, { back: { sheet: 'glocke' } });
+  function goToItem(item: OpenItem, fromBell = true) {
+    if (item.target === 'tuer') bitteHerein(fromBell ? { sheet: 'glocke' } : undefined);
+    else open(item.target, fromBell ? { back: { sheet: 'glocke' } } : {});
   }
 
   function toggleTutorial(on: boolean) {
@@ -293,8 +306,12 @@ export function App() {
   function end() {
     if (game.finished) return;
     const next = endRound(game, balance, events);
-    // Rundenwechsel (2c): Kalenderblatt, neues Datum, ein Blick zurück. Am Kapitelende kommt das Tableau.
-    if (!next.ending) setUebergang({ from: formatDate(game), to: formatDate(next), round: next.round, lines: roundLog(next).slice(-3) });
+    // Rundenwechsel (2c): Kalenderblatt, neues Datum. Was geschah, steht danach im Rundenbericht.
+    // Am Kapitelende kommt das Tableau.
+    if (!next.ending) {
+      setUebergang({ from: formatDate(game), to: formatDate(next), round: next.round, lines: [] });
+      setBericht({ round: next.round, from: formatDate(game), to: formatDate(next), before: game, after: next });
+    }
     setGame(next);
     setNotice(null);
     dispatch({ type: 'close' });
@@ -313,6 +330,7 @@ export function App() {
     setNotice(null);
     setPeek(false);
     setUebergang(null);
+    setBericht(null);
     dispatch({ type: 'reset' });
     setSpielNr((n) => n + 1);
   }
@@ -366,14 +384,17 @@ export function App() {
     vorigeAnsicht.current = ui.view;
   }, [ui.view]);
 
-  // Besuch gegangen: Fokus zurück an die Tür (oder auf den Tisch, wenn er von der Karte kam).
+  // Besuch gegangen: Fokus zurück an die Tür – eine Szene, die auf „später“ gelegt
+  // wurde, hängt jetzt am Notizspieß, dorthin geht der Fokus.
   const vorigerBesuch = useRef(ui.visitor);
   useEffect(() => {
-    if (vorigerBesuch.current !== null && ui.visitor === null && ui.view === 'desk') {
-      document.querySelector<HTMLElement>('.objekt-tuer')?.focus({ preventScroll: true });
+    const war = vorigerBesuch.current;
+    if (war !== null && ui.visitor === null && ui.view === 'desk' && !ui.sheet) {
+      const ziel = appearances[war]?.kind === 'tableau' ? '.objekt-vorfaelle' : '.objekt-tuer';
+      document.querySelector<HTMLElement>(ziel)?.focus({ preventScroll: true });
     }
     vorigerBesuch.current = ui.visitor;
-  }, [ui.visitor, ui.view]);
+  }, [ui.visitor, ui.view, ui.sheet]);
 
   // Zeichen auf der Karte (2b): Pflock, wo Jacob etwas tun kann; Brief, wo ein offenes Ereignis liegt.
   function kartenZeichen(): MapMarker[] {
@@ -395,9 +416,10 @@ export function App() {
   function zumZeichen(m: MapMarker) {
     const id = m.eventId;
     if (!id) return;
-    if (inbox.letters.some((e) => e.id === id)) open('post');
+    // Der angeklickte Brief (oder Vorfall) liegt im Fenster vorn.
+    if (inbox.letters.some((e) => e.id === id)) open('post', { focus: id });
     else if (inbox.visitors.some((e) => e.id === id) || inbox.tableaus.some((e) => e.id === id)) dispatch({ type: 'visitor', id });
-    else open('vorfaelle');
+    else open('vorfaelle', { focus: id });
   }
 
   const ctx: SheetContext = {
@@ -408,6 +430,7 @@ export function App() {
     onGame,
     onLoan: apply,
     tab: ui.sheet?.tab,
+    focus: ui.sheet?.focus,
     onTab: (tab) => dispatch({ type: 'tab', tab }),
     open,
     showOnMap: (id) => dispatch({ type: 'showOnMap', id }),
@@ -427,6 +450,8 @@ export function App() {
       onBack={() => dispatch({ type: 'back' })}
       onEndRound={end}
       onGo={goToItem}
+      report={bericht}
+      onVisitor={(id) => dispatch({ type: 'visitor', id })}
       onChapterEnd={
         game.ending
           ? () => {
@@ -465,15 +490,7 @@ export function App() {
             {game.ending === 'pleite' ? (
               <GameOverScreen game={game} onRestart={() => startNewWorld(randomSeed())} />
             ) : (
-              <>
-                <ChapterEndScreen game={game} onRestart={() => startNewWorld(randomSeed())} onIpo={ipo} />
-                {notice && <p className="randnotiz warn">{notice}</p>}
-                <p>
-                  <button type="button" className="link" onClick={() => setPeek(true)}>
-                    Noch einmal auf den Schreibtisch schauen
-                  </button>
-                </p>
-              </>
+              <ChapterEndScreen game={game} onRestart={() => startNewWorld(randomSeed())} onIpo={ipo} notice={notice} onPeek={() => setPeek(true)} />
             )}
           </div>
         </div>
@@ -502,6 +519,22 @@ export function App() {
     />
   );
 
+  // Bohrungen, die auf Jacob warten – für Ruths Zettel, in einem Satz je Ranch.
+  const bohrWartet = game.wells
+    .filter((w) => w.status === 'decision' || w.status === 'stuck')
+    .map((w) => {
+      const p = game.parcels.find((x) => x.id === w.parcelId);
+      const ort = p ? parcelLabel(p) : w.parcelId;
+      const tiefe = balance.drilling.stages[w.stage - 1]?.depth;
+      return {
+        parcelId: w.parcelId,
+        text: w.status === 'decision' ? `${ort}: in ${tiefe} m trocken – tiefer bohren oder aufgeben?` : `${ort}: Werkzeug klemmt in ${tiefe} m – fischen oder aufgeben?`,
+      };
+    });
+  // Thomas steht erst im Familienfoto, wenn die Szene seiner Geburt gespielt ist.
+  const geburtOffen = inbox.tableaus.some((e) => events.find((d) => d.id === e.id)?.marked.includes('thomas_geboren'));
+  const imRaumName = imRaum?.kind === 'visitor' ? imRaum.name : null;
+
   const schreibtisch = (
     <DeskScene
       game={game}
@@ -514,11 +547,18 @@ export function App() {
       tutorial={tutorialView}
       tutorialOffer={!tutorialOn && tutorialActive(game, balance)}
       onTutorial={toggleTutorial}
-      glow={targetObject(ziel)}
+      glow={rundgang ? null : targetObject(ziel)}
       spotlight={spot}
       waiting={{ names: wartende, figure: ersteFigur ? figureOf(figures, ersteFigur) : null }}
-      knock={unseen(draussen.visitors, ui.seen).length > 0}
-      onDoor={bitteHerein}
+      inRoom={imRaumName}
+      hideFamily={geburtOffen ? ['thomas'] : []}
+      open={offen}
+      wellsWaiting={bohrWartet}
+      onItem={(item) => goToItem(item, false)}
+      onWell={(id) => dispatch({ type: 'showOnMap', id })}
+      // Es klopft erst, wenn Übergang, Bericht und Zeitung weg sind – sonst geht es unter.
+      knock={unseen(draussen.visitors, ui.seen).length > 0 && !besetzt && ui.sheet === null && ui.visitor === null}
+      onDoor={() => bitteHerein()}
       onRuth={ziel ? () => goTo(ziel) : null}
       onOpen={(sheet, tab) => open(sheet, { tab })}
       onMap={() => dispatch({ type: 'view', view: 'map' })}
@@ -544,10 +584,11 @@ export function App() {
                 parcel={parcel}
                 debug={debug}
                 notice={notice}
-                stepText={tutorialView?.text ?? step?.text ?? null}
+                stepText={kartenText}
                 onAction={act}
                 onClose={() => dispatch({ type: 'ranch', id: null })}
                 onLedger={() => open('kassenbuch')}
+                onRigs={() => open('akte', { tab: 'tuerme' })}
               />
             ) : null
           }
@@ -556,6 +597,7 @@ export function App() {
           onDesk={() => dispatch({ type: 'view', view: 'desk' })}
           onPipeline={() => open('fracht', { tab: 'pipeline' })}
           onBell={() => open('glocke')}
+          hint={kartenText}
         />
       ) : (
         schreibtisch

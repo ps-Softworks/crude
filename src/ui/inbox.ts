@@ -14,7 +14,7 @@ export type Appearance = { kind: 'visitor'; figure: string; name: string } | { k
 export interface Inbox {
   /** Briefe, dringende zuerst (Reihenfolge aus deskMail). */
   letters: DeskEvent[];
-  /** Besucher in der Reihenfolge, in der sie auf dem Schreibtisch liegen. */
+  /** Besucher – wessen Frist zuerst abläuft, steht vorn (sonst in der Reihenfolge, in der sie kamen). */
   visitors: DeskEvent[];
   tableaus: DeskEvent[];
   /** Alles ohne Brief und ohne Auftritt: Zettel am Notizspieß. */
@@ -34,7 +34,8 @@ export function sortInbox(
   const ohneBrief = pending.filter((e) => !e.mail);
   return {
     letters: [...mail],
-    visitors: ohneBrief.filter((e) => appearances[e.id]?.kind === 'visitor'),
+    // Nur sortiert, keine Regel: Frist (roundsLeft aus src/sim) zuerst; sort ist stabil.
+    visitors: ohneBrief.filter((e) => appearances[e.id]?.kind === 'visitor').sort((a, b) => a.roundsLeft - b.roundsLeft),
     tableaus: ohneBrief.filter((e) => appearances[e.id]?.kind === 'tableau'),
     incidents: ohneBrief.filter((e) => !appearances[e.id]),
     routines: [...routines],
@@ -86,6 +87,7 @@ export function eventsShownIn(inbox: Inbox, sheet: SheetId): DeskEvent[] {
   if (sheet === 'post') return inbox.letters;
   if (sheet === 'vorfaelle') return [...inbox.incidents, ...inbox.tableaus];
   if (sheet === 'termine') return inbox.routines;
+  if (sheet === 'wartende') return inbox.visitors;
   return [];
 }
 
@@ -136,9 +138,10 @@ export function openItems(inbox: Inbox, agenda: Pick<AgendaView, 'left'>): OpenI
     });
   }
   if (inbox.routines.length > 0 && agenda.left > 0) {
+    const n = inbox.routines.length;
     items.push({
       target: 'termine',
-      text: `${anzahl(agenda.left, 'Termin', 'Termine')} frei – ${anzahl(inbox.routines.length, 'fester Termin', 'feste Termine')} im Kalender`,
+      text: `${anzahl(n, 'fester Termin', 'feste Termine')} im Kalender ${n === 1 ? 'wartet' : 'warten'} noch (freiwillig, ${anzahl(agenda.left, 'Termin', 'Termine')} frei)`,
       urgent: false,
     });
   }

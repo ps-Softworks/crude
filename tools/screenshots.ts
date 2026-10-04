@@ -1,7 +1,9 @@
 // Screenshots (2.12, ab 0.2.15+10 für Schreibtisch, Fenster, Karte und Besuch):
 // Bildschirme des Spiels nach docs/screenshots/, um zu prüfen, ob die
 // Platzhaltergrafik wie aus einem Guss wirkt. Dazu prüft es, dass die Seite bei
-// 1280×800, 1440×900 und 1920×1080 nie scrollt (Schreibtisch und Karte).
+// 1280×800, 1440×900 und 1920×1080 nie scrollt (Schreibtisch und Karte) und dass
+// die Ergebnisbögen (Kapitelende, Pleite) ohne inneres Scrollen ganz zu sehen sind
+// – samt „Neues Spiel“ (0.2.15+11).
 // Aufruf: npm run screenshots  (braucht Google Chrome; startet einen eigenen
 // Vite-Server auf Port 5199 und beendet ihn danach wieder).
 //
@@ -101,6 +103,7 @@ const bilder: Bild[] = [
   { name: '12-rundgang', state: start, prefs: { 'crude.rundgang': 'nein' }, warte: 1200 },
   { name: '13-kapitelende', state: kapitel },
   { name: '14-pleite', state: pleite },
+  { name: '15-rundenbericht', state: mitte, prefs: { 'crude.zeitung': 'an' }, tasten: ['e', 'Enter'], warte: 1600 },
 ];
 
 // --- Chrome über das DevTools-Protokoll steuern ---
@@ -150,8 +153,9 @@ class Cdp {
   }
   /** Eine Taste wie vom Spieler: keydown, char, keyup an das Element mit dem Fokus. */
   async taste(key: string) {
-    const code = key.length === 1 ? key.toUpperCase().charCodeAt(0) : 0;
-    await this.send('Input.dispatchKeyEvent', { type: 'keyDown', key, text: key.length === 1 ? key : undefined, windowsVirtualKeyCode: code });
+    const code = key === 'Enter' ? 13 : key === 'Escape' ? 27 : key.length === 1 ? key.toUpperCase().charCodeAt(0) : 0;
+    const text = key === 'Enter' ? '\r' : key.length === 1 ? key : undefined;
+    await this.send('Input.dispatchKeyEvent', { type: 'keyDown', key, code: key === 'Enter' ? 'Enter' : undefined, text, windowsVirtualKeyCode: code });
     await this.send('Input.dispatchKeyEvent', { type: 'keyUp', key, windowsVirtualKeyCode: code });
   }
 }
@@ -238,12 +242,31 @@ try {
       console.log(`${ok ? 'ok    ' : 'FEHLER'} ${w}×${h} ${ansicht}: Seite ${m.sw}×${m.sh}${m.klein > 0 ? ` · ${m.klein} Schrift unter 15 px` : ''}`);
     }
   }
+  // Ergebnisbögen (0.2.15+11): kein inneres Scrollen, „Neues Spiel“ sichtbar.
+  for (const [w, h] of [
+    [1280, 800],
+    [1920, 1080],
+  ] as const) {
+    await groesse(w, h);
+    for (const [name, state] of [
+      ['Kapitelende', kapitel],
+      ['Pleite', pleite],
+    ] as const) {
+      await lade(state, {}, undefined);
+      const m = await cdp.js<{ innen: number; sicht: number; knopf: boolean }>(
+        `(() => { const i = document.querySelector('.bogen-inhalt'); const k = [...document.querySelectorAll('.bogen-fuss button')].find((b) => b.textContent.includes('Neues Spiel')); const r = k?.getBoundingClientRect(); return { innen: i ? i.scrollHeight : 0, sicht: i ? i.clientHeight : 0, knopf: !!r && r.bottom <= innerHeight && r.top >= 0 }; })()`,
+      );
+      const ok = m.innen <= m.sicht + 1 && m.knopf;
+      if (!ok) fehler++;
+      console.log(`${ok ? 'ok    ' : 'FEHLER'} ${w}×${h} ${name}: Inhalt ${m.innen} von ${m.sicht} px${m.knopf ? '' : ' · „Neues Spiel“ nicht sichtbar'}`);
+    }
+  }
   ws.close();
 } finally {
   chrome.kill();
   await server.close();
 }
 if (fehler > 0) {
-  console.error(`${fehler} Ansicht(en) scrollen – das darf nicht sein.`);
+  console.error(`${fehler} Ansicht(en) scrollen oder verstecken Knöpfe – das darf nicht sein.`);
   process.exit(1);
 }
