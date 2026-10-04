@@ -526,7 +526,7 @@ export interface WorldModelBalance {
     findSize: Range;
   };
   demand: { growth: number; cap: number; techBoost: number; crashDrop: number; warBoost: number; armsDemand: number };
-  price: { min: number; max: number; techCost: number };
+  price: { min: number; max: number; techCost: number; trendMin: number };
   tech: { rate: number };
   credit: {
     boom: number;
@@ -540,7 +540,10 @@ export interface WorldModelBalance {
     crashChance: number;
     crashSlope: number;
     priceTrigger: number;
+    priceTriggerFrom: number;
     after: number;
+    pipelineCut: number;
+    investCut: number;
     rounds: Range;
   };
   mood: { speed: number; price: number; crash: number; war: number; boom: number; noise: number };
@@ -549,9 +552,11 @@ export interface WorldModelBalance {
     base: number;
     revert: number;
     scarcity: number;
+    scarcityFrom: number;
     arms: number;
     armsFrom: number;
     nationalism: number;
+    nationalismFrom: number;
     noise: number;
     warFrom: number;
     warChance: number;
@@ -1603,7 +1608,7 @@ function parseWorldModel(raw: unknown): WorldModelBalance {
       warBoost: nn('demand.warBoost'),
       armsDemand: nn('demand.armsDemand'),
     },
-    price: { min: nn('price.min'), max: nn('price.max'), techCost: sh('price.techCost') },
+    price: { min: nn('price.min'), max: nn('price.max'), techCost: sh('price.techCost'), trendMin: sh('price.trendMin') },
     tech: { rate: sh('tech.rate') },
     credit: {
       boom: nn('credit.boom'),
@@ -1617,7 +1622,10 @@ function parseWorldModel(raw: unknown): WorldModelBalance {
       crashChance: sh('credit.crashChance'),
       crashSlope: sh('credit.crashSlope'),
       priceTrigger: sh('credit.priceTrigger'),
+      priceTriggerFrom: scale('credit.priceTriggerFrom'),
       after: sh('credit.after'),
+      pipelineCut: sh('credit.pipelineCut'),
+      investCut: sh('credit.investCut'),
       rounds: rng('credit.rounds', 1, 1000),
     },
     mood: {
@@ -1640,9 +1648,11 @@ function parseWorldModel(raw: unknown): WorldModelBalance {
       base: scale('tension.base'),
       revert: sh('tension.revert'),
       scarcity: nn('tension.scarcity'),
+      scarcityFrom: nn('tension.scarcityFrom'),
       arms: sh('tension.arms'),
       armsFrom: scale('tension.armsFrom'),
       nationalism: sh('tension.nationalism'),
+      nationalismFrom: scale('tension.nationalismFrom'),
       noise: nn('tension.noise'),
       warFrom: scale('tension.warFrom'),
       warChance: sh('tension.warChance'),

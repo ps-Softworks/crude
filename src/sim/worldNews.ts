@@ -15,6 +15,9 @@ export const WORLD_HEADLINES = [
   'world_election_handel',
   'world_election_volksbund',
   'world_election_provinz',
+  'world_reelected_handel',
+  'world_reelected_volksbund',
+  'world_reelected_provinz',
   'world_credit_tight',
   'world_credit_easy',
   'world_mood_angry',
@@ -28,9 +31,21 @@ const ELECTION: Record<Party, WorldHeadline> = {
   provinz: 'world_election_provinz',
 };
 
+const REELECTED: Record<Party, WorldHeadline> = {
+  handel: 'world_reelected_handel',
+  volksbund: 'world_reelected_volksbund',
+  provinz: 'world_reelected_provinz',
+};
+
+/**
+ * Große Weltereignisse: Sie stehen in der Zeitung vor den Meldungen aus Salt Hill,
+ * damit die einzige Ankündigung eines Crashs oder Kriegs nie wegen Platzmangels fehlt.
+ */
+export const MAJOR_WORLD_HEADLINES: readonly WorldHeadline[] = ['world_crash', 'world_war', 'world_nationalization', 'world_glut'];
+
 /**
  * Höchstens eine Meldung aus der Welt: zuerst, was in der letzten Runde geschah
- * (Crash vor Krieg vor Frieden …), sonst ein Zustand jenseits der Schwellen aus
+ * (Crash vor Krieg vor Verstaatlichung vor Riesenfund vor Frieden …), sonst ein Zustand jenseits der Schwellen aus
  * balance.yaml (worldModel.news). Ruhige Welt → keine Meldung.
  */
 export function worldHeadline(world: WorldState | undefined, wb: WorldModelBalance): WorldHeadline | null {
@@ -38,10 +53,11 @@ export function worldHeadline(world: WorldState | undefined, wb: WorldModelBalan
   const n = world.news;
   if (n.includes('crash')) return 'world_crash';
   if (n.includes('war')) return 'world_war';
-  if (n.includes('peace')) return 'world_peace';
   if (n.includes('nationalization')) return 'world_nationalization';
   if (n.includes('glut')) return 'world_glut';
+  if (n.includes('peace')) return 'world_peace';
   if (n.includes('election')) return ELECTION[world.government];
+  if (n.includes('reelection')) return REELECTED[world.government];
   if (n.includes('recovery')) return 'world_recovery';
   const s = wb.news;
   if (world.crash > 0 || world.credit <= s.creditTight) return 'world_credit_tight';

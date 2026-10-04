@@ -42,6 +42,9 @@ export interface WorldRun {
   maxImbalance: number;
   /** Regierungsjahre je Partei. */
   governmentRounds: Record<(typeof PARTIES)[number], number>;
+  /** Runden (ab 1), in denen ein Crash bzw. ein Krieg begann. */
+  crashStarts: number[];
+  warStarts: number[];
 }
 
 /** Eine Welt über rounds Runden ohne Spieler. */
@@ -53,8 +56,12 @@ export function runWorld(seed: string, wb: WorldModelBalance, rounds: number): W
   let crashRounds = 0;
   let maxImbalance = 1;
   const governmentRounds = { handel: 0, volksbund: 0, provinz: 0 };
+  const crashStarts: number[] = [];
+  const warStarts: number[] = [];
   for (let r = 1; r <= rounds; r++) {
     w = advanceWorld(w, wb);
+    if (w.news.includes('crash')) crashStarts.push(r);
+    if (w.news.includes('war')) warStarts.push(r);
     prices.push(w.price);
     if (w.war > 0) warRounds += 1;
     if (w.crash > 0) crashRounds += 1;
@@ -72,7 +79,7 @@ export function runWorld(seed: string, wb: WorldModelBalance, rounds: number): W
     maxYearDrop = Math.max(maxYearDrop, 1 - prices[i] / hoch);
     maxYearRise = Math.max(maxYearRise, prices[i] / tief - 1);
   }
-  return { seed, years, final: w, maxYearDrop, maxYearRise, warRounds, crashRounds, maxImbalance, governmentRounds };
+  return { seed, years, final: w, maxYearDrop, maxYearRise, warRounds, crashRounds, maxImbalance, governmentRounds, crashStarts, warStarts };
 }
 
 /** Viele Welten: Seeds `${prefix}-0` … `${prefix}-${count-1}`. */
@@ -142,3 +149,26 @@ export const CAMPAIGN_TARGETS = {
   gluts: [1, 3] as [number, number],
   wars: [0, 2] as [number, number],
 };
+
+/** Spieljahr (ab 0) einer Runde (ab 1). */
+export function yearOfRound(round: number): number {
+  return Math.floor((round - 1) / ROUNDS_PER_YEAR);
+}
+
+/**
+ * Wann Krisen kommen: je Fenster von `years` Spieljahren, wie viele Krisen eine
+ * Welt dort im Schnitt hat (rate) und welcher Anteil der Welten dort seine
+ * erste Krise hat (first). Klumpen die Krisen in einem Fenster, lernt der Spieler
+ * ihren Zeitpunkt auswendig (GDD §7.2).
+ */
+export function crisisWindows(runs: readonly WorldRun[], pick: (r: WorldRun) => readonly number[], years: number, totalYears = 73): { rate: number[]; first: number[] } {
+  const n = Math.ceil(totalYears / years);
+  const rate = new Array<number>(n).fill(0);
+  const first = new Array<number>(n).fill(0);
+  for (const r of runs) {
+    const starts = pick(r).filter((x) => yearOfRound(x) < totalYears);
+    for (const x of starts) rate[Math.floor(yearOfRound(x) / years)] += 1 / runs.length;
+    if (starts.length > 0) first[Math.floor(yearOfRound(starts[0]) / years)] += 1 / runs.length;
+  }
+  return { rate, first };
+}

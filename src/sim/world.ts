@@ -15,11 +15,15 @@
 //
 // Drei Rückkopplungen:
 //   1. Preis → Neubohrungen (verzögert um supply.delay Runden) → Kapazität → Preis.
-//      Dämpft sich selbst, aber spät: Zwischendurch laufen die Tanks über.
+//      Dämpft sich selbst, aber spät: Zwischendurch laufen Tanks voll oder leer.
 //   2. Boom (hoher Preis) → Kreditklima → mehr Neubohrungen und Spekulation →
 //      Klima steigt weiter (über 50 schaukelt es sich auf) → Crash.
 //   3. Knappheit (hoher Preis) → Außenspannung → Aufrüstung → Nachfrage → Knappheit.
 //      Über etwa 60 ist die Aufrüstung stärker als die Diplomatie → Krieg.
+//
+// „Knappheit“ heißt überall Weltpreis ÷ Trendpreis (knappheit()): Technik macht Öl
+// billiger, ohne dass Firmen weniger bohren, Banken vorsichtiger oder Mächte
+// ruhiger werden. Nur der Preis selbst (Kapitel 1: worldPriceFactor) sinkt mit dem Trend.
 //
 // Kapitel 1 spürt die Welt sanft: worldPriceFactor (Trend des Posted Price) und
 // worldRateAdd (Zinsen der Bank). Die Zeitung deutet Zustände an (worldHeadline).
@@ -31,8 +35,8 @@ export const PARTIES = ['handel', 'volksbund', 'provinz'] as const;
 /** Handelspartei, Volksbund, Provinzliga (GDD §7.1). */
 export type Party = (typeof PARTIES)[number];
 
-/** Was in einer Runde in der Welt geschah – für Zeitung und Auswertung. */
-export type WorldNews = 'crash' | 'recovery' | 'war' | 'peace' | 'election' | 'glut' | 'nationalization';
+/** Was in einer Runde in der Welt geschah – für Zeitung und Auswertung. election = eine andere Partei regiert jetzt, reelection = die regierende Partei bleibt. */
+export type WorldNews = 'crash' | 'recovery' | 'war' | 'peace' | 'election' | 'reelection' | 'glut' | 'nationalization';
 
 /** Chronik: wie oft etwas seit Kampagnenbeginn geschah. */
 export interface WorldCounts {
@@ -132,10 +136,41 @@ function normalizeParties(raw: Record<Party, number>, minShare: number): Record<
   }
 }
 
-/** Wachstum der Grundnachfrage in der ersten Runde – so viel bohren die Firmen schon vor Spielbeginn mit. */
-function startGrowth(tech: number, wb: WorldModelBalance): number {
+/** Technikstand nach einer Runde (logistisch, nähert sich 100, ohne es je zu erreichen). */
+function nextTech(tech: number, wb: Pick<WorldModelBalance, 'tech'>): number {
+  return clamp(tech + wb.tech.rate * tech * (1 - tech / 100), 0, 100);
+}
+
+/** Wachstum der Grundnachfrage je Runde bei diesem Technikstand und dieser Nachfrage. */
+function demandGrowth(tech: number, demand: number, wb: Pick<WorldModelBalance, 'demand'>): number {
   const d = wb.demand;
-  return d.growth * (1 + (d.techBoost * tech) / 100) * (1 - 1 / d.cap);
+  return d.growth * (1 + (d.techBoost * tech) / 100) * (1 - demand / d.cap);
+}
+
+/**
+ * Anteil der Kapazität, den die Firmen neu bohren, damit nach supply.delay Runden
+ * genug fördert: Ersatz für Erschöpftes plus Wachstum – mitgewachsen über den Verzug,
+ * sonst liefe das Angebot dem Wachstum immer hinterher (und der Preis stiege still).
+ */
+function steadyInvest(growth: number, wb: WorldModelBalance): number {
+  // Heute begonnen, fördert die Bohrung ab Runde delay; bis dahin ist die Kapazität delay − 1 Runden gewachsen.
+  return (wb.supply.depletion + growth) * (1 + growth) ** (wb.supply.delay - 1);
+}
+
+/** Die Spielzahlen, die eine Ausgangslage braucht. */
+type StartBalance = Pick<WorldModelBalance, 'demand' | 'tech'> & {
+  supply: Pick<WorldModelBalance['supply'], 'utilBase' | 'depletion' | 'delay' | 'stockNorm'>;
+};
+
+/** Was sich eine Ausgangslage aussucht; der Rest (Angebot, Lager, Pipeline) folgt daraus im Gleichgewicht. */
+interface StartValues {
+  tech: number;
+  credit: number;
+  mood: number;
+  tension: number;
+  nationalism: number;
+  parties: Record<Party, number>;
+  electionIn: number;
 }
 
 /** Ausgangslage einer Kampagne: Jede Welt ist neu (GDD §7.2), der Preis startet im Gleichgewicht bei 1. */
@@ -152,35 +187,31 @@ export function newWorld(seed: string, wb: WorldModelBalance): WorldState {
     wb.politics.minShare,
   );
   const electionIn = rng.int(1, wb.politics.electionEvery);
-  return startState(rng.state, startGrowth(tech, wb), wb.supply.utilBase, wb.supply.depletion, wb.supply.delay, wb.supply.stockNorm, {
-    tech,
-    credit,
-    mood,
-    tension,
-    nationalism,
-    parties,
-    electionIn,
-  });
+  return startState(rng.state, wb, { tech, credit, mood, tension, nationalism, parties, electionIn });
 }
 
-function startState(
-  rng: RngState,
-  growth: number,
-  utilBase: number,
-  depletion: number,
-  delay: number,
-  stockNorm: number,
-  v: { tech: number; credit: number; mood: number; tension: number; nationalism: number; parties: Record<Party, number>; electionIn: number },
-): WorldState {
-  const capacity = 1 / utilBase;
+/**
+ * Gleichgewicht ohne Zufall: Die Kapazität deckt die Nachfrage dieser Runde (mit
+ * Aufrüstung) bei normaler Auslastung, das Lager ist normal, und die Pipeline
+ * liefert genau das Wachstum der nächsten delay Runden. So bleibt der Preis bei 1,
+ * bis Zufall und Rückkopplungen ihn bewegen – Krisen kommen nicht in allen Welten
+ * zur selben Zeit.
+ */
+function startState(rng: RngState, wb: StartBalance, v: StartValues): WorldState {
+  const s = wb.supply;
+  const nachfrage = effectiveDemand({ demand: 1, tension: v.tension, crash: 0, war: 0 }, wb);
+  const capacity = nachfrage / s.utilBase;
+  const g = demandGrowth(nextTech(v.tech, wb), 1, wb);
+  // Bohrung i (vorne = 0) wurde vor delay − i Runden begonnen; fertig wird sie in Runde i + 1.
+  const pipeline = Array.from({ length: s.delay }, (_, i) => (s.depletion + g) * capacity * (1 + g) ** i);
   return {
     rng,
     round: 0,
     demand: 1,
     capacity,
-    output: 1,
-    stock: stockNorm,
-    pipeline: Array.from({ length: delay }, () => (depletion + growth) * capacity),
+    output: nachfrage,
+    stock: s.stockNorm,
+    pipeline,
     price: 1,
     credit: v.credit,
     mood: v.mood,
@@ -199,31 +230,60 @@ function startState(
 }
 
 /**
- * Ersatzwert für Spielstände ohne Weltmodell (vor Format 14): eine ruhige
- * Durchschnittswelt, ohne balance.yaml (das Laden kennt die Spielzahlen nicht).
- * Werte = Mitte der Startbereiche aus balance.yaml (Stand 0.4.1).
+ * Ersatzwert für Spielstände ohne Weltmodell (vor Format 14). Das Laden kennt
+ * balance.yaml nicht, darum steht hier eine Momentaufnahme der Spielzahlen
+ * (Stand 0.4.1): Mitte der Startbereiche, Angebot im Gleichgewicht. Weichen die
+ * Spielzahlen später ab, gleicht advanceWorld die Pipeline an supply.delay an
+ * (pipelineFor), und die Welt schwingt in wenigen Runden auf die neuen Werte ein.
  */
 export function neutralWorld(seed: string): WorldState {
-  return startState(seedFromString(`${seed}:welt`), 0.012, 0.85, 0.02, 6, 0.25, {
+  const snapshot: StartBalance = {
+    supply: { utilBase: 0.85, depletion: 0.02, delay: 6, stockNorm: 0.25 },
+    demand: { growth: 0.012, cap: 9, techBoost: 0.6, crashDrop: 0.08, warBoost: 0.12, armsDemand: 0.06 },
+    tech: { rate: 0.017 },
+  };
+  return startState(seedFromString(`${seed}:welt`), snapshot, {
     tech: 8,
     credit: 50,
     mood: 54,
     tension: 19,
     nationalism: 14,
-    parties: { handel: 0.44, volksbund: 0.28, provinz: 0.28 },
+    parties: { handel: 0.38, volksbund: 0.31, provinz: 0.31 },
     electionIn: 16,
   });
 }
 
+/**
+ * Pipeline auf supply.delay Einträge bringen, bevor eine Runde sie fortschreibt –
+ * für Spielstände, die mit einem anderen delay gespeichert wurden. Zu lang: Die
+ * überzähligen vorderen Bohrungen werden sofort fertig (zurückgegeben als done).
+ * Zu kurz: vorne mit dem Durchschnitt auffüllen, damit weiter jede Runde etwas fertig wird.
+ */
+export function pipelineFor(pipeline: readonly number[], delay: number): { pipeline: number[]; done: number } {
+  const p = [...pipeline];
+  let done = 0;
+  while (p.length > delay) done += p.shift()!;
+  if (p.length < delay) {
+    const mittel = p.length > 0 ? p.reduce((a, b) => a + b, 0) / p.length : 0;
+    p.unshift(...Array.from({ length: delay - p.length }, () => mittel));
+  }
+  return { pipeline: p, done };
+}
+
 /** Nachfrage dieser Runde: Grundnachfrage mit Aufrüstung, Crash und Krieg. */
-export function effectiveDemand(w: Pick<WorldState, 'demand' | 'tension' | 'crash' | 'war'>, wb: WorldModelBalance): number {
+export function effectiveDemand(w: Pick<WorldState, 'demand' | 'tension' | 'crash' | 'war'>, wb: Pick<WorldModelBalance, 'demand'>): number {
   const d = wb.demand;
   return w.demand * (1 + (d.armsDemand * w.tension) / 100) * (w.crash > 0 ? 1 - d.crashDrop : 1) * (w.war > 0 ? 1 + d.warBoost : 1);
 }
 
 /** Trendpreis T: Technik macht das Fördern billiger. */
 export function trendPrice(w: Pick<WorldState, 'tech' | 'techStart'>, wb: WorldModelBalance): number {
-  return Math.max(0.5, 1 - (wb.price.techCost * (w.tech - w.techStart)) / 100);
+  return Math.max(wb.price.trendMin, 1 - (wb.price.techCost * (w.tech - w.techStart)) / 100);
+}
+
+/** Knappheit: Weltpreis ÷ Trendpreis (1 = normal). Danach richten sich Bohren, Fördern, Banken, Spannung, Stimmung und Politik. */
+export function knappheit(w: Pick<WorldState, 'price' | 'tech' | 'techStart'>, wb: WorldModelBalance): number {
+  return w.price / trendPrice(w, wb);
 }
 
 /** Weltpreis aus Nachfrage, möglicher Förderung und Lager (GDD §7.3: P = T · (N/A)^ε · Lagerdruck). */
@@ -247,15 +307,15 @@ export function advanceWorld(input: WorldState, wb: WorldModelBalance, extern: W
   const counts = { ...input.counts };
 
   // Technikstand: logistisch, nähert sich 100, ohne es je zu erreichen.
-  const tech = clamp(input.tech + wb.tech.rate * input.tech * (1 - input.tech / 100), 0, 100);
+  const tech = nextTech(input.tech, wb);
 
   // Nachfrage: wächst bis zur Sättigung, Technik (Automobile) beschleunigt.
-  const d = wb.demand;
-  const demand = input.demand + d.growth * (1 + (d.techBoost * tech) / 100) * input.demand * (1 - input.demand / d.cap);
+  const demand = input.demand * (1 + demandGrowth(tech, input.demand, wb));
 
   // Angebot: fertige Neubohrungen dazu, erschöpfte Quellen ab, ab und zu ein Riesenfund.
-  let pipeline = [...input.pipeline];
-  const fertig = pipeline.length >= s.delay ? pipeline.shift()! : 0;
+  const angeglichen = pipelineFor(input.pipeline, s.delay);
+  let pipeline = angeglichen.pipeline;
+  const fertig = pipeline.shift()! + angeglichen.done;
   let capacity = input.capacity * (1 - s.depletion) + fertig;
   if (u[0] < s.findChance) {
     capacity *= 1 + s.findSize.min + u[1] * (s.findSize.max - s.findSize.min);
@@ -282,9 +342,10 @@ export function advanceWorld(input: WorldState, wb: WorldModelBalance, extern: W
   const nachfrage = effectiveDemand({ demand, tension: input.tension, crash: input.crash, war: input.war }, wb);
   const trend = trendPrice({ tech, techStart: input.techStart }, wb);
   const price = worldPrice(nachfrage, capacity * s.utilBase + extra, input.stock, trend, wb);
+  const knapp = price / trend;
 
-  // Förderung: bei hohem Preis voll auslasten, bei niedrigem drosseln; was nicht verkauft wird, geht ins Lager.
-  const util = clamp(s.utilBase + s.utilSlope * (price - 1), s.utilMin, 1);
+  // Förderung: bei knappem Öl voll auslasten, bei Überfluss drosseln; was nicht verkauft wird, geht ins Lager.
+  const util = clamp(s.utilBase + s.utilSlope * (knapp - 1), s.utilMin, 1);
   const output = Math.max(0, capacity * util + extra);
   const stock = clamp(input.stock + (output - nachfrage) / nachfrage, 0, s.stockMax);
 
@@ -295,7 +356,7 @@ export function advanceWorld(input: WorldState, wb: WorldModelBalance, extern: W
   if (input.crash > 0) {
     credit += c.revert * (50 - credit) + govCredit;
   } else {
-    credit += c.boom * (price - 1) + c.speculation * Math.max(0, credit - 50) + c.revert * (50 - credit) + govCredit;
+    credit += c.boom * (knapp - 1) + c.speculation * Math.max(0, credit - 50) + c.revert * (50 - credit) + govCredit;
   }
   credit = clamp(credit + c.noise * sym(4) + (extern.creditShift ?? 0), 0, 100);
   let crash = input.crash;
@@ -304,32 +365,32 @@ export function advanceWorld(input: WorldState, wb: WorldModelBalance, extern: W
     if (crash === 0) news.push('recovery');
   } else {
     const chance = credit >= c.crashFrom ? c.crashChance + (c.crashSlope * (credit - c.crashFrom)) / Math.max(1, 100 - c.crashFrom) : 0;
-    const sturz = (input.price - price) / input.price >= c.priceTrigger && credit > 60;
+    const sturz = (input.price - price) / input.price >= c.priceTrigger && credit > c.priceTriggerFrom;
     if (u[5] < chance || sturz) {
       credit *= c.after;
       crash = pickInt(u[6], c.rounds);
-      pipeline = pipeline.map((x) => x * 0.5);
+      pipeline = pipeline.map((x) => x * c.pipelineCut);
       news.push('crash');
       counts.crashes += 1;
     }
   }
 
-  // Schleife 1 (+ Kredit): Neubohrungen nach Preis, verstärkt oder gebremst vom Kreditklima.
+  // Schleife 1 (+ Kredit): Neubohrungen nach Knappheit, verstärkt oder gebremst vom Kreditklima.
   const kredit = 1 + (s.creditInvest * (credit - 50)) / 50;
-  // Die Firmen bohren für das erwartete Wachstum der Nachfrage mit, sonst liefe das Angebot immer hinterher.
+  // Die Firmen bohren für das erwartete Wachstum der Nachfrage mit (steadyInvest), sonst liefe das Angebot immer hinterher.
   const wachstum = demand / input.demand - 1;
-  const anteil = clamp(s.depletion + wachstum + s.investSlope * (price - 1), 0, s.investMax);
-  pipeline.push(capacity * anteil * Math.max(0, kredit) * (crash > 0 ? 0.5 : 1));
+  const anteil = clamp(steadyInvest(wachstum, wb) + s.investSlope * (knapp - 1), 0, s.investMax);
+  pipeline.push(capacity * anteil * Math.max(0, kredit) * (crash > 0 ? c.investCut : 1));
 
   // Stimmung: teures Öl, Arbeitslosigkeit im Crash und Krieg drücken, Wohlstand hebt.
   const m = wb.mood;
-  const ziel = 50 - m.price * (price - 1) - (crash > 0 ? m.crash : 0) - (input.war > 0 ? m.war : 0) + (m.boom * (credit - 50)) / 50 + (extern.moodShift ?? 0);
+  const ziel = 50 - m.price * (knapp - 1) - (crash > 0 ? m.crash : 0) - (input.war > 0 ? m.war : 0) + (m.boom * (credit - 50)) / 50 + (extern.moodShift ?? 0);
   const mood = clamp(input.mood + m.speed * (ziel - input.mood) + m.noise * sym(7), 0, 100);
 
   // Politik: Unzufriedene wählen Volksbund, Zufriedene die Handelspartei, billiges Öl treibt kleine Förderer zur Provinzliga.
   const pol = wb.politics;
   const gap = (mood - 50) / 50;
-  const billig = Math.max(0, 1 - price);
+  const billig = Math.max(0, 1 - knapp);
   const roh: Record<Party, number> = {
     handel: input.parties.handel + pol.drift * gap - (pol.drift * billig) / 2 + pol.noise * sym(8) + pol.revert * (1 / 3 - input.parties.handel),
     volksbund: input.parties.volksbund - pol.drift * gap - (pol.drift * billig) / 2 + pol.noise * sym(9) + pol.revert * (1 / 3 - input.parties.volksbund),
@@ -342,9 +403,9 @@ export function advanceWorld(input: WorldState, wb: WorldModelBalance, extern: W
   if (electionIn <= 0) {
     const sieger = leadingParty(parties);
     if (sieger !== government) counts.changes += 1;
+    news.push(sieger !== government ? 'election' : 'reelection');
     government = sieger;
     electionIn = pol.electionEvery;
-    news.push('election');
     counts.elections += 1;
   }
 
@@ -353,9 +414,9 @@ export function advanceWorld(input: WorldState, wb: WorldModelBalance, extern: W
   let tension = clamp(
     input.tension +
       t.revert * (t.base - input.tension) +
-      t.scarcity * Math.max(0, price - 1.1) +
+      t.scarcity * Math.max(0, knapp - t.scarcityFrom) +
       t.arms * Math.max(0, input.tension - t.armsFrom) +
-      t.nationalism * Math.max(0, nationalism - 50) +
+      t.nationalism * Math.max(0, nationalism - t.nationalismFrom) +
       t.noise * sym(11) +
       (extern.tensionShift ?? 0),
     0,

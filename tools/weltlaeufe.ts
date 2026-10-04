@@ -9,6 +9,7 @@ import {
   CAMPAIGN_ROUNDS,
   CAMPAIGN_TARGETS,
   crisisStats,
+  crisisWindows,
   extremes,
   percentile,
   ROUNDS_PER_YEAR,
@@ -77,6 +78,23 @@ function krisenTabelle(): string {
   return zeilen.join('\n');
 }
 
+// --- Krisen über die Zeit ---------------------------------------------------
+const FENSTER = 5;
+function zeitTabelle(): string {
+  const crash = crisisWindows(runs, (r) => r.crashStarts, FENSTER);
+  const krieg = crisisWindows(runs, (r) => r.warStarts, FENSTER);
+  const kopf = `| je Welt | ${crash.rate.map((_, i) => `J. ${i * FENSTER}–${Math.min(72, i * FENSTER + FENSTER - 1)}`).join(' | ')} |`;
+  const linie = `| --- | ${crash.rate.map(() => '---:').join(' | ')} |`;
+  const reihe = (name: string, werte: number[], f: (x: number) => string) => `| ${name} | ${werte.map(f).join(' | ')} |`;
+  return [
+    kopf,
+    linie,
+    reihe('Crashs', crash.rate, (x) => zahl(x)),
+    reihe('erster Crash (Anteil Welten)', crash.first, (x) => prozent(x)),
+    reihe('Kriege', krieg.rate, (x) => zahl(x)),
+  ].join('\n');
+}
+
 function regierungZeile(): string {
   const summe = { handel: 0, volksbund: 0, provinz: 0 };
   for (const r of runs) for (const p of Object.keys(summe) as (keyof typeof summe)[]) summe[p] += r.governmentRounds[p];
@@ -99,6 +117,21 @@ const zinsen = kapitel1.flatMap((r) => {
   }
   return out;
 });
+// Abweichung des Preisfaktors je Runde und Wahlausgänge im Kapitel.
+const nahe: number[] = [];
+const wahlen1 = { handel: 0, volksbund: 0, provinz: 0, wieder: 0, alle: 0 };
+for (const r of kapitel1) {
+  let w = newWorld(r.seed, wb);
+  for (let i = 0; i < balance.start.rounds; i++) {
+    w = advanceWorld(w, wb);
+    nahe.push(Math.abs(worldPriceFactor(w, wb) - 1));
+    if (w.news.includes('election') || w.news.includes('reelection')) {
+      wahlen1.alle += 1;
+      wahlen1[w.government] += 1;
+      if (w.news.includes('reelection')) wahlen1.wieder += 1;
+    }
+  }
+}
 const crashKapitel1 = kapitel1.filter((r) => r.final.counts.crashes > 0).length / kapitel1.length;
 const kriegKapitel1 = kapitel1.filter((r) => r.final.counts.wars > 0).length / kapitel1.length;
 
@@ -109,6 +142,7 @@ const NAMEN: Record<WorldNews, string> = {
   war: 'Krieg',
   peace: 'Frieden',
   election: 'Wahl',
+  reelection: 'Wiederwahl',
   glut: 'Riesenfund',
   nationalization: 'Verstaatlichung',
 };
@@ -117,9 +151,8 @@ function chronik(seed: string): string {
   let w = newWorld(seed, wb);
   const zeilen: string[] = [];
   for (let i = 1; i <= CAMPAIGN_ROUNDS; i++) {
-    const vorher = w.government;
     w = advanceWorld(w, wb);
-    const wichtig = w.news.filter((n) => n !== 'election' || w.government !== vorher);
+    const wichtig = w.news.filter((n) => n !== 'reelection');
     if (wichtig.length === 0) continue;
     const jahr = Math.floor((i - 1) / ROUNDS_PER_YEAR) + 1;
     const text = wichtig.map((n) => (n === 'election' ? `Wahl: ${PARTEI[w.government]} regiert` : NAMEN[n])).join(', ');
@@ -160,6 +193,12 @@ ${krisenTabelle()}
 
 Regierung: ${regierungZeile()}.
 
+## Krisen über die Zeit
+
+Jede Welt ist neu (GDD §7.2): Crashs und Kriege sollen nicht in allen Welten zur selben Zeit kommen. Je Fenster von ${FENSTER} Spieljahren: Ø Krisen je Welt und Anteil der Welten, deren erster Crash dort liegt (der Rest: ohne Crash).
+
+${zeitTabelle()}
+
 ## Preisausschläge
 
 - Größter Preisrückgang binnen eines Jahres je Welt: Median ${prozent(percentile(drops, 0.5))}, 90 % ${prozent(percentile(drops, 0.9))}; Welten mit einem Einbruch von mindestens 40 %: ${prozent(drops.filter((d) => d >= 0.4).length / drops.length)} (GDD §7.3: „fast −50 % in einem Jahr“ soll vorkommen).
@@ -169,6 +208,8 @@ Regierung: ${regierungZeile()}.
 
 - Faktor auf den Trendpreis am Salt Hill nach ${balance.start.rounds} Runden: 10 % ${zahl(percentile(faktoren, 0.1), 3)} · Median ${zahl(percentile(faktoren, 0.5), 3)} · 90 % ${zahl(percentile(faktoren, 0.9), 3)} (Grenze ±${prozent(wb.chapter1.priceMaxDev)}).
 - Zinsaufschlag der Bank je Runde: 10 % ${zahl(percentile(zinsen, 0.1) * 100)} · Median ${zahl(percentile(zinsen, 0.5) * 100)} · 90 % ${zahl(percentile(zinsen, 0.9) * 100)} Prozentpunkte (Grenze ±${zahl(wb.chapter1.rateMaxAdd * 100)}).
+- Runden, in denen der Faktor höchstens ±2 % vom Neutralwert abweicht: ${prozent(nahe.filter((x) => x <= 0.02 + 1e-9).length / Math.max(1, nahe.length))}; Zins billiger: ${prozent(zinsen.filter((x) => x < 0).length / zinsen.length)}, teurer: ${prozent(zinsen.filter((x) => x > 0).length / zinsen.length)} der Runden.
+- Wahlen in Kapitel 1: ${wahlen1.alle}; es siegt Handelspartei ${prozent(wahlen1.handel / Math.max(1, wahlen1.alle))}, Volksbund ${prozent(wahlen1.volksbund / Math.max(1, wahlen1.alle))}, Provinzliga ${prozent(wahlen1.provinz / Math.max(1, wahlen1.alle))}; Wiederwahl ${prozent(wahlen1.wieder / Math.max(1, wahlen1.alle))}.
 - Welten mit einem Crash in Kapitel 1: ${prozent(crashKapitel1)}; mit einem Krieg: ${prozent(kriegKapitel1)}.
 - Ob die Kapitel-1-Balance hält, zeigt \`npm run bots\` (docs/botlaeufe.md) – die Bots spielen mit Weltmodell.
 

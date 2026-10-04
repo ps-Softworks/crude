@@ -16,5 +16,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    // Viele Fertig-Kriterien spielen hunderte Partien durch; auf einem ausgelasteten
+    // Rechner dauert das länger als die üblichen 5 s, ohne dass etwas falsch ist.
+    testTimeout: 30_000,
   },
 });

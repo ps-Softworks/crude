@@ -10,18 +10,21 @@ import {
   advanceWorld,
   effectiveDemand,
   isWorldState,
+  knappheit,
   leadingParty,
   neutralWorld,
   newWorld,
   PARTIES,
+  pipelineFor,
   saltHillInput,
   skipWorld,
+  trendPrice,
   worldPriceFactor,
   worldRateAdd,
   type WorldState,
 } from './world';
 import { worldHeadline } from './worldNews';
-import { CAMPAIGN_ROUNDS, crisisStats, CAMPAIGN_TARGETS, runWorld, runWorlds, ROUNDS_PER_YEAR } from './worldRun';
+import { CAMPAIGN_ROUNDS, crisisStats, crisisWindows, CAMPAIGN_TARGETS, percentile, runWorld, runWorlds, ROUNDS_PER_YEAR } from './worldRun';
 import { parse } from 'yaml';
 import { readFileSync } from 'node:fs';
 
@@ -59,7 +62,21 @@ describe('Weltmodell (4.1): Ausgangslage', () => {
       const w = newWorld(seed, wb);
       expect(w.price).toBe(1);
       expect(worldPriceFactor(w, wb)).toBe(1);
-      expect(w.capacity * wb.supply.utilBase).toBeCloseTo(1, 10);
+      // Die Kapazität deckt bei normaler Auslastung die Nachfrage samt Aufrüstung.
+      expect(w.capacity * wb.supply.utilBase).toBeCloseTo(effectiveDemand(w, wb), 10);
+    }
+  });
+
+  it('die Ausgangslage ist ein echtes Gleichgewicht: ohne Zufall bleibt die Knappheit bei 1 und das Lager normal', () => {
+    // Ohne Kredit-, Spannungs- und Regierungswirkung, damit nur Angebot und Nachfrage zählen.
+    const ruhig = mit('credit', { boom: 0, speculation: 0, handel: 0, volksbund: 0, provinz: 0 }, mit('tension', { revert: 0, arms: 0 }, still));
+    for (const seed of ['g1', 'g2', 'g3']) {
+      let w: WorldState = { ...newWorld(seed, ruhig), government: 'provinz', credit: 50 };
+      for (let i = 0; i < 40; i++) {
+        w = advanceWorld(w, ruhig);
+        expect(Math.abs(knappheit(w, ruhig) - 1)).toBeLessThan(0.01);
+        expect(Math.abs(w.stock - wb.supply.stockNorm)).toBeLessThan(0.02);
+      }
     }
   });
 
@@ -129,6 +146,45 @@ describe('Weltmodell: eine Runde', () => {
     expect(n.capacity).toBeCloseTo(w.capacity * (1 - wb.supply.depletion) + 5, 10);
     // Die neue Bohrung steht hinten an.
     expect(n.pipeline).toHaveLength(wb.supply.delay);
+  });
+
+  it('eine Pipeline mit anderer Länge (alter Spielstand, geändertes delay) wird sofort angeglichen', () => {
+    expect(pipelineFor([1, 2, 3, 4], 2)).toEqual({ pipeline: [3, 4], done: 3 });
+    expect(pipelineFor([2, 4], 4)).toEqual({ pipeline: [3, 3, 2, 4], done: 0 });
+    expect(pipelineFor([1, 2], 2)).toEqual({ pipeline: [1, 2], done: 0 });
+    const w = newWorld('angleichen', wb); // gespeichert mit delay 6
+    for (const delay of [3, 9]) {
+      const anders = mit('supply', { delay }, still);
+      const n = advanceWorld(w, anders);
+      expect(n.pipeline).toHaveLength(delay);
+      if (delay < w.pipeline.length) {
+        // Zu lang: die überzähligen Bohrungen sind sofort fertig – keine geht verloren.
+        const fertig = w.pipeline.slice(0, w.pipeline.length - delay + 1).reduce((a, b) => a + b, 0);
+        expect(n.capacity).toBeCloseTo(w.capacity * (1 - wb.supply.depletion) + fertig, 10);
+      } else {
+        // Zu kurz: es wird trotzdem jede Runde etwas fertig, nicht erst nach (delay − 6) Runden.
+        expect(n.capacity).toBeGreaterThan(w.capacity * (1 - wb.supply.depletion) + 0.01);
+      }
+      // Und der Preis läuft danach nicht weg.
+      expect(Math.abs(skipWorld(w, anders, 20).price / trendPrice(skipWorld(w, anders, 20), anders) - 1)).toBeLessThan(0.1);
+    }
+  });
+
+  it('Technik senkt den Preis, aber nicht das Bohren, Fördern oder die Stimmung (alles hängt an der Knappheit)', () => {
+    const w = { ...newWorld('technik-knapp', wb), tech: 60 };
+    const neu = advanceWorld({ ...w, techStart: 60 }, still);
+    const alt = advanceWorld({ ...w, techStart: 10 }, still);
+    expect(alt.price).toBeLessThan(neu.price * 0.9);
+    expect(knappheit(alt, wb)).toBeCloseTo(knappheit(neu, wb), 10);
+    expect(alt.pipeline.at(-1)!).toBeCloseTo(neu.pipeline.at(-1)!, 10);
+    expect(alt.output).toBeCloseTo(neu.output, 10);
+    expect(alt.mood).toBeCloseTo(neu.mood, 10);
+    expect(alt.credit).toBeCloseTo(neu.credit, 10);
+  });
+
+  it('der Trendpreis sinkt nie unter price.trendMin', () => {
+    expect(trendPrice({ tech: 100, techStart: 0 }, mit('price', { techCost: 0.9, trendMin: 0.4 }))).toBe(0.4);
+    expect(trendPrice({ tech: 100, techStart: 0 }, mit('price', { techCost: 0.9, trendMin: 0.2 }))).toBeCloseTo(0.2, 10);
   });
 });
 
@@ -212,10 +268,20 @@ describe('Schleife 2: Kreditklima schaukelt sich auf und kippt', () => {
     expect(x.news).toContain('recovery');
   });
 
-  it('ein Preissturz kippt ein heißes Klima auch ohne Würfelglück', () => {
+  it('ein Preissturz kippt ein heißes Klima auch ohne Würfelglück – ab credit.priceTriggerFrom', () => {
     const trigger = mit('credit', { priceTrigger: 0.2 }, still);
     const w = { ...newWorld('sturz', wb), credit: 70, price: 2 };
     expect(advanceWorld(w, trigger).news).toContain('crash');
+    expect(advanceWorld(w, mit('credit', { priceTrigger: 0.2, priceTriggerFrom: 90 }, still)).news).not.toContain('crash');
+  });
+
+  it('im Crash stoppen Bohrungen im Bau (pipelineCut) und es wird weniger neu gebohrt (investCut)', () => {
+    const w = { ...newWorld('crash-bohren', wb), credit: 90 };
+    const zahlen = (pipelineCut: number, investCut: number) => advanceWorld(w, mit('credit', { crashChance: 1, pipelineCut, investCut }, still)).pipeline;
+    const voll = zahlen(1, 1);
+    const halb = zahlen(0.5, 1);
+    expect(halb.slice(0, -1).map((x, i) => x / voll[i])).toEqual(halb.slice(0, -1).map(() => 0.5));
+    expect(zahlen(1, 0.25).at(-1)!).toBeCloseTo(voll.at(-1)! * 0.25, 10);
   });
 });
 
@@ -225,6 +291,18 @@ describe('Schleife 3: Knappheit → Spannung → Aufrüstung → Nachfrage', () 
     const ruhig = advanceWorld({ ...w, tension: 30 }, still);
     const knapp = advanceWorld({ ...w, tension: 30, stock: 0, capacity: w.capacity * 0.75 }, still);
     expect(knapp.tension).toBeGreaterThan(ruhig.tension);
+  });
+
+  it('Knappheit heizt erst ab tension.scarcityFrom, Nationalismus erst ab tension.nationalismFrom', () => {
+    const w = { ...newWorld('schwellen', wb), tension: 30 };
+    const knapp = { ...w, stock: 0, capacity: w.capacity * 0.9 };
+    const tief = advanceWorld(knapp, mit('tension', { scarcityFrom: 1 }, still));
+    const hoch = advanceWorld(knapp, mit('tension', { scarcityFrom: 5 }, still));
+    expect(tief.tension).toBeGreaterThan(hoch.tension);
+    const national = { ...w, nationalism: 70 };
+    expect(advanceWorld(national, mit('tension', { nationalismFrom: 20 }, still)).tension).toBeGreaterThan(
+      advanceWorld(national, mit('tension', { nationalismFrom: 90 }, still)).tension,
+    );
   });
 
   it('Aufrüstung erhöht die Nachfrage und damit den Preis', () => {
@@ -274,15 +352,28 @@ describe('Stimmung, Politik, Nationalismus', () => {
   it('Wahlen alle electionEvery Runden; es regiert die stärkste Partei', () => {
     let w = { ...newWorld('wahl', wb), electionIn: 1 };
     w = advanceWorld(w, wb);
-    expect(w.news).toContain('election');
+    expect(w.news.some((n) => n === 'election' || n === 'reelection')).toBe(true);
     expect(w.government).toBe(leadingParty(w.parties));
     expect(w.electionIn).toBe(wb.politics.electionEvery);
     let wahlen = 0;
     for (let i = 0; i < wb.politics.electionEvery * 3; i++) {
       w = advanceWorld(w, wb);
-      if (w.news.includes('election')) wahlen += 1;
+      if (w.news.includes('election') || w.news.includes('reelection')) wahlen += 1;
     }
     expect(wahlen).toBe(3);
+  });
+
+  it('Wiederwahl und Regierungswechsel werden unterschieden', () => {
+    const w = { ...newWorld('wieder', wb), electionIn: 1 };
+    const bleibt = advanceWorld({ ...w, parties: { handel: 0.6, volksbund: 0.2, provinz: 0.2 }, government: 'handel' }, still);
+    expect(bleibt.news).toContain('reelection');
+    expect(bleibt.news).not.toContain('election');
+    expect(bleibt.counts.changes).toBe(0);
+    expect(worldHeadline(bleibt, wb)).toBe('world_reelected_handel');
+    const wechsel = advanceWorld({ ...w, parties: { handel: 0.2, volksbund: 0.6, provinz: 0.2 }, government: 'handel' }, still);
+    expect(wechsel.news).toContain('election');
+    expect(wechsel.counts.changes).toBe(1);
+    expect(worldHeadline(wechsel, wb)).toBe('world_election_volksbund');
   });
 
   it('die Regierung färbt das Kreditklima: Handelspartei lockert, Volksbund bremst', () => {
@@ -371,6 +462,34 @@ describe('Grenzen über viele Seeds (Fertig-Kriterium 4.1)', () => {
     }
   });
 
+  it('kein schleichendes Leerlaufen: Das Lager bleibt über die Kampagne nahe am Normalwert', () => {
+    const lager73 = percentile(runs.map((r) => r.years[73].stock), 0.5);
+    expect(Math.abs(lager73 - wb.supply.stockNorm)).toBeLessThan(0.2 * wb.supply.stockNorm);
+    // Der Preis folgt dem Technik-Trend nach unten (GDD §7.3: T sinkt mit dem Technikstand).
+    const knapp73 = percentile(runs.map((r) => knappheit(r.years[73], wb)), 0.5);
+    expect(Math.abs(knapp73 - 1)).toBeLessThan(0.1);
+    expect(percentile(runs.map((r) => r.years[73].price), 0.5)).toBeLessThan(0.9);
+  });
+
+  it('jede Welt ist neu: Krisen klumpen nicht in einem Zeitfenster (GDD §7.2)', () => {
+    const crash = crisisWindows(runs, (r) => r.crashStarts, 5);
+    const mittel = crash.rate.reduce((a, b) => a + b, 0) / crash.rate.length;
+    // Kein 5-Jahres-Fenster hat mehr als doppelt so viele Crashs wie der Schnitt …
+    expect(Math.max(...crash.rate)).toBeLessThan(2 * mittel);
+    // … und in keinem liegt der erste Crash für mehr als ein Viertel aller Welten.
+    expect(Math.max(...crash.first)).toBeLessThan(0.25);
+    const krieg = crisisWindows(runs, (r) => r.warStarts, 5);
+    const kriegMittel = krieg.rate.reduce((a, b) => a + b, 0) / krieg.rate.length;
+    expect(Math.max(...krieg.rate)).toBeLessThan(2.5 * kriegMittel);
+  });
+
+  it('das Kreditklima wandert in den ersten Jahren nicht in allen Welten in dieselbe Richtung', () => {
+    const median = (jahr: number) => percentile(runs.map((r) => r.years[jahr].credit), 0.5);
+    for (const jahr of [1, 2, 3, 4, 5, 8]) expect(Math.abs(median(jahr) - median(0))).toBeLessThan(5);
+    // Auch der Weltpreis startet ohne gemeinsamen Ruck.
+    expect(Math.abs(percentile(runs.map((r) => r.years[1].price), 0.5) - 1)).toBeLessThan(0.02);
+  });
+
   it('ein Lauf zeichnet jedes Spieljahr auf', () => {
     const r = runWorld('jahre', wb, 20 * ROUNDS_PER_YEAR);
     expect(r.years).toHaveLength(21);
@@ -428,6 +547,30 @@ describe('Kapitel 1 spürt die Welt sanft', () => {
     expect(endRound(hoch, balance).postedPrice).toBeGreaterThan(endRound(s, balance).postedPrice);
   });
 
+  it('in Kapitel 1 kann jede Partei die Wahl gewinnen, und Geld wird mal billiger, mal teurer', () => {
+    const sieger = { handel: 0, volksbund: 0, provinz: 0 };
+    let billiger = 0;
+    let teurer = 0;
+    let runden = 0;
+    for (let i = 0; i < 300; i++) {
+      let w = newWorld(`kapitel1-wahl-${i}`, wb);
+      for (let r = 0; r < balance.start.rounds; r++) {
+        w = advanceWorld(w, wb);
+        if (w.news.includes('election') || w.news.includes('reelection')) sieger[w.government] += 1;
+        const zins = worldRateAdd(w, wb);
+        if (zins < 0) billiger += 1;
+        if (zins > 0) teurer += 1;
+        runden += 1;
+      }
+    }
+    const wahlen = sieger.handel + sieger.volksbund + sieger.provinz;
+    const andere = (sieger.volksbund + sieger.provinz) / wahlen;
+    expect(andere).toBeGreaterThan(0.15);
+    expect(andere).toBeLessThan(0.45);
+    expect(billiger / runden).toBeGreaterThan(0.1);
+    expect(teurer / runden).toBeGreaterThan(0.1);
+  });
+
   it('über ein ganzes Kapitel bewegt die Welt den Preistrend nur um wenige Prozent', () => {
     const faktoren = runWorlds('kapitel1', 200, wb, balance.start.rounds).map((r) => worldPriceFactor(r.final, wb));
     const mitte = [...faktoren].sort((a, b) => a - b)[100];
@@ -480,6 +623,15 @@ describe('Spielstand mit Weltmodell (Format 14)', () => {
     expect(isWorldState(geladen.state.worldModel)).toBe(true);
     // Mit der Ersatzwelt läuft das Spiel normal weiter.
     expect(endRound(geladen.state, balance).worldModel.round).toBe(1);
+  });
+
+  it('die Ersatzwelt ist mit den heutigen Spielzahlen ruhig: ohne Zufall kein Preisruck', () => {
+    const ruhig = mit('credit', { boom: 0, speculation: 0, handel: 0, volksbund: 0, provinz: 0 }, mit('tension', { revert: 0, arms: 0 }, still));
+    let w = neutralWorld('ersatz');
+    for (let i = 0; i < 20; i++) {
+      w = advanceWorld(w, ruhig);
+      expect(Math.abs(knappheit(w, ruhig) - 1)).toBeLessThan(0.02);
+    }
   });
 
   it('ein kaputtes Weltmodell wird nicht geladen', () => {

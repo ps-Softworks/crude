@@ -13,7 +13,7 @@ import { computePrice, jacobSupply, neighbourSupply, rivalSupply } from './marke
 import { advanceProduction } from './production';
 import { craneCut, markRound, RIVAL_MARKS } from './trust';
 import { worldPriceFactor } from './world';
-import { worldHeadline, WORLD_HEADLINES } from './worldNews';
+import { MAJOR_WORLD_HEADLINES, worldHeadline, WORLD_HEADLINES } from './worldNews';
 
 /** Aussicht für den Ölpreis bis zum Rundenende. */
 export type Outlook = 'crash' | 'fall' | 'steady' | 'rise';
@@ -112,8 +112,10 @@ export function newsItems(state: GameState, balance: Balance): HeadlineId[] {
     ids.push('rival_find');
   }
   // Weltmodell (4.1): höchstens eine Meldung aus der Welt – was geschah, sonst ein Frühwarnzeichen.
+  // Große Ereignisse (Crash, Krieg, Verstaatlichung, Riesenfund) stehen ganz vorn, alles andere hinten an.
   const welt = worldHeadline(state.worldModel, balance.worldModel);
-  if (welt) ids.push(welt);
+  if (welt && MAJOR_WORLD_HEADLINES.includes(welt)) ids.unshift(welt);
+  else if (welt) ids.push(welt);
   if (ids.length === 0) ids.push('classifieds');
   return ids.slice(0, balance.newspaper.maxItems);
 }

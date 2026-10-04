@@ -162,6 +162,27 @@ headlines:
     text:
       de: Die Provinzen haben Hallstead die Stirn geboten. Die neue Regierung will die kleinen Produzenten schützen – und fremdes Öl mit Zöllen belegen.
       en: The provinces have defied Hallstead. The new government wants to protect the small producers – and put tariffs on foreign oil.
+  world_reelected_handel:
+    title:
+      de: Handelspartei bleibt an der Regierung
+      en: Commerce Party stays in power
+    text:
+      de: Die Wähler haben der Regierung noch einmal vertraut. In Hallstead knallen die Korken, und die Banken rechnen mit vier weiteren ruhigen Jahren.
+      en: The voters have trusted the government once more. Corks are popping in Hallstead, and the banks are counting on four more quiet years.
+  world_reelected_volksbund:
+    title:
+      de: Volksbund behauptet sich
+      en: People's League holds on
+    text:
+      de: Farmer und Arbeiter bleiben ihrer Regierung treu. Die Bankaufsicht bleibt streng, und die Trusts müssen weiter mit Prüfern rechnen.
+      en: Farmers and workers stay loyal to their government. Bank supervision stays strict, and the trusts must keep reckoning with inspectors.
+  world_reelected_provinz:
+    title:
+      de: Provinzliga regiert weiter
+      en: Provincial League governs on
+    text:
+      de: Die Provinzen geben Hallstead nicht zurück. Die Regierung verspricht den kleinen Produzenten weiter Schutz – und den Importeuren weiter Zölle.
+      en: The provinces will not hand Hallstead back. The government promises the small producers continued protection – and the importers continued tariffs.
   world_credit_tight:
     title:
       de: Die Banken werden vorsichtig

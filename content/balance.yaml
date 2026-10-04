@@ -521,23 +521,23 @@ tutorial:
 worldModel:
   start:                     # jede Kampagne würfelt ihre eigene Ausgangslage
     tech: { min: 6, max: 10 }
-    credit: { min: 42, max: 58 }
+    credit: { min: 32, max: 62 }     # breit: Welten starten in verschiedenen Phasen des Kreditzyklus
     mood: { min: 48, max: 60 }
     tension: { min: 10, max: 28 }
     nationalism: { min: 8, max: 20 }
-    handel: { min: 0.38, max: 0.50 }     # Anteile der Parteien vor dem Normieren
-    volksbund: { min: 0.22, max: 0.34 }
-    provinz: { min: 0.20, max: 0.32 }
+    handel: { min: 0.30, max: 0.42 }     # Anteile der Parteien vor dem Normieren: meist führt die Handelspartei,
+    volksbund: { min: 0.24, max: 0.38 }  # in etwa jeder vierten Welt eine andere
+    provinz: { min: 0.22, max: 0.36 }
   supply:                    # Schleife 1: Angebot & Lager
     elasticity: 1.4          # ε: Nachfrage/Förderung hoch ε → Preis
     stockNorm: 0.25          # normales Lager in Quartalsbedarf
     stockMax: 1.0            # mehr passt in keinen Tank – der Rest läuft aus
     stockWeight: 0.35        # wie stark volle Tanks den Preis drücken
-    utilBase: 0.85           # Auslastung der Quellen bei Preis 1
-    utilSlope: 0.4           # Preis über/unter 1 → mehr/weniger gefördert (drosseln)
+    utilBase: 0.85           # Auslastung der Quellen bei normaler Knappheit (Weltpreis = Trendpreis)
+    utilSlope: 0.4           # Knappheit über/unter 1 → mehr/weniger gefördert (drosseln)
     utilMin: 0.6
     depletion: 0.02          # so viel Kapazität versiegt je Runde
-    investSlope: 0.04        # Neubohrungen je Preispunkt über 1 (Anteil der Kapazität)
+    investSlope: 0.04        # Neubohrungen je Punkt Knappheit über 1 (Anteil der Kapazität), dazu Ersatz und Wachstum
     investMax: 0.07
     delay: 6                 # Runden, bis eine Neubohrung fördert (Verzögerung der Schleife 1)
     creditInvest: 0.6        # Kreditklima 100 → 60 % mehr Neubohrungen, 0 → 60 % weniger
@@ -554,25 +554,29 @@ worldModel:
     min: 0.35                # Weltpreis-Index höchstens auf ein gutes Drittel …
     max: 2.8                 # … und höchstens auf knapp das Dreifache
     techCost: 0.25           # Technik senkt den Trendpreis: +100 Punkte → −25 %
+    trendMin: 0.5            # tiefer sinkt der Trendpreis nie
   tech:
     rate: 0.017              # logistisches Wachstum je Runde (Forschung aller Firmen)
   credit:                    # Schleife 2: Kreditklima
-    boom: 4                  # Punkte je Runde bei Weltpreis 2 (Boom macht Banken mutig)
-    speculation: 0.07        # über 50 schaukelt es sich auf: + speculation × (Klima − 50)
+    boom: 4                  # Punkte je Runde bei doppelter Knappheit (Weltpreis = 2 × Trendpreis; Boom macht Banken mutig)
+    speculation: 0.09        # über 50 schaukelt es sich auf: + speculation × (Klima − 50)
     revert: 0.05             # Rückkehr zur Mitte
-    noise: 2.5
-    handel: 0.5              # Regierung Handelspartei lockert je Runde
-    volksbund: -0.6          # Regierung Volksbund: Bankaufsicht
+    noise: 3.5
+    handel: 0.3              # Regierung Handelspartei lockert je Runde
+    volksbund: -0.4          # Regierung Volksbund: Bankaufsicht
     provinz: 0
-    crashFrom: 74            # ab hier kann es kippen
+    crashFrom: 68            # ab hier kann es kippen
     crashChance: 0.04        # Chance je Runde an der Schwelle …
     crashSlope: 0.5          # … plus so viel bei Klima 100
-    priceTrigger: 0.2        # Preissturz ab 20 % in einer Runde kippt ein Klima über 60
+    priceTrigger: 0.2        # Preissturz ab 20 % in einer Runde kippt ein Klima …
+    priceTriggerFrom: 60     # … über diesem Wert
     after: 0.35              # Klima nach dem Crash = Klima × after
+    pipelineCut: 0.5         # im Crash wird so viel der Bohrungen im Bau weitergebaut (Rest gestoppt)
+    investCut: 0.5           # solange der Crash nachwirkt, wird nur so viel neu gebohrt
     rounds: { min: 4, max: 8 }   # so lange wirkt ein Crash nach
   mood:
     speed: 0.2               # wie schnell die Stimmung ihrem Ziel folgt
-    price: 25                # Weltpreis 2 → −25 Punkte (teures Benzin, teures Heizöl)
+    price: 25                # doppelte Knappheit → −25 Punkte (teures Benzin, teures Heizöl)
     crash: 18                # Arbeitslosigkeit im Crash
     war: 6
     boom: 8                  # Kreditklima 100 → +8 (Wohlstand)
@@ -587,10 +591,12 @@ worldModel:
   tension:                   # Schleife 3: Außenspannung
     base: 18                 # Ruhe-Niveau der Diplomatie
     revert: 0.04
-    scarcity: 20             # Weltpreis über 1,1 → Spannung steigt (Rohstoffknappheit)
+    scarcity: 20             # Knappheit (Weltpreis ÷ Trendpreis) über scarcityFrom → Spannung steigt
+    scarcityFrom: 1.1
     arms: 0.08               # Aufrüstung: + arms × (Spannung − armsFrom); ab gut 60 stärker als die Diplomatie
     armsFrom: 40
-    nationalism: 0.02        # Nationalismus über 50 heizt die Lage an
+    nationalism: 0.02        # Nationalismus über nationalismFrom heizt die Lage an
+    nationalismFrom: 50
     noise: 2.5
     warFrom: 70
     warChance: 0.03
@@ -608,7 +614,7 @@ worldModel:
     nationalizeLoss: 0.06    # so viel Förderkapazität geht bei einer Verstaatlichung verloren
     after: 40
   chapter1:                  # wie sanft Kapitel 1 die Welt spürt
-    priceWeight: 0.3         # Posted Price-Trend: 1 + 0,3 × (Weltpreis − 1) …
+    priceWeight: 0.5         # Posted Price-Trend: 1 + 0,5 × (Weltpreis − 1) …
     priceMaxDev: 0.15        # … höchstens ±15 %
     rateWeight: 0.01         # Kreditklima 0/100 → Zins +1/−1 Punkt
     crashRate: 0.02          # im Crash zwei Punkte mehr
