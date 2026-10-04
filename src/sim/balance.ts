@@ -497,6 +497,90 @@ export interface RivalsBalance {
   thorne: ThorneBalance;
   wildcatters: WildcattersBalance;
 }
+/** Weltmodell (4.1, GDD §7.1): Zahlen der neun Weltgrößen, Details in content/balance.yaml. */
+export interface WorldModelBalance {
+  start: {
+    tech: Range;
+    credit: Range;
+    mood: Range;
+    tension: Range;
+    nationalism: Range;
+    handel: Range;
+    volksbund: Range;
+    provinz: Range;
+  };
+  supply: {
+    elasticity: number;
+    stockNorm: number;
+    stockMax: number;
+    stockWeight: number;
+    utilBase: number;
+    utilSlope: number;
+    utilMin: number;
+    depletion: number;
+    investSlope: number;
+    investMax: number;
+    delay: number;
+    creditInvest: number;
+    findChance: number;
+    findSize: Range;
+  };
+  demand: { growth: number; cap: number; techBoost: number; crashDrop: number; warBoost: number; armsDemand: number };
+  price: { min: number; max: number; techCost: number };
+  tech: { rate: number };
+  credit: {
+    boom: number;
+    speculation: number;
+    revert: number;
+    noise: number;
+    handel: number;
+    volksbund: number;
+    provinz: number;
+    crashFrom: number;
+    crashChance: number;
+    crashSlope: number;
+    priceTrigger: number;
+    after: number;
+    rounds: Range;
+  };
+  mood: { speed: number; price: number; crash: number; war: number; boom: number; noise: number };
+  politics: { drift: number; noise: number; minShare: number; fatigue: number; revert: number; electionEvery: number };
+  tension: {
+    base: number;
+    revert: number;
+    scarcity: number;
+    arms: number;
+    armsFrom: number;
+    nationalism: number;
+    noise: number;
+    warFrom: number;
+    warChance: number;
+    warSlope: number;
+    warRounds: Range;
+    afterWar: number;
+  };
+  nationalism: {
+    base: number;
+    revert: number;
+    drift: number;
+    tension: number;
+    noise: number;
+    nationalizeFrom: number;
+    nationalizeChance: number;
+    nationalizeLoss: number;
+    after: number;
+  };
+  chapter1: {
+    priceWeight: number;
+    priceMaxDev: number;
+    rateWeight: number;
+    crashRate: number;
+    rateMaxAdd: number;
+    nationalBarrels: number;
+  };
+  news: { creditEasy: number; creditTight: number; moodAngry: number; tensionHigh: number };
+}
+
 export interface Balance {
   rivals: RivalsBalance;
   start: { cash: number; year: number; rounds: number };
@@ -523,6 +607,7 @@ export interface Balance {
   family: FamilyBalance;
   newspaper: NewspaperBalance;
   tutorial: TutorialBalance;
+  worldModel: WorldModelBalance;
 }
 
 /** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
@@ -1461,6 +1546,151 @@ function parseRanches(raw: unknown): RanchBalance {
   return r;
 }
 
+/**
+ * Weltmodell (4.1): Alle Zahlen eines Blocks sind Pflicht. Grundregel: nicht
+ * negativ; Anteile (Chancen, Rückkehr, Gewichte) zwischen 0 und 1; Skalen 0–100.
+ * Vorzeichen frei sind nur die Regierungswirkungen aufs Kreditklima.
+ */
+function parseWorldModel(raw: unknown): WorldModelBalance {
+  const w = 'worldModel';
+  const block = (raw as Record<string, unknown> | undefined)?.[w];
+  if (!block || typeof block !== 'object') throw new BalanceError('balance.yaml: Block "worldModel" fehlt');
+  const nn = (p: string) => nonNegative(raw, `${w}.${p}`);
+  const sh = (p: string) => share(raw, `${w}.${p}`);
+  const free = (p: string) => num(raw, `${w}.${p}`);
+  const scale = (p: string) => {
+    const v = num(raw, `${w}.${p}`);
+    if (v < 0 || v > 100) throw new BalanceError(`balance.yaml: "${w}.${p}" muss zwischen 0 und 100 liegen`);
+    return v;
+  };
+  const rng = (p: string, lo: number, hi: number) => {
+    const r = range(raw, `${w}.${p}`);
+    if (r.min < lo || r.max > hi) throw new BalanceError(`balance.yaml: "${w}.${p}" muss zwischen ${lo} und ${hi} liegen`);
+    return r;
+  };
+  const wm: WorldModelBalance = {
+    start: {
+      tech: rng('start.tech', 0, 100),
+      credit: rng('start.credit', 0, 100),
+      mood: rng('start.mood', 0, 100),
+      tension: rng('start.tension', 0, 100),
+      nationalism: rng('start.nationalism', 0, 100),
+      handel: rng('start.handel', 0, 1),
+      volksbund: rng('start.volksbund', 0, 1),
+      provinz: rng('start.provinz', 0, 1),
+    },
+    supply: {
+      elasticity: nn('supply.elasticity'),
+      stockNorm: nn('supply.stockNorm'),
+      stockMax: nn('supply.stockMax'),
+      stockWeight: nn('supply.stockWeight'),
+      utilBase: sh('supply.utilBase'),
+      utilSlope: nn('supply.utilSlope'),
+      utilMin: sh('supply.utilMin'),
+      depletion: sh('supply.depletion'),
+      investSlope: nn('supply.investSlope'),
+      investMax: sh('supply.investMax'),
+      delay: positiveInt(raw, `${w}.supply.delay`),
+      creditInvest: sh('supply.creditInvest'),
+      findChance: sh('supply.findChance'),
+      findSize: rng('supply.findSize', 0, 1),
+    },
+    demand: {
+      growth: sh('demand.growth'),
+      cap: nn('demand.cap'),
+      techBoost: nn('demand.techBoost'),
+      crashDrop: sh('demand.crashDrop'),
+      warBoost: nn('demand.warBoost'),
+      armsDemand: nn('demand.armsDemand'),
+    },
+    price: { min: nn('price.min'), max: nn('price.max'), techCost: sh('price.techCost') },
+    tech: { rate: sh('tech.rate') },
+    credit: {
+      boom: nn('credit.boom'),
+      speculation: sh('credit.speculation'),
+      revert: sh('credit.revert'),
+      noise: nn('credit.noise'),
+      handel: free('credit.handel'),
+      volksbund: free('credit.volksbund'),
+      provinz: free('credit.provinz'),
+      crashFrom: scale('credit.crashFrom'),
+      crashChance: sh('credit.crashChance'),
+      crashSlope: sh('credit.crashSlope'),
+      priceTrigger: sh('credit.priceTrigger'),
+      after: sh('credit.after'),
+      rounds: rng('credit.rounds', 1, 1000),
+    },
+    mood: {
+      speed: sh('mood.speed'),
+      price: nn('mood.price'),
+      crash: nn('mood.crash'),
+      war: nn('mood.war'),
+      boom: nn('mood.boom'),
+      noise: nn('mood.noise'),
+    },
+    politics: {
+      drift: sh('politics.drift'),
+      noise: sh('politics.noise'),
+      minShare: sh('politics.minShare'),
+      fatigue: sh('politics.fatigue'),
+      revert: sh('politics.revert'),
+      electionEvery: positiveInt(raw, `${w}.politics.electionEvery`),
+    },
+    tension: {
+      base: scale('tension.base'),
+      revert: sh('tension.revert'),
+      scarcity: nn('tension.scarcity'),
+      arms: sh('tension.arms'),
+      armsFrom: scale('tension.armsFrom'),
+      nationalism: sh('tension.nationalism'),
+      noise: nn('tension.noise'),
+      warFrom: scale('tension.warFrom'),
+      warChance: sh('tension.warChance'),
+      warSlope: sh('tension.warSlope'),
+      warRounds: rng('tension.warRounds', 1, 1000),
+      afterWar: scale('tension.afterWar'),
+    },
+    nationalism: {
+      base: scale('nationalism.base'),
+      revert: sh('nationalism.revert'),
+      drift: nn('nationalism.drift'),
+      tension: sh('nationalism.tension'),
+      noise: nn('nationalism.noise'),
+      nationalizeFrom: scale('nationalism.nationalizeFrom'),
+      nationalizeChance: sh('nationalism.nationalizeChance'),
+      nationalizeLoss: sh('nationalism.nationalizeLoss'),
+      after: scale('nationalism.after'),
+    },
+    chapter1: {
+      priceWeight: sh('chapter1.priceWeight'),
+      priceMaxDev: sh('chapter1.priceMaxDev'),
+      rateWeight: sh('chapter1.rateWeight'),
+      crashRate: sh('chapter1.crashRate'),
+      rateMaxAdd: sh('chapter1.rateMaxAdd'),
+      nationalBarrels: nn('chapter1.nationalBarrels'),
+    },
+    news: {
+      creditEasy: scale('news.creditEasy'),
+      creditTight: scale('news.creditTight'),
+      moodAngry: scale('news.moodAngry'),
+      tensionHigh: scale('news.tensionHigh'),
+    },
+  };
+  if (wm.price.min <= 0 || wm.price.min > 1 || wm.price.max < 1) {
+    throw new BalanceError('balance.yaml: "worldModel.price" – min muss in (0, 1] liegen, max mindestens 1');
+  }
+  if (wm.supply.stockMax < wm.supply.stockNorm || wm.supply.stockNorm <= 0) {
+    throw new BalanceError('balance.yaml: "worldModel.supply.stockNorm" muss über 0 und höchstens stockMax sein');
+  }
+  if (wm.supply.utilMin > wm.supply.utilBase) {
+    throw new BalanceError('balance.yaml: "worldModel.supply.utilMin" darf nicht über utilBase liegen');
+  }
+  if (wm.demand.cap <= 1) throw new BalanceError('balance.yaml: "worldModel.demand.cap" muss über 1 liegen');
+  if (wm.chapter1.nationalBarrels <= 0) throw new BalanceError('balance.yaml: "worldModel.chapter1.nationalBarrels" muss über 0 liegen');
+  if (wm.politics.minShare * 3 >= 1) throw new BalanceError('balance.yaml: "worldModel.politics.minShare" muss unter 1/3 liegen');
+  return wm;
+}
+
 /** Die Karte aus content/map.yaml; Fehler dort kommen als BalanceError mit „map.yaml:“ davor. */
 function parseWorld(raw: unknown): WorldMap {
   const world = (raw as { world?: unknown })?.world;
@@ -1536,6 +1766,7 @@ export function parseBalance(raw: unknown): Balance {
     family: parseFamily(raw),
     newspaper: parseNewspaper(raw),
     tutorial: parseTutorial(raw),
+    worldModel: parseWorldModel(raw),
   };
 
   for (const r of balance.transport.pipeline.rights) {

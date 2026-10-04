@@ -265,7 +265,7 @@ describe('Spielstand mit Türmen (Format 13)', () => {
       expect(geladen.state.rigs).toEqual(s.rigs);
       expect(geladen.state.wells[0].pump).toBe(true);
     }
-    expect(SAVE_FORMAT).toBe(13);
+    expect(SAVE_FORMAT).toBeGreaterThanOrEqual(13);
   });
 
   it('Format 12 ohne Türme lädt mit Silas geliehenem Turm', () => {

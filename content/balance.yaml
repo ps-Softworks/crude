@@ -508,3 +508,114 @@ tutorial:
   endAfterProducedRounds: 2  # fertig, wenn die erste Quelle 2 Runden gefördert hat (die Verkaufsrunde ist vorbei)
   deeperMinChance: 25        # PLATZHALTER: tiefer bohren nur raten, wenn der Geologe der nächsten Stufe mind. 25 % gibt
   loanRounding: 100          # vorgeschlagene Kredite auf 100 $ aufgerundet (mindestens credit.minLoan)
+
+# Weltmodell (4.1, GDD §7.1): neun Weltgrößen, je Runde (Quartal) fortgeschrieben
+# in src/sim/world.ts. Indizes: Nachfrage, Förderkapazität und Weltpreis starten
+# bei 1; Kreditklima, Stimmung, Außenspannung, Technik und Nationalismus laufen
+# von 0 bis 100. Drei Rückkopplungen: (1) Preis → Neubohrungen → Angebot → Preis
+# (dämpft, aber verzögert), (2) Boom → Kredit → Spekulation → Crash (schaukelt
+# sich auf), (3) Knappheit → Außenspannung → Aufrüstung → Nachfrage → Knappheit
+# (schaukelt sich auf, bis Krieg). Zielwerte (GDD §15) einer Welt ohne Spieler je
+# Kampagne (73 Jahre): 2–4 Kreditkrisen, 1–3 Ölschwemmen, 0–2 Kriege.
+# Alle Werte PLATZHALTER; Verläufe prüft `npm run welt` (docs/weltmodell.md).
+worldModel:
+  start:                     # jede Kampagne würfelt ihre eigene Ausgangslage
+    tech: { min: 6, max: 10 }
+    credit: { min: 42, max: 58 }
+    mood: { min: 48, max: 60 }
+    tension: { min: 10, max: 28 }
+    nationalism: { min: 8, max: 20 }
+    handel: { min: 0.38, max: 0.50 }     # Anteile der Parteien vor dem Normieren
+    volksbund: { min: 0.22, max: 0.34 }
+    provinz: { min: 0.20, max: 0.32 }
+  supply:                    # Schleife 1: Angebot & Lager
+    elasticity: 1.4          # ε: Nachfrage/Förderung hoch ε → Preis
+    stockNorm: 0.25          # normales Lager in Quartalsbedarf
+    stockMax: 1.0            # mehr passt in keinen Tank – der Rest läuft aus
+    stockWeight: 0.35        # wie stark volle Tanks den Preis drücken
+    utilBase: 0.85           # Auslastung der Quellen bei Preis 1
+    utilSlope: 0.4           # Preis über/unter 1 → mehr/weniger gefördert (drosseln)
+    utilMin: 0.6
+    depletion: 0.02          # so viel Kapazität versiegt je Runde
+    investSlope: 0.04        # Neubohrungen je Preispunkt über 1 (Anteil der Kapazität)
+    investMax: 0.07
+    delay: 6                 # Runden, bis eine Neubohrung fördert (Verzögerung der Schleife 1)
+    creditInvest: 0.6        # Kreditklima 100 → 60 % mehr Neubohrungen, 0 → 60 % weniger
+    findChance: 0.007        # Riesenfund je Runde → Ölschwemme
+    findSize: { min: 0.12, max: 0.22 }   # so viel Kapazität kommt auf einen Schlag dazu
+  demand:
+    growth: 0.012            # Wachstum je Runde ohne Sättigung (Industrie, später Autos)
+    cap: 9                   # Sättigung des Nachfrage-Index
+    techBoost: 0.6           # Technik 100 → Wachstum × 1,6
+    crashDrop: 0.08          # im Crash fehlt so viel Nachfrage
+    warBoost: 0.12           # im Krieg kommt so viel dazu
+    armsDemand: 0.06         # Aufrüstung: Außenspannung 100 → so viel mehr Nachfrage
+  price:
+    min: 0.35                # Weltpreis-Index höchstens auf ein gutes Drittel …
+    max: 2.8                 # … und höchstens auf knapp das Dreifache
+    techCost: 0.25           # Technik senkt den Trendpreis: +100 Punkte → −25 %
+  tech:
+    rate: 0.017              # logistisches Wachstum je Runde (Forschung aller Firmen)
+  credit:                    # Schleife 2: Kreditklima
+    boom: 4                  # Punkte je Runde bei Weltpreis 2 (Boom macht Banken mutig)
+    speculation: 0.07        # über 50 schaukelt es sich auf: + speculation × (Klima − 50)
+    revert: 0.05             # Rückkehr zur Mitte
+    noise: 2.5
+    handel: 0.5              # Regierung Handelspartei lockert je Runde
+    volksbund: -0.6          # Regierung Volksbund: Bankaufsicht
+    provinz: 0
+    crashFrom: 74            # ab hier kann es kippen
+    crashChance: 0.04        # Chance je Runde an der Schwelle …
+    crashSlope: 0.5          # … plus so viel bei Klima 100
+    priceTrigger: 0.2        # Preissturz ab 20 % in einer Runde kippt ein Klima über 60
+    after: 0.35              # Klima nach dem Crash = Klima × after
+    rounds: { min: 4, max: 8 }   # so lange wirkt ein Crash nach
+  mood:
+    speed: 0.2               # wie schnell die Stimmung ihrem Ziel folgt
+    price: 25                # Weltpreis 2 → −25 Punkte (teures Benzin, teures Heizöl)
+    crash: 18                # Arbeitslosigkeit im Crash
+    war: 6
+    boom: 8                  # Kreditklima 100 → +8 (Wohlstand)
+    noise: 3
+  politics:
+    drift: 0.012             # Anteilsverschiebung je Runde und Stimmungsabstand (in 50 Punkten)
+    noise: 0.012
+    minShare: 0.1
+    fatigue: 0.002           # Regierungsmüdigkeit: die regierende Partei verliert je Runde so viel
+    revert: 0.01             # Anteile kehren langsam zur Mitte zurück (keine Partei verschwindet für immer)
+    electionEvery: 16        # GDD §7.1: Wahlen alle 4 Jahre
+  tension:                   # Schleife 3: Außenspannung
+    base: 18                 # Ruhe-Niveau der Diplomatie
+    revert: 0.04
+    scarcity: 20             # Weltpreis über 1,1 → Spannung steigt (Rohstoffknappheit)
+    arms: 0.08               # Aufrüstung: + arms × (Spannung − armsFrom); ab gut 60 stärker als die Diplomatie
+    armsFrom: 40
+    nationalism: 0.02        # Nationalismus über 50 heizt die Lage an
+    noise: 2.5
+    warFrom: 70
+    warChance: 0.03
+    warSlope: 0.3
+    warRounds: { min: 8, max: 16 }
+    afterWar: 22
+  nationalism:
+    base: 15
+    revert: 0.02
+    drift: 0.12              # je Runde × Nachfrage-Index: je mehr Öl die Welt braucht, desto mehr Einmischung
+    tension: 0.015           # × Außenspannung
+    noise: 2
+    nationalizeFrom: 80
+    nationalizeChance: 0.06
+    nationalizeLoss: 0.06    # so viel Förderkapazität geht bei einer Verstaatlichung verloren
+    after: 40
+  chapter1:                  # wie sanft Kapitel 1 die Welt spürt
+    priceWeight: 0.3         # Posted Price-Trend: 1 + 0,3 × (Weltpreis − 1) …
+    priceMaxDev: 0.15        # … höchstens ±15 %
+    rateWeight: 0.01         # Kreditklima 0/100 → Zins +1/−1 Punkt
+    crashRate: 0.02          # im Crash zwei Punkte mehr
+    rateMaxAdd: 0.03
+    nationalBarrels: 5000000 # Barrel je Runde, die der Weltindex 1 bedeutet (Salt Hill ist ein Bruchteil)
+  news:                      # wann die Zeitung Zustände andeutet (keine Zahlen)
+    creditEasy: 70
+    creditTight: 30
+    moodAngry: 32
+    tensionHigh: 60

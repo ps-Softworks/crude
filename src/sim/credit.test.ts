@@ -27,8 +27,14 @@ import { loadBalance } from './testBalance';
 // Die Handrechnungen hier gehen von den GDD-Zahlen aus (§12): Bankrahmen 3.000 $,
 // Geldverleiher bis 2.000 $. balance.yaml weicht seit 1.15 davon ab (Bot-Justierung);
 // die Regeln sind dieselben, deshalb stehen die beiden Werte hier fest.
+// Das Kreditklima des Weltmodells (4.1) ist hier abgeschaltet, damit die Zinsen
+// den Handrechnungen folgen; seine Wirkung prüft world.test.ts.
 const echt = loadBalance();
-const balance: Balance = { ...echt, credit: { ...echt.credit, limitBase: 3000, emergency: { ...echt.credit.emergency, limit: 2000 } } };
+const balance: Balance = {
+  ...echt,
+  credit: { ...echt.credit, limitBase: 3000, emergency: { ...echt.credit.emergency, limit: 2000 } },
+  worldModel: { ...echt.worldModel, chapter1: { ...echt.worldModel.chapter1, rateWeight: 0, crashRate: 0 } },
+};
 const C = balance.credit;
 
 /** Spiel mit n fördernden Quellen; die Bohrungen werden nur so hingesetzt. */
