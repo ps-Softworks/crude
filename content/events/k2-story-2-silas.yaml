@@ -1,0 +1,522 @@
+# Kapitel 2 – Story-Bogen „Silas gegen den Aufsichtsrat“ (GDD §13 Kapitel 2, Story-Bibel §3 und §6 B).
+# Entwurf – Philipp überarbeitet. Alle Texte hier sind Entwürfe von Claude.
+#
+# Jahr 11–14 (98–101 d. F.). Silas ist 54–57 (V), der Bart weiß, er trinkt „nur sonntags“ – das
+# stimmt nicht mehr. Jedes Ereignis trägt { minChapter: 2, maxChapter: 2 }.
+# Runden zählen im Kapitel ab 1 (Annahme). Merkzeichen aus Kapitel 1 muss der Zeitsprung als
+# „vor Kapitelbeginn“ werten, sonst greift „delay“ erst spät (siehe k2-story-3-ruth.yaml).
+#
+# Drei Wege, je nach Kapitel 1:
+#   B1 Silas im Rat (silas_fair)
+#     Runde 3+  k2_silas_rat            Ratssitz oder Trupps
+#     Runde 5+  k2_silas_unfall         Ein Toter an Turm vier – decken, abberufen, auszahlen
+#               k2_silas_unfall_akte    … mit silas_gedeckt (K1): Pettibone hat die Quittung für das Seil
+#     Runde 8+  k2_silas_strohmann      Schlüsselszene: „Die Herren kaufen dich, Junge, Stück für Stück.“
+#     danach    k2_silas_recht          (silas_ausgelacht) Die Vollmachten der Fremden
+#   B2 Silas als Kunde (silas_ausgekauft)
+#     Runde 4+  k2_silas_tarif          „Silas gegen den Tarif“
+#   B3 Silas als Zeuge (silas_betrogen – auch versöhnt oder Kronzeuge)
+#     Runde 6+  k2_silas_hauptversammlung  Schlüsselszene: zehn Aktien und eine alte Geschichte
+#   (Silas' Geschichte bei Nora: k2_nora_silas, k2_nora_geopfert in k2-story-1-nora.yaml)
+#
+# Ausgänge des Bogens (für content/arcs.yaml – erster passender gilt):
+#   gewarnt      silas_k2_gewarnt                       Silas hat Jacob vor den Strohmännern bewahrt
+#   geschuetzt   silas_geschuetzt                       Jacob hat Silas gegen den Rat gehalten
+#   recht        silas_k2_recht_gegeben                 Silas hatte recht, Jacob hat es zugegeben
+#   geopfert     silas_k2_geopfert                      Der Rat hat einen Schuldigen bekommen
+#   ausgezahlt   silas_k2_ausgezahlt, silas_quellen_gekauft
+#   kunde        silas_tarif_fair, silas_tarif_voll
+#   nachgezahlt  silas_k2_nachgezahlt
+#   gekauft      silas_schweigegeld
+#   hinaus       silas_k2_hinausgeworfen
+#
+# Merkzeichen aus Kapitel 1: silas_fair, silas_gedeckt, silas_ausgekauft, silas_betrogen.
+# Neu, liest Kapitel 2: silas_geschuetzt, silas_k2_geopfert (Nora), silas_ausgelacht.
+# Neu für Kapitel 3 (content/relevance.yaml): silas_ratssitz, silas_trupps, silas_k2_ausgezahlt,
+#   silas_k2_gewarnt, silas_k2_recht_gegeben, silas_tarif_fair, silas_tarif_voll,
+#   silas_quellen_gekauft, silas_k2_nachgezahlt, silas_k2_hinausgeworfen, silas_schweigegeld.
+
+# Entwurf – Philipp überarbeitet.
+- id: k2_silas_rat
+  visitor: silas
+  title:
+    de: Silas im zu engen Anzug
+    en: Silas in a Suit Too Tight
+  text:
+    de: >-
+      Silas kommt in einem Anzug, der an den Schultern spannt; Ruth hat ihn in Port
+      Ellis machen lassen. Der Bart ist weiß geworden, an der linken Hand fehlen
+      zwei Finger. Morgen tagt der Aufsichtsrat der Harlan Oil. Pettibone hat
+      ausrichten lassen, ein Bohrmeister gehöre an den Turm, nicht an den Tisch.
+      „Die Herren wollen wissen, wie viel ein Barrel kostet“, sagt Silas. „Fragt
+      mal, was ein Finger kostet. Ich hab noch acht.“
+    en: >-
+      Silas comes in a suit that pulls at the shoulders; Ruth had it made in Port
+      Ellis. His beard has gone white, and two fingers are missing from his left
+      hand. Tomorrow Harlan Oil's board meets. Pettibone has sent word that a
+      drilling boss belongs at the rig, not at the table. "The gentlemen want to
+      know what a barrel costs," Silas says. "Ask them what a finger costs. I've got
+      eight left."
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  marked: [silas_fair]
+  delay: 0
+  certain: true
+  choices:
+    - id: sitz
+      label: { de: "Ihm den Ratssitz geben, der ihm zusteht", en: "Give him the board seat he is owed" }
+      result:
+        de: >-
+          Silas sitzt am nächsten Morgen als Erster am Tisch und geht als Letzter. Er
+          liest nichts, er hört zu. Pettibone setzt sich ans andere Ende, und seine
+          Bank verlangt fortan einen Viertelpunkt mehr. Die Bohrtrupps arbeiten, als
+          wäre es ihr eigener Sitz.
+        en: >-
+          Next morning Silas is first at the table and last to leave. He reads
+          nothing; he listens. Pettibone sits at the far end, and from then on his
+          bank wants a quarter point more. The drilling crews work as if it were
+          their own seat.
+      # TODO-Effekt: boardLoyalty: { silas: +15, pettibone: -10 }, reputation: { workers: +3 }
+      effects: { production: 0.05, cash: -1500 }
+      marks: [silas_ratssitz]
+    - id: trupps
+      label: { de: "Ihm die Trupps geben und den Sitz einem Bankier überlassen", en: "Give him the crews and leave the seat to a banker" }
+      result:
+        de: >-
+          Silas nickt langsam. „Turm statt Tisch. Na gut, Junge.“ Ein Mann von
+          Vandermeer & Co. bekommt den Sitz und bringt eine günstige Kreditlinie mit.
+          Silas trinkt an diesem Abend nicht nur sonntags.
+        en: >-
+          Silas nods slowly. "Rig, not table. All right, boy." A man from Vandermeer
+          & Co. gets the seat and brings a cheap line of credit with him. That
+          evening Silas doesn't drink only on Sundays.
+      # TODO-Effekt: boardLoyalty: { vandermeer: +10, silas: -10 }, control: -2
+      effects: { cash: 3000, strength: -3 }
+      marks: [silas_trupps]
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Ohne silas_gedeckt aus Kapitel 1. Mit: k2_silas_unfall_akte.
+- id: k2_silas_unfall
+  rival: thorne
+  title:
+    de: Der Tote an Turm vier
+    en: The Dead Man at Rig Four
+  text:
+    de: >-
+      An Turm vier ist ein Gestänge gebrochen. Ein junger Bohrarbeiter ist tot,
+      zwei Wochen verheiratet. Silas hatte die Schicht. Er war nüchtern, sagen die
+      Männer, und Silas sagt es auch, mit roten Augen. Der Rat glaubt es nicht.
+      Pettibone verlangt, dass Silas geht – „aus Verantwortung gegenüber den
+      Aktionären“.
+    en: >-
+      A drill string has broken at rig four. A young driller is dead, married two
+      weeks. Silas had the shift. He was sober, the men say, and Silas says so too,
+      with red eyes. The board doesn't believe it. Pettibone demands that Silas go –
+      "out of responsibility to the shareholders".
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 5 }
+  marked: [silas_fair]
+  notMarked: [silas_gedeckt]
+  delay: 0
+  certain: true
+  choices:
+    - id: decken
+      label: { de: "Silas decken und der Witwe eine Rente zahlen (2.500 $)", en: "Stand by Silas and pay the widow a pension (2,500 $)" }
+      result:
+        de: >-
+          Jacob stellt sich in der Sitzung vor Silas. Die Witwe bekommt jeden Monat
+          Geld, Silas bringt es ihr selbst. Pettibone lässt ins Protokoll schreiben,
+          dass er dagegen war.
+        en: >-
+          Jacob stands in front of Silas at the meeting. The widow gets money every
+          month; Silas brings it to her himself. Pettibone has it minuted that he was
+          against it.
+      # TODO-Effekt: boardLoyalty: { pettibone: -10, vandermeer: -5 }, reputation: { workers: +5 }
+      requires: { minCash: 2500 }
+      effects: { cash: -2500 }
+      marks: [silas_geschuetzt]
+    - id: abberufen
+      label: { de: "Silas abberufen – der Rat hat recht", en: "Remove Silas – the board is right" }
+      result:
+        de: >-
+          Silas räumt seinen Spind an Turm vier selbst. Er gibt Jacob nicht die Hand.
+          Die Trupps arbeiten weiter, aber langsamer, und am Zahltag fehlen drei
+          Männer.
+        en: >-
+          Silas clears out his locker at rig four himself. He doesn't shake Jacob's
+          hand. The crews keep working, but slower, and on payday three men are
+          missing.
+      # TODO-Effekt: boardLoyalty: { pettibone: +10 }, reputation: { workers: -5 }
+      effects: { production: -0.1 }
+      marks: [silas_k2_geopfert]
+      default: true
+    - id: auszahlen
+      label: { de: "Ihm seine Aktien abkaufen, damit er in Ehren geht (8.000 $)", en: "Buy his shares so he can leave with honour (8,000 $)" }
+      result:
+        de: >-
+          Silas zählt das Geld nicht. „Ist ein guter Preis für einen alten Mann“,
+          sagt er. „Für den Jungen an Turm vier zahlt keiner was.“ Die Hälfte gibt er
+          der Witwe.
+        en: >-
+          Silas doesn't count the money. "It's a good price for an old man," he says.
+          "Nobody pays anything for the boy at rig four." He gives half to the widow.
+      # TODO-Effekt: shares: { silas: -3, jacob: +3 }, control: +1
+      requires: { minCash: 8000 }
+      effects: { cash: -8000 }
+      marks: [silas_k2_ausgezahlt]
+
+# Entwurf – Philipp überarbeitet.
+# Mit silas_gedeckt aus Kapitel 1: Jacob zahlte damals das gerissene Seil und schwieg.
+- id: k2_silas_unfall_akte
+  rival: thorne
+  draft: true
+  title:
+    de: Pettibones Mappe
+    en: Pettibone's Folder
+  text:
+    de: >-
+      An Turm vier ist ein Gestänge gebrochen, ein junger Bohrarbeiter ist tot.
+      Silas hatte die Schicht und war nüchtern, sagen die Männer. Pettibone legt
+      eine Mappe auf den Ratstisch: die Quittung für ein Bohrseil, elf Jahre alt,
+      bar bezahlt von Jacob Harlan am Morgen nach einer Nacht, über die am Salt
+      Hill niemand redet. „Der Mann hat schon einmal getrunken, meine Herren. Und
+      Mr. Harlan hat es bezahlt.“
+    en: >-
+      A drill string has broken at rig four; a young driller is dead. Silas had the
+      shift and was sober, the men say. Pettibone lays a folder on the board table:
+      the receipt for a drilling cable, eleven years old, paid in cash by Jacob
+      Harlan the morning after a night nobody on Salt Hill talks about. "The man has
+      been drinking before, gentlemen. And Mr. Harlan paid for it."
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 5 }
+  marked: [silas_fair, silas_gedeckt]
+  delay: 0
+  certain: true
+  choices:
+    - id: decken
+      label: { de: "Zu Silas stehen – auch zu dem Seil damals (3.500 $)", en: "Stand by Silas – and by the old cable too (3,500 $)" }
+      result:
+        de: >-
+          „Ich habe das Seil bezahlt, weil er es wert war“, sagt Jacob. „Er ist es
+          noch.“ Die Witwe bekommt eine Rente, der Rat einen Gutachter, der Silas
+          entlastet. Pettibone schließt die Mappe und behält sie.
+        en: >-
+          "I paid for the cable because he was worth it," Jacob says. "He still is."
+          The widow gets a pension, the board an expert who clears Silas. Pettibone
+          closes the folder and keeps it.
+      # TODO-Effekt: boardLoyalty: { pettibone: -15 }, trace: { severity: 1, label: "Seil von Salt Hill" }
+      requires: { minCash: 3500 }
+      effects: { cash: -3500 }
+      marks: [silas_geschuetzt]
+    - id: abberufen
+      label: { de: "Silas fallen lassen, bevor die Mappe Jacob trifft", en: "Drop Silas before the folder hits Jacob" }
+      result:
+        de: >-
+          Silas hört es von Pettibone, nicht von Jacob. Er räumt den Spind. Ganz
+          hinten liegt eine volle Flasche, unangebrochen. Er stellt sie Jacob auf den
+          Schreibtisch und geht.
+        en: >-
+          Silas hears it from Pettibone, not from Jacob. He clears his locker. Right
+          at the back is a full bottle, unopened. He sets it on Jacob's desk and
+          leaves.
+      # TODO-Effekt: boardLoyalty: { pettibone: +10 }, reputation: { workers: -8 }
+      effects: { production: -0.1 }
+      marks: [silas_k2_geopfert]
+      default: true
+    - id: auszahlen
+      label: { de: "Ihm die Aktien abkaufen und die Mappe mitkaufen (10.000 $)", en: "Buy his shares and the folder with them (10,000 $)" }
+      result:
+        de: >-
+          Pettibone verkauft die Mappe nicht, aber er vergisst sie, als Silas' Aktien
+          bei Jacob liegen. Silas nimmt das Geld. „Jetzt hast du mich zweimal
+          bezahlt, Junge. Einmal hätte gereicht.“
+        en: >-
+          Pettibone doesn't sell the folder, but he forgets it once Silas's shares are
+          with Jacob. Silas takes the money. "Now you've paid for me twice, boy. Once
+          would have done."
+      # TODO-Effekt: shares: { silas: -3, jacob: +3 }, boardLoyalty: { pettibone: +5 }
+      requires: { minCash: 10000 }
+      effects: { cash: -10000 }
+      marks: [silas_k2_ausgezahlt]
+
+# Entwurf – Philipp überarbeitet.
+# Schlüsselszene (GDD: typische Falle – Thorne kauft sich über Strohmänner ein).
+- id: k2_silas_strohmann
+  visitor: silas
+  rival: thorne
+  draft: true
+  title:
+    de: Sieben Namen auf Packpapier
+    en: Seven Names on Brown Paper
+  text:
+    de: >-
+      Silas legt ein Stück Packpapier auf den Eichenschreibtisch. Darauf stehen, in
+      großen, mühsamen Buchstaben, sieben Namen. Er hat sie im Aktienbuch in
+      Hallstead abgeschrieben, Buchstabe für Buchstabe, weil er nicht schnell
+      lesen kann. Keiner der Männer wohnt, wo er angeblich wohnt. Alle haben mit
+      Schecks derselben Bank bezahlt – der, die Thornes Eisenbahn gehört. „Die
+      Herren kaufen dich, Junge“, sagt Silas. „Stück für Stück.“
+    en: >-
+      Silas lays a piece of brown paper on the oak desk. On it, in large laboured
+      letters, are seven names. He copied them from the share register in
+      Hallstead, letter by letter, because he can't read fast. None of the men lives
+      where he is supposed to. All paid with cheques from the same bank – the one
+      Thorne's railway owns. "The gentlemen are buying you, boy," Silas says. "Piece
+      by piece."
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 8 }
+  marked: [silas_geschuetzt]
+  delay: 2
+  certain: true
+  choices:
+    - id: zurueckkaufen
+      label: { de: "Ihm glauben und die Aktien zurückkaufen (12.000 $)", en: "Believe him and buy the shares back (12,000 $)" }
+      result:
+        de: >-
+          Jacob kauft über drei Wochen und vier Makler. Der Kurs steigt, als wüsste
+          jemand Bescheid. Am Ende sind fünf der sieben Namen aus dem Buch
+          verschwunden. Silas sagt nur: „Acht Finger, Junge. Und die Augen sind noch
+          gut.“
+        en: >-
+          Jacob buys over three weeks through four brokers. The price climbs as if
+          someone knew. In the end five of the seven names are gone from the book.
+          Silas only says: "Eight fingers, boy. And the eyes are still good."
+      # TODO-Effekt: control: +4, rivalStake: { thorne: -4 }, sharePrice: +0.05 (befristet)
+      requires: { minCash: 12000 }
+      effects: { cash: -12000 }
+      marks: [silas_k2_gewarnt]
+    - id: pruefen
+      label: { de: "Den Anwalt nachforschen lassen (1.500 $)", en: "Have the lawyer look into it (1,500 $)" }
+      result:
+        de: >-
+          Der Anwalt braucht sechs Wochen und findet zwei der sieben Männer. Sie
+          hätten gekauft, sagen sie, weil ein Freund dazu geraten habe. Der Freund hat
+          keinen Namen. Die anderen fünf bleiben im Buch.
+        en: >-
+          The lawyer takes six weeks and finds two of the seven men. They bought, they
+          say, because a friend advised it. The friend has no name. The other five
+          stay in the book.
+      # TODO-Effekt: control: +1, rivalStake: { thorne: +2 }
+      requires: { minCash: 1500 }
+      effects: { cash: -1500 }
+    - id: auslachen
+      label: { de: "Lachen – Silas sieht Gespenster", en: "Laugh – Silas is seeing ghosts" }
+      result:
+        de: >-
+          Silas faltet das Papier zusammen, sorgfältig, und steckt es ein. „Hab ich
+          auch mal gesagt“, meint er, „von einem Seil.“ Er geht ohne Gruß.
+        en: >-
+          Silas folds the paper, carefully, and puts it away. "I said that once too,"
+          he says, "about a cable." He leaves without a word.
+      # TODO-Effekt: boardLoyalty: { silas: -15 }, rivalStake: { thorne: +5 }
+      marks: [silas_ausgelacht]
+      appointments: 0
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Nachwirkung (silas_ausgelacht): Silas hatte recht.
+- id: k2_silas_recht
+  rival: thorne
+  title:
+    de: Vollmachten von Fremden
+    en: Proxies from Strangers
+  text:
+    de: >-
+      Hauptversammlung im Saal über der Bank in Port Ellis. Pettibone verliest
+      Vollmachten: sieben Aktionäre, die niemand je gesehen hat, übertragen ihm
+      ihre Stimmen. Es sind die Namen von Silas' Packpapier. Silas sitzt in der
+      letzten Reihe, den Hut auf den Knien, und sieht Jacob nicht an.
+    en: >-
+      Shareholders' meeting in the hall above the bank in Port Ellis. Pettibone
+      reads out proxies: seven shareholders nobody has ever seen transfer their
+      votes to him. They are the names from Silas's brown paper. Silas sits in the
+      back row, hat on his knees, and doesn't look at Jacob.
+  conditions: { minChapter: 2, maxChapter: 2 }
+  marked: [silas_ausgelacht]
+  delay: 3
+  certain: true
+  appointments: 2
+  choices:
+    - id: zugeben
+      label: { de: "Nach der Versammlung zu Silas gehen und sagen, dass er recht hatte", en: "Go to Silas after the meeting and tell him he was right" }
+      result:
+        de: >-
+          Silas hört zu, die Hände um den Hut. „Zu spät für die Aktien“, sagt er.
+          „Nicht zu spät für mich.“ Am nächsten Morgen steht er wieder am Turm. Die
+          Abstimmung hat Pettibone trotzdem gewonnen.
+        en: >-
+          Silas listens, hands around his hat. "Too late for the shares," he says.
+          "Not too late for me." Next morning he is back at the rig. Pettibone still
+          won the vote.
+      # TODO-Effekt: control: -3, boardLoyalty: { silas: +10 }
+      effects: { strength: -4, production: 0.05 }
+      marks: [silas_k2_recht_gegeben]
+    - id: anfechten
+      label: { de: "Die Vollmachten anfechten lassen (5.000 $)", en: "Challenge the proxies (5,000 $)" }
+      result:
+        de: >-
+          Drei Vollmachten erklärt der Notar für ungültig, vier bleiben. Pettibone
+          gewinnt die Abstimmung über die Dividende trotzdem, aber knapper als
+          geplant. Silas ist vor dem Ende gegangen.
+        en: >-
+          The notary declares three proxies void; four stand. Pettibone still wins the
+          dividend vote, but more narrowly than planned. Silas left before the end.
+      # TODO-Effekt: control: -1, rival: { thorne: { aggression: +10 } }
+      requires: { minCash: 5000 }
+      effects: { cash: -5000 }
+    - id: hinnehmen
+      label: { de: "Die Abstimmung laufen lassen", en: "Let the vote go ahead" }
+      result:
+        de: >-
+          Pettibone setzt die hohe Dividende durch. Das Geld fließt ab, an sieben
+          Männer, die niemand kennt, und an eine Bank, die jeder kennt. Silas geht
+          vor dem Ende der Versammlung.
+        en: >-
+          Pettibone pushes the high dividend through. The money flows out, to seven
+          men nobody knows and to a bank everybody knows. Silas leaves before the
+          meeting ends.
+      # TODO-Effekt: control: -4, dividendPressure: +1
+      effects: { cash: -3000 }
+      appointments: 0
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# B2: Mit silas_ausgekauft aus Kapitel 1 bohrt Silas seit zehn Jahren auf eigene Rechnung am Salt Hill.
+- id: k2_silas_tarif
+  visitor: silas
+  title:
+    de: Silas gegen den Tarif
+    en: Silas Against the Tariff
+  text:
+    de: >-
+      Silas bohrt seit zehn Jahren auf eigene Rechnung am Salt Hill: drei kleine
+      Quellen, ein Turm, der Sohn seiner Schwester als Gehilfe. Der Trust zahlt
+      ihm, was er will, und die Bahn nimmt, was sie will. Jetzt fragt Silas, ob
+      sein Öl zu Jacobs Frachtpreis mitfahren darf. Er ist grau geworden und hat
+      sich die Rede aufgeschrieben, obwohl er sie nicht lesen kann. „Silas gegen
+      den Tarif, so nennen sie das im Saloon. Ich hab gesagt, ich red mit dem
+      Jungen.“
+    en: >-
+      Silas has been drilling on his own account at Salt Hill for ten years: three
+      small wells, one rig, his sister's son as helper. The Trust pays him what it
+      likes and the railway takes what it likes. Now Silas asks whether his oil may
+      travel at Jacob's freight rate. He has gone grey and has written his speech
+      down, though he can't read it. "Silas against the tariff, that's what they
+      call it in the saloon. I said I'd talk to the boy."
+  # TODO-Bedingung: hasPipeline (Silas' Öl durch Jacobs Leitung) – bis dahin über Jacobs Frachtvertrag
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4 }
+  marked: [silas_ausgekauft]
+  delay: 0
+  certain: true
+  choices:
+    - id: freundschaft
+      label: { de: "Freundschaftstarif – zum Selbstkostenpreis", en: "Friendship rate – at cost" }
+      result:
+        de: >-
+          Silas spuckt in die Hand und schlägt ein. Am Salt Hill erzählt er, Harlan
+          sei noch immer der Junge von damals. Drei andere kleine Förderer fragen in
+          der Woche darauf, ob sie auch dürfen.
+        en: >-
+          Silas spits in his palm and shakes. On Salt Hill he tells everyone Harlan is
+          still the boy he was. Three other small producers ask the next week whether
+          they may too.
+      # TODO-Effekt: transportFee: { silas: 0 }, reputation: { industryRespect: +5 }
+      effects: { cash: -2000 }
+      marks: [silas_tarif_fair]
+    - id: voll
+      label: { de: "Den vollen Tarif verlangen", en: "Charge the full rate" }
+      result:
+        de: >-
+          Silas zahlt. „Ist ehrliches Geld“, sagt er, wie damals. Er sieht sich im
+          Büro um, als zähle er die Stühle. Am Salt Hill sagt er nichts über Harlan,
+          und das ist neu.
+        en: >-
+          Silas pays. "It's honest money," he says, as he did back then. He looks
+          round the office as if counting the chairs. On Salt Hill he says nothing
+          about Harlan, and that is new.
+      # TODO-Effekt: transportFee: { silas: voll }
+      effects: { cash: 2000 }
+      marks: [silas_tarif_voll]
+      default: true
+    - id: kaufen
+      label: { de: "Ihm die Quellen abkaufen (9.000 $)", en: "Buy his wells (9,000 $)" }
+      result:
+        de: >-
+          Silas nimmt das Geld und behält den Turm. „Den verkauf ich nicht, Junge.
+          Den hab ich dir schon mal geliehen.“ Die drei Quellen fördern ab jetzt für
+          Harlan Oil.
+        en: >-
+          Silas takes the money and keeps the rig. "That one I don't sell, boy. I lent
+          it to you once already." From now on the three wells pump for Harlan Oil.
+      requires: { minCash: 9000 }
+      effects: { cash: -9000, production: 0.1 }
+      marks: [silas_quellen_gekauft]
+
+# Entwurf – Philipp überarbeitet.
+# B3: Mit silas_betrogen aus Kapitel 1 (auch wenn er später versöhnt wurde oder Nora alles aufschrieb).
+- id: k2_silas_hauptversammlung
+  draft: true
+  title:
+    de: Zehn Aktien und eine Geschichte
+    en: Ten Shares and a Story
+  text:
+    de: >-
+      Hauptversammlung der Harlan Oil. In der dritten Reihe steht ein alter Mann
+      auf, der auf keiner Liste der Großaktionäre steht. Silas Brandt hat zehn
+      Aktien gekauft, mehr nicht – genug, um reden zu dürfen. Er erzählt von einem
+      Bohrturm, den er einem jungen Mann geliehen hat, und von Büchern, in denen
+      kein Gewinn stand. Die Herren aus Hallstead hören zu, wie man einem
+      Theaterstück zuhört. Pettibone schreibt mit.
+    en: >-
+      Harlan Oil's shareholders' meeting. In the third row an old man stands up who
+      is on no list of major shareholders. Silas Brandt has bought ten shares, no
+      more – enough to be allowed to speak. He tells of a derrick he lent a young
+      man, and of books in which there was no profit. The gentlemen from Hallstead
+      listen the way one listens to a play. Pettibone takes notes.
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 6 }
+  marked: [silas_betrogen]
+  delay: 0
+  certain: true
+  appointments: 2
+  choices:
+    - id: nachzahlen
+      label: { de: "Öffentlich nachzahlen, was ihm zusteht (6.000 $)", en: "Pay him publicly what he's owed (6,000 $)" }
+      result:
+        de: >-
+          Jacob steht auf und sagt vor allen, Silas habe recht. Am nächsten Tag geht
+          ein Scheck hinaus. Silas löst ihn ein und schickt eine Karte: „Spät. Aber in
+          Tinte.“ Vandermeer findet, so etwas sage man nicht vor Aktionären.
+        en: >-
+          Jacob stands and says before everyone that Silas is right. Next day a cheque
+          goes out. Silas cashes it and sends a card: "Late. But in ink." Vandermeer
+          thinks one doesn't say such things before shareholders.
+      # TODO-Effekt: reputation: { workers: +5, public: +3 }, boardLoyalty: { vandermeer: -5 }
+      requires: { minCash: 6000 }
+      effects: { cash: -6000 }
+      marks: [silas_k2_nachgezahlt]
+    - id: hinausbegleiten
+      label: { de: "Ihn hinausbegleiten lassen", en: "Have him shown out" }
+      result:
+        de: >-
+          Zwei Saaldiener nehmen Silas an den Armen, freundlich, wie man einen
+          Betrunkenen nimmt. Er war nüchtern. Am nächsten Morgen weiß es jeder
+          Bohrtrupp in Cordova.
+        en: >-
+          Two ushers take Silas by the arms, kindly, the way one takes a drunk. He was
+          sober. By next morning every drilling crew in Cordova knows.
+      # TODO-Effekt: reputation: { workers: -8 }, heat: +3
+      effects: { production: -0.05 }
+      marks: [silas_k2_hinausgeworfen]
+      default: true
+    - id: schweigegeld
+      label: { de: "Ihm nach der Versammlung Geld für sein Schweigen anbieten (3.000 $)", en: "Offer him money for his silence after the meeting (3,000 $)" }
+      result:
+        de: >-
+          Ein Anwalt bringt Silas einen Umschlag und ein Papier. Silas unterschreibt
+          mit einem Kreuz und lacht dabei. Das Papier liegt jetzt in Jacobs Schrank.
+          Wer sonst davon weiß, weiß niemand.
+        en: >-
+          A lawyer brings Silas an envelope and a paper. Silas signs with a cross and
+          laughs as he does. The paper now lies in Jacob's cabinet. Who else knows
+          about it, nobody knows.
+      # TODO-Effekt: trace: { severity: 3, label: "Schweigegeld an Silas Brandt" }
+      requires: { minCash: 3000 }
+      effects: { cash: -3000 }
+      marks: [silas_schweigegeld]

@@ -29,3 +29,38 @@ later:
   - { mark: vale_geld, reason: "Mr. Vales Einladung (GDD Kapitel 3)" }
   - { mark: vale_abgelehnt, reason: "Mr. Vales Einladung (GDD Kapitel 3)" }
   - { mark: crane_abgelehnt, reason: "Crane merkt sich die Absage (GDD: Rivalen merken sich Gefallen und Verrat)" }
+
+  # Kapitel 2 – Story-Bögen Ruth, Silas, Nora (content/events/k2-story-*.yaml). Entwurf – Philipp überarbeitet.
+  # Ausgänge, die erst Kapitel 3 abfragt (Story-Bibel §7 und §8): Wendepunkt der Ehe, Silas' letztes
+  # Kapitel, Noras Buch, Clara 15–18.
+  - { mark: ruth_finanzen, reason: "Ruth führt die Finanzen (K3: Wendepunkt der Ehe – Ruth unterschreibt mit)" }
+  - { mark: ruth_vertroestet_k2, reason: "Ruth wurde zum zweiten Mal vertröstet (K3: Wendepunkt der Ehe)" }
+  - { mark: ruth_zuhause, reason: "Ruth bleibt zu Hause (K3: Wendepunkt der Ehe, Trennung wahrscheinlicher)" }
+  - { mark: ruth_eigenes_geschaeft, reason: "Ruths Laden am Okara (K3: Ehe; Trennung zu Hannah mit eigenem Geld)" }
+  - { mark: ruth_verboten, reason: "Jacob hat Ruths Geschäft verhindert (K3: Wendepunkt der Ehe)" }
+  - { mark: ruth_rat_behauptet, reason: "Ruth behauptet sich im Rat (K3: ehe_partner wahrscheinlich)" }
+  - { mark: ruth_rat_stumm, reason: "Ruth schweigt im Rat (K3: Wendepunkt der Ehe)" }
+  - { mark: clara_k2_vater_da, reason: "Jacob saß an Claras Bett (K3: Clara 15–18, Weichen für Zeitsprung III)" }
+  - { mark: clara_k2_vater_fehlte, reason: "Jacob war in der Sitzung (K3: Clara 15–18)" }
+  - { mark: silas_ratssitz, reason: "Silas im Rat (K3: Silas lehrt Thomas das Bohren)" }
+  - { mark: silas_trupps, reason: "Silas bei den Trupps statt im Rat (K3: Silas' letztes Kapitel)" }
+  - { mark: silas_k2_ausgezahlt, reason: "Silas ist ausgezahlt (K3: Silas' Erinnerungen)" }
+  - { mark: silas_k2_gewarnt, reason: "Silas hat die Strohmänner entdeckt (K3: Thorne, Silas' letztes Kapitel)" }
+  - { mark: silas_k2_recht_gegeben, reason: "Jacob gab Silas recht (K3: Silas' letztes Kapitel)" }
+  - { mark: silas_tarif_fair, reason: "Freundschaftstarif für Silas (K3: Silas, unabhängige Produzenten)" }
+  - { mark: silas_tarif_voll, reason: "Voller Tarif für Silas (K3: Silas, unabhängige Produzenten)" }
+  - { mark: silas_quellen_gekauft, reason: "Jacob kaufte Silas' Quellen (K3: Silas' letztes Kapitel)" }
+  - { mark: silas_k2_nachgezahlt, reason: "Silas öffentlich nachgezahlt (K3: Silas diktiert Nora seine Erinnerungen)" }
+  - { mark: silas_k2_hinausgeworfen, reason: "Silas aus der Hauptversammlung geworfen (K3: Zeuge für Daniel/Delaney)" }
+  - { mark: silas_schweigegeld, reason: "Schweigegeld an Silas – Spur für Daniels Akte (K3)" }
+  - { mark: silas_k2_zurueckgeholt, reason: "Silas zurückgeholt (K3: Silas' letztes Kapitel)" }
+  - { mark: nora_quelle, reason: "Jacob war Noras Quelle (K3: Noras Buch, langes Gespräch)" }
+  - { mark: nora_interview_k2, reason: "Interview mit Nora (K3: Noras Buch)" }
+  - { mark: nora_ohne_jacob, reason: "Nora schreibt ohne Jacob (K3: Noras Buch)" }
+  - { mark: ledger_gekauft, reason: "Jacob besitzt ein Viertel des Ledger (K3: Zeitung, Lobby, Skandal)" }
+  - { mark: nora_k2_bestaetigt, reason: "Jacob verriet Bullards Rabatt (K3: Bullards Bitte, die Söhne erinnern sich)" }
+  - { mark: nora_k2_dementiert, reason: "Jacob schwieg über Bullard (K3: Bullard, Noras Buch)" }
+  - { mark: nora_silas_wahrheit, reason: "Jacob sagte Nora die Wahrheit über Silas (K3: Noras Buch, Delaney)" }
+  - { mark: nora_silas_umschlag, reason: "Der fotografierte Umschlag – Beweisstück (K3: Daniel/Delaney)" }
+  - { mark: nora_silas_gedruckt, reason: "Silas' Geschichte gedruckt (K3: Noras Buch)" }
+  - { mark: nora_k2_rat_bloss, reason: "Jacob stellte den Rat bloß (K3: Aufsichtsrat, Pettibone)" }

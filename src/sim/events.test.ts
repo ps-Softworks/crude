@@ -61,6 +61,22 @@ describe('Bedingungen', () => {
     expect(conditionsMet(state, { minLeases: 1 })).toBe(false);
   });
 
+  it('Kapitel: ohne Angabe gilt Kapitel 1, minChapter/maxChapter grenzen ein', () => {
+    expect(state.chapter).toBeUndefined();
+    expect(conditionsMet(state, { minChapter: 1, maxChapter: 1 })).toBe(true);
+    expect(conditionsMet(state, { minChapter: 2 })).toBe(false);
+    expect(conditionsMet({ ...state, chapter: 2 }, { minChapter: 2, maxChapter: 2 })).toBe(true);
+    expect(conditionsMet({ ...state, chapter: 3 }, { minChapter: 2, maxChapter: 2 })).toBe(false);
+  });
+
+  it('kein Ereignis aus content/events/k2-* oder k3-* kann in Kapitel 1 kommen', () => {
+    const spaeter = loadEvents().filter((e) => /^k[23]_/.test(e.id));
+    for (const e of spaeter) {
+      expect(e.conditions.minChapter, e.id).toBeGreaterThanOrEqual(2);
+      expect(conditionsMet({ ...state, round: 8, cash: 1e9, oilStock: 1e9, strength: 50 }, e.conditions), e.id).toBe(false);
+    }
+  });
+
   it('nennt den Grund, warum eine Wahl gesperrt ist', () => {
     expect(unmetReason(state, { minCash: 1000 })).toBe('Dafür fehlt das Geld (1.000 $ nötig).');
     expect(unmetReason(state, { minOilStock: 500 })).toBe('Dafür fehlt Öl im Tank (500 bbl nötig).');
@@ -106,6 +122,26 @@ describe('Ereignisse würfeln', () => {
     expect(nach.events.pending).toEqual(['a']);
     expect(nach.events.seen).toEqual(['a']);
     expect(nach.log.at(-1)).toMatch(/Auf dem Schreibtisch: Titel a\.$/);
+  });
+
+  it('ein Ereignis für Kapitel 2 kommt in Kapitel 1 nicht – auch nicht, wenn es sicher ist', () => {
+    const state = newGame('kap', balance);
+    const k2 = [ereignis('a', { conditions: { minChapter: 2 } }), ereignis('b', { conditions: { minChapter: 2 }, certain: true })];
+    expect(drawEvents(state, balance, k2).events.pending).toEqual([]);
+    expect(drawEvents({ ...state, chapter: 2 }, balance, k2).events.pending).toContain('b');
+  });
+
+  it('Kapitel-2-Story-Bögen (k2-story-*): Ruths Abend kommt in Kapitel 2 sicher, Ruths Wunsch je nach Kapitel-1-Merkzeichen in genau einer Fassung', () => {
+    const k2 = loadEvents().filter((e) => e.id.startsWith('k2_'));
+    const start = { ...newGame('k2', balance), chapter: 2 };
+    expect(drawEvents(start, balance, k2).events.pending).toContain('k2_ruth_abend');
+    const fassungen = ['k2_ruth_wunsch', 'k2_ruth_datum', 'k2_ruth_sitz'];
+    for (const [mark, erwartet] of [[null, 'k2_ruth_wunsch'], ['ruth_vertroestet', 'k2_ruth_datum'], ['ruth_teilhaberin', 'k2_ruth_sitz']] as const) {
+      const marks = mark ? { [mark]: 0 } : {};
+      const runde4 = { ...start, round: 4, events: { ...start.events, marks } };
+      const offen = drawEvents(runde4, balance, k2).events.pending.filter((id) => fassungen.includes(id));
+      expect(offen, String(mark)).toEqual([erwartet]);
+    }
   });
 
   it('Chance 0 kommt nie, gleicher Seed würfelt gleich', () => {
