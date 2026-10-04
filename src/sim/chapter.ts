@@ -15,6 +15,7 @@
 
 import { parseDocument } from 'yaml';
 import { arcOutcome, type ArcContent } from './arcs';
+import { chapterOf } from './chapterOf';
 import type { Balance } from './balance';
 import { formatDate } from './calendar';
 import type { ContentError } from './eventContent';
@@ -79,7 +80,7 @@ export function chapterBonuses(state: Pick<GameState, 'events'>, content: Chapte
 /** Darf Jacob jetzt über den Börsengang entscheiden? Nur am Kapitelende, nur einmal, nur mit bestandener Prüfung. */
 export function canGoPublic(state: GameState, balance: Balance): boolean {
   // Kapitel 2 ist noch Platzhalter (4.5): Aktien gibt es nur am Ende von Kapitel 1.
-  return (state.chapter ?? 1) === 1 && state.ending === 'kapitel' && state.ipo === null && chapterCheck(state, balance).passed;
+  return chapterOf(state) === 1 && state.ending === 'kapitel' && state.ipo === null && chapterCheck(state, balance).passed;
 }
 
 /** Erlös für einen verkauften Anteil in ganzen $ (nie unter 0). */
@@ -94,7 +95,7 @@ export type IpoResult = { ok: true; state: GameState } | { ok: false; reason: st
  * einer der Anteile aus chapter.ipo.shares. Der Erlös geht in die Kasse.
  */
 export function decideIpo(state: GameState, balance: Balance, share: number): IpoResult {
-  if (state.ending !== 'kapitel' || (state.chapter ?? 1) !== 1) return { ok: false, reason: 'Das geht erst am Ende des Kapitels.' };
+  if (state.ending !== 'kapitel' || chapterOf(state) !== 1) return { ok: false, reason: 'Das geht erst am Ende des Kapitels.' };
   if (state.ipo !== null) return { ok: false, reason: 'Die Entscheidung ist schon gefallen.' };
   if (share === 0) {
     return { ok: true, state: { ...state, ipo: { share: 0, proceeds: 0 }, log: [...state.log, `${formatDate(state)}: Die Firma bleibt in der Familie.`] } };

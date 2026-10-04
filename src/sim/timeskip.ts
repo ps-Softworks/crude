@@ -31,6 +31,7 @@ import { empireValue } from './empire';
 import type { ContentError } from './eventContent';
 import { drawEvents, marksIntoNextChapter, type EventDef } from './events';
 import { openChapterSystems, type ChapterSystemTexts } from './chapterSystems';
+import { chapterOf } from './chapterOf';
 import { bondWord, type BondWord } from './family';
 import { fieldOf, fieldLabel } from './field';
 import { trueChance } from './forecast';
@@ -205,7 +206,7 @@ export function chapterRounds(state: Pick<GameState, 'totalRounds' | 'chapterSta
 
 /** Ist Kapitel 2 der Platzhalter („im Bau“)? Solange es Kapitel 2 nicht gibt: immer. */
 export function chapterUnderConstruction(state: Pick<GameState, 'chapter'>): boolean {
-  return (state.chapter ?? 1) >= 2;
+  return chapterOf(state) >= 2;
 }
 
 // ---------------------------------------------------------------------------
@@ -213,7 +214,7 @@ export function chapterUnderConstruction(state: Pick<GameState, 'chapter'>): boo
 
 /** Warum der Sprung (noch) nicht geht; undefined = er geht. */
 export function timeskipBlocked(state: GameState, balance: Balance): string | undefined {
-  if ((state.chapter ?? 1) !== 1) return 'Kapitel 2 ist noch im Bau – weiter geht es noch nicht.';
+  if (chapterOf(state) !== 1) return 'Kapitel 2 ist noch im Bau – weiter geht es noch nicht.';
   if (state.ending !== 'kapitel') return 'Der Zeitsprung kommt erst am Ende des Kapitels.';
   if (state.jump) return 'Der Zeitsprung läuft schon.';
   if (canGoPublic(state, balance) && state.ipo === null) return 'Erst über die Aktiengesellschaft entscheiden.';

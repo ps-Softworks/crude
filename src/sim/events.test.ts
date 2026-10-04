@@ -181,6 +181,15 @@ describe('Bedingungen', () => {
     expect(chapterMet({ chapter: 3 }, abend.conditions)).toBe(false);
   });
 
+  it('sichere Kapitel-1-Ereignisse (thomas_geburt, Silas, Moss, Rivalen …) tragen ausdrücklich maxChapter: 1', () => {
+    const sicher = loadEvents().filter((e) => e.certain && !/^k[2-9]_/.test(e.id) && !e.id.startsWith('fernleitung_'));
+    expect(sicher.map((e) => e.id)).toContain('thomas_geburt');
+    for (const e of sicher) {
+      expect(e.conditions.maxChapter, e.id).toBe(1);
+      expect(chapterMet({ chapter: 2 }, e.conditions), e.id).toBe(false);
+    }
+  });
+
   it('chapterMet: ohne minChapter nur Kapitel 1 (bis maxChapter), mit minChapter offen nach oben (Phase 4)', () => {
     expect(chapterMet({}, {})).toBe(true);
     expect(chapterMet({ chapter: 2 }, {})).toBe(false);

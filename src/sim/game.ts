@@ -8,6 +8,7 @@ import { formatDate } from './calendar';
 import { settleBrand, type BrandState } from './brand';
 import { checkBankruptcy, settleLoans, type Loan } from './credit';
 import { chapterCheck } from './chapter';
+import { chapterOf } from './chapterOf';
 import { advanceDrilling, type Well } from './drilling';
 import { assignFields, buildFields, type Field } from './field';
 import { makeForecasts, type Forecast } from './forecast';
@@ -337,7 +338,7 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
     // Kapitelprüfung (2.11): steht im Protokoll, der Ergebnisbildschirm zeigt die Einzelheiten.
     const ende: GameState = { ...state, finished: true, ending: 'kapitel' };
     // Kapitel 2 ist noch ein Platzhalter (4.5): keine eigene Prüfung.
-    const kapitel = state.chapter ?? 1;
+    const kapitel = chapterOf(state);
     const pruefung = kapitel > 1 ? 'Weiter geht es, sobald Kapitel 2 fertig ist.' : chapterCheck(ende, balance).passed ? 'Das Ziel ist erreicht.' : 'Das Ziel ist verfehlt.';
     return { ...ende, log: [...state.log, `${formatDate(state)}: Kapitel ${kapitel} ist zu Ende. ${pruefung}`] };
   }

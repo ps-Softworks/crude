@@ -23,6 +23,7 @@
   marked: [thomas_geboren]
   delay: 0                 # gleich in der Runde der Geburt
   certain: true
+  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   choices:
     - id: dabei
       label: { de: "Alles stehen lassen und zu Ruth gehen", en: "Drop everything and go to Ruth" }

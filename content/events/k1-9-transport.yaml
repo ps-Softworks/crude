@@ -109,6 +109,7 @@
 - id: wegerecht_moss
   ranch: moss
   certain: true
+  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   once: false
   marked: [pipeline_geplant]
   notMarked: [wegerecht_moss, moss_fair, moss_feind]
@@ -146,6 +147,7 @@
   visitor: moss
   ranch: moss
   certain: true
+  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   once: false
   marked: [pipeline_geplant, moss_fair]
   notMarked: [wegerecht_moss, moss_feind]
@@ -181,6 +183,7 @@
 - id: wegerecht_moss_versoehnt
   ranch: moss
   certain: true
+  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   once: false
   draft: true
   marked: [pipeline_geplant, daniel_entschuldigung]
@@ -220,6 +223,7 @@
 - id: wegerecht_moss_feind
   ranch: moss
   certain: true
+  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   once: false
   marked: [pipeline_geplant, moss_feind]
   notMarked: [wegerecht_moss, daniel_entschuldigung]
@@ -269,6 +273,7 @@
   rival: thorne
   mail: offer
   certain: true
+  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   once: false
   deadline: 2
   marked: [pipeline_geplant]

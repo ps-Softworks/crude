@@ -1,10 +1,10 @@
 # Bot-Läufe
 
-Stand: 2026-10-04 · Version 0.4.5
+Stand: 2026-10-04 · Version 0.4.5+1
 
 - Partien je Strategie: 1.000
 - Seeds: `bot-0` bis `bot-999` (für jede Strategie dieselben)
-- Mit allen 383 Ereignissen aus content/events/ (Briefe, feste Termine, Rivalen, Story-Bögen)
+- Mit allen 384 Ereignissen aus content/events/ (Briefe, feste Termine, Rivalen, Story-Bögen)
 - Erzeugt mit `npm run bots` (tools/botlaeufe.ts, Regeln in src/sim/bots.ts)
 
 | Strategie | Partien | Bankrottquote | Kapitelziel | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen | Ø Termine |
@@ -63,9 +63,9 @@ Bankrottquote je Strategie, getrennt nach Seeds, in deren Welt während des Kapi
 | Strategie | Seeds mit Kreditkrise | Bankrottquote dort | Seeds ohne | Bankrottquote dort |
 | --- | ---: | ---: | ---: | ---: |
 | vorsichtig | 81 | 0,0 % | 919 | 0,0 % |
-| gierig | 81 | 17,3 % | 919 | 15,1 % |
-| ausgewogen | 81 | 0,0 % | 919 | 0,9 % |
-| zufaellig | 81 | 35,8 % | 919 | 38,1 % |
+| gierig | 81 | 16,0 % | 919 | 17,8 % |
+| ausgewogen | 81 | 2,5 % | 919 | 1,2 % |
+| zufaellig | 81 | 30,9 % | 919 | 38,5 % |
 
 ## Zeitsprung I
 
@@ -73,20 +73,20 @@ Bankrottquote je Strategie, getrennt nach Seeds, in deren Welt während des Kapi
 
 | Haltung | Sprünge | Ø Imperium | p10 | Median | p90 | Ø Schulden | pleite | Kreditkündigung | Notverkauf | Nachbarbezirk |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| wagemutig | 900 | 265.844 $ | -4.721 $ | 270.293 $ | 581.663 $ | 15.143 $ | 13,3 % | 26,9 % | 1,3 % | 54,4 % |
-| ausgewogen | 900 | 143.412 $ | -4.169 $ | 134.912 $ | 342.300 $ | 1.994 $ | 11,1 % | 14,2 % | 1,0 % | 0,0 % |
-| vorsichtig | 900 | 134.399 $ | -3.495 $ | 105.880 $ | 333.297 $ | 1.508 $ | 11,3 % | 10,1 % | 1,0 % | 0,0 % |
+| wagemutig | 900 | 383.161 $ | 0 $ | 410.214 $ | 686.620 $ | 20.178 $ | 9,2 % | 23,7 % | 1,4 % | 74,2 % |
+| ausgewogen | 900 | 197.195 $ | 0 $ | 182.014 $ | 385.703 $ | 1.096 $ | 7,7 % | 10,8 % | 1,4 % | 0,0 % |
+| vorsichtig | 900 | 194.041 $ | -2.557 $ | 166.581 $ | 412.625 $ | 846 $ | 7,0 % | 5,3 % | 1,7 % | 0,0 % |
 
 | Familie | Ø Imperium | Ø Ruth | mit Clara |
 | --- | ---: | ---: | ---: |
-| die Firma zuerst | 202.953 $ | 63 | 95,8 % |
-| wie bisher | 194.034 $ | 89 | 96,8 % |
-| viel Zeit zu Hause | 146.668 $ | 100 | 97,2 % |
+| die Firma zuerst | 284.344 $ | 63 | 97,7 % |
+| wie bisher | 271.509 $ | 90 | 99,3 % |
+| viel Zeit zu Hause | 218.544 $ | 100 | 99,3 % |
 
 | Haltung | Seeds mit Bankpanik-Weiche | Ø Pump − Tilgen | Pump schlechter | pleite Pump / Tilgen | Notverkauf Pump / Tilgen |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| wagemutig | 40 | -22.674 $ | 75,0 % | 5,0 % / 5,0 % | 0,0 % / 0,0 % |
-| ausgewogen | 39 | -1.781 $ | 53,8 % | 5,1 % / 5,1 % | 0,0 % / 0,0 % |
+| wagemutig | 39 | -34.392 $ | 87,2 % | 5,1 % / 5,1 % | 5,1 % / 0,0 % |
+| ausgewogen | 39 | -4.152 $ | 43,6 % | 5,1 % / 5,1 % | 0,0 % / 0,0 % |
 
 ## Zielwerte Kapitel 1
 

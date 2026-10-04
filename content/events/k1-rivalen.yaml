@@ -39,7 +39,7 @@
       down two glasses. "Jim Bullard. We're drilling side by side, Harlan. Here's my
       offer: neither of us leases right under the other's nose. Whoever breaks the
       handshake deals with me." He holds out his hand and waits.
-  conditions: { minRound: 2 }
+  conditions: { minRound: 2, maxChapter: 1 }
   choices:
     - id: handschlag
       label: { de: "Einschlagen", en: "Shake on it" }
@@ -78,6 +78,7 @@
   visitor: bullard
   rival: bullard
   certain: true
+  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   marked: [bullard_verraten]
   title:
     de: Bullard hat es gemerkt
@@ -151,6 +152,7 @@
   rival: bullard
   mail: personal
   certain: true
+  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   marked: [bullard_schuld]
   delay: 3
   title:
@@ -176,6 +178,7 @@
 - id: bullard_treue
   rival: bullard
   certain: true
+  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   marked: [crane_treue]
   notMarked: [bullard_fehde, bullard_verraten]
   title:
@@ -214,7 +217,7 @@
   mail: offer
   certain: true
   deadline: 2
-  conditions: { minRound: 4 }
+  conditions: { minRound: 4, maxChapter: 1 }
   title:
     de: Thorne Rail bietet einen Frachtvertrag
     en: Thorne Rail Offers a Freight Contract
@@ -277,7 +280,7 @@
   mail: demand
   certain: true
   deadline: 2
-  conditions: { minRound: 6 }
+  conditions: { minRound: 6, maxChapter: 1 }
   title:
     de: Der Crane Trust kündigt einen Abschlag an
     en: The Crane Trust Announces a Discount
@@ -333,7 +336,7 @@
   mail: offer
   certain: true
   deadline: 2
-  conditions: { minRound: 15 }
+  conditions: { minRound: 15, maxChapter: 1 }
   title:
     de: Cornelius Crane macht ein Angebot
     en: Cornelius Crane Makes an Offer

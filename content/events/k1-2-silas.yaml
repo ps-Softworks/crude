@@ -29,7 +29,7 @@
       At sunrise Silas Brandt lies snoring beside the derrick, bottle still in hand.
       The drilling cable snapped in the night and the bit is stuck down the hole.
       The men stand around and look at Jacob.
-  conditions: { minRound: 2 }
+  conditions: { minRound: 2, maxChapter: 1 }
   certain: true
   choices:
     - id: decken
@@ -68,7 +68,7 @@
       He owes the blacksmith and the saloon. "Thirty in a hundred, boy, that was the
       deal. I just want to know where I stand." Ruth has the figures. Jacob has the
       last word.
-  conditions: { minRound: 8 }
+  conditions: { minRound: 8, maxChapter: 1 }
   certain: true
   choices:
     - id: fair
@@ -127,6 +127,7 @@
   marked: [silas_fair]
   delay: 3
   certain: true
+  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   choices:
     - id: annehmen
       label: { de: "Nach Hause gehen und schlafen", en: "Go home and sleep" }
@@ -162,6 +163,7 @@
   marked: [silas_ausgekauft]
   delay: 2
   certain: true
+  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   choices:
     - id: hingehen
       label: { de: "Zum Bahnsteig gehen", en: "Go to the platform" }
@@ -197,6 +199,7 @@
   marked: [silas_betrogen]
   delay: 2
   certain: true
+  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   choices:
     - id: nachzahlen
       label: { de: "Hingehen und ihm doch noch seinen Anteil zahlen (600 $)", en: "Go and pay him his share after all (600 $)" }

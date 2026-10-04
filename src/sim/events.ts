@@ -18,7 +18,7 @@ import { recordAct } from './politics';
 import { openRegions, unlockRegion } from './regions';
 import type { PublicAct } from './world';
 import { Rng, seedFromString, type RngState } from './rng';
-import { chapterOf } from './stocks'; // gemeinsamer Kapitel-Helfer aller Phase-4-Systeme (state.chapter, sonst 1)
+import { chapterOf } from './chapterOf'; // gemeinsamer Kapitel-Helfer aller Phase-4-Systeme (state.chapter, sonst 1)
 
 /**
  * Bedingungen: jede ist eine Untergrenze (min…) oder Obergrenze (max…).

@@ -3,6 +3,38 @@
 Stand: 2026-10-04 · Version unverändert 0.4.2 (Basis: main mit 4.1 Weltmodell und 4.2 Politik).
 Block A (4.3 Gesetze, 4.4 Kreditklima, 4.5 Zeitsprung) läuft auf main und ist **noch nicht** hier drin.
 
+## Stand auf main (0.4.5+1)
+
+Der Integrations-Branch ist in main zusammengeführt (mit 4.3 Gesetze, 4.4 Kreditklima, 4.5 Zeitsprung),
+dazu „Frühes Öl“ (`fix/fruehes-oel`) und die Bohrquoten-Messung (`fix/bohr-bug`, `tools/bohrquote.ts`).
+Was beim Zusammenstecken entschieden wurde:
+
+- **Kapitel:** `state.chapter` (Pflichtfeld aus 4.5) und `chapterStart`; alle lesen das Kapitel über
+  `chapterOf` (jetzt eigene Datei `src/sim/chapterOf.ts`, von stocks.ts weitergereicht). Runden zählen über
+  Kapitel weiter (Kapitel 2 beginnt bei Runde ≈ 41); `minRound`/`maxRound` zählen ab Kapitelbeginn.
+- **Eine Kapitel-Regel für Ereignisse** (`chapterMet`): Ohne `minChapter` nur Kapitel 1 (bzw. bis `maxChapter`).
+  Die sicheren Kapitel-1-Ereignisse (thomas_geburt, Silas, Moss, Wegerecht, Rivalen) tragen zusätzlich ausdrücklich
+  `maxChapter: 1` (Test). Der Familienabend mit den Kindern aus 4.5 (`termin_familie_k2`) gilt nur in Kapitel 2.
+  Thomas' Alter (`minThomasAge`/`maxThomasAge`, 4.5) und die Integrations-Bedingungen stehen nebeneinander.
+- **Kapitelstart:** `runTimeskip` setzt Kapitel 2, nimmt die Merkzeichen mit (`marksIntoNextChapter(events,
+  chapterStart − 1)` – sie gelten als vor Kapitelbeginn gesetzt, `delay` zählt ab Runde 1 des Kapitels) und ruft
+  `openChapterSystems` auf: Raffinerie, Fernleitungen, Aktienbuch (Räte aus content/stocks.yaml, die Oberfläche gibt
+  sie über `texts.stocksBoard` mit), Personal, Diplomatie, Ermittler und Forschung sind ab der ersten Runde da.
+- **Okara:** Die Kapitel-2-Texte fragen die Merkzeichen aus 4.5 ab (`okara_bullard`, `okara_pachten`) statt
+  des Entwurfsnamens `zs1_okara`; `k2_okara_sauer` kommt nur, wenn Bullard die Okara-Pachten hat.
+- **Weltmodell:** Die Kampagne der eigenen Zeitung (4.16) ist ein einmaliger Stoß (`moodKick`), seit 4.2 ist
+  `moodShift` ein dauerhafter Eingriff. `advanceWorld` bekommt den Gesetzeskatalog und die drei Eingänge (Börse,
+  Lobby, Konsortium).
+- **Gesetze → Diplomatie:** `antitrustInForce` (4.10) erkennt das beschlossene Kartellgesetz aus 4.3
+  (`worldModel.laws`, id `antitrust`).
+- **Spielstand Format 19** (Felder der Kapitel-2/3-Systeme, alle freiwillig); Format 18 lädt weiter.
+- Screenshots des Zeitsprungs heißen jetzt `31-…34-*` (16–30 sind die der Integration).
+
+Noch offen aus „Zusammenführung mit main“: 4.14 `brandAntitrust` → `breakupFrom`, 4.16 Lobby auf die Gesetz-ids und
+Lobby-Aktionen von main (`LAWS_CONNECTED` bleibt `false`), 4.7 Transportpflicht (`commonCarrier` gibt es nicht),
+4.15 `crashWorld` auf eine gemeinsame Crash-Funktion in world.ts (heute Nachbau ohne Bankpanik), Maklerkredite
+und Anleihen im Rating. Kapitelziele/Enden für Kapitel 2/3 und der Zeitsprung II fehlen weiter.
+
 ## Kurz
 
 Alle 15 Branches sind zusammengeführt: 4.6 Raffinerie, 4.7 Fernleitungen, 4.8 Aktien, 4.9 Personal,
