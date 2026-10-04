@@ -10,11 +10,11 @@
 // gehört der Welt und wird nie angefasst; Math.random kommt nicht vor.
 // Die Zahlen stehen in content/balance.yaml unter bots.
 
-import { TRANSPORT_MODES, type Balance, type BotEventWeights, type BotTargetId, type BotTransport, type Buyer, type TransportMode } from './balance';
+import { TRANSPORT_MODES, type Balance, type BotEventWeights, type BotInvest, type BotTargetId, type BotTransport, type Buyer, type TransportMode } from './balance';
 import { overtimeFor } from './agenda';
 import { creditLimit, debt, headroom, takeLoan } from './credit';
 import { applyAction, parcelActions, type DeskActionKind } from './desk';
-import { drillQuote, stageCost, wellOf, wellsOn } from './drilling';
+import { drillQuote, stageCost, wellOf, wellsOn, type Well } from './drilling';
 import { pumpOutlook, wellOutlook, type Outlook } from './invest';
 import { buyRig, freeRig, rentRig, returnRig, rigWell, upgradeRig, type RigResult } from './rigs';
 import { chapterCheck } from './chapter';
@@ -459,7 +459,8 @@ function goodInvestments(state: GameState, balance: Balance, kind: 'drill' | 'pu
   const rechne = (id: string): Outlook | null => (kind === 'drill' ? (busy(state, id) ? null : wellOutlook(state, balance, id)) : pumpOutlook(state, balance, id));
   return jacobsLeases(state)
     .map((id) => ({ id, o: rechne(id) }))
-    .filter((x): x is { id: string; o: Outlook } => x.o !== null && x.o.payback !== null && x.o.payback <= maxPayback)
+    // maxPayback = Infinity (Gegenprobe „alles ausbauen“, 0.2.15+8): auch was sich bis Kapitelende nie bezahlt macht.
+    .filter((x): x is { id: string; o: Outlook } => x.o !== null && (maxPayback === Infinity || (x.o.payback !== null && x.o.payback <= maxPayback)))
     .sort((a, b) => b.o.profit - a.o.profit || a.id.localeCompare(b.id))
     .map((x) => x.id);
 }
@@ -878,7 +879,38 @@ export interface GameResult {
   transport: TransportLedger;
   /** Lief in dieser Partie eine Pipeline? */
   pipeline: boolean;
+  /** Ausbau (0.2.15+8): höchste Zahl Türme zugleich, Pumpen, Ranches mit Quelle und davon ausgebaute. */
+  build: BuildStats;
   state: GameState;
+}
+
+/** Ausbau einer Partie (0.2.15+8). */
+export interface BuildStats {
+  /** Höchste Zahl Türme zugleich (Silas' Turm mitgezählt). */
+  rigs: number;
+  /** Quellen mit Pumpe am Ende. */
+  pumps: number;
+  /** Fündige Bohrlöcher über das erste je Ranch hinaus. */
+  extraWells: number;
+  /** Ranches mit mindestens einer fündigen Quelle. */
+  producing: number;
+  /** Davon ausgebaut: Pumpe oder mehr als ein fündiges Bohrloch. */
+  expanded: number;
+}
+
+/** Zählt den Ausbau am Ende einer Partie; rigs = höchste Turmzahl, die die Partie gesehen hat. */
+export function buildStats(state: GameState, rigs = state.rigs.length): BuildStats {
+  const funde = state.wells.filter((w) => w.status === 'found');
+  const ranches = new Map<string, Well[]>();
+  for (const w of funde) ranches.set(w.parcelId, [...(ranches.get(w.parcelId) ?? []), w]);
+  const ausgebaut = [...ranches.values()].filter((ws) => ws.length > 1 || ws.some((w) => w.pump)).length;
+  return {
+    rigs,
+    pumps: funde.filter((w) => w.pump).length,
+    extraWells: funde.length - ranches.size,
+    producing: ranches.size,
+    expanded: ausgebaut,
+  };
 }
 
 /**
@@ -892,6 +924,7 @@ export function playGame(seed: string, balance: Balance, strategy: Strategy, cat
   let appointments = 0;
   let sickRounds = 0;
   const ledger = newLedger();
+  let maxRigs = state.rigs.length;
   while (!state.finished) {
     if (rounds >= state.totalRounds + 5) {
       throw new Error(`Partie ${seed} (${strategy}) endet nicht nach ${rounds} Runden.`);
@@ -899,6 +932,7 @@ export function playGame(seed: string, balance: Balance, strategy: Strategy, cat
     if (state.sick > 0) sickRounds++;
     else appointments += state.agenda.budget;
     const gezogen = botTurn(state, balance, strategy, rng, catalog, ledger);
+    maxRigs = Math.max(maxRigs, gezogen.rigs.length);
     state = endRound(gezogen, balance, catalog);
     bookRound(gezogen, state, balance, ledger);
     rounds++;
@@ -913,6 +947,7 @@ export function playGame(seed: string, balance: Balance, strategy: Strategy, cat
     sickRounds,
     transport: ledger,
     pipeline: state.events.marks[LOGISTICS_MARKS.built] !== undefined,
+    build: buildStats(state, maxRigs),
     state,
   };
 }
@@ -1012,6 +1047,10 @@ export interface BotRow {
   /** Partien mit Kapitelziel – und davon mit Pipeline. */
   goalGames: number;
   pipelineGoalGames: number;
+  /** Ausbau über alle Partien summiert (0.2.15+8). */
+  build: BuildStats;
+  /** Je Seed (in Reihenfolge): Imperiumswert und Pleite – für die Gegenprobe „alles ausbauen“. */
+  seeds: { empire: number; bankrupt: boolean }[];
 }
 
 /**
@@ -1086,6 +1125,8 @@ export function runBots(balance: Balance, games = balance.bots.games, catalog: r
         transport: newLedger(),
         pipeline: 0,
         pipelineZiel: 0,
+        build: { rigs: 0, pumps: 0, extraWells: 0, producing: 0, expanded: 0 } as BuildStats,
+        seeds: [] as { empire: number; bankrupt: boolean }[],
       },
     ]),
   );
@@ -1109,6 +1150,8 @@ export function runBots(balance: Balance, games = balance.bots.games, catalog: r
       addLedger(s.transport, r.transport);
       if (r.pipeline) s.pipeline++;
       if (r.pipeline && r.goal) s.pipelineZiel++;
+      for (const k of Object.keys(s.build) as (keyof BuildStats)[]) s.build[k] += r.build[k];
+      s.seeds.push({ empire: r.empire, bankrupt: r.bankrupt });
       return { strategy, bankrupt: r.bankrupt, empire: r.empire };
     });
     for (const [strategy, anteil] of seedWinners(results, balance.start.cash)) summe.get(strategy)!.siege += anteil;
@@ -1132,8 +1175,63 @@ export function runBots(balance: Balance, games = balance.bots.games, catalog: r
       pipelineGames: s.pipeline,
       goalGames: s.ziel,
       pipelineGoalGames: s.pipelineZiel,
+      build: s.build,
+      seeds: s.seeds,
     };
   });
+}
+
+// --- Gegenproben Ausbau (0.2.15+8) ---------------------------------------------
+
+/** Ergebnis des Standard-Bots mit anderem Ausbau-Charakter, je Seed verglichen mit dem echten. */
+export interface InvestVariant {
+  games: number;
+  meanEmpire: number;
+  bankruptRate: number;
+  build: BuildStats;
+  /** Anteil der Seeds (mit unterschiedlichem Ausgang), in denen die Variante besser abschneidet als der Standard-Bot. */
+  beatsStandard: number;
+}
+
+/** Ausbau-Charakter der Gegenproben: „nie ausbauen“ (nur Silas' Turm, keine Pumpe, kein weiteres Loch) und „alles ausbauen“. */
+export function investVariant(balance: Balance, kind: 'none' | 'all'): BotInvest {
+  return kind === 'none'
+    ? { pumpPayback: 0, wellPayback: 0, rigs: 1, rent: false, steam: false, rods: false }
+    : { pumpPayback: Infinity, wellPayback: Infinity, rigs: balance.drilling.rigs.max, rent: true, steam: true, rods: true };
+}
+
+/**
+ * Spielt den Standard-Bot (ausgewogen) auf denselben Seeds mit einem anderen
+ * Ausbau-Charakter und vergleicht je Seed mit standard (Pleite = letzter Platz).
+ */
+export function runInvestVariant(balance: Balance, invest: BotInvest, standard: BotRow, catalog: readonly EventDef[] = []): InvestVariant {
+  const b: Balance = { ...balance, bots: { ...balance.bots, invest: { ...balance.bots.invest, balanced: invest } } };
+  const games = standard.seeds.length;
+  const build: BuildStats = { rigs: 0, pumps: 0, extraWells: 0, producing: 0, expanded: 0 };
+  let wert = 0;
+  let pleiten = 0;
+  let besser = 0;
+  let anders = 0;
+  const rang = (r: { empire: number; bankrupt: boolean }) => (r.bankrupt ? -Infinity : r.empire);
+  for (let i = 0; i < games; i++) {
+    const r = playGame(`${balance.bots.seedPrefix}-${i}`, b, 'ausgewogen', catalog);
+    wert += r.empire;
+    if (r.bankrupt) pleiten++;
+    for (const k of Object.keys(build) as (keyof BuildStats)[]) build[k] += r.build[k];
+    const a = rang(r);
+    const s = rang(standard.seeds[i]);
+    if (a !== s) {
+      anders++;
+      if (a > s) besser++;
+    }
+  }
+  return {
+    games,
+    meanEmpire: games > 0 ? wert / games : 0,
+    bankruptRate: games > 0 ? pleiten / games : 0,
+    build,
+    beatsStandard: anders > 0 ? besser / anders : 0,
+  };
 }
 
 /**
@@ -1186,6 +1284,9 @@ const TARGET_TEXT: Record<BotTargetId, { label: string; goal: string; unit: Targ
   appointments: { label: 'Ø Termine je Runde (Standard-Bot)', goal: 'GDD §15: 5 je Quartal', unit: 'zahl' },
   routeShare: { label: 'Höchster Anteil eines Transportwegs an allen verkauften Barrel', goal: 'GDD §6: kein Weg dominiert, jeder hat seinen Preis', unit: 'prozent' },
   pipelineSuccess: { label: 'Partien mit Kapitelziel, in denen eine Pipeline läuft', goal: 'Pipeline ist eine Wahl, kein Pflichtweg', unit: 'prozent' },
+  expandedShare: { label: 'Ausgebaute Quellen (Pumpe oder weiteres Bohrloch), planende Bots', goal: 'Ausbau lohnt für gute Quellen, nicht für jede', unit: 'prozent' },
+  investGain: { label: 'Ø Imperium Standard-Bot ÷ derselbe Bot ohne Ausbau', goal: 'Investitionen in gute Quellen zahlen sich aus (über 1)', unit: 'faktor' },
+  allOutWins: { label: 'Seeds, in denen „alles ausbauen“ den Standard-Bot schlägt', goal: 'Blind alles ausbauen ist keine Siegformel', unit: 'prozent' },
 };
 
 /** Anteil je Weg an allen verkauften Barrel (Händler nicht extra – er fährt über einen der Wege). */
@@ -1205,7 +1306,12 @@ function mean(xs: readonly number[]): number {
 }
 
 /** Misst alle Kennzahlen aus den Bot-Zeilen und vergleicht sie mit bots.targets. */
-export function checkTargets(rows: readonly BotRow[], wildcatHit: number, balance: Balance): TargetRow[] {
+export function checkTargets(
+  rows: readonly BotRow[],
+  wildcatHit: number,
+  balance: Balance,
+  variants: { none: Pick<InvestVariant, 'meanEmpire'>; all: Pick<InvestVariant, 'beatsStandard'> },
+): TargetRow[] {
   const row = (s: Strategy) => rows.find((r) => r.strategy === s);
   const alle = <K extends keyof FindStats>(k: K) => rows.flatMap((r) => r.finds[k]);
   const tag = balance.bots.daysPerRound;
@@ -1229,6 +1335,13 @@ export function checkTargets(rows: readonly BotRow[], wildcatHit: number, balanc
       const ziel = planend.reduce((s, r) => s + r.goalGames, 0);
       return ziel > 0 ? planend.reduce((s, r) => s + r.pipelineGoalGames, 0) / ziel : 0;
     })(),
+    expandedShare: (() => {
+      const planend = rows.filter((r) => r.strategy !== 'zufaellig');
+      const quellen = planend.reduce((s, r) => s + r.build.producing, 0);
+      return quellen > 0 ? planend.reduce((s, r) => s + r.build.expanded, 0) / quellen : 0;
+    })(),
+    investGain: variants.none.meanEmpire > 0 ? (row('ausgewogen')?.meanEmpire ?? 0) / variants.none.meanEmpire : 0,
+    allOutWins: variants.all.beatsStandard,
   };
   return (Object.keys(TARGET_TEXT) as BotTargetId[]).map((id) => {
     const { min, max } = balance.bots.targets[id];
@@ -1271,6 +1384,25 @@ export function botTable(rows: readonly BotRow[]): string {
     '| Strategie | Partien | Bankrottquote | Kapitelziel | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen | Ø Termine |',
     '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
     ...zeilen,
+  ].join('\n');
+}
+
+/**
+ * Markdown-Tabelle Ausbau (0.2.15+8): je Strategie und für die beiden Gegenproben
+ * Ø höchste Turmzahl, Ø Pumpen, Ø weitere Bohrlöcher, Anteil ausgebauter Quellen
+ * (Ranches mit Fund), Ø Imperium und Pleitequote.
+ */
+export function buildTable(rows: readonly BotRow[], variants: { none: InvestVariant; all: InvestVariant }): string {
+  const zeile = (name: string, games: number, b: BuildStats, empire: number, bankrupt: number) => {
+    const je = (x: number) => zahl(games > 0 ? x / games : 0, 2);
+    return `| ${name} | ${je(b.rigs)} | ${je(b.pumps)} | ${je(b.extraWells)} | ${prozent(b.producing > 0 ? b.expanded / b.producing : 0)} | ${Math.round(empire).toLocaleString('de-DE')} $ | ${prozent(bankrupt)} |`;
+  };
+  return [
+    '| Bot | Ø Bohrtürme (höchstens zugleich) | Ø Pumpen | Ø weitere Bohrlöcher | Anteil ausgebauter Quellen | Ø Imperiumswert | Bankrottquote |',
+    '| --- | ---: | ---: | ---: | ---: | ---: | ---: |',
+    ...rows.map((r) => zeile(r.strategy, r.games, r.build, r.meanEmpire, r.bankruptRate)),
+    zeile('ausgewogen, nie ausbauen', variants.none.games, variants.none.build, variants.none.meanEmpire, variants.none.bankruptRate),
+    zeile('ausgewogen, alles ausbauen', variants.all.games, variants.all.build, variants.all.meanEmpire, variants.all.bankruptRate),
   ].join('\n');
 }
 

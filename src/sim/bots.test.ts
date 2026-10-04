@@ -6,7 +6,11 @@ import {
   blindWildcatChance,
   botTable,
   botTurn,
+  buildStats,
+  buildTable,
   checkTargets,
+  investVariant,
+  runInvestVariant,
   choiceValue,
   eventPolicy,
   bookRound,
@@ -330,16 +334,18 @@ describe('Bot-Läufe mit Ereignissen (2.15)', () => {
       pipelineGames: 0,
       goalGames: 0,
       pipelineGoalGames: 0,
+      build: { rigs: 10, pumps: 0, extraWells: 0, producing: 0, expanded: 0 },
+      seeds: [],
       ...o,
     });
     const tag = balance.bots.daysPerRound;
     const rows = [
       row('vorsichtig', { meanEmpire: 10_000, winRate: 0.2 }),
-      row('gierig', { meanEmpire: 20_000, bankruptRate: 0.2, winRate: 0.3, finds: { small: [100 * tag, 600 * tag], gusher: [], declines: [0.1] } }),
+      row('gierig', { build: { rigs: 15, pumps: 2, extraWells: 1, producing: 4, expanded: 2 }, meanEmpire: 20_000, bankruptRate: 0.2, winRate: 0.3, finds: { small: [100 * tag, 600 * tag], gusher: [], declines: [0.1] } }),
       row('ausgewogen', { meanEmpire: 30_000, bankruptRate: 0.05, goalRate: 0.4, winRate: 0.5, finds: { small: [], gusher: [800 * tag], declines: [0.14] } }),
       row('zufaellig', {}),
     ];
-    const t = Object.fromEntries(checkTargets(rows, 0.15, balance).map((x) => [x.id, x]));
+    const t = Object.fromEntries(checkTargets(rows, 0.15, balance, { none: { meanEmpire: 25_000 }, all: { beatsStandard: 0.7 } }).map((x) => [x.id, x]));
     expect(Object.keys(t)).toEqual([...BOT_TARGET_IDS]);
     expect(t.winRate.value).toBe(0.5);
     expect(t.winRate.ok).toBe(false);
@@ -350,6 +356,10 @@ describe('Bot-Läufe mit Ereignissen (2.15)', () => {
     expect(t.standardGoal.value).toBe(0.4);
     expect(t.appointments.value).toBe(5);
     expect(t.wildcatHit.ok).toBe(true);
+    expect(t.expandedShare.value).toBe(0.5);
+    expect(t.investGain.value).toBeCloseTo(30_000 / 25_000, 10);
+    expect(t.allOutWins.value).toBe(0.7);
+    expect(t.allOutWins.ok).toBe(false);
     expect(targetTable(Object.values(t))).toContain('**nein**');
   });
 
@@ -360,7 +370,12 @@ describe('Bot-Läufe mit Ereignissen (2.15)', () => {
       expect(r.games).toBe(1000);
       expect(Number.isFinite(r.meanEmpire)).toBe(true);
     }
-    const ziele = checkTargets(rows, blindWildcatChance(balance), balance);
+    const standard = rows.find((r) => r.strategy === 'ausgewogen')!;
+    const variants = {
+      none: runInvestVariant(balance, investVariant(balance, 'none'), standard, events),
+      all: runInvestVariant(balance, investVariant(balance, 'all'), standard, events),
+    };
+    const ziele = checkTargets(rows, blindWildcatChance(balance), balance, variants);
     expect(ziele.filter((z) => !z.ok).map((z) => `${z.label}: ${z.value}`)).toEqual([]);
   }, 240_000);
 });
@@ -481,4 +496,53 @@ describe('Ausbau nach Charakter (0.2.15+7)', () => {
     expect(ausgewogen.some((s) => s.rigs[0].steam && s.rigs[0].rods)).toBe(true);
     expect(ausgewogen.some((s) => s.wells.some((w) => w.pump))).toBe(true);
   }, 120_000);
+});
+
+describe('Ausbau messen und Gegenproben (0.2.15+8)', () => {
+  it('buildStats zählt Pumpen, weitere fündige Bohrlöcher und ausgebaute Ranches', () => {
+    const state = newGame('ausbau', balance);
+    const well = (id: string, parcelId: string, status: 'found' | 'dry', pump = false) =>
+      ({ id, parcelId, stage: 1, status, roundsLeft: 0, spent: 0, oilStage: 1, startRound: 1, pump }) as GameState['wells'][number];
+    const s: GameState = {
+      ...state,
+      wells: [
+        well('a#1', 'a', 'found'),
+        well('a#2', 'a', 'found'),
+        well('b#1', 'b', 'found', true),
+        well('c#1', 'c', 'found'),
+        well('c#2', 'c', 'dry'),
+        well('d#1', 'd', 'dry'),
+      ],
+    };
+    expect(buildStats(s, 3)).toEqual({ rigs: 3, pumps: 1, extraWells: 1, producing: 3, expanded: 2 });
+  });
+
+  it('Gegenproben: „nie ausbauen“ baut nichts, „alles ausbauen“ pumpt mehr als der Standard-Bot', () => {
+    const n = 40;
+    const seedsOf = (strategy: 'ausgewogen') =>
+      Array.from({ length: n }, (_, i) => playGame(`${balance.bots.seedPrefix}-${i}`, balance, strategy, events));
+    const games = seedsOf('ausgewogen');
+    const standard = {
+      seeds: games.map((g) => ({ empire: g.empire, bankrupt: g.bankrupt })),
+    } as BotRow;
+    const nie = runInvestVariant(balance, investVariant(balance, 'none'), standard, events);
+    const alles = runInvestVariant(balance, investVariant(balance, 'all'), standard, events);
+    expect(nie.games).toBe(n);
+    expect(nie.build.pumps + nie.build.extraWells + nie.build.expanded).toBe(0);
+    expect(nie.build.rigs).toBe(n);
+    const pumpenStandard = games.reduce((s, g) => s + g.build.pumps, 0);
+    expect(alles.build.pumps).toBeGreaterThan(pumpenStandard);
+    expect(alles.beatsStandard).toBeGreaterThanOrEqual(0);
+    expect(alles.beatsStandard).toBeLessThanOrEqual(1);
+  }, 120_000);
+
+  it('die Ausbau-Tabelle hat je Strategie und Gegenprobe eine Zeile', () => {
+    const rows = runBots(balance, 3, events);
+    const standard = rows.find((r) => r.strategy === 'ausgewogen')!;
+    const v = { none: runInvestVariant(balance, investVariant(balance, 'none'), standard, events), all: runInvestVariant(balance, investVariant(balance, 'all'), standard, events) };
+    const t = buildTable(rows, v).split('\n');
+    expect(t).toHaveLength(2 + STRATEGIES.length + 2);
+    expect(t[0]).toContain('Ø Pumpen');
+    expect(t.at(-1)).toContain('alles ausbauen');
+  }, 60_000);
 });

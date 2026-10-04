@@ -1,6 +1,6 @@
 # Bot-Läufe
 
-Stand: 2026-10-04 · Version 0.2.15+7
+Stand: 2026-10-04 · Version 0.2.15+8
 
 - Partien je Strategie: 1.000
 - Seeds: `bot-0` bis `bot-999` (für jede Strategie dieselben)
@@ -39,6 +39,23 @@ Pipeline lief in: vorsichtig 6,4 % (mit Kapitelziel 34,8 %), gierig 28,2 % (mit 
 
 - **Transport-Charakter** (balance.yaml bots.transport): vorsichtig {"trader":"never","teams":"overflow","tanks":true,"pipelinePayback":2,"thorne":"exclusive","threaten":false,"guards":"always","holdShare":0,"margin":true}; gierig {"trader":"always","teams":"overflow","tanks":true,"pipelinePayback":1,"thorne":"refuse","threaten":false,"guards":"never","holdShare":0.5,"margin":false}; ausgewogen {"trader":"calc","teams":"cheaper","tanks":true,"pipelinePayback":1.5,"thorne":"calc","threaten":true,"guards":"enemies","holdShare":0,"margin":true}; zufällig: mit 15,0 % je Runde eine zufällige Anschaffung, verkauft zufällig auch an den Händler.
 
+## Ausbau: Bohrtürme, Pumpen, weitere Bohrlöcher
+
+Je Partie: Ø höchste Zahl Türme zugleich (Silas' Turm mitgezählt), Ø Quellen mit Pumpe am Ende, Ø fündige Bohrlöcher über das erste je Ranch hinaus; Anteil ausgebauter Quellen = Ranches mit Fund, die eine Pumpe oder mehr als ein fündiges Bohrloch haben. Bebaubar ist in Kapitel 1 nur der Salt Hill. Zwei Gegenproben spielen den Standard-Bot (ausgewogen) auf denselben Seeds: **nie ausbauen** (nur Silas' Turm, keine Pumpe, kein weiteres Loch, kein Nachrüsten) und **alles ausbauen** (bis 4 Türme gemietet, nachgerüstet, Pumpe und weiteres Loch überall, wo es geht – auch ohne Amortisation).
+
+| Bot | Ø Bohrtürme (höchstens zugleich) | Ø Pumpen | Ø weitere Bohrlöcher | Anteil ausgebauter Quellen | Ø Imperiumswert | Bankrottquote |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| vorsichtig | 1,00 | 0,06 | 0,01 | 6,0 % | 22.246 $ | 0,0 % |
+| gierig | 1,46 | 0,25 | 1,02 | 37,4 % | 41.219 $ | 16,1 % |
+| ausgewogen | 1,00 | 0,21 | 0,24 | 16,7 % | 54.536 $ | 0,4 % |
+| zufaellig | 1,00 | 0,00 | 0,00 | 27,8 % | -1.109 $ | 37,9 % |
+| ausgewogen, nie ausbauen | 1,00 | 0,00 | 0,00 | 0,0 % | 45.019 $ | 0,0 % |
+| ausgewogen, alles ausbauen | 1,81 | 2,08 | 1,69 | 80,4 % | 23.836 $ | 27,0 % |
+
+„Alles ausbauen“ schlägt den Standard-Bot in 30,2 %, „nie ausbauen“ in 33,4 % der Seeds mit unterschiedlichem Ausgang.
+
+- **Ausbau-Charakter** (balance.yaml bots.invest): vorsichtig {"pumpPayback":2,"wellPayback":3,"rigs":1,"rent":false,"steam":false,"rods":true}; gierig {"pumpPayback":2,"wellPayback":4,"rigs":2,"rent":true,"steam":true,"rods":false}; ausgewogen {"pumpPayback":3,"wellPayback":4,"rigs":1,"rent":false,"steam":true,"rods":true}.
+
 ## Zielwerte Kapitel 1
 
 Toleranzbereiche stehen in balance.yaml unter bots.targets; gemessen wird in src/sim/bots.ts (checkTargets).
@@ -57,8 +74,20 @@ Toleranzbereiche stehen in balance.yaml unter bots.targets; gemessen wird in src
 | Ø Termine je Runde (Standard-Bot) | GDD §15: 5 je Quartal | 4,50 – 5,00 | 5,00 | ja |
 | Höchster Anteil eines Transportwegs an allen verkauften Barrel | GDD §6: kein Weg dominiert, jeder hat seinen Preis | 0,0 % – 75,0 % | 48,8 % | ja |
 | Partien mit Kapitelziel, in denen eine Pipeline läuft | Pipeline ist eine Wahl, kein Pflichtweg | 0,0 % – 60,0 % | 39,5 % | ja |
+| Ausgebaute Quellen (Pumpe oder weiteres Bohrloch), planende Bots | Ausbau lohnt für gute Quellen, nicht für jede | 5,0 % – 70,0 % | 23,1 % | ja |
+| Ø Imperium Standard-Bot ÷ derselbe Bot ohne Ausbau | Investitionen in gute Quellen zahlen sich aus (über 1) | 1,02 – 10,00 | 1,21 | ja |
+| Seeds, in denen „alles ausbauen“ den Standard-Bot schlägt | Blind alles ausbauen ist keine Siegformel | 0,0 % – 50,0 % | 30,2 % | ja |
 
 <!-- Ab hier von Hand geschrieben: npm run bots lässt den Rest stehen. -->
+
+## Karte & Bohrtürme (0.2.15+8)
+
+Nachprüfung nach dem Kartenumbau (Ranches und Farmen statt Raster, in Kapitel 1 nur der Salt Hill bebaubar) und den Investitionen aus 0.2.15+7 (mehrere Türme, Dampfmaschine, Stahlgestänge, Pumpen, weitere Bohrlöcher). Philipp war krank, darum ohne Rückfrage entschieden.
+
+- **Neu gemessen** (Tabelle **Ausbau** oben): Ø Bohrtürme, Ø Pumpen, Ø weitere Bohrlöcher, Anteil ausgebauter Quellen – je Bot und für zwei Gegenproben des Standard-Bots auf denselben Seeds: „nie ausbauen“ und „alles ausbauen“ (bis 4 Türme, überall Pumpe und weiteres Loch, auch wenn es sich nie bezahlt macht).
+- **Drei neue Zielwerte** (balance.yaml `bots.targets`): ausgebaute Quellen 5–70 % (Ist 23,1 %), Ø Imperium Standard-Bot ÷ ohne Ausbau mindestens 1,02 (Ist 1,21 – Ausbau guter Quellen bringt gut ein Fünftel mehr), „alles ausbauen“ schlägt den Standard-Bot in höchstens 50 % der Seeds (Ist 30,2 %; Ø Imperium 23.836 $ statt 54.536 $, Pleitequote 27 % statt 0,4 %).
+- **Ergebnis:** Alle 15 Zielwerte im Rahmen, keine Strategie gewinnt mehr als 35,7 % der Seeds (Grenze 40 %), kein Transportweg über 48,8 % (Grenze 75 %). Darum keine Spielzahl geändert – die Werte aus 0.2.15+7 (Turm 2.500 $ / Miete 350 $, Pumpe 4.000 $ + 400 $ Unterhalt, Dampf 1.200 $, Gestänge 600 $) halten die Balance: Wer gute Quellen gezielt ausbaut, gewinnt; wer blind alles ausbaut, drückt Felddruck und Preis und geht oft pleite.
+- Auffällig, nicht angefasst: Der Zufalls-Bot findet nur in gut 2 % der Partien Öl (er bohrt selten und gibt Bohrungen oft auf); sein Anteil ausgebauter Quellen (27,8 %) beruht auf wenigen Quellen und zählt nicht zum Zielwert.
 
 ## Bohrtürme, Bohrlöcher, Pumpen (0.2.15+7)
 

@@ -377,6 +377,10 @@ bots:
     appointments: { min: 4.5, max: 5 }        # Ø Termine je Runde des Standard-Bots (GDD §15: 5 je Quartal)
     routeShare: { min: 0, max: 0.75 }         # 0.2.15+4: höchster Anteil eines Transportwegs an allen verkauften Barrel – kein Weg dominiert
     pipelineSuccess: { min: 0, max: 0.6 }     # 0.2.15+4: Anteil der Partien mit Kapitelziel (planende Bots), in denen eine Pipeline läuft
+    # 0.2.15+8 Ausbau: Gute Quellen lohnen den Ausbau, aber „alles ausbauen“ ist keine Siegformel.
+    expandedShare: { min: 0.05, max: 0.7 }    # Anteil der Ranches mit Fund (planende Bots) mit Pumpe oder weiterem Bohrloch
+    investGain: { min: 1.02, max: 10 }        # Ø Imperium ausgewogen ÷ derselbe Bot ohne Ausbau (Investieren zahlt sich aus)
+    allOutWins: { min: 0, max: 0.5 }          # Anteil der Seeds, in denen „alles ausbauen“ den Standard-Bot schlägt
 
 # Rivalen (GDD §9.2, §15). Bullard pachtet und bohrt nach Gewinn-Formel.
 rivals:

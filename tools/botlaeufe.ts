@@ -4,7 +4,7 @@
 // Aufruf: npm run bots
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { loadBalance } from '../src/sim/testBalance';
-import { blindWildcatChance, botTable, checkTargets, pipelineLine, runBots, targetTable, transportTable } from '../src/sim/bots';
+import { blindWildcatChance, botTable, buildTable, checkTargets, investVariant, pipelineLine, runBots, runInvestVariant, targetTable, transportTable } from '../src/sim/bots';
 import { loadEvents } from '../src/sim/testEvents';
 
 const root = new URL('../', import.meta.url);
@@ -12,17 +12,26 @@ const balance = loadBalance();
 const { version } = JSON.parse(readFileSync(new URL('package.json', root), 'utf8')) as { version: string };
 const catalog = loadEvents();
 
+const prozent = (x: number) => `${(x * 100).toLocaleString('de-DE', { maximumFractionDigits: 1, minimumFractionDigits: 1 })} %`;
+
 const start = Date.now();
 const rows = runBots(balance, balance.bots.games, catalog);
 const table = botTable(rows);
 const wege = transportTable(rows);
-const targets = checkTargets(rows, blindWildcatChance(balance), balance);
+const standard = rows.find((r) => r.strategy === 'ausgewogen')!;
+const variants = {
+  none: runInvestVariant(balance, investVariant(balance, 'none'), standard, catalog),
+  all: runInvestVariant(balance, investVariant(balance, 'all'), standard, catalog),
+};
+const ausbau = buildTable(rows, variants);
+const targets = checkTargets(rows, blindWildcatChance(balance), balance, variants);
 const zielTabelle = targetTable(targets);
 const ohneSieger = Math.max(0, 1 - rows.reduce((s, r) => s + r.winRate, 0));
 const sekunden = ((Date.now() - start) / 1000).toFixed(1);
 
 console.log(table);
 console.log(`\n${wege}\nPipeline: ${pipelineLine(rows)}`);
+console.log(`\n${ausbau}\n„alles ausbauen“ schlägt den Standard-Bot in ${prozent(variants.all.beatsStandard)}, „nie ausbauen“ in ${prozent(variants.none.beatsStandard)} der Seeds mit unterschiedlichem Ausgang.`);
 console.log(`\n${zielTabelle}`);
 console.log(`\n${balance.bots.games} Partien je Strategie in ${sekunden} s.`);
 const verfehlt = targets.filter((t) => !t.ok);
@@ -38,7 +47,6 @@ const handTeil = alt.includes(MARKE)
   : alt.includes('\n## Justierung')
     ? alt.slice(alt.indexOf('\n## Justierung'))
     : '';
-const prozent = (x: number) => `${(x * 100).toLocaleString('de-DE', { maximumFractionDigits: 1, minimumFractionDigits: 1 })} %`;
 const md = `# Bot-Läufe
 
 Stand: ${datum} · Version ${version}
@@ -68,6 +76,16 @@ ${wege}
 Pipeline lief in: ${pipelineLine(rows)}.
 
 - **Transport-Charakter** (balance.yaml bots.transport): vorsichtig ${JSON.stringify(balance.bots.transport.cautious)}; gierig ${JSON.stringify(balance.bots.transport.greedy)}; ausgewogen ${JSON.stringify(balance.bots.transport.balanced)}; zufällig: mit ${prozent(balance.bots.random.logisticsChance)} je Runde eine zufällige Anschaffung, verkauft zufällig auch an den Händler.
+
+## Ausbau: Bohrtürme, Pumpen, weitere Bohrlöcher
+
+Je Partie: Ø höchste Zahl Türme zugleich (Silas' Turm mitgezählt), Ø Quellen mit Pumpe am Ende, Ø fündige Bohrlöcher über das erste je Ranch hinaus; Anteil ausgebauter Quellen = Ranches mit Fund, die eine Pumpe oder mehr als ein fündiges Bohrloch haben. Bebaubar ist in Kapitel 1 nur der Salt Hill. Zwei Gegenproben spielen den Standard-Bot (ausgewogen) auf denselben Seeds: **nie ausbauen** (nur Silas' Turm, keine Pumpe, kein weiteres Loch, kein Nachrüsten) und **alles ausbauen** (bis ${balance.drilling.rigs.max} Türme gemietet, nachgerüstet, Pumpe und weiteres Loch überall, wo es geht – auch ohne Amortisation).
+
+${ausbau}
+
+„Alles ausbauen“ schlägt den Standard-Bot in ${prozent(variants.all.beatsStandard)}, „nie ausbauen“ in ${prozent(variants.none.beatsStandard)} der Seeds mit unterschiedlichem Ausgang.
+
+- **Ausbau-Charakter** (balance.yaml bots.invest): vorsichtig ${JSON.stringify(balance.bots.invest.cautious)}; gierig ${JSON.stringify(balance.bots.invest.greedy)}; ausgewogen ${JSON.stringify(balance.bots.invest.balanced)}.
 
 ## Zielwerte Kapitel 1
 

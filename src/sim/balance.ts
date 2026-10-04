@@ -413,6 +413,9 @@ export const BOT_TARGET_IDS = [
   'appointments',
   'routeShare',
   'pipelineSuccess',
+  'expandedShare',
+  'investGain',
+  'allOutWins',
 ] as const;
 export type BotTargetId = (typeof BOT_TARGET_IDS)[number];
 
