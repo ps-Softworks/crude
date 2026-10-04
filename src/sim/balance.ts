@@ -4,6 +4,8 @@
 
 import { parseStocksBalance, type StocksBalance } from './stocksBalance'; // 4.8 Andockpunkt
 import { parseDiplomacy, type DiplomacyBalance } from './diplomacyBalance'; // 4.10 Andockpunkt
+// 4.15 Andockpunkt: Börse und Kauf auf Kredit.
+import { parseExchangeBalance, type ExchangeBalance } from './exchangeBalance';
 import { parseWorldMap, type WorldMap } from './worldMap';
 import { PARTIES, PUBLIC_ACTS, type Party, type PublicAct } from './world';
 // 4.6 Andockpunkt: Raffinerie (Zahlen und Prüfung in refineryBalance.ts).
@@ -653,6 +655,8 @@ export interface Balance {
   research: ResearchBalance;
   /** 4.14 Andockpunkt: Marke und Tankstellen (Kapitel 3). */
   brand: BrandBalance;
+  // 4.15 Andockpunkt: Börse und Kauf auf Kredit (eigener Abschnitt, gelesen in exchangeBalance.ts).
+  exchange: ExchangeBalance;
 }
 
 /** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
@@ -1865,6 +1869,8 @@ export function parseBalance(raw: unknown): Balance {
     research: parseResearchBalance(raw),
     // 4.14 Andockpunkt: Marke und Tankstellen (Kapitel 3).
     brand: parseBrand(raw),
+    // 4.15 Andockpunkt: Börse und Kauf auf Kredit.
+    exchange: parseExchangeBalance(raw),
   };
 
   for (const r of balance.transport.pipeline.rights) {

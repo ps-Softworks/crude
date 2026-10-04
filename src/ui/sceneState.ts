@@ -31,6 +31,8 @@ export const SHEET_IDS = [
   'werkstatt',
   /** 4.14 Andockpunkt: Vertrieb – Marke und Tankstellen (erst ab Kapitel 3 auf dem Tisch). */
   'marke',
+  // 4.15 Andockpunkt: Börsenticker (ab Kapitel 3).
+  'boerse',
 ] as const;
 export type SheetId = (typeof SHEET_IDS)[number];
 

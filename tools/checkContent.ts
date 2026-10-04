@@ -17,6 +17,8 @@ import { parsePoliticsContent } from '../src/sim/politics';
 import { parseRefineryContent } from '../src/sim/refineryContent';
 import { parseStocksContent } from '../src/sim/stocksContent'; // 4.8 Andockpunkt
 import { checkStaffContent, parseStaffContent } from '../src/sim/staffContent'; // 4.9 Andockpunkt
+// 4.15 Andockpunkt: Börse.
+import { parseExchangeContent } from '../src/sim/exchangeContent';
 import { loadBalance } from '../src/sim/testBalance';
 import { EVENTS_DIR, readEventFiles } from '../src/sim/testEvents';
 import { parseTutorialContent } from '../src/sim/tutorial';
@@ -64,6 +66,14 @@ const errors = [...aktien.errors, ...diplomatie.errors, ...wirkung.errors, ...wi
 const personal = parseStaffContent('content/staff.yaml', readFileSync(new URL('../content/staff.yaml', import.meta.url), 'utf8'));
 errors.push(...personal.errors);
 if (personal.content) errors.push(...checkStaffContent('content/staff.yaml', personal.content, loadBalance()));
+
+// 4.15 Andockpunkt: Börse – Namen der Aktien aus balance.yaml, Schlagzeilen, Briefe des Maklers.
+const boerse = parseExchangeContent(
+  'content/exchange.yaml',
+  readFileSync(new URL('../content/exchange.yaml', import.meta.url), 'utf8'),
+  loadBalance().exchange.stocks.map((s) => s.id),
+);
+errors.push(...boerse.errors);
 
 // Karte (0.2.15+5): ranch und unlocks in den Ereignissen müssen auf content/map.yaml zeigen.
 const karte = parsed.errors.length === 0 ? mapRefErrors(events, loadBalance().world) : [];

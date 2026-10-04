@@ -38,6 +38,8 @@ import { advanceDiplomacy, type DiplomacyState } from './diplomacy'; // 4.10 And
 // 4.11 Andockpunkt: Ermittler und Forschung (ab Kapitel 2).
 import { advanceInvestigation, type InvestigationState } from './investigation';
 import { advanceResearch, type ResearchState } from './research';
+// 4.15 Andockpunkt: Börse und Kauf auf Kredit (ab Kapitel 3).
+import { exchangeWorldInput, readClimate, settleExchange, type ExchangeState } from './exchange';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
@@ -131,6 +133,8 @@ export interface GameState {
   research?: ResearchState;
   /** 4.14 Andockpunkt: Marke und Tankstellen – erst ab Kapitel 3 da, vorher undefined. */
   brand?: BrandState;
+  // 4.15 Andockpunkt: Börse und Depot; erst ab Kapitel 3 da (in Kapitel 1 und 2 undefined).
+  exchange?: ExchangeState;
 }
 
 /**
@@ -205,7 +209,8 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
 function advanceWorldInGame(state: GameState, vorMarkt: GameState, balance: Balance): GameState {
   if (!state.worldModel) return state;
   const angebot = saltHillSupply(vorMarkt, balance.market, balance.rivals.bullard.ratePerWell);
-  const input = saltHillInput(angebot, balance.market.demand, balance.worldModel);
+  // 4.15 Andockpunkt: Jacobs Kauf auf Kredit heizt das Kreditklima (ohne Börse unverändert).
+  const input = exchangeWorldInput(state, saltHillInput(angebot, balance.market.demand, balance.worldModel));
   return { ...state, worldModel: advanceWorld(state.worldModel, balance.worldModel, input) };
 }
 
@@ -268,9 +273,12 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // 4.14 Andockpunkt: Tankstellen rechnen ab (vor den Zinsen); vor Kapitel 3 unverändert.
   const vertrieb = settleBrand(rivale, balance);
   const verzinst = settleLoans(settleStocks(settleRigs(advanceLogistics(vertrieb, balance), balance), balance), balance);
+  // 4.15 Andockpunkt: Börse (ab Kapitel 3) – Kurse, Maklerzinsen, Zwangsverkäufe vor der Pleiteprüfung.
+  // Warnungen und Maklerzins zählen mit dem Kreditklima vom Rundenbeginn (das stand in der Zeitung).
+  const gehandelt = settleExchange(verzinst, balance, readClimate(input));
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   // 4.7 Andockpunkt: Fernleitungen nach dem Transport – Thorne nimmt unter Druck eine Erhöhung zurück und senkt den Tarif.
-  const gefahren = advanceBigPipelines(advanceTransport(verzinst, balance), balance, { railTariffBefore: verzinst.railTariff });
+  const gefahren = advanceBigPipelines(advanceTransport(gehandelt, balance), balance, { railTariffBefore: gehandelt.railTariff });
   // Rivalen-Diplomatie (4.10): ohne state.diplomacy (Kapitel 1) passiert nichts. // 4.10 Andockpunkt
   const diplomatie = advanceDiplomacy(gefahren, balance);
   // 4.10 Andockpunkt: Verkauf an Pruett (Antwort auf seinen Besuch) beendet die Partie ohne weitere Abrechnung.

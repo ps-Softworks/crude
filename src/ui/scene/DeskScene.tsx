@@ -59,6 +59,8 @@ import { BlueprintShape } from './objects/BlueprintShape';
 import { BrandShape } from './objects/BrandShape';
 import { brandDeskBadge, brandDeskStatus } from '../sheets/BrandSheet';
 import { brandContent } from '../brand';
+// 4.15 Andockpunkt: Börsenticker (erscheint erst mit der Börse, Kapitel 3).
+import { ExchangeTicker } from './ExchangeTicker';
 
 /** Wo was liegt, in Prozent der Bühne (unter der Kopfleiste). */
 const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte' | 'tuer', Placement> = {
@@ -87,6 +89,16 @@ const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte
   // Personalakten (ab Kapitel 2) und Vertrieb (ab Kapitel 3) beide da, teilen sie sich
   // die Spalte zwischen Tür und Glocke (RECHTE_SPALTE_GETEILT).
   marke: { left: 86, top: 47, width: 12, height: 21 },
+};
+
+/**
+ * 4.15 Andockpunkt: Raffinerie (ab Kapitel 2) und Börsenticker (ab Kapitel 3) teilen sich den
+ * Platz unter dem Kassenbuch (zwischen Ruths Zettel ab 71 % und Glocke ab 86 %) übereinander;
+ * allein behält jeder seinen vollen Platz (AT.raffinerie bzw. TICKER_AT).
+ */
+const UNTER_KASSENBUCH_GETEILT: Record<'raffinerie' | 'boerse', Placement> = {
+  raffinerie: { left: 72, top: 74, width: 13, height: 11.5 },
+  boerse: { left: 72, top: 86, width: 13, height: 11 },
 };
 
 /** Personal und Vertrieb gleichzeitig auf dem Tisch: übereinander zwischen Tür (bis 42 %) und Glocke (ab 70 %). */
@@ -375,7 +387,7 @@ export function DeskScene(p: DeskSceneProps) {
           obj(
             'raffinerie',
             rt('object'),
-            { status: refineryObjectStatus(game) },
+            { status: refineryObjectStatus(game), ...(game.exchange ? { at: UNTER_KASSENBUCH_GETEILT.raffinerie } : {}) },
             <RefineryShape running={refineryStatus(game) === 'running' || refineryStatus(game) === 'expanding'} />,
           )}
         {obj('protokoll', 'Kladde', { status: p.saved ? '✓ gesichert' : undefined }, <NotebookShape />)}
@@ -403,6 +415,13 @@ export function DeskScene(p: DeskSceneProps) {
           )}
         {/* 4.14 Andockpunkt: Vertrieb – nur sichtbar, wenn die Marke freigeschaltet ist (Kapitel 3). */}
         {vertrieb !== null && obj('marke', localize(brandContent.object.name), { status: vertrieb, badge: brandDeskBadge(game), ...(game.staff ? { at: RECHTE_SPALTE_GETEILT.marke } : {}) }, <BrandShape />)}
+        {/* 4.15 Andockpunkt: Börsenticker – ohne Börse (Kapitel 1 und 2) nicht da. */}
+        <ExchangeTicker
+          game={game}
+          {...(game.refinery ? { at: UNTER_KASSENBUCH_GETEILT.boerse } : {})}
+          glow={p.glow === 'boerse' || p.spotlight === 'boerse'}
+          onOpen={() => p.onOpen('boerse')}
+        />
         {obj(
           'glocke',
           game.finished ? 'Kapitel beendet' : 'Runde beenden',

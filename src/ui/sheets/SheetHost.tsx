@@ -30,6 +30,8 @@ import { WaitingSheet } from './WaitingSheet';
 // 4.11 Andockpunkt: Schattenbuch (Ermittler) und Werkstatt (Forschung).
 import { ShadowBookSheet } from './ShadowBookSheet';
 import { WorkshopSheet } from './WorkshopSheet';
+// 4.15 Andockpunkt: Börsenticker.
+import { ExchangeSheet } from './ExchangeSheet';
 
 export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   zeitung: { title: 'Zeitung', size: 'brief' },
@@ -54,6 +56,8 @@ export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   werkstatt: { title: 'Werkstatt', size: 'mappe' },
   // 4.14 Andockpunkt: Marke und Tankstellen.
   marke: { title: localize(brandContent.object.title), size: 'mappe' },
+  // 4.15 Andockpunkt: Börsenticker.
+  boerse: { title: 'Börsenticker', size: 'mappe' },
 };
 
 export interface SheetHostProps {
@@ -100,6 +104,8 @@ export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound
     werkstatt: () => <WorkshopSheet ctx={ctx} />,
     // 4.14 Andockpunkt: Marke und Tankstellen.
     marke: () => <BrandSheet ctx={ctx} />,
+    // 4.15 Andockpunkt: Börsenticker.
+    boerse: () => <ExchangeSheet ctx={ctx} />,
   };
   return (
     <Sheet

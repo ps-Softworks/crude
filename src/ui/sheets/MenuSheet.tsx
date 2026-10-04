@@ -21,6 +21,8 @@ import { DiplomacyDebug } from './DiplomacySheet'; // 4.10 Andockpunkt
 // 4.11 Andockpunkt: Ermittler (Schattenbuch) und Werkstatt vorab freischalten.
 import { previewInvestigation } from '../../sim/investigation';
 import { previewResearch } from '../../sim/research';
+// 4.15 Andockpunkt: Börse im Debug vorziehen.
+import { openExchange } from '../../sim/exchange';
 
 export interface MenuProps {
   ctx: SheetContext;
@@ -221,6 +223,13 @@ export function MenuSheet(p: MenuProps) {
               </button>
             )}
             {ctx.game.research && <span className="muted klein">Werkstatt ist freigeschaltet.</span>}
+            {/* 4.15 Andockpunkt: Börse zum Ausprobieren vorziehen (gehört sonst zu Kapitel 3). */}
+            {!ctx.game.exchange && !ctx.game.finished && (
+              <button type="button" onClick={() => ctx.onGame(openExchange(ctx.game, balance))}>
+                Börse öffnen (Kapitel 3 vorziehen)
+              </button>
+            )}
+            {ctx.game.exchange && <span className="muted klein">Börse ist geöffnet.</span>}
           </fieldset>
         </section>
       )}
