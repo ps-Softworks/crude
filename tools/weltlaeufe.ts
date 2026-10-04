@@ -28,7 +28,8 @@ const anzahl = Number(process.argv[2] ?? 300);
 const PREFIX = 'welt';
 
 const start = Date.now();
-const runs = runWorlds(PREFIX, anzahl, wb, CAMPAIGN_ROUNDS);
+const laws = balance.laws;
+const runs = runWorlds(PREFIX, anzahl, wb, CAMPAIGN_ROUNDS, laws);
 const sekunden = ((Date.now() - start) / 1000).toFixed(1);
 
 const zahl = (x: number, stellen = 2) => x.toLocaleString('de-DE', { minimumFractionDigits: stellen, maximumFractionDigits: stellen });
@@ -105,14 +106,14 @@ function regierungZeile(): string {
 // --- Preisausschläge und Kapitel 1 -----------------------------------------
 const drops = runs.map((r) => r.maxYearDrop);
 const rises = runs.map((r) => r.maxYearRise);
-const kapitel1 = runWorlds(PREFIX, anzahl, wb, balance.start.rounds);
+const kapitel1 = runWorlds(PREFIX, anzahl, wb, balance.start.rounds, laws);
 const faktoren = kapitel1.map((r) => worldPriceFactor(r.final, wb));
 const zinsen = kapitel1.flatMap((r) => {
   // Zinsaufschlag in jeder Runde des Kapitels.
   let w = newWorld(r.seed, wb);
   const out: number[] = [];
   for (let i = 0; i < balance.start.rounds; i++) {
-    w = advanceWorld(w, wb);
+    w = advanceWorld(w, wb, {}, laws);
     out.push(worldRateAdd(w, wb));
   }
   return out;
@@ -123,7 +124,7 @@ const wahlen1 = { handel: 0, volksbund: 0, provinz: 0, wieder: 0, alle: 0 };
 for (const r of kapitel1) {
   let w = newWorld(r.seed, wb);
   for (let i = 0; i < balance.start.rounds; i++) {
-    w = advanceWorld(w, wb);
+    w = advanceWorld(w, wb, {}, laws);
     nahe.push(Math.abs(worldPriceFactor(w, wb) - 1));
     if (w.news.includes('election') || w.news.includes('reelection')) {
       wahlen1.alle += 1;
@@ -151,14 +152,44 @@ function chronik(seed: string): string {
   let w = newWorld(seed, wb);
   const zeilen: string[] = [];
   for (let i = 1; i <= CAMPAIGN_ROUNDS; i++) {
-    w = advanceWorld(w, wb);
+    w = advanceWorld(w, wb, {}, laws);
     const wichtig = w.news.filter((n) => n !== 'reelection');
-    if (wichtig.length === 0) continue;
+    const parlament = w.laws.news.filter((n) => n.kind !== 'debate');
+    if (wichtig.length === 0 && parlament.length === 0) continue;
     const jahr = Math.floor((i - 1) / ROUNDS_PER_YEAR) + 1;
-    const text = wichtig.map((n) => (n === 'election' ? `Wahl: ${PARTEI[w.government]} regiert` : NAMEN[n])).join(', ');
+    const GESETZ = { proposed: 'Antrag', passed: 'beschlossen', failed: 'abgelehnt', debate: 'Debatte' };
+    const text = [
+      ...wichtig.map((n) => (n === 'election' ? `Wahl: ${PARTEI[w.government]} regiert` : NAMEN[n])),
+      ...parlament.map((n) => `${laws.find((l) => l.id === n.law)?.name.de ?? n.law} ${GESETZ[n.kind]}${n.yes !== undefined ? ` (${Math.round(n.yes * 100)} % Ja)` : ''}`),
+    ].join(', ');
     zeilen.push(`- Jahr ${jahr}: ${text} (Weltpreis ${zahl(w.price)}, Kreditklima ${zahl(w.credit, 0)}, Spannung ${zahl(w.tension, 0)})`);
   }
   return zeilen.join('\n');
+}
+
+// --- Gesetze (4.3) ------------------------------------------------------------
+function gesetzTabelle(): string {
+  const zeilen = [
+    '| Gesetz | Welten mit Beschluss | Jahr des Beschlusses 10 % · 50 % · 90 % | verschiedene Runden | Ø Anträge | Ø Niederlagen | beschlossen in Kapitel 1 |',
+    '| --- | ---: | ---: | ---: | ---: | ---: | ---: |',
+  ];
+  for (const l of laws) {
+    const runden = runs.map((r) => r.lawPassed[l.id]).filter((x): x is number => x !== null);
+    const jahr = (q: number) => (runden.length > 0 ? zahl(percentile(runden, q) / ROUNDS_PER_YEAR, 0) : '–');
+    const schnitt = (f: (r: WorldRun) => number) => zahl(runs.reduce((s, r) => s + f(r), 0) / runs.length);
+    const k1 = kapitel1.filter((r) => r.lawPassed[l.id] !== null).length / kapitel1.length;
+    zeilen.push(
+      `| ${l.name.de} | ${prozent(runden.length / runs.length)} | ${jahr(0.1)} · ${jahr(0.5)} · ${jahr(0.9)} | ${new Set(runden).size} | ${schnitt((r) => r.lawProposals[l.id])} | ${schnitt((r) => r.lawFailures[l.id])} | ${prozent(k1)} |`,
+    );
+  }
+  return zeilen.join('\n');
+}
+function trustZeile(): string {
+  const jahre = [0, 10, 20, 40, 73];
+  return jahre.map((j) => {
+    const werte = runs.map((r) => r.years[j].laws.trustShare);
+    return `Jahr ${j}: ${prozent(percentile(werte, 0.1))} · **${prozent(percentile(werte, 0.5))}** · ${prozent(percentile(werte, 0.9))}`;
+  }).join('; ');
 }
 
 const zielOk = (['crashes', 'gluts', 'wars'] as const).every((k) => crisisStats(runs, (r) => r.final.counts[k], CAMPAIGN_TARGETS[k]).inTarget > 0.6);
@@ -168,7 +199,7 @@ const auto = `# Weltmodell
 
 Stand: ${new Date().toISOString().slice(0, 10)} · Version ${version}
 
-Erzeugt mit \`npm run welt\` (tools/weltlaeufe.ts, Regeln in src/sim/world.ts, Zahlen in content/balance.yaml unter worldModel).
+Erzeugt mit \`npm run welt\` (tools/weltlaeufe.ts, Regeln in src/sim/world.ts und src/sim/laws.ts, Zahlen in content/balance.yaml unter worldModel, Gesetze in content/laws/).
 ${anzahl} Welten (Seeds \`${PREFIX}-0\` bis \`${PREFIX}-${anzahl - 1}\`) über eine ganze Kampagne: ${CAMPAIGN_ROUNDS} Runden = 73 Spieljahre, **ohne Spieler**. Rechenzeit ${sekunden} s.
 
 - Alle Werte endlich: **${endlich ? 'ja' : 'NEIN'}** · Krisenzahlen in der Mehrheit der Welten im GDD-Ziel: **${zielOk ? 'ja' : 'NEIN'}**
@@ -212,6 +243,14 @@ ${zeitTabelle()}
 - Wahlen in Kapitel 1: ${wahlen1.alle}; es siegt Handelspartei ${prozent(wahlen1.handel / Math.max(1, wahlen1.alle))}, Volksbund ${prozent(wahlen1.volksbund / Math.max(1, wahlen1.alle))}, Provinzliga ${prozent(wahlen1.provinz / Math.max(1, wahlen1.alle))}; Wiederwahl ${prozent(wahlen1.wieder / Math.max(1, wahlen1.alle))}.
 - Welten mit einem Crash in Kapitel 1: ${prozent(crashKapitel1)}; mit einem Krieg: ${prozent(kriegKapitel1)}.
 - Ob die Kapitel-1-Balance hält, zeigt \`npm run bots\` (docs/botlaeufe.md) – die Bots spielen mit Weltmodell.
+
+## Gesetze (4.3)
+
+Kein Gesetz hat ein festes Jahr: Druck aus dem Weltzustand → Antrag → Debatte → Abstimmung (content/laws/, Ablauf in balance.yaml unter worldModel.laws).
+
+${gesetzTabelle()}
+
+Marktanteil des größten Konzerns (Crane Trust), 10 % · Median · 90 %: ${trustZeile()}.
 
 ## Beispielwelt \`${PREFIX}-0\`
 

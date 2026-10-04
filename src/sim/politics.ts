@@ -66,12 +66,21 @@ export interface PartyText {
   program: LocalizedText[];
 }
 
+/** Allgemeine Texte der Gesetzesmeldungen (4.3); was je Gesetz gemeldet wird, steht in content/laws/. */
+export interface LawTexts {
+  voteTitle: LocalizedText;
+  yes: LocalizedText;
+  no: LocalizedText;
+  outlook: Record<'likely' | 'close' | 'unlikely', LocalizedText>;
+}
+
 export interface PoliticsContent {
   /** Überschrift des Wahlergebnisses in der Zeitung. */
   electionTitle: LocalizedText;
   /** Überschrift über dem Programm der Sieger. */
   programTitle: LocalizedText;
   parties: Record<Party, PartyText>;
+  laws: LawTexts;
 }
 
 /** Eine Zeile des Wahlergebnisses. */
@@ -139,7 +148,7 @@ export function parsePoliticsContent(file: string, text: string): { content: Pol
   }
   const raw: unknown = doc.toJS();
   if (!istObjekt(raw)) {
-    fehler('Die Datei braucht „electionTitle“, „programTitle“ und „parties“.');
+    fehler('Die Datei braucht „electionTitle“, „programTitle“, „parties“ und „laws“.');
     return { content: null, errors };
   }
   function sprachtext(value: unknown, wo: string): LocalizedText | null {
@@ -156,7 +165,7 @@ export function parsePoliticsContent(file: string, text: string): { content: Pol
     if (value.en !== undefined && typeof value.en !== 'string') fehler(`${wo}: englischer Text muss Text sein.`);
     return { de: value.de, en: typeof value.en === 'string' ? value.en : '' };
   }
-  const unbekannt = Object.keys(raw).filter((k) => !['electionTitle', 'programTitle', 'parties'].includes(k));
+  const unbekannt = Object.keys(raw).filter((k) => !['electionTitle', 'programTitle', 'parties', 'laws'].includes(k));
   if (unbekannt.length > 0) fehler(`Unbekannte Einträge: ${unbekannt.join(', ')}.`);
   const electionTitle = sprachtext(raw.electionTitle, 'electionTitle');
   const programTitle = sprachtext(raw.programTitle, 'programTitle');
@@ -183,6 +192,20 @@ export function parsePoliticsContent(file: string, text: string): { content: Pol
     const punkte = programm.map((t, i) => sprachtext(t, `${p}.program[${i}]`));
     if (name && punkte.every((t): t is LocalizedText => t !== null)) parties[p] = { name, program: punkte };
   }
-  if (errors.length > 0 || !electionTitle || !programTitle) return { content: null, errors };
-  return { content: { electionTitle, programTitle, parties: parties as Record<Party, PartyText> }, errors };
+  // Gesetzesmeldungen (4.3): Abstimmung und Aussicht in der Debatte.
+  let laws: LawTexts | null = null;
+  const lawsRaw = raw.laws;
+  if (!istObjekt(lawsRaw) || !istObjekt(lawsRaw.outlook)) fehler('„laws“ fehlt (voteTitle, yes, no, outlook mit likely/close/unlikely).');
+  else {
+    const fremdL = Object.keys(lawsRaw).filter((k) => !['voteTitle', 'yes', 'no', 'outlook'].includes(k));
+    if (fremdL.length > 0) fehler(`laws: unbekannte Einträge ${fremdL.join(', ')}.`);
+    const o = lawsRaw.outlook;
+    const fremdO = Object.keys(o).filter((k) => !['likely', 'close', 'unlikely'].includes(k));
+    if (fremdO.length > 0) fehler(`laws.outlook: unbekannte Einträge ${fremdO.join(', ')}.`);
+    const t = [sprachtext(lawsRaw.voteTitle, 'laws.voteTitle'), sprachtext(lawsRaw.yes, 'laws.yes'), sprachtext(lawsRaw.no, 'laws.no')];
+    const a = [sprachtext(o.likely, 'laws.outlook.likely'), sprachtext(o.close, 'laws.outlook.close'), sprachtext(o.unlikely, 'laws.outlook.unlikely')];
+    if (t.every((x) => x) && a.every((x) => x)) laws = { voteTitle: t[0]!, yes: t[1]!, no: t[2]!, outlook: { likely: a[0]!, close: a[1]!, unlikely: a[2]! } };
+  }
+  if (errors.length > 0 || !electionTitle || !programTitle || !laws) return { content: null, errors };
+  return { content: { electionTitle, programTitle, parties: parties as Record<Party, PartyText>, laws }, errors };
 }

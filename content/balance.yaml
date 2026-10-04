@@ -606,6 +606,28 @@ worldModel:
     handel: { scrutiny: 0.75 }    # niedrige Steuern, wenig Regulierung – man drückt ein Auge zu
     volksbund: { scrutiny: 1.5 }  # gegen Trusts, für Aufsicht – jeder Brand wird zum Thema
     provinz: { scrutiny: 1 }
+  laws:                      # 4.3 Gesetzeskatalog (GDD §10): Ablauf im Parlament; die Gesetze selbst stehen in content/laws/
+    decay: 0.85              # Druck je Runde: alter Druck × decay + Druckpunkte der erfüllten Gründe (Gleichgewicht = Punkte ÷ 0,15)
+    proposeChance: 0.2       # Chance je Runde, dass ein Gesetz über seiner Schwelle als Antrag ins Parlament kommt
+    maxOpen: 1               # so viele Anträge gleichzeitig im Parlament (die Zeitung bringt je Runde eine Gesetzesmeldung)
+    debateRounds: { min: 2, max: 3 }   # Antrag → Debatte → Abstimmung nach so vielen Runden
+    voteNoise: 0.04          # Zufall bei der Abstimmung: ± so viel Zustimmung (Abweichler, Kranke, Absprachen)
+    closeVote: 0.05          # Debatte: liegt die erwartete Zustimmung näher als so viel an 50 %, meldet die Zeitung „knapp“
+    cooldown: 12             # nach einer Niederlage so viele Runden kein neuer Antrag für dasselbe Gesetz
+    failPressure: 0.3        # … und der Druck fällt auf diesen Anteil
+    trust:                   # Marktanteil des größten Konzerns im Land (Crane Trust) – Hilfsgröße für das Kartellgesetz
+      start: { min: 0.30, max: 0.46 }
+      base: 0.38             # dahin kehrt der Anteil langsam zurück (Neue drängen nach, Alte versiegen)
+      revert: 0.02
+      crash: 0.006           # je Crash-Runde dazu: Pleitefirmen werden billig aufgekauft
+      glut: 0.03             # Riesenfund → Ölschwemme → kleine Förderer gehen ein, der Trust kauft
+      noise: 0.01
+      min: 0.1
+      max: 0.85
+    lobby:                   # VORBEREITET (ab Kapitel 2): was Jacobs Gefallen im Parlament bewirken
+      demand: 3              # fordern: so viele Druckpunkte auf einmal
+      block: 0.06            # verhindern: so viel weniger Zustimmung bei der Abstimmung
+      delay: 2               # verzögern: so viele Runden mehr Debatte
   tension:                   # Schleife 3: Außenspannung
     base: 18                 # Ruhe-Niveau der Diplomatie
     revert: 0.04

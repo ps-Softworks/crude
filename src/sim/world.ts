@@ -29,11 +29,11 @@
 // worldRateAdd (Zinsen der Bank). Die Zeitung deutet Zustände an (worldHeadline).
 
 import type { Range, WorldModelBalance } from './balance';
+import { advanceLaws, isLawsState, lawWorldEffects, neutralLaws, newLaws, type LawDef, type LawsState, type LobbyMove } from './laws';
 import { Rng, seedFromString, type RngState } from './rng';
 
-export const PARTIES = ['handel', 'volksbund', 'provinz'] as const;
-/** Handelspartei, Volksbund, Provinzliga (GDD §7.1). */
-export type Party = (typeof PARTIES)[number];
+import { PARTIES, type Party } from './parties';
+export { PARTIES, type Party } from './parties';
 
 /**
  * Öffentliches Handeln (4.2, GDD §7.1/§10): was Jacob (später auch Rivalen) tut und
@@ -120,6 +120,8 @@ export interface WorldState {
   actsDone: PublicAct[];
   /** Letzte Wahl (4.2); null = in dieser Kampagne noch keine. */
   lastElection: ElectionResult | null;
+  /** Gesetzgebung (4.3): Druck, Anträge, beschlossene Gesetze, Sitze, Marktanteil des Trusts. Eigener Zufall. */
+  laws: LawsState;
 }
 
 /**
@@ -143,6 +145,8 @@ export interface WorldInput {
   partyShift?: Partial<Record<Party, number>>;
   tensionShift?: number;
   nationalismShift?: number;
+  /** Lobby im Parlament (4.3, vorbereitet für Kapitel 2): einmalig wie moodKick. */
+  lobby?: LobbyMove[];
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -234,7 +238,7 @@ export function newWorld(seed: string, wb: WorldModelBalance): WorldState {
     wb.politics.minShare,
   );
   const electionIn = rng.int(1, wb.politics.electionEvery);
-  return startState(rng.state, wb, { tech, credit, mood, tension, nationalism, parties, electionIn });
+  return { ...startState(rng.state, wb, { tech, credit, mood, tension, nationalism, parties, electionIn }), laws: newLaws(seed, wb.laws, parties) };
 }
 
 /**
@@ -244,7 +248,7 @@ export function newWorld(seed: string, wb: WorldModelBalance): WorldState {
  * bis Zufall und Rückkopplungen ihn bewegen – Krisen kommen nicht in allen Welten
  * zur selben Zeit.
  */
-function startState(rng: RngState, wb: StartBalance, v: StartValues): WorldState {
+function startState(rng: RngState, wb: StartBalance, v: StartValues): Omit<WorldState, 'laws'> {
   const s = wb.supply;
   const nachfrage = effectiveDemand({ demand: 1, tension: v.tension, crash: 0, war: 0 }, wb);
   const capacity = nachfrage / s.utilBase;
@@ -292,15 +296,9 @@ export function neutralWorld(seed: string): WorldState {
     demand: { growth: 0.012, cap: 9, techBoost: 0.6, crashDrop: 0.08, warBoost: 0.12, armsDemand: 0.06 },
     tech: { rate: 0.017 },
   };
-  return startState(seedFromString(`${seed}:welt`), snapshot, {
-    tech: 8,
-    credit: 50,
-    mood: 54,
-    tension: 19,
-    nationalism: 14,
-    parties: { handel: 0.38, volksbund: 0.31, provinz: 0.31 },
-    electionIn: 16,
-  });
+  const parties = { handel: 0.38, volksbund: 0.31, provinz: 0.31 };
+  const welt = startState(seedFromString(`${seed}:welt`), snapshot, { tech: 8, credit: 50, mood: 54, tension: 19, nationalism: 14, parties, electionIn: 16 });
+  return { ...welt, laws: neutralLaws(seed, parties) };
 }
 
 /**
@@ -381,20 +379,35 @@ export function mergeInput(a: WorldInput, b: WorldInput): WorldInput {
   if (moodKick !== undefined) out.moodKick = moodKick;
   if (tensionShift !== undefined) out.tensionShift = tensionShift;
   if (nationalismShift !== undefined) out.nationalismShift = nationalismShift;
+  if (a.lobby || b.lobby) out.lobby = [...(a.lobby ?? []), ...(b.lobby ?? [])];
   if (a.partyShift || b.partyShift) {
     out.partyShift = Object.fromEntries(PARTIES.map((p) => [p, (a.partyShift?.[p] ?? 0) + (b.partyShift?.[p] ?? 0)])) as Record<Party, number>;
   }
   return out;
 }
 
+/** Was geltende Gesetze (4.3) jede Runde in die Welt geben; den Marktanteil des Trusts verschieben sie in advanceLaws. */
+export function lawsInput(laws: LawsState | undefined, catalog: readonly LawDef[]): WorldInput {
+  const e = lawWorldEffects(laws, catalog);
+  const out: WorldInput = {};
+  if (e.creditShift !== undefined) out.creditShift = e.creditShift;
+  if (e.moodShift !== undefined) out.moodShift = e.moodShift;
+  if (e.tensionShift !== undefined) out.tensionShift = e.tensionShift;
+  if (e.nationalismShift !== undefined) out.nationalismShift = e.nationalismShift;
+  return out;
+}
+
 /**
  * Eine Runde Welt. Jede Runde zieht genau gleich viele Zufallszahlen, damit ein
- * Krieg nicht den Würfel für die nächste Wahl verschiebt.
+ * Krieg nicht den Würfel für die nächste Wahl verschiebt. laws = Gesetzeskatalog
+ * (content/laws/, 4.3): Geltende Gesetze wirken auf die Welt, danach tagt das
+ * Parlament mit eigenem Zufall – ohne Katalog bleibt es still.
  */
-export function advanceWorld(input: WorldState, wb: WorldModelBalance, externIn: WorldInput = {}): WorldState {
+export function advanceWorld(input: WorldState, wb: WorldModelBalance, externIn: WorldInput = {}, laws: readonly LawDef[] = []): WorldState {
   // Öffentliches Handeln dieser Runde (4.2) wirkt jetzt und steht danach in actsDone.
   const taten = input.acts ?? [];
-  const extern = mergeInput(externIn, actsInput(taten, input.government, wb));
+  const gesetze = input.laws ?? neutralLaws(String(input.rng), input.parties);
+  const extern = mergeInput(mergeInput(externIn, actsInput(taten, input.government, wb)), lawsInput(gesetze, laws));
   const rng = new Rng(input.rng);
   const u = Array.from({ length: 14 }, () => rng.float());
   const sym = (i: number) => 2 * u[i] - 1;
@@ -540,6 +553,17 @@ export function advanceWorld(input: WorldState, wb: WorldModelBalance, externIn:
     }
   }
 
+  // Gesetzgebung (4.3): Das Parlament sieht die Welt nach dieser Runde.
+  const gewaehlt = lastElection && lastElection.round === input.round + 1 ? lastElection.shares : null;
+  const lawsNext = advanceLaws(
+    gesetze,
+    { round: input.round + 1, scarcity: knapp, credit, mood, tension, nationalism, tech, government, war: war > 0, crash: crash > 0 },
+    laws,
+    wb.laws,
+    { crashing: crash > 0, glut: news.includes('glut'), election: gewaehlt, lobby: extern.lobby ?? [] },
+    lawWorldEffects(gesetze, laws).trustShift ?? 0,
+  );
+
   return {
     ...input,
     rng: rng.state,
@@ -565,6 +589,7 @@ export function advanceWorld(input: WorldState, wb: WorldModelBalance, externIn:
     acts: [],
     actsDone: [...taten],
     lastElection,
+    laws: lawsNext,
   };
 }
 
@@ -573,10 +598,10 @@ export function advanceWorld(input: WorldState, wb: WorldModelBalance, externIn:
  * Dauerhafte Eingriffe (extraSupply, creditShift, moodShift, tensionShift, nationalismShift)
  * wirken jede Runde; einmalige Stöße (moodKick, partyShift) nur in der ersten.
  */
-export function skipWorld(world: WorldState, wb: WorldModelBalance, rounds: number, extern: WorldInput = {}): WorldState {
-  const { moodKick: _kick, partyShift: _party, ...dauerhaft } = extern;
+export function skipWorld(world: WorldState, wb: WorldModelBalance, rounds: number, extern: WorldInput = {}, laws: readonly LawDef[] = []): WorldState {
+  const { moodKick: _kick, partyShift: _party, lobby: _lobby, ...dauerhaft } = extern;
   let w = world;
-  for (let i = 0; i < rounds; i++) w = advanceWorld(w, wb, i === 0 ? extern : dauerhaft);
+  for (let i = 0; i < rounds; i++) w = advanceWorld(w, wb, i === 0 ? extern : dauerhaft, laws);
   return w;
 }
 
@@ -623,6 +648,7 @@ export function isWorldState(value: unknown): value is WorldState {
   if (typeof c !== 'object' || c === null || !Object.keys(noCounts()).every((k) => zahl(c[k]))) return false;
   const taten = (x: unknown) => Array.isArray(x) && x.every((a) => PUBLIC_ACTS.includes(a as PublicAct));
   if (!taten(w.acts) || !taten(w.actsDone)) return false;
+  if (!isLawsState(w.laws)) return false;
   const e = w.lastElection as Record<string, unknown> | null | undefined;
   if (e === null) return true;
   if (typeof e !== 'object' || e === undefined) return false;
@@ -642,4 +668,17 @@ export function withPoliticsDefaults(value: unknown): unknown {
   if (typeof value !== 'object' || value === null) return value;
   const w = value as Record<string, unknown>;
   return { ...w, acts: w.acts ?? [], actsDone: w.actsDone ?? [], lastElection: w.lastElection === undefined ? null : w.lastElection };
+}
+
+/**
+ * Ersatzwert (4.3) für Weltzustände aus Format 14/15: noch kein Gesetz, nichts im
+ * Parlament, Sitze = heutige Parteianteile, Trust-Anteil in der Mitte, Zufall aus dem Seed.
+ */
+export function withLawDefaults(value: unknown, seed: string): unknown {
+  if (typeof value !== 'object' || value === null) return value;
+  const w = value as Record<string, unknown>;
+  if (w.laws !== undefined) return w;
+  const p = w.parties as Record<Party, number> | undefined;
+  const parties = p && PARTIES.every((k) => typeof p[k] === 'number') ? p : { handel: 1 / 3, volksbund: 1 / 3, provinz: 1 / 3 };
+  return { ...w, laws: neutralLaws(seed, parties) };
 }

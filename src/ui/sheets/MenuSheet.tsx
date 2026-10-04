@@ -2,6 +2,7 @@
 // Zeitung, Rundgang, Tastenhilfe – und mit Debug-Bereich (?debug=1) der Reiter „Debug“.
 
 import type { Party } from '../../sim/world';
+import { balance } from '../balance';
 import { FeedbackLink } from '../FeedbackLink';
 import { politicsContent } from '../politics';
 import { keyLabel, SHORTCUTS } from '../keys';
@@ -63,6 +64,18 @@ function WorldDebug({ ctx }: { ctx: SheetContext }) {
       <dt>Technik / Nationalismus</dt>
       <dd>
         {z(w.tech)} / {z(w.nationalism)}
+      </dd>
+      <dt>Gesetze (Trust-Anteil {z(w.laws.trustShare * 100)} %)</dt>
+      <dd>
+        {balance.laws
+          .map((l) => {
+            const b = w.laws.bills[l.id];
+            if (!b) return `${l.name.de}: –`;
+            if (b.stage === 'passed') return `${l.name.de}: gilt seit Weltrunde ${b.passedRound}`;
+            if (b.stage === 'debate') return `${l.name.de}: im Parlament, Abstimmung in ${b.voteIn} Runden`;
+            return `${l.name.de}: Druck ${z(b.pressure, 1)} / ${l.threshold}${b.cooldown > 0 ? `, Ruhe noch ${b.cooldown}` : ''}`;
+          })
+          .join(' · ')}
       </dd>
     </dl>
   );

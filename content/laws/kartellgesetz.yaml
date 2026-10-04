@@ -1,0 +1,75 @@
+# Kartellgesetz (4.3, GDD §10): wird wahrscheinlich, wenn eine Firma über 40 %
+# Marktanteil hat, die Stimmung schlecht ist und der Volksbund regiert.
+# ENTWURF: Zahlen und Texte sind Vorschläge von Claude.
+id: antitrust
+draft: true
+name: { de: Kartellgesetz, en: Antitrust Act }
+summary:
+  de: "Absprachen über Preise und Märkte werden verboten; wer einen Markt beherrscht, kann zerschlagen werden."
+  en: "Agreements on prices and markets are outlawed; whoever dominates a market can be broken up."
+
+# Ab so viel Druck kann der Antrag kommen (Gleichgewicht eines Grundes = add ÷ 0,15).
+threshold: 11
+# Druckpunkte je Runde, solange der Grund stimmt (mehrere Gründe zählen zusammen).
+pressure:
+  - when: { trustShare: { min: 0.4 } }      # der Trust beherrscht den Markt
+    add: 1
+  - when: { trustShare: { min: 0.5 } }      # … erdrückend
+    add: 1
+  - when: { mood: { max: 45 } }             # die Leute sind wütend
+    add: 0.6
+  - when: { government: volksbund }         # die Partei gegen die Trusts regiert
+    add: 1
+  - when: { volksbund: { min: 0.38 } }      # starke Volksbund-Fraktion
+    add: 0.4
+  - when: { government: handel }            # die Handelspartei hält die Hand darüber
+    add: -0.8
+
+# Wie die Fraktionen abstimmen (Anteil Ja-Stimmen), dazu die Lage am Tag der Abstimmung.
+votes: { handel: 0.1, volksbund: 0.85, provinz: 0.5 }
+swing:
+  - when: { mood: { max: 40 } }
+    add: 0.04
+  - when: { trustShare: { min: 0.55 } }
+    add: 0.04
+  - when: { crash: true }                   # nach dem Crash kauft der Trust die Pleitefirmen – Empörung
+    add: 0.03
+
+effects:
+  world:
+    trustShift: -0.003     # je Runde: Verfahren und Auflagen drücken den Marktanteil des Trusts
+    moodShift: 1           # die Leute sehen, dass Hallstead handelt
+  rules:
+    cartelBan: 1           # Absprachen sind illegal (ab Kapitel 2: Preisabsprachen mit Rivalen strafbar)
+    breakupFrom: 0.5       # ab 50 % Marktanteil droht das Zerschlagungsverfahren
+
+# VORBEREITET (ab Kapitel 2): was Jacob mit Gefallen im Parlament tun kann.
+lobby:
+  demand: { label: { de: "Das Gesetz fordern", en: "Call for the act" } }
+  block: { label: { de: "Abgeordnete umstimmen", en: "Turn members of Parliament" } }
+  weaken:
+    label: { de: "Das Gesetz aufweichen", en: "Water the act down" }
+    rules: { cartelBan: 1, breakupFrom: 0.7 }
+  delay: { label: { de: "Die Debatte in die Länge ziehen", en: "Drag out the debate" } }
+
+news:
+  proposed:
+    title: { de: "Kartellgesetz im Parlament", en: "Antitrust bill before Parliament" }
+    text:
+      de: "In Hallstead liegt ein Antrag gegen die Trusts vor. Die Namen Crane und Thorne fallen in jeder Rede."
+      en: "A bill against the trusts lies before Parliament in Hallstead. The names Crane and Thorne come up in every speech."
+  debate:
+    title: { de: "Redeschlacht um das Kartellgesetz", en: "War of words over the antitrust bill" }
+    text:
+      de: "Die Handelspartei warnt vor dem Ende des Fortschritts, der Volksbund liest die Frachttarife des Trusts vor."
+      en: "The Commerce Party warns of the end of progress; the People's League reads out the trust's freight rates."
+  passed:
+    title: { de: "Kartellgesetz beschlossen", en: "Antitrust Act passed" }
+    text:
+      de: "Absprachen über Preise sind ab sofort verboten. Wer einen Markt beherrscht, muss mit dem Staatsanwalt rechnen."
+      en: "Agreements on prices are outlawed from today. Whoever dominates a market must reckon with the prosecutor."
+  failed:
+    title: { de: "Kartellgesetz gescheitert", en: "Antitrust bill defeated" }
+    text:
+      de: "Das Parlament lehnt das Gesetz gegen die Trusts ab. In den Büros des Crane Trust in Port Ellis brennt bis spät Licht."
+      en: "Parliament rejects the bill against the trusts. The lights burn late in the Crane Trust offices in Port Ellis."

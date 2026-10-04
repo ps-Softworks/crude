@@ -306,6 +306,12 @@ a.feedback.gross { font-size: 1.05rem; }
 .zeitung-wahl-ergebnis li.sieger .balken { background: var(--tinte); }
 .zeitung-wahl-ergebnis li .anteil { text-align: right; }
 .zeitung-wahl-programm { margin: 6px 0 0; font-size: 0.93rem; }
+.zeitung-gesetz { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--tinte-weich); font-size: 0.95rem; }
+.zeitung-gesetz h3 { margin: 0 0 2px; font-size: 1.05rem; font-variant: small-caps; letter-spacing: 0.04em; }
+.zeitung-gesetz p { margin: 0; }
+.zeitung-gesetz-abstimmung { margin-top: 4px !important; }
+.zeitung-gesetz-abstimmung .balken { display: block; height: 0.5em; margin-top: 3px; background: var(--linie); }
+.zeitung-gesetz-abstimmung .balken span { display: block; height: 100%; background: var(--tinte); }
 
 /* Silhouetten (2.12): Scherenschnitt im Oval statt Porträt. */
 .silhouette { flex: none; display: block; }

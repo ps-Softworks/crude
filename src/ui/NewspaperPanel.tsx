@@ -1,6 +1,7 @@
 // Die Zeitung zu Beginn der Runde (2.6): Titelseite mit der Aussicht für den
 // Ölpreis und Kurzmeldungen. Welche Schlagzeile erscheint, entscheidet src/sim.
-// Nach einer Wahl (4.2) druckt die Zeitung das amtliche Ergebnis und das Programm der Sieger.
+// Nach einer Wahl (4.2) druckt die Zeitung das amtliche Ergebnis und das Programm der Sieger,
+// aus dem Parlament (4.3) Antrag, Debatte oder Abstimmung über ein Gesetz.
 
 import type { GameState } from '../sim/game';
 import { makeNewspaper } from '../sim/newspaper';
@@ -11,6 +12,7 @@ import { politicsContent } from './politics';
 export function NewspaperPanel({ game }: { game: GameState }) {
   const zeitung = makeNewspaper(game, balance, newspaperContent, undefined, politicsContent);
   const wahl = zeitung.election;
+  const gesetz = zeitung.law;
   return (
     <section className="zeitung" aria-label="Zeitung">
       <div className="zeitung-kopf">{zeitung.name}</div>
@@ -25,6 +27,20 @@ export function NewspaperPanel({ game }: { game: GameState }) {
           </li>
         ))}
       </ul>
+      {gesetz && (
+        <div className="zeitung-gesetz" aria-label={gesetz.title}>
+          <h3>{gesetz.title}</h3>
+          <p>{gesetz.text}</p>
+          {gesetz.vote && (
+            <p className="zeitung-gesetz-abstimmung">
+              <em>{gesetz.vote.title}:</em> {gesetz.vote.yesLabel} {gesetz.vote.yes} % · {gesetz.vote.noLabel} {gesetz.vote.no} %
+              <span className="balken" aria-hidden="true">
+                <span style={{ width: `${gesetz.vote.yes}%` }} />
+              </span>
+            </p>
+          )}
+        </div>
+      )}
       {wahl && (
         <div className="zeitung-wahl" aria-label={wahl.title}>
           <h3>{wahl.title}</h3>

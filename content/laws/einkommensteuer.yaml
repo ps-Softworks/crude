@@ -1,0 +1,70 @@
+# Einkommensteuer (4.3, GDD §10): wird wahrscheinlich, wenn der Staat Geld braucht
+# (Krieg, Krise). Wirkung im Spiel: Gewinne werden versteuert (ab Kapitel 2).
+# ENTWURF: Zahlen und Texte sind Vorschläge von Claude.
+id: income_tax
+draft: true
+name: { de: Einkommensteuer, en: Income Tax Act }
+summary:
+  de: "Der Bund besteuert Einkommen und Gewinne – wer viel verdient, zahlt mehr."
+  en: "The Federation taxes incomes and profits – whoever earns more pays more."
+
+threshold: 10
+pressure:
+  - when: { war: true }                     # Krieg in Übersee: Rüstung kostet, auch wenn die Föderation nicht kämpft
+    add: 2.2
+  - when: { crash: true }                   # Krise: die Zolleinnahmen brechen weg, Arbeitslose brauchen Brot
+    add: 1.8
+  - when: { tension: { min: 60 } }          # Aufrüstung
+    add: 0.6
+  - when: { mood: { max: 40 } }
+    add: 0.4
+  - when: { government: volksbund }
+    add: 0.6
+  - when: { government: handel }
+    add: -0.8
+
+votes: { handel: 0.15, volksbund: 0.8, provinz: 0.4 }
+swing:
+  - when: { war: true }                     # in Kriegszeiten stimmen auch Zögernde zu
+    add: 0.1
+  - when: { crash: true }
+    add: 0.04
+  - when: { credit: { min: 65 } }           # in guten Zeiten will niemand Steuern
+    add: -0.05
+
+effects:
+  world:
+    creditShift: -0.15     # je Runde: weniger freies Geld für Spekulation
+    moodShift: 0.5         # die Reichen zahlen endlich mit
+  rules:
+    incomeTax: 0.07        # Steuersatz auf Gewinne (ab Kapitel 2 abgerechnet)
+
+lobby:
+  demand: { label: { de: "Die Steuer fordern", en: "Call for the tax" } }
+  block: { label: { de: "Gegen die Steuer stimmen lassen", en: "Have members vote against the tax" } }
+  weaken:
+    label: { de: "Schlupflöcher lobbyieren", en: "Lobby for loopholes" }
+    rules: { incomeTax: 0.04 }
+  delay: { label: { de: "Die Abstimmung verschleppen", en: "Stall the vote" } }
+
+news:
+  proposed:
+    title: { de: "Hallstead will eine Einkommensteuer", en: "Hallstead wants an income tax" }
+    text:
+      de: "Die Staatskasse ist leer. Ein Antrag im Parlament will Einkommen und Gewinne besteuern."
+      en: "The treasury is empty. A bill in Parliament would tax incomes and profits."
+  debate:
+    title: { de: "Steuerdebatte in Hallstead", en: "Tax debate in Hallstead" }
+    text:
+      de: "„Wer am Öl reich wird, soll auch für das Land zahlen“, ruft ein Abgeordneter des Volksbunds. Die Handelspartei spricht von Diebstahl."
+      en: "\"Whoever grows rich on oil should pay for the country too,\" cries a member of the People's League. The Commerce Party calls it theft."
+  passed:
+    title: { de: "Einkommensteuer beschlossen", en: "Income tax passed" }
+    text:
+      de: "Ab dem nächsten Jahr verlangt der Bund einen Teil jedes Gewinns. Die Buchhalter in Port Ellis haben neue Sorgen."
+      en: "From next year the Federation claims a share of every profit. The bookkeepers in Port Ellis have new worries."
+  failed:
+    title: { de: "Einkommensteuer abgelehnt", en: "Income tax defeated" }
+    text:
+      de: "Das Parlament lehnt die Steuer ab. Die Staatskasse bleibt leer – bis zur nächsten Not."
+      en: "Parliament rejects the tax. The treasury stays empty – until the next emergency."

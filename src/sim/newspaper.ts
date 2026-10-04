@@ -12,6 +12,7 @@ import { LANGUAGES, localize, type Lang, type LocalizedText } from './i18n';
 import { computePrice, jacobSupply, neighbourSupply, rivalSupply } from './market';
 import { advanceProduction } from './production';
 import { craneCut, markRound, RIVAL_MARKS } from './trust';
+import { lawReport, type LawReport } from './laws';
 import { electionReport, loudestAct, type ElectionReport, type PoliticsContent } from './politics';
 import { PUBLIC_ACTS, worldPriceFactor } from './world';
 import { MAJOR_WORLD_HEADLINES, worldHeadline, WORLD_HEADLINES } from './worldNews';
@@ -65,6 +66,8 @@ export interface Newspaper {
   items: Headline[];
   /** Wahlergebnis (4.2), nur in der Ausgabe direkt nach einer Wahl. */
   election: ElectionReport | null;
+  /** Aus dem Parlament (4.3): Antrag, Debatte oder Abstimmung der letzten Runde – höchstens eine Meldung. */
+  law: LawReport | null;
 }
 
 /**
@@ -149,6 +152,7 @@ export function makeNewspaper(state: GameState, balance: Balance, content: Newsp
     front: headline(FRONT[marketOutlook(state, balance)]),
     items: newsItems(state, balance).map(headline),
     election: politics ? electionReport(state.worldModel, politics, lang) : null,
+    law: politics ? lawReport(state.worldModel?.laws, balance.laws, politics, lang) : null,
   };
 }
 

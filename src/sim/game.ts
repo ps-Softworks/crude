@@ -176,7 +176,8 @@ function advanceWorldInGame(state: GameState, vorMarkt: GameState, balance: Bala
   if (!state.worldModel) return state;
   const angebot = saltHillSupply(vorMarkt, balance.market, balance.rivals.bullard.ratePerWell);
   const input = saltHillInput(angebot, balance.market.demand, balance.worldModel);
-  return { ...state, worldModel: advanceWorld(state.worldModel, balance.worldModel, input) };
+  // Gesetze (4.3): Das Parlament tagt mit dem Katalog aus content/laws/.
+  return { ...state, worldModel: advanceWorld(state.worldModel, balance.worldModel, input, balance.laws) };
 }
 
 /**

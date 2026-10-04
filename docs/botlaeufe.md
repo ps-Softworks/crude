@@ -1,6 +1,6 @@
 # Bot-Läufe
 
-Stand: 2026-10-04 · Version 0.4.2
+Stand: 2026-10-04 · Version 0.4.3
 
 - Partien je Strategie: 1.000
 - Seeds: `bot-0` bis `bot-999` (für jede Strategie dieselben)

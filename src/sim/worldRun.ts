@@ -3,6 +3,7 @@
 // `npm run welt` (docs/weltmodell.md) und für die Grenz-Tests.
 
 import type { WorldModelBalance } from './balance';
+import type { LawDef } from './laws';
 import { advanceWorld, effectiveDemand, newWorld, PARTIES, type WorldState } from './world';
 
 /** Runden je Spieljahr (Quartale). */
@@ -45,10 +46,14 @@ export interface WorldRun {
   /** Runden (ab 1), in denen ein Crash bzw. ein Krieg begann. */
   crashStarts: number[];
   warStarts: number[];
+  /** Gesetze (4.3): Runde des Beschlusses je Gesetz (null = in diesem Lauf nie), Anträge und Niederlagen. */
+  lawPassed: Record<string, number | null>;
+  lawProposals: Record<string, number>;
+  lawFailures: Record<string, number>;
 }
 
-/** Eine Welt über rounds Runden ohne Spieler. */
-export function runWorld(seed: string, wb: WorldModelBalance, rounds: number): WorldRun {
+/** Eine Welt über rounds Runden ohne Spieler; laws = Gesetzeskatalog (ohne ihn tagt kein Parlament). */
+export function runWorld(seed: string, wb: WorldModelBalance, rounds: number, laws: readonly LawDef[] = []): WorldRun {
   let w = newWorld(seed, wb);
   const years: WorldState[] = [w];
   const prices: number[] = [w.price];
@@ -58,8 +63,10 @@ export function runWorld(seed: string, wb: WorldModelBalance, rounds: number): W
   const governmentRounds = { handel: 0, volksbund: 0, provinz: 0 };
   const crashStarts: number[] = [];
   const warStarts: number[] = [];
+  const lawFailures: Record<string, number> = Object.fromEntries(laws.map((l) => [l.id, 0]));
   for (let r = 1; r <= rounds; r++) {
-    w = advanceWorld(w, wb);
+    w = advanceWorld(w, wb, {}, laws);
+    for (const n of w.laws.news) if (n.kind === 'failed') lawFailures[n.law] = (lawFailures[n.law] ?? 0) + 1;
     if (w.news.includes('crash')) crashStarts.push(r);
     if (w.news.includes('war')) warStarts.push(r);
     prices.push(w.price);
@@ -79,12 +86,14 @@ export function runWorld(seed: string, wb: WorldModelBalance, rounds: number): W
     maxYearDrop = Math.max(maxYearDrop, 1 - prices[i] / hoch);
     maxYearRise = Math.max(maxYearRise, prices[i] / tief - 1);
   }
-  return { seed, years, final: w, maxYearDrop, maxYearRise, warRounds, crashRounds, maxImbalance, governmentRounds, crashStarts, warStarts };
+  const lawPassed = Object.fromEntries(laws.map((l) => [l.id, w.laws.bills[l.id]?.passedRound ?? null]));
+  const lawProposals = Object.fromEntries(laws.map((l) => [l.id, w.laws.bills[l.id]?.proposals ?? 0]));
+  return { seed, years, final: w, maxYearDrop, maxYearRise, warRounds, crashRounds, maxImbalance, governmentRounds, crashStarts, warStarts, lawPassed, lawProposals, lawFailures };
 }
 
 /** Viele Welten: Seeds `${prefix}-0` … `${prefix}-${count-1}`. */
-export function runWorlds(prefix: string, count: number, wb: WorldModelBalance, rounds: number): WorldRun[] {
-  return Array.from({ length: count }, (_, i) => runWorld(`${prefix}-${i}`, wb, rounds));
+export function runWorlds(prefix: string, count: number, wb: WorldModelBalance, rounds: number, laws: readonly LawDef[] = []): WorldRun[] {
+  return Array.from({ length: count }, (_, i) => runWorld(`${prefix}-${i}`, wb, rounds, laws));
 }
 
 /** Perzentil (0–1) einer Liste, linear zwischen den Nachbarn. */

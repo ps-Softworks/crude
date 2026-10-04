@@ -4,6 +4,7 @@
 
 import { parseWorldMap, type WorldMap } from './worldMap';
 import { PARTIES, PUBLIC_ACTS, type Party, type PublicAct } from './world';
+import type { LawDef } from './laws';
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
 
@@ -502,6 +503,28 @@ export interface RivalsBalance {
 /** Wirkung einer öffentlichen Tat (4.2): Stimmungspunkte und Anteile je Partei (vor dem Normieren). */
 export type ActEffect = { mood: number } & Record<Party, number>;
 
+/** Gesetzgebung (4.3): Druck, Antrag, Debatte, Abstimmung; dazu der Marktanteil des Trusts und (vorbereitet) die Lobby. */
+export interface LawsBalance {
+  /** Druck je Runde = alter Druck × decay + Druckpunkte der erfüllten Gründe. */
+  decay: number;
+  /** Chance je Runde auf einen Antrag, sobald der Druck die Schwelle des Gesetzes erreicht. */
+  proposeChance: number;
+  /** Höchstens so viele Anträge gleichzeitig im Parlament. */
+  maxOpen: number;
+  /** Runden vom Antrag bis zur Abstimmung. */
+  debateRounds: Range;
+  voteNoise: number;
+  /** „Knapp“ in der Debatte, wenn die erwartete Zustimmung näher als so viel an 50 % liegt. */
+  closeVote: number;
+  /** Nach einer Niederlage: so viele Runden kein neuer Antrag, Druck × failPressure. */
+  cooldown: number;
+  failPressure: number;
+  /** Marktanteil des größten Konzerns (Crane Trust). */
+  trust: { start: Range; base: number; revert: number; crash: number; glut: number; noise: number; min: number; max: number };
+  /** Vorbereitet (ab Kapitel 2): Stärke der Lobby-Züge. */
+  lobby: { demand: number; block: number; delay: number };
+}
+
 export interface WorldModelBalance {
   start: {
     tech: Range;
@@ -559,6 +582,8 @@ export interface WorldModelBalance {
   acts: { maxMood: number; maxParty: number } & Record<PublicAct, ActEffect>;
   /** Parteiprogramme (4.2): scrutiny = Gewicht der Verfehlungen (Stimmung nach unten), solange die Partei regiert. */
   programs: Record<Party, { scrutiny: number }>;
+  /** Gesetzgebung (4.3, GDD §10): Ablauf im Parlament; die Gesetze selbst stehen in content/laws/ (Balance.laws). */
+  laws: LawsBalance;
   tension: {
     base: number;
     revert: number;
@@ -628,6 +653,8 @@ export interface Balance {
   newspaper: NewspaperBalance;
   tutorial: TutorialBalance;
   worldModel: WorldModelBalance;
+  /** Gesetzeskatalog aus content/laws/ (4.3), beim Laden über parseGameData übergeben; ohne ihn tagt kein Parlament. */
+  laws: readonly LawDef[];
 }
 
 /** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
@@ -1710,7 +1737,32 @@ function parseWorldModel(raw: unknown): WorldModelBalance {
       ) as Record<PublicAct, ActEffect>),
     },
     programs: Object.fromEntries(PARTIES.map((p) => [p, { scrutiny: nn(`programs.${p}.scrutiny`) }])) as Record<Party, { scrutiny: number }>,
+    laws: {
+      decay: sh('laws.decay'),
+      proposeChance: sh('laws.proposeChance'),
+      maxOpen: positiveInt(raw, `${w}.laws.maxOpen`),
+      debateRounds: rng('laws.debateRounds', 1, 1000),
+      voteNoise: sh('laws.voteNoise'),
+      closeVote: sh('laws.closeVote'),
+      cooldown: integerInRange(raw, `${w}.laws.cooldown`, 0, 1000),
+      failPressure: sh('laws.failPressure'),
+      trust: {
+        start: rng('laws.trust.start', 0, 1),
+        base: sh('laws.trust.base'),
+        revert: sh('laws.trust.revert'),
+        crash: sh('laws.trust.crash'),
+        glut: sh('laws.trust.glut'),
+        noise: sh('laws.trust.noise'),
+        min: sh('laws.trust.min'),
+        max: sh('laws.trust.max'),
+      },
+      lobby: { demand: nn('laws.lobby.demand'), block: sh('laws.lobby.block'), delay: integerInRange(raw, `${w}.laws.lobby.delay`, 0, 100) },
+    },
   };
+  if (!Number.isInteger(wm.laws.debateRounds.min) || !Number.isInteger(wm.laws.debateRounds.max)) {
+    throw new BalanceError('balance.yaml: "worldModel.laws.debateRounds" braucht ganze Runden');
+  }
+  if (wm.laws.trust.min > wm.laws.trust.max) throw new BalanceError('balance.yaml: "worldModel.laws.trust" – min darf nicht über max liegen');
   if (wm.price.min <= 0 || wm.price.min > 1 || wm.price.max < 1) {
     throw new BalanceError('balance.yaml: "worldModel.price" – min muss in (0, 1] liegen, max mindestens 1');
   }
@@ -1738,8 +1790,8 @@ function parseWorld(raw: unknown): WorldMap {
 }
 
 /** Spielzahlen und Karte zusammen: balance.yaml und map.yaml als rohe YAML-Daten. */
-export function parseGameData(balanceRaw: unknown, mapRaw: unknown): Balance {
-  return parseBalance({ ...(balanceRaw as object), world: mapRaw });
+export function parseGameData(balanceRaw: unknown, mapRaw: unknown, laws: readonly LawDef[] = []): Balance {
+  return { ...parseBalance({ ...(balanceRaw as object), world: mapRaw }), laws };
 }
 
 export function parseBalance(raw: unknown): Balance {
@@ -1802,6 +1854,7 @@ export function parseBalance(raw: unknown): Balance {
     newspaper: parseNewspaper(raw),
     tutorial: parseTutorial(raw),
     worldModel: parseWorldModel(raw),
+    laws: [],
   };
 
   for (const r of balance.transport.pipeline.rights) {

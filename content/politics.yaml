@@ -32,3 +32,14 @@ parties:
       - { de: "Rechte der Provinzen gegen Hallstead", en: "The rights of the provinces against Hallstead" }
       - { de: "Schutz für kleine Produzenten, Zölle auf fremdes Öl", en: "Protection for small producers, tariffs on foreign oil" }
       - { de: "Rohre und Gleise müssen jedes Öl zum selben Preis befördern", en: "Pipes and rails must carry all oil at the same price" }
+
+# Gesetzesmeldungen (4.3): allgemeine Texte. Was je Gesetz in der Zeitung steht
+# (Antrag, Debatte, angenommen, abgelehnt), steht in content/laws/.
+laws:
+  voteTitle: { de: Abstimmung im Parlament, en: Vote in Parliament }
+  yes: { de: Ja, en: Aye }
+  no: { de: Nein, en: Nay }
+  outlook:
+    likely: { de: "In den Fluren heißt es, die Mehrheit stehe.", en: "In the corridors they say the votes are there." }
+    close: { de: "Die Abstimmung wird knapp – in Hallstead wird um jede Stimme gerungen.", en: "The vote will be close – in Hallstead every vote is being fought over." }
+    unlikely: { de: "Eine Mehrheit ist nicht in Sicht.", en: "There is no majority in sight." }

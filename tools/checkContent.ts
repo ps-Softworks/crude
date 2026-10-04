@@ -9,8 +9,9 @@ import { formatContentError, parseEventFiles } from '../src/sim/eventContent';
 import { analyzeRelevance, checkRelevanceMarks, parseRelevanceContent, readMarks, simReadMarks } from '../src/sim/eventRelevance';
 import { parseFamilyContent } from '../src/sim/family';
 import { parseNewspaperContent } from '../src/sim/newspaper';
+import { parseLawFiles } from '../src/sim/laws';
 import { parsePoliticsContent } from '../src/sim/politics';
-import { loadBalance } from '../src/sim/testBalance';
+import { loadBalance, readLawFiles } from '../src/sim/testBalance';
 import { EVENTS_DIR, readEventFiles } from '../src/sim/testEvents';
 import { parseTutorialContent } from '../src/sim/tutorial';
 import { mapRefErrors } from '../src/sim/regions';
@@ -29,6 +30,8 @@ const zeitung = parseNewspaperContent(
 );
 // Parteien (4.2): Namen und Programme für Wahlergebnis und Zeitung.
 const politik = parsePoliticsContent('content/politics.yaml', readFileSync(new URL('../content/politics.yaml', import.meta.url), 'utf8'));
+// Gesetze (4.3): jede Datei in content/laws/ ist ein Gesetz mit Bedingungen, Wirkung und Zeitungsmeldungen.
+const gesetze = parseLawFiles(readLawFiles());
 // Familie (2.7): Zustandswörter und Sätze für den Familienbildschirm.
 const familie = parseFamilyContent('content/family.yaml', readFileSync(new URL('../content/family.yaml', import.meta.url), 'utf8'));
 // Story-Bögen (2.9): Ausgänge und ihre Merkzeichen.
@@ -42,7 +45,7 @@ const einstieg = parseTutorialContent('content/tutorial.yaml', readFileSync(new 
 // Wirkung der Antworten (0.2.15+3): begründete Ausnahmen.
 const wirkung = parseRelevanceContent('content/relevance.yaml', readFileSync(new URL('../content/relevance.yaml', import.meta.url), 'utf8'));
 const wirkungMarks = wirkung.content && parsed.errors.length === 0 ? checkRelevanceMarks('content/relevance.yaml', wirkung.content, events) : [];
-const errors = [...wirkung.errors, ...wirkungMarks, ...einstieg.errors, ...parsed.errors, ...zeitung.errors, ...politik.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks];
+const errors = [...wirkung.errors, ...wirkungMarks, ...einstieg.errors, ...parsed.errors, ...zeitung.errors, ...politik.errors, ...gesetze.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks];
 
 // Karte (0.2.15+5): ranch und unlocks in den Ereignissen müssen auf content/map.yaml zeigen.
 const karte = parsed.errors.length === 0 ? mapRefErrors(events, loadBalance().world) : [];
@@ -67,11 +70,14 @@ if (errors.length > 0) {
 }
 const ohneEnglisch = events.filter((e) => e.title.en.trim() === '').length;
 console.log(`Inhalte in Ordnung: ${events.length} Ereignisse in ${files.length} Datei(en).`);
+console.log(`Gesetze: ${gesetze.laws.length} – ${gesetze.laws.map((l) => l.name.de).join(', ')}.`);
 console.log(`Auftritte: ${events.filter((e) => e.visitor).length} Besuche am Schreibtisch, ${events.filter((e) => e.tableau).length} Vollbild-Szenen.`);
 if (ohneEnglisch > 0) console.log(`Hinweis: ${ohneEnglisch} Ereignisse haben noch keinen englischen Text.`);
 // Entwürfe (2.10a): Schlüsselszenen, die Philipp noch überarbeiten soll.
 const entwuerfe = events.filter((e) => e.draft).map((e) => e.id);
 if (entwuerfe.length > 0) console.log(`Entwürfe (draft: true): ${entwuerfe.length} – ${entwuerfe.join(', ')}`);
+const gesetzEntwuerfe = gesetze.laws.filter((l) => l.draft).map((l) => l.id);
+if (gesetzEntwuerfe.length > 0) console.log(`Gesetze als Entwurf: ${gesetzEntwuerfe.join(', ')}`);
 // Wirkung der Antworten (0.2.15+3): Zusammenfassung; die Liste zeigt npm run check:events.
 if (boegen.content && kapitel.content && wirkung.content) {
   const balance = loadBalance();
