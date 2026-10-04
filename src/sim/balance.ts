@@ -3,6 +3,8 @@
 // Seit 0.2.15+5 gehört die Karte (content/map.yaml) mit dazu: parseGameData.
 
 import { parseWorldMap, type WorldMap } from './worldMap';
+// 4.16 Andockpunkt
+import { parseHallstead, type HallsteadBalance } from './hallsteadBalance';
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
 
@@ -523,6 +525,8 @@ export interface Balance {
   family: FamilyBalance;
   newspaper: NewspaperBalance;
   tutorial: TutorialBalance;
+  // 4.16 Andockpunkt: Nebeninvestments und Lobbyist in Hallstead.
+  hallstead: HallsteadBalance;
 }
 
 /** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
@@ -1536,6 +1540,8 @@ export function parseBalance(raw: unknown): Balance {
     family: parseFamily(raw),
     newspaper: parseNewspaper(raw),
     tutorial: parseTutorial(raw),
+    // 4.16 Andockpunkt
+    hallstead: parseHallstead(raw),
   };
 
   for (const r of balance.transport.pipeline.rights) {

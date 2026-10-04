@@ -8,6 +8,8 @@ import { checkChapterMarks, parseChapterContent } from '../src/sim/chapter';
 import { formatContentError, parseEventFiles } from '../src/sim/eventContent';
 import { analyzeRelevance, checkRelevanceMarks, parseRelevanceContent, readMarks, simReadMarks } from '../src/sim/eventRelevance';
 import { parseFamilyContent } from '../src/sim/family';
+// 4.16 Andockpunkt
+import { checkHallsteadContent, parseHallsteadContent } from '../src/sim/hallsteadContent';
 import { parseNewspaperContent } from '../src/sim/newspaper';
 import { loadBalance } from '../src/sim/testBalance';
 import { EVENTS_DIR, readEventFiles } from '../src/sim/testEvents';
@@ -57,6 +59,10 @@ try {
 } catch (e) {
   errors.push({ file: 'content/tutorial.yaml', line: 1, message: (e as Error).message });
 }
+// 4.16 Andockpunkt: Texte der Hallstead-Mappe und ob sie zu balance.yaml passen.
+const hallstead = parseHallsteadContent('content/hallstead.yaml', readFileSync(new URL('../content/hallstead.yaml', import.meta.url), 'utf8'));
+errors.push(...hallstead.errors);
+if (hallstead.content) errors.push(...checkHallsteadContent('content/hallstead.yaml', hallstead.content, loadBalance()));
 if (errors.length > 0) {
   for (const error of errors) console.error(formatContentError(error));
   console.error(`\n${errors.length} Fehler in ${files.length} Datei(en). Inhalte nicht in Ordnung.`);

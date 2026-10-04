@@ -22,6 +22,8 @@ export const SHEET_IDS = [
   'bericht',
   /** Wer vor der Tür wartet, wenn es mehrere sind (0.2.15+11). */
   'wartende',
+  /** 4.16 Andockpunkt: Hallstead-Mappe – Beteiligungen und Lobbyist (ab Kapitel 3). */
+  'hallstead',
 ] as const;
 export type SheetId = (typeof SHEET_IDS)[number];
 

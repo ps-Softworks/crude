@@ -40,6 +40,8 @@ import {
   WallMapShape,
 } from './objects/Shapes';
 import { RuthNote } from './RuthNote';
+// 4.16 Andockpunkt
+import { HallsteadDeskItem, hallsteadOnDesk } from '../sheets/HallsteadSheet';
 
 /** Wo was liegt, in Prozent der Bühne (unter der Kopfleiste). */
 const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte' | 'tuer', Placement> = {
@@ -56,6 +58,8 @@ const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte
   fracht: { left: 19, top: 75, width: 15, height: 22 },
   protokoll: { left: 36, top: 76, width: 9, height: 21 },
   glocke: { left: 86, top: 70, width: 12, height: 27 },
+  // 4.16 Andockpunkt: Hallstead-Mappe unter dem Kassenbuch (ab Kapitel 3).
+  hallstead: { left: 73, top: 75, width: 12, height: 22 },
 };
 
 export interface DeskSceneProps {
@@ -317,6 +321,10 @@ export function DeskScene(p: DeskSceneProps) {
             ),
           },
           <FolderShape variant="fracht" />,
+        )}
+        {/* 4.16 Andockpunkt: Hallstead-Mappe, in Kapitel 1 unsichtbar (im Debug sichtbar). */}
+        {hallsteadOnDesk(game, p.debug) && (
+          <HallsteadDeskItem game={game} at={AT.hallstead!} glow={p.glow === 'hallstead' || p.spotlight === 'hallstead'} onOpen={() => p.onOpen('hallstead')} />
         )}
         {obj('protokoll', 'Kladde', { status: p.saved ? '✓ gesichert' : undefined }, <NotebookShape />)}
         {obj(

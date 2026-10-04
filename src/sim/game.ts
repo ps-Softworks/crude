@@ -24,6 +24,9 @@ import { advanceLogistics, newLogistics, settleStorage, spillOver, type Logistic
 import { advanceTransport, noShipments } from './transport';
 import { settleTakeover } from './trust';
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
+// 4.16 Andockpunkt: Nebeninvestments und Lobbyist in Hallstead (ab Kapitel 3).
+import { settleHallstead } from './hallstead';
+import type { HallsteadState } from './hallsteadState';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
@@ -95,6 +98,8 @@ export interface GameState {
   sick: number;
   /** Ruth und Thomas (2.7). */
   family: FamilyState;
+  /** 4.16 Andockpunkt: Hallstead (Beteiligungen, Lobbyist) – erst da, wenn Jacob dort etwas tut (ab Kapitel 3). */
+  hallstead?: HallsteadState;
   log: string[];
   /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
   roundLogStart: number;
@@ -212,7 +217,9 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const verzinst = settleLoans(settleRigs(advanceLogistics(rivale, balance), balance), balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   const gefahren = advanceTransport(verzinst, balance);
-  const state = { ...checkBankruptcy(gefahren, balance), roundLogStart };
+  // 4.16 Andockpunkt: Beteiligungen und Lobby in Hallstead (ohne Hallstead-Zustand unverändert) – vor der Pleiteprüfung.
+  const hallstead = settleHallstead(gefahren, balance);
+  const state = { ...checkBankruptcy(hallstead, balance), roundLogStart };
   if (state.ending === 'pleite') return state;
   if (state.round >= state.totalRounds) {
     // Kapitelprüfung (2.11): steht im Protokoll, der Ergebnisbildschirm zeigt die Einzelheiten.
