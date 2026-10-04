@@ -1,0 +1,280 @@
+// 4.8 Aktien, Aufsichtsrat, Anleihen (ab Kapitel 2): drei Reiter im Kassenbuch.
+// Alle Regeln stehen in src/sim/stocks.ts – hier wird nur angezeigt und geklickt.
+// Jeder Knopf zeigt vorher, was passiert (Probelauf der Simulation).
+
+import { useState } from 'react';
+import type { GameState } from '../sim/game';
+import {
+  acceptDemand,
+  boardMajority,
+  bondCoupons,
+  bondRate,
+  buyBack,
+  buybackCost,
+  control,
+  courtMember,
+  dividendCost,
+  investigate,
+  issueBond,
+  issueProceeds,
+  issueShares,
+  loyalSeats,
+  marketCap,
+  maxIssue,
+  memberMood,
+  ownStake,
+  payDividend,
+  pressCampaign,
+  rejectDemand,
+  revealed,
+  stocksWorldOf,
+  totalShares,
+  type StocksResult,
+  type StocksState,
+} from '../sim/stocks';
+import { demandText, memberLabel, strawName } from '../sim/stocksContent';
+import { localize } from '../sim/i18n';
+import { balance } from './balance';
+import { money, percent } from './format';
+import { stocksContent } from './stocks';
+
+type Props = { game: GameState; onChange: (s: GameState) => void; debug?: boolean };
+
+function Aktion({ result, onDone, children }: { result: StocksResult; onDone: (s: GameState) => void; children: string }) {
+  return (
+    <button type="button" disabled={!result.ok} title={result.ok ? undefined : result.reason} onClick={() => result.ok && onDone(result.state)}>
+      {children}
+    </button>
+  );
+}
+
+function stueck(n: number): string {
+  return `${n.toLocaleString('de-DE')} ${n === 1 ? 'Aktie' : 'Aktien'}`;
+}
+
+function Abgesetzt({ s }: { s: StocksState }) {
+  return s.ousted > 0 ? <p className="state pleite">Seit Runde {s.ousted} führt der Aufsichtsrat Harlan Oil ohne Jacob.</p> : null;
+}
+
+/** Reiter „Aktienbuch“: Kurs, wer welche Aktien hält, Ausgabe, Rückkauf, Dividende, Detektei. */
+export function SharesPanel({ game, onChange, debug = false }: Props) {
+  const s = game.stocks;
+  if (!s) return null;
+  if (!s.public) return <p className="muted">Harlan Oil ist eine Familienfirma: Es gibt keine Aktien. Geld bringen Bank und Anleihen.</p>;
+  const total = totalShares(s);
+  const vorher = s.priceHistory.at(-2);
+  const pfeil = vorher === undefined || vorher === s.price ? '' : s.price > vorher ? ' ↑' : ' ↓';
+  const kontrolle = control(s, balance);
+  const D = balance.stocks.dividend;
+  const ohneDividende = game.round - s.dividendRound;
+
+  // Strohmänner nach Namen zusammengefasst.
+  const bloecke = new Map<string, { shares: number; enttarnt: boolean }>();
+  for (const b of s.blocks) {
+    const name = strawName(stocksContent, b);
+    const alt = bloecke.get(name) ?? { shares: 0, enttarnt: true };
+    bloecke.set(name, { shares: alt.shares + b.shares, enttarnt: alt.enttarnt && revealed(s, b.since) });
+  }
+
+  const ausgabe = [Math.round(total * 0.05), Math.round(total * 0.1), maxIssue(s, balance)].filter((n, i, a) => n > 0 && a.indexOf(n) === i);
+  const rueckkauf = [Math.round(total * 0.02), Math.round(total * 0.05)].filter((n, i, a) => n > 0 && a.indexOf(n) === i);
+
+  return (
+    <div className="aktien-panel">
+      <Abgesetzt s={s} />
+      <dl className="terms">
+        <dt>Kurs</dt>
+        <dd>
+          {money(s.price)} je Aktie{pfeil} · Börsenwert {money(marketCap(s))}
+        </dd>
+        <dt>Jacobs Anteil</dt>
+        <dd>{percent(ownStake(s))}</dd>
+        <dt>Kontrolle</dt>
+        <dd>
+          {percent(kontrolle)} {kontrolle < 0.5 ? <strong>– unter 50 %: Der Aufsichtsrat kann Jacob absetzen.</strong> : '(eigene Aktien + loyale Räte)'}
+        </dd>
+      </dl>
+
+      <h3>Aktienbuch</h3>
+      <ul className="loans">
+        <li>
+          Jacob Harlan: {stueck(s.jacob)} ({percent(s.jacob / total)})
+        </li>
+        <li>
+          Kleinaktionäre: {stueck(s.float)} ({percent(s.float / total)})
+        </li>
+        {[...bloecke].map(([name, b]) => (
+          <li key={name}>
+            {name}: {stueck(b.shares)} ({percent(b.shares / total)})
+            {b.enttarnt ? <strong> – Strohmann von Augustus Thorne</strong> : debug && <span className="muted"> (Debug: Thorne)</span>}
+          </li>
+        ))}
+      </ul>
+      <Aktion result={investigate(game, balance)} onDone={onChange}>
+        {`Detektei auf das Aktienbuch ansetzen (${money(balance.stocks.thorne.investigateCost)})`}
+      </Aktion>
+
+      <h3>Neue Aktien ausgeben</h3>
+      <p className="klein">Bringt Geld, verwässert aber Jacobs Anteil. Braucht die Mehrheit im Aufsichtsrat.</p>
+      <div className="actions zeile">
+        {ausgabe.map((n) => (
+          <Aktion key={n} result={issueShares(game, balance, n)} onDone={onChange}>
+            {`${stueck(n)} (+${money(issueProceeds(s, balance, n))}, Jacob dann ${percent(s.jacob / (total + n))})`}
+          </Aktion>
+        ))}
+      </div>
+
+      <h3>Aktien zurückkaufen</h3>
+      <p className="klein">Von den Kleinaktionären, mit Aufschlag. Hebt Jacobs Anteil und stützt den Kurs. Strohmänner verkaufen nicht.</p>
+      <div className="actions zeile">
+        {rueckkauf.map((n) => (
+          <Aktion key={n} result={buyBack(game, balance, n)} onDone={onChange}>
+            {`${stueck(n)} (${money(buybackCost(s, balance, n))})`}
+          </Aktion>
+        ))}
+      </div>
+
+      <h3>Dividende</h3>
+      <p className="klein">
+        {s.dividendsTotal > 0 ? `Letzte Dividende in Runde ${s.dividendRound}.` : 'Noch keine Dividende gezahlt.'}{' '}
+        {ohneDividende >= D.graceRounds ? 'Die Anleger werden ungeduldig – der Kurs leidet.' : 'Jacobs eigener Anteil bleibt in der Familie.'}
+      </p>
+      <div className="actions zeile">
+        {D.rates.map((rate, i) => {
+          const d = dividendCost(game, balance, i);
+          return (
+            <Aktion key={rate} result={payDividend(game, balance, i)} onDone={onChange}>
+              {`${i === 0 ? 'Kleine' : 'Große'} Dividende: ${money(d?.amount ?? 0)} (aus der Kasse ${money(d?.cost ?? 0)})`}
+            </Aktion>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Reiter „Aufsichtsrat“: Räte mit Agenda, Forderung, Stellvertreterkampf. */
+export function BoardPanel({ game, onChange, debug = false }: Props) {
+  const s = game.stocks;
+  if (!s) return null;
+  if (!s.public) return <p className="muted">Eine Familienfirma hat keinen Aufsichtsrat.</p>;
+  const loyal = loyalSeats(s, balance);
+  const forderer = s.demand ? s.board.find((m) => m.id === s.demand!.member) : undefined;
+  return (
+    <div className="rat-panel">
+      <Abgesetzt s={s} />
+      <p className={boardMajority(s, balance) ? 'state' : 'state pleite'}>
+        {loyal} von {s.board.length} Räten auf Jacobs Seite – {boardMajority(s, balance) ? 'Jacob hat die Mehrheit.' : 'Jacob fehlt die Mehrheit.'}
+      </p>
+
+      {s.proxy && (
+        <div className="hint">
+          <strong>Stellvertreterkampf bis Runde {s.proxy.until}.</strong> Jacob braucht wieder 50 % Kontrolle (jetzt {percent(control(s, balance))}): Aktien
+          zurückkaufen, Räte umstimmen, Kleinaktionäre über die Presse gewinnen.
+          <div className="actions zeile">
+            <Aktion result={pressCampaign(game, balance)} onDone={onChange}>
+              {`Anzeigen in allen Zeitungen (${money(balance.stocks.vote.pressCost)})`}
+            </Aktion>
+          </div>
+        </div>
+      )}
+
+      {s.demand && forderer && (
+        <div className="hint">
+          <p>{demandText(stocksContent, s.demand, memberLabel(stocksContent, forderer, revealed(s, forderer.since)).name)}</p>
+          {s.demand.accepted ? (
+            <p className="klein">Jacob hat zugesagt.</p>
+          ) : (
+            <div className="actions zeile">
+              <Aktion result={acceptDemand(game)} onDone={onChange}>
+                Zusagen
+              </Aktion>
+              <Aktion result={rejectDemand(game, balance)} onDone={onChange}>
+                Ablehnen
+              </Aktion>
+            </div>
+          )}
+        </div>
+      )}
+
+      <ul className="loans">
+        {s.board.map((m) => {
+          const l = memberLabel(stocksContent, m, revealed(s, m.since));
+          return (
+            <li key={m.id}>
+              <strong>{l.name}</strong>, {l.role} · {l.agenda} · {localize(stocksContent.moods[memberMood(m, balance)])}
+              {debug && <span className="muted"> · Treue {m.loyalty}</span>}{' '}
+              {m.agenda !== 'spy' && (
+                <Aktion result={courtMember(game, balance, m.id)} onDone={onChange}>
+                  {`zum Essen ausführen (${money(balance.stocks.board.courtCost)})`}
+                </Aktion>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+/** Reiter „Anleihen“: laufende Anleihen und neue ausgeben. */
+export function BondsPanel({ game, onChange }: Props) {
+  const B = balance.stocks.bonds;
+  const [summe, setSumme] = useState(B.sizes[0]);
+  const [laufzeit, setLaufzeit] = useState(B.terms[0]);
+  const s = game.stocks;
+  if (!s) return null;
+  const zins = bondRate(balance, game.rating, stocksWorldOf(game));
+  const probe = issueBond(game, balance, summe, laufzeit);
+  return (
+    <div className="anleihen-panel">
+      <p className="klein">
+        Große Summen zu festem Zins. Der Zins läuft jede Runde weiter – auch in der Krise –, und am Ende ist die ganze Summe auf einmal fällig.
+      </p>
+      <dl className="terms">
+        <dt>Zins heute</dt>
+        <dd>{zins === null ? 'Mit Rating D zeichnet niemand.' : `${percent(zins)} pro Jahr (Rating ${game.rating}, Kreditklima)`}</dd>
+        <dt>Zins je Quartal</dt>
+        <dd>{money(bondCoupons(s))}</dd>
+      </dl>
+      {s.bonds.length === 0 ? (
+        <p className="muted">Keine Anleihen.</p>
+      ) : (
+        <ul className="loans">
+          {s.bonds.map((b) => (
+            <li key={b.id}>
+              Nr. {b.id} · {money(b.principal)} · {percent(b.rate)} pro Jahr · {money((b.principal * b.rate) / 4)} je Quartal · fällig am Ende von Runde {b.maturity}
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="regler-zeile">
+        <strong>Neue Anleihe</strong>
+        <label>
+          Summe{' '}
+          <select value={summe} onChange={(e) => setSumme(Number(e.target.value))}>
+            {B.sizes.map((x) => (
+              <option key={x} value={x}>
+                {money(x)}
+              </option>
+            ))}
+          </select>
+        </label>{' '}
+        <label>
+          Laufzeit{' '}
+          <select value={laufzeit} onChange={(e) => setLaufzeit(Number(e.target.value))}>
+            {B.terms.map((x) => (
+              <option key={x} value={x}>
+                {x} Runden
+              </option>
+            ))}
+          </select>
+        </label>{' '}
+        <Aktion result={probe} onDone={onChange}>
+          {`Ausgeben (+${money(Math.round(summe * (1 - B.fee)))})`}
+        </Aktion>
+        {!probe.ok && <p className="hint">{probe.reason}</p>}
+      </div>
+    </div>
+  );
+}

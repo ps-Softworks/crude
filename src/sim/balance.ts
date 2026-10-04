@@ -2,6 +2,7 @@
 // Objekt; parseBalance prüft es und meldet verständliche Fehler.
 // Seit 0.2.15+5 gehört die Karte (content/map.yaml) mit dazu: parseGameData.
 
+import { parseStocksBalance, type StocksBalance } from './stocksBalance'; // 4.8 Andockpunkt
 import { parseWorldMap, type WorldMap } from './worldMap';
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
@@ -523,6 +524,8 @@ export interface Balance {
   family: FamilyBalance;
   newspaper: NewspaperBalance;
   tutorial: TutorialBalance;
+  /** Aktien, Aufsichtsrat, Anleihen ab Kapitel 2 (GDD §8). */
+  stocks: StocksBalance; // 4.8 Andockpunkt
 }
 
 /** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
@@ -1536,6 +1539,7 @@ export function parseBalance(raw: unknown): Balance {
     family: parseFamily(raw),
     newspaper: parseNewspaper(raw),
     tutorial: parseTutorial(raw),
+    stocks: parseStocksBalance(raw, (m) => new BalanceError(m)), // 4.8 Andockpunkt
   };
 
   for (const r of balance.transport.pipeline.rights) {

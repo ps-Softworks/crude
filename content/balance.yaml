@@ -508,3 +508,88 @@ tutorial:
   endAfterProducedRounds: 2  # fertig, wenn die erste Quelle 2 Runden gefördert hat (die Verkaufsrunde ist vorbei)
   deeperMinChance: 25        # PLATZHALTER: tiefer bohren nur raten, wenn der Geologe der nächsten Stufe mind. 25 % gibt
   loanRounding: 100          # vorgeschlagene Kredite auf 100 $ aufgerundet (mindestens credit.minLoan)
+
+# 4.8 Aktien, Aufsichtsrat, Anleihen (GDD §8) – ab Kapitel 2, in Kapitel 1 unsichtbar.
+# Regeln: src/sim/stocks.ts, Zahlen lesen: src/sim/stocksBalance.ts, Namen und Texte: content/stocks.yaml.
+# Der Börsengang selbst fällt am Ende von Kapitel 1 (chapter.ipo). Alle Werte PLATZHALTER bis zu den Bot-Läufen von Kapitel 2.
+stocks:
+  fromChapter: 2             # ab diesem Kapitel gibt es Aktienbuch und Anleihen
+  totalShares: 1000          # Aktien beim Börsengang (Jacob behält 1 − verkaufter Anteil)
+  # Kurs = Imperiumswert / Aktien × Stimmung. Die Stimmung (1 = fair) folgt Gewinn, Dividende,
+  # Kreditklima (4.1: credit 0–100, 50 = normal) und öffentlicher Stimmung (mood) und zieht zurück zur 1.
+  price:
+    min: 1                   # tiefer fällt eine Aktie nie (in $)
+    sentimentMin: 0.4
+    sentimentMax: 1.8
+    profitWeight: 0.5        # Wertzuwachs der Runde (Anteil, höchstens ±0,2) × dieses Gewicht
+    creditWeight: 0.06       # Boom an der Börse hebt, Kreditklemme drückt (je voller Ausschlag)
+    moodWeight: 0.04         # schlechte Stimmung im Land drückt
+    noise: 0.04              # Gerüchte: zufälliger Ausschlag je Runde (±)
+    reversion: 0.15          # so viel des Abstands zur 1 holt die Stimmung je Runde auf
+  dividend:
+    rates: [0.01, 0.03]      # wählbare Dividende: Anteil am Börsenwert (klein, groß)
+    graceRounds: 4           # so lange ohne Dividende bleibt der Kurs ruhig (ein Jahr)
+    missPenalty: 0.04        # danach je Runde ohne Dividende: Stimmung −0,04
+    bonus: 0.03              # Runde mit Dividende: Stimmung +0,03
+  issue:
+    maxShare: 0.2            # höchstens so viele neue Aktien je Ausgabe (Anteil an allen Aktien)
+    discount: 0.1            # neue Aktien gehen mit 10 % Abschlag auf den Kurs weg (Bankprovision)
+    dilutionPenalty: 0.5     # Stimmung − Anteil neuer Aktien × 0,5
+  buyback:
+    premium: 0.1             # Rückkauf kostet Kurs + 10 %
+    bonus: 0.2               # Stimmung + Anteil zurückgekaufter Aktien × 0,2
+  # Aufsichtsrat: 5–9 Sitze (GDD §8). Sitze = seatsBase + verkaufter Anteil × seatsPerShare.
+  board:
+    seatsMin: 5
+    seatsMax: 9
+    seatsBase: 4
+    seatsPerShare: 6         # 20 % → 5 Sitze, 49 % → 7 Sitze
+    loyalFrom: 50            # ab dieser Treue (0–100) stimmt ein Rat mit Jacob
+    weight: 0.6              # loyale Räte bringen diesen Anteil der Stimmen der freien Aktionäre mit
+    gain: 3                  # Treue je Runde, in der die Agenda erfüllt ist …
+    loss: 4                  # … und je Runde, in der sie verletzt ist
+    maxDebtRatio: 0.3        # Agenda Sicherheit: Schulden höchstens 30 % des Imperiumswerts
+    courtCost: 2000          # „Rat umstimmen“: Essen, Gefälligkeiten
+    courtGain: 12            # … bringt so viel Treue (höchstens einmal je Runde)
+    bigDecision: 0.25        # Anleihen über 25 % des Firmenwerts brauchen die Mehrheit (neue Aktien immer)
+  # Forderungen des Aufsichtsrats: der unzufriedenste Rat verlangt etwas mit Frist.
+  demands:
+    chance: 0.35             # Chance je Runde ohne offene Forderung
+    dueRounds: 3             # Frist in Runden
+    dividendShare: 0.02      # Forderung Dividende: so viel vom Börsenwert
+    debtCut: 0.25            # Forderung Schulden: um ein Viertel senken
+    buybackShare: 0.03       # Forderung Rückkauf: so viele Aktien
+    issueShare: 0.1          # Thornes Mann fordert so viele neue Aktien
+    fulfillGain: 15          # erfüllt: Treue +15
+    failLoss: 20             # zugesagt, aber nicht erfüllt: −20
+    rejectLoss: 10           # abgelehnt oder ignoriert: −10
+  # Thorne und die Strohmänner (GDD §8, §13: „zu viele Aktien verkauft – Thorne kauft sich über Strohmänner ein“).
+  thorne:
+    minOutside: 0.4          # erst wenn mindestens 40 % der Aktien nicht bei Jacob liegen, kann Thorne unbemerkt kaufen
+    buyChance: 0.5           # Chance je Runde, dass er zukauft
+    buyShare: 0.03           # so viele Aktien (Anteil an allen) je Kauf
+    hostileFactor: 1.5       # hat Jacob ihn in Kapitel 1 abgewiesen (hostileMarks), kauft er so viel mehr
+    hostileMarks: [thorne_abgelehnt]
+    cheapBelow: 0.8          # Stimmung unter 0,8: Die Aktie ist billig – Thorne kauft doppelt
+    floatKeep: 0.05          # so viel bleibt immer bei den Kleinaktionären
+    maxStake: 0.45           # mehr will er nicht
+    seatPer: 0.1             # je 10 % Anteil bekommt Thorne einen Sitz im Aufsichtsrat (sein Mann)
+    maxSeats: 3
+    investigateCost: 1500    # Detektei durchleuchtet das Aktienbuch: alle Strohmänner fliegen auf
+  # Misstrauensvotum und Stellvertreterkampf (GDD §8): nur wenn die Kontrolle unter 50 % liegt.
+  vote:
+    lookback: 2              # Kurs der letzten 2 Runden …
+    dropFrom: 0.15           # … um 15 % gefallen, oder …
+    moodBelow: 30            # … die Stimmung im Land (Skandale) unter 30
+    proxyRounds: 2           # Stellvertreterkampf: so viele Runden Zeit
+    pressCost: 1500          # Kleinaktionäre über die Presse mobilisieren …
+    pressBonus: 0.04         # … bringt so viel Kontrolle (bis zum Ende des Kampfs)
+  # Anleihen (GDD §8: ab Kapitel 2, große Summen, fester Zins, Zinsen laufen auch in Krisen).
+  bonds:
+    sizes: [10000, 25000, 50000]
+    terms: [8, 12]           # Laufzeit in Runden (2 oder 3 Jahre)
+    baseRate: 0.05           # Jahreszins …
+    spreads: { A: 0, B: 0.01, C: 0.03 }  # … plus Aufschlag nach Rating (D: niemand zeichnet)
+    climateSpread: 0.03      # … plus bis zu 3 Punkte in der Kreditklemme (credit 0), minus bis zu 3 im Boom (credit 100)
+    minRate: 0.03
+    fee: 0.02                # Bankprovision beim Ausgeben

@@ -41,5 +41,7 @@ export function empireValue(state: GameState, balance: Balance): number {
   const imBoden = state.fields.reduce((sum, field) => sum + ownReserves(state, balance, field.id), 0);
   const reserven = balance.empire.reserveFactor * state.postedPrice * imBoden;
   // Tanks, Gespanne und Pipeline (0.2.15+2) sowie gekaufte Türme (0.2.15+7) zählen mit ihrem Buchwert.
-  return cents(state.cash + tank + reserven + logisticsAssets(state, balance) + rigAssets(state, balance) - debt(state));
+  // 4.8 Andockpunkt: Anleihen sind Schulden wie Bankkredite.
+  const anleihen = (state.stocks?.bonds ?? []).reduce((sum, b) => sum + b.principal, 0);
+  return cents(state.cash + tank + reserven + logisticsAssets(state, balance) + rigAssets(state, balance) - debt(state) - anleihen);
 }

@@ -23,6 +23,7 @@ import { newRival, advanceRival, type RivalState } from './rival';
 import { advanceLogistics, newLogistics, settleStorage, spillOver, type LogisticsState } from './logistics';
 import { advanceTransport, noShipments } from './transport';
 import { settleTakeover } from './trust';
+import { settleStocks, type StocksState } from './stocks'; // 4.8 Andockpunkt
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
@@ -98,6 +99,8 @@ export interface GameState {
   log: string[];
   /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
   roundLogStart: number;
+  /** 4.8 Andockpunkt: Aktien, Aufsichtsrat, Anleihen ab Kapitel 2 (startStocks); fehlt in Kapitel 1. */
+  stocks?: StocksState;
 }
 
 /**
@@ -209,7 +212,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const rivale = advanceRival(gepachtet, balance, gebohrt, input.postedPrice);
   // Eigene Fuhrwerke und Pipeline (0.2.15+2): Löhne, Unterhalt, Baufortschritt, Sabotage – vor den Zinsen.
   // Türme und Pumpen (0.2.15+7): Turmmiete und Pumpenunterhalt, ebenfalls vor den Zinsen.
-  const verzinst = settleLoans(settleRigs(advanceLogistics(rivale, balance), balance), balance);
+  // 4.8 Andockpunkt: Anleihen, Kurs, Aufsichtsrat, Thorne – vor den Bankzinsen (ohne state.stocks wirkungslos).
+  const verzinst = settleLoans(settleStocks(settleRigs(advanceLogistics(rivale, balance), balance), balance), balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   const gefahren = advanceTransport(verzinst, balance);
   const state = { ...checkBankruptcy(gefahren, balance), roundLogStart };

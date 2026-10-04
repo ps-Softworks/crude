@@ -14,6 +14,7 @@ import { formatDate, type GameState } from '../../sim/game';
 import { storageCapacity } from '../../sim/logistics';
 import { makeNewspaper } from '../../sim/newspaper';
 import { rigSummary } from '../../sim/rigs';
+import { stocksAttention } from '../../sim/stocks'; // 4.8 Andockpunkt
 import type { TutorialView } from '../../sim/tutorial';
 import { balance } from '../balance';
 import { familyContent } from '../family';
@@ -287,7 +288,19 @@ export function DeskScene(p: DeskSceneProps) {
         {obj(
           'kassenbuch',
           'Kassenbuch',
-          { badge: game.bankruptcyDeadline > 0 ? { text: `Runde ${game.bankruptcyDeadline}`, urgent: true } : null, status: `Rating ${game.rating}` },
+          {
+            badge:
+              game.bankruptcyDeadline > 0
+                ? { text: `Runde ${game.bankruptcyDeadline}`, urgent: true }
+                : // 4.8 Andockpunkt: Stellvertreterkampf oder offene Forderung des Aufsichtsrats.
+                  stocksAttention(game) === 'proxy'
+                  ? { text: 'Misstrauen', urgent: true }
+                  : stocksAttention(game) === 'demand'
+                    ? { text: 'Aufsichtsrat' }
+                    : null,
+            status: `Rating ${game.rating}`,
+            onOpen: () => p.onOpen('kassenbuch', stocksAttention(game) ? 'rat' : undefined),
+          },
           <LedgerShape />,
         )}
         {obj(
