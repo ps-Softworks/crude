@@ -19,7 +19,7 @@ import { Rng, seedFromString, type RngState } from './rng';
 
 /**
  * Bedingungen: jede ist eine Untergrenze (min…) oder Obergrenze (max…).
- * minChapter/maxChapter (Phase 4): Kapitel 1–5; ein Spielstand ohne Kapitelangabe ist in Kapitel 1.
+ * minChapter/maxChapter (Phase 4): Kapitel 1–7; ein Spielstand ohne Kapitelangabe ist in Kapitel 1.
  * Ereignisse ohne Kapitel-Bedingung kommen in jedem Kapitel.
  */
 export const CONDITION_KEYS = [

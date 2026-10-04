@@ -36,6 +36,8 @@ later:
   - { mark: k2_werksarzt, reason: "Arbeiterschutz-Akte und Arbeiter-Ruf (Story-Bibel §8: kerrigan_*/trupp_* → Gewerkschaftssaat, Kapitel 3)" }
   - { mark: k2_benzin_frueh, reason: "Greaves' Benzin-Kolonne: Thomas' Ideen zu Marke und Automobil in Kapitel 3 (Story-Bibel §7 B)" }
   - { mark: k2_marine_vertrag, reason: "Heizöl für die Marine – Weiche zs2_marine_vertrag im Zeitsprung II (Story-Bibel §2)" }
+  - { mark: k2_thorne_klausel, reason: "Thornes Vertrag, Seite neun: keine eigene Leitung zu einem anderen Hafen – 4.7 Pipelines sperrt den Bau oder wertet ihn als Vertragsbruch (Story-Bibel §3 Thorne, GDD §13 Pipeline zum Hafen)" }
+  - { mark: k2_daniel_brief_beantwortet, reason: "Jacob hat Daniel Moss auf den Brief zum Grab geantwortet – Daniel als Bezirksstaatsanwalt in Kapitel 3 (Story-Bibel §3, §7 A)" }
   - { mark: k2_quill_detektiv, reason: "Mr. Quill aus Thornes Detektei kennt Harlans Mengen – Fixer-Ersatz und Thornes Strohmänner (Story-Bibel §4, §6)" }
   - { mark: k2_sayles_aktien, reason: "Mr. Sayles kauft Aktien – Thornes Strohmann-Falle k2_thorne_strohmann (Story-Bibel §6, Rivalen am Rand)" }
   - { mark: k2_anleihe_verzug, reason: "Rating bei Vandermeer & Co. und Pettibone (Story-Bibel §8: bank_kredit/wechsel_gehalten → Rating), Kapitel 3" }

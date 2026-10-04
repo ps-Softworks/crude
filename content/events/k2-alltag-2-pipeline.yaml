@@ -8,7 +8,10 @@
 #
 # Merkzeichen aus Kapitel 1, die hier gelesen werden:
 #   moss_fair            → k2_moss_brunnen (Ezekiel kommt selbst)
-#   moss_feind           → k2_moss_zaun (ohne moss_verloren)
+#   moss_feind           → k2_moss_zaun (ohne moss_verloren und moss_vertrieben: nur nach dem Betrug,
+#                          da hat Moss die Farm noch – siehe moss_wagenweg in Kapitel 1)
+#   moss_vertrieben      → k2_moss_daniel_brief (Jacob hat die Farm ersteigert; Ezekiel kommt nie wieder,
+#                          Bibel §3 – es schreibt Daniel)
 #   eli_waechter         → k2_pipeline_angezapft_eli (Eli Ward führt die Wachleute)
 #   thorne_vertrag       → k2_fracht_vertrag (Thorne will verlängern)
 #   ohne thorne_vertrag  → k2_fracht_druck (Thorne erhöht einfach)
@@ -17,6 +20,9 @@
 #   k2_leck_geleugnet → k2_leck_klage (2 Runden später)
 #   k2_pipeline_offen / k2_pipeline_wucher → Paket 4 (Delgados Beitrag)
 #   k2_quill_detektiv → content/relevance.yaml (Thornes Detektei, später)
+#   k2_thorne_klausel → content/relevance.yaml (4.7 Pipelines: Thornes Vertrag verbietet eine eigene
+#                       Leitung zu einem anderen Hafen – Bau sperren oder als Vertragsbruch werten)
+#   k2_daniel_brief_beantwortet → content/relevance.yaml (Daniel Moss in Kapitel 3)
 
 # --- Wegerechte ------------------------------------------------------------------
 
@@ -114,7 +120,7 @@
 - id: k2_moss_zaun
   ranch: moss
   marked: [moss_feind]
-  notMarked: [moss_verloren]
+  notMarked: [moss_verloren, moss_vertrieben]
   delay: 0
   # TODO-Bedingung: hasPipeline
   conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
@@ -155,6 +161,59 @@
         en: "In the morning the wire lies in the ditch. One of the hands has a split scalp. Ezekiel Moss writes a letter to Hallstead, to his son. Jacob never learns what it says."
       # TODO-Effekt: heat: 1, trace: { severity: 2, label: Moss-Zaun }
       effects: { strength: -3 }
+      appointments: 0
+      default: true
+
+# Die Farm gehört Jacob (ersteigert, moss_vertrieben) oder dem Herrn aus Hallstead, an den er sie
+# verkauft hat. Erfunden: Das Grab von Daniels Mutter hinter dem Farmhaus (Kapitel 1 nennt sie nie). Ezekiel lebt bei Verwandten und kommt nie (Bibel §3). Daniel ist Mitte zwanzig und
+# Anwalt (mit moss_feind: Hilfsanwalt bei Frank Delaney, Bibel §3) – er schreibt.
+- id: k2_moss_daniel_brief
+  mail: personal
+  ranch: moss
+  marked: [moss_vertrieben]
+  delay: 0
+  deadline: 3
+  # TODO-Bedingung: hasPipeline
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  chance: 0.15
+  title:
+    de: Ein Brief von Daniel Moss
+    en: A Letter from Daniel Moss
+  text:
+    de: >-
+      Ein Brief aus Hallstead, auf dem Papier einer Behörde, mit der Maschine geschrieben und
+      von Hand unterzeichnet: Daniel Moss. Die neue Leitung läuft über das Land, auf dem er
+      aufgewachsen ist. Bei den Bauarbeiten haben die Trupps das Grab seiner Mutter hinter
+      dem alten Farmhaus eingeebnet. Er verlangt nichts. Er teilt es nur mit, „für die Akten“.
+    en: >-
+      A letter from Hallstead on the paper of a government office, typed and signed by hand:
+      Daniel Moss. The new line runs across the land he grew up on. During the works the
+      crews levelled his mother's grave behind the old farmhouse. He asks for nothing. He
+      merely informs Jacob, “for the record”.
+  choices:
+    - id: grab
+      label: { de: "Das Grab wiederherstellen lassen, mit Stein und Zaun (2.500 $)", en: "Have the grave restored, with a stone and a fence (2,500 $)" }
+      result:
+        de: "Ein Steinmetz aus Port Ellis setzt einen grauen Stein mit dem Namen, den Daniel genannt hat. Die Leitung macht einen kleinen Bogen darum. Daniel antwortet nicht, aber er schickt den Brief auch nicht zurück."
+        en: "A stonemason from Port Ellis sets a grey stone with the name Daniel gave. The line makes a small bend around it. Daniel does not reply, but he does not send the letter back either."
+      requires: { minCash: 2500 }
+      effects: { cash: -2500, strength: 2 }
+      marks: [k2_daniel_brief_beantwortet]
+    - id: antworten
+      label: { de: "Selbst antworten, mit der Hand", en: "Reply himself, by hand" }
+      result:
+        de: "Jacob schreibt vier Seiten und streicht drei davon. Was bleibt, ist eine Entschuldigung ohne das Wort. Daniel legt den Brief in eine Mappe, auf der schon Jacobs Name steht."
+        en: "Jacob writes four pages and strikes out three. What remains is an apology without the word. Daniel puts the letter in a folder that already bears Jacob's name."
+      effects: { strength: -4 }
+      marks: [k2_daniel_brief_beantwortet]
+      appointments: 2
+    - id: anwalt
+      label: { de: "Den Anwälten übergeben", en: "Hand it to the lawyers" }
+      result:
+        de: "Harlans Anwälte antworten in drei Sätzen: Das Wegerecht sei rechtmäßig erworben, die Arbeiten genehmigt. Beides stimmt. In Hallstead wird der Brief abgeheftet, zu den anderen."
+        en: "Harlan's lawyers reply in three sentences: the right of way was lawfully acquired, the works approved. Both are true. In Hallstead the letter is filed, with the others."
+      # TODO-Effekt: trace: { severity: 1, label: Moss-Grab }
+      effects: { cash: -400, strength: -2 }
       appointments: 0
       default: true
 
@@ -405,9 +464,11 @@
     - id: verlaengern
       label: { de: "Verlängern – der Tarif sinkt", en: "Renew – the tariff falls" }
       result:
-        de: "Thornes Sekretär holt den Vertrag persönlich ab und bedankt sich für die lange Freundschaft. Die Frachtkosten sinken. Die Pläne für die Leitung nach Okara wandern in den Schrank."
-        en: "Thorne's secretary collects the contract in person and gives thanks for the long friendship. Freight costs fall. The plans for the line to Okara go into the cupboard."
+        de: "Thornes Sekretär holt den Vertrag persönlich ab und bedankt sich für die lange Freundschaft. Die Frachtkosten sinken. Die Pläne für eine eigene Leitung an die Küste wandern in den Schrank."
+        en: "Thorne's secretary collects the contract in person and gives thanks for the long friendship. Freight costs fall. The plans for a line of his own to the coast go into the cupboard."
+      # TODO-Effekt (4.7 Pipelines): Bau einer eigenen Leitung zu einem anderen Hafen sperren – oder als Vertragsbruch werten (Thorne erhöht, klagt)
       effects: { railTariff: -0.04 }
+      marks: [k2_thorne_klausel]
     - id: streichen
       label: { de: "Seite neun streichen und zurückschicken", en: "Strike page nine and send it back" }
       result:

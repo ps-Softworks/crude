@@ -11,11 +11,19 @@
 # Merkzeichen aus Kapitel 1, die hier gelesen werden:
 #   courier_gekauft  → k2_courier_portraet (Bixby erinnert sich gern)
 #   silas_fair       → k2_thomas_turm_silas (Silas zeigt dem Jungen das Seil) / ohne: k2_thomas_turm
+#                      (silas_freund gibt es nur nach silas_fair – marked: [silas_fair] deckt beide ab)
 #   eli_versorgt     → k2_clara_freundin (Eli Wards Tochter)
 #   kerrigan_lager   → k2_kerrigan_alt (Kerrigan zählt noch Fässer)
 #   kerrigan_verheizt → k2_kerrigan_witwe
 # Aus Paket 1: k2_verbrennung_vertuscht → k2_courier_verbrennung.
 # Neue Merkzeichen → content/relevance.yaml: k2_grady_spende, k2_courier_anteil, k2_thomas_turm_sommer.
+#
+# Politik: Ob ein Gesetz kommt oder wer eine Wahl gewinnt, entscheiden Weltmodell und Gesetze-System
+# (Block A). Die Texte sagen darum nur, wohin es sich neigt („gewinnt Stimmen“, „liegt vorn“); die
+# Wirkung steht als TODO-Effekt lawPressure / party.
+# Ohne Bedingung kommen hier weder Ada Pell (sie muss nicht eingestellt sein) noch Aufsichtsrat
+# (die Aktiengesellschaft ist nur eine Möglichkeit, Bibel §2) noch Greaves' Labor vor.
+# Ort: Okara (Prärieprovinz im Binnenland) gibt es erst mit zs1_okara; Häfen liegen am Golf (Port Ellis).
 
 # --- Presse und Politik ------------------------------------------------------------
 
@@ -132,10 +140,10 @@
     - id: grady
       label: { de: "Grady unterstützen (6.000 $)", en: "Back Grady (6,000 $)" }
       result:
-        de: "Das Gesetz verschwindet im Ausschuss für Haushalt und Verkehr. Grady schickt eine Zigarrenkiste und ein Foto mit Widmung. Man wird sich wiedersehen, steht darauf."
-        en: "The bill vanishes into the committee for budget and transport. Grady sends a box of cigars and a signed photograph. We shall meet again, it says."
+        de: "Der Entwurf wandert in den Ausschuss für Haushalt und Verkehr und bleibt dort liegen, vorerst. Grady schickt eine Zigarrenkiste und ein Foto mit Widmung. Man wird sich wiedersehen, steht darauf."
+        en: "The bill goes to the committee for budget and transport and stays there, for now. Grady sends a box of cigars and a signed photograph. We shall meet again, it says."
       requires: { minCash: 6000 }
-      # TODO-Effekt: favors: 1, party: { handel: 2 }, heat: 1
+      # TODO-Effekt: favors: 1, party: { handel: 2 }, heat: 1, lawPressure: { einkommensteuer: -1 }
       effects: { cash: -6000 }
       marks: [k2_grady_spende]
     - id: dafuer
@@ -148,9 +156,9 @@
     - id: abwarten
       label: { de: "Sich heraushalten", en: "Stay out of it" }
       result:
-        de: "Das Gesetz kommt durch, knapp. Im Frühjahr schickt das Finanzamt in Hallstead einen Beamten, der drei Tage in Ruths Büchern liest."
-        en: "The bill passes, narrowly. In spring the tax office in Hallstead sends an official who spends three days reading Ruth's books."
-      # TODO-Effekt: lawPressure: { einkommensteuer: 1 }
+        de: "Der Entwurf gewinnt Stimmen, Woche für Woche, und niemand hält ihn auf. Ruth bezahlt vorsorglich einen Steuerberater aus Hallstead, der drei Tage in ihren Büchern liest und am Ende seufzt."
+        en: "The bill gains votes week by week, and nobody stops it. As a precaution Ruth pays a tax adviser from Hallstead, who spends three days reading her books and sighs at the end."
+      # TODO-Effekt: lawPressure: { einkommensteuer: 1 } – ob das Gesetz kommt, entscheidet das Gesetze-System (Block A)
       effects: { cash: -1500 }
       appointments: 0
       default: true
@@ -176,25 +184,25 @@
     - id: liga
       label: { de: "Den Rancher der Provinzliga unterstützen (5.000 $)", en: "Back the Provincial League rancher (5,000 $)" }
       result:
-        de: "Der Rancher gewinnt mit vierhundert Stimmen. Er öffnet das Staatsland, wie versprochen. Bei der Versteigerung bietet Harlan als Erster."
-        en: "The rancher wins by four hundred votes. He opens the state land as promised. At the auction Harlan bids first."
+        de: "Mit Harlans Geld holt der Rancher auf; im Courier liegt er plötzlich vorn. Er verspricht, das Staatsland zu öffnen, und schickt Harlan Oil vorab die Liste der Parzellen."
+        en: "With Harlan's money the rancher catches up; in the Courier he is suddenly ahead. He promises to open the state land and sends Harlan Oil the list of parcels in advance."
       requires: { minCash: 5000 }
-      # TODO-Effekt: party: { provinz: 3 }, influence: 1
+      # TODO-Effekt: party: { provinz: 3 }, influence: 1 – wer gewinnt, entscheidet das Weltmodell (Block A, Parteien)
       effects: { cash: -5000, leaseCost: -0.15 }
     - id: handel
       label: { de: "Den Anwalt der Handelspartei unterstützen (5.000 $)", en: "Back the Trade Party lawyer (5,000 $)" }
       result:
-        de: "Der Anwalt gewinnt. Thorne gratuliert Jacob als Erster, mit einem Telegramm: Die Fracht nach Port Ellis werde im neuen Jahr etwas günstiger."
-        en: "The lawyer wins. Thorne is first to congratulate Jacob, by telegram: freight to Port Ellis will be a little cheaper in the new year."
+        de: "Der Anwalt liegt vorn. Thorne dankt Jacob schon vor der Wahl, mit einem Telegramm: Die Fracht nach Port Ellis werde im neuen Jahr etwas günstiger."
+        en: "The lawyer is ahead. Thorne thanks Jacob before the vote is even held, by telegram: freight to Port Ellis will be a little cheaper in the new year."
       requires: { minCash: 5000 }
-      # TODO-Effekt: party: { handel: 3 }, influence: 1
+      # TODO-Effekt: party: { handel: 3 }, influence: 1 – wer gewinnt, entscheidet das Weltmodell (Block A, Parteien)
       effects: { cash: -5000, railTariff: -0.03 }
     - id: keiner
       label: { de: "Keinem Geld geben", en: "Give money to neither" }
       result:
-        de: "Der Anwalt gewinnt, mit Thornes Geld. Seine erste Amtshandlung ist eine neue Gebühr für Pipelines, die Bahnlinien kreuzen."
-        en: "The lawyer wins, with Thorne's money. His first act in office is a new fee for pipelines that cross railway lines."
-      # TODO-Effekt: lawPressure: { pipelinegebuehr: 1 }
+        de: "Der Anwalt liegt vorn, mit Thornes Geld. In jeder Rede verspricht er eine neue Gebühr für Pipelines, die Bahnlinien kreuzen."
+        en: "The lawyer is ahead, with Thorne's money. In every speech he promises a new fee for pipelines that cross railway lines."
+      # TODO-Effekt: lawPressure: { pipelinegebuehr: 1 } – wer gewinnt, entscheidet das Weltmodell (Block A, Parteien)
       effects: { railTariff: 0.02 }
       appointments: 0
       default: true
@@ -247,7 +255,7 @@
 
 - id: k2_thomas_turm
   group: k2_thomas_turm
-  notMarked: [silas_fair]
+  notMarked: [silas_fair, silas_freund]
   conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
   chance: 0.1
   title:
@@ -282,13 +290,14 @@
     - id: mitnehmen
       label: { de: "Ihn zur nächsten Inspektion mitnehmen (zwei Termine)", en: "Take him on the next inspection (two appointments)" }
       result:
-        de: "Thomas steht neben Jacob auf der Plattform, mit einem Seil um den Bauch. Jacob zeigt ihm Okara am Horizont. Auf dem Rückweg sagt keiner von beiden etwas, und es ist gut so."
-        en: "Thomas stands beside Jacob on the platform with a rope round his waist. Jacob shows him Okara on the horizon. On the way back neither says a word, and that's fine."
+        de: "Thomas steht neben Jacob auf der Plattform, mit einem Seil um den Bauch. Jacob zeigt ihm die eigenen Türme, einen nach dem anderen, bis hinunter zum Bahnhof. Auf dem Rückweg sagt keiner von beiden etwas, und es ist gut so."
+        en: "Thomas stands beside Jacob on the platform with a rope round his waist. Jacob shows him their own derricks, one after another, all the way down to the station. On the way back neither says a word, and that's fine."
       effects: { thomas: 13, strength: -5 }
       appointments: 2
 
 - id: k2_thomas_turm_silas
   group: k2_thomas_turm
+  # silas_fair oder silas_freund – silas_freund gibt es nur nach silas_fair (k1-2-silas), marked ist UND.
   marked: [silas_fair]
   delay: 0
   conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
@@ -336,18 +345,18 @@
     de: >-
       Doktor Haskell kommt ins Büro statt ins Haus, weil er Jacob dort sicherer antrifft. Clara
       ist sechs und hat seit drei Tagen Fieber, Scharlach vielleicht. Sie fragt nach ihrem
-      Vater, sagt Haskell, und zwar jede Stunde. Am Mittwoch soll Jacob in Hallstead vor dem
-      Aufsichtsrat stehen.
+      Vater, sagt Haskell, und zwar jede Stunde. Am Mittwoch soll Jacob in Hallstead vor den
+      Bankiers stehen, die Harlan Oil Geld leihen.
     en: >-
       Doctor Haskell comes to the office rather than the house, because he's surer of finding
       Jacob there. Clara is six and has had a fever for three days, scarlet fever perhaps. She
-      asks for her father, Haskell says, every hour. On Wednesday Jacob is due before the board
-      in Hallstead.
+      asks for her father, Haskell says, every hour. On Wednesday Jacob is due in Hallstead
+      before the bankers who lend Harlan Oil money.
   choices:
     - id: bleiben
       label: { de: "Zu Hause bleiben, die Reise absagen (zwei Termine)", en: "Stay home, cancel the trip (two appointments)" }
       result:
-        de: "Jacob sitzt drei Nächte an Claras Bett und liest ihr aus der Zeitung vor, weil kein Märchenbuch im Haus ist. Sie schläft bei den Ölpreisen ein. Die Sitzung in Hallstead findet ohne ihn statt."
+        de: "Jacob sitzt drei Nächte an Claras Bett und liest ihr aus der Zeitung vor, weil kein Märchenbuch im Haus ist. Sie schläft bei den Ölpreisen ein. Die Besprechung in Hallstead findet ohne ihn statt."
         en: "Jacob sits three nights at Clara's bed reading her the newspaper, because there's no storybook in the house. She falls asleep to the oil prices. The Hallstead meeting goes ahead without him."
       # TODO-Effekt: clara: 15, boardLoyalty: { vandermeer: -5 }
       effects: { ruth: 10, strength: -2, production: -0.03 }
@@ -363,7 +372,7 @@
     - id: fahren
       label: { de: "Nach Hallstead fahren – Haskell weiß, was er tut", en: "Go to Hallstead – Haskell knows what he's doing" }
       result:
-        de: "Die Sitzung läuft gut. Als Jacob zurückkommt, ist das Fieber gesunken. Clara fragt nicht mehr nach ihm. Ruth hat ihr gesagt, Papa sei bei wichtigen Männern."
+        de: "Die Besprechung läuft gut. Als Jacob zurückkommt, ist das Fieber gesunken. Clara fragt nicht mehr nach ihm. Ruth hat ihr gesagt, Papa sei bei wichtigen Männern."
         en: "The meeting goes well. When Jacob gets back the fever has fallen. Clara no longer asks for him. Ruth told her Papa was with important men."
       # TODO-Effekt: clara: -10, boardLoyalty: { vandermeer: 5 }
       effects: { ruth: -10, production: 0.03 }
@@ -426,13 +435,13 @@
     de: >-
       Ruth hat den Hochzeitstag nicht erwähnt, und das ist das Zeichen. Fünfzehn Jahre seit der
       Kapelle neben der Zeche. Am selben Abend gibt Ambrose Vandermeer in Hallstead ein Essen
-      für die Aufsichtsräte. Ada Pell hat beides in den Kalender geschrieben, untereinander,
-      mit einem Fragezeichen.
+      für seine Geschäftsfreunde, und Harlan Oil ist eingeladen. Im Kalender auf Jacobs
+      Schreibtisch steht beides untereinander. Jemand hat ein Fragezeichen dahintergesetzt.
     en: >-
       Ruth hasn't mentioned the anniversary, and that is the sign. Fifteen years since the
       chapel by the colliery. The same evening Ambrose Vandermeer is giving a dinner in
-      Hallstead for the board members. Ada Pell has written both in the diary, one under the
-      other, with a question mark.
+      Hallstead for his business friends, and Harlan Oil is invited. In the diary on Jacob's
+      desk the two stand one under the other. Someone has added a question mark.
   choices:
     - id: ruth
       label: { de: "Mit Ruth essen gehen, im Gulf Hotel", en: "Take Ruth to dinner at the Gulf Hotel" }
@@ -553,21 +562,21 @@
     en: Kerrigan's Widow
   text:
     de: >-
-      Eine Frau in Schwarz wartet am Werkstor, nicht im Vorzimmer; sie traut sich nicht weiter.
+      Eine Frau in Schwarz wartet am Tor des Lagerhauses, nicht im Vorzimmer; sie traut sich nicht weiter.
       Kerrigans Witwe. Ihr Mann hat für Jacob gebohrt, bis seine Lunge nicht mehr wollte. Ihr
       Sohn ist sechzehn und sucht Arbeit. Sie sagt nicht, dass Jacob ihr etwas schuldet. Sie
       muss es nicht sagen.
     en: >-
-      A woman in black waits at the works gate, not in the anteroom; she doesn't dare go
+      A woman in black waits at the warehouse gate, not in the anteroom; she doesn't dare go
       further. Kerrigan's widow. Her husband drilled for Jacob until his lungs gave out. Her son
       is sixteen and looking for work. She doesn't say Jacob owes her anything. She doesn't
       have to.
   choices:
     - id: lehre
-      label: { de: "Den Sohn in die Lehre nehmen, bei Greaves im Labor (800 $)", en: "Take the son as an apprentice in Greaves's laboratory (800 $)" }
+      label: { de: "Den Sohn in die Lehre nehmen, in der Werkstatt (800 $)", en: "Take the son as an apprentice in the workshop (800 $)" }
       result:
-        de: "Der junge Kerrigan ist still und hat gute Hände. Greaves sagt nach einem Monat, er sei der Einzige, der nicht im Weg stehe. Das ist Greaves' höchstes Lob."
-        en: "Young Kerrigan is quiet and has good hands. After a month Greaves says he's the only one who doesn't get in the way. That is Greaves's highest praise."
+        de: "Der junge Kerrigan ist still und hat gute Hände. Der Werkstattmeister sagt nach einem Monat, er sei der Einzige, der nicht im Weg stehe. Das ist sein höchstes Lob."
+        en: "Young Kerrigan is quiet and has good hands. After a month the workshop foreman says he's the only one who doesn't get in the way. That is his highest praise."
       requires: { minCash: 800 }
       effects: { cash: -800, strength: 3 }
     - id: geld
@@ -596,14 +605,15 @@
     en: Brother Abel Wants a School
   text:
     de: >-
-      Bruder Abel ist grau geworden, seine Predigten nicht milder. In der Zeltstadt bei Okara
-      gibt es zweihundert Kinder und keine Schule; die Älteren arbeiten an den Türmen. Er will
+      Bruder Abel ist grau geworden, seine Predigten nicht milder. In den Baracken hinter dem
+      Bahnhof Salt Hill gibt es zweihundert Kinder und keine Schule; die Älteren arbeiten an
+      den Türmen. Er will
       ein Schulhaus, einen Lehrer und Bänke. „Sie haben Ihren Sohn auf eine gute Schule
       geschickt, Mr. Harlan. Diese Kinder haben auch Väter. Sie arbeiten für Sie.“
     en: >-
-      Brother Abel has gone grey; his sermons have not grown milder. In the tent town near
-      Okara there are two hundred children and no school; the older ones work at the
-      derricks. He wants a schoolhouse, a teacher and benches. “You sent your son to a good
+      Brother Abel has gone grey; his sermons have not grown milder. In the shacks behind
+      Salt Hill station there are two hundred children and no school; the older ones work at
+      the derricks. He wants a schoolhouse, a teacher and benches. “You sent your son to a good
       school, Mr. Harlan. These children have fathers too. They work for you.”
   choices:
     - id: schule
@@ -646,12 +656,12 @@
   text:
     de: >-
       Doktor Haskell hat das Stethoskop schon um den Hals, als er hereinkommt. Ruth hat ihn
-      geschickt, sagt er, und Ada Pell hat ihm einen Termin gegeben, ohne Jacob zu fragen. Er
+      geschickt, sagt er, und das Vorzimmer hat ihm einen Termin gegeben, ohne Jacob zu fragen. Er
       hört lange auf Jacobs Brust. „Sie sind noch keine vierzig, Harlan, und Ihr Herz klingt
       wie das von Silas.“
     en: >-
       Doctor Haskell already has the stethoscope round his neck when he comes in. Ruth sent
-      him, he says, and Ada Pell gave him an appointment without asking Jacob. He listens to
+      him, he says, and the anteroom gave him an appointment without asking Jacob. He listens to
       Jacob's chest for a long time. “You're not yet forty, Harlan, and your heart sounds like
       Silas's.”
   choices:
@@ -665,8 +675,8 @@
     - id: tropfen
       label: { de: "Tropfen nehmen und weiterarbeiten (300 $)", en: "Take the drops and keep working (300 $)" }
       result:
-        de: "Die Tropfen schmecken nach Bittermandel. Sie helfen, ein wenig. Ada Pell stellt das Fläschchen jeden Morgen neben den Kaffee."
-        en: "The drops taste of bitter almond. They help, a little. Every morning Ada Pell sets the bottle next to the coffee."
+        de: "Die Tropfen schmecken nach Bittermandel. Sie helfen, ein wenig. Ruth stellt das Fläschchen jeden Morgen neben seine Kaffeetasse."
+        en: "The drops taste of bitter almond. They help, a little. Every morning Ruth sets the bottle next to his coffee cup."
       requires: { minCash: 300 }
       effects: { cash: -300, strength: 6 }
     - id: abwinken
@@ -701,15 +711,15 @@
     - id: abpumpen
       label: { de: "Den Tank leerpumpen lassen, solange es geht (Männer, Gefahr)", en: "Pump the tank out while it can be done (men, danger)" }
       result:
-        de: "Zwölf Mann pumpen unter dem brennenden Dach in Kesselwagen um. Sie retten die Hälfte. Einer von ihnen, ein Junge aus Okara, verliert das Augenlicht auf einer Seite."
-        en: "Twelve men pump into tank cars beneath the burning roof. They save half. One of them, a boy from Okara, loses the sight of one eye."
+        de: "Zwölf Mann pumpen unter dem brennenden Dach in Kesselwagen um. Sie retten die Hälfte. Einer von ihnen, ein Junge aus der Hollins-Prärie, verliert das Augenlicht auf einer Seite."
+        en: "Twelve men pump into tank cars beneath the burning roof. They save half. One of them, a boy from the Hollins prairie, loses the sight of one eye."
       # TODO-Effekt: reputation: { workers: -2 }
       effects: { oilStock: -1500, cash: -1500, strength: -6 }
     - id: brennen
       label: { de: "Brennen lassen und die Nachbartanks kühlen", en: "Let it burn and cool the neighbouring tanks" }
       result:
-        de: "Der Tank brennt drei Tage aus. Die Nachbartanks bleiben stehen. Die Schiffe im Hafen verlegen sich nach Okara, bis der Rauch weg ist."
-        en: "The tank burns out over three days. The neighbouring tanks survive. The ships in the harbour move to Okara until the smoke has cleared."
+        de: "Der Tank brennt drei Tage aus. Die Nachbartanks bleiben stehen. Die Schiffe im Hafen weichen auf die Reede vor der Rio-Salado-Mündung aus, bis der Rauch weg ist."
+        en: "The tank burns out over three days. The neighbouring tanks survive. The ships in the harbour move out to the roads off the mouth of the Rio Salado until the smoke has cleared."
       effects: { oilStock: -3000, price: -0.03 }
       appointments: 0
       default: true

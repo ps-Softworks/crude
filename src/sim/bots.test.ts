@@ -377,8 +377,7 @@ describe('Bot-Läufe mit Ereignissen (2.15)', () => {
     };
     const ziele = checkTargets(rows, blindWildcatChance(balance), balance, variants);
     expect(ziele.filter((z) => !z.ok).map((z) => `${z.label}: ${z.value}`)).toEqual([]);
-    // 3.000+ ganze Partien: allein gut 2 Minuten, unter Last (parallele Läufe) über 4 Minuten.
-  }, 600_000);
+  }, 600_000); // dieselbe Arbeit wie `npm run bots`; auf einem ausgelasteten Rechner gut 4 Minuten
 });
 
 describe('Bot-Läufe: Transportwege (0.2.15+4)', () => {

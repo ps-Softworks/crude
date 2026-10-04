@@ -9,8 +9,12 @@
 # nicht (kommt mit 4.6) – darum steht bei ihnen „# TODO-Bedingung: hasRefinery“.
 # Gewünschte neue Wirkungen stehen als „# TODO-Effekt: …“ neben einer vorläufigen vorhandenen.
 #
-# Figuren aus der Bibel: Walter Greaves (Raffineriedirektor, V), Bullard (Okara), Margaret Crane,
+# Figuren aus der Bibel: Walter Greaves (Raffineriedirektor, V), Bullard, Margaret Crane,
 # Doktor Haskell. Ohne Besucher-Figur für Greaves (kein Eintrag in figures.yaml): Vorfälle und Briefe.
+# Greaves kann zu Pruett gehen (Paket 3, k2_abwerbung_greaves → k2_greaves_weg): Dann sperren alle
+# Ereignisse, in denen er auftritt (notMarked: [k2_greaves_weg]); k2_kessel_undicht_neu ersetzt die
+# Kessel-Panne. Der Brand (Folge des Flickens) nennt keinen Namen und kommt in beiden Fällen.
+# Okara (Prärieprovinz im Binnenland) gibt es erst mit der Zeitsprung-Weiche zs1_okara.
 #
 # Merkzeichen (neu, hier und in Paket 3/5 gelesen):
 #   k2_raffinerie_geflickt → k2_raffinerie_brand (2 Runden später, Würfel)
@@ -24,6 +28,7 @@
   group: k2_raffinerie
   once: false
   cooldown: 4
+  notMarked: [k2_greaves_weg]
   # TODO-Bedingung: hasRefinery
   conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
   chance: 0.12
@@ -69,6 +74,48 @@
       effects: { cash: -2500, strength: -3 }
       marks: [k2_greaves_vertrauen]
       appointments: 2
+
+# Dieselbe Panne, wenn Greaves zu Pruett gegangen ist: sein Nachfolger kennt den Kessel nicht.
+- id: k2_kessel_undicht_neu
+  group: k2_raffinerie
+  once: false
+  cooldown: 4
+  marked: [k2_greaves_weg]
+  # TODO-Bedingung: hasRefinery
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  chance: 0.12
+  title:
+    de: Der neue Direktor und der dritte Kessel
+    en: The New Director and the Third Still
+  text:
+    de: >-
+      An der Naht des dritten Destillierkessels steht ein dunkler Rand, handbreit. Der neue
+      Direktor hat ihn erst bemerkt, als ein Kesselwärter ihn darauf hinwies. Greaves hätte
+      ihn vor einer Woche gesehen und mit Kreide umfahren. Der Neue fragt Jacob, was er tun
+      soll, und schreibt die Antwort mit.
+    en: >-
+      A dark stain the width of a hand stands on the seam of the third still. The new
+      director only noticed it when a stillman pointed it out. Greaves would have seen it a
+      week ago and circled it in chalk. The new man asks Jacob what he should do and writes
+      the answer down.
+  choices:
+    - id: abschalten
+      label: { de: "Abschalten und neu nieten (6.000 $, die Raffinerie steht)", en: "Shut it down and re-rivet (6,000 $, the refinery stands idle)" }
+      result:
+        de: "Zwei Wochen kein Rauch über dem Werk. Die Nieter arbeiten nachts bei Fackeln. Der neue Direktor steht jede Nacht dabei und lernt, wie ein Kessel klingt, der hält."
+        en: "Two weeks without smoke over the works. The riveters work at night by torchlight. The new director stands by every night and learns what a still sounds like when it holds."
+      requires: { minCash: 6000 }
+      # TODO-Effekt: refineryDown: 1
+      effects: { cash: -6000, production: -0.1 }
+    - id: flicken
+      label: { de: "Flicken lassen und weiterfahren (800 $)", en: "Patch it and keep running (800 $)" }
+      result:
+        de: "Ein Blech, ein Kitt, zwei Schellen. Der dunkle Rand ist weg. Niemand stellt einen Eimer Sand neben den Kessel."
+        en: "A plate, some putty, two clamps. The dark stain is gone. Nobody sets a bucket of sand beside the still."
+      effects: { cash: -800 }
+      marks: [k2_raffinerie_geflickt]
+      appointments: 0
+      default: true
 
 - id: k2_verbrennung
   group: k2_raffinerie
@@ -166,7 +213,9 @@
 
 - id: k2_okara_sauer
   rival: bullard
+  notMarked: [k2_greaves_weg]
   # TODO-Bedingung: hasRefinery
+  # TODO-Bedingung: Region Okara offen / zs1_okara (Bullards Okara-Funde, Bibel §2/§3)
   conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12 }
   chance: 0.12
   title:
@@ -211,6 +260,7 @@
 - id: k2_kerosin_faellt
   mail: info
   deadline: 3
+  notMarked: [k2_greaves_weg]
   # TODO-Bedingung: hasRefinery
   conditions: { minChapter: 2, maxChapter: 2, minRound: 5 }
   chance: 0.15
@@ -313,8 +363,8 @@
     - id: ablehnen
       label: { de: "Ablehnen", en: "Decline" }
       result:
-        de: "Brandauer verbeugt sich, als hätte er gewonnen. Eine Woche später liegt das Schiff vor Bullards Verladestelle in Okara."
-        en: "Brandauer bows as though he had won. A week later the ship lies off Bullard's loading point at Okara."
+        de: "Brandauer verbeugt sich, als hätte er gewonnen. Eine Woche später liegt das Schiff in Port Ellis vor Bullards Verladesteg."
+        en: "Brandauer bows as though he had won. A week later the ship lies in Port Ellis, off Bullard's loading jetty."
       appointments: 0
       default: true
 
@@ -334,13 +384,13 @@
     de: >-
       Um drei Uhr nachts weckt die Werksglocke halb Port Ellis. Ein Kessel, der längst
       hätte raus müssen, hat nachgegeben, das Feuer läuft die Rinne entlang zu den
-      Kerosintanks. Greaves steht in Hemdsärmeln im Hof und brüllt Zahlen, die niemand
-      versteht. Jacob ist keine fünfundzwanzig mehr und rennt trotzdem.
+      Kerosintanks. Der Werksdirektor steht in Hemdsärmeln im Hof und brüllt Zahlen, die
+      niemand versteht. Jacob ist keine fünfundzwanzig mehr und rennt trotzdem.
     en: >-
       At three in the morning the works bell wakes half of Port Ellis. A still that
       should have come out long ago has given way, and the fire runs along the gutter
-      towards the kerosene tanks. Greaves stands in his shirtsleeves in the yard shouting
-      figures nobody understands. Jacob is no longer twenty-five and runs anyway.
+      towards the kerosene tanks. The works director stands in his shirtsleeves in the yard
+      shouting figures nobody understands. Jacob is no longer twenty-five and runs anyway.
   choices:
     - id: graben
       label: { de: "Selbst mit anpacken: Gräben ziehen, Tanks fluten", en: "Lend a hand himself: dig trenches, flood the tanks" }

@@ -13,6 +13,12 @@
 # liest einige davon selbst):
 #   bullard_handschlag → k2_bullard_grenze_freund, k2_bullard_saeulenhaus
 #   (ohne bullard_handschlag) → k2_bullard_grenze
+#
+# Alter (Bibel §1/§3): Bullards Söhne Wade und Cole sind in Kapitel 3 erst 24 und 20, hier also
+# 14–17 und 10–13 – Halbwüchsige, keine Bohrleute. Schlägereien im Saloon führt Bullards Vorarbeiter.
+# Ort: Bullards Alltag spielt in Salt Hill. Okara (Prärieprovinz im Binnenland) gibt es erst mit der
+# Zeitsprung-Weiche zs1_okara – darum nennt hier kein Ereignis Okara als festen Ort.
+# Erfunden (nicht in der Bibel): Hap Cutler, Bullards Vorarbeiter.
 #   delgado_verband    → k2_delgado_gruendung (als Gründungsmitglied) / ohne: k2_delgado_einkauf
 # Aus Paket 2: k2_pipeline_wucher → k2_delgado_rede; k2_pipeline_offen → k2_kleine_produzenten.
 # Neue Merkzeichen:
@@ -166,23 +172,24 @@
     en: Pettibone Calls In the Credit Line
   text:
     de: >-
-      Pettibone kommt in seiner Eigenschaft als Bankier, nicht als Ratsmitglied, und betont
-      das zweimal. Die Thorne-Bank wolle den Kreditrahmen von Harlan Oil zum Quartalsende
-      kündigen. Es sei denn, ein Herr aus Hallstead, ein Vertrauter von Mr. Thorne, bekäme
-      einen Sitz im Aufsichtsrat. „Ich kaufe keine Firmen“, zitiert Pettibone seinen Herrn.
-      „Ich kaufe Zeit.“
+      Pettibone kommt in seiner Eigenschaft als Filialleiter, und er betont das zweimal. Die
+      Thorne-Bank wolle den Kreditrahmen von Harlan Oil zum Quartalsende kündigen. Es sei
+      denn, ein Herr aus Hallstead, ein Vertrauter von Mr. Thorne, bekäme Einsicht in die
+      Bücher und eine Stimme bei allen großen Ausgaben. „Ich kaufe keine Firmen“, zitiert
+      Pettibone seinen Herrn. „Ich kaufe Zeit.“
     en: >-
-      Pettibone comes in his capacity as banker, not board member, and stresses it twice. The
-      Thorne bank intends to cancel Harlan Oil's credit line at the end of the quarter. Unless
-      a gentleman from Hallstead, a confidant of Mr. Thorne's, were given a seat on the board.
-      “I don't buy companies,” Pettibone quotes his master. “I buy time.”
+      Pettibone comes in his capacity as branch manager, and he stresses it twice. The Thorne
+      bank intends to cancel Harlan Oil's credit line at the end of the quarter. Unless a
+      gentleman from Hallstead, a confidant of Mr. Thorne's, were given access to the books
+      and a say in every large expenditure. “I don't buy companies,” Pettibone quotes his
+      master. “I buy time.”
   choices:
     - id: sitz
-      label: { de: "Den Sitz geben – der Kredit bleibt", en: "Give the seat – the credit stays" }
+      label: { de: "Thornes Mann hereinlassen – der Kredit bleibt", en: "Let Thorne's man in – the credit stays" }
       result:
-        de: "Mr. Sayles erscheint zur nächsten Sitzung pünktlich, mit leerem Notizbuch. Er sagt nichts. Er schreibt viel."
-        en: "Mr. Sayles arrives punctually for the next meeting with an empty notebook. He says nothing. He writes a great deal."
-      # TODO-Effekt: boardMember: sayles, control: -2, rivalStake: { thorne: 2 }
+        de: "Mr. Sayles erscheint am nächsten Montag pünktlich, mit leerem Notizbuch. Er bekommt einen Stuhl in Ruths Kontor. Er sagt nichts. Er schreibt viel."
+        en: "Mr. Sayles arrives punctually the next Monday with an empty notebook. He is given a chair in Ruth's counting house. He says nothing. He writes a great deal."
+      # TODO-Effekt: boardMember: sayles (mit AG, Bedingung ipo; ohne AG: Einsicht in die Bücher), control: -2, rivalStake: { thorne: 2 }
       effects: { strength: -3, railTariff: -0.02 }
       marks: [k2_thorne_ratssitz]
     - id: zurueckzahlen
@@ -254,13 +261,13 @@
     en: Bullard Is Drilling Crooked
   text:
     de: >-
-      Harlans neue Quelle in Okara verliert Druck, und Bullards Turm am Zaun fördert mehr
-      als jeder andere im Feld. Ein Bohrmeister, der für beide gearbeitet hat, zeichnet es
+      Harlans neue Quelle am Nordhang von Salt Hill verliert Druck, und Bullards Turm am Zaun
+      fördert mehr als jeder andere im Feld. Ein Bohrmeister, der für beide gearbeitet hat, zeichnet es
       auf eine Serviette: Bullards Bohrloch knickt in neunhundert Fuß Tiefe ab, unter Harlans
       Land. Zehn Jahre, und Bullard bohrt noch immer, wo er will.
     en: >-
-      Harlan's new well at Okara is losing pressure, and Bullard's derrick at the fence brings
-      up more than any other in the field. A driller who has worked for both sketches it on a
+      Harlan's new well on the north slope of Salt Hill is losing pressure, and Bullard's
+      derrick at the fence brings up more than any other in the field. A driller who has worked for both sketches it on a
       napkin: Bullard's hole bends at nine hundred feet, under Harlan's land. Ten years, and
       Bullard still drills wherever he likes.
   choices:
@@ -284,8 +291,8 @@
     - id: hinnehmen
       label: { de: "Hinnehmen – das Feld ist groß genug", en: "Let it go – the field is big enough" }
       result:
-        de: "Die Quelle wird schwächer. In Okara erzählt man, Harlan sei weich geworden in seinem Büro mit dem Telefon. Bullard lacht am lautesten."
-        en: "The well weakens. In Okara they say Harlan has gone soft in his office with the telephone. Bullard laughs loudest."
+        de: "Die Quelle wird schwächer. In Salt Hill erzählt man, Harlan sei weich geworden in seinem Büro mit dem Telefon. Bullard lacht am lautesten."
+        en: "The well weakens. In Salt Hill they say Harlan has gone soft in his office with the telephone. Bullard laughs loudest."
       effects: { production: -0.06 }
       appointments: 0
       default: true
@@ -304,77 +311,78 @@
   text:
     de: >-
       Bullard ist breiter geworden und grauer, die Stimme ist dieselbe. Er setzt sich, ohne
-      zu fragen, und legt eine Bohrliste auf Jacobs Tisch. Sein Loch am Zaun in Okara ist
-      abgeknickt, unter Harlans Land. „Meine Jungs schwören, sie haben's nicht gemerkt.
-      Ich glaub's ihnen halb. Was machen wir, Harlan? Zehn Jahre Handschlag.“
+      zu fragen, und legt eine Bohrliste auf Jacobs Tisch. Sein Loch am Zaun auf dem Nordhang
+      ist abgeknickt, unter Harlans Land. „Mein Bohrmeister schwört, er hat's nicht gemerkt.
+      Ich glaub's ihm halb. Was machen wir, Harlan? Zehn Jahre Handschlag.“
     en: >-
       Bullard has grown broader and greyer; the voice is the same. He sits down without asking
-      and lays a drilling log on Jacob's desk. His hole at the Okara fence has bent, under
-      Harlan's land. “My boys swear they didn't notice. I half believe 'em. What do we do,
-      Harlan? Ten years of a handshake.”
+      and lays a drilling log on Jacob's desk. His hole at the fence on the north slope has
+      bent, under Harlan's land. “My driller swears he didn't notice. I half believe him. What
+      do we do, Harlan? Ten years of a handshake.”
   choices:
     - id: teilen
       label: { de: "Die Quelle teilen, halbe-halbe", en: "Share the well, half and half" }
       result:
-        de: "Bullard spuckt in die Hand und hält sie hin. Die Quelle fördert für beide. In Okara heißt sie ab jetzt die Brüderquelle, nicht ganz ohne Spott."
-        en: "Bullard spits in his palm and holds it out. The well produces for both. In Okara it's called the Brothers' Well from now on, not entirely without mockery."
+        de: "Bullard spuckt in die Hand und hält sie hin. Die Quelle fördert für beide. In Salt Hill heißt sie ab jetzt die Brüderquelle, nicht ganz ohne Spott."
+        en: "Bullard spits in his palm and holds it out. The well produces for both. In Salt Hill it's called the Brothers' Well from now on, not entirely without mockery."
       # TODO-Effekt: rival: { bullard: { trust: 10 } }
       effects: { production: 0.04, strength: 3 }
     - id: entschaedigung
       label: { de: "Volle Entschädigung verlangen (+7.000 $)", en: "Demand full compensation (+7,000 $)" }
       result:
-        de: "Bullard zahlt, ohne zu handeln, in bar, aus der Westentasche. Er steht auf und sagt: Zehn Jahre, Harlan. Du hast Aktien, ich hab Söhne. Dann geht er."
-        en: "Bullard pays without haggling, in cash, from his waistcoat pocket. He stands and says: Ten years, Harlan. You've got shares, I've got sons. Then he leaves."
+        de: "Bullard zahlt, ohne zu handeln, in bar, aus der Westentasche. Er steht auf und sagt: Zehn Jahre, Harlan. Du hast Bankiers, ich hab Söhne. Dann geht er."
+        en: "Bullard pays without haggling, in cash, from his waistcoat pocket. He stands and says: Ten years, Harlan. You've got bankers, I've got sons. Then he leaves."
       # TODO-Effekt: rival: { bullard: { trust: -15 } }
       effects: { cash: 7000 }
     - id: schenken
       label: { de: "„Lass es laufen, Jim. Ich hab genug.“", en: "“Let it run, Jim. I've got enough.”" }
       result:
-        de: "Bullard sieht Jacob lange an, als suche er den Haken. Dann lacht er, zu laut. Im Winter schickt er zwei seiner Trupps, als Harlan einen Brand in Okara nicht in den Griff bekommt."
-        en: "Bullard looks at Jacob a long time, as if searching for the catch. Then he laughs, too loudly. In winter he sends two of his crews when Harlan can't get a fire at Okara under control."
+        de: "Bullard sieht Jacob lange an, als suche er den Haken. Dann lacht er, zu laut. Im Winter schickt er zwei seiner Trupps, als Harlan einen Brand am Nordhang nicht in den Griff bekommt."
+        en: "Bullard looks at Jacob a long time, as if searching for the catch. Then he laughs, too loudly. In winter he sends two of his crews when Harlan can't get a fire on the north slope under control."
       # TODO-Effekt: rival: { bullard: { trust: 20 } }
       effects: { production: -0.04, strength: 2 }
       appointments: 0
       default: true
 
-- id: k2_bullard_soehne
+- id: k2_bullard_vorarbeiter
   rival: bullard
   conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
   chance: 0.1
   title:
-    de: Wade und Cole
-    en: Wade and Cole
+    de: Bullards Vorarbeiter
+    en: Bullard's Foreman
   text:
     de: >-
-      Bullards Söhne Wade und Cole haben im Saloon von Okara zwei von Harlans Bohrarbeitern
-      zusammengeschlagen. Einer hat einen Schnitt über dem Auge, der genäht werden musste.
-      Wade ist vierundzwanzig und sieht aus wie sein Vater vor zwanzig Jahren, nur ohne den
-      Ehrenkodex.
+      Bullards Vorarbeiter Hap Cutler hat mit drei seiner Leute im Saloon von Salt Hill zwei
+      von Harlans Bohrarbeitern zusammengeschlagen. Einer hat einen Schnitt über dem Auge,
+      der genäht werden musste. Bullards Ältester, Wade, noch keine sechzehn, hat von der Tür
+      aus zugesehen und den Männern hinterher die Jacken gehalten, als wäre es eine Ehre.
     en: >-
-      Bullard's sons Wade and Cole have beaten up two of Harlan's roughnecks in the Okara
-      saloon. One has a cut over the eye that needed stitches. Wade is twenty-four and looks
-      like his father twenty years ago, only without the code of honour.
+      Bullard's foreman Hap Cutler and three of his men have beaten up two of Harlan's
+      roughnecks in the Salt Hill saloon. One has a cut over the eye that needed stitches.
+      Bullard's eldest, Wade, not yet sixteen, watched from the door and held the men's coats
+      afterwards, as though it were an honour.
   choices:
     - id: bullard_reden
-      label: { de: "Zu Bullard fahren und es unter Vätern klären", en: "Drive to Bullard and settle it father to father" }
+      label: { de: "Zu Bullard fahren und es unter Männern klären", en: "Drive to Bullard and settle it man to man" }
       result:
-        de: "Bullard hört zu, mit verschränkten Armen. Dann ruft er seine Söhne herein und lässt sie sich entschuldigen, vor Jacob. Cole sieht dabei auf den Boden. Wade nicht."
-        en: "Bullard listens, arms folded. Then he calls his sons in and makes them apologise, in front of Jacob. Cole looks at the floor. Wade doesn't."
+        de: "Bullard hört zu, mit verschränkten Armen. Dann ruft er Cutler herein und lässt ihn sich entschuldigen, vor Jacob und vor seinem Sohn. Cutler sieht dabei auf den Boden. Wade nicht."
+        en: "Bullard listens, arms folded. Then he calls Cutler in and makes him apologise, in front of Jacob and in front of his son. Cutler looks at the floor. Wade doesn't."
       # TODO-Effekt: rival: { bullard: { trust: 5 } }
       effects: { strength: -6, production: 0.03 }
       appointments: 2
     - id: zurueckschlagen
       label: { de: "Die Männer machen lassen", en: "Let the men handle it" }
       result:
-        de: "Am Samstag darauf brennt in Okara ein Schuppen, der Bullard gehört. Die Männer arbeiten die Woche darauf, als hätten sie etwas gewonnen. Wade Bullard merkt sich Gesichter."
-        en: "The following Saturday a shed belonging to Bullard burns down in Okara. The next week the men work as though they'd won something. Wade Bullard remembers faces."
+        de: "Am Samstag darauf brennt in Salt Hill ein Schuppen, der Bullard gehört. Die Männer arbeiten die Woche darauf, als hätten sie etwas gewonnen. Der junge Wade Bullard merkt sich Gesichter."
+        en: "The following Saturday a shed belonging to Bullard burns down in Salt Hill. The next week the men work as though they'd won something. Young Wade Bullard remembers faces."
       # TODO-Effekt: heat: 1, rival: { bullard: { aggression: 10 } }
       effects: { production: 0.05, strength: -2 }
     - id: arzt
       label: { de: "Den Arzt zahlen und schweigen (600 $)", en: "Pay the doctor and keep quiet (600 $)" }
       result:
-        de: "Die Wunde heilt. Im Saloon von Okara sitzen Harlans Männer jetzt an der Wand, nicht mehr an der Theke."
-        en: "The wound heals. In the Okara saloon Harlan's men now sit by the wall, no longer at the bar."
+        de: "Die Wunde heilt. Im Saloon von Salt Hill sitzen Harlans Männer jetzt an der Wand, nicht mehr an der Theke."
+        en: "The wound heals. In the Salt Hill saloon Harlan's men now sit by the wall, no longer at the bar."
       effects: { cash: -600 }
       appointments: 0
       default: true
@@ -392,12 +400,14 @@
     en: Bullard's House of Columns
   text:
     de: >-
-      Bullard hat in Okara ein Haus mit acht weißen Säulen gebaut, größer als das Gericht.
+      Bullard hat auf dem Hügel über Salt Hill ein Haus mit acht weißen Säulen gebaut, größer
+      als das Bezirksgericht.
       Die Einladung zur Einweihung ist auf Büttenpapier gedruckt, die Rechtschreibung nicht
       ganz. Unten hat er von Hand dazugeschrieben: „Bring Ruth mit. Und den Jungen. Meine
       Frau will sehen, ob er dir ähnlich sieht.“
     en: >-
-      Bullard has built a house in Okara with eight white columns, bigger than the courthouse.
+      Bullard has built a house on the hill above Salt Hill with eight white columns, bigger
+      than the district courthouse.
       The invitation to the housewarming is printed on deckle-edged paper, the spelling not
       quite right. At the bottom he's added by hand: “Bring Ruth. And the boy. My wife wants to
       see if he looks like you.”
@@ -405,8 +415,8 @@
     - id: hinfahren
       label: { de: "Mit der Familie hinfahren (drei Termine, Geschenk 1.500 $)", en: "Go with the family (three appointments, a 1,500 $ gift)" }
       result:
-        de: "Thomas spielt mit Bullards Jüngstem im Garten Fangen, bis beide Hemden schwarz sind. Ruth und Mrs. Bullard reden über Schulen. Bullard hält eine Rede und weint am Ende."
-        en: "Thomas plays tag in the garden with Bullard's youngest until both shirts are black. Ruth and Mrs. Bullard talk about schools. Bullard gives a speech and weeps at the end."
+        de: "Thomas spielt mit Bullards Jüngstem, Cole, der so alt ist wie er, im Garten Fangen, bis beide Hemden schwarz sind. Ruth und Mrs. Bullard reden über Schulen. Bullard hält eine Rede und weint am Ende."
+        en: "Thomas plays tag in the garden with Bullard's youngest, Cole, who is his age, until both shirts are black. Ruth and Mrs. Bullard talk about schools. Bullard gives a speech and weeps at the end."
       requires: { minCash: 1500 }
       # TODO-Effekt: rival: { bullard: { trust: 10 } }
       effects: { cash: -1500, ruth: 6, thomas: 8, strength: 2 }
@@ -589,9 +599,9 @@
     - id: schweigen
       label: { de: "Schweigen", en: "Say nothing" }
       result:
-        de: "Der Landtag von Cordova nimmt das Transportgesetz in die nächste Lesung. Der Abgeordnete aus Salt Hill zitiert Delgado wörtlich."
-        en: "The Cordova assembly takes the transport bill to its next reading. The member for Salt Hill quotes Delgado word for word."
-      # TODO-Effekt: lawPressure: { transportpflicht: 2 }
+        de: "Im Landtag von Cordova gewinnt der Entwurf zum Transportgesetz Stimmen. Der Abgeordnete aus Salt Hill zitiert Delgado wörtlich."
+        en: "In the Cordova assembly the transport bill gains votes. The member for Salt Hill quotes Delgado word for word."
+      # TODO-Effekt: lawPressure: { transportpflicht: 2 } – ob das Gesetz kommt, entscheidet das Gesetze-System (Block A)
       effects: { strength: -3 }
       appointments: 0
       default: true
@@ -682,12 +692,12 @@
     en: An Evening in the Back Room
   text:
     de: >-
-      Im Hinterzimmer des Gulf Hotel sitzen Bullard, zwei Wildcatter aus Okara und ein Mann
+      Im Hinterzimmer des Gulf Hotel sitzen Bullard, zwei Wildcatter vom Nordhang und ein Mann
       von Crane Eastern, der sich nicht vorstellt. Der Preis fällt seit einem Jahr. Wenn alle
       ein Zehntel weniger fördern, sagt Bullard, steigt er wieder. Es müssen nur alle
       mitmachen. Und niemand darf es aufschreiben.
     en: >-
-      In the back room of the Gulf Hotel sit Bullard, two wildcatters from Okara and a man from
+      In the back room of the Gulf Hotel sit Bullard, two wildcatters from the north slope and a man from
       Crane Eastern who doesn't introduce himself. The price has been falling for a year. If
       everyone produces a tenth less, Bullard says, it will rise again. Everyone just has to
       join in. And nobody may write it down.
@@ -695,8 +705,8 @@
     - id: mitmachen
       label: { de: "Mitmachen – ein Zehntel weniger", en: "Join in – a tenth less" }
       result:
-        de: "Zwei Monate lang halten sich alle daran. Der Preis steigt. Dann bohrt einer der Okara-Männer heimlich nach, und alle wissen es, und keiner sagt etwas."
-        en: "For two months everyone keeps to it. The price rises. Then one of the Okara men secretly drills again, and everyone knows, and nobody says anything."
+        de: "Zwei Monate lang halten sich alle daran. Der Preis steigt. Dann bohrt einer der Nordhang-Männer heimlich nach, und alle wissen es, und keiner sagt etwas."
+        en: "For two months everyone keeps to it. The price rises. Then one of the north-slope men secretly drills again, and everyone knows, and nobody says anything."
       # TODO-Effekt: heat: 1, rival: { bullard: { trust: 5 } }
       effects: { production: -0.1, price: 0.12 }
     - id: unterlaufen

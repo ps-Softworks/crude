@@ -36,7 +36,7 @@ export interface GameState {
   /** Aktuelle Runde, beginnt bei 1. */
   round: number;
   /**
-   * Kapitel 1–5 (Phase 4, für die Ereignis-Bedingungen minChapter/maxChapter). Fehlt es,
+   * Kapitel 1–7 (Phase 4, für die Ereignis-Bedingungen minChapter/maxChapter). Fehlt es,
    * ist es Kapitel 1 – den Wechsel setzt später der Zeitsprung.
    */
   chapter?: number;

@@ -16,8 +16,5 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
-    // Die Viel-Seed-Läufe (Post, Bohren, Rivalen, Rundgang) brauchen allein 3–5 s; unter Last
-    // (mehrere Läufe gleichzeitig) rissen sie die 5-s-Grenze von Vitest. Phase 4.
-    testTimeout: 30_000,
   },
 });
