@@ -26,6 +26,7 @@
 # stehen im Schattenbuch (Schublade am Schreibtisch).
 
 - id: k2_delaney_ankunft
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: info
   certain: true
   draft: true                # Schlüsselszene: Delaneys erster Auftritt (Weltbibel)
@@ -67,6 +68,7 @@
       default: true
 
 - id: k2_nora_geruecht
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   visitor: nora
   certain: true
   title:
@@ -115,6 +117,7 @@
       default: true
 
 - id: k2_delaney_besuch
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   visitor: delaney
   certain: true
   draft: true                # Schlüsselszene: Delaney sitzt Jacob gegenüber
@@ -184,6 +187,7 @@
       appointments: 2
 
 - id: k2_delaney_anklage
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: demand
   certain: true
   deadline: 2

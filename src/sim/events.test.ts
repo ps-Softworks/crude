@@ -5,9 +5,11 @@ import type { Well } from './drilling';
 import {
   applyEffects,
   autoResolve,
+  chapterMet,
   conditionsMet,
   defaultChoice,
   deskEvents,
+  deskRoutines,
   drawEvents,
   marksIntoNextChapter,
   marksMet,
@@ -68,6 +70,10 @@ describe('Bedingungen', () => {
     expect(conditionsMet(state, { minChapter: 2 })).toBe(false);
     expect(conditionsMet({ ...state, chapter: 2 }, { minChapter: 2, maxChapter: 2 })).toBe(true);
     expect(conditionsMet({ ...state, chapter: 3 }, { minChapter: 2, maxChapter: 2 })).toBe(false);
+    expect(conditionsMet(state, { minChapter: 3 })).toBe(false);
+    expect(conditionsMet({ ...state, chapter: 3 }, { minChapter: 3, maxChapter: 3 })).toBe(true);
+    expect(conditionsMet({ ...state, chapter: 3 }, { maxChapter: 2 })).toBe(false);
+    expect(conditionsMet({ ...state, chapter: 4 }, { minChapter: 3, maxChapter: 3 })).toBe(false);
   });
 
   it('kein Ereignis aus content/events/k2-* oder k3-* kann in Kapitel 1 kommen', () => {
@@ -75,8 +81,8 @@ describe('Bedingungen', () => {
     for (const e of spaeter) {
       // Integration: Die Ereignisse der Kapitel-2-Systeme (4.9 Personal, 4.10 Diplomatie, 4.11 Delaney)
       // hängen an Merkzeichen, die nur die Simulation ab ihrem Kapitel setzt (oder der Debug-Knopf
-      // zur Probe) – sie brauchen kein minChapter. Alle anderen grenzen das Kapitel selbst ein.
-      if (e.conditions.minChapter === undefined) {
+      // zur Probe) – sie tragen minChapter: 1 (jedes Kapitel). Alle anderen grenzen das Kapitel selbst ein.
+      if (e.conditions.minChapter === 1 && e.conditions.maxChapter === undefined) {
         expect(e.marked.length, e.id).toBeGreaterThan(0);
         expect(marksMet({ ...state, round: 8 }, e), e.id).toBe(false);
         continue;
@@ -124,6 +130,68 @@ describe('Bedingungen', () => {
     expect(validateState({ ...state }).ok).toBe(true);
     expect(validateState({ ...state, chapter: 2 }).ok).toBe(true);
     expect(validateState({ ...state, chapter: 'zwei' }).ok).toBe(false);
+  });
+
+  it('Ereignisse für Kapitel 3 kommen nie in Kapitel 1, Kapitel 1 bleibt unverändert (Phase 4)', () => {
+    const katalog = loadEvents();
+    const k3 = katalog.filter((e) => e.id.startsWith('k3_'));
+    expect(k3.length).toBeGreaterThan(0);
+    for (const e of k3) {
+      expect(e.conditions.minChapter, e.id).toBe(3);
+      expect(e.conditions.maxChapter, e.id).toBe(3);
+      for (let round = 1; round <= balance.start.rounds; round++) expect(conditionsMet({ ...state, round }, e.conditions), e.id).toBe(false);
+    }
+    // Kapitel-1-Ereignisse brauchen keine Kapitel-Angabe: Ohne minChapter gelten sie nur in Kapitel 1.
+    // (Die Fernleitungs-Ereignisse aus 4.7 gehören zu Kapitel 2 und tragen minChapter: 1.)
+    const k1 = katalog.filter((x) => !/^k[2-9]_/.test(x.id) && !x.id.startsWith('fernleitung_'));
+    expect(k1.length).toBeGreaterThan(0);
+    for (const e of k1) {
+      expect(e.conditions.minChapter, e.id).toBeUndefined();
+      expect(chapterMet(state, e.conditions), e.id).toBe(true);
+      expect(chapterMet({ chapter: 3 }, e.conditions), e.id).toBe(false);
+    }
+  });
+
+  it('chapterMet: ohne minChapter nur Kapitel 1 (bis maxChapter), mit minChapter offen nach oben (Phase 4)', () => {
+    expect(chapterMet({}, {})).toBe(true);
+    expect(chapterMet({ chapter: 2 }, {})).toBe(false);
+    expect(chapterMet({ chapter: 3 }, {})).toBe(false);
+    expect(chapterMet({ chapter: 2 }, { maxChapter: 2 })).toBe(true);
+    expect(chapterMet({ chapter: 3 }, { maxChapter: 2 })).toBe(false);
+    expect(chapterMet({ chapter: 1 }, { minChapter: 3 })).toBe(false);
+    expect(chapterMet({ chapter: 4 }, { minChapter: 3 })).toBe(true);
+    expect(chapterMet({ chapter: 4 }, { minChapter: 3, maxChapter: 3 })).toBe(false);
+  });
+
+  it('nach dem Zeitsprung in Kapitel 3 kommen keine Kapitel-1-Ereignisse und -Briefe mehr (Phase 4)', () => {
+    const alle = loadEvents();
+    for (const seed of ['k3-a', 'k3-b', 'k3-c']) {
+      const g = newGame(seed, balance, alle);
+      let s: GameState = { ...g, chapter: 3, events: { ...g.events, pending: [], due: {}, docs: {} } };
+      for (let r = 0; r < 12 && !s.finished; r++) {
+        s = drawEvents({ ...autoResolve(s, alle), round: s.round + 1 }, balance, alle);
+        for (const id of s.events.pending) expect(id, seed).toMatch(/^k3_/);
+        expect(deskRoutines(s, balance, alle).map((e) => e.id).filter((id) => !/^k[2-9]_/.test(id)), seed).toEqual([]);
+      }
+      // Nicht leer geprüft: Kapitel-3-Ereignisse kommen tatsächlich.
+      expect(s.events.seen.some((id) => id.startsWith('k3_')), seed).toBe(true);
+    }
+  });
+
+  it('Ereignisse späterer Kapitel ändern keine Partie in Kapitel 1 – gleicher Seed, gleiche Ereignisse (Phase 4)', () => {
+    const alle = loadEvents();
+    const nurK1 = alle.filter((e) => !/^k[2-9]_/.test(e.id));
+    expect(nurK1.length).toBeLessThan(alle.length);
+    for (const seed of ['kapitel-a', 'kapitel-b', 'kapitel-c']) {
+      let mit = newGame(seed, balance, alle);
+      let ohne = newGame(seed, balance, nurK1);
+      for (let r = 0; r < balance.start.rounds && !mit.finished; r++) {
+        mit = endRound(mit, balance, alle);
+        ohne = endRound(ohne, balance, nurK1);
+      }
+      expect(mit.events.seen, seed).toEqual(ohne.events.seen);
+      expect(mit.log, seed).toEqual(ohne.log);
+    }
   });
 
   it('nennt den Grund, warum eine Wahl gesperrt ist', () => {

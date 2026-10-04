@@ -19,6 +19,7 @@
 # verdeckten Folgen zu kennen.
 
 - id: k2_vorzimmer_abwerbung
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: info
   draft: true
   marked: [personal_sekretaerin]
@@ -55,6 +56,7 @@
       default: true
 
 - id: k2_fixer_erpresser
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: demand
   draft: true
   marked: [personal_fixer]
@@ -90,6 +92,7 @@
       appointments: 0
 
 - id: k2_hitze_reporterin
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: personal
   draft: true
   marked: [fixer_hitze]

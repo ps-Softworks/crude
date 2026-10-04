@@ -16,10 +16,15 @@ Kurzreferenz der Felder:
   `content/map.yaml` – jede Figur bekommt dort eine echte Ranch). `unlocks: [hollins]` an einer Wahl
   schaltet ein gesperrtes Gebiet aus `content/map.yaml` frei; seine Ranches entstehen dann aus dem Seed.
 - Bedingungen: `minRound`, `maxRound`, `minCash`, `maxCash`, `minOilStock`,
-  `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100)
-- Kapitel (Phase 4): `minChapter`, `maxChapter` – ein Spielstand ohne Kapitelangabe ist in Kapitel 1.
-  Ereignisse ohne Kapitel-Bedingung kommen in jedem Kapitel; Ereignisse für Kapitel 2 tragen
-  `conditions: { minChapter: 2, maxChapter: 2 }` und erscheinen so nie in Kapitel 1.
+  `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100),
+  `minChapter`, `maxChapter` (Kapitel; ohne Angabe im Spielstand gilt Kapitel 1 – Phase 4). Für das
+  ganze Ereignis gilt: Fehlt `minChapter`, ist es ein Kapitel-1-Ereignis – es kommt nur in Kapitel 1
+  (bzw. bis `maxChapter`, falls angegeben). Mit `minChapter` und ohne `maxChapter` kommt es ab diesem
+  Kapitel in jedem späteren. Das gilt für gewürfelte und sichere Ereignisse, Briefe und feste Termine.
+  An einer Wahl prüfen `minChapter`/`maxChapter` nur, was dasteht.
+  Die Ereignisse der Kapitel-2-Systeme (`k2-fernleitung`, `k2-personal`, `k2-diplomatie`, `k2-delaney`) tragen
+  `minChapter: 1`: Sie hängen an Merkzeichen der Simulation und kommen so in jedem Kapitel, sobald diese gesetzt sind.
+  Ereignisse für Kapitel 2 tragen `conditions: { minChapter: 2, maxChapter: 2 }` und erscheinen so nie in Kapitel 1.
 - Kapitel 2 – Alltag (Phase 4, Entwurf): `k2-alltag-1` (Raffinerie, Geschäft), `-2` (Pipeline, Wegerechte,
   Fracht), `-3` (Aktionäre, Anleihen, Personal), `-4` (Rivalen: Crane-Nachfolge, Thorne, Bullard, Delgado),
   `-5` (Presse, Politik, Familie, Unglücke). Fehlende Bedingungen (`hasRefinery`, `hasPipeline`, `ipo`) und
@@ -115,3 +120,15 @@ Kurzreferenz der Felder:
   vorläufigen. Runden zählen im Kapitel ab 1. Der Kapitelwechsel setzt alle Merkzeichen mit
   `marksIntoNextChapter` (src/sim/events.ts) auf Runde 0, damit `delay` ab Kapitelbeginn zählt.
   ENTWURF – Philipp überarbeitet.
+- Kapitel 3 – Alltag (Phase 4, ENTWURF – Philipp überarbeitet): `k3-alltag-1-marke` (Marke, Tankstellen,
+  Margaret Crane), `-2-boerse` (Börse, Kauf auf Kredit, Thornes Kurspflege), `-3-lobby` (Dunmore, Grady,
+  Steuerabzug, Courier), `-4-seismik` (Dr. Hale, Konsortium, Ashcombe), `-5-stand` (Club, Kirche, Ball,
+  Stiftung), `-6-rivalen` (Bullard verschuldet, Thorne, Pruett), `-7-krise` (volle Tanks, Zinsen,
+  Flugblätter, Bankrun), `-8-familie` (Haskell, Silberhochzeit, Thomas, Clara, Silas) – 59 Ereignisse.
+  Alle mit `conditions: { minChapter: 3, maxChapter: 3 }`; kommen also nie in Kapitel 1 und ändern dort
+  auch keinen Wurf (gemischt werden nur Ereignisse des laufenden Kapitels). Umgekehrt kommen die
+  Kapitel-1-Ereignisse (ohne `minChapter`) nach dem Zeitsprung nicht mehr – auch nicht als Brief oder
+  fester Termin; Kapitel 3 braucht also eigene feste Termine (Abend mit Ruth usw.), falls gewünscht. Wirkungen, die es noch nicht
+  gibt (Marke, Aktien, Ruf, Stand, Clara …), stehen als `# TODO-Effekt: …` neben einer Ersatzwirkung.
+  Offen für den Zeitsprung (Block A): Er muss `chapter` im Spielstand setzen und beim Kapitelwechsel
+  `marksIntoNextChapter` aufrufen, damit `delay` bei Merkzeichen früherer Kapitel ab Kapitelbeginn zählt.

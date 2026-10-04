@@ -12,6 +12,7 @@
 #   fernleitung_thorne_abkommen     Abkommen mit Thorne: keine weitere Leitung zum Hafen
 
 - id: fernleitung_thorne_unterhaendler
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   rival: thorne
   certain: true
   marked: [fernleitung_hafen_geplant]
@@ -60,6 +61,7 @@
       default: true
 
 - id: fernleitung_querkopf_veranda
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   certain: true
   marked: [fernleitung_querkopf]
   title:
@@ -113,6 +115,7 @@
       default: true
 
 - id: fernleitung_sabotage_spuren
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   certain: true
   marked: [fernleitung_sabotiert]
   title:
@@ -165,6 +168,7 @@
 # liegt sein Brief im Posteingang – und wer ihn sich zum Feind gemacht hat, bekommt Besuch.
 
 - id: fernleitung_thorne_gegenangebot
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   rival: thorne
   mail: offer
   certain: true
@@ -227,6 +231,7 @@
       default: true
 
 - id: fernleitung_thorne_besuch
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   rival: thorne
   visitor: thorne
   certain: true

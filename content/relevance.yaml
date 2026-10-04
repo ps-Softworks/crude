@@ -146,3 +146,17 @@ later:
   - { mark: k2_courier_anteil, reason: "Harlan am Courier beteiligt – Bixby als Pressesprecher in Kapitel 3 (Story-Bibel §3, §8)" }
   - { mark: k2_grady_spende, reason: "Senator Grady schuldet einen Gefallen – Reserveland im Zeitsprung II (zs2_grady_*, Story-Bibel §2)" }
   - { mark: k2_thomas_turm_sommer, reason: "Thomas am Turm (Story-Bibel §6 G: thomas_felder) – Weg in Kapitel 3 (thomas_feld, §7 B)" }
+
+  # Kapitel 3 – Alltag (Phase 4, k3-alltag-*.yaml). Entwurf – Philipp überarbeitet.
+  - { mark: k3_dunmore_gedeckt, reason: "Dunmore schuldet Jacob sein Ansehen – Skandalrisiko des Lobbyisten (Story-Bibel §4, System 4.16, Kapitel 4)" }
+  - { mark: k3_reserveland, reason: "Reserveland ohne Ausschreibung – Saat für Daniels Akte und den Skandal um Grady (Story-Bibel §2/§7, Kapitel 4)" }
+  - { mark: k3_seismik_verkauft, reason: "Hales Messstreifen ans Konsortium verkauft – Schuld bei Mr. Vale (Story-Bibel §7 D, System 4.17)" }
+  - { mark: k3_quote_eingehalten, reason: "Jacob hält sich an die Quote des Konsortiums – Vales Einladung (Story-Bibel §7 D, Kapitel 4)" }
+  - { mark: k3_quote_ignoriert, reason: "Jacob bricht die Quote – das Konsortium merkt es sich (Story-Bibel §7 D, Kapitel 4)" }
+  - { mark: k3_ashcombe_kontakt, reason: "Erster Liefervertrag mit Royal Aldmark Petroleum – Ashcombe als Rivale oder Partner ab Kapitel 5 (GDD §9.2)" }
+  - { mark: k3_pruett_option, reason: "Pruetts Vorkaufsrecht greift im Crash (GDD §9.2: kauft in Krisen Pleitefirmen auf; Zeitsprung III)" }
+  - { mark: k3_preislisten_vernichtet, reason: "Verbrannte Preislisten – Beweis für Delaney oder Daniel (Story-Bibel §7 A, Kapitel 4)" }
+  - { mark: k3_flugblaetter_eingesammelt, reason: "Gewerkschaftssaat – Zeitsprung III: ein Gewerkschaftsgesetz (GDD §13)" }
+  - { mark: k3_raedelsfuehrer_entlassen, reason: "Gewerkschaftssaat – die Entlassenen kommen in Kapitel 4 wieder (GDD §13, Zeitsprung III)" }
+  - { mark: k3_bank_abgezogen, reason: "Thornes Bank im Crash: Wer abhob, wird erinnert (Story-Bibel §2, Zeitsprung III)" }
+  - { mark: k3_bank_gestuetzt, reason: "Thornes Bank im Crash: Wer stützte, hat einen Gefallen offen (Story-Bibel §2, Zeitsprung III)" }

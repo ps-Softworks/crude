@@ -1,0 +1,436 @@
+# Kapitel 3 – Alltag, Paket 2: Börse und Spekulation (Phase 4). Entwurf – Philipp überarbeitet.
+# Grundlage: Story-Bibel §9 (K3 Thema 2: Aktientipp vom Friseur bei vollen Tanks, Aktienpflege,
+# Autoaktien, Margin Call, Ruth rät ab), GDD §13 Kapitel 3 („Typische Falle: Aktien auf Kredit
+# gekauft, während die Zeitung schon von vollen Tanks und steigenden Zinsen schreibt“),
+# §9.2 (Thorne bläht Aktien auf).
+#
+# Nur Kapitel 3 (minChapter/maxChapter 3). Beträge vorläufig im Maßstab von Kapitel 1.
+# Aktien, Kurs und Kontrolle gibt es als Wirkung noch nicht – Ersatz: cash, Kommentar
+# „# TODO-Effekt“ nennt die gewünschte Wirkung (System 4.15 Börse, 4.8 Aktien).
+#
+# Merkzeichen dieses Pakets:
+#   k3_aktien_kredit → k3_margin_call, k3_ruth_raet_ab
+#   k3_aktien_bar → k3_autoaktien_verkauf
+#   k3_thorne_prospekt → k3_prospekt_wackelt
+#   k3_aktienpflege → k3_aktienpflege_frage
+#   k3_hale_aktien_gehalten → k3_hale_verlust (Paket 7)
+# Martha Hale (Witwe, Hale-Ranch, Aktien statt Pacht) steht in der Bibel §3 „Weitere“.
+
+- id: k3_friseur_tipp
+  title:
+    de: Ein Tipp beim Friseur
+    en: A Tip at the Barber's
+  text:
+    de: >-
+      Der Friseur im Grand Hotel von Port Ellis rasiert Jacob seit acht Jahren. Heute
+      redet er von Automobilaktien aus Hallstead: Sie haben sich in einem Jahr
+      verdoppelt, sein Schwager kauft auf Kredit, zehn Prozent Anzahlung. Auf dem
+      Stuhl nebenan liest ein Mann im Ledger, dass die Tanks am Hafen voll sind. Das
+      Messer liegt an Jacobs Hals, während der Friseur von Reichtum spricht.
+    en: >-
+      The barber at the Grand Hotel in Port Ellis has shaved Jacob for eight years.
+      Today he talks of automobile shares from Hallstead: they doubled in a year, his
+      brother-in-law buys on margin, ten percent down. In the next chair a man reads in
+      the Ledger that the tanks at the harbour are full. The razor rests at Jacob's
+      throat while the barber speaks of riches.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.3
+  choices:
+    - id: kredit
+      label: { de: "Auf Kredit kaufen – zehn Prozent Anzahlung (1.000 $)", en: "Buy on margin – ten percent down (1,000 $)" }
+      result:
+        de: Der Makler in Hallstead telegrafiert noch am selben Tag. Jacob besitzt jetzt zehnmal so viele Aktien, wie er bezahlt hat.
+        en: The broker in Hallstead wires the same day. Jacob now owns ten times as many shares as he has paid for.
+      requires: { minCash: 1000 }
+      effects: { cash: -1000 }  # TODO-Effekt: margin: +10000, investment: { autoaktien: +10000 }
+      marks: [k3_aktien_kredit]
+      appointments: 0
+    - id: bar
+      label: { de: "Bar kaufen, nur was er entbehren kann (3.000 $)", en: "Buy outright, only what he can spare (3,000 $)" }
+      result:
+        de: Jacob kauft ein kleines Paket und legt die Urkunden in den Safe, neben Ruths Heiratsurkunde.
+        en: Jacob buys a small block and puts the certificates in the safe, next to Ruth's marriage certificate.
+      requires: { minCash: 3000 }
+      effects: { cash: -3000 }  # TODO-Effekt: investment: { autoaktien: +3000 }
+      marks: [k3_aktien_bar]
+      appointments: 0
+    - id: trinkgeld
+      label: { de: "Ein Trinkgeld geben und den Ledger nehmen", en: "Leave a tip and take the Ledger" }
+      result:
+        de: Jacob liest die Meldung über die vollen Tanks zweimal. Der Friseur zuckt die Schultern. „Sie waren immer vorsichtig, Mr. Harlan.“ Es klingt nicht wie ein Lob.
+        en: Jacob reads the item on the full tanks twice. The barber shrugs. "You were always careful, Mr. Harlan." It doesn't sound like praise.
+      appointments: 0
+      default: true
+
+- id: k3_margin_call
+  mail: demand
+  marked: [k3_aktien_kredit]
+  delay: 2
+  chance: 0.6
+  deadline: 2
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Der Makler fordert Nachschuss
+    en: The Broker Calls for More Margin
+  text:
+    de: >-
+      Ein Telegramm aus Hallstead, ohne Gruß: Die Automobilaktien sind in einer Woche
+      um ein Drittel gefallen. Der Makler verlangt bis Freitag Nachschuss, sonst
+      verkauft er Jacobs Paket zum Tageskurs. Darunter, handschriftlich ergänzt: „Der
+      Schwager Ihres Friseurs hat gestern verkauft.“
+    en: >-
+      A telegram from Hallstead, no greeting: the automobile shares fell by a third in
+      a week. The broker demands more margin by Friday, otherwise he sells Jacob's block
+      at the day's price. Below, added by hand: "Your barber's brother-in-law sold
+      yesterday."
+  choices:
+    - id: nachschiessen
+      label: { de: "Nachschießen (4.000 $)", en: "Put up the margin (4,000 $)" }
+      result:
+        de: Jacob telegrafiert das Geld. Die Aktien fallen weiter, langsamer. Er hält jetzt Papier, das ihn hält.
+        en: Jacob wires the money. The shares keep falling, more slowly. He now holds paper that holds him.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000 }  # TODO-Effekt: margin bleibt, Kurs entscheidet später
+    - id: oel
+      label: { de: "Öl verkaufen, um zu decken (3.000 Barrel)", en: "Sell oil to cover (3,000 barrels)" }
+      result:
+        de: Das Öl geht zu einem Preis weg, über den Jacob vor einem Jahr gelacht hätte. Die Aktien bleiben in seinem Namen.
+        en: The oil goes at a price Jacob would have laughed at a year ago. The shares stay in his name.
+      requires: { minOilStock: 3000 }
+      effects: { oilStock: -3000, cash: -400 }  # TODO-Effekt: Notverkauf zum halben Preis
+    - id: verkaufen_lassen
+      label: { de: "Verkaufen lassen", en: "Let him sell" }
+      result:
+        de: Der Makler verkauft. Die Anzahlung ist weg, und auf dem Konto steht eine Restschuld. In Hallstead weiß man jetzt, dass Harlan auf Kredit spielt.
+        en: The broker sells. The down payment is gone, and the account shows a remaining debt. Hallstead now knows that Harlan gambles on credit.
+      effects: { cash: -2000, strength: -10 }  # TODO-Effekt: rating: -1, standing: -2
+      appointments: 0
+      default: true
+
+- id: k3_autoaktien_verkauf
+  mail: info
+  marked: [k3_aktien_bar]
+  delay: 2
+  chance: 0.5
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Die Urkunden im Safe
+    en: The Certificates in the Safe
+  text:
+    de: >-
+      Der Makler schreibt höflich: Die Automobilaktien stehen beim Doppelten. Er rate
+      zu nichts, er berichte nur. In derselben Post liegt eine Mahnung von Thornes
+      Bank an einen Nachbarn, der auf Kredit gekauft hat, versehentlich in Jacobs
+      Umschlag gesteckt.
+    en: >-
+      The broker writes politely: the automobile shares stand at double. He advises
+      nothing, he only reports. In the same post lies a dunning letter from Thorne's
+      bank to a neighbour who bought on margin, mistakenly slipped into Jacob's envelope.
+  choices:
+    - id: verkaufen
+      label: { de: "Jetzt verkaufen (+5.500 $)", en: "Sell now (+5,500 $)" }
+      result:
+        de: Jacob verkauft an einem Dienstag. Am Freitag stehen die Aktien noch höher. Er liest den Kurszettel nicht mehr.
+        en: Jacob sells on a Tuesday. On Friday the shares stand higher still. He stops reading the price list.
+      effects: { cash: 5500 }  # TODO-Effekt: investment: { autoaktien: -3000 }
+      appointments: 0
+    - id: halten
+      label: { de: "Halten – Automobile bleiben", en: "Hold – automobiles are here to stay" }
+      result:
+        de: Die Urkunden bleiben im Safe. Jacob weiß nicht, ob er klug ist oder nur stur. Ruth fragt nicht.
+        en: The certificates stay in the safe. Jacob doesn't know whether he is wise or only stubborn. Ruth doesn't ask.
+      effects: { strength: -5 }  # TODO-Effekt: investment bleibt, Crash-Risiko (crash)
+      appointments: 0
+      default: true
+
+- id: k3_ruth_raet_ab
+  visitor: ruth
+  marked: [k3_aktien_kredit]
+  delay: 1
+  chance: 0.5
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Ruth hat die Abrechnung gelesen
+    en: Ruth Has Read the Statement
+  text:
+    de: >-
+      Ruth legt die Abrechnung des Maklers auf Jacobs Tisch, mit der Schrift nach oben.
+      Sie hat die Zahlen mit Bleistift unterstrichen, wie früher die Schulden des
+      Krämers. Ihr Haar ist an den Schläfen grau, sie trägt es nicht mehr hochgesteckt.
+      „Du kaufst Papier mit Papier, Jacob. Damals hast du gesagt, du willst nie wieder
+      etwas, das dir ein anderer nehmen kann.“
+    en: >-
+      Ruth lays the broker's statement on Jacob's desk, writing side up. She has
+      underlined the figures in pencil, as she once did the storekeeper's debts. Her
+      hair is grey at the temples; she no longer wears it pinned up. "You buy paper with
+      paper, Jacob. Back then you said you never again wanted anything another man
+      could take from you."
+  choices:
+    - id: verkaufen
+      label: { de: "Verkaufen – mit Verlust, aber schuldenfrei", en: "Sell – at a loss, but free of debt" }
+      result:
+        de: Jacob verkauft am nächsten Morgen. Der Verlust ist kleiner als der Abend, an dem Ruth es ihm vorrechnet. Sie bleibt danach sitzen.
+        en: Jacob sells the next morning. The loss is smaller than the evening Ruth spends adding it up for him. Afterwards she stays sitting.
+      effects: { cash: -1500, ruth: 12 }  # TODO-Effekt: margin: 0
+    - id: ihr_geben
+      label: { de: "„Dann führ du das Depot.“", en: "\"Then you run the account.\"" }
+      result:
+        de: Ruth nimmt den Bleistift und fängt sofort an. Am Monatsende ist die Hälfte verkauft und der Rest bar bezahlt. Sie schreibt ihre Initialen an jede Zeile.
+        en: Ruth picks up the pencil and starts at once. By month's end half is sold and the rest paid in cash. She writes her initials on every line.
+      effects: { cash: -800, ruth: 15 }  # TODO-Effekt: staff: { finanzen: ruth }, margin: -0.5
+      appointments: 2
+    - id: weiter
+      label: { de: "„Der Markt steigt. Du warst immer zu vorsichtig.“", en: "\"The market is rising. You were always too careful.\"" }
+      result:
+        de: 'Ruth nimmt die Abrechnung wieder mit. In der Tür sagt sie: „Ich habe das Datum aufgeschrieben.“ Sie sagt nicht, welches.'
+        en: Ruth takes the statement back with her. At the door she says, "I have written down the date." She doesn't say which.
+      effects: { ruth: -12, cash: 1500 }  # TODO-Effekt: margin bleibt, Kurs steigt vorerst
+    - id: schweigen
+      label: { de: "Darüber schweigen", en: "Say nothing about it" }
+      result:
+        de: Jacob sagt nichts. Ruth wartet eine Weile, dann legt sie die Abrechnung zu den anderen Papieren. Beim Abendessen spricht sie über Clara und nicht über Geld.
+        en: Jacob says nothing. Ruth waits a while, then puts the statement with the other papers. At supper she talks about Clara, not about money.
+      effects: { ruth: -6 }  # TODO-Effekt: margin bleibt
+      appointments: 0
+      default: true
+
+- id: k3_aktienpflege
+  rival: thorne
+  title:
+    de: Thornes Bank bietet Kurspflege an
+    en: Thorne's Bank Offers Price Care
+  text:
+    de: >-
+      Mr. Pettibone ist dick geworden und trägt jetzt eine goldene Uhrkette. Thornes
+      Bank, sagt er, pflege die Aktien guter Kunden: Sie kaufe zu, wenn der Kurs
+      schwächelt, und verkaufe, wenn er steht. Ein Kurs, der nur steigt, beruhige
+      die Aktionäre. „Nennen wir es Gärtnerei, Mr. Harlan. Nicht Manipulation.“
+    en: >-
+      Mr. Pettibone has grown stout and now wears a gold watch chain. Thorne's bank, he
+      says, tends the shares of good customers: it buys when the price weakens and sells
+      when it stands. A price that only rises calms shareholders. "Let's call it
+      gardening, Mr. Harlan. Not manipulation."
+  # WUNSCH: conditions: hasShares – Harlan Oil ist nur nach dem Börsengang am Ende von Kapitel 1
+  # eine Aktiengesellschaft (state.ipo.share > 0, Story-Bibel §2). Ohne Börsengang gibt es keine
+  # Harlan-Aktie, kein Aktienbuch und keinen Aufsichtsrat – bis dahin läuft die Szene sonst ins Leere.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.25
+  choices:
+    - id: annehmen
+      label: { de: "Die Bank pflegen lassen (2.000 $ Gebühr)", en: "Let the bank tend them (2,000 $ fee)" }
+      result:
+        de: Die Harlan-Aktie steigt sechs Wochen lang an jedem Freitag um einen halben Punkt. Die Aktionäre schreiben dankbare Briefe. Pettibone schreibt Rechnungen.
+        en: The Harlan share rises half a point every Friday for six weeks. Shareholders write grateful letters. Pettibone writes invoices.
+      requires: { minCash: 2000 }
+      effects: { cash: -2000, price: 0.2 }  # TODO-Effekt: sharePrice: +10 (befristet), heat: +2, rivalStake: { thorne: +2 }
+      marks: [k3_aktienpflege]
+    - id: ablehnen
+      label: { de: "„Mein Kurs wächst, wo die Quellen sind.“", en: "\"My price grows where the wells are.\"" }
+      result:
+        de: Pettibone lächelt. Im nächsten Quartal ist der Frachttarif für Harlan-Öl einen Cent höher. Ein Zufall, sagt der Brief der Bahn.
+        en: Pettibone smiles. Next quarter the freight rate for Harlan oil is a cent higher. A coincidence, says the railway's letter.
+      effects: { railTariff: 0.03 }  # TODO-Effekt: rival: { thorne: { relation: -10 } }
+      default: true
+
+- id: k3_aktienpflege_frage
+  marked: [k3_aktienpflege]
+  delay: 2
+  chance: 0.5
+  # WUNSCH: conditions: hasShares – Harlan Oil ist nur nach dem Börsengang am Ende von Kapitel 1
+  # eine Aktiengesellschaft (state.ipo.share > 0, Story-Bibel §2). Ohne Börsengang gibt es keine
+  # Harlan-Aktie, kein Aktienbuch und keinen Aufsichtsrat – bis dahin läuft die Szene sonst ins Leere.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Ein Kurs, der jeden Freitag steigt
+    en: A Price That Rises Every Friday
+  text:
+    de: >-
+      Ein Kleinaktionär aus Port Ellis, Lehrer im Ruhestand, hat aufgeschrieben, wann
+      die Harlan-Aktie steigt: jeden Freitag, kurz vor Schluss, um einen halben Punkt.
+      Er hat die Liste an die Börsenaufsicht in Hallstead geschickt – und eine Kopie
+      an Jacob, mit der Bitte um Erklärung. Er besitzt elf Aktien.
+    en: >-
+      A small shareholder from Port Ellis, a retired teacher, has written down when the
+      Harlan share rises: every Friday, just before the close, by half a point. He has
+      sent the list to the exchange supervisors in Hallstead – and a copy to Jacob,
+      asking for an explanation. He owns eleven shares.
+  choices:
+    - id: beenden
+      label: { de: "Die Pflege sofort beenden lassen", en: "Have the tending stopped at once" }
+      result:
+        de: Am nächsten Freitag fällt die Aktie um zwei Punkte. Die Aufsicht legt die Liste des Lehrers zu den Akten. Pettibone schickt trotzdem die letzte Rechnung.
+        en: The next Friday the share falls two points. The supervisors file the teacher's list. Pettibone sends the last invoice anyway.
+      effects: { cash: -1000, price: -0.15 }  # TODO-Effekt: sharePrice: -8, heat: -1
+    - id: abkaufen
+      label: { de: "Dem Lehrer die elf Aktien abkaufen – zum Dreifachen", en: "Buy the teacher's eleven shares – at triple the price" }
+      result:
+        de: Der Lehrer verkauft und schreibt keinen Brief mehr. Die Aufsicht hat seine Liste aber schon. Akten vergessen nicht, nur langsam.
+        en: The teacher sells and writes no more letters. But the supervisors already have his list. Files don't forget, only slowly.
+      effects: { cash: -600 }  # TODO-Effekt: heat: +1, trace: { severity: 2, label: "Freitagskurse" }
+      appointments: 0
+      default: true
+
+- id: k3_thorne_prospekt
+  rival: thorne
+  title:
+    de: Ein Prospekt mit Jacobs Namen
+    en: A Prospectus with Jacob's Name
+  text:
+    de: >-
+      Augustus Thorne lässt einen Prospekt drucken: den „Cordova Petroleum Trust“, ein
+      Fonds aus Ölaktien für kleine Sparer, ab zehn Dollar. Harlan-Aktien sollen die
+      Hälfte ausmachen. Thorne möchte Jacobs Namen auf der ersten Seite, als Beirat.
+      Der Ausgabepreis liegt ein Drittel über dem Kurs. Im Begleitbrief: „Ich kaufe
+      keine Firmen, Mr. Harlan. Ich kaufe Zeit.“
+    en: >-
+      Augustus Thorne is printing a prospectus: the "Cordova Petroleum Trust", a fund of
+      oil shares for small savers, from ten dollars. Harlan shares are to make up half.
+      Thorne wants Jacob's name on the first page, as adviser. The issue price is a third
+      above the market. The covering letter: "I don't buy companies, Mr. Harlan. I buy
+      time."
+  # WUNSCH: conditions: hasShares – Harlan Oil ist nur nach dem Börsengang am Ende von Kapitel 1
+  # eine Aktiengesellschaft (state.ipo.share > 0, Story-Bibel §2). Ohne Börsengang gibt es keine
+  # Harlan-Aktie, kein Aktienbuch und keinen Aufsichtsrat – bis dahin läuft die Szene sonst ins Leere.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.25
+  choices:
+    - id: namen
+      label: { de: "Den Namen hergeben (+4.000 $ Beiratsgeld)", en: "Lend his name (+4,000 $ adviser's fee)" }
+      result:
+        de: Der Prospekt liegt in jeder Bankfiliale der Provinz. Witwen und Schaffner kaufen Anteile, weil Harlan auf der ersten Seite steht.
+        en: The prospectus lies in every bank branch in the province. Widows and conductors buy units because Harlan is on the first page.
+      effects: { cash: 4000 }  # TODO-Effekt: sharePrice: +8, rivalStake: { thorne: +3 }, heat: +1
+      marks: [k3_thorne_prospekt]
+    - id: ablehnen
+      label: { de: "Ablehnen", en: "Decline" }
+      result:
+        de: Der Prospekt erscheint ohne Jacobs Namen, aber mit seinen Aktien. Thorne kann sie kaufen, wo er will. Das Aktienbuch wird dicker.
+        en: The prospectus appears without Jacob's name but with his shares. Thorne can buy them wherever he likes. The share register grows thicker.
+      effects: { railTariff: 0.02 }  # TODO-Effekt: rivalStake: { thorne: +2 }, control: -1
+      default: true
+    - id: warnen
+      label: { de: "Den Ledger vor dem Ausgabepreis warnen", en: "Warn the Ledger about the issue price" }
+      result:
+        de: Der Ledger druckt eine kleine, genaue Meldung. Der Fonds verkauft schlechter. Thorne schreibt nicht zurück; seine Bahn schreibt dafür einen neuen Tarif.
+        en: The Ledger prints a small, precise item. The fund sells worse. Thorne doesn't write back; his railway writes a new tariff instead.
+      effects: { railTariff: 0.05, strength: 5 }  # TODO-Effekt: reputation: { public: +2 }, rival: { thorne: { aggression: +15 } }
+
+- id: k3_prospekt_wackelt
+  marked: [k3_thorne_prospekt]
+  delay: 3
+  chance: 0.5
+  # WUNSCH: hasShares wie bei k3_thorne_prospekt – folgt nur auf dessen Merkzeichen, braucht es also nicht eigens.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  rival: thorne
+  title:
+    de: Briefe von Sparern
+    en: Letters from Savers
+  text:
+    de: >-
+      Der Cordova Petroleum Trust steht unter dem Ausgabepreis. Auf Jacobs Tisch liegen
+      vierzig Briefe, manche mit Bleistift geschrieben. Ein Schaffner aus Salt Hill hat
+      seine Ersparnisse von elf Jahren hineingesteckt, „weil Ihr Name darauf stand,
+      Mr. Harlan, und Sie einer von uns waren“.
+    en: >-
+      The Cordova Petroleum Trust stands below its issue price. Forty letters lie on
+      Jacob's desk, some written in pencil. A conductor from Salt Hill put eleven years'
+      savings into it, "because your name was on it, Mr. Harlan, and you were one of us".
+  choices:
+    - id: zurueckkaufen
+      label: { de: "Den Sparern ihre Anteile zum Ausgabepreis abkaufen (5.000 $)", en: "Buy the savers' units back at issue price (5,000 $)" }
+      result:
+        de: Jacob kauft zurück, was die Sparer zurückgeben. Thorne verdient an jedem Anteil zweimal. Der Schaffner schreibt einen zweiten Brief, kürzer.
+        en: Jacob buys back whatever the savers return. Thorne earns twice on every unit. The conductor writes a second letter, shorter.
+      requires: { minCash: 5000 }
+      effects: { cash: -5000 }  # TODO-Effekt: reputation: { public: +3, workers: +2 }, control: +1
+    - id: ablegen
+      label: { de: "„Aktien steigen und fallen.“", en: "\"Shares rise and fall.\"" }
+      result:
+        de: Die Briefe kommen in eine Kiste. Die Kiste kommt in den Keller. Nora Whitlock hat den Schaffner schon besucht.
+        en: The letters go into a box. The box goes into the cellar. Nora Whitlock has already visited the conductor.
+      effects: { strength: -5 }  # TODO-Effekt: reputation: { public: -4 }, trace: { severity: 1, label: "Cordova Petroleum Trust" }
+      appointments: 0
+      default: true
+
+- id: k3_hale_aktien
+  title:
+    de: Martha Hale fragt nach ihren Aktien
+    en: Martha Hale Asks about Her Shares
+  text:
+    de: >-
+      Martha Hale hat beim Börsengang für ihre Ranch Harlan-Aktien statt Pacht genommen. Jetzt sitzt
+      sie im schwarzen Witwenkleid, das sie trägt, seit ihr Mann am Salt Hill vom Turm
+      fiel, vor Jacobs Sekretärin und lässt fragen, ob sie verkaufen soll. Der Kurs
+      steht so hoch wie nie, ihr Neffe drängt. „Mein Mann hat Ihnen vertraut,
+      Mr. Harlan. Ich weiß nicht, ob ich es soll. Ich frage trotzdem.“
+    en: >-
+      At the flotation Martha Hale took Harlan shares instead of royalties for her ranch. Now she sits
+      in the black widow's dress she has worn since her husband fell from a derrick at
+      Salt Hill, in front of Jacob's secretary, and asks whether she should sell. The
+      price is higher than ever, her nephew is pressing. "My husband trusted you,
+      Mr. Harlan. I don't know whether I should. I'm asking anyway."
+  # WUNSCH: conditions: hasShares – Harlan Oil ist nur nach dem Börsengang am Ende von Kapitel 1
+  # eine Aktiengesellschaft (state.ipo.share > 0, Story-Bibel §2). Ohne Börsengang gibt es keine
+  # Harlan-Aktie, kein Aktienbuch und keinen Aufsichtsrat – bis dahin läuft die Szene sonst ins Leere.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.25
+  choices:
+    - id: abkaufen
+      label: { de: "Ihr die Aktien selbst abkaufen, zum Tageskurs (4.000 $)", en: "Buy her shares himself, at the day's price (4,000 $)" }
+      result:
+        de: Martha Hale zählt das Geld nicht nach. Die Aktien bleiben im Haus Harlan, nicht bei Thornes Strohmännern.
+        en: Martha Hale doesn't count the money. The shares stay in the Harlan house, not with Thorne's straw men.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000 }  # TODO-Effekt: control: +1, shares: { jacob: +1 }
+    - id: verkaufen
+      label: { de: "Raten zu verkaufen – an der Börse", en: "Advise her to sell – on the exchange" }
+      result:
+        de: Martha Hale verkauft in Hallstead. Wer gekauft hat, steht im Aktienbuch unter einem Namen, den niemand in Cordova kennt.
+        en: Martha Hale sells in Hallstead. Whoever bought is entered in the share register under a name nobody in Cordova knows.
+      effects: { strength: 5, railTariff: 0.02 }  # TODO-Effekt: rivalStake: { thorne: +1 }, control: -1
+    - id: halten
+      label: { de: "Raten zu halten", en: "Advise her to hold" }
+      result:
+        de: 'Martha Hale nickt und geht. Im Treppenhaus sagt sie zu ihrem Neffen: „Mr. Harlan hat sich noch nie geirrt.“'
+        en: Martha Hale nods and leaves. On the stairs she tells her nephew, "Mr. Harlan has never been wrong."
+      marks: [k3_hale_aktien_gehalten]
+      appointments: 0
+      default: true
+
+# Briefe-Garantie in Kapitel 3: Information, wiederkehrend.
+- id: k3_marktbericht
+  mail: info
+  once: false
+  cooldown: 4
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.25
+  title:
+    de: Der Wochenbericht von Vandermeer & Co.
+    en: The Weekly Report of Vandermeer & Co.
+  text:
+    de: >-
+      Das Bankhaus Vandermeer & Co. schickt seinen Marktbericht auf Büttenpapier. Auf
+      Seite eins: Rekordkurse, Optimismus, neue Automobile. Auf Seite vier, klein:
+      volle Tanks in Port Ellis, Zinsen der Zentralbank leicht erhöht. Jemand hat in
+      der Firma beide Seiten angestrichen, in verschiedenen Farben.
+    en: >-
+      The banking house Vandermeer & Co. sends its market report on deckle-edged paper.
+      Page one: record prices, optimism, new automobiles. Page four, small: full tanks
+      in Port Ellis, central bank rates slightly raised. Someone in the firm has marked
+      both pages, in different colours.
+  choices:
+    - id: verkaufen
+      label: { de: "Öl aus dem Tank verkaufen, solange der Preis hält (1.500 Barrel)", en: "Sell oil from the tank while the price holds (1,500 barrels)" }
+      result:
+        de: Das Öl geht zum Tagespreis weg. Zwei Wochen später ist der Preis gefallen – oder gestiegen. Jacob hat aufgehört, darauf zu wetten.
+        en: The oil goes at the day's price. Two weeks later the price has fallen – or risen. Jacob has stopped betting on it.
+      requires: { minOilStock: 1500 }
+      effects: { oilStock: -1500, cash: 1500 }
+      appointments: 0
+    - id: lesen
+      label: { de: "Seite eins lesen, Seite vier ablegen", en: "Read page one, file page four" }
+      result:
+        de: Der Bericht kommt in den Ordner zu den anderen. Der Ordner wird dicker. Die Tanks am Hafen auch.
+        en: The report goes into the folder with the others. The folder grows thicker. So do the tanks at the harbour.
+      appointments: 0
+      default: true

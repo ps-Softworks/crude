@@ -48,6 +48,7 @@
 # --- Nachfolge im Crane Trust -------------------------------------------------
 
 - id: k2_crane_rueckzug
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   visitor: crane
   certain: true
   marked: [k2_diplomatie]
@@ -89,6 +90,7 @@
       default: true
 
 - id: k2_margaret_besuch
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   visitor: margaret
   certain: true
   marked: [k2_diplomatie]
@@ -123,6 +125,7 @@
       default: true
 
 - id: k2_pruett_besuch
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   visitor: pruett
   certain: true
   marked: [k2_diplomatie]
@@ -155,6 +158,7 @@
       default: true
 
 - id: k2_nachfolge_margaret
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   visitor: margaret
   certain: true
   marked: [k2_nachfolge_margaret]
@@ -188,6 +192,7 @@
       default: true
 
 - id: k2_nachfolge_pruett
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   visitor: pruett
   certain: true
   marked: [k2_nachfolge_pruett]
@@ -221,6 +226,7 @@
       default: true
 
 - id: k2_trust_zerschlagen
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: info
   certain: true
   marked: [k2_trust_zerschlagen]
@@ -260,6 +266,7 @@
 # --- Delgados Produzentenverband ---------------------------------------------
 
 - id: k2_verband_gruendung
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   visitor: delgado
   certain: true
   marked: [k2_verband_gegruendet]
@@ -300,6 +307,7 @@
       default: true
 
 - id: k2_verband_mitglied
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   visitor: delgado
   certain: true
   marked: [k2_verband_uebernommen]
@@ -339,6 +347,7 @@
       appointments: 0
 
 - id: k2_verband_zu_gross
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   visitor: delgado
   certain: true
   marked: [k2_verband_zu_gross]
@@ -377,6 +386,7 @@
 # --- Verrat ---------------------------------------------------------------------
 
 - id: k2_verrat_gerede
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: info
   certain: true
   marked: [k2_verrat]
@@ -411,6 +421,7 @@
       default: true
 
 - id: k2_hintergangen_brief
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: personal
   certain: true
   once: false                # kommt bei jedem Bruch (Anlass k2_bruch), nicht nur beim ersten
@@ -452,6 +463,7 @@
 # der Brief (diplomacy.pacts.offerRounds = deadline).
 
 - id: k2_angebot_margaret_supply
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: offer
   certain: true
   once: false
@@ -493,6 +505,7 @@
       default: true
 
 - id: k2_angebot_margaret_cross
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: offer
   certain: true
   once: false
@@ -535,6 +548,7 @@
       default: true
 
 - id: k2_angebot_pruett_price
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: offer
   certain: true
   once: false
@@ -574,6 +588,7 @@
       default: true
 
 - id: k2_angebot_pruett_territory
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: offer
   certain: true
   once: false
@@ -614,6 +629,7 @@
       default: true
 
 - id: k2_angebot_pruett_cross
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: offer
   certain: true
   once: false
@@ -654,6 +670,7 @@
       default: true
 
 - id: k2_angebot_bullard_price
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: offer
   certain: true
   once: false
@@ -693,6 +710,7 @@
       default: true
 
 - id: k2_angebot_bullard_territory
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: offer
   certain: true
   once: false
@@ -732,6 +750,7 @@
       default: true
 
 - id: k2_angebot_bullard_cross
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: offer
   certain: true
   once: false
@@ -772,6 +791,7 @@
       default: true
 
 - id: k2_angebot_thorne_cross
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: offer
   certain: true
   once: false
@@ -814,6 +834,7 @@
 # --- Pruett kauft auf -----------------------------------------------------------
 
 - id: k2_angebot_pruett_buyout
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   visitor: pruett
   certain: true
   once: false
@@ -856,6 +877,7 @@
       default: true
 
 - id: k2_krisenkauf
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: info
   certain: true
   once: false
@@ -899,6 +921,7 @@
 # --- Rache der Rivalen (GDD §9.5; Anlass k2_rache_<rivale>) ---------------------
 
 - id: k2_rache_margaret
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: info
   certain: true
   once: false
@@ -933,6 +956,7 @@
       default: true
 
 - id: k2_rache_pruett
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: info
   certain: true
   once: false
@@ -968,6 +992,7 @@
       default: true
 
 - id: k2_rache_bullard
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: info
   certain: true
   once: false
@@ -1003,6 +1028,7 @@
       default: true
 
 - id: k2_rache_delgado
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: info
   certain: true
   once: false
@@ -1038,6 +1064,7 @@
       default: true
 
 - id: k2_rache_thorne
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
   mail: info
   certain: true
   once: false

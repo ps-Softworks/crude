@@ -47,3 +47,7 @@ pruett: { form: zylinder, name: Harold Pruett }
 delgado: { form: frau, name: Rosa Delgado }
 # 4.11 Andockpunkt: Bundesanwalt Delaney (ab Kapitel 2, content/events/k2-delaney.yaml).
 delaney: { form: hut, name: Bundesanwalt Delaney }
+# Kapitel 3 – Alltag (Phase 4) – ENTWURF, Namen aus der Story-Bibel Kapitel 2/3
+# (Margaret Crane und Harold Pruett stehen schon oben bei 4.10).
+grady: { form: zylinder, name: Senator Grady }
+dunmore: { form: zylinder, name: Lionel Dunmore }

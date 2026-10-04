@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ContentLoadError, formatContentError, loadEventCatalog, parseEventFile, parseEventFiles } from './eventContent';
+import { ContentLoadError, formatContentError, loadEventCatalog, parseEventFile, parseEventFiles, ZEITSPRUNG_MARKS } from './eventContent';
 import { resolveEvent } from './events';
 import { newGame } from './game';
 import { loadBalance } from './testBalance';
@@ -26,7 +26,8 @@ describe('echte Inhalte in content/events/', () => {
     // 4.7 Andockpunkt: Die Kapitel-2-Ereignisse der Fernleitungen (k2-fernleitung.yaml) prüft bigPipeline.test.ts.
     // 4.9 Andockpunkt: Briefe für Kapitel 2 (k2-*.yaml) gehören nicht zur Liste von Kapitel 1.
     // 4.10 Andockpunkt: Ereignisse späterer Kapitel (k2_…) prüfen ihre eigenen Tests.
-    // Story Kapitel 2: Ereignisse späterer Kapitel (minChapter ≥ 2) prüfen eigene Tests (events.test.ts).
+    // Story Kapitel 2 und Alltag Kapitel 3: Ereignisse späterer Kapitel (minChapter ≥ 2) prüfen eigene Tests (events.test.ts).
+    // Die Ereignisse der Kapitel-2-Systeme tragen minChapter: 1 und fallen über ihr Präfix heraus.
     const ids = loadEvents()
       .filter((e) => (e.conditions.minChapter ?? 1) <= 1)
       .map((e) => e.id)
@@ -204,6 +205,14 @@ describe('Nachwirkung im YAML (2.2)', () => {
     expect(errors.map(formatContentError)).toEqual([
       'a.yaml:14: Ereignis „folge“: Das Merkzeichen „nie“ setzt keine Wahl (marks: [nie]) – Tippfehler?',
     ]);
+  });
+
+  it('Merkzeichen des Zeitsprungs (Block A) zählen als gesetzt – aber nur die aus der Liste', () => {
+    for (const m of ZEITSPRUNG_MARKS) {
+      expect(parseEventFiles([{ file: 'a.yaml', text: MIT_MARKE.replace('notMarked: [nie]', `notMarked: [${m}]`) }]).errors, m).toEqual([]);
+    }
+    const tippfehler = parseEventFiles([{ file: 'a.yaml', text: MIT_MARKE.replace('notMarked: [nie]', 'notMarked: [zs2_grady_reservland]') }]);
+    expect(tippfehler.errors).toHaveLength(1);
   });
 
   it('kaputte Merkzeichen und delay werden gemeldet', () => {

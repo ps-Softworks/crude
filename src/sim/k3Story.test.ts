@@ -174,7 +174,8 @@ describe('Kapitel 3 – Story-Bögen', () => {
       expect(ids).not.toContain('k3_ruth_hannah');
       for (const e of k3) {
         expect(e.marked, e.id).not.toContain('ruth_vertroestet');
-        expect(e.text.de, e.id).not.toMatch(/Datum aufgeschrieben|Grundbuch/);
+        // „Grundbuchamt“ (k3_reserveland_folge, Alltag Kapitel 3) ist kein Grundbuch-Fund.
+        expect(e.text.de, e.id).not.toMatch(/Datum aufgeschrieben|Grundbuch(?!amt)/);
       }
     });
 
