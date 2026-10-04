@@ -16,6 +16,8 @@ import { logisticsAssets } from './logistics';
 import type { GameState } from './game';
 import { fieldStatus, fieldWells, wellRate } from './production';
 import { rigAssets } from './rigs';
+// 4.7 Andockpunkt: Fernleitungen zählen zum Buchwert.
+import { bigPipelineAssets } from './bigPipeline';
 
 function cents(value: number): number {
   return Math.round(value * 100) / 100;
@@ -41,5 +43,6 @@ export function empireValue(state: GameState, balance: Balance): number {
   const imBoden = state.fields.reduce((sum, field) => sum + ownReserves(state, balance, field.id), 0);
   const reserven = balance.empire.reserveFactor * state.postedPrice * imBoden;
   // Tanks, Gespanne und Pipeline (0.2.15+2) sowie gekaufte Türme (0.2.15+7) zählen mit ihrem Buchwert.
-  return cents(state.cash + tank + reserven + logisticsAssets(state, balance) + rigAssets(state, balance) - debt(state));
+  // 4.7 Andockpunkt: plus Fernleitungen (Kapitel 2+; in Kapitel 1 immer 0).
+  return cents(state.cash + tank + reserven + logisticsAssets(state, balance) + rigAssets(state, balance) + bigPipelineAssets(state, balance) - debt(state));
 }

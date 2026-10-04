@@ -1,0 +1,41 @@
+/* Fernleitungen (4.7): Trassenskizze, Wegerechte, Briefe – im Fenster Fracht. */
+
+.fernleitung section { margin: 0 0 1.1em; display: flow-root; }
+.fernleitung h3 { margin: 0.4em 0 0.3em; }
+
+.trasse-skizze {
+  display: block;
+  float: right;
+  width: 40%;
+  max-width: 280px;
+  aspect-ratio: 4 / 3;
+  margin: 0 0 0.6em 1em;
+  border: 1px solid var(--linie);
+  background: var(--land);
+}
+.trasse-land { fill: var(--land); }
+.trasse-meer { fill: var(--meer); }
+.trasse-gebiet { fill: none; stroke: var(--tinte-blass); stroke-width: 0.12; stroke-dasharray: 0.4 0.3; }
+.trasse-stadt { fill: var(--papier-dunkel); stroke: var(--tinte-weich); stroke-width: 0.12; }
+.trasse-ranch { stroke: var(--tinte-weich); stroke-width: 0.08; }
+.trasse-ranch.klar { fill: var(--gruen-hell); }
+.trasse-ranch.offen { fill: var(--ocker-hell); }
+.trasse-ranch.quer { fill: var(--rot-hell); }
+.trasse-bahn { fill: none; stroke: var(--tinte); stroke-width: 0.25; stroke-dasharray: 0.5 0.25; }
+.trasse-linie { fill: none; stroke: var(--oel); stroke-width: 0.35; stroke-linecap: round; }
+.trasse-bahnhof { fill: var(--papier-hell); stroke: var(--tinte); stroke-width: 0.12; }
+.trasse-hafen { fill: var(--blau); stroke: var(--tinte); stroke-width: 0.12; }
+
+.trasse-rechte { list-style: none; margin: 0.3em 0; padding: 0; }
+.trasse-recht { display: flex; flex-wrap: wrap; gap: 0.2em 0.8em; align-items: baseline; padding: 0.3em 0; border-bottom: 1px dotted var(--linie-hell); }
+.trasse-recht-name { flex: 1 1 14em; }
+.trasse-recht-stand { flex: 0 1 auto; color: var(--tinte-weich); font-style: italic; }
+.trasse-recht.holdout .trasse-recht-stand { color: var(--rot); }
+.trasse-recht.klar .trasse-recht-stand { color: var(--gruen-dunkel); }
+.trasse-recht-aktionen { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 0.3em; align-items: baseline; }
+.trasse-recht-aktionen button { padding: 2px 8px; font-size: 0.92rem; }
+
+.trasse-post { padding: 0.4em 0.8em; background: var(--papier-hell); border: 1px solid var(--linie-hell); }
+.trasse-brief { margin: 0.3em 0; font-style: italic; }
+.trasse-brief.neu { border-left: 3px solid var(--ocker); padding-left: 0.5em; }
+.trasse-planer label { margin-right: 0.8em; }

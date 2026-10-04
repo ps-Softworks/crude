@@ -6,6 +6,8 @@ import { keyLabel, SHORTCUTS } from '../keys';
 import { Tabs, activeTab } from '../sheet/Tabs';
 import { tester } from '../tester';
 import type { SheetContext } from './types';
+// 4.7 Andockpunkt: Debug-Knopf für die Fernleitungen.
+import { TrunkDebugButton } from './TrunkPipelineTab';
 
 export interface MenuProps {
   ctx: SheetContext;
@@ -165,6 +167,8 @@ export function MenuSheet(p: MenuProps) {
             </button>
           </form>
           <WorldDebug ctx={ctx} />
+          {/* 4.7 Andockpunkt: Fernleitungen zum Ausprobieren schon in Kapitel 1 freischalten. */}
+          <TrunkDebugButton ctx={ctx} />
         </section>
       )}
     </Tabs>

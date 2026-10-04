@@ -3,6 +3,8 @@
 // Seit 0.2.15+5 gehört die Karte (content/map.yaml) mit dazu: parseGameData.
 
 import { parseWorldMap, type WorldMap } from './worldMap';
+// 4.7 Andockpunkt: Fernleitungen.
+import { parseBigPipelineBalance, type BigPipelineBalance } from './bigPipelineBalance';
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
 
@@ -608,6 +610,8 @@ export interface Balance {
   newspaper: NewspaperBalance;
   tutorial: TutorialBalance;
   worldModel: WorldModelBalance;
+  /** 4.7 Andockpunkt: Fernleitungen (Kapitel 2+), Abschnitt bigPipelines. */
+  bigPipelines: BigPipelineBalance;
 }
 
 /** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
@@ -1702,6 +1706,15 @@ function parseWorld(raw: unknown): WorldMap {
   }
 }
 
+/** 4.7 Andockpunkt: Fehler im Abschnitt bigPipelines kommen als BalanceError. */
+function parseBigPipelines(raw: unknown): BigPipelineBalance {
+  try {
+    return parseBigPipelineBalance(raw, LANDOWNER_TYPES);
+  } catch (e) {
+    throw new BalanceError(e instanceof Error ? e.message : String(e));
+  }
+}
+
 /** Spielzahlen und Karte zusammen: balance.yaml und map.yaml als rohe YAML-Daten. */
 export function parseGameData(balanceRaw: unknown, mapRaw: unknown): Balance {
   return parseBalance({ ...(balanceRaw as object), world: mapRaw });
@@ -1767,11 +1780,19 @@ export function parseBalance(raw: unknown): Balance {
     newspaper: parseNewspaper(raw),
     tutorial: parseTutorial(raw),
     worldModel: parseWorldModel(raw),
+    // 4.7 Andockpunkt: Fernleitungen – eigener Parser in bigPipelineBalance.ts.
+    bigPipelines: parseBigPipelines(raw),
   };
 
   for (const r of balance.transport.pipeline.rights) {
     if (r.figure && !balance.world.figures.some((f) => f.id === r.figure)) {
       throw new BalanceError(`balance.yaml: Wegerecht "${r.mark}" verweist auf die Figur "${r.figure}", die es in map.yaml nicht gibt`);
+    }
+  }
+  // 4.7 Andockpunkt: Ziele der Fernleitungen müssen Bahnhöfe oder Häfen der Karte sein.
+  for (const d of balance.bigPipelines.destinations) {
+    if (!balance.world.landmarks.some((l) => l.id === d.id && l.at)) {
+      throw new BalanceError(`balance.yaml: Fernleitungs-Ziel "${d.id}" ist kein Bahnhof oder Hafen in map.yaml`);
     }
   }
   const { count } = balance.lease.startOptions;

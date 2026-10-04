@@ -1,0 +1,160 @@
+# Kapitel 2 – Fernleitungen (4.7, GDD §6). ENTWURF von Claude, bitte in eigener Stimme umschreiben.
+# Kommen nur in Kapitel 2+: Die Merkzeichen unten setzt erst die Fernleitung (src/sim/bigPipeline.ts).
+#
+# Merkzeichen, die die Simulation setzt (BIG_PIPELINE_MARKS):
+#   fernleitung_vermessen, fernleitung_hafen_geplant, fernleitung_querkopf, fernleitung_gebaut,
+#   fernleitung_hafen, fernleitung_sabotiert, thorne_unter_druck, fernleitung_enteignet
+# Merkzeichen, die die Simulation liest (BIG_PIPELINE_READ_MARKS):
+#   fernleitung_thorne_feind        mehr Sabotage an Leitungen zum Hafen
+#   fernleitung_thorne_stillhalten  Waffenstillstand: weniger Sabotage, Thorne hetzt die Landbesitzer nicht auf
+#   fernleitung_ruf_gut             Landbesitzer nehmen Angebote eher an
+#   fernleitung_einschuechterung    alle Querköpfe an Ranches geben nach – danach mehr Sabotage (Rache)
+
+- id: fernleitung_thorne_unterhaendler
+  rival: thorne
+  certain: true
+  marked: [fernleitung_hafen_geplant]
+  title:
+    de: Thornes Anwalt bittet um ein Wort
+    en: Thorne's Lawyer Asks for a Word
+  text:
+    de: >-
+      Ein Herr in grauem Gehrock, Visitenkarte der Thorne Rail & Trust Bank. Mr.
+      Thorne habe von der Vermessung zum Hafen gehört. Er rate dringend ab: Rohre
+      seien empfindlich, die Gegend sei rau, und die Bahn habe Freunde in jedem
+      Ranchhaus zwischen Salt Hill und Port Ellis. Es sei denn, man einige sich
+      unter Gentlemen.
+    en: >-
+      A gentleman in a grey frock coat, calling card of Thorne Rail & Trust Bank.
+      Mr. Thorne has heard of the survey to the harbour. He strongly advises
+      against it: pipes are delicate, the country is rough, and the railway has
+      friends in every ranch house between Salt Hill and Port Ellis. Unless one
+      comes to terms as gentlemen.
+  choices:
+    - id: hinauswerfen
+      label: { de: "Ihn hinauswerfen – die Leitung kommt", en: "Throw him out – the line is coming" }
+      result:
+        de: Der Anwalt rückt seinen Hut zurecht. „Wie Sie meinen.“ Thornes Leute werden die Trasse besuchen.
+        en: The lawyer straightens his hat. "As you wish." Thorne's men will be visiting the route.
+      marks: [fernleitung_thorne_feind]
+    - id: stillhalten
+      label: { de: "Einen Waffenstillstand vereinbaren: keine Hetze, keine Saboteure (500 $ Anwaltskosten)", en: "Agree to a truce: no agitation, no saboteurs (500 $ legal fees)" }
+      result:
+        de: >-
+          Zwei Seiten Papier, zwei Unterschriften. Thorne lässt die Landbesitzer in
+          Ruhe und seine Leute bleiben von der Trasse. Bauen darf Jacob trotzdem.
+        en: >-
+          Two pages of paper, two signatures. Thorne leaves the landowners alone and
+          keeps his men away from the route. Jacob may still build.
+      requires: { minCash: 500 }
+      effects: { cash: -500 }
+      marks: [fernleitung_thorne_stillhalten]
+      sharp: true
+    - id: abwarten
+      label: { de: "Höflich zuhören und nichts versprechen", en: "Listen politely and promise nothing" }
+      result:
+        de: Der Anwalt geht mit leeren Händen. Was Thorne daraus macht, wird sich zeigen.
+        en: The lawyer leaves empty-handed. What Thorne makes of it remains to be seen.
+      appointments: 0
+      default: true
+
+- id: fernleitung_querkopf_veranda
+  certain: true
+  marked: [fernleitung_querkopf]
+  title:
+    de: Ein Gewehr auf der Veranda
+    en: A Rifle on the Porch
+  text:
+    de: >-
+      Jacobs Vermesser kommen zurück, die Pfähle unter dem Arm. Ein Rancher an der
+      Trasse hat sie mit der Flinte vom Land gejagt, und die Nachbarn reden schon
+      davon, es ihm gleichzutun. Wer einmal nachgibt, bezahlt bald jeden Zaunpfahl
+      doppelt.
+    en: >-
+      Jacob's surveyors come back with the stakes under their arms. A rancher on
+      the route ran them off his land with a shotgun, and the neighbours are
+      already talking about doing the same. Give in once and soon you pay double
+      for every fence post.
+  choices:
+    - id: reden
+      label: { de: "Selbst hinreiten, auf der Veranda sitzen und zuhören", en: "Ride out yourself, sit on the porch and listen" }
+      result:
+        de: >-
+          Ein langer Nachmittag, schlechter Kaffee, eine Geschichte über den Vater, der
+          die Ranch aus dem Nichts gebaut hat. Der Rancher bleibt stur – aber im Land
+          heißt es jetzt, mit Harlan könne man reden.
+        en: >-
+          A long afternoon, bad coffee, a story about the father who built the ranch
+          from nothing. The rancher stays stubborn – but word goes round that Harlan
+          is a man you can talk to.
+      effects: { strength: -4 }
+      appointments: 2
+      marks: [fernleitung_ruf_gut]
+      sharp: true
+    - id: maenner
+      label: { de: "Ein paar harte Männer hinschicken (300 $)", en: "Send a few hard men (300 $)" }
+      result:
+        de: >-
+          Die Männer reiten nachts. Am Morgen unterschreiben die Querköpfe einer nach
+          dem anderen. Niemand redet darüber – aber alle wissen es.
+        en: >-
+          The men ride at night. By morning the holdouts sign, one after another.
+          Nobody talks about it – but everybody knows.
+      requires: { minCash: 300 }
+      effects: { cash: -300 }
+      marks: [fernleitung_einschuechterung]
+    - id: warten
+      label: { de: "Abwarten – der Mann kommt schon zur Vernunft", en: "Wait – the man will come to his senses" }
+      result:
+        de: Die Pfähle liegen im Schuppen. Der Rancher sitzt weiter auf seiner Veranda.
+        en: The stakes lie in the shed. The rancher keeps sitting on his porch.
+      appointments: 0
+      default: true
+
+- id: fernleitung_sabotage_spuren
+  certain: true
+  marked: [fernleitung_sabotiert]
+  title:
+    de: Spuren am Graben
+    en: Tracks by the Trench
+  text:
+    de: >-
+      Der Streckenwärter bringt einen Fetzen Stoff, der am Stacheldraht hing: das
+      Futter einer Jacke mit dem eingestickten Zeichen der Thorne Rail. Ein Beweis
+      ist das nicht. Aber Nora Whitlock vom Port Ellis Courier würde es gern sehen.
+    en: >-
+      The line-walker brings a scrap of cloth that was caught on the barbed wire:
+      the lining of a jacket embroidered with the Thorne Rail emblem. It is not
+      proof. But Nora Whitlock of the Port Ellis Courier would like to see it.
+  choices:
+    - id: presse
+      label: { de: "Den Fetzen der Zeitung geben", en: "Give the scrap to the newspaper" }
+      result:
+        de: >-
+          „Bahnbaron sabotiert Konkurrenz?“ – mit Fragezeichen, aber auf der ersten
+          Seite. Thorne lässt ausrichten, er werde seine Leute im Zaum halten.
+        en: >-
+          "Rail Baron Sabotaging Competition?" – with a question mark, but on the
+          front page. Thorne sends word that he will keep his men in check.
+      effects: { strength: -2 }
+      marks: [fernleitung_thorne_stillhalten]
+      sharp: true
+    - id: vergeltung
+      label: { de: "Thornes Kesselwagen eine Nacht lang brennen lassen (200 $)", en: "Let Thorne's tank cars burn for a night (200 $)" }
+      result:
+        de: >-
+          Am Bahnhof brennen drei Kesselwagen. Thorne weiß, wer es war, und erhöht
+          die Fracht. Seine Männer kommen wieder.
+        en: >-
+          Three tank cars burn at the station. Thorne knows who did it and raises
+          the freight rate. His men will be back.
+      requires: { minCash: 200 }
+      effects: { cash: -200, railTariff: 0.05 }
+      marks: [fernleitung_thorne_feind]
+    - id: hinnehmen
+      label: { de: "Den Fetzen wegwerfen und die Leitung flicken", en: "Throw the scrap away and patch the line" }
+      result:
+        de: Der Streckenwärter zuckt mit den Schultern. Die Leitung ist bald wieder dicht.
+        en: The line-walker shrugs. The line will soon be tight again.
+      appointments: 0
+      default: true
