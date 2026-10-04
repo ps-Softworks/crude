@@ -154,7 +154,7 @@ describe('Ölpreis (1.9)', () => {
 
   describe('Fertig-Kriterium: Preisverfall am Salt Hill, sobald alle bohren', () => {
     // Jacob darf mehrere Türme gleichzeitig betreiben, damit er wirklich "alles" anbohrt.
-    const viel = { ...balance, drilling: { ...balance.drilling, rigs: 8 } };
+    const viel = { ...balance, drilling: { ...balance.drilling, rigs: { ...balance.drilling.rigs, start: 8, max: 8 } } };
 
     it('Szenario 1: Jacob und die Nachbarn bohren 16 Runden – der Preis fällt um mindestens 40 %', () => {
       const s = partie('salt-hill', viel, true);

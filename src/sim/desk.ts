@@ -9,10 +9,11 @@ import type { Balance } from './balance';
 import { TRANSPORT_MODES } from './balance';
 import {
   abandonWell,
+  deeperQuote,
   drillDeeper,
+  drillQuote,
   fishWell,
   freeSlots,
-  stageCost,
   startDrilling,
   wellOf,
   wellsOn,
@@ -32,13 +33,15 @@ import {
   type LeaseResult,
 } from './lease';
 import { sellOil } from './transport';
+import { pumpOutlook, wellOutlook, type Outlook } from './invest';
+import { installPump, pumpTarget, type RigResult } from './rigs';
 
 function money(value: number): string {
   return `${value.toLocaleString('de-DE')} $`;
 }
 
 /** Was auf der Karte anklickbar ist – jede Art von Aktion genau einmal. */
-export type DeskActionKind = 'lease' | 'option' | 'exercise' | 'drill' | 'deeper' | 'fish' | 'abandon';
+export type DeskActionKind = 'lease' | 'option' | 'exercise' | 'drill' | 'deeper' | 'fish' | 'abandon' | 'pump';
 
 export interface DeskAction {
   kind: DeskActionKind;
@@ -51,7 +54,7 @@ export interface DeskAction {
 }
 
 /** Aus einem Probelauf der Simulation eine Knopfzeile machen. */
-function knopf(kind: DeskActionKind, label: string, probe: LeaseResult | DrillResult): DeskAction {
+function knopf(kind: DeskActionKind, label: string, probe: LeaseResult | DrillResult | RigResult): DeskAction {
   return probe.ok ? { kind, label, ok: true } : { kind, label, ok: false, reason: probe.reason };
 }
 
@@ -75,8 +78,9 @@ export function parcelActions(state: GameState, balance: Balance, parcelId: stri
 
   if (lease?.holder === 'jacob') {
     const actions: DeskAction[] = [];
+    const quote = drillQuote(state, balance, parcelId);
     if (!well) {
-      actions.push(knopf('drill', `Bohren (${money(stageCost(balance, 1))})`, startDrilling(state, balance, parcelId)));
+      actions.push(knopf('drill', `Bohren (${money(quote.cost)})`, startDrilling(state, balance, parcelId)));
     } else if (
       (well.status === 'found' || well.status === 'dry') &&
       wellsOn(state, parcelId).some((w) => w.status === 'found') &&
@@ -84,14 +88,22 @@ export function parcelActions(state: GameState, balance: Balance, parcelId: stri
     ) {
       // Weitere Bohrlöcher (0.2.15+5): auf fündigem Land, solange Bohrplätze frei sind.
       actions.push(
-        knopf('drill', `Weiteres Bohrloch (${money(stageCost(balance, 1))}, noch ${freeSlots(state, parcelId)} frei)`, startDrilling(state, balance, parcelId)),
+        knopf(
+          'drill',
+          `Weiteres Bohrloch (${money(quote.cost)}, direkt auf ${balance.drilling.stages[quote.stage - 1].depth} m, noch ${freeSlots(state, parcelId)} frei)`,
+          startDrilling(state, balance, parcelId),
+        ),
       );
+    }
+    // Pumpe nachrüsten (0.2.15+7) an der stärksten Quelle ohne Pumpe.
+    if (pumpTarget(state, parcelId)) {
+      actions.push(knopf('pump', `Pumpe nachrüsten (${money(balance.production.pump.cost)})`, installPump(state, balance, parcelId)));
     }
     // Nach einer trockenen Stufe geht es tiefer weiter, bei klemmendem Werkzeug
     // muss es erst bergen – beides kann man aufgeben.
-    const letzte = balance.drilling.stages[well?.stage ?? 0];
-    if (well?.status === 'decision' && letzte) {
-      actions.push(knopf('deeper', `Tiefer bohren (${money(stageCost(balance, well.stage + 1))})`, drillDeeper(state, balance, parcelId)));
+    const tiefer = well?.status === 'decision' ? deeperQuote(state, balance, well) : null;
+    if (well?.status === 'decision' && tiefer) {
+      actions.push(knopf('deeper', `Tiefer bohren (${money(tiefer.cost)})`, drillDeeper(state, balance, parcelId)));
     }
     if (well?.status === 'stuck') {
       actions.push(knopf('fish', 'Fischen', fishWell(state, balance, parcelId)));
@@ -140,7 +152,32 @@ export function applyAction(
       return fishWell(state, balance, parcelId);
     case 'abandon':
       return abandonWell(state, balance, parcelId);
+    case 'pump':
+      return installPump(state, balance, parcelId);
   }
+}
+
+/** Ausbau einer Ranch am Schreibtisch (0.2.15+7): was ein weiteres Bohrloch und eine Pumpe bringen würden. */
+export interface ParcelOutlook {
+  kind: 'drill' | 'pump';
+  label: string;
+  outlook: Outlook;
+}
+
+/** Die Rechnungen aus src/sim/invest.ts für diese Ranch – nur, was hier gerade möglich ist. */
+export function parcelOutlooks(state: GameState, balance: Balance, parcelId: string): ParcelOutlook[] {
+  const out: ParcelOutlook[] = [];
+  const loch = wellOutlook(state, balance, parcelId);
+  if (loch) out.push({ kind: 'drill', label: 'Weiteres Bohrloch', outlook: loch });
+  const pumpe = pumpOutlook(state, balance, parcelId);
+  if (pumpe) out.push({ kind: 'pump', label: 'Pumpe', outlook: pumpe });
+  return out;
+}
+
+/** Die Amortisation in Worten, z. B. „bezahlt nach 2 Runden“ oder „lohnt sich bis Kapitelende nicht“. */
+export function paybackText(outlook: Outlook): string {
+  if (outlook.payback === null) return 'lohnt sich bis Kapitelende nicht';
+  return outlook.payback === 1 ? 'bezahlt nach 1 Runde' : `bezahlt nach ${outlook.payback} Runden`;
 }
 
 /** Ein kurzer Hinweis auf den nächsten Schritt und die Parzellen, um die es geht. */
@@ -187,15 +224,16 @@ export function nextStep(state: GameState, balance: Balance): NextStep | null {
     };
   }
 
-  // 2. Der Turm arbeitet: nur die nächste Runde bringt ihn weiter.
-  if (state.wells.some((w) => w.status === 'drilling')) {
-    return { text: 'Der Turm bohrt. Beende die Runde, um weiterzukommen.', parcelIds: [] };
-  }
-
   // 3. Eine eigene, ungebohrte Pacht, die sofort gebohrt werden kann.
   const bereit = state.leases
     .filter((l) => l.holder === 'jacob' && !l.drilled && startDrilling(state, balance, l.parcelId).ok)
     .map((l) => l.parcelId);
+
+  // 2. Der Turm arbeitet und kein freier Turm hat etwas zu tun: nur die nächste Runde bringt ihn weiter.
+  if (bereit.length === 0 && state.wells.some((w) => w.status === 'drilling')) {
+    return { text: 'Der Turm bohrt. Beende die Runde, um weiterzukommen.', parcelIds: [] };
+  }
+
   if (bereit.length > 0) {
     const orte = ort(labelsOf(state, bereit));
     return {
@@ -238,6 +276,8 @@ export function nextStep(state: GameState, balance: Balance): NextStep | null {
 
 /** Eine Bohrung in einer Zeile für die Quellenliste auf dem Schreibtisch. */
 export interface SourceRow {
+  /** Bohrloch (mehrere je Ranch möglich). */
+  wellId: string;
   parcelId: string;
   label: string;
   status: WellStatus;
@@ -258,7 +298,7 @@ function statusText(well: Well): string {
     case 'stuck':
       return 'Werkzeug klemmt';
     case 'found':
-      return 'fördert';
+      return well.pump ? 'fördert, mit Pumpe' : 'fördert';
     case 'dry':
       return 'trocken';
   }
@@ -278,6 +318,7 @@ export function sourceRows(state: GameState): SourceRow[] {
   return [...state.wells]
     .sort((a, b) => RANGLISTE[a.status] - RANGLISTE[b.status] || a.startRound - b.startRound)
     .map((well) => ({
+      wellId: well.id,
       parcelId: well.parcelId,
       label: labelsOf(state, [well.parcelId])[0],
       status: well.status,

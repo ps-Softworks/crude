@@ -14,9 +14,9 @@ import { TRANSPORT_MODES, type Balance, type BotEventWeights, type BotTargetId, 
 import { overtimeFor } from './agenda';
 import { creditLimit, debt, headroom, takeLoan } from './credit';
 import { applyAction, parcelActions, type DeskActionKind } from './desk';
-import { freeSlots, stageCost, wellOf, wellsOn } from './drilling';
-import { fieldOf } from './field';
-import { fieldWells } from './production';
+import { drillQuote, stageCost, wellOf, wellsOn } from './drilling';
+import { pumpOutlook, wellOutlook, type Outlook } from './invest';
+import { buyRig, freeRig, rentRig, returnRig, rigWell, upgradeRig, type RigResult } from './rigs';
 import { chapterCheck } from './chapter';
 import { empireValue } from './empire';
 import { endRound, newGame, type GameState } from './game';
@@ -444,22 +444,85 @@ function jacobsOptions(state: GameState): { parcelId: string; bonus: number }[] 
   return state.options.filter((o) => o.holder === 'jacob');
 }
 
+/** Auf dieser Ranch läuft gerade eine Bohrung. */
+function busy(state: GameState, parcelId: string): boolean {
+  return wellsOn(state, parcelId).some((w) => w.status === 'drilling' || w.status === 'decision' || w.status === 'stuck');
+}
+
 /**
- * Weitere Bohrlöcher (0.2.15+5): eigene fündige Ranches mit freiem Bohrplatz und
- * ohne laufende Bohrung. Mit druckEgal = false nur, solange das Feld darunter noch
- * ohne Druckverlust fördert (weniger als production.freeWells Quellen).
+ * Ausbau (0.2.15+7), was sich laut src/sim/invest.ts in höchstens maxPayback
+ * Runden bezahlt macht – der größte Gewinn zuerst. Weitere Bohrlöcher nur auf
+ * Ranches ohne laufende Bohrung; Pumpen an jeder Quelle ohne Pumpe.
  */
-function extraWellSpots(state: GameState, balance: Balance, druckEgal: boolean): string[] {
-  return jacobsLeases(state).filter((id) => {
-    if (freeSlots(state, id) === 0) return false;
-    const auf = wellsOn(state, id);
-    if (!auf.some((w) => w.status === 'found') || auf.some((w) => w.status === 'drilling' || w.status === 'decision' || w.status === 'stuck')) {
-      return false;
+function goodInvestments(state: GameState, balance: Balance, kind: 'drill' | 'pump', maxPayback: number): string[] {
+  if (maxPayback <= 0) return [];
+  const rechne = (id: string): Outlook | null => (kind === 'drill' ? (busy(state, id) ? null : wellOutlook(state, balance, id)) : pumpOutlook(state, balance, id));
+  return jacobsLeases(state)
+    .map((id) => ({ id, o: rechne(id) }))
+    .filter((x): x is { id: string; o: Outlook } => x.o !== null && x.o.payback !== null && x.o.payback <= maxPayback)
+    .sort((a, b) => b.o.profit - a.o.profit || a.id.localeCompare(b.id))
+    .map((x) => x.id);
+}
+
+/** Bezahlt eine Ausbau-Aktion aus der Kasse (mit Kredit im Rahmen des Bots); sonst bleibt alles, wie es ist. */
+function invest(state: GameState, balance: Balance, purse: Purse, cost: number, run: (s: GameState) => RigResult | { ok: true; state: GameState } | { ok: false; reason: string }): GameState {
+  const bezahlbar = afford(state, balance, purse, cost);
+  if (!bezahlbar) return state;
+  const r = run(bezahlbar);
+  return r.ok ? r.state : state;
+}
+
+/**
+ * Türme nach Charakter (bots.invest): Erst nachrüsten (nur aus der Kasse über der
+ * Rücklage), dann – wenn mehr Bohrarbeit wartet als Türme frei sind – einen Turm
+ * mieten oder kaufen. Danach bohren die Bots ihre Pachten, dann folgt investWells.
+ */
+function investRigs(state: GameState, balance: Balance, strategy: Exclude<Strategy, 'zufaellig'>, purse: Purse): GameState {
+  const cfg = balance.bots.invest[strategyKey(strategy)];
+  const R = balance.drilling.rigs;
+  // Erst wenn eine Quelle Geld bringt – vorher zählt jeder Dollar für Pacht und Bohrung.
+  if (production(state) === 0 && !state.wells.some((w) => w.status === 'found')) return state;
+  // Nachrüsten nur aus der Kasse und nur, wenn danach noch zwei Bohrungen bezahlbar bleiben.
+  const polster = purse.reserve + 2 * stageCost(balance, 1);
+  for (const upgrade of ['steam', 'rods'] as const) {
+    if (!cfg[upgrade]) continue;
+    for (const rig of state.rigs.filter((r) => r.kind !== 'rented' && !r[upgrade])) {
+      if (state.cash - R[upgrade].cost < polster) break;
+      const r = upgradeRig(state, balance, rig.id, upgrade);
+      if (r.ok) state = r.state;
     }
-    if (druckEgal) return true;
-    const feld = fieldOf(state, id);
-    return !feld || fieldWells(state, feld.id).length < balance.production.freeWells;
-  });
+  }
+  // Ein Turm mehr nur für Bohrlöcher, die sich laut Rechnung bezahlen, und wenn alle Türme belegt sind.
+  const bohrloecher = goodInvestments(state, balance, 'drill', cfg.wellPayback);
+  const frei = state.rigs.filter((r) => r.readyRound <= state.round && !rigWell(state, r.id)).length;
+  if (bohrloecher.length + undrilled(state).length > frei && bohrloecher.length > 0 && state.rigs.length < cfg.rigs) {
+    if (cfg.rent) state = invest(state, balance, purse, R.rent.costPerRound, (s) => rentRig(s, balance));
+    else if (state.cash - R.buy.cost >= polster) {
+      const r = buyRig(state, balance);
+      if (r.ok) state = r.state;
+    }
+  }
+  return state;
+}
+
+/** Zweiter Teil des Ausbaus, nach den neuen Pachten: weitere Bohrlöcher, Pumpen, leere Miettürme zurück. */
+function investWells(state: GameState, balance: Balance, strategy: Exclude<Strategy, 'zufaellig'>, purse: Purse): GameState {
+  const cfg = balance.bots.invest[strategyKey(strategy)];
+  for (const parcelId of goodInvestments(state, balance, 'drill', cfg.wellPayback)) {
+    if (!freeRig(state)) break;
+    state = invest(state, balance, purse, drillQuote(state, balance, parcelId).cost, (s) => applyAction(s, balance, parcelId, 'drill'));
+  }
+  for (const parcelId of goodInvestments(state, balance, 'pump', cfg.pumpPayback)) {
+    state = invest(state, balance, purse, balance.production.pump.cost, (s) => applyAction(s, balance, parcelId, 'pump'));
+  }
+  // Ein Mietturm ohne Arbeit kostet nur – zurück damit.
+  if (undrilled(state).length === 0) {
+    for (const rig of state.rigs.filter((r) => r.kind === 'rented' && !rigWell(state, r.id))) {
+      const r = returnRig(state, balance, rig.id);
+      if (r.ok) state = r.state;
+    }
+  }
+  return state;
 }
 
 /** Offene Bohrungen, an denen Jacob entscheiden muss. */
@@ -481,15 +544,14 @@ function cautiousTurn(state: GameState, balance: Balance, catalog: readonly Even
   for (const option of jacobsOptions(state)) {
     if (state.cash - option.bonus >= cashReserve) state = act(state, balance, option.parcelId, 'exercise');
   }
+  state = investRigs(state, balance, 'vorsichtig', purseFor(balance, 'vorsichtig'));
   for (const parcelId of jacobsLeases(state)) {
     if (!wellOf(state, parcelId) && state.cash - stageCost(balance, 1) >= cashReserve) {
       state = act(state, balance, parcelId, 'drill');
     }
   }
-  // Weitere Bohrlöcher auf fündigem Land – nur aus eigener Kasse und ohne Druckverlust.
-  for (const parcelId of extraWellSpots(state, balance, false)) {
-    if (state.cash - stageCost(balance, 1) >= cashReserve) state = act(state, balance, parcelId, 'drill');
-  }
+  // Ausbau (0.2.15+7): nur aus eigener Kasse und nur, was sich schnell bezahlt.
+  state = investWells(state, balance, 'vorsichtig', purseFor(balance, 'vorsichtig'));
   // Eine Option nur, wenn danach auch der Bonus noch bezahlbar ist – sonst verfällt
   // sie ungenutzt. Die beste Prognose, die sich das leisten kann.
   const best = freeParcels(state, minChance).find((id) => {
@@ -555,15 +617,14 @@ function greedyTurn(state: GameState, balance: Balance, catalog: readonly EventD
   for (const option of jacobsOptions(state)) {
     state = withLoan(state, balance, option.parcelId, 'exercise', option.bonus, rentDue(state, balance) + balance.lease.delayRental);
   }
+  state = investRigs(state, balance, 'gierig', { reserve: rentDue(state, balance), borrowable: (s) => headroom(s, balance) });
   for (const parcelId of jacobsLeases(state)) {
     if (!wellOf(state, parcelId)) {
       state = withLoan(state, balance, parcelId, 'drill', stageCost(balance, 1), rentDue(state, balance) - balance.lease.delayRental);
     }
   }
-  // Weitere Bohrlöcher auf fündigem Land, auch auf Kredit und egal, wie voll das Feld ist.
-  for (const parcelId of extraWellSpots(state, balance, true)) {
-    state = withLoan(state, balance, parcelId, 'drill', stageCost(balance, 1), rentDue(state, balance));
-  }
+  // Ausbau (0.2.15+7): auch auf Kredit, Menge vor Marge.
+  state = investWells(state, balance, 'gierig', { reserve: rentDue(state, balance), borrowable: (s) => headroom(s, balance) });
   // Pachten, solange Kasse und Bankrahmen reichen – die beste Prognose zuerst,
   // die sich noch bezahlen lässt. Für jede ungebohrte Pacht bleibt Geld für die
   // erste Bohrstufe übrig; sonst verfiele die Pacht ungebohrt.
@@ -618,9 +679,10 @@ function balancedTurn(state: GameState, balance: Balance, catalog: readonly Even
     if (state === vorher) state = act(state, balance, well.parcelId, 'abandon');
   }
   for (const option of jacobsOptions(state)) state = balancedPay(state, balance, option.parcelId, 'exercise', option.bonus);
+  state = investRigs(state, balance, 'ausgewogen', purseFor(balance, 'ausgewogen'));
   for (const parcelId of undrilled(state)) state = balancedPay(state, balance, parcelId, 'drill', stageCost(balance, 1));
-  // Weitere Bohrlöcher auf fündigem Land, solange das Feld ohne Druckverlust fördert.
-  for (const parcelId of extraWellSpots(state, balance, false)) state = balancedPay(state, balance, parcelId, 'drill', stageCost(balance, 1));
+  // Ausbau (0.2.15+7): was sich laut Rechnung bezahlt macht, im eigenen Kreditrahmen.
+  state = investWells(state, balance, 'ausgewogen', purseFor(balance, 'ausgewogen'));
   // Neues Land nur, wenn danach auch die erste Bohrstufe und die Rücklage bezahlbar bleiben.
   if (undrilled(state).length + jacobsOptions(state).length < maxUndrilled) {
     const geld = state.cash + balancedBorrowable(state, balance) - cashReserve - stageCost(balance, 1);

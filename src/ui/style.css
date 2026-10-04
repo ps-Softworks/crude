@@ -380,3 +380,12 @@ input[type='checkbox'] { accent-color: var(--tinte-weich); }
 .lager h3:first-child, .pipeline h3:first-child { margin-top: 0; }
 .actions.zeile { flex-direction: row; flex-wrap: wrap; }
 .rechte { list-style: none; padding: 0; margin: 4px 0; }
+
+/* Ausbau einer Ranch und Bohrtürme (0.2.15+7) */
+.ausbau { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--linie); }
+.ausbau dd.gut strong { color: var(--gruen); }
+.ausbau dd.schlecht strong { color: var(--rot); }
+.ausbau dl > div { display: contents; }
+.rigs { list-style: none; margin: 0 0 8px; padding: 0; }
+.rigs li { padding: 4px 0; border-bottom: 1px solid var(--linie-hell); }
+.rigs li .actions { margin-top: 4px; }

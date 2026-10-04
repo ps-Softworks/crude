@@ -141,12 +141,16 @@ describe('Aktionen auf einer Parzelle (parcelActions)', () => {
     ]);
   });
 
-  it('eine laufende oder abgeschlossene Bohrung lässt keine Aktion zu (Ranch mit nur einem Bohrplatz)', () => {
+  it('eine laufende oder abgeschlossene Bohrung lässt keine Aktion zu (Ranch mit nur einem Bohrplatz) – außer der Pumpe an einer Quelle', () => {
     for (const status of ['drilling', 'found', 'dry'] as WellStatus[]) {
       const roh = mitBohrung(status, status === 'found' ? GEFUNDEN : {});
       const id = roh.wells[0].parcelId;
       const state = { ...roh, parcels: roh.parcels.map((p) => (p.id === id ? { ...p, slots: 1 } : p)) };
-      expect(parcelActions(state, balance, id)).toEqual([]);
+      const pumpe = { kind: 'pump', label: `Pumpe nachrüsten (${balance.production.pump.cost.toLocaleString('de-DE')} $)`, ok: true };
+      expect(parcelActions(state, balance, id)).toEqual(status === 'found' ? [pumpe] : []);
+      // Mit Pumpe bleibt nichts mehr zu tun.
+      const gepumpt = { ...state, wells: state.wells.map((w) => ({ ...w, pump: true })) };
+      expect(parcelActions(gepumpt, balance, id)).toEqual([]);
     }
   });
 
@@ -155,10 +159,12 @@ describe('Aktionen auf einer Parzelle (parcelActions)', () => {
     const id = roh.wells[0].parcelId;
     const mitPlaetzen = (slots: number) => ({ ...roh, parcels: roh.parcels.map((p) => (p.id === id ? { ...p, slots } : p)) });
     const kosten = balance.drilling.stages[0].cost.toLocaleString('de-DE');
-    expect(parcelActions(mitPlaetzen(3), balance, id)).toEqual([
-      { kind: 'drill', label: `Weiteres Bohrloch (${kosten} $, noch 2 frei)`, ok: true },
+    const tiefe = balance.drilling.stages[0].depth;
+    const ohnePumpe = (s: GameState) => parcelActions(s, balance, id).filter((a) => a.kind !== 'pump');
+    expect(ohnePumpe(mitPlaetzen(3))).toEqual([
+      { kind: 'drill', label: `Weiteres Bohrloch (${kosten} $, direkt auf ${tiefe} m, noch 2 frei)`, ok: true },
     ]);
-    expect(parcelActions(mitPlaetzen(1), balance, id)).toEqual([]);
+    expect(ohnePumpe(mitPlaetzen(1))).toEqual([]);
     // Trocken gebohrt: kein weiteres Loch, auch wenn Platz wäre.
     const trocken = mitBohrung('dry');
     const tid = trocken.wells[0].parcelId;

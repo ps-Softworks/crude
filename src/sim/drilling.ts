@@ -11,6 +11,7 @@ import type { GameState } from './game';
 import type { Parcel } from './geology';
 import { leaseOf, parcelLabel } from './lease';
 import { Rng } from './rng';
+import { findRig, freeRig, noRigReason, rigLabel, rigRisk, rigStageCost, rigStageRounds, type Rig } from './rigs';
 
 export type WellStatus = 'drilling' | 'decision' | 'stuck' | 'found' | 'dry';
 
@@ -46,6 +47,10 @@ export interface Well {
   /** Wird beim Fund gesetzt; davor gibt es nichts zu fördern. */
   production?: Production;
   startRound: number;
+  /** Turm, der hier bohrt oder gebohrt hat (0.2.15+7); fehlt bei alten Ständen = Silas' Turm. */
+  rigId?: string;
+  /** Pumpe nachgerüstet (0.2.15+7). */
+  pump?: boolean;
 }
 
 export type DrillResult = { ok: true; state: GameState } | { ok: false; reason: string };
@@ -132,11 +137,41 @@ function labelOf(state: GameState, parcelId: string): string {
   return parcel ? parcelLabel(parcel) : parcelId;
 }
 
+/** Was die nächste Bohrung auf einer Ranch kostet und wie lange sie dauert. */
+export interface DrillQuote {
+  /** Stufe, in der die Bohrung beginnt (weitere Bohrlöcher: gleich die Tiefe der Quelle). */
+  stage: number;
+  cost: number;
+  rounds: number;
+  /** Der Turm, mit dem gerechnet wird (der beste freie, sonst der beste überhaupt). */
+  rig?: Rig;
+}
+
+/**
+ * Kosten und Dauer der nächsten Bohrung auf dieser Ranch. Die erste Bohrung
+ * beginnt mit Stufe 1. Ein weiteres Bohrloch (0.2.15+7) geht gleich auf die
+ * Tiefe, in der die Quelle liegt: alle Stufen bis dorthin in einem Zug, ohne
+ * Zwischenentscheidung – die Tiefe ist ja bekannt.
+ */
+export function drillQuote(state: Pick<GameState, 'wells' | 'rigs' | 'round'>, balance: Balance, parcelId: string): DrillQuote {
+  const rig = freeRig(state) ?? [...state.rigs].sort((a, b) => Number(b.steam) - Number(a.steam))[0];
+  const quelle = wellsOn(state, parcelId).find((w) => w.status === 'found');
+  const stage = quelle ? quelle.stage : 1;
+  const stufen = balance.drilling.stages.slice(0, stage);
+  return {
+    stage,
+    cost: stufen.reduce((s, st) => s + rigStageCost(balance, rig, st), 0),
+    rounds: stufen.reduce((s, st) => s + rigStageRounds(balance, rig, st), 0),
+    rig,
+  };
+}
+
 /**
  * Bohrung auf einer eigenen Pacht beginnen. Die erste Bohrung geht auf jeder
  * eigenen Pacht; weitere Bohrlöcher (0.2.15+5) nur auf fündigem Land, bis alle
- * Bohrplätze der Ranch belegt sind. Sie treffen das Öl in derselben Tiefe wie
- * die erste Quelle – das Risiko sind nur noch Unfälle und klemmendes Werkzeug.
+ * Bohrplätze der Ranch belegt sind. Sie gehen gleich auf die Tiefe der ersten
+ * Quelle (0.2.15+7) – das Risiko sind nur noch Unfälle und klemmendes Werkzeug.
+ * Jede Bohrung braucht einen freien Turm (0.2.15+7); der beste freie bohrt.
  */
 export function startDrilling(state: GameState, balance: Balance, parcelId: string): DrillResult {
   if (state.finished) return { ok: false, reason: 'Das Kapitel ist beendet.' };
@@ -153,10 +188,10 @@ export function startDrilling(state: GameState, balance: Balance, parcelId: stri
       return { ok: false, reason: `Alle ${parcel.slots} Bohrplätze auf ${parcelLabel(parcel)} sind belegt.` };
     }
   }
-  if (activeWells(state).length >= balance.drilling.rigs) {
-    return { ok: false, reason: 'Der Bohrturm ist noch bei einer anderen Bohrung im Einsatz.' };
-  }
-  const cost = stageCost(balance, 1);
+  const rig = freeRig(state);
+  if (!rig) return { ok: false, reason: noRigReason(state) };
+  const quote = drillQuote(state, balance, parcelId);
+  const cost = quote.cost;
   if (state.cash < cost) {
     return { ok: false, reason: `Nicht genug Geld: Die Bohrung kostet ${money(cost)}, in der Kasse sind ${money(state.cash)}.` };
   }
@@ -168,13 +203,16 @@ export function startDrilling(state: GameState, balance: Balance, parcelId: stri
   const well: Well = {
     id: `${parcelId}#${nummer}`,
     parcelId,
-    stage: 1,
+    stage: quote.stage,
     status: 'drilling',
-    roundsLeft: stageOf(balance, 1).rounds,
+    roundsLeft: quote.rounds,
     spent: cost,
     oilStage,
     startRound: state.round,
+    rigId: rig.id,
   };
+  const tiefe = stageOf(balance, quote.stage).depth;
+  const turm = state.rigs.length > 1 ? `, ${rigLabel(rig)}` : '';
   return {
     ok: true,
     state: {
@@ -186,8 +224,8 @@ export function startDrilling(state: GameState, balance: Balance, parcelId: stri
       log: [
         ...state.log,
         nummer === 1
-          ? `${formatDate(state)}: Bohrung auf ${parcelLabel(parcel)} begonnen (${stageOf(balance, 1).depth} m, ${money(cost)}).`
-          : `${formatDate(state)}: ${nummer}. Bohrloch auf ${parcelLabel(parcel)} begonnen (${stageOf(balance, 1).depth} m, ${money(cost)}).`,
+          ? `${formatDate(state)}: Bohrung auf ${parcelLabel(parcel)} begonnen (${tiefe} m, ${money(cost)}${turm}).`
+          : `${formatDate(state)}: ${nummer}. Bohrloch auf ${parcelLabel(parcel)} begonnen (direkt auf ${tiefe} m, ${money(cost)}${turm}).`,
       ],
     },
   };
@@ -214,13 +252,15 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
     const a = rng.float();
     const s = rng.float();
     const depth = stageOf(balance, well.stage).depth;
-    if (a < accidentChance(balance, well.stage)) {
+    // Stahlgestänge (0.2.15+7) senkt Unfall- und Klemm-Chance des Turms.
+    const risiko = rigRisk(balance, findRig(input, well.rigId), stageOf(balance, well.stage));
+    if (a < risiko.accident) {
       const paid = Math.min(cash, balance.drilling.accidentCost);
       cash -= paid;
       log.push(`${date}: Unfall auf dem Bohrturm (${label}) – ${money(paid)} Entschädigung, die Stufe muss wiederholt werden.`);
       return { ...well, roundsLeft: 1 };
     }
-    if (s < stuckChance(balance, well.stage)) {
+    if (s < risiko.stuck) {
       log.push(`${date}: Auf ${label} klemmt das Werkzeug in ${depth} m Tiefe.`);
       return { ...well, status: 'stuck' };
     }
@@ -277,18 +317,28 @@ export function drillDeeper(state: GameState, balance: Balance, parcelId: string
   const next = well.stage + 1;
   if (next > balance.drilling.stages.length) return { ok: false, reason: 'Tiefer geht es mit diesem Turm nicht.' };
   const stage = stageOf(balance, next);
-  if (state.cash < stage.cost) {
-    return { ok: false, reason: `Nicht genug Geld: ${stage.depth} m kosten ${money(stage.cost)}, in der Kasse sind ${money(state.cash)}.` };
+  const rig = findRig(state, well.rigId);
+  const cost = rigStageCost(balance, rig, stage);
+  if (state.cash < cost) {
+    return { ok: false, reason: `Nicht genug Geld: ${stage.depth} m kosten ${money(cost)}, in der Kasse sind ${money(state.cash)}.` };
   }
   return {
     ok: true,
     state: {
       ...state,
-      cash: state.cash - stage.cost,
-      wells: replaceWell(state, { ...well, stage: next, status: 'drilling', roundsLeft: stage.rounds, spent: well.spent + stage.cost }),
-      log: [...state.log, `${formatDate(state)}: Auf ${labelOf(state, parcelId)} wird tiefer gebohrt, auf ${stage.depth} m (${money(stage.cost)}).`],
+      cash: state.cash - cost,
+      wells: replaceWell(state, { ...well, stage: next, status: 'drilling', roundsLeft: rigStageRounds(balance, rig, stage), spent: well.spent + cost }),
+      log: [...state.log, `${formatDate(state)}: Auf ${labelOf(state, parcelId)} wird tiefer gebohrt, auf ${stage.depth} m (${money(cost)}).`],
     },
   };
+}
+
+/** Kosten und Unfall-Chance der nächsten tieferen Stufe mit dem Turm dieser Bohrung. */
+export function deeperQuote(state: Pick<GameState, 'rigs'>, balance: Balance, well: Well): { cost: number; accident: number } | null {
+  const stage = balance.drilling.stages[well.stage];
+  if (!stage) return null;
+  const rig = findRig(state, well.rigId);
+  return { cost: rigStageCost(balance, rig, stage), accident: rigRisk(balance, rig, stage).accident };
 }
 
 /** Klemmendes Werkzeug bergen: kostet Geld und eine Runde, dann wird die Stufe neu abgeschlossen. */

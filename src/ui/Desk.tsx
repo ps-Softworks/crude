@@ -19,6 +19,7 @@ import { Map } from './Map';
 import { NewspaperPanel } from './NewspaperPanel';
 import { Bohrturm } from './Silhouette';
 import { PipelinePanel, RoutePlanPanel, SalePanel, StoragePanel } from './TransportPanel';
+import { RigsPanel } from './RigsPanel';
 import type { TutorialAction, TutorialView } from '../sim/tutorial';
 
 function money(value: number): string {
@@ -202,6 +203,11 @@ export function Desk({
             <h2>Quellen</h2>
             <SourcesPanel game={game} onSelect={onSelect} />
           </section>
+
+          <section className="panel">
+            <h2>Bohrtürme</h2>
+            <RigsPanel game={game} onChange={onSold} />
+          </section>
         </div>
       </div>
 
@@ -278,7 +284,7 @@ export function SourcesPanel({ game, onSelect }: { game: GameState; onSelect: (i
   return (
     <ul className="sources">
       {rows.map((row) => (
-        <li key={row.parcelId} className={row.status}>
+        <li key={row.wellId} className={row.status}>
           <button className="link" onClick={() => onSelect(row.parcelId)}>
             {row.label}
           </button>

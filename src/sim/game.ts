@@ -16,6 +16,7 @@ import { checkBirth, newFamily, settleFamily, type FamilyState } from './family'
 import { autoResolve, drawEvents, newEventsState, type EventDef, type EventsState } from './events';
 import { parcelLabel, settleLeases, startOptions, type Lease, type LeaseOption } from './lease';
 import { advanceProduction } from './production';
+import { settleRigs, startRigs, type Rig } from './rigs';
 import { Rng, seedFromString, type RngState } from './rng';
 import { advanceMarket, computePrice, neighbourSupply } from './market';
 import { newRival, advanceRival, type RivalState } from './rival';
@@ -59,6 +60,8 @@ export interface GameState {
   forecasts: Record<string, Forecast>;
   /** Bohrungen, auch abgeschlossene. */
   wells: Well[];
+  /** Bohrtürme (0.2.15+7): Silas' geliehener, gekaufte und gemietete. */
+  rigs: Rig[];
   /** Aktueller Posted Price in $ je Barrel (Market). */
   postedPrice: number;
   /** Preishistorie: postedPrice je Runde (Index 0 = Runde 1). */
@@ -128,6 +131,7 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
     options: [],
     forecasts: {},
     wells: [],
+    rigs: startRigs(balance),
     postedPrice: startPrice,
     priceHistory: [startPrice],
     loans: [],
@@ -204,7 +208,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const gepachtet = settleLeases(gebohrt, balance);
   const rivale = advanceRival(gepachtet, balance, gebohrt, input.postedPrice);
   // Eigene Fuhrwerke und Pipeline (0.2.15+2): Löhne, Unterhalt, Baufortschritt, Sabotage – vor den Zinsen.
-  const verzinst = settleLoans(advanceLogistics(rivale, balance), balance);
+  // Türme und Pumpen (0.2.15+7): Turmmiete und Pumpenunterhalt, ebenfalls vor den Zinsen.
+  const verzinst = settleLoans(settleRigs(advanceLogistics(rivale, balance), balance), balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   const gefahren = advanceTransport(verzinst, balance);
   const state = { ...checkBankruptcy(gefahren, balance), roundLogStart };

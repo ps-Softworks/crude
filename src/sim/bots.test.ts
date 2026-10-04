@@ -465,3 +465,20 @@ describe('Bot-Läufe: Transportwege (0.2.15+4)', () => {
     expect(t.some((z) => z.startsWith('| davon an den Händler'))).toBe(true);
   });
 });
+
+describe('Ausbau nach Charakter (0.2.15+7)', () => {
+  // 60 Partien je Strategie mit Ereignissen: Wer rüstet nach, wer mietet Türme, wer pumpt?
+  const spiele = (s: 'vorsichtig' | 'gierig' | 'ausgewogen') => Array.from({ length: 60 }, (_, i) => playGame(`bot-${i}`, balance, s, events).state);
+
+  it('vorsichtig: nie ein zweiter Turm, nie eine Dampfmaschine; gierig mietet Türme; ausgewogen rüstet nach und pumpt', () => {
+    const vorsichtig = spiele('vorsichtig');
+    const gierig = spiele('gierig');
+    const ausgewogen = spiele('ausgewogen');
+    expect(vorsichtig.every((s) => s.rigs.length === 1 && !s.rigs[0].steam)).toBe(true);
+    expect(gierig.every((s) => s.rigs.length <= balance.bots.invest.greedy.rigs && s.rigs.every((r) => !r.rods))).toBe(true);
+    expect(gierig.some((s) => s.log.some((l) => l.includes('mietet einen Bohrturm')))).toBe(true);
+    expect(gierig.flatMap((s) => s.rigs).every((r) => r.kind !== 'owned')).toBe(true);
+    expect(ausgewogen.some((s) => s.rigs[0].steam && s.rigs[0].rods)).toBe(true);
+    expect(ausgewogen.some((s) => s.wells.some((w) => w.pump))).toBe(true);
+  }, 120_000);
+});

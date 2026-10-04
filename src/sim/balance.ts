@@ -110,8 +110,41 @@ export interface DrillStage {
   stuck: number;
 }
 
+/**
+ * Bohrtürme (0.2.15+7, GDD §5): Jacob startet mit Silas' geliehenem
+ * Seilschlag-Turm; weitere kauft (Lieferzeit) oder mietet er (Miete je Runde).
+ * Dampfmaschine und Stahlgestänge machen einen Turm billiger und sicherer.
+ */
+export interface RigsBalance {
+  /** Türme zu Spielbeginn – der erste ist Silas' geliehener. */
+  start: number;
+  /** Höchstens so viele Türme insgesamt (gekauft, gemietet, geliehen). */
+  max: number;
+  /** Kauf: Preis in $ und Runden bis zur Lieferung (0 = sofort). */
+  buy: { cost: number; deliveryRounds: number };
+  /** Miete: $ je Runde, ab sofort, Rückgabe jederzeit (wenn er nicht bohrt). */
+  rent: { costPerRound: number };
+  /** Buchwert gekaufter Türme im Imperiumswert als Anteil vom Kaufpreis. */
+  assetShare: number;
+  /** Dampfmaschine: Stufenkosten mal costFactor, roundsLess Runden schneller je Stufe (mindestens 1). */
+  steam: { cost: number; costFactor: number; roundsLess: number };
+  /** Stahlgestänge: Unfall- und Klemm-Chance mal riskFactor. */
+  rods: { cost: number; riskFactor: number };
+}
+
+/** Pumpe an einer Quelle (0.2.15+7): mehr Rate, weniger Druckverlust, dafür Unterhalt. */
+export interface PumpBalance {
+  cost: number;
+  /** $ je Runde, solange die Quelle fördert. */
+  upkeep: number;
+  /** Rate der Quelle mal rateFactor. */
+  rateFactor: number;
+  /** Anteil des Druckverlusts im Feld, den die Pumpe ausgleicht (0–1). */
+  pressureKeep: number;
+}
+
 export interface DrillingBalance {
-  rigs: number;
+  rigs: RigsBalance;
   accidentCost: number;
   fishingCost: number;
   stages: DrillStage[];
@@ -136,6 +169,8 @@ export interface ProductionBalance {
   recoveryLossPerWell: number;
   /** Höchster Ausbeuteverlust des Feldes (Überförderung). */
   recoveryLossMax: number;
+  /** Pumpen an fündigen Quellen (0.2.15+7). */
+  pump: PumpBalance;
 }
 
 /**
@@ -308,6 +343,8 @@ export interface BotsBalance {
   transport: Record<'cautious' | 'greedy' | 'balanced', BotTransport>;
   /** Grobe Schätzung in $, was die Wegerechte für die Pipeline zusammen kosten (Planung der Bots). */
   rightsEstimate: number;
+  /** Wie die planenden Bots in Türme, Bohrlöcher und Pumpen investieren (0.2.15+7). */
+  invest: Record<'cautious' | 'greedy' | 'balanced', BotInvest>;
   /** Zielwerte Kapitel 1 (2.15): Toleranzbereich je Kennzahl. */
   targets: Record<BotTargetId, { min: number; max: number }>;
 }
@@ -322,6 +359,22 @@ export interface BotEventWeights {
   appointment: number;
   /** Überstunden nur ab dieser Kraft. */
   overtimeFrom: number;
+}
+
+/** Investitions-Charakter eines Bots (0.2.15+7, src/sim/bots.ts). */
+export interface BotInvest {
+  /** Pumpe nur, wenn sie sich in höchstens so vielen Runden bezahlt macht (0 = nie). */
+  pumpPayback: number;
+  /** Weiteres Bohrloch nur bei Amortisation in höchstens so vielen Runden (0 = nie). */
+  wellPayback: number;
+  /** So viele Türme hält er höchstens (Silas' Turm mitgezählt). */
+  rigs: number;
+  /** Zusätzliche Türme mieten statt kaufen. */
+  rent: boolean;
+  /** Dampfmaschine nachrüsten. */
+  steam: boolean;
+  /** Stahlgestänge nachrüsten. */
+  rods: boolean;
 }
 
 /** Transport-Charakter eines Bots (0.2.15+4, src/sim/bots.ts). */
@@ -794,7 +847,24 @@ function parseDrilling(raw: unknown): DrillingBalance {
   if (accidentCost < 0 || fishingCost < 0) {
     throw new BalanceError('balance.yaml: Unfall- und Bergungskosten dürfen nicht negativ sein');
   }
-  return { rigs: positiveInt(raw, 'drilling.rigs'), accidentCost, fishingCost, stages };
+  const rigs: RigsBalance = {
+    start: positiveInt(raw, 'drilling.rigs.start'),
+    max: positiveInt(raw, 'drilling.rigs.max'),
+    buy: { cost: nonNegative(raw, 'drilling.rigs.buy.cost'), deliveryRounds: nonNegative(raw, 'drilling.rigs.buy.deliveryRounds') },
+    rent: { costPerRound: nonNegative(raw, 'drilling.rigs.rent.costPerRound') },
+    assetShare: share(raw, 'drilling.rigs.assetShare'),
+    steam: {
+      cost: nonNegative(raw, 'drilling.rigs.steam.cost'),
+      costFactor: share(raw, 'drilling.rigs.steam.costFactor'),
+      roundsLess: nonNegative(raw, 'drilling.rigs.steam.roundsLess'),
+    },
+    rods: { cost: nonNegative(raw, 'drilling.rigs.rods.cost'), riskFactor: share(raw, 'drilling.rigs.rods.riskFactor') },
+  };
+  if (rigs.start > rigs.max) throw new BalanceError('balance.yaml: "drilling.rigs.start" darf nicht über "drilling.rigs.max" liegen');
+  if (!Number.isInteger(rigs.buy.deliveryRounds) || !Number.isInteger(rigs.steam.roundsLess)) {
+    throw new BalanceError('balance.yaml: Lieferzeit und Dampf-Ersparnis der Türme müssen ganze Runden sein');
+  }
+  return { rigs, accidentCost, fishingCost, stages };
 }
 
 function parseProduction(raw: unknown): ProductionBalance {
@@ -828,6 +898,18 @@ function parseProduction(raw: unknown): ProductionBalance {
     pressureMin,
     recoveryLossPerWell,
     recoveryLossMax,
+    pump: parsePump(raw),
+  };
+}
+
+function parsePump(raw: unknown): PumpBalance {
+  const rateFactor = num(raw, 'production.pump.rateFactor');
+  if (rateFactor < 1) throw new BalanceError('balance.yaml: "production.pump.rateFactor" muss mindestens 1 sein');
+  return {
+    cost: nonNegative(raw, 'production.pump.cost'),
+    upkeep: nonNegative(raw, 'production.pump.upkeep'),
+    rateFactor,
+    pressureKeep: share(raw, 'production.pump.pressureKeep'),
   };
 }
 
@@ -1153,6 +1235,11 @@ function parseBots(raw: unknown): BotsBalance {
       balanced: parseBotTransport(raw, 'balanced'),
     },
     rightsEstimate: nonNegative(raw, 'bots.rightsEstimate'),
+    invest: {
+      cautious: parseBotInvest(raw, 'cautious'),
+      greedy: parseBotInvest(raw, 'greedy'),
+      balanced: parseBotInvest(raw, 'balanced'),
+    },
     targets: Object.fromEntries(
       BOT_TARGET_IDS.map((id) => {
         const min = num(raw, `bots.targets.${id}.min`);
@@ -1193,6 +1280,23 @@ function parseBotTransport(raw: unknown, name: string): BotTransport {
     guards: choice(raw, `${p}.guards`, ['never', 'always', 'enemies'] as const),
     holdShare: share(raw, `${p}.holdShare`),
     margin,
+  };
+}
+
+function parseBotInvest(raw: unknown, name: string): BotInvest {
+  const p = `bots.invest.${name}`;
+  const flag = (key: string): boolean => {
+    const v = path(raw, `${p}.${key}`);
+    if (typeof v !== 'boolean') throw new BalanceError(`balance.yaml: "${p}.${key}" muss true oder false sein`);
+    return v;
+  };
+  return {
+    pumpPayback: nonNegative(raw, `${p}.pumpPayback`),
+    wellPayback: nonNegative(raw, `${p}.wellPayback`),
+    rigs: positiveInt(raw, `${p}.rigs`),
+    rent: flag('rent'),
+    steam: flag('steam'),
+    rods: flag('rods'),
   };
 }
 

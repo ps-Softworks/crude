@@ -128,11 +128,12 @@ describe('Zeitung: Frühwarnzeichen (GDD §7.2)', () => {
       const rng = new Rng(seedFromString(seed + ':bot'));
       let state = newGame(seed, balance);
       while (!state.finished) {
-        const outlook = marketOutlook(state, balance);
-        gesehen.add(outlook);
-        // Der Spieler handelt, dann endet die Runde: Seine Züge ändern die Förderung dieser Runde nicht.
+        // Der Spieler handelt, dann endet die Runde. Seit 0.2.15+7 kann ein Zug die Förderung
+        // dieser Runde ändern (Pumpe nachrüsten) – die Schätzung gilt für den Stand nach seinen Zügen.
         const gespielt = botTurn(state, balance, 'gierig', rng);
-        const schaetzung = expectedPrice(state, balance);
+        const outlook = marketOutlook(gespielt, balance);
+        gesehen.add(outlook);
+        const schaetzung = expectedPrice(gespielt, balance);
         const naechste = endRound(gespielt, balance);
         expect(naechste.priceHistory.at(-1)).toBe(schaetzung);
         const change = aenderung(state.postedPrice, naechste.priceHistory.at(-1)!);

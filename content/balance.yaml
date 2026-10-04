@@ -134,6 +134,11 @@ production:
   pressureMin: 0.40          # PLATZHALTER: tiefster Druckfaktor
   recoveryLossPerWell: 0.06  # PLATZHALTER: Ausbeuteverlust des Feldes je Quelle über freeWells
   recoveryLossMax: 0.30      # GDD: Überförderung senkt die Ausbeute um bis zu 30 %
+  # Pumpe (0.2.15+7): nachrüsten an einer fündigen Quelle. +25 % Rate und die Hälfte des
+  # Druckverlusts aufgefangen – aber 400 $ Unterhalt je Runde. Beispiel: gute Quelle 10.000 bbl,
+  # 0,90 $ netto → +2.500 bbl ≈ 2.250 $ − 400 $ = 1.850 $ je Runde, bezahlt nach 3 Runden.
+  # Müde Quelle 2.000 bbl, 0,60 $ netto → +500 bbl ≈ 300 $ – weniger als der Unterhalt, lohnt nie.
+  pump: { cost: 4000, upkeep: 400, rateFactor: 1.25, pressureKeep: 0.5 }
 
 # Geologe (GDD §5): Er nennt nie die wahre Fundchance, sondern eine
 # Bandbreite. Je genauer und je weniger verzerrt, desto eher deckt sie die
@@ -152,7 +157,20 @@ forecast:
 # accident: Unfall-Chance je Stufe (Entschädigung, Stufe wird wiederholt).
 # stuck: Chance, dass das Werkzeug klemmt (bergen oder aufgeben).
 drilling:
-  rigs: 1                 # PLATZHALTER: gleichzeitige Bohrungen (geliehener Turm)
+  # Bohrtürme (0.2.15+7): Je Turm läuft eine Bohrung zugleich. Jacob startet mit
+  # Silas' geliehenem Seilschlag-Turm; weitere kauft oder mietet er in Port Ellis.
+  rigs:
+    start: 1                # Türme zu Spielbeginn (der erste ist Silas' geliehener)
+    max: 4                  # PLATZHALTER: höchstens so viele Türme
+    buy: { cost: 2500, deliveryRounds: 1 }   # PLATZHALTER: Kaufpreis, Lieferung zur nächsten Runde
+    rent: { costPerRound: 350 }               # PLATZHALTER: Miete je Runde, sofort da, jederzeit zurückzugeben
+    assetShare: 0.5         # gekaufte Türme zählen zur Hälfte des Kaufpreises im Imperiumswert
+    # Dampfmaschine statt Handwinde: jede Stufe 20 % billiger und eine Runde schneller (mind. 1).
+    # Lohnt nach etwa 1.200 / (0,2 × 1.000) = 6 Bohrstufen – für wer viel bohrt.
+    steam: { cost: 1200, costFactor: 0.8, roundsLess: 1 }
+    # Stahlgestänge statt Manila-Seil: halb so viele Unfälle und klemmende Werkzeuge.
+    # Spart im Schnitt (0,04·200 + 0,05·300)·0,5 ≈ 12 $ je Stufe 1, mehr in der Tiefe – eher Sicherheit als Rendite.
+    rods: { cost: 600, riskFactor: 0.5 }
   accidentCost: 200       # PLATZHALTER: $ Entschädigung je Unfall
   fishingCost: 300        # PLATZHALTER: $ Bergung bei klemmendem Werkzeug
   stages:                 # PLATZHALTER; 1.15: Stufe 1 unter GDD (1.500–3.000 $), damit Tieferbohren mit der Startkasse geht
@@ -333,6 +351,16 @@ bots:
     cautious: { trader: never, teams: overflow, tanks: true, pipelinePayback: 2, thorne: exclusive, threaten: false, guards: always, holdShare: 0, margin: true }
     greedy: { trader: always, teams: overflow, tanks: true, pipelinePayback: 1, thorne: refuse, threaten: false, guards: never, holdShare: 0.5, margin: false }
     balanced: { trader: calc, teams: cheaper, tanks: true, pipelinePayback: 1.5, thorne: calc, threaten: true, guards: enemies, holdShare: 0, margin: true }
+  # Investitionen (0.2.15+7): Amortisation laut src/sim/invest.ts (mit Felddruck und Preisdruck).
+  # pumpPayback/wellPayback = höchstens so viele Runden, bis sich Pumpe/weiteres Bohrloch bezahlt machen
+  # (0 = nie) · rigs = höchstens so viele Türme (ein weiterer nur, wenn lohnende Bohrlöcher auf einen Turm
+  # warten) · rent = mieten statt kaufen · steam/rods = Turm nachrüsten (nur aus der Kasse, ab der ersten Quelle).
+  # Justiert mit npm run bots: Ein zweiter Turm lässt den gierigen Bot schneller wildcatten – auf Kredit;
+  # schon mit 3 Türmen ging er in 20 % der Partien pleite. Ausgewogen mit 2 Türmen gewann 43 % der Seeds (über 40 %).
+  invest:
+    cautious: { pumpPayback: 2, wellPayback: 3, rigs: 1, rent: false, steam: false, rods: true }
+    greedy: { pumpPayback: 2, wellPayback: 4, rigs: 2, rent: true, steam: true, rods: false }
+    balanced: { pumpPayback: 3, wellPayback: 4, rigs: 1, rent: false, steam: true, rods: true }
   rightsEstimate: 600      # grobe Schätzung der Bots: so viel kosten die Wegerechte für die Pipeline zusammen
   # Zielwerte Kapitel 1 (2.15, GDD §15 und §17): Toleranzbereich min–max je Kennzahl.
   # Was gemessen wird, steht in src/sim/bots.ts (TARGETS); die Tabelle Ist/Ziel in docs/botlaeufe.md.

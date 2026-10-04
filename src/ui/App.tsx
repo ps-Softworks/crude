@@ -2,8 +2,9 @@
 // Spielregeln und alle Texte kommen aus src/sim – hier wird nur geklickt.
 
 import { useEffect, useState } from 'react';
-import { applyAction, nextStep, parcelActions, type DeskActionKind } from '../sim/desk';
-import { accidentChance, deeperChance, wellOf, wellsOn, type Well } from '../sim/drilling';
+import { applyAction, nextStep, parcelActions, parcelOutlooks, paybackText, type DeskActionKind, type ParcelOutlook } from '../sim/desk';
+import { deeperChance, deeperQuote, wellOf, wellsOn, type Well } from '../sim/drilling';
+import { findRig, rigLabel } from '../sim/rigs';
 import { formatForecast, trueChance } from '../sim/forecast';
 import { fieldLabel, fieldOf } from '../sim/field';
 import { endRound, newGame, type GameState } from '../sim/game';
@@ -303,12 +304,12 @@ function ParcelPanel({ game, parcel, debug, notice, stepText, onAction }: PanelP
         .filter((w) => w !== well)
         .map((w) => (
           <p key={w.id} className={`state well ${w.status}`}>
-            <WellInfo well={w} />
+            <WellInfo game={game} well={w} />
           </p>
         ))}
       {well && (
         <p className={`state well ${well.status}`}>
-          <WellInfo well={well} />
+          <WellInfo game={game} well={well} />
           {debug && (
             <>
               <br />
@@ -321,6 +322,8 @@ function ParcelPanel({ game, parcel, debug, notice, stepText, onAction }: PanelP
 
       {well?.status === 'found' && <SourceInfo game={game} well={well} debug={debug} />}
 
+      {lease?.holder === 'jacob' && <OutlookInfo outlooks={parcelOutlooks(game, balance, id)} />}
+
       {actions.length > 0 && (
         <div className="actions">
           {actions.map((action) => (
@@ -331,11 +334,11 @@ function ParcelPanel({ game, parcel, debug, notice, stepText, onAction }: PanelP
               onClick={() => onAction(action.kind, id)}
             >
               {action.label}
-              {action.kind === 'deeper' && well && (
+              {action.kind === 'deeper' && well && deeperQuote(game, balance, well) && (
                 <>
                   {' '}
                   auf {balance.drilling.stages[well.stage].depth} m, Unfallrisiko{' '}
-                  {percent(accidentChance(balance, well.stage + 1))}
+                  {percent(deeperQuote(game, balance, well)!.accident)}
                 </>
               )}
             </button>
@@ -353,10 +356,41 @@ function ParcelPanel({ game, parcel, debug, notice, stepText, onAction }: PanelP
   );
 }
 
+/**
+ * Ausbau der Ranch (0.2.15+7): Kosten, erwartete Mehrförderung und Amortisation
+ * für ein weiteres Bohrloch und eine Pumpe – gerechnet in src/sim/invest.ts.
+ */
+function OutlookInfo({ outlooks }: { outlooks: ParcelOutlook[] }) {
+  if (outlooks.length === 0) return null;
+  return (
+    <div className="ausbau">
+      <p className="muted">Ausbau – gerechnet bis Kapitelende mit Felddruck und Ölpreis:</p>
+      <dl className="terms">
+        {outlooks.map(({ kind, label, outlook: o }) => (
+          <div key={kind}>
+            <dt>{label}</dt>
+            <dd className={o.payback === null ? 'schlecht' : 'gut'}>
+              {money(o.cost)}
+              {o.upkeep > 0 && ` + ${money(o.upkeep)} je Runde`} ·{' '}
+              {o.extraFirst >= 0 ? '+' : '−'}
+              {barrels(Math.abs(o.extraFirst))} bbl je Runde
+              {o.delay > 0 && ` (ab ${rounds(o.delay)})`}
+              {o.priceDrop > 0 && `, drückt den Preis um ${o.priceDrop.toLocaleString('de-DE', { minimumFractionDigits: 2 })} $`} ·{' '}
+              <strong>{paybackText(o)}</strong>
+              {o.payback !== null && ` · bis Kapitelende ${o.profit >= 0 ? '+' : '−'}${money(Math.abs(Math.round(o.profit)))}`}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
 /** Bohrstatus in Worten. */
-function WellInfo({ well }: { well: Well }) {
+function WellInfo({ game, well }: { game: GameState; well: Well }) {
   const depth = balance.drilling.stages[well.stage - 1].depth;
-  const head = `Bohrung · Stufe ${well.stage}/${balance.drilling.stages.length} (${depth} m) · bisher ${money(well.spent)}`;
+  const turm = game.rigs.length > 1 && well.status !== 'found' && well.status !== 'dry' ? findRig(game, well.rigId) : undefined;
+  const head = `Bohrung · Stufe ${well.stage}/${balance.drilling.stages.length} (${depth} m) · bisher ${money(well.spent)}${turm ? ` · ${rigLabel(turm)}` : ''}${well.pump ? ' · mit Pumpe' : ''}`;
   switch (well.status) {
     case 'drilling':
       return (

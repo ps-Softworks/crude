@@ -41,12 +41,25 @@ export function recoverable(balance: Balance, reserves: number, peakWells: numbe
   return Math.round(reserves * recoveryFactor(balance, peakWells));
 }
 
-/** Was eine Quelle in der nächsten Runde liefert: Anfangsrate minus Rückgang, mal Druck. */
-export function wellRate(balance: Balance, well: Well, wells: number): number {
+/**
+ * Druck, den eine Quelle spürt: der Druckfaktor des Feldes; eine Pumpe
+ * (0.2.15+7) fängt pump.pressureKeep des Verlusts auf.
+ */
+export function wellPressure(balance: Balance, pump: boolean, wells: number): number {
+  const p = pressureFactor(balance, wells);
+  return pump ? 1 - (1 - p) * (1 - balance.production.pump.pressureKeep) : p;
+}
+
+/**
+ * Was eine Quelle in der nächsten Runde liefert: Anfangsrate minus Rückgang, mal
+ * Druck. Eine Pumpe (0.2.15+7) hebt die Rate um pump.rateFactor.
+ */
+export function wellRate(balance: Balance, well: Pick<Well, 'production' | 'pump'>, wells: number): number {
   const p = well.production;
   if (!p) return 0;
   const ratengang = (1 - balance.production.decline) ** p.roundsProduced;
-  return Math.round(p.initialRate * ratengang * pressureFactor(balance, wells));
+  const pumpe = well.pump ? balance.production.pump.rateFactor : 1;
+  return Math.round(p.initialRate * ratengang * wellPressure(balance, !!well.pump, wells) * pumpe);
 }
 
 /** Alle Quellen, die gerade fördern. */

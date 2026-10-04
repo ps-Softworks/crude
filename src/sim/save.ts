@@ -7,15 +7,16 @@
 import type { GameState } from './game';
 import { newLogistics } from './logistics';
 
-/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2), 11 = mit befristeten Nachwirkungen der Ereignisse (0.2.15+3), 12 = Karte mit Gebieten und Ranches statt Raster, mehrere Bohrlöcher je Ranch (0.2.15+5). */
-export const SAVE_FORMAT = 12;
+/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2), 11 = mit befristeten Nachwirkungen der Ereignisse (0.2.15+3), 12 = Karte mit Gebieten und Ranches statt Raster, mehrere Bohrlöcher je Ranch (0.2.15+5), 13 = Bohrtürme und Pumpen (0.2.15+7). */
+export const SAVE_FORMAT = 13;
 
 /**
- * Ältere Formate, die mit Ersatzwerten noch geladen werden. Seit Format 12 keins
+ * Ältere Formate, die mit Ersatzwerten noch geladen werden. Vor Format 12 keins
  * mehr: Die Rasterparzellen der alten Stände passen nicht auf die neue Karte.
+ * Format 12 bekommt Silas' Turm (0.2.15+7).
  * Die Umrisse der Ranches stehen nie im Spielstand – sie kommen aus dem Seed.
  */
-const ALTE_FORMATE: number[] = [];
+const ALTE_FORMATE: number[] = [12];
 
 export interface SaveFile {
   format: number;
@@ -52,7 +53,7 @@ const ZAHLEN = [
 ] as const;
 
 /** Listen im Zustand. */
-const LISTEN = ['regions', 'parcels', 'fields', 'leases', 'options', 'wells', 'priceHistory', 'loans', 'log'] as const;
+const LISTEN = ['regions', 'parcels', 'fields', 'leases', 'options', 'wells', 'rigs', 'priceHistory', 'loans', 'log'] as const;
 
 /** Nachschlagewerke im Zustand. */
 const OBJEKTE = ['forecasts', 'shipped'] as const;
@@ -148,6 +149,14 @@ export function validateState(value: unknown): LoadResult {
   if (!istObjekt(value.shipped) || !['wagon', 'rail', 'teams', 'pipeline'].every((k) => istZahl((value.shipped as Record<string, unknown>)[k]))) {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
+  const RIG_KINDS = ['lent', 'owned', 'rented'];
+  if (
+    !(value.rigs as unknown[]).every(
+      (r) => istObjekt(r) && istText(r.id) && RIG_KINDS.includes(r.kind as string) && istZahl(r.readyRound) && typeof r.steam === 'boolean' && typeof r.rods === 'boolean',
+    )
+  ) {
+    return { ok: false, reason: UNVOLLSTAENDIG };
+  }
   const round = value.round as number;
   const totalRounds = value.totalRounds as number;
   return round >= 1 && round <= totalRounds ? { ok: true, state: value as unknown as GameState } : { ok: false, reason: UNVOLLSTAENDIG };
@@ -217,5 +226,7 @@ export function deserializeGame(text: string): LoadResult {
   if (istObjekt(state.shipped) && (state.shipped.teams === undefined || state.shipped.pipeline === undefined)) {
     state = { ...state, shipped: { teams: 0, pipeline: 0, ...state.shipped } };
   }
+  // Ersatzwert (0.2.15+7): Spielstände bis Format 12 kennen keine Türme – Jacob hat Silas' geliehenen.
+  if (state.rigs === undefined) state = { ...state, rigs: [{ id: 'silas', kind: 'lent', readyRound: 1, steam: false, rods: false }] };
   return validateState(state);
 }
