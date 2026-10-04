@@ -91,6 +91,12 @@ export interface GameState {
   strength: number;
   /** Höchste Kraft in diesem Lebensabschnitt (Kapitel 1: 100). */
   strengthMax: number;
+  /**
+   * Laufendes Kapitel (Phase 4). Fehlt es, ist es Kapitel 1 – so bleiben alte
+   * Spielstände gültig. Der Zeitsprung (Block A) setzt es; Ereignisse fragen es
+   * mit den Bedingungen minChapter/maxChapter ab.
+   */
+  chapter?: number;
   /** Runden, die Jacob noch krank im Bett liegt (2.7); 0 = gesund. */
   sick: number;
   /** Ruth und Thomas (2.7). */

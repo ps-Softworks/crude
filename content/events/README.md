@@ -16,7 +16,8 @@ Kurzreferenz der Felder:
   `content/map.yaml` – jede Figur bekommt dort eine echte Ranch). `unlocks: [hollins]` an einer Wahl
   schaltet ein gesperrtes Gebiet aus `content/map.yaml` frei; seine Ranches entstehen dann aus dem Seed.
 - Bedingungen: `minRound`, `maxRound`, `minCash`, `maxCash`, `minOilStock`,
-  `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100)
+  `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100),
+  `minChapter`, `maxChapter` (Kapitel; ohne Angabe im Spielstand gilt Kapitel 1 – Phase 4)
 - Effekte: `cash`, `oilStock`, `railTariff`, `strength` (Kraft), `ruth`, `thomas` (Beziehung 0–100, 2.7),
   `teams` (eigene Gespanne +/−), `teamsIdle` (eigene Fuhrwerke stehen bis Runde jetzt+n still; 0.2.15+2),
   befristet für `events.timedRounds` Runden (0.2.15+3): `price` ($ je Barrel beim Trust), `production`
@@ -84,3 +85,14 @@ Kurzreferenz der Felder:
   Nur wer wirklich ins Büro kommt, bekommt `visitor` (0.2.15+11): Spielt der Text woanders (Saloon,
   Bahnsteig, Veranda, Bohrturm, Bank), bleibt das Ereignis ein Vorfall – sonst widerspricht die Szene
   „Besuch · Silas“ dem eigenen Text. ENTWURF: Philipp segnet die Besetzung ab.
+- Kapitel 3 – Alltag (Phase 4, ENTWURF – Philipp überarbeitet): `k3-alltag-1-marke` (Marke, Tankstellen,
+  Margaret Crane), `-2-boerse` (Börse, Kauf auf Kredit, Thornes Kurspflege), `-3-lobby` (Dunmore, Grady,
+  Steuerabzug, Courier), `-4-seismik` (Dr. Hale, Konsortium, Ashcombe), `-5-stand` (Club, Kirche, Ball,
+  Stiftung), `-6-rivalen` (Bullard verschuldet, Thorne, Pruett), `-7-krise` (volle Tanks, Zinsen,
+  Flugblätter, Bankrun), `-8-familie` (Haskell, Silberhochzeit, Thomas, Clara, Silas) – 57 Ereignisse.
+  Alle mit `conditions: { minChapter: 3, maxChapter: 3 }`; kommen also nie in Kapitel 1 und ändern dort
+  auch keinen Wurf (gemischt werden nur Ereignisse des laufenden Kapitels). Wirkungen, die es noch nicht
+  gibt (Marke, Aktien, Ruf, Stand, Clara …), stehen als `# TODO-Effekt: …` neben einer Ersatzwirkung.
+  Offen für den Zeitsprung (Block A): Er muss `chapter` im Spielstand setzen. Fängt die Rundenzählung je
+  Kapitel neu an, braucht `delay` bei Kapitel-1-Merkzeichen eine Lösung (Merkzeichen tragen die Runde,
+  in der sie gesetzt wurden).

@@ -38,3 +38,9 @@ bankier: { form: zylinder, name: Mr. Pettibone }
 lusk: { form: zylinder, name: Lusk vom Trust }
 sheriff: { form: hut, name: Sheriff Tatum }
 prediger: { form: kopf, name: Bruder Abel }
+
+# Kapitel 3 – Alltag (Phase 4) – ENTWURF, Namen aus der Story-Bibel Kapitel 2/3.
+margaret: { form: frau, name: Margaret Crane }
+pruett: { form: zylinder, name: Harold Pruett }
+grady: { form: zylinder, name: Senator Grady }
+dunmore: { form: zylinder, name: Lionel Dunmore }

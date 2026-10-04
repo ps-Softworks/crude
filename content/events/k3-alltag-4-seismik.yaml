@@ -1,0 +1,249 @@
+# Kapitel 3 – Alltag, Paket 4: Seismik und Konsortium (Phase 4). Entwurf – Philipp überarbeitet.
+# Grundlage: Story-Bibel §9 (K3 Thema 4: Dr. Hale, Messtrupp, Quoten im Alltag, Ashcombe),
+# §8 (hale_* → Dr. Hale und Seismik), GDD §5 (Reflexionsseismik, Technikstufe III, braucht
+# Spezialtrupp; Patente und Lizenzen), §9.2 (Sir Reginald Ashcombe – Royal Aldmark Petroleum,
+# ab Kapitel 5: hier nur als Vorschau), Weltbibel (Mr. Vale, das Konsortium).
+#
+# Nur Kapitel 3 (minChapter/maxChapter 3). Forschung, Seismik und Konsortium gibt es als
+# Wirkung noch nicht (System 4.17) – Ersatz: production (bessere Funde), leaseCost (genauere
+# Pachtpreise), siehe „# TODO-Effekt“.
+#
+# Merkzeichen aus Kapitel 1: hale_beteiligt, hale_gutachten_falsch (Dr. L. Hales Gutachten am
+# Cedar Creek – echt oder gefälscht).
+# Merkzeichen dieses Pakets:
+#   k3_seismik_hale → k3_seismik_ergebnis
+#   k3_seismik_verkauft, k3_quote_eingehalten, k3_quote_ignoriert, k3_ashcombe_kontakt
+#     → content/relevance.yaml (Konsortium / Mr. Vales Einladung, Kapitel 4–5)
+
+- id: k3_hale_seismik
+  marked: [hale_beteiligt]
+  notMarked: [hale_gutachten_falsch]
+  delay: 0
+  chance: 0.35
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Dr. Hale hört in die Erde
+    en: Dr. Hale Listens to the Earth
+  text:
+    de: >-
+      Dr. L. Hale, dessen Gutachten am Cedar Creek damals stimmte, schreibt aus
+      Hallstead. Er ist weißhaarig geworden und hat ein Verfahren aus Aldmark
+      weiterentwickelt: Man zündet eine kleine Ladung und misst, wie das Echo aus den
+      Schichten zurückkommt. „Wir müssen nicht mehr raten, Mr. Harlan. Wir müssen nur
+      zuhören.“ Er braucht Geld für einen Messtrupp und ein Jahr.
+    en: >-
+      Dr. L. Hale, whose survey at Cedar Creek proved true back then, writes from
+      Hallstead. He has turned white-haired and has developed a method from Aldmark:
+      one sets off a small charge and measures how the echo returns from the strata.
+      "We needn't guess any more, Mr. Harlan. We need only listen." He needs money for
+      a survey crew and a year.
+  choices:
+    - id: finanzieren
+      label: { de: "Den Messtrupp finanzieren (5.000 $)", en: "Fund the survey crew (5,000 $)" }
+      result:
+        de: Hales Trupp fährt mit zwei Wagen voller Kisten hinaus. In der Prärie hört man jetzt manchmal ein dumpfes Knallen, und die Vögel fliegen auf.
+        en: Hale's crew drives out with two wagons full of crates. On the prairie one now sometimes hears a dull bang, and the birds fly up.
+      requires: { minCash: 5000 }
+      effects: { cash: -5000 }  # TODO-Effekt: research: { seismik: +1 }
+      marks: [k3_seismik_hale]
+    - id: lizenz
+      label: { de: "Lieber eine fertige Lizenz aus Aldmark kaufen (3.500 $)", en: "Rather buy a finished licence from Aldmark (3,500 $)" }
+      result:
+        de: Die Lizenz kommt mit einem Handbuch auf Aldmärkisch und einem Ingenieur, der kein Wort Westmärkisch spricht. Die Messungen sind gut, wenn man sie versteht.
+        en: The licence comes with a manual in Aldmarkian and an engineer who speaks not a word of Westmark. The readings are good, if one understands them.
+      requires: { minCash: 3500 }
+      effects: { cash: -3500, leaseCost: -0.2 }  # TODO-Effekt: research: { seismik: Lizenz }
+    - id: nein
+      label: { de: "„Ich bohre lieber.“", en: "\"I'd rather drill.\"" }
+      result:
+        de: Hale schreibt zurück, freundlich und kurz. Ein halbes Jahr später liest Jacob, dass Crane Midland ein Patent auf Hales Verfahren angemeldet hat.
+        en: Hale writes back, kind and brief. Half a year later Jacob reads that Crane Midland has filed a patent on Hale's method.
+      appointments: 0
+      default: true
+
+- id: k3_seismik_ergebnis
+  marked: [k3_seismik_hale]
+  delay: 3
+  chance: 0.7
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Eine Kuppel unter den Sümpfen
+    en: A Dome beneath the Marshes
+  text:
+    de: >-
+      Hale breitet auf Jacobs Tisch Papierstreifen aus, lang wie ein Tischtuch, voller
+      gezackter Linien. Unter den Bitterwasser-Sümpfen wölbt sich etwas, das aussieht
+      wie Salt Hill, nur größer und tiefer. Niemand sonst weiß davon. Noch. „Die
+      Herren, die Märkte aufteilen, würden für diese Streifen gut bezahlen“, sagt Hale.
+      Er sagt es, als wolle er es nicht gesagt haben.
+    en: >-
+      Hale spreads paper strips across Jacob's desk, as long as a tablecloth, full of
+      jagged lines. Beneath the Bitterwater Marshes something arches up that looks like
+      Salt Hill, only larger and deeper. No one else knows. Yet. "The gentlemen who
+      divide markets would pay well for these strips," says Hale. He says it as if he'd
+      rather not have.
+  choices:
+    - id: pachten
+      label: { de: "Still pachten, was zu pachten ist (4.000 $)", en: "Quietly lease whatever can be leased (4,000 $)" }
+      result:
+        de: Jacobs Landmänner kaufen über drei Strohmänner Sumpfland, das niemand will. Die Farmer am Rand lachen über die dummen Städter.
+        en: Jacob's landmen buy marshland nobody wants through three straw men. The farmers on the edge laugh at the foolish city folk.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000, production: 0.25 }  # TODO-Effekt: neues Gebiet (unlocks: bitterwasser), research: { seismik: +1 }
+    - id: verkaufen
+      label: { de: "Die Streifen verkaufen – an die, die gut bezahlen (+6.000 $)", en: "Sell the strips – to those who pay well (+6,000 $)" }
+      result:
+        de: Ein Umschlag ohne Absender, darin ein Wechsel auf eine Bank in Aldmark. Hales Streifen verschwinden. Hale sieht Jacob danach nicht mehr in die Augen.
+        en: An envelope with no sender, inside it a draft on a bank in Aldmark. Hale's strips disappear. Afterwards Hale no longer looks Jacob in the eye.
+      effects: { cash: 6000, strength: -5 }  # TODO-Effekt: consortiumDebt: +1, consortiumPower: +1
+      marks: [k3_seismik_verkauft]
+    - id: warten
+      label: { de: "Erst eine Probebohrung abwarten", en: "Wait for a test well first" }
+      result:
+        de: Die Probebohrung dauert ein Quartal. Als sie Öl zeigt, stehen am Sumpfrand schon zwei fremde Landmänner mit Pachtverträgen.
+        en: The test well takes a quarter. When it shows oil, two strange landmen are already standing at the marsh's edge with leases.
+      effects: { leaseCost: 0.2 }  # TODO-Effekt: Konkurrenz kennt den Fund
+      default: true
+
+- id: k3_hale_schwindler
+  marked: [hale_gutachten_falsch]
+  delay: 0
+  chance: 0.35
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Wieder ein Gutachten von Dr. Hale
+    en: Another Survey from Dr. Hale
+  text:
+    de: >-
+      In Hallstead verkauft ein Dr. L. Hale „seismische Gutachten“ an Witwen und Zahnärzte,
+      die in Öl anlegen wollen. Dieselbe Unterschrift, die Jacob vor zwanzig Jahren 300 $
+      gekostet hat. Ein Zahnarzt schreibt an Harlan Oil: Dr. Hale habe gesagt, Mr. Harlan
+      sei einer seiner ersten Kunden gewesen.
+    en: >-
+      In Hallstead a Dr. L. Hale is selling "seismic surveys" to widows and dentists who
+      want to invest in oil. The same signature that cost Jacob 300 $ twenty years ago. A
+      dentist writes to Harlan Oil: Dr. Hale said Mr. Harlan was one of his first clients.
+  choices:
+    - id: anzeigen
+      label: { de: "Hale anzeigen und die alte Urkunde vorlegen (1.000 $)", en: "Report Hale and produce the old document (1,000 $)" }
+      result:
+        de: Die Anwälte legen das gefälschte Gutachten vom Cedar Creek vor. Hale verschwindet aus Hallstead, bevor die Polizei kommt. Der Zahnarzt schickt einen Dankesbrief.
+        en: The lawyers present the forged Cedar Creek survey. Hale vanishes from Hallstead before the police arrive. The dentist sends a letter of thanks.
+      requires: { minCash: 1000 }
+      effects: { cash: -1000, leaseCost: -0.1 }  # TODO-Effekt: reputation: { public: +2 }
+    - id: schweigen
+      label: { de: "Schweigen – man gibt nicht zu, dass man reingefallen ist", en: "Stay silent – one doesn't admit having been fooled" }
+      result:
+        de: Hale verkauft weiter, mit Jacobs Namen als Empfehlung. Ein halbes Jahr später verklagt der Zahnarzt Harlan als Mitwisser. Die Anwälte einigen sich still.
+        en: Hale keeps selling, with Jacob's name as a reference. Half a year later the dentist sues Harlan as an accessory. The lawyers settle quietly.
+      effects: { cash: -800, price: -0.1 }  # TODO-Effekt: reputation: { public: -3 }, heat: +1
+      default: true
+
+- id: k3_messtrupp
+  title:
+    de: Dynamit auf der Weide
+    en: Dynamite in the Pasture
+  text:
+    de: >-
+      Ein Messtrupp hat auf einer Weide der Hollins-Prärie Ladungen gezündet, um die
+      Schichten abzuhören. Drei trächtige Kühe haben verkalbt. Der Rancher steht mit
+      einer Schrotflinte am Zaun und lässt keinen Wagen mehr durch. Er ist so alt, wie
+      Ezekiel Moss war, als Jacob nach Cordova kam, und genauso stur.
+    en: >-
+      A survey crew set off charges in a Hollins Prairie pasture to listen to the strata.
+      Three pregnant cows lost their calves. The rancher stands at the fence with a
+      shotgun and lets no more wagons through. He is as old as Ezekiel Moss was when
+      Jacob came to Cordova, and just as stubborn.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.25
+  choices:
+    - id: entschaedigen
+      label: { de: "Die Kühe dreifach bezahlen und sich entschuldigen (1.500 $)", en: "Pay three times for the cows and apologise (1,500 $)" }
+      result:
+        de: Der Rancher nimmt das Geld und lässt den Trupp weitermessen, wenn er vorher Bescheid bekommt. Seine Nachbarn hören davon.
+        en: The rancher takes the money and lets the crew keep surveying if he is told beforehand. His neighbours hear of it.
+      requires: { minCash: 1500 }
+      effects: { cash: -1500, leaseCost: -0.1 }  # TODO-Effekt: reputation: { public: +1 }
+    - id: sheriff
+      label: { de: "Den Sheriff schicken – die Messrechte sind bezahlt", en: "Send the sheriff – the survey rights are paid for" }
+      result:
+        de: Der Sheriff nimmt dem Alten die Flinte ab. Die Messungen gehen weiter. Auf der ganzen Prärie verlangen die Rancher jetzt das Doppelte für jede Pacht.
+        en: The sheriff takes the old man's shotgun. The surveying continues. All over the prairie the ranchers now ask double for every lease.
+      effects: { leaseCost: 0.25, strength: -5 }  # TODO-Effekt: reputation: { public: -2 }
+      default: true
+    - id: abziehen
+      label: { de: "Den Trupp abziehen", en: "Withdraw the crew" }
+      result:
+        de: Die Weide bleibt ungemessen. Die Linien auf Hales Karte haben jetzt ein weißes Loch, genau dort, wo sie interessant werden.
+        en: The pasture stays unsurveyed. The lines on the map now have a white hole, exactly where they get interesting.
+      effects: { production: -0.1 }  # TODO-Effekt: research: { seismik: -1 }
+
+- id: k3_quoten
+  mail: info
+  title:
+    de: Ein Rundschreiben ohne Absender
+    en: A Circular without a Sender
+  text:
+    de: >-
+      Gutes Papier, kein Briefkopf, keine Unterschrift. Das Rundschreiben „empfiehlt den
+      großen Förderern der Föderation“, im kommenden Jahr ein Zehntel weniger zu fördern,
+      „im Interesse stabiler Verhältnisse“. Darunter eine Tabelle: wer wie viel. Harlans
+      Zeile ist genau ausgefüllt, genauer als Jacobs eigene Bücher.
+    en: >-
+      Good paper, no letterhead, no signature. The circular "recommends to the great
+      producers of the Federation" that they produce a tenth less next year, "in the
+      interest of stable conditions". Below, a table: who, how much. Harlan's line is
+      filled in exactly, more exactly than Jacob's own books.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.3
+  choices:
+    - id: einhalten
+      label: { de: "Ein Zehntel weniger fördern", en: "Produce a tenth less" }
+      result:
+        de: Harlan fördert weniger, die anderen auch. Der Preis steigt, still und gleichmäßig, als hätte ihn jemand an einer Schnur gezogen.
+        en: Harlan produces less, so do the others. The price rises, quietly and evenly, as if someone had pulled it on a string.
+      effects: { production: -0.1, price: 0.25 }  # TODO-Effekt: consortiumPower: +1, mood: 0
+      marks: [k3_quote_eingehalten]
+    - id: ignorieren
+      label: { de: "Mehr fördern, solange die anderen sparen", en: "Produce more while the others hold back" }
+      result:
+        de: Harlan verkauft in die Lücke, die die anderen lassen. Drei Monate lang. Dann liegt ein zweites Rundschreiben auf dem Tisch, nur mit Harlans Zeile, rot unterstrichen.
+        en: Harlan sells into the gap the others leave. For three months. Then a second circular lies on the desk, with only Harlan's line, underlined in red.
+      effects: { production: 0.15 }  # TODO-Effekt: consortium: { relation: -10 }, rival: alle { aggression: +5 }
+      marks: [k3_quote_ignoriert]
+      default: true
+
+- id: k3_ashcombe_brief
+  mail: offer
+  title:
+    de: Ein Angebot aus Aldmark
+    en: An Offer from Aldmark
+  text:
+    de: >-
+      Ein Brief mit dem Wappen der Royal Aldmark Petroleum, unterschrieben von einem
+      Sekretär im Auftrag von Sir Reginald Ashcombe. Die Kaiserliche Flotte stellt auf
+      Öl um und sucht einen zweiten Lieferanten außerhalb des Reichs, „zur Sicherheit“.
+      Zehn Jahre, fester Preis. Das Angebot ist großzügig. Varenhold wird davon lesen.
+    en: >-
+      A letter bearing the crest of Royal Aldmark Petroleum, signed by a secretary on
+      behalf of Sir Reginald Ashcombe. The Imperial Fleet is converting to oil and seeks
+      a second supplier outside the empire, "for security". Ten years, fixed price. The
+      offer is generous. Varenhold will read of it.
+  conditions: { minChapter: 3, maxChapter: 3, minOilStock: 2000 }
+  chance: 0.2
+  choices:
+    - id: liefern
+      label: { de: "Liefern – 2.000 Barrel als erste Ladung (+3.200 $)", en: "Supply – 2,000 barrels as first cargo (+3,200 $)" }
+      result:
+        de: Ein Tanker unter aldmärkischer Flagge legt in Port Ellis an. Die Matrosen sprechen eine Sprache, die die Hafenarbeiter nicht verstehen. Das Geld verstehen alle.
+        en: A tanker under the Aldmark flag docks at Port Ellis. The sailors speak a language the dockers don't understand. Everyone understands the money.
+      requires: { minOilStock: 2000 }
+      effects: { oilStock: -2000, cash: 3200 }  # TODO-Effekt: tension: +1, contract: { aldmark: 10 Jahre }
+      marks: [k3_ashcombe_kontakt]
+    - id: ablehnen
+      label: { de: "„Westmärkisches Öl bleibt in Westmark.“", en: "\"Westmark oil stays in Westmark.\"" }
+      result:
+        de: Der Sekretär bedankt sich in drei Zeilen. Den Vertrag bekommt Harold Pruett. Die Handelskammer in Hallstead nennt Jacob einen Patrioten. Es bringt nichts ein.
+        en: The secretary thanks him in three lines. Harold Pruett gets the contract. The Hallstead chamber of commerce calls Jacob a patriot. It earns nothing.
+      appointments: 0
+      default: true

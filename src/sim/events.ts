@@ -29,6 +29,9 @@ export const CONDITION_KEYS = [
   'minLeases',
   'minStrength',
   'maxStrength',
+  // Kapitel (Phase 4): Ereignisse für spätere Kapitel kommen nicht in Kapitel 1.
+  'minChapter',
+  'maxChapter',
 ] as const;
 export type ConditionKey = (typeof CONDITION_KEYS)[number];
 export type Conditions = Partial<Record<ConditionKey, number>>;
@@ -265,7 +268,7 @@ export function marksMet(state: Pick<GameState, 'round' | 'events'>, event: Pick
   return state.round >= zuletzt + event.delay;
 }
 
-type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength'>;
+type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength' | 'chapter'>;
 
 /** Der Wert im Zustand, den eine Bedingung prüft. */
 function wertFuer(state: Lage, key: ConditionKey): number {
@@ -286,7 +289,21 @@ function wertFuer(state: Lage, key: ConditionKey): number {
     case 'minStrength':
     case 'maxStrength':
       return state.strength;
+    case 'minChapter':
+    case 'maxChapter':
+      return chapterOf(state);
   }
+}
+
+/** Passt das laufende Kapitel zu minChapter/maxChapter (Phase 4)? Ohne Angabe: jedes Kapitel. */
+export function chapterMet(state: Partial<Pick<GameState, 'chapter'>>, conditions: Conditions): boolean {
+  const k = chapterOf(state);
+  return (conditions.minChapter === undefined || k >= conditions.minChapter) && (conditions.maxChapter === undefined || k <= conditions.maxChapter);
+}
+
+/** Laufendes Kapitel (Phase 4); fehlt die Angabe, ist es Kapitel 1. */
+export function chapterOf(state: Partial<Pick<GameState, 'chapter'>>): number {
+  return state.chapter ?? 1;
 }
 
 function erfuellt(state: Lage, key: ConditionKey, grenze: number): boolean {
@@ -426,7 +443,9 @@ export function drawEvents(state: GameState, balance: Balance, catalog: readonly
   const sicher = catalog.filter((e) => e.certain && !e.routine && !e.mail);
   // Gewürfelte Ereignisse (2.10b) in zufälliger Reihenfolge: Sonst gewinnen bei maxPerRound
   // immer die Dateien vorn im Alphabet, und späte Ereignisse kämen kaum je vor.
-  const gewuerfelt = rng.shuffle(catalog.filter((e) => !e.certain && !e.routine && !e.mail));
+  // Nur Ereignisse des laufenden Kapitels mischen (Phase 4): So bleibt die Reihenfolge – und
+  // damit jede Partie zum selben Seed – in Kapitel 1 dieselbe wie ohne spätere Kapitel.
+  const gewuerfelt = rng.shuffle(catalog.filter((e) => !e.certain && !e.routine && !e.mail && chapterMet(state, e.conditions)));
   for (const event of [...sicher, ...gewuerfelt]) {
     if (!event.certain && neu >= balance.events.maxPerRound) break;
     // Feste Termine (2.3) werden nicht gewürfelt, Briefe kommen mit der Post (2.4).
@@ -478,8 +497,10 @@ export function dueMailKinds(state: Pick<GameState, 'round' | 'events'>, balance
  * Danach würfeln die übrigen Briefe mit ihrer Chance, in der Reihenfolge des
  * Katalogs. Jeder Brief bekommt seine Frist.
  */
-export function drawMail(state: GameState, balance: Balance, catalog: readonly EventDef[], lang: Lang = DEFAULT_LANG): GameState {
-  if (state.finished || !catalog.some((e) => e.mail)) return state;
+export function drawMail(state: GameState, balance: Balance, alle: readonly EventDef[], lang: Lang = DEFAULT_LANG): GameState {
+  // Briefe anderer Kapitel gar nicht erst ansehen (Phase 4) – spart Zeit, ändert keinen Wurf.
+  const catalog = alle.filter((e) => e.mail && chapterMet(state, e.conditions));
+  if (state.finished || catalog.length === 0) return state;
   const rng = new Rng(state.events.rng);
   let out = state;
   let neu = 0;

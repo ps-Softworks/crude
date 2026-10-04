@@ -61,6 +61,47 @@ describe('Bedingungen', () => {
     expect(conditionsMet(state, { minLeases: 1 })).toBe(false);
   });
 
+  it('Kapitel: ohne Angabe gilt Kapitel 1, minChapter/maxChapter grenzen ein (Phase 4)', () => {
+    expect(state.chapter).toBeUndefined();
+    expect(conditionsMet(state, { maxChapter: 1 })).toBe(true);
+    expect(conditionsMet(state, { minChapter: 3 })).toBe(false);
+    const k3 = { ...state, chapter: 3 };
+    expect(conditionsMet(k3, { minChapter: 3, maxChapter: 3 })).toBe(true);
+    expect(conditionsMet(k3, { maxChapter: 2 })).toBe(false);
+    expect(conditionsMet({ ...state, chapter: 4 }, { minChapter: 3, maxChapter: 3 })).toBe(false);
+  });
+
+  it('Ereignisse für Kapitel 3 kommen nie in Kapitel 1, Kapitel 1 bleibt unverändert (Phase 4)', () => {
+    const katalog = loadEvents();
+    const k3 = katalog.filter((e) => e.id.startsWith('k3_'));
+    expect(k3.length).toBeGreaterThan(0);
+    for (const e of k3) {
+      expect(e.conditions.minChapter, e.id).toBe(3);
+      expect(e.conditions.maxChapter, e.id).toBe(3);
+      for (let round = 1; round <= balance.start.rounds; round++) expect(conditionsMet({ ...state, round }, e.conditions), e.id).toBe(false);
+    }
+    // Kapitel-1-Ereignisse fragen das Kapitel nicht ab.
+    for (const e of katalog.filter((x) => !x.id.startsWith('k2_') && !x.id.startsWith('k3_'))) {
+      expect(e.conditions.minChapter, e.id).toBeUndefined();
+    }
+  });
+
+  it('Ereignisse späterer Kapitel ändern keine Partie in Kapitel 1 – gleicher Seed, gleiche Ereignisse (Phase 4)', () => {
+    const alle = loadEvents();
+    const nurK1 = alle.filter((e) => !/^k[2-9]_/.test(e.id));
+    expect(nurK1.length).toBeLessThan(alle.length);
+    for (const seed of ['kapitel-a', 'kapitel-b', 'kapitel-c']) {
+      let mit = newGame(seed, balance, alle);
+      let ohne = newGame(seed, balance, nurK1);
+      for (let r = 0; r < balance.start.rounds && !mit.finished; r++) {
+        mit = endRound(mit, balance, alle);
+        ohne = endRound(ohne, balance, nurK1);
+      }
+      expect(mit.events.seen, seed).toEqual(ohne.events.seen);
+      expect(mit.log, seed).toEqual(ohne.log);
+    }
+  });
+
   it('nennt den Grund, warum eine Wahl gesperrt ist', () => {
     expect(unmetReason(state, { minCash: 1000 })).toBe('Dafür fehlt das Geld (1.000 $ nötig).');
     expect(unmetReason(state, { minOilStock: 500 })).toBe('Dafür fehlt Öl im Tank (500 bbl nötig).');

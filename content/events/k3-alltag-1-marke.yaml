@@ -1,0 +1,380 @@
+# Kapitel 3 – Alltag, Paket 1: Marke und Tankstellen (Phase 4). Entwurf – Philipp überarbeitet.
+# Grundlage: Story-Bibel Kapitel 2/3 §9 (K3 Thema 1), GDD §6 (Eigene Marke & Tankstellen),
+# §9.2 (Margaret Crane – Crane Eastern: Tankstellen, Werbung, Ostküste, braucht Lieferanten).
+#
+# Alle Ereignisse kommen nur in Kapitel 3 (conditions: minChapter 3, maxChapter 3).
+# Kapitel 3 hat noch keine eigene Wirtschaft: Die Beträge sind vorläufig im Maßstab von
+# Kapitel 1 (Schwelle 200 $), die Wirkungen, die es noch nicht gibt, stehen als
+# „# TODO-Effekt: …“ neben einer vorhandenen Ersatzwirkung (meist price = Abnahmepreis
+# je Barrel, befristet – steht hier für den Absatz der Marke).
+#
+# Merkzeichen dieses Pakets:
+#   k3_marke_familienname → k3_marke_skandal (der Name auf dem Schild)
+#   k3_preiskampf_unterboten → k3_margaret_waffenstillstand (Margaret kommt selbst)
+#   k3_margaret_absprache → k3_absprache_beamter (Paket 6)
+#   k3_tanklaster_anwalt → k3_tanklaster_artikel
+# Kein neuer Name: Pächter, Fahrer und Werbeleute bleiben ohne Namen (Namen nur aus der Bibel).
+
+- id: k3_marke_name
+  title:
+    de: Ein Name für die Zapfsäulen
+    en: A Name for the Pumps
+  text:
+    de: >-
+      Zwei Herren einer Werbeagentur aus Hallstead haben Entwürfe auf Jacobs Tisch
+      gelegt. Auf dem einen steht in roten Buchstaben HARLAN, auf dem anderen ein
+      Stern über dem Wort CORDOVA. „Ein Familienname verkauft Vertrauen, Mr. Harlan.
+      Solange die Familie es verdient.“ Der Jüngere sieht dabei auf Jacobs graue
+      Schläfen, als schätze er, wie lange noch.
+    en: >-
+      Two gentlemen from a Hallstead advertising agency have laid designs on Jacob's
+      desk. One says HARLAN in red letters, the other a star above the word CORDOVA.
+      "A family name sells trust, Mr. Harlan. As long as the family deserves it."
+      The younger one glances at Jacob's grey temples as if estimating how long.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.3
+  choices:
+    - id: harlan
+      label: { de: "HARLAN auf jedes Schild (2.000 $)", en: "HARLAN on every sign (2,000 $)" }
+      result:
+        de: Drei Wochen später steht der Name an der Straße nach Port Ellis, mannshoch. Ruth fährt daran vorbei und sagt nichts.
+        en: Three weeks later the name stands by the road to Port Ellis, man-high. Ruth drives past it and says nothing.
+      requires: { minCash: 2000 }
+      effects: { cash: -2000, price: 0.25 }  # TODO-Effekt: brand: { cordova: +10 }, legacy: +1
+      marks: [k3_marke_familienname]
+    - id: stern
+      label: { de: "Den Stern über CORDOVA (2.000 $)", en: "The star above CORDOVA (2,000 $)" }
+      result:
+        de: Der Stern verkauft sich langsamer, aber niemand verbindet ihn mit einem Gesicht. Das war der Sinn.
+        en: The star sells more slowly, but no one connects it with a face. That was the point.
+      requires: { minCash: 2000 }
+      effects: { cash: -2000, price: 0.15 }  # TODO-Effekt: brand: { cordova: +6 }
+    - id: nichts
+      label: { de: "„Öl braucht keinen Namen.“", en: "\"Oil needs no name.\"" }
+      result:
+        de: Die Herren packen ein. Im Treppenhaus sagt der Jüngere etwas über Leute, die noch wie Bohrarbeiter denken.
+        en: The gentlemen pack up. On the stairs the younger one says something about people who still think like drillers.
+      appointments: 0
+      default: true
+
+- id: k3_plakate
+  title:
+    de: Plakate an der Landstraße
+    en: Billboards on the Highway
+  text:
+    de: >-
+      Die ersten Automobile fahren die Straße von Port Ellis nach Hallstead in zwei
+      Tagen. Margaret Crane hat an jeder Kurve eine Tafel aufstellen lassen, blau und
+      weiß, mit der Entfernung zur nächsten Crane-Eastern-Säule. Die Farmer verpachten
+      ihr Zaunholz dafür. Jacobs Vertriebsleiter will dasselbe – oder etwas Klügeres.
+    en: >-
+      The first automobiles drive the road from Port Ellis to Hallstead in two days.
+      Margaret Crane has had a board put up at every bend, blue and white, giving the
+      distance to the next Crane Eastern pump. The farmers lease out their fence posts
+      for it. Jacob's sales manager wants the same – or something cleverer.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.3
+  rival: crane
+  choices:
+    - id: tafeln
+      label: { de: "Eigene Tafeln, größer als ihre (3.000 $)", en: "Our own boards, bigger than hers (3,000 $)" }
+      result:
+        de: Nach einem Monat steht an manchen Kurven eine Harlan-Tafel vor einer Crane-Tafel. Die Farmer verlangen jetzt das Doppelte.
+        en: After a month some bends have a Harlan board in front of a Crane board. The farmers now ask double.
+      requires: { minCash: 3000 }
+      effects: { cash: -3000, price: 0.2, leaseCost: 0.15 }  # TODO-Effekt: brand: { cordova: +8 }; leaseCost steht für teurere Zaunpacht
+    - id: karten
+      label: { de: "Gratis-Straßenkarten an jeder Säule (1.500 $)", en: "Free road maps at every pump (1,500 $)" }
+      result:
+        de: Die Karten zeigen jede Harlan-Säule und keine einzige von Crane. Die Reisenden behalten sie im Handschuhfach – und kommen wieder.
+        en: The maps show every Harlan pump and not a single Crane one. Travellers keep them in the glove box – and come back.
+      requires: { minCash: 1500 }
+      effects: { cash: -1500, price: 0.1 }  # TODO-Effekt: brand: { cordova: +5, hallstead: +2 }
+    - id: abwarten
+      label: { de: "Abwarten, ob Automobile bleiben", en: "Wait and see whether automobiles last" }
+      result:
+        de: Die blauen Tafeln bleiben allein an der Straße. Wer zum ersten Mal tankt, tankt bei Crane.
+        en: The blue boards stand alone by the road. Whoever fills up for the first time fills up at Crane's.
+      effects: { price: -0.1 }  # TODO-Effekt: brand: { cordova: -3 }
+      appointments: 0
+      default: true
+
+- id: k3_paechter_abgeworben
+  title:
+    de: Der Pächter an der Brücke
+    en: The Leaseholder at the Bridge
+  text:
+    de: >-
+      Der Mann, der die Harlan-Station an der Rio-Salado-Brücke führt, steht mit dem
+      Hut in der Hand vor Jacobs Vertriebsbüro. Crane Eastern bietet ihm zwei Cent mehr
+      je Gallone, neue Säulen und einen Vertrag auf zehn Jahre. „Ich hab drei Kinder,
+      Mr. Harlan. Ich frag Sie, bevor ich unterschreibe. Das ist alles, was ich tun kann.“
+    en: >-
+      The man who runs the Harlan station at the Rio Salado bridge stands hat in hand
+      at Jacob's sales office. Crane Eastern offers him two cents more a gallon, new
+      pumps and a ten-year contract. "I've three children, Mr. Harlan. I'm asking you
+      before I sign. That's all I can do."
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.25
+  rival: crane
+  choices:
+    - id: mitbieten
+      label: { de: "Mitbieten – drei Cent mehr (2.500 $)", en: "Match it – three cents more (2,500 $)" }
+      result:
+        de: Der Pächter bleibt. Eine Woche später stehen zwei weitere Pächter im Büro, ebenfalls mit dem Hut in der Hand.
+        en: The leaseholder stays. A week later two more leaseholders stand in the office, also hat in hand.
+      requires: { minCash: 2500 }
+      effects: { cash: -2500 }  # TODO-Effekt: stations: { cordova: 0 }, margin: -0.02
+    - id: klagen
+      label: { de: "Auf den alten Vertrag pochen und klagen lassen", en: "Insist on the old contract and sue" }
+      result:
+        de: Die Anwälte gewinnen. Der Pächter bleibt, verkauft aber, was er muss, und keine Gallone mehr. Seine Kinder grüßen Jacobs Wagen nicht mehr.
+        en: The lawyers win. The leaseholder stays but sells what he must and not a gallon more. His children no longer wave at Jacob's car.
+      effects: { cash: -800, strength: -10, production: -0.05 }  # TODO-Effekt: reputation: { public: -2 }
+      appointments: 2
+    - id: ziehen
+      label: { de: "Ihn ziehen lassen", en: "Let him go" }
+      result:
+        de: Über Nacht wird die Säule an der Brücke blau gestrichen. Der Pächter winkt, als Jacob vorbeifährt. Es sieht aus wie eine Entschuldigung.
+        en: Overnight the pump at the bridge is painted blue. The leaseholder waves as Jacob drives past. It looks like an apology.
+      effects: { price: -0.15 }  # TODO-Effekt: stations: { cordova: -1 }, rivalStake: { margaret: +1 }
+      appointments: 0
+      default: true
+
+- id: k3_preiskampf
+  title:
+    de: Zwei Cent weniger bei Crane
+    en: Two Cents Less at Crane's
+  text:
+    de: >-
+      Seit Montag kostet die Gallone an jeder Crane-Eastern-Säule in drei Provinzen
+      zwei Cent weniger. Die Zeitungen nennen es einen Segen für den Autofahrer. Der
+      Vertriebsleiter legt eine Rechnung vor: Hält Harlan den Preis, verliert er die
+      Hälfte der Kunden an den Landstraßen. Zieht er mit, verdient er an keiner Gallone.
+    en: >-
+      Since Monday a gallon at every Crane Eastern pump in three provinces costs two
+      cents less. The papers call it a blessing for the motorist. The sales manager
+      puts a calculation on the desk: if Harlan holds the price it loses half the
+      highway customers. If it follows, it earns on no gallon at all.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.25
+  rival: crane
+  choices:
+    - id: mitziehen
+      label: { de: "Mitziehen", en: "Follow her down" }
+      result:
+        de: Beide Firmen verkaufen jetzt unter den Kosten. Die Autofahrer tanken wie nie zuvor. Margaret schickt eine Karte ohne Text.
+        en: Both firms now sell below cost. Motorists fill up as never before. Margaret sends a card with no text.
+      effects: { price: -0.25 }  # TODO-Effekt: pumpPrice: { cordova: -0.02 }, brand hält
+    - id: unterbieten
+      label: { de: "Drei Cent unter Crane gehen", en: "Go three cents under Crane" }
+      result:
+        de: Die Schlangen stehen jetzt an Jacobs Säulen. Die Kasse wird jeden Abend dünner. In Hallstead fragt man, wer zuerst blutet.
+        en: The queues now form at Jacob's pumps. The till grows thinner every evening. In Hallstead people ask who will bleed first.
+      effects: { price: -0.4, cash: -1500 }  # TODO-Effekt: pumpPrice: { cordova: -0.03 }, brand: +5, rival: { margaret: { aggression: +10 } }
+      marks: [k3_preiskampf_unterboten]
+    - id: halten
+      label: { de: "Den Preis halten – Qualität statt Rabatt", en: "Hold the price – quality, not discount" }
+      result:
+        de: Die Stammkunden bleiben, die Durchreisenden nicht. An der Straße nach Hallstead steht eine Harlan-Säule einen ganzen Tag lang still.
+        en: The regulars stay, the travellers don't. On the road to Hallstead a Harlan pump stands idle for a whole day.
+      effects: { production: -0.1 }  # TODO-Effekt: brand: { hallstead: -5 }, Absatz statt Förderung
+      default: true
+
+- id: k3_margaret_waffenstillstand
+  visitor: margaret
+  rival: crane
+  marked: [k3_preiskampf_unterboten]
+  delay: 1
+  chance: 0.6
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Margaret Crane bittet um zehn Minuten
+    en: Margaret Crane Asks for Ten Minutes
+  text:
+    de: >-
+      Margaret Crane kommt allein, ohne Anwalt, im grauen Reisekostüm. Sie ist älter
+      geworden, nicht weicher. Sie setzt sich, bevor Jacob es anbietet. „Vater kaufte
+      Raffinerien. Ich kaufe Gewohnheiten. Die rosten nicht. Aber Sie machen meinen
+      Kunden gerade die falsche Gewohnheit, Mr. Harlan: billig.“ Sie legt eine Liste
+      mit Preisen auf den Tisch. Keine Unterschrift darunter.
+    en: >-
+      Margaret Crane comes alone, without a lawyer, in a grey travelling suit. She has
+      grown older, not softer. She sits before Jacob offers. "Father bought refineries.
+      I buy habits. They don't rust. But you are teaching my customers the wrong habit,
+      Mr. Harlan: cheap." She lays a list of prices on the desk. No signature beneath.
+  choices:
+    - id: absprache
+      label: { de: "Die Liste nehmen – gleiche Preise ab Montag", en: "Take the list – same prices from Monday" }
+      result:
+        de: Am Montag kosten beide Säulen an jeder Kreuzung dasselbe, auf den Cent. Niemand hat etwas unterschrieben. Jeder weiß es.
+        en: On Monday both pumps at every crossroads cost the same, to the cent. No one signed anything. Everyone knows.
+      effects: { price: 0.35 }  # TODO-Effekt: heat: +2, trace: { severity: 2, label: "Preisliste Crane Eastern" }
+      marks: [k3_margaret_absprache]
+    - id: ablehnen
+      label: { de: "„Die Autofahrer mögen billig. Ich auch.“", en: "\"Motorists like cheap. So do I.\"" }
+      result:
+        de: Margaret faltet die Liste und steckt sie ein. „Dann lernen wir beide etwas über Geduld.“ Der Preiskampf geht in den nächsten Monat.
+        en: Margaret folds the list and puts it away. "Then we'll both learn something about patience." The price war runs into the next month.
+      effects: { price: -0.2, strength: -5 }  # TODO-Effekt: rival: { margaret: { relation: -10 } }
+      default: true
+    - id: rohoel
+      label: { de: "Statt Preisen Rohöl anbieten (2.000 Barrel)", en: "Offer crude instead of prices (2,000 barrels)" }
+      result:
+        de: Margaret rechnet im Kopf nach und nickt einmal. Sie kauft das Öl zu einem fairen Preis und senkt ihren Pumpenpreis trotzdem nicht. Aber sie redet wieder mit ihm.
+        en: Margaret does the sums in her head and nods once. She buys the oil at a fair price and still doesn't raise her pump price. But she talks to him again.
+      requires: { minOilStock: 2000 }
+      effects: { oilStock: -2000, cash: 2600 }  # TODO-Effekt: rival: { margaret: { trust: +10 } }
+
+- id: k3_tanklaster
+  title:
+    de: Der Tankwagen in der Kurve
+    en: The Tank Truck on the Bend
+  text:
+    de: >-
+      Ein Harlan-Tankwagen ist vor Port Ellis in der Kurve am Friedhof umgekippt.
+      Das Benzin lief in den Graben und brannte bis zum Morgen. Der Fahrer lebt. Ein
+      Junge, der Zeitungen austrug, liegt mit verbrannten Beinen im Krankenhaus.
+      Seine Mutter putzt in einem Hotel, das Jacob gehört.
+    en: >-
+      A Harlan tank truck overturned outside Port Ellis on the bend by the cemetery.
+      The gasoline ran into the ditch and burned till morning. The driver lives. A
+      boy who delivered newspapers lies in hospital with burned legs. His mother
+      cleans in a hotel that Jacob owns.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.2
+  choices:
+    - id: entschaedigen
+      label: { de: "Krankenhaus und eine Rente für den Jungen (3.000 $)", en: "Hospital and a pension for the boy (3,000 $)" }
+      result:
+        de: Jacob schickt keinen Anwalt, sondern einen Scheck und Doktor Haskell. Die Mutter putzt weiter im Hotel. Sie grüßt ihn jetzt, wenn er durch die Halle geht.
+        en: Jacob sends no lawyer but a cheque and Doctor Haskell. The mother still cleans in the hotel. She greets him now when he crosses the lobby.
+      requires: { minCash: 3000 }
+      effects: { cash: -3000, strength: 5 }  # TODO-Effekt: reputation: { public: +3 }, brand: +2
+    - id: anwalt
+      label: { de: "Die Anwälte regeln es – keine Schuld anerkennen", en: "The lawyers handle it – admit no fault" }
+      result:
+        de: Die Anwälte zahlen der Mutter 200 $ gegen eine Unterschrift. Sie kann nicht lesen, was sie unterschreibt. Jemand im Krankenhaus kann es.
+        en: The lawyers pay the mother 200 $ for a signature. She can't read what she signs. Someone at the hospital can.
+      effects: { cash: -200 }  # TODO-Effekt: heat: +1
+      marks: [k3_tanklaster_anwalt]
+      default: true
+    - id: fahrer
+      label: { de: "Den Fahrer entlassen und es dabei belassen", en: "Fire the driver and leave it at that" }
+      result:
+        de: Der Fahrer war elf Jahre bei Harlan. Er sagt im Saloon, die Bremsen seien seit dem Frühjahr gemeldet. Die Fahrer hören zu.
+        en: The driver had been with Harlan eleven years. He tells the saloon the brakes had been reported since spring. The drivers listen.
+      effects: { cash: -300, production: -0.05 }  # TODO-Effekt: reputation: { workers: -4 }, staffLoyalty: { fahrer: -10 }
+      marks: [k3_tanklaster_anwalt]
+
+- id: k3_tanklaster_artikel
+  marked: [k3_tanklaster_anwalt]
+  delay: 2
+  chance: 0.5
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: „Benzin im Graben, Tinte auf dem Vertrag“
+    en: '"Gasoline in the Ditch, Ink on the Contract"'
+  text:
+    de: >-
+      Der Hallstead Ledger bringt eine halbe Seite über den Jungen aus Port Ellis: die
+      verbrannten Beine, die 200 $, die Bremsen, die keiner reparierte. Ein Foto des
+      Tankwagens mit dem Harlan-Schriftzug. Die Verfasserin ist nicht genannt. Jacob
+      erkennt den Satzbau trotzdem.
+    en: >-
+      The Hallstead Ledger runs half a page on the boy from Port Ellis: the burned
+      legs, the 200 $, the brakes nobody fixed. A photograph of the tank truck with the
+      Harlan lettering. The author isn't named. Jacob recognises the sentences anyway.
+  choices:
+    - id: nachzahlen
+      label: { de: "Öffentlich nachzahlen und die Flotte prüfen lassen (4.000 $)", en: "Pay more publicly and have the fleet inspected (4,000 $)" }
+      result:
+        de: Die zweite Meldung ist klein und steht auf Seite sechs. Die Mechaniker finden an elf Wagen dieselben Bremsen.
+        en: The second item is small and on page six. The mechanics find the same brakes on eleven trucks.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000 }  # TODO-Effekt: reputation: { public: +2 }, brand: +2
+    - id: anzeigen
+      label: { de: "Dem Ledger die Anzeigen entziehen", en: "Pull the advertising from the Ledger" }
+      result:
+        de: Der Ledger druckt am nächsten Tag die Kündigung der Anzeigen im Wortlaut ab, gleich neben dem Foto.
+        en: The next day the Ledger prints the cancellation of the advertising word for word, right next to the photograph.
+      effects: { price: -0.3, strength: -5 }  # TODO-Effekt: brand: { hallstead: -8 }, rival: { nora: hostile }
+      default: true
+
+- id: k3_marke_skandal
+  marked: [k3_marke_familienname]
+  delay: 3
+  chance: 0.35
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Der Name auf dem Schild
+    en: The Name on the Sign
+  text:
+    de: >-
+      Jemand hat an der Säule in der Cottonwood-Niederung über HARLAN mit Teer ein Wort
+      geschrieben, das man in Hallstead nicht ausspricht. Es geht um den Abschlag, den
+      Harlan den Kleinproduzenten zahlt. Der Pächter hat es überstrichen, aber man liest
+      es durch die Farbe. Der Absatz an drei Säulen ist um ein Viertel gefallen.
+    en: >-
+      Someone has written a word in tar above HARLAN on the pump in the Cottonwood
+      bottoms, a word not spoken in Hallstead. It concerns the discount Harlan pays the
+      small producers. The leaseholder painted over it, but it reads through the paint.
+      Sales at three pumps have fallen by a quarter.
+  choices:
+    - id: kleinproduzenten
+      label: { de: "Den Abschlag für die Kleinen senken", en: "Lower the discount for the small producers" }
+      result:
+        de: Die Kleinproduzenten bekommen einen Cent mehr. Das Wort an der Säule bleibt unter der Farbe, aber niemand malt ein neues.
+        en: The small producers get a cent more. The word on the pump stays under the paint, but no one writes a new one.
+      effects: { cash: -2500 }  # TODO-Effekt: reputation: { public: +3, industryRespect: +2 }, party: { volksbund: +1 }
+    - id: neuer_name
+      label: { de: "Die Säulen umbenennen – den Stern doch noch (3.500 $)", en: "Rename the pumps – the star after all (3,500 $)" }
+      result:
+        de: Der Name verschwindet von den Säulen. In der Firma sagen sie, der Alte habe zum ersten Mal einen Rückzieher gemacht.
+        en: The name disappears from the pumps. In the company they say the old man backed down for the first time.
+      requires: { minCash: 3500 }
+      effects: { cash: -3500, strength: -10 }  # TODO-Effekt: brand: neu aufbauen, legacy: -1
+    - id: aussitzen
+      label: { de: "Aussitzen – Teer kann man überstreichen", en: "Sit it out – tar can be painted over" }
+      result:
+        de: Es kommen neue Wörter, an anderen Säulen. Der Vertriebsleiter kauft weiße Farbe in Fässern.
+        en: New words come, on other pumps. The sales manager buys white paint by the barrel.
+      effects: { price: -0.3 }  # TODO-Effekt: brand: { cottonwood: -10 }
+      default: true
+
+# Briefe-Garantie in Kapitel 3: Angebot, wiederkehrend.
+- id: k3_brief_zapfsaeule
+  mail: offer
+  once: false
+  cooldown: 4
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.25
+  title:
+    de: Eine Säule vor dem Kramladen
+    en: A Pump Outside the General Store
+  text:
+    de: >-
+      Ein Krämer aus einem Dorf, das Jacob nicht kennt, schreibt in ordentlicher
+      Schulschrift: Seit die Straße gepflastert ist, halten jeden Tag Automobile vor
+      seinem Laden und fragen nach Benzin. Er würde eine Harlan-Säule aufstellen, wenn
+      Harlan die Säule bezahlt. „Mein Vater hat noch Petroleum für Lampen verkauft.“
+    en: >-
+      A storekeeper from a village Jacob doesn't know writes in neat schoolroom hand:
+      since the road was paved, automobiles stop at his store every day asking for
+      gasoline. He would put up a Harlan pump if Harlan pays for the pump. "My father
+      still sold kerosene for lamps."
+  choices:
+    - id: saeule
+      label: { de: "Die Säule bezahlen (1.200 $)", en: "Pay for the pump (1,200 $)" }
+      result:
+        de: Ein halbes Jahr später schickt der Krämer ein Foto. Vor der Säule steht ein Automobil und daneben ein Pferdewagen, der auch wartet.
+        en: Half a year later the storekeeper sends a photograph. In front of the pump stands an automobile and next to it a horse cart, also waiting.
+      requires: { minCash: 1200 }
+      effects: { cash: -1200, price: 0.05 }  # TODO-Effekt: stations: { region: +1 }
+    - id: nein
+      label: { de: "Höflich absagen", en: "Decline politely" }
+      result:
+        de: Im nächsten Brief des Krämers, an jemand anderen, wird eine blaue Säule stehen.
+        en: In the storekeeper's next letter, to someone else, there will be a blue pump.
+      appointments: 0
+      default: true
