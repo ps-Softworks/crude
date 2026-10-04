@@ -24,6 +24,9 @@ import { parseMapHints } from '../src/ui/tutorialMap';
 import { visitorErrors } from '../src/ui/visitors';
 // 4.7 Andockpunkt: Briefe der Fernleitungen.
 import { parsePipelineContent } from '../src/sim/bigPipelineContent';
+// 4.11 Andockpunkt: Texte für Schattenbuch (Ermittler) und Werkstatt (Forschung).
+import { checkInvestigationContent, parseInvestigationContent } from '../src/sim/investigation';
+import { parseResearchContent } from '../src/sim/research';
 
 const dir = process.argv[2] ? resolve(process.argv[2]) : EVENTS_DIR;
 const files = readEventFiles(dir);
@@ -80,6 +83,14 @@ try {
 errors.push(...parseRefineryContent('content/refinery.yaml', readFileSync(new URL('../content/refinery.yaml', import.meta.url), 'utf8')).errors);
 // 4.7 Andockpunkt: Fernleitungen (Kapitel 2) – Briefe in content/pipelines.yaml.
 errors.push(...parsePipelineContent('content/pipelines.yaml', readFileSync(new URL('../content/pipelines.yaml', import.meta.url), 'utf8')).errors);
+// 4.11 Andockpunkt: Ermittler und Forschung (ab Kapitel 2).
+{
+  const balance = loadBalance();
+  const ermittler = parseInvestigationContent('content/investigation.yaml', readFileSync(new URL('../content/investigation.yaml', import.meta.url), 'utf8'));
+  errors.push(...ermittler.errors);
+  if (ermittler.content && parsed.errors.length === 0) errors.push(...checkInvestigationContent('content/investigation.yaml', ermittler.content, balance, events));
+  errors.push(...parseResearchContent('content/research.yaml', readFileSync(new URL('../content/research.yaml', import.meta.url), 'utf8'), balance).errors);
+}
 if (errors.length > 0) {
   for (const error of errors) console.error(formatContentError(error));
   console.error(`\n${errors.length} Fehler in ${files.length} Datei(en). Inhalte nicht in Ordnung.`);

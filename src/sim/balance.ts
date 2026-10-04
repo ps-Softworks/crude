@@ -11,6 +11,9 @@ import { parseRefineryBalance, type RefineryBalance } from './refineryBalance';
 // 4.7 Andockpunkt: Fernleitungen.
 import { parseBigPipelineBalance, type BigPipelineBalance } from './bigPipelineBalance';
 import { parseStaff, type StaffBalance } from './staff'; // 4.9 Andockpunkt: Personal
+// 4.11 Andockpunkt: Ermittler und Forschung lesen ihre Abschnitte selbst.
+import { parseInvestigationBalance, type InvestigationBalance } from './investigation';
+import { parseResearchBalance, type ResearchBalance } from './research';
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
 
@@ -642,6 +645,9 @@ export interface Balance {
   stocks: StocksBalance; // 4.8 Andockpunkt
   /** 4.9 Andockpunkt: Personal (Kapitel 2). */
   staff: StaffBalance;
+  // 4.11 Andockpunkt: Ermittler (Delaney, Hitze) und Forschung (Technikstufe II), ab Kapitel 2.
+  investigation: InvestigationBalance;
+  research: ResearchBalance;
 }
 
 /** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
@@ -1840,6 +1846,9 @@ export function parseBalance(raw: unknown): Balance {
     bigPipelines: parseBigPipelines(raw),
     stocks: parseStocksBalance(raw, (m) => new BalanceError(m)), // 4.8 Andockpunkt
     staff: parseStaff(raw), // 4.9 Andockpunkt
+    // 4.11 Andockpunkt
+    investigation: parseInvestigationBalance(raw),
+    research: parseResearchBalance(raw),
   };
 
   for (const r of balance.transport.pipeline.rights) {

@@ -26,6 +26,9 @@ export const SHEET_IDS = [
   'raffinerie',
   /** 4.9 Andockpunkt: Personalakten (ab Kapitel 2). */
   'personal',
+  // 4.11 Andockpunkt: Schattenbuch in der Schublade und Werkstatt-Mappe (beide erst ab Kapitel 2 auf dem Tisch).
+  'schattenbuch',
+  'werkstatt',
 ] as const;
 export type SheetId = (typeof SHEET_IDS)[number];
 

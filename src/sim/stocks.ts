@@ -147,10 +147,10 @@ export function stocksWorldOf(state: { worldModel?: Partial<Pick<WorldState, 'cr
   };
 }
 
-/** Kapitelnummer (4.5 setzt state.chapter); ohne Angabe Kapitel 1. */
+/** Kapitelnummer (4.5 setzt state.chapter); ohne Angabe Kapitel 1. Gemeinsamer Helfer für alle Kapitel-2-Systeme (4.8, 4.9, 4.11). */
 export function chapterOf(state: object): number {
   const c = (state as { chapter?: unknown }).chapter;
-  return typeof c === 'number' && Number.isFinite(c) ? c : 1;
+  return typeof c === 'number' && Number.isFinite(c) && c >= 1 ? Math.floor(c) : 1;
 }
 
 /** Gibt es im aktuellen Kapitel Aktien und Anleihen? */

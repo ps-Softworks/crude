@@ -23,6 +23,9 @@ import { RivalsSheet } from './RivalsSheet';
 import { StaffSheet } from './StaffSheet'; // 4.9 Andockpunkt
 import type { SheetContext } from './types';
 import { WaitingSheet } from './WaitingSheet';
+// 4.11 Andockpunkt: Schattenbuch (Ermittler) und Werkstatt (Forschung).
+import { ShadowBookSheet } from './ShadowBookSheet';
+import { WorkshopSheet } from './WorkshopSheet';
 
 export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   zeitung: { title: 'Zeitung', size: 'brief' },
@@ -42,6 +45,9 @@ export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   // 4.6 Andockpunkt: Raffinerie.
   raffinerie: { title: rt('sheetTitle'), size: 'mappe' },
   personal: { title: 'Personal', size: 'mappe' }, // 4.9 Andockpunkt
+  // 4.11 Andockpunkt
+  schattenbuch: { title: 'Schattenbuch', size: 'brief' },
+  werkstatt: { title: 'Werkstatt', size: 'mappe' },
 };
 
 export interface SheetHostProps {
@@ -83,6 +89,9 @@ export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound
     // 4.6 Andockpunkt: Raffinerie.
     raffinerie: () => <RefinerySheet ctx={ctx} />,
     personal: () => <StaffSheet ctx={ctx} />, // 4.9 Andockpunkt
+    // 4.11 Andockpunkt
+    schattenbuch: () => <ShadowBookSheet ctx={ctx} />,
+    werkstatt: () => <WorkshopSheet ctx={ctx} />,
   };
   return (
     <Sheet

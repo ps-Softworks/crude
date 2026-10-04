@@ -45,3 +45,5 @@ thorne: { form: zylinder, name: Augustus Thorne }
 margaret: { form: frau, name: Margaret Crane }
 pruett: { form: zylinder, name: Harold Pruett }
 delgado: { form: frau, name: Rosa Delgado }
+# 4.11 Andockpunkt: Bundesanwalt Delaney (ab Kapitel 2, content/events/k2-delaney.yaml).
+delaney: { form: hut, name: Bundesanwalt Delaney }

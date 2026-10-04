@@ -33,6 +33,9 @@ import { advanceRefinery, type RefineryState } from './refinery';
 import type { StaffState } from './staff'; // 4.9 Andockpunkt: Personal
 import { delegateMail, settleStaff } from './staffRound'; // 4.9 Andockpunkt: Personal
 import { advanceDiplomacy, type DiplomacyState } from './diplomacy'; // 4.10 Andockpunkt
+// 4.11 Andockpunkt: Ermittler und Forschung (ab Kapitel 2).
+import { advanceInvestigation, type InvestigationState } from './investigation';
+import { advanceResearch, type ResearchState } from './research';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
@@ -119,6 +122,11 @@ export interface GameState {
   refinery?: RefineryState;
   /** 4.8 Andockpunkt: Aktien, Aufsichtsrat, Anleihen ab Kapitel 2 (startStocks); fehlt in Kapitel 1. */
   stocks?: StocksState;
+  // 4.11 Andockpunkt: entstehen erst ab Kapitel 2 (fehlen in Kapitel 1 und in älteren Spielständen).
+  /** Delaneys Ermittlungen, Spuren und Gegenmittel (src/sim/investigation.ts). */
+  investigation?: InvestigationState;
+  /** Versuchswerkstatt, Techniken, Patente (src/sim/research.ts). */
+  research?: ResearchState;
 }
 
 /**
@@ -261,7 +269,9 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const diplomatie = advanceDiplomacy(gefahren, balance);
   // 4.10 Andockpunkt: Verkauf an Pruett (Antwort auf seinen Besuch) beendet die Partie ohne weitere Abrechnung.
   if (diplomatie.finished) return { ...diplomatie, roundLogStart };
-  const state = { ...checkBankruptcy(diplomatie, balance), roundLogStart };
+  // 4.11 Andockpunkt: Ermittler und Forschung – in Kapitel 1 kommt derselbe Zustand zurück.
+  const ermittelt = advanceResearch(advanceInvestigation(diplomatie, balance), balance);
+  const state = { ...checkBankruptcy(ermittelt, balance), roundLogStart };
   if (state.ending === 'pleite') return state;
   if (state.round >= state.totalRounds) {
     // Kapitelprüfung (2.11): steht im Protokoll, der Ergebnisbildschirm zeigt die Einzelheiten.

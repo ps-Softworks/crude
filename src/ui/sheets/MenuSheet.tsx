@@ -18,6 +18,9 @@ import { TrunkDebugButton } from './TrunkPipelineTab';
 import { StocksDebugButton } from './LedgerSheet';
 import { openStaff } from '../../sim/staff'; // 4.9 Andockpunkt
 import { DiplomacyDebug } from './DiplomacySheet'; // 4.10 Andockpunkt
+// 4.11 Andockpunkt: Ermittler (Schattenbuch) und Werkstatt vorab freischalten.
+import { previewInvestigation } from '../../sim/investigation';
+import { previewResearch } from '../../sim/research';
 
 export interface MenuProps {
   ctx: SheetContext;
@@ -205,6 +208,19 @@ export function MenuSheet(p: MenuProps) {
             {ctx.game.staff && <span className="muted klein">Personal ist freigeschaltet.</span>}
             {/* 4.10 Andockpunkt: Rivalen-Diplomatie aus Kapitel 2 vorab einschalten. */}
             <DiplomacyDebug ctx={ctx} />
+            {/* 4.11 Andockpunkt: Schattenbuch (Delaney) und Werkstatt (Forschung) vorab auf den Tisch legen. */}
+            {!ctx.game.investigation && !ctx.game.finished && (
+              <button type="button" onClick={() => ctx.onGame(previewInvestigation(ctx.game, balance))}>
+                Schattenbuch und Delaney freischalten (Vorschau Kapitel 2)
+              </button>
+            )}
+            {ctx.game.investigation && <span className="muted klein">Schattenbuch ist freigeschaltet.</span>}
+            {!ctx.game.research && !ctx.game.finished && (
+              <button type="button" onClick={() => ctx.onGame(previewResearch(ctx.game))}>
+                Werkstatt freischalten (Vorschau Kapitel 2)
+              </button>
+            )}
+            {ctx.game.research && <span className="muted klein">Werkstatt ist freigeschaltet.</span>}
           </fieldset>
         </section>
       )}

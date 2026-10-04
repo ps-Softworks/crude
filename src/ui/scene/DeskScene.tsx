@@ -31,6 +31,7 @@ import { Door } from './Door';
 import {
   BellShape,
   CorkShape,
+  DrawerShape,
   FolderShape,
   LampShape,
   LedgerShape,
@@ -48,6 +49,12 @@ import { refineryStatus } from '../../sim/refinery';
 import { rt } from '../refinery';
 import { StaffFileShape } from '../sheets/StaffSheet'; // 4.9 Andockpunkt
 import { diplomacyPin } from '../sheets/DiplomacySheet'; // 4.10 Andockpunkt
+// 4.11 Andockpunkt: Schublade (Schattenbuch) und Blaupause (Werkstatt), erst ab Kapitel 2.
+import { localize } from '../../sim/i18n';
+import { heat, heatWord, investigationUnlocked } from '../../sim/investigation';
+import { researchUnlocked } from '../../sim/research';
+import { investigationContent } from '../investigationContent';
+import { BlueprintShape } from './objects/BlueprintShape';
 
 /** Wo was liegt, in Prozent der Bühne (unter der Kopfleiste). */
 const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte' | 'tuer', Placement> = {
@@ -68,6 +75,9 @@ const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte
   raffinerie: { left: 72, top: 75, width: 13, height: 22 },
   // 4.9 Andockpunkt: Personalakten rechts neben dem Kassenbuch, zwischen Tür und Glocke (der Platz unter dem Kassenbuch gehört der Raffinerie).
   personal: { left: 86.5, top: 46, width: 11.5, height: 22 },
+  // 4.11 Andockpunkt: Schublade unter Ruths Zettel (zwischen Kladde und Raffinerie-Plan), Blaupause an der Wand zwischen Lampe und Kalender.
+  schattenbuch: { left: 47, top: 85, width: 22, height: 12 },
+  werkstatt: { left: 51.5, top: 8, width: 6, height: 24 },
 };
 
 export interface DeskSceneProps {
@@ -362,6 +372,16 @@ export function DeskScene(p: DeskSceneProps) {
               badge: game.staff.candidates.length > 0 ? { text: `${game.staff.candidates.length} Bewerbung${game.staff.candidates.length === 1 ? '' : 'en'}` } : null,
             },
             <StaffFileShape />,
+          )}
+        {/* 4.11 Andockpunkt: Schattenbuch und Werkstatt – in Kapitel 1 nicht auf dem Tisch. */}
+        {investigationUnlocked(game, balance) &&
+          obj('schattenbuch', 'Schublade', { status: `Hitze: ${localize(investigationContent.heat[heatWord(heat(game, balance), balance)])}` }, <DrawerShape />)}
+        {researchUnlocked(game, balance) &&
+          obj(
+            'werkstatt',
+            'Werkstatt',
+            { status: game.research?.project ? 'forscht' : undefined },
+            <BlueprintShape />,
           )}
         {obj(
           'glocke',
