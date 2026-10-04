@@ -29,3 +29,29 @@ later:
   - { mark: vale_geld, reason: "Mr. Vales Einladung (GDD Kapitel 3)" }
   - { mark: vale_abgelehnt, reason: "Mr. Vales Einladung (GDD Kapitel 3)" }
   - { mark: crane_abgelehnt, reason: "Crane merkt sich die Absage (GDD: Rivalen merken sich Gefallen und Verrat)" }
+  # Kapitel 3 – Story-Bögen Daniel, Thomas, Ehe (Phase 4, Story-Bibel §7 A–C). Entwurf – Philipp überarbeitet.
+  # Ausgänge, die erst Zeitsprung III oder Kapitel 4 abfragen (GDD §13/§14: Abrechnung, Erbe, Enden).
+  - { mark: daniel_unterstuetzt, reason: "Daniel Moss weiß, wer seinen Wahlkampf bezahlt hat – Dankbarkeit gegen Pflicht (Kapitel 4)" }
+  - { mark: daniel_offen, reason: "Daniel erinnert sich, wer ihm die Bücher freiwillig gezeigt hat (Kapitel 4)" }
+  - { mark: daniel_sarg_getragen, reason: "Jacob hat Ezekiels Sarg getragen – Daniels Dankbarkeit (Kapitel 4)" }
+  - { mark: daniel_vergleich, reason: "Ausgang Daniel-Bogen: Vergleich (Kapitel 4)" }
+  - { mark: daniel_anklage, reason: "Ausgang Daniel-Bogen: Der Prozess läuft in Kapitel 4 weiter" }
+  - { mark: daniel_verbuendet, reason: "Ausgang Daniel-Bogen: Verbündeter gegen Thorne (Kapitel 4)" }
+  - { mark: daniel_weggelobt, reason: "Ausgang Daniel-Bogen: Richter Moss sitzt länger als Staatsanwälte (Kapitel 4)" }
+  - { mark: daniel_bestechung_versuch, reason: "Story-Bibel: K4-Prüfung – ein Bestechungsversuch bleibt in der Akte" }
+  - { mark: daniel_suendenbock, reason: "Der geopferte Prokurist weiß, woher das Geld kam (Kapitel 4, Spur)" }
+  - { mark: daniel_beweise_vernichtet, reason: "Verbrannte Bücher: Spur für Kapitel 4 (Ermittler, Nora)" }
+  - { mark: thomas_firma, reason: "Thomas im Unternehmen – Erbe und Nachfolge (Zeitsprung III, Kapitel 4)" }
+  - { mark: thomas_feld, reason: "Thomas bei den Bohrtrupps – Werte des Erben (Kapitel 4)" }
+  - { mark: thomas_eigener_weg, reason: "Thomas bei Crane Eastern – Erbe oder Rivale (Kapitel 4)" }
+  - { mark: thomas_gezwungen, reason: "Thomas wurde gezwungen – Werte des Erben (Kapitel 4)" }
+  - { mark: thomas_bruch, reason: "Saat „Rivale“: Thomas baut eigene Tankstellen (Kapitel 4)" }
+  - { mark: thomas_versoehnt_k3, reason: "Thomas und Jacob nach dem Bruch versöhnt (Kapitel 4)" }
+  - { mark: thomas_abteilung, reason: "Thomas führt die Marke – geschenkte Abteilung (Kapitel 4)" }
+  - { mark: thomas_benutzt, reason: "Jacob hat Thomas als Quelle gegen Crane Eastern benutzt (Kapitel 4)" }
+  - { mark: heirat_crane_saat, reason: "Heiratssaat Thomas und Evelyn Crane (Zeitsprung III)" }
+  - { mark: heirat_crane_verboten, reason: "Heirat mit Evelyn Crane verboten (Zeitsprung III)" }
+  - { mark: ruth_gefragt, reason: "Ruth wurde gefragt – Ehe-Partnerin wahrscheinlicher (Zeitsprung III, Kapitel 4)" }
+  - { mark: ehe_partner, reason: "Ausgang Ehe-Bogen: Ruth unterschreibt mit, Kontrolle sicher (Kapitel 4)" }
+  - { mark: ehe_waffenstillstand, reason: "Ausgang Ehe-Bogen: Waffenstillstand (Kapitel 4)" }
+  - { mark: ehe_trennung, reason: "Ausgang Ehe-Bogen: Trennung, Ruths Anteile verkauft (Kapitel 4)" }

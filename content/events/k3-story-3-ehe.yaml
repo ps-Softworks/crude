@@ -1,0 +1,601 @@
+# Kapitel 3 – Story-Bogen Wendepunkt der Ehe (Phase 4, Story-Bibel §7 C).
+# Entwurf – Philipp überarbeitet. Alle Texte hier sind Entwürfe von Claude.
+#
+# Ruth ist 43–46. Ihr Ziel: nicht im großen Haus verschwinden. Drei Proben, dann die
+# Entscheidung. Jede verfehlte Probe hinterlässt ein Merkzeichen; der Wendepunkt liest sie.
+# Alle Ereignisse nur in Kapitel 3 (minChapter/maxChapter); Runden 1–16.
+#
+#   R2+    k3_ruth_datum       (ruth_vertroestet, Kapitel 1) Das Datum aus der Kiste
+#          k3_ruth_anteile     (ruth_teilhaberin, Kapitel 1) Pettibone will Ruths Anteile
+#          k3_ruth_hannah      (ruth_zurueckgewiesen, Kapitel 1) Ruth kauft mit Hannah Land
+#   R3–6   k3_ruth_ball        Probe 1 (Schlüsselszene): „früher in einem Laden gearbeitet?“
+#   R7–10  k3_ruth_vale        Probe 2: Mr. Vales Einladung – hätte Jacob sie gefragt?
+#   R9–13  k3_ruth_abwesend    Probe 3: sechs Wochen nicht zu Hause
+#   R13–16 k3_ruth_wendepunkt  Schlüsselszene, vier Fassungen:
+#          _wendepunkt (keine Probe verfehlt) · _riss (ruth_riss) · _fern (ruth_sechs_wochen)
+#          · _fremd (beides) – Ausgänge ehe_partner / ehe_waffenstillstand / ehe_trennung
+#
+# ruth_riss: ein verfehlter Abend (Ball, Vale, Datum, Anteile, Grundbuch). ruth_sechs_wochen:
+# die lange Abwesenheit. Teure Umkehr bleibt in jeder Fassung möglich.
+# Ausgänge für Zeitsprung III und Kapitel 4 (content/relevance.yaml): ehe_partner,
+# ehe_waffenstillstand, ehe_trennung, ruth_gefragt.
+#
+# Anknüpfung (nach Merge nachtragen):
+#   phase4/inhalte-k2-story: ruth_aufsichtsrat / ruth_finanzen → k3_ruth_wendepunkt (sie sitzt schon
+#   im Rat); ruth_eigenes_geschaeft → k3_ruth_hannah auch ohne Kapitel-1-Zeichen; ruth_verboten → ruth_riss
+#   Vale-Bogen (k3_vale_karte): k3_ruth_vale sollte auf dessen Merkzeichen warten.
+# WUNSCH (Story-Bibel §10): Effekte shares: { ruth: ±% }, control, boardLoyalty, standing;
+# Bedingung minRuth/maxRuth – dann braucht der Wendepunkt keine vier Fassungen mehr.
+
+# Kapitel 1: Jacob hat Ruth vertröstet – „Wenn die zweite Quelle fließt.“
+- id: k3_ruth_datum
+  visitor: ruth
+  title:
+    de: Das Datum aus der Kiste
+    en: The Date from the Box
+  text:
+    de: >-
+      Ruth legt einen vergilbten Zettel auf Jacobs Schreibtisch, mit Reißzweckenlöchern
+      in den Ecken. Ihre Handschrift, zwanzig Jahre jünger. „Ich habe das Datum
+      aufgeschrieben, Jacob. Du hast gesagt: wenn die zweite Quelle fließt.“ Sie zeigt
+      auf die Karte an der Wand, auf die vielen kleinen Fähnchen. „Ich habe aufgehört zu
+      zählen. Ich wollte nur, dass du es auch nicht vergisst.“
+    en: >-
+      Ruth lays a yellowed slip of paper on Jacob's desk, with drawing-pin holes in the
+      corners. Her handwriting, twenty years younger. "I wrote down the date, Jacob. You
+      said: when the second well flows." She points to the map on the wall, to all the
+      little flags. "I stopped counting. I only wanted you not to forget either."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 2, maxRound: 8 }
+  marked: [ruth_vertroestet]
+  certain: true
+  choices:
+    - id: einloesen
+      label: { de: "Es einlösen – heute, mit Notar und Anteilen", en: "Make good on it – today, with a notary and shares" }
+      result:
+        de: >-
+          Der Notar kommt am Nachmittag. Ruth liest jede Seite, bevor sie unterschreibt,
+          und korrigiert einen Rechenfehler auf Seite drei. Den Zettel steckt sie wieder
+          ein. „Den behalte ich“, sagt sie. „Als Quittung.“
+        en: >-
+          The notary comes in the afternoon. Ruth reads every page before she signs and
+          corrects an arithmetic error on page three. She pockets the slip again. "I'll
+          keep this," she says. "As a receipt."
+      effects: { ruth: 25, cash: -2000 } # TODO-Effekt: shares: { ruth: +5 }, control: -2
+      marks: [ruth_gefragt]
+    - id: vertroesten
+      label: { de: "„Nach der Hauptversammlung. Versprochen.“", en: "\"After the shareholders' meeting. I promise.\"" }
+      result:
+        de: >-
+          Ruth nickt. Sie nimmt den Zettel nicht wieder mit. Er liegt am nächsten Morgen
+          noch auf dem Tisch, und am übernächsten. Dann ist er weg, und Jacob weiß nicht,
+          wer ihn genommen hat.
+        en: >-
+          Ruth nods. She does not take the slip back. It is still on the desk the next
+          morning, and the morning after. Then it is gone, and Jacob does not know who
+          took it.
+      effects: { ruth: -20 }
+      marks: [ruth_riss]
+      default: true
+
+# Kapitel 1: Ruth ist Teilhaberin. Thornes Mann will ihre Anteile.
+- id: k3_ruth_anteile
+  visitor: ruth
+  rival: thorne
+  title:
+    de: Ein Angebot für Mrs. Harlan
+    en: An Offer for Mrs. Harlan
+  text:
+    de: >-
+      Mr. Pettibone hat Ruth zum Tee gebeten, allein. Er hat ihr für ihre Anteile an
+      Harlan Oil das Doppelte des Kurses geboten, im Namen eines Freundes, dessen Namen
+      er nicht nennen durfte. Ruth erzählt es Jacob beim Frühstück, zwischen Toast und
+      Zeitung. „Ich habe gesagt, ich denke darüber nach“, sagt sie. „Ich wollte sehen,
+      was du sagst.“
+    en: >-
+      Mr. Pettibone invited Ruth to tea, alone. He offered her twice the market price for
+      her shares in Harlan Oil, on behalf of a friend whose name he was not permitted to
+      give. Ruth tells Jacob at breakfast, between toast and newspaper. "I said I would
+      think about it," she says. "I wanted to see what you'd say."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 4, maxRound: 10 }
+  marked: [ruth_teilhaberin]
+  certain: true
+  choices:
+    - id: ihre_sache
+      label: { de: "„Es sind deine Anteile. Du entscheidest.“", en: "\"They're your shares. You decide.\"" }
+      result:
+        de: >-
+          Ruth legt das Messer hin. Sie sieht ihn eine Weile an. Dann schreibt sie
+          Pettibone eine Absage, drei Zeilen, und lässt Jacob den Brief nicht lesen.
+        en: >-
+          Ruth puts down her knife. She looks at him for a while. Then she writes Pettibone
+          a refusal, three lines, and does not let Jacob read the letter.
+      effects: { ruth: 20 } # TODO-Effekt: control: Risiko, rival: { thorne: { trust: -5 } }
+      marks: [ruth_gefragt]
+      sharp: true
+    - id: verbieten
+      label: { de: "„An Thorne verkaufst du nicht.“", en: "\"You are not selling to Thorne.\"" }
+      result:
+        de: >-
+          „Ich hatte nicht vor, an Thorne zu verkaufen“, sagt Ruth. „Ich wollte nur wissen,
+          ob du mich fragst oder mir etwas sagst.“ Sie steht auf, bevor der Toast kalt ist.
+        en: >-
+          "I had no intention of selling to Thorne," says Ruth. "I only wanted to know
+          whether you'd ask me or tell me." She gets up before the toast is cold.
+      effects: { ruth: -20 }
+      marks: [ruth_riss]
+      default: true
+    - id: abkaufen
+      label: { de: "Ihr die Anteile selbst abkaufen, zu Pettibones Preis (6.000 $)", en: "Buy the shares from her yourself, at Pettibone's price (6,000 $)" }
+      result:
+        de: >-
+          Ruth nimmt den Scheck. Sie zahlt ihn auf ein eigenes Konto ein, bei einer Bank,
+          die Jacob nicht kennt. „Jetzt bin ich nur noch deine Frau“, sagt sie. Es klingt
+          nicht traurig. Es klingt wie eine Feststellung.
+        en: >-
+          Ruth takes the cheque. She pays it into an account of her own, at a bank Jacob
+          does not know. "Now I'm only your wife," she says. It does not sound sad. It
+          sounds like a statement of fact.
+      requires: { minCash: 6000 }
+      effects: { cash: -6000, ruth: -10 } # TODO-Effekt: shares: { ruth: -10, jacob: +10 }, control: +3
+      marks: [ruth_riss]
+
+# Kapitel 1: Jacob hat Ruth zurückgewiesen („Das ist Männersache“). Sie hat sich etwas Eigenes gesucht.
+- id: k3_ruth_hannah
+  title:
+    de: Ein Eintrag im Grundbuch
+    en: An Entry in the Land Register
+  text:
+    de: >-
+      Jacobs Landagent bringt einen Auszug aus dem Grundbuch von Okara. Zwölf Bauplätze
+      an der neuen Hauptstraße, gekauft vor zwei Jahren von „R. Harlan und Schwester“. Hannah ist aus den Kohleprovinzen gekommen, mit grauem Haar und ihren
+      Ersparnissen. Ruth hat das Geld aus ihrem Haushaltsbuch dazugelegt, Monat für
+      Monat. Auf den Plätzen stehen inzwischen eine Pension und ein Laden.
+    en: >-
+      Jacob's land agent brings an extract from the Okara land register. Twelve building
+      plots on the new main street, bought two years ago by "R. Harlan and Sister". Hannah came from the coal provinces with grey hair and her savings. Ruth
+      added money from her housekeeping book, month by month. A boarding house and a
+      shop now stand on the plots.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 2, maxRound: 8 }
+  marked: [ruth_zurueckgewiesen]
+  certain: true
+  choices:
+    - id: hinfahren
+      label: { de: "Nach Okara fahren und sich den Laden zeigen lassen", en: "Drive to Okara and ask to be shown the shop" }
+      result:
+        de: >-
+          Ruth steht hinter dem Ladentisch, als Jacob eintritt, und verkauft einem Bohrer
+          Tabak. Sie zeigt ihm die Bücher. Sie sind besser geführt als seine. Er sagt es
+          ihr. Sie lächelt zum ersten Mal seit Langem.
+        en: >-
+          Ruth stands behind the counter when Jacob comes in, selling tobacco to a driller.
+          She shows him the books. They are better kept than his. He tells her so. She
+          smiles for the first time in a long while.
+      effects: { ruth: 20, strength: -10 }
+      appointments: 2
+      marks: [ruth_gefragt]
+    - id: aufkaufen
+      label: { de: "Die Nachbarplätze aufkaufen lassen, bevor sie es tut (3.000 $)", en: "Have the neighbouring plots bought up before she can (3,000 $)" }
+      result:
+        de: >-
+          Jacobs Agent kauft die Straße. Ruth erfährt es vom Notar. Sie sagt nichts. Sie
+          zieht für einen Monat zu Hannah in die Pension, „wegen der Buchhaltung“.
+        en: >-
+          Jacob's agent buys the street. Ruth hears of it from the notary. She says
+          nothing. She moves into Hannah's boarding house for a month, "for the accounts".
+      requires: { minCash: 3000 }
+      effects: { cash: -3000, ruth: -25 } # TODO-Effekt: investment: { boomtownLand: +1 }
+      marks: [ruth_riss]
+    - id: schweigen
+      label: { de: "Den Auszug in die Schublade legen", en: "Put the extract in the drawer" }
+      result:
+        de: >-
+          Jacob sagt nichts, und Ruth sagt nichts. Beim Abendessen fragt sie, wie sein Tag
+          war, und er sagt: gut. Beide wissen, dass der andere es weiß.
+        en: >-
+          Jacob says nothing, and Ruth says nothing. At dinner she asks how his day was,
+          and he says: fine. Both know that the other knows.
+      effects: { ruth: -10 }
+      marks: [ruth_riss]
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Probe 1 (Schlüsselszene): der Ball bei den Vandermeers.
+- id: k3_ruth_ball
+  draft: true
+  title:
+    de: „Früher in einem Laden?“
+    en: '"Once in a Shop?"'
+  text:
+    de: >-
+      Der Ballsaal der Vandermeers in Hallstead hat vierzig Kerzenleuchter. Cornelia
+      Vandermeer hält Ruths Hand einen Moment zu lange. „Mrs. Harlan, man hat mir
+      erzählt, Sie hätten früher in einem Laden gearbeitet? Wie tapfer.“ Die Damen
+      ringsum lächeln. Ruth trägt ein Kleid aus Paris, und an den Schläfen ist ihr Haar
+      grau geworden. Sie sieht Jacob an. Sie wartet.
+    en: >-
+      The Vandermeers' ballroom in Hallstead has forty chandeliers. Cornelia Vandermeer
+      holds Ruth's hand a moment too long. "Mrs. Harlan, I am told you once worked in a
+      shop? How brave." The ladies around them smile. Ruth wears a dress from Paris, and
+      her hair has gone grey at the temples. She looks at Jacob. She waits.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 3, maxRound: 6 }
+  certain: true
+  choices:
+    - id: verteidigen
+      label: { de: "„Sie hat die Bücher geführt. Besser als Ihr Bankhaus.“", en: "\"She kept the books. Better than your bank does.\"" }
+      result:
+        de: >-
+          Es wird still um sie herum. Cornelia Vandermeer lächelt weiter, ohne Wärme.
+          Vandermeer & Co. verlangt für die nächste Anleihe einen halben Punkt mehr. Ruth
+          tanzt an diesem Abend jeden Tanz mit Jacob, auch die, die er nicht kann.
+        en: >-
+          It goes quiet around them. Cornelia Vandermeer keeps smiling, without warmth.
+          Vandermeer & Co. asks half a point more on the next bond. Ruth dances every dance
+          with Jacob that evening, even the ones he cannot.
+      effects: { ruth: 20, cash: -1500 } # TODO-Effekt: standing: -2, boardLoyalty: { vandermeer: -10 }
+      sharp: true
+    - id: wechseln
+      label: { de: "Das Thema wechseln", en: "Change the subject" }
+      result:
+        de: >-
+          Jacob fragt nach dem Wetter in Aldmark. Ruth antwortet an seiner Stelle,
+          freundlich und genau. Auf der Heimfahrt sitzt sie am Fenster und sieht hinaus,
+          obwohl es dunkel ist.
+        en: >-
+          Jacob asks about the weather in Aldmark. Ruth answers in his place, kindly and
+          precisely. On the drive home she sits by the window looking out, though it is dark.
+      effects: { ruth: -15 }
+      marks: [ruth_riss]
+      default: true
+    - id: lachen
+      label: { de: "Mitlachen", en: "Laugh along" }
+      result:
+        de: >-
+          Jacob lacht, kurz, wie man in Hallstead lacht. Cornelia Vandermeer nickt ihm zu,
+          als hätte er eine Prüfung bestanden. Ruth geht allein zur Garderobe. Den Rest
+          des Abends spricht sie mit den Kellnern.
+        en: >-
+          Jacob laughs, briefly, the way one laughs in Hallstead. Cornelia Vandermeer nods
+          to him as if he had passed an examination. Ruth goes alone to the cloakroom. For
+          the rest of the evening she talks to the waiters.
+      effects: { ruth: -30 } # TODO-Effekt: standing: +2
+      marks: [ruth_riss]
+
+# Probe 2: Mr. Vales Einladung. Ruth hat die Karte gefunden.
+- id: k3_ruth_vale
+  visitor: ruth
+  title:
+    de: „Ob du mich gefragt hättest“
+    en: '"Whether You Would Have Asked Me"'
+  text:
+    de: >-
+      Ruth hat die Karte in Jacobs Mantel gefunden: schweres Papier, ein Wappen aus
+      Aldmark, eine Einladung „wie es ist“, nur für ihn. Sie legt sie vor ihn hin, mit
+      der Schrift nach oben. „Ich frage nicht, ob du es tust, Jacob. Ich frage, ob du
+      mich gefragt hättest.“ Ihre Lesebrille hängt an einer Kette um ihren Hals; früher
+      hat sie keine gebraucht.
+    en: >-
+      Ruth found the card in Jacob's coat: heavy paper, a crest from Aldmark, an
+      invitation "as it is", for him alone. She lays it before him, writing up. "I'm not
+      asking whether you'll do it, Jacob. I'm asking whether you would have asked me."
+      Her reading glasses hang on a chain round her neck; she never used to need them.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 7, maxRound: 10 }
+  certain: true
+  choices:
+    - id: fragen
+      label: { de: "„Ich frage dich jetzt. Was meinst du?“", en: "\"I'm asking you now. What do you think?\"" }
+      result:
+        de: >-
+          Ruth setzt sich. Sie redet eine Stunde lang über Mr. Vale, über Thorne und über
+          das, was man unterschreibt, ohne es zu lesen. Jacob hört zu. Es kostet ihn den
+          Abend und eine Antwort, die er schon fertig hatte.
+        en: >-
+          Ruth sits down. She talks for an hour about Mr. Vale, about Thorne, and about what
+          people sign without reading. Jacob listens. It costs him the evening and an answer
+          he had already prepared.
+      effects: { ruth: 15, strength: -10 }
+      marks: [ruth_gefragt]
+      sharp: true
+    - id: geschaeft
+      label: { de: "„Das ist Geschäft, Ruth.“", en: "\"It's business, Ruth.\"" }
+      result:
+        de: >-
+          „Das war der Laden auch“, sagt Ruth. Sie nimmt die Brille ab, faltet sie
+          zusammen und geht. Die Karte lässt sie liegen.
+        en: >-
+          "So was the shop," says Ruth. She takes off her glasses, folds them and leaves.
+          She leaves the card behind.
+      effects: { ruth: -20 }
+      marks: [ruth_riss]
+      default: true
+    - id: luegen
+      label: { de: "„Die ist von einem Kunden. Nichts Wichtiges.“", en: "\"It's from a client. Nothing important.\"" }
+      result:
+        de: >-
+          Ruth nickt langsam. „Ein Kunde mit Wappen“, sagt sie. Sie glaubt ihm nicht, und
+          sie lässt ihn merken, dass sie beschlossen hat, nicht weiter zu fragen.
+        en: >-
+          Ruth nods slowly. "A client with a crest," she says. She does not believe him, and
+          she lets him see that she has decided not to ask any further.
+      effects: { ruth: -10 }
+      marks: [ruth_riss]
+
+# Probe 3: sechs Wochen nicht zu Hause.
+- id: k3_ruth_abwesend
+  title:
+    de: Sechs Wochen
+    en: Six Weeks
+  text:
+    de: >-
+      Die Verhandlungen in Hallstead ziehen sich. Noch zwei Wochen, sagen die Anwälte,
+      dann steht der Vertrag, der Harlan Oil für zehn Jahre sichert. Aus Port Ellis
+      kommt ein Telegramm von Ruth: Clara hat Geburtstag, Thomas ist zu Besuch, das Dach
+      im Ostflügel ist undicht. Kein Vorwurf. Nur die Liste. Jacob liest es zweimal.
+    en: >-
+      The negotiations in Hallstead drag on. Two more weeks, say the lawyers, and the
+      contract that secures Harlan Oil for ten years will be done. From Port Ellis comes
+      a telegram from Ruth: it is Clara's birthday, Thomas is visiting, the roof in the
+      east wing leaks. No reproach. Just the list. Jacob reads it twice.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 9, maxRound: 13 }
+  certain: true
+  choices:
+    - id: heim
+      label: { de: "Nach Hause fahren – der Vertrag muss warten", en: "Go home – the contract must wait" }
+      result:
+        de: >-
+          Jacob ist zu Claras Geburtstag da. Der Vertrag geht an Crane Eastern, mit einem
+          Brief von Margaret: „Familie ist ein Luxus, Harlan. Ich gönne ihn Ihnen.“
+        en: >-
+          Jacob is there for Clara's birthday. The contract goes to Crane Eastern, with a
+          letter from Margaret: "Family is a luxury, Harlan. I don't begrudge you it."
+      effects: { ruth: 20, price: -0.2 } # TODO-Effekt: clara: +10, rival: { margaret: { aggression: +5 } }
+    - id: bleiben
+      label: { de: "Bleiben, bis der Vertrag steht", en: "Stay until the contract is signed" }
+      result:
+        de: >-
+          Der Vertrag steht nach drei Wochen statt zwei. Als Jacob heimkommt, ist das Dach
+          repariert. Ruth hat es selbst veranlasst, mit eigenem Geld. Sie zeigt ihm die
+          Rechnung nicht.
+        en: >-
+          The contract is signed after three weeks instead of two. When Jacob comes home
+          the roof is repaired. Ruth arranged it herself, with her own money. She does not
+          show him the bill.
+      effects: { ruth: -20, price: 0.2 } # TODO-Effekt: clara: -10
+      marks: [ruth_sechs_wochen]
+      default: true
+    - id: nachkommen
+      label: { de: "Ruth und Clara nach Hallstead holen (1.000 $)", en: "Bring Ruth and Clara to Hallstead (1,000 $)" }
+      result:
+        de: >-
+          Ruth sitzt bei der letzten Verhandlung im Nebenzimmer und schiebt Jacob zweimal
+          einen Zettel hinüber. Beide Male hat sie recht. Clara feiert Geburtstag im Hotel
+          und findet es großartig.
+        en: >-
+          Ruth sits in the next room at the final session and passes Jacob a note twice.
+          Both times she is right. Clara has her birthday in the hotel and thinks it splendid.
+      requires: { minCash: 1000 }
+      effects: { cash: -1000, ruth: 15, strength: -10 }
+
+# Entwurf – Philipp überarbeitet.
+# Der Wendepunkt – Fassung ohne verfehlte Probe.
+- id: k3_ruth_wendepunkt
+  visitor: ruth
+  draft: true
+  title:
+    de: Zwei Unterschriften
+    en: Two Signatures
+  text:
+    de: >-
+      Ruth kommt mit einem Entwurf ins Büro, von ihr selbst getippt. Ein neuer
+      Gesellschaftsvertrag: Für alles, was die Kontrolle über Harlan Oil berührt, braucht
+      es künftig zwei Unterschriften. Seine und ihre. „Du hast mich gefragt, Jacob. Jedes
+      Mal. Ich will nur, dass es auch auf dem Papier steht, für die Zeit, in der du es
+      vergisst.“ Sie sagt „wenn“ nicht. Sie sagt „in der“.
+    en: >-
+      Ruth comes into the office with a draft she typed herself. A new articles of
+      partnership: everything touching control of Harlan Oil will need two signatures in
+      future. His and hers. "You asked me, Jacob. Every time. I only want it on paper,
+      for the time when you forget." She does not say "if". She says "when".
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 13, maxRound: 16 }
+  notMarked: [ruth_riss, ruth_sechs_wochen]
+  certain: true
+  choices:
+    - id: unterschreiben
+      label: { de: "Unterschreiben", en: "Sign" }
+      result:
+        de: >-
+          Jacob unterschreibt. Ruth unterschreibt darunter, mit demselben Füller. Der Rat
+          murrt eine Woche lang. Dann merkt Pettibone, dass sich Jacobs Anteile jetzt nicht
+          mehr einzeln kaufen lassen.
+        en: >-
+          Jacob signs. Ruth signs below, with the same pen. The board grumbles for a week.
+          Then Pettibone realises that Jacob's shares can no longer be bought piecemeal.
+      effects: { ruth: 20 } # TODO-Effekt: control: +5 (Kontrolle sicher), boardLoyalty: { pettibone: -10 }
+      marks: [ehe_partner]
+    - id: spaeter
+      label: { de: "„Lass uns das nach dem Winter besprechen.“", en: "\"Let's discuss it after the winter.\"" }
+      result:
+        de: >-
+          Ruth legt den Entwurf in die oberste Schublade, nicht in den Papierkorb. „Ich
+          weiß, wo er liegt“, sagt sie. Es ist ein Frieden. Es ist kein ganzer.
+        en: >-
+          Ruth puts the draft in the top drawer, not the wastepaper basket. "I know where
+          it is," she says. It is a peace. It is not a whole one.
+      effects: { ruth: -15 }
+      marks: [ehe_waffenstillstand]
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Der Wendepunkt – Fassung Riss: ein verfehlter Abend zu viel.
+- id: k3_ruth_wendepunkt_riss
+  visitor: ruth
+  draft: true
+  title:
+    de: Die Liste
+    en: The List
+  text:
+    de: >-
+      Ruth hat eine Liste geschrieben, keine lange. Abende, an denen sie gewartet hat,
+      dass Jacob etwas sagt, und er hat etwas anderes gesagt. Sie liest sie nicht vor.
+      Sie legt sie nur hin. „Ich bin nicht gekommen, um zu streiten. Ich bin gekommen,
+      um zu fragen, ob du noch weißt, wer ich bin. Nicht wer ich auf Bällen bin.“
+    en: >-
+      Ruth has written a list, not a long one. Evenings when she waited for Jacob to say
+      something, and he said something else. She does not read it out. She just lays it
+      down. "I didn't come to quarrel. I came to ask whether you still know who I am. Not
+      who I am at balls."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 13, maxRound: 16 }
+  marked: [ruth_riss]
+  notMarked: [ruth_sechs_wochen]
+  certain: true
+  choices:
+    - id: umkehr
+      label: { de: "Ihr einen Sitz im Rat geben – gegen Vandermeers Stimme (4.000 $)", en: "Give her a board seat – against Vandermeer's vote (4,000 $)" }
+      result:
+        de: >-
+          Vandermeer verkauft aus Protest ein Aktienpaket, und Jacob muss es selbst
+          auffangen. Ruth sitzt bei der nächsten Sitzung rechts neben ihm. Sie stellt die
+          erste Frage. Es ist die richtige.
+        en: >-
+          Vandermeer sells a block of shares in protest, and Jacob has to buy it himself.
+          At the next meeting Ruth sits on his right. She asks the first question. It is
+          the right one.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000, ruth: 25 } # TODO-Effekt: boardMember: ruth, boardLoyalty: { vandermeer: -15 }, control: +3
+      marks: [ehe_partner]
+    - id: frieden
+      label: { de: "„Ich weiß es. Ich zeige es nur schlecht.“", en: "\"I know. I just show it badly.\"" }
+      result:
+        de: >-
+          Ruth faltet die Liste zusammen und steckt sie ein. „Dann zeig es besser“, sagt
+          sie. Sie bleibt. Sie schläft in dieser Woche im Gästezimmer, „wegen deines Schnarchens“.
+        en: >-
+          Ruth folds the list and puts it away. "Then show it better," she says. She stays.
+          That week she sleeps in the guest room, "because of your snoring".
+      effects: { ruth: -10, strength: -10 }
+      marks: [ehe_waffenstillstand]
+      default: true
+    - id: gehen
+      label: { de: "„Wenn dir das Haus zu groß ist, geh zu Hannah.“", en: "\"If the house is too big for you, go to Hannah.\"" }
+      result:
+        de: >-
+          Ruth sieht ihn an, als hätte sie auf diesen Satz zwanzig Jahre gewartet. Sie
+          packt noch am Abend. Ihre Anteile nimmt sie mit. An wen sie verkauft, sagt sie
+          ihm nicht.
+        en: >-
+          Ruth looks at him as if she had waited twenty years for that sentence. She packs
+          that same evening. She takes her shares with her. To whom she sells, she does not
+          tell him.
+      effects: { ruth: -40 } # TODO-Effekt: shares: { ruth: -%, thorne/margaret: +% }, control: -5
+      marks: [ehe_trennung]
+
+# Entwurf – Philipp überarbeitet.
+# Der Wendepunkt – Fassung fern: Jacob war zu lange weg.
+- id: k3_ruth_wendepunkt_fern
+  visitor: ruth
+  draft: true
+  title:
+    de: Das reparierte Dach
+    en: The Mended Roof
+  text:
+    de: >-
+      Ruth legt Jacob eine Rechnung hin, die er nicht kennt: das Dach im Ostflügel,
+      bezahlt im Frühjahr, als er in Hallstead war. „Ich brauche dein Geld nicht, Jacob.
+      Ich wollte dir nur zeigen, dass das Haus auch ohne dich steht. Das hat mich mehr
+      erschreckt als dich.“ Sie sieht auf die Uhr an der Wand. Es ist Abend, und er ist
+      noch im Büro.
+    en: >-
+      Ruth lays before Jacob a bill he does not recognise: the roof in the east wing,
+      paid in spring while he was in Hallstead. "I don't need your money, Jacob. I only
+      wanted to show you that the house stands without you. That frightened me more than
+      it does you." She looks at the clock on the wall. It is evening, and he is still at
+      the office.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 13, maxRound: 16 }
+  marked: [ruth_sechs_wochen]
+  notMarked: [ruth_riss]
+  certain: true
+  choices:
+    - id: zuhause
+      label: { de: "Den Rest des Jahres keine Reisen mehr", en: "No more travel for the rest of the year" }
+      result:
+        de: >-
+          Jacob sagt drei Reisen ab. Zwei Verträge gehen an Crane Eastern. Ruth und er
+          essen jeden Abend zusammen, und nach einer Weile reden sie dabei auch.
+        en: >-
+          Jacob cancels three journeys. Two contracts go to Crane Eastern. Ruth and he eat
+          together every evening, and after a while they talk while they do.
+      effects: { ruth: 25, price: -0.2 }
+      marks: [ehe_partner]
+    - id: frieden
+      label: { de: "„Es war das letzte Mal so lange.“", en: "\"That was the last time for so long.\"" }
+      result:
+        de: Ruth nickt. „Das hast du beim letzten Mal auch gesagt.“ Sie bleibt. Sie zählt jetzt die Wochen.
+        en: Ruth nods. "You said that last time too." She stays. She counts the weeks now.
+      effects: { ruth: -15 }
+      marks: [ehe_waffenstillstand]
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Der Wendepunkt – Fassung fremd: verfehlte Abende und die lange Abwesenheit.
+- id: k3_ruth_wendepunkt_fremd
+  visitor: ruth
+  draft: true
+  title:
+    de: Ein gepackter Koffer
+    en: A Packed Trunk
+  text:
+    de: >-
+      Im Flur steht Ruths Koffer, derselbe, mit dem sie vor zwanzig Jahren in Port Ellis
+      angekommen ist, schwanger und voller Zahlen. Sie hat einen Brief an Hannah
+      geschrieben und einen an den Notar. „Ich gehe nicht im Zorn, Jacob. Ich gehe, weil
+      ich in diesem Haus jeden Tag ein bisschen weniger werde. Du hast es nicht bemerkt.
+      Das ist das Einzige, was ich dir vorwerfe.“
+    en: >-
+      Ruth's trunk stands in the hall, the same one she arrived with in Port Ellis twenty
+      years ago, pregnant and full of figures. She has written a letter to Hannah and one
+      to the notary. "I'm not leaving in anger, Jacob. I'm leaving because in this house
+      I become a little less every day. You didn't notice. That is the only thing I hold
+      against you."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 13, maxRound: 16 }
+  marked: [ruth_riss, ruth_sechs_wochen]
+  certain: true
+  choices:
+    - id: kaempfen
+      label: { de: "Um sie kämpfen – alles absagen, mitfahren zu Hannah", en: "Fight for her – cancel everything, go with her to Hannah's" }
+      result:
+        de: >-
+          Jacob fährt mit, in denselben Zug, ohne Gepäck. Drei Wochen lang wohnt er in
+          Hannahs Pension, und die Geschäfte laufen ohne ihn schlechter, als er gedacht
+          hat. Ruth kommt zurück. Nicht ganz, aber sie kommt.
+        en: >-
+          Jacob goes along, on the same train, without luggage. For three weeks he lives in
+          Hannah's boarding house, and business runs worse without him than he thought.
+          Ruth comes back. Not entirely, but she comes.
+      effects: { ruth: 30, strength: -25, production: -0.1 }
+      appointments: 3
+      marks: [ehe_waffenstillstand]
+      sharp: true
+    - id: abkaufen
+      label: { de: "Ihr die Anteile abkaufen, bevor sie geht (8.000 $)", en: "Buy her shares before she leaves (8,000 $)" }
+      result:
+        de: >-
+          Ruth unterschreibt, ohne zu verhandeln. Das hat Jacob am meisten getroffen,
+          sagt er später zu niemandem. Die Kontrolle bleibt bei ihm. Der Koffer bleibt
+          nicht im Flur.
+        en: >-
+          Ruth signs without negotiating. That hurt Jacob most, he says later, to no one.
+          Control stays with him. The trunk does not stay in the hall.
+      requires: { minCash: 8000 }
+      effects: { cash: -8000, ruth: -20 } # TODO-Effekt: shares: { ruth: -%, jacob: +% }, control: +5
+      marks: [ehe_trennung]
+    - id: gehen_lassen
+      label: { de: "Sie gehen lassen – mit ihren Anteilen", en: "Let her go – with her shares" }
+      result:
+        de: >-
+          Jacob trägt ihr den Koffer zur Kutsche. Es ist das Letzte, was er für sie tut,
+          und er tut es gut. Wem sie ihre Anteile verkauft, erfährt er aus der Zeitung.
+        en: >-
+          Jacob carries her trunk to the carriage. It is the last thing he does for her,
+          and he does it well. To whom she sells her shares, he learns from the newspaper.
+      effects: { ruth: -30 } # TODO-Effekt: shares: { ruth: -%, thorne/margaret/niemand: +% }, control: -5
+      marks: [ehe_trennung]
+      default: true

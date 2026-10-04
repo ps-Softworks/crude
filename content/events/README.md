@@ -16,7 +16,9 @@ Kurzreferenz der Felder:
   `content/map.yaml` – jede Figur bekommt dort eine echte Ranch). `unlocks: [hollins]` an einer Wahl
   schaltet ein gesperrtes Gebiet aus `content/map.yaml` frei; seine Ranches entstehen dann aus dem Seed.
 - Bedingungen: `minRound`, `maxRound`, `minCash`, `maxCash`, `minOilStock`,
-  `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100)
+  `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100),
+  `minChapter`, `maxChapter` (Phase 4: Kapitel; solange der Spielstand kein Kapitel kennt, gilt 1 –
+  Ereignisse mit `minChapter: 3` erscheinen also nie in Kapitel 1)
 - Effekte: `cash`, `oilStock`, `railTariff`, `strength` (Kraft), `ruth`, `thomas` (Beziehung 0–100, 2.7),
   `teams` (eigene Gespanne +/−), `teamsIdle` (eigene Fuhrwerke stehen bis Runde jetzt+n still; 0.2.15+2),
   befristet für `events.timedRounds` Runden (0.2.15+3): `price` ($ je Barrel beim Trust), `production`
@@ -84,3 +86,7 @@ Kurzreferenz der Felder:
   Nur wer wirklich ins Büro kommt, bekommt `visitor` (0.2.15+11): Spielt der Text woanders (Saloon,
   Bahnsteig, Veranda, Bohrturm, Bank), bleibt das Ereignis ein Vorfall – sonst widerspricht die Szene
   „Besuch · Silas“ dem eigenen Text. ENTWURF: Philipp segnet die Besetzung ab.
+- Kapitel 3, Story-Bögen (Phase 4): `k3-story-1-daniel.yaml` (Daniel Moss als Bezirksstaatsanwalt, 19),
+  `k3-story-2-thomas.yaml` (Thomas im Unternehmen oder nicht, 9), `k3-story-3-ehe.yaml` (Wendepunkt der Ehe, 10).
+  Alle mit `minChapter: 3, maxChapter: 3`; Runden zählen innerhalb des Kapitels. Gewünschte neue Wirkungen
+  stehen als `# TODO-Effekt:` neben einer vorläufigen. ENTWURF – Philipp überarbeitet.

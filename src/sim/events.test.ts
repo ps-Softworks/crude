@@ -66,6 +66,32 @@ describe('Bedingungen', () => {
     expect(unmetReason(state, { minOilStock: 500 })).toBe('Dafür fehlt Öl im Tank (500 bbl nötig).');
     expect(unmetReason(state, { minCash: 100 })).toBeNull();
   });
+
+  it('Kapitel (Phase 4): ohne Kapitel im Spielstand gilt Kapitel 1 – Ereignisse für Kapitel 3 kommen dort nie', () => {
+    expect(conditionsMet(state, { minChapter: 1, maxChapter: 1 })).toBe(true);
+    expect(conditionsMet(state, { minChapter: 2 })).toBe(false);
+    expect(conditionsMet(state, { minChapter: 3, maxChapter: 3 })).toBe(false);
+    expect(conditionsMet({ ...state, chapter: 3 }, { minChapter: 3, maxChapter: 3 })).toBe(true);
+    expect(conditionsMet({ ...state, chapter: 4 }, { maxChapter: 3 })).toBe(false);
+    expect(unmetReason(state, { minChapter: 3 })).toBe('Das kommt erst in einem späteren Kapitel.');
+  });
+
+  it('Kapitel (Phase 4): keine Partie in Kapitel 1 bringt ein Ereignis mit minChapter über 1 auf den Schreibtisch', () => {
+    const katalog = loadEvents();
+    const spaeter = new Set(katalog.filter((e) => (e.conditions.minChapter ?? 1) > 1).map((e) => e.id));
+    expect(spaeter.size).toBeGreaterThan(0);
+    for (const seed of ['k1', 'k2', 'k3', 'k4', 'k5']) {
+      let s: GameState = newGame(seed, balance);
+      // Alle Merkzeichen gesetzt: Nur die Kapitel-Bedingung hält die späteren Ereignisse zurück.
+      const alle = Object.fromEntries(katalog.flatMap((e) => e.choices.flatMap((c) => c.marks)).map((m) => [m, 0]));
+      s = { ...s, events: { ...s.events, marks: { ...s.events.marks, ...alle } } };
+      for (let r = 0; r < 16 && !s.finished; r++) {
+        for (const e of deskEvents(s, balance, katalog)) expect(spaeter.has(e.id)).toBe(false);
+        s = endRound(s, balance, katalog);
+      }
+      expect(s.events.seen.filter((id) => spaeter.has(id))).toEqual([]);
+    }
+  });
 });
 
 describe('Effekte', () => {

@@ -29,6 +29,8 @@ export const CONDITION_KEYS = [
   'minLeases',
   'minStrength',
   'maxStrength',
+  'minChapter',
+  'maxChapter',
 ] as const;
 export type ConditionKey = (typeof CONDITION_KEYS)[number];
 export type Conditions = Partial<Record<ConditionKey, number>>;
@@ -265,7 +267,18 @@ export function marksMet(state: Pick<GameState, 'round' | 'events'>, event: Pick
   return state.round >= zuletzt + event.delay;
 }
 
-type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength'>;
+/**
+ * Kapitel (Phase 4, minimal): Ereignisse für Kapitel 2 und 3 stehen schon in
+ * content/events, sollen aber nicht in Kapitel 1 erscheinen. minChapter/maxChapter
+ * prüfen state.chapter – solange der Spielstand kein Kapitel kennt (bis die
+ * Zeitsprünge kommen), gilt Kapitel 1. Kapitel 1 bleibt dadurch unverändert.
+ */
+type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength'> & { chapter?: number };
+
+/** Das laufende Kapitel (1, solange der Spielstand keins kennt). */
+export function currentChapter(state: { chapter?: number }): number {
+  return state.chapter ?? 1;
+}
 
 /** Der Wert im Zustand, den eine Bedingung prüft. */
 function wertFuer(state: Lage, key: ConditionKey): number {
@@ -286,6 +299,9 @@ function wertFuer(state: Lage, key: ConditionKey): number {
     case 'minStrength':
     case 'maxStrength':
       return state.strength;
+    case 'minChapter':
+    case 'maxChapter':
+      return currentChapter(state);
   }
 }
 
@@ -311,6 +327,8 @@ function grund(key: ConditionKey, grenze: number): string {
       return 'Dafür braucht es eine eigene Pacht.';
     case 'minStrength':
       return 'Dafür fehlt Jacob die Kraft.';
+    case 'minChapter':
+      return 'Das kommt erst in einem späteren Kapitel.';
     default:
       return 'Das geht gerade nicht.';
   }
