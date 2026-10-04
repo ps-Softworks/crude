@@ -1,7 +1,8 @@
 // 4.2 Parteien, Stimmung, Wahlen (GDD §7.1, §10): Jacobs öffentliches Handeln
 // verschiebt Stimmung und Parteien, Wahlen bringen ein Ergebnis aus dem
 // Weltzustand, die Zeitung berichtet. Fertig-Kriterium: Preiskampf und Feldbrand
-// verschieben die Stimmung messbar.
+// verschieben die Stimmung messbar (Preiskampf über recordAct; in Kapitel 1 gibt es
+// keinen echten, dort steht Jacob mit den Unabhängigen gegen den Trust).
 
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -17,6 +18,7 @@ import {
   electionReport,
   loudestAct,
   parsePoliticsContent,
+  pollIsClose,
   pollLeader,
   recordAct,
   roundedPercents,
@@ -24,7 +26,7 @@ import {
 import { deserializeGame, serializeGame } from './save';
 import { loadBalance, rawBalance } from './testBalance';
 import { loadEvents } from './testEvents';
-import { actsInput, advanceWorld, isWorldState, leadingParty, newWorld, PARTIES, PUBLIC_ACTS, type Party, type WorldState } from './world';
+import { actsInput, advanceWorld, isWorldState, leadingParty, newWorld, PARTIES, PUBLIC_ACTS, skipWorld, type Party, type WorldState } from './world';
 import { worldHeadline } from './worldNews';
 
 const balance = loadBalance();
@@ -56,7 +58,7 @@ describe('Fertig-Kriterium 4.2: Jacobs Handeln verschiebt die Stimmung messbar',
       const start = mitEreignis(seed, 'brand_nachbar');
       const brand = endRound(antworten(start, 'brand_nachbar', 'schlafen'), balance);
       const graben = endRound(antworten(start, 'brand_nachbar', 'graben'), balance);
-      const erwartet = actsInput(['field_fire'], start.worldModel.government, wb).moodShift!;
+      const erwartet = actsInput(['field_fire'], start.worldModel.government, wb).moodKick!;
       expect(erwartet).toBeLessThan(-1);
       expect(brand.worldModel.mood - graben.worldModel.mood).toBeCloseTo(erwartet, 9);
       // Volksbund gewinnt Anteil, Handelspartei verliert.
@@ -65,14 +67,28 @@ describe('Fertig-Kriterium 4.2: Jacobs Handeln verschiebt die Stimmung messbar',
     }
   });
 
-  it('Preiskampf (crane_abschlag: Delgados Verband) drückt die Stimmung und stärkt die Provinzliga', () => {
-    const start = mitEreignis('preiskampf', 'crane_abschlag', { round: 6, cash: 1000 });
-    const kampf = endRound(antworten(start, 'crane_abschlag', 'verband'), balance);
+  it('Front gegen den Trust (crane_abschlag: Delgados Verband) ist beliebt und stärkt Provinzliga und Volksbund', () => {
+    const start = mitEreignis('verband', 'crane_abschlag', { round: 6, cash: 1000 });
+    const verband = endRound(antworten(start, 'crane_abschlag', 'verband'), balance);
     const hinnehmen = endRound(antworten(start, 'crane_abschlag', 'hinnehmen'), balance);
-    const erwartet = actsInput(['price_war'], start.worldModel.government, wb).moodShift!;
-    expect(kampf.worldModel.mood - hinnehmen.worldModel.mood).toBeCloseTo(erwartet, 9);
-    expect(kampf.worldModel.mood).toBeLessThan(hinnehmen.worldModel.mood - 1);
-    expect(kampf.worldModel.parties.provinz).toBeGreaterThan(hinnehmen.worldModel.parties.provinz);
+    expect(verband.worldModel.actsDone).toEqual(['independents_stand']);
+    const erwartet = actsInput(['independents_stand'], start.worldModel.government, wb).moodKick!;
+    expect(erwartet).toBeGreaterThanOrEqual(0);
+    expect(verband.worldModel.mood - hinnehmen.worldModel.mood).toBeCloseTo(erwartet, 9);
+    expect(verband.worldModel.parties.provinz).toBeGreaterThan(hinnehmen.worldModel.parties.provinz);
+    expect(verband.worldModel.parties.volksbund).toBeGreaterThan(hinnehmen.worldModel.parties.volksbund);
+    expect(verband.worldModel.parties.handel).toBeLessThan(hinnehmen.worldModel.parties.handel);
+  });
+
+  it('echter Preiskampf (ab Kapitel 2 über recordAct): billiges Öl hebt die Stimmung, die Provinzliga gewinnt', () => {
+    const start = newGame('preiskampf', balance);
+    const kampf = endRound(recordAct(start, 'price_war'), balance);
+    const ruhig = endRound(start, balance);
+    expect(wb.acts.price_war.mood).toBeGreaterThan(0);
+    expect(kampf.worldModel.mood - ruhig.worldModel.mood).toBeCloseTo(wb.acts.price_war.mood, 9);
+    expect(kampf.worldModel.parties.provinz).toBeGreaterThan(ruhig.worldModel.parties.provinz);
+    // In Kapitel 1 trägt keine Antwort einen Preiskampf – Jacob kann dort noch niemanden unterbieten.
+    expect(catalog.some((e) => e.choices.some((c) => c.public?.includes('price_war')))).toBe(false);
   });
 
   it('Spende für die Bretterkirche hebt die Stimmung', () => {
@@ -111,19 +127,19 @@ describe('Öffentliches Handeln im Weltmodell (actsInput)', () => {
     expect(wb.programs.provinz.scrutiny).toBe(1);
     for (const act of PUBLIC_ACTS) {
       const e = actsInput([act], 'provinz', wb);
-      expect(e.moodShift).toBeCloseTo(Math.max(-wb.acts.maxMood, Math.min(wb.acts.maxMood, wb.acts[act].mood)), 9);
+      expect(e.moodKick).toBeCloseTo(Math.max(-wb.acts.maxMood, Math.min(wb.acts.maxMood, wb.acts[act].mood)), 9);
       for (const p of PARTIES) expect(e.partyShift![p]).toBeCloseTo(wb.acts[act][p], 9);
     }
   });
 
   it('Parteiprogramm: Unter dem Volksbund wiegt ein Feldbrand schwerer als unter der Handelspartei', () => {
-    const volk = actsInput(['field_fire'], 'volksbund', wb).moodShift!;
-    const handel = actsInput(['field_fire'], 'handel', wb).moodShift!;
+    const volk = actsInput(['field_fire'], 'volksbund', wb).moodKick!;
+    const handel = actsInput(['field_fire'], 'handel', wb).moodKick!;
     expect(volk).toBeCloseTo(wb.acts.field_fire.mood * wb.programs.volksbund.scrutiny, 9);
     expect(handel).toBeCloseTo(wb.acts.field_fire.mood * wb.programs.handel.scrutiny, 9);
     expect(volk).toBeLessThan(handel);
     // Gutes wird nicht gewichtet.
-    expect(actsInput(['charity'], 'volksbund', wb).moodShift).toBe(wb.acts.charity.mood);
+    expect(actsInput(['charity'], 'volksbund', wb).moodKick).toBe(wb.acts.charity.mood);
     // Im Weltmodell: gleiche Welt, andere Regierung → anderer Ausschlag.
     const w = { ...newWorld('programm', wb), electionIn: 10 };
     const diff = (g: Party) => advanceWorld({ ...regiert(w, g), acts: ['field_fire'] }, wb).mood - advanceWorld(regiert(w, g), wb).mood;
@@ -132,10 +148,10 @@ describe('Öffentliches Handeln im Weltmodell (actsInput)', () => {
 
   it('je Runde höchstens ± maxMood und ± maxParty', () => {
     const viel = actsInput(Array(10).fill('field_fire'), 'volksbund', wb);
-    expect(viel.moodShift).toBe(-wb.acts.maxMood);
+    expect(viel.moodKick).toBe(-wb.acts.maxMood);
     expect(viel.partyShift!.volksbund).toBe(wb.acts.maxParty);
     const eng: WorldModelBalance = { ...wb, acts: { ...wb.acts, maxMood: 1 } };
-    expect(actsInput(['field_fire'], 'provinz', eng).moodShift).toBe(-1);
+    expect(actsInput(['field_fire'], 'provinz', eng).moodKick).toBe(-1);
   });
 
   it('nach der Runde sind die Taten verbraucht und stehen in actsDone', () => {
@@ -149,6 +165,23 @@ describe('Öffentliches Handeln im Weltmodell (actsInput)', () => {
   it('Taten ziehen keinen Zufall: Die Welt würfelt mit und ohne sie gleich', () => {
     const w = newWorld('zufall', wb);
     expect(advanceWorld({ ...w, acts: ['price_war'] }, wb).rng).toBe(advanceWorld(w, wb).rng);
+  });
+
+  it('Eingriffe: moodShift verschiebt dauerhaft das Ziel, moodKick stößt einmal an – auch über einen Zeitsprung', () => {
+    // Ohne Rückwirkung der Stimmung auf die Parteien: Beide Läufe würfeln und regieren gleich.
+    const still: WorldModelBalance = { ...wb, politics: { ...wb.politics, drift: 0 } };
+    const w = newWorld('eingriff', still);
+    const basis = skipWorld(w, still, 80);
+    // Dauerhaft +5 aufs Ziel: im Gleichgewicht genau 5 Punkte mehr, nicht 5 / mood.speed.
+    const dauer = skipWorld(w, still, 80, { moodShift: 5 });
+    expect(dauer.mood - basis.mood).toBeCloseTo(5, 2);
+    // Eine Runde: moodShift wirkt mit mood.speed, moodKick voll.
+    expect(advanceWorld(w, still, { moodShift: 4 }).mood - advanceWorld(w, still).mood).toBeCloseTo(4 * still.mood.speed, 9);
+    expect(advanceWorld(w, still, { moodKick: 4 }).mood - advanceWorld(w, still).mood).toBeCloseTo(4, 9);
+    // Ein Stoß im Zeitsprung wirkt nur in der ersten Runde und ist nach 80 Runden verklungen.
+    const stoss = skipWorld(w, still, 80, { moodKick: 5 });
+    expect(Math.abs(stoss.mood - basis.mood)).toBeLessThan(0.01);
+    expect(skipWorld(w, still, 1, { moodKick: 5 }).mood - skipWorld(w, still, 1).mood).toBeCloseTo(5, 9);
   });
 
   it('Spenden für eine Partei verschieben die Anteile zu ihr', () => {
@@ -209,8 +242,20 @@ describe('Zeitung: Umfrage, Wahlergebnis, Jacobs Handeln', () => {
     const vorn = leadingParty(w.parties);
     expect(pollLeader({ ...w, electionIn: wb.news.pollFrom }, wb.news.pollFrom)).toBe(vorn);
     expect(pollLeader({ ...w, electionIn: wb.news.pollFrom + 1 }, wb.news.pollFrom)).toBeNull();
-    expect(worldHeadline({ ...w, electionIn: 1 }, wb)).toBe(`world_poll_${vorn}`);
-    expect(worldHeadline({ ...w, electionIn: wb.news.pollFrom + 1 }, wb)).toBeNull();
+    const klar = { ...w, parties: { handel: 0.25, volksbund: 0.45, provinz: 0.3 } };
+    expect(worldHeadline({ ...klar, electionIn: 1 }, wb)).toBe('world_poll_volksbund');
+    expect(worldHeadline({ ...klar, electionIn: wb.news.pollFrom + 1 }, wb)).toBeNull();
+  });
+
+  it('Kopf an Kopf (news.pollClose): Die Umfrage sagt, wenn eine Tat die Wahl kippen kann', () => {
+    const w = { ...newWorld('kopf', wb), news: [], crash: 0, credit: 50, tension: 10, mood: 50, electionIn: 1 };
+    const knapp = { handel: 0.4, volksbund: 0.4 - wb.news.pollClose / 2, provinz: 0.2 + wb.news.pollClose / 2 };
+    expect(pollIsClose(knapp, wb.news.pollClose)).toBe(true);
+    expect(worldHeadline({ ...w, parties: knapp }, wb)).toBe('world_poll_close_handel');
+    const deutlich = { handel: 0.4, volksbund: 0.4 - 2 * wb.news.pollClose, provinz: 0.2 + 2 * wb.news.pollClose };
+    expect(pollIsClose(deutlich, wb.news.pollClose)).toBe(false);
+    expect(worldHeadline({ ...w, parties: deutlich }, wb)).toBe('world_poll_handel');
+    for (const p of PARTIES) expect(zeitung.headlines[`world_poll_close_${p}`].title.de).toMatch(/Kopf an Kopf/);
   });
 
   it('nach der Wahl druckt die Zeitung Ergebnis und Programm der Sieger, sonst nicht', () => {
@@ -265,7 +310,7 @@ describe('Inhalte und Spielstand', () => {
 
   it('die getaggten Antworten in content/events tragen ihre Tat', () => {
     const tat = (ev: string, ch: string) => catalog.find((e) => e.id === ev)!.choices.find((c) => c.id === ch)!.public;
-    expect(tat('crane_abschlag', 'verband')).toEqual(['price_war']);
+    expect(tat('crane_abschlag', 'verband')).toEqual(['independents_stand']);
     expect(tat('brand_nachbar', 'schlafen')).toEqual(['field_fire']);
     expect(tat('streik', 'ersetzen')).toEqual(['strike_break']);
     expect(tat('prediger', 'spenden')).toEqual(['charity']);

@@ -100,13 +100,21 @@ headlines:
   # --- Öffentliches Handeln (4.2): Worüber man in der letzten Runde über Jacob
   # redete – höchstens eine Meldung, die lauteste zuerst. Die Tat verschiebt am
   # Rundenende die Stimmung im Land und die Parteien (balance.yaml, worldModel.acts). ---
+  # Echter Preiskampf (Jacob unterbietet), erst ab Kapitel 2.
   public_price_war:
     title:
       de: Preiskampf am Salt Hill
       en: Price war at Salt Hill
     text:
-      de: Die Unabhängigen wehren sich gegen den Trust, Harlan vorneweg. In Cordova fragt man, wer die kleinen Förderer schützt – die Provinzliga hat eine Antwort.
-      en: The independents are fighting back against the Trust, Harlan in the lead. In Cordova people ask who protects the small producers – the Provincial League has an answer.
+      de: Harlan unterbietet die Konkurrenz, das Öl wird billiger. Die Kunden freuen sich, die kleinen Förderer zählen ihre Schulden – in Cordova hat die Provinzliga eine Antwort.
+      en: Harlan is undercutting the competition and oil is getting cheaper. The customers are pleased, the small producers count their debts – in Cordova the Provincial League has an answer.
+  public_independents_stand:
+    title:
+      de: Die Unabhängigen trotzen dem Trust
+      en: The independents defy the Trust
+    text:
+      de: Zwanzig kleine Förderer verhandeln gemeinsam mit dem Crane Trust, Harlan unter ihnen – und der Trust gibt nach. Bei den Farmern und in den Versammlungen des Volksbunds hört man das gern, in Cordova jubelt die Provinzliga.
+      en: Twenty small producers bargain together with the Crane Trust, Harlan among them – and the Trust gives way. The farmers and the People's League meetings like to hear it, and in Cordova the Provincial League cheers.
   public_field_fire:
     title:
       de: Feuer bei Harlan
@@ -307,3 +315,25 @@ headlines:
     text:
       de: Von Cordova bis an die Grenze hängen die Plakate der Liga. Die Wettbüros halten einen Sieg der Provinzen für möglich.
       en: From Cordova to the border hang the League's posters. The betting shops think a victory for the provinces is possible.
+  # Kopf an Kopf (worldModel.news.pollClose): Jetzt kann eine Schlagzeile die Wahl entscheiden.
+  world_poll_close_handel:
+    title:
+      de: Kopf an Kopf – Handelspartei knapp vorn
+      en: Neck and neck – Commerce Party narrowly ahead
+    text:
+      de: Die Wettbüros sind sich uneins, die Handelspartei liegt nur eine Nasenlänge vorn. Ein Brand, ein Streik, eine Spende – jede Schlagzeile kann die Wahl jetzt kippen.
+      en: The betting shops can't agree; the Commerce Party is ahead by a nose. A fire, a strike, a donation – any headline could tip the election now.
+  world_poll_close_volksbund:
+    title:
+      de: Kopf an Kopf – Volksbund knapp vorn
+      en: Neck and neck – People's League narrowly ahead
+    text:
+      de: Die Säle des Volksbunds sind voll, doch er liegt nur knapp vorn, und die Wettbüros zögern. Ein Brand, ein Streik, eine Spende – jede Schlagzeile kann die Wahl jetzt kippen.
+      en: The People's League halls are full, yet it is only narrowly ahead, and the betting shops hesitate. A fire, a strike, a donation – any headline could tip the election now.
+  world_poll_close_provinz:
+    title:
+      de: Kopf an Kopf – Provinzliga knapp vorn
+      en: Neck and neck – Provincial League narrowly ahead
+    text:
+      de: Die Liga liegt eine Nasenlänge vorn, Hallstead wird nervös. Ein Brand, ein Streik, eine Spende – jede Schlagzeile kann die Wahl jetzt kippen.
+      en: The League is ahead by a nose and Hallstead is getting nervous. A fire, a strike, a donation – any headline could tip the election now.

@@ -86,7 +86,8 @@ Kurzreferenz der Felder:
   „Besuch · Silas“ dem eigenen Text. ENTWURF: Philipp segnet die Besetzung ab.
 - Öffentliches Handeln (4.2): `public: [field_fire]` an einer Wahl – darüber redet das Land. Am Rundenende
   verschiebt die Tat die Stimmung und die Parteien (Zahlen in balance.yaml, `worldModel.acts`), die Zeitung
-  berichtet in der nächsten Runde. Taten: `price_war` (Preiskampf), `field_fire` (Feldbrand), `strike`,
+  berichtet in der nächsten Runde. Taten: `price_war` (Jacob unterbietet wirklich, erst ab Kapitel 2), `independents_stand` (gemeinsam mit
+  anderen Unabhängigen gegen den Trust), `field_fire` (Feldbrand), `strike`,
   `strike_break` (Streikbrecher), `charity` (Spende für die Stadt), `support_handel`, `support_volksbund`,
   `support_provinz` (Spende/Stimmen für eine Partei), `press_praise`, `press_scandal`. Ein Tankbrand im Lager
   zählt von selbst als `field_fire`. Parteinamen und Programme: `content/politics.yaml`.

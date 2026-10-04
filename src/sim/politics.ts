@@ -11,7 +11,7 @@ import { LANGUAGES, localize, type Lang, type LocalizedText } from './i18n';
 import { leadingParty, PARTIES, type Party, type PublicAct, type WorldState } from './world';
 
 /**
- * Jacob tut etwas, worüber man redet (Feldbrand, Preiskampf, Streik, Spende,
+ * Jacob tut etwas, worüber man redet (Feldbrand, Front gegen den Trust, Streik, Spende,
  * Presse): Die Tat wartet im Weltmodell und wirkt am Rundenende auf Stimmung und
  * Parteien. Ohne Weltmodell (alte Teststände) bleibt alles, wie es ist.
  */
@@ -26,6 +26,7 @@ export const ACT_PRIORITY: readonly PublicAct[] = [
   'strike_break',
   'price_war',
   'press_scandal',
+  'independents_stand',
   'strike',
   'support_handel',
   'support_volksbund',
@@ -44,6 +45,12 @@ export function loudestAct(world: Pick<WorldState, 'actsDone'> | undefined): Pub
 export function pollLeader(world: Pick<WorldState, 'electionIn' | 'parties'> | undefined, pollFrom: number): Party | null {
   if (!world || world.electionIn > pollFrom) return null;
   return leadingParty(world.parties);
+}
+
+/** Kopf an Kopf (4.2): Liegen die beiden Ersten näher als pollClose beieinander? */
+export function pollIsClose(parties: Record<Party, number>, pollClose: number): boolean {
+  const [erste, zweite] = PARTIES.map((p) => parties[p]).sort((a, b) => b - a);
+  return erste - zweite < pollClose;
 }
 
 /** Hat in der letzten fortgeschriebenen Runde eine Wahl stattgefunden? */

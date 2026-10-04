@@ -591,7 +591,8 @@ worldModel:
   acts:                      # 4.2: Jacobs öffentliches Handeln, wirkt am Rundenende auf Stimmung (Punkte) und Parteianteile
     maxMood: 6               # je Runde höchstens ± so viele Stimmungspunkte aus Jacobs Handeln
     maxParty: 0.015          # … und höchstens so viel Anteil je Partei
-    price_war:         { mood: -2.5, handel: -0.004, volksbund: 0.002, provinz: 0.006 }  # Preiskampf am Salt Hill: kleine Förderer rufen nach der Provinzliga
+    price_war:         { mood: 1,    handel: -0.002, volksbund: 0,     provinz: 0.006 }  # echter Preiskampf (ab Kapitel 2): billiges Öl freut die Leute, ruinierte kleine Förderer rufen nach der Provinzliga
+    independents_stand: { mood: 1,   handel: -0.004, volksbund: 0.003, provinz: 0.006 }  # Unabhängige gemeinsam gegen den Trust (Delgados Verband): Farmer und Arbeiter mögen das
     field_fire:        { mood: -3,   handel: -0.003, volksbund: 0.006, provinz: 0 }      # Feldbrand: Rauch bis Port Ellis, Ruf nach Aufsicht
     strike:            { mood: -1.5, handel: -0.002, volksbund: 0.004, provinz: 0 }
     strike_break:      { mood: -3,   handel: 0,      volksbund: 0.008, provinz: 0 }      # Streikbrecher
@@ -643,3 +644,4 @@ worldModel:
     moodAngry: 32
     tensionHigh: 60
     pollFrom: 2              # 4.2: so viele Runden vor der Wahl druckt die Zeitung eine Umfrage
+    pollClose: 0.015         # liegen die beiden Ersten näher als 1,5 Prozentpunkte: „Kopf an Kopf“ (gut jede vierte Umfrage; dann kippt eine einzelne Tat die Wahl am ehesten)

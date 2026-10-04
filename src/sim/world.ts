@@ -42,6 +42,7 @@ export type Party = (typeof PARTIES)[number];
  */
 export const PUBLIC_ACTS = [
   'price_war',
+  'independents_stand',
   'field_fire',
   'strike',
   'strike_break',
@@ -128,9 +129,17 @@ export interface WorldState {
 export interface WorldInput {
   extraSupply?: number;
   creditShift?: number;
-  /** Stimmungspunkte, sofort auf die Stimmung (danach kehrt sie mit mood.speed zu ihrem Ziel zurück). */
+  /**
+   * Dauerhafter Eingriff: verschiebt das Ziel der Stimmung um so viele Punkte. Wirkt je Runde
+   * mit mood.speed – bleibt er bestehen, liegt die Stimmung im Gleichgewicht genau so viel höher.
+   */
   moodShift?: number;
-  /** Verschiebung der Parteianteile vor dem Normieren (4.2). */
+  /**
+   * Einmaliger Stoß (4.2, Jacobs Taten): so viele Punkte sofort auf die Stimmung; danach zieht
+   * mood.speed sie zum Ziel zurück. skipWorld gibt ihn nur in der ersten Runde mit.
+   */
+  moodKick?: number;
+  /** Verschiebung der Parteianteile vor dem Normieren (4.2), einmalig wie moodKick. */
   partyShift?: Partial<Record<Party, number>>;
   tensionShift?: number;
   nationalismShift?: number;
@@ -353,7 +362,7 @@ export function actsInput(acts: readonly PublicAct[], government: Party, wb: Pic
     for (const p of PARTIES) parties[p] += e[p];
   }
   const partyShift = Object.fromEntries(PARTIES.map((p) => [p, clamp(parties[p], -a.maxParty, a.maxParty)])) as Record<Party, number>;
-  return { moodShift: clamp(mood, -a.maxMood, a.maxMood), partyShift };
+  return { moodKick: clamp(mood, -a.maxMood, a.maxMood), partyShift };
 }
 
 /** Zwei Eingriffe zusammenlegen (Salt Hill und öffentliches Handeln). */
@@ -363,11 +372,13 @@ export function mergeInput(a: WorldInput, b: WorldInput): WorldInput {
   const extraSupply = sum(a.extraSupply, b.extraSupply);
   const creditShift = sum(a.creditShift, b.creditShift);
   const moodShift = sum(a.moodShift, b.moodShift);
+  const moodKick = sum(a.moodKick, b.moodKick);
   const tensionShift = sum(a.tensionShift, b.tensionShift);
   const nationalismShift = sum(a.nationalismShift, b.nationalismShift);
   if (extraSupply !== undefined) out.extraSupply = extraSupply;
   if (creditShift !== undefined) out.creditShift = creditShift;
   if (moodShift !== undefined) out.moodShift = moodShift;
+  if (moodKick !== undefined) out.moodKick = moodKick;
   if (tensionShift !== undefined) out.tensionShift = tensionShift;
   if (nationalismShift !== undefined) out.nationalismShift = nationalismShift;
   if (a.partyShift || b.partyShift) {
@@ -469,9 +480,9 @@ export function advanceWorld(input: WorldState, wb: WorldModelBalance, externIn:
 
   // Stimmung: teures Öl, Arbeitslosigkeit im Crash und Krieg drücken, Wohlstand hebt.
   const m = wb.mood;
-  const ziel = 50 - m.price * (knapp - 1) - (crash > 0 ? m.crash : 0) - (input.war > 0 ? m.war : 0) + (m.boom * (credit - 50)) / 50;
-  // Eingriffe (Jacobs Handeln, 4.2) verschieben die Stimmung sofort; danach zieht das Ziel sie langsam zurück.
-  const mood = clamp(input.mood + m.speed * (ziel - input.mood) + m.noise * sym(7) + (extern.moodShift ?? 0), 0, 100);
+  const ziel = 50 - m.price * (knapp - 1) - (crash > 0 ? m.crash : 0) - (input.war > 0 ? m.war : 0) + (m.boom * (credit - 50)) / 50 + (extern.moodShift ?? 0);
+  // Taten (moodKick, 4.2) stoßen die Stimmung sofort an; danach zieht das Ziel sie langsam zurück.
+  const mood = clamp(input.mood + m.speed * (ziel - input.mood) + m.noise * sym(7) + (extern.moodKick ?? 0), 0, 100);
 
   // Politik: Unzufriedene wählen Volksbund, Zufriedene die Handelspartei, billiges Öl treibt kleine Förderer zur Provinzliga.
   const pol = wb.politics;
@@ -557,10 +568,15 @@ export function advanceWorld(input: WorldState, wb: WorldModelBalance, externIn:
   };
 }
 
-/** Mehrere Runden am Stück, etwa für einen Zeitsprung (GDD §2) – ohne Spieler. */
+/**
+ * Mehrere Runden am Stück, etwa für einen Zeitsprung (GDD §2) – ohne Spieler.
+ * Dauerhafte Eingriffe (extraSupply, creditShift, moodShift, tensionShift, nationalismShift)
+ * wirken jede Runde; einmalige Stöße (moodKick, partyShift) nur in der ersten.
+ */
 export function skipWorld(world: WorldState, wb: WorldModelBalance, rounds: number, extern: WorldInput = {}): WorldState {
+  const { moodKick: _kick, partyShift: _party, ...dauerhaft } = extern;
   let w = world;
-  for (let i = 0; i < rounds; i++) w = advanceWorld(w, wb, extern);
+  for (let i = 0; i < rounds; i++) w = advanceWorld(w, wb, i === 0 ? extern : dauerhaft);
   return w;
 }
 

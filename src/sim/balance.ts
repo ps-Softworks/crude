@@ -594,8 +594,11 @@ export interface WorldModelBalance {
     rateMaxAdd: number;
     nationalBarrels: number;
   };
-  /** pollFrom (4.2): so viele Runden vor der Wahl bringt die Zeitung eine Umfrage. */
-  news: { creditEasy: number; creditTight: number; moodAngry: number; tensionHigh: number; pollFrom: number };
+  /**
+   * pollFrom (4.2): so viele Runden vor der Wahl bringt die Zeitung eine Umfrage;
+   * pollClose: Liegen die beiden Ersten näher als so viel Anteil beieinander, meldet sie „Kopf an Kopf“.
+   */
+  news: { creditEasy: number; creditTight: number; moodAngry: number; tensionHigh: number; pollFrom: number; pollClose: number };
 }
 
 export interface Balance {
@@ -1697,6 +1700,7 @@ function parseWorldModel(raw: unknown): WorldModelBalance {
       moodAngry: scale('news.moodAngry'),
       tensionHigh: scale('news.tensionHigh'),
       pollFrom: integerInRange(raw, `${w}.news.pollFrom`, 0, 1000),
+      pollClose: sh('news.pollClose'),
     },
     acts: {
       maxMood: nn('acts.maxMood'),
