@@ -3,6 +3,10 @@
 Kurzanleitung für Philipp: vom ZIP zur privaten itch.io-Seite, Fragebogen anlegen, Tester einladen.
 Die Bezeichnungen auf itch.io können sich leicht ändern – sinngemäß ist es immer dasselbe.
 
+> **Oberfläche im Umbau (ab 0.2.15+9):** Statt einer langen Seite gibt es jetzt einen Schreibtisch, auf dem man
+> Gegenstände anklickt (Briefe, Zeitung, Kassenbuch, Wandkarte …), und eine Kartenansicht mit Ranch-Fenster.
+> Die Seite scrollt nicht mehr. Screenshots und Teile dieser Anleitung werden mit Etappe 2 nachgezogen.
+
 ## 1. Fragebogen anlegen (zuerst, damit der Link ins Spiel kann)
 
 1. Auf <https://forms.google.com> ein neues Formular anlegen, Titel z. B. „CRUDE – Feedback zum Tester-Build“.
@@ -34,9 +38,9 @@ Nach jeder Änderung (auch nach dem Eintragen des Fragebogen-Links) neu bauen.
 2. **Title:** CRUDE · **Kind of project:** **HTML** (wichtig, sonst lässt es sich nicht im Browser spielen).
 3. **Uploads:** den ZIP hochladen und beim Upload den Haken **„This file will be played in the browser“** setzen.
 4. **Embed options:**
-   - **Viewport dimensions:** 1280 × 800 (das Spiel ist für breite Bildschirme gebaut; kleiner geht, dann wird gescrollt)
+   - **Viewport dimensions:** 1280 × 800 (das Spiel ist für breite Bildschirme gebaut; der Schreibtisch passt genau hinein)
    - **Fullscreen button** anschalten
-   - **Enable scrollbars** anschalten (die Seite ist länger als der Bildschirm)
+   - **Enable scrollbars** aus lassen (ab 0.2.15+9 scrollt die Seite nicht mehr)
    - „Mobile friendly“ aus lassen
 5. **Visibility & access:** **Restricted** wählen und ein **Passwort** setzen – oder das Projekt als **Draft** lassen und den **Secret URL**-Link nehmen, den itch.io nach dem Speichern anzeigt. Beides ist nicht öffentlich auffindbar.
 6. **Save** → **View page** und selbst einmal durchklicken: Startet das Spiel? Steht oben die richtige Version? Ist „Feedback geben“ da und öffnet das Formular?

@@ -29,12 +29,14 @@ export function loadAutosave(): GameState | null {
   }
 }
 
-/** Schreibt den Zustand als neuen Spielstand; ein Fehler kostet nur den Spielstand. */
-export function writeAutosave(state: GameState): void {
+/** Schreibt den Zustand als neuen Spielstand; ein Fehler kostet nur den Spielstand. Sagt, ob es geklappt hat. */
+export function writeAutosave(state: GameState): boolean {
   try {
     saveStore().write(KEY, serializeGame(state, __APP_VERSION__));
+    return true;
   } catch {
     /* Kein Speicher, kein Autosave – das Spiel läuft trotzdem. */
+    return false;
   }
 }
 

@@ -1,24 +1,26 @@
-// Ereignisse auf dem Schreibtisch (2.1) und der Terminkalender (2.3): Titel,
-// Text und die Antworten als Knöpfe, jeweils mit dem, was sie an Terminen
-// kosten. Was eine Antwort bewirkt und ob sie geht, entscheidet src/sim.
-// Posteingang (2.4): Briefe mit Briefart, Frist und rotem Siegel.
-// Dokumentenprüfung (2.5): Dokument neben dem Vergleichsstück, Lupe je Feld.
+// Ein Ereignis als Karte (2.1, ab 0.2.15+9 eigene Datei): Titel, Text und die
+// Antworten als Knöpfe mit dem, was sie an Terminen kosten. Genutzt für Briefe,
+// Vorfälle, Termine (und ab Etappe 2 Besucher). Was eine Antwort bewirkt und ob
+// sie geht, entscheidet src/sim. Briefe (2.4) zeigen Briefart, Frist und rotes
+// Siegel; die Dokumentenprüfung (2.5) legt das Dokument neben das Vergleichsstück.
 
+import { useEffect } from 'react';
 import { costLabel } from '../sim/agenda';
 import { inspectField, type DeskDocument } from '../sim/documents';
-import { deskEvents, deskMail, deskRoutines, resolveEvent, type DeskEvent, type MailKind } from '../sim/events';
+import { resolveEvent, type DeskEvent, type MailKind } from '../sim/events';
 import type { GameState } from '../sim/game';
 import { balance } from './balance';
 import { events } from './events';
+import { choiceIndex, keyInput } from './keys';
 
-const BRIEFART: Record<MailKind, string> = {
+export const BRIEFART: Record<MailKind, string> = {
   offer: 'Angebot',
   demand: 'Forderung',
   info: 'Information',
   personal: 'Persönliches',
 };
 
-function frist(event: DeskEvent): string {
+export function frist(event: DeskEvent): string {
   return event.urgent ? 'Frist läuft ab – sonst gilt die Standardantwort' : `noch ${event.roundsLeft} Runden Zeit`;
 }
 
@@ -70,8 +72,42 @@ function Dokument({ game, eventId, doc, onResolved }: { game: GameState; eventId
   );
 }
 
-function Karte({ game, event, onResolved, className }: { game: GameState; event: DeskEvent; onResolved: (state: GameState) => void; className: string }) {
+export function EventCard({
+  game,
+  event,
+  onResolved,
+  className,
+  hotkeys = false,
+}: {
+  game: GameState;
+  event: DeskEvent;
+  onResolved: (state: GameState) => void;
+  className: string;
+  /** Tasten 1–4 wählen eine Antwort (nur für die Karte, die gerade vorn liegt). */
+  hotkeys?: boolean;
+}) {
   const gesperrt = event.choices.find((c) => !c.ok);
+
+  function antworte(choiceId: string) {
+    const r = resolveEvent(game, balance, events, event.id, choiceId);
+    if (r.ok) onResolved(r.state);
+  }
+
+  useEffect(() => {
+    if (!hotkeys) return;
+    const taste = (e: KeyboardEvent) => {
+      const i = choiceIndex(keyInput(e));
+      if (i === null) return;
+      const choice = event.choices[i];
+      // Gesperrte Antworten lassen sich auch per Taste nicht wählen.
+      if (!choice || !choice.ok) return;
+      e.preventDefault();
+      antworte(choice.id);
+    };
+    window.addEventListener('keydown', taste);
+    return () => window.removeEventListener('keydown', taste);
+  });
+
   return (
     <article className={className}>
       {event.mail && (
@@ -80,56 +116,29 @@ function Karte({ game, event, onResolved, className }: { game: GameState; event:
           <span className="briefart">{BRIEFART[event.mail]}</span> · {frist(event)}
         </p>
       )}
-      <h2>{event.title}</h2>
+      {!event.mail && event.urgent && (
+        <p className="briefkopf">
+          <span className="siegel" aria-hidden="true" /> Frist läuft ab – sonst gilt die Standardantwort
+        </p>
+      )}
+      <h3 className="event-titel">{event.title}</h3>
       <p>{event.text}</p>
       {event.document && <Dokument game={game} eventId={event.id} doc={event.document} onResolved={onResolved} />}
       <div className="actions">
-        {event.choices.map((choice) => (
+        {event.choices.map((choice, i) => (
           <button
             key={choice.id}
             disabled={!choice.ok}
             title={choice.reason}
             className={choice.overtime > 0 ? 'ueberstunde' : undefined}
-            onClick={() => {
-              const r = resolveEvent(game, balance, events, event.id, choice.id);
-              if (r.ok) onResolved(r.state);
-            }}
+            onClick={() => antworte(choice.id)}
           >
+            {hotkeys && i < 4 && <span className="taste">{i + 1}</span>}
             {choice.label} <span className="kosten">· {costLabel(choice.cost, choice.overtime)}</span>
           </button>
         ))}
       </div>
       {gesperrt && <p className="hint">{gesperrt.reason}</p>}
     </article>
-  );
-}
-
-export function EventsPanel({ game, onResolved }: { game: GameState; onResolved: (state: GameState) => void }) {
-  const offen = deskEvents(game, balance, events).filter((e) => !e.mail);
-  const post = deskMail(game, balance, events);
-  const termine = deskRoutines(game, balance, events);
-  if (offen.length === 0 && post.length === 0 && termine.length === 0) return null;
-  return (
-    <section className="events">
-      {offen.map((event) => (
-        <Karte key={event.id} game={game} event={event} onResolved={onResolved} className="event" />
-      ))}
-      {post.length > 0 && (
-        <details className="posteingang" open>
-          <summary>Posteingang – {post.length === 1 ? '1 Brief' : `${post.length} Briefe`}</summary>
-          {post.map((event) => (
-            <Karte key={event.id} game={game} event={event} onResolved={onResolved} className={event.urgent ? 'event brief dringend' : 'event brief'} />
-          ))}
-        </details>
-      )}
-      {termine.length > 0 && (
-        <details className="kalender" open>
-          <summary>Terminkalender – was diese Runde noch ginge</summary>
-          {termine.map((event) => (
-            <Karte key={event.id} game={game} event={event} onResolved={onResolved} className="event termin" />
-          ))}
-        </details>
-      )}
-    </section>
   );
 }

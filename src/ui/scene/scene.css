@@ -1,0 +1,367 @@
+/* Schreibtisch statt Scroll-Seite (0.2.15+9): Bühne, Gegenstände, Fenster,
+   Kartenansicht. Farben nur aus den Variablen in style.css. Die Seite scrollt
+   nie – nur Fenster scrollen innen. */
+
+#root { display: grid; place-items: center; }
+
+/* Die Bühne: ein 16:10-Kasten, so groß wie es geht. */
+.buehne {
+  position: relative;
+  width: min(100vw, 160vh);
+  height: min(100vh, 62.5vw);
+  overflow: hidden;
+  background: var(--tapete);
+  box-shadow: 0 0 0 1px var(--tisch-dunkel), 0 10px 40px rgba(0, 0, 0, 0.45);
+}
+.schreibtisch, .kartenansicht, .tableau { display: flex; flex-direction: column; width: 100%; height: 100%; }
+
+/* ------------------------------------------------------------------ Kopfleiste */
+.kopfleiste {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 18px;
+  padding: 5px 14px;
+  font-size: 15px;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--tinte);
+  background: linear-gradient(180deg, #d8b86a 0%, var(--messing) 45%, var(--messing-dunkel) 100%);
+  border-bottom: 2px solid var(--tisch-dunkel);
+  box-shadow: inset 0 1px 0 rgba(255, 245, 210, 0.6);
+  position: relative;
+  z-index: 3;
+}
+.kopf-titel { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; letter-spacing: 0.2em; font-size: 17px; }
+.kopf-titel .version { font-size: 13px; font-weight: normal; letter-spacing: normal; color: var(--tinte-weich); }
+.kopfleiste .klein { font-size: 13px; color: var(--tinte-weich); }
+.kopfleiste .termine.warn { color: var(--rot); }
+.kopf-rechts { margin-left: auto; display: inline-flex; align-items: center; gap: 12px; }
+.kopfleiste .gesichert { color: var(--gruen); font-size: 14px; }
+.kopfleiste a.feedback.kopf { color: var(--tinte); font-size: 14px; }
+.menue-knopf { padding: 1px 10px; font-size: 15px; }
+.banderole { padding: 1px 10px; font-size: 15px; font-weight: 600; color: var(--papier-hell); background: var(--rot); border-color: var(--rot); }
+.banderole:hover:not(:disabled) { color: var(--rot); }
+
+/* ------------------------------------------------------------------ Szene */
+.szene { position: relative; flex: 1 1 auto; min-height: 0; }
+.wand {
+  position: absolute; left: 0; right: 0; top: 0; height: 43%;
+  background:
+    repeating-linear-gradient(90deg, rgba(120, 90, 50, 0.07) 0 14px, transparent 14px 40px),
+    linear-gradient(180deg, var(--tapete), var(--papier-dunkel));
+}
+.tisch {
+  position: absolute; left: 0; right: 0; top: 43%; bottom: 0;
+  background:
+    repeating-linear-gradient(178deg, rgba(0, 0, 0, 0.07) 0 3px, transparent 3px 17px),
+    linear-gradient(180deg, var(--holz-hell) 0%, var(--holz) 30%, var(--tisch) 100%);
+  border-top: 6px solid var(--tisch-dunkel);
+  box-shadow: inset 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+.buehne.erschoepft .szene::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  background: rgba(70, 62, 52, 0.28);
+}
+
+/* Gegenstände: ein Knopf mit Bild, Namensschild und Abzeichen. */
+.objekt {
+  position: absolute;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px;
+  padding: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  box-shadow: none;
+  color: var(--tinte);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+.objekt:hover:not(:disabled), .objekt:focus-visible {
+  transform: translateY(-2px);
+  background: rgba(236, 217, 166, 0.14);
+  border-color: var(--ocker);
+  box-shadow: 0 10px 18px rgba(20, 10, 0, 0.28);
+}
+.objekt:focus-visible { outline: 3px solid var(--ocker); outline-offset: 2px; }
+.objekt-bild { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
+.objekt-bild > svg.form { width: 100%; height: 100%; filter: drop-shadow(0 3px 3px rgba(20, 10, 0, 0.3)); }
+.namensschild {
+  flex: none;
+  font-size: 15px; line-height: 1.25; white-space: nowrap;
+  padding: 0 8px;
+  background: var(--papier-hell);
+  border: 1px solid var(--linie);
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(20, 10, 0, 0.3);
+}
+.namensschild kbd, .tastenhilfe kbd, .taste {
+  font: inherit; font-size: 13px; margin-left: 6px; padding: 0 5px;
+  border: 1px solid var(--linie); border-bottom-width: 2px; border-radius: 3px;
+  background: var(--papier); color: var(--tinte-weich);
+}
+.objekt-status {
+  flex: none; max-width: 100%;
+  font-size: 15px; line-height: 1.25;
+  padding: 0 6px;
+  background: rgba(248, 241, 223, 0.92);
+  border-radius: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.abzeichen {
+  position: absolute; top: -8px; right: -8px; z-index: 1;
+  display: inline-flex; align-items: center; gap: 4px;
+  min-width: 26px; justify-content: center;
+  padding: 1px 8px;
+  font-size: 15px; font-weight: 700;
+  background: var(--papier-hell); color: var(--tinte);
+  border: 2px solid var(--tinte); border-radius: 14px;
+  box-shadow: 0 2px 4px rgba(20, 10, 0, 0.35);
+}
+.abzeichen.dringend { color: var(--rot); border-color: var(--rot); }
+
+/* Der Einstieg zeigt hierher: ein ruhiges Ocker-Leuchten. */
+.objekt.tutorial-ziel { border-color: var(--ocker); }
+.objekt.tutorial-ziel::after {
+  content: ''; position: absolute; inset: -6px; border: 3px solid var(--ocker); border-radius: 8px; pointer-events: none;
+  animation: leuchten 1.6s ease-in-out infinite;
+}
+@keyframes leuchten { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+@media (prefers-reduced-motion: reduce) {
+  .objekt, .zettel { transition: none; }
+  .objekt.tutorial-ziel::after { animation: none; }
+}
+
+/* Formen (SVG): Farben als Klassen. */
+.f-holz { fill: var(--holz-hell); }
+.f-holz-dunkel { fill: var(--holz); }
+.f-land { fill: var(--land); }
+.f-meer { fill: var(--meer); }
+.f-gebiet { fill: var(--gruen-hell); stroke: var(--tinte-weich); stroke-width: 0.8; }
+.f-rot { fill: var(--rot); }
+.f-rot-hell { fill: var(--rot-hell); stroke: var(--rot); stroke-width: 1; }
+.f-kork { fill: var(--kork); }
+.f-messing { fill: var(--messing); stroke: var(--messing-dunkel); stroke-width: 1; }
+.f-messing-dunkel { fill: var(--messing-dunkel); }
+.f-tuerfeld { fill: var(--holz); stroke: var(--tisch-dunkel); stroke-width: 1.5; }
+.f-papier { fill: var(--papier-hell); stroke: var(--linie); stroke-width: 1; }
+.f-papier-dunkel { fill: var(--papier-dunkel); }
+.f-leder { fill: var(--leder); }
+.f-mappe { fill: var(--ocker); }
+.f-mappe-gruen { fill: var(--gruen); }
+.f-kladde { fill: var(--blau); }
+.s-tinte { fill: none; stroke: var(--tinte-blass); stroke-width: 1.2; }
+.s-tinte-dick { fill: none; stroke: var(--tinte); stroke-width: 2; stroke-linejoin: round; }
+.s-eisen { stroke: var(--tinte); stroke-width: 2.5; stroke-linecap: round; }
+.s-fluss { fill: none; stroke: var(--blau); stroke-width: 1.5; }
+.s-glanz { fill: none; stroke: rgba(255, 245, 210, 0.7); stroke-width: 3; stroke-linecap: round; }
+
+/* Pinnwand: zwei Zettel mit der Konkurrenz. */
+.objekt-konkurrenz .objekt-status { position: absolute; top: 14%; left: 9%; right: 9%; background: none; padding: 0; white-space: normal; overflow: visible; }
+.pinnwand-zettel { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.pinnwand-zettel span { display: block; padding: 2px 6px; background: var(--papier-hell); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); transform: rotate(-1deg); text-align: left; }
+.pinnwand-zettel span + span { transform: rotate(1.2deg); }
+
+/* Abreißkalender */
+.kalenderblatt {
+  width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: var(--papier-hell); border: 1px solid var(--linie); box-shadow: 0 3px 6px rgba(20, 10, 0, 0.3);
+  position: relative; padding-top: 14px;
+}
+.kalender-band { position: absolute; top: 0; left: 0; right: 0; height: 12px; background: var(--rot); }
+.kalender-zeit { font-size: 15px; font-variant: small-caps; letter-spacing: 0.05em; }
+.kalender-runde { font-size: 32px; font-weight: 700; line-height: 1; display: flex; flex-direction: column; align-items: center; font-variant-numeric: lining-nums; }
+.kalender-runde small { font-size: 14px; font-weight: normal; color: var(--tinte-weich); }
+
+/* Familienfoto */
+.foto { position: relative; width: 100%; height: 100%; display: block; }
+.foto > svg { width: 100%; height: 100%; }
+.foto-figur { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.foto-worte { display: flex; flex-direction: column; }
+.objekt-familie .objekt-status { white-space: normal; text-align: center; }
+
+/* Lampe – nur Stimmung. Erschöpft: dunkler, krank: aus. */
+.lampe { position: absolute; pointer-events: none; }
+.lampe svg { width: 100%; height: 100%; }
+.lampe-schein { fill: var(--ocker-hell); opacity: 0.55; }
+.lampe-glas { fill: rgba(248, 241, 223, 0.55); stroke: var(--tinte-blass); stroke-width: 1; }
+.lampe-flamme { fill: var(--ocker); }
+.schreibtisch.erschoepft .lampe-schein { opacity: 0.2; }
+.schreibtisch.krank .lampe-schein, .schreibtisch.krank .lampe-flamme { opacity: 0; }
+
+/* Tür (Besucher kommen mit Etappe 2) */
+.tuer { position: absolute; display: flex; flex-direction: column; align-items: center; }
+.tuer > svg { width: 100%; height: 100%; }
+.tuer-plakette {
+  position: absolute; top: 47%; left: 50%; transform: translateX(-50%);
+  font-size: 15px; white-space: nowrap; padding: 0 8px;
+  background: var(--messing); border: 1px solid var(--messing-dunkel); color: var(--tinte);
+}
+
+/* Zeitung, gefaltet auf dem Tisch */
+.zeitung-gefaltet {
+  width: 92%; height: 92%; display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; text-align: left;
+  background: var(--papier-hell); border: 1px solid var(--linie); box-shadow: 0 4px 8px rgba(20, 10, 0, 0.35);
+  transform: rotate(-3deg); overflow: hidden;
+}
+.zeitung-name { font-variant: small-caps; font-weight: 700; letter-spacing: 0.08em; border-bottom: 2px double var(--tinte); font-size: 15px; text-align: center; }
+.zeitung-schlagzeile { font-weight: 700; font-size: 15px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.zeitung-spalten { flex: 1; background: repeating-linear-gradient(180deg, var(--linie-hell) 0 1px, transparent 1px 6px); }
+
+/* Ruths Zettel auf der Schreibunterlage */
+.unterlage-platz { position: absolute; }
+.unterlage {
+  width: 100%; height: 100%; padding: 10px 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: var(--filz); border: 6px solid var(--leder); border-radius: 3px; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+}
+.zettel {
+  flex: 1 1 auto; min-height: 0; width: 100%;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left;
+  padding: 10px 14px; font-size: 16px; line-height: 1.35;
+  background: var(--papier-hell); border: 1px solid var(--linie); border-left: 5px solid var(--ocker);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35);
+  transform: rotate(-0.8deg);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  overflow: hidden;
+}
+.zettel:hover:not(.ohne-ziel), .zettel:focus-visible { transform: rotate(-0.8deg) translateY(-2px); box-shadow: 0 8px 14px rgba(0, 0, 0, 0.4); background: var(--papier-hell); }
+.zettel.ohne-ziel { cursor: default; }
+.zettel.krank { border-left-color: var(--rot); }
+.zettel-kopf { font-size: 15px; font-variant: small-caps; letter-spacing: 0.04em; color: var(--tinte-weich); }
+.zettel-text { font-style: italic; }
+.zettel-ps { font-size: 15px; color: var(--rot); }
+.zettel-hin { margin-top: auto; align-self: flex-end; font-size: 15px; color: var(--ocker); font-weight: 600; }
+.unterlage-links .link { color: var(--papier-hell); font-size: 15px; text-decoration-color: var(--papier-dunkel); }
+.unterlage-links .link:hover:not(:disabled) { color: var(--ocker-hell); }
+
+/* Fracht: Tank-Messlatte */
+.tank-messlatte { display: flex; flex-direction: column; gap: 2px; min-width: 120px; }
+.tank-balken { display: block; height: 8px; background: var(--papier-dunkel); border: 1px solid var(--tinte-weich); overflow: hidden; }
+.tank-fuellung { display: block; height: 100%; background: var(--oel); transform-origin: left center; }
+.tank-fuellung.voll { background: var(--rot); }
+.tank-text { font-size: 15px; }
+
+/* Glocke: das größte Ding auf dem Tisch. */
+.objekt.glocke .namensschild { font-size: 17px; font-weight: 700; background: var(--tinte); color: var(--papier-hell); border-color: var(--tinte); padding: 2px 12px; }
+.objekt.glocke .namensschild kbd { background: var(--tinte-weich); color: var(--papier-hell); border-color: var(--tinte-blass); }
+
+/* ------------------------------------------------------------------ Fenster */
+.sheet-dunkel {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: rgba(20, 12, 6, 0.55);
+}
+.sheet {
+  display: flex; flex-direction: column;
+  width: 100%; max-height: 86vh;
+  background:
+    radial-gradient(ellipse at 15% 10%, rgba(255, 250, 235, 0.55), transparent 60%),
+    var(--papier);
+  border: 1px solid var(--tinte-weich);
+  outline: 1px solid var(--linie); outline-offset: -6px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  font-size: 17px;
+}
+.sheet:focus { outline: 1px solid var(--linie); }
+.sheet-brief { max-width: 600px; }
+.sheet-mappe { max-width: 1040px; height: 86vh; }
+.sheet-kopf { flex: none; display: flex; align-items: center; gap: 12px; padding: 12px 14px 6px 22px; border-bottom: 1px solid var(--linie); }
+.sheet-kopf h2 { margin: 0; font-size: 1.35rem; font-variant: small-caps; letter-spacing: 0.08em; flex: 1; }
+.sheet-zurueck { font-size: 15px; }
+.sheet-zu { font-size: 22px; line-height: 1; padding: 2px 10px 4px; }
+.sheet-inhalt { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 12px 16px 16px; margin: 0 6px 6px; }
+.randnotiz { flex: none; margin: 0; padding: 8px 22px 10px; border-top: 1px dashed var(--linie); font-style: italic; color: var(--tinte-weich); font-size: 16px; background: var(--papier-hell); }
+.randnotiz.warn { color: var(--rot); }
+.sheet .log { max-height: none; }
+.sheet .zeitung, .sheet .familie { margin-top: 0; box-shadow: none; }
+.sheet .event { box-shadow: none; }
+.event-titel { margin: 0 0 6px; font-size: 1.2rem; font-variant: normal; letter-spacing: normal; }
+.event .taste { margin: 0 8px 0 0; }
+.leer { font-style: italic; }
+
+/* Reiter */
+.reiter { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 2px solid var(--tinte-weich); margin-bottom: 12px; }
+.reiter button { border-bottom: none; border-radius: 4px 4px 0 0; background: var(--papier-dunkel); margin-bottom: -2px; padding: 4px 14px; }
+.reiter button.aktiv { background: var(--papier-hell); border-color: var(--tinte-weich); border-bottom: 2px solid var(--papier-hell); font-weight: 600; }
+.reiter-zahl { color: var(--tinte-weich); font-size: 14px; }
+
+/* Stapel: links die Liste, rechts die Karte vorn. */
+.stapel { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); gap: 18px; align-items: start; }
+.stapel-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; position: sticky; top: 0; }
+.stapel-liste button { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 1px; padding: 6px 10px; border-left: 4px solid var(--tinte-blass); }
+.stapel-liste button.dringend { border-left-color: var(--rot); }
+.stapel-liste button.aktiv { background: var(--ocker-hell); border-color: var(--ocker); border-left-width: 4px; }
+.stapel-titel { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.stapel-meta { font-size: 15px; color: var(--tinte-weich); }
+.frist-text { color: var(--rot); font-weight: 700; font-size: 15px; }
+.stapel-karte .event { margin-bottom: 6px; }
+
+.kalender-kopf, .kassenbuch-kopf { margin-top: 0; font-variant-numeric: lining-nums tabular-nums; }
+.pinnwand-liste { padding-left: 20px; margin: 0 0 8px; }
+.pinnwand-liste li { margin-bottom: 4px; }
+.menue { display: flex; flex-direction: column; gap: 10px; }
+.menue p { margin: 0; }
+.tastenhilfe { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0 0 10px; }
+.tastenhilfe > div { display: contents; }
+.tastenhilfe dt { text-align: right; white-space: nowrap; }
+.tastenhilfe dd { margin: 0; }
+.tastenhilfe kbd { margin-left: 0; }
+
+/* Glocke */
+.glocke-blatt h3 { margin-top: 0; }
+.offen-liste { list-style: none; padding: 0; margin: 0 0 8px; display: flex; flex-direction: column; gap: 6px; }
+.offen-liste li { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--papier-hell); border-left: 4px solid var(--tinte-blass); }
+.offen-liste li.dringend { border-left-color: var(--rot); }
+.offen-liste li > .offen-text { flex: 1; }
+.glocke-blatt .knoepfe { justify-content: flex-end; }
+
+/* ------------------------------------------------------------------ Karte */
+.kartenleiste {
+  flex: none; display: flex; align-items: center; gap: 10px 18px; flex-wrap: wrap;
+  padding: 6px 14px; font-size: 15px;
+  background: var(--papier-dunkel); border-bottom: 1px solid var(--linie);
+}
+.kartenleiste button { font-size: 15px; padding: 2px 10px; }
+.taste-hinweis { color: var(--tinte-weich); font-size: 13px; }
+.lage-revier { display: inline-flex; flex-wrap: wrap; gap: 0 16px; color: var(--tinte-weich); font-variant-numeric: lining-nums; }
+.kartenleiste-rechts { margin-left: auto; display: inline-flex; gap: 8px; }
+button.klein-primary { padding: 2px 12px; font-size: 15px; }
+.kartenansicht-koerper { flex: 1 1 auto; min-height: 0; display: flex; }
+.kartenflaeche {
+  flex: 1 1 auto; min-width: 0; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  padding: 10px;
+  container-type: size;
+  background: var(--tisch);
+}
+.kartenflaeche .karte { width: min(100cqw, calc((100cqh - 10px) * 4 / 3)); }
+.kartenflaeche .karte-bild { outline-color: var(--papier-dunkel); }
+.kartenflaeche .karte-legende {
+  position: absolute; left: 10px; bottom: 10px; max-width: calc(100% - 20px); margin: 0;
+  padding: 6px 10px; background: var(--papier-hell); border: 1px solid var(--linie); box-shadow: var(--schatten);
+}
+.kartenflaeche.legende-zu .karte-legende { display: none; }
+
+.ranch-fenster {
+  flex: none; width: 400px; max-width: 42%;
+  display: flex; flex-direction: column; min-height: 0;
+  background: var(--papier); border-left: 2px solid var(--tinte-weich);
+  box-shadow: -6px 0 18px rgba(0, 0, 0, 0.3);
+}
+.ranch-kopf { flex: none; display: flex; align-items: center; gap: 8px; padding: 10px 12px 6px 16px; border-bottom: 1px solid var(--linie); }
+.ranch-kopf h2 { margin: 0; flex: 1; font-size: 1.3rem; }
+.ranch-inhalt { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 8px 16px 12px; }
+.ranch-inhalt h3 { margin: 12px 0 4px; }
+.ranch-unterzeile { margin: 0 0 8px; }
+.ranch-aktionen { margin: 8px 0; }
+.ausbau-klappe { margin-top: 12px; }
+.ausbau-klappe > summary { font-weight: 600; font-variant: small-caps; letter-spacing: 0.04em; color: var(--tinte); }
+
+/* ------------------------------------------------------------------ Tableau */
+.tableau-flaeche {
+  flex: 1 1 auto; min-height: 0; overflow: auto;
+  display: flex; flex-direction: column; align-items: center; padding: 20px;
+  background: radial-gradient(ellipse at 50% 30%, var(--holz-hell), var(--tisch-dunkel));
+}
+.tableau-flaeche .gameover { margin-top: 0; }
+.tableau-flaeche > p .link { color: var(--papier-hell); }

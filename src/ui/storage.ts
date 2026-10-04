@@ -48,3 +48,24 @@ export function pickSaveStore(host: StoreHost): SaveStore {
 export function saveStore(): SaveStore {
   return pickSaveStore(window as unknown as StoreHost);
 }
+
+/**
+ * Kleine Vorlieben der Oberfläche (0.2.15+9), z. B. der zuletzt benutzte Reiter
+ * eines Fensters. Kein Teil des Spielstands; ohne Speicher gilt die Wahl nur bis
+ * zum Neuladen – darum schluckt dieser Zugriff jeden Fehler.
+ */
+export function readPref(name: string): string | null {
+  try {
+    return saveStore().read(name);
+  } catch {
+    return null;
+  }
+}
+
+export function writePref(name: string, value: string): void {
+  try {
+    saveStore().write(name, value);
+  } catch {
+    /* Kein Speicher – dann eben nur bis zum Neuladen. */
+  }
+}

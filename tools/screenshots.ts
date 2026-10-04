@@ -148,6 +148,11 @@ try {
     await geladen;
     await cdp.send('Runtime.evaluate', { expression: 'document.fonts.ready', awaitPromise: true });
     await new Promise((r) => setTimeout(r, 300));
+    // Ab 0.2.15+9 liegt die Karte hinter der Wandkarte: Zeitung zu (Esc), dann K.
+    await cdp.send('Runtime.evaluate', {
+      expression: `window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); setTimeout(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k' })), 50)`,
+    });
+    await new Promise((r) => setTimeout(r, 300));
     if (karte.vorher) await cdp.send('Runtime.evaluate', { expression: karte.vorher });
     await new Promise((r) => setTimeout(r, 900));
     const { result } = await cdp.send('Runtime.evaluate', {

@@ -318,7 +318,9 @@ export function Map({ balance, game, debug, selected, highlight, onSelect }: Pro
     } else if (e.key === '-') {
       e.preventDefault();
       zoomKnopf(1 / 0.7);
-    } else if (e.key === 'Escape') {
+    } else if (e.key === 'Escape' && (!sameView(v, overview(limits), 0.05) || notice)) {
+      // Nur wenn die Karte selbst etwas zu tun hat; sonst geht das Esc weiter (zurück zum Schreibtisch).
+      e.preventDefault();
       zurUebersicht();
     }
   }
