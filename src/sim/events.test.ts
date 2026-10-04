@@ -76,6 +76,26 @@ describe('Bedingungen', () => {
     expect(conditionsMet({ ...state, chapter: 4 }, { minChapter: 3, maxChapter: 3 })).toBe(false);
   });
 
+  it('Integration: Raffinerie, eigene Leitungen und Aktiengesellschaft als Bedingung', () => {
+    // Ohne die Kapitel-2-Systeme ist alles 0.
+    expect(conditionsMet(state, { minRefineryLevel: 1 })).toBe(false);
+    expect(conditionsMet(state, { minPipelines: 1 })).toBe(false);
+    expect(conditionsMet(state, { minPublicShare: 1 })).toBe(false);
+    // Raffinerie: erst die fertige Stufe zählt, nicht die Baustelle.
+    const bau = { ...state, refinery: { level: 0 } } as unknown as GameState;
+    expect(conditionsMet(bau, { minRefineryLevel: 1 })).toBe(false);
+    expect(conditionsMet({ ...state, refinery: { level: 2 } } as unknown as GameState, { minRefineryLevel: 1 })).toBe(true);
+    // Leitungen: kleine Pipeline aus Kapitel 1 und fertige Fernleitungen zählen zusammen.
+    const klein = { ...state, logistics: { ...state.logistics, pipeline: 'ready' } } as GameState;
+    expect(conditionsMet(klein, { minPipelines: 1 })).toBe(true);
+    const fern = { ...klein, bigPipelines: { projects: [{ status: 'ready' }, { status: 'building' }] } } as unknown as GameState;
+    expect(conditionsMet(fern, { minPipelines: 2 })).toBe(true);
+    expect(conditionsMet(fern, { minPipelines: 3 })).toBe(false);
+    // Aktien: nur als Aktiengesellschaft, in Prozent der verkauften Aktien.
+    expect(conditionsMet({ ...state, ipo: { share: 0.4, proceeds: 0 }, stocks: { public: false } } as unknown as GameState, { minPublicShare: 1 })).toBe(false);
+    expect(conditionsMet({ ...state, ipo: { share: 0.4, proceeds: 0 }, stocks: { public: true } } as unknown as GameState, { minPublicShare: 40 })).toBe(true);
+  });
+
   it('kein Ereignis aus content/events/k2-* oder k3-* kann in Kapitel 1 kommen', () => {
     const spaeter = loadEvents().filter((e) => /^k[23]_/.test(e.id));
     for (const e of spaeter) {

@@ -4,7 +4,8 @@
 # Pipelines sollen fremdes Öl transportieren).
 #
 # Alle Ereignisse nur in Kapitel 2: conditions { minChapter: 2, maxChapter: 2 }.
-# Eine eigene Pipeline als Bedingung gibt es noch nicht (kommt mit 4.7) – „# TODO-Bedingung: hasPipeline“.
+# Eine eigene laufende Leitung ist Bedingung: `minPipelines: 1` (kleine Pipeline aus Kapitel 1 oder Fernleitung
+# aus 4.7; seit der Integration, vorher „# TODO-Bedingung: hasPipeline“).
 #
 # Merkzeichen aus Kapitel 1, die hier gelesen werden:
 #   moss_fair            → k2_moss_brunnen (Ezekiel kommt selbst)
@@ -28,8 +29,8 @@
 
 - id: k2_wegerecht_pruitt
   ranch: pruitt
-  # TODO-Bedingung: hasPipeline
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12 }
+  # Bedingung: eigene Leitung läuft (minPipelines, kleine Pipeline oder Fernleitung 4.7)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12, minPipelines: 1 }
   chance: 0.12
   title:
     de: Agnes Pruitt will mitverdienen
@@ -75,8 +76,8 @@
   ranch: moss
   marked: [moss_fair]
   delay: 0
-  # TODO-Bedingung: hasPipeline
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  # Bedingung: eigene Leitung läuft (minPipelines, kleine Pipeline oder Fernleitung 4.7)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, minPipelines: 1 }
   chance: 0.15
   title:
     de: Ezekiel Moss und das Wasser
@@ -122,8 +123,8 @@
   marked: [moss_feind]
   notMarked: [moss_verloren, moss_vertrieben]
   delay: 0
-  # TODO-Bedingung: hasPipeline
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  # Bedingung: eigene Leitung läuft (minPipelines, kleine Pipeline oder Fernleitung 4.7)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, minPipelines: 1 }
   chance: 0.15
   title:
     de: Der Zaun steht wieder
@@ -173,8 +174,8 @@
   marked: [moss_vertrieben]
   delay: 0
   deadline: 3
-  # TODO-Bedingung: hasPipeline
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  # Bedingung: eigene Leitung läuft (minPipelines, kleine Pipeline oder Fernleitung 4.7)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, minPipelines: 1 }
   chance: 0.15
   title:
     de: Ein Brief von Daniel Moss
@@ -224,8 +225,8 @@
   once: false
   cooldown: 5
   notMarked: [eli_waechter]
-  # TODO-Bedingung: hasPipeline
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  # Bedingung: eigene Leitung läuft (minPipelines, kleine Pipeline oder Fernleitung 4.7)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, minPipelines: 1 }
   chance: 0.1
   title:
     de: Löcher in der Leitung
@@ -270,8 +271,8 @@
   cooldown: 5
   marked: [eli_waechter]
   delay: 0
-  # TODO-Bedingung: hasPipeline
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  # Bedingung: eigene Leitung läuft (minPipelines, kleine Pipeline oder Fernleitung 4.7)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, minPipelines: 1 }
   chance: 0.1
   title:
     de: Eli Ward hat die Diebe
@@ -314,8 +315,8 @@
   group: k2_pipeline
   once: false
   cooldown: 5
-  # TODO-Bedingung: hasPipeline
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 4 }
+  # Bedingung: eigene Leitung läuft (minPipelines, kleine Pipeline oder Fernleitung 4.7)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4, minPipelines: 1 }
   chance: 0.1
   title:
     de: Schwarze Baumwolle
@@ -394,8 +395,8 @@
 # --- Transport und Fracht ----------------------------------------------------------
 
 - id: k2_transportpflicht
-  # TODO-Bedingung: hasPipeline
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 4, maxRound: 14 }
+  # Bedingung: eigene Leitung läuft (minPipelines, kleine Pipeline oder Fernleitung 4.7)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4, maxRound: 14, minPipelines: 1 }
   chance: 0.12
   title:
     de: Fremdes Öl in Harlans Leitung

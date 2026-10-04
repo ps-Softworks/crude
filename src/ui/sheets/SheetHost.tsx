@@ -119,7 +119,8 @@ export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound
   return (
     <Sheet
       title={info.title}
-      size={info.size}
+      // 4.10 Andockpunkt (Integration): Mit Diplomatie hat die Pinnwand fünf Reiter – die passen nur in die breite Mappe.
+      size={open.id === 'konkurrenz' && ctx.game.diplomacy ? 'mappe' : info.size}
       className={`sheet-${open.id}`}
       origin={open.id === 'wartende' ? '.objekt-tuer' : `.objekt[data-sheet="${open.id}"]`}
       closing={closing}

@@ -4,8 +4,8 @@
 # Ada Pell, Fixer-Auftrag, Unterschlagung, Gewissenhafter verweigert, Abwerbung durch Pruett).
 #
 # Alle Ereignisse nur in Kapitel 2: conditions { minChapter: 2, maxChapter: 2 }.
-# Aktien-Ereignisse setzen eine Aktiengesellschaft voraus; die Bedingung gibt es noch nicht (kommt mit
-# 4.8) – „# TODO-Bedingung: ipo“. Die Wirkungen auf Kontrolle, Kurs und Rat stehen als
+# Aktien-Ereignisse setzen eine Aktiengesellschaft voraus: `minPublicShare: 1` (seit der Integration mit
+# 4.8; vorher „# TODO-Bedingung: ipo“). Die Wirkungen auf Kontrolle, Kurs und Rat stehen als
 # „# TODO-Effekt: …“ neben einer vorläufigen Wirkung in Geld, Kraft oder Förderung.
 #
 # Merkzeichen aus Kapitel 1, die hier gelesen werden:
@@ -31,8 +31,8 @@
 
 - id: k2_dividende
   visitor: bankier
-  # TODO-Bedingung: ipo (Harlan Oil ist eine Aktiengesellschaft)
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  # Bedingung: Harlan Oil ist Aktiengesellschaft (minPublicShare, 4.8)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, minPublicShare: 1 }
   chance: 0.12
   title:
     de: Pettibone will eine Dividende
@@ -78,8 +78,8 @@
 - id: k2_pell_aktien
   mail: personal
   deadline: 3
-  # TODO-Bedingung: ipo
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12 }
+  # Bedingung: Harlan Oil ist Aktiengesellschaft (minPublicShare, 4.8)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12, minPublicShare: 1 }
   chance: 0.1
   title:
     de: Der Krämer Pell will seine Aktien loswerden
@@ -126,8 +126,8 @@
   group: k2_kurs
   once: false
   cooldown: 4
-  # TODO-Bedingung: ipo
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  # Bedingung: Harlan Oil ist Aktiengesellschaft (minPublicShare, 4.8)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, minPublicShare: 1 }
   chance: 0.1
   title:
     de: Ein Gerücht in Hallstead
@@ -173,8 +173,8 @@
   group: k2_kurs
   once: false
   cooldown: 4
-  # TODO-Bedingung: ipo (Pettibone rät hier als Bankier, nicht als Ratsmitglied)
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  # Bedingung: Harlan Oil ist Aktiengesellschaft (minPublicShare, 4.8) – Pettibone rät hier als Bankier, nicht als Ratsmitglied
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, minPublicShare: 1 }
   chance: 0.08
   title:
     de: Der Kurs steht hoch
@@ -285,8 +285,8 @@
       default: true
 
 - id: k2_martha_hale
-  # TODO-Bedingung: ipo (Martha Hale tauscht beim Börsengang ihre Pacht gegen Aktien, Bibel §5)
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 4, maxRound: 14 }
+  # Bedingung: Harlan Oil ist Aktiengesellschaft (minPublicShare, 4.8) – Martha Hale tauscht beim Börsengang ihre Pacht gegen Aktien, Bibel §5
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4, maxRound: 14, minPublicShare: 1 }
   chance: 0.1
   title:
     de: Martha Hale will Geländer
@@ -508,8 +508,8 @@
       default: true
 
 - id: k2_gewissen
-  # TODO-Bedingung: hasPipeline
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 4 }
+  # Bedingung: eigene Leitung läuft (minPipelines, kleine Pipeline oder Fernleitung 4.7)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4, minPipelines: 1 }
   chance: 0.1
   title:
     de: Lindqvist weigert sich
@@ -597,8 +597,8 @@
   group: k2_abwerbung
   # Pruett wirbt nur einmal: jede Wahl hier und in k2_abwerbung_greaves_bleibt setzt k2_pruett_abwerbung.
   notMarked: [k2_greaves_vertrauen, k2_pruett_abwerbung, k2_greaves_weg]
-  # TODO-Bedingung: hasRefinery
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 5 }
+  # Bedingung: eigene Raffinerie (minRefineryLevel, 4.6)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 5, minRefineryLevel: 1 }
   chance: 0.1
   title:
     de: Pruett will Greaves
@@ -649,8 +649,8 @@
   group: k2_abwerbung
   marked: [k2_greaves_vertrauen]
   notMarked: [k2_pruett_abwerbung, k2_greaves_weg]
-  # TODO-Bedingung: hasRefinery
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 5 }
+  # Bedingung: eigene Raffinerie (minRefineryLevel, 4.6)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 5, minRefineryLevel: 1 }
   chance: 0.1
   title:
     de: Greaves zeigt Pruetts Brief

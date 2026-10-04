@@ -102,6 +102,8 @@ ui:
   news: { de: Bericht des Vertriebschefs, en: Report from the head of sales }
   noNews: { de: Nichts Besonderes an den Zapfsäulen., en: Nothing special at the pumps. }
   newsBadge: { de: "{anzahl} neu", en: "{anzahl} new" }
+  # Kurzform am Gegenstand vor der Gründung (der Platz am Tisch ist schmal).
+  deskNoBrand: { de: "noch keine Marke", en: "no brand yet" }
 
 # Was bei der letzten Abrechnung geschah (BrandNews in src/sim/brand.ts).
 news:

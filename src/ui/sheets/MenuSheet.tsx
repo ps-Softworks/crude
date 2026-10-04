@@ -21,6 +21,8 @@ import { DiplomacyDebug } from './DiplomacySheet'; // 4.10 Andockpunkt
 // 4.11 Andockpunkt: Ermittler (Schattenbuch) und Werkstatt vorab freischalten.
 import { previewInvestigation } from '../../sim/investigation';
 import { previewResearch } from '../../sim/research';
+// 4.14 Andockpunkt (Integration): Marke und Tankstellen im Debug vorziehen.
+import { brandUnlocked, brandWorldFrom, previewBrand } from '../../sim/brand';
 // 4.15 Andockpunkt: Börse im Debug vorziehen.
 import { openExchange } from '../../sim/exchange';
 // 4.16 Andockpunkt: Hallstead (Beteiligungen, Lobbyist) im Debug vorziehen.
@@ -227,6 +229,13 @@ export function MenuSheet(p: MenuProps) {
               </button>
             )}
             {ctx.game.research && <span className="muted klein">Werkstatt ist freigeschaltet.</span>}
+            {/* 4.14 Andockpunkt (Integration): Vertrieb (Marke, Tankstellen) zum Ausprobieren vorziehen (gehört sonst zu Kapitel 3). */}
+            {!brandUnlocked(brandWorldFrom(ctx.game), balance) && !ctx.game.finished && (
+              <button type="button" onClick={() => ctx.onGame(previewBrand(ctx.game, balance))}>
+                Marke und Tankstellen freischalten (Kapitel 3 vorziehen)
+              </button>
+            )}
+            {brandUnlocked(brandWorldFrom(ctx.game), balance) && <span className="muted klein">Vertrieb ist freigeschaltet.</span>}
             {/* 4.15 Andockpunkt: Börse zum Ausprobieren vorziehen (gehört sonst zu Kapitel 3). */}
             {!ctx.game.exchange && !ctx.game.finished && (
               <button type="button" onClick={() => ctx.onGame(openExchange(ctx.game, balance))}>

@@ -5,8 +5,8 @@
 # Alle Ereignisse nur in Kapitel 2: conditions { minChapter: 2, maxChapter: 2 }.
 # Zehn Jahre sind vergangen: Jacob ist 35–38, Thomas 10–13, Clara 5–8 (Bibel §1).
 #
-# Die Raffinerie-Ereignisse setzen eine eigene Raffinerie voraus. Diese Bedingung gibt es noch
-# nicht (kommt mit 4.6) – darum steht bei ihnen „# TODO-Bedingung: hasRefinery“.
+# Die Raffinerie-Ereignisse setzen eine eigene Raffinerie voraus: `minRefineryLevel: 1` (seit der
+# Integration mit 4.6; vorher „# TODO-Bedingung: hasRefinery“).
 # Gewünschte neue Wirkungen stehen als „# TODO-Effekt: …“ neben einer vorläufigen vorhandenen.
 #
 # Figuren aus der Bibel: Walter Greaves (Raffineriedirektor, V), Bullard, Margaret Crane,
@@ -29,8 +29,8 @@
   once: false
   cooldown: 4
   notMarked: [k2_greaves_weg]
-  # TODO-Bedingung: hasRefinery
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  # Bedingung: eigene Raffinerie (minRefineryLevel, 4.6)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, minRefineryLevel: 1 }
   chance: 0.12
   title:
     de: Der dritte Kessel schwitzt
@@ -81,8 +81,8 @@
   once: false
   cooldown: 4
   marked: [k2_greaves_weg]
-  # TODO-Bedingung: hasRefinery
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  # Bedingung: eigene Raffinerie (minRefineryLevel, 4.6)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, minRefineryLevel: 1 }
   chance: 0.12
   title:
     de: Der neue Direktor und der dritte Kessel
@@ -121,8 +121,8 @@
   group: k2_raffinerie
   once: false
   cooldown: 4
-  # TODO-Bedingung: hasRefinery
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  # Bedingung: eigene Raffinerie (minRefineryLevel, 4.6)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, minRefineryLevel: 1 }
   chance: 0.1
   title:
     de: Verbrüht am Ablassventil
@@ -169,8 +169,8 @@
   group: k2_raffinerie
   once: false
   cooldown: 5
-  # TODO-Bedingung: hasRefinery
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 4 }
+  # Bedingung: eigene Raffinerie (minRefineryLevel, 4.6)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4, minRefineryLevel: 1 }
   chance: 0.1
   title:
     de: Der Fischmarkt riecht nach Schwefel
@@ -214,9 +214,9 @@
 - id: k2_okara_sauer
   rival: bullard
   notMarked: [k2_greaves_weg]
-  # TODO-Bedingung: hasRefinery
+  # Bedingung: eigene Raffinerie (minRefineryLevel, 4.6)
   # TODO-Bedingung: Region Okara offen / zs1_okara (Bullards Okara-Funde, Bibel §2/§3)
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12 }
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12, minRefineryLevel: 1 }
   chance: 0.12
   title:
     de: Billiges Öl aus Okara
@@ -261,8 +261,8 @@
   mail: info
   deadline: 3
   notMarked: [k2_greaves_weg]
-  # TODO-Bedingung: hasRefinery
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 5 }
+  # Bedingung: eigene Raffinerie (minRefineryLevel, 4.6)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 5, minRefineryLevel: 1 }
   chance: 0.15
   title:
     de: Kerosin fällt, Benzin steigt

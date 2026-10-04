@@ -41,6 +41,13 @@ export const CONDITION_KEYS = [
   // minChapter/maxChapter, damit sie nie in Kapitel 1 erscheinen. Fehlt state.chapter, gilt Kapitel 1.
   'minChapter',
   'maxChapter',
+  // Integration Phase 4: Bedingungen für die Kapitel-2-Inhalte (vorher „# TODO-Bedingung“ in content/events).
+  // minRefineryLevel: fertige Raffinerie-Stufen (4.6, 0 ohne Raffinerie); minPipelines: laufende eigene
+  // Leitungen (kleine Pipeline aus Kapitel 1 und fertige Fernleitungen aus 4.7); minPublicShare: Prozent
+  // der Aktien in fremder Hand, nur wenn Harlan Oil eine Aktiengesellschaft ist (4.8, sonst 0).
+  'minRefineryLevel',
+  'minPipelines',
+  'minPublicShare',
 ] as const;
 export type ConditionKey = (typeof CONDITION_KEYS)[number];
 export type Conditions = Partial<Record<ConditionKey, number>>;
@@ -289,7 +296,8 @@ export function marksIntoNextChapter(events: EventsState): EventsState {
   return { ...events, marks: Object.fromEntries(Object.keys(events.marks).map((m) => [m, 0])) };
 }
 
-type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength'> & Partial<Pick<GameState, 'chapter'>>;
+type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength'> &
+  Partial<Pick<GameState, 'chapter' | 'refinery' | 'bigPipelines' | 'stocks' | 'ipo' | 'logistics'>>;
 
 /** Der Wert im Zustand, den eine Bedingung prüft. */
 function wertFuer(state: Lage, key: ConditionKey): number {
@@ -313,6 +321,12 @@ function wertFuer(state: Lage, key: ConditionKey): number {
     case 'minChapter':
     case 'maxChapter':
       return chapterOf(state);
+    case 'minRefineryLevel':
+      return state.refinery?.level ?? 0;
+    case 'minPipelines':
+      return (state.logistics?.pipeline === 'ready' ? 1 : 0) + (state.bigPipelines?.projects ?? []).filter((p) => p.status === 'ready').length;
+    case 'minPublicShare':
+      return state.stocks?.public ? Math.round((state.ipo?.share ?? 0) * 100) : 0;
   }
 }
 

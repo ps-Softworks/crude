@@ -50,6 +50,7 @@ const UI_KEYS = [
   'news',
   'noNews',
   'newsBadge',
+  'deskNoBrand',
 ] as const;
 export type BrandUiKey = (typeof UI_KEYS)[number];
 

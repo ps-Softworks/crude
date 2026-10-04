@@ -21,6 +21,7 @@ import {
   isBrandState,
   nationalShare,
   newBrand,
+  previewBrand,
   regionDemand,
   regionMarket,
   reputationFactor,
@@ -91,6 +92,20 @@ describe('Freischaltung (4.14)', () => {
   it('Kapitel 1 bleibt im Rundenende ohne Marke', () => {
     const s = endRound(newGame('k1-runde', balance), balance);
     expect(s.brand).toBeUndefined();
+  });
+
+  it('Debug-Vorschau (Integration) öffnet die Marke schon in Kapitel 1 und übersteht Sichern und Laden', () => {
+    const s = { ...newGame('vorab', balance), cash: 1_000_000 };
+    expect(brandUnlocked(brandWorldFrom(s), balance)).toBe(false);
+    const v = previewBrand(s, balance);
+    expect(brandWorldFrom(v).chapter).toBe(B.unlockChapter);
+    expect(v.brand?.founded).toBe(false);
+    expect(foundBrand(v, balance, brandWorldFrom(v), 'harlan').ok).toBe(true);
+    expect(previewBrand(v, balance)).toBe(v);
+    const geladen = deserializeGame(serializeGame(v, 'test'));
+    expect(geladen.ok).toBe(true);
+    if (geladen.ok) expect(geladen.state.brand).toEqual(v.brand);
+    expect(isBrandState({ ...v.brand!, previewChapter: 'drei' })).toBe(false);
   });
 
   it('Aktionen gehen in Kapitel 1 nicht', () => {

@@ -74,7 +74,7 @@ export function brandDeskStatus(game: GameState): string | null {
   const world = brandWorldFrom(game);
   if (!brandUnlocked(world, balance)) return null;
   const brand = brandOf(game, balance);
-  if (!brand.founded) return localize(C.intro.title);
+  if (!brand.founded) return localize(C.ui.deskNoBrand);
   const stationen = Object.values(brand.regions).reduce((s, r) => s + r.stations, 0);
   return `${stationen} ${localize(C.ui.stations)} · ${percent(nationalShare(brand).jacob)}`;
 }

@@ -244,6 +244,7 @@ export const DEFAULT_BRAND_WORLD: BrandWorld = { chapter: 1, reputation: 0, cras
 
 /** Felder, die andere Systeme später in den Spielzustand legen. Alles optional. */
 interface FremdeFelder {
+  brand?: { previewChapter?: unknown } | null;
   /** Weltmodell aus 4.1 (auf main: GameState.worldModel: WorldState). */
   worldModel?: { crash?: unknown } | null;
   reputation?: { public?: unknown } | null;
@@ -260,7 +261,8 @@ function endlich(v: unknown): v is number {
  */
 export function brandWorldFrom(state: object, overrides: Partial<BrandWorld> = {}): BrandWorld {
   const s = state as FremdeFelder;
-  const chapter = chapterOf(state);
+  const vorab = s.brand && endlich(s.brand.previewChapter) ? s.brand.previewChapter : 1;
+  const chapter = Math.max(chapterOf(state), vorab);
   const crash = s.worldModel && endlich(s.worldModel.crash) ? s.worldModel.crash > 0 : DEFAULT_BRAND_WORLD.crash;
   const reputation = s.reputation && endlich(s.reputation.public) ? Math.max(-100, Math.min(100, s.reputation.public)) : DEFAULT_BRAND_WORLD.reputation;
   return { ...DEFAULT_BRAND_WORLD, chapter, crash, reputation, ...overrides };
@@ -334,6 +336,8 @@ export interface BrandState {
   news: BrandNews[];
   /** Gewinn der letzten Abrechnung über alle Regionen, in $. */
   lastProfit: number;
+  /** Nur Debug (Integration): Kapitel, als das die Marke vorab gilt, solange es Kapitel 3 noch nicht gibt. */
+  previewChapter?: number;
 }
 
 type BrandGame = Pick<GameState, 'seed' | 'round' | 'cash' | 'log' | 'startYear'> & { brand?: BrandState };
@@ -362,6 +366,15 @@ export function newBrand(seed: string, balance: WithBrand): BrandState {
     };
   }
   return { rng: seedFromString(`${seed}:marke`), founded: false, nameId: null, foundedRound: 0, motor: 1, regions, news: [], lastProfit: 0 };
+}
+
+/**
+ * Debug (Integration): Marke und Tankstellen schon vor Kapitel 3 ansehen. Legt die Ausgangslage
+ * an und merkt sich das Freischaltkapitel; ohne Aufruf ändert sich nichts.
+ */
+export function previewBrand<S extends BrandGame>(state: S, balance: WithBrand): S {
+  if (brandUnlocked(brandWorldFrom(state), balance)) return state;
+  return { ...state, brand: { ...brandOf(state, balance), previewChapter: balance.brand.unlockChapter } };
 }
 
 /** Der Markenzustand – vor der ersten Abrechnung in Kapitel 3 die Ausgangslage. */
@@ -846,6 +859,7 @@ const istPreis = (v: unknown): boolean => PRICE_POLICIES.includes(v as PricePoli
 export function isBrandState(value: unknown): value is BrandState {
   if (!istObjekt(value)) return false;
   if (!['rng', 'foundedRound', 'motor', 'lastProfit'].every((k) => endlich(value[k]))) return false;
+  if (value.previewChapter !== undefined && !endlich(value.previewChapter)) return false;
   if (typeof value.founded !== 'boolean' || !(value.nameId === null || typeof value.nameId === 'string')) return false;
   if (!Array.isArray(value.news) || !value.news.every((n) => istObjekt(n) && typeof n.kind === 'string')) return false;
   if (!istObjekt(value.regions)) return false;

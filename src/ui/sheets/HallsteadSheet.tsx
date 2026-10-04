@@ -42,7 +42,8 @@ export function HallsteadDebugButton({ ctx }: { ctx: SheetContext }) {
 export function HallsteadDeskItem({ game, at, glow, onOpen }: { game: GameState; at: Placement; glow: boolean; onOpen: () => void }) {
   const v = hallsteadView(game, balance, C);
   const anzahl = v.holdings.filter((h) => h.owned).length;
-  const status = v.unlocked ? `${anzahl} ${anzahl === 1 ? 'Beteiligung' : 'Beteiligungen'} · ${v.favors} ${L(C.ui.favors)}` : 'verschlossen';
+  // Kurz, weil sich die Mappe die untere Reihe mit Schublade und Siegelmappe teilen kann (Integration).
+  const status = v.unlocked ? (v.favors > 0 ? `${v.favors} ${L(C.ui.favors)}` : `${anzahl} ${anzahl === 1 ? 'Anteil' : 'Anteile'}`) : 'verschlossen';
   return (
     <DeskObject id="hallstead" name={L(C.object.name)} at={at} sheet="hallstead" glow={glow} onOpen={onOpen} status={status} badge={v.telegramNews && v.unlocked ? { text: 'Telegramm' } : null}>
       <svg viewBox="0 0 100 70" className="hallstead-mappe" aria-hidden="true">

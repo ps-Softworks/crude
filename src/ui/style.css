@@ -366,3 +366,7 @@ input[type='checkbox'] { accent-color: var(--tinte-weich); }
 .rigs { list-style: none; margin: 0 0 8px; padding: 0; }
 .rigs li { padding: 4px 0; border-bottom: 1px solid var(--linie-hell); }
 .rigs li .actions { margin-top: 4px; }
+
+/* Integration Phase 4: Debug-Reiter „Vorab freischalten“ – alle Knöpfe gleichmäßig nebeneinander. */
+.debug-unlocks { display: flex; flex-wrap: wrap; gap: 0.4rem 0.5rem; align-items: center; }
+.debug-unlocks > p { margin: 0; }
