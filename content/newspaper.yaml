@@ -96,3 +96,118 @@ headlines:
     text:
       de: Gebrauchter Bohrturm zu verkaufen, kaum benutzt. Zimmer frei in der Front Street, nur an ordentliche Herren.
       en: Used derrick for sale, hardly used. Room to let on Front Street, respectable gentlemen only.
+
+  # --- Weltmodell (4.1): höchstens eine Meldung je Runde. Erst, was geschah,
+  # sonst ein Frühwarnzeichen (Schwellen in balance.yaml, worldModel.news). ---
+  world_crash:
+    title:
+      de: Panik an der Börse von Hallstead
+      en: Panic on the Hallstead exchange
+    text:
+      de: Eine große Bank schließt ihre Schalter, die Kurse stürzen. Überall im Land kündigen Banken Kredite und verlangen höhere Zinsen.
+      en: A large bank has closed its doors and prices are tumbling. All over the country banks are calling in loans and demanding higher interest.
+  world_recovery:
+    title:
+      de: Die Banken atmen auf
+      en: The banks breathe again
+    text:
+      de: Nach Monaten der Angst öffnen die Bankhäuser in Hallstead wieder ihre Bücher. Wer heute Geld leihen will, wird nicht mehr gleich vor die Tür gesetzt.
+      en: After months of fear the banking houses of Hallstead are opening their books again. Whoever wants to borrow today is no longer shown straight to the door.
+  world_war:
+    title:
+      de: Krieg zwischen Aldmark und Varenhold
+      en: War between Aldmark and Varenhold
+    text:
+      de: Jenseits des Ozeans sprechen die Kanonen. Flotten und Fabriken verlangen Öl, und in Hallstead streitet das Parlament, ob die Föderation neutral bleibt.
+      en: Across the ocean the guns are speaking. Fleets and factories are crying out for oil, and in Hallstead parliament argues whether the Federation will stay neutral.
+  world_peace:
+    title:
+      de: Frieden in Übersee
+      en: Peace overseas
+    text:
+      de: Aldmark und Varenhold unterzeichnen einen Waffenstillstand. Die Händler in Port Ellis fragen sich, wer jetzt noch so viel Öl kauft.
+      en: Aldmark and Varenhold sign an armistice. The traders in Port Ellis wonder who will buy so much oil now.
+  world_nationalization:
+    title:
+      de: Costa Negra nimmt die Ölfelder
+      en: Costa Negra seizes the oil fields
+    text:
+      de: Eine neue Regierung in Costa Negra erklärt die Felder der fremden Gesellschaften zum Eigentum des Volkes. Ausländische Ingenieure packen ihre Koffer.
+      en: A new government in Costa Negra declares the fields of the foreign companies the property of the people. Foreign engineers are packing their bags.
+  world_glut:
+    title:
+      de: Riesenfund lässt die Märkte zittern
+      en: Giant strike shakes the markets
+    text:
+      de: Irgendwo ist ein Feld angebohrt worden, wie es noch keiner gesehen hat. Alle Nachbarn bohren um die Wette – bald wird es mehr Öl geben als Tanks.
+      en: Somewhere a field has been tapped such as nobody has ever seen. All the neighbours are drilling for their lives – soon there will be more oil than tanks.
+  world_election_handel:
+    title:
+      de: Handelspartei gewinnt die Wahl
+      en: Commerce Party wins the election
+    text:
+      de: Industrie und Banken feiern in Hallstead. Die neue Regierung verspricht niedrige Steuern und freie Hand für große Unternehmen.
+      en: Industry and the banks are celebrating in Hallstead. The new government promises low taxes and a free hand for big business.
+  world_election_volksbund:
+    title:
+      de: Volksbund siegt bei der Wahl
+      en: People's League wins the election
+    text:
+      de: Farmer und Arbeiter haben gewählt. Die neue Regierung kündigt eine strengere Aufsicht über Banken und Trusts an.
+      en: Farmers and workers have voted. The new government announces stricter supervision of banks and trusts.
+  world_election_provinz:
+    title:
+      de: Provinzliga stellt die Regierung
+      en: Provincial League forms the government
+    text:
+      de: Die Provinzen haben Hallstead die Stirn geboten. Die neue Regierung will die kleinen Produzenten schützen – und fremdes Öl mit Zöllen belegen.
+      en: The provinces have defied Hallstead. The new government wants to protect the small producers – and put tariffs on foreign oil.
+  world_reelected_handel:
+    title:
+      de: Handelspartei bleibt an der Regierung
+      en: Commerce Party stays in power
+    text:
+      de: Die Wähler haben der Regierung noch einmal vertraut. In Hallstead knallen die Korken, und die Banken rechnen mit vier weiteren ruhigen Jahren.
+      en: The voters have trusted the government once more. Corks are popping in Hallstead, and the banks are counting on four more quiet years.
+  world_reelected_volksbund:
+    title:
+      de: Volksbund behauptet sich
+      en: People's League holds on
+    text:
+      de: Farmer und Arbeiter bleiben ihrer Regierung treu. Die Bankaufsicht bleibt streng, und die Trusts müssen weiter mit Prüfern rechnen.
+      en: Farmers and workers stay loyal to their government. Bank supervision stays strict, and the trusts must keep reckoning with inspectors.
+  world_reelected_provinz:
+    title:
+      de: Provinzliga regiert weiter
+      en: Provincial League governs on
+    text:
+      de: Die Provinzen geben Hallstead nicht zurück. Die Regierung verspricht den kleinen Produzenten weiter Schutz – und den Importeuren weiter Zölle.
+      en: The provinces will not hand Hallstead back. The government promises the small producers continued protection – and the importers continued tariffs.
+  world_credit_tight:
+    title:
+      de: Die Banken werden vorsichtig
+      en: The banks grow cautious
+    text:
+      de: In den Kontoren heißt es wieder „Sicherheiten, bitte“. Wer jetzt Geld braucht, zahlt mehr Zinsen als im letzten Jahr.
+      en: In the counting houses it is "collateral, please" once more. Whoever needs money now pays more interest than last year.
+  world_credit_easy:
+    title:
+      de: Geld ist billig wie nie
+      en: Money has never been cheaper
+    text:
+      de: Die Banken leihen jedem, der einen Bohrturm zeichnen kann, und an der Börse kauft man auf Pump. Alte Bankiers schütteln den Kopf.
+      en: The banks lend to anyone who can draw a derrick, and on the exchange people buy on credit. Old bankers shake their heads.
+  world_mood_angry:
+    title:
+      de: Unmut im Land
+      en: Discontent in the country
+    text:
+      de: Teures Heizöl, entlassene Arbeiter, leere Teller. In den Versammlungen des Volksbunds ist kein Stuhl mehr frei.
+      en: Expensive heating oil, laid-off workers, empty plates. There is not a free chair left at the People's League meetings.
+  world_tension:
+    title:
+      de: Diplomatische Noten zwischen Aldmark und Varenhold
+      en: Diplomatic notes between Aldmark and Varenhold
+    text:
+      de: Beide Mächte rüsten ihre Flotten auf und kaufen Öl, wo sie es kriegen. Die Zeitungen in Übersee sprechen schon vom Krieg.
+      en: Both powers are building up their fleets and buying oil wherever they can get it. The papers overseas are already talking of war.

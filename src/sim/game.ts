@@ -18,7 +18,8 @@ import { parcelLabel, settleLeases, startOptions, type Lease, type LeaseOption }
 import { advanceProduction } from './production';
 import { settleRigs, startRigs, type Rig } from './rigs';
 import { Rng, seedFromString, type RngState } from './rng';
-import { advanceMarket, computePrice, neighbourSupply } from './market';
+import { advanceMarket, computePrice, neighbourSupply, saltHillSupply } from './market';
+import { advanceWorld, newWorld, saltHillInput, worldPriceFactor, type WorldState } from './world';
 import { newRival, advanceRival, type RivalState } from './rival';
 import { advanceLogistics, newLogistics, settleStorage, spillOver, type LogisticsState } from './logistics';
 import { advanceTransport, noShipments } from './transport';
@@ -100,6 +101,8 @@ export interface GameState {
   family: FamilyState;
   /** 4.16 Andockpunkt: Hallstead (Beteiligungen, Lobbyist) – erst da, wenn Jacob dort etwas tut (ab Kapitel 3). */
   hallstead?: HallsteadState;
+  /** Weltmodell (4.1): die neun Weltgrößen, je Runde fortgeschrieben. */
+  worldModel: WorldState;
   log: string[];
   /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
   roundLogStart: number;
@@ -116,7 +119,8 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
   const geologie = generateParcels(balance, seed, regions);
   const fields = buildFields(geologie);
   const parcels = assignFields(geologie, fields);
-  const startPrice = computePrice(balance.market, neighbourSupply(balance.market, 1));
+  const worldModel = newWorld(seed, balance.worldModel);
+  const startPrice = computePrice(balance.market, neighbourSupply(balance.market, 1), worldPriceFactor(worldModel, balance.worldModel));
   const state: GameState = {
     seed,
     rng: rng.state,
@@ -156,6 +160,7 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
     strengthMax: balance.agenda.strengthMax,
     sick: 0,
     family: newFamily(balance),
+    worldModel,
   };
   // Erst die Startoptionen, dann die Prognosen: so bleiben Karte und Startoptionen
   // bei gleichem Seed so, wie sie es vor der Prognose waren.
@@ -169,6 +174,14 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
     state.log.push(`${date}: Jacob hat freie Pachtoptionen auf ${labels.join(' und ')}.`);
   }
   return drawEvents(checkBirth(state, balance), balance, catalog);
+}
+
+/** Die Welt ein Quartal weiter; ohne Weltmodell (alte Teststände) bleibt alles, wie es ist. */
+function advanceWorldInGame(state: GameState, vorMarkt: GameState, balance: Balance): GameState {
+  if (!state.worldModel) return state;
+  const angebot = saltHillSupply(vorMarkt, balance.market, balance.rivals.bullard.ratePerWell);
+  const input = saltHillInput(angebot, balance.market.demand, balance.worldModel);
+  return { ...state, worldModel: advanceWorld(state.worldModel, balance.worldModel, input) };
 }
 
 /**
@@ -208,7 +221,14 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Lager (0.2.15+2): Kosten, Schwund und Brand für das Öl, das noch im Tank steht; neue Tanks sind fertig.
   // Nach der Förderung läuft aus, was nicht mehr in die Tanks passt.
   const gefoerdert = spillOver(advanceProduction(settleStorage(ausgeruht, balance), balance), balance);
-  const markt = advanceMarket(gefoerdert, balance.market, balance.rivals.bullard.ratePerWell);
+  // Weltmodell (4.1): Der Preis dieser Runde folgt dem Welttrend von heute, danach rückt die Welt ein Quartal weiter.
+  // Salt Hill fließt mit seinem Über- oder Unterangebot (winzig) in die Welt ein.
+  const rivalRate = balance.rivals.bullard.ratePerWell;
+  const markt = advanceWorldInGame(
+    advanceMarket(gefoerdert, balance.market, rivalRate, worldPriceFactor(gefoerdert.worldModel, balance.worldModel)),
+    gefoerdert,
+    balance,
+  );
   const gebohrt = advanceDrilling(markt, balance);
   const gepachtet = settleLeases(gebohrt, balance);
   const rivale = advanceRival(gepachtet, balance, gebohrt, input.postedPrice);

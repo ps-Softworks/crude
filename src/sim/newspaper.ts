@@ -12,6 +12,8 @@ import { LANGUAGES, localize, type Lang, type LocalizedText } from './i18n';
 import { computePrice, jacobSupply, neighbourSupply, rivalSupply } from './market';
 import { advanceProduction } from './production';
 import { craneCut, markRound, RIVAL_MARKS } from './trust';
+import { worldPriceFactor } from './world';
+import { MAJOR_WORLD_HEADLINES, worldHeadline, WORLD_HEADLINES } from './worldNews';
 
 /** Aussicht für den Ölpreis bis zum Rundenende. */
 export type Outlook = 'crash' | 'fall' | 'steady' | 'rise';
@@ -29,6 +31,7 @@ export const HEADLINE_IDS = [
   'jacob_gusher',
   'jacob_find',
   'classifieds',
+  ...WORLD_HEADLINES,
 ] as const;
 export type HeadlineId = (typeof HEADLINE_IDS)[number];
 
@@ -70,7 +73,7 @@ export function expectedPrice(state: GameState, balance: Balance): number {
     jacobSupply(gefoerdert) +
     neighbourSupply(balance.market, state.round) +
     rivalSupply(state, balance.rivals.bullard.ratePerWell);
-  return computePrice(balance.market, supply);
+  return computePrice(balance.market, supply, worldPriceFactor(state.worldModel, balance.worldModel));
 }
 
 /** Welche Aussicht die Titelseite zeigt (Schwellen in balance.yaml, newspaper). */
@@ -108,6 +111,11 @@ export function newsItems(state: GameState, balance: Balance): HeadlineId[] {
   if (state.rival.wells.some((w) => w.status === 'found' && w.rate === ratePerWell)) {
     ids.push('rival_find');
   }
+  // Weltmodell (4.1): höchstens eine Meldung aus der Welt – was geschah, sonst ein Frühwarnzeichen.
+  // Große Ereignisse (Crash, Krieg, Verstaatlichung, Riesenfund) stehen ganz vorn, alles andere hinten an.
+  const welt = worldHeadline(state.worldModel, balance.worldModel);
+  if (welt && MAJOR_WORLD_HEADLINES.includes(welt)) ids.unshift(welt);
+  else if (welt) ids.push(welt);
   if (ids.length === 0) ids.push('classifieds');
   return ids.slice(0, balance.newspaper.maxItems);
 }

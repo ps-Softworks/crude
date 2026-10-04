@@ -202,6 +202,43 @@ describe('Zeitung: Kurzmeldungen', () => {
   });
 });
 
+describe('Zeitung: Weltmeldungen haben Vorrang vor Platzmangel (4.1)', () => {
+  const quelle = {
+    parcelId: 'neu',
+    stage: 1,
+    status: 'found',
+    roundsLeft: 0,
+    spent: 1000,
+    oilStage: 1,
+    result: 'small',
+    production: { initialRate: 1000, roundsProduced: 0, lastRate: 0, total: 0 },
+    startRound: 1,
+  } as Well;
+  // Drei Meldungen aus Salt Hill: Preissturz, Jacobs Fund, Bullards Fund – die Zeitung ist voll (maxItems 3).
+  const voll = { ...mitBullardFunden(newGame('voll', balance), 1), priceHistory: [1, 0.8], wells: [quelle] };
+  const mitWelt = (news: GameState['worldModel']['news']): GameState => ({ ...voll, worldModel: { ...voll.worldModel, news } });
+
+  it('drei lokale Meldungen füllen die Zeitung', () => {
+    expect(balance.newspaper.maxItems).toBe(3);
+    expect(newsItems(voll, balance)).toEqual(['price_cut', 'jacob_find', 'rival_find']);
+  });
+
+  it('ein Crash, Krieg, eine Verstaatlichung oder ein Riesenfund fällt nie weg, sondern steht vorn', () => {
+    expect(newsItems(mitWelt(['crash']), balance)).toEqual(['world_crash', 'price_cut', 'jacob_find']);
+    expect(newsItems(mitWelt(['war']), balance)[0]).toBe('world_war');
+    expect(newsItems(mitWelt(['nationalization']), balance)[0]).toBe('world_nationalization');
+    expect(newsItems(mitWelt(['glut', 'peace']), balance)[0]).toBe('world_glut');
+    const eine: Balance = { ...balance, newspaper: { ...balance.newspaper, maxItems: 1 } };
+    expect(newsItems(mitWelt(['crash']), eine)).toEqual(['world_crash']);
+  });
+
+  it('kleine Weltmeldungen (Wahl, Frieden, Stimmungen) stehen hinten an und weichen bei voller Zeitung', () => {
+    expect(newsItems(mitWelt(['peace']), balance)).toEqual(['price_cut', 'jacob_find', 'rival_find']);
+    const ruhig = { ...newGame('ruhig', balance), priceHistory: [1, 0.8] };
+    expect(newsItems({ ...ruhig, worldModel: { ...ruhig.worldModel, news: ['peace'] } }, balance)).toEqual(['price_cut', 'world_peace']);
+  });
+});
+
 describe('Zeitung: Spielzahlen', () => {
   it('balance.yaml: newspaper muss da sein und crashFrom ≥ fallFrom', async () => {
     const { parseBalance, BalanceError } = await import('./balance');

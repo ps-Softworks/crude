@@ -17,6 +17,7 @@ import { leaseOf } from './lease';
 import { fieldWells, initialRate, recoverable, wellRate } from './production';
 import { pumpTarget } from './rigs';
 import { computePrice, neighbourSupply, rivalSupply } from './market';
+import { worldPriceFactor } from './world';
 import { buyerPrice, modeUnavailable, netPrice, tariff } from './transport';
 
 export interface Outlook {
@@ -117,10 +118,11 @@ function netAt(state: GameState, balance: Balance, royalty: number, price: numbe
   return Math.max(0, kaeufer * (1 - royalty) - fracht);
 }
 
-/** Posted Price je Runde für Jacobs Förderung, die Nachbarn (die jede Runde mehr werden) und Bullard. */
+/** Posted Price je Runde für Jacobs Förderung, die Nachbarn (die jede Runde mehr werden) und Bullard; der Welttrend bleibt, wie er heute ist. */
 function pricesFor(state: GameState, balance: Balance, jacob: readonly number[]): number[] {
   const bullard = rivalSupply(state, balance.rivals.bullard.ratePerWell);
-  return jacob.map((bbl, i) => computePrice(balance.market, bbl + neighbourSupply(balance.market, state.round + i) + bullard));
+  const trend = worldPriceFactor(state.worldModel, balance.worldModel);
+  return jacob.map((bbl, i) => computePrice(balance.market, bbl + neighbourSupply(balance.market, state.round + i) + bullard, trend));
 }
 
 /**
