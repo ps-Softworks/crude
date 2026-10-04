@@ -9,6 +9,7 @@ import { CalendarSheet } from './CalendarSheet';
 import { FamilySheet } from './FamilySheet';
 import { FreightSheet } from './FreightSheet';
 import { IncidentsSheet } from './IncidentsSheet';
+import { KonzernSheet } from './KonzernSheet'; // 4.17 Andockpunkt
 import { JournalSheet } from './JournalSheet';
 import { LedgerSheet } from './LedgerSheet';
 import { MenuSheet, type MenuProps } from './MenuSheet';
@@ -35,6 +36,7 @@ export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   glocke: { title: 'Runde beenden', size: 'brief' },
   bericht: { title: 'Was diese Runde geschah', size: 'brief' },
   wartende: { title: 'Wer vor der Tür wartet', size: 'brief' },
+  konzern: { title: 'Konzern und Gesellschaft', size: 'mappe' }, // 4.17 Andockpunkt
 };
 
 export interface SheetHostProps {
@@ -73,6 +75,7 @@ export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound
     glocke: () => <BellSheet ctx={ctx} onEndRound={onEndRound} onGo={onGo} onChapterEnd={onChapterEnd} />,
     bericht: () => <ReportSheet report={report} onDone={onClose} next={open.then === 'zeitung'} onJournal={() => ctx.open('protokoll', { back: { sheet: 'bericht' } })} />,
     wartende: () => <WaitingSheet ctx={ctx} onVisitor={onVisitor} />,
+    konzern: () => <KonzernSheet ctx={ctx} />, // 4.17 Andockpunkt
   };
   return (
     <Sheet

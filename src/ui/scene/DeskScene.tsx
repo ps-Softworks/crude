@@ -40,6 +40,10 @@ import {
   WallMapShape,
 } from './objects/Shapes';
 import { RuthNote } from './RuthNote';
+// 4.17 Andockpunkt: Siegelmappe für Kapitel 3 (vorher nur im Debug sichtbar).
+import { kapitel3Unlocked } from '../../sim/kapitel3';
+import { kapitel3Pending } from '../../sim/kapitel3View';
+import { SealFolderShape } from '../sheets/KonzernSheet';
 
 /** Wo was liegt, in Prozent der Bühne (unter der Kopfleiste). */
 const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte' | 'tuer', Placement> = {
@@ -56,6 +60,7 @@ const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte
   fracht: { left: 19, top: 75, width: 15, height: 22 },
   protokoll: { left: 36, top: 76, width: 9, height: 21 },
   glocke: { left: 86, top: 70, width: 12, height: 27 },
+  konzern: { left: 73, top: 75, width: 12, height: 22 }, // 4.17 Andockpunkt
 };
 
 export interface DeskSceneProps {
@@ -318,6 +323,8 @@ export function DeskScene(p: DeskSceneProps) {
           },
           <FolderShape variant="fracht" />,
         )}
+        {/* 4.17 Andockpunkt: Siegelmappe – ab Kapitel 3, im Debug schon vorher (zum Ausprobieren). */}
+        {(kapitel3Unlocked(game, balance) || p.debug) && <KonzernObjekt game={game} obj={obj} />}
         {obj('protokoll', 'Kladde', { status: p.saved ? '✓ gesichert' : undefined }, <NotebookShape />)}
         {obj(
           'glocke',
@@ -327,5 +334,25 @@ export function DeskScene(p: DeskSceneProps) {
         )}
       </div>
     </div>
+  );
+}
+
+/** 4.17 Andockpunkt: die Siegelmappe mit Abzeichen für offene Entscheidungen. */
+function KonzernObjekt({
+  game,
+  obj,
+}: {
+  game: GameState;
+  obj: (id: SheetId, name: string, extra: Partial<Parameters<typeof DeskObject>[0]>, bild: ReactNode) => ReactNode;
+}) {
+  const offen = kapitel3Pending(game, balance);
+  return obj(
+    'konzern',
+    'Siegelmappe',
+    {
+      badge: offen && offen.total > 0 ? { text: String(offen.total), urgent: offen.urgent } : null,
+      status: offen ? undefined : 'Kapitel 3',
+    },
+    <SealFolderShape />,
   );
 }

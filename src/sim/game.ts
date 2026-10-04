@@ -24,6 +24,9 @@ import { advanceLogistics, newLogistics, settleStorage, spillOver, type Logistic
 import { advanceTransport, noShipments } from './transport';
 import { settleTakeover } from './trust';
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
+// 4.17 Andockpunkt: Kapitel 3 (Seismik, Konsortium, Projekte, Stand).
+import type { Kapitel3State } from './kapitel3';
+import { advanceKapitel3 } from './kapitel3Runde';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
@@ -95,6 +98,8 @@ export interface GameState {
   sick: number;
   /** Ruth und Thomas (2.7). */
   family: FamilyState;
+  /** 4.17 Andockpunkt: Kapitel 3 (src/sim/kapitel3.ts) – fehlt, bis Kapitel 3 beginnt. */
+  kapitel3?: Kapitel3State;
   log: string[];
   /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
   roundLogStart: number;
@@ -210,8 +215,10 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Eigene Fuhrwerke und Pipeline (0.2.15+2): Löhne, Unterhalt, Baufortschritt, Sabotage – vor den Zinsen.
   // Türme und Pumpen (0.2.15+7): Turmmiete und Pumpenunterhalt, ebenfalls vor den Zinsen.
   const verzinst = settleLoans(settleRigs(advanceLogistics(rivale, balance), balance), balance);
+  // 4.17 Andockpunkt: Kapitel 3 – Seismik-Berichte, Konsortium, Projekte, Stand (vor Kapitel 3 unverändert).
+  const konzern = advanceKapitel3(verzinst, balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
-  const gefahren = advanceTransport(verzinst, balance);
+  const gefahren = advanceTransport(konzern, balance);
   const state = { ...checkBankruptcy(gefahren, balance), roundLogStart };
   if (state.ending === 'pleite') return state;
   if (state.round >= state.totalRounds) {

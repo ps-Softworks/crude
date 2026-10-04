@@ -16,6 +16,7 @@ import { findRig, rigLabel } from '../../sim/rigs';
 import { balance } from '../balance';
 import { barrels, money, percent, rounds, units } from '../format';
 import { STATUS_LABEL, ranchStatus } from '../mapShapes';
+import { SeismikZeile } from '../Kapitel3Ranch'; // 4.17 Andockpunkt
 
 const GEOLOGY_LABEL = { dry: 'trocken', small: 'klein', gusher: 'Gusher' } as const;
 
@@ -32,9 +33,11 @@ export interface RanchSheetProps {
   onLedger: () => void;
   /** Zur Bohrturm-Akte (Turm kaufen oder mieten). */
   onRigs: () => void;
+  /** 4.17 Andockpunkt: neuer Spielstand nach einer Seismik-Aktion (Kapitel 3). */
+  onGame?: (state: GameState) => void;
 }
 
-export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, onClose, onLedger, onRigs }: RanchSheetProps) {
+export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, onClose, onLedger, onRigs, onGame }: RanchSheetProps) {
   const id = parcel.id;
   const lease = leaseOf(game, id);
   const option = optionOf(game, id);
@@ -161,6 +164,7 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
                 {forecast ? formatForecast(forecast) : '–'}
                 {debug && ` · wirklich ${percent(trueChance(balance, parcel))}`}
               </dd>
+              <SeismikZeile game={game} parcelId={id} onGame={onGame} />
               <dt>Lage</dt>
               <dd>{terms.location.label}</dd>
               <dt>Landbesitzer</dt>

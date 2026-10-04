@@ -22,6 +22,8 @@ export const SHEET_IDS = [
   'bericht',
   /** Wer vor der Tür wartet, wenn es mehrere sind (0.2.15+11). */
   'wartende',
+  /** 4.17 Andockpunkt: Siegelmappe – Seismik, Mr. Vale, Projekte, Hallstead (erst ab Kapitel 3 auf dem Tisch). */
+  'konzern',
 ] as const;
 export type SheetId = (typeof SHEET_IDS)[number];
 

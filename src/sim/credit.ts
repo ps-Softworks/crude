@@ -13,6 +13,7 @@ import type { Well } from './drilling';
 import type { GameState } from './game';
 import { parcelLabel } from './lease';
 import { producingWells } from './production';
+import { withStandDiscount } from './stand'; // 4.17 Andockpunkt
 
 /** Woher das Geld kommt: von der Bank oder als Notkredit vom Geldverleiher. */
 export type LoanSource = 'bank' | 'lender';
@@ -148,7 +149,8 @@ export function takeLoan(state: GameState, balance: Balance, amount: number): Lo
   const blocked = loanBlocked(state, balance, amount);
   if (blocked) return { ok: false, reason: blocked };
   const pfand = freeCollateral(state)[0];
-  const zins = loanRate(balance, state.rating, pfand !== undefined);
+  // 4.17 Andockpunkt: Stand in Hallstead – die alten Banken geben Rabatt (ab Kapitel 3).
+  const zins = withStandDiscount(loanRate(balance, state.rating, pfand !== undefined), state, balance);
   const loan: Loan = {
     id: lastId(state.loans) + 1,
     source: 'bank',

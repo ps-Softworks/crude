@@ -592,6 +592,7 @@ export function App() {
                 onClose={() => dispatch({ type: 'ranch', id: null })}
                 onLedger={() => open('kassenbuch')}
                 onRigs={() => open('akte', { tab: 'tuerme' })}
+                onGame={onGame} // 4.17 Andockpunkt
               />
             ) : null
           }
