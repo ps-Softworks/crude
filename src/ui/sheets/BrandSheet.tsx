@@ -58,6 +58,17 @@ function Aktion({ result, onDone, children, className }: { result: BrandResult<G
   );
 }
 
+/**
+ * Neu-Hinweis am Gegenstand: Hat die letzte Abrechnung (oder ein Skandal während der
+ * Runde) Meldungen gebracht – Preiskampf, Cranes Ausbau, auslaufende Werbung –, zeigt
+ * der Gegenstand „n neu“. null vor Kapitel 3 und ohne Meldungen.
+ */
+export function brandDeskBadge(game: GameState): { text: string } | null {
+  if (!brandUnlocked(brandWorldFrom(game), balance) || !game.brand) return null;
+  const n = game.brand.news.length;
+  return n > 0 ? { text: t('newsBadge', { anzahl: n }) } : null;
+}
+
 /** Kurzform für das Schild am Gegenstand, z. B. „12 Tankstellen · 9 %“; null vor Kapitel 3. */
 export function brandDeskStatus(game: GameState): string | null {
   const world = brandWorldFrom(game);

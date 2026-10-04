@@ -85,7 +85,7 @@ export interface BrandBalance {
     targetShare: number;
     adGain: number;
   };
-  value: { goodwillPerBarrel: number; assetShare: number };
+  value: { profitMultiple: number; assetShare: number };
   goal: { regions: number; share: number; presenceStations: number };
   antitrust: { regional: number; national: number };
   regions: BrandRegionBalance[];
@@ -199,7 +199,7 @@ export function parseBrandBalance(raw: unknown): BrandBalance {
       targetShare: zahl(raw, `${p}.crane.targetShare`, 0, 1),
       adGain: zahl(raw, `${p}.crane.adGain`, 0, 100),
     },
-    value: { goodwillPerBarrel: zahl(raw, `${p}.value.goodwillPerBarrel`, 0), assetShare: zahl(raw, `${p}.value.assetShare`, 0, 1) },
+    value: { profitMultiple: zahl(raw, `${p}.value.profitMultiple`, 0), assetShare: zahl(raw, `${p}.value.assetShare`, 0, 1) },
     goal: { regions: ganz(raw, `${p}.goal.regions`, 1), share: zahl(raw, `${p}.goal.share`, 0, 1), presenceStations: ganz(raw, `${p}.goal.presenceStations`, 1) },
     antitrust: { regional: zahl(raw, `${p}.antitrust.regional`, 0, 1), national: zahl(raw, `${p}.antitrust.national`, 0, 1) },
     regions,
@@ -231,7 +231,7 @@ export interface BrandWorld {
   chapter: number;
   /** Ruf in der Öffentlichkeit −100 … +100 (GDD §4, Ruf-Achse „Öffentlichkeit“). Ersatz: 0 (neutral). */
   reputation: number;
-  /** Läuft gerade ein Kreditcrash (Weltmodell 4.1, WorldState.crash > 0)? Ersatz: nein. */
+  /** Läuft gerade ein Kreditcrash (Weltmodell 4.1, state.worldModel.crash > 0)? Ersatz: nein. */
   crash: boolean;
   /** Zusatzfaktor auf die Benzinnachfrage aus dem Weltmodell (Automobilisierung). Ersatz: 1. */
   motorization: number;
@@ -244,7 +244,8 @@ export const DEFAULT_BRAND_WORLD: BrandWorld = { chapter: 1, reputation: 0, cras
 /** Felder, die andere Systeme später in den Spielzustand legen. Alles optional. */
 interface FremdeFelder {
   chapter?: unknown;
-  world?: { crash?: unknown } | null;
+  /** Weltmodell aus 4.1 (auf main: GameState.worldModel: WorldState). */
+  worldModel?: { crash?: unknown } | null;
   reputation?: { public?: unknown } | null;
 }
 
@@ -254,13 +255,13 @@ function endlich(v: unknown): v is number {
 
 /**
  * 4.x Andockpunkt: liest Kapitel (4.5: state.chapter), Kreditcrash (4.1:
- * state.world.crash) und Ruf (state.reputation.public) aus dem Spielzustand,
+ * state.worldModel.crash, Runden Nachwirkung) und Ruf (state.reputation.public) aus dem Spielzustand,
  * wenn es sie gibt – sonst Ersatzwerte. overrides gewinnt (Tests, Debug).
  */
 export function brandWorldFrom(state: object, overrides: Partial<BrandWorld> = {}): BrandWorld {
   const s = state as FremdeFelder;
   const chapter = endlich(s.chapter) ? s.chapter : DEFAULT_BRAND_WORLD.chapter;
-  const crash = s.world && endlich(s.world.crash) ? s.world.crash > 0 : DEFAULT_BRAND_WORLD.crash;
+  const crash = s.worldModel && endlich(s.worldModel.crash) ? s.worldModel.crash > 0 : DEFAULT_BRAND_WORLD.crash;
   const reputation = s.reputation && endlich(s.reputation.public) ? Math.max(-100, Math.min(100, s.reputation.public)) : DEFAULT_BRAND_WORLD.reputation;
   return { ...DEFAULT_BRAND_WORLD, chapter, crash, reputation, ...overrides };
 }
@@ -298,6 +299,12 @@ export interface BrandRegionState {
   building: { count: number; ready: number }[];
   /** Bekanntheit 0–100. */
   awareness: number;
+  /**
+   * Der Teil der Bekanntheit, den nur die Werbung gebracht hat (verblasst wie die
+   * Bekanntheit). Der Markenwert zählt ihn nicht – sonst hebt gekaufte Werbung den
+   * Imperiumswert sofort über ihre Kosten.
+   */
+  adAwareness: number;
   price: PricePolicy;
   /** Laufende Werbung: Art und letzte Runde, in der sie wirkt. */
   campaigns: { kind: string; until: number }[];
@@ -313,7 +320,7 @@ export type BrandNews =
   | { kind: 'priceWarEnd'; region: string }
   | { kind: 'craneExpand'; region: string; count: number }
   | { kind: 'campaignEnd'; region: string; campaign: string }
-  | { kind: 'scandal'; severity: number };
+  | { kind: 'scandal'; severity: number; /** Runde, in der der Skandal kam. */ round?: number };
 
 export interface BrandState {
   rng: RngState;
@@ -347,6 +354,7 @@ export function newBrand(seed: string, balance: WithBrand): BrandState {
       stations: 0,
       building: [],
       awareness: 0,
+      adAwareness: 0,
       price: 'normal',
       campaigns: [],
       crane: { stations: r.craneStations, awareness: r.craneAwareness, price: 'normal', warRounds: 0, cooldown: 0 },
@@ -584,8 +592,20 @@ export function applyBrandScandal<S extends BrandGame>(state: S, balance: WithBr
   if (!brand || !brand.founded) return state;
   const schwere = clamp(Math.round(severity), 1, 5);
   const verlust = balance.brand.awareness.scandalLoss * schwere;
-  const regions = Object.fromEntries(Object.entries(brand.regions).map(([id, r]) => [id, { ...r, awareness: Math.max(0, r.awareness - verlust) }]));
-  return { ...state, brand: { ...brand, regions, news: [...brand.news, { kind: 'scandal', severity: schwere }] } };
+  const regions = Object.fromEntries(
+    Object.entries(brand.regions).map(([id, r]) => {
+      const awareness = Math.max(0, r.awareness - verlust);
+      // Der Werbeanteil schrumpft im selben Verhältnis wie die Bekanntheit.
+      const adAwareness = r.awareness > 0 ? r.adAwareness * (awareness / r.awareness) : 0;
+      return [id, { ...r, awareness, adAwareness }];
+    }),
+  );
+  // round: settleBrand übernimmt die Meldung in die nächste Abrechnung, damit sie nicht verloren geht.
+  return {
+    ...state,
+    brand: { ...brand, regions, news: [...brand.news, { kind: 'scandal', severity: schwere, round: state.round }] },
+    log: logged(state, 'Skandal: Die Kunden meiden unsere Tankstellen.'),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -603,7 +623,8 @@ export function settleBrand<S extends BrandGame>(state: S, balance: WithBrand, w
   const b = balance.brand;
   const start = brandOf(state, balance);
   const rng = new Rng(start.rng);
-  const news: BrandNews[] = [];
+  // Was seit der letzten Abrechnung dazukam (Skandal während der Runde), bleibt stehen.
+  const news: BrandNews[] = start.news.filter((n) => n.kind === 'scandal' && n.round !== undefined && n.round >= state.round);
   let brand: BrandState = { ...start, regions: { ...start.regions } };
   let gewinn = 0;
   let absatz = 0;
@@ -636,6 +657,8 @@ export function settleBrand<S extends BrandGame>(state: S, balance: WithBrand, w
     const awareness = brand.founded
       ? clamp(r.awareness * (1 - b.awareness.decay) + b.awareness.perStation * Math.sqrt(r.stations) + werbung, 0, 100)
       : r.awareness;
+    // Werbeanteil: verblasst genauso, nie mehr als die ganze Bekanntheit.
+    const adAwareness = brand.founded ? clamp(r.adAwareness * (1 - b.awareness.decay) + werbung, 0, awareness) : r.adAwareness;
     const crane = { ...r.crane };
     crane.awareness = clamp(crane.awareness * (1 - b.awareness.decay) + b.awareness.perStation * Math.sqrt(crane.stations) + b.crane.adGain, 0, 100);
 
@@ -676,7 +699,7 @@ export function settleBrand<S extends BrandGame>(state: S, balance: WithBrand, w
       profit: markt.profit,
       priceWar: markt.priceWar,
     };
-    brand.regions[rb.id] = { ...r, awareness, crane, campaigns, last };
+    brand.regions[rb.id] = { ...r, awareness, adAwareness, crane, campaigns, last };
   }
 
   // Eigenes Benzin (4.13): Was die Raffinerie nicht liefert, wird zugekauft.
@@ -686,14 +709,34 @@ export function settleBrand<S extends BrandGame>(state: S, balance: WithBrand, w
   }
   gewinn = cents(gewinn);
   brand = { ...brand, rng: rng.state, motor: brand.motor * (1 + b.demand.growth), news, lastProfit: gewinn };
-  const log =
-    brand.founded && (absatz > 0 || gewinn !== 0)
-      ? logged(
-          state,
-          `Tankstellen: ${Math.floor(absatz).toLocaleString('de-DE')} bbl Benzin verkauft, ${gewinn < 0 ? 'Verlust' : 'Gewinn'} ${dollars(Math.abs(gewinn))} $${zukauf > 0 ? ` (davon ${Math.floor(zukauf).toLocaleString('de-DE')} bbl zugekauft)` : ''}.`,
-        )
-      : state.log;
+  let log = state.log;
+  if (brand.founded && (absatz > 0 || gewinn !== 0)) {
+    log = logged(
+      { ...state, log },
+      `Tankstellen: ${Math.floor(absatz).toLocaleString('de-DE')} bbl Benzin verkauft, ${gewinn < 0 ? 'Verlust' : 'Gewinn'} ${dollars(Math.abs(gewinn))} $${zukauf > 0 ? ` (davon ${Math.floor(zukauf).toLocaleString('de-DE')} bbl zugekauft)` : ''}.`,
+    );
+  }
+  // Margaret Cranes Züge gehören ins Protokoll – nicht nur ins Fenster „Vertrieb“.
+  for (const satz of craneLogLines(news)) log = logged({ ...state, log }, satz);
   return { ...state, cash: cents(state.cash + gewinn), brand, log };
+}
+
+/**
+ * Protokollsätze zu Margaret Cranes Zügen (Preiskampf, Ausbau). Wie die übrigen
+ * Protokollzeilen deutsch und ohne Regionsnamen (die stehen in content/brand.yaml);
+ * die Einzelheiten zeigt das Fenster „Vertrieb“.
+ */
+export function craneLogLines(news: readonly BrandNews[]): string[] {
+  const anzahl = (kind: BrandNews['kind']) => news.filter((n) => n.kind === kind).length;
+  const regionen = (n: number) => (n === 1 ? 'einer Region' : `${n} Regionen`);
+  const saetze: string[] = [];
+  const start = anzahl('priceWarStart');
+  const ende = anzahl('priceWarEnd');
+  const neu = news.reduce((s, n) => s + (n.kind === 'craneExpand' ? n.count : 0), 0);
+  if (start > 0) saetze.push(`Margaret Crane beginnt in ${regionen(start)} einen Preiskampf an der Zapfsäule.`);
+  if (ende > 0) saetze.push(`Margaret Crane beendet den Preiskampf in ${regionen(ende)}.`);
+  if (neu > 0) saetze.push(`Crane Eastern baut ${neu} neue Tankstelle${neu === 1 ? '' : 'n'} neben unseren.`);
+  return saetze;
 }
 
 // ---------------------------------------------------------------------------
@@ -710,14 +753,25 @@ export function nationalShare(brand: BrandState | undefined): { jacob: number; c
   return { jacob: res.reduce((s, x) => s + x.sales, 0) / nachfrage, crane: res.reduce((s, x) => s + x.craneSales, 0) / nachfrage };
 }
 
-/** Markenwert in $ (GDD §6): Bekanntheit × Nachfrage × goodwillPerBarrel × Ruf, über alle offenen Regionen. */
+/**
+ * Markenwert in $ (GDD §6): was das Netz je Runde verdient (Absatz × Marge −
+ * Unterhalt, nie unter 0) × profitMultiple, über alle offenen Regionen. Gerechnet
+ * mit der Bekanntheit ohne den Werbeanteil (adAwareness): gekaufte Werbung bringt
+ * Absatz und Gewinn in die Kasse, aber keinen Buchwert. Der Ruf wirkt sofort über
+ * die Anziehung (regionMarket).
+ */
 export function brandValue(brand: BrandState | undefined, balance: WithBrand, world: BrandWorld): number {
   if (!brand || !brand.founded) return 0;
-  const rep = reputationFactor(balance, world.reputation);
+  const ohneWerbung: BrandState = {
+    ...brand,
+    regions: Object.fromEntries(
+      Object.entries(brand.regions).map(([id, r]) => [id, { ...r, awareness: Math.max(0, r.awareness - r.adAwareness) }]),
+    ),
+  };
   const summe = balance.brand.regions
     .filter((rb) => brandRegionOpen(world, balance, rb.id))
-    .reduce((s, rb) => s + ((brand.regions[rb.id]?.awareness ?? 0) / 100) * regionDemand(balance, rb.id, brand.motor, world), 0);
-  return cents(summe * balance.brand.value.goodwillPerBarrel * rep);
+    .reduce((s, rb) => s + Math.max(0, regionMarket(ohneWerbung, balance, rb.id, world).profit), 0);
+  return cents(summe * balance.brand.value.profitMultiple);
 }
 
 /**
@@ -796,7 +850,7 @@ export function isBrandState(value: unknown): value is BrandState {
   if (!Array.isArray(value.news) || !value.news.every((n) => istObjekt(n) && typeof n.kind === 'string')) return false;
   if (!istObjekt(value.regions)) return false;
   return Object.values(value.regions).every((r) => {
-    if (!istObjekt(r) || !endlich(r.stations) || !endlich(r.awareness) || !istPreis(r.price)) return false;
+    if (!istObjekt(r) || !endlich(r.stations) || !endlich(r.awareness) || !endlich(r.adAwareness) || !istPreis(r.price)) return false;
     if (!Array.isArray(r.building) || !r.building.every((x) => istObjekt(x) && endlich(x.count) && endlich(x.ready))) return false;
     if (!Array.isArray(r.campaigns) || !r.campaigns.every((x) => istObjekt(x) && typeof x.kind === 'string' && endlich(x.until))) return false;
     const c = r.crane;

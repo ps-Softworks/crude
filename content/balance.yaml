@@ -545,7 +545,7 @@ brand:
     - { id: strassenkarten, cost: 5000, rounds: 4, gain: 4 }
   demand:
     growth: 0.03            # Automobilisierung: Benzinnachfrage wächst je Runde um 3 % (bis 4.1 sie liefert)
-    crashDrop: 0.25         # im Kreditcrash (Weltmodell 4.1) tanken die Leute ein Viertel weniger
+    crashDrop: 0.25         # im Kreditcrash (state.worldModel.crash > 0) tanken die Leute ein Viertel weniger; bei der Integration mit worldModel.demand.crashDrop zusammenlegen
   supply:
     boughtCost: 0.15        # $ je bbl, wenn die eigene Raffinerie (4.13) nicht genug Benzin liefert und zugekauft wird
   crane:                    # Margaret Crane (Crane Eastern) führt den Kampf um die Marke (GDD §13)
@@ -558,7 +558,7 @@ brand:
     targetShare: 0.45       # so viel Marktanteil will sie je Region halten
     adGain: 2               # Bekanntheit je Runde durch ihre ständige Werbung
   value:
-    goodwillPerBarrel: 0.6  # Markenwert = Σ Bekanntheit × Nachfrage × goodwillPerBarrel × Ruf (Anleger zahlen für den Namen)
+    profitMultiple: 4       # Markenwert = Gewinn des Netzes je Runde (ohne Werbewirkung, nie unter 0) × so viele Runden – ein Jahr Gewinn
     assetShare: 0.5         # Tankstellen zählen im Imperiumswert mit diesem Anteil ihrer Baukosten
   goal:                     # Kapitelprüfung Kapitel 3 (GDD §13): Marke in ≥ 3 Regionen oder ≥ 10 % Marktanteil
     regions: 3

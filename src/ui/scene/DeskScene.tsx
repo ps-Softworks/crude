@@ -42,7 +42,7 @@ import {
 import { RuthNote } from './RuthNote';
 // 4.14 Andockpunkt: Vertrieb (Marke und Tankstellen), erst ab Kapitel 3 auf dem Tisch.
 import { BrandShape } from './objects/BrandShape';
-import { brandDeskStatus } from '../sheets/BrandSheet';
+import { brandDeskBadge, brandDeskStatus } from '../sheets/BrandSheet';
 import { brandContent } from '../brand';
 import { localize } from '../../sim/i18n';
 
@@ -61,8 +61,10 @@ const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte
   fracht: { left: 19, top: 75, width: 15, height: 22 },
   protokoll: { left: 36, top: 76, width: 9, height: 21 },
   glocke: { left: 86, top: 70, width: 12, height: 27 },
-  // 4.14 Andockpunkt: zwischen Kassenbuch und Glocke.
-  marke: { left: 73, top: 75, width: 12, height: 22 },
+  // 4.14 Andockpunkt: rechts neben dem Kassenbuch, über der Glocke (der Platz unter dem
+  // Kassenbuch, 73/75, ist von 4.6 Raffinerie, 4.9 Personal und 4.11 Werkstatt belegt –
+  // Platzplan in docs/phase4/4.14.md).
+  marke: { left: 86, top: 47, width: 12, height: 21 },
 };
 
 export interface DeskSceneProps {
@@ -329,7 +331,7 @@ export function DeskScene(p: DeskSceneProps) {
         )}
         {obj('protokoll', 'Kladde', { status: p.saved ? '✓ gesichert' : undefined }, <NotebookShape />)}
         {/* 4.14 Andockpunkt: Vertrieb – nur sichtbar, wenn die Marke freigeschaltet ist (Kapitel 3). */}
-        {vertrieb !== null && obj('marke', localize(brandContent.object.name), { status: vertrieb }, <BrandShape />)}
+        {vertrieb !== null && obj('marke', localize(brandContent.object.name), { status: vertrieb, badge: brandDeskBadge(game) }, <BrandShape />)}
         {obj(
           'glocke',
           game.finished ? 'Kapitel beendet' : 'Runde beenden',

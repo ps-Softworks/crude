@@ -15,6 +15,7 @@ import {
   buildStations,
   buildingCount,
   campaignActive,
+  craneLogLines,
   DEFAULT_BRAND_WORLD,
   foundBrand,
   isBrandState,
@@ -105,10 +106,14 @@ describe('Schnittstelle zur Welt', () => {
   });
 
   it('liest Kapitel, Kreditcrash und Ruf, wenn andere Systeme sie liefern', () => {
-    const w = brandWorldFrom({ chapter: 3, world: { crash: 2 }, reputation: { public: -250 } });
+    // Block A (main, 4.1) legt das Weltmodell als state.worldModel ab; crash = Runden Nachwirkung.
+    const w = brandWorldFrom({ chapter: 3, worldModel: { crash: 2 }, reputation: { public: -250 } });
     expect(w.chapter).toBe(3);
     expect(w.crash).toBe(true);
     expect(w.reputation).toBe(-100);
+    expect(brandWorldFrom({ chapter: 3, worldModel: { crash: 0 } }).crash).toBe(false);
+    // Der alte Name state.world zählt nicht.
+    expect(brandWorldFrom({ chapter: 3, world: { crash: 2 } }).crash).toBe(false);
   });
 
   it('overrides gewinnen', () => {
@@ -349,10 +354,36 @@ describe('Bekanntheit und Werbung', () => {
     const a = s.brand!.regions.cordova.awareness;
     const n = applyBrandScandal(s, balance, 2);
     expect(n.brand!.regions.cordova.awareness).toBeCloseTo(Math.max(0, a - 2 * B.awareness.scandalLoss));
-    expect(n.brand!.news.at(-1)).toEqual({ kind: 'scandal', severity: 2 });
+    expect(n.brand!.news.at(-1)).toEqual({ kind: 'scandal', severity: 2, round: s.round });
+    expect(n.log.at(-1)).toContain('Skandal');
     // Ohne Marke passiert nichts.
     const ohne = kapitel3();
     expect(applyBrandScandal(ohne, balance, 5)).toBe(ohne);
+  });
+
+  it('ein Skandal während der Runde steht nach der Abrechnung noch im Bericht – eine Runde später nicht mehr', () => {
+    const s = settleBrand({ ...mitTankstellen(4), round: 4 }, balance, K3);
+    const runde = { ...s, round: s.round + 1 };
+    const skandal = applyBrandScandal(runde, balance, 3);
+    const abgerechnet = settleBrand(skandal, balance, K3);
+    expect(abgerechnet.brand!.news).toContainEqual({ kind: 'scandal', severity: 3, round: runde.round });
+    const danach = settleBrand({ ...abgerechnet, round: abgerechnet.round + 1 }, balance, K3);
+    expect(danach.brand!.news.some((n) => n.kind === 'scandal')).toBe(false);
+  });
+
+  it('der Werbeanteil der Bekanntheit verblasst wie die Bekanntheit und wird nie größer als sie', () => {
+    const radio = B.campaigns.find((c) => c.id === 'radio')!;
+    let s = ok(startCampaign({ ...mitTankstellen(3), round: 5 }, balance, K3, 'cordova', 'radio'));
+    s = settleBrand(s, balance, K3);
+    expect(s.brand!.regions.cordova.adAwareness).toBeCloseTo(radio.gain);
+    for (let i = 0; i < 12; i++) {
+      s = settleBrand({ ...s, round: s.round + 1 }, balance, K3);
+      const r = s.brand!.regions.cordova;
+      expect(r.adAwareness).toBeLessThanOrEqual(r.awareness + 1e-9);
+    }
+    expect(s.brand!.regions.cordova.adAwareness).toBeLessThan(radio.gain);
+    const skandal = applyBrandScandal(s, balance, 5).brand!.regions.cordova;
+    expect(skandal.adAwareness).toBeLessThanOrEqual(skandal.awareness + 1e-9);
   });
 
   it('Bekanntheit kommt nur als Wort', () => {
@@ -439,12 +470,41 @@ describe('Kennzahlen', () => {
     expect(brandAntitrust(undefined, balance)).toEqual({ regions: [], national: false });
   });
 
-  it('Markenwert wächst mit der Bekanntheit und hängt am Ruf', () => {
-    const s = settleBrand({ ...mitTankstellen(5), round: 5 }, balance, K3);
+  it('Markenwert = Gewinn des Netzes je Runde × profitMultiple und hängt am Ruf', () => {
+    let s = settleBrand({ ...mitTankstellen(20), round: 5 }, balance, K3);
+    for (let i = 0; i < 6; i++) s = settleBrand({ ...s, round: s.round + 1 }, balance, K3);
+    const gewinn = Math.max(0, regionMarket(s.brand!, balance, 'cordova', K3).profit);
+    expect(gewinn).toBeGreaterThan(0);
+    expect(brandValue(s.brand, balance, K3)).toBeCloseTo(gewinn * B.value.profitMultiple, 0);
     const gut = brandValue(s.brand, balance, { ...K3, reputation: 50 });
     const schlecht = brandValue(s.brand, balance, { ...K3, reputation: -50 });
     expect(gut).toBeGreaterThan(schlecht);
     expect(brandValue(newBrand('x', balance), balance, K3)).toBe(0);
+  });
+
+  it('Werbung erhöht den Imperiumswert nicht um mehr als ihre Kosten', () => {
+    // Gleiche Partie mit und ohne Kampagne: Der Markenwert (Tankstellen + Name) darf durch die
+    // Werbung höchstens um ihre Kosten steigen – während sie läuft und danach. Auch bei hoher
+    // Automobilisierung (motor 3) und in der großen Ostküste.
+    for (const region of ['cordova', 'ostkueste'])
+      for (const n of [3, 20, 40])
+        for (const motor of [1, 3])
+          for (const c of B.campaigns) {
+            let s: GameState = ok(foundBrand(kapitel3('wert', 1e8), balance, K3, 'harlan'));
+            for (let rest = n; rest > 0; rest -= B.station.buildMax) s = ok(buildStations(s, balance, K3, region, Math.min(rest, B.station.buildMax)));
+            s = { ...s, round: s.round + 1, brand: { ...s.brand!, motor } };
+            for (let i = 0; i < 6; i++) s = settleBrand({ ...s, round: s.round + 1 }, balance, K3);
+            let ohne: GameState = { ...s, round: s.round + 1 };
+            let mit = ok(startCampaign(ohne, balance, K3, region, c.id));
+            expect(brandAssets(mit, balance)).toBeLessThanOrEqual(brandAssets(ohne, balance) + c.cost);
+            for (let i = 0; i < c.rounds + 6; i++) {
+              ohne = settleBrand(ohne, balance, K3);
+              mit = settleBrand(mit, balance, K3);
+              expect(brandAssets(mit, balance) - brandAssets(ohne, balance), `${region} ${n} motor ${motor} ${c.id} Runde ${i}`).toBeLessThanOrEqual(c.cost);
+              ohne = { ...ohne, round: ohne.round + 1 };
+              mit = { ...mit, round: mit.round + 1 };
+            }
+          }
   });
 
   it('Tankstellen und Markenwert zählen im Imperiumswert; ohne Marke bleibt er gleich', () => {
@@ -453,6 +513,39 @@ describe('Kennzahlen', () => {
     expect(brandAssets(ohne, balance)).toBe(0);
     expect(empireValue(s, balance)).toBeCloseTo(empireValue(ohne, balance) + brandAssets(s, balance), 1);
     expect(brandAssets(s, balance)).toBeGreaterThan(0);
+  });
+});
+
+describe('Margaret Cranes Züge im Protokoll', () => {
+  it('Preiskampf und Ausbau stehen im Protokoll, nicht nur im Fenster', () => {
+    const b2 = parseBalance({
+      ...rawBalance(),
+      brand: { ...(rawBalance().brand as object), crane: { ...(rawBalance().brand as { crane: object }).crane, warChance: 1, reactShare: 0, expandChance: 1, targetShare: 1 } },
+    });
+    let s: GameState = ok(foundBrand(kapitel3(), b2, K3, 'harlan'));
+    s = ok(buildStations(s, b2, K3, 'cordova', 2));
+    s = settleBrand({ ...s, round: s.round + 1 }, b2, K3);
+    const neu = s.log.slice(-3).join(' ');
+    expect(neu).toContain('Preiskampf');
+    expect(neu).toContain('Crane Eastern baut');
+  });
+
+  it('craneLogLines fasst zusammen und schweigt ohne Züge', () => {
+    expect(craneLogLines([])).toEqual([]);
+    expect(craneLogLines([{ kind: 'opened', region: 'cordova', count: 2 }])).toEqual([]);
+    expect(
+      craneLogLines([
+        { kind: 'priceWarStart', region: 'cordova' },
+        { kind: 'priceWarStart', region: 'okara' },
+        { kind: 'priceWarEnd', region: 'mittelland' },
+        { kind: 'craneExpand', region: 'cordova', count: 2 },
+        { kind: 'craneExpand', region: 'okara', count: 1 },
+      ]),
+    ).toEqual([
+      'Margaret Crane beginnt in 2 Regionen einen Preiskampf an der Zapfsäule.',
+      'Margaret Crane beendet den Preiskampf in einer Region.',
+      'Crane Eastern baut 3 neue Tankstellen neben unseren.',
+    ]);
   });
 });
 

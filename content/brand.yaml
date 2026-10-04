@@ -101,6 +101,7 @@ ui:
   priceWar: { de: "Preiskampf!", en: "Price war!" }
   news: { de: Bericht des Vertriebschefs, en: Report from the head of sales }
   noNews: { de: Nichts Besonderes an den Zapfsäulen., en: Nothing special at the pumps. }
+  newsBadge: { de: "{anzahl} neu", en: "{anzahl} new" }
 
 # Was bei der letzten Abrechnung geschah (BrandNews in src/sim/brand.ts).
 news:

@@ -49,6 +49,7 @@ const UI_KEYS = [
   'priceWar',
   'news',
   'noNews',
+  'newsBadge',
 ] as const;
 export type BrandUiKey = (typeof UI_KEYS)[number];
 
