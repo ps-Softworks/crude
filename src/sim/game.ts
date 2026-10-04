@@ -26,6 +26,7 @@ import { advanceTransport, noShipments } from './transport';
 // 4.7 Andockpunkt: Fernleitungen (Kapitel 2+).
 import { advanceBigPipelines, type BigPipelineState } from './bigPipeline';
 import { settleTakeover } from './trust';
+import { settleStocks, type StocksState } from './stocks'; // 4.8 Andockpunkt
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
 // 4.6 Andockpunkt: Raffinerie (ab Kapitel 2).
 import { advanceRefinery, type RefineryState } from './refinery';
@@ -109,6 +110,8 @@ export interface GameState {
   roundLogStart: number;
   /** 4.6 Andockpunkt: Raffinerie und Produktmix; undefined = noch nicht freigeschaltet (Kapitel 1). */
   refinery?: RefineryState;
+  /** 4.8 Andockpunkt: Aktien, Aufsichtsrat, Anleihen ab Kapitel 2 (startStocks); fehlt in Kapitel 1. */
+  stocks?: StocksState;
 }
 
 /**
@@ -239,7 +242,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const rivale = advanceRival(gepachtet, balance, gebohrt, input.postedPrice);
   // Eigene Fuhrwerke und Pipeline (0.2.15+2): Löhne, Unterhalt, Baufortschritt, Sabotage – vor den Zinsen.
   // Türme und Pumpen (0.2.15+7): Turmmiete und Pumpenunterhalt, ebenfalls vor den Zinsen.
-  const verzinst = settleLoans(settleRigs(advanceLogistics(rivale, balance), balance), balance);
+  // 4.8 Andockpunkt: Anleihen, Kurs, Aufsichtsrat, Thorne – vor den Bankzinsen (ohne state.stocks wirkungslos).
+  const verzinst = settleLoans(settleStocks(settleRigs(advanceLogistics(rivale, balance), balance), balance), balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   // 4.7 Andockpunkt: Fernleitungen nach dem Transport – Thorne nimmt unter Druck eine Erhöhung zurück und senkt den Tarif.
   const gefahren = advanceBigPipelines(advanceTransport(verzinst, balance), balance, { railTariffBefore: verzinst.railTariff });

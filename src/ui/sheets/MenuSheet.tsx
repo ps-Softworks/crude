@@ -14,6 +14,8 @@ import { balance } from '../balance';
 import { rt } from '../refinery';
 // 4.7 Andockpunkt: Debug-Knopf für die Fernleitungen.
 import { TrunkDebugButton } from './TrunkPipelineTab';
+// 4.8 Andockpunkt: Debug-Knopf für Aktienbuch, Aufsichtsrat und Anleihen.
+import { StocksDebugButton } from './LedgerSheet';
 
 export interface MenuProps {
   ctx: SheetContext;
@@ -190,6 +192,8 @@ export function MenuSheet(p: MenuProps) {
             {ctx.game.refinery && <span className="muted klein">Raffinerie ist freigeschaltet.</span>}
             {/* 4.7 Andockpunkt: Fernleitungen zum Ausprobieren schon in Kapitel 1 freischalten. */}
             <TrunkDebugButton ctx={ctx} />
+            {/* 4.8 Andockpunkt: Aktienbuch wie in Kapitel 2 anlegen. */}
+            <StocksDebugButton ctx={ctx} />
           </fieldset>
         </section>
       )}

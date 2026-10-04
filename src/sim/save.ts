@@ -11,6 +11,7 @@ import { isWorldState, neutralWorld, withPoliticsDefaults } from './world';
 import { isRefineryState } from './refinery';
 // 4.7 Andockpunkt: Fernleitungen (fehlen in Kapitel 1 – dann ist nichts zu prüfen).
 import { validBigPipelines } from './bigPipeline';
+import { isStocksState } from './stocks'; // 4.8 Andockpunkt
 
 /** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2), 11 = mit befristeten Nachwirkungen der Ereignisse (0.2.15+3), 12 = Karte mit Gebieten und Ranches statt Raster, mehrere Bohrlöcher je Ranch (0.2.15+5), 13 = Bohrtürme und Pumpen (0.2.15+7), 14 = mit Weltmodell (4.1), 15 = mit öffentlichem Handeln und Wahlergebnis im Weltmodell (4.2). */
 export const SAVE_FORMAT = 15;
@@ -167,6 +168,8 @@ export function validateState(value: unknown): LoadResult {
   if (value.refinery !== undefined && !isRefineryState(value.refinery)) return { ok: false, reason: UNVOLLSTAENDIG };
   // 4.7 Andockpunkt: Fernleitungen, falls freigeschaltet.
   if (!validBigPipelines(value.bigPipelines)) return { ok: false, reason: UNVOLLSTAENDIG };
+  // 4.8 Andockpunkt: Aktien, Aufsichtsrat, Anleihen (ab Kapitel 2, sonst fehlt das Feld).
+  if (value.stocks !== undefined && !isStocksState(value.stocks)) return { ok: false, reason: UNVOLLSTAENDIG };
   const round = value.round as number;
   const totalRounds = value.totalRounds as number;
   return round >= 1 && round <= totalRounds ? { ok: true, state: value as unknown as GameState } : { ok: false, reason: UNVOLLSTAENDIG };

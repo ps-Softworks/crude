@@ -47,5 +47,7 @@ export function empireValue(state: GameState, balance: Balance): number {
   // Tanks, Gespanne und Pipeline (0.2.15+2) sowie gekaufte Türme (0.2.15+7) zählen mit ihrem Buchwert.
   // 4.6 Andockpunkt: Die Raffinerie zählt mit ihrem Buchwert (0 ohne Raffinerie).
   // 4.7 Andockpunkt: plus Fernleitungen (Kapitel 2+; in Kapitel 1 immer 0).
-  return cents(state.cash + tank + reserven + logisticsAssets(state, balance) + rigAssets(state, balance) + refineryAssets(state, balance) + bigPipelineAssets(state, balance) - debt(state));
+  // 4.8 Andockpunkt: Anleihen sind Schulden wie Bankkredite.
+  const anleihen = (state.stocks?.bonds ?? []).reduce((sum, b) => sum + b.principal, 0);
+  return cents(state.cash + tank + reserven + logisticsAssets(state, balance) + rigAssets(state, balance) + refineryAssets(state, balance) + bigPipelineAssets(state, balance) - debt(state) - anleihen);
 }

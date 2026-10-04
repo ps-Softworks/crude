@@ -2,6 +2,7 @@
 // Objekt; parseBalance prüft es und meldet verständliche Fehler.
 // Seit 0.2.15+5 gehört die Karte (content/map.yaml) mit dazu: parseGameData.
 
+import { parseStocksBalance, type StocksBalance } from './stocksBalance'; // 4.8 Andockpunkt
 import { parseWorldMap, type WorldMap } from './worldMap';
 import { PARTIES, PUBLIC_ACTS, type Party, type PublicAct } from './world';
 // 4.6 Andockpunkt: Raffinerie (Zahlen und Prüfung in refineryBalance.ts).
@@ -633,6 +634,8 @@ export interface Balance {
   refinery: RefineryBalance;
   /** 4.7 Andockpunkt: Fernleitungen (Kapitel 2+), Abschnitt bigPipelines. */
   bigPipelines: BigPipelineBalance;
+  /** Aktien, Aufsichtsrat, Anleihen ab Kapitel 2 (GDD §8). */
+  stocks: StocksBalance; // 4.8 Andockpunkt
 }
 
 /** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
@@ -1828,6 +1831,7 @@ export function parseBalance(raw: unknown): Balance {
     refinery: parseRefinery(raw),
     // 4.7 Andockpunkt: Fernleitungen – eigener Parser in bigPipelineBalance.ts.
     bigPipelines: parseBigPipelines(raw),
+    stocks: parseStocksBalance(raw, (m) => new BalanceError(m)), // 4.8 Andockpunkt
   };
 
   for (const r of balance.transport.pipeline.rights) {
