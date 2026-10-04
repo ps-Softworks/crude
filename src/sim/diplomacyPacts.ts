@@ -30,9 +30,11 @@ import {
   diplomacyWorld,
   hasDiplomacy,
   LOG_NAMES,
+  offerMark,
   personality,
   remember,
   setMark,
+  setPulse,
   takeId,
   type DiploGame,
   type DiploReason,
@@ -260,7 +262,8 @@ export function advancePacts(state: DiploGame, balance: Balance, rng: Rng): Dipl
     behalten.push(pact);
   }
   out = { ...out, log, diplomacy: { ...d, pacts: behalten } };
-  return gebrochen ? setMark(out, DIPLO_MARKS.betrayed) : out;
+  // Beim ersten Bruch k2_hintergangen (bleibt), bei jedem Bruch der Anlass k2_bruch (Brief).
+  return gebrochen ? setPulse(setMark(out, DIPLO_MARKS.betrayed), DIPLO_MARKS.broken) : out;
 }
 
 /** Offene Absprachen, die ein Rivale anbieten könnte: seine Arten ohne laufende Absprache und ohne offenes Angebot. */
@@ -269,9 +272,20 @@ function offenFuer(d: DiplomacyState, balance: Balance, rival: DiploRival, round
 }
 
 /**
+ * Würde dieser Rivale von sich aus etwas anbieten? Nur wer Jacob fast selbst zusagen
+ * würde (acceptScore ≥ acceptThreshold − offerMargin), wenig Groll hat (unter
+ * offerMaxGrudge) und nie verraten wurde. So passt das Angebot zur eigenen
+ * Zusage-Schwelle: Wer Jacobs Vorschläge ablehnt, schreibt ihm auch keine.
+ */
+export function wouldOffer(d: DiplomacyState, balance: Balance, rival: DiploRival): boolean {
+  const p = balance.diplomacy.pacts;
+  return !betrayedBy(d, rival) && d.relations[rival].grudge < p.offerMaxGrudge && acceptScore(d, balance, rival) >= p.acceptThreshold - p.offerMargin;
+}
+
+/**
  * Am Rundenende: abgelaufene Angebote verfallen; dann schlägt mit offerChance ein
- * Rivale etwas vor (Vertrauen ≥ 0, Groll unter offerMaxGrudge, nicht verraten). Das
- * Angebot liegt ab der nächsten Runde offerRounds Runden auf dem Tisch.
+ * Rivale etwas vor (wouldOffer). Das Angebot liegt ab der nächsten Runde offerRounds
+ * Runden auf dem Tisch und kommt als Brief (Anlass k2_angebot_<rivale>_<art>).
  * Zufall: ein Wert für die Chance, dann je einer für Rivale und Art.
  */
 export function advanceOffers(state: DiploGame, balance: Balance, rng: Rng): DiploGame {
@@ -282,18 +296,19 @@ export function advanceOffers(state: DiploGame, balance: Balance, rng: Rng): Dip
   const verfallen = d.offers.filter((o) => o.expires <= state.round);
   for (const o of verfallen) log.push(`${date}: Das Angebot von ${LOG_NAMES[o.rival]} ist verfallen.`);
   d = { ...d, offers: d.offers.filter((o) => o.expires > state.round) };
+  let neu: Offer | null = null;
   if (rng.float() < p.offerChance) {
-    const kandidaten = DIPLO_RIVALS.filter(
-      (r) => !betrayedBy(d, r) && d.relations[r].trust >= 0 && d.relations[r].grudge < p.offerMaxGrudge && offenFuer(d, balance, r, state.round).length > 0,
-    );
+    const kandidaten = DIPLO_RIVALS.filter((r) => wouldOffer(d, balance, r) && offenFuer(d, balance, r, state.round).length > 0);
     if (kandidaten.length > 0) {
       const rival = rng.pick(kandidaten);
       const kind = rng.pick(offenFuer(d, balance, rival, state.round));
       const [id, d2] = takeId(d, 'o');
       const offer: Offer = { id, rival, kind, round: state.round, expires: state.round + p.offerRounds };
       d = { ...d2, offers: [...d2.offers, offer] };
+      neu = offer;
       log.push(`${date}: ${LOG_NAMES[rival]} schlägt Jacob ${KIND_LOG[kind]} vor.`);
     }
   }
-  return { ...state, log, diplomacy: d };
+  const out: DiploGame = { ...state, log, diplomacy: d };
+  return neu ? setPulse(out, offerMark(neu.rival, neu.kind)) : out;
 }

@@ -35,6 +35,7 @@ export interface DiplomacyBalance {
     revengeLeaseCost: number;
     revengeRail: number;
     revengeRelief: number;
+    reconcileGrudge: number;
   };
   rivals: Record<DiploRival, DiploRivalBalance>;
   carryOver: {
@@ -86,6 +87,7 @@ export interface DiplomacyBalance {
     breakRounds: number;
     offerChance: number;
     offerMaxGrudge: number;
+    offerMargin: number;
     offerRounds: number;
   };
   takeovers: {
@@ -98,6 +100,8 @@ export interface DiplomacyBalance {
     pruettBuyChance: number;
     distressPremium: number;
     distressMin: number;
+    crisisHelpTrust: number;
+    crisisHelpGrudge: number;
   };
   guild: {
     foundDelay: number;
@@ -229,6 +233,7 @@ export function parseDiplomacy(raw: unknown): DiplomacyBalance {
       revengeLeaseCost: anteil,
       revengeRail: abNull,
       revengeRelief: punkte,
+      reconcileGrudge: punkte,
     }),
     rivals,
     carryOver: block<DiplomacyBalance['carryOver']>(raw, `${d}.carryOver`, {
@@ -260,6 +265,7 @@ export function parseDiplomacy(raw: unknown): DiplomacyBalance {
       breakRounds: ab1,
       offerChance: anteil,
       offerMaxGrudge: punkte,
+      offerMargin: abNull,
       offerRounds: ab1,
     }),
     takeovers: block<DiplomacyBalance['takeovers']>(raw, `${d}.takeovers`, {
@@ -272,6 +278,8 @@ export function parseDiplomacy(raw: unknown): DiplomacyBalance {
       pruettBuyChance: anteil,
       distressPremium: abNull,
       distressMin: abNull,
+      crisisHelpTrust: punkte,
+      crisisHelpGrudge: punkte,
     }),
     guild: block<DiplomacyBalance['guild']>(raw, `${d}.guild`, {
       foundDelay: ab0,

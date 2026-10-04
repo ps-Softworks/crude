@@ -456,6 +456,7 @@ diplomacy:
     revengeLeaseCost: 0.15   # Bullard/Delgado: Pachten so viel teurer (Anteil am Bonus)
     revengeRail: 0.03        # Thorne: Bahntarif dauerhaft so viel $ je Barrel höher
     revengeRelief: 25        # nach der Rache sinkt der Groll um so viel
+    reconcileGrudge: 20      # Versöhnungsbrief nach einer Rache (Ereignis k2_rache_…): Groll − so viel
   # Persönlichkeiten (GDD §9.2, Skala 1–5); Bullard steht unter rivals.bullard.
   # kinds: welche Absprachen der Rivale überhaupt eingeht (price, territory, supply, cross).
   rivals:
@@ -488,7 +489,7 @@ diplomacy:
     loserGrudge: 20          # … wer verliert, auch nicht
     doubleGameTrust: 30      # beiden zugesagt: beide trauen Jacob danach so viel weniger
     congratsTrust: 10        # Glückwunsch an die Siegerin / den Sieger
-    partnerTrust: 20         # Margaret führt: Partneraufschlag nur ab diesem Vertrauen
+    partnerTrust: 20         # Margaret führt: Partneraufschlag ab diesem Vertrauen – oder mit laufendem Liefervertrag/Kreuzbeteiligung
     margaretPremium: 0.06    # $ je Barrel, die Margarets Trust ihren Partnern mehr zahlt
     pruettCut: 0.05          # $ je Barrel, die Pruetts Trust allen weniger zahlt (Kostenkürzer) – außer Partnern einer Preisabsprache
     breakupPremium: 0.04     # zerschlagen: Crane Eastern und Crane Midland bieten gegeneinander, so viel $ je Barrel mehr
@@ -521,7 +522,8 @@ diplomacy:
     breakChance: 0.03        # Rivale bricht je Runde mit Chance breakChance × (6 − Vertragstreue) + Groll / 1000
     breakRounds: 2           # wer zuerst bricht, kassiert so viele Runden doppelt
     offerChance: 0.35        # je Runde schlägt ein Rivale mit dieser Chance selbst etwas vor …
-    offerMaxGrudge: 40       # … aber nur, wenn sein Groll darunter liegt
+    offerMaxGrudge: 40       # … aber nur, wenn sein Groll darunter liegt …
+    offerMargin: 10          # … und er selbst fast zusagen würde: acceptScore ≥ acceptThreshold − offerMargin
     offerRounds: 2           # ein Angebot liegt so viele Runden auf dem Tisch
   # Übernahmen (GDD §9.4, §9.6): kleine Wildcatter kaufen; Pruett kauft in Krisen auf.
   takeovers:
@@ -534,6 +536,8 @@ diplomacy:
     pruettBuyChance: 0.3     # in der Krise kauft Pruett je Runde mit dieser Chance eine Firma (als Trustchef doppelt)
     distressPremium: 0.6     # Steht Jacob vor der Pleite, bietet Pruett Imperiumswert × 0,6 …
     distressMin: 5000        # … mindestens so viel $
+    crisisHelpTrust: 5       # Jacob nimmt die Leute einer von Pruett geschluckten Firma auf: Delgado traut ihm mehr …
+    crisisHelpGrudge: 5      # … Pruett grollt
   # Delgados Produzentenverband (GDD §9.2, §13 Kapitel 2).
   guild:
     foundDelay: 2            # Delgado gründet den Verband so viele Runden nach Kapitelbeginn

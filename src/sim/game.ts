@@ -237,6 +237,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const gefahren = advanceTransport(verzinst, balance);
   // Rivalen-Diplomatie (4.10): ohne state.diplomacy (Kapitel 1) passiert nichts. // 4.10 Andockpunkt
   const diplomatie = advanceDiplomacy(gefahren, balance);
+  // 4.10 Andockpunkt: Verkauf an Pruett (Antwort auf seinen Besuch) beendet die Partie ohne weitere Abrechnung.
+  if (diplomatie.finished) return { ...diplomatie, roundLogStart };
   const state = { ...checkBankruptcy(diplomatie, balance), roundLogStart };
   if (state.ending === 'pleite') return state;
   if (state.round >= state.totalRounds) {

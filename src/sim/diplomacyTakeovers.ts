@@ -9,6 +9,8 @@
 // - Steht Jacob selbst vor der Pleite (Frist läuft oder Kasse im Minus), bietet
 //   Pruett an, die Firma zu kaufen: Imperiumswert · distressPremium, mindestens
 //   distressMin. Annehmen beendet die Partie mit dem Verkauf (Ende „verkauft“).
+//   Pruett kommt damit persönlich vorbei (Anlass k2_angebot_pruett_buyout); jeder
+//   Krisenkauf kommt als Brief (Anlass k2_krisenkauf).
 // Feindliche Übernahmen über Aktien gehören zu 4.8 (Schutz: takeoverShield).
 
 import { spendAppointments } from './agenda';
@@ -18,7 +20,10 @@ import {
   betrayedBy,
   cents,
   diplomacyWorld,
+  DIPLO_MARKS,
   hasDiplomacy,
+  offerMark,
+  setPulse,
   takeId,
   type DiploGame,
   type DiploReason,
@@ -103,6 +108,7 @@ export function advanceTakeovers(state: DiploGame, balance: Balance, rng: Rng): 
   const log = [...state.log];
   let d = state.diplomacy;
   let cash = state.cash;
+  const anlaesse: string[] = [];
 
   const gewinn = firmsIncome(state, balance);
   if (gewinn > 0) {
@@ -118,6 +124,7 @@ export function advanceTakeovers(state: DiploGame, balance: Balance, rng: Rng): 
       const name = rng.pick(frei);
       d = { ...d, firms: [...d.firms, { name, owner: 'pruett', round: state.round }] };
       log.push(`${date}: Harold Pruett kauft in der Krise ${name} auf.`);
+      anlaesse.push(DIPLO_MARKS.crisisBuy);
     }
   }
 
@@ -127,8 +134,10 @@ export function advanceTakeovers(state: DiploGame, balance: Balance, rng: Rng): 
     const price = buyoutPrice({ ...state, cash }, balance);
     d = { ...d2, offers: [...d2.offers, { id, rival: 'pruett', kind: 'buyout', round: state.round, expires: state.round + balance.diplomacy.pacts.offerRounds, price }] };
     log.push(`${date}: Harold Pruett bietet an, Jacobs Firma für ${price.toLocaleString('de-DE')} $ zu kaufen.`);
+    anlaesse.push(offerMark('pruett', 'buyout'));
   }
-  return { ...state, cash, log, diplomacy: d };
+  // Krisenkauf und Kaufangebot kommen als Brief bzw. Pruett mit Mappe an der Tür (content/events/k2-diplomatie.yaml).
+  return anlaesse.reduce<DiploGame>((s, m) => setPulse(s, m), { ...state, cash, log, diplomacy: d });
 }
 
 /** Rückgabe-Hülle für die Oberfläche: Firmen mit Besitzer und Preis. */

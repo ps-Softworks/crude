@@ -30,14 +30,24 @@ import {
   type DiploGame,
   type DiplomacyState,
 } from './diplomacy';
-import { refreshEffects } from './diplomacyEffects';
-import { DIPLOMACY_READ_MARKS, DIPLOMACY_SIM_MARKS, driftRelations } from './diplomacyCore';
+import { margaretPartner, refreshEffects } from './diplomacyEffects';
+import {
+  DIPLOMACY_PULSE_MARKS,
+  DIPLOMACY_READ_MARKS,
+  DIPLOMACY_SIM_MARKS,
+  driftRelations,
+  offerAnswerMark,
+  offerMark,
+  reconcileMark,
+  revengeMark,
+  type DiploRival,
+} from './diplomacyCore';
 import { diploText, parseDiplomacyContent, respectWord } from './diplomacyContent';
 import { advanceGuild } from './diplomacyGuild';
-import { advanceOffers, advancePacts } from './diplomacyPacts';
+import { advanceOffers, advancePacts, wouldOffer } from './diplomacyPacts';
 import { advanceSuccession, margaretSeats } from './diplomacySuccession';
 import { advanceTakeovers, firmsIncome } from './diplomacyTakeovers';
-import { timedEffect } from './events';
+import { drawEvents, timedEffect } from './events';
 import { endRound, newGame, type GameState } from './game';
 import { Rng } from './rng';
 import { deserializeGame, serializeGame } from './save';
@@ -82,16 +92,28 @@ function ruhigMit(patch: (d: Roh) => void): Balance {
   });
 }
 
+/**
+ * Kapitel 2 mit ausgeglichener Welt: Seit 4.1 würfelt newGame die Weltgrößen (Stimmung,
+ * Kreditklima …) je Seed – die Tests setzen sie ausdrücklich auf 50/50, damit sie nicht
+ * am Würfel des Seeds hängen.
+ */
 function k2(b: Balance = ruhig, seed = 'diplo'): DiploGame {
-  return startDiplomacy({ ...newGame(seed, b), cash: 50000 }, b, 2) as DiploGame;
+  return startDiplomacy(mitWelt({ ...newGame(seed, b), cash: 50000 }, { mood: 50, credit: 50, government: 'handel' }), b, 2) as DiploGame;
 }
 
 function mitMarken<T extends GameState>(state: T, marks: Record<string, number>): T {
   return { ...state, events: { ...state.events, marks: { ...state.events.marks, ...marks } } };
 }
 
+/** Setzt einzelne Weltgrößen; der Rest des Weltmodells (4.1) bleibt, wie er ist. */
 function mitWelt<T extends GameState>(state: T, welt: Record<string, unknown>): T {
-  return { ...state, worldModel: welt } as T;
+  return { ...state, worldModel: { ...state.worldModel, ...welt } } as T;
+}
+
+/** Ohne Weltmodell (z. B. ein Zustand ohne Block A) – dann gelten die Ersatzwerte. */
+function ohneWelt(state: GameState): GameState {
+  const { worldModel: _welt, ...rest } = state;
+  return rest as GameState;
 }
 
 function diplo<T extends DiploGame>(state: T, patch: Partial<DiplomacyState>): T {
@@ -185,9 +207,52 @@ describe('Start in Kapitel 2', () => {
   });
 });
 
+describe('Übertrag aus Kapitel 1: Delgados Verband', () => {
+  const g0 = balance.diplomacy.guild;
+
+  it('wer in Kapitel 1 beigetreten ist, ist von Anfang an Mitglied – keine zweite Gründung, keine zweite Bitte', () => {
+    const g = mitMarken({ ...newGame('verband', balance, catalog), cash: 50000 }, { [RIVAL_MARKS.alliance]: 5 });
+    const s = startDiplomacy(g, balance, 2);
+    expect(d(s).guild).toMatchObject({ founded: s.round, member: true, joinedRound: s.round, members: g0.startMembers + 1, expelled: false });
+    expect(d(s).relations.delgado.trust).toBe(balance.diplomacy.carryOver.delgadoMemberTrust);
+    expect(s.events.marks[DIPLO_MARKS.guildFounded]).toBe(s.round);
+    expect(s.events.marks[DIPLO_MARKS.guildCarried]).toBe(s.round);
+    // advanceGuild gründet nicht noch einmal, sondern verlangt den Beitrag.
+    const weiter = advanceGuild(s as DiploGame, ruhig, new Rng(1));
+    expect(d(weiter).guild.founded).toBe(s.round);
+    expect(weiter.cash).toBe(s.cash - g0.dues);
+    // Ein paar Runden: Die Gründungs-Bitte kommt nie, stattdessen Delgado mit der neuen Satzung.
+    let r: GameState = s;
+    for (let i = 0; i < 5; i++) r = endRound(r, ruhig, catalog);
+    expect(r.events.seen).not.toContain('k2_verband_gruendung');
+    expect(r.events.seen).toContain('k2_verband_mitglied');
+    expect(d(r).guild.member).toBe(true);
+    expect(d(r).relations.delgado.trust).toBeGreaterThan(0);
+  });
+
+  it('ohne Beitritt in Kapitel 1: Gründung nach foundDelay und die Bitte um Beitritt', () => {
+    let r: GameState = k2();
+    expect(d(r).guild.founded).toBe(0);
+    for (let i = 0; i < 5; i++) r = endRound(r, ruhig, catalog);
+    expect(r.events.seen).toContain('k2_verband_gruendung');
+    expect(r.events.seen).not.toContain('k2_verband_mitglied');
+  });
+
+  it('beim Neubeginn kündigen: Delgado traut Jacob weniger', () => {
+    const s = startDiplomacy(mitMarken(newGame('verband', balance), { [RIVAL_MARKS.alliance]: 5 }), ruhig, 2);
+    const raus = advanceDiplomacy(mitMarken(s, { [DIPLO_MARKS.guildCancel]: s.round }), ruhig);
+    expect(d(raus).guild.member).toBe(false);
+    expect(d(raus).guild.expelled).toBe(false);
+    expect(d(raus).relations.delgado.trust).toBe(ruhig.diplomacy.carryOver.delgadoMemberTrust - ruhig.diplomacy.guild.leaveTrust - ruhig.diplomacy.relations.trustDrift);
+  });
+});
+
 describe('Welt-Schnittstelle (4.1–4.4) mit Ersatzwerten', () => {
   it('ohne Weltmodell gelten die Ersatzwerte', () => {
-    expect(diplomacyWorld(newGame('w', balance))).toEqual(FALLBACK_WORLD);
+    expect(diplomacyWorld(ohneWelt(newGame('w', balance)))).toEqual(FALLBACK_WORLD);
+    // Mit dem Weltmodell aus 4.1 gelten dessen gewürfelte Werte.
+    const g = newGame('w', balance);
+    expect(diplomacyWorld(g)).toMatchObject({ mood: g.worldModel.mood, credit: g.worldModel.credit, government: g.worldModel.government });
   });
 
   it('liest Stimmung, Kreditklima und Regierung aus state.worldModel', () => {
@@ -218,12 +283,16 @@ describe('Crane-Nachfolge: Margaret gegen Pruett', () => {
   });
 
   it('Zufall verschiebt je Runde höchstens noise / 2', () => {
-    let s = k2(balance);
+    // Nur der Zufall: ohne Kredit-Drift (sonst schiebt die Welt zusätzlich).
+    const zufall = mitDiplo((x) => {
+      x.succession.creditDrift = 0;
+    });
+    let s = k2(zufall);
     const rng = new Rng(7);
     for (let i = 0; i < 6; i++) {
       const vorher = d(s).succession.share;
-      s = advanceSuccession(s, balance, rng);
-      expect(Math.abs(d(s).succession.share - vorher)).toBeLessThanOrEqual(balance.diplomacy.succession.noise / 2 + 0.005);
+      s = advanceSuccession(s, zufall, rng);
+      expect(Math.abs(d(s).succession.share - vorher)).toBeLessThanOrEqual(zufall.diplomacy.succession.noise / 2 + 0.005);
     }
   });
 
@@ -337,6 +406,31 @@ describe('Wirkung der Nachfolge auf den Preis', () => {
     expect(diplomacyEffects(rel(mit('margaret'), 'margaret', s.partnerTrust - 1), ruhig, 1).price).toBe(0);
   });
 
+  it('Partner ist auch, wer mit Margaret einen Liefervertrag oder eine Kreuzbeteiligung laufen hat', () => {
+    const g = rel(mit('margaret'), 'margaret', 0);
+    const vertrag = (kind: 'supply' | 'cross' | 'price') =>
+      diplo(g, { pacts: [{ id: 'a1', rival: 'margaret', kind, startRound: g.round, endRound: g.round + 3, traced: false }] });
+    expect(margaretPartner(d(g), ruhig, g.round)).toBe(false);
+    expect(margaretPartner(d(vertrag('supply')), ruhig, g.round)).toBe(true);
+    expect(margaretPartner(d(vertrag('cross')), ruhig, g.round)).toBe(true);
+    // Abgelaufen zählt nicht mehr.
+    expect(margaretPartner(d(vertrag('supply')), ruhig, g.round + 4)).toBe(false);
+    expect(diplomacyEffects(vertrag('cross'), ruhig, g.round).price).toBe(s.margaretPremium);
+    expect(diplomacyEffects(vertrag('supply'), ruhig, g.round).price).toBe(Math.round((s.margaretPremium + ruhig.diplomacy.pacts.supplyPremium) * 100) / 100);
+  });
+
+  it('der Lohn für den Rückhalt verpufft nicht: mit Liefervertrag bleibt der Aufschlag, auch wenn das Vertrauen verblasst', () => {
+    // Margaret gewinnt mit Jacobs Rückhalt (winnerTrust), Jacob schließt gleich den Liefervertrag.
+    let g: GameState = rel(mit('margaret'), 'margaret', s.winnerTrust);
+    expect(margaretSagtZu(g as DiploGame)).toBe(true);
+    const a = proposePact(g, ruhig, 'margaret', 'supply');
+    if (!a.ok || !a.accepted) throw new Error('Margaret sollte zusagen');
+    g = a.state;
+    for (let i = 0; i < 8; i++) g = advanceDiplomacy(g, ruhig);
+    expect(d(g).relations.margaret.trust).toBeLessThan(s.partnerTrust);
+    expect(diplomacyEffects(g as DiploGame, ruhig, g.round).price).toBeGreaterThanOrEqual(s.margaretPremium);
+  });
+
   it('Pruett führt: Abschlag für alle außer Partnern einer Preisabsprache', () => {
     const g = mit('pruett');
     expect(diplomacyEffects(g, ruhig, g.round).price).toBe(-s.pruettCut);
@@ -354,6 +448,11 @@ describe('Wirkung der Nachfolge auf den Preis', () => {
     expect(jacobPrice(g, ruhig)).toBeCloseTo(g.postedPrice + s.margaretPremium, 2);
   });
 });
+
+/** Margaret sagt einem Vorschlag zu (für den Partner-Test). */
+function margaretSagtZu(g: DiploGame): boolean {
+  return acceptScore(d(g), ruhig, 'margaret') >= ruhig.diplomacy.pacts.acceptThreshold;
+}
 
 describe('Absprachen', () => {
   const p = ruhig.diplomacy.pacts;
@@ -518,6 +617,29 @@ describe('Angebote der Rivalen', () => {
     const spaeter = advanceOffers({ ...s, round: o.expires }, angebote, new Rng(4));
     expect(d(spaeter).offers.some((x) => x.id === o.id)).toBe(false);
     expect(spaeter.log.some((l) => l.includes('verfallen'))).toBe(true);
+  });
+
+  it('ein Angebot passt zur eigenen Zusage-Schwelle: wer Jacob nicht zusagen würde, bietet auch nichts an', () => {
+    const p = angebote.diplomacy.pacts;
+    const g = k2(angebote);
+    // Zu Beginn (Vertrauen 0): Margaret (Vertragstreue 2) und Thorne (1) liegen weit unter der Schwelle.
+    expect(wouldOffer(d(g), angebote, 'margaret')).toBe(false);
+    expect(wouldOffer(d(g), angebote, 'thorne')).toBe(false);
+    for (const r of ['margaret', 'pruett', 'bullard', 'thorne', 'delgado'] as DiploRival[]) {
+      expect(wouldOffer(d(g), angebote, r)).toBe(acceptScore(d(g), angebote, r) >= p.acceptThreshold - p.offerMargin && d(g).relations[r].grudge < p.offerMaxGrudge);
+    }
+    // In vielen Runden bietet nie jemand an, der unter der Schwelle liegt.
+    let s: DiploGame = g;
+    const rng = new Rng(11);
+    for (let i = 0; i < 30; i++) {
+      const vorher = d(s).offers.map((o) => o.id);
+      s = advanceOffers({ ...s, round: s.round + 1 }, angebote, rng);
+      for (const o of d(s).offers.filter((x) => !vorher.includes(x.id))) {
+        expect(acceptScore(d(s), angebote, o.rival)).toBeGreaterThanOrEqual(p.acceptThreshold - p.offerMargin);
+      }
+    }
+    // Mit genug Vertrauen schreibt auch Margaret.
+    expect(wouldOffer(d(rel(g, 'margaret', 20)), angebote, 'margaret')).toBe(true);
   });
 
   it('wer grollt oder verraten wurde, bietet nichts an', () => {
@@ -688,10 +810,13 @@ describe('Antworten aus den Ereignissen (Merkzeichen)', () => {
   });
 
   it('jede gelesene Antwort-Marke steht in content/events/k2-diplomatie.yaml, jede Sim-Marke wird dort abgefragt', () => {
+    // Angebote gibt es nur für die Arten, die balance.yaml einem Rivalen erlaubt – die prüft der Test unten.
+    const angebot = (m: string) => m.startsWith('k2_angebot_');
     const gesetzt = new Set(catalog.flatMap((e) => e.choices.flatMap((c) => c.marks)));
-    for (const m of DIPLOMACY_READ_MARKS) expect(gesetzt.has(m), m).toBe(true);
+    for (const m of DIPLOMACY_READ_MARKS.filter((x) => !angebot(x))) expect(gesetzt.has(m), m).toBe(true);
     const abgefragt = new Set(catalog.flatMap((e) => e.marked));
-    for (const m of DIPLOMACY_SIM_MARKS) expect(abgefragt.has(m), m).toBe(true);
+    // k2_hintergangen (erster Bruch) bleibt für spätere Kapitel; der Brief hängt am Anlass k2_bruch.
+    for (const m of DIPLOMACY_SIM_MARKS.filter((x) => !angebot(x) && x !== DIPLO_MARKS.betrayed)) expect(abgefragt.has(m), m).toBe(true);
   });
 });
 
@@ -823,5 +948,157 @@ describe('Texte (content/diplomacy.yaml)', () => {
     expect(respectWord(80)).toBe('hoch');
     expect(respectWord(50)).toBe('mittel');
     expect(respectWord(10)).toBe('niedrig');
+  });
+});
+
+describe('Briefe und Besuche zu Angeboten, Rache, Brüchen und Krisenkäufen (Anlässe)', () => {
+  const angebote = ruhigMit((x) => {
+    x.pacts.offerChance = 1;
+  });
+
+  /** Ereignis aus dem Katalog, das auf diesen Anlass wartet. */
+  const ereignisZu = (mark: string) => catalog.filter((e) => e.marked.includes(mark));
+
+  it('jedes Angebot, das balance.yaml erlaubt, hat einen Brief mit Annehmen und Ablehnen', () => {
+    const paare: [DiploRival, string][] = [
+      ...(Object.entries(balance.diplomacy.rivals) as [DiploRival, { kinds: string[] }][]).flatMap(([r, x]) => x.kinds.map((k) => [r, k] as [DiploRival, string])),
+      ['pruett', 'buyout'],
+    ];
+    for (const [rival, kind] of paare) {
+      const m = offerMark(rival, kind as 'price');
+      const ev = ereignisZu(m);
+      expect(ev, m).toHaveLength(1);
+      expect(ev[0].once, m).toBe(false);
+      const marks = ev[0].choices.flatMap((c) => c.marks);
+      expect(marks, m).toContain(offerAnswerMark(rival, kind as 'price', true));
+      expect(marks, m).toContain(offerAnswerMark(rival, kind as 'price', false));
+      // Ohne Antwort verfällt das Angebot nur – die Standard-Wahl setzt nichts.
+      expect(ev[0].choices.find((c) => c.default)?.marks ?? [], m).toEqual([]);
+      // Kreuzbeteiligung: der Knopf verlangt genau den Preis aus balance.yaml.
+      if (kind === 'cross') {
+        const ja = ev[0].choices.find((c) => c.marks.includes(offerAnswerMark(rival, 'cross', true)))!;
+        expect(ja.requires.minCash, m).toBe(balance.diplomacy.pacts.crossCost);
+      }
+    }
+    // Pruetts Kaufangebot kommt persönlich – mit Mappe an der Tür.
+    expect(ereignisZu(offerMark('pruett', 'buyout'))[0].visitor).toBe('pruett');
+  });
+
+  it('jeder Anlass (Rache je Rivale, Bruch, Krisenkauf) hat ein wiederholbares Ereignis', () => {
+    for (const m of DIPLOMACY_PULSE_MARKS.filter((x) => !x.startsWith('k2_angebot_'))) {
+      const ev = ereignisZu(m);
+      expect(ev, m).toHaveLength(1);
+      expect(ev[0].once, m).toBe(false);
+    }
+    for (const r of ['margaret', 'pruett', 'bullard', 'thorne', 'delgado'] as DiploRival[]) {
+      expect(ereignisZu(revengeMark(r))[0].choices.some((c) => c.marks.includes(reconcileMark(r))), r).toBe(true);
+    }
+  });
+
+  it('ein neues Angebot setzt seinen Anlass; in der Runde danach liegt der Brief im Posteingang, dann ist der Anlass weg', () => {
+    const g = k2(angebote);
+    const s = advanceOffers(g, angebote, new Rng(3));
+    const o = d(s).offers[0];
+    expect(s.events.marks[offerMark(o.rival, o.kind)]).toBe(g.round);
+    let r: GameState = endRound(g, angebote, catalog);
+    const neu = d(r).offers.find((x) => x.round === g.round)!;
+    expect(r.events.pending).toContain(`k2_angebot_${neu.rival}_${neu.kind}`);
+    expect(r.events.marks[offerMark(neu.rival, neu.kind)]).toBe(g.round);
+    r = endRound(r, angebote, catalog);
+    expect(r.events.marks[offerMark(neu.rival, neu.kind)]).toBeUndefined();
+  });
+
+  it('Annehmen im Brief schließt die Absprache, Ablehnen kränkt – und beides geht wieder', () => {
+    const p = ruhig.diplomacy.pacts;
+    const offer = { id: 'o9', rival: 'bullard' as const, kind: 'price' as const, round: 1, expires: 9 };
+    const g = { ...diplo(k2(), { offers: [offer] }), round: 2 };
+    const ja = advanceDiplomacy(mitMarken(g, { [offerAnswerMark('bullard', 'price', true)]: 2 }), ruhig);
+    expect(d(ja).offers).toEqual([]);
+    expect(d(ja).pacts.map((x) => [x.rival, x.kind])).toEqual([['bullard', 'price']]);
+    expect(ja.events.marks[offerAnswerMark('bullard', 'price', true)]).toBeUndefined();
+    const nein = advanceDiplomacy(mitMarken(g, { [offerAnswerMark('bullard', 'price', false)]: 2 }), ruhig);
+    expect(d(nein).offers).toEqual([]);
+    expect(d(nein).pacts).toEqual([]);
+    expect(d(nein).relations.bullard.grudge).toBe(Math.round((p.declineGrudge - ruhig.diplomacy.relations.grudgeDecay / 5) * 100) / 100);
+    // Ein zweites Angebot derselben Art lässt sich wieder per Brief beantworten.
+    const zweites = { ...diplo(nein as DiploGame, { offers: [{ ...offer, id: 'o10' }] }), round: 3 };
+    const nochmal = advanceDiplomacy(mitMarken(zweites, { [offerAnswerMark('bullard', 'price', true)]: 3 }), ruhig);
+    expect(d(nochmal).pacts).toHaveLength(1);
+  });
+
+  it('am Schreibtisch schon beantwortet: der Brief bleibt ohne Wirkung', () => {
+    const s = advanceDiplomacy(mitMarken(k2(), { [offerAnswerMark('pruett', 'price', true)]: 1 }), ruhig);
+    expect(d(s).pacts).toEqual([]);
+    expect(s.log.some((l) => l.includes('liegt nicht mehr auf dem Tisch'))).toBe(true);
+  });
+
+  it('Pruett an der Tür: Verkaufen beendet die Partie sofort', () => {
+    const offer = { id: 'o1', rival: 'pruett' as const, kind: 'buyout' as const, round: 1, expires: 3, price: 7000 };
+    const g = { ...diplo(k2(), { offers: [offer] }), round: 2 };
+    const r = endRound(mitMarken(g, { [offerAnswerMark('pruett', 'buyout', true)]: 2 }), ruhig, catalog);
+    expect(r).toMatchObject({ finished: true, ending: 'verkauft', cash: 7000, round: 2 });
+    expect(r.log.at(-1)).toContain('an Harold Pruett');
+  });
+
+  it('das Kaufangebot setzt den Anlass für Pruetts Besuch; der Besuch kommt in der nächsten Runde', () => {
+    const kauf = ruhigMit((x) => {
+      x.takeovers.pruettBuyChance = 1;
+    });
+    const g = { ...k2(kauf), cash: -100 };
+    const s = advanceTakeovers(g, kauf, new Rng(1));
+    expect(s.events.marks[offerMark('pruett', 'buyout')]).toBe(g.round);
+    const r = drawEvents({ ...s, round: s.round + 1 }, kauf, catalog);
+    expect(r.events.pending).toContain('k2_angebot_pruett_buyout');
+  });
+
+  it('Krisenkauf: Anlass und Brief; Hilfe für die Bohrleute freut Delgado und ärgert Pruett', () => {
+    const kauf = ruhigMit((x) => {
+      x.takeovers.pruettBuyChance = 1;
+    });
+    const s = advanceTakeovers(mitWelt(k2(kauf), { credit: 20 }), kauf, new Rng(1));
+    expect(s.events.marks[DIPLO_MARKS.crisisBuy]).toBe(s.round);
+    const t = ruhig.diplomacy.takeovers;
+    const h = advanceDiplomacy(mitMarken(k2(), { [DIPLO_MARKS.crisisHelp]: 1 }), ruhig);
+    expect(d(h).relations.delgado.trust).toBe(t.crisisHelpTrust - ruhig.diplomacy.relations.trustDrift);
+    expect(d(h).relations.pruett.grudge).toBe(Math.round((t.crisisHelpGrudge - (ruhig.diplomacy.relations.grudgeDecay * 3) / 5) * 100) / 100);
+    expect(h.events.marks[DIPLO_MARKS.crisisHelp]).toBeUndefined();
+  });
+
+  it('jede Rache setzt ihren Anlass; die Versöhnung senkt den Groll', () => {
+    const rache = ruhigMit((x) => {
+      x.relations.revengeChance = 1;
+    });
+    const g = rel(k2(rache), 'bullard', 0, 80);
+    const s = advanceDiplomacy(g, rache);
+    expect(s.events.marks[revengeMark('bullard')]).toBe(g.round);
+    const r = endRound(g, rache, catalog);
+    expect(r.events.pending).toContain('k2_rache_bullard');
+    const vorher = d(r).relations.bullard.grudge;
+    const v = advanceDiplomacy(mitMarken(r, { [reconcileMark('bullard')]: r.round }), rache);
+    const decay = (rache.diplomacy.relations.grudgeDecay * 1) / 5;
+    expect(d(v).relations.bullard.grudge).toBe(Math.round(Math.max(0, vorher - rache.diplomacy.relations.reconcileGrudge - decay) * 100) / 100);
+  });
+
+  it('jeder Bruch durch einen Rivalen kommt als Brief, nicht nur der erste', () => {
+    const brecher = ruhigMit((x) => {
+      x.pacts.breakChance = 1;
+    });
+    const pakt = (g: DiploGame, id: string) => diplo(g, { pacts: [{ id, rival: 'bullard', kind: 'price', startRound: g.round, endRound: g.round + 5, traced: false }] });
+    let r: GameState = endRound(pakt(k2(brecher), 'a1'), brecher, catalog);
+    expect(r.events.marks[DIPLO_MARKS.betrayed]).toBeDefined();
+    expect(r.events.pending).toContain('k2_hintergangen_brief');
+    // Brief beantworten (schweigen), ein paar Runden warten, zweiter Bruch.
+    for (let i = 0; i < 3; i++) r = endRound(r, brecher, catalog);
+    expect(r.events.pending).not.toContain('k2_hintergangen_brief');
+    r = endRound(pakt(r as DiploGame, 'a2'), brecher, catalog);
+    expect(r.events.pending).toContain('k2_hintergangen_brief');
+  });
+
+  it('Anlässe aus der Vorrunde werden gelöscht, frische bleiben', () => {
+    const g = k2();
+    const alt = mitMarken(g, { [revengeMark('thorne')]: g.round - 1, [DIPLO_MARKS.crisisBuy]: g.round });
+    const s = advanceDiplomacy({ ...alt, round: g.round }, ruhig);
+    expect(s.events.marks[revengeMark('thorne')]).toBeUndefined();
+    expect(s.events.marks[DIPLO_MARKS.crisisBuy]).toBe(g.round);
   });
 });

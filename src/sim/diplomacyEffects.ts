@@ -2,7 +2,8 @@
 // Pachtkosten. Alles zusammen steht als eine befristete Nachwirkung in events.timed
 // (Quelle „diplomatie“): jacobPrice (trust.ts) und leaseTerms (lease.ts) rechnen sie mit.
 //
-//   price     = Nachfolge (Margaret-Partner + / Pruett − / zerschlagen +)
+//   price     = Nachfolge (Margaret-Partner + / Pruett − / zerschlagen +; Partner = laufender
+//               Liefervertrag oder Kreuzbeteiligung mit Margaret, oder Vertrauen ≥ partnerTrust)
 //             + Preisabsprachen + Liefervertrag + Verband (× Stärke) + Nachwirkungen
 //   leaseCost = − Gebietsabsprachen + Außenseiter-Aufschlag (zu groß für den Verband) + Nachwirkungen
 //
@@ -33,6 +34,16 @@ export function tooBig(state: GameState, balance: Balance): boolean {
   return empireValue(state, balance) >= balance.diplomacy.guild.tooBigValue;
 }
 
+/**
+ * Ist Jacob Margarets Partner? Eine laufende Absprache mit ihr (Liefervertrag oder
+ * Kreuzbeteiligung) macht ihn dazu, auch wenn das Vertrauen langsam verblasst – sonst
+ * zählt das Vertrauen (≥ succession.partnerTrust).
+ */
+export function margaretPartner(d: Pick<DiplomacyState, 'pacts' | 'relations'>, balance: Balance, round: number): boolean {
+  if (d.pacts.some((x) => x.rival === 'margaret' && (x.kind === 'supply' || x.kind === 'cross') && pactActive(x, round))) return true;
+  return d.relations.margaret.trust >= balance.diplomacy.succession.partnerTrust;
+}
+
 /** Wirkung der Diplomatie in einer Runde (round = für welche Runde). */
 export function diplomacyEffects(state: DiploGame, balance: Balance, round: number): { price: number; leaseCost: number } {
   const d = state.diplomacy;
@@ -44,7 +55,7 @@ export function diplomacyEffects(state: DiploGame, balance: Balance, round: numb
 
   switch (d.succession.outcome) {
     case 'margaret':
-      if (d.relations.margaret.trust >= s.partnerTrust) price += s.margaretPremium;
+      if (margaretPartner(d, balance, round)) price += s.margaretPremium;
       break;
     case 'pruett':
       if (!aktiv.some((x) => x.rival === 'pruett' && x.kind === 'price')) price -= s.pruettCut;

@@ -186,7 +186,90 @@ export const DIPLO_MARKS = {
   betrayer: 'k2_verrat',
   /** sim: Ein Rivale hat zum ersten Mal eine Absprache mit Jacob gebrochen. */
   betrayed: 'k2_hintergangen',
+  /** sim: Jacob war schon in Kapitel 1 in Delgados Verband – er ist von Anfang an Mitglied (statt der Bitte um Beitritt). */
+  guildCarried: 'k2_verband_uebernommen',
+  /** wahl: Jacob war schon in Kapitel 1 im Verband und kündigt beim Neubeginn (Delgado traut ihm weniger). */
+  guildCancel: 'k2_verband_kuendigung',
+  /** Anlass (sim, je Mal neu): Ein Rivale hat eine Absprache mit Jacob gebrochen – jedes Mal, nicht nur beim ersten. */
+  broken: 'k2_bruch',
+  /** Anlass (sim, je Mal neu): Harold Pruett hat in der Krise eine kleine Firma aufgekauft. */
+  crisisBuy: 'k2_krisenkauf',
+  /** wahl (wiederholbar): Jacob bietet den Leuten der aufgekauften Firma Arbeit an. */
+  crisisHelp: 'k2_krisenkauf_hilfe',
 } as const;
+
+// ---------------------------------------------------------------------------
+// Anlass-Merkzeichen: Was mehrmals passieren kann (Angebote, Rache, Brüche,
+// Krisenkäufe), setzt die Simulation jedes Mal neu – mit der Runde, in der es
+// geschah. Ein Ereignis mit „once: false“ und „marked: [anlass]“ kommt dann in der
+// nächsten Runde als Brief oder Besuch. Am Ende jener Runde löscht die Diplomatie
+// den Anlass wieder (clearPulses), damit derselbe Brief nicht noch einmal kommt.
+//
+// Antworten darauf („…_ja“, „…_nein“, „…_versoehnt“, k2_krisenkauf_hilfe,
+// k2_angeprangert) sind wiederholbar: Die Diplomatie verarbeitet sie am Rundenende
+// und löscht sie, statt sie wie die übrigen Antworten nur einmal zu lesen.
+
+/** Arten von Angeboten der Rivalen: Absprachen und Pruetts Kaufangebot. */
+export const OFFER_KINDS = ['price', 'territory', 'supply', 'cross', 'buyout'] as const;
+
+/** Anlass: Ein Rivale bietet Jacob etwas an (z. B. k2_angebot_margaret_supply). */
+export function offerMark(rival: DiploRival, kind: (typeof OFFER_KINDS)[number]): string {
+  return `k2_angebot_${rival}_${kind}`;
+}
+
+/** Antwort auf ein Angebot im Brief bzw. beim Besuch: annehmen (…_ja) oder ablehnen (…_nein). */
+export function offerAnswerMark(rival: DiploRival, kind: (typeof OFFER_KINDS)[number], accept: boolean): string {
+  return `${offerMark(rival, kind)}_${accept ? 'ja' : 'nein'}`;
+}
+
+/** Anlass: Ein Rivale hat sich gerächt (GDD §9.5). */
+export function revengeMark(rival: DiploRival): string {
+  return `k2_rache_${rival}`;
+}
+
+/** Antwort auf eine Rache: Jacob sucht die Versöhnung (Groll sinkt um relations.reconcileGrudge). */
+export function reconcileMark(rival: DiploRival): string {
+  return `${revengeMark(rival)}_versoehnt`;
+}
+
+const OFFER_PAIRS = DIPLO_RIVALS.flatMap((r) => OFFER_KINDS.map((k) => [r, k] as const));
+
+/** Alle Anlass-Merkzeichen (setzt nur die Simulation, je Mal neu). */
+export const DIPLOMACY_PULSE_MARKS: readonly string[] = [
+  ...OFFER_PAIRS.map(([r, k]) => offerMark(r, k)),
+  ...DIPLO_RIVALS.map(revengeMark),
+  DIPLO_MARKS.broken,
+  DIPLO_MARKS.crisisBuy,
+];
+
+/** Wiederholbare Antworten: verarbeitet und gelöscht, sooft sie kommen. */
+export const DIPLOMACY_REPEAT_MARKS: readonly string[] = [
+  ...OFFER_PAIRS.flatMap(([r, k]) => [offerAnswerMark(r, k, true), offerAnswerMark(r, k, false)]),
+  ...DIPLO_RIVALS.map(reconcileMark),
+  DIPLO_MARKS.crisisHelp,
+  DIPLO_MARKS.exposed,
+];
+
+/** Setzt einen Anlass auf diese Runde (auch wenn er schon gesetzt war). */
+export function setPulse<T extends GameState>(state: T, mark: string): T {
+  return { ...state, events: { ...state.events, marks: { ...state.events.marks, [mark]: state.round } } };
+}
+
+/** Löscht Merkzeichen (Anlässe nach ihrer Runde, verarbeitete wiederholbare Antworten). */
+export function clearMarks<T extends GameState>(state: T, marks: readonly string[]): T {
+  if (!marks.some((m) => state.events.marks[m] !== undefined)) return state;
+  const rest = { ...state.events.marks };
+  for (const m of marks) delete rest[m];
+  return { ...state, events: { ...state.events, marks: rest } };
+}
+
+/** Anlässe aus früheren Runden hatten ihren Brief bzw. Besuch – weg damit. */
+export function clearPulses<T extends GameState>(state: T): T {
+  return clearMarks(
+    state,
+    DIPLOMACY_PULSE_MARKS.filter((m) => state.events.marks[m] !== undefined && state.events.marks[m] < state.round),
+  );
+}
 
 /** Merkzeichen, die die Simulation selbst setzt (für die Inhaltsprüfung). */
 export const DIPLOMACY_SIM_MARKS: readonly string[] = [
@@ -195,9 +278,11 @@ export const DIPLOMACY_SIM_MARKS: readonly string[] = [
   DIPLO_MARKS.heirPruett,
   DIPLO_MARKS.breakup,
   DIPLO_MARKS.guildFounded,
+  DIPLO_MARKS.guildCarried,
   DIPLO_MARKS.guildTooBig,
   DIPLO_MARKS.betrayer,
   DIPLO_MARKS.betrayed,
+  ...DIPLOMACY_PULSE_MARKS,
 ];
 
 /** Merkzeichen aus Antworten, die die Simulation liest (für die Wirkungsprüfung). */
@@ -211,7 +296,8 @@ export const DIPLOMACY_READ_MARKS: readonly string[] = [
   DIPLO_MARKS.guildLeave,
   DIPLO_MARKS.guildFight,
   DIPLO_MARKS.apology,
-  DIPLO_MARKS.exposed,
+  DIPLO_MARKS.guildCancel,
+  ...DIPLOMACY_REPEAT_MARKS,
 ];
 
 /** Namen für das Protokoll (das Protokoll ist bisher deutsch; die Oberfläche nimmt content/diplomacy.yaml). */

@@ -7,7 +7,10 @@
 // kapitel ≥ diplomacy.unlockChapter (4.5 Andockpunkt: beim Start von Kapitel 2 aufrufen).
 //
 // Reihenfolge am Rundenende (advanceDiplomacy, nach Transport und vor der Pleiteprüfung):
-//   1. Antworten aus content/events/k2-diplomatie.yaml (Merkzeichen) wirken
+//   0. Anlässe der Vorrunde (Briefe/Besuche sind gekommen) werden gelöscht
+//   1. Antworten aus content/events/k2-diplomatie.yaml (Merkzeichen) wirken – einmalige
+//      genau einmal, wiederholbare (Angebote, Versöhnung, …) sooft sie kommen;
+//      verkauft Jacob an Pruett, endet hier die Partie
 //   2. Nachfolge: Zerschlagungsdruck, Aufsichtsrat, ggf. Entscheidung
 //   3. Absprachen: Ablauf, Bruch durch Rivalen, Spuren unter Kartellgesetz
 //   4. Angebote: Verfall, neues Angebot eines Rivalen
@@ -24,17 +27,26 @@ import {
   betrayedBy,
   cents,
   changeRelation,
+  clearMarks,
+  clearPulses,
   DIPLO_MARKS,
   DIPLO_RIVALS,
   DIPLOMACY_READ_MARKS,
+  DIPLOMACY_REPEAT_MARKS,
   driftRelations,
   hasDiplomacy,
   HEIRS,
+  LOG_NAMES,
   markSet,
+  OFFER_KINDS,
+  offerAnswerMark,
   personality,
+  reconcileMark,
   relationMood,
   remember,
+  revengeMark,
   setMark,
+  setPulse,
   type DiploGame,
   type DiploReason,
   type DiploRival,
@@ -47,7 +59,7 @@ import {
 } from './diplomacyCore';
 import { diplomacyEffects, diplomacyHeat, guildStrength, isCartel, pactActive, refreshEffects } from './diplomacyEffects';
 import { enterGuild, exitGuild, advanceGuild, joinReason, leaveReason, newGuild } from './diplomacyGuild';
-import { advanceOffers, advancePacts, proposeReason } from './diplomacyPacts';
+import { advanceOffers, advancePacts, answerOffer, proposeReason } from './diplomacyPacts';
 import { advanceSuccession, backReason, breakupTalk, margaretSeats, newSuccession, pushReason, type BreakupTalk } from './diplomacySuccession';
 import { advanceTakeovers, firmRows, type FirmRow } from './diplomacyTakeovers';
 import type { GameState } from './game';
@@ -102,18 +114,69 @@ export function startDiplomacy(state: GameState, balance: Balance, chapter: numb
   } else if (stance === 'fehde') d = changeRelation(d, 'bullard', { grudge: c.bullardFeudGrudge });
   else if (stance === 'pakt') d = changeRelation(d, 'bullard', { trust: c.bullardPactTrust });
   if (markRound(state, RIVAL_MARKS.craneLoyal) !== undefined) for (const h of HEIRS) d = changeRelation(d, h, { trust: c.craneLoyalTrust });
-  if (markRound(state, RIVAL_MARKS.alliance) !== undefined) d = changeRelation(d, 'delgado', { trust: c.delgadoMemberTrust });
+  // Schon in Kapitel 1 in Delgados Verband (GDD §9.2): Der Verband besteht, Jacob ist Mitglied –
+  // Delgado bittet ihn nicht noch einmal um den Beitritt: k2_verband_uebernommen statt der Gründungs-Bitte.
+  // (Eigenes Merkzeichen mit der Runde von jetzt – das alte aus Kapitel 1 trägt eine Runde aus Kapitel 1.)
+  const imVerband = markRound(state, RIVAL_MARKS.alliance) !== undefined;
+  if (imVerband) {
+    d = changeRelation(d, 'delgado', { trust: c.delgadoMemberTrust });
+    d = { ...d, guild: { ...d.guild, founded: state.round, members: b.guild.startMembers + 1, member: true, joinedRound: state.round } };
+  }
   if (markRound(state, RIVAL_MARKS.thorneContract) !== undefined) d = changeRelation(d, 'thorne', { trust: c.thorneContractTrust });
   if (markRound(state, RIVAL_MARKS.thorneRefused) !== undefined) d = changeRelation(d, 'thorne', { grudge: c.thorneRefusedGrudge });
   const log = [...state.log, `${formatDate(state)}: Cornelius Crane zieht sich zurück. Margaret Crane und Harold Pruett ringen um den Crane Trust.`];
-  return setMark({ ...state, diplomacy: d, log }, DIPLO_MARKS.started);
+  if (imVerband) log.push(`${formatDate(state)}: Rosa Delgados Verband wird zum Produzentenverband – Harlan Oil ist von Anfang an dabei.`);
+  const gestartet = setMark({ ...state, diplomacy: d, log }, DIPLO_MARKS.started);
+  return imVerband ? setMark(setMark(gestartet, DIPLO_MARKS.guildFounded), DIPLO_MARKS.guildCarried) : gestartet;
+}
+
+/** Einmalige Antworten (je genau einmal gelesen); die wiederholbaren verarbeitet handleRepeats. */
+const ONCE_MARKS = DIPLOMACY_READ_MARKS.filter((m) => !DIPLOMACY_REPEAT_MARKS.includes(m));
+
+/**
+ * Wiederholbare Antworten aus Briefen und Besuchen: Angebote annehmen/ablehnen,
+ * Versöhnung nach einer Rache, Hilfe nach Pruetts Krisenkauf, Bruch anprangern.
+ * Jede wirkt einmal je Setzen und wird danach gelöscht. Ein Angebot, das schon nicht
+ * mehr auf dem Tisch liegt (am Schreibtisch beantwortet), bleibt ohne Wirkung.
+ */
+function handleRepeats(state: DiploGame, balance: Balance): DiploGame {
+  const gesetzt = DIPLOMACY_REPEAT_MARKS.filter((m) => markSet(state, m));
+  if (gesetzt.length === 0) return state;
+  let out: DiploGame = clearMarks(state, gesetzt);
+  const date = formatDate(out);
+  for (const rival of DIPLO_RIVALS) {
+    for (const kind of OFFER_KINDS) {
+      for (const accept of [true, false]) {
+        if (!gesetzt.includes(offerAnswerMark(rival, kind, accept)) || out.finished) continue;
+        const offer = out.diplomacy.offers.find((o) => o.rival === rival && o.kind === kind);
+        const r = offer ? answerOffer(out, balance, offer.id, accept) : null;
+        if (r?.ok) out = r.state as DiploGame;
+        else out = { ...out, log: [...out.log, `${date}: Das Angebot von ${LOG_NAMES[rival]} liegt nicht mehr auf dem Tisch.`] };
+      }
+    }
+    if (gesetzt.includes(reconcileMark(rival))) {
+      out = { ...out, diplomacy: changeRelation(out.diplomacy, rival, { grudge: -balance.diplomacy.relations.reconcileGrudge }) };
+    }
+  }
+  if (gesetzt.includes(DIPLO_MARKS.crisisHelp)) {
+    const t = balance.diplomacy.takeovers;
+    out = { ...out, diplomacy: changeRelation(changeRelation(out.diplomacy, 'delgado', { trust: t.crisisHelpTrust }), 'pruett', { grudge: t.crisisHelpGrudge }) };
+  }
+  if (gesetzt.includes(DIPLO_MARKS.exposed)) {
+    // Wer zuletzt gebrochen hat, steht jetzt bloß da (Groll + 10); Jacob gewinnt Respekt.
+    let d = out.diplomacy;
+    const taeter = [...d.memory].reverse().find((m) => m.kind === 'beleidigung')?.rival;
+    if (taeter) d = changeRelation(d, taeter, { grudge: 10 });
+    out = { ...out, diplomacy: { ...d, respect: Math.min(100, d.respect + balance.diplomacy.relations.betrayalRespect / 3) } };
+  }
+  return out;
 }
 
 /** Antworten aus den Ereignissen (Merkzeichen) wirken – jedes Merkzeichen genau einmal. */
 function handleMarks(state: DiploGame, balance: Balance): DiploGame {
   const s = balance.diplomacy.succession;
   let out = state;
-  for (const mark of DIPLOMACY_READ_MARKS) {
+  for (const mark of ONCE_MARKS) {
     if (!markSet(out, mark) || out.diplomacy.handled.includes(mark)) continue;
     let d: DiplomacyState = { ...out.diplomacy, handled: [...out.diplomacy.handled, mark] };
     out = { ...out, diplomacy: d };
@@ -151,13 +214,9 @@ function handleMarks(state: DiploGame, balance: Balance): DiploGame {
       case DIPLO_MARKS.guildFight:
         out = exitGuild(out, balance, 'streit');
         break;
-      case DIPLO_MARKS.exposed: {
-        // Wer zuletzt gebrochen hat, steht jetzt bloß da (Groll + 10); Jacob gewinnt Respekt.
-        const taeter = [...d.memory].reverse().find((m) => m.kind === 'beleidigung')?.rival;
-        if (taeter) d = changeRelation(d, taeter, { grudge: 10 });
-        out = { ...out, diplomacy: { ...d, respect: Math.min(100, d.respect + balance.diplomacy.relations.betrayalRespect / 3) } };
+      case DIPLO_MARKS.guildCancel:
+        if (d.guild.member) out = exitGuild(out, balance, 'austritt');
         break;
-      }
       case DIPLO_MARKS.apology:
         out = { ...out, diplomacy: { ...d, respect: Math.min(100, d.respect + balance.diplomacy.relations.betrayalRespect / 2) } };
         break;
@@ -165,7 +224,7 @@ function handleMarks(state: DiploGame, balance: Balance): DiploGame {
         break;
     }
   }
-  return out;
+  return handleRepeats(out, balance);
 }
 
 const REVENGE_LOG: Record<DiploRival, string> = {
@@ -181,13 +240,14 @@ const REVENGE_LOG: Record<DiploRival, string> = {
  * revengeChance × Aggressivität / 5 zu (ein Zufallswert je solchem Rivalen):
  * Margaret/Pruett zahlen weniger, Bullard/Delgado verteuern Pachten (je revengeRounds
  * Runden ab der nächsten), Thorne erhöht den Bahntarif dauerhaft. Danach sinkt der
- * Groll um revengeRelief.
+ * Groll um revengeRelief. Jede Rache setzt den Anlass k2_rache_<rivale> (Brief).
  */
 function advanceRevenge(state: DiploGame, balance: Balance, rng: Rng): DiploGame {
   const b = balance.diplomacy.relations;
   let d = state.diplomacy;
   let railTariff = state.railTariff;
   const log = [...state.log];
+  const anlaesse: string[] = [];
   for (const rival of DIPLO_RIVALS) {
     if (d.relations[rival].grudge < b.revengeGrudge) continue;
     if (rng.float() >= (b.revengeChance * personality(balance, rival).aggression) / 5) continue;
@@ -198,15 +258,19 @@ function advanceRevenge(state: DiploGame, balance: Balance, rng: Rng): DiploGame
     else d = { ...d, aftermath: [...d.aftermath, { key: 'leaseCost', value: b.revengeLeaseCost, from, until }] };
     d = changeRelation(d, rival, { grudge: -b.revengeRelief });
     log.push(`${formatDate(state)}: ${REVENGE_LOG[rival]}`);
+    anlaesse.push(revengeMark(rival));
   }
-  return { ...state, railTariff, log, diplomacy: d };
+  // Jede Rache kommt als Brief (content/events/k2-diplomatie.yaml, Anlass k2_rache_<rivale>).
+  return anlaesse.reduce<DiploGame>((s, m) => setPulse(s, m), { ...state, railTariff, log, diplomacy: d });
 }
 
 /** Der Rundenschritt der Diplomatie (Reihenfolge oben). Ohne Diplomatie: unverändert. */
 export function advanceDiplomacy(state: GameState, balance: Balance): GameState {
   if (!hasDiplomacy(state) || state.finished) return state;
   const rng = new Rng(state.diplomacy.rng);
-  let s = handleMarks(state, balance);
+  let s = handleMarks(clearPulses(state), balance);
+  // Verkauf an Pruett (Antwort auf seinen Besuch): Die Partie endet hier, game.ts rechnet nicht weiter.
+  if (s.finished) return s;
   s = advanceSuccession(s, balance, rng);
   s = advancePacts(s, balance, rng);
   s = advanceOffers(s, balance, rng);
