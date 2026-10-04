@@ -13,6 +13,7 @@ import { analyzeRelevance, checkRelevanceMarks, parseRelevanceContent, readMarks
 import { parseFamilyContent } from '../src/sim/family';
 // 4.16 Andockpunkt
 import { checkHallsteadContent, parseHallsteadContent } from '../src/sim/hallsteadContent';
+import { checkKapitel3Content, parseKapitel3Content } from '../src/sim/kapitel3Content'; // 4.17 Andockpunkt
 import { parseNewspaperContent } from '../src/sim/newspaper';
 import { parsePoliticsContent } from '../src/sim/politics';
 // 4.6 Andockpunkt: Texte der Raffinerie.
@@ -76,6 +77,11 @@ const boerse = parseExchangeContent(
   loadBalance().exchange.stocks.map((s) => s.id),
 );
 errors.push(...boerse.errors);
+
+// 4.17 Andockpunkt: Kapitel 3 – Texte für Seismik, Konsortium, Projekte und Stand, passend zu balance.yaml.
+const kapitel3 = parseKapitel3Content('content/kapitel3.yaml', readFileSync(new URL('../content/kapitel3.yaml', import.meta.url), 'utf8'));
+errors.push(...kapitel3.errors);
+if (kapitel3.content) errors.push(...checkKapitel3Content('content/kapitel3.yaml', kapitel3.content, loadBalance()));
 
 // Karte (0.2.15+5): ranch und unlocks in den Ereignissen müssen auf content/map.yaml zeigen.
 const karte = parsed.errors.length === 0 ? mapRefErrors(events, loadBalance().world) : [];

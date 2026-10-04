@@ -21,6 +21,8 @@ import { parseResearchBalance, type ResearchBalance } from './research';
 import { parseBrandBalance, type BrandBalance } from './brand';
 // 4.16 Andockpunkt
 import { parseHallstead, type HallsteadBalance } from './hallsteadBalance';
+// 4.17 Andockpunkt: Kapitel 3 (Seismik, Konsortium, Projekte, Stand) prüft seinen Block selbst.
+import { parseKapitel3Balance, type Kapitel3Balance } from './kapitel3Balance';
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
 
@@ -661,6 +663,8 @@ export interface Balance {
   brand: BrandBalance;
   // 4.15 Andockpunkt: Börse und Kauf auf Kredit (eigener Abschnitt, gelesen in exchangeBalance.ts).
   exchange: ExchangeBalance;
+  /** 4.17 Andockpunkt: Kapitel 3 – Seismik, Konsortium, Projekte, Stand (src/sim/kapitel3Balance.ts). */
+  kapitel3: Kapitel3Balance;
 }
 
 /** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
@@ -1877,6 +1881,7 @@ export function parseBalance(raw: unknown): Balance {
     brand: parseBrand(raw),
     // 4.15 Andockpunkt: Börse und Kauf auf Kredit.
     exchange: parseExchangeBalance(raw),
+    kapitel3: parseKapitel3Balance(raw), // 4.17 Andockpunkt
   };
 
   for (const r of balance.transport.pipeline.rights) {

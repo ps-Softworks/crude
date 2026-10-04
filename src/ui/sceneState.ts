@@ -35,6 +35,8 @@ export const SHEET_IDS = [
   'boerse',
   /** 4.16 Andockpunkt: Hallstead-Mappe – Beteiligungen und Lobbyist (ab Kapitel 3). */
   'hallstead',
+  /** 4.17 Andockpunkt: Siegelmappe – Seismik, Mr. Vale, Projekte, Hallstead (erst ab Kapitel 3 auf dem Tisch). */
+  'konzern',
 ] as const;
 export type SheetId = (typeof SHEET_IDS)[number];
 

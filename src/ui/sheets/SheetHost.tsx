@@ -13,6 +13,7 @@ import { CalendarSheet } from './CalendarSheet';
 import { FamilySheet } from './FamilySheet';
 import { FreightSheet } from './FreightSheet';
 import { IncidentsSheet } from './IncidentsSheet';
+import { KonzernSheet } from './KonzernSheet'; // 4.17 Andockpunkt
 import { JournalSheet } from './JournalSheet';
 import { LedgerSheet } from './LedgerSheet';
 import { MenuSheet, type MenuProps } from './MenuSheet';
@@ -62,6 +63,7 @@ export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   boerse: { title: 'Börsenticker', size: 'mappe' },
   // 4.16 Andockpunkt
   hallstead: { title: 'Hallstead-Mappe', size: 'mappe' },
+  konzern: { title: 'Konzern und Gesellschaft', size: 'mappe' }, // 4.17 Andockpunkt
 };
 
 export interface SheetHostProps {
@@ -112,6 +114,7 @@ export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound
     boerse: () => <ExchangeSheet ctx={ctx} />,
     // 4.16 Andockpunkt
     hallstead: () => <HallsteadSheet ctx={ctx} />,
+    konzern: () => <KonzernSheet ctx={ctx} />, // 4.17 Andockpunkt
   };
   return (
     <Sheet

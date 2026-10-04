@@ -63,6 +63,10 @@ import { brandContent } from '../brand';
 import { ExchangeTicker } from './ExchangeTicker';
 // 4.16 Andockpunkt: Hallstead-Mappe (ab Kapitel 3 oder per Debug-Freischaltung).
 import { HallsteadDeskItem, hallsteadOnDesk } from '../sheets/HallsteadSheet';
+// 4.17 Andockpunkt: Siegelmappe für Kapitel 3 (vorher nur im Debug sichtbar).
+import { kapitel3Unlocked } from '../../sim/kapitel3';
+import { kapitel3Pending } from '../../sim/kapitel3View';
+import { SealFolderShape } from '../sheets/KonzernSheet';
 
 /** Wo was liegt, in Prozent der Bühne (unter der Kopfleiste). */
 const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte' | 'tuer', Placement> = {
@@ -94,6 +98,10 @@ const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte
   // 4.16 Andockpunkt: Hallstead-Mappe in der unteren Reihe zwischen Kladde und Raffinerie-Plan,
   // rechts neben der Schublade (unter dem Kassenbuch liegen schon Raffinerie und Börsenticker).
   hallstead: { left: 59, top: 85, width: 11.5, height: 12 },
+  // 4.17 Andockpunkt: Siegelmappe ebenfalls in der unteren Reihe zwischen Kladde und Raffinerie-Plan
+  // (unter dem Kassenbuch liegen Raffinerie und Börsenticker). Allein nimmt sie den rechten Platz
+  // der Reihe; mit Schublade und/oder Hallstead-Mappe teilen sich alle die Reihe (UNTERE_REIHE).
+  konzern: { left: 59, top: 85, width: 11.5, height: 12 },
 };
 
 /**
@@ -114,6 +122,27 @@ const RECHTE_SPALTE_GETEILT: Record<'personal' | 'marke', Placement> = {
 
 /** 4.16: Liegt die Hallstead-Mappe auf dem Tisch, rückt die Schublade (4.11) in die linke Hälfte ihrer Reihe. */
 const SCHUBLADE_GETEILT: Placement = { left: 47, top: 85, width: 11.5, height: 12 };
+
+type UntereReihe = 'schattenbuch' | 'hallstead' | 'konzern';
+
+/**
+ * Integration 4.11/4.16/4.17: Die untere Reihe zwischen Kladde (bis 45 %) und Raffinerie-Plan
+ * (ab 72 %) teilen sich Schublade, Hallstead-Mappe und Siegelmappe. Allein behält jeder seinen
+ * Platz (AT), zu zweit links/rechts je eine Hälfte, zu dritt je ein Drittel (46–71 %).
+ */
+function untereReihe(da: Record<UntereReihe, boolean>): Partial<Record<UntereReihe, Placement>> {
+  const liste = (['schattenbuch', 'hallstead', 'konzern'] as const).filter((id) => da[id]);
+  if (liste.length <= 1) return {};
+  if (liste.length === 2) {
+    const [links, rechts] = liste;
+    return { [links]: SCHUBLADE_GETEILT, [rechts]: AT.hallstead! };
+  }
+  return {
+    schattenbuch: { left: 46, top: 85, width: 8, height: 12 },
+    hallstead: { left: 54.5, top: 85, width: 8, height: 12 },
+    konzern: { left: 63, top: 85, width: 8, height: 12 },
+  };
+}
 
 export interface DeskSceneProps {
   game: GameState;
@@ -165,6 +194,9 @@ export function DeskScene(p: DeskSceneProps) {
   const vertrieb = brandDeskStatus(game);
   // 4.16 Andockpunkt: Hallstead-Mappe auf dem Tisch? (ab Kapitel 3 oder per Debug-Freischaltung)
   const mappe = hallsteadOnDesk(game);
+  // 4.17 Andockpunkt: Siegelmappe ab Kapitel 3 (oder nach „Kapitel 3 zur Probe öffnen“ im Debug-Reiter).
+  const siegelmappe = kapitel3Unlocked(game, balance);
+  const reihe = untereReihe({ schattenbuch: investigationUnlocked(game, balance), hallstead: mappe, konzern: siegelmappe });
 
   // Akte: was die Türme gerade tun, gezählt in src/sim (rigSummary).
   const tuerme = rigSummary(game);
@@ -402,8 +434,10 @@ export function DeskScene(p: DeskSceneProps) {
           )}
         {/* 4.16 Andockpunkt: Hallstead-Mappe – erst ab Kapitel 3 (oder per Debug-Freischaltung im Menü). */}
         {mappe && (
-          <HallsteadDeskItem game={game} at={AT.hallstead!} glow={p.glow === 'hallstead' || p.spotlight === 'hallstead'} onOpen={() => p.onOpen('hallstead')} />
+          <HallsteadDeskItem game={game} at={reihe.hallstead ?? AT.hallstead!} glow={p.glow === 'hallstead' || p.spotlight === 'hallstead'} onOpen={() => p.onOpen('hallstead')} />
         )}
+        {/* 4.17 Andockpunkt: Siegelmappe – ab Kapitel 3 (Debug: „Kapitel 3 zur Probe öffnen“ im Menü). */}
+        {siegelmappe && <KonzernObjekt game={game} obj={obj} at={reihe.konzern} />}
         {obj('protokoll', 'Kladde', { status: p.saved ? '✓ gesichert' : undefined }, <NotebookShape />)}
         {/* 4.9 Andockpunkt: Personalakten – erst ab Kapitel 2 (state.staff), in Kapitel 1 unsichtbar. */}
         {game.staff &&
@@ -419,7 +453,7 @@ export function DeskScene(p: DeskSceneProps) {
           )}
         {/* 4.11 Andockpunkt: Schattenbuch und Werkstatt – in Kapitel 1 nicht auf dem Tisch. */}
         {investigationUnlocked(game, balance) &&
-          obj('schattenbuch', 'Schublade', { status: `Hitze: ${localize(investigationContent.heat[heatWord(heat(game, balance), balance)])}`, ...(mappe ? { at: SCHUBLADE_GETEILT } : {}) }, <DrawerShape />)}
+          obj('schattenbuch', 'Schublade', { status: `Hitze: ${localize(investigationContent.heat[heatWord(heat(game, balance), balance)])}`, ...(reihe.schattenbuch ? { at: reihe.schattenbuch } : {}) }, <DrawerShape />)}
         {researchUnlocked(game, balance) &&
           obj(
             'werkstatt',
@@ -444,5 +478,29 @@ export function DeskScene(p: DeskSceneProps) {
         )}
       </div>
     </div>
+  );
+}
+
+/** 4.17 Andockpunkt: die Siegelmappe mit Abzeichen für offene Entscheidungen. */
+function KonzernObjekt({
+  game,
+  obj,
+  at,
+}: {
+  game: GameState;
+  obj: (id: SheetId, name: string, extra: Partial<Parameters<typeof DeskObject>[0]>, bild: ReactNode) => ReactNode;
+  /** Geteilter Platz in der unteren Reihe; ohne Angabe AT.konzern. */
+  at?: Placement;
+}) {
+  const offen = kapitel3Pending(game, balance);
+  return obj(
+    'konzern',
+    'Siegelmappe',
+    {
+      badge: offen && offen.total > 0 ? { text: String(offen.total), urgent: offen.urgent } : null,
+      status: offen ? undefined : 'Kapitel 3',
+      ...(at ? { at } : {}),
+    },
+    <SealFolderShape />,
   );
 }

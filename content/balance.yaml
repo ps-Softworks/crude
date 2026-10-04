@@ -1429,3 +1429,92 @@ exchange:
     - { id: crane_trust, sector: oil, start: 150 }
     - { id: motorwagen, sector: auto, start: 40 }
     - { id: westmark_stahl, sector: steel, start: 70 }
+
+# Kapitel 3 – Der Konzernherr (4.17, GDD §5, §12, §13): Technikstufe III (Seismik), Mr. Vales
+# Einladung ins Konsortium, Konsortialprojekte für große Vorhaben und die Aufnahme in die
+# Gesellschaft (Stand). Erst ab fromChapter sichtbar; in Kapitel 1 und 2 ruht alles.
+# Texte stehen in content/kapitel3.yaml. Alle Zahlen PLATZHALTER: Die Wirtschaft von
+# Kapitel 3 gibt es noch nicht – grob zehn- bis zwanzigmal Kapitel 1.
+kapitel3:
+  fromChapter: 3
+  # Ersatzwerte, solange das Weltmodell (4.1) nicht im Spielstand steht (0–100 wie dort).
+  world: { tech: 50, credit: 50, tension: 30, mood: 50 }
+  seismik:
+    # Technikstand der Welt (4.1: Start 6–10, logistisch +1,7 % je Runde), ab dem Stufe I–V gilt.
+    # Kurve: Runde 40 ≈ 11–18, Runde 80 ≈ 20–30, Runde 160 ≈ 49–63, Runde 256 ≈ 83–90.
+    # Schnelle Welten erreichen eine Stufe so etwas früher; garantiert ist sie über chapterStages.
+    techStages: [0, 15, 28, 55, 85]
+    chapterStages: [1, 2, 3, 3, 4, 4, 5]  # Mindeststufe je Kapitel 1–7 (GDD §13: II in Kap. 2, III in Kap. 3, IV in Kap. 5)
+    stage: 3                 # Reflexionsseismik braucht Technikstufe III (GDD §5)
+    licenseCost: 20000       # Lizenz beim Patentinhaber (einmalig); Konsortium-Mitglieder zahlen nichts
+    surveyCost: 6000         # eine Vermessung je Ranch
+    surveyRounds: 1          # so lange ist der Spezialtrupp unterwegs
+    crews: 1                 # Trupps mit der Lizenz
+    crewCost: 15000          # jeder weitere Trupp
+    maxCrews: 3
+    width: 10                # Bandbreite der Fundchance in Prozentpunkten (Geologe: 10–50)
+    insight: 0.3             # so stark sieht die Messung die wirkliche Falle statt nur die Zone (0–1); GDD §5: „gut“, nicht „sehr gut“
+    rounding: 5              # Raster der Prozentangabe
+    sizeMiss: 0.2            # Chance, dass die Größe eine Klasse daneben liegt (dann zwei Klassen Spanne)
+    falseTrap: 0.25          # Fehlmessung: eine trockene Ranch zeigt eine Struktur – Chance und Falle wirken wie bei Öl
+    missTrap: 0.15           # Fehlmessung: die Falle einer Ranch mit Öl bleibt unsichtbar – Chance wie bei einer trockenen
+    sizeClasses:             # Größenklassen nach förderbarem Öl (GDD §5), aufsteigend
+      - { id: tasche, from: 0 }
+      - { id: klein, from: 50000 }
+      - { id: mittel, from: 500000 }
+      - { id: gross, from: 5000000 }
+      - { id: riese, from: 50000000 }
+  konsortium:
+    inviteRound: 3           # Mr. Vales Einladung kommt zu Beginn der 3. Runde des Kapitels
+    inviteDeadline: 2        # Bedenkzeit in Runden (Ankunftsrunde mitgezählt); Schweigen gilt als Absage
+    trustStart: 50           # Vales Vertrauen 0–100
+    trustValeGeld: 15        # Jacob hat in Kapitel 1 das Geld „eines Freundes“ behalten
+    trustValeAbgelehnt: -10  # … oder zurückgegeben
+    powerStart: 60           # Macht des Konsortiums 0–100 (Akteur im Weltmodell)
+    memberIncome: 8000       # Anteil am Kartellgewinn je Runde als Mitglied
+    doubleIncome: 14000      # Doppelspiel: Kartellgewinn plus Insiderwissen
+    doubleDetect: 0.06       # Chance je Runde, dass das Doppelspiel auffliegt …
+    doubleDetectGrowth: 0.03 # … plus so viel je Runde im Doppelspiel
+    feignDetect: 0.10        # ein vorgetäuschter Gefallen erhöht die Chance dauerhaft um so viel
+    favorEvery: 3            # alle so viele Runden verlangt Vale einen Gefallen
+    favorEveryControlled: 2  # nach einer Rettung: Vale hat die Hand an den Förderquoten
+    favorDeadline: 2         # Frist eines Gefallens (Ankunftsrunde mitgezählt)
+    complyTrust: 10
+    refuseTrust: -20
+    expelBelow: 20           # darunter fliegt Jacob aus dem Konsortium
+    trustWords: [35, 65]     # ab hier wirkt Vale abwartend, ab hier vertraut er (nur als Satz sichtbar)
+    expelledPenalty: 5000    # je Runde: Das Konsortium drückt Jacobs Preise (bis das Weltmodell das übernimmt)
+    expelledRounds: 6
+    power: { join: 5, refuse: -5, double: 3, exposed: -15, broken: -10 }
+    rescue: { cash: 50000, trust: 30 }  # Rettung in der Pleitefrist – gegen die Förderquoten
+    worldInput: { tension: 0.04, credit: 0.03, mood: -0.02 }  # Wirkung je Machtpunkt über 50 auf die Weltgrößen
+    favors:                  # Gefallen: Kosten beim Erfüllen (Texte in content/kapitel3.yaml)
+      - { id: drosseln, cash: 6000 }
+      - { id: spende_grady, cash: 4000, ansehen: -3 }
+      - { id: preis_halten, cash: 5000 }
+      - { id: zeitung_schweigen, cash: 3000, ansehen: -2 }
+      - { id: crane_schonen, cash: 7000 }
+  projekte:
+    offerEvery: 3            # alle so viele Runden ein neues Angebot
+    maxOffers: 2
+    offerRounds: 2           # so lange liegt ein Angebot
+    shares: [0.25, 0.5]      # Anteile, die Jacob zeichnen kann
+    fraud: 0.05              # je Baurunde: ein Partner betrügt, das Projekt verzögert sich um eine Runde
+    memberRisk: 0.5          # Konsortium-Mitglieder: Risiko mal so viel (Vale glättet die Wege)
+    list:                    # minRank: Stand nötig (0 Emporkömmling … 3 aufgenommen); members: nur fürs Konsortium
+      - { id: seismik_kampagne, cost: 120000, rounds: 2, income: 9000, risk: 0.05, minRank: 0, members: false }
+      - { id: fernpipeline, cost: 200000, rounds: 4, income: 16000, risk: 0.10, minRank: 0, members: false }
+      - { id: grossraffinerie, cost: 300000, rounds: 5, income: 24000, risk: 0.12, minRank: 2, members: false }
+      - { id: hafen_tanklager, cost: 150000, rounds: 3, income: 11000, risk: 0.08, minRank: 1, members: false }
+      - { id: costa_negra, cost: 250000, rounds: 3, income: 30000, risk: 0.25, minRank: 0, members: true }
+  stand:
+    start: 10                # Ansehen in Hallstead bei Kapitelbeginn (0–100): Ölgeld zählt dort nichts
+    ranks: [0, 25, 50]       # ab so viel Ansehen: Emporkömmling, geduldet, anerkannt (aufgenommen nur über den Club)
+    decay: 1                 # je Runde verblasst Ansehen um so viel (nicht unter start), bis Jacob aufgenommen ist
+    donation: { cost: 15000, gain: 10, falloff: 0.7, cap: 60 }  # Stiftung: jede weitere bringt 70 % der vorigen, höchstens bis cap
+    marriage: { cost: 40000, gain: 30, minRank: 1, thomas: -20 }  # Heirat in die Vandermeer-Familie: Mitgift, Thomas' Beziehung
+    breakOrder: { cost: 250000 }   # die Schulden der alten Familien aufkaufen: Türen auf, aber kein Ansehen mehr
+    club: { cost: 10000, from: 75 }  # Aufnahme in den Hallstead Union Club ab so viel Ansehen
+    member: 5                # Beitritt zum Konsortium: man gehört zu den Großen
+    exposed: -20             # Doppelspiel aufgeflogen
+    rateDiscount: [0, 0, 0.005, 0.01]  # Zinsrabatt der alten Banken je Rang (Emporkömmling … aufgenommen)

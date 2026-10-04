@@ -21,7 +21,7 @@ import { advanceProduction } from './production';
 import { settleRigs, startRigs, type Rig } from './rigs';
 import { Rng, seedFromString, type RngState } from './rng';
 import { advanceMarket, computePrice, neighbourSupply, saltHillSupply } from './market';
-import { advanceWorld, newWorld, saltHillInput, worldPriceFactor, type WorldState } from './world';
+import { advanceWorld, mergeInput, newWorld, saltHillInput, worldPriceFactor, type WorldState } from './world';
 import { newRival, advanceRival, type RivalState } from './rival';
 import { advanceLogistics, newLogistics, settleStorage, spillOver, type LogisticsState } from './logistics';
 import { advanceTransport, noShipments } from './transport';
@@ -43,6 +43,11 @@ import { exchangeWorldInput, readClimate, settleExchange, type ExchangeState } f
 // 4.16 Andockpunkt: Nebeninvestments und Lobbyist in Hallstead (ab Kapitel 3).
 import { hallsteadWorldInput, settleHallstead } from './hallstead';
 import type { HallsteadState } from './hallsteadState';
+// 4.17 Andockpunkt: Kapitel 3 (Seismik, Konsortium, Projekte, Stand).
+import type { Kapitel3State } from './kapitel3';
+import type { Kapitel3Content } from './kapitel3Content';
+import { advanceKapitel3 } from './kapitel3Runde';
+import { konsortiumWorldInput } from './konsortium';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
@@ -122,6 +127,8 @@ export interface GameState {
   bigPipelines?: BigPipelineState;
   /** 4.9 Andockpunkt: Personal (Sekretärin, Fixer, Richtlinien) – erst ab Kapitel 2, in Kapitel 1 undefined. */
   staff?: StaffState;
+  /** 4.17 Andockpunkt: Kapitel 3 (src/sim/kapitel3.ts) – fehlt, bis Kapitel 3 beginnt. */
+  kapitel3?: Kapitel3State;
   log: string[];
   /** Rivalen-Diplomatie und Crane-Nachfolge (4.10): erst ab Kapitel 2, in Kapitel 1 fehlt sie. */
   diplomacy?: DiplomacyState; // 4.10 Andockpunkt
@@ -217,7 +224,9 @@ function advanceWorldInGame(state: GameState, vorMarkt: GameState, balance: Bala
   // 4.15 Andockpunkt: Jacobs Kauf auf Kredit heizt das Kreditklima (ohne Börse unverändert).
   const salzHuegel = exchangeWorldInput(state, saltHillInput(angebot, balance.market.demand, balance.worldModel));
   // 4.16 Andockpunkt: Die Kampagne von Jacobs eigener Zeitung in Hallstead hebt die Stimmung (sonst 0).
-  const input = { ...salzHuegel, moodShift: (salzHuegel.moodShift ?? 0) + hallsteadWorldInput(state, balance).moodShift };
+  const lobby = { ...salzHuegel, moodShift: (salzHuegel.moodShift ?? 0) + hallsteadWorldInput(state, balance).moodShift };
+  // 4.17 Andockpunkt: Die Macht des Konsortiums verschiebt Spannung, Kreditklima und Stimmung (ohne Kapitel 3 alles 0).
+  const input = mergeInput(lobby, konsortiumWorldInput(state, balance));
   return { ...state, worldModel: advanceWorld(state.worldModel, balance.worldModel, input) };
 }
 
@@ -242,7 +251,8 @@ function advanceWorldInGame(state: GameState, vorMarkt: GameState, balance: Bala
  * endet die Partie direkt nach den Antworten; zur neuen Runde bekommen die
  * neuen Nachbarquellen ihre Wildcatter.
  */
-export function endRound(input: GameState, balance: Balance, catalog: readonly EventDef[] = []): GameState {
+// 4.17 Andockpunkt: kapitel3 = Texte aus content/kapitel3.yaml, damit Kapitel 3 seine Ereignisse in die Kladde schreibt.
+export function endRound(input: GameState, balance: Balance, catalog: readonly EventDef[] = [], texts: { kapitel3?: Kapitel3Content } = {}): GameState {
   if (input.finished) return input;
   // Offene Ereignisse bekommen ihre Standard-Antwort, bevor die Runde abgerechnet wird.
   // Gebiete (0.2.15+5): Hat eine Antwort ein Gebiet freigeschaltet, bekommt es jetzt seine Ranches.
@@ -283,9 +293,11 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // 4.15 Andockpunkt: Börse (ab Kapitel 3) – Kurse, Maklerzinsen, Zwangsverkäufe vor der Pleiteprüfung.
   // Warnungen und Maklerzins zählen mit dem Kreditklima vom Rundenbeginn (das stand in der Zeitung).
   const gehandelt = settleExchange(verzinst, balance, readClimate(input));
+  // 4.17 Andockpunkt: Kapitel 3 – Seismik-Berichte, Konsortium, Projekte, Stand (vor Kapitel 3 unverändert).
+  const konzern = advanceKapitel3(gehandelt, balance, texts.kapitel3);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   // 4.7 Andockpunkt: Fernleitungen nach dem Transport – Thorne nimmt unter Druck eine Erhöhung zurück und senkt den Tarif.
-  const gefahren = advanceBigPipelines(advanceTransport(gehandelt, balance), balance, { railTariffBefore: gehandelt.railTariff });
+  const gefahren = advanceBigPipelines(advanceTransport(konzern, balance), balance, { railTariffBefore: konzern.railTariff });
   // Rivalen-Diplomatie (4.10): ohne state.diplomacy (Kapitel 1) passiert nichts. // 4.10 Andockpunkt
   const diplomatie = advanceDiplomacy(gefahren, balance);
   // 4.10 Andockpunkt: Verkauf an Pruett (Antwort auf seinen Besuch) beendet die Partie ohne weitere Abrechnung.
