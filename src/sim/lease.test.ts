@@ -359,6 +359,20 @@ describe('Startoptionen', () => {
     }
   });
 
+  it('Frühes Öl: die erste Startoption liegt auf einer vernünftigen Ranch (Ring oder Kern, nicht der trockene Rand)', () => {
+    const rand = balance.geology.zones[balance.geology.zones.length - 1].name;
+    for (let i = 0; i < 200; i++) {
+      const state = newGame(`startoption-${i}`, balance);
+      const erste = state.parcels.find((p) => p.id === state.options[0].parcelId)!;
+      expect(erste.zone, `Seed startoption-${i}`).not.toBe(rand);
+      expect(erste.discovery).toBeFalsy();
+      // Nie direkt am Fund – das wäre geschenkt.
+      expect(leaseTerms(state, balance, erste.id).location.name).not.toBe(balance.lease.locations[0].name);
+      expect(state.options).toHaveLength(balance.lease.startOptions.count);
+      expect(new Set(state.options.map((o) => o.parcelId)).size).toBe(state.options.length);
+    }
+  });
+
   it('sind je Seed gleich und je Seed verschieden', () => {
     const ids = (seed: string) => newGame(seed, balance).options.map((o) => o.parcelId);
     expect(ids('harlan')).toEqual(ids('harlan'));

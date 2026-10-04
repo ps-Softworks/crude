@@ -13,7 +13,7 @@ import {
   fillVars,
   parseTutorialContent,
   recommendedParcel,
-  shownChance,
+  recommendScore,
   TUTORIAL_HINT_IDS,
   tutorialActive,
   tutorialHint,
@@ -111,7 +111,7 @@ describe('Wann der Einstieg läuft (tutorialActive)', () => {
 });
 
 describe('Schritt 1: Pacht', () => {
-  it('empfiehlt die beste bezahlbare Schätzung und zeigt auf sie', () => {
+  it('empfiehlt die beste bezahlbare Wertung (Schätzung minus Pachtkosten) und zeigt auf sie', () => {
     const state = newGame('einstieg', balance);
     const h = hint(state);
     expect(h.step).toBe('lease');
@@ -119,12 +119,13 @@ describe('Schritt 1: Pacht', () => {
     const ziel = recommendedParcel(state, balance)!;
     expect(h.parcelIds).toEqual([ziel.parcelId]);
     expect(h.action).toEqual({ kind: ziel.kind, parcelId: ziel.parcelId });
-    // Keine bezahlbare Parzelle hat eine bessere Schätzung.
+    // Keine bezahlbare Parzelle hat eine bessere Wertung.
     const drill = stageCost(balance, 1);
     for (const p of state.parcels) {
       if (p.discovery || state.leases.some((l) => l.parcelId === p.id) || state.options.some((o) => o.parcelId === p.id)) continue;
-      if (leaseTerms(state, balance, p.id).bonus + drill <= state.cash) {
-        expect(shownChance(state, p.id)).toBeLessThanOrEqual(shownChance(state, ziel.parcelId));
+      const bonus = leaseTerms(state, balance, p.id).bonus;
+      if (bonus + drill <= state.cash) {
+        expect(recommendScore(state, balance, p.id, bonus)).toBeLessThanOrEqual(recommendScore(state, balance, ziel.parcelId, ziel.cost));
       }
     }
   });
@@ -137,6 +138,25 @@ describe('Schritt 1: Pacht', () => {
     expect(h).toMatchObject({ id: 'lease_option', action: { kind: 'exercise', parcelId: option } });
     expect(h.vars.chance).toBe('99–100 % Fundchance');
     expect(h.vars.ort).toBe(parcelLabel(state.parcels.find((p) => p.id === option)!));
+  });
+
+  it('Frühes Öl: eine teure Pacht, die kaum besser aussieht, verliert gegen eine billige', () => {
+    let state: GameState = { ...newGame('einstieg', balance), options: [] };
+    const drill = stageCost(balance, 1);
+    const frei = state.parcels.filter((p) => !p.discovery && leaseTerms(state, balance, p.id).bonus + drill <= state.cash);
+    const nachBonus = [...frei].sort((a, b) => leaseTerms(state, balance, a.id).bonus - leaseTerms(state, balance, b.id).bonus);
+    const billig = nachBonus[0];
+    const teuer = nachBonus[nachBonus.length - 1];
+    const differenz = leaseTerms(state, balance, teuer.id).bonus - leaseTerms(state, balance, billig.id).bonus;
+    expect(differenz).toBeGreaterThan(balance.tutorial.dollarsPerPoint * 10);
+    // Alle anderen schlecht, die teure 5 Punkte besser als die billige.
+    state = { ...state, forecasts: Object.fromEntries(Object.entries(state.forecasts).map(([id, f]) => [id, { ...f, low: 0, high: 5 }])) };
+    state = prognose(prognose(state, billig.id, 60, 70), teuer.id, 65, 75);
+    expect(recommendedParcel(state, balance)!.parcelId).toBe(billig.id);
+    // Sieht die teure um mehr als ihren Aufpreis besser aus, lohnt sie sich.
+    const punkte = Math.ceil(differenz / balance.tutorial.dollarsPerPoint / 5) * 5 + 5;
+    state = prognose(prognose(state, billig.id, 0, 10), teuer.id, Math.min(95, punkte), Math.min(100, punkte + 5));
+    expect(recommendedParcel(state, balance)!.parcelId).toBe(punkte <= 95 ? teuer.id : billig.id);
   });
 
   it('eine Parzelle, deren Pacht die Bohrung unbezahlbar macht, wird nicht empfohlen', () => {
@@ -258,6 +278,14 @@ describe('Ein Bot, der nur den Hinweisen folgt (Fertig-Kriterium 2.13)', () => {
     expect(spiele.filter((s) => s.foundRound !== null && s.foundRound <= 3).length / n).toBeGreaterThan(0.4);
     expect(spiele.some((s) => s.state.ending === 'pleite')).toBe(false);
   });
+
+  it('Frühes Öl: wer nur dem Einstieg folgt, hat in mindestens 90 % der Seeds bis Runde 6 eine Quelle', () => {
+    const n = 200;
+    const bisSechs = Array.from({ length: n }, (_, i) => playByHints(`frueh-${i}`, balance)).filter(
+      (s) => s.foundRound !== null && s.foundRound <= 6,
+    ).length;
+    expect(bisSechs / n).toBeGreaterThanOrEqual(0.9);
+  }, 60_000);
 
   it('auch mit allen Ereignissen aus content/events', () => {
     const events = loadEvents();

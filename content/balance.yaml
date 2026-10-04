@@ -30,7 +30,7 @@ geology:
   zones:
     - name: kern
       maxDistance: 2.5     # 0.2.15+5: Ranch-Mitten statt Rasterfelder (vorher 1,5)
-      dry: 0.30
+      dry: 0.30           # Frühes Öl (0.4.4+): bewusst unverändert – Kern 0,20 / Ring 0,32 machte das Kapitelziel fast geschenkt (73 %)
       small: 0.55
       gusher: 0.15
     - name: ring
@@ -40,8 +40,8 @@ geology:
       gusher: 0.08
     - name: rand
       maxDistance: 99
-      dry: 0.75          # 2.15: vorher 0,55 – blinde Wildcat-Bohrung traf 1 von 3, GDD §15 sagt 1 von 5 bis 1 von 10
-      small: 0.24
+      dry: 0.85          # Frühes Öl (0.4.4+): vorher 0,75 – echter Rand trifft auf 300 m nur noch gut 1 von 10 (GDD §15), gleicht den höheren Stufe-1-Anteil aus; 2.15: vorher 0,55 – blinde Wildcat-Bohrung traf 1 von 3, GDD §15 sagt 1 von 5 bis 1 von 10
+      small: 0.14
       gusher: 0.01
   # Förderbare Gesamtmenge in Barrel (gleichverteilt zwischen min und max).
   # 1.15: deutlich angehoben (vorher 2.000–12.000 und 30.000–120.000), damit die Anfangsrate im GDD-Rahmen liegt
@@ -128,7 +128,7 @@ production:
   initialRateShare:
     small: 0.25              # PLATZHALTER
     gusher: 0.30             # PLATZHALTER
-  decline: 0.10              # Rückgang je Quartal (GDD: 8–15 %); 2.15: vorher 0,12 – gemessen kamen mit Druckverlust und leeren Feldern 14,5 % heraus
+  decline: 0.09              # Rückgang je Quartal (GDD: 8–15 %); Frühes Öl (0.4.4+): vorher 0,10 – mehr Quellen je Feld drücken den Druck, gemessen kamen 15,7 % heraus; 2.15: vorher 0,12 – gemessen kamen mit Druckverlust und leeren Feldern 14,5 % heraus
   freeWells: 4               # PLATZHALTER: so viele Quellen verträgt ein Feld ohne Druckverlust
   pressureLossPerWell: 0.15  # PLATZHALTER: Druckverlust je Quelle über freeWells
   pressureMin: 0.40          # PLATZHALTER: tiefster Druckfaktor
@@ -169,14 +169,16 @@ drilling:
     # Lohnt nach etwa 1.200 / (0,2 × 1.000) = 6 Bohrstufen – für wer viel bohrt.
     steam: { cost: 1200, costFactor: 0.8, roundsLess: 1 }
     # Stahlgestänge statt Manila-Seil: halb so viele Unfälle und klemmende Werkzeuge.
-    # Spart im Schnitt (0,04·200 + 0,05·300)·0,5 ≈ 12 $ je Stufe 1, mehr in der Tiefe – eher Sicherheit als Rendite.
+    # Spart im Schnitt (0,02·200 + 0,03·300)·0,5 ≈ 7 $ je Stufe 1, mehr in der Tiefe – eher Sicherheit als Rendite.
     rods: { cost: 600, riskFactor: 0.5 }
   accidentCost: 200       # PLATZHALTER: $ Entschädigung je Unfall
   fishingCost: 300        # PLATZHALTER: $ Bergung bei klemmendem Werkzeug
   stages:                 # PLATZHALTER; 1.15: Stufe 1 unter GDD (1.500–3.000 $), damit Tieferbohren mit der Startkasse geht
-    - { depth: 300, cost: 1000, rounds: 1, oilShare: 0.7, accident: 0.04, stuck: 0.05 }
-    - { depth: 600, cost: 1100, rounds: 1, oilShare: 0.2, accident: 0.08, stuck: 0.10 }
-    - { depth: 900, cost: 1400, rounds: 2, oilShare: 0.1, accident: 0.15, stuck: 0.15 }
+    # Frühes Öl (0.4.4+): vorher oilShare 0,7/0,2/0,1 und Stufe 1 Unfall 0,04 / Klemmen 0,05 – die erste
+    # Bohrung auf einem Feld mit ≥ 60 % Prognose traf nur rund 40 %, mit der Startkasse reichte das oft nicht.
+    - { depth: 300, cost: 1000, rounds: 1, oilShare: 0.85, accident: 0.02, stuck: 0.03 }
+    - { depth: 600, cost: 1100, rounds: 1, oilShare: 0.10, accident: 0.08, stuck: 0.10 }
+    - { depth: 900, cost: 1400, rounds: 2, oilShare: 0.05, accident: 0.15, stuck: 0.15 }
 
 # Markt (GDD §7.3): Der Crane Trust kauft das Öl zum Posted Price. Der Preis
 # entsteht jede Runde aus Angebot und Nachfrage am Salt Hill:
@@ -507,6 +509,7 @@ tutorial:
   lastRound: 8               # spätestens nach Runde 8 schweigen die Hinweise (halbes Kapitel)
   endAfterProducedRounds: 2  # fertig, wenn die erste Quelle 2 Runden gefördert hat (die Verkaufsrunde ist vorbei)
   deeperMinChance: 25        # PLATZHALTER: tiefer bohren nur raten, wenn der Geologe der nächsten Stufe mind. 25 % gibt
+  dollarsPerPoint: 100       # Frühes Öl (0.4.4+): 100 $ Pacht wiegen einen Prozentpunkt Schätzung auf – der Hinweis rät nicht zur teuren Pacht, die kaum besser aussieht
   loanRounding: 100          # vorgeschlagene Kredite auf 100 $ aufgerundet (mindestens credit.minLoan)
 
 # Weltmodell (4.1, GDD §7.1): neun Weltgrößen, je Runde (Quartal) fortgeschrieben

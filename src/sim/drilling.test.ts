@@ -9,6 +9,7 @@ import {
   fishWell,
   rollOilStage,
   stageCost,
+  stageOutlook,
   startDrilling,
   wellOf,
   type DrillResult,
@@ -79,33 +80,111 @@ describe('Ölstufe ziehen', () => {
     expect(rollOilStage(balance, { ...parcel(game()), geology: 'dry' }, 0)).toBeNull();
   });
 
-  it('teilt nach den kumulierten Anteilen (0,7 / 0,2 / 0,1)', () => {
+  it('teilt nach den kumulierten Anteilen aus balance.yaml (0,85 / 0,10 / 0,05)', () => {
     const p = parcel(game());
+    const [a, b] = balance.drilling.stages.map((s) => s.oilShare);
     expect(rollOilStage(balance, p, 0)).toBe(1);
-    expect(rollOilStage(balance, p, 0.699)).toBe(1);
-    expect(rollOilStage(balance, p, 0.7)).toBe(2);
-    expect(rollOilStage(balance, p, 0.899)).toBe(2);
-    expect(rollOilStage(balance, p, 0.9)).toBe(3);
+    expect(rollOilStage(balance, p, a - 0.001)).toBe(1);
+    expect(rollOilStage(balance, p, a + 0.001)).toBe(2);
+    expect(rollOilStage(balance, p, a + b - 0.001)).toBe(2);
+    expect(rollOilStage(balance, p, a + b + 0.001)).toBe(3);
     expect(rollOilStage(balance, p, 0.9999)).toBe(3);
+  });
+
+  it('Frühes Öl: das meiste Öl liegt in der ersten Stufe, Stufe 1 ist sicherer als die Tiefe', () => {
+    const [s1, s2, s3] = balance.drilling.stages;
+    expect(s1.oilShare).toBeGreaterThanOrEqual(0.8);
+    expect(s1.oilShare + s2.oilShare + s3.oilShare).toBeCloseTo(1, 10);
+    expect(s1.accident + s1.stuck).toBeLessThanOrEqual(0.06);
   });
 });
 
 describe('Chance beim Tieferbohren', () => {
+  const [a, b, c] = balance.drilling.stages.map((s) => s.oilShare);
+
   it('stimmt mit der Handrechnung überein', () => {
     const p = parcel(game());
-    const q = trueChance(balance, p); // Randzone: 0,45
-    expect(deeperChance(balance, p, 1)).toBeCloseTo((q * 0.2) / (1 - q * 0.7), 10);
-    expect(deeperChance(balance, p, 2)).toBeCloseTo((q * 0.1) / (1 - q * 0.9), 10);
+    const q = trueChance(balance, p);
+    expect(deeperChance(balance, p, 1)).toBeCloseTo((q * b) / (1 - q * a), 10);
+    expect(deeperChance(balance, p, 2)).toBeCloseTo((q * c) / (1 - q * (a + b)), 10);
     expect(deeperChance(balance, p, 3)).toBe(0);
   });
 
   it('ist konsistent: Fund in Stufe 1 + weiter + weiter ergibt die Gesamtchance', () => {
     const p = parcel(game());
     const q = trueChance(balance, p);
-    const d1 = q * 0.7;
+    const d1 = q * a;
     const total = d1 + (1 - d1) * deeperChance(balance, p, 1) +
       (1 - d1) * (1 - deeperChance(balance, p, 1)) * deeperChance(balance, p, 2);
     expect(total).toBeCloseTo(q, 10);
+  });
+});
+
+describe('Chance in der nächsten Tiefe (Frühes Öl)', () => {
+  /** Prognose fest setzen, damit die Rechnung nachvollziehbar ist. */
+  function mitPrognose(state: GameState, low: number, high: number): GameState {
+    return { ...state, forecasts: { ...state.forecasts, [PARCEL]: { parcelId: PARCEL, low, high, center: (low + high) / 2 } } };
+  }
+
+  it('vor der ersten Stufe: Mitte der Prognose × Anteil der ersten Stufe, auf 300 m', () => {
+    const state = mitPrognose(game(), 50, 80);
+    const share = balance.drilling.stages[0].oilShare;
+    expect(stageOutlook(state, balance, PARCEL)).toEqual({ stage: 1, depth: 300, chance: Math.round(65 * share) });
+    // Weniger als die Gesamtchance – genau das soll der Spieler sehen.
+    expect(stageOutlook(state, balance, PARCEL)!.chance).toBeLessThan(65);
+  });
+
+  it('rechnet nur aus der angezeigten Prognose, nie aus der wahren Geologie', () => {
+    const trocken = mitPrognose(game('dry'), 50, 80);
+    const gusher = mitPrognose(game('gusher'), 50, 80);
+    expect(stageOutlook(trocken, balance, PARCEL)).toEqual(stageOutlook(gusher, balance, PARCEL));
+  });
+
+  it('nach einer trockenen Stufe: die neue Prognose gilt schon für die nächste Stufe', () => {
+    let state = ok(startDrilling(game('dry'), SAFE, PARCEL));
+    state = advanceDrilling(state, SAFE);
+    expect(well(state).status).toBe('decision');
+    const f = state.forecasts[PARCEL];
+    expect(stageOutlook(state, SAFE, PARCEL)).toEqual({ stage: 2, depth: 600, chance: Math.round((f.low + f.high) / 2) });
+    // Während Stufe 2 läuft, bleibt es bei derselben Aussage.
+    state = ok(drillDeeper(state, SAFE, PARCEL));
+    expect(stageOutlook(state, SAFE, PARCEL)).toMatchObject({ stage: 2, depth: 600 });
+  });
+
+  it('nichts mehr zu sagen: nach einem Fund, nach dem Aufgeben, ohne Prognose', () => {
+    let state = ok(startDrilling(game('small'), SAFE, PARCEL));
+    state = setWell(state, { oilStage: 1 });
+    state = advanceDrilling(state, SAFE);
+    expect(well(state).status).toBe('found');
+    expect(stageOutlook(state, SAFE, PARCEL)).toBeNull();
+
+    let leer = ok(startDrilling(game('dry'), SAFE, PARCEL));
+    leer = advanceDrilling(leer, SAFE);
+    leer = ok(abandonWell(leer, SAFE, PARCEL));
+    expect(stageOutlook(leer, SAFE, PARCEL)).toBeNull();
+
+    const ohne = { ...game(), forecasts: {} };
+    expect(stageOutlook(ohne, balance, PARCEL)).toBeNull();
+  });
+});
+
+describe('Frühes Öl: erste Bohrung auf gut geschätztem Land', () => {
+  it('auf Ranches mit ≥ 60 % Prognose trifft die erste Bohrung (300 m, ohne klemmendes Werkzeug) in mindestens der Hälfte der Fälle', () => {
+    const s1 = balance.drilling.stages[0];
+    let felder = 0;
+    let treffer = 0;
+    for (let i = 0; i < 150; i++) {
+      const state = newGame(`frueh-${i}`, balance);
+      for (const p of state.parcels) {
+        const f = state.forecasts[p.id];
+        if (p.discovery || !f || (f.low + f.high) / 2 < 60) continue;
+        felder++;
+        // Unfälle wiederholen nur die Stufe; verloren ist sie nur, wenn das Werkzeug klemmt.
+        if (p.geology !== 'dry') treffer += s1.oilShare * (1 - s1.stuck);
+      }
+    }
+    expect(felder).toBeGreaterThan(500);
+    expect(treffer / felder).toBeGreaterThanOrEqual(0.5);
   });
 });
 

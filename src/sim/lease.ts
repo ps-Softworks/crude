@@ -259,7 +259,13 @@ export function exerciseOption(state: GameState, balance: Balance, parcelId: str
   };
 }
 
-/** Startoptionen: freie Optionen auf verschiedenen Ranches in Randlage, per Seed gewählt. */
+/**
+ * Startoptionen: freie Optionen auf verschiedenen Ranches in Randlage, per Seed gewählt.
+ * Frühes Öl (0.4.4+): Die erste Option liegt, wenn es geht, auf einer vernünftigen
+ * Ranch (geologisch Ring oder Kern, nicht der trockene Rand) – damit der Einstieg
+ * nicht schon an der Wahl der Startparzellen scheitert. Die übrigen bleiben Zufall.
+ * Jede Option verbraucht genau einen Zufallswert, wie zuvor.
+ */
 export function startOptions(state: GameState, balance: Balance, rng: Rng): LeaseOption[] {
   const { count, termRounds } = balance.lease.startOptions;
   const outermost = balance.lease.locations[balance.lease.locations.length - 1];
@@ -271,9 +277,19 @@ export function startOptions(state: GameState, balance: Balance, rng: Rng): Leas
     throw new Error(`Zu wenige Ranches in Randlage für ${count} Startoptionen.`);
   }
   const options: LeaseOption[] = [];
+  const outerZone = balance.geology.zones[balance.geology.zones.length - 1].name;
   for (let i = 0; i < count; i++) {
-    const parcel = rng.pick(candidates);
-    candidates.splice(candidates.indexOf(parcel), 1);
+    let good = i === 0 ? candidates.filter((p) => p.zone !== outerZone) : [];
+    // Keine solche Ranch in Randlage? Dann eine aus der nächsten Lage (nicht direkt am Fund).
+    if (i === 0 && good.length === 0) {
+      const amFund = balance.lease.locations[0].name;
+      good = state.parcels.filter(
+        (p) => !p.discovery && p.zone !== outerZone && locationFor(balance, state.parcels, discoveries, p).name !== amFund,
+      );
+    }
+    const parcel = rng.pick(good.length > 0 ? good : candidates);
+    const index = candidates.indexOf(parcel);
+    if (index >= 0) candidates.splice(index, 1);
     options.push({
       parcelId: parcel.id,
       holder: 'jacob',

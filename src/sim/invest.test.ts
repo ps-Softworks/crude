@@ -18,8 +18,8 @@ const P = balance.production.pump;
  * Netto je Barrel: 1,00 − 0,25 − 1,00 · 0,125 = 0,625 $. Die Ranch liegt im
  * größten Feld, damit die Reserve die Rechnung nicht begrenzt.
  */
-function lage(wells: Partial<Well>[] = [], round = 1): { state: GameState; id: string; feld: string[] } {
-  const s = newGame('ausbau', balance);
+function lage(wells: Partial<Well>[] = [], round = 1, seed = 'ausbau'): { state: GameState; id: string; feld: string[] } {
+  const s = newGame(seed, balance);
   const feld = [...s.fields].sort((a, b) => b.reserves - a.reserves)[0];
   const id = feld.parcelIds.find((pid) => !s.parcels.find((p) => p.id === pid)!.discovery)!;
   const state: GameState = {
@@ -87,10 +87,10 @@ describe('Pumpe: lohnt bei guten Quellen, nicht bei schwachen', () => {
     expect(pumpOutlook(state, balance, id)!.payback).toBe(1);
   });
 
-  it('müde Quelle (2.000 bbl, vier Runden alt): +328 bbl ≈ 205 $ – weniger als der Unterhalt, lohnt nie', () => {
+  it('müde Quelle (2.000 bbl, vier Runden alt): +343 bbl ≈ 214 $ – weniger als der Unterhalt, lohnt nie', () => {
     const { state, id } = lage([rate(2_000, 4)]);
     const o = pumpOutlook(state, balance, id)!;
-    expect(o.extraFirst).toBe(328); // 2.000 · 0,9^4 = 1.312 · 0,25
+    expect(o.extraFirst).toBe(343); // 2.000 · 0,91^4 = 1.372 · 0,25
     expect(o.payback).toBeNull();
     expect(o.profit).toBeLessThan(0);
   });
@@ -117,7 +117,8 @@ describe('Preisdruck: mehr Öl senkt den Posted Price für alle Barrel Jacobs', 
   });
 
   it('ist der Markt satt (Jacob fördert anderswo schon riesig), lohnt nicht einmal die Pumpe an einer starken Quelle', () => {
-    const { state, id, feld } = lage([rate(40_000)]);
+    // Ein Seed mit mehr als einem Feld (seit „Frühes Öl“ hängt der Salt Hill oft zu einem Feld zusammen).
+    const { state, id, feld } = lage([rate(40_000)], 1, 'ausbau-3');
     const anderswo = state.fields.find((f) => !f.parcelIds.some((pid) => feld.includes(pid)))!;
     const riesig: Well[] = Array.from({ length: 3 }, (_, i) => ({
       id: `${anderswo.parcelIds[0]}#${i + 1}`,

@@ -90,6 +90,11 @@ export function makeForecasts(
   return forecasts;
 }
 
+/** Mitte der angezeigten Bandbreite in Prozent – das, was der Spieler abliest. */
+export function forecastMid(forecast: Pick<Forecast, 'low' | 'high'>): number {
+  return (forecast.low + forecast.high) / 2;
+}
+
 /** Kurzform für die Anzeige, z. B. "35–60 % Fundchance". */
 export function formatForecast(forecast: Forecast): string {
   return `${forecast.low}–${forecast.high} % Fundchance`;
