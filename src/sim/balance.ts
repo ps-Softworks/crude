@@ -302,6 +302,49 @@ export interface CreditBalance {
 }
 
 /** Bankrott: Frist, bevor es Konkurs gibt. */
+/** Zeitsprünge (4.5, GDD §2/§13): vereinfachte Regeln zwischen den Kapiteln. */
+export const STANCES = ['aggressive', 'balanced', 'cautious'] as const;
+export type Stance = (typeof STANCES)[number];
+export const FAMILY_TIMES = ['little', 'some', 'much'] as const;
+export type FamilyTime = (typeof FAMILY_TIMES)[number];
+
+export interface TimeskipBalance {
+  /** Quartale im Zeitsprung I. */
+  rounds: number;
+  /** Runden des nächsten Kapitels (Platzhalter). */
+  nextChapterRounds: number;
+  reserve: Record<Stance, number>;
+  invest: Record<Stance, number>;
+  minChance: Record<Stance, number>;
+  borrow: Record<Stance, number>;
+  repay: Record<Stance, number>;
+  maxNewWells: number;
+  upkeepPerWell: number;
+  family: {
+    bond: Record<FamilyTime, number>;
+    growth: Record<FamilyTime, number>;
+    claraChance: Record<FamilyTime, number>;
+    claraFromYear: number;
+    claraStart: number;
+    claraBond: number;
+  };
+  neighbours: { decline: number; entryPrice: number; entryRate: number };
+  crisis: { callShare: number; fireSale: number };
+  switches: {
+    panicRepay: number;
+    rideBorrow: number;
+    automobileYear: number;
+    automobileCost: number;
+    automobilePremium: number;
+    okaraFromYear: number;
+    okaraChance: number;
+    okaraCost: number;
+    okaraSuccess: number;
+    okaraIncome: number;
+  };
+  rival: { drillChance: number; drillCost: number };
+}
+
 /** Imperiumswert (GDD §4). */
 /** Kapitelprüfung und Kapitelende (2.11, GDD §13, §8). */
 export interface ChapterBalance {
@@ -709,6 +752,7 @@ export interface Balance {
   bankruptcy: BankruptcyBalance;
   empire: EmpireBalance;
   chapter: ChapterBalance;
+  timeskip: TimeskipBalance;
   bots: BotsBalance;
   events: EventsBalance;
   agenda: AgendaBalance;
@@ -1401,6 +1445,62 @@ function parseChapter(raw: unknown): ChapterBalance {
   };
 }
 
+function parseTimeskip(raw: unknown): TimeskipBalance {
+  const block = (raw as { timeskip?: unknown })?.timeskip;
+  if (!block || typeof block !== 'object') throw new BalanceError('balance.yaml: Block "timeskip" fehlt');
+  const p = (key: string) => `timeskip.${key}`;
+  const jeHaltung = (key: string, lesen: (o: unknown, path: string) => number) =>
+    Object.fromEntries(STANCES.map((s) => [s, lesen(raw, p(`${key}.${s}`))])) as Record<Stance, number>;
+  const jeFamilie = (key: string, lesen: (o: unknown, path: string) => number) =>
+    Object.fromEntries(FAMILY_TIMES.map((f) => [f, lesen(raw, p(`family.${key}.${f}`))])) as Record<FamilyTime, number>;
+  const jahr = (key: string) => {
+    const v = positiveInt(raw, p(key));
+    if (v < 5 || v > 10) throw new BalanceError(`balance.yaml: "${p(key)}" muss ein Jahr im Zeitsprung I (5–10) sein`);
+    return v;
+  };
+  const t: TimeskipBalance = {
+    rounds: positiveInt(raw, p('rounds')),
+    nextChapterRounds: positiveInt(raw, p('nextChapterRounds')),
+    reserve: jeHaltung('reserve', nonNegative),
+    invest: jeHaltung('invest', share),
+    minChance: jeHaltung('minChance', share),
+    borrow: jeHaltung('borrow', share),
+    repay: jeHaltung('repay', share),
+    maxNewWells: positiveInt(raw, p('maxNewWells')),
+    upkeepPerWell: nonNegative(raw, p('upkeepPerWell')),
+    family: {
+      bond: jeFamilie('bond', num),
+      growth: jeFamilie('growth', nonNegative),
+      claraChance: jeFamilie('claraChance', share),
+      claraFromYear: jahr('family.claraFromYear'),
+      claraStart: nonNegative(raw, p('family.claraStart')),
+      claraBond: nonNegative(raw, p('family.claraBond')),
+    },
+    neighbours: {
+      decline: share(raw, p('neighbours.decline')),
+      entryPrice: nonNegative(raw, p('neighbours.entryPrice')),
+      entryRate: nonNegative(raw, p('neighbours.entryRate')),
+    },
+    crisis: { callShare: share(raw, p('crisis.callShare')), fireSale: share(raw, p('crisis.fireSale')) },
+    switches: {
+      panicRepay: share(raw, p('switches.panicRepay')),
+      rideBorrow: share(raw, p('switches.rideBorrow')),
+      automobileYear: jahr('switches.automobileYear'),
+      automobileCost: nonNegative(raw, p('switches.automobileCost')),
+      automobilePremium: nonNegative(raw, p('switches.automobilePremium')),
+      okaraFromYear: jahr('switches.okaraFromYear'),
+      okaraChance: share(raw, p('switches.okaraChance')),
+      okaraCost: nonNegative(raw, p('switches.okaraCost')),
+      okaraSuccess: share(raw, p('switches.okaraSuccess')),
+      okaraIncome: nonNegative(raw, p('switches.okaraIncome')),
+    },
+    rival: { drillChance: share(raw, p('rival.drillChance')), drillCost: nonNegative(raw, p('rival.drillCost')) },
+  };
+  if (t.rounds % 4 !== 0) throw new BalanceError('balance.yaml: "timeskip.rounds" muss ganze Jahre (Vielfaches von 4) umfassen');
+  if (t.family.claraStart > 100) throw new BalanceError('balance.yaml: "timeskip.family.claraStart" muss zwischen 0 und 100 liegen');
+  return t;
+}
+
 function parseBots(raw: unknown): BotsBalance {
   const block = (raw as { bots?: unknown })?.bots;
   if (!block || typeof block !== 'object') throw new BalanceError('balance.yaml: Block "bots" fehlt');
@@ -1987,6 +2087,7 @@ export function parseBalance(raw: unknown): Balance {
     rivals: parseRivals(raw),
     empire: parseEmpire(raw),
     chapter: parseChapter(raw),
+    timeskip: parseTimeskip(raw),
     bots: parseBots(raw),
     events: parseEvents(raw),
     agenda: parseAgenda(raw),

@@ -14,6 +14,7 @@ import { parsePoliticsContent } from '../src/sim/politics';
 import { loadBalance, readLawFiles } from '../src/sim/testBalance';
 import { EVENTS_DIR, readEventFiles } from '../src/sim/testEvents';
 import { parseTutorialContent } from '../src/sim/tutorial';
+import { parseTimeskipContent } from '../src/sim/timeskip';
 import { mapRefErrors } from '../src/sim/regions';
 import { parseFigureCatalog } from '../src/ui/figures';
 import { parseMapHints } from '../src/ui/tutorialMap';
@@ -40,12 +41,14 @@ const bogenMarks = boegen.content && parsed.errors.length === 0 ? checkArcMarks(
 // Kapitelende (2.11): Texte des Ergebnisbildschirms und Merkzeichen der Boni.
 const kapitel = parseChapterContent('content/chapter.yaml', readFileSync(new URL('../content/chapter.yaml', import.meta.url), 'utf8'));
 const kapitelMarks = kapitel.content && parsed.errors.length === 0 ? checkChapterMarks('content/chapter.yaml', kapitel.content, events) : [];
+// Zeitsprünge (4.5): Direktiven, Weichen, Chronik, Kapitel-2-Platzhalter.
+const sprung = parseTimeskipContent('content/timeskip.yaml', readFileSync(new URL('../content/timeskip.yaml', import.meta.url), 'utf8'));
 // Einstieg (2.13): Hinweistexte des Tutorials.
 const einstieg = parseTutorialContent('content/tutorial.yaml', readFileSync(new URL('../content/tutorial.yaml', import.meta.url), 'utf8'));
 // Wirkung der Antworten (0.2.15+3): begründete Ausnahmen.
 const wirkung = parseRelevanceContent('content/relevance.yaml', readFileSync(new URL('../content/relevance.yaml', import.meta.url), 'utf8'));
 const wirkungMarks = wirkung.content && parsed.errors.length === 0 ? checkRelevanceMarks('content/relevance.yaml', wirkung.content, events) : [];
-const errors = [...wirkung.errors, ...wirkungMarks, ...einstieg.errors, ...parsed.errors, ...zeitung.errors, ...politik.errors, ...gesetze.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks];
+const errors = [...wirkung.errors, ...wirkungMarks, ...einstieg.errors, ...parsed.errors, ...zeitung.errors, ...politik.errors, ...gesetze.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks, ...sprung.errors];
 
 // Karte (0.2.15+5): ranch und unlocks in den Ereignissen müssen auf content/map.yaml zeigen.
 const karte = parsed.errors.length === 0 ? mapRefErrors(events, loadBalance().world) : [];
@@ -76,6 +79,7 @@ if (ohneEnglisch > 0) console.log(`Hinweis: ${ohneEnglisch} Ereignisse haben noc
 // Entwürfe (2.10a): Schlüsselszenen, die Philipp noch überarbeiten soll.
 const entwuerfe = events.filter((e) => e.draft).map((e) => e.id);
 if (entwuerfe.length > 0) console.log(`Entwürfe (draft: true): ${entwuerfe.length} – ${entwuerfe.join(', ')}`);
+if (sprung.content?.draft) console.log('Entwurf: content/timeskip.yaml (Zeitsprung-Texte, draft: true)');
 const gesetzEntwuerfe = gesetze.laws.filter((l) => l.draft).map((l) => l.id);
 if (gesetzEntwuerfe.length > 0) console.log(`Gesetze als Entwurf: ${gesetzEntwuerfe.join(', ')}`);
 // Wirkung der Antworten (0.2.15+3): Zusammenfassung; die Liste zeigt npm run check:events.

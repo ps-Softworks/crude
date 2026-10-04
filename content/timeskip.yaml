@@ -1,0 +1,143 @@
+# Zeitsprünge (4.5, GDD §2/§13): Texte für Direktiven, Weichen-Telegramme, die Chronik
+# „Die Jahre dazwischen“ und den Platzhalter-Start von Kapitel 2.
+# Zahlen stehen in balance.yaml unter timeskip, Regeln in src/sim/timeskip.ts.
+# Platzhalter in geschweiften Klammern setzt das Spiel ein: {n} Anzahl, {betrag} Geld,
+# {name} Name, {partei} Partei, {gesetz} Gesetz, {preis} Preis, {wort} Zustandswort,
+# {jahr} Jahr der Föderation, {von}/{bis} Jahre.
+# draft: true = von Claude geschrieben, Philipp soll drüberlesen.
+draft: true
+
+start:
+  title: { de: "Die Jahre bis Kapitel 2", en: "The Years Until Chapter 2" }
+  text:
+    de: Sechs Jahre lang führt ein Verwalter das Tagesgeschäft. Jacob gibt ihm einen Brief mit, wie er es halten soll – und bleibt für Telegramme erreichbar.
+    en: For six years a manager runs the daily business. Jacob leaves him a letter on how to go about it – and stays reachable by telegram.
+  button: { de: "Die Jahre ziehen ins Land …", en: "The years go by …" }
+  blockedIpo: { de: "Erst über die Aktiengesellschaft entscheiden.", en: "Decide on the stock company first." }
+
+directives:
+  title: { de: "An den Verwalter", en: "To the Manager" }
+  text:
+    de: "Port Ellis, Winter {jahr}. Sie führen die Firma, bis ich zurück am Schreibtisch sitze. Halten Sie es so:"
+    en: "Port Ellis, winter {jahr}. You will run the company until I am back at my desk. Keep to this:"
+  stance:
+    label: { de: "Haltung", en: "Stance" }
+    aggressive:
+      label: { de: "Wagemutig", en: "Bold" }
+      text: { de: "Jeden Dollar in neue Bohrungen, auch auf Pump. Viel Gewinn – oder viel Verlust.", en: "Every dollar into new wells, borrowed money too. Big gains – or big losses." }
+    balanced:
+      label: { de: "Ausgewogen", en: "Balanced" }
+      text: { de: "Die Hälfte in neue Bohrungen, ein wenig tilgen, ein Polster behalten.", en: "Half into new wells, pay down a little, keep a cushion." }
+    cautious:
+      label: { de: "Vorsichtig", en: "Cautious" }
+      text: { de: "Schulden zurückzahlen, nur sichere Ranches anbohren, viel Rücklage.", en: "Pay off debts, drill only safe ranches, keep a big reserve." }
+  family:
+    label: { de: "Familie", en: "Family" }
+    little:
+      label: { de: "Die Firma zuerst", en: "Business first" }
+      text: { de: "Jacob ist kaum zu Hause. Mehr Wachstum – Ruth und die Kinder leiden.", en: "Jacob is hardly home. More growth – Ruth and the children suffer." }
+    some:
+      label: { de: "Wie bisher", en: "As before" }
+      text: { de: "Sonntags zu Hause, unter der Woche im Büro.", en: "Home on Sundays, at the office during the week." }
+    much:
+      label: { de: "Viel Zeit zu Hause", en: "Plenty of time at home" }
+      text: { de: "Jacob sieht seine Kinder aufwachsen. Die Firma wächst langsamer.", en: "Jacob watches his children grow up. The company grows more slowly." }
+  send: { de: "Brief abschicken", en: "Send the letter" }
+  back: { de: "Zurück zum Kapitelende", en: "Back to the chapter's end" }
+
+# Weichen-Telegramme: unterbrechen den Sprung, wenn die Welt sie hergibt (GDD §13, Zeitsprung I).
+switches:
+  telegram: { de: "Telegramm", en: "Telegram" }
+  bank_panic:
+    title: { de: "Das Geld ist zu billig", en: "Money Is Too Cheap" }
+    text:
+      de: "VERWALTER AN HARLAN – BANKEN LEIHEN JEDEM – KURSE STEIGEN OHNE GRUND – ALTE HASEN WARNEN VOR DER PANIK – SCHULDEN JETZT ZURÜCKZAHLEN ODER WEITER AUF PUMP BOHREN – ERBITTE ANTWORT"
+      en: "MANAGER TO HARLAN – BANKS LEND TO ANYONE – PRICES RISE FOR NO REASON – OLD HANDS WARN OF A PANIC – PAY DEBTS NOW OR KEEP DRILLING ON CREDIT – REPLY REQUESTED"
+    repay: { de: "Schulden zurückzahlen", en: "Pay off the debts" }
+    ride: { de: "Weiter auf Pump bohren", en: "Keep drilling on credit" }
+  automobile:
+    title: { de: "Der erste Motorwagen", en: "The First Motor Car" }
+    text:
+      de: "VERWALTER AN HARLAN – IN PORT ELLIS FÄHRT EIN MOTORWAGEN – LÄUFT AUF BENZIN – EIN CHEMIKER SUCHT GELD FÜR EINE BENZINANLAGE – EINSTEIGEN ODER NICHT"
+      en: "MANAGER TO HARLAN – A MOTOR CAR DRIVES IN PORT ELLIS – RUNS ON GASOLINE – A CHEMIST WANTS MONEY FOR A GASOLINE PLANT – IN OR OUT"
+    invest: { de: "Einsteigen ({betrag})", en: "Buy in ({betrag})" }
+    ignore: { de: "Eine Mode – nicht einsteigen", en: "A fad – stay out" }
+  okara:
+    title: { de: "Öl in Okara", en: "Oil in Okara" }
+    text:
+      de: "VERWALTER AN HARLAN – FUND IN DER PRÄRIEPROVINZ OKARA – PACHTEN NOCH BILLIG – BULLARD SCHON UNTERWEGS – PACHTEN KAUFEN ODER LASSEN"
+      en: "MANAGER TO HARLAN – STRIKE IN THE PRAIRIE PROVINCE OF OKARA – LEASES STILL CHEAP – BULLARD ALREADY ON HIS WAY – BUY LEASES OR PASS"
+    lease: { de: "Pachten kaufen ({betrag})", en: "Buy leases ({betrag})" }
+    pass: { de: "Bullard soll sie haben", en: "Let Bullard have them" }
+  clara:
+    title: { de: "Ruth erwartet ein Kind", en: "Ruth Is Expecting" }
+    text:
+      de: "RUTH AN JACOB – WIR BEKOMMEN EIN ZWEITES KIND – THOMAS FREUT SICH – KOMMST DU NACH HAUSE"
+      en: "RUTH TO JACOB – WE ARE HAVING A SECOND CHILD – THOMAS IS THRILLED – WILL YOU COME HOME"
+    home: { de: "Die Monate zu Hause bleiben", en: "Stay home for those months" }
+    business: { de: "Die Geschäfte gehen vor", en: "Business comes first" }
+
+# Die Chronik „Die Jahre dazwischen“: eine Zeitungsseite je Spieljahr.
+chronicle:
+  title: { de: "Die Jahre dazwischen", en: "The Years Between" }
+  paper: { de: "Cordova Courier – Jahresrückblick", en: "Cordova Courier – Year in Review" }
+  year: { de: "Jahr {jahr} der Föderation", en: "Year {jahr} of the Federation" }
+  quiet: { de: "Ein ruhiges Jahr am Salt Hill.", en: "A quiet year at Salt Hill." }
+  balance: { de: "Was die Jahre gebracht haben", en: "What the Years Brought" }
+  continue: { de: "An den Schreibtisch – Frühjahr {jahr}", en: "Back to the desk – spring {jahr}" }
+  entries:
+    world_crash: { de: "Börsenkrach! Banken schließen, Firmen gehen reihenweise pleite.", en: "Market crash! Banks close, firms go bust by the dozen." }
+    world_panic: { de: "Bankenpanik – vor den Schaltern stehen die Sparer Schlange.", en: "Bank panic – savers queue at the counters." }
+    world_recovery: { de: "Die Banken leihen wieder.", en: "The banks are lending again." }
+    world_war: { de: "Krieg in Übersee – Aldmark und Varenhold rüsten auf Öl.", en: "War overseas – Aldmark and Varenhold arm themselves with oil." }
+    world_peace: { de: "Frieden in Übersee.", en: "Peace overseas." }
+    world_election: { de: "Wahl: {partei} übernimmt die Regierung.", en: "Election: {partei} takes over the government." }
+    world_reelection: { de: "Wahl: {partei} bleibt an der Regierung.", en: "Election: {partei} stays in government." }
+    world_glut: { de: "Riesenfund im Ausland – Öl im Überfluss.", en: "Huge find abroad – oil in abundance." }
+    world_nationalization: { de: "Ein Förderland verstaatlicht die Ölfelder der Fremden.", en: "A producing country nationalizes the foreigners' oil fields." }
+    world_uprising: { de: "Aufstand in Costa Negra – die Felder stehen still.", en: "Uprising in Costa Negra – the fields stand idle." }
+    world_embargo: { de: "Qasir verhängt ein Ölembargo.", en: "Qasir imposes an oil embargo." }
+    law_passed: { de: "Das Parlament beschließt: {gesetz}.", en: "Parliament passes: {gesetz}." }
+    law_failed: { de: "Abgelehnt: {gesetz}.", en: "Rejected: {gesetz}." }
+    price: { de: "Posted Price am Salt Hill im Schnitt {preis}.", en: "Posted price at Salt Hill averaged {preis}." }
+    wells_found: { de: "Harlan Oil bringt {n} neue Quellen in Förderung.", en: "Harlan Oil brings {n} new wells into production." }
+    wells_dry: { de: "{n} Bohrungen des Verwalters bleiben trocken.", en: "{n} of the manager's wells come up dry." }
+    field_empty: { de: "{name} ist erschöpft – die Quellen versiegen.", en: "{name} is exhausted – the wells run dry." }
+    debt_repaid: { de: "Der Verwalter tilgt {betrag} Schulden.", en: "The manager pays off {betrag} of debt." }
+    crisis_call: { de: "Die Bank kündigt Kredite: Harlan Oil muss {betrag} sofort zurückzahlen.", en: "The bank calls in loans: Harlan Oil must repay {betrag} at once." }
+    fire_sale: { de: "Notverkauf: {n} Quellen gehen für {betrag} an den Trust.", en: "Fire sale: {n} wells go to the Trust for {betrag}." }
+    emergency_loan: { de: "Die Kasse ist leer – die Bank leiht {betrag} zu hohem Zins.", en: "The till is empty – the bank lends {betrag} at a steep rate." }
+    bullard_wells: { de: "Bullard bohrt weiter: {n} neue Quellen.", en: "Bullard keeps drilling: {n} new wells." }
+    wildcatters_quit: { de: "{name} gibt auf und verkauft die Quellen an den Trust.", en: "{name} gives up and sells out to the Trust." }
+    panic_repay: { de: "Jacob lässt {betrag} Schulden zurückzahlen, bevor die Blase platzt.", en: "Jacob has {betrag} of debt repaid before the bubble bursts." }
+    panic_nodebt: { de: "Harlan Oil hat keine Schulden – soll die Panik ruhig kommen.", en: "Harlan Oil owes nothing – let the panic come." }
+    panic_ride: { de: "Jacob bohrt weiter auf Pump.", en: "Jacob keeps drilling on credit." }
+    automobile_invest: { de: "Harlan Oil steigt bei einer Benzinanlage ein ({betrag}).", en: "Harlan Oil buys into a gasoline plant ({betrag})." }
+    automobile_ignore: { de: "Jacob hält die Motorwagen für eine Mode.", en: "Jacob thinks motor cars are a fad." }
+    okara_found: { de: "Öl auf den Pachten in Okara!", en: "Oil on the Okara leases!" }
+    okara_dry: { de: "Die Pachten in Okara bleiben trocken.", en: "The Okara leases come up dry." }
+    okara_bullard: { de: "Bullard sichert sich die Pachten in Okara.", en: "Bullard secures the Okara leases." }
+    clara_born: { de: "Clara Harlan kommt zur Welt.", en: "Clara Harlan is born." }
+    clara_home: { de: "Jacob bleibt die Monate vor der Geburt zu Hause.", en: "Jacob stays home for the months before the birth." }
+    clara_business: { de: "Jacob ist bei der Geburt auf Geschäftsreise.", en: "Jacob is away on business at the birth." }
+    thomas_school: { de: "Thomas kommt in die Schule.", en: "Thomas starts school." }
+    ruth_word: { de: "Ruth ist {wort}.", en: "Ruth is {wort}." }
+
+  # Einzahl, wenn {n} = 1 ist.
+  one:
+    wells_found: { de: "Harlan Oil bringt eine neue Quelle in Förderung.", en: "Harlan Oil brings a new well into production." }
+    wells_dry: { de: "Eine Bohrung des Verwalters bleibt trocken.", en: "One of the manager's wells comes up dry." }
+    fire_sale: { de: "Notverkauf: Eine Quelle geht für {betrag} an den Trust.", en: "Fire sale: one well goes to the Trust for {betrag}." }
+    bullard_wells: { de: "Bullard bohrt weiter: eine neue Quelle.", en: "Bullard keeps drilling: one new well." }
+
+# Kapitel 2 gibt es noch nicht: Nach dem Sprung geht es mit den Kapitel-1-Systemen weiter.
+chapter2:
+  badge: { de: "Kapitel 2 · im Bau", en: "Chapter 2 · under construction" }
+  title: { de: "Kapitel 2 – Der Herausforderer (im Bau)", en: "Chapter 2 – The Challenger (under construction)" }
+  text:
+    de: Kapitel 2 ist noch im Bau. Bis dahin geht es mit den Werkzeugen aus Kapitel 1 weiter – Raffinerie, Aktien und Pipelines zum Hafen kommen später.
+    en: Chapter 2 is still under construction. Until then, play on with the tools from chapter 1 – refinery, shares and pipelines to the harbour come later.
+  endTitle: { de: "Ende der Probefahrt", en: "End of the Test Run" }
+  endText:
+    de: Hier endet, was von Kapitel 2 schon steht. Danke fürs Weiterspielen!
+    en: This is as far as chapter 2 goes for now. Thanks for playing on!

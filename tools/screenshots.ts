@@ -26,6 +26,8 @@ import { Rng, seedFromString } from '../src/sim/rng';
 import { serializeGame } from '../src/sim/save';
 import { loadBalance } from '../src/sim/testBalance';
 import { loadEvents } from '../src/sim/testEvents';
+import { decideIpo } from '../src/sim/chapter';
+import { answerSwitch, markChronicleRead, runTimeskip, startTimeskip, SWITCH_CHOICES } from '../src/sim/timeskip';
 
 const root = new URL('../', import.meta.url);
 const balance = loadBalance();
@@ -79,6 +81,28 @@ try {
   bankrott = null;
 }
 const pleite = suche((s) => s.ending === 'pleite');
+// Zeitsprung (4.5): Kapitelende mit entschiedenem Börsengang, laufender Sprung an einer Weiche, Chronik, Kapitel 2.
+const kapitelFrei = (() => {
+  const r = decideIpo(kapitel, balance, 0);
+  return r.ok ? r.state : kapitel;
+})();
+const imSprung = (() => {
+  const r = startTimeskip(kapitelFrei, balance, { stance: 'balanced', family: 'some' });
+  if (!r.ok) throw new Error(r.reason);
+  return r.state;
+})();
+const nachSprung = (() => {
+  let s = imSprung;
+  for (let i = 0; i < 10; i++) {
+    const step = runTimeskip(s, balance, events);
+    if (step.status === 'done') return step.state;
+    const a = answerSwitch(s, balance, step.id, SWITCH_CHOICES[step.id][0], events);
+    if (!a.ok) throw new Error(a.reason);
+    s = a.state;
+  }
+  throw new Error('Zeitsprung endet nicht.');
+})();
+const kapitel2 = markChronicleRead(nachSprung);
 
 interface Bild {
   name: string;
@@ -114,6 +138,10 @@ const bilder: Bild[] = [
   { name: '13-kapitelende', state: kapitel },
   { name: '14-pleite', state: pleite },
   { name: '15-rundenbericht', state: mitte, prefs: { 'crude.zeitung': 'an' }, tasten: ['e', 'Enter'], warte: 1600 },
+  { name: '16-zeitsprung-brief', state: kapitelFrei, dann: `[...document.querySelectorAll('.bogen-fuss button')].find((b) => b.textContent.includes('Jahre'))?.click()` },
+  { name: '17-zeitsprung-telegramm', state: imSprung },
+  { name: '18-zeitsprung-chronik', state: nachSprung },
+  { name: '19-kapitel2-schreibtisch', state: kapitel2 },
 ];
 
 // --- Chrome über das DevTools-Protokoll steuern ---
@@ -329,17 +357,18 @@ try {
     [1920, 1080],
   ] as const) {
     await groesse(w, h);
-    for (const [name, state] of [
-      ['Kapitelende', kapitel],
-      ['Pleite', pleite],
+    for (const [name, state, knopfText] of [
+      ['Kapitelende', kapitel, 'Neues Spiel'],
+      ['Pleite', pleite, 'Neues Spiel'],
+      ['Chronik nach dem Zeitsprung', nachSprung, 'Schreibtisch'],
     ] as const) {
       await lade(state, {}, undefined);
       const m = await cdp.js<{ innen: number; sicht: number; knopf: boolean }>(
-        `(() => { const i = document.querySelector('.bogen-inhalt'); const k = [...document.querySelectorAll('.bogen-fuss button')].find((b) => b.textContent.includes('Neues Spiel')); const r = k?.getBoundingClientRect(); return { innen: i ? i.scrollHeight : 0, sicht: i ? i.clientHeight : 0, knopf: !!r && r.bottom <= innerHeight && r.top >= 0 }; })()`,
+        `(() => { const i = document.querySelector('.bogen-inhalt'); const k = [...document.querySelectorAll('.bogen-fuss button')].find((b) => b.textContent.includes(${JSON.stringify(knopfText)})); const r = k?.getBoundingClientRect(); return { innen: i ? i.scrollHeight : 0, sicht: i ? i.clientHeight : 0, knopf: !!r && r.bottom <= innerHeight && r.top >= 0 }; })()`,
       );
       const ok = m.innen <= m.sicht + 1 && m.knopf;
       if (!ok) fehler++;
-      console.log(`${ok ? 'ok    ' : 'FEHLER'} ${w}×${h} ${name}: Inhalt ${m.innen} von ${m.sicht} px${m.knopf ? '' : ' · „Neues Spiel“ nicht sichtbar'}`);
+      console.log(`${ok ? 'ok    ' : 'FEHLER'} ${w}×${h} ${name}: Inhalt ${m.innen} von ${m.sicht} px${m.knopf ? '' : ` · „${knopfText}“ nicht sichtbar`}`);
     }
   }
   ws.close();

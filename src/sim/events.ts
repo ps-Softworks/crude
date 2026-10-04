@@ -269,14 +269,15 @@ export function marksMet(state: Pick<GameState, 'round' | 'events'>, event: Pick
   return state.round >= zuletzt + event.delay;
 }
 
-type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength'>;
+type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength'> & Partial<Pick<GameState, 'chapterStart'>>;
 
 /** Der Wert im Zustand, den eine Bedingung prüft. */
 function wertFuer(state: Lage, key: ConditionKey): number {
   switch (key) {
     case 'minRound':
     case 'maxRound':
-      return state.round;
+      // Runde im laufenden Kapitel (4.5): In Kapitel 2 zählen die Bedingungen wieder ab 1.
+      return state.round - (state.chapterStart ?? 1) + 1;
     case 'minCash':
     case 'maxCash':
       return state.cash;

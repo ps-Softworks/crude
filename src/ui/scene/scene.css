@@ -724,3 +724,45 @@ input:focus-visible { outline: 2px solid var(--ocker); outline-offset: 1px; }
 .bogen-fuss .randnotiz { flex-basis: 100%; border: none; padding: 0; background: none; }
 .bogen-fuss a.feedback { margin-right: auto; }
 .tableau-flaeche .bogen-fuss .link { color: var(--tinte); }
+
+/* ------------------------------------------------------------------ Zeitsprung (4.5)
+   Brief an den Verwalter, Weichen-Telegramm, Chronik „Die Jahre dazwischen“. */
+.sprung-brief .brief-anrede { font-style: italic; }
+.sprung-brief .brief-gruss { text-align: right; font-style: italic; margin: 10px 8px 0 0; }
+.direktive { border: 1px solid var(--linie); padding: 6px 12px 10px; margin: 10px 0 0; background: var(--papier); }
+.direktive legend { font-variant: small-caps; letter-spacing: 0.06em; font-weight: 600; padding: 0 6px; }
+.direktive label { display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: baseline; padding: 6px 4px; border-bottom: 1px dotted var(--linie); cursor: pointer; }
+.direktive label:last-child { border-bottom: none; }
+.direktive label span { grid-column: 2; font-size: 0.93rem; color: var(--tinte-weich); }
+.direktive label.gewaehlt { background: var(--ocker-hell); }
+.direktive input:focus-visible { outline: 2px solid var(--ocker); outline-offset: 2px; }
+
+.telegramm {
+  box-sizing: border-box; width: min(620px, 100%); padding: 18px 24px 16px;
+  background: #f2e6b8; border: 1px solid var(--messing-dunkel); box-shadow: var(--schatten);
+  font-family: 'Courier New', Courier, monospace; color: var(--tinte);
+  animation: einblenden 240ms ease-out;
+}
+.telegramm-kopf { margin: 0 0 6px; font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--tinte-weich); border-bottom: 2px solid var(--messing-dunkel); padding-bottom: 4px; }
+.telegramm h2 { margin: 6px 0 8px; font-size: 1.3rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.telegramm-text { margin: 0 0 12px; line-height: 1.45; letter-spacing: 0.03em; }
+.telegramm .knoepfe button { font-family: var(--schrift); }
+
+.chronik .zeitung-kopf { margin: 0; }
+.chronik-titel { text-align: center; margin: 4px 0 10px !important; font-variant: small-caps; letter-spacing: 0.08em; }
+.chronik-jahre { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 18px; border-top: 3px double var(--tinte); padding-top: 8px; }
+.chronik-jahr { border-right: 1px solid var(--linie); padding-right: 14px; }
+.chronik-jahr:nth-child(3n) { border-right: none; }
+.chronik-jahr h3 { margin: 0 0 4px; font-size: 1.02rem; font-variant: small-caps; letter-spacing: 0.05em; border-bottom: 1px solid var(--tinte-weich); }
+.chronik-jahr ul { margin: 0; padding: 0; list-style: none; font-size: 0.93rem; }
+.chronik-jahr li { margin-bottom: 3px; }
+.chronik-jahr li.chronik-world, .chronik-jahr li.chronik-law { font-weight: 600; }
+.chronik-jahr li.chronik-price { color: var(--tinte-weich); font-style: italic; }
+@media (max-width: 760px) { .chronik-jahre { grid-template-columns: minmax(0, 1fr); } .chronik-jahr { border-right: none; } }
+
+.stempel-klein, .kapitel-im-bau {
+  display: inline-block; padding: 1px 8px; border: 2px solid var(--rot); color: var(--rot);
+  font-variant: small-caps; letter-spacing: 0.06em; font-size: 13px; transform: rotate(-2deg);
+}
+.kapitel-im-bau { margin-left: 10px; background: var(--papier-hell); font-weight: 600; }
+.bogen-fuss .stempel-klein { margin-right: auto; }

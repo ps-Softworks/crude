@@ -81,7 +81,7 @@ export function expectedPrice(state: GameState, balance: Balance): number {
   const gefoerdert = advanceProduction(state, balance);
   const supply =
     jacobSupply(gefoerdert) +
-    neighbourSupply(balance.market, state.round) +
+    neighbourSupply(balance.market, state.round, state.neighbourOffset ?? 0) +
     rivalSupply(state, balance.rivals.bullard.ratePerWell);
   return computePrice(balance.market, supply, worldPriceFactor(state.worldModel, balance.worldModel));
 }

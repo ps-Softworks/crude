@@ -6,6 +6,7 @@
 // Das Menü liegt ab 0.2.15+11 nur noch im Knopf ☰ der Kopfleiste: Die Schublade
 // bleibt für das Schattenbuch frei (GDD §16).
 
+import { chapterRound, chapterRounds } from '../../sim/timeskip';
 import type { ReactNode } from 'react';
 import { agendaView } from '../../sim/agenda';
 import type { NextStep } from '../../sim/desk';
@@ -195,8 +196,8 @@ export function DeskScene(p: DeskSceneProps) {
             <span className="kalender-band" />
             <span className="kalender-zeit">{formatDate(game)}</span>
             <span className="kalender-runde">
-              Runde {game.round}
-              <small>von {game.totalRounds}</small>
+              Runde {chapterRound(game)}
+              <small>von {chapterRounds(game)}</small>
             </span>
           </span>,
         )}

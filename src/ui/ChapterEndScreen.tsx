@@ -4,6 +4,7 @@
 // 2.8: Auch das frühe Ende „Der kluge Mann“ – Jacob hat an den Crane Trust verkauft.
 // 2.11: Kapitelprüfung (erreicht/verfehlt) mit Boni und die Entscheidung zur
 // Aktiengesellschaft. Regeln in src/sim/chapter.ts, Texte in content/chapter.yaml.
+// 4.5: Weiter in den Zeitsprung bis Kapitel 2; am Ende des Platzhalter-Kapitels 2 ein eigener Text.
 
 import { useEffect, useRef } from 'react';
 import { arcSummaries } from '../sim/arcs';
@@ -17,6 +18,8 @@ import { chapterContent } from './chapter';
 import { FeedbackLink } from './FeedbackLink';
 import { barrels, money, NBSP } from './format';
 import { Silhouette } from './Silhouette';
+import { chapterUnderConstruction, fillTimeskipText, timeskipBlocked } from '../sim/timeskip';
+import { timeskipContent } from './timeskip';
 
 
 function prozent(share: number) {
@@ -33,6 +36,7 @@ export function ChapterEndScreen({
   onIpo,
   notice = null,
   onPeek,
+  onTimeskip,
 }: {
   game: GameState;
   onRestart: () => void;
@@ -41,6 +45,8 @@ export function ChapterEndScreen({
   notice?: string | null;
   /** „Noch einmal auf den Schreibtisch schauen“. */
   onPeek?: () => void;
+  /** Weiter in den Zeitsprung (4.5): der Brief an den Verwalter. */
+  onTimeskip?: () => void;
 }) {
   const ref = useRef<HTMLElement>(null);
   // Fokus auf die Überschrift des Bogens (0.2.15+12) – nicht auf den Börsengang oder
@@ -50,7 +56,15 @@ export function ChapterEndScreen({
   }, [game.ipo === null]);
   const ergebnis = chapterResult(game, balance);
   const verkauft = ergebnis === 'verkauft';
-  const ende = chapterContent.endings[ergebnis === 'erreicht' || ergebnis === 'verkauft' ? ergebnis : 'verfehlt'];
+  // Kapitel 2 ist noch Platzhalter (4.5): eigener Abschluss, keine Prüfung, keine Aktien.
+  const imBau = chapterUnderConstruction(game);
+  const k2 = timeskipContent.chapter2;
+  const ende = imBau
+    ? { title: k2.endTitle, text: k2.endText }
+    : chapterContent.endings[ergebnis === 'erreicht' || ergebnis === 'verkauft' ? ergebnis : 'verfehlt'];
+  const sprung = timeskipContent.start;
+  const sprungGesperrt = timeskipBlocked(game, balance);
+  const sprungMoeglich = !imBau && !verkauft && game.ending === 'kapitel';
   const quellen = game.wells.filter((w) => w.status === 'found');
   const pruefung = chapterCheck(game, balance);
   const boni = chapterBonuses(game, chapterContent, arcContent);
@@ -71,7 +85,7 @@ export function ChapterEndScreen({
         </div>
         <div className="bogen-spalten">
           <div>
-            {!verkauft && (
+            {!verkauft && !imBau && (
               <>
                 <h3>Kapitelprüfung</h3>
                 <ul className="pruefung">
@@ -112,7 +126,7 @@ export function ChapterEndScreen({
             </dl>
           </div>
           <div>
-            {!verkauft && (
+            {!verkauft && !imBau && (
               <div className="ipo">
                 <h3>{fillText(ipo.title, {})}</h3>
                 {game.ipo === null && canGoPublic(game, balance) ? (
@@ -134,6 +148,13 @@ export function ChapterEndScreen({
                 ) : (
                   <p>{fillText(ipo.blocked, {})}</p>
                 )}
+              </div>
+            )}
+            {sprungMoeglich && onTimeskip && (
+              <div className="ipo sprung-angebot">
+                <h3>{fillTimeskipText(sprung.title, {})}</h3>
+                <p>{fillTimeskipText(sprung.text, {})}</p>
+                {sprungGesperrt ? <p className="muted">{fillTimeskipText(sprung.blockedIpo, {})}</p> : null}
               </div>
             )}
             <h3>Was aus ihnen wurde</h3>
@@ -160,9 +181,14 @@ export function ChapterEndScreen({
             Noch einmal auf den Schreibtisch schauen
           </button>
         )}
-        <button className="primary" onClick={onRestart}>
+        <button className={sprungMoeglich && onTimeskip ? '' : 'primary'} onClick={onRestart}>
           Neues Spiel
         </button>
+        {sprungMoeglich && onTimeskip && (
+          <button type="button" className="primary" onClick={onTimeskip} disabled={sprungGesperrt !== undefined} title={sprungGesperrt}>
+            {fillTimeskipText(sprung.button, {})}
+          </button>
+        )}
       </div>
     </section>
   );

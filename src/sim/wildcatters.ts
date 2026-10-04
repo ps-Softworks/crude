@@ -2,7 +2,8 @@
 // gehören die Nachbarquellen am Salt Hill, die der Markt schon immer mitrechnet
 // (market.neighbours) – die Wildcatter geben ihnen nur Namen. Darum ändern sie
 // weder den Preis noch Jacobs Welt: eigener Zufall (seed + ':wildcatter'), und die
-// Summe ihrer Quellen ist immer genau neighbourWells der laufenden Runde.
+// Summe ihrer Quellen ist immer genau neighbourWells der laufenden Runde (ab Kapitel 2 mit
+// neighbourOffset, 4.5: Nach dem Zeitsprung sind es so viele, wie der Sprung übrig ließ).
 
 import type { Balance } from './balance';
 import { formatDate } from './calendar';
@@ -23,8 +24,8 @@ export interface WildcattersState {
 }
 
 /** Nachbarquellen als ganze Zahl (der Markt darf Bruchteile haben). */
-function wellsIn(balance: Balance, round: number): number {
-  return Math.max(0, Math.floor(neighbourWells(balance.market, round)));
+function wellsIn(balance: Balance, round: number, offset = 0): number {
+  return Math.max(0, Math.floor(neighbourWells(balance.market, round, offset)));
 }
 
 /** Verteilt so viele Quellen zufällig auf die Firmen und meldet, wer wie viele bekam. */
@@ -68,7 +69,7 @@ export function newWildcatters(seed: string, balance: Balance): WildcattersState
 export function advanceWildcatters(state: GameState, balance: Balance): GameState {
   const { firms: alt } = state.wildcatters;
   if (alt.length === 0) return state;
-  const fehlt = wellsIn(balance, state.round) - alt.reduce((s, f) => s + f.wells, 0);
+  const fehlt = wellsIn(balance, state.round, state.neighbourOffset ?? 0) - alt.reduce((s, f) => s + f.wells, 0);
   if (fehlt <= 0) return state;
   const rng = new Rng(state.wildcatters.rng);
   const firms = [...alt];

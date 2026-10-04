@@ -39,6 +39,21 @@ thomas:
     en: Thomas knows the landlady better than his own father.
 
 # Was zu Hause über Jacob gesagt wird – je nachdem, wie er beisammen ist.
+
+# Clara (4.5): geboren im Zeitsprung I – eigenständig, eigensinnig, idealistisch (Weltbibel). Entwurf von Claude.
+clara:
+  content:
+    de: Clara klettert dir auf den Schoß und will wissen, wie Öl aus der Erde kommt.
+    en: Clara climbs onto your lap and wants to know how oil comes out of the ground.
+  neglected:
+    de: Clara malt Bilder von Bohrtürmen – auf keinem ist ihr Vater zu sehen.
+    en: Clara draws pictures of derricks – her father is in none of them.
+  bitter:
+    de: Clara dreht sich weg, wenn du ihr gute Nacht sagen willst.
+    en: Clara turns away when you try to say good night.
+  estranged:
+    de: Clara nennt dich „den Herrn aus dem Büro“.
+    en: Clara calls you "the gentleman from the office".
 jacob:
   rested:
     de: Jacob pfeift auf dem Weg zum Turm.

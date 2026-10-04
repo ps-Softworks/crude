@@ -12,14 +12,14 @@ function cents(value: number): number {
 }
 
 /** Bohrtürme der anderen Firmen am Salt Hill in dieser Runde (bis es Rivalen gibt). */
-export function neighbourWells(balance: MarketBalance, round: number): number {
+export function neighbourWells(balance: MarketBalance, round: number, offset = 0): number {
   const { startWells, newWellsPerRound } = balance.neighbours;
-  return startWells + newWellsPerRound * (round - 1);
+  return startWells + newWellsPerRound * (round - 1) + offset;
 }
 
 /** Förderung der Nachbarn in Barrel je Runde. */
-export function neighbourSupply(balance: MarketBalance, round: number): number {
-  return neighbourWells(balance, round) * balance.neighbours.ratePerWell;
+export function neighbourSupply(balance: MarketBalance, round: number, offset = 0): number {
+  return Math.max(0, neighbourWells(balance, round, offset)) * balance.neighbours.ratePerWell;
 }
 
 /** Bullards Förderung je Runde: Summe der Raten seiner fündigen Quellen (ratePerWell, wo keine Rate gespeichert ist). */
@@ -28,8 +28,8 @@ export function rivalSupply(state: Pick<GameState, 'rival'>, ratePerWell: number
 }
 
 /** Gesamtangebot am Salt Hill in dieser Runde: Jacob, Nachbarn, Bullard. */
-export function saltHillSupply(state: Pick<GameState, 'wells' | 'rival' | 'round'>, balance: MarketBalance, rivalRatePerWell: number): number {
-  return jacobSupply(state) + neighbourSupply(balance, state.round) + rivalSupply(state, rivalRatePerWell);
+export function saltHillSupply(state: Pick<GameState, 'wells' | 'rival' | 'round'> & Partial<Pick<GameState, 'neighbourOffset'>>, balance: MarketBalance, rivalRatePerWell: number): number {
+  return jacobSupply(state) + neighbourSupply(balance, state.round, state.neighbourOffset ?? 0) + rivalSupply(state, rivalRatePerWell);
 }
 
 /** Jacobs Förderung der letzten Runde: Summe über alle fündigen Quellen. */

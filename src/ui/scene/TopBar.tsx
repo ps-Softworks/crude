@@ -9,6 +9,8 @@ import { balance } from '../balance';
 import { FeedbackLink } from '../FeedbackLink';
 import { barrels, money } from '../format';
 import { Bohrturm } from '../Silhouette';
+import { chapterRound, chapterRounds, chapterUnderConstruction, fillTimeskipText } from '../../sim/timeskip';
+import { timeskipContent } from '../timeskip';
 
 /** Termine der Runde als Punkte (● belegt, ○ frei, ◆ Überstunde) und Jacobs Zustand in einem Wort (2.3). */
 export function Termine({ game, debug, lang = false, kurz = false }: { game: GameState; debug: boolean; lang?: boolean; /** Ohne „wirkt …“, wenn die Leiste eng ist. */ kurz?: boolean }) {
@@ -58,9 +60,14 @@ export function TopBar({
       <span className="kopf-titel">
         <Bohrturm size={22} />
         CRUDE <span className="version">v{__APP_VERSION__}</span>
+        {chapterUnderConstruction(game) && (
+          <span className="kapitel-im-bau" title={fillTimeskipText(timeskipContent.chapter2.text, {})}>
+            {fillTimeskipText(timeskipContent.chapter2.badge, {})}
+          </span>
+        )}
       </span>
       <span>
-        {formatDate(game)} · Runde {game.round}/{game.totalRounds}
+        {formatDate(game)} · Runde {chapterRound(game)}/{chapterRounds(game)}
       </span>
       <span>
         Kasse <strong>{money(game.cash)}</strong>

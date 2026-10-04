@@ -6,8 +6,10 @@
 // Wandkarte ⇄ Karte, Rundenwechsel) und der Rundgang beim ersten Start.
 // Ab 0.2.15+11: Rundenbericht nach der Glocke, Auswahl „Wer wartet“ an der Tür,
 // Ruths Zettel mit den offenen Punkten, Hinweise auf der Karte.
+// Ab 0.4.5: Zeitsprung nach Kapitel 1 – Brief an den Verwalter, Weichen-Telegramme,
+// Chronik „Die Jahre dazwischen“, dann Kapitel 2 (Platzhalter) am Schreibtisch.
 
-import { useEffect, useReducer, useRef, useState } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { agendaView } from '../sim/agenda';
 import { decideIpo } from '../sim/chapter';
 import type { LoanResult } from '../sim/credit';
@@ -16,12 +18,14 @@ import { deskEvents, deskMail, deskRoutines } from '../sim/events';
 import { endRound, formatDate, newGame, type GameState } from '../sim/game';
 import { ranchOfFigure } from '../sim/geology';
 import { tutorialActive, tutorialHint, viewTutorial } from '../sim/tutorial';
+import { answerSwitch, continueTimeskip, markChronicleRead, runTimeskip, startTimeskip, unreadChronicle, type Directives } from '../sim/timeskip';
 import { parcelLabel } from '../sim/lease';
 import { clearAutosave, loadAutosave, writeAutosave } from './autosave';
 import { balance } from './balance';
 import { ChapterEndScreen } from './ChapterEndScreen';
 import { events } from './events';
 import { GameOverScreen } from './GameOverScreen';
+import { ChronicleScreen, DirectivesLetter, SwitchTelegram } from './TimeskipScreen';
 import { figures } from './figureContent';
 import { figureOf } from './figures';
 import { eventsShownIn, inboxBadges, landDeadlines, openItems, seenKey, sortInbox, unseen, visitorNames, type OpenItem } from './inbox';
@@ -142,6 +146,15 @@ export function App() {
   const [spot, setSpot] = useState<string | null>(null);
   // Zählt neue Spiele, damit auch ein neues Spiel in Runde 1 die Zeitung aufschlägt.
   const [spielNr, setSpielNr] = useState(0);
+  // Zeitsprung (4.5): Der Brief an den Verwalter liegt offen.
+  const [brief, setBrief] = useState(false);
+  // Läuft ein Sprung, steht die nächste Weiche fest (src/sim rechnet ihn von vorn).
+  const sprungSchritt = useMemo(() => (game.jump ? runTimeskip(game, balance, events) : null), [game]);
+  const chronik = unreadChronicle(game);
+  // Sicherheitsnetz: Ist ein geladener Sprung schon ganz beantwortet, beginnt Kapitel 2 sofort.
+  useEffect(() => {
+    if (sprungSchritt?.status === 'done') setGame(sprungSchritt.state);
+  }, [sprungSchritt]);
 
   // Nach jeder Runde und jeder Aktion wird der Spielstand neu geschrieben.
   useEffect(() => setSaved(writeAutosave(game)), [game]);
@@ -152,7 +165,8 @@ export function App() {
   const wechselt = uebergang !== null;
   useEffect(() => {
     if (wechselt) return;
-    dispatch({ type: 'round', round: game.round, autoNewspaper: autoNewspaper && !game.finished, report: bericht?.round === game.round && !game.finished });
+    // Liegt die Chronik nach dem Zeitsprung noch auf dem Tisch, schlägt sich die Zeitung erst danach auf (4.5).
+    dispatch({ type: 'round', round: game.round, autoNewspaper: autoNewspaper && !game.finished && chronik === null, report: bericht?.round === game.round && !game.finished });
   }, [game.round, spielNr, wechselt]);
 
   // „Gesehen“ merken, damit „neu“ nach dem Neuladen nicht wieder aufleuchtet.
@@ -210,7 +224,8 @@ export function App() {
   // Auf der Karte ohne den Weg dorthin („Öffne die Wandkarte …“) – man ist ja schon da.
   const kartenText = hint ? viewTutorial(hint, mapTutorialContent).text : (step?.text ?? null);
 
-  const tableau = (game.ending === 'pleite' || game.ending === 'kapitel' || game.ending === 'verkauft') && !(peek && game.ending !== 'pleite');
+  const tableau =
+    ((game.ending === 'pleite' || game.ending === 'kapitel' || game.ending === 'verkauft') && !(peek && game.ending !== 'pleite')) || game.jump !== null || chronik !== null;
 
   // Besuch von selbst (Bauplan Abschnitt 4): nach der Zeitung höchstens einer je Runde – erst klopft es.
   const besetzt = wechselt || rundgang || tableau || zoom !== null;
@@ -327,7 +342,37 @@ export function App() {
     else setNotice(result.reason);
   }
 
+  // Zeitsprung (4.5): Direktiven abschicken, Weichen beantworten; fertig → Chronik, danach Kapitel 2.
+  function sprungStarten(d: Directives) {
+    const r = startTimeskip(game, balance, d);
+    if (!r.ok) {
+      setNotice(r.reason);
+      return;
+    }
+    setBrief(false);
+    setGame(continueTimeskip(r.state, balance, events));
+  }
+
+  function weicheBeantworten(id: Parameters<typeof answerSwitch>[2], choice: string) {
+    const r = answerSwitch(game, balance, id, choice, events);
+    if (!r.ok) {
+      setNotice(r.reason);
+      return;
+    }
+    setGame(continueTimeskip(r.state, balance, events));
+  }
+
+  function chronikGelesen() {
+    setGame(markChronicleRead(game));
+    setPeek(false);
+    setUebergang(null);
+    setBericht(null);
+    dispatch({ type: 'reset' });
+    setSpielNr((n) => n + 1);
+  }
+
   function startNewWorld(neuerSeed: string) {
+    setBrief(false);
     setSeed(neuerSeed);
     setGame(newGame(neuerSeed, balance, events));
     setNotice(null);
@@ -490,10 +535,26 @@ export function App() {
         <div className="tableau">
           {topBar}
           <div className="tableau-flaeche">
-            {game.ending === 'pleite' ? (
+            {chronik ? (
+              <ChronicleScreen game={game} record={chronik} onContinue={chronikGelesen} />
+            ) : sprungSchritt?.status === 'switch' ? (
+              <SwitchTelegram key={sprungSchritt.id} id={sprungSchritt.id} year={sprungSchritt.year} onAnswer={(c) => weicheBeantworten(sprungSchritt.id, c)} />
+            ) : brief && game.ending === 'kapitel' ? (
+              <DirectivesLetter game={game} onSend={sprungStarten} onBack={() => setBrief(false)} />
+            ) : game.ending === 'pleite' ? (
               <GameOverScreen game={game} onRestart={() => startNewWorld(randomSeed())} />
             ) : (
-              <ChapterEndScreen game={game} onRestart={() => startNewWorld(randomSeed())} onIpo={ipo} notice={notice} onPeek={() => setPeek(true)} />
+              <ChapterEndScreen
+                game={game}
+                onRestart={() => startNewWorld(randomSeed())}
+                onIpo={ipo}
+                notice={notice}
+                onPeek={() => setPeek(true)}
+                onTimeskip={() => {
+                  setNotice(null);
+                  setBrief(true);
+                }}
+              />
             )}
           </div>
         </div>

@@ -122,7 +122,7 @@ function netAt(state: GameState, balance: Balance, royalty: number, price: numbe
 function pricesFor(state: GameState, balance: Balance, jacob: readonly number[]): number[] {
   const bullard = rivalSupply(state, balance.rivals.bullard.ratePerWell);
   const trend = worldPriceFactor(state.worldModel, balance.worldModel);
-  return jacob.map((bbl, i) => computePrice(balance.market, bbl + neighbourSupply(balance.market, state.round + i) + bullard, trend));
+  return jacob.map((bbl, i) => computePrice(balance.market, bbl + neighbourSupply(balance.market, state.round + i, state.neighbourOffset ?? 0) + bullard, trend));
 }
 
 /**

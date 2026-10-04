@@ -3,6 +3,7 @@
 
 import { agendaView } from '../../sim/agenda';
 import { formatDate } from '../../sim/game';
+import { chapterRound, chapterRounds } from '../../sim/timeskip';
 import { balance } from '../balance';
 import { Termine } from '../scene/TopBar';
 import { EventStack } from './EventStack';
@@ -15,7 +16,7 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
     <>
       <p className="kalender-kopf">
         <strong>
-          {formatDate(game)} · Runde {game.round} von {game.totalRounds}
+          {formatDate(game)} · Runde {chapterRound(game)} von {chapterRounds(game)}
         </strong>
         <br />
         <Termine game={game} debug={ctx.debug} lang />

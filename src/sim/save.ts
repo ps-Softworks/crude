@@ -8,16 +8,17 @@ import type { GameState } from './game';
 import { newLogistics } from './logistics';
 import { isWorldState, neutralWorld, withCreditForeignDefaults, withLawDefaults, withPoliticsDefaults } from './world';
 
-/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2), 11 = mit befristeten Nachwirkungen der Ereignisse (0.2.15+3), 12 = Karte mit Gebieten und Ranches statt Raster, mehrere Bohrlöcher je Ranch (0.2.15+5), 13 = Bohrtürme und Pumpen (0.2.15+7), 14 = mit Weltmodell (4.1), 15 = mit öffentlichem Handeln und Wahlergebnis im Weltmodell (4.2), 16 = mit Gesetzgebung im Weltmodell (4.3), 17 = mit Kreditzyklus (Verschuldung, Bankpanik) und Ausland (Costa Negra, Qasir) im Weltmodell (4.4). */
-export const SAVE_FORMAT = 17;
+/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2), 11 = mit befristeten Nachwirkungen der Ereignisse (0.2.15+3), 12 = Karte mit Gebieten und Ranches statt Raster, mehrere Bohrlöcher je Ranch (0.2.15+5), 13 = Bohrtürme und Pumpen (0.2.15+7), 14 = mit Weltmodell (4.1), 15 = mit öffentlichem Handeln und Wahlergebnis im Weltmodell (4.2), 16 = mit Gesetzgebung im Weltmodell (4.3), 17 = mit Kreditzyklus (Verschuldung, Bankpanik) und Ausland (Costa Negra, Qasir) im Weltmodell (4.4), 18 = mit Kapitel, Zeitsprung und Chronik (4.5). */
+export const SAVE_FORMAT = 18;
 
 /**
  * Ältere Formate, die mit Ersatzwerten noch geladen werden. Vor Format 12 keins
  * mehr: Die Rasterparzellen der alten Stände passen nicht auf die neue Karte.
- * Format 12 bekommt Silas' Turm (0.2.15+7), Format 12 und 13 eine ruhige Durchschnittswelt (4.1), Format 14 leere Listen für öffentliches Handeln und keine gemerkte Wahl (4.2).
+ * Format 12 bekommt Silas' Turm (0.2.15+7), Format 12 und 13 eine ruhige Durchschnittswelt (4.1), Format 14 leere Listen für öffentliches Handeln und keine gemerkte Wahl (4.2),
+ * bis Format 17 Kapitel 1 ohne Zeitsprung (4.5).
  * Die Umrisse der Ranches stehen nie im Spielstand – sie kommen aus dem Seed.
  */
-const ALTE_FORMATE: number[] = [12, 13, 14, 15, 16];
+const ALTE_FORMATE: number[] = [12, 13, 14, 15, 16, 17];
 
 export interface SaveFile {
   format: number;
@@ -51,10 +52,13 @@ const ZAHLEN = [
   'strength',
   'strengthMax',
   'sick',
+  'chapter',
+  'chapterStart',
+  'neighbourOffset',
 ] as const;
 
 /** Listen im Zustand. */
-const LISTEN = ['regions', 'parcels', 'fields', 'leases', 'options', 'wells', 'rigs', 'priceHistory', 'loans', 'log'] as const;
+const LISTEN = ['regions', 'parcels', 'fields', 'leases', 'options', 'wells', 'rigs', 'priceHistory', 'loans', 'log', 'timeskips'] as const;
 
 /** Nachschlagewerke im Zustand. */
 const OBJEKTE = ['forecasts', 'shipped'] as const;
@@ -159,6 +163,20 @@ export function validateState(value: unknown): LoadResult {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
   if (!isWorldState(value.worldModel)) return { ok: false, reason: UNVOLLSTAENDIG };
+  // Kapitel und Zeitsprung (4.5).
+  const chapter = value.chapter as number;
+  if (!Number.isInteger(chapter) || chapter < 1 || (value.chapterStart as number) < 1) return { ok: false, reason: UNVOLLSTAENDIG };
+  const jump = value.jump;
+  if (jump !== null && !(istObjekt(jump) && istObjekt(jump.directives) && istText(jump.directives.stance) && istText(jump.directives.family) && istObjekt(jump.answers))) {
+    return { ok: false, reason: UNVOLLSTAENDIG };
+  }
+  if (
+    !(value.timeskips as unknown[]).every(
+      (t) => istObjekt(t) && istZahl(t.number) && istListe(t.entries) && istListe(t.switches) && istObjekt(t.before) && istObjekt(t.after) && typeof t.read === 'boolean',
+    )
+  ) {
+    return { ok: false, reason: UNVOLLSTAENDIG };
+  }
   const round = value.round as number;
   const totalRounds = value.totalRounds as number;
   return round >= 1 && round <= totalRounds ? { ok: true, state: value as unknown as GameState } : { ok: false, reason: UNVOLLSTAENDIG };
@@ -238,5 +256,11 @@ export function deserializeGame(text: string): LoadResult {
   if (state.worldModel !== undefined && istText(state.seed)) state = { ...state, worldModel: withLawDefaults(state.worldModel, state.seed) };
   // Ersatzwerte (4.4): Weltzustände bis Format 16 kennen keine Verschuldung, keine Bankpanik und kein Ausland.
   if (state.worldModel !== undefined) state = { ...state, worldModel: withCreditForeignDefaults(state.worldModel) };
+  // Ersatzwerte (4.5): Spielstände bis Format 17 sind in Kapitel 1, ohne Zeitsprung und Chronik.
+  if (state.chapter === undefined) state = { ...state, chapter: 1 };
+  if (state.chapterStart === undefined) state = { ...state, chapterStart: 1 };
+  if (state.neighbourOffset === undefined) state = { ...state, neighbourOffset: 0 };
+  if (state.jump === undefined) state = { ...state, jump: null };
+  if (state.timeskips === undefined) state = { ...state, timeskips: [] };
   return validateState(state);
 }

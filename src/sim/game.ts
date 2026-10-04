@@ -25,6 +25,7 @@ import { advanceLogistics, newLogistics, settleStorage, spillOver, type Logistic
 import { advanceTransport, noShipments } from './transport';
 import { settleTakeover } from './trust';
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
+import type { JumpState, TimeskipRecord } from './timeskip';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
@@ -98,6 +99,16 @@ export interface GameState {
   family: FamilyState;
   /** Weltmodell (4.1): die neun Weltgrößen, je Runde fortgeschrieben. */
   worldModel: WorldState;
+  /** Kapitel (4.5): 1, nach Zeitsprung I 2 (vorerst Platzhalter mit den Systemen aus Kapitel 1). */
+  chapter: number;
+  /** Erste Runde des laufenden Kapitels (Kapitel 1: 1). Runden zählen über Kapitel hinweg weiter. */
+  chapterStart: number;
+  /** Nachbarquellen am Salt Hill mehr (+) oder weniger (−) als nach der Kapitel-1-Formel (4.5: nach dem Zeitsprung). */
+  neighbourOffset: number;
+  /** Laufender Zeitsprung (4.5): Direktiven und beantwortete Weichen; null = keiner. */
+  jump: JumpState | null;
+  /** Abgeschlossene Zeitsprünge mit Chronik „Die Jahre dazwischen“. */
+  timeskips: TimeskipRecord[];
   log: string[];
   /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
   roundLogStart: number;
@@ -115,7 +126,7 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
   const fields = buildFields(geologie);
   const parcels = assignFields(geologie, fields);
   const worldModel = newWorld(seed, balance.worldModel);
-  const startPrice = computePrice(balance.market, neighbourSupply(balance.market, 1), worldPriceFactor(worldModel, balance.worldModel));
+  const startPrice = computePrice(balance.market, neighbourSupply(balance.market, 1, 0), worldPriceFactor(worldModel, balance.worldModel));
   const state: GameState = {
     seed,
     rng: rng.state,
@@ -156,6 +167,11 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
     sick: 0,
     family: newFamily(balance),
     worldModel,
+    chapter: 1,
+    chapterStart: 1,
+    neighbourOffset: 0,
+    jump: null,
+    timeskips: [],
   };
   // Erst die Startoptionen, dann die Prognosen: so bleiben Karte und Startoptionen
   // bei gleichem Seed so, wie sie es vor der Prognose waren.
@@ -238,8 +254,10 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   if (state.round >= state.totalRounds) {
     // Kapitelprüfung (2.11): steht im Protokoll, der Ergebnisbildschirm zeigt die Einzelheiten.
     const ende: GameState = { ...state, finished: true, ending: 'kapitel' };
-    const pruefung = chapterCheck(ende, balance).passed ? 'Das Ziel ist erreicht.' : 'Das Ziel ist verfehlt.';
-    return { ...ende, log: [...state.log, `${formatDate(state)}: Kapitel 1 ist zu Ende. ${pruefung}`] };
+    // Kapitel 2 ist noch ein Platzhalter (4.5): keine eigene Prüfung.
+    const kapitel = state.chapter ?? 1;
+    const pruefung = kapitel > 1 ? 'Weiter geht es, sobald Kapitel 2 fertig ist.' : chapterCheck(ende, balance).passed ? 'Das Ziel ist erreicht.' : 'Das Ziel ist verfehlt.';
+    return { ...ende, log: [...state.log, `${formatDate(state)}: Kapitel ${kapitel} ist zu Ende. ${pruefung}`] };
   }
   const next = { ...state, round: state.round + 1 };
   // Zur neuen Runde kommen neue Ereignisse auf den Schreibtisch – nach einer Geburt (2.7).

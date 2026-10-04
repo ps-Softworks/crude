@@ -1,6 +1,7 @@
 // Pleite-Bildschirm: Die Rechnung ist nicht zu bezahlen, die Bank nimmt die Firma
 // in Zwangsverwaltung. Zeigt den Stand am Ende und startet ein neues Spiel.
 
+import { chapterRound, chapterRounds } from '../sim/timeskip';
 import { useEffect, useRef } from 'react';
 import { debt } from '../sim/credit';
 import { formatDate, type GameState } from '../sim/game';
@@ -25,7 +26,7 @@ export function GameOverScreen({ game, onRestart }: { game: GameState; onRestart
               Pleite
             </h2>
             <p className="bogen-text">
-              {formatDate(game)}, Runde {game.round} von {game.totalRounds}: Jacob Harlan hat die Rechnung nicht bezahlen können. Die Bank nimmt
+              {formatDate(game)}, Runde {chapterRound(game)} von {chapterRounds(game)}: Jacob Harlan hat die Rechnung nicht bezahlen können. Die Bank nimmt
               die Firma in Zwangsverwaltung – der Bohrturm, die Pachten und die fördernden Quellen werden zwangsversteigert.
             </p>
           </div>

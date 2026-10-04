@@ -28,6 +28,10 @@ export interface FamilyState {
   thomasBorn: number;
   /** Familienzeit in der laufenden Runde (Antworten, die Ruth oder Thomas guttun). */
   time: number;
+  /** Beziehung zu Clara, 0–100 (4.5: geboren im Zeitsprung I); fehlt, solange sie nicht geboren ist. */
+  clara?: number;
+  /** Runde der Geburt von Clara; fehlt oder 0 = nicht geboren. */
+  claraBorn?: number;
 }
 
 /** Merkzeichen, die die Simulation selbst setzt (nicht eine Wahl) – für die Inhaltsprüfung. */
@@ -37,7 +41,7 @@ export const SIM_MARKS = ['thomas_geboren'] as const;
 export const BOND_WORDS = ['content', 'neglected', 'bitter', 'estranged'] as const;
 export type BondWord = (typeof BOND_WORDS)[number];
 
-export const FAMILY_MEMBERS = ['ruth', 'thomas'] as const;
+export const FAMILY_MEMBERS = ['ruth', 'thomas', 'clara'] as const;
 export type FamilyMember = (typeof FAMILY_MEMBERS)[number];
 
 export function newFamily(balance: Balance): FamilyState {
@@ -92,7 +96,7 @@ export function familyStrength(state: Pick<GameState, 'family'>, balance: Balanc
   return Math.round(strengthFrom + ((strengthTo - strengthFrom) * familyBond(state)) / 100);
 }
 
-const NAMEN: Record<FamilyMember, string> = { ruth: 'Ruth', thomas: 'Thomas' };
+const NAMEN: Record<FamilyMember, string> = { ruth: 'Ruth', thomas: 'Thomas', clara: 'Clara' };
 const WORT: Record<BondWord, string> = {
   content: 'zufrieden',
   neglected: 'vernachlässigt',
@@ -111,6 +115,7 @@ export function settleFamily(state: GameState, balance: Balance): GameState {
   const log = [...state.log];
   let { strength } = state;
   let { ruth, thomas } = f;
+  let clara = f.clara;
   if (f.time > 0) {
     const plus = familyStrength(state, balance);
     strength = Math.min(state.strengthMax, strength + plus);
@@ -118,6 +123,7 @@ export function settleFamily(state: GameState, balance: Balance): GameState {
   } else if (state.sick === 0) {
     ruth = klemmen(ruth - balance.family.neglect);
     if (thomasBorn(state)) thomas = klemmen(thomas - balance.family.neglect);
+    if ((f.claraBorn ?? 0) > 0) clara = klemmen((f.clara ?? 0) - balance.family.neglect);
   }
   const geboren = thomasBorn(state);
   for (const [wer, vorher, nachher] of [
@@ -129,7 +135,7 @@ export function settleFamily(state: GameState, balance: Balance): GameState {
     const neu = bondWord(nachher, balance);
     if (alt !== neu) log.push(`${date}: ${NAMEN[wer]} wirkt jetzt ${WORT[neu]}.`);
   }
-  return { ...state, strength, log, family: { ...f, ruth, thomas, time: 0 } };
+  return { ...state, strength, log, family: { ...f, ruth, thomas, ...(clara === undefined ? {} : { clara }), time: 0 } };
 }
 
 /**
@@ -156,6 +162,8 @@ export interface FamilyContent {
   /** Ein Satz je Familienmitglied und Zustandswort. */
   ruth: Record<BondWord, LocalizedText>;
   thomas: Record<BondWord, LocalizedText>;
+  /** Clara (4.5, geboren im Zeitsprung I); fehlt der Block, steht sie nicht im Familienfenster. */
+  clara?: Record<BondWord, LocalizedText>;
   /** Was die Familie über Jacobs Zustand sagt – je Kraftstufe (Kraft selbst ist nie sichtbar). */
   jacob: Record<StrengthLevel, LocalizedText>;
 }
@@ -180,10 +188,12 @@ export interface FamilyView {
 export function familyView(state: GameState, balance: Balance, content: FamilyContent, lang: Lang = DEFAULT_LANG): FamilyView {
   const mitglied = (id: FamilyMember, value: number): FamilyMemberView => {
     const word = bondWord(value, balance);
-    return { id, name: NAMEN[id], word, wordText: localize(content.words[word], lang), text: localize(content[id][word], lang) };
+    const saetze = content[id] ?? content.thomas;
+    return { id, name: NAMEN[id], word, wordText: localize(content.words[word], lang), text: localize(saetze[word], lang) };
   };
   const members = [mitglied('ruth', state.family.ruth)];
   if (thomasBorn(state)) members.push(mitglied('thomas', state.family.thomas));
+  if ((state.family.claraBorn ?? 0) > 0 && content.clara) members.push(mitglied('clara', state.family.clara ?? 0));
   return { members, jacob: localize(content.jacob[strengthLevel(state, balance)], lang), sick: state.sick > 0 };
 }
 
@@ -241,6 +251,8 @@ export function parseFamilyContent(file: string, text: string): { content: Famil
   const ruth = block('ruth', BOND_WORDS);
   const thomas = block('thomas', BOND_WORDS);
   const jacob = block('jacob', STRENGTH_LEVELS);
+  // Clara (4.5) ist freiwillig: Erst ab Kapitel 2 kann es sie geben.
+  const clara = raw.clara === undefined ? null : block('clara', BOND_WORDS);
   if (errors.length > 0 || !words || !ruth || !thomas || !jacob) return { content: null, errors };
-  return { content: { words, ruth, thomas, jacob }, errors };
+  return { content: { words, ruth, thomas, jacob, ...(clara ? { clara } : {}) }, errors };
 }
