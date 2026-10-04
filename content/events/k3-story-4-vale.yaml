@@ -1,0 +1,186 @@
+# Kapitel 3 – Bogen D, Auftakt: Mr. Vales Karte (Phase 4, Story-Bibel §7 D).
+# Entwurf – Philipp überarbeitet. Alle Texte hier sind Entwürfe von Claude.
+#
+# Nur die Karte, nicht das Schloss: k3_vale_schloss (Schlüsselszene, Reise, Konsortium) gehört zum
+# System „Seismik/Konsortium“ und wird dort geschrieben. Die Karte steht hier, weil Ruths zweite
+# Probe (k3_ruth_vale, k3-story-3-ehe.yaml) auf sie wartet: Ruth kann nur eine Karte finden, die
+# auch gekommen ist. Jede Wahl setzt darum vale_karte.
+#
+#   R6–8   k3_vale_karte            ohne Kapitel-1-Vorgeschichte: „als hätten sie sich schon gesehen“
+#          k3_vale_karte_schuld     (vale_geld) er spricht über die Schuld, ohne das Wort zu benutzen
+#          k3_vale_karte_respekt    (vale_abgelehnt) er spricht mit Respekt und erhöht das Angebot
+#
+# Merkzeichen: vale_karte (liest k3_ruth_vale) · vale_k3_zugesagt / vale_k3_abgesagt (für
+# k3_vale_schloss, content/relevance.yaml).
+
+# Die Karte – ohne Vorgeschichte aus Kapitel 1.
+- id: k3_vale_karte
+  mail: personal
+  deadline: 3
+  title:
+    de: Eine Karte mit Wappen
+    en: A Card with a Crest
+  text:
+    de: >-
+      Schweres Papier, ein Wappen aus Aldmark, Schloss Hohenbrück. „Man trifft sich, wie es
+      ist. Sieben Herren, ein Tisch, kein Protokoll. Ihre Anwesenheit würde mich ehren.“
+      Unterschrieben mit einem einzigen Buchstaben: V. Jacob kennt niemanden, der so
+      unterschreibt. Beim zweiten Lesen ist er nicht mehr sicher. Er hält die Karte weiter
+      weg als früher.
+    en: >-
+      Heavy paper, a crest from Aldmark, Schloss Hohenbrück. "One meets as it is. Seven
+      gentlemen, one table, no minutes. Your presence would honour me." Signed with a
+      single letter: V. Jacob knows no one who signs like that. On the second reading he is
+      no longer sure. He holds the card further away than he used to.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 6, maxRound: 8 }
+  notMarked: [vale_geld, vale_abgelehnt]
+  certain: true
+  choices:
+    - id: liegen
+      label: { de: "Die Karte in die Manteltasche stecken – später entscheiden", en: "Put the card in his coat pocket – decide later" }
+      result:
+        de: Die Karte wandert in die Innentasche des Mantels. Dort bleibt sie, und manchmal spürt Jacob ihre Kante.
+        en: The card goes into the inside pocket of his coat. There it stays, and sometimes Jacob feels its edge.
+      marks: [vale_karte]
+      default: true
+    - id: zusagen
+      label: { de: "Zusagen – die Reise nach Aldmark eintragen lassen", en: "Accept – have the journey to Aldmark entered" }
+      result:
+        de: >-
+          Ada Pell trägt drei Wochen im Frühjahr ein und fragt nicht, wohin. Die Antwortkarte
+          geht mit der Abendpost. Am nächsten Morgen ist Mr. Vales Dank schon da, als hätte er
+          die Zusage vorher gekannt.
+        en: >-
+          Ada Pell enters three weeks in spring and does not ask where. The reply goes with
+          the evening post. By next morning Mr. Vale's thanks have already arrived, as if he had
+          known the answer beforehand.
+      effects: { strength: -5 } # TODO-Effekt: consortium: { invited: true }
+      marks: [vale_karte, vale_k3_zugesagt]
+    - id: absagen
+      label: { de: "Höflich absagen", en: "Decline politely" }
+      result:
+        de: >-
+          Jacob schreibt drei Zeilen. Eine Woche später senkt ein Händler in Hallstead ohne
+          Grund seinen Preis für Harlan-Öl. Es ist vermutlich Zufall.
+        en: >-
+          Jacob writes three lines. A week later a dealer in Hallstead lowers his price for
+          Harlan oil for no reason. It is probably coincidence.
+      effects: { price: -0.1 } # TODO-Effekt: consortium: { refused: 1 }
+      marks: [vale_karte, vale_k3_abgesagt]
+
+# Die Karte – Jacob hat in Kapitel 1 Vales 500 $ behalten (vale_geld).
+- id: k3_vale_karte_schuld
+  mail: personal
+  deadline: 3
+  title:
+    de: Unter Freunden
+    en: Between Friends
+  text:
+    de: >-
+      Schweres Papier, ein Wappen aus Aldmark, Schloss Hohenbrück. „Man trifft sich, wie es
+      ist. Ein Freund, der vor zwanzig Jahren an Sie geglaubt hat, würde sich freuen, Sie an
+      diesem Tisch zu sehen. Zinsen sind unter Freunden noch immer nicht nötig.“
+      Unterschrieben: V. Jacob erinnert sich an neue Scheine in einem Umschlag ohne
+      Absender und an einen Herrn im grauen Mantel. Der Herr muss heute ein alter Mann sein.
+    en: >-
+      Heavy paper, a crest from Aldmark, Schloss Hohenbrück. "One meets as it is. A friend
+      who believed in you twenty years ago would be glad to see you at this table. Between
+      friends, interest is still unnecessary." Signed: V. Jacob remembers new bills in an
+      envelope with no sender, and a gentleman in a grey coat. The gentleman must be an old
+      man by now.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 6, maxRound: 8 }
+  marked: [vale_geld]
+  certain: true
+  choices:
+    - id: liegen
+      label: { de: "Die Karte in die Manteltasche stecken – später entscheiden", en: "Put the card in his coat pocket – decide later" }
+      result:
+        de: Die Karte wandert in die Innentasche des Mantels, zu den Dingen, die Jacob nicht bezahlt hat.
+        en: The card goes into the inside pocket of his coat, with the things Jacob has not paid for.
+      marks: [vale_karte]
+      default: true
+    - id: zusagen
+      label: { de: "Zusagen – eine Schuld begleicht man", en: "Accept – a debt is a debt" }
+      result:
+        de: >-
+          Jacob schreibt die Zusage selbst, mit der Hand. Mr. Vales Dank kommt mit einer
+          Liste: die Preise, zu denen Crane Eastern im Herbst verkaufen wird. Diesmal liegt
+          kein Geld bei. Es ist mehr wert als Geld.
+        en: >-
+          Jacob writes the acceptance himself, by hand. Mr. Vale's thanks arrive with a list:
+          the prices at which Crane Eastern will sell in the autumn. This time there is no
+          money enclosed. It is worth more than money.
+      effects: { price: 0.1, strength: -5 } # TODO-Effekt: consortium: { invited: true }, favors: { vale: -1 }
+      marks: [vale_karte, vale_k3_zugesagt]
+    - id: absagen
+      label: { de: "Absagen – und die 500 $ mit Zinsen zurückschicken (1.500 $)", en: "Decline – and send back the 500 $ with interest (1,500 $)" }
+      result:
+        de: >-
+          Der Scheck wird eingelöst, von einer Bank in Aldmark, am Tag seiner Ankunft. Eine
+          Antwort kommt nicht. Jacob hat bezahlt, was er schuldete. Ob Mr. Vale das auch so
+          sieht, weiß er nicht.
+        en: >-
+          The cheque is cashed by a bank in Aldmark on the day it arrives. No answer comes.
+          Jacob has paid what he owed. Whether Mr. Vale sees it the same way, he does not
+          know.
+      requires: { minCash: 1500 }
+      effects: { cash: -1500 } # TODO-Effekt: consortium: { refused: 1 }, favors: { vale: 0 }
+      marks: [vale_karte, vale_k3_abgesagt]
+
+# Die Karte – Jacob hat in Kapitel 1 Vales Umschlag zurückgegeben (vale_abgelehnt).
+- id: k3_vale_karte_respekt
+  mail: personal
+  deadline: 3
+  title:
+    de: „Aus Bewunderung“
+    en: '"Out of Admiration"'
+  text:
+    de: >-
+      Schweres Papier, ein Wappen aus Aldmark, und diesmal ein ganzer Brief. „Sie haben vor
+      zwanzig Jahren fünfhundert Dollar zurückgegeben, Mr. Harlan. Ich habe Sie seitdem
+      nicht aus den Augen gelassen. Aus Bewunderung. Man trifft sich, wie es ist, auf Schloss
+      Hohenbrück. Ein Mann, der nein sagen kann, gehört an diesen Tisch.“ Unterschrieben:
+      V. Die Handschrift zittert ein wenig. Vor zwanzig Jahren hat sie nicht gezittert.
+    en: >-
+      Heavy paper, a crest from Aldmark, and this time a whole letter. "Twenty years ago you
+      returned five hundred dollars, Mr. Harlan. I have not let you out of my sight since.
+      Out of admiration. One meets as it is, at Schloss Hohenbrück. A man who can say no
+      belongs at this table." Signed: V. The handwriting trembles a little. Twenty years ago
+      it did not.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 6, maxRound: 8 }
+  marked: [vale_abgelehnt]
+  certain: true
+  choices:
+    - id: liegen
+      label: { de: "Die Karte in die Manteltasche stecken – später entscheiden", en: "Put the card in his coat pocket – decide later" }
+      result:
+        de: Der Brief wandert in die Innentasche des Mantels. Jacob liest ihn in dieser Woche noch zweimal.
+        en: The letter goes into the inside pocket of his coat. Jacob reads it twice more that week.
+      marks: [vale_karte]
+      default: true
+    - id: zusagen
+      label: { de: "Zusagen – hören, was sie zu sagen haben", en: "Accept – hear what they have to say" }
+      result:
+        de: >-
+          Die Zusage geht ab. Mr. Vale antwortet nicht mit Dank, sondern mit einer Zahl: ein
+          fester Preis für Harlan-Öl, fünf Jahre lang, wenn die Herren sich einig werden.
+          Die Zahl ist hoch. Sie ist zu hoch, um ehrlich zu sein.
+        en: >-
+          The acceptance goes off. Mr. Vale replies not with thanks but with a figure: a fixed
+          price for Harlan oil, five years long, if the gentlemen agree. The figure is high.
+          It is too high to be honest.
+      effects: { strength: -5 } # TODO-Effekt: consortium: { invited: true, offer: hoch }
+      marks: [vale_karte, vale_k3_zugesagt]
+    - id: absagen
+      label: { de: "Wieder absagen", en: "Decline again" }
+      result:
+        de: >-
+          Jacob schreibt eine Zeile, dieselbe wie damals im Hotel. Eine Woche später kommt
+          eine zweite Karte, das Angebot verdoppelt, und ein Satz: „Ich habe nichts anderes
+          erwartet.“ Jacob steckt sie zu der ersten.
+        en: >-
+          Jacob writes one line, the same as back then at the hotel. A week later a second card
+          arrives, the offer doubled, and one sentence: "I expected nothing else." Jacob puts
+          it with the first.
+      effects: { strength: -5 } # TODO-Effekt: consortium: { refused: 1, offer: verdoppelt }
+      marks: [vale_karte, vale_k3_abgesagt]

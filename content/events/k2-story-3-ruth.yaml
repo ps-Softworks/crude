@@ -1,0 +1,520 @@
+# Kapitel 2 – Story-Bogen „Ruths Wunsch mitzuarbeiten“ (GDD §13 Kapitel 2, Story-Bibel §3 und §6 C).
+# Entwurf – Philipp überarbeitet. Alle Texte hier sind Entwürfe von Claude.
+#
+# Jahr 11–14 (98–101 d. F.). Jacob 35–38, Ruth 33–36 (V), Thomas 10–13, Clara 5–8 (V: geb. Jahr 6).
+# Jedes Ereignis trägt { minChapter: 2, maxChapter: 2 } – in Kapitel 1 kommt keins davon.
+# Runden zählen hier im Kapitel ab 1 (Annahme für den Zeitsprung von Block A).
+# Zeitsprung: Merkzeichen aus Kapitel 1 tragen ihre Runde aus Kapitel 1 (bis 16). Der Kapitelwechsel
+# setzt sie mit marksIntoNextChapter (src/sim/events.ts) auf Runde 0 – „vor Kapitelbeginn“. Sonst
+# schöbe ein spätes ruth_vertroestet k2_ruth_datum weit nach hinten (Test in events.test.ts).
+# Bank-Reaktionen auf Ruth im Rat wechseln ab (nie zweimal dieselbe Strafe in einer Partie):
+#   k2_ruth_wunsch/rat  Kreditlinie gekündigt     k2_ruth_datum/rat  Anleihe einen halben Punkt teurer
+#   k2_ruth_sitz/stuhl  Vandermeer boykottiert    k2_ruth_rat/weiter Vandermeers Brief an die Aktionäre
+#
+#   Runde 1–3  k2_ruth_abend      Ruth und Clara im neuen Büro – Abendessen oder Lusks Anruf
+#   Runde 4+   k2_ruth_wunsch     Schlüsselszene: Rat, Finanzen, vertrösten oder Nein
+#              k2_ruth_datum      … dieselbe Szene mit ruth_vertroestet (K1): „Es sind jetzt einundvierzig.“
+#              k2_ruth_sitz       … dieselbe Szene mit ruth_teilhaberin (K1): sie fragt nur nach dem Stuhl
+#   Runde 3+   k2_ruth_schweigen  mit ruth_zurueckgewiesen (K1): Ruth fragt nicht mehr – die Feder in der Schublade
+#   danach     k2_ruth_rat        (ruth_aufsichtsrat)   Erste Sitzung: Vandermeer verlässt den Raum
+#   Runde 6+   k2_ruth_eigenes    (ruth_k2_abgewiesen)  Das Grundbuch: Ruth und Hannah kaufen einen Laden am Bahnhof Salt Hill
+#   Runde 12+  k2_ruth_clara      Clara hat Fieber, der Rat tagt – wer fährt?
+#
+# Ausgänge des Bogens (für content/arcs.yaml, sobald Bögen je Kapitel gehen – erster passender gilt):
+#   partnerin    ruth_rat_behauptet                      Ruth sitzt im Rat und wird gehört
+#   finanzen     ruth_finanzen                           Ruth führt die Finanzen, mit Titel
+#   still        ruth_rat_stumm                          Ruth sitzt im Rat und schweigt
+#   eigenes      ruth_eigenes_geschaeft                  Ruth hat ihr eigenes Geschäft (Trennung in K3 wahrscheinlicher)
+#   verboten     ruth_verboten                           Jacob hat ihr eigenes Geschäft verhindert
+#   zuhause      ruth_zuhause, ruth_vertroestet_k2       Ruth wartet – wieder
+#
+# Merkzeichen aus Kapitel 1: ruth_vertroestet, ruth_teilhaberin, ruth_zurueckgewiesen.
+# Neu, liest Kapitel 2: ruth_aufsichtsrat, ruth_k2_abgewiesen.
+# Neu für Kapitel 3 (content/relevance.yaml): ruth_finanzen, ruth_vertroestet_k2, ruth_zuhause,
+#   ruth_eigenes_geschaeft, ruth_verboten, ruth_rat_behauptet, ruth_rat_stumm, clara_k2_vater_da,
+#   clara_k2_vater_fehlte.
+# TODO-Effekt: Gewünschte neue Wirkungen stehen als Kommentar neben der vorläufigen.
+
+# Entwurf – Philipp überarbeitet.
+- id: k2_ruth_abend
+  visitor: ruth
+  title:
+    de: Ruth nach Ladenschluss
+    en: Ruth After Closing Time
+  text:
+    de: >-
+      Das neue Büro hat einen Eichenschreibtisch und ein Telefon, das Jacob noch
+      nicht leiden kann. Ruth kommt nach Ladenschluss, Clara an der Hand, und
+      setzt sich auf den Besucherstuhl wie eine Kundin. Über der Schläfe hat sie
+      die ersten grauen Haare; sie färbt sie nicht. „Thomas fragt, ob du zum
+      Abendessen kommst. Ich habe gesagt, ich frage nicht mehr. Also frage ich für
+      ihn.“ Um sieben will Lusk vom Trust anrufen.
+    en: >-
+      The new office has an oak desk and a telephone Jacob still can't stand. Ruth
+      comes after closing time, Clara by the hand, and sits in the visitor's chair
+      like a customer. Above her temple are the first grey hairs; she doesn't dye
+      them. "Thomas asks whether you're coming to supper. I said I don't ask any
+      more. So I'm asking for him." At seven, Lusk from the Trust is due to call.
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 1, maxRound: 3 }
+  certain: true
+  choices:
+    - id: mitgehen
+      label: { de: "Mitgehen – Lusk soll morgen noch einmal anrufen", en: "Go with them – Lusk can call again tomorrow" }
+      result:
+        de: >-
+          Lusk ruft nicht noch einmal an. Er schickt einen Brief mit einem neuen
+          Preis, zwei Cent niedriger. Am Tisch erzählt Thomas von der Schule, und
+          Clara schläft auf Jacobs Schoß ein.
+        en: >-
+          Lusk doesn't call again. He sends a letter with a new price, two cents
+          lower. At the table Thomas talks about school, and Clara falls asleep on
+          Jacob's lap.
+      effects: { ruth: 10, thomas: 8, price: -0.02 }
+    - id: telefonieren
+      label: { de: "Auf den Anruf warten", en: "Wait for the call" }
+      result:
+        de: >-
+          Lusk ist pünktlich und gut gelaunt; der Trust legt zwei Cent drauf. Als
+          Jacob nach Hause kommt, steht sein Teller im Ofen. Ruth ist schon oben.
+        en: >-
+          Lusk is punctual and in a good mood; the Trust adds two cents. When Jacob
+          gets home, his plate is in the oven. Ruth has already gone up.
+      effects: { price: 0.02, ruth: -6, thomas: -6 }
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Schlüsselszene des Bogens. Nur ohne die Kapitel-1-Varianten (die haben eigene Fassungen unten).
+- id: k2_ruth_wunsch
+  visitor: ruth
+  draft: true
+  title:
+    de: Ruths eigene Bilanz
+    en: Ruth's Own Balance Sheet
+  text:
+    de: >-
+      Ruth legt die Quartalsbilanz der Harlan Oil auf den Schreibtisch – nicht die
+      des Buchhalters, sondern ihre eigene, mit Bleistift. Drei Fehler hat sie
+      angestrichen, einer davon kostet 2.000 $. „Ich will mitarbeiten, Jacob.
+      Nicht zu Hause rechnen und dir abends die Zettel zustecken. Mit Titel. Oder
+      mit einem Sitz im Rat.“ Sie ist dreiunddreißig. Sie sagt es, als hätte sie
+      den Satz zehn Jahre lang geübt.
+    en: >-
+      Ruth lays Harlan Oil's quarterly balance on the desk – not the bookkeeper's,
+      her own, in pencil. She has marked three errors; one of them costs 2,000 $.
+      "I want to work, Jacob. Not do sums at home and slip you notes in the
+      evening. With a title. Or with a seat on the board." She is thirty-three. She
+      says it as if she had practised the sentence for ten years.
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4 }
+  notMarked: [ruth_vertroestet, ruth_teilhaberin, ruth_zurueckgewiesen]
+  certain: true
+  choices:
+    - id: rat
+      label: { de: "Ihr einen Sitz im Aufsichtsrat geben", en: "Give her a seat on the board" }
+      result:
+        de: >-
+          Ruth nickt, als hätte sie nichts anderes erwartet. Pettibone schreibt am
+          selben Abend nach Hallstead. Eine Woche später kündigt Vandermeer & Co. die
+          Kreditlinie der Harlan Oil zum Quartalsende, ohne Begründung, mit
+          vorzüglicher Hochachtung.
+        en: >-
+          Ruth nods as if she had expected nothing else. Pettibone writes to
+          Hallstead that same evening. A week later Vandermeer & Co. cancels Harlan
+          Oil's line of credit as of quarter's end, without explanation, with the
+          most respectful regards.
+      # TODO-Effekt: boardLoyalty: { vandermeer: -10, pettibone: -5 }, control: +2 (Ruths Stimme), creditLine: gekündigt – vorläufig: Kassenabfluss
+      effects: { ruth: 15, cash: -2000 }
+      marks: [ruth_aufsichtsrat]
+    - id: finanzen
+      label: { de: "Sie zur Finanzchefin machen – mit Titel und Unterschrift", en: "Make her head of finance – with title and signature" }
+      result:
+        de: >-
+          Am Montag hängt neben Jacobs Namen ein zweites Schild: R. Harlan,
+          Finanzen. In der ersten Woche findet Ruth doppelt bezahlte Frachtrechnungen
+          über 2.000 $. Der Buchhalter kündigt.
+        en: >-
+          On Monday a second plate hangs beside Jacob's name: R. Harlan, Finance. In
+          her first week Ruth finds freight bills paid twice, 2,000 $ worth. The
+          bookkeeper resigns.
+      # TODO-Effekt: hire: finanzchefin, staffLoyalty: { buchhaltung: -10 }
+      effects: { ruth: 12, cash: 2000 }
+      marks: [ruth_finanzen]
+    - id: vertroesten
+      label: { de: "„Wenn die Raffinerie steht“", en: "\"When the refinery is running\"" }
+      result:
+        de: >-
+          Ruth nimmt ihre Bilanz wieder mit. An der Tür bleibt sie stehen und
+          schreibt etwas in ihr kleines Buch. Jacob weiß, was: das Datum.
+        en: >-
+          Ruth takes her balance sheet back. At the door she stops and writes
+          something in her little book. Jacob knows what: the date.
+      effects: { ruth: -10 }
+      marks: [ruth_vertroestet_k2, ruth_k2_abgewiesen]
+    - id: nein
+      label: { de: "„Der Rat ist kein Ort für dich“", en: "\"The board is no place for you\"" }
+      result:
+        de: >-
+          Ruth sagt nichts. Sie legt den Bleistift auf den Schreibtisch, sehr gerade,
+          und geht. Die drei Fehler korrigiert der Buchhalter, zwei davon.
+        en: >-
+          Ruth says nothing. She lays the pencil on the desk, very straight, and
+          leaves. The bookkeeper corrects the three errors – two of them.
+      effects: { ruth: -20 }
+      marks: [ruth_zuhause, ruth_k2_abgewiesen]
+      appointments: 0
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Dieselbe Schlüsselszene mit ruth_vertroestet aus Kapitel 1 (Ruth will ihren Namen auf dem Papier,
+# Jacob sagte: „Wenn die zweite Quelle fließt“).
+- id: k2_ruth_datum
+  visitor: ruth
+  draft: true
+  title:
+    de: Das Datum aus der Kiste
+    en: The Date from the Box
+  text:
+    de: >-
+      Ruth stellt die Holzkiste, die zehn Jahre unter dem Bett stand, auf den
+      Eichenschreibtisch. Obenauf liegt die Pachturkunde vom Salt Hill, ohne ihren
+      Namen. „Ich habe das Datum aufgeschrieben, Jacob. Du hast gesagt: wenn die
+      zweite Quelle fließt. Es sind jetzt einundvierzig.“ Sie will den Namen auf
+      dem Papier – und diesmal einen Platz im Rat dazu.
+    en: >-
+      Ruth sets the wooden box that sat under the bed for ten years on the oak
+      desk. On top lies the Salt Hill lease deed, without her name. "I wrote down
+      the date, Jacob. You said: when the second well flows. It's forty-one now."
+      She wants her name on the paper – and this time a seat on the board as well.
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4 }
+  marked: [ruth_vertroestet]
+  delay: 0
+  certain: true
+  choices:
+    - id: rat
+      label: { de: "Unterschreiben lassen und ihr den Sitz im Rat geben", en: "Let her sign and give her the board seat" }
+      result:
+        de: >-
+          Ruth unterschreibt die alte Urkunde zuerst, dann die neue. Die Kiste nimmt
+          sie mit nach Hause, leer. Vandermeer & Co. erhöht den Zins der nächsten
+          Anleihe um einen halben Punkt.
+        en: >-
+          Ruth signs the old deed first, then the new one. She takes the box home,
+          empty. Vandermeer & Co. raises the rate on the next bond by half a point.
+      # TODO-Effekt: boardLoyalty: { vandermeer: -10 }, control: +2 – vorläufig: teurere Anleihe
+      effects: { ruth: 20, cash: -2000 }
+      marks: [ruth_aufsichtsrat]
+    - id: finanzen
+      label: { de: "Ihr die Finanzen geben – den Rat noch nicht", en: "Give her the finances – not the board yet" }
+      result:
+        de: >-
+          „Noch nicht“, wiederholt Ruth und nimmt den Schlüssel zur Kasse trotzdem.
+          Bis Monatsende hat sie 2.000 $ gefunden, die niemand vermisst hatte.
+        en: >-
+          "Not yet," Ruth repeats, and takes the key to the cash box anyway. By the
+          end of the month she has found 2,000 $ nobody had missed.
+      # TODO-Effekt: hire: finanzchefin
+      effects: { ruth: 8, cash: 2000 }
+      marks: [ruth_finanzen]
+    - id: vertroesten
+      label: { de: "„Nächstes Jahr, Ruth. Ganz sicher.“", en: "\"Next year, Ruth. For certain.\"" }
+      result:
+        de: >-
+          Ruth legt die Urkunde zurück in die Kiste und die Kiste nicht mehr unter
+          das Bett, sondern in ihren eigenen Schrank. Sie schließt ab.
+        en: >-
+          Ruth puts the deed back in the box, and the box no longer under the bed but
+          in her own wardrobe. She locks it.
+      effects: { ruth: -25 }
+      marks: [ruth_vertroestet_k2, ruth_k2_abgewiesen]
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Dieselbe Schlüsselszene mit ruth_teilhaberin aus Kapitel 1: Ihr Name steht längst auf dem Papier.
+- id: k2_ruth_sitz
+  visitor: ruth
+  draft: true
+  title:
+    de: Der Stuhl neben Jacob
+    en: The Chair Beside Jacob
+  text:
+    de: >-
+      Ruths Name steht seit zehn Jahren neben Jacobs auf jeder Pachturkunde. In die
+      Liste der Ratsmitglieder hat Pettibone ihn trotzdem nicht geschrieben – „aus
+      Rücksicht auf Hallstead“. Ruth fragt nicht nach dem Anteil; den hat sie. Sie
+      trägt die Brille, die sie seit dem Winter braucht, und fragt nur nach dem
+      Stuhl.
+    en: >-
+      Ruth's name has stood beside Jacob's on every lease deed for ten years.
+      Pettibone still left it off the list of board members – "out of
+      consideration for Hallstead". Ruth doesn't ask about the share; she has it.
+      She wears the spectacles she has needed since winter, and asks only about the
+      chair.
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4 }
+  marked: [ruth_teilhaberin]
+  delay: 0
+  certain: true
+  choices:
+    - id: stuhl
+      label: { de: "Den Stuhl neben sich frei machen", en: "Clear the chair beside him" }
+      result:
+        de: >-
+          Pettibone legt sein Mandat nicht nieder, aber er rückt einen Platz weiter.
+          Vandermeer kommt zur nächsten Sitzung nicht, zur übernächsten auch nicht.
+          Ohne seine Unterschrift bleibt die Anleihe ein Quartal lang liegen.
+        en: >-
+          Pettibone doesn't resign his seat, but he moves one place down. Vandermeer
+          doesn't come to the next meeting, nor to the one after. Without his
+          signature the bond sits unsigned for a quarter.
+      # TODO-Effekt: boardLoyalty: { pettibone: -5, vandermeer: -10 }, control: +3, boardBoycott: vandermeer
+      effects: { ruth: 15, cash: -1500 }
+      marks: [ruth_aufsichtsrat]
+    - id: anteil_reicht
+      label: { de: "„Dein Anteil spricht für dich – der Stuhl muss nicht sein“", en: "\"Your share speaks for you – the chair isn't needed\"" }
+      result:
+        de: >-
+          Ruth rechnet kurz. „Mein Anteil spricht für mich, wenn ich ihn verkaufe“,
+          sagt sie. Dann lächelt sie, was schlimmer ist als jeder Streit. Vandermeer
+          zeichnet die Anleihe zum alten Zins.
+        en: >-
+          Ruth does a quick sum. "My share speaks for me when I sell it," she says.
+          Then she smiles, which is worse than any quarrel. Vandermeer underwrites
+          the bond at the old rate.
+      # TODO-Effekt: boardLoyalty: { vandermeer: +5 }
+      effects: { ruth: -15, cash: 1500 }
+      marks: [ruth_vertroestet_k2, ruth_k2_abgewiesen]
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Mit ruth_zurueckgewiesen aus Kapitel 1 („Das ist Männersache“): Ruth fragt nicht mehr.
+# Im Kapitel-1-Text legte sie die Feder in die Schublade.
+- id: k2_ruth_schweigen
+  draft: true
+  title:
+    de: Die Feder in der Schublade
+    en: The Pen in the Drawer
+  text:
+    de: >-
+      Beim Umzug ins neue Büro fällt aus der alten Schublade eine Feder: Ruths
+      Feder, mit der sie vor zehn Jahren ihren Namen auf die Urkunde setzen
+      wollte. Ruth hat seitdem nicht mehr gefragt. Sie führt die Haushaltsbücher,
+      pünktlich, und spricht beim Essen über Clara und das Wetter. Ihre Schwester
+      Hannah war in diesem Quartal dreimal zu Besuch.
+    en: >-
+      During the move to the new office a pen falls out of the old drawer: Ruth's
+      pen, the one she meant to sign the deed with ten years ago. Ruth hasn't asked
+      since. She keeps the household books, punctually, and at supper talks about
+      Clara and the weather. Her sister Hannah has visited three times this quarter.
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  marked: [ruth_zurueckgewiesen]
+  delay: 0
+  certain: true
+  choices:
+    - id: zurueckbringen
+      label: { de: "Ihr die Feder zurückbringen – mit einem Titel dazu", en: "Bring her the pen back – with a title" }
+      result:
+        de: >-
+          Ruth dreht die Feder lange zwischen den Fingern. „Zehn Jahre“, sagt sie.
+          Dann nimmt sie an. Am Montag sitzt sie über den Büchern der Firma, als
+          hätte sie nie damit aufgehört, und findet bis Freitag 1.500 $.
+        en: >-
+          Ruth turns the pen between her fingers for a long time. "Ten years," she
+          says. Then she accepts. On Monday she sits over the company books as if she
+          had never stopped, and by Friday she has found 1,500 $.
+      # TODO-Effekt: hire: finanzchefin
+      effects: { ruth: 20, cash: 1500 }
+      marks: [ruth_finanzen]
+    - id: liegen_lassen
+      label: { de: "Die Feder zurück in die Schublade legen", en: "Put the pen back in the drawer" }
+      result:
+        de: Die Feder bleibt, wo sie war. Ruth fragt weiter nicht. Hannah kommt im nächsten Quartal öfter.
+        en: The pen stays where it was. Ruth still doesn't ask. Hannah comes more often next quarter.
+      marks: [ruth_k2_abgewiesen]
+      appointments: 0
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Nachwirkung (ruth_aufsichtsrat): die erste Sitzung. Ein Rat ist eine Person mit Gedächtnis.
+- id: k2_ruth_rat
+  title:
+    de: Vandermeer verlässt den Raum
+    en: Vandermeer Leaves the Room
+  text:
+    de: >-
+      Erste Sitzung des Aufsichtsrats mit Ruth. Sie hat die Zahlen vor allen
+      anderen gelesen und Fragen an den Rand geschrieben. Als sie das Wort
+      ergreift, steht Ambrose Vandermeer auf, knöpft die Weste zu und verlässt den
+      Raum. Pettibone bleibt sitzen und sieht auf seine Uhr. Die Tür fällt ins
+      Schloss. Alle sehen Jacob an.
+    en: >-
+      The board's first meeting with Ruth. She read the figures before anyone else
+      and wrote questions in the margins. When she takes the floor, Ambrose
+      Vandermeer stands, buttons his waistcoat and leaves the room. Pettibone stays
+      seated and looks at his watch. The door clicks shut. Everyone looks at Jacob.
+  conditions: { minChapter: 2, maxChapter: 2 }
+  marked: [ruth_aufsichtsrat]
+  delay: 1
+  certain: true
+  choices:
+    - id: weiter
+      label: { de: "Die Sitzung ohne Vandermeer fortsetzen", en: "Carry on without Vandermeer" }
+      result:
+        de: >-
+          Ruth spricht zwanzig Minuten über Frachtkosten. Niemand unterbricht sie.
+          Eine Woche später bekommt jeder Aktionär in Hallstead einen Brief von
+          Vandermeer: Die Harlan Oil werde neuerdings „am Küchentisch geführt“. Jacob
+          beantwortet jeden einzeln, drei Wochen lang, und der Kurs erholt sich nur
+          langsam.
+        en: >-
+          Ruth speaks for twenty minutes on freight costs. Nobody interrupts her. A
+          week later every shareholder in Hallstead receives a letter from
+          Vandermeer: Harlan Oil is now "run from the kitchen table". Jacob answers
+          each one personally, for three weeks, and the share price recovers only
+          slowly.
+      # TODO-Effekt: boardLoyalty: { vandermeer: -15 }, sharePrice: -0.05 (befristet)
+      effects: { ruth: 10, strength: -10 }
+      marks: [ruth_rat_behauptet]
+    - id: zurueckholen
+      label: { de: "Vandermeer nachgehen – Ruth soll heute nur zuhören", en: "Go after Vandermeer – Ruth should only listen today" }
+      result:
+        de: >-
+          Vandermeer kommt zurück, mit einer Zigarre und einem Lächeln. Ruth schreibt
+          die ganze Sitzung mit und sagt kein Wort. Auf dem Heimweg sagt sie auch
+          keins.
+        en: >-
+          Vandermeer comes back with a cigar and a smile. Ruth takes notes for the
+          whole meeting and says not a word. On the way home she says none either.
+      # TODO-Effekt: boardLoyalty: { vandermeer: +5 }
+      effects: { ruth: -20 }
+      marks: [ruth_rat_stumm]
+      default: true
+    - id: vorrechnen
+      label: { de: "Ruth das Wort lassen – sie soll Vandermeers Anleihe vorrechnen", en: "Let Ruth speak – she should take Vandermeer's bond apart" }
+      result:
+        de: >-
+          Ruth rechnet laut vor, was Vandermeer & Co. an der Anleihe verdient und was
+          die Bank in Port Ellis bieten würde. Vandermeer bleibt in der Tür stehen,
+          kommt zurück und senkt den Zins, noch bevor die Sitzung vorbei ist.
+        en: >-
+          Ruth works out aloud what Vandermeer & Co. earns on the bond and what the
+          bank in Port Ellis would offer. Vandermeer stops in the doorway, comes back
+          and lowers the rate before the meeting is over.
+      # TODO-Effekt: boardLoyalty: { vandermeer: -5 }, control: +2
+      effects: { ruth: 15, cash: 2500 }
+      marks: [ruth_rat_behauptet]
+      sharp: true
+
+# Entwurf – Philipp überarbeitet.
+# Nachwirkung (ruth_k2_abgewiesen): Ruth geht eigene Wege. Jacob erfährt es aus dem Grundbuch.
+- id: k2_ruth_eigenes
+  draft: true
+  title:
+    de: Ein Auszug aus dem Grundbuch
+    en: An Extract from the Land Register
+  text:
+    de: >-
+      Der Notar in Port Ellis schickt aus Gewohnheit eine Abschrift: Im Grundbuch
+      stehen zwei Bauplätze und ein Laden am Bahnhof Salt Hill, wo die Bohrstadt
+      jedes Jahr eine Straße weiter wächst, auf Ruth Harlan und ihre Schwester
+      Hannah. Bezahlt hat Ruth mit Geld, das sie zehn
+      Jahre lang vom Haushaltsgeld zurückgelegt hat. Sie hat es Jacob nicht
+      gesagt. Sie hat ihn auch nicht angelogen – er hat nie gefragt.
+    en: >-
+      Out of habit the notary in Port Ellis sends a copy: in the land register, two
+      building plots and a shop by Salt Hill station, where the oil town grows by
+      another street every year, stand in the names of Ruth Harlan and her sister
+      Hannah. Ruth paid with money she put aside
+      from the housekeeping for ten years. She didn't tell Jacob. Nor did she lie
+      to him – he never asked.
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 6 }
+  marked: [ruth_k2_abgewiesen]
+  delay: 3
+  certain: true
+  choices:
+    - id: respektieren
+      label: { de: "Die Abschrift in die Schublade legen – es ist ihr Geld", en: "Put the copy in the drawer – it's her money" }
+      result:
+        de: >-
+          Jacob sagt nichts. Ruth merkt, dass er es weiß, und sagt auch nichts. Der
+          Laden am Bahnhof macht im ersten Quartal Gewinn.
+        en: >-
+          Jacob says nothing. Ruth notices that he knows, and says nothing either.
+          The shop by the station turns a profit in its first quarter.
+      effects: { ruth: 8 }
+      marks: [ruth_eigenes_geschaeft]
+      appointments: 0
+      default: true
+    - id: verbieten
+      label: { de: "Den Kauf durch den Anwalt rückgängig machen lassen", en: "Have the lawyer undo the purchase" }
+      result:
+        de: >-
+          Der Anwalt findet einen Formfehler, wie Anwälte das tun. Ruth verkauft die
+          Bauplätze mit Verlust an Bullards Landmann. Sie sagt nur: „Gut. Jetzt weiß
+          ich es.“
+        en: >-
+          The lawyer finds a flaw in the form, as lawyers do. Ruth sells the plots at
+          a loss to Bullard's land agent. All she says is: "Good. Now I know."
+      effects: { ruth: -30, cash: -800 }
+      marks: [ruth_verboten]
+    - id: einbeziehen
+      label: { de: "Ihr anbieten, den Laden über die Firma zu führen – als Finanzchefin (3.000 $)", en: "Offer to run the shop through the company – as head of finance (3,000 $)" }
+      result:
+        de: >-
+          Ruth denkt eine Woche nach. Dann bringt sie den Laden mit und die Bücher
+          dazu. Die Firma kauft Hannahs Hälfte für 3.000 $; den Preis hat Ruth selbst
+          gemacht. Die Farmer am Salt Hill, die dort einkaufen, verpachten seitdem lieber an Harlan.
+        en: >-
+          Ruth thinks it over for a week. Then she brings the shop and the books with
+          her. The company buys Hannah's half for 3,000 $; Ruth set the price herself.
+          The Salt Hill farmers who shop there have preferred leasing to Harlan ever since.
+      requires: { minCash: 3000 }
+      effects: { ruth: 12, cash: -3000, leaseCost: -0.1 }
+      marks: [ruth_finanzen]
+
+# Entwurf – Philipp überarbeitet.
+# Spät im Kapitel: Familie gegen Rat. Doktor Haskell ist alt geworden.
+- id: k2_ruth_clara
+  title:
+    de: Claras Fieber
+    en: Clara's Fever
+  text:
+    de: >-
+      Clara hat seit zwei Tagen Fieber. Doktor Haskell, der inzwischen am Stock
+      geht, will sie heute noch im Krankenhaus in Port Ellis sehen. Am selben Abend
+      stimmt der Aufsichtsrat über die Dividende ab. Ruth hat den Mantel schon an
+      und sieht Jacob an: Einer muss fahren, und einer muss in die Sitzung.
+    en: >-
+      Clara has had a fever for two days. Doctor Haskell, who walks with a cane
+      now, wants to see her at the hospital in Port Ellis tonight. That same
+      evening the board votes on the dividend. Ruth already has her coat on and
+      looks at Jacob: one of them must drive, and one must go to the meeting.
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 12 }
+  certain: true
+  choices:
+    - id: jacob_faehrt
+      label: { de: "Selbst fahren – der Rat soll ohne ihn beschließen", en: "Drive himself – let the board decide without him" }
+      result:
+        de: >-
+          Jacob sitzt die Nacht am Bett. Clara hält seinen Daumen, auch im Schlaf.
+          Der Rat beschließt ohne ihn eine hohe Dividende; das Geld fehlt im
+          nächsten Quartal in der Kasse.
+        en: >-
+          Jacob sits by the bed all night. Clara holds his thumb, even in her sleep.
+          Without him the board votes a high dividend; the money is missing from the
+          till next quarter.
+      # TODO-Effekt: clara: +15, control: -1, dividendPressure: +1
+      effects: { ruth: 10, cash: -4000, strength: -5 }
+      marks: [clara_k2_vater_da]
+    - id: ruth_faehrt
+      label: { de: "Ruth fahren lassen und in die Sitzung gehen", en: "Let Ruth drive and go to the meeting" }
+      result:
+        de: >-
+          Jacob setzt die Reinvestition durch, knapp. Um Mitternacht ruft Ruth aus
+          Port Ellis an: Es ist die Lunge, es wird gut. Clara fragt am nächsten
+          Morgen, wo Papa war.
+        en: >-
+          Jacob pushes the reinvestment through, narrowly. At midnight Ruth calls
+          from Port Ellis: it's her lungs, she'll be fine. The next morning Clara
+          asks where Papa was.
+      # TODO-Effekt: clara: -10
+      effects: { ruth: -10, cash: 2000 }
+      marks: [clara_k2_vater_fehlte]
+      default: true

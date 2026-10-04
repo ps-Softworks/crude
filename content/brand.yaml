@@ -1,0 +1,130 @@
+# Marke und Tankstellen (4.14, GDD §6 Vertrieb, §13 Kapitel 3).
+# Hier steht nur, wie es klingt – die Zahlen stehen in balance.yaml (Block brand),
+# die Regeln in src/sim/brand.ts. Jede Region und jede Werbung aus balance.yaml
+# braucht hier einen Namen (npm run check:content prüft das).
+# Jeder Text mit Sprachschlüssel de/en (Englisch darf leer bleiben, dann erscheint Deutsch).
+# Platzhalter in geschweiften Klammern: {region}, {anzahl}, {name}, {kampagne}.
+# ENTWURF von Claude: Sätze bitte in eigener Stimme umschreiben.
+draft: true
+
+# Gegenstand auf dem Schreibtisch und Fenstertitel.
+object:
+  name: { de: Vertrieb, en: Sales }
+  title: { de: Marke und Tankstellen, en: Brand and filling stations }
+
+# Namen, die der Vertriebschef für die Marke vorschlägt.
+names:
+  harlan: { de: Harlan, en: Harlan }
+  golfstern: { de: Golfstern, en: Gulf Star }
+  praerie: { de: Prärie-Benzin, en: Prairie Gasoline }
+  salthill: { de: Salt Hill Motoröl, en: Salt Hill Motor Oil }
+
+# Absatzregionen (Kennungen wie in balance.yaml, brand.regions).
+regions:
+  cordova: { de: Cordova, en: Cordova }
+  okara: { de: Okara, en: Okara }
+  mittelland: { de: Mittelland, en: Midlands }
+  ostkueste: { de: Ostküste, en: East Coast }
+  sierra_alta: { de: Sierra Alta, en: Sierra Alta }
+
+# Werbung (Kennungen wie in balance.yaml, brand.campaigns).
+campaigns:
+  plakate:
+    name: { de: Plakate, en: Billboards }
+    text:
+      de: Bunte Schilder an jeder Landstraße – billig und schnell vergessen.
+      en: Bright signs on every country road – cheap and quickly forgotten.
+  radio:
+    name: { de: Radio, en: Radio }
+    text:
+      de: Ein Lied, das jeder pfeift. Teuer, aber es geht ins Ohr.
+      en: A jingle everyone whistles. Expensive, but it sticks.
+  strassenkarten:
+    name: { de: Gratis-Straßenkarten, en: Free road maps }
+    text:
+      de: Wer mit deiner Karte fährt, tankt bei dir – und das noch lange.
+      en: Whoever drives with your map fills up with you – for a long time.
+
+# Preis an der Zapfsäule.
+prices:
+  billig: { de: billig, en: cheap }
+  normal: { de: normal, en: normal }
+  teuer: { de: teuer, en: premium }
+
+# Bekanntheit nie als Zahl, nur als Wort.
+words:
+  unbekannt: { de: unbekannt, en: unknown }
+  bekannt: { de: bekannt, en: known }
+  beliebt: { de: beliebt, en: popular }
+  ueberall: { de: in aller Munde, en: on everyone's lips }
+
+# Brief des Vertriebschefs, solange es noch keine Marke gibt.
+intro:
+  title: { de: Ein Brief vom Vertriebschef, en: A letter from the head of sales }
+  text:
+    de: >-
+      Die Leute kaufen Automobile, Mr. Harlan, und jedes davon hat einen Tank. Margaret Crane
+      stellt schon an jeder Ecke der Ostküste ihre Zapfsäulen auf. Wenn wir unser Benzin nicht
+      unter eigenem Namen verkaufen, verkaufen wir es an sie – zu ihrem Preis.
+    en: >-
+      People are buying automobiles, Mr. Harlan, and every one of them has a tank. Margaret Crane
+      is already putting up her pumps on every corner of the East Coast. If we do not sell our
+      gasoline under our own name, we sell it to her – at her price.
+  choose: { de: "Unter welchem Namen?", en: "Under which name?" }
+  found: { de: "Marke gründen ({kosten})", en: "Found the brand ({kosten})" }
+
+# Überschriften und Knöpfe im Fenster.
+ui:
+  tabNetwork: { de: Netz, en: Network }
+  tabAds: { de: Werbung, en: Advertising }
+  tabCrane: { de: Crane, en: Crane }
+  region: { de: Region, en: Region }
+  stations: { de: Tankstellen, en: Stations }
+  share: { de: Anteil, en: Share }
+  awareness: { de: Bekanntheit, en: Awareness }
+  price: { de: Preis, en: Price }
+  building: { de: "im Bau: {anzahl}", en: "under construction: {anzahl}" }
+  build: { de: "+{anzahl} bauen ({kosten})", en: "build +{anzahl} ({kosten})" }
+  sell: { de: "eine verkaufen (+{kosten})", en: "sell one (+{kosten})" }
+  closed: { de: "erst später erschlossen", en: "not open yet" }
+  national: { de: "Marktanteil im ganzen Land: {anteil}", en: "National market share: {anteil}" }
+  profit: { de: "Gewinn der Tankstellen in der letzten Runde: {betrag}", en: "Station profit last round: {betrag}" }
+  value: { de: "Markenwert: {betrag}", en: "Brand value: {betrag}" }
+  goal: { de: "Kapitelziel: Marke in {soll} Regionen ({ist}) oder {anteilSoll} Marktanteil ({anteilIst})", en: "Chapter goal: brand in {soll} regions ({ist}) or {anteilSoll} market share ({anteilIst})" }
+  antitrust: { de: "Vorsicht: So viel Marktanteil weckt die Kartellbehörde.", en: "Careful: this much market share wakes the antitrust office." }
+  campaignRun: { de: "{kampagne} läuft noch bis Runde {runde}.", en: "{kampagne} runs until round {runde}." }
+  campaignStart: { de: "{region} ({kosten})", en: "{region} ({kosten})" }
+  craneIntro:
+    de: Margaret Crane führt Crane Eastern wie eine Uhr. Ihre Tankstellen sind sauber, ihre Werbung ist überall.
+    en: Margaret Crane runs Crane Eastern like clockwork. Her stations are clean, her advertising is everywhere.
+  craneRow: { de: "{region}: {anzahl} Tankstellen, {wort}, Preis {preis}", en: "{region}: {anzahl} stations, {wort}, price {preis}" }
+  priceWar: { de: "Preiskampf!", en: "Price war!" }
+  news: { de: Bericht des Vertriebschefs, en: Report from the head of sales }
+  noNews: { de: Nichts Besonderes an den Zapfsäulen., en: Nothing special at the pumps. }
+  newsBadge: { de: "{anzahl} neu", en: "{anzahl} new" }
+  # Kurzform am Gegenstand vor der Gründung (der Platz am Tisch ist schmal).
+  deskNoBrand: { de: "noch keine Marke", en: "no brand yet" }
+
+# Was bei der letzten Abrechnung geschah (BrandNews in src/sim/brand.ts).
+news:
+  opened: { de: "{region}: {anzahl} neue Tankstellen haben geöffnet.", en: "{region}: {anzahl} new stations opened." }
+  priceWarStart: { de: "{region}: Margaret Crane senkt die Preise – sie will uns aus dem Markt drängen.", en: "{region}: Margaret Crane cuts prices – she wants to push us out." }
+  priceWarEnd: { de: "{region}: Crane verlangt wieder normale Preise.", en: "{region}: Crane is charging normal prices again." }
+  craneExpand: { de: "{region}: Crane baut {anzahl} neue Tankstellen.", en: "{region}: Crane builds {anzahl} new stations." }
+  campaignEnd: { de: "{region}: Die Werbung „{kampagne}“ ist ausgelaufen.", en: "{region}: the “{kampagne}” campaign has run out." }
+  scandal: { de: "Nach dem Skandal fahren die Kunden an unseren Schildern vorbei.", en: "After the scandal, customers drive past our signs." }
+
+# Warum eine Aktion nicht geht (BrandRefusal in src/sim/brand.ts).
+refusals:
+  locked: { de: Das kommt erst mit den Automobilen., en: That only comes with the automobiles. }
+  founded: { de: Die Marke gibt es schon., en: The brand already exists. }
+  notFounded: { de: Erst die Marke gründen., en: Found the brand first. }
+  cash: { de: Dafür reicht das Geld nicht., en: There is not enough money for that. }
+  region: { de: Diese Region ist noch nicht erschlossen., en: This region is not open yet. }
+  count: { de: So viele auf einmal schafft kein Bautrupp., en: No crew can build that many at once. }
+  full: { de: Mehr Tankstellen verträgt die Region nicht., en: The region cannot take more stations. }
+  noStation: { de: Dort steht noch keine Tankstelle., en: There is no station there yet. }
+  campaign: { de: Diese Werbung gibt es nicht., en: That campaign does not exist. }
+  running: { de: Diese Werbung läuft dort schon., en: That campaign is already running there. }
+  samePrice: { de: Dieser Preis gilt schon., en: That price is already set. }
+  name: { de: Dieser Name geht nicht., en: That name will not do. }

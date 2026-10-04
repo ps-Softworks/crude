@@ -4,11 +4,11 @@
 import { useState } from 'react';
 import type { Rating } from '../sim/balance';
 import {
+  bankRate,
   creditLimit,
   debt,
   freeCollateral,
   headroom,
-  loanRate,
   loanSlider,
   quarterInterest,
   quarterInterestTotal,
@@ -22,7 +22,7 @@ import {
 } from '../sim/credit';
 import type { GameState } from '../sim/game';
 import { parcelLabel } from '../sim/lease';
-import { worldLimitFactor, worldRateAdd } from '../sim/world';
+import { worldLimitFactor } from '../sim/world';
 import { balance } from './balance';
 import { money, NBSP } from './format';
 
@@ -77,8 +77,6 @@ export function BankPanel({ game, onResult }: { game: GameState; onResult: (resu
   const [kreditPos, setKreditPos] = useState(0);
   const [tilgPos, setTilgPos] = useState(Number.MAX_SAFE_INTEGER);
   const schuld = debt(game);
-  // Kreditklima des Weltmodells (4.1): lockeres Geld macht den Zins billiger, ein Crash teurer.
-  const klima = worldRateAdd(game.worldModel, balance.worldModel);
   const rahmen = creditLimit(game, balance);
   // Kreditzyklus (4.4): Im Boom leihen die Banken mehr, in Panik und Crash kürzen sie den Rahmen.
   const laune = worldLimitFactor(game.worldModel, balance.worldModel);
@@ -123,8 +121,10 @@ export function BankPanel({ game, onResult }: { game: GameState; onResult: (resu
         </dd>
         <dt>Zins heute</dt>
         <dd>
-          {percent(loanRate(balance, game.rating, pfandFrei > 0, klima))} mit Pfand ·{' '}
-          {percent(loanRate(balance, game.rating, false, klima))} ohne
+          {/* 4.17 Andockpunkt: bankRate – derselbe Zins, den takeLoan berechnet: Kreditklima (4.1),
+              eigene Bank (4.16) und Stand-Rabatt (4.17) sind eingerechnet. */}
+          {percent(bankRate(game, balance, pfandFrei > 0))} mit Pfand ·{' '}
+          {percent(bankRate(game, balance, false))} ohne
           {pfandFrei > 0 ? ` · ${pfandFrei} Quelle als Pfand frei` : ' · keine Quelle als Pfand frei'}
         </dd>
         <dt>Zins je Quartal</dt>

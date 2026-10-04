@@ -1,0 +1,389 @@
+# Kapitel 3 – Alltag, Paket 8: Familie (Phase 4). Entwurf – Philipp überarbeitet.
+# Grundlage: Story-Bibel §1 (Jacob 45–48, Kraft-Maximum 80; „Ruth und der Arzt merken Jacobs
+# Müdigkeit vor ihm“; Thomas 20–23, Clara 15–18, Silas 64–67), §3 (Doktor Haskell: Jacobs Herz;
+# Eli Wards Tochter als Claras Freundin; Silas bringt Thomas das Bohren bei), §9 (K3 Thema 7).
+# Die großen Bögen (Thomas' Weg, Wendepunkt der Ehe, Claras Weichen) schreibt das Story-Paket
+# k3-*.yaml – hier nur der Alltag dazwischen.
+#
+# Nur Kapitel 3 (minChapter/maxChapter 3). Clara hat noch keinen Beziehungswert: Wo es um sie
+# geht, steht „# TODO-Effekt: clara: …“ neben einer Ersatzwirkung (meist ruth oder Kraft).
+#
+# Merkzeichen aus Kapitel 1: geburt_verpasst, silas_fair, eli_waechter.
+# Merkzeichen aus Paket 5: k3_portraet_allein → k3_portraet_flur.
+# Merkzeichen dieses Pakets:
+#   k3_herz_verschwiegen → k3_herz_ruth
+
+- id: k3_haskell_herz
+  visitor: arzt
+  conditions: { minChapter: 3, maxChapter: 3, maxStrength: 55 }
+  chance: 0.4
+  title:
+    de: Doktor Haskell hört zu lange hin
+    en: Doctor Haskell Listens Too Long
+  text:
+    de: >-
+      Doktor Haskell ist alt geworden, seine Hände nicht. Er hält das Hörrohr lange auf
+      Jacobs Brust, länger als früher. Dann setzt er sich und putzt die Brille. „Ihr
+      Herz klopft wie eine Pumpe, die zu lange gelaufen ist, Jacob. Es läuft noch. Die
+      Frage ist, ob Sie es jedes Quartal neu anwerfen wollen.“
+    en: >-
+      Doctor Haskell has grown old, his hands have not. He holds the stethoscope to
+      Jacob's chest a long time, longer than he used to. Then he sits and polishes his
+      spectacles. "Your heart knocks like a pump that's run too long, Jacob. It still
+      runs. The question is whether you want to restart it every quarter."
+  choices:
+    - id: kur
+      label: { de: "Sechs Wochen Kur im Gebirge (1.500 $, 3 Termine)", en: "Six weeks' cure in the mountains (1,500 $, 3 appointments)" }
+      result:
+        de: Jacob sitzt sechs Wochen auf einer Veranda und sieht in Berge, die kein Öl haben. Ruth kommt am zweiten Wochenende nach. Die Firma läuft ohne ihn. Das beunruhigt ihn mehr als das Herz.
+        en: Jacob sits on a veranda for six weeks looking at mountains with no oil in them. Ruth joins him the second weekend. The company runs without him. That troubles him more than his heart.
+      requires: { minCash: 1500 }
+      effects: { cash: -1500, strength: 25, ruth: 8 }
+      appointments: 3
+    - id: tropfen
+      label: { de: "Tropfen nehmen und weiterarbeiten", en: "Take the drops and keep working" }
+      result:
+        de: Haskell schreibt ein Rezept und schüttelt den Kopf dabei. Die Tropfen schmecken nach Bittermandel. Jacob nimmt sie vor jeder Sitzung.
+        en: Haskell writes a prescription, shaking his head. The drops taste of bitter almond. Jacob takes them before every meeting.
+      effects: { strength: 8, cash: -100 }
+      default: true
+    - id: verschweigen
+      label: { de: "„Ruth erfährt davon nichts.“", en: "\"Ruth hears nothing of this.\"" }
+      result:
+        de: Haskell sieht Jacob über die Brille an. „Ich bin Arzt, kein Beichtvater. Aber gut.“ Er nimmt die Tasche und geht durch die Hintertür.
+        en: Haskell looks at Jacob over his spectacles. "I'm a doctor, not a confessor. But very well." He takes his bag and leaves by the back door.
+      effects: { strength: 5 }
+      marks: [k3_herz_verschwiegen]
+      appointments: 0
+
+- id: k3_herz_ruth
+  visitor: ruth
+  marked: [k3_herz_verschwiegen]
+  delay: 2
+  chance: 0.6
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Ruth hat das Rezept gefunden
+    en: Ruth Has Found the Prescription
+  text:
+    de: >-
+      Ruth legt Haskells Rezept auf den Schreibtisch, glattgestrichen, als wäre es ein
+      Beweisstück. Sie hat es in Jacobs Weste gefunden. Sie setzt sich nicht. „Zwanzig
+      Jahre habe ich dir angesehen, wenn du müde warst, Jacob. Und das hier versteckst
+      du in der Weste.“
+    en: >-
+      Ruth lays Haskell's prescription on the desk, smoothed out as if it were evidence.
+      She found it in Jacob's waistcoat. She doesn't sit down. "Twenty years I've seen
+      it in your face when you were tired, Jacob. And this you hide in your waistcoat."
+  choices:
+    - id: wahrheit
+      label: { de: "Ihr alles sagen und kürzertreten", en: "Tell her everything and slow down" }
+      result:
+        de: Jacob erzählt es ihr am Küchentisch, nicht im Büro. Ruth streicht ihm von da an jeden zweiten Abendtermin aus dem Kalender. Er lässt es zu.
+        en: Jacob tells her at the kitchen table, not in the office. From then on Ruth strikes every other evening appointment from his calendar. He lets her.
+      effects: { ruth: 15, strength: 10 }
+      appointments: 2
+    - id: abwiegeln
+      label: { de: "„Haskell übertreibt. Er wird alt.“", en: "\"Haskell exaggerates. He's getting old.\"" }
+      result:
+        de: Ruth nimmt das Rezept wieder mit. Am nächsten Morgen steht ein Fläschchen mit den Tropfen neben seiner Kaffeetasse. Sie sagt kein Wort dazu, wochenlang.
+        en: Ruth takes the prescription back. The next morning a little bottle of the drops stands beside his coffee cup. She says not a word about it, for weeks.
+      effects: { ruth: -15 }
+      default: true
+
+- id: k3_silberhochzeit
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.3
+  title:
+    de: Fünfundzwanzig Jahre
+    en: Twenty-Five Years
+  text:
+    de: >-
+      In zwei Wochen sind Jacob und Ruth fünfundzwanzig Jahre verheiratet. Die Sekretärin
+      hat es im Kalender rot angestrichen, Ruth hat es nicht erwähnt. In Hallstead würde
+      man ein Fest erwarten, mit Kapelle und Gästen, deren Namen in der Zeitung stehen.
+      In Port Ellis steht noch die Pension, in der sie im ersten Frühjahr wohnten.
+    en: >-
+      In two weeks Jacob and Ruth will have been married twenty-five years. The secretary
+      has marked it red in the calendar; Ruth hasn't mentioned it. Hallstead would expect
+      a party, with a band and guests whose names appear in the paper. In Port Ellis the
+      boarding house where they lived that first spring still stands.
+  choices:
+    - id: fest
+      label: { de: "Ein Fest in Hallstead, mit allen, die zählen (4.000 $, 2 Termine)", en: "A party in Hallstead, with everyone who counts (4,000 $, 2 appointments)" }
+      result:
+        de: Zweihundert Gäste, ein Orchester, ein Foto im Ledger. Ruth tanzt mit Senator Grady und mit einem Bankier. Mit Jacob tanzt sie einmal, spät, als fast alle weg sind.
+        en: Two hundred guests, an orchestra, a photograph in the Ledger. Ruth dances with Senator Grady and with a banker. With Jacob she dances once, late, when almost everyone has gone.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000, ruth: 5, strength: -5 }  # TODO-Effekt: standing: +2
+      appointments: 2
+    - id: pension
+      label: { de: "Mit Ruth allein nach Port Ellis, in die alte Pension (3 Termine)", en: "Alone with Ruth to Port Ellis, to the old boarding house (3 appointments)" }
+      result:
+        de: Die Wirtin ist eine andere, das Zimmer ist dasselbe. Ruth findet die Kerbe im Fensterbrett, die Jacob damals geschnitzt hat, für jeden Fuß Bohrung. Es sind siebenundvierzig.
+        en: The landlady is a different one, the room is the same. Ruth finds the notches in the windowsill that Jacob carved back then, one for every foot drilled. There are forty-seven.
+      effects: { ruth: 20, strength: 10 }
+      appointments: 3
+    - id: geschenk
+      label: { de: "Ein Collier aus Hallstead schicken lassen (2.000 $)", en: "Have a necklace sent from Hallstead (2,000 $)" }
+      result:
+        de: Das Collier ist schön und kalt. Ruth trägt es zum Abendessen und legt es danach in die Schatulle zu den anderen. Die Karte hat die Sekretärin geschrieben. Ruth erkennt die Schrift.
+        en: The necklace is beautiful and cold. Ruth wears it to dinner and afterwards puts it in the box with the others. The secretary wrote the card. Ruth recognises the hand.
+      effects: { cash: -2000, ruth: -10 }
+      appointments: 0
+      default: true
+
+- id: k3_thomas_schulden
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.25
+  title:
+    de: Thomas schuldet dem Club
+    en: Thomas Owes the Club
+  text:
+    de: >-
+      Ein Brief vom Sekretär eines Herrenclubs in Hallstead: Mr. Thomas Harlan habe
+      Spielschulden und Rechnungen für Champagner, insgesamt eine Summe, die ein
+      Bohrarbeiter in vier Jahren verdient. Man wende sich diskret an den Vater. Thomas
+      ist einundzwanzig. Er hat an Jacob seit zwei Monaten nicht geschrieben.
+    en: >-
+      A letter from the secretary of a gentlemen's club in Hallstead: Mr. Thomas Harlan
+      has gambling debts and bills for champagne, in all a sum a driller earns in four
+      years. One turns discreetly to the father. Thomas is twenty-one. He hasn't written
+      to Jacob in two months.
+  choices:
+    - id: still
+      label: { de: "Still bezahlen (2.500 $)", en: "Pay quietly (2,500 $)" }
+      result:
+        de: Die Schulden sind bezahlt. Thomas erfährt es aus dem Club, nicht vom Vater. Er schreibt einen Brief, höflich und kurz, mit einem Dank, der nach Pflicht klingt.
+        en: The debts are paid. Thomas learns of it from the club, not from his father. He writes a letter, polite and short, with thanks that sound like duty.
+      requires: { minCash: 2500 }
+      effects: { cash: -2500, thomas: 5 }
+      appointments: 0
+    - id: hinfahren
+      label: { de: "Nach Hallstead fahren und mit ihm reden (2.500 $, 3 Termine)", en: "Travel to Hallstead and talk to him (2,500 $, 3 appointments)" }
+      result:
+        de: Jacob bezahlt und geht mit Thomas danach essen, nur sie beide. Thomas redet über Automobile und Straßenkarten, zwei Stunden lang. Jacob versteht die Hälfte und hört trotzdem zu.
+        en: Jacob pays and afterwards takes Thomas to dinner, just the two of them. Thomas talks about automobiles and road maps for two hours. Jacob understands half and listens anyway.
+      requires: { minCash: 2500 }
+      effects: { cash: -2500, thomas: 15, strength: -10 }
+      appointments: 3
+    - id: nicht
+      label: { de: "Nicht bezahlen – „Er soll lernen, was Geld kostet.“", en: "Don't pay – \"Let him learn what money costs.\"" }
+      result:
+        de: Der Club schließt Thomas aus. Er arbeitet ein Jahr lang bei einem Autohändler, um die Schulden abzuzahlen. Er erzählt es niemandem in der Familie. Ruth erfährt es von Margaret Crane.
+        en: The club expels Thomas. He works a year at an automobile dealer to pay off the debts. He tells no one in the family. Ruth hears it from Margaret Crane.
+      effects: { thomas: -20, ruth: -5 }
+      appointments: 0
+      default: true
+
+- id: k3_thomas_volljaehrig
+  marked: [geburt_verpasst]
+  delay: 0
+  chance: 0.35
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Thomas wird einundzwanzig
+    en: Thomas Turns Twenty-One
+  text:
+    de: >-
+      Thomas wird einundzwanzig, im Herbst, wie damals. An dem Tag, an dem er geboren
+      wurde, stand Jacob auf einem Bohrturm am Salt Hill. Ruth hat es nie wieder
+      erwähnt. Heute erwähnt sie es, beim Frühstück, nebenbei: „Diesmal ist es ein
+      Sonntag, Jacob. Da bohrt niemand.“
+    en: >-
+      Thomas turns twenty-one, in autumn, as back then. On the day he was born Jacob
+      stood on a derrick at Salt Hill. Ruth never mentioned it again. Today she does, at
+      breakfast, in passing: "This time it's a Sunday, Jacob. Nobody drills on a Sunday."
+  choices:
+    - id: dabei
+      label: { de: "Den ganzen Sonntag mit Thomas verbringen", en: "Spend the whole Sunday with Thomas" }
+      result:
+        de: Jacob fährt Thomas zum Salt Hill und zeigt ihm den Platz, wo der Turm stand, an jenem Tag. Er entschuldigt sich nicht. Er erzählt nur, wie es war. Thomas hört zu, ohne zu unterbrechen.
+        en: Jacob drives Thomas to Salt Hill and shows him the spot where the derrick stood that day. He doesn't apologise. He just tells how it was. Thomas listens without interrupting.
+      effects: { thomas: 15, ruth: 10 }
+      appointments: 2
+    - id: geschenk
+      label: { de: "Ein Automobil schenken und am Abend kurz vorbeikommen (2.500 $)", en: "Give him an automobile and drop by briefly in the evening (2,500 $)" }
+      result:
+        de: Das Automobil steht am Morgen vor der Tür, mit Schleife. Jacob kommt um neun, als der Kuchen schon gegessen ist. Thomas bedankt sich für das Auto. Für den Abend nicht.
+        en: The automobile stands at the door in the morning, with a bow. Jacob arrives at nine, when the cake has already been eaten. Thomas thanks him for the car. Not for the evening.
+      requires: { minCash: 2500 }
+      effects: { cash: -2500, thomas: 3 }
+      appointments: 0
+    - id: arbeit
+      label: { de: "Die Sitzung am Sonntag findet trotzdem statt", en: "The Sunday meeting goes ahead anyway" }
+      result:
+        de: 'Jacob sitzt den Sonntag im Büro. Ruth deckt für drei. Thomas sagt am Abend nur: „Ist gut, Vater. Ich kenne es nicht anders.“'
+        en: Jacob spends the Sunday in the office. Ruth sets the table for three. In the evening Thomas only says, "It's fine, Father. I've never known it otherwise."
+      effects: { thomas: -15, ruth: -15, production: 0.05 }
+      appointments: 0
+      default: true
+
+- id: k3_clara_freundin
+  marked: [eli_waechter]
+  delay: 0
+  chance: 0.3
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Clara und die Tochter des Wächters
+    en: Clara and the Watchman's Daughter
+  text:
+    de: >-
+      Clara ist sechzehn und will ihre Freundin mit auf das Mädchenpensionat in Hallstead
+      nehmen: Eli Wards Tochter, klüger als alle in ihrer Klasse und so arm, dass sie im
+      Winter dieselben Schuhe trägt wie im Sommer. Die Vandermeer-Mädchen haben schon
+      gefragt, ob die Harlans jetzt auch Dienstboten zur Schule schicken.
+    en: >-
+      Clara is sixteen and wants to take her friend with her to the girls' boarding school
+      in Hallstead: Eli Ward's daughter, cleverer than anyone in her class and so poor she
+      wears the same shoes in winter as in summer. The Vandermeer girls have already asked
+      whether the Harlans now send servants to school too.
+  choices:
+    - id: beide
+      label: { de: "Das Schulgeld für beide zahlen (2.000 $)", en: "Pay the fees for both (2,000 $)" }
+      result:
+        de: Die beiden Mädchen fahren zusammen mit dem Zug nach Hallstead. Eli steht am Bahnsteig und hält den Hut in beiden Händen. Clara schreibt, die Vandermeer-Mädchen seien jetzt sehr höflich zu ihr. Zu ihrer Freundin nicht.
+        en: The two girls take the train to Hallstead together. Eli stands on the platform holding his hat in both hands. Clara writes that the Vandermeer girls are very polite to her now. Not to her friend.
+      requires: { minCash: 2000 }
+      effects: { cash: -2000, ruth: 5 }  # TODO-Effekt: clara: +12, reputation: { workers: +1 }, standing: -1
+    - id: stipendium
+      label: { de: "Ein Stipendium für Arbeiterkinder stiften, mit Prüfung (3.500 $)", en: "Endow a scholarship for workers' children, with an exam (3,500 $)" }
+      result:
+        de: Eli Wards Tochter besteht die Prüfung als Beste. Mit ihr fahren drei andere Kinder aus Okara. Clara sagt, das sei gerecht, aber nicht das, worum sie gebeten habe.
+        en: Eli Ward's daughter passes the exam top of the list. Three other children from Okara go with her. Clara says that is fair, but not what she asked for.
+      requires: { minCash: 3500 }
+      effects: { cash: -3500 }  # TODO-Effekt: clara: +5, reputation: { workers: +3 }, legacy: +1
+    - id: nein
+      label: { de: "„Jeder geht auf die Schule, die zu ihm passt.“", en: "\"Everyone goes to the school that suits them.\"" }
+      result:
+        de: Clara fährt allein nach Hallstead. Am Bahnsteig sagt sie kein Wort zu Jacob. Sie schreibt den ganzen Winter nur ihrer Mutter.
+        en: Clara travels to Hallstead alone. On the platform she says not a word to Jacob. All winter she writes only to her mother.
+      effects: { ruth: -10, strength: -5 }  # TODO-Effekt: clara: -15
+      appointments: 0
+      default: true
+
+- id: k3_silas_turm
+  visitor: silas
+  marked: [silas_fair]
+  delay: 0
+  chance: 0.35
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Der alte Turm wird abgerissen
+    en: The Old Rig Is Coming Down
+  text:
+    de: >-
+      Silas ist vierundsechzig, sein Bart ist weiß und dünn, seine Stimme so laut wie
+      immer. Am Salt Hill reißen sie die letzten Holztürme ab, auch den, auf dem er und
+      Jacob die erste Quelle gebohrt haben. „Am Samstag kommt die Abrissfirma, Junge.
+      Ich dachte, du willst dabei sein. Oder du schickst einen von deinen Herren mit
+      Zylinder, der aufschreibt, wie viel das Holz bringt.“
+    en: >-
+      Silas is sixty-four, his beard white and thin, his voice as loud as ever. At Salt
+      Hill they are tearing down the last wooden derricks, including the one on which he
+      and Jacob drilled the first well. "The wreckers come Saturday, boy. I thought you'd
+      want to be there. Or you send one of your gentlemen in a top hat to write down what
+      the timber fetches."
+  choices:
+    - id: hinfahren
+      label: { de: "Am Samstag hinfahren (2 Termine)", en: "Drive out on Saturday (2 appointments)" }
+      result:
+        de: Jacob und Silas sitzen auf einem Stapel Bretter und sehen zu, wie der Turm fällt. Silas zieht eine Flasche hervor. Es ist Samstag, nicht Sonntag. Jacob sagt nichts dazu und trinkt mit.
+        en: Jacob and Silas sit on a pile of planks and watch the derrick fall. Silas pulls out a bottle. It's Saturday, not Sunday. Jacob says nothing and drinks with him.
+      effects: { strength: 15 }
+      appointments: 2
+    - id: kaufen
+      label: { de: "Den Turm kaufen und stehen lassen (1.500 $)", en: "Buy the rig and leave it standing (1,500 $)" }
+      result:
+        de: Der Turm bleibt stehen, allein auf dem leeren Hügel. Silas lacht, bis er husten muss. „Ein Denkmal. Für einen Bohrturm. Du bist wirklich reich geworden, Junge.“
+        en: The derrick stays standing, alone on the empty hill. Silas laughs until he coughs. "A monument. To a derrick. You really have got rich, boy."
+      requires: { minCash: 1500 }
+      effects: { cash: -1500, strength: 5 }  # TODO-Effekt: legacy: +1
+      appointments: 0
+    - id: nein
+      label: { de: "„Ich kann am Samstag nicht.“", en: "\"I can't on Saturday.\"" }
+      result:
+        de: Silas nickt und setzt die Mütze auf. Am Montag liegt ein Stück Seil auf Jacobs Schreibtisch, ausgefranst, ohne Zettel. Jacob weiß, von welchem Turm.
+        en: Silas nods and puts on his cap. On Monday a piece of cable lies on Jacob's desk, frayed, without a note. Jacob knows from which rig.
+      effects: { strength: -15 }
+      appointments: 0
+      default: true
+
+- id: k3_portraet_flur
+  marked: [k3_portraet_allein]
+  delay: 2
+  chance: 0.5
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Der Herr im Flur
+    en: The Gentleman in the Hall
+  text:
+    de: >-
+      Jacob kommt spät nach Hause und findet Clara im Flur vor seinem Porträt, im
+      Nachthemd, mit verschränkten Armen. „Wo sind deine Hände, Papa? Mama sagt, du hast
+      früher Seile gespleißt. Auf dem Bild sieht es aus, als hättest du nie etwas
+      angefasst.“
+    en: >-
+      Jacob comes home late and finds Clara in the hall in front of his portrait, in her
+      nightgown, arms folded. "Where are your hands, Papa? Mama says you used to splice
+      cable. In the picture it looks as though you never touched anything."
+  choices:
+    - id: uebermalen
+      label: { de: "Den Maler zurückholen – die Hände sollen sichtbar sein (1.500 $)", en: "Call the painter back – the hands are to show (1,500 $)" }
+      result:
+        de: Der Maler kommt und malt die Hände, murrend. Sie sind zu groß für den Anzug. Clara bleibt jeden Morgen kurz vor dem Bild stehen.
+        en: The painter comes and paints the hands, grumbling. They are too big for the suit. Clara stops briefly before the picture every morning.
+      requires: { minCash: 1500 }
+      effects: { cash: -1500, ruth: 5 }  # TODO-Effekt: clara: +10
+    - id: erzaehlen
+      label: { de: "Sich zu ihr setzen und vom Salt Hill erzählen", en: "Sit down with her and tell her about Salt Hill" }
+      result:
+        de: Sie sitzen auf der Treppe bis nach Mitternacht. Clara fragt nach dem Brand, nach Silas, nach dem Abschlag des Trusts. Bei der letzten Frage weicht Jacob aus. Sie merkt es.
+        en: They sit on the stairs past midnight. Clara asks about the fire, about Silas, about the Trust's discount. At the last question Jacob evades. She notices.
+      effects: { strength: 10, ruth: 5 }  # TODO-Effekt: clara: +8
+      appointments: 2
+    - id: bett
+      label: { de: "„Es ist spät, Clara. Ins Bett.“", en: "\"It's late, Clara. Bed.\"" }
+      result:
+        de: 'Clara geht. Am nächsten Morgen hängt ein Zettel am Rahmen, in ihrer Schrift: „Der Herr im Flur“. Die Dienstboten lassen ihn hängen, bis Jacob ihn selbst abnimmt.'
+        en: 'Clara goes. Next morning a note hangs on the frame in her hand: "The gentleman in the hall". The servants leave it until Jacob takes it down himself.'
+      effects: { strength: -5 }  # TODO-Effekt: clara: -8
+      appointments: 0
+      default: true
+
+# Briefe-Garantie in Kapitel 3: Persönliches, wiederkehrend.
+- id: k3_brief_kohleprovinz
+  mail: personal
+  once: false
+  cooldown: 4
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.25
+  title:
+    de: Ein Brief aus den Kohleprovinzen
+    en: A Letter from the Coal Provinces
+  text:
+    de: >-
+      Ein Brief aus der Bergbaustadt, in der Jacob aufgewachsen ist, auf liniertem
+      Papier. Jemand, der sich als Vetter vorstellt, schreibt, die Grube werde
+      geschlossen, die Männer seien ohne Arbeit, die Witwen ohne Kohle. Er bittet um
+      nichts. Er erwähnt nur, dass Jacobs Vater auf dem Friedhof neben der Halde liegt.
+    en: >-
+      A letter from the mining town where Jacob grew up, on ruled paper. Someone
+      introducing himself as a cousin writes that the pit is closing, the men are out of
+      work, the widows without coal. He asks for nothing. He only mentions that Jacob's
+      father lies in the cemetery beside the slag heap.
+  choices:
+    - id: schicken
+      label: { de: "Geld für Kohle und das Grab schicken (1.000 $)", en: "Send money for coal and the grave (1,000 $)" }
+      result:
+        de: 'Ein halbes Jahr später kommt ein Foto: ein neuer Grabstein, ein Kohlenwagen davor, Kinder darauf. Jacob stellt es nicht auf den Schreibtisch. Er trägt es in der Weste.'
+        en: 'Half a year later a photograph arrives: a new gravestone, a coal wagon before it, children on top. Jacob doesn''t put it on his desk. He carries it in his waistcoat.'
+      requires: { minCash: 1000 }
+      effects: { cash: -1000, strength: 5 }
+    - id: ablegen
+      label: { de: "Den Brief zu den anderen legen", en: "Put the letter with the others" }
+      result:
+        de: Die Schublade mit den Briefen aus den Kohleprovinzen klemmt inzwischen.
+        en: The drawer with the letters from the coal provinces sticks by now.
+      appointments: 0
+      default: true

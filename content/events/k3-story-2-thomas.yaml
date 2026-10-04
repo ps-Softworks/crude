@@ -1,0 +1,644 @@
+# Kapitel 3 – Story-Bogen Thomas im Unternehmen oder nicht (Phase 4, Story-Bibel §7 B).
+# Entwurf – Philipp überarbeitet. Alle Texte hier sind Entwürfe von Claude.
+#
+# Thomas ist 20–23. Er kommt zurück aus dem Osten, mit Ideen zu Marke und Automobil, die
+# Jacob für Spielerei hält und Margaret Crane nicht. Jacob will einen Nachfolger, Thomas
+# einen Vater. Alle Ereignisse nur in Kapitel 3 (minChapter/maxChapter); Runden 1–16.
+#
+#   R1–2   k3_thomas_heimkehr        Wer holt ihn am Bahnhof ab?
+#   R3–6   k3_thomas_weg             Schlüsselszene: Firma / Felder / eigener Weg / zwingen
+#          k3_thomas_weg_fremd       dieselbe Wahl, wenn Jacob Thomas' Geburt verpasst hat
+#   R8+    k3_thomas_idee            (thomas_firma) Straßenkarten und Plakate
+#          k3_thomas_feld            (thomas_feld) Thomas auf dem Bohrturm
+#          k3_thomas_brief           (thomas_eigener_weg) Brief von Crane Eastern
+#          k3_thomas_gezwungen_folge (thomas_gezwungen) Der Rat misstraut dem Sohn
+#   R8+    k3_thomas_evelyn          Vandermeer-Ball: Evelyn Crane (Heiratssaat)
+#   R12+   k3_thomas_bruch           (thomas_gekraenkt, bei Harlan Oil) Thomas geht – Saat „Rivale“
+#          k3_thomas_bruch_crane     (thomas_gekraenkt + thomas_eigener_weg) Er verlässt Crane Eastern
+#                                    und gründet selbst – ein Rivale beider Häuser
+#
+# Ausgänge für spätere Kapitel (content/relevance.yaml): thomas_firma, thomas_feld,
+# thomas_eigener_weg, thomas_gezwungen, thomas_bruch, thomas_versoehnt_k3, thomas_abteilung,
+# thomas_benutzt, thomas_teilhaber, heirat_crane_saat, heirat_crane_verboten.
+#
+# Anknüpfung Kapitel 1: geburt_verpasst → k3_thomas_weg_fremd.
+# Anknüpfung Kapitel 2 (nach Merge von phase4/inhalte-k2-story nachtragen):
+#   thomas_internat / thomas_felder → eigene Fassungen von k3_thomas_weg (Ostküste oder Turm)
+#   thomas_buero / thomas_ferngehalten → k3_thomas_idee (er kennt die Firma / er kennt sie nicht)
+#   thomas_wahrheit / thomas_geschont → Werte des Erben (heirValues)
+#   zs2_thomas_college / zs2_thomas_kein_college (Block A) → Text von k3_thomas_heimkehr
+# WUNSCH (Story-Bibel §10): Silhouette nach Alter – Thomas steht bis dahin als „kind“ in
+# content/figures.yaml, obwohl er hier 20 ist. Effekte heirValues, boardLoyalty, brand.
+
+# Thomas kommt zurück. Gealtertes Detail: Er ist größer als Jacob.
+- id: k3_thomas_heimkehr
+  title:
+    de: Der Mittagszug aus dem Osten
+    en: The Noon Train from the East
+  text:
+    de: >-
+      Thomas kommt mit dem Mittagszug. Er ist zwanzig, trägt einen Anzug aus Hallstead
+      und einen Koffer voller Bücher, und er ist inzwischen einen Fingerbreit größer
+      als sein Vater. Die Ratssitzung ist auf zwölf Uhr angesetzt. Ruth fragt beim
+      Frühstück, wer zum Bahnhof fährt, und sieht dabei nicht von der Zeitung auf.
+    en: >-
+      Thomas arrives on the noon train. He is twenty, wears a Hallstead suit and carries
+      a trunk full of books, and he is now a finger's breadth taller than his father.
+      The board meeting is set for twelve o'clock. At breakfast Ruth asks who is going
+      to the station, without looking up from the newspaper.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 1, maxRound: 2 }
+  certain: true
+  choices:
+    - id: selbst
+      label: { de: "Selbst fahren – die Sitzung verschieben", en: "Go himself – postpone the meeting" }
+      result:
+        de: >-
+          Thomas steht auf dem Bahnsteig und sucht die Kutsche, nicht den Vater. Als er
+          Jacob sieht, bleibt er einen Moment stehen. Dann lacht er. Auf der Heimfahrt
+          reden sie über nichts, eine ganze Stunde lang.
+        en: >-
+          Thomas stands on the platform looking for the carriage, not his father. When he
+          sees Jacob he stops for a moment. Then he laughs. On the drive home they talk
+          about nothing for a whole hour.
+      effects: { thomas: 15, strength: -5 } # TODO-Effekt: boardLoyalty: { vandermeer: -5 }
+      sharp: true
+    - id: ruth
+      label: { de: "Ruth fahren lassen – die Sitzung geht vor", en: "Let Ruth go – the meeting comes first" }
+      result:
+        de: >-
+          Ruth und Thomas kommen lachend zur Tür herein. Als Jacob am Abend dazukommt,
+          hören sie auf zu lachen, nicht unfreundlich. Einfach so.
+        en: >-
+          Ruth and Thomas come through the door laughing. When Jacob joins them in the
+          evening, they stop laughing – not unkindly. Just so.
+      effects: { thomas: -15, ruth: 5 }
+    - id: kutscher
+      label: { de: "Den Kutscher schicken", en: "Send the coachman" }
+      result:
+        de: >-
+          Der Kutscher bringt den Koffer und einen Gruß. Thomas ist zu Fuß gegangen, sagt
+          er, über die Felder. Er wollte sehen, was aus Salt Hill geworden ist.
+        en: >-
+          The coachman brings the trunk and a greeting. Thomas walked, he says, across the
+          fields. He wanted to see what has become of Salt Hill.
+      effects: { thomas: -20 }
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Schlüsselszene: Was wird Thomas? (Jacob war bei der Geburt.)
+- id: k3_thomas_weg
+  visitor: thomas
+  draft: true
+  title:
+    de: „Schenk mir keine Abteilung“
+    en: '"Don''t Give Me a Department"'
+  text:
+    de: >-
+      Thomas sitzt auf dem Stuhl, auf dem sonst die Bankiers sitzen, und hält sich zu
+      gerade. Er hat Pläne mitgebracht: Tankstellen mit einem Zeichen, das man von der
+      Straße aus erkennt, Karten für Automobilisten. „Du hast mir beigebracht, dass man
+      nichts geschenkt bekommt. Also schenk mir keine Abteilung.“ Margaret Crane hat ihm
+      geschrieben, sagt er. Er sagt es so, dass Jacob es hören muss.
+    en: >-
+      Thomas sits in the chair where the bankers usually sit and holds himself too
+      straight. He has brought plans: filling stations with a sign you can recognise
+      from the road, maps for motorists. "You taught me nobody gets anything for free.
+      So don't give me a department." Margaret Crane has written to him, he says. He
+      says it so that Jacob has to hear it.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 3, maxRound: 6 }
+  notMarked: [geburt_verpasst]
+  certain: true
+  choices:
+    - id: firma
+      label: { de: "Ganz unten im Vertrieb anfangen lassen", en: "Have him start at the bottom in sales" }
+      result:
+        de: >-
+          Thomas bekommt einen Schreibtisch im Keller neben den Frachtbriefen. Er ist am
+          ersten Tag um sechs da. Jacob erfährt es vom Pförtner, nicht von ihm.
+        en: >-
+          Thomas gets a desk in the basement next to the bills of lading. On the first day
+          he is in at six. Jacob learns it from the porter, not from him.
+      effects: { thomas: 10 } # TODO-Effekt: heirValues: { thomas: { business: +1, ambition: +1 } }
+      marks: [thomas_firma]
+    - id: feld
+      label: { de: "Ihn auf die Felder schicken, zu den Bohrtrupps", en: "Send him to the fields, to the drilling crews" }
+      result:
+        de: >-
+          „Wie du damals“, sagt Thomas und weiß nicht, ob er sich freuen soll. Am Ende der
+          ersten Woche hat er Blasen an den Händen und einen Spitznamen, den er niemandem verrät.
+        en: >-
+          "Like you back then," says Thomas, unsure whether to be glad. By the end of the
+          first week he has blistered hands and a nickname he tells no one.
+      effects: { thomas: 10 } # TODO-Effekt: heirValues: { thomas: { loyalty: +1, moral: +1 } }
+      marks: [thomas_feld]
+    - id: eigener_weg
+      label: { de: "„Geh, wohin du willst. Auch zu Margaret.“", en: "\"Go wherever you like. Even to Margaret.\"" }
+      result:
+        de: >-
+          Thomas starrt ihn an, als hätte er mit allem gerechnet außer damit. Er nimmt die
+          Stelle bei Crane Eastern. Zum Abschied umarmt er seinen Vater, ungeschickt, wie
+          man jemanden umarmt, den man lange nicht umarmt hat.
+        en: >-
+          Thomas stares at him as if he had expected anything but this. He takes the post
+          at Crane Eastern. On leaving he hugs his father, awkwardly, the way you hug
+          someone you have not hugged in a long time.
+      effects: { thomas: 15 } # TODO-Effekt: heirValues: { thomas: { ambition: +2, loyalty: -1 } }, rival: { margaret: { trust: +5 } }
+      marks: [thomas_eigener_weg]
+    - id: zwingen
+      label: { de: "„Montag fängst du als mein Stellvertreter an. Ende.“", en: "\"Monday you start as my deputy. That's that.\"" }
+      result:
+        de: >-
+          Thomas faltet seine Pläne zusammen, sehr ordentlich. „Ja, Vater.“ Er hat ihn
+          nie zuvor Vater genannt. Er hat immer Dad gesagt.
+        en: >-
+          Thomas folds his plans away, very neatly. "Yes, Father." He has never called him
+          Father before. He always said Dad.
+      effects: { thomas: -20 } # TODO-Effekt: heirValues: { thomas: { loyalty: +1, ambition: -2 } }
+      marks: [thomas_gezwungen]
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Schlüsselszene – Fassung fremd: Jacob hat die Geburt verpasst (Kapitel 1). Thomas sagt „Sir“.
+- id: k3_thomas_weg_fremd
+  visitor: thomas
+  draft: true
+  title:
+    de: „Sir“
+    en: '"Sir"'
+  text:
+    de: >-
+      Thomas meldet sich bei der Sekretärin an wie ein Geschäftspartner und wartet, bis
+      er hereingerufen wird. „Sir“, sagt er. Seine Mutter hat ihm einmal erzählt, wo
+      Jacob war, als er geboren wurde. Er erwähnt es nicht. Er legt einen Brief von
+      Margaret Crane auf den Tisch, ein Angebot, und daneben seine eigenen Pläne für
+      Tankstellen. „Ich wollte, dass Sie beides sehen, bevor ich mich entscheide.“
+    en: >-
+      Thomas has the secretary announce him like a business partner and waits to be
+      called in. "Sir," he says. His mother once told him where Jacob was when he was
+      born. He does not mention it. He lays a letter from Margaret Crane on the desk, an
+      offer, and beside it his own plans for filling stations. "I wanted you to see both
+      before I decide."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 3, maxRound: 6 }
+  marked: [geburt_verpasst]
+  certain: true
+  choices:
+    - id: firma
+      label: { de: "„Bleib. Fang im Vertrieb an.“", en: "\"Stay. Start in sales.\"" }
+      result:
+        de: Thomas nickt knapp. „Wie Sie wünschen, Sir.“ Er bleibt. Ob wegen Jacob oder wegen der Pläne, sagt er nicht.
+        en: Thomas nods briefly. "As you wish, sir." He stays. Whether for Jacob or for the plans, he does not say.
+      effects: { thomas: 5, strength: -10 }
+      marks: [thomas_firma]
+    - id: feld
+      label: { de: "Ihn zu den Bohrtrupps schicken", en: "Send him to the drilling crews" }
+      result:
+        de: >-
+          Thomas geht, ohne zu widersprechen. Die Trupps erzählen ihm Geschichten über
+          seinen Vater, die er nicht kennt. Manche davon stimmen.
+        en: >-
+          Thomas goes without arguing. The crews tell him stories about his father he has
+          never heard. Some of them are true.
+      effects: { thomas: 10 }
+      marks: [thomas_feld]
+    - id: eigener_weg
+      label: { de: "„Nimm Margarets Angebot. Es ist gut.“", en: "\"Take Margaret's offer. It's a good one.\"" }
+      result:
+        de: >-
+          Thomas sieht ihn lange an. „Das ist das Erste, was Sie mir je geraten haben.“ Er
+          nimmt das Angebot an. Er sagt immer noch Sir, aber leiser.
+        en: >-
+          Thomas looks at him a long time. "That is the first advice you have ever given
+          me." He takes the offer. He still says sir, but more quietly.
+      effects: { thomas: 15 }
+      marks: [thomas_eigener_weg]
+    - id: zwingen
+      label: { de: "„Du bist ein Harlan. Du arbeitest für Harlan Oil.“", en: "\"You are a Harlan. You work for Harlan Oil.\"" }
+      result:
+        de: Thomas legt Margarets Brief zurück in die Tasche. „Dann bin ich das wohl.“ Es klingt nicht nach Zustimmung.
+        en: Thomas puts Margaret's letter back in his pocket. "Then I suppose I am." It does not sound like agreement.
+      effects: { thomas: -25 }
+      marks: [thomas_gezwungen]
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Nachwirkung: Thomas ist in der Firma und kommt mit einer Idee.
+- id: k3_thomas_idee
+  visitor: thomas
+  draft: true
+  title:
+    de: Eine Karte für Automobilisten
+    en: A Map for Motorists
+  text:
+    de: >-
+      Thomas breitet eine Straßenkarte über Jacobs Tisch: Cordova, jede Landstraße, und
+      alle dreißig Meilen ein kleines rotes Zeichen. „Wir verschenken die Karte. Jeder
+      Automobilist weiß dann, wo er Harlan-Benzin bekommt, bevor er überhaupt losfährt.“
+      Er hat die Druckkosten ausgerechnet, Spalte für Spalte, ordentlich wie seine Mutter. Margaret
+      Crane, sagt er, plane etwas Ähnliches.
+    en: >-
+      Thomas spreads a road map across Jacob's desk: Cordova, every country road, and
+      every thirty miles a small red sign. "We give the map away. Every motorist knows
+      where to get Harlan gasoline before he even sets out." He has worked out the printing
+      costs, column by column, as orderly as his mother. Margaret Crane, he says, is planning
+      something similar.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 8 }
+  marked: [thomas_firma]
+  delay: 2
+  certain: true
+  choices:
+    - id: foerdern
+      label: { de: "Ihm das Geld geben – unter seinem Namen (3.000 $)", en: "Give him the money – under his name (3,000 $)" }
+      result:
+        de: >-
+          Die Karten liegen nach drei Monaten in jedem Hotel von Port Ellis. Unten in der
+          Ecke steht klein: „Entworfen von T. Harlan“. Thomas tut so, als hätte er es
+          nicht bemerkt.
+        en: >-
+          After three months the maps lie in every hotel in Port Ellis. In the bottom
+          corner, small: "Designed by T. Harlan". Thomas pretends not to have noticed.
+      requires: { minCash: 3000 }
+      effects: { cash: -3000, thomas: 15, price: 0.1 } # TODO-Effekt: brand: { cordova: +1 }, heirValues: { thomas: { business: +1 } }
+    - id: spielerei
+      label: { de: "„Spielerei. Wir verkaufen Öl, keine Landkarten.“", en: "\"A toy. We sell oil, not maps.\"" }
+      result:
+        de: >-
+          Thomas rollt die Karte wieder zusammen. Ein halbes Jahr später liegt eine
+          ähnliche Karte in jedem Hotel von Port Ellis. Das Zeichen darauf gehört Crane Eastern.
+        en: >-
+          Thomas rolls the map up again. Half a year later a similar map lies in every
+          hotel in Port Ellis. The sign on it belongs to Crane Eastern.
+      effects: { thomas: -15 } # TODO-Effekt: brand: { cordova: -1 }, rival: { margaret: { aggression: +5 } }
+      marks: [thomas_gekraenkt]
+      default: true
+    - id: uebernehmen
+      label: { de: "Die Idee übernehmen – unter Jacobs Namen (3.000 $)", en: "Take the idea – under Jacob's name (3,000 $)" }
+      result:
+        de: >-
+          Die Karten werden gedruckt, mit Jacobs Bild auf der Rückseite. Sie verkaufen
+          gut. Thomas bedankt sich beim Abendessen, höflich wie bei einem Fremden.
+        en: >-
+          The maps are printed, with Jacob's portrait on the back. They sell well. Thomas
+          thanks him at dinner, politely, as one thanks a stranger.
+      requires: { minCash: 3000 }
+      effects: { cash: -3000, thomas: -20, price: 0.1 } # TODO-Effekt: brand: { cordova: +1 }
+      marks: [thomas_gekraenkt]
+
+# Nachwirkung: Thomas ist bei den Bohrtrupps.
+- id: k3_thomas_feld
+  title:
+    de: Schwarze Hände
+    en: Black Hands
+  text:
+    de: >-
+      An Bohrstelle Neun schlägt das Gestänge zurück. Thomas zieht einen Mann aus dem
+      Schlamm, bevor der Kessel nachgibt, und verbrennt sich dabei beide Unterarme. Am
+      Abend sitzt er mit Verbänden am Familientisch und isst mit der linken Hand. Die
+      Trupps reden von nichts anderem. Ruth sieht Jacob über den Tisch hinweg an.
+    en: >-
+      At well site nine the rods kick back. Thomas drags a man out of the mud before the
+      boiler gives, burning both forearms. In the evening he sits at the family table in
+      bandages, eating left-handed. The crews talk of nothing else. Ruth looks at Jacob
+      across the table.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 8 }
+  marked: [thomas_feld]
+  delay: 2
+  certain: true
+  choices:
+    - id: vormann
+      label: { de: "Ihn zum Vormann machen", en: "Make him foreman" }
+      result:
+        de: >-
+          Die Trupps arbeiten für Thomas schneller als für jeden Vormann vor ihm. Ruth
+          spricht drei Tage nicht mit Jacob. Dann fragt sie, ob die Kessel geprüft werden.
+        en: >-
+          The crews work faster for Thomas than for any foreman before him. Ruth does not
+          speak to Jacob for three days. Then she asks whether the boilers are being inspected.
+      effects: { thomas: 15, ruth: -10, production: 0.05 } # TODO-Effekt: reputation: { workers: +2 }
+    - id: buero
+      label: { de: "Ihn ins Büro holen – zu gefährlich", en: "Bring him into the office – too dangerous" }
+      result:
+        de: >-
+          „Du warst doch auch draußen“, sagt Thomas. Er geht ins Büro. Er hängt seinen
+          Helm neben die Tür, wo er ihn jeden Morgen sieht.
+        en: >-
+          "You were out there too," says Thomas. He goes into the office. He hangs his
+          helmet beside the door, where he sees it every morning.
+      effects: { thomas: -15, ruth: 10 }
+      marks: [thomas_gekraenkt]
+      default: true
+
+# Nachwirkung: Thomas ist zu Crane Eastern gegangen.
+- id: k3_thomas_brief
+  mail: personal
+  deadline: 2
+  title:
+    de: Briefpapier von Crane Eastern
+    en: Crane Eastern Letterhead
+  text:
+    de: >-
+      Thomas schreibt auf dem Briefpapier von Crane Eastern, Hallstead. Margaret habe
+      ihm die Marke für den Süden gegeben, schreibt er. Sie sage, er habe den Blick
+      seines Vaters für Zahlen und nicht dessen Laune. Im letzten Absatz erwähnt er,
+      dass Crane Eastern im Frühjahr seine Preise in Cordova senkt. Er erwähnt es so,
+      als wisse er nicht, was er da schreibt. Er weiß es.
+    en: >-
+      Thomas writes on Crane Eastern letterhead, Hallstead. Margaret has given him the
+      brand for the South, he writes. She says he has his father's eye for figures and
+      not his temper. In the last paragraph he mentions that Crane Eastern will cut its
+      prices in Cordova in the spring. He mentions it as though he does not know what he
+      is writing. He knows.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  marked: [thomas_eigener_weg]
+  delay: 3
+  certain: true
+  rival: crane
+  choices:
+    - id: warm
+      label: { de: "Herzlich antworten – und den Preis-Absatz überlesen", en: "Reply warmly – and ignore the price paragraph" }
+      result:
+        de: >-
+          Jacob schreibt vier Seiten, mehr als je zuvor an irgendwen. Im Frühjahr senkt
+          Crane Eastern die Preise, und Harlan Oil ist nicht vorbereitet.
+        en: >-
+          Jacob writes four pages, more than he has ever written to anyone. In spring
+          Crane Eastern cuts its prices, and Harlan Oil is unprepared.
+      effects: { thomas: 15, price: -0.2 }
+      default: true
+    - id: nutzen
+      label: { de: "Den Hinweis nutzen und Thomas nach mehr fragen", en: "Use the hint and ask Thomas for more" }
+      result:
+        de: >-
+          Jacob senkt seine Preise einen Monat vor Crane Eastern. Thomas antwortet auf den
+          nächsten Brief nicht mehr. Margaret schon: „Er hat es Ihnen geschenkt, Harlan.
+          Sie haben es sich genommen.“
+        en: >-
+          Jacob cuts his prices a month before Crane Eastern. Thomas does not answer the
+          next letter. Margaret does: "He gave it to you, Harlan. You took it."
+      effects: { thomas: -25, price: 0.2 } # TODO-Effekt: rival: { margaret: { relation: -15 } }
+      marks: [thomas_benutzt]
+    - id: zurueck
+      label: { de: "Ihn zurückbefehlen", en: "Order him home" }
+      result:
+        de: Thomas antwortet mit einer Zeile, sehr sauber geschrieben. „Ich bin kein Angestellter von Harlan Oil, Sir.“
+        en: Thomas answers with one line, very neatly written. "I am not an employee of Harlan Oil, sir."
+      effects: { thomas: -20 }
+      marks: [thomas_gekraenkt]
+
+# Nachwirkung: Thomas wurde gezwungen. Der Rat sieht, was Jacob nicht sehen will.
+- id: k3_thomas_gezwungen_folge
+  title:
+    de: Ein Fehler im Frachtbuch
+    en: An Error in the Freight Book
+  text:
+    de: >-
+      Thomas hat einen Frachtvertrag mit der Thorne-Linie unterschrieben, ohne die
+      Klausel auf Seite vier zu lesen. Oder er hat sie gelesen. Harlan Oil zahlt ein
+      Jahr lang zu viel. Im Aufsichtsrat sagt Ambrose Vandermeer nur: „Ein Sohn ist
+      keine Qualifikation, Mr. Harlan.“ Thomas sitzt dabei und sieht aus dem Fenster.
+    en: >-
+      Thomas has signed a freight contract with the Thorne line without reading the
+      clause on page four. Or he read it. Harlan Oil will overpay for a year. On the
+      board Ambrose Vandermeer says only: "A son is no qualification, Mr. Harlan."
+      Thomas sits there looking out of the window.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  marked: [thomas_gezwungen]
+  delay: 3
+  certain: true
+  rival: thorne
+  choices:
+    - id: decken
+      label: { de: "Ihn vor dem Rat decken und den Vertrag zurückkaufen (2.500 $)", en: "Cover for him before the board and buy back the contract (2,500 $)" }
+      result:
+        de: >-
+          Jacob nimmt die Schuld auf sich, vor allen. Thomas sagt hinterher nichts. Aber
+          er kommt am nächsten Morgen pünktlich, und am übernächsten auch.
+        en: >-
+          Jacob takes the blame himself, in front of everyone. Thomas says nothing
+          afterwards. But he is on time the next morning, and the morning after.
+      requires: { minCash: 2500 }
+      effects: { cash: -2500, thomas: 10 } # TODO-Effekt: boardLoyalty: { vandermeer: -10 }, control: -2
+    - id: zurechtweisen
+      label: { de: "Ihn vor dem Rat zurechtweisen", en: "Reprimand him before the board" }
+      result:
+        de: >-
+          Jacob spricht fünf Minuten. Vandermeer nickt zufrieden. Thomas steht auf, als
+          Jacob fertig ist, und verlässt den Raum, ohne die Tür zuzuschlagen.
+        en: >-
+          Jacob speaks for five minutes. Vandermeer nods, satisfied. Thomas rises when
+          Jacob has finished and leaves the room without slamming the door.
+      effects: { thomas: -20, railTariff: 0.03 } # TODO-Effekt: boardLoyalty: { vandermeer: +5 }
+      marks: [thomas_gekraenkt]
+      default: true
+    - id: gehen_lassen
+      label: { de: "Ihn freigeben: „Geh, wohin du willst.“", en: "Release him: \"Go wherever you like.\"" }
+      result:
+        de: >-
+          Thomas sieht seinen Vater an, als sähe er ihn zum ersten Mal. Eine Woche später
+          arbeitet er bei Crane Eastern. Der Frachtvertrag bleibt, wie er ist.
+        en: >-
+          Thomas looks at his father as if seeing him for the first time. A week later he
+          is working for Crane Eastern. The freight contract stays as it is.
+      effects: { thomas: 15, railTariff: 0.03 }
+      marks: [thomas_eigener_weg]
+
+# Entwurf – Philipp überarbeitet.
+# Heiratssaat: Evelyn Crane, Margarets Tochter, auf dem Ball der Vandermeers.
+- id: k3_thomas_evelyn
+  draft: true
+  title:
+    de: Ein Walzer zu viel
+    en: One Waltz Too Many
+  text:
+    de: >-
+      Auf dem Ball der Vandermeers tanzt Thomas dreimal mit Evelyn Crane, Margarets
+      Tochter. Beim dritten Mal hört die Kapelle früher auf, als hätte jemand ein
+      Zeichen gegeben. Margaret steht am anderen Ende des Saals und hebt ihr Glas in
+      Jacobs Richtung. Cornelia Vandermeer sagt neben ihm: „Wie hübsch. Und wie praktisch.“
+    en: >-
+      At the Vandermeers' ball Thomas dances three times with Evelyn Crane, Margaret's
+      daughter. The third time the band stops early, as if someone gave a signal.
+      Margaret stands at the far end of the hall and raises her glass towards Jacob.
+      Cornelia Vandermeer says beside him: "How pretty. And how practical."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 8 }
+  chance: 0.5
+  rival: crane
+  choices:
+    - id: foerdern
+      label: { de: "Margaret zuprosten – und Evelyn zum Essen einladen", en: "Toast Margaret back – and invite Evelyn to dinner" }
+      result:
+        de: >-
+          Evelyn kommt zum Essen und widerspricht Jacob zweimal, höflich und mit Zahlen.
+          Ruth mag sie sofort. Thomas sieht seinen Vater an, als hätte er ihm etwas geschenkt.
+        en: >-
+          Evelyn comes to dinner and contradicts Jacob twice, politely and with figures.
+          Ruth likes her at once. Thomas looks at his father as if he had given him something.
+      effects: { thomas: 15, ruth: 5 } # TODO-Effekt: rival: { margaret: { trust: +10 } }
+      marks: [heirat_crane_saat]
+    - id: verbieten
+      label: { de: "Es Thomas verbieten – keine Crane in diesem Haus", en: "Forbid it – no Crane in this house" }
+      result:
+        de: >-
+          Thomas widerspricht nicht. Er geht nur nicht mehr auf Bälle, auf denen sein
+          Vater ist. Margaret schickt einen Kranz zu Ruths Geburtstag, als sei jemand gestorben.
+        en: >-
+          Thomas does not argue. He simply stops going to balls his father attends.
+          Margaret sends a wreath for Ruth's birthday, as if someone had died.
+      effects: { thomas: -20 } # TODO-Effekt: rival: { margaret: { relation: -10 } }
+      marks: [heirat_crane_verboten]
+    - id: nichts
+      label: { de: "Nichts sagen", en: "Say nothing" }
+      result:
+        de: Jacob trinkt sein Glas aus und redet mit Pettibone über Anleihen. Als er sich umdreht, sind Thomas und Evelyn nicht mehr im Saal.
+        en: Jacob drains his glass and talks bonds with Pettibone. When he turns round, Thomas and Evelyn are no longer in the hall.
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Der Bruch: Thomas wurde zu oft gekränkt. Saat „Rivale“ für Kapitel 4. Nur, solange Thomas bei Harlan Oil
+# ist – wer bei Crane Eastern arbeitet (thomas_eigener_weg), bekommt k3_thomas_bruch_crane.
+- id: k3_thomas_bruch
+  visitor: thomas
+  draft: true
+  title:
+    de: Thomas packt
+    en: Thomas Packs
+  text:
+    de: >-
+      Thomas kommt nicht zum Reden. Er kommt, um es zu sagen. Er hat Teilhaber gefunden,
+      in Hallstead, Leute mit Geld und ohne Namen, und er wird Tankstellen bauen, eigene,
+      unter eigenem Zeichen. Gegen Harlan Oil, wenn es sein muss. „Ich habe gelernt, was
+      du mir beigebracht hast“, sagt er. „Dass man nichts geschenkt bekommt. Auch keinen Vater.“
+    en: >-
+      Thomas has not come to talk. He has come to say it. He has found partners in
+      Hallstead, people with money and no names, and he will build filling stations,
+      his own, under his own sign. Against Harlan Oil, if need be. "I learned what you
+      taught me," he says. "That nobody gets anything for free. Not even a father."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 12 }
+  marked: [thomas_gekraenkt]
+  notMarked: [thomas_eigener_weg]
+  certain: true
+  choices:
+    - id: gehen
+      label: { de: "Ihn gehen lassen", en: "Let him go" }
+      result:
+        de: >-
+          Thomas nickt, als hätte er nichts anderes erwartet. An der Tür dreht er sich
+          noch einmal um, aber Jacob sieht schon in seine Papiere. Er sieht nicht, dass
+          Thomas sich umgedreht hat. Ruth sieht es.
+        en: >-
+          Thomas nods as if he expected nothing else. At the door he turns round once more,
+          but Jacob is already looking at his papers. He does not see that Thomas turned.
+          Ruth sees it.
+      effects: { thomas: -20, ruth: -10 }
+      marks: [thomas_bruch]
+      default: true
+    - id: verzeihung
+      label: { de: "Um Verzeihung bitten", en: "Ask his forgiveness" }
+      result:
+        de: >-
+          Jacob braucht drei Anläufe für den Satz. Thomas hört zu, ohne ihm zu helfen.
+          Dann setzt er sich, zum ersten Mal an diesem Tag. Er geht trotzdem nach
+          Hallstead. Aber er schreibt.
+        en: >-
+          Jacob needs three attempts at the sentence. Thomas listens without helping him.
+          Then he sits down, for the first time that day. He still goes to Hallstead. But
+          he writes.
+      effects: { thomas: 20, strength: -20 }
+      marks: [thomas_versoehnt_k3]
+      sharp: true
+    - id: abteilung
+      label: { de: "Ihm die Marke geben, die er will (5.000 $)", en: "Give him the brand he wants (5,000 $)" }
+      result:
+        de: >-
+          Thomas bleibt, mit Budget und Titel. „Jetzt hast du mir doch eine Abteilung
+          geschenkt“, sagt er. Er sagt es freundlich. Es ist trotzdem ein Vorwurf.
+        en: >-
+          Thomas stays, with a budget and a title. "So you gave me a department after
+          all," he says. He says it kindly. It is a reproach all the same.
+      requires: { minCash: 5000 }
+      effects: { cash: -5000, thomas: 10 } # TODO-Effekt: brand: { cordova: +1 }, boardLoyalty: { vandermeer: -5 }
+      marks: [thomas_abteilung]
+
+# Entwurf – Philipp überarbeitet.
+# Der Bruch – Fassung Crane Eastern: Thomas arbeitet längst bei Margaret und wurde von Jacob gekränkt
+# (Brief zurückbefohlen). Er verlässt Crane Eastern und gründet selbst. Saat „Rivale“ für Kapitel 4.
+- id: k3_thomas_bruch_crane
+  visitor: thomas
+  draft: true
+  title:
+    de: Ein eigenes Zeichen
+    en: A Sign of His Own
+  text:
+    de: >-
+      Thomas kommt unangemeldet, im Reisemantel, den Hut in der Hand. Er hat bei Crane
+      Eastern gekündigt, gestern, vor Margaret, die gelacht und ihm Glück gewünscht hat. Er
+      wird Tankstellen bauen, eigene, unter eigenem Zeichen, mit Geld aus Hallstead von
+      Leuten ohne Namen. „Margaret wollte einen Harlan, der für sie arbeitet. Du wolltest
+      einen, der zurückkommt. Ich habe keinem von euch den Gefallen getan.“ An seiner
+      Weste hängt die Uhrkette seines Großvaters. Ruth hat sie ihm gegeben, nicht Jacob.
+    en: >-
+      Thomas arrives unannounced, in a travelling coat, hat in hand. He resigned from
+      Crane Eastern yesterday, in front of Margaret, who laughed and wished him luck. He
+      will build filling stations, his own, under his own sign, with money from Hallstead
+      from people with no names. "Margaret wanted a Harlan to work for her. You wanted one
+      who would come back. I have done neither of you the favour." On his waistcoat hangs
+      his grandfather's watch chain. Ruth gave it to him, not Jacob.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 12 }
+  marked: [thomas_gekraenkt, thomas_eigener_weg]
+  certain: true
+  choices:
+    - id: gehen
+      label: { de: "Ihm Glück wünschen und es dabei lassen", en: "Wish him luck and leave it at that" }
+      result:
+        de: >-
+          „Glück“, sagt Jacob, und es klingt wie ein Geschäftsbrief. Thomas setzt den Hut
+          auf. Im Herbst steht an der Straße nach Port Ellis eine Tankstelle mit einem
+          Zeichen, das keiner kennt, zwischen einer von Harlan und einer von Crane.
+        en: >-
+          "Luck," says Jacob, and it sounds like a business letter. Thomas puts his hat on.
+          By autumn a filling station stands on the Port Ellis road under a sign no one
+          knows, between one of Harlan's and one of Crane's.
+      effects: { thomas: -20, price: -0.1 } # TODO-Effekt: rival: { thomas: neu }, brand: { cordova: -1 }
+      marks: [thomas_bruch]
+      default: true
+    - id: verzeihung
+      label: { de: "Um Verzeihung bitten – für den Brief", en: "Ask his forgiveness – for the letter" }
+      result:
+        de: >-
+          Jacob sagt, dass er ihn nicht hätte zurückbefehlen dürfen. Er sagt es einmal und
+          ohne Ausrede. Thomas setzt sich. Er baut seine Tankstellen trotzdem. Aber zum
+          Richtfest der ersten lädt er seine Eltern ein, beide.
+        en: >-
+          Jacob says he should not have ordered him home. He says it once, without excuse.
+          Thomas sits down. He builds his stations all the same. But to the topping-out of
+          the first he invites his parents, both of them.
+      effects: { thomas: 20, strength: -20 }
+      marks: [thomas_versoehnt_k3]
+      sharp: true
+    - id: zurueckholen
+      label: { de: "Ihn zurückholen: die Marke von Harlan Oil, mit Budget (5.000 $)", en: "Bring him back: Harlan Oil's brand, with a budget (5,000 $)" }
+      result:
+        de: >-
+          Thomas denkt eine Nacht darüber nach. Dann kommt er, mit seinen Plänen und zwei
+          Leuten von Crane Eastern. „Jetzt schenkst du mir doch eine Abteilung“, sagt er.
+          Margaret schickt Jacob eine Karte: „Gut gekauft, Harlan.“
+        en: >-
+          Thomas thinks it over for a night. Then he comes, with his plans and two people from
+          Crane Eastern. "So you are giving me a department after all," he says. Margaret
+          sends Jacob a card: "Well bought, Harlan."
+      requires: { minCash: 5000 }
+      effects: { cash: -5000, thomas: 10 } # TODO-Effekt: brand: { cordova: +1 }, rival: { margaret: { relation: -10 } }
+      marks: [thomas_abteilung]
+    - id: teilhaber
+      label: { de: "Still mit einsteigen – Jacobs Geld, Thomas' Zeichen (4.000 $)", en: "Buy in quietly – Jacob's money, Thomas's sign (4,000 $)" }
+      result:
+        de: >-
+          Thomas nimmt das Geld, nachdem er den Vertrag zweimal gelesen hat. Jacobs Name
+          steht nirgends. „Wenn ich dich schlage“, sagt Thomas, „verdienst du daran. Das ist
+          das Netteste, was ich dir anbieten kann.“
+        en: >-
+          Thomas takes the money after reading the contract twice. Jacob's name appears
+          nowhere. "If I beat you," says Thomas, "you'll profit from it. That's the kindest
+          thing I can offer you."
+      requires: { minCash: 4000 }
+      effects: { cash: -4000, thomas: 10 } # TODO-Effekt: investment: { thomas_tankstellen: 4000 }, rival: { thomas: neu }
+      marks: [thomas_bruch, thomas_teilhaber]

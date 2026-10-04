@@ -4,13 +4,25 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { checkArcMarks, parseArcContent } from '../src/sim/arcs';
+// 4.14 Andockpunkt: Marke und Tankstellen.
+import { checkBrandRefs, parseBrandContent } from '../src/sim/brandContent';
 import { checkChapterMarks, parseChapterContent } from '../src/sim/chapter';
+import { parseDiplomacyContent } from '../src/sim/diplomacyContent'; // 4.10 Andockpunkt
 import { formatContentError, parseEventFiles } from '../src/sim/eventContent';
 import { analyzeRelevance, checkRelevanceMarks, parseRelevanceContent, readMarks, simReadMarks } from '../src/sim/eventRelevance';
 import { parseFamilyContent } from '../src/sim/family';
+// 4.16 Andockpunkt
+import { checkHallsteadContent, parseHallsteadContent } from '../src/sim/hallsteadContent';
+import { checkKapitel3Content, parseKapitel3Content } from '../src/sim/kapitel3Content'; // 4.17 Andockpunkt
 import { parseNewspaperContent } from '../src/sim/newspaper';
 import { parseLawFiles } from '../src/sim/laws';
 import { parsePoliticsContent } from '../src/sim/politics';
+// 4.6 Andockpunkt: Texte der Raffinerie.
+import { parseRefineryContent } from '../src/sim/refineryContent';
+import { parseStocksContent } from '../src/sim/stocksContent'; // 4.8 Andockpunkt
+import { checkStaffContent, parseStaffContent } from '../src/sim/staffContent'; // 4.9 Andockpunkt
+// 4.15 Andockpunkt: Börse.
+import { parseExchangeContent } from '../src/sim/exchangeContent';
 import { loadBalance, readLawFiles } from '../src/sim/testBalance';
 import { EVENTS_DIR, readEventFiles } from '../src/sim/testEvents';
 import { parseTutorialContent } from '../src/sim/tutorial';
@@ -19,6 +31,11 @@ import { mapRefErrors } from '../src/sim/regions';
 import { parseFigureCatalog } from '../src/ui/figures';
 import { parseMapHints } from '../src/ui/tutorialMap';
 import { visitorErrors } from '../src/ui/visitors';
+// 4.7 Andockpunkt: Briefe der Fernleitungen.
+import { parsePipelineContent } from '../src/sim/bigPipelineContent';
+// 4.11 Andockpunkt: Texte für Schattenbuch (Ermittler) und Werkstatt (Forschung).
+import { checkInvestigationContent, parseInvestigationContent } from '../src/sim/investigation';
+import { parseResearchContent } from '../src/sim/research';
 
 const dir = process.argv[2] ? resolve(process.argv[2]) : EVENTS_DIR;
 const files = readEventFiles(dir);
@@ -48,7 +65,29 @@ const einstieg = parseTutorialContent('content/tutorial.yaml', readFileSync(new 
 // Wirkung der Antworten (0.2.15+3): begründete Ausnahmen.
 const wirkung = parseRelevanceContent('content/relevance.yaml', readFileSync(new URL('../content/relevance.yaml', import.meta.url), 'utf8'));
 const wirkungMarks = wirkung.content && parsed.errors.length === 0 ? checkRelevanceMarks('content/relevance.yaml', wirkung.content, events) : [];
-const errors = [...wirkung.errors, ...wirkungMarks, ...einstieg.errors, ...parsed.errors, ...zeitung.errors, ...politik.errors, ...gesetze.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks, ...sprung.errors];
+// 4.8 Andockpunkt: Aufsichtsrat, Strohmänner und Forderungen (Kapitel 2).
+const aktien = parseStocksContent('content/stocks.yaml', readFileSync(new URL('../content/stocks.yaml', import.meta.url), 'utf8'), loadBalance().stocks.board.seatsMax);
+// Rivalen-Diplomatie (4.10): Texte der Pinnwand ab Kapitel 2. // 4.10 Andockpunkt
+const diplomatie = parseDiplomacyContent('content/diplomacy.yaml', readFileSync(new URL('../content/diplomacy.yaml', import.meta.url), 'utf8'));
+const errors = [...aktien.errors, ...diplomatie.errors, ...wirkung.errors, ...wirkungMarks, ...einstieg.errors, ...parsed.errors, ...zeitung.errors, ...politik.errors, ...gesetze.errors, ...familie.errors, ...boegen.errors, ...bogenMarks, ...kapitel.errors, ...kapitelMarks, ...sprung.errors];
+
+// 4.9 Andockpunkt – Personal: Namen, Merkmale und Wörter der Personalakten, passend zu balance.yaml (staff).
+const personal = parseStaffContent('content/staff.yaml', readFileSync(new URL('../content/staff.yaml', import.meta.url), 'utf8'));
+errors.push(...personal.errors);
+if (personal.content) errors.push(...checkStaffContent('content/staff.yaml', personal.content, loadBalance()));
+
+// 4.15 Andockpunkt: Börse – Namen der Aktien aus balance.yaml, Schlagzeilen, Briefe des Maklers.
+const boerse = parseExchangeContent(
+  'content/exchange.yaml',
+  readFileSync(new URL('../content/exchange.yaml', import.meta.url), 'utf8'),
+  loadBalance().exchange.stocks.map((s) => s.id),
+);
+errors.push(...boerse.errors);
+
+// 4.17 Andockpunkt: Kapitel 3 – Texte für Seismik, Konsortium, Projekte und Stand, passend zu balance.yaml.
+const kapitel3 = parseKapitel3Content('content/kapitel3.yaml', readFileSync(new URL('../content/kapitel3.yaml', import.meta.url), 'utf8'));
+errors.push(...kapitel3.errors);
+if (kapitel3.content) errors.push(...checkKapitel3Content('content/kapitel3.yaml', kapitel3.content, loadBalance()));
 
 // Karte (0.2.15+5): ranch und unlocks in den Ereignissen müssen auf content/map.yaml zeigen.
 const karte = parsed.errors.length === 0 ? mapRefErrors(events, loadBalance().world) : [];
@@ -66,6 +105,26 @@ try {
 } catch (e) {
   errors.push({ file: 'content/tutorial.yaml', line: 1, message: (e as Error).message });
 }
+// 4.6 Andockpunkt: Raffinerie (content/refinery.yaml).
+errors.push(...parseRefineryContent('content/refinery.yaml', readFileSync(new URL('../content/refinery.yaml', import.meta.url), 'utf8')).errors);
+// 4.7 Andockpunkt: Fernleitungen (Kapitel 2) – Briefe in content/pipelines.yaml.
+errors.push(...parsePipelineContent('content/pipelines.yaml', readFileSync(new URL('../content/pipelines.yaml', import.meta.url), 'utf8')).errors);
+// 4.11 Andockpunkt: Ermittler und Forschung (ab Kapitel 2).
+{
+  const balance = loadBalance();
+  const ermittler = parseInvestigationContent('content/investigation.yaml', readFileSync(new URL('../content/investigation.yaml', import.meta.url), 'utf8'));
+  errors.push(...ermittler.errors);
+  if (ermittler.content && parsed.errors.length === 0) errors.push(...checkInvestigationContent('content/investigation.yaml', ermittler.content, balance, events));
+  errors.push(...parseResearchContent('content/research.yaml', readFileSync(new URL('../content/research.yaml', import.meta.url), 'utf8'), balance).errors);
+}
+// 4.14 Andockpunkt: Marke und Tankstellen – Texte und Querprüfung gegen balance.yaml (brand).
+const marke = parseBrandContent('content/brand.yaml', readFileSync(new URL('../content/brand.yaml', import.meta.url), 'utf8'));
+errors.push(...marke.errors);
+if (marke.content) errors.push(...checkBrandRefs('content/brand.yaml', marke.content, loadBalance()));
+// 4.16 Andockpunkt: Texte der Hallstead-Mappe und ob sie zu balance.yaml passen.
+const hallstead = parseHallsteadContent('content/hallstead.yaml', readFileSync(new URL('../content/hallstead.yaml', import.meta.url), 'utf8'));
+errors.push(...hallstead.errors);
+if (hallstead.content) errors.push(...checkHallsteadContent('content/hallstead.yaml', hallstead.content, loadBalance()));
 if (errors.length > 0) {
   for (const error of errors) console.error(formatContentError(error));
   console.error(`\n${errors.length} Fehler in ${files.length} Datei(en). Inhalte nicht in Ordnung.`);

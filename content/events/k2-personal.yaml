@@ -1,0 +1,130 @@
+# Kapitel 2 – Personal (4.9, GDD §11 und §3). Entwurf von Claude, bitte in eigener Stimme umschreiben.
+#
+# Diese Briefe kommen erst, wenn Jacob Personal hat: Die Merkzeichen setzt die Simulation
+# (src/sim/staff.ts, STAFF_MARKS), solange jemand angestellt ist bzw. solange es heiß ist:
+#   personal_sekretaerin  – eine Kraft im Vorzimmer ist angestellt
+#   personal_fixer        – ein Fixer ist angestellt
+#   fixer_hitze           – die Hitze ist hoch (ab staff.fixer.scandalFrom)
+# In Kapitel 1 gibt es kein Personal, also auch diese Briefe nicht. Weil es Briefe sind,
+# ändern sie die Würfel von Kapitel 1 nicht.
+#
+# Merkzeichen, die das Personal liest (STAFF_EVENT_MARKS), wirken am Ende der Runde, in der
+# sie gesetzt werden:
+#   personal_lob_vorzimmer – Loyalität des Vorzimmers plus (wie eine Anerkennung)
+#   personal_lob_fixer     – Loyalität des Fixers plus
+#   fixer_auftrag_brief    – der Fixer zieht los: Hitze plus (staff.fixer.eventHeat)
+#
+# Achtung Delegation: Steht die Briefart in den Richtlinien auf „Vorzimmer entscheidet“,
+# beantwortet das Vorzimmer ablaufende Briefe selbst – nach Geld und Wirkung, ohne die
+# verdeckten Folgen zu kennen.
+
+- id: k2_vorzimmer_abwerbung
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
+  mail: info
+  draft: true
+  marked: [personal_sekretaerin]
+  delay: 2
+  chance: 0.25
+  title:
+    de: Ein Angebot an Ihr Vorzimmer
+    en: An Offer to Your Front Office
+  text:
+    de: >-
+      Ein Zettel ohne Unterschrift, in der Handschrift eines Laufburschen: Bullards
+      Buchhalter hat Ihrer Kraft im Vorzimmer beim Mittagessen ein Angebot gemacht.
+      Mehr Geld, ein eigenes Büro, „und keine Briefe von Witwen“.
+    en: >-
+      An unsigned note in an errand boy's hand: Bullard's bookkeeper made your front
+      office an offer over lunch. More money, an office of their own, "and no letters
+      from widows".
+  choices:
+    - id: zulage
+      label: { de: "Eine Zulage zahlen (250 $)", en: "Pay a bonus (250 $)" }
+      result:
+        de: Am nächsten Morgen liegt die Post sortiert wie nie zuvor auf Jacobs Tisch.
+        en: The next morning the mail lies on Jacob's desk sorted as never before.
+      requires: { minCash: 250 }
+      effects: { cash: -250 }
+      marks: [personal_lob_vorzimmer]
+      appointments: 0
+    - id: abwarten
+      label: { de: "Nichts sagen", en: "Say nothing" }
+      result:
+        de: Jacob tut, als wisse er von nichts. Im Vorzimmer wird es stiller.
+        en: Jacob pretends to know nothing. The front office grows quieter.
+      appointments: 0
+      default: true
+
+- id: k2_fixer_erpresser
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
+  mail: demand
+  draft: true
+  marked: [personal_fixer]
+  delay: 1
+  chance: 0.2
+  title:
+    de: Ein Brief mit Fotografien
+    en: A Letter with Photographs
+  text:
+    de: >-
+      Ein Umschlag, darin zwei Fotografien von Jacobs Bohrplatz bei Nacht und eine
+      Forderung: 400 $ in einem Futtersack am Bahnhof, sonst gehen die Bilder an die
+      Zeitung. Wer die Bilder gemacht hat, schreibt der Absender nicht.
+    en: >-
+      An envelope with two photographs of Jacob's well site at night and a demand:
+      400 $ in a feed sack at the station, or the pictures go to the paper. The sender
+      doesn't say who took them.
+  choices:
+    - id: zahlen
+      label: { de: "Zahlen (400 $)", en: "Pay (400 $)" }
+      result:
+        de: Der Futtersack ist am nächsten Morgen fort. Die Fotografien auch – vorerst.
+        en: The feed sack is gone the next morning. So are the photographs – for now.
+      effects: { cash: -400 }
+      appointments: 0
+      default: true
+    - id: fixer
+      label: { de: "Den Sicherheitschef zum Bahnhof schicken", en: "Send the head of security to the station" }
+      result:
+        de: Am Bahnhof wartet nicht der Erpresser, sondern sein Bruder. Er wird nie wieder Fotografien machen. Im Saloon redet man darüber.
+        en: It isn't the blackmailer waiting at the station but his brother. He will never take photographs again. The saloon talks about it.
+      marks: [fixer_auftrag_brief]
+      appointments: 0
+
+- id: k2_hitze_reporterin
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
+  mail: personal
+  draft: true
+  marked: [fixer_hitze]
+  delay: 0
+  chance: 0.35
+  cooldown: 4
+  once: false
+  title:
+    de: Nora Whitlock bittet um ein Gespräch
+    en: Nora Whitlock Asks for a Word
+  text:
+    de: >-
+      Nora Whitlock schreibt, höflich wie immer: Sie arbeite an einem Artikel über die
+      „Methoden“ in Salt Hill und würde gern hören, was Mr. Harlan zu den Gerüchten über
+      seinen Sicherheitschef sagt. Sie gibt ihm eine Woche.
+    en: >-
+      Nora Whitlock writes, polite as ever: she is working on a piece about the
+      "methods" in Salt Hill and would like to hear what Mr. Harlan says about the rumours
+      concerning his head of security. She gives him a week.
+  choices:
+    - id: gespraech
+      label: { de: "Sie empfangen und alles abstreiten", en: "Receive her and deny everything" }
+      result:
+        de: Nora schreibt mit, nickt und glaubt kein Wort. Der Artikel wird vorsichtiger, als er hätte sein können.
+        en: Nora takes notes, nods and believes not a word. The piece is more careful than it might have been.
+      effects: { strength: -10, cash: -150 }
+      appointments: 1
+    - id: schweigen
+      label: { de: "Nicht antworten", en: "Don't answer" }
+      result:
+        de: Der Artikel erscheint. Jacobs Name steht neben dem Wort „Schläger“. Die Bank ruft an.
+        en: The piece appears. Jacob's name stands next to the word "thug". The bank calls.
+      effects: { cash: -300 }
+      appointments: 0
+      default: true

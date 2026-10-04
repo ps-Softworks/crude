@@ -1,0 +1,379 @@
+# Kapitel 3 – Alltag, Paket 3: Lobby in Hallstead (Phase 4). Entwurf – Philipp überarbeitet.
+# Grundlage: Story-Bibel §4 (Lionel Dunmore, Lobbyist: Vandermeers Neffe zweiten Grades,
+# Spielschulden, charmant, Skandalrisiko), §3 „Weitere“ (Senator Grady: Gefälligkeiten,
+# Reserveland), §9 (K3 Thema 3: Boomtown-Land, Zeitung kaufen, Dunmore, Reserveland,
+# Steuerabzug), GDD §10 (Steuerabzug für Ölvorkommen, wenn die Förderer-Lobby stark ist und
+# die Handelspartei regiert), Weltbibel (Parteien, Grady).
+#
+# Nur Kapitel 3 (minChapter/maxChapter 3). Gefallen, Hitze, Parteien und Gesetze gibt es als
+# Wirkung noch nicht (System 4.16 Investments/Lobbyist, Block A Weltmodell) – Ersatz siehe
+# „# TODO-Effekt“.
+#
+# Merkzeichen dieses Pakets:
+#   k3_dunmore_angestellt → k3_dunmore_schulden, k3_steuerabzug_dunmore
+#   k3_dunmore_entlassen, k3_dunmore_gedeckt, k3_reserveland → content/relevance.yaml (Kapitel 4)
+#   (k3_reserveland setzen k3_reserveland/zugreifen und k3_reserveland_folge/verlaengern)
+#   k3_courier_besitz → k3_courier_redaktion
+# Merkzeichen aus Kapitel 1: courier_gekauft (Redakteur Bixby erinnert sich).
+# Merkzeichen aus Zeitsprung II (Block A, noch nicht auf diesem Branch): zs2_grady_reserveland,
+# zs2_grady_abgelehnt – k3_reserveland nur ohne beide, k3_reserveland_folge nach dem Zugriff.
+
+- id: k3_dunmore_vorstellung
+  visitor: dunmore
+  title:
+    de: Ein Herr, der jeden kennt
+    en: A Gentleman Who Knows Everyone
+  text:
+    de: >-
+      Lionel Dunmore trägt einen Anzug, der älter ist als sein Lächeln, und Manschetten
+      aus echtem Gold, die er vielleicht nicht bezahlt hat. Er ist ein Vandermeer, sagt
+      er, zweiten Grades, „die Seite der Familie, über die man beim Tee nicht spricht“.
+      Er bietet an, Harlan in Hallstead zu vertreten. „In Hallstead kauft man niemanden,
+      Mr. Harlan. Man lädt ihn zum Essen ein, bis er vergisst, dass er nie bezahlt hat.“
+    en: >-
+      Lionel Dunmore wears a suit older than his smile and cufflinks of real gold that
+      he may not have paid for. He is a Vandermeer, he says, of the second degree, "the
+      side of the family one doesn't mention at tea". He offers to represent Harlan in
+      Hallstead. "In Hallstead one buys nobody, Mr. Harlan. One invites him to dinner
+      until he forgets he never paid."
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.35
+  choices:
+    - id: anstellen
+      label: { de: "Ihn anstellen – mit Spesenkonto (3.000 $)", en: "Hire him – with an expense account (3,000 $)" }
+      result:
+        de: Dunmore nimmt den Scheck mit zwei Fingern, als wäre er warm. Eine Woche später kennt Jacob drei Senatoren beim Vornamen, und einer schuldet ihm ein Essen.
+        en: Dunmore takes the cheque with two fingers as if it were warm. A week later Jacob knows three senators by first name, and one owes him a dinner.
+      requires: { minCash: 3000 }
+      effects: { cash: -3000, railTariff: -0.03 }  # TODO-Effekt: influence: +2, staff: { lobbyist: dunmore }; railTariff steht für die Bahnkommission
+      marks: [k3_dunmore_angestellt]
+    - id: ablehnen
+      label: { de: "„Ich esse lieber zu Hause.“", en: "\"I prefer to dine at home.\"" }
+      result:
+        de: Dunmore verbeugt sich, ohne beleidigt zu wirken. Einen Monat später sieht Jacob ihn im Ledger, auf einem Foto neben Margaret Crane.
+        en: Dunmore bows without seeming offended. A month later Jacob sees him in the Ledger, in a photograph beside Margaret Crane.
+      appointments: 0
+      default: true
+
+- id: k3_dunmore_schulden
+  marked: [k3_dunmore_angestellt]
+  delay: 2
+  chance: 0.5
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Ein Mann aus dem Spielsalon
+    en: A Man from the Gaming Room
+  text:
+    de: >-
+      Ein höflicher Herr mit einem Notizbuch wartet im Vorzimmer. Er vertritt einen
+      Spielsalon in Hallstead. Mr. Dunmore schulde dem Haus eine Summe, die man unter
+      Herren nicht ausspricht; er schreibt sie auf. Man wolle keinen Skandal. Man habe
+      gehört, Mr. Dunmore arbeite jetzt für jemanden, der zahlen könne.
+    en: >-
+      A polite gentleman with a notebook waits in the anteroom. He represents a gaming
+      house in Hallstead. Mr. Dunmore owes the house a sum gentlemen don't say aloud; he
+      writes it down. The house wants no scandal. It has heard Mr. Dunmore now works for
+      someone who can pay.
+  choices:
+    - id: zahlen
+      label: { de: "Die Schulden still bezahlen (2.500 $)", en: "Pay the debts quietly (2,500 $)" }
+      result:
+        de: Der Herr streicht die Zahl in seinem Notizbuch durch. Dunmore bedankt sich mit Tränen in den Augen und mit einem Satz, den er wahrscheinlich schon oft gesagt hat.
+        en: The gentleman crosses out the figure in his notebook. Dunmore thanks Jacob with tears in his eyes and a sentence he has probably said many times.
+      requires: { minCash: 2500 }
+      effects: { cash: -2500 }  # TODO-Effekt: staffLoyalty: { dunmore: +20 }, heat: +1
+      marks: [k3_dunmore_gedeckt]
+    - id: entlassen
+      label: { de: "Dunmore entlassen", en: "Dismiss Dunmore" }
+      result:
+        de: Dunmore geht mit einem Koffer voller Briefe, die er für Harlan geschrieben hat, und mit den Namen der Senatoren, mit denen er gegessen hat.
+        en: Dunmore leaves with a case full of letters he wrote for Harlan, and with the names of the senators he dined with.
+      effects: { railTariff: 0.03, strength: -5 }  # TODO-Effekt: influence: -2, trace: { severity: 1, label: "Dunmores Koffer" }
+      marks: [k3_dunmore_entlassen]
+    - id: vorschuss
+      label: { de: "Ihm einen Vorschuss aufs Gehalt geben, sonst nichts (1.000 $)", en: "Give him an advance on salary, nothing more (1,000 $)" }
+      result:
+        de: Der Herr mit dem Notizbuch nimmt die Hälfte und kommt in drei Monaten wieder. Dunmore arbeitet jetzt doppelt so hart. Für wen, ist nicht ganz klar.
+        en: The man with the notebook takes half and will come back in three months. Dunmore now works twice as hard. For whom isn't quite clear.
+      effects: { cash: -1000 }  # TODO-Effekt: staffLoyalty: { dunmore: -10 }, Abwerbung möglich
+      default: true
+
+- id: k3_steuerabzug
+  visitor: grady
+  title:
+    de: Senator Grady und der Steuerabzug
+    en: Senator Grady and the Depletion Allowance
+  text:
+    de: >-
+      Senator Hollis Grady ist grau geworden, aber er lacht noch wie ein Mann im
+      Wahlkampf. Im Ausschuss liegt ein Gesetz: Wer Öl fördert, darf einen Teil des
+      Ertrags als „Erschöpfung der Vorkommen“ von der Steuer abziehen. Die Handelspartei
+      ist dafür, der Volksbund nennt es ein Geschenk an die Reichen. „Es fehlen drei
+      Stimmen, Jacob. Stimmen sind teuer. Und ich bin bescheiden.“
+    en: >-
+      Senator Hollis Grady has gone grey, but he still laughs like a man on the stump. A
+      bill lies in committee: whoever produces oil may deduct part of the income from tax
+      as "depletion of reserves". The Commerce Party is for it; the People's League calls
+      it a gift to the rich. "We're three votes short, Jacob. Votes are expensive. And
+      I'm modest."
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.3
+  choices:
+    - id: spenden
+      label: { de: "Für den Wahlkampffonds spenden (4.000 $)", en: "Donate to the campaign fund (4,000 $)" }
+      result:
+        de: Das Gesetz geht mit zwei Stimmen Mehrheit durch. Grady schickt eine Zigarrenkiste. Im Ledger steht eine Liste der Spender. Jacobs Name ist darauf, an dritter Stelle.
+        en: The bill passes by two votes. Grady sends a box of cigars. The Ledger prints a list of donors. Jacob's name is on it, third.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000, price: 0.3 }  # TODO-Effekt: lawPressure: { steuerabzug: +20 }, favors: +1, party: { handel: +2, volksbund: -2 }, heat: +1
+    - id: kleine
+      label: { de: "Mit Delgados Kleinproduzenten für einen Abzug nur bis zu einer Grenze werben (1.500 $)", en: "Back a capped allowance with Delgado's small producers (1,500 $)" }
+      result:
+        de: Das Gesetz kommt, aber mit einer Grenze, die die Großen trifft – auch Harlan. Rosa Delgado nickt Jacob im Ausschuss zu. Grady sieht weg.
+        en: The bill passes, but with a cap that hits the big firms – Harlan too. Rosa Delgado nods to Jacob in committee. Grady looks away.
+      requires: { minCash: 1500 }
+      effects: { cash: -1500, price: 0.1 }  # TODO-Effekt: party: { provinz: +2 }, rival: { delgado: { trust: +10 } }, favors: -1
+    - id: nichts
+      label: { de: "„Wer zahlen muss, soll zahlen.“", en: "\"Whoever owes, should pay.\"" }
+      result:
+        de: Grady lacht, zu laut. Das Gesetz scheitert an zwei Stimmen. Margaret Crane hatte gespendet. Grady erzählt es Jacob beim Hinausgehen, wie nebenbei.
+        en: Grady laughs, too loudly. The bill fails by two votes. Margaret Crane had donated. Grady tells Jacob on the way out, as if in passing.
+      appointments: 0
+      default: true
+
+- id: k3_steuerabzug_dunmore
+  marked: [k3_dunmore_angestellt]
+  notMarked: [k3_dunmore_entlassen]
+  delay: 3
+  chance: 0.35
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Dunmores Abendessen
+    en: Dunmore's Dinner
+  text:
+    de: >-
+      Dunmore hat für Freitag einen Tisch im Hallstead Club reserviert, für zwölf
+      Personen, auf Harlans Rechnung: vier Abgeordnete, zwei Richter, ein Redakteur und
+      ihre Frauen. „Niemand wird um etwas gebeten, Mr. Harlan. Das ist ja der Witz.“ Die
+      Rechnung des letzten Essens liegt bei. Jemand hat den Wein dreimal bestellt.
+    en: >-
+      Dunmore has booked a table at the Hallstead Club for Friday, for twelve, on
+      Harlan's account: four deputies, two judges, an editor and their wives. "Nobody
+      will be asked for anything, Mr. Harlan. That's the point." The bill for the last
+      dinner is enclosed. Someone ordered the wine three times.
+  choices:
+    - id: hingehen
+      label: { de: "Selbst hingehen und zahlen (2.000 $, 2 Termine)", en: "Go himself and pay (2,000 $, 2 appointments)" }
+      result:
+        de: Jacob sitzt zwischen einem Richter und dessen Frau, die über Pferde redet. Beim Kaffee sagt der Richter, Cordova sei ein Land mit Zukunft. Mehr sagt er nicht. Es reicht.
+        en: Jacob sits between a judge and his wife, who talks about horses. Over coffee the judge says Cordova is a land with a future. He says no more. It is enough.
+      requires: { minCash: 2000 }
+      effects: { cash: -2000, strength: -10, railTariff: -0.03 }  # TODO-Effekt: influence: +2, standing: +1
+      appointments: 2
+    - id: zahlen
+      label: { de: "Zahlen, aber nicht hingehen (2.000 $)", en: "Pay but stay away (2,000 $)" }
+      result:
+        de: Das Essen findet ohne Jacob statt. Dunmore erzählt hinterher, man habe auf ihn getrunken. Auf wen genau, weiß nur Dunmore.
+        en: The dinner takes place without Jacob. Dunmore says afterwards they drank to him. To whom exactly, only Dunmore knows.
+      requires: { minCash: 2000 }
+      effects: { cash: -2000 }  # TODO-Effekt: influence: +1
+      appointments: 0
+    - id: streichen
+      label: { de: "Das Essen streichen", en: "Cancel the dinner" }
+      result:
+        de: Dunmore sagt zwölf Gästen ab, einzeln, mit Bedauern. Elf nehmen es hin. Der Redakteur schreibt einen Satz darüber.
+        en: Dunmore cancels on twelve guests, one by one, with regret. Eleven accept it. The editor writes a sentence about it.
+      appointments: 0
+      default: true
+
+# Reserveland: Grady bietet es schon in Zeitsprung II an (zs2_grady_reserveland / zs2_grady_abgelehnt,
+# Story-Bibel §2/§9). k3_reserveland ist das Angebot nur für Partien, in denen der Zeitsprung es nicht
+# gebracht hat; k3_reserveland_folge knüpft an den Zugriff im Zeitsprung an.
+- id: k3_reserveland
+  notMarked: [zs2_grady_reserveland, zs2_grady_abgelehnt]
+  title:
+    de: Staatsland ohne Ausschreibung
+    en: Federal Land without Tender
+  text:
+    de: >-
+      Ein Beamter des Marineamts, schlecht bezahlt und gut informiert, bittet Jacob in
+      ein Café am Bahnhof von Hallstead. Die Marine hat in Cordova Land als Ölreserve
+      zurückgelegt. Ein Teil davon könne verpachtet werden, „aus Gründen der
+      Erprobung“, ohne Ausschreibung. Der Name Grady fällt nicht. Er muss nicht fallen.
+    en: >-
+      An official of the Naval Office, badly paid and well informed, asks Jacob to a
+      café at the Hallstead station. The navy has set aside land in Cordova as an oil
+      reserve. Part of it could be leased "for testing purposes", without tender. The
+      name Grady isn't mentioned. It needn't be.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.2
+  choices:
+    - id: zugreifen
+      label: { de: "Zugreifen (5.000 $ „Gebühren“)", en: "Take it (5,000 $ in \"fees\")" }
+      result:
+        de: Der Pachtvertrag trägt drei Stempel und keine Unterschrift eines Ministers. Die Bohrtrupps fahren nachts hinaus. Das Öl ist gut.
+        en: The lease carries three stamps and no minister's signature. The crews drive out at night. The oil is good.
+      requires: { minCash: 5000 }
+      effects: { cash: -5000, production: 0.2 }  # TODO-Effekt: heat: +3, trace: { severity: 3, label: "Reserveland" }, favors: -1
+      marks: [k3_reserveland]
+    - id: ablehnen
+      label: { de: "Den Kaffee bezahlen und gehen", en: "Pay for the coffee and leave" }
+      result:
+        de: Der Beamte steckt das Wechselgeld ein. Beim Hinausgehen sieht Jacob Harold Pruett am Nachbartisch. Pruett hebt nicht einmal den Kopf.
+        en: The official pockets the change. On the way out Jacob sees Harold Pruett at the next table. Pruett doesn't even raise his head.
+      appointments: 0
+      default: true
+
+- id: k3_reserveland_folge
+  marked: [zs2_grady_reserveland]
+  mail: demand
+  deadline: 2
+  once: true
+  title:
+    de: Die Stempel laufen ab
+    en: The Stamps Expire
+  text:
+    de: >-
+      Ein Umschlag ohne Absender, darin ein einziger Bogen mit dem Kopf des Marineamts:
+      Die Erprobungspacht auf dem Reserveland, die Senator Grady damals vermittelt hat,
+      läuft zum Quartalsende aus. Eine Verlängerung sei möglich. Die Gebühren seien
+      gestiegen, schreibt der Beamte, „wie alles in diesen Zeiten“. Unten, mit Bleistift:
+      Eine Zeitung in Port Ellis habe im Grundbuchamt nach dem Land gefragt.
+    en: >-
+      An envelope with no sender, inside a single sheet headed by the Naval Office: the
+      trial lease on the reserve land that Senator Grady arranged back then expires at
+      the end of the quarter. An extension is possible. The fees have risen, the
+      official writes, "like everything these days". At the bottom, in pencil: a
+      newspaper in Port Ellis has been asking about the land at the land registry.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.5
+  choices:
+    - id: verlaengern
+      label: { de: "Verlängern (4.000 $ „Gebühren“)", en: "Extend (4,000 $ in \"fees\")" }
+      result:
+        de: Der neue Vertrag trägt vier Stempel statt drei. Die Bohrtrupps fahren weiter nachts hinaus. Wer im Grundbuchamt gefragt hat, erfährt Jacob nicht.
+        en: The new contract carries four stamps instead of three. The crews keep driving out at night. Jacob never learns who asked at the land registry.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000, production: 0.15 }  # TODO-Effekt: heat: +2, trace: { severity: 3, label: "Reserveland" }, favors: -1
+      marks: [k3_reserveland]
+    - id: auslaufen
+      label: { de: "Die Pacht auslaufen lassen", en: "Let the lease run out" }
+      result:
+        de: Am Quartalsende ziehen die Bohrtrupps ab und lassen die Türme stehen. Das Land ist wieder Reserve. Die alten Stempel bleiben in den Akten des Marineamts.
+        en: At the end of the quarter the crews pull out and leave the derricks standing. The land is reserve again. The old stamps stay in the Naval Office's files.
+      effects: { production: -0.05 }  # TODO-Effekt: trace bleibt (zs2_grady_reserveland), heat: -1
+      appointments: 0
+      default: true
+
+- id: k3_courier_kauf
+  title:
+    de: Der Courier steht zum Verkauf
+    en: The Courier Is for Sale
+  text:
+    de: >-
+      Der Port Ellis Courier hat Schulden bei der Druckerei und einen Besitzer, der
+      nach Aldmark auswandern will. Redakteur Bixby, inzwischen kahl und mit
+      Lesebrille, bringt die Bücher selbst vorbei. „Wer die Zeitung kauft, Mr. Harlan,
+      kauft nicht die Wahrheit. Nur den Platz, an dem sie stehen könnte.“
+    en: >-
+      The Port Ellis Courier owes the printer money and has an owner who wants to
+      emigrate to Aldmark. Editor Bixby, bald now and wearing reading glasses, brings the
+      books over himself. "Whoever buys the paper, Mr. Harlan, doesn't buy the truth.
+      Only the place where it might stand."
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.25
+  choices:
+    - id: kaufen
+      label: { de: "Den Courier kaufen (6.000 $)", en: "Buy the Courier (6,000 $)" }
+      result:
+        de: Am Montag steht Jacobs Name im Impressum, ganz klein. Bixby bleibt Redakteur. Er fragt nicht, was er schreiben soll. Noch nicht.
+        en: On Monday Jacob's name appears in the masthead, very small. Bixby stays on as editor. He doesn't ask what to write. Not yet.
+      requires: { minCash: 6000 }
+      effects: { cash: -6000 }  # TODO-Effekt: investment: { zeitung: courier }, reputation: { public: +1 }, heat: -1
+      marks: [k3_courier_besitz]
+    - id: anzeigen
+      label: { de: "Nur einen Anzeigenvertrag auf drei Jahre (1.500 $)", en: "Only an advertising contract for three years (1,500 $)" }
+      result:
+        de: Der Courier überlebt das Jahr. Auf Seite zwei steht jetzt jede Woche eine Harlan-Anzeige. Auf Seite eins steht, was Bixby will.
+        en: The Courier survives the year. Page two now carries a Harlan advertisement every week. Page one carries what Bixby wants.
+      requires: { minCash: 1500 }
+      effects: { cash: -1500, price: 0.05 }  # TODO-Effekt: brand: { cordova: +2 }
+    - id: nein
+      label: { de: "„Ich lese Zeitungen. Ich kaufe keine.“", en: "\"I read newspapers. I don't buy them.\"" }
+      result:
+        de: Margaret Crane kauft den Courier einen Monat später. Die erste Ausgabe unter ihr berichtet über Tankwagen und Bremsen.
+        en: Margaret Crane buys the Courier a month later. The first issue under her reports on tank trucks and brakes.
+      effects: { price: -0.05 }  # TODO-Effekt: rival: { margaret: Zeitung }, reputation: { public: -1 }
+      appointments: 0
+      default: true
+
+- id: k3_courier_redaktion
+  marked: [k3_courier_besitz, courier_gekauft]
+  delay: 2
+  chance: 0.6
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: „Ein Mann der Zukunft, Seite zwei“
+    en: '"A Man of the Future, Page Two"'
+  text:
+    de: >-
+      Bixby kommt mit einem vergilbten Ausschnitt aus dem Courier, den Jacob vor fast
+      zwanzig Jahren bezahlt hat: „Ein Mann der Zukunft“, Seite zwei, 120 $. Nora
+      Whitlock habe ihn in ihren Unterlagen, sagt Bixby, und sie schreibe ein Buch.
+      „Sie können mir jetzt sagen, was ich drucken soll, Mr. Harlan. Ich möchte nur
+      wissen, ob Sie es tun.“
+    en: >-
+      Bixby comes with a yellowed clipping from the Courier that Jacob paid for almost
+      twenty years ago: "A Man of the Future", page two, 120 $. Nora Whitlock has it in
+      her files, says Bixby, and she is writing a book. "You can tell me now what to
+      print, Mr. Harlan. I'd only like to know whether you will."
+  choices:
+    - id: frei
+      label: { de: "„Drucken Sie, was stimmt.“", en: "\"Print what's true.\"" }
+      result:
+        de: Bixby nickt langsam und steckt den Ausschnitt wieder ein. In der nächsten Woche steht im Courier eine kritische Meldung über Harlans Abschlag. Jacob liest sie zweimal.
+        en: Bixby nods slowly and pockets the clipping. The next week the Courier carries a critical item on Harlan's discount. Jacob reads it twice.
+      effects: { price: -0.1, strength: 10 }  # TODO-Effekt: reputation: { public: +2 }, heat: -1
+    - id: lenken
+      label: { de: "Bixby eine Linie vorgeben", en: "Give Bixby a line to follow" }
+      result:
+        de: Der Courier schreibt jetzt freundlich über Harlan, jede Woche. Die Leser merken es nach einem Monat. Bixby trinkt wieder.
+        en: The Courier now writes kindly about Harlan, every week. The readers notice after a month. Bixby drinks again.
+      effects: { price: 0.1, strength: -10 }  # TODO-Effekt: reputation: { public: -2 }, staff: { pressesprecher: bixby }, trace: { severity: 1, label: "Linie des Courier" }
+      default: true
+
+# Briefe-Garantie in Kapitel 3: Forderung, wiederkehrend.
+- id: k3_spendenaufruf
+  mail: demand
+  once: false
+  cooldown: 4
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.25
+  title:
+    de: Die Partei bittet um einen Beitrag
+    en: The Party Asks for a Contribution
+  text:
+    de: >-
+      Ein vorgedruckter Brief, nur der Betrag ist mit Tinte eingesetzt: Die Partei
+      erwarte von ihren Freunden in der Wirtschaft einen Beitrag zur kommenden Wahl.
+      Unterschrieben vom Schatzmeister. Welche Partei, steht im Briefkopf. Sie schreiben
+      alle denselben Brief.
+    en: >-
+      A printed letter, only the amount filled in by hand: the party expects its friends
+      in business to contribute to the coming election. Signed by the treasurer. Which
+      party is in the letterhead. They all write the same letter.
+  choices:
+    - id: zahlen
+      label: { de: "Zahlen (1.000 $)", en: "Pay (1,000 $)" }
+      result:
+        de: Eine gedruckte Quittung kommt zurück, mit einer echten Unterschrift. Man wird sich erinnern, steht darunter.
+        en: A printed receipt comes back, with a real signature. It says one will remember.
+      requires: { minCash: 1000 }
+      effects: { cash: -1000 }  # TODO-Effekt: party: { handel: +1 }, favors: +1
+    - id: nicht
+      label: { de: "Nicht antworten", en: "Don't reply" }
+      result:
+        de: Der nächste Brief der Partei ist nicht mehr vorgedruckt.
+        en: The party's next letter is no longer printed.
+      appointments: 0
+      default: true

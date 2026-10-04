@@ -1,0 +1,160 @@
+# Personal (4.9, GDD §11): Texte für die Personalakten ab Kapitel 2.
+# Die Zahlen (Löhne, Loyalität, Hitze, Chancen) stehen in content/balance.yaml unter staff,
+# die Regeln in src/sim/staff.ts und src/sim/staffRound.ts.
+#
+# Bewerber werden gewürfelt: Kompetenz, Ehrgeiz und 1–2 Merkmale kommen aus dem Zufall,
+# der Name und die Herkunft aus names unten. Die Herkunft darf darum nichts über Merkmale
+# verraten (kein „trinkt gern“ – das zeigt erst die Personalakte).
+# Je Stelle genau staff.namePool Namen (balance.yaml) – npm run check:content prüft das.
+#
+# Platzhalter: {cash} {drilling} {found} {leases} im Spionagebericht.
+#
+# Entwurf von Claude – Philipp überarbeitet.
+
+draft: true
+
+roles:
+  secretary:
+    title: { de: "Vorzimmer – Sekretärin oder Prokurist", en: "Front Office – Secretary or Clerk" }
+    text:
+      de: >-
+        Jemand, der die Post öffnet, die Termine ordnet und unterschreiben darf, wenn
+        Jacob nicht da ist. Schafft ein, zwei Termine mehr je Runde und erledigt Briefe
+        und den Ölverkauf nach Jacobs Richtlinien – so gut, wie er eben ist.
+      en: >-
+        Someone to open the mail, keep the calendar and sign when Jacob is away. Frees
+        up one or two appointments a round and handles letters and oil sales by Jacob's
+        rules – as well as they can.
+  fixer:
+    title: { de: "Sicherheitschef – der Fixer", en: "Head of Security – the Fixer" }
+    text:
+      de: >-
+        Ein Mann für Schutz und für Aufträge, über die man nicht schreibt. Hält Saboteure
+        von Jacobs Anlagen fern, horcht Rivalen aus und erledigt Schmutziges. Jeder Auftrag
+        macht es heißer – und wer zu viel weiß, ist gefährlich, wenn er geht.
+      en: >-
+        A man for protection and for jobs nobody writes down. Keeps saboteurs away from
+        Jacob's works, sounds out rivals and does the dirty work. Every job raises the
+        heat – and a man who knows too much is dangerous when he leaves.
+
+traits:
+  genie:
+    label: { de: Genie, en: Genius }
+    text: { de: "Hohe Kompetenz, aber launisch.", en: "Highly capable, but moody." }
+  trinker:
+    label: { de: Trinker, en: Drinker }
+    text: { de: "Gelegentliche Aussetzer – dann geht in einer Runde nichts.", en: "Occasional lapses – then a whole round is lost." }
+  gewissenhaft:
+    label: { de: Gewissenhaft, en: Conscientious }
+    text: { de: "Verweigert illegale Befehle, kann zum Whistleblower werden.", en: "Refuses illegal orders, may turn whistleblower." }
+  gierig:
+    label: { de: Gierig, en: Greedy }
+    text: { de: "Bestechlich, unterschlägt.", en: "Bribable, embezzles." }
+  verschwiegen:
+    label: { de: Verschwiegen, en: Discreet }
+    text: { de: "Spuren verblassen schneller.", en: "Traces fade faster." }
+  spieler:
+    label: { de: Spieler, en: Gambler }
+    text: { de: "Nimmt Regeln als Empfehlung und liebt riskante Wetten.", en: "Treats rules as suggestions and loves a risky bet." }
+  treu:
+    label: { de: Treu bis zum Tod, en: Loyal unto Death }
+    text: { de: "Nimmt Schuld auf sich.", en: "Takes the blame." }
+  ehrgeizig:
+    label: { de: Ehrgeizig, en: Ambitious }
+    text: { de: "Will Beförderung – oder gründet eine eigene Firma.", en: "Wants promotion – or founds a company of their own." }
+  charmant:
+    label: { de: Charmant, en: Charming }
+    text: { de: "Bessere Verhandlungen.", en: "Better at negotiating." }
+
+loyalty:
+  treu: { de: treu ergeben, en: devoted }
+  zufrieden: { de: zufrieden, en: content }
+  unzufrieden: { de: unzufrieden, en: disgruntled }
+  abtruennig: { de: abtrünnig, en: disloyal }
+
+heat:
+  kalt:
+    label: { de: kalt, en: cold }
+    text: { de: "Niemand stellt Fragen.", en: "Nobody asks questions." }
+  lauwarm:
+    label: { de: lauwarm, en: warm }
+    text: { de: "Im Saloon wird über Jacobs Leute geredet.", en: "Jacob's men are talked about in the saloon." }
+  heiss:
+    label: { de: heiß, en: hot }
+    text: { de: "Reporter fragen nach. Ein Skandal liegt in der Luft.", en: "Reporters are asking. A scandal is in the air." }
+
+orders:
+  spy:
+    label: { de: "Bullard aushorchen", en: "Sound out Bullard" }
+    text: { de: "Ein Bericht über Bullards Kasse, Bohrungen und Pachten.", en: "A report on Bullard's cash, wells and leases." }
+  sabotage:
+    label: { de: "Bullard Steine in den Weg legen", en: "Throw a spanner in Bullard's works" }
+    text:
+      de: "Ein Brand im Schuppen, ein gerissenes Seil: Bullard verliert Geld und Zeit. Fliegt es auf, gibt es Fehde."
+      en: "A fire in the shed, a snapped rope: Bullard loses money and time. If it comes out, it means a feud."
+
+intel:
+  de: "Bullard hat etwa {cash} $ in der Kasse. Bohrungen im Gang: {drilling} · fördernde Quellen: {found} · Pachten: {leases}."
+  en: "Bullard has about {cash} $ in hand. Wells drilling: {drilling} · producing: {found} · leases: {leases}."
+
+policies:
+  mail:
+    jacob: { de: "Jacob prüft selbst", en: "Jacob decides" }
+    staff: { de: "Vorzimmer entscheidet", en: "Front office decides" }
+  wage:
+    knapp: { de: "knapp (10 % unter Markt)", en: "tight (10 % below market)" }
+    markt: { de: "Marktlohn", en: "market wage" }
+    gut: { de: "gut (10 % über Markt)", en: "good (10 % above market)" }
+    grosszuegig: { de: "großzügig (25 % über Markt)", en: "generous (25 % above market)" }
+
+names:
+  secretary:
+    - name: Miss Harriet Lowe
+      text:
+        de: War Telegrafistin in Hallstead, kann Stenografie und liest Briefe schneller, als andere sie öffnen.
+        en: A telegraphist in Hallstead, knows shorthand and reads letters faster than others open them.
+    - name: Mr. Ambrose Tull
+      text:
+        de: Sohn eines Buchhalters aus Port Ellis, Prokura bei einer Baumwollfirma, bis die pleiteging.
+        en: A bookkeeper's son from Port Ellis, held power of attorney at a cotton firm until it went bust.
+    - name: Mrs. Delphine Carraway
+      text:
+        de: Witwe eines Holzhändlers. Kennt jeden in Port Ellis, der etwas zu sagen hat – und was er verschweigt.
+        en: A timber merchant's widow. Knows everyone in Port Ellis who matters – and what they keep quiet.
+    - name: Mr. Oswin Pell
+      text:
+        de: Junger Schreiber aus der Bank am Hafen, kommt mit einem Empfehlungsschreiben und sehr sauberen Manschetten.
+        en: A young clerk from the harbour bank, arrives with a letter of reference and very clean cuffs.
+    - name: Miss Clementine Ash
+      text:
+        de: War Lehrerin in Salt Hill, bis die Schule einem Bohrturm weichen musste.
+        en: Taught school in Salt Hill until the schoolhouse had to make way for a derrick.
+    - name: Mr. Barnaby Quill
+      text:
+        de: Alter Kontorist der Eisenbahn, dreißig Jahre Frachtbriefe. Thorne hat ihn vor die Tür gesetzt.
+        en: An old railway clerk, thirty years of waybills. Thorne showed him the door.
+  fixer:
+    - name: Jonah Creed
+      text:
+        de: Ehemaliger Detektiv einer Agentur aus dem Osten. Spricht leise und sieht sich jeden Ausgang an.
+        en: A former detective with an Eastern agency. Speaks softly and looks at every exit.
+    - name: Halvard Moe
+      text:
+        de: War Sanitäter im Grenzkrieg. Seither nennen ihn alle „Doc“, und keiner fragt, warum.
+        en: Served as a medic in the border war. Everyone calls him "Doc" since, and nobody asks why.
+    - name: Rafe Calloway
+      text:
+        de: Hilfssheriff in Cordova, bis der Sheriff ihn billiger fand als einen Ehrlichen.
+        en: A deputy in Cordova until the sheriff found him cheaper than an honest man.
+    - name: Ignatius Sloane
+      text:
+        de: Der Mann, den die Hafenarbeiter von Port Ellis rufen, wenn ein Streit nicht vor Gericht soll.
+        en: The man the Port Ellis dockers call when a quarrel shouldn't go to court.
+    - name: Elias Dunmore
+      text:
+        de: Führte eine Spielhalle in Port Ellis. Weiß, wer wem Geld schuldet – in der ganzen Provinz.
+        en: Ran a gambling hall in Port Ellis. Knows who owes whom – across the whole province.
+    - name: Tobias Wren
+      text:
+        de: Preisboxer, dann Leibwächter eines Viehbarons. Redet wenig, vergisst nichts.
+        en: A prizefighter, then bodyguard to a cattle baron. Says little, forgets nothing.

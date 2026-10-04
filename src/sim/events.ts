@@ -18,8 +18,14 @@ import { recordAct } from './politics';
 import { openRegions, unlockRegion } from './regions';
 import type { PublicAct } from './world';
 import { Rng, seedFromString, type RngState } from './rng';
+import { chapterOf } from './stocks'; // gemeinsamer Kapitel-Helfer aller Phase-4-Systeme (state.chapter, sonst 1)
 
-/** Bedingungen: jede ist eine Untergrenze (min…) oder Obergrenze (max…). */
+/**
+ * Bedingungen: jede ist eine Untergrenze (min…) oder Obergrenze (max…).
+ * minChapter/maxChapter (Phase 4): Kapitel 1–7; ein Spielstand ohne Kapitelangabe ist in Kapitel 1.
+ * Für ganze Ereignisse gilt chapterMet: ohne minChapter nur Kapitel 1 (bzw. bis maxChapter),
+ * mit minChapter ab diesem Kapitel (bis maxChapter). An einer Wahl gilt nur, was dasteht.
+ */
 export const CONDITION_KEYS = [
   'minRound',
   'maxRound',
@@ -31,8 +37,18 @@ export const CONDITION_KEYS = [
   'minLeases',
   'minStrength',
   'maxStrength',
+  // Kapitel (Phase 4, Inhalte für Kapitel 2/3): Ereignisse späterer Kapitel tragen
+  // minChapter/maxChapter, damit sie nie in Kapitel 1 erscheinen. Fehlt state.chapter, gilt Kapitel 1.
   'minChapter',
   'maxChapter',
+  // Integration Phase 4: Bedingungen für die Kapitel-2-Inhalte (vorher „# TODO-Bedingung“ in content/events).
+  // minRefineryLevel: fertige Raffinerie-Stufen (4.6, 0 ohne Raffinerie); minPipelines: laufende eigene
+  // Leitungen (kleine Pipeline aus Kapitel 1 und fertige Fernleitungen aus 4.7); minPublicShare: Prozent
+  // der Aktien in fremder Hand, nur wenn Harlan Oil eine Aktiengesellschaft ist (4.8, sonst 0).
+  'minRefineryLevel',
+  'minPipelines',
+  'minPublicShare',
+  // Thomas' Alter in ganzen Jahren (4.5); vor der Geburt −1 – Baby-Ereignisse tragen maxThomasAge.
   'minThomasAge',
   'maxThomasAge',
 ] as const;
@@ -273,7 +289,19 @@ export function marksMet(state: Pick<GameState, 'round' | 'events'>, event: Pick
   return state.round >= zuletzt + event.delay;
 }
 
-type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength'> & Partial<Pick<GameState, 'chapterStart' | 'chapter' | 'family'>>;
+/**
+ * Zeitsprung (Phase 4): Merkzeichen gehen ins nächste Kapitel mit, gelten dort aber als „vor
+ * Kapitelbeginn“ gesetzt (Runde `beforeRound`, beim Zeitsprung chapterStart − 1). Ohne das zählte
+ * delay ab der Runde, in der das Merkzeichen gesetzt wurde – ein Merkzeichen aus dem Zeitsprung
+ * käme so zu spät, ein frühes aus Kapitel 1 sofort. So zählt delay für alle ab Kapitelbeginn:
+ * delay 3 heißt „ab der dritten Runde des neuen Kapitels“. Der Zeitsprung (4.5, timeskip.ts) ruft das auf.
+ */
+export function marksIntoNextChapter(events: EventsState, beforeRound = 0): EventsState {
+  return { ...events, marks: Object.fromEntries(Object.keys(events.marks).map((m) => [m, beforeRound])) };
+}
+
+type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength'> &
+  Partial<Pick<GameState, 'chapterStart' | 'chapter' | 'family' | 'refinery' | 'bigPipelines' | 'stocks' | 'ipo' | 'logistics'>>;
 
 /** Der Wert im Zustand, den eine Bedingung prüft. */
 function wertFuer(state: Lage, key: ConditionKey): number {
@@ -297,15 +325,36 @@ function wertFuer(state: Lage, key: ConditionKey): number {
       return state.strength;
     case 'minChapter':
     case 'maxChapter':
-      // Kapitel (4.5): Ereignisse, die nur in Kapitel 1 passen (Pension, Taufe …), tragen maxChapter: 1.
-      return state.chapter ?? 1;
+      // Kapitel (4.5, gemeinsamer Helfer chapterOf): Ereignisse späterer Kapitel tragen minChapter.
+      return chapterOf(state);
     case 'minThomasAge':
     case 'maxThomasAge': {
       // Alter von Thomas in ganzen Jahren (4.5); vor der Geburt −1 – Baby-Ereignisse tragen maxThomasAge.
       const geboren = state.family?.thomasBorn ?? 0;
       return geboren > 0 && state.round >= geboren ? Math.floor((state.round - geboren) / 4) : -1;
     }
+    case 'minRefineryLevel':
+      return state.refinery?.level ?? 0;
+    case 'minPipelines':
+      return (state.logistics?.pipeline === 'ready' ? 1 : 0) + (state.bigPipelines?.projects ?? []).filter((p) => p.status === 'ready').length;
+    case 'minPublicShare':
+      return state.stocks?.public ? Math.round((state.ipo?.share ?? 0) * 100) : 0;
   }
+}
+
+/**
+ * Gehört ein Ereignis ins laufende Kapitel (Phase 4)? Fehlt minChapter, ist es ein Kapitel-1-Ereignis:
+ * Es gilt dann von Kapitel 1 bis maxChapter, ohne maxChapter nur in Kapitel 1. So kommen die vielen
+ * Kapitel-1-Ereignisse ohne Kapitel-Angabe nach dem Zeitsprung nicht mehr. Mit minChapter und ohne
+ * maxChapter gilt es ab minChapter in jedem späteren Kapitel. Nur für ganze Ereignisse, nicht für Wahlen.
+ * Die Ereignisse der Kapitel-2-Systeme (4.7, 4.9–4.11) tragen `minChapter: 1`: Sie hängen an Merkzeichen,
+ * die nur die Simulation setzt (bzw. der Debug-Knopf schon in Kapitel 1), und gelten so in jedem Kapitel.
+ */
+export function chapterMet(state: Partial<Pick<GameState, 'chapter'>>, conditions: Conditions): boolean {
+  const k = chapterOf(state);
+  const min = conditions.minChapter ?? 1;
+  const max = conditions.maxChapter ?? (conditions.minChapter === undefined ? 1 : Infinity);
+  return k >= min && k <= max;
 }
 
 function erfuellt(state: Lage, key: ConditionKey, grenze: number): boolean {
@@ -390,6 +439,7 @@ export function routineOffered(state: GameState, event: EventDef): boolean {
     event.routine &&
     !state.finished &&
     !state.agenda.done.includes(event.id) &&
+    chapterMet(state, event.conditions) &&
     conditionsMet(state, event.conditions) &&
     marksMet(state, event)
   );
@@ -442,10 +492,14 @@ export function drawEvents(state: GameState, balance: Balance, catalog: readonly
   const log = [...state.log];
   let neu = 0;
   // Sichere Ereignisse (2.8) zuerst: ohne Würfel, ohne Platz in maxPerRound.
-  const sicher = catalog.filter((e) => e.certain && !e.routine && !e.mail);
+  // Nur Ereignisse des laufenden Kapitels (Phase 4, chapterMet – auch für sichere Ereignisse) vor
+  // dem Mischen: So bleibt die Reihenfolge – und damit jede Partie zum selben Seed – in Kapitel 1
+  // dieselbe wie ohne spätere Kapitel, und Kapitel-1-Ereignisse kommen nach dem Zeitsprung nicht mehr.
+  const imKapitel = catalog.filter((e) => chapterMet(state, e.conditions));
+  const sicher = imKapitel.filter((e) => e.certain && !e.routine && !e.mail);
   // Gewürfelte Ereignisse (2.10b) in zufälliger Reihenfolge: Sonst gewinnen bei maxPerRound
   // immer die Dateien vorn im Alphabet, und späte Ereignisse kämen kaum je vor.
-  const gewuerfelt = rng.shuffle(catalog.filter((e) => !e.certain && !e.routine && !e.mail));
+  const gewuerfelt = rng.shuffle(imKapitel.filter((e) => !e.certain && !e.routine && !e.mail));
   for (const event of [...sicher, ...gewuerfelt]) {
     if (!event.certain && neu >= balance.events.maxPerRound) break;
     // Feste Termine (2.3) werden nicht gewürfelt, Briefe kommen mit der Post (2.4).
@@ -497,8 +551,10 @@ export function dueMailKinds(state: Pick<GameState, 'round' | 'events'>, balance
  * Danach würfeln die übrigen Briefe mit ihrer Chance, in der Reihenfolge des
  * Katalogs. Jeder Brief bekommt seine Frist.
  */
-export function drawMail(state: GameState, balance: Balance, catalog: readonly EventDef[], lang: Lang = DEFAULT_LANG): GameState {
-  if (state.finished || !catalog.some((e) => e.mail)) return state;
+export function drawMail(state: GameState, balance: Balance, alle: readonly EventDef[], lang: Lang = DEFAULT_LANG): GameState {
+  // Briefe anderer Kapitel gar nicht erst ansehen (Phase 4) – spart Zeit, ändert keinen Wurf.
+  const catalog = alle.filter((e) => e.mail && chapterMet(state, e.conditions));
+  if (state.finished || catalog.length === 0) return state;
   const rng = new Rng(state.events.rng);
   let out = state;
   let neu = 0;
@@ -565,6 +621,30 @@ export function resolveEvent(
   const belegt = spendAppointments(state, balance, choiceCost(event, choice));
   if (!belegt.ok) return belegt;
   return { ok: true, state: openRegions(erledigen(belegt.state, event, choice, lang, '', balance.events.timedRounds), balance) };
+}
+
+// 4.9 Andockpunkt: Personal (src/sim/staffRound.ts) erledigt Briefe nach Richtlinie –
+// ohne Jacobs Termine und unabhängig von seiner Erschöpfung (sharp gilt nicht).
+/** Ist eine Wahl ohne Blick auf Termine und Kraft möglich? Bedingungen und Dokumentenprüfung. */
+export function choicePossible(state: GameState, event: EventDef, choice: EventChoice): boolean {
+  return waehlbar(state, event, choice);
+}
+
+/** Jemand aus dem Personal beantwortet ein offenes Ereignis; vorsatz steht vor dem Eintrag im Protokoll. */
+export function resolveDelegated(
+  state: GameState,
+  balance: Balance,
+  catalog: readonly EventDef[],
+  eventId: string,
+  choiceId: string,
+  vorsatz: string,
+  lang: Lang = DEFAULT_LANG,
+): EventResult {
+  const event = finde(catalog, eventId);
+  if (!event || event.routine || !state.events.pending.includes(eventId)) return { ok: false, reason: 'Dieses Ereignis liegt nicht auf dem Schreibtisch.' };
+  const choice = event.choices.find((c) => c.id === choiceId);
+  if (!choice || !waehlbar(state, event, choice)) return { ok: false, reason: 'Diese Antwort geht gerade nicht.' };
+  return { ok: true, state: openRegions(erledigen(state, event, choice, lang, vorsatz, balance.events.timedRounds), balance) };
 }
 
 function erledigen(state: GameState, event: EventDef, choice: EventChoice, lang: Lang, vorsatz: string, timedRounds: number): GameState {

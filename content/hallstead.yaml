@@ -1,0 +1,158 @@
+# Hallstead-Mappe (4.16, GDD §8, §10, §11): Nebeninvestments und Lobbyist – ab Kapitel 3.
+# Zahlen stehen in content/balance.yaml → hallstead. Platzhalter in Texten:
+# {name} {amount} {favors} {party} {rounds} {cost}
+
+object:
+  name: { de: "Hallstead-Mappe", en: "Hallstead file" }
+  hint: { de: "Beteiligungen, Lobbyist und Gesetze in der Hauptstadt.", en: "Holdings, lobbyist and bills in the capital." }
+  locked: { de: "Hallsteads Türen öffnen sich erst einem Konzernherrn (ab Kapitel 3).", en: "Hallstead only opens its doors to a captain of industry (from chapter 3)." }
+
+tabs:
+  holdings: { de: "Beteiligungen", en: "Holdings" }
+  lobby: { de: "Lobbyist", en: "Lobbyist" }
+  laws: { de: "Gesetze", en: "Bills" }
+
+holdings:
+  land:
+    name: { de: "Land in Boomtowns", en: "Boomtown land" }
+    text: { de: "Steigt mit jeder neuen Quelle in der Gegend. Versiegt das Feld, ist das Land kaum noch etwas wert.", en: "Rises with every new well nearby. When the field runs dry, the land is worth next to nothing." }
+    shock: { de: "Das Feld unter der Boomtown versiegt. Jacobs Land verliert {amount}.", en: "The field beneath the boomtown runs dry. Jacob's land loses {amount}." }
+  bahn:
+    name: { de: "Eisenbahnaktien", en: "Railroad shares" }
+    text: { de: "Gute Dividende, solange die Wirtschaft brummt. Im Crash fallen sie schwer.", en: "A fine dividend while business hums. They fall hard in a crash." }
+  auto:
+    name: { de: "Autoaktien", en: "Motorcar shares" }
+    text: { de: "Wachsen mit jedem Automobil auf der Straße – und stürzen im Crash am tiefsten.", en: "Grow with every motorcar on the road – and fall deepest in a crash." }
+  zeitung:
+    name: { de: "Eigene Zeitung", en: "Own newspaper" }
+    text: { de: "Kostet eher, als sie bringt. Dafür lenkt sie Schlagzeilen – solange man ihr noch glaubt.", en: "Costs more than it earns. But it steers the headlines – as long as people still believe it." }
+  bank:
+    name: { de: "Eigene Bank", en: "Own bank" }
+    text: { de: "Billigeres Geld für die eigene Firma. In jeder Kreditkrise droht der Ansturm auf die Schalter.", en: "Cheaper money for the company. In every credit crisis a run on the counters looms." }
+    shock: { de: "Ansturm auf die Schalter! Die Kunden räumen Jacobs Bank leer – sie verliert {amount}.", en: "A run on the bank! Customers empty Jacob's vaults – it loses {amount}." }
+
+newspaper:
+  campaign: { de: "Kampagne fahren", en: "Run a campaign" }
+  campaignDone: { de: "Die Kampagne dieser Runde läuft.", en: "This round's campaign is running." }
+  credibility:
+    high: { de: "Die Leser glauben dem Blatt.", en: "Readers trust the paper." }
+    scratched: { de: "Die Leser werden misstrauisch.", en: "Readers are growing suspicious." }
+    lost: { de: "Niemand glaubt dem Blatt mehr ein Wort.", en: "Nobody believes a word the paper prints." }
+
+bank:
+  discount: { de: "Jacobs Firma leiht bei der eigenen Bank {amount} Punkte billiger.", en: "Jacob's company borrows {amount} points cheaper from its own bank." }
+
+lobbyists:
+  pryce:
+    name: { de: "Edmund Pryce", en: "Edmund Pryce" }
+    text: { de: "Dreißig Jahre in Hallsteads Fluren, kennt jeden Ausschuss beim Vornamen. Fasst keinen Umschlag an.", en: "Thirty years in Hallstead's corridors, on first-name terms with every committee. Won't touch an envelope." }
+  lowell:
+    name: { de: "Harriet Lowell", en: "Harriet Lowell" }
+    text: { de: "Brillant, wenn sie will. Manche Woche will sie nicht.", en: "Brilliant when she wants to be. Some weeks she doesn't." }
+  tibbs:
+    name: { de: "Warren Tibbs", en: "Warren Tibbs" }
+    text: { de: "Billig, laut und in jedem Club bekannt – nicht immer nüchtern.", en: "Cheap, loud and known in every club – not always sober." }
+
+traits:
+  gewissenhaft: { de: "gewissenhaft", en: "scrupulous" }
+  trinker: { de: "Trinker", en: "drinker" }
+  genie: { de: "Genie, launisch", en: "genius, moody" }
+
+competence:
+  low: { de: "unerfahren", en: "green" }
+  mid: { de: "brauchbar", en: "capable" }
+  high: { de: "erfahren", en: "seasoned" }
+
+parties:
+  handel: { de: "Handelspartei", en: "Commerce Party" }
+  volksbund: { de: "Volksbund", en: "People's League" }
+  provinz: { de: "Provinzliga", en: "Provincial League" }
+
+# Gesetze, auf die der Lobbyist Druck machen kann (GDD §10). Ersatzkatalog, bis
+# das Gesetzessystem (4.3) seinen eigenen Katalog liefert; die ids sollen dort gleich heißen.
+# oil: was die Förderer-Lobby will (for/against).
+laws:
+  transportpflicht:
+    name: { de: "Transportpflicht für Pipelines", en: "Common carrier pipelines" }
+    oil: against
+  kartell:
+    name: { de: "Kartellgesetz", en: "Antitrust act" }
+    oil: against
+  einkommensteuer:
+    name: { de: "Einkommensteuer", en: "Income tax" }
+    oil: against
+  steuerabzug:
+    name: { de: "Steuerabzug für Ölvorkommen", en: "Depletion allowance" }
+    oil: for
+  foerderquoten:
+    name: { de: "Förderquoten, Verbot von heißem Öl", en: "Production quotas, hot oil ban" }
+    oil: for
+  gewerkschaft:
+    name: { de: "Gewerkschaftsgesetz", en: "Labour act" }
+    oil: against
+  bankaufsicht:
+    name: { de: "Bankaufsicht", en: "Banking supervision" }
+    oil: against
+  importquoten:
+    name: { de: "Importquoten", en: "Import quotas" }
+    oil: for
+  umwelt:
+    name: { de: "Umweltgesetze", en: "Environmental laws" }
+    oil: against
+
+ui:
+  value: { de: "Wert", en: "Value" }
+  invested: { de: "eingesetzt", en: "invested" }
+  buy: { de: "Kaufen", en: "Buy" }
+  buyMore: { de: "Nachkaufen", en: "Buy more" }
+  sell: { de: "Verkaufen", en: "Sell" }
+  hire: { de: "Einstellen", en: "Hire" }
+  fire: { de: "Entlassen", en: "Dismiss" }
+  salary: { de: "Gehalt je Runde", en: "Salary per round" }
+  favors: { de: "Gefallen", en: "Favours" }
+  favorsHint: { de: "Hallstead schuldet Jacob {favors} Gefallen.", en: "Hallstead owes Jacob {favors} favours." }
+  bribe: { de: "Umschlag ({cost})", en: "Envelope ({cost})" }
+  bribeHint: { de: "Bringt schnell Gefallen – und Hitze, wenn es jemand merkt.", en: "Buys favours fast – and heat if anyone notices." }
+  donate: { de: "Wahlkampfspende", en: "Campaign donation" }
+  donateHint: { de: "Gewinnt die Partei die nächste Wahl, schuldet sie Jacob etwas. Sonst ist das Geld weg.", en: "If the party wins the next election, it owes Jacob. Otherwise the money is gone." }
+  donationPending: { de: "{amount} an die {party}, gewählt wird in {rounds}.", en: "{amount} to the {party}, election in {rounds}." }
+  government: { de: "Es regiert die {party}.", en: "The {party} governs." }
+  push: { de: "Fordern", en: "Push" }
+  block: { de: "Verhindern", en: "Block" }
+  water: { de: "Verwässern", en: "Water down" }
+  oilFor: { de: "Die Förderer wollen es.", en: "Producers want it." }
+  oilAgainst: { de: "Die Förderer sind dagegen.", en: "Producers oppose it." }
+  pressureFor: { de: "Jacobs Leute drängen darauf.", en: "Jacob's people are pushing for it." }
+  pressureAgainst: { de: "Jacobs Leute bremsen.", en: "Jacob's people are stalling it." }
+  watered: { de: "Schon verwässert.", en: "Already watered down." }
+  needLobbyist: { de: "Ohne Lobbyisten in Hallstead hört dort niemand zu.", en: "Without a lobbyist in Hallstead, nobody there listens." }
+  lawsPending: { de: "Noch steht keines dieser Gesetze zur Abstimmung. Was Jacobs Leute jetzt fordern, bremsen oder verwässern, ist nur vorgemerkt – und verblasst, bis das Parlament darüber berät.", en: "None of these bills is up for a vote yet. Whatever Jacob's people push, block or water down now is only noted – and fades until parliament takes them up." }
+  telegram: { de: "Telegramm aus Hallstead", en: "Telegram from Hallstead" }
+  nothing: { de: "Noch keine Beteiligungen.", en: "No holdings yet." }
+  debugUnlock: { de: "Hallstead öffnen (Kapitel 3 vorziehen)", en: "Open Hallstead (preview chapter 3)" }
+
+# Telegramm nach dem Rundenende.
+news:
+  crash: { de: "Crash an der Börse: {name} verliert {amount}.", en: "Crash on the exchange: {name} loses {amount}." }
+  yieldPlus: { de: "Erträge der Beteiligungen: {amount}.", en: "Income from holdings: {amount}." }
+  yieldMinus: { de: "Zuschuss für die Beteiligungen: {amount}.", en: "Subsidy for the holdings: {amount}." }
+  donationWon: { de: "Die {party} hat die Wahl gewonnen und schuldet Jacob {favors} Gefallen.", en: "The {party} won the election and owes Jacob {favors} favours." }
+  donationLost: { de: "Die {party} hat verloren. {amount} Spende sind verloren.", en: "The {party} lost. {amount} in donations are gone." }
+  lobbyFavors: { de: "Der Lobbyist meldet {favors} neue Gefallen.", en: "The lobbyist reports {favors} new favours." }
+  lobbyDrunk: { de: "Der Lobbyist hat die Runde im Club verschlafen.", en: "The lobbyist slept through the round at his club." }
+  salary: { de: "Gehalt des Lobbyisten: {amount}.", en: "Lobbyist's salary: {amount}." }
+
+# Warum eine Handlung nicht geht.
+reasons:
+  locked: { de: "Hallstead ist noch verschlossen.", en: "Hallstead is still closed." }
+  cash: { de: "Dafür reicht die Kasse nicht.", en: "Not enough cash for that." }
+  owned: { de: "Gehört Jacob schon.", en: "Jacob already owns it." }
+  notOwned: { de: "Gehört Jacob nicht.", en: "Jacob doesn't own it." }
+  noLobbyist: { de: "Dafür braucht Jacob einen Lobbyisten.", en: "Jacob needs a lobbyist for that." }
+  hasLobbyist: { de: "Jacob hat schon einen Lobbyisten.", en: "Jacob already has a lobbyist." }
+  unknown: { de: "Unbekannt.", en: "Unknown." }
+  favors: { de: "Nicht genug Gefallen.", en: "Not enough favours." }
+  refuses: { de: "Der Lobbyist weigert sich.", en: "The lobbyist refuses." }
+  already: { de: "In dieser Runde schon geschehen.", en: "Already done this round." }
+  amount: { de: "Der Betrag ist zu klein.", en: "The amount is too small." }
+  maxed: { de: "Mehr geht nicht.", en: "That's as far as it goes." }

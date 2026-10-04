@@ -4,12 +4,29 @@
 // verworfen. Keine Spielregeln hier, nur sichern und prüfen, ob der Zustand
 // vollständig ist.
 
+import { validDiplomacy } from './diplomacy'; // 4.10 Andockpunkt
 import type { GameState } from './game';
 import { newLogistics } from './logistics';
 import { isWorldState, neutralWorld, withCreditForeignDefaults, withLawDefaults, withPoliticsDefaults } from './world';
+// 4.6 Andockpunkt: Raffinerie.
+import { isRefineryState } from './refinery';
+// 4.7 Andockpunkt: Fernleitungen (fehlen in Kapitel 1 – dann ist nichts zu prüfen).
+import { validBigPipelines } from './bigPipeline';
+import { isStocksState } from './stocks'; // 4.8 Andockpunkt
+import { isStaffState } from './staff'; // 4.9 Andockpunkt: Personal
+// 4.11 Andockpunkt: Ermittler und Forschung prüfen ihren Teil selbst.
+import { validInvestigation } from './investigation';
+import { validResearch } from './research';
+// 4.14 Andockpunkt: Marke und Tankstellen.
+import { isBrandState } from './brand';
+// 4.15 Andockpunkt: Börse (optional, erst ab Kapitel 3 im Spielstand).
+import { validExchange } from './exchange';
+// 4.16 Andockpunkt
+import { validHallstead } from './hallsteadState';
+import { isKapitel3State } from './kapitel3'; // 4.17 Andockpunkt
 
-/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2), 11 = mit befristeten Nachwirkungen der Ereignisse (0.2.15+3), 12 = Karte mit Gebieten und Ranches statt Raster, mehrere Bohrlöcher je Ranch (0.2.15+5), 13 = Bohrtürme und Pumpen (0.2.15+7), 14 = mit Weltmodell (4.1), 15 = mit öffentlichem Handeln und Wahlergebnis im Weltmodell (4.2), 16 = mit Gesetzgebung im Weltmodell (4.3), 17 = mit Kreditzyklus (Verschuldung, Bankpanik) und Ausland (Costa Negra, Qasir) im Weltmodell (4.4), 18 = mit Kapitel, Zeitsprung und Chronik (4.5; Beteiligungen `ventures` sind freiwillig – fehlen sie, gibt es keine). */
-export const SAVE_FORMAT = 18;
+/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2), 11 = mit befristeten Nachwirkungen der Ereignisse (0.2.15+3), 12 = Karte mit Gebieten und Ranches statt Raster, mehrere Bohrlöcher je Ranch (0.2.15+5), 13 = Bohrtürme und Pumpen (0.2.15+7), 14 = mit Weltmodell (4.1), 15 = mit öffentlichem Handeln und Wahlergebnis im Weltmodell (4.2), 16 = mit Gesetzgebung im Weltmodell (4.3), 17 = mit Kreditzyklus (Verschuldung, Bankpanik) und Ausland (Costa Negra, Qasir) im Weltmodell (4.4), 18 = mit Kapitel, Zeitsprung und Chronik (4.5; Beteiligungen `ventures` sind freiwillig – fehlen sie, gibt es keine), 19 = mit den Systemen der Kapitel 2 und 3 (4.6–4.17: refinery, bigPipelines, stocks, staff, diplomacy, investigation, research, brand, exchange, hallstead, kapitel3 – alle freiwillig, fehlen sie, ist das System noch nicht offen). */
+export const SAVE_FORMAT = 19;
 
 /**
  * Ältere Formate, die mit Ersatzwerten noch geladen werden. Vor Format 12 keins
@@ -18,7 +35,7 @@ export const SAVE_FORMAT = 18;
  * bis Format 17 Kapitel 1 ohne Zeitsprung (4.5).
  * Die Umrisse der Ranches stehen nie im Spielstand – sie kommen aus dem Seed.
  */
-const ALTE_FORMATE: number[] = [12, 13, 14, 15, 16, 17];
+const ALTE_FORMATE: number[] = [12, 13, 14, 15, 16, 17, 18];
 
 export interface SaveFile {
   format: number;
@@ -88,6 +105,8 @@ function istObjekt(wert: unknown): wert is Record<string, unknown> {
 export function validateState(value: unknown): LoadResult {
   if (!istObjekt(value) || !istText(value.seed) || !istText(value.rating)) return { ok: false, reason: UNVOLLSTAENDIG };
   if (!ZAHLEN.every((key) => istZahl(value[key]))) return { ok: false, reason: UNVOLLSTAENDIG };
+  // Kapitel (Phase 4): darf fehlen (= Kapitel 1), sonst eine Zahl.
+  if (value.chapter !== undefined && !istZahl(value.chapter)) return { ok: false, reason: KAPUTT };
   if (!LISTEN.every((key) => istListe(value[key]))) return { ok: false, reason: UNVOLLSTAENDIG };
   if (!OBJEKTE.every((key) => istObjekt(value[key]))) return { ok: false, reason: UNVOLLSTAENDIG };
 
@@ -162,6 +181,8 @@ export function validateState(value: unknown): LoadResult {
   ) {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
+  // 4.16 Andockpunkt: Hallstead ist optional (fehlt in Kapitel 1); wenn da, muss es vollständig sein.
+  if (!validHallstead(value.hallstead)) return { ok: false, reason: UNVOLLSTAENDIG };
   if (!isWorldState(value.worldModel)) return { ok: false, reason: UNVOLLSTAENDIG };
   // Kapitel und Zeitsprung (4.5).
   const chapter = value.chapter as number;
@@ -190,6 +211,25 @@ export function validateState(value: unknown): LoadResult {
   ) {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
+  // 4.6 Andockpunkt: Die Raffinerie ist optional (fehlt in Kapitel 1); wenn sie da ist, muss sie stimmen.
+  if (value.refinery !== undefined && !isRefineryState(value.refinery)) return { ok: false, reason: UNVOLLSTAENDIG };
+  // 4.7 Andockpunkt: Fernleitungen, falls freigeschaltet.
+  if (!validBigPipelines(value.bigPipelines)) return { ok: false, reason: UNVOLLSTAENDIG };
+  // 4.8 Andockpunkt: Aktien, Aufsichtsrat, Anleihen (ab Kapitel 2, sonst fehlt das Feld).
+  if (value.stocks !== undefined && !isStocksState(value.stocks)) return { ok: false, reason: UNVOLLSTAENDIG };
+  // 4.9 Andockpunkt: Personal ist freiwillig (Kapitel 1 ohne) – wenn da, muss es vollständig sein.
+  if (value.staff !== undefined && !isStaffState(value.staff)) return { ok: false, reason: UNVOLLSTAENDIG };
+  // 4.10 Andockpunkt: Rivalen-Diplomatie fehlt in Kapitel 1 (und in älteren Ständen) – dann nichts zu prüfen.
+  if (value.diplomacy !== undefined && !validDiplomacy(value.diplomacy)) return { ok: false, reason: UNVOLLSTAENDIG };
+  // 4.11 Andockpunkt: Ermittlung und Forschung gibt es erst ab Kapitel 2 – fehlen sie, ist das in Ordnung.
+  if (value.investigation !== undefined && !validInvestigation(value.investigation)) return { ok: false, reason: UNVOLLSTAENDIG };
+  if (value.research !== undefined && !validResearch(value.research)) return { ok: false, reason: UNVOLLSTAENDIG };
+  // 4.14 Andockpunkt: Marke und Tankstellen – fehlt vor Kapitel 3 (und in älteren Ständen) ganz.
+  if (value.brand !== undefined && !isBrandState(value.brand)) return { ok: false, reason: UNVOLLSTAENDIG };
+  // 4.15 Andockpunkt: Börse – fehlt sie, ist das gültig (Kapitel 1 und 2).
+  if (!validExchange(value.exchange)) return { ok: false, reason: UNVOLLSTAENDIG };
+  // 4.17 Andockpunkt: Kapitel 3 ist freiwillig – fehlt in älteren Ständen und in Kapitel 1.
+  if (value.kapitel3 !== undefined && !isKapitel3State(value.kapitel3)) return { ok: false, reason: UNVOLLSTAENDIG };
   const round = value.round as number;
   const totalRounds = value.totalRounds as number;
   return round >= 1 && round <= totalRounds ? { ok: true, state: value as unknown as GameState } : { ok: false, reason: UNVOLLSTAENDIG };

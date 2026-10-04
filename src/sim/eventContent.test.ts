@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ContentLoadError, formatContentError, loadEventCatalog, parseEventFile, parseEventFiles } from './eventContent';
+import { ContentLoadError, formatContentError, loadEventCatalog, parseEventFile, parseEventFiles, ZEITSPRUNG_MARKS } from './eventContent';
 import { resolveEvent } from './events';
 import { newGame } from './game';
 import { loadBalance } from './testBalance';
@@ -23,8 +23,35 @@ const GUT = `- id: brief
 
 describe('echte Inhalte in content/events/', () => {
   it('sind fehlerfrei und enthalten die Probe-Ereignisse, festen Termine und Alltagsereignisse 1–67 für Kapitel 1 (2.2–2.10b)', () => {
-    const ids = loadEvents().map((e) => e.id);
-    expect(ids).toEqual(['thomas_geburt', 'ruth_buecher', 'silas_schnaps', 'silas_abrechnung', 'silas_nachtschicht', 'silas_abschied', 'silas_saloon', 'moss_schulden', 'moss_wagenweg', 'moss_dank', 'moss_versteigerung', 'moss_spekulant', 'moss_daniel_dank', 'moss_daniel_zorn', 'nora_brand', 'vale_umschlag', 'ruth_sorge', 'arzt_besuch', 'panne_meissel', 'panne_kessel', 'panne_gestaenge', 'trupp_lohn', 'trupp_schlaegerei', 'trupp_unfall', 'quelle_salzwasser', 'quelle_gas', 'brand_nachbar', 'rutengaenger', 'fuhre_aufschlag', 'fuhre_schlamm', 'faesser_angebot', 'tank_leck', 'pension_miete', 'saloon_serviette', 'spekulant_angebot', 'bezirk_steuer', 'geruecht_fund', 'geruecht_tanks', 'geruecht_tarif', 'prediger', 'sheriff_schutz', 'nora_interview', 'poker', 'kumpel', 'fieber', 'thomas_nacht', 'thomas_wort', 'ruth_geburtstag', 'bank_kredit', 'bank_tilgung', 'wucher_kredit', 'wucher_faellig', 'wechsel_angebot', 'wechsel_geplatzt', 'crane_vorkauf', 'crane_pruefer', 'bullard_ausbruch', 'bullard_seil', 'bullard_rache_folge', 'thorne_waggons', 'tilly_tank', 'pickett_pleite', 'trupp_sonntag', 'streik', 'kerrigan_husten', 'kerrigan_zusammenbruch', 'eli_zurueck', 'eli_mutter', 'crabb_lager', 'mateo_papiere', 'blitz_tank', 'sturm_golf', 'torpedo', 'kind_grube', 'diebe_tank', 'diebe_gefasst', 'ruth_anteil', 'ruth_schwester', 'haus_kaufen', 'thomas_krupp', 'thomas_taufe', 'courier_anzeige', 'nora_artikel', 'wahl_spende', 'liga_petition', 'richter_schreiber', 'wahl_stimmen', 'fuhrleute_streik', 'fuhrleute_bestochen', 'wegerecht_moss', 'wegerecht_moss_freund', 'wegerecht_moss_versoehnt', 'wegerecht_moss_feind', 'wegerecht_bahndamm', 'dok_pike_urkunde', 'dok_pike_echt_folge', 'dok_pike_falsch_folge', 'dok_hale_gutachten', 'dok_hale_echt_folge', 'dok_hale_falsch_folge', 'post_seil', 'post_oelkauf', 'post_mietstall', 'post_witwe', 'post_kurier', 'post_geologe', 'post_mutter', 'post_drohung', 'bullard_saloon', 'bullard_verrat', 'bullard_kredit', 'bullard_rueckzahlung', 'bullard_treue', 'thorne_frachtvertrag', 'crane_abschlag', 'crane_uebernahme', 'termin_ruth', 'termin_familie', 'termin_familie_k2', 'termin_sonntag', 'termin_lohnbohren', 'termin_rundgang', 'termin_port_ellis']);
+    // 4.7 Andockpunkt: Die Kapitel-2-Ereignisse der Fernleitungen (k2-fernleitung.yaml) prüft bigPipeline.test.ts.
+    // 4.9 Andockpunkt: Briefe für Kapitel 2 (k2-*.yaml) gehören nicht zur Liste von Kapitel 1.
+    // 4.10 Andockpunkt: Ereignisse späterer Kapitel (k2_…) prüfen ihre eigenen Tests.
+    // Story Kapitel 2 und Alltag Kapitel 3: Ereignisse späterer Kapitel (minChapter ≥ 2) prüfen eigene Tests (events.test.ts).
+    // Die Ereignisse der Kapitel-2-Systeme tragen minChapter: 1 und fallen über ihr Präfix heraus.
+    const ids = loadEvents()
+      .filter((e) => (e.conditions.minChapter ?? 1) <= 1)
+      .map((e) => e.id)
+      .filter((id) => !id.startsWith('fernleitung_') && !id.startsWith('k2_'));
+    expect(ids).toEqual(['thomas_geburt', 'ruth_buecher', 'silas_schnaps', 'silas_abrechnung', 'silas_nachtschicht', 'silas_abschied', 'silas_saloon', 'moss_schulden', 'moss_wagenweg', 'moss_dank', 'moss_versteigerung', 'moss_spekulant', 'moss_daniel_dank', 'moss_daniel_zorn', 'nora_brand', 'vale_umschlag', 'ruth_sorge', 'arzt_besuch', 'panne_meissel', 'panne_kessel', 'panne_gestaenge', 'trupp_lohn', 'trupp_schlaegerei', 'trupp_unfall', 'quelle_salzwasser', 'quelle_gas', 'brand_nachbar', 'rutengaenger', 'fuhre_aufschlag', 'fuhre_schlamm', 'faesser_angebot', 'tank_leck', 'pension_miete', 'saloon_serviette', 'spekulant_angebot', 'bezirk_steuer', 'geruecht_fund', 'geruecht_tanks', 'geruecht_tarif', 'prediger', 'sheriff_schutz', 'nora_interview', 'poker', 'kumpel', 'fieber', 'thomas_nacht', 'thomas_wort', 'ruth_geburtstag', 'bank_kredit', 'bank_tilgung', 'wucher_kredit', 'wucher_faellig', 'wechsel_angebot', 'wechsel_geplatzt', 'crane_vorkauf', 'crane_pruefer', 'bullard_ausbruch', 'bullard_seil', 'bullard_rache_folge', 'thorne_waggons', 'tilly_tank', 'pickett_pleite', 'trupp_sonntag', 'streik', 'kerrigan_husten', 'kerrigan_zusammenbruch', 'eli_zurueck', 'eli_mutter', 'crabb_lager', 'mateo_papiere', 'blitz_tank', 'sturm_golf', 'torpedo', 'kind_grube', 'diebe_tank', 'diebe_gefasst', 'ruth_anteil', 'ruth_schwester', 'haus_kaufen', 'thomas_krupp', 'thomas_taufe', 'courier_anzeige', 'nora_artikel', 'wahl_spende', 'liga_petition', 'richter_schreiber', 'wahl_stimmen', 'fuhrleute_streik', 'fuhrleute_bestochen', 'wegerecht_moss', 'wegerecht_moss_freund', 'wegerecht_moss_versoehnt', 'wegerecht_moss_feind', 'wegerecht_bahndamm', 'dok_pike_urkunde', 'dok_pike_echt_folge', 'dok_pike_falsch_folge', 'dok_hale_gutachten', 'dok_hale_echt_folge', 'dok_hale_falsch_folge', 'post_seil', 'post_oelkauf', 'post_mietstall', 'post_witwe', 'post_kurier', 'post_geologe', 'post_mutter', 'post_drohung', 'bullard_saloon', 'bullard_verrat', 'bullard_kredit', 'bullard_rueckzahlung', 'bullard_treue', 'thorne_frachtvertrag', 'crane_abschlag', 'crane_uebernahme', 'termin_ruth', 'termin_familie', 'termin_sonntag', 'termin_lohnbohren', 'termin_rundgang', 'termin_port_ellis']);
+    // 4.11 Andockpunkt: Delaneys Ereignisse für Kapitel 2 (content/events/k2-delaney.yaml) sind geladen.
+    expect(loadEvents().map((e) => e.id)).toEqual(expect.arrayContaining(['k2_delaney_ankunft', 'k2_nora_geruecht', 'k2_delaney_besuch', 'k2_delaney_anklage']));
+  });
+
+  it('Kapitel 2 – Alltag (Phase 4): content/events/k2-alltag-*.yaml, jedes nur in Kapitel 2 und mit Präfix k2_', () => {
+    // Integration: Nur die Alltagsdateien – Story-Bögen und Kapitel-2-Systeme (4.7–4.11) grenzen
+    // ihr Kapitel teils über Merkzeichen statt minChapter ein und prüfen das in events.test.ts.
+    const k2 = readEventFiles(EVENTS_DIR)
+      .filter((f) => /k2-alltag-[^/]*\.ya?ml$/.test(f.file))
+      .flatMap((f) => parseEventFile(f.file, f.text).events);
+    expect(k2.length).toBeGreaterThanOrEqual(45);
+    for (const e of k2) {
+      expect(e.id.startsWith('k2_'), e.id).toBe(true);
+      expect(e.conditions.minChapter, e.id).toBe(2);
+      expect(e.conditions.maxChapter, e.id).toBe(2);
+    }
+    // Und alle diese Ereignisse sind im echten Katalog geladen.
+    const ids = new Set(loadEvents().map((e) => e.id));
+    for (const e of k2) expect(ids.has(e.id), e.id).toBe(true);
   });
 
   it('jedes Probe-Ereignis hat 1–4 Wahlen (GDD §3: 2–4 Antworten) und eine Standard-Wahl ohne Sperre', () => {
@@ -178,6 +205,14 @@ describe('Nachwirkung im YAML (2.2)', () => {
     expect(errors.map(formatContentError)).toEqual([
       'a.yaml:14: Ereignis „folge“: Das Merkzeichen „nie“ setzt keine Wahl (marks: [nie]) – Tippfehler?',
     ]);
+  });
+
+  it('Merkzeichen des Zeitsprungs (Block A) zählen als gesetzt – aber nur die aus der Liste', () => {
+    for (const m of ZEITSPRUNG_MARKS) {
+      expect(parseEventFiles([{ file: 'a.yaml', text: MIT_MARKE.replace('notMarked: [nie]', `notMarked: [${m}]`) }]).errors, m).toEqual([]);
+    }
+    const tippfehler = parseEventFiles([{ file: 'a.yaml', text: MIT_MARKE.replace('notMarked: [nie]', 'notMarked: [zs2_grady_reservland]') }]);
+    expect(tippfehler.errors).toHaveLength(1);
   });
 
   it('kaputte Merkzeichen und delay werden gemeldet', () => {

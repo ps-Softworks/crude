@@ -1,0 +1,253 @@
+# Kapitel 3 – Der Konzernherr (4.17): Texte für Seismik, Mr. Vale und das Konsortium,
+# Konsortialprojekte und den Stand in Hallstead. Entwurf von Claude, bitte in eigener
+# Stimme überarbeiten. Zahlen stehen in content/balance.yaml (Block kapitel3).
+# Platzhalter in den Notizen: {ranch} (Name der Ranch), {betrag} (Geld), {gefallen}
+# (Titel des Gefallens), {projekt} (Titel des Projekts).
+
+desk:
+  name: { de: "Siegelmappe", en: "Sealed Folder" }
+  title: { de: "Konzern und Gesellschaft", en: "Company and Society" }
+  tabs:
+    seismik: { de: "Seismik", en: "Seismics" }
+    konsortium: { de: "Mr. Vale", en: "Mr. Vale" }
+    projekte: { de: "Projekte", en: "Ventures" }
+    stand: { de: "Hallstead", en: "Hallstead" }
+    notizen: { de: "Notizen", en: "Notes" }
+  preview: { de: "Kapitel 3 zur Probe öffnen (Debug)", en: "Open chapter 3 as a preview (debug)" }
+  locked: { de: "Diese Mappe gehört zu Kapitel 3.", en: "This folder belongs to chapter 3." }
+
+reasons:
+  gesperrt: { de: "Das kommt erst in Kapitel 3.", en: "That comes in chapter 3." }
+  kapitel_ende: { de: "Das Kapitel ist beendet.", en: "The chapter is over." }
+  geld: { de: "Nicht genug Geld in der Kasse.", en: "Not enough cash." }
+  technik: { de: "So weit ist die Technik in der Föderation noch nicht – Seismik braucht Technikstufe III.", en: "Technology in the Federation is not that far yet – seismics needs tech level III." }
+  lizenz_fehlt: { de: "Erst braucht Jacob die Lizenz für das Seismik-Patent.", en: "Jacob first needs a licence for the seismic patent." }
+  lizenz_da: { de: "Die Lizenz hat Jacob schon.", en: "Jacob already holds the licence." }
+  kein_trupp: { de: "Alle Seismik-Trupps sind unterwegs.", en: "All seismic crews are out." }
+  max_trupps: { de: "Mehr Spezialtrupps gibt es in der ganzen Föderation nicht.", en: "There are no more specialist crews in the whole Federation." }
+  parzelle: { de: "Diese Ranch lässt sich nicht vermessen.", en: "This ranch cannot be surveyed." }
+  schon_vermessen: { de: "Die Ranch ist schon vermessen.", en: "The ranch has already been surveyed." }
+  laeuft_schon: { de: "Der Trupp ist schon auf dieser Ranch.", en: "A crew is already on this ranch." }
+  keine_einladung: { de: "Es liegt keine Einladung vor.", en: "There is no invitation." }
+  schon_entschieden: { de: "Jacob hat schon geantwortet.", en: "Jacob has already answered." }
+  kein_gefallen: { de: "Vale verlangt gerade nichts.", en: "Vale is asking for nothing right now." }
+  falsche_wahl: { de: "Diese Antwort steht Jacob nicht offen.", en: "That answer is not open to Jacob." }
+  keine_rettung: { de: "Vale bietet gerade keine Rettung an.", en: "Vale is not offering a rescue right now." }
+  kein_angebot: { de: "Dieses Angebot liegt nicht mehr auf dem Tisch.", en: "This offer is no longer on the table." }
+  anteil: { de: "Diesen Anteil bietet das Konsortium nicht an.", en: "That share is not on offer." }
+  rang: { de: "Dafür fehlt Jacob der Stand in Hallstead.", en: "Jacob lacks the standing in Hallstead for that." }
+  nur_mitglieder: { de: "Nur für Mitglieder des Konsortiums.", en: "Members of the Consortium only." }
+  verstossen: { de: "Das Konsortium hat Jacob verstoßen.", en: "The Consortium has cast Jacob out." }
+  kein_sohn: { de: "Es gibt keinen Sohn, der heiraten könnte.", en: "There is no son who could marry." }
+  schon_verheiratet: { de: "Thomas ist schon verheiratet.", en: "Thomas is already married." }
+  gebrochen: { de: "Jacob hat die alte Ordnung gebrochen – diese Tür bleibt zu.", en: "Jacob broke the old order – this door stays shut." }
+  aufgenommen: { de: "Jacob gehört schon dazu.", en: "Jacob already belongs." }
+  ansehen: { de: "Der Club nimmt Jacob noch nicht auf.", en: "The club will not admit Jacob yet." }
+  spenden_ausgereizt: { de: "Mehr Ansehen lässt sich nicht kaufen.", en: "No more standing can be bought." }
+
+notes:
+  freigeschaltet: { de: "Mahagoni statt Kiste: Harlan Oil ist ein Konzern.", en: "Mahogany instead of a crate: Harlan Oil is a company now." }
+  seismik_lizenz: { de: "Lizenz für das Seismik-Patent erworben ({betrag}).", en: "Licence for the seismic patent acquired ({betrag})." }
+  seismik_trupp: { de: "Ein weiterer Seismik-Trupp angeworben ({betrag}).", en: "Another seismic crew hired ({betrag})." }
+  seismik_auftrag: { de: "Der Seismik-Trupp fährt auf {ranch} ({betrag}).", en: "The seismic crew heads for {ranch} ({betrag})." }
+  seismik_bericht: { de: "Der Seismik-Bericht für {ranch} liegt auf dem Tisch.", en: "The seismic report for {ranch} is on the desk." }
+  einladung: { de: "Ein Brief mit grauem Siegel: Mr. Vale lädt nach Aldmark ein.", en: "A letter with a grey seal: Mr. Vale sends an invitation to Aldmark." }
+  einladung_verfallen: { de: "Jacob hat nicht geantwortet. Vale nimmt das als Antwort.", en: "Jacob did not reply. Vale takes that as an answer." }
+  beitritt: { de: "Jacob unterschreibt auf Schloss Kerrow. Er gehört jetzt dazu.", en: "Jacob signs at Kerrow Castle. He belongs now." }
+  absage: { de: "Jacob lehnt ab. Vale lächelt und sagt, man werde sich wiedersehen.", en: "Jacob declines. Vale smiles and says they will meet again." }
+  doppelspiel: { de: "Jacob unterschreibt – und hat nicht vor, sich daran zu halten.", en: "Jacob signs – with no intention of keeping his word." }
+  kartellgewinn: { de: "Anteil am Kartellgewinn: {betrag}.", en: "Share of the cartel profit: {betrag}." }
+  insidergewinn: { de: "Kartellgewinn und ein paar Hinweise, die nicht für Jacob bestimmt waren: {betrag}.", en: "Cartel profit and a few hints not meant for Jacob: {betrag}." }
+  gefallen: { de: "Mr. Vale bittet um einen Gefallen: {gefallen}.", en: "Mr. Vale asks a favour: {gefallen}." }
+  gefallen_erfuellt: { de: "Gefallen erfüllt: {gefallen} ({betrag}).", en: "Favour done: {gefallen} ({betrag})." }
+  gefallen_verweigert: { de: "Gefallen verweigert: {gefallen}. Vale notiert es.", en: "Favour refused: {gefallen}. Vale makes a note." }
+  gefallen_vorgetaeuscht: { de: "Gefallen nur zum Schein erfüllt: {gefallen}.", en: "Favour done only for show: {gefallen}." }
+  gefallen_verfallen: { de: "Keine Antwort auf Vales Bitte ({gefallen}). Auch das ist eine Antwort.", en: "No answer to Vale's request ({gefallen}). That is an answer too." }
+  verstossen: { de: "Das Konsortium hat Jacob verstoßen.", en: "The Consortium has cast Jacob out." }
+  aufgeflogen: { de: "Vale weiß vom Doppelspiel. Jacob ist draußen – und Hallstead tuschelt.", en: "Vale knows about the double game. Jacob is out – and Hallstead whispers." }
+  preisdruck: { de: "Das Konsortium drückt Jacobs Preise: {betrag} weniger.", en: "The Consortium squeezes Jacob's prices: {betrag} less." }
+  rettung: { de: "Vale rettet Harlan Oil ({betrag}). Über die Förderquoten entscheidet jetzt er.", en: "Vale rescues Harlan Oil ({betrag}). He now decides the production quotas." }
+  projekt_angebot: { de: "Neues Konsortialprojekt: {projekt}.", en: "New joint venture: {projekt}." }
+  projekt_verfallen: { de: "Das Angebot ist vom Tisch: {projekt}.", en: "The offer is off the table: {projekt}." }
+  projekt_gezeichnet: { de: "Jacob zeichnet einen Anteil: {projekt} ({betrag}).", en: "Jacob subscribes a share: {projekt} ({betrag})." }
+  projekt_verzoegert: { de: "Ein Partner hat betrogen – {projekt} verzögert sich.", en: "A partner cheated – {projekt} is delayed." }
+  projekt_fertig: { de: "Fertig und in Betrieb: {projekt}.", en: "Finished and running: {projekt}." }
+  projekt_gescheitert: { de: "Gescheitert: {projekt}. Der Anteil ({betrag}) ist verloren.", en: "Failed: {projekt}. The share ({betrag}) is lost." }
+  projekt_ertrag: { de: "Erträge aus den Konsortialprojekten: {betrag}.", en: "Income from joint ventures: {betrag}." }
+  spende: { de: "Eine Stiftung im Namen Harlan ({betrag}).", en: "A foundation in the Harlan name ({betrag})." }
+  heirat: { de: "Thomas heiratet in die Familie Vandermeer (Mitgift {betrag}).", en: "Thomas marries into the Vandermeer family (dowry {betrag})." }
+  ordnung_gebrochen: { de: "Jacob kauft die Schulden der alten Familien ({betrag}). Hallstead gehorcht – aus Angst.", en: "Jacob buys up the old families' debts ({betrag}). Hallstead obeys – out of fear." }
+  club: { de: "Aufnahme in den Hallstead Union Club ({betrag}).", en: "Admitted to the Hallstead Union Club ({betrag})." }
+
+seismik:
+  intro:
+    de: >-
+      Reflexionsseismik: Ein Spezialtrupp sprengt kleine Ladungen und horcht auf das
+      Echo der Schichten. Teuer und genauer als jeder Geologe – aber auch ein Echo kann
+      täuschen, und trocken bohren kann man immer noch. Das Patent hält der Crane Trust.
+    en: >-
+      Reflection seismics: a specialist crew sets off small charges and listens to the
+      echo of the strata. Expensive and more precise than any geologist – but an echo can
+      deceive too, and a dry hole is still possible. The Crane Trust holds the patent.
+  stage: { de: "Technikstufe der Föderation", en: "Federation tech level" }
+  license: { de: "Lizenz kaufen", en: "Buy licence" }
+  licenseFree: { de: "Lizenz annehmen (für Mitglieder umsonst)", en: "Accept licence (free for members)" }
+  crew: { de: "Weiteren Trupp anwerben", en: "Hire another crew" }
+  order: { de: "Seismik-Trupp schicken", en: "Send seismic crew" }
+  label: { de: "Seismik", en: "Seismics" }
+  pending: { de: "Trupp unterwegs", en: "Crew out" }
+  none: { de: "keine Falle zu erkennen", en: "no trap visible" }
+  chance: { de: "{low}–{high} % Fundchance", en: "{low}–{high} % chance of oil" }
+  trap: { de: "Falle {size}", en: "trap {size}" }
+  trapRange: { de: "Falle {from} bis {to}", en: "trap {from} to {to}" }
+  showOnMap: { de: "Auf Karte zeigen", en: "Show on map" }
+  howTo: { de: "Den Trupp schickt Jacob auf der Karte: Ranch anklicken, dann „Seismik-Trupp schicken“.", en: "Jacob sends the crew from the map: click a ranch, then \"Send seismic crew\"." }
+  sizes:
+    tasche: { de: "Tasche", en: "pocket" }
+    klein: { de: "klein", en: "small" }
+    mittel: { de: "mittel", en: "medium" }
+    gross: { de: "groß", en: "large" }
+    riese: { de: "Riesenfeld", en: "giant field" }
+
+konsortium:
+  letter:
+    title: { de: "Eine Einladung nach Aldmark", en: "An Invitation to Aldmark" }
+    text:
+      de: >-
+        Der Umschlag ist schwer, das Siegel grau und ohne Wappen. „Einige Herren, die
+        das Ölgeschäft lieber geordnet als verwüstet sehen, treffen sich im Spätsommer
+        auf Schloss Kerrow. Man würde sich freuen, Sie dort zu begrüßen. Wir haben uns,
+        wenn Sie sich erinnern, schon einmal kennengelernt.“ Unterschrieben: Vale.
+        Die Abmachung, um die es geht, hat einen schlichten Namen: „Wie es ist“.
+      en: >-
+        The envelope is heavy, the seal grey and without arms. "Some gentlemen who
+        prefer the oil business ordered rather than ravaged will meet at Kerrow Castle
+        in late summer. We would be delighted to welcome you. We have, if you recall,
+        met once before." Signed: Vale. The agreement in question has a plain name:
+        "As It Is".
+  choices:
+    annehmen:
+      label: { de: "Nach Aldmark reisen und unterschreiben", en: "Travel to Aldmark and sign" }
+      hint: { de: "Kartellgewinn, Lizenzen, Projekte – und Gefallen, die man nicht ablehnt.", en: "Cartel profit, licences, ventures – and favours one does not refuse." }
+    ablehnen:
+      label: { de: "Höflich ablehnen", en: "Politely decline" }
+      hint: { de: "Keine Vorteile, keine Schuld.", en: "No advantages, no debt." }
+    ausspielen:
+      label: { de: "Unterschreiben – und nehmen, ohne zu geben", en: "Sign – and take without giving" }
+      hint: { de: "Mehr Geld, solange es niemand merkt. Vale fürchtet nichts mehr als solche Männer.", en: "More money, as long as nobody notices. Vale fears nothing more than such men." }
+  paths:
+    offen: { de: "Mr. Vale hat sich noch nicht gemeldet.", en: "Mr. Vale has not been in touch yet." }
+    mitglied: { de: "Jacob gehört zum Konsortium.", en: "Jacob belongs to the Consortium." }
+    abgelehnt: { de: "Jacob hat Vale abgewiesen.", en: "Jacob turned Vale away." }
+    doppelspiel: { de: "Jacob spielt das Konsortium aus – noch merkt es niemand.", en: "Jacob is playing the Consortium – nobody has noticed yet." }
+    verstossen: { de: "Das Konsortium hat Jacob verstoßen.", en: "The Consortium has cast Jacob out." }
+  controlled: { de: "Seit der Rettung hält Vale die Hand an den Förderquoten.", en: "Since the rescue, Vale has his hand on the production quotas." }
+  trust:
+    niedrig: { de: "Vale wirkt kühl.", en: "Vale seems cool." }
+    mittel: { de: "Vale wartet ab.", en: "Vale is waiting." }
+    hoch: { de: "Vale vertraut Jacob.", en: "Vale trusts Jacob." }
+  favorChoices:
+    erfuellen: { de: "Erfüllen", en: "Comply" }
+    verweigern: { de: "Verweigern", en: "Refuse" }
+    vortaeuschen: { de: "Zum Schein erfüllen", en: "Comply for show" }
+  favors:
+    drosseln:
+      title: { de: "Die Förderung drosseln", en: "Throttle production" }
+      text: { de: "„Der Markt ist nervös. Ein wenig weniger Öl aus Ihren Feldern, nur dieses Quartal.“", en: "\"The market is nervous. A little less oil from your fields, just this quarter.\"" }
+    spende_grady:
+      title: { de: "Senator Grady unterstützen", en: "Support Senator Grady" }
+      text: { de: "„Senator Grady braucht Freunde. Er wird sich erinnern – und wir auch.“", en: "\"Senator Grady needs friends. He will remember – and so shall we.\"" }
+    preis_halten:
+      title: { de: "Den Preis an der Zapfsäule halten", en: "Hold the price at the pump" }
+      text: { de: "„Kein Preiskampf in Okara. Was Sie verlieren, gleicht sich anderswo aus.“", en: "\"No price war in Okara. What you lose evens out elsewhere.\"" }
+    zeitung_schweigen:
+      title: { de: "Eine Zeitung zum Schweigen bringen", en: "Silence a newspaper" }
+      text: { de: "„Eine Redaktion in Port Ellis stellt zu viele Fragen. Inserate wirken Wunder.“", en: "\"An editorial office in Port Ellis asks too many questions. Advertising works wonders.\"" }
+    crane_schonen:
+      title: { de: "Den Crane Trust schonen", en: "Spare the Crane Trust" }
+      text: { de: "„Mrs. Crane ist eine von uns. Lassen Sie ihr Gebiet in Ruhe.“", en: "\"Mrs. Crane is one of us. Leave her territory alone.\"" }
+  rescue:
+    title: { de: "Ein Freund in der Not", en: "A Friend in Need" }
+    text:
+      de: >-
+        Die Bank hat gekündigt, die Frist läuft. Da steht Mr. Vale im Büro, den Hut in
+        der Hand. „Wir lassen niemanden fallen, der zu uns gehören könnte. Über Ihre
+        Förderquoten reden wir später.“
+      en: >-
+        The bank has called in the loans, the deadline is running. Then Mr. Vale stands
+        in the office, hat in hand. "We let no one fall who might belong with us. We can
+        talk about your production quotas later."
+    accept: { de: "Das Geld annehmen", en: "Accept the money" }
+
+projekte:
+  intro:
+    de: >-
+      Manche Vorhaben sind für eine Firma allein zu groß. Mehrere legen zusammen –
+      und jeder hofft, dass die anderen ehrlich sind.
+    en: >-
+      Some ventures are too big for one company alone. Several pool their money – and
+      each hopes the others are honest.
+  share: { de: "Anteil zeichnen", en: "Subscribe share" }
+  decline: { de: "Ablehnen", en: "Decline" }
+  status:
+    bau: { de: "im Bau", en: "under construction" }
+    laeuft: { de: "in Betrieb", en: "running" }
+    gescheitert: { de: "gescheitert", en: "failed" }
+  list:
+    seismik_kampagne:
+      title: { de: "Seismik-Kampagne an der Golfküste", en: "Gulf Coast Seismic Campaign" }
+      text: { de: "Vier Firmen vermessen gemeinsam die ganze Küste und teilen die Karten.", en: "Four companies survey the whole coast together and share the maps." }
+    fernpipeline:
+      title: { de: "Fernpipeline zur Ostküste", en: "Trunk Pipeline to the East Coast" }
+      text: { de: "Tausend Meilen Rohr bis zu den Raffinerien von Hallstead.", en: "A thousand miles of pipe to the refineries of Hallstead." }
+    grossraffinerie:
+      title: { de: "Großraffinerie in Port Ellis", en: "Great Refinery at Port Ellis" }
+      text: { de: "Die alten Banken finanzieren mit – aber nur mit Leuten, die sie kennen.", en: "The old banks are co-financing – but only with people they know." }
+    hafen_tanklager:
+      title: { de: "Tanklager am Hafen", en: "Harbour Tank Farm" }
+      text: { de: "Stahltanks für eine Million Barrel, direkt an der Pier.", en: "Steel tanks for a million barrels, right on the pier." }
+    costa_negra:
+      title: { de: "Konzession in Costa Negra", en: "Concession in Costa Negra" }
+      text: { de: "Das Konsortium teilt ein neues Feld auf. Die Regierung dort wankt.", en: "The Consortium is dividing up a new field. The government there is shaky." }
+
+stand:
+  intro:
+    de: >-
+      In Hallstead zählt nicht, wie viel Öl ein Mann fördert, sondern wessen Sohn er
+      ist. Cornelia Vandermeer entscheidet, wer an ihrem Tisch sitzt.
+    en: >-
+      In Hallstead it does not matter how much oil a man pumps, only whose son he is.
+      Cornelia Vandermeer decides who sits at her table.
+  ranks:
+    emporkoemmling:
+      word: { de: "Emporkömmling", en: "Upstart" }
+      line: { de: "Cornelia Vandermeer kennt Jacobs Namen nicht – und will ihn nicht kennen.", en: "Cornelia Vandermeer does not know Jacob's name – and does not want to." }
+    geduldet:
+      word: { de: "geduldet", en: "tolerated" }
+      line: { de: "Man lädt Jacob ein, wenn es um Geld geht. Zum Essen bleibt er nicht.", en: "Jacob is invited when money is discussed. He does not stay for dinner." }
+    anerkannt:
+      word: { de: "anerkannt", en: "respected" }
+      line: { de: "Cornelia Vandermeer nickt Jacob in der Oper zu. Ein kleines Nicken.", en: "Cornelia Vandermeer nods to Jacob at the opera. A small nod." }
+    aufgenommen:
+      word: { de: "aufgenommen", en: "admitted" }
+      line: { de: "Jacob hat einen Sessel im Union Club. Die Türen der Banken stehen offen.", en: "Jacob has an armchair at the Union Club. The banks' doors stand open." }
+    gefuerchtet:
+      word: { de: "gefürchtet", en: "feared" }
+      line: { de: "Hallstead gehört Jacob. Niemand lädt ihn ein, aber keiner wagt, ihn abzuweisen.", en: "Hallstead belongs to Jacob. No one invites him, but no one dares turn him away." }
+  ways:
+    donation:
+      title: { de: "Anerkennung erkaufen", en: "Buy recognition" }
+      text: { de: "Eine Stiftung für Oper, Museum oder Universität. Jede bringt weniger als die vorige.", en: "An endowment for opera, museum or university. Each brings less than the last." }
+      action: { de: "Stiften", en: "Endow" }
+    marriage:
+      title: { de: "Anerkennung erheiraten", en: "Marry into recognition" }
+      text: { de: "Eleanor Vandermeer, Cornelias Enkelin, wäre eine Partie. Thomas wird nicht gefragt.", en: "Eleanor Vandermeer, Cornelia's granddaughter, would be a match. Thomas is not asked." }
+      action: { de: "Die Heirat arrangieren", en: "Arrange the marriage" }
+    breakOrder:
+      title: { de: "Die alte Ordnung brechen", en: "Break the old order" }
+      text: { de: "Die Schulden der alten Familien aufkaufen. Die Türen gehen auf – aber niemand wird Jacob je mögen.", en: "Buy up the old families' debts. The doors open – but no one will ever like Jacob." }
+      action: { de: "Die Schulden aufkaufen", en: "Buy the debts" }
+    club:
+      title: { de: "Hallstead Union Club", en: "Hallstead Union Club" }
+      text: { de: "Wer hier einen Sessel hat, gehört dazu.", en: "Whoever has an armchair here belongs." }
+      action: { de: "Um Aufnahme bitten", en: "Apply for admission" }

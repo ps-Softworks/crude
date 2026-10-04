@@ -1,0 +1,359 @@
+# Kapitel 3 – Alltag, Paket 6: Rivalen (Phase 4). Entwurf – Philipp überarbeitet.
+# Grundlage: GDD §13 Kapitel 3 („Margaret Crane führt den Kampf um die Marke. Thorne bläht
+# Aktien auf. Bullard verschuldet sich.“), §9.2 (Bullard: Draufgänger mit Ehrenkodex, Schulden,
+# Söhne erben den Groll; Thorne: Frachtdruck → Kreditdruck → Übernahmeversuch; Pruett: kauft in
+# Krisen Pleitefirmen auf), Story-Bibel §3 (Bullard K3 „bietet an“ statt zu bitten; Söhne Wade
+# und Cole; Pruett: „Ich habe nichts gegen Sie, Mr. Harlan. Ich habe etwas gegen Schwankungen.“).
+#
+# Nur Kapitel 3 (minChapter/maxChapter 3). Rivalen-Beziehungen und Anteile gibt es als
+# Wirkung noch nicht (System 4.10 Diplomatie, 4.8 Aktien) – Ersatz siehe „# TODO-Effekt“.
+#
+# Merkzeichen aus Kapitel 1: bullard_fehde (Schrägbohrung in Okara).
+# Merkzeichen aus Paket 1: k3_margaret_absprache → k3_absprache_beamter.
+# Merkzeichen dieses Pakets:
+#   k3_bullard_wechsel_gekauft → k3_bullard_soehne
+#   k3_bullard_gewarnt → k3_bullard_dank
+#   k3_thorne_kredit → k3_thorne_kredit_faellig
+#   k3_pruett_option, k3_preislisten_vernichtet → content/relevance.yaml (Kapitel 4)
+
+- id: k3_bullard_wechsel
+  rival: bullard
+  visitor: bankier
+  title:
+    de: Bullards Schuldscheine
+    en: Bullard's Notes
+  text:
+    de: >-
+      Mr. Pettibone legt ein Bündel Wechsel auf den Tisch, mit Bullards breiter
+      Unterschrift. Big Jim hat in Okara auf Kredit gebohrt, drei trockene Löcher in
+      Folge. Thornes Bank will die Papiere loswerden, mit einem Drittel Abschlag. „Wer
+      sie hält, Mr. Harlan, hält Bullard. Ich dachte, das interessiert Sie.“
+    en: >-
+      Mr. Pettibone lays a bundle of notes on the desk, with Bullard's broad signature.
+      Big Jim drilled on credit at Okara, three dry holes in a row. Thorne's bank wants
+      to be rid of the paper, at a third off. "Whoever holds them, Mr. Harlan, holds
+      Bullard. I thought that might interest you."
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.3
+  choices:
+    - id: kaufen
+      label: { de: "Die Wechsel kaufen (5.000 $)", en: "Buy the notes (5,000 $)" }
+      result:
+        de: Pettibone zählt das Geld mit sichtbarem Vergnügen. Jacob schließt die Wechsel in den Safe. Er weiß noch nicht, was er damit tun will. Bullard weiß es schon am nächsten Tag.
+        en: Pettibone counts the money with visible pleasure. Jacob locks the notes in the safe. He doesn't yet know what he'll do with them. Bullard knows by the next day.
+      requires: { minCash: 5000 }
+      effects: { cash: -5000 }  # TODO-Effekt: rivalStake: { bullard: +15 }, rival: { bullard: { trust: -20 } }
+      marks: [k3_bullard_wechsel_gekauft]
+    - id: warnen
+      label: { de: "Bullard warnen, dass seine Wechsel auf dem Markt sind", en: "Warn Bullard that his notes are on the market" }
+      result:
+        de: Jacob schickt einen Boten nach Okara mit einer einzigen Zeile. Pettibone erfährt es und schreibt Jacobs Namen in ein anderes Buch.
+        en: Jacob sends a messenger to Okara with a single line. Pettibone finds out and writes Jacob's name in a different book.
+      effects: { railTariff: 0.03 }  # TODO-Effekt: rival: { bullard: { trust: +15 }, thorne: { relation: -10 } }
+      marks: [k3_bullard_gewarnt]
+    - id: nein
+      label: { de: "„Ich kaufe keine Männer.“", en: "\"I don't buy men.\"" }
+      result:
+        de: Pettibone verkauft die Wechsel an Harold Pruett. Bullard bohrt jetzt für einen Mann, den er nie gesehen hat.
+        en: Pettibone sells the notes to Harold Pruett. Bullard now drills for a man he has never met.
+      appointments: 0
+      default: true
+
+- id: k3_bullard_soehne
+  rival: bullard
+  marked: [k3_bullard_wechsel_gekauft]
+  delay: 2
+  chance: 0.6
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Wade und Cole
+    en: Wade and Cole
+  text:
+    de: >-
+      Bullards Söhne stehen am Harlan-Bohrplatz in Okara, Wade mit verschränkten Armen,
+      Cole mit einem Stein in der Hand, den er nicht wirft. Sie sagen nichts. Sie sehen
+      zu, wie Jacobs Männer arbeiten, den ganzen Tag lang. Am Abend fehlt ein Seil.
+      Vom Vater kommt ein Brief: „Du hast meine Schulden. Meine Söhne hast du nicht.“
+    en: >-
+      Bullard's sons stand at the Harlan drilling site at Okara, Wade with arms folded,
+      Cole with a stone in his hand he doesn't throw. They say nothing. They watch Jacob's
+      men work all day long. In the evening a cable is missing. A letter comes from the
+      father: "You have my debts. You don't have my sons."
+  choices:
+    - id: erlassen
+      label: { de: "Bullard die Hälfte der Schulden erlassen", en: "Forgive Bullard half the debt" }
+      result:
+        de: Bullard schickt keinen Dank, aber die Söhne verschwinden vom Bohrplatz. Im Saloon in Okara erzählt man, Harlan sei weich geworden. Oder klug.
+        en: Bullard sends no thanks, but the sons disappear from the drilling site. In the Okara saloon they say Harlan has gone soft. Or clever.
+      effects: { cash: -2500 }  # TODO-Effekt: rivalStake: { bullard: -8 }, rival: { bullard: { trust: +10 } }
+    - id: eintreiben
+      label: { de: "Die Wechsel eintreiben – Bullards Quellen als Pfand", en: "Collect on the notes – Bullard's wells as security" }
+      result:
+        de: Die Anwälte pfänden zwei Quellen in Okara. Bullard steht am Zaun, als die Harlan-Männer die Schilder wechseln. Wade steht neben ihm und merkt sich jedes Gesicht.
+        en: The lawyers seize two wells at Okara. Bullard stands at the fence as the Harlan men change the signs. Wade stands beside him, memorising every face.
+      effects: { production: 0.2, strength: -10 }  # TODO-Effekt: rival: { bullard: { relation: -30, aggression: +20 } }, Söhne erben den Groll
+    - id: nichts
+      label: { de: "Nichts tun – die Söhne bleiben", en: "Do nothing – the sons stay" }
+      result:
+        de: Wade und Cole stehen drei Wochen lang am Bohrplatz. Es fehlen noch zwei Seile und eine Rohrzange. Dann kommen sie nicht mehr. Im Saloon in Okara erzählt man, Harlan lasse sich anstarren.
+        en: Wade and Cole stand at the drilling site for three weeks. Two more cables go missing, and a pipe wrench. Then they stop coming. In the Okara saloon they say Harlan lets himself be stared at.
+      effects: { cash: -300, strength: -5 }  # TODO-Effekt: rival: { bullard: { relation: -5 } }, Schulden bleiben offen
+      appointments: 0
+      default: true
+
+- id: k3_bullard_dank
+  rival: bullard
+  visitor: bullard
+  marked: [k3_bullard_gewarnt]
+  delay: 2
+  chance: 0.6
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Bullard bietet an
+    en: Bullard Makes an Offer
+  text:
+    de: >-
+      Big Jim Bullard ist schwer geworden und geht am Stock, aber er bittet nicht. Er
+      bietet an. Er stellt eine Kiste Whiskey auf den Tisch und legt eine Karte daneben:
+      ein Feld bei Okara, das er nicht mehr bohren kann. „Du hast mich gewarnt, Harlan.
+      Ich zahle meine Schulden. Auch die, die nicht auf Papier stehen.“
+    en: >-
+      Big Jim Bullard has grown heavy and walks with a stick, but he doesn't beg. He
+      offers. He sets a crate of whiskey on the desk and lays a map beside it: a field
+      near Okara he can no longer drill. "You warned me, Harlan. I pay my debts. Even the
+      ones not on paper."
+  choices:
+    - id: gemeinsam
+      label: { de: "Das Feld gemeinsam bohren, halbe-halbe", en: "Drill the field together, halves" }
+      result:
+        de: Bullards Trupps und Harlans Turm arbeiten zum ersten Mal auf demselben Platz. Nach drei Wochen raufen sie, nach sechs trinken sie zusammen.
+        en: Bullard's crews and Harlan's rig work the same site for the first time. After three weeks they brawl, after six they drink together.
+      effects: { production: 0.15, cash: -1500 }  # TODO-Effekt: rival: { bullard: { trust: +15 } }, Kartellsaat
+    - id: kaufen
+      label: { de: "Bullard das Feld zu einem fairen Preis abkaufen (4.000 $)", en: "Buy the field from Bullard at a fair price (4,000 $)" }
+      result:
+        de: Bullard nimmt das Geld und zahlt am selben Tag seine Bank. Er sagt, das sei das erste Mal seit Jahren, dass er Thornes Leuten ins Gesicht lachen konnte.
+        en: Bullard takes the money and pays his bank that same day. He says it's the first time in years he could laugh in the face of Thorne's people.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000, production: 0.2 }  # TODO-Effekt: rival: { bullard: { relation: +10 } }
+    - id: whiskey
+      label: { de: "Nur den Whiskey nehmen", en: "Take only the whiskey" }
+      result:
+        de: Bullard lacht, nimmt die Karte wieder mit und lässt die Kiste stehen. „Dann bohrt es eben Pruett.“
+        en: Bullard laughs, takes the map back and leaves the crate. "Then Pruett can drill it."
+      appointments: 0
+      default: true
+
+- id: k3_bullard_schraeg
+  rival: bullard
+  marked: [bullard_fehde]
+  delay: 0
+  chance: 0.3
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Eine Bohrung, die schräg läuft
+    en: A Well That Runs Crooked
+  text:
+    de: >-
+      Bullards neuer Turm steht drei Schritte vor Jacobs Grenze in Okara. Jacobs
+      Bohrmeister schwört, dass Bullards Gestänge schräg läuft, unter die Grenze, in
+      Harlans Sand. Beweisen kann er es nicht ohne Bohrlochmessung. Bullard steht auf
+      der Plattform und winkt, wie vor zwanzig Jahren am Salt Hill.
+    en: >-
+      Bullard's new rig stands three paces from Jacob's line at Okara. Jacob's drilling
+      foreman swears Bullard's string runs crooked, under the line, into Harlan sand. He
+      can't prove it without a well survey. Bullard stands on the platform and waves, as
+      he did twenty years ago at Salt Hill.
+  choices:
+    - id: messen
+      label: { de: "Messen lassen und klagen (2.500 $)", en: "Have it surveyed and sue (2,500 $)" }
+      result:
+        de: Die Messung zeigt, dass Bullards Loch elf Grad abweicht. Der Bezirksrichter verurteilt ihn. Bullard zahlt mit einem Wechsel, der wenig wert ist.
+        en: The survey shows Bullard's hole deviates eleven degrees. The district judge rules against him. Bullard pays with a note worth little.
+      requires: { minCash: 2500 }
+      effects: { cash: -2500, production: 0.1 }  # TODO-Effekt: rival: { bullard: { relation: -10 } }
+      appointments: 2
+    - id: selbst
+      label: { de: "Selbst schräg zurückbohren", en: "Drill crooked back at him" }
+      result:
+        de: Jetzt laufen zwei Löcher schräg, gegeneinander. Beide verlieren Druck. Die Arbeiter beider Seiten nennen den Platz „die Gabel“.
+        en: Now two holes run crooked, against each other. Both lose pressure. The workers on both sides call the site "the fork".
+      effects: { production: -0.1, cash: 1000 }  # TODO-Effekt: heat: +1, rival: { bullard: { aggression: +10 } }
+    - id: hinnehmen
+      label: { de: "Hinnehmen – Okara ist groß", en: "Let it be – Okara is big" }
+      result:
+        de: Bullards Quelle fördert gut. Jacobs Nachbarloch fördert ein Viertel weniger. Bullard winkt jetzt jeden Morgen.
+        en: Bullard's well produces well. Jacob's neighbouring hole produces a quarter less. Bullard waves every morning now.
+      effects: { production: -0.15 }
+      default: true
+
+- id: k3_thorne_kredit
+  rival: thorne
+  mail: offer
+  title:
+    de: Thornes Bank glaubt an Harlan
+    en: Thorne's Bank Believes in Harlan
+  text:
+    de: >-
+      Die Thorne Rail & Trust Bank bietet Harlan Oil einen Kredit an, wie es ihn nur
+      im Boom gibt: billig, lang, ohne Sicherheiten außer „dem guten Namen und einer
+      kleinen Option auf Aktien, rein formal“. Augustus Thorne hat persönlich
+      unterschrieben. Seine Handschrift ist zittrig geworden.
+    en: >-
+      Thorne Rail & Trust Bank offers Harlan Oil a loan of a kind that exists only in a
+      boom: cheap, long, with no security except "the good name and a small option on
+      shares, purely a formality". Augustus Thorne has signed in person. His hand has
+      grown shaky.
+  # WUNSCH: conditions: hasShares – Harlan Oil ist nur nach dem Börsengang am Ende von Kapitel 1
+  # eine Aktiengesellschaft (state.ipo.share > 0, Story-Bibel §2). Ohne Börsengang gibt es keine
+  # Harlan-Aktie, kein Aktienbuch und keinen Aufsichtsrat – bis dahin läuft die Szene sonst ins Leere.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.25
+  choices:
+    - id: annehmen
+      label: { de: "Annehmen (+8.000 $, Option auf Aktien)", en: "Accept (+8,000 $, option on shares)" }
+      result:
+        de: Das Geld ist am nächsten Tag auf dem Konto. Die Option steht auf Seite elf des Vertrags, in einer Schrift, für die Ruth die Lupe braucht.
+        en: The money is in the account the next day. The option is on page eleven of the contract, in a type for which Ruth needs the magnifying glass.
+      effects: { cash: 8000 }  # TODO-Effekt: credit: +8000, rivalStake: { thorne: Option 5 % }
+      marks: [k3_thorne_kredit]
+      appointments: 0
+    - id: ablehnen
+      label: { de: "Ablehnen", en: "Decline" }
+      result:
+        de: Thorne antwortet nicht. Die nächste Frachtrechnung der Bahn ist um einen Cent höher. Thorne vergisst nicht, er bucht.
+        en: Thorne doesn't reply. The railway's next freight bill is a cent higher. Thorne doesn't forget; he books.
+      effects: { railTariff: 0.03 }  # TODO-Effekt: rival: { thorne: { relation: -5 } }
+      appointments: 0
+      default: true
+
+- id: k3_thorne_kredit_faellig
+  rival: thorne
+  mail: demand
+  marked: [k3_thorne_kredit]
+  delay: 4
+  chance: 0.8
+  deadline: 2
+  # WUNSCH: conditions: hasShares – Harlan Oil ist nur nach dem Börsengang am Ende von Kapitel 1
+  # eine Aktiengesellschaft (state.ipo.share > 0, Story-Bibel §2). Ohne Börsengang gibt es keine
+  # Harlan-Aktie, kein Aktienbuch und keinen Aufsichtsrat – bis dahin läuft die Szene sonst ins Leere.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Die kleine Option
+    en: The Small Option
+  text:
+    de: >-
+      Thornes Bank kündigt den Kredit, Seite vier, Absatz zwei: „bei veränderter
+      Marktlage“. Die Marktlage hat sich verändert. Rückzahlung 9.000 $ binnen zwei
+      Monaten – oder die Bank zieht ihre Option und übernimmt Aktien zum Ausgabekurs.
+      Pettibone hat den Brief persönlich gebracht und wartet im Vorzimmer.
+    en: >-
+      Thorne's bank calls the loan, page four, paragraph two: "should market conditions
+      change". Market conditions have changed. Repayment of 9,000 $ within two months –
+      or the bank exercises its option and takes shares at the issue price. Pettibone
+      brought the letter in person and waits in the anteroom.
+  choices:
+    - id: zahlen
+      label: { de: "Zahlen (9.000 $)", en: "Pay (9,000 $)" }
+      result:
+        de: Pettibone nimmt den Scheck und lächelt nicht. Er hatte auf etwas anderes gehofft.
+        en: Pettibone takes the cheque and doesn't smile. He had hoped for something else.
+      requires: { minCash: 9000 }
+      effects: { cash: -9000 }  # TODO-Effekt: credit: -8000
+    - id: oel
+      label: { de: "Mit Öl und Bargeld zahlen (4.000 $ und 4.000 Barrel)", en: "Pay in oil and cash (4,000 $ and 4,000 barrels)" }
+      result:
+        de: Thornes Bank nimmt das Öl zum Tiefstpreis und verkauft es eine Woche später teurer. Die Aktien bleiben bei Harlan.
+        en: Thorne's bank takes the oil at the lowest price and sells it a week later for more. The shares stay with Harlan.
+      requires: { minCash: 4000, minOilStock: 4000 }
+      effects: { cash: -4000, oilStock: -4000 }
+      appointments: 2
+    - id: option
+      label: { de: "Die Bank die Aktien nehmen lassen", en: "Let the bank take the shares" }
+      result:
+        de: Am nächsten Morgen steht Thornes Bank im Aktienbuch, mit einem Anteil, der für einen Sitz im Aufsichtsrat reicht. Pettibone wird ihn einnehmen.
+        en: Next morning Thorne's bank is in the share register, with a stake large enough for a board seat. Pettibone will take it.
+      effects: { cash: -2000, strength: -15 }  # TODO-Effekt: shares: { thorne: +5 }, control: -5, boardMember: pettibone
+      appointments: 0
+      default: true
+
+- id: k3_pruett_option
+  visitor: pruett
+  title:
+    de: Harold Pruett hat Zeit
+    en: Harold Pruett Has Time
+  text:
+    de: >-
+      Harold Pruett von Crane Midland trägt denselben grauen Anzug wie vor zehn Jahren,
+      vielleicht denselben. Er bietet Geld für eine Option: Sollte Harlan Oil je
+      verkaufen müssen, kauft Crane Midland zuerst, zu einem heute festgelegten Preis.
+      „Ich habe nichts gegen Sie, Mr. Harlan. Ich habe etwas gegen Schwankungen. Und
+      Schwankungen kommen.“ Er sagt es, wie andere das Wetter ansagen.
+    en: >-
+      Harold Pruett of Crane Midland wears the same grey suit as ten years ago, perhaps
+      the very same. He offers money for an option: should Harlan Oil ever have to sell,
+      Crane Midland buys first, at a price fixed today. "I have nothing against you,
+      Mr. Harlan. I have something against fluctuations. And fluctuations are coming." He
+      says it the way others forecast the weather.
+  # WUNSCH: Das Vorkaufsrecht gilt für die ganze Firma und braucht keine Aktien. Mit Börsengang
+  # (hasShares) als Option auf Aktienpakete wirken lassen – rivalStake: { pruett: … }.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  chance: 0.25
+  choices:
+    - id: einraeumen
+      label: { de: "Die Option einräumen (+5.000 $)", en: "Grant the option (+5,000 $)" }
+      result:
+        de: Pruett unterschreibt mit einem Füller, den er nach jeder Zeile zuschraubt. Dann geht er, ohne etwas zu trinken. Der Preis im Vertrag ist niedrig. Er ist für schlechte Zeiten gemacht.
+        en: Pruett signs with a pen he caps after every line. Then he leaves without a drink. The price in the contract is low. It is made for bad times.
+      effects: { cash: 5000 }  # TODO-Effekt: rivalStake: { pruett: Vorkaufsrecht }, crash: Übernahme möglich
+      marks: [k3_pruett_option]
+    - id: ablehnen
+      label: { de: "„Harlan verkauft nicht.“", en: "\"Harlan doesn't sell.\"" }
+      result:
+        de: Pruett nickt, als hätte er diesen Satz in einer Akte. „Das sagen alle. Bis zum Dienstag, an dem sie es tun.“
+        en: Pruett nods as if he had the sentence in a file. "They all say that. Until the Tuesday they do."
+      appointments: 0
+      default: true
+
+- id: k3_absprache_beamter
+  marked: [k3_margaret_absprache]
+  delay: 3
+  chance: 0.5
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Ein Beamter fragt nach Preislisten
+    en: An Official Asks about Price Lists
+  text:
+    de: >-
+      Ein junger Beamter des Handelsministeriums sitzt im Vorzimmer, mit Aktentasche
+      und billigen Schuhen. Ihm sei aufgefallen, dass Harlan und Crane Eastern an jeder
+      Kreuzung in drei Provinzen auf den Cent denselben Preis nehmen, seit demselben
+      Montag. Er möchte die Preislisten der letzten Monate sehen. „Reine Routine.“
+    en: >-
+      A young official of the Commerce Ministry sits in the anteroom, with a briefcase
+      and cheap shoes. He has noticed that Harlan and Crane Eastern charge the same price
+      to the cent at every crossroads in three provinces, since the same Monday. He would
+      like to see the price lists for recent months. "Pure routine."
+  choices:
+    - id: zeigen
+      label: { de: "Die Listen zeigen und die Absprache beenden", en: "Show the lists and end the arrangement" }
+      result:
+        de: Der Beamte schreibt drei Tage lang ab. Am Montag darauf kostet Harlan einen Cent weniger als Crane. Margaret schickt wieder eine Karte ohne Text.
+        en: The official copies for three days. The Monday after, Harlan costs a cent less than Crane. Margaret again sends a card with no text.
+      effects: { price: -0.3, strength: -5 }  # TODO-Effekt: heat: -1, rival: { margaret: { relation: -10 } }
+      appointments: 2
+    - id: vernichten
+      label: { de: "Die Listen verschwinden lassen", en: "Make the lists disappear" }
+      result:
+        de: Im Archiv brennt nachts ein Papierkorb. Der Beamte kommt mit einer Vorladung wieder, diesmal mit einem älteren Kollegen.
+        en: At night a wastepaper basket burns in the archive. The official returns with a summons, this time with an older colleague.
+      effects: { cash: -1500, strength: -10 }  # TODO-Effekt: heat: +3, trace: { severity: 3, label: "Verbrannte Preislisten" }, investigation: +1
+      marks: [k3_preislisten_vernichtet]
+    - id: hinhalten
+      label: { de: "Die Anwälte hinhalten lassen", en: "Have the lawyers stall him" }
+      result:
+        de: Die Anwälte schreiben Briefe, der Beamte schreibt zurück. An den Kreuzungen bleibt der Preis auf den Cent gleich. Im Ministerium wird eine Akte dicker, ganz langsam.
+        en: The lawyers write letters, the official writes back. At the crossroads the price stays the same to the cent. In the ministry a file grows thicker, very slowly.
+      effects: { cash: -400 }  # TODO-Effekt: heat: +1, Absprache läuft weiter
+      appointments: 0
+      default: true

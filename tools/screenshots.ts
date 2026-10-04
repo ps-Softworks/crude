@@ -8,6 +8,10 @@
 // dürfen sich nicht überdecken, ein großes Fenster liegt ganz im Bild, das Menü
 // in der Kopfleiste bleibt sichtbar (auch mit Banderole), die Blase des Rundgangs
 // ragt nicht hinaus.
+// Phase 4 (Integration): Ein Spielstand mit allen Systemen aus Kapitel 2 und einer mit allen aus
+// Kapitel 2 und 3 – freigeschaltet wie mit den Debug-Knöpfen im Menü. Der Tisch wird in allen Größen
+// auf Überlappung geprüft (Schilder und Gegenstände), jedes neue Fenster einmal geöffnet und
+// geprüft, dass es ganz im Bild liegt.
 // Aufruf: npm run screenshots  (braucht Google Chrome; startet einen eigenen
 // Vite-Server auf Port 5199 und beendet ihn danach wieder).
 //
@@ -15,7 +19,7 @@
 // Ereignissen, der Stand landet im Autosave des Browsers, dann wird die Seite
 // geladen. Klicks und Tasten gehen wie beim Spieler über das DevTools-Protokoll.
 import { spawn } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServer } from 'vite';
@@ -24,6 +28,19 @@ import { deskEvents, deskMail } from '../src/sim/events';
 import { endRound, newGame, type GameState } from '../src/sim/game';
 import { Rng, seedFromString } from '../src/sim/rng';
 import { serializeGame } from '../src/sim/save';
+// Phase 4: dieselben Freischaltungen wie die Debug-Knöpfe im Menü.
+import { unlockBigPipelines } from '../src/sim/bigPipeline';
+import { previewBrand } from '../src/sim/brand';
+import { startDiplomacy } from '../src/sim/diplomacy';
+import { openExchange } from '../src/sim/exchange';
+import { debugUnlockHallstead } from '../src/sim/hallsteadState';
+import { previewInvestigation } from '../src/sim/investigation';
+import { previewKapitel3 } from '../src/sim/kapitel3';
+import { unlockRefinery } from '../src/sim/refinery';
+import { previewResearch } from '../src/sim/research';
+import { openStaff } from '../src/sim/staff';
+import { startStocks } from '../src/sim/stocks';
+import { parseStocksContent } from '../src/sim/stocksContent';
 import { loadBalance } from '../src/sim/testBalance';
 import { loadEvents } from '../src/sim/testEvents';
 import { decideIpo } from '../src/sim/chapter';
@@ -34,8 +51,9 @@ const balance = loadBalance();
 const { version } = JSON.parse(readFileSync(new URL('package.json', root), 'utf8')) as { version: string };
 const events = loadEvents();
 const CHROME = process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const PORT = 5199;
-const DEBUG_PORT = 9333;
+// Eigene Ports per Umgebung (z. B. SHOT_PORT=5299 SHOT_DEBUG_PORT=9433), falls ein zweiter Lauf parallel läuft (Worktrees).
+const PORT = Number(process.env.SHOT_PORT ?? 5199);
+const DEBUG_PORT = Number(process.env.SHOT_DEBUG_PORT ?? 9333);
 const OUT = new URL('docs/screenshots/', root);
 const BREIT = 1280;
 const HOCH = 800;
@@ -106,6 +124,54 @@ const nachSprung = (() => {
 })();
 const kapitel2 = markChronicleRead(nachSprung);
 
+// --- Phase 4: Kapitel-2- und Kapitel-3-Systeme wie per Debug freigeschaltet ---
+const stocksBoard = parseStocksContent('content/stocks.yaml', readFileSync(new URL('content/stocks.yaml', root), 'utf8'), balance.stocks.board.seatsMax).content!.board;
+function kapitel2Systeme(s: GameState): GameState {
+  let x = { ...s, cash: Math.max(s.cash, 400_000) };
+  x = unlockRefinery(x, balance);
+  x = unlockBigPipelines(x, balance, { force: true });
+  x = startStocks({ ...x, ipo: x.ipo ?? { share: 0.49, proceeds: 0 } }, balance, stocksBoard, { force: true });
+  x = openStaff(x, balance);
+  x = startDiplomacy(x, balance, balance.diplomacy.unlockChapter);
+  x = previewInvestigation(x, balance);
+  return previewResearch(x);
+}
+function kapitel3Systeme(s: GameState): GameState {
+  let x = kapitel2Systeme(s);
+  x = previewBrand(x, balance);
+  x = openExchange(x, balance);
+  x = debugUnlockHallstead(x, balance);
+  return previewKapitel3(x, balance);
+}
+/** Freischalten und zwei Runden weiterspielen, damit die Systeme einmal abrechnen. */
+function weiter(s: GameState, runden = 2): GameState {
+  const rng = new Rng(seedFromString(`${s.seed}-p4`));
+  let x = s;
+  for (let i = 0; i < runden && !x.finished; i++) x = endRound(botTurn(x, balance, 'ausgewogen', rng), balance, events);
+  return x;
+}
+const p4basis = suche((s) => s.round === 6 && s.wells.length > 0 && !s.finished, [6]);
+const kap2 = weiter(kapitel2Systeme(p4basis));
+const kap3 = weiter(kapitel3Systeme(p4basis));
+if (kap2.finished || kap3.finished) throw new Error('Phase-4-Spielstand ist vorzeitig zu Ende.');
+const KLICK = (sel: string) => `(() => { const el = document.querySelector(${JSON.stringify(sel)}); el?.dispatchEvent(new MouseEvent('click', { bubbles: true })); return !!el; })()`;
+/** Fenster der Phase-4-Systeme, je mit dem Klick, der es öffnet. */
+const P4_FENSTER: [string, string[], string][] = [
+  ['Raffinerie', [], KLICK('.objekt-raffinerie')],
+  ['Fernleitung', ['f'], 'REITER:Fernleitung'],
+  ['Aufsichtsrat', ['g'], 'REITER:Aufsichtsrat'],
+  ['Personal', [], KLICK('.objekt-personal')],
+  ['Konkurrenz mit Diplomatie', [], KLICK('.objekt-konkurrenz')],
+  ['Schattenbuch', [], KLICK('.objekt-schattenbuch')],
+  ['Werkstatt', [], KLICK('.objekt-werkstatt')],
+  ['Vertrieb', [], KLICK('.objekt-marke')],
+  ['Börse', [], KLICK('.objekt-boerse')],
+  ['Hallstead', [], KLICK('.objekt-hallstead')],
+  ['Siegelmappe', [], KLICK('.objekt-konzern')],
+];
+const REITER = (text: string) =>
+  `(() => { const b = [...document.querySelectorAll('.sheet [role=tab], .sheet .reiter button, .sheet button')].find((x) => x.textContent.trim().startsWith(${JSON.stringify(text)})); b?.click(); return !!b; })()`;
+
 interface Bild {
   name: string;
   state: GameState;
@@ -140,10 +206,32 @@ const bilder: Bild[] = [
   { name: '13-kapitelende', state: kapitel },
   { name: '14-pleite', state: pleite },
   { name: '15-rundenbericht', state: mitte, prefs: { 'crude.zeitung': 'an' }, tasten: ['e', 'Enter'], warte: 1600 },
-  { name: '16-zeitsprung-brief', state: kapitelFrei, dann: `[...document.querySelectorAll('.bogen-fuss button')].find((b) => b.textContent.includes('Jahre'))?.click()` },
-  { name: '17-zeitsprung-telegramm', state: imSprung },
-  { name: '18-zeitsprung-chronik', state: nachSprung },
-  { name: '19-kapitel2-schreibtisch', state: kapitel2 },
+  // Phase 4 (Integration)
+  { name: '16-tisch-kapitel2', state: kap2 },
+  { name: '17-tisch-kapitel3', state: kap3 },
+  { name: '18-raffinerie', state: kap3, dann: KLICK('.objekt-raffinerie') },
+  { name: '19-fernleitung', state: kap3, tasten: ['f'], dann: REITER('Fernleitung') },
+  { name: '20-aktien', state: kap3, tasten: ['g'], dann: REITER('Aufsichtsrat') },
+  { name: '21-personal', state: kap3, dann: KLICK('.objekt-personal') },
+  { name: '22-diplomatie', state: kap3, dann: `${KLICK('.objekt-konkurrenz')}; setTimeout(() => ${REITER('Absprachen')}, 400)`, warte: 1000 },
+  { name: '23-schattenbuch', state: kap3, dann: KLICK('.objekt-schattenbuch') },
+  { name: '24-werkstatt', state: kap3, dann: KLICK('.objekt-werkstatt') },
+  { name: '25-marke', state: kap3, dann: KLICK('.objekt-marke') },
+  { name: '26-boerse', state: kap3, dann: KLICK('.objekt-boerse') },
+  { name: '27-hallstead', state: kap3, dann: KLICK('.objekt-hallstead') },
+  { name: '28-konzern', state: kap3, dann: KLICK('.objekt-konzern') },
+  { name: '29-zeitung-kapitel3', state: kap3, tasten: ['z'], warte: 600 },
+  {
+    name: '30-debug-freischalten',
+    state: mitte,
+    dann: `${KLICK('.menue-knopf')}; setTimeout(() => { ${REITER('Debug')}; setTimeout(() => document.querySelector('.debug-unlocks')?.scrollIntoView({ block: 'end' }), 200); }, 400)`,
+    warte: 1100,
+  },
+  // Zeitsprung I (4.5)
+  { name: '31-zeitsprung-brief', state: kapitelFrei, dann: `[...document.querySelectorAll('.bogen-fuss button')].find((b) => b.textContent.includes('Jahre'))?.click()` },
+  { name: '32-zeitsprung-telegramm', state: imSprung },
+  { name: '33-zeitsprung-chronik', state: nachSprung },
+  { name: '34-kapitel2-schreibtisch', state: kapitel2 },
 ];
 
 // --- Chrome über das DevTools-Protokoll steuern ---
@@ -200,7 +288,9 @@ class Cdp {
   }
 }
 
-const server = await createServer({ root: new URL('.', root).pathname, server: { port: PORT, strictPort: true }, logLevel: 'error' });
+// node_modules darf ein Verweis sein (z. B. in einem Git-Worktree) – dann die Schriften auch von dort ausliefern.
+const erlaubt = [new URL('.', root).pathname, realpathSync(new URL('node_modules', root))];
+const server = await createServer({ root: new URL('.', root).pathname, server: { port: PORT, strictPort: true, fs: { allow: erlaubt } }, logLevel: 'error' });
 await server.listen();
 const profil = mkdtempSync(join(tmpdir(), 'crude-chrome-'));
 const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${DEBUG_PORT}`, `--user-data-dir=${profil}`, '--hide-scrollbars', 'about:blank'], {
@@ -297,6 +387,19 @@ try {
     }
     return fehler;
   })()`;
+  // Phase 4: Gegenstände selbst (nicht nur ihre Schilder) liegen nicht übereinander.
+  const KOERPER = `(() => {
+    const teile = [...document.querySelectorAll('.szene .objekt')].map((el) => ({ el, r: el.getBoundingClientRect() }));
+    const zettel = document.querySelector('.unterlage-platz');
+    if (zettel) teile.push({ el: zettel, r: zettel.getBoundingClientRect() });
+    const fehler = [];
+    for (let i = 0; i < teile.length; i++) for (let j = i + 1; j < teile.length; j++) {
+      const a = teile[i].r, b = teile[j].r;
+      const x = Math.min(a.right, b.right) - Math.max(a.left, b.left), y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+      if (x > 4 && y > 4) fehler.push('Gegenstände: ' + (teile[i].el.getAttribute('aria-label') || teile[i].el.className).slice(0, 24) + ' ↔ ' + (teile[j].el.getAttribute('aria-label') || teile[j].el.className).slice(0, 24));
+    }
+    return fehler;
+  })()`;
   // Ein Fenster ganz im Bild (Titel, X und unterer Rand) und das Menü in der Kopfleiste sichtbar.
   const IM_BILD = (sel: string) =>
     `(() => { const el = document.querySelector(${JSON.stringify(sel)}); if (!el) return 'fehlt'; const r = el.getBoundingClientRect(); return r.top >= -1 && r.left >= -1 && r.bottom <= innerHeight + 1 && r.right <= innerWidth + 1 ? 'ok' : Math.round(r.left) + ',' + Math.round(r.top) + '–' + Math.round(r.right) + ',' + Math.round(r.bottom); })()`;
@@ -327,6 +430,34 @@ try {
         const fenster = await cdp.js<string>(IM_BILD('.sheet'));
         if (fenster !== 'ok') fehler++;
         console.log(`${fenster === 'ok' ? 'ok    ' : 'FEHLER'} ${w}×${h} Fenster Kassenbuch: ${fenster}`);
+      }
+    }
+    // Phase 4: Tisch mit allen Kapitel-2- bzw. Kapitel-2/3-Systemen – Schilder und Gegenstände überdecken sich nicht.
+    for (const [name, state] of [
+      ['Kapitel 2', kap2],
+      ['Kapitel 3', kap3],
+    ] as const) {
+      await lade(state, {}, undefined);
+      const m = await cdp.js<{ sh: number; sw: number; ih: number; iw: number }>(
+        `(() => { const e = document.documentElement; return { sh: e.scrollHeight, sw: e.scrollWidth, ih: innerHeight, iw: innerWidth }; })()`,
+      );
+      const ueber = [...(await cdp.js<string[]>(UEBERLAPPUNG)), ...(await cdp.js<string[]>(KOERPER))];
+      if (m.sh > m.ih || m.sw > m.iw) ueber.push(`Seite ${m.sw}×${m.sh}`);
+      if (ueber.length > 0) fehler++;
+      console.log(`${ueber.length === 0 ? 'ok    ' : 'FEHLER'} ${w}×${h} Tisch ${name}: ${ueber.length === 0 ? 'nichts überdeckt' : ueber.join(' · ')}`);
+      if (name === 'Kapitel 3' && (h < 800 || w === 1920)) {
+        for (const [fenster, tasten, klick] of P4_FENSTER) {
+          await lade(state, {}, undefined);
+          for (const t of tasten) {
+            await cdp.taste(t);
+            await pause(250);
+          }
+          const offen = await cdp.js<boolean>(klick.startsWith('REITER:') ? REITER(klick.slice(7)) : klick);
+          await pause(400);
+          const r = offen ? await cdp.js<string>(IM_BILD('.sheet')) : 'nicht gefunden';
+          if (r !== 'ok') fehler++;
+          console.log(`${r === 'ok' ? 'ok    ' : 'FEHLER'} ${w}×${h} Fenster ${fenster}: ${r}`);
+        }
       }
     }
     // Banderole „Bankrott droht“: das Menü bleibt sichtbar (mit Debug-Anzeige erst recht eng).

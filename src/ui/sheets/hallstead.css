@@ -1,0 +1,25 @@
+/* Hallstead-Mappe (4.16): Gegenstand auf dem Tisch und Fenster. */
+.hallstead-mappe { width: 100%; height: 100%; }
+.hallstead-mappe .mappe-leder { fill: var(--rost); stroke: var(--tisch-dunkel); stroke-width: 1.5; }
+.hallstead-mappe .mappe-klappe { fill: var(--rost-hell); opacity: 0.35; }
+.hallstead-mappe .mappe-siegel { fill: var(--messing); stroke: var(--messing-dunkel); stroke-width: 1.5; }
+.hallstead-mappe .mappe-kuppel { fill: none; stroke: var(--tisch-dunkel); stroke-width: 1.6; stroke-linecap: round; }
+
+.hallstead { display: flex; flex-direction: column; gap: 8px; }
+.hallstead-telegramm {
+  background: var(--papier-hell);
+  border: 1px dashed var(--linie);
+  padding: 8px 12px;
+  font-family: ui-monospace, 'Courier New', monospace;
+  font-size: 0.92rem;
+}
+.hallstead-telegramm ul { margin: 4px 0 0; padding-left: 18px; }
+.hallstead-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.hallstead-liste > li { border-bottom: 1px solid var(--linie-hell); padding-bottom: 8px; }
+.hallstead-liste > li.besitz { border-left: 3px solid var(--messing); padding-left: 8px; }
+.hallstead-liste p { margin: 2px 0 4px; }
+.hallstead-zeile { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
+.hallstead-knoepfe { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.hallstead-notiz { font-style: italic; color: var(--tinte-weich); }
+.hallstead-person { margin-bottom: 10px; }
+.hallstead-spenden { margin: 6px 0 0; padding-left: 18px; }

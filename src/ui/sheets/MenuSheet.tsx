@@ -9,6 +9,27 @@ import { keyLabel, SHORTCUTS } from '../keys';
 import { Tabs, activeTab } from '../sheet/Tabs';
 import { tester } from '../tester';
 import type { SheetContext } from './types';
+// 4.6 Andockpunkt: Raffinerie im Debug-Reiter freischalten.
+import { unlockRefinery } from '../../sim/refinery';
+import { balance } from '../balance';
+import { rt } from '../refinery';
+// 4.7 Andockpunkt: Debug-Knopf für die Fernleitungen.
+import { TrunkDebugButton } from './TrunkPipelineTab';
+// 4.8 Andockpunkt: Debug-Knopf für Aktienbuch, Aufsichtsrat und Anleihen.
+import { StocksDebugButton } from './LedgerSheet';
+import { openStaff } from '../../sim/staff'; // 4.9 Andockpunkt
+import { DiplomacyDebug } from './DiplomacySheet'; // 4.10 Andockpunkt
+// 4.11 Andockpunkt: Ermittler (Schattenbuch) und Werkstatt vorab freischalten.
+import { previewInvestigation } from '../../sim/investigation';
+import { previewResearch } from '../../sim/research';
+// 4.14 Andockpunkt (Integration): Marke und Tankstellen im Debug vorziehen.
+import { brandUnlocked, brandWorldFrom, previewBrand } from '../../sim/brand';
+// 4.15 Andockpunkt: Börse im Debug vorziehen.
+import { openExchange } from '../../sim/exchange';
+// 4.16 Andockpunkt: Hallstead (Beteiligungen, Lobbyist) im Debug vorziehen.
+import { HallsteadDebugButton } from './HallsteadSheet';
+// 4.17 Andockpunkt: Kapitel 3 (Siegelmappe) im Debug zur Probe öffnen.
+import { KonzernDebugButton } from './KonzernSheet';
 
 export interface MenuProps {
   ctx: SheetContext;
@@ -193,6 +214,61 @@ export function MenuSheet(p: MenuProps) {
             </button>
           </form>
           <WorldDebug ctx={ctx} />
+          {/* Phase 4: gemeinsamer Abschnitt für Systeme späterer Kapitel – jedes System steckt hier seinen Freischalt-Knopf hinein. */}
+          <fieldset className="debug-unlocks">
+            <legend>Vorab freischalten (spätere Kapitel)</legend>
+            {/* 4.6 Andockpunkt: Raffinerie vorab ansehen, bis es Kapitel 2 gibt (4.5). */}
+            {!ctx.game.refinery && (
+              <button type="button" onClick={() => ctx.onGame(unlockRefinery(ctx.game, balance))}>
+                {rt('hints.unlockDebug')}
+              </button>
+            )}
+            {ctx.game.refinery && <span className="muted klein">Raffinerie ist freigeschaltet.</span>}
+            {/* 4.7 Andockpunkt: Fernleitungen zum Ausprobieren schon in Kapitel 1 freischalten. */}
+            <TrunkDebugButton ctx={ctx} />
+            {/* 4.8 Andockpunkt: Aktienbuch wie in Kapitel 2 anlegen. */}
+            <StocksDebugButton ctx={ctx} />
+            {/* 4.9 Andockpunkt: Personal vorab ansehen, solange es Kapitel 2 noch nicht gibt. */}
+            {!ctx.game.staff && (
+              <button type="button" onClick={() => ctx.onGame(openStaff(ctx.game, balance))}>
+                Personal freischalten (Vorschau Kapitel 2)
+              </button>
+            )}
+            {ctx.game.staff && <span className="muted klein">Personal ist freigeschaltet.</span>}
+            {/* 4.10 Andockpunkt: Rivalen-Diplomatie aus Kapitel 2 vorab einschalten. */}
+            <DiplomacyDebug ctx={ctx} />
+            {/* 4.11 Andockpunkt: Schattenbuch (Delaney) und Werkstatt (Forschung) vorab auf den Tisch legen. */}
+            {!ctx.game.investigation && !ctx.game.finished && (
+              <button type="button" onClick={() => ctx.onGame(previewInvestigation(ctx.game, balance))}>
+                Schattenbuch und Delaney freischalten (Vorschau Kapitel 2)
+              </button>
+            )}
+            {ctx.game.investigation && <span className="muted klein">Schattenbuch ist freigeschaltet.</span>}
+            {!ctx.game.research && !ctx.game.finished && (
+              <button type="button" onClick={() => ctx.onGame(previewResearch(ctx.game))}>
+                Werkstatt freischalten (Vorschau Kapitel 2)
+              </button>
+            )}
+            {ctx.game.research && <span className="muted klein">Werkstatt ist freigeschaltet.</span>}
+            {/* 4.14 Andockpunkt (Integration): Vertrieb (Marke, Tankstellen) zum Ausprobieren vorziehen (gehört sonst zu Kapitel 3). */}
+            {!brandUnlocked(brandWorldFrom(ctx.game), balance) && !ctx.game.finished && (
+              <button type="button" onClick={() => ctx.onGame(previewBrand(ctx.game, balance))}>
+                Marke und Tankstellen freischalten (Kapitel 3 vorziehen)
+              </button>
+            )}
+            {brandUnlocked(brandWorldFrom(ctx.game), balance) && <span className="muted klein">Vertrieb ist freigeschaltet.</span>}
+            {/* 4.15 Andockpunkt: Börse zum Ausprobieren vorziehen (gehört sonst zu Kapitel 3). */}
+            {!ctx.game.exchange && !ctx.game.finished && (
+              <button type="button" onClick={() => ctx.onGame(openExchange(ctx.game, balance))}>
+                Börse öffnen (Kapitel 3 vorziehen)
+              </button>
+            )}
+            {ctx.game.exchange && <span className="muted klein">Börse ist geöffnet.</span>}
+            {/* 4.16 Andockpunkt: Hallstead-Mappe zum Ausprobieren öffnen (gehört sonst zu Kapitel 3). */}
+            <HallsteadDebugButton ctx={ctx} />
+            {/* 4.17 Andockpunkt: Siegelmappe (Seismik, Konsortium, Projekte, Stand) zur Probe öffnen. */}
+            <KonzernDebugButton ctx={ctx} />
+          </fieldset>
         </section>
       )}
     </Tabs>

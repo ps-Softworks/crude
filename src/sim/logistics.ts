@@ -15,6 +15,7 @@ import type { Balance, TransportMode } from './balance';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
 import { recordAct } from './politics';
+import { fixerDefense } from './staff'; // 4.9 Andockpunkt
 import { Rng, seedFromString, type RngState } from './rng';
 import { markRound, RIVAL_MARKS } from './trust';
 
@@ -296,7 +297,7 @@ export function setGuards(state: GameState, on: boolean): LogisticsResult {
 }
 
 /** Chance je Runde, dass die laufende Pipeline sabotiert wird. */
-export function sabotageChance(state: Pick<GameState, 'events' | 'logistics'>, balance: Balance): number {
+export function sabotageChance(state: Pick<GameState, 'events' | 'logistics'> & Partial<Pick<GameState, 'staff'>>, balance: Balance): number {
   const p = balance.transport.pipeline;
   const feinde =
     markRound(state, RIVAL_MARKS.bullardFeud) !== undefined ||
@@ -304,7 +305,8 @@ export function sabotageChance(state: Pick<GameState, 'events' | 'logistics'>, b
     markRound(state, RIVAL_MARKS.thorneRefused) !== undefined ||
     state.logistics.threatRound > 0;
   const basis = p.sabotageChance * (feinde ? p.sabotageFactor : 1);
-  return Math.min(1, state.logistics.guards ? basis * p.guardsFactor : basis);
+  // 4.9 Andockpunkt: Ein Fixer im Dienst hält Saboteure fern (fixerDefense = 1 ohne Fixer).
+  return Math.min(1, (state.logistics.guards ? basis * p.guardsFactor : basis) * fixerDefense(state, balance));
 }
 
 /** Fixkosten je Runde: Lohn der Fuhrleute, Streckenwärter, Wachleute. */
@@ -402,7 +404,8 @@ export function threatenThorne(state: GameState, balance: Balance): LogisticsRes
     };
     return { ok: true, state: withMark(out, RIVAL_MARKS.thorneRefused) };
   }
-  const neu = Math.max(th.minTariff, cents(state.railTariff - th.threatCut));
+  // 4.7 Andockpunkt: Liegt der Tarif schon unter minTariff (Fernleitung zum Hafen, Kapitel 2), hebt die Drohung ihn nicht an.
+  const neu = Math.min(state.railTariff, Math.max(th.minTariff, cents(state.railTariff - th.threatCut)));
   return {
     ok: true,
     state: {

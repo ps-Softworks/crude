@@ -1,0 +1,241 @@
+# Kapitel 2 – Delaneys Ermittlungen (4.11, GDD §10 „Ermittlungen & Justiz“, Weltbibel „Frank Delaney“).
+# Entwurf von Claude, bitte in eigener Stimme umschreiben.
+# Vorlage und Erklärung: docs/ereignis-vorlage.md
+#
+# Diese Ereignisse kommen erst ab Kapitel 2: Ihre Merkzeichen setzt nur die Simulation
+# (src/sim/investigation.ts, DELANEY_MARKS), und das erst ab investigation.fromChapter.
+#   delaney_im_amt         Kapitel 2 hat begonnen, Delaney ist in Cordova
+#   delaney_geruecht       Hitze ab investigation.rumorAt: In Cordova wird geredet
+#   delaney_vorermittlung  Hitze ab investigation.probeAt: Delaney ermittelt
+#   delaney_anklage        Beweise ab investigation.chargeAt: Anklage, Urteil nach trialDelay Runden
+#   (außerdem: delaney_eingestellt, delaney_freispruch, delaney_verurteilt, delaney_zwangsverkauf,
+#    delaney_suendenbock – für spätere Ereignisse)
+#
+# Die Simulation liest diese Merkzeichen der Antworten (DELANEY_CHOICE_MARKS) – Namen nicht ändern:
+#   delaney_anwalt_frueh   Anwalt ab Stufe investigation.lawyer.early, sobald Delaney ermittelt
+#   delaney_interview      vor Gericht besser (trial.interview), Risiko eines Versprechers (evidence.slipChance)
+#   delaney_nora_crane     Delaney schaut auch auf den Crane Trust (evidence.divertedFactor)
+#   delaney_offen          sofort mehr Beweise (evidence.candid), aber halbe Strafe (fine.candidFactor)
+#   delaney_anwalt         Anwalt ab Stufe investigation.lawyer.summoned
+#   delaney_feind          Delaney gräbt schneller (evidence.hostileFactor)
+#   delaney_kronzeuge      viel weniger Beweise (crown.evidenceCut); 4.10: Crane wird zum Feind
+#   delaney_vergleich      der Fall ist erledigt (das Geld steht in der Antwort)
+#   delaney_prozess        eine Anwaltsstufe mehr im Prozess
+#
+# Gegenmittel wie Spuren vernichten, Zeugen kaufen, Sündenbock und politischer Druck
+# stehen im Schattenbuch (Schublade am Schreibtisch).
+
+- id: k2_delaney_ankunft
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
+  mail: info
+  certain: true
+  draft: true                # Schlüsselszene: Delaneys erster Auftritt (Weltbibel)
+  title:
+    de: Ein neuer Bundesanwalt in Cordova
+    en: A New Federal Prosecutor in Cordova
+  text:
+    de: >-
+      Ruth legt Jacob den Cordova Herald hin, eine Meldung ist mit Bleistift
+      umrandet: Das Justizministerium hat einen Bundesanwalt in die Ölprovinz
+      geschickt, Frank Delaney. Er habe in Hallstead zwei Eisenbahndirektoren
+      ins Gefängnis gebracht, steht da, und er nehme keine Einladungen zum Essen an.
+      „Ich dachte, das willst du wissen“, sagt Ruth.
+    en: >-
+      Ruth puts the Cordova Herald in front of Jacob, one item circled in pencil:
+      the Department of Justice has sent a federal prosecutor to the oil province,
+      Frank Delaney. He put two railroad directors in prison in Hallstead, it says,
+      and he accepts no dinner invitations. "I thought you'd want to know," says Ruth.
+  marked: [delaney_im_amt]
+  choices:
+    - id: anwalt
+      label: { de: "Einen Anwalt auf Abruf nehmen (500 $)", en: "Keep a lawyer on call (500 $)" }
+      result:
+        de: >-
+          Mr. Ashby von Ashby & Lowe nimmt das Geld und eine Kopie der Grundbücher.
+          „Wenn er klopft, rufen Sie mich, bevor Sie die Tür aufmachen.“
+        en: >-
+          Mr. Ashby of Ashby & Lowe takes the money and a copy of the land records.
+          "If he knocks, call me before you open the door."
+      requires: { minCash: 500 }
+      effects: { cash: -500 }
+      marks: [delaney_anwalt_frueh]
+    - id: abwarten
+      label: { de: "Die Zeitung zusammenfalten", en: "Fold up the paper" }
+      result:
+        de: Jacob faltet die Zeitung zusammen. Ein Mann mehr in Cordova, der Fragen stellt.
+        en: Jacob folds up the paper. One more man in Cordova asking questions.
+      appointments: 0
+      default: true
+
+- id: k2_nora_geruecht
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
+  visitor: nora
+  certain: true
+  title:
+    de: Nora Whitlock hat etwas gehört
+    en: Nora Whitlock Has Heard Something
+  text:
+    de: >-
+      Nora Whitlock schreibt jetzt für den Herald und hat immer noch keine Eile.
+      Sie setzt sich, ohne zu fragen. „Man erzählt sich Dinge über Sie, Mr. Harlan.
+      Über die alten Zeiten am Salt Hill. Delaney hört sich das an – ich auch.
+      Wollen Sie mir Ihre Seite erzählen, bevor es ein anderer tut?“
+    en: >-
+      Nora Whitlock writes for the Herald now and still has no hurry. She sits
+      down without asking. "People are telling stories about you, Mr. Harlan.
+      About the old days at Salt Hill. Delaney is listening – so am I. Do you want
+      to tell me your side before someone else does?"
+  marked: [delaney_geruecht]
+  choices:
+    - id: interview
+      label: { de: "Ihr ein Interview geben", en: "Give her an interview" }
+      result:
+        de: >-
+          Jacob redet eine Stunde. Nora schreibt alles mit und unterstreicht manches.
+          Am Samstag steht im Herald ein Mann, der hart rechnet – aber ehrlich, meistens.
+        en: >-
+          Jacob talks for an hour. Nora writes everything down and underlines some of it.
+          On Saturday the Herald has a man who drives a hard bargain – but honest, mostly.
+      marks: [delaney_interview]
+    - id: crane
+      label: { de: "Ihr erzählen, was der Crane Trust mit kleinen Förderern macht", en: "Tell her what the Crane Trust does to small producers" }
+      result:
+        de: >-
+          Noras Bleistift fliegt. „Das ist eine bessere Geschichte als Ihre“, sagt sie.
+          Eine Woche später liest auch Delaney über Rabatte, Pipelines und gekaufte Bahntarife.
+        en: >-
+          Nora's pencil flies. "That's a better story than yours," she says.
+          A week later Delaney is reading about rebates, pipelines and bought rail rates too.
+      marks: [delaney_nora_crane]
+      appointments: 2
+    - id: abwimmeln
+      label: { de: "„Kein Kommentar.“", en: "\"No comment.\"" }
+      result:
+        de: Nora klappt das Notizbuch zu. „Das schreibe ich auch auf, Mr. Harlan.“
+        en: Nora snaps the notebook shut. "I'll write that down too, Mr. Harlan."
+      appointments: 0
+      default: true
+
+- id: k2_delaney_besuch
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
+  visitor: delaney
+  certain: true
+  draft: true                # Schlüsselszene: Delaney sitzt Jacob gegenüber
+  title:
+    de: Bundesanwalt Delaney hat ein paar Fragen
+    en: Federal Prosecutor Delaney Has a Few Questions
+  text:
+    de: >-
+      Frank Delaney trägt einen abgewetzten Anzug und hat eine Aktentasche dabei,
+      die schwerer aussieht als er selbst. Er bleibt stehen. „Mr. Harlan, ich
+      ermittle wegen einiger Vorgänge aus Ihren ersten Jahren in Port Ellis. Ich
+      kann warten, bis ich alles beisammen habe. Oder Sie sagen mir jetzt, was Sie
+      wissen.“ Er legt ein Notizbuch auf den Tisch und schlägt eine leere Seite auf.
+    en: >-
+      Frank Delaney wears a worn suit and carries a briefcase that looks heavier
+      than he does. He stays on his feet. "Mr. Harlan, I am looking into certain
+      matters from your first years in Port Ellis. I can wait until I have it all.
+      Or you can tell me now what you know." He puts a notebook on the desk and
+      opens it to a blank page.
+  marked: [delaney_vorermittlung]
+  choices:
+    - id: offen
+      label: { de: "Offen antworten", en: "Answer openly" }
+      result:
+        de: >-
+          Jacob erzählt, was er erzählen muss, und ein wenig mehr. Delaney schreibt
+          zwei Seiten voll. „Danke. Das wird Ihnen vor Gericht nicht schaden, Mr. Harlan.
+          Es wird nur nicht reichen.“
+        en: >-
+          Jacob tells what he has to, and a little more. Delaney fills two pages.
+          "Thank you. That won't hurt you in court, Mr. Harlan. It just won't be enough."
+      marks: [delaney_offen]
+    - id: anwalt
+      label: { de: "Auf den Anwalt verweisen", en: "Refer him to the lawyer" }
+      result:
+        de: >-
+          „Sprechen Sie mit Ashby & Lowe.“ Delaney nickt, als hätte er nichts anderes
+          erwartet, und notiert die Adresse. Die Kanzlei schickt ihre Rechnung jede Runde.
+        en: >-
+          "Talk to Ashby & Lowe." Delaney nods as if he expected nothing else and
+          notes the address. The firm sends its bill every round.
+      marks: [delaney_anwalt]
+      default: true
+    - id: hinauswerfen
+      label: { de: "Ihn hinauswerfen", en: "Throw him out" }
+      result:
+        de: >-
+          Delaney nimmt seinen Hut. In der Tür dreht er sich um. „Ich komme wieder,
+          Mr. Harlan. Mit einem Gerichtsbeschluss.“ Ab jetzt gräbt er tiefer.
+        en: >-
+          Delaney takes his hat. At the door he turns. "I'll be back, Mr. Harlan.
+          With a court order." From now on he digs deeper.
+      marks: [delaney_feind]
+      appointments: 0
+    - id: kronzeuge
+      label: { de: "Ihm Material über den Crane Trust anbieten", en: "Offer him evidence against the Crane Trust" }
+      result:
+        de: >-
+          Jacob holt die Frachtbriefe, die Rabattlisten, die Briefe von Lusk. Delaney
+          liest lange. „Sie wissen, was Sie da tun? Crane vergisst so etwas nicht.“ Er
+          nimmt die Papiere trotzdem mit.
+        en: >-
+          Jacob fetches the freight bills, the rebate lists, the letters from Lusk.
+          Delaney reads for a long time. "You know what you're doing? Crane doesn't
+          forget a thing like this." He takes the papers anyway.
+      marks: [delaney_kronzeuge]
+      appointments: 2
+
+- id: k2_delaney_anklage
+  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
+  mail: demand
+  certain: true
+  deadline: 2
+  title:
+    de: Vorladung vor das Bundesgericht
+    en: Summons to the Federal Court
+  text:
+    de: >-
+      Ein Gerichtsdiener bringt einen Umschlag mit dem Siegel der Föderation: Anklage
+      gegen Jacob Harlan, Verhandlung vor dem Bundesgericht in Cordova. Dabei liegt
+      ein kurzer Brief von Delaney, mit der Hand geschrieben: Das Ministerium sei
+      bereit, über einen Vergleich zu reden. Bis zum Verhandlungstag.
+    en: >-
+      A court officer brings an envelope with the seal of the Federation: charges
+      against Jacob Harlan, trial before the federal court in Cordova. With it, a
+      short handwritten note from Delaney: the Department is willing to discuss a
+      settlement. Until the day of the trial.
+  marked: [delaney_anklage]
+  choices:
+    - id: vergleich
+      label: { de: "Einen Vergleich anbieten (6.000 $)", en: "Offer a settlement (6,000 $)" }
+      result:
+        de: >-
+          Ashby verhandelt zwei Tage. Am Ende unterschreibt Jacob, zahlt und gibt nichts
+          zu. Delaney schüttelt ihm nicht die Hand.
+        en: >-
+          Ashby negotiates for two days. In the end Jacob signs, pays and admits nothing.
+          Delaney does not shake his hand.
+      requires: { minCash: 6000 }
+      effects: { cash: -6000 }
+      marks: [delaney_vergleich]
+    - id: kaempfen
+      label: { de: "Den besten Anwalt der Ostküste holen (1.500 $)", en: "Bring in the best lawyer on the East Coast (1,500 $)" }
+      result:
+        de: >-
+          Mr. Whitcombe kommt mit dem Nachtzug, zwei Gehilfen und vier Koffern voller
+          Akten. „Geschworene sind auch nur Farmer, Mr. Harlan. Farmer mögen keine Männer
+          aus Hallstead.“
+        en: >-
+          Mr. Whitcombe arrives on the night train with two clerks and four trunks of
+          files. "Jurors are just farmers, Mr. Harlan. Farmers don't like men from Hallstead."
+      requires: { minCash: 1500 }
+      effects: { cash: -1500 }
+      marks: [delaney_prozess]
+    - id: abwarten
+      label: { de: "Es darauf ankommen lassen", en: "Take your chances" }
+      result:
+        de: Jacob legt die Vorladung in die Schublade, zum Schattenbuch.
+        en: Jacob puts the summons in the drawer, next to the shadow book.
+      appointments: 0
+      default: true

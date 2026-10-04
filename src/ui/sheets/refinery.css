@@ -1,0 +1,12 @@
+/* Fenster „Raffinerie“ (4.6). */
+.raffinerie { display: flex; flex-direction: column; gap: 8px; }
+.raffinerie-status { font-weight: 600; margin: 0; }
+.raffinerie-knoepfe { display: flex; flex-wrap: wrap; gap: 8px; }
+.raffinerie-regler { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.raffinerie-regler input[type='range'] { flex: 1 1 160px; min-width: 120px; }
+.raffinerie-mix input[type='range'] { width: 90px; vertical-align: middle; }
+.raffinerie-vergleich td { font-size: 1.1rem; }
+.raffinerie-vergleich td.besser { font-weight: bold; }
+@media (max-width: 560px) {
+  .raffinerie-mix input[type='range'] { width: 64px; }
+}

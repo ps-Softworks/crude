@@ -19,11 +19,16 @@
 // Feste Termine (routine) haben nur eine Antwort: Ihre Abwägung ist der Termin selbst –
 // sie werden aufgelistet, aber nicht bewertet.
 
+import { DIPLOMACY_READ_MARKS } from './diplomacyCore'; // 4.10 Andockpunkt
 import { parseDocument } from 'yaml';
 import type { Balance } from './balance';
 import type { ContentError } from './eventContent';
 import type { EventChoice, EventDef } from './events';
 import { RIVAL_MARKS } from './trust';
+// 4.7 Andockpunkt: Fernleitungen.
+import { BIG_PIPELINE_READ_MARK_LIST } from './bigPipeline';
+import { STAFF_EVENT_MARKS } from './staff'; // 4.9 Andockpunkt
+import { DELANEY_READ_MARKS } from './investigation'; // 4.11 Andockpunkt
 
 export type Verdict = 'stark' | 'gegenstueck' | 'schwach' | 'termin';
 
@@ -54,7 +59,20 @@ export interface RelevanceReport {
 
 /** Merkzeichen, die die Simulation liest (Rivalen, Wegerechte der Pipeline). */
 export function simReadMarks(balance: Balance): string[] {
-  return [...Object.values(RIVAL_MARKS), ...balance.transport.pipeline.rights.map((r) => r.mark)];
+  // 4.7 Andockpunkt: Merkzeichen, die die Fernleitungen lesen.
+  // 4.9 Andockpunkt: Merkzeichen, die das Personal liest (STAFF_EVENT_MARKS).
+  // 4.10 Andockpunkt: Merkzeichen, die die Diplomatie liest (DIPLOMACY_READ_MARKS).
+  return [
+    ...Object.values(RIVAL_MARKS),
+    ...balance.transport.pipeline.rights.map((r) => r.mark),
+    ...BIG_PIPELINE_READ_MARK_LIST,
+    ...Object.values(STAFF_EVENT_MARKS),
+    ...DIPLOMACY_READ_MARKS,
+    // 4.11 Andockpunkt: Delaney liest die Antworten auf seine Ereignisse, die Spuren und den Leumund.
+    ...DELANEY_READ_MARKS,
+    ...balance.investigation.traces.map((t) => t.mark),
+    ...balance.investigation.goodMarks,
+  ];
 }
 
 /**

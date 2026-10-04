@@ -7,6 +7,43 @@
 # Jede Ausnahme braucht einen Grund. Fragt später ein Ereignis das Merkzeichen ab, kann sie raus.
 
 later:
+  # Kapitel 3 – Story-Bögen Daniel, Thomas, Ehe, Vales Karte (Phase 4, Story-Bibel §7 A–D). Entwurf – Philipp
+  # überarbeitet. Ausgänge, die erst Zeitsprung III oder Kapitel 4 abfragen (GDD §13/§14: Abrechnung, Erbe, Enden).
+  # Steht absichtlich vorn in der Liste: Kapitel 2 (phase4/inhalte-k2-story) hängt seine Gründe hinten an.
+  - { mark: daniel_unterstuetzt, reason: "Daniel Moss weiß, wer seinen Wahlkampf bezahlt hat – Dankbarkeit gegen Pflicht (Kapitel 4)" }
+  - { mark: daniel_offen, reason: "Daniel erinnert sich, wer ihm die Bücher freiwillig gezeigt hat (Kapitel 4)" }
+  - { mark: daniel_sarg_getragen, reason: "Jacob hat Ezekiels Sarg getragen – Daniels Dankbarkeit (Kapitel 4)" }
+  - { mark: daniel_vergleich, reason: "Ausgang Daniel-Bogen: Vergleich (Kapitel 4)" }
+  - { mark: daniel_anklage, reason: "Ausgang Daniel-Bogen: Der Prozess läuft in Kapitel 4 weiter" }
+  - { mark: daniel_entlastet, reason: "Ausgang Daniel-Bogen: Pikes Lüge widerlegt, Jacob entlastet (Kapitel 4)" }
+  - { mark: daniel_verbuendet, reason: "Ausgang Daniel-Bogen: Verbündeter gegen Thorne (Kapitel 4)" }
+  - { mark: daniel_zeuge_thorne, reason: "Jacob hat gegen Thorne ausgesagt – Thorne vergisst es nicht (Kapitel 4)" }
+  - { mark: daniel_weggelobt, reason: "Ausgang Daniel-Bogen: Richter Moss sitzt länger als Staatsanwälte (Kapitel 4)" }
+  - { mark: daniel_bestechung_versuch, reason: "Story-Bibel: K4-Prüfung – ein Bestechungsversuch bleibt in der Akte" }
+  - { mark: daniel_suendenbock, reason: "Der geopferte Prokurist weiß, woher das Geld kam (Kapitel 4, Spur)" }
+  - { mark: daniel_beweise_vernichtet, reason: "Verbrannte Bücher: Spur für Kapitel 4 (Ermittler, Nora)" }
+  - { mark: daniel_beugehaft, reason: "Jacob saß für Thorne in Beugehaft – Thornes Schuld, Daniels Gedächtnis (Kapitel 4)" }
+  - { mark: daniel_thorne_gedeckt, reason: "Thornes Anwälte haben Jacob herausgeholt – Gefallen und Spur (Kapitel 4)" }
+  - { mark: daniel_vertagt, reason: "Vorladung nur vertagt – Daniel lädt in Kapitel 4 wieder vor" }
+  - { mark: daniel_unfallkasse, reason: "Kerrigan-Kasse für Arbeiter – Arbeiter-Ruf und Gewerkschaft (Kapitel 4)" }
+  - { mark: moss_land_zurueck, reason: "Die Moss-Farm gehört wieder Daniels Familie (Kapitel 4, Enden)" }
+  - { mark: thomas_firma, reason: "Thomas im Unternehmen – Erbe und Nachfolge (Zeitsprung III, Kapitel 4)" }
+  - { mark: thomas_feld, reason: "Thomas bei den Bohrtrupps – Werte des Erben (Kapitel 4)" }
+  - { mark: thomas_eigener_weg, reason: "Thomas bei Crane Eastern – Erbe oder Rivale (Kapitel 4)" }
+  - { mark: thomas_gezwungen, reason: "Thomas wurde gezwungen – Werte des Erben (Kapitel 4)" }
+  - { mark: thomas_bruch, reason: "Saat „Rivale“: Thomas baut eigene Tankstellen (Kapitel 4)" }
+  - { mark: thomas_teilhaber, reason: "Jacob ist stiller Teilhaber der Tankstellen seines Sohnes (Kapitel 4)" }
+  - { mark: thomas_versoehnt_k3, reason: "Thomas und Jacob nach dem Bruch versöhnt (Kapitel 4)" }
+  - { mark: thomas_abteilung, reason: "Thomas führt die Marke – geschenkte Abteilung (Kapitel 4)" }
+  - { mark: thomas_benutzt, reason: "Jacob hat Thomas als Quelle gegen Crane Eastern benutzt (Kapitel 4)" }
+  - { mark: heirat_crane_saat, reason: "Heiratssaat Thomas und Evelyn Crane (Zeitsprung III)" }
+  - { mark: heirat_crane_verboten, reason: "Heirat mit Evelyn Crane verboten (Zeitsprung III)" }
+  - { mark: ruth_gefragt, reason: "Ruth wurde gefragt – Ehe-Partnerin wahrscheinlicher (Zeitsprung III, Kapitel 4)" }
+  - { mark: ehe_partner, reason: "Ausgang Ehe-Bogen: Ruth unterschreibt mit, Kontrolle sicher (Kapitel 4)" }
+  - { mark: ehe_waffenstillstand, reason: "Ausgang Ehe-Bogen: Waffenstillstand (Kapitel 4)" }
+  - { mark: ehe_trennung, reason: "Ausgang Ehe-Bogen: Trennung, Ruths Anteile verkauft (Kapitel 4)" }
+  - { mark: vale_k3_zugesagt, reason: "Zusage an Mr. Vale – k3_vale_schloss (Bogen D, System Konsortium)" }
+  - { mark: vale_k3_abgesagt, reason: "Absage an Mr. Vale – k3_vale_schloss, Preisdruck in der nächsten Krise (Bogen D)" }
   - { mark: geburt_dabei, reason: "Thomas' Bogen (GDD Kapitel 3: Thomas kommt ins Unternehmen – oder nicht)" }
   - { mark: geburt_verpasst, reason: "Thomas' Bogen (GDD Kapitel 3)" }
   - { mark: thomas_wort_dabei, reason: "Thomas' Bogen (GDD Kapitel 3)" }
@@ -29,3 +66,97 @@ later:
   - { mark: vale_geld, reason: "Mr. Vales Einladung (GDD Kapitel 3)" }
   - { mark: vale_abgelehnt, reason: "Mr. Vales Einladung (GDD Kapitel 3)" }
   - { mark: crane_abgelehnt, reason: "Crane merkt sich die Absage (GDD: Rivalen merken sich Gefallen und Verrat)" }
+
+  # Kapitel 2 – Story-Bögen Ruth, Silas, Nora (content/events/k2-story-*.yaml). Entwurf – Philipp überarbeitet.
+  # Ausgänge, die erst Kapitel 3 abfragt (Story-Bibel §7 und §8): Wendepunkt der Ehe, Silas' letztes
+  # Kapitel, Noras Buch, Clara 15–18.
+  - { mark: ruth_finanzen, reason: "Ruth führt die Finanzen (K3: Wendepunkt der Ehe – Ruth unterschreibt mit)" }
+  - { mark: ruth_vertroestet_k2, reason: "Ruth wurde zum zweiten Mal vertröstet (K3: Wendepunkt der Ehe)" }
+  - { mark: ruth_zuhause, reason: "Ruth bleibt zu Hause (K3: Wendepunkt der Ehe, Trennung wahrscheinlicher)" }
+  - { mark: ruth_eigenes_geschaeft, reason: "Ruths Laden am Bahnhof Salt Hill (K3: Ehe; Trennung zu Hannah mit eigenem Geld)" }
+  - { mark: ruth_verboten, reason: "Jacob hat Ruths Geschäft verhindert (K3: Wendepunkt der Ehe)" }
+  - { mark: ruth_rat_behauptet, reason: "Ruth behauptet sich im Rat (K3: ehe_partner wahrscheinlich)" }
+  - { mark: ruth_rat_stumm, reason: "Ruth schweigt im Rat (K3: Wendepunkt der Ehe)" }
+  - { mark: clara_k2_vater_da, reason: "Jacob saß an Claras Bett (K3: Clara 15–18, Weichen für Zeitsprung III)" }
+  - { mark: clara_k2_vater_fehlte, reason: "Jacob war in der Sitzung (K3: Clara 15–18)" }
+  - { mark: silas_ratssitz, reason: "Silas im Rat (K3: Silas lehrt Thomas das Bohren)" }
+  - { mark: silas_trupps, reason: "Silas bei den Trupps statt im Rat (K3: Silas' letztes Kapitel)" }
+  - { mark: silas_k2_ausgezahlt, reason: "Silas ist ausgezahlt (K3: Silas' Erinnerungen)" }
+  - { mark: silas_k2_gewarnt, reason: "Silas hat die Strohmänner entdeckt (K3: Thorne, Silas' letztes Kapitel)" }
+  - { mark: silas_k2_recht_gegeben, reason: "Jacob gab Silas recht (K3: Silas' letztes Kapitel)" }
+  - { mark: silas_tarif_fair, reason: "Freundschaftstarif für Silas (K3: Silas, unabhängige Produzenten)" }
+  - { mark: silas_tarif_voll, reason: "Voller Tarif für Silas (K3: Silas, unabhängige Produzenten)" }
+  - { mark: silas_quellen_gekauft, reason: "Jacob kaufte Silas' Quellen (K3: Silas' letztes Kapitel)" }
+  - { mark: silas_k2_nachgezahlt, reason: "Silas öffentlich nachgezahlt (K3: Silas diktiert Nora seine Erinnerungen)" }
+  - { mark: silas_k2_hinausgeworfen, reason: "Silas aus der Hauptversammlung geworfen (K3: Zeuge für Daniel/Delaney)" }
+  - { mark: silas_schweigegeld, reason: "Schweigegeld an Silas – Spur für Daniels Akte (K3)" }
+  - { mark: silas_k2_zurueckgeholt, reason: "Silas zurückgeholt (K3: Silas' letztes Kapitel)" }
+  - { mark: silas_k2_thorne_im_rat, reason: "Thornes Mann im Aufsichtsrat (K3: Thorne, Aufsichtsrat, Kontrolle)" }
+  - { mark: silas_k2_vollmacht_abgewehrt, reason: "Silas und Jacob wehrten die Strohmänner ab (K3: Silas' letztes Kapitel, Thorne)" }
+  - { mark: silas_k2_beobachter, reason: "Thornes Mann als Gast ohne Stimme im Rat (K3: Thorne, Aufsichtsrat)" }
+  - { mark: silas_k2_genossen, reason: "„Harlans Leute“ – die kleinen Förderer am Salt Hill (K3: unabhängige Produzenten, Crane)" }
+  - { mark: silas_k2_stolz, reason: "Silas zahlt aus Stolz den vollen Tarif (K3: Silas' letztes Kapitel)" }
+  - { mark: silas_k2_tarif_zurueck, reason: "Jacob nahm Silas' Tarif auf Lusks Druck zurück (K3: Silas, Crane)" }
+  - { mark: silas_k2_vor_bullard, reason: "Jacob kaufte Silas' Quellen vor Bullard (K3: Bullard, Silas)" }
+  - { mark: silas_k2_tarif_spaet, reason: "Freundschaftstarif erst unter Bullards Druck (K3: Silas' letztes Kapitel)" }
+  - { mark: silas_an_bullard, reason: "Silas verkaufte an Bullard – Bullard am Zaun (K3: Bullard)" }
+  - { mark: silas_k2_letzte_quelle, reason: "Silas' letzte Quelle an der Ecke am Bach (K3: Silas' letztes Kapitel)" }
+  - { mark: silas_k2_bohrmeister, reason: "Silas als Bohrmeister der Firma (K3: Silas lehrt Thomas das Bohren)" }
+  - { mark: silas_turm_verkauft, reason: "Silas' Turm ging an Bullard (K3: Silas, Bullard)" }
+  - { mark: silas_k2_buecher_offen, reason: "Delaney hat die Bücher vom Salt Hill gesehen (K3: Delaney-Ermittlung)" }
+  - { mark: silas_k2_fuersprecher, reason: "Silas sprach bei Delaney für Jacob (K3: Delaney, Silas' letztes Kapitel)" }
+  - { mark: silas_k2_buecher_verbrannt, reason: "Verbrannte Bücher – Spur für Delaney (K3)" }
+  - { mark: silas_k2_entschuldigt, reason: "Jacob entschuldigte sich im Saloon (K3: Silas' letztes Kapitel, Arbeiter)" }
+  - { mark: silas_k2_hausverbot, reason: "Silas Hausverbot im eigenen Saloon (K3: Zeuge für Daniel/Delaney)" }
+  - { mark: silas_k2_schweigegeld_notar, reason: "Beurkundetes Schweigegeld – Spur für Daniels Akte (K3)" }
+  - { mark: silas_k2_spaete_wahrheit, reason: "Jacob sagte Silas die Wahrheit, das Papier ist verbrannt (K3: Silas' letztes Kapitel)" }
+  - { mark: nora_quelle, reason: "Jacob war Noras Quelle (K3: Noras Buch, langes Gespräch)" }
+  - { mark: nora_interview_k2, reason: "Interview mit Nora (K3: Noras Buch)" }
+  - { mark: nora_ohne_jacob, reason: "Nora schreibt ohne Jacob (K3: Noras Buch)" }
+  - { mark: ledger_gekauft, reason: "Jacob besitzt ein Viertel des Ledger (K3: Zeitung, Lobby, Skandal)" }
+  - { mark: nora_k2_bestaetigt, reason: "Jacob verriet Bullards Rabatt (K3: Bullards Bitte, die Söhne erinnern sich)" }
+  - { mark: nora_k2_dementiert, reason: "Jacob schwieg über Bullard (K3: Bullard, Noras Buch)" }
+  - { mark: nora_silas_wahrheit, reason: "Jacob sagte Nora die Wahrheit über Silas (K3: Noras Buch, Delaney)" }
+  - { mark: nora_silas_umschlag, reason: "Der fotografierte Umschlag – Beweisstück (K3: Daniel/Delaney)" }
+  - { mark: nora_silas_gedruckt, reason: "Silas' Geschichte gedruckt (K3: Noras Buch)" }
+  - { mark: nora_k2_rat_bloss, reason: "Jacob stellte den Rat bloß (K3: Aufsichtsrat, Pettibone)" }
+
+  # Kapitel 2 – Alltag (Phase 4, Entwurf – Philipp überarbeitet): Saat für die Story-Bögen von
+  # Kapitel 2 (k2-*-Story-Dateien, Systeme 4.6–4.11) und für Kapitel 3. Jede dieser Antworten hat
+  # schon eine spürbare Wirkung in Geld, Förderung, Preis oder Fracht.
+  - { mark: k2_werksarzt, reason: "Arbeiterschutz-Akte und Arbeiter-Ruf (Story-Bibel §8: kerrigan_*/trupp_* → Gewerkschaftssaat, Kapitel 3)" }
+  - { mark: k2_benzin_frueh, reason: "Greaves' Benzin-Kolonne: Thomas' Ideen zu Marke und Automobil in Kapitel 3 (Story-Bibel §7 B)" }
+  - { mark: k2_marine_vertrag, reason: "Heizöl für die Marine – Weiche zs2_marine_vertrag im Zeitsprung II (Story-Bibel §2)" }
+  - { mark: k2_thorne_klausel, reason: "Thornes Vertrag, Seite neun: keine eigene Leitung zu einem anderen Hafen – 4.7 Pipelines sperrt den Bau oder wertet ihn als Vertragsbruch (Story-Bibel §3 Thorne, GDD §13 Pipeline zum Hafen)" }
+  - { mark: k2_daniel_brief_beantwortet, reason: "Jacob hat Daniel Moss auf den Brief zum Grab geantwortet – Daniel als Bezirksstaatsanwalt in Kapitel 3 (Story-Bibel §3, §7 A)" }
+  - { mark: k2_quill_detektiv, reason: "Mr. Quill aus Thornes Detektei kennt Harlans Mengen – Fixer-Ersatz und Thornes Strohmänner (Story-Bibel §4, §6)" }
+  - { mark: k2_sayles_aktien, reason: "Mr. Sayles kauft Aktien – Thornes Strohmann-Falle k2_thorne_strohmann (Story-Bibel §6, Rivalen am Rand)" }
+  - { mark: k2_anleihe_verzug, reason: "Rating bei Vandermeer & Co. und Pettibone (Story-Bibel §8: bank_kredit/wechsel_gehalten → Rating), Kapitel 3" }
+  - { mark: k2_hale_rat, reason: "Martha Hale im Aufsichtsrat (Story-Bibel §5) – Rats-Ereignisse von 4.8" }
+  - { mark: k2_sekretaer_hallstead, reason: "Mr. Purvis statt Ada Pell: wer die Briefe liest (Story-Bibel §4, Personal 4.9)" }
+  - { mark: k2_lindqvist, reason: "Der gewissenhafte Ingenieur (Story-Bibel §9: Personal 4.9 – Gewissenhafter verweigert)" }
+  - { mark: k2_greaves_beteiligt, reason: "Greaves' Cracken-Forschung (Story-Bibel §4, Forschung 4.11: Spionage gegen Greaves)" }
+  - { mark: k2_tatum_fixer, reason: "Boyd Tatum als Fixer (Story-Bibel §4) – Daniels Akte in Kapitel 3 (§7 A)" }
+  - { mark: k2_margaret_zahlen, reason: "Crane-Nachfolge: Jacob stand mit Lusks Bericht auf Margarets Seite (Story-Bibel §6 D, margaret_partner)" }
+  - { mark: k2_pruett_zahlen, reason: "Crane-Nachfolge: Jacob stand auf Pruetts Seite (Story-Bibel §6 D, pruett_partner)" }
+  - { mark: k2_margaret_marke, reason: "Harlans Name auf Margarets Kanistern – Kampf um die Marke in Kapitel 3 (Story-Bibel §3, §9 K3 Marke)" }
+  - { mark: k2_thorne_ratssitz, reason: "Thornes Mann im Aufsichtsrat (Story-Bibel §5: Strohmann Mr. Sayles) – Kontrolle in Kapitel 2/3" }
+  - { mark: k2_delgado_fern, reason: "Delgado ohne Harlan: delgado_k2_gegner, in Kapitel 3 mit Clara auf der anderen Seite (Story-Bibel §3)" }
+  - { mark: k2_tilly_gekauft, reason: "Übernahme kleiner Wildcatter (Story-Bibel §9: Diplomatie 4.10) – Industrie-Ruf" }
+  - { mark: k2_courier_anteil, reason: "Harlan am Courier beteiligt – Bixby als Pressesprecher in Kapitel 3 (Story-Bibel §3, §8)" }
+  - { mark: k2_grady_spende, reason: "Senator Grady schuldet einen Gefallen – Reserveland im Zeitsprung II (zs2_grady_*, Story-Bibel §2)" }
+  - { mark: k2_thomas_turm_sommer, reason: "Thomas am Turm (Story-Bibel §6 G: thomas_felder) – Weg in Kapitel 3 (thomas_feld, §7 B)" }
+
+  # Kapitel 3 – Alltag (Phase 4, k3-alltag-*.yaml). Entwurf – Philipp überarbeitet.
+  - { mark: k3_dunmore_gedeckt, reason: "Dunmore schuldet Jacob sein Ansehen – Skandalrisiko des Lobbyisten (Story-Bibel §4, System 4.16, Kapitel 4)" }
+  - { mark: k3_reserveland, reason: "Reserveland ohne Ausschreibung – Saat für Daniels Akte und den Skandal um Grady (Story-Bibel §2/§7, Kapitel 4)" }
+  - { mark: k3_seismik_verkauft, reason: "Hales Messstreifen ans Konsortium verkauft – Schuld bei Mr. Vale (Story-Bibel §7 D, System 4.17)" }
+  - { mark: k3_quote_eingehalten, reason: "Jacob hält sich an die Quote des Konsortiums – Vales Einladung (Story-Bibel §7 D, Kapitel 4)" }
+  - { mark: k3_quote_ignoriert, reason: "Jacob bricht die Quote – das Konsortium merkt es sich (Story-Bibel §7 D, Kapitel 4)" }
+  - { mark: k3_ashcombe_kontakt, reason: "Erster Liefervertrag mit Royal Aldmark Petroleum – Ashcombe als Rivale oder Partner ab Kapitel 5 (GDD §9.2)" }
+  - { mark: k3_pruett_option, reason: "Pruetts Vorkaufsrecht greift im Crash (GDD §9.2: kauft in Krisen Pleitefirmen auf; Zeitsprung III)" }
+  - { mark: k3_preislisten_vernichtet, reason: "Verbrannte Preislisten – Beweis für Delaney oder Daniel (Story-Bibel §7 A, Kapitel 4)" }
+  - { mark: k3_flugblaetter_eingesammelt, reason: "Gewerkschaftssaat – Zeitsprung III: ein Gewerkschaftsgesetz (GDD §13)" }
+  - { mark: k3_raedelsfuehrer_entlassen, reason: "Gewerkschaftssaat – die Entlassenen kommen in Kapitel 4 wieder (GDD §13, Zeitsprung III)" }
+  - { mark: k3_bank_abgezogen, reason: "Thornes Bank im Crash: Wer abhob, wird erinnert (Story-Bibel §2, Zeitsprung III)" }
+  - { mark: k3_bank_gestuetzt, reason: "Thornes Bank im Crash: Wer stützte, hat einen Gefallen offen (Story-Bibel §2, Zeitsprung III)" }

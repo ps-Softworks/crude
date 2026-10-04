@@ -1,0 +1,136 @@
+# Rivalen-Diplomatie und Crane-Nachfolge (4.10, GDD §9, §13 Kapitel 2): Texte der Pinnwand
+# „Konkurrenz“ ab Kapitel 2. Die Simulation (src/sim/diplomacy*.ts) entscheidet, was gilt;
+# hier steht nur, wie es klingt. Zahlen stehen in content/balance.yaml (diplomacy).
+# Jeder Text mit Sprachschlüssel de/en (Englisch darf leer bleiben, dann erscheint Deutsch).
+# Platzhalter in geschweiften Klammern ({name}, {preis} …) setzt die Oberfläche ein.
+# Wie bei der Familie: Vertrauen und Groll sind nie als Zahl zu sehen, nur als Wort.
+# ENTWURF von Claude: bitte in eigener Stimme umschreiben.
+draft: true
+
+tabs:
+  revier: { de: "Revier", en: "Territory" }
+  nachfolge: { de: "Nachfolge", en: "Succession" }
+  absprachen: { de: "Absprachen", en: "Agreements" }
+  uebernahmen: { de: "Übernahmen", en: "Takeovers" }
+  verband: { de: "Verband", en: "Association" }
+
+rivals:
+  margaret: { name: { de: Margaret Crane, en: Margaret Crane }, firm: { de: Crane Eastern, en: Crane Eastern } }
+  pruett: { name: { de: Harold Pruett, en: Harold Pruett }, firm: { de: Crane Midland, en: Crane Midland } }
+  bullard: { name: { de: '"Big" Jim Bullard', en: '"Big" Jim Bullard' }, firm: { de: Bullard Oil, en: Bullard Oil } }
+  thorne: { name: { de: Augustus Thorne, en: Augustus Thorne }, firm: { de: Thorne Rail & Trust Bank, en: Thorne Rail & Trust Bank } }
+  delgado: { name: { de: Rosa Delgado, en: Rosa Delgado }, firm: { de: Verband unabhängiger Produzenten, en: Association of Independent Producers } }
+
+# Wie ein Rivale zu Jacob steht (die Simulation wählt das Wort).
+moods:
+  verraten: { de: "hat dir den Verrat nie verziehen", en: "has never forgiven your betrayal" }
+  feind: { de: "sinnt auf Rache", en: "is out for revenge" }
+  kuehl: { de: "kühl", en: "cool" }
+  neutral: { de: "abwartend", en: "wary" }
+  wohlgesonnen: { de: "wohlgesonnen", en: "well-disposed" }
+  freund: { de: "vertraut dir", en: "trusts you" }
+
+# Dein Wort in der Branche (Branchen-Respekt).
+respect:
+  hoch: { de: "Dein Wort gilt in der Branche etwas.", en: "Your word carries weight in the trade." }
+  mittel: { de: "Man hört dir zu – mit Vorbehalt.", en: "People listen to you – with reservations." }
+  niedrig: { de: "Auf dein Wort gibt in der Branche kaum noch jemand etwas.", en: "Hardly anyone in the trade puts stock in your word anymore." }
+
+kinds:
+  price:
+    label: { de: "Preisabsprache", en: "Price agreement" }
+    text: { de: "Beide halten Öl zurück – der Trust zahlt mehr je Barrel. Mit Kartellgesetz verboten.", en: "Both hold back oil – the Trust pays more per barrel. Illegal under an antitrust law." }
+  territory:
+    label: { de: "Gebietsabsprache", en: "Territory agreement" }
+    text: { de: "Keiner bietet dem anderen Pachten weg – Pachten werden billiger. Mit Kartellgesetz verboten.", en: "Neither outbids the other for leases – leases get cheaper. Illegal under an antitrust law." }
+  supply:
+    label: { de: "Exklusiver Liefervertrag", en: "Exclusive supply contract" }
+    text: { de: "Crane Eastern zahlt mehr für dein Öl – und nimmt Bullards nicht mehr ab.", en: "Crane Eastern pays more for your oil – and stops buying Bullard's." }
+  cross:
+    label: { de: "Kreuzbeteiligung", en: "Cross-shareholding" }
+    text: { de: "Ihr kauft Aktien voneinander ({kosten}) – Schutz vor feindlichen Übernahmen.", en: "You buy each other's shares ({kosten}) – protection against hostile takeovers." }
+  buyout:
+    label: { de: "Kaufangebot für Harlan Oil", en: "Offer to buy Harlan Oil" }
+    text: { de: "Pruett kauft Firmen, die vor der Pleite stehen. Er bietet {preis}. Annehmen beendet das Spiel.", en: "Pruett buys companies on the brink of bankruptcy. He offers {preis}. Accepting ends the game." }
+
+# Wie laut über eine Zerschlagung des Trusts geredet wird.
+talk:
+  ruhig: { de: "Von einer Zerschlagung redet niemand.", en: "Nobody is talking about a breakup." }
+  geruechte: { de: "In Hallstead gibt es Gerüchte über ein Verfahren gegen den Trust.", en: "In Hallstead there are rumours of a case against the Trust." }
+  drohend: { de: "Das Verfahren gegen den Trust steht kurz bevor.", en: "The case against the Trust is imminent." }
+
+outcome:
+  margaret: { de: "Margaret Crane führt den Trust. Wer ihr Vertrauen hat, bekommt mehr je Barrel.", en: "Margaret Crane leads the Trust. Those she trusts get more per barrel." }
+  pruett: { de: "Harold Pruett führt den Trust und kürzt den Preis – außer für Partner einer Preisabsprache.", en: "Harold Pruett leads the Trust and cuts the price – except for partners in a price agreement." }
+  zerschlagen: { de: "Der Trust ist zerschlagen. Crane Eastern und Crane Midland bieten gegeneinander um dein Öl.", en: "The Trust is broken up. Crane Eastern and Crane Midland bid against each other for your oil." }
+
+texts:
+  pin_offers: { de: "Angebote: {n}", en: "Offers: {n}" }
+  pin_running: { de: "Crane-Nachfolge: {runden}", en: "Crane succession: {runden}" }
+  succession_running:
+    de: Cornelius Crane tritt ab. Im Aufsichtsrat stehen {sitze} von {alle} Sitzen hinter Margaret Crane, der Rest hinter Harold Pruett. Die Entscheidung fällt in {runden}.
+    en: Cornelius Crane is stepping down. On the board, {sitze} of {alle} seats back Margaret Crane, the rest Harold Pruett. The decision falls in {runden}.
+  succession_hint:
+    de: Ein Boom hilft Margaret, eine Krise Pruett. Dein öffentlicher Rückhalt wiegt so viel wie dein Wort in der Branche.
+    en: A boom helps Margaret, a crisis helps Pruett. Your public backing weighs as much as your word in the trade.
+  back_margaret: { de: "Öffentlich hinter Margaret stellen ({kosten}, 1 Termin)", en: "Publicly back Margaret ({kosten}, 1 appointment)" }
+  back_pruett: { de: "Öffentlich hinter Pruett stellen ({kosten}, 1 Termin)", en: "Publicly back Pruett ({kosten}, 1 appointment)" }
+  push_for: { de: "Unterlagen über den Trust an die Presse geben ({kosten}, 1 Termin)", en: "Leak papers on the Trust to the press ({kosten}, 1 appointment)" }
+  push_against: { de: "Freunde in Hallstead bitten, den Trust zu schonen ({kosten}, 1 Termin)", en: "Ask friends in Hallstead to spare the Trust ({kosten}, 1 appointment)" }
+  relations_title: { de: "Wer wie zu dir steht", en: "Where everyone stands with you" }
+  relation_line: { de: "{name} ({firma}): {stimmung}", en: "{name} ({firma}): {stimmung}" }
+  offers_title: { de: "Angebote auf dem Tisch", en: "Offers on the table" }
+  offers_none: { de: "Niemand hat dir etwas angeboten.", en: "Nobody has made you an offer." }
+  offer_line: { de: "{name} schlägt vor: {art}", en: "{name} proposes: {art}" }
+  offer_left: { de: "Noch {runden}.", en: "{runden} left." }
+  accept: { de: "Annehmen", en: "Accept" }
+  accept_buyout: { de: "Verkaufen – das Spiel endet", en: "Sell – the game ends" }
+  decline: { de: "Ablehnen", en: "Decline" }
+  pacts_title: { de: "Laufende Absprachen", en: "Running agreements" }
+  pacts_none: { de: "Keine Absprachen.", en: "No agreements." }
+  pact_line: { de: "{art} mit {name} – noch {runden}", en: "{art} with {name} – {runden} left" }
+  pact_illegal: { de: "Verboten – es gilt ein Kartellgesetz.", en: "Illegal – an antitrust law is in force." }
+  break: { de: "Brechen (Verrat)", en: "Break it (betrayal)" }
+  break_confirm:
+    de: Wer bricht, kassiert doppelt – aber der andere vergisst es nie, und die ganze Branche traut deinem Wort weniger. Wirklich brechen?
+    en: Whoever breaks it collects double – but the other side never forgets, and the whole trade trusts your word less. Really break it?
+  propose_title: { de: "Selbst vorschlagen (1 Termin)", en: "Propose yourself (1 appointment)" }
+  propose_none: { de: "Mit niemandem gerade etwas zu verhandeln.", en: "Nothing to negotiate with anyone right now." }
+  accepted: { de: "Zugesagt.", en: "Agreed." }
+  refused: { de: "Abgelehnt – zu wenig Vertrauen.", en: "Refused – not enough trust." }
+  effects: { de: "Wirkung diese Runde: {preis} je Barrel beim Trust, Pachten {pacht}.", en: "Effect this round: {preis} per barrel from the Trust, leases {pacht}." }
+  heat: { de: "Kartellabsprachen unter dem Gesetz: {n} Spur(en) im Schattenbuch.", en: "Cartel agreements under the law: {n} trace(s) in the shadow ledger." }
+  takeovers_intro:
+    de: Kleine Firmen im Revier. Kaufst du eine, fördern ihre Quellen weiter – der Gewinn geht an dich.
+    en: Small firms in the territory. Buy one and its wells keep pumping – the profit goes to you.
+  takeovers_none: { de: "Keine kleinen Firmen im Revier.", en: "No small firms in the territory." }
+  firm_line: { de: "{name}: {quellen} Quelle(n)", en: "{name}: {quellen} well(s)" }
+  firm_jacob: { de: "gehört dir", en: "yours" }
+  firm_pruett: { de: "gehört jetzt Pruett", en: "now belongs to Pruett" }
+  buy: { de: "Kaufen ({preis}, 1 Termin)", en: "Buy ({preis}, 1 appointment)" }
+  guild_not_founded: { de: "Rosa Delgado sammelt noch Unterschriften für einen Verband der Unabhängigen.", en: "Rosa Delgado is still collecting signatures for an association of independents." }
+  guild_status: { de: "{mitglieder} Mitglieder – der Verband verhandelt mit {kraft} seiner Kraft.", en: "{mitglieder} members – the association bargains at {kraft} of its strength." }
+  guild_member: { de: "Du bist Mitglied. Beitrag {beitrag} je Runde.", en: "You are a member. Dues {beitrag} per round." }
+  guild_expelled: { de: "Delgado hat dich ausgeschlossen. Die Unabhängigen reden über dich wie früher über Crane.", en: "Delgado has expelled you. The independents talk about you the way they used to talk about Crane." }
+  guild_join: { de: "Beitreten (1 Termin, {beitrag} je Runde)", en: "Join (1 appointment, {beitrag} per round)" }
+  guild_leave: { de: "Austreten", en: "Leave" }
+  debug_start: { de: "Diplomatie aus Kapitel 2 einschalten (Vorschau)", en: "Switch on chapter 2 diplomacy (preview)" }
+
+# Warum etwas gerade nicht geht (Gründe der Simulation).
+reasons:
+  inaktiv: { de: "Das kommt erst in Kapitel 2.", en: "That only comes in chapter 2." }
+  ende: { de: "Das Kapitel ist zu Ende.", en: "The chapter is over." }
+  entschieden: { de: "Die Nachfolge ist entschieden.", en: "The succession is decided." }
+  schon: { de: "Das hast du in dieser Runde schon getan.", en: "You already did that this round." }
+  geld: { de: "Dafür fehlt das Geld.", en: "You don't have the money for that." }
+  zeit: { de: "Dafür fehlt die Zeit in dieser Runde.", en: "You don't have the time this round." }
+  unbekannt: { de: "Das gibt es nicht mehr.", en: "That no longer exists." }
+  art: { de: "Darauf lässt sich dieser Rivale nicht ein.", en: "This rival won't agree to that kind of deal." }
+  verraten: { de: "Du hast ihn verraten – er verhandelt nicht mehr mit dir.", en: "You betrayed them – they won't negotiate with you anymore." }
+  laeuft: { de: "Das läuft schon oder liegt schon auf dem Tisch.", en: "That is already running or already on the table." }
+  vergeben: { de: "Die Firma gehört schon jemandem.", en: "The firm already belongs to someone." }
+  nicht_gegruendet: { de: "Den Verband gibt es noch nicht.", en: "The association doesn't exist yet." }
+  mitglied: { de: "Du bist schon Mitglied.", en: "You are already a member." }
+  kein_mitglied: { de: "Du bist kein Mitglied.", en: "You are not a member." }
+  ausgeschlossen: { de: "Delgado hat dich ausgeschlossen.", en: "Delgado has expelled you." }
+  gesetz: { de: "Das verbietet das Gesetz.", en: "The law forbids it." }

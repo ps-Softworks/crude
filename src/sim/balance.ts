@@ -2,9 +2,28 @@
 // Objekt; parseBalance prüft es und meldet verständliche Fehler.
 // Seit 0.2.15+5 gehört die Karte (content/map.yaml) mit dazu: parseGameData.
 
+import { parseStocksBalance, type StocksBalance } from './stocksBalance'; // 4.8 Andockpunkt
+import { parseDiplomacy, type DiplomacyBalance } from './diplomacyBalance'; // 4.10 Andockpunkt
+// 4.15 Andockpunkt: Börse und Kauf auf Kredit.
+import { parseExchangeBalance, type ExchangeBalance } from './exchangeBalance';
 import { parseWorldMap, type WorldMap } from './worldMap';
 import { PARTIES, PUBLIC_ACTS, type Party, type PublicAct } from './world';
 import type { LawDef } from './laws';
+// 4.6 Andockpunkt: Raffinerie (Zahlen und Prüfung in refineryBalance.ts).
+import { parseRefineryBalance, type RefineryBalance } from './refineryBalance';
+// 4.7 Andockpunkt: Fernleitungen.
+import { parseBigPipelineBalance, type BigPipelineBalance } from './bigPipelineBalance';
+import { parseStaff, type StaffBalance } from './staff'; // 4.9 Andockpunkt: Personal
+// 4.11 Andockpunkt: Ermittler und Forschung lesen ihre Abschnitte selbst.
+import { parseInvestigationBalance, type InvestigationBalance } from './investigation';
+import { parseResearchBalance, type ResearchBalance } from './research';
+
+// 4.14 Andockpunkt: Marke und Tankstellen – Zahlen liest src/sim/brand.ts selbst.
+import { parseBrandBalance, type BrandBalance } from './brand';
+// 4.16 Andockpunkt
+import { parseHallstead, type HallsteadBalance } from './hallsteadBalance';
+// 4.17 Andockpunkt: Kapitel 3 (Seismik, Konsortium, Projekte, Stand) prüft seinen Block selbst.
+import { parseKapitel3Balance, type Kapitel3Balance } from './kapitel3Balance';
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
 
@@ -747,6 +766,8 @@ export interface QasirBalance {
 
 export interface Balance {
   rivals: RivalsBalance;
+  /** Rivalen-Diplomatie und Crane-Nachfolge (4.10, src/sim/diplomacyBalance.ts). */
+  diplomacy: DiplomacyBalance; // 4.10 Andockpunkt
   start: { cash: number; year: number; rounds: number };
   /** Karte aus content/map.yaml (beim Laden als raw.world übergeben). */
   world: WorldMap;
@@ -772,9 +793,28 @@ export interface Balance {
   family: FamilyBalance;
   newspaper: NewspaperBalance;
   tutorial: TutorialBalance;
+  // 4.16 Andockpunkt: Nebeninvestments und Lobbyist in Hallstead.
+  hallstead: HallsteadBalance;
   worldModel: WorldModelBalance;
   /** Gesetzeskatalog aus content/laws/ (4.3), beim Laden über parseGameData übergeben; ohne ihn tagt kein Parlament. */
   laws: readonly LawDef[];
+  /** 4.6 Andockpunkt: Raffinerie und Produktmix (ab Kapitel 2). */
+  refinery: RefineryBalance;
+  /** 4.7 Andockpunkt: Fernleitungen (Kapitel 2+), Abschnitt bigPipelines. */
+  bigPipelines: BigPipelineBalance;
+  /** Aktien, Aufsichtsrat, Anleihen ab Kapitel 2 (GDD §8). */
+  stocks: StocksBalance; // 4.8 Andockpunkt
+  /** 4.9 Andockpunkt: Personal (Kapitel 2). */
+  staff: StaffBalance;
+  // 4.11 Andockpunkt: Ermittler (Delaney, Hitze) und Forschung (Technikstufe II), ab Kapitel 2.
+  investigation: InvestigationBalance;
+  research: ResearchBalance;
+  /** 4.14 Andockpunkt: Marke und Tankstellen (Kapitel 3). */
+  brand: BrandBalance;
+  // 4.15 Andockpunkt: Börse und Kauf auf Kredit (eigener Abschnitt, gelesen in exchangeBalance.ts).
+  exchange: ExchangeBalance;
+  /** 4.17 Andockpunkt: Kapitel 3 – Seismik, Konsortium, Projekte, Stand (src/sim/kapitel3Balance.ts). */
+  kapitel3: Kapitel3Balance;
 }
 
 /** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
@@ -2061,6 +2101,33 @@ function parseWorld(raw: unknown): WorldMap {
   }
 }
 
+/** 4.6 Andockpunkt: Block „refinery“; Fehler kommen als BalanceError. */
+function parseRefinery(raw: unknown): RefineryBalance {
+  try {
+    return parseRefineryBalance((raw as { refinery?: unknown })?.refinery);
+  } catch (e) {
+    throw new BalanceError(e instanceof Error ? e.message : String(e));
+  }
+}
+
+/** 4.7 Andockpunkt: Fehler im Abschnitt bigPipelines kommen als BalanceError. */
+function parseBigPipelines(raw: unknown): BigPipelineBalance {
+  try {
+    return parseBigPipelineBalance(raw, LANDOWNER_TYPES);
+  } catch (e) {
+    throw new BalanceError(e instanceof Error ? e.message : String(e));
+  }
+}
+
+/** 4.14 Andockpunkt: Fehler im Block „brand“ kommen wie alle anderen als BalanceError. */
+function parseBrand(raw: unknown): BrandBalance {
+  try {
+    return parseBrandBalance(raw);
+  } catch (e) {
+    throw new BalanceError(e instanceof Error ? e.message : String(e));
+  }
+}
+
 /** Spielzahlen und Karte zusammen: balance.yaml und map.yaml als rohe YAML-Daten. */
 export function parseGameData(balanceRaw: unknown, mapRaw: unknown, laws: readonly LawDef[] = []): Balance {
   return { ...parseBalance({ ...(balanceRaw as object), world: mapRaw }), laws };
@@ -2117,6 +2184,7 @@ export function parseBalance(raw: unknown): Balance {
     credit: parseCredit(raw),
     bankruptcy: parseBankruptcy(raw),
     rivals: parseRivals(raw),
+    diplomacy: parseDiplomacy(raw), // 4.10 Andockpunkt
     empire: parseEmpire(raw),
     chapter: parseChapter(raw),
     timeskip: parseTimeskip(raw),
@@ -2126,13 +2194,35 @@ export function parseBalance(raw: unknown): Balance {
     family: parseFamily(raw),
     newspaper: parseNewspaper(raw),
     tutorial: parseTutorial(raw),
+    // 4.16 Andockpunkt
+    hallstead: parseHallstead(raw),
     worldModel: parseWorldModel(raw),
     laws: [],
+    // 4.6 Andockpunkt: Raffinerie.
+    refinery: parseRefinery(raw),
+    // 4.7 Andockpunkt: Fernleitungen – eigener Parser in bigPipelineBalance.ts.
+    bigPipelines: parseBigPipelines(raw),
+    stocks: parseStocksBalance(raw, (m) => new BalanceError(m)), // 4.8 Andockpunkt
+    staff: parseStaff(raw), // 4.9 Andockpunkt
+    // 4.11 Andockpunkt
+    investigation: parseInvestigationBalance(raw),
+    research: parseResearchBalance(raw),
+    // 4.14 Andockpunkt: Marke und Tankstellen (Kapitel 3).
+    brand: parseBrand(raw),
+    // 4.15 Andockpunkt: Börse und Kauf auf Kredit.
+    exchange: parseExchangeBalance(raw),
+    kapitel3: parseKapitel3Balance(raw), // 4.17 Andockpunkt
   };
 
   for (const r of balance.transport.pipeline.rights) {
     if (r.figure && !balance.world.figures.some((f) => f.id === r.figure)) {
       throw new BalanceError(`balance.yaml: Wegerecht "${r.mark}" verweist auf die Figur "${r.figure}", die es in map.yaml nicht gibt`);
+    }
+  }
+  // 4.7 Andockpunkt: Ziele der Fernleitungen müssen Bahnhöfe oder Häfen der Karte sein.
+  for (const d of balance.bigPipelines.destinations) {
+    if (!balance.world.landmarks.some((l) => l.id === d.id && l.at)) {
+      throw new BalanceError(`balance.yaml: Fernleitungs-Ziel "${d.id}" ist kein Bahnhof oder Hafen in map.yaml`);
     }
   }
   const { count } = balance.lease.startOptions;

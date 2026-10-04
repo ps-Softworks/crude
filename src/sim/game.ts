@@ -4,6 +4,8 @@
 import { newAgenda, settleAgenda, type AgendaState } from './agenda';
 import type { Balance, Rating, TransportMode } from './balance';
 import { formatDate } from './calendar';
+// 4.14 Andockpunkt: Marke und Tankstellen (Kapitel 3).
+import { settleBrand, type BrandState } from './brand';
 import { checkBankruptcy, settleLoans, type Loan } from './credit';
 import { chapterCheck } from './chapter';
 import { advanceDrilling, type Well } from './drilling';
@@ -19,14 +21,35 @@ import { advanceProduction } from './production';
 import { settleRigs, startRigs, type Rig } from './rigs';
 import { Rng, seedFromString, type RngState } from './rng';
 import { advanceMarket, computePrice, neighbourSupply, saltHillSupply } from './market';
-import { advanceWorld, newWorld, saltHillInput, worldPriceFactor, type WorldState } from './world';
+import { advanceWorld, mergeInput, newWorld, saltHillInput, worldPriceFactor, type WorldState } from './world';
 import { newRival, advanceRival, type RivalState } from './rival';
 import { advanceLogistics, newLogistics, settleStorage, spillOver, type LogisticsState } from './logistics';
 import { advanceTransport, noShipments } from './transport';
+// 4.7 Andockpunkt: Fernleitungen (Kapitel 2+).
+import { advanceBigPipelines, type BigPipelineState } from './bigPipeline';
 import { settleTakeover } from './trust';
+import { settleStocks, type StocksState } from './stocks'; // 4.8 Andockpunkt
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
 import type { JumpState, TimeskipRecord } from './timeskip';
 import { settleVentures, type Ventures } from './ventures';
+// 4.6 Andockpunkt: Raffinerie (ab Kapitel 2).
+import { advanceRefinery, type RefineryState } from './refinery';
+import type { StaffState } from './staff'; // 4.9 Andockpunkt: Personal
+import { delegateMail, settleStaff } from './staffRound'; // 4.9 Andockpunkt: Personal
+import { advanceDiplomacy, type DiplomacyState } from './diplomacy'; // 4.10 Andockpunkt
+// 4.11 Andockpunkt: Ermittler und Forschung (ab Kapitel 2).
+import { advanceInvestigation, type InvestigationState } from './investigation';
+import { advanceResearch, type ResearchState } from './research';
+// 4.15 Andockpunkt: Börse und Kauf auf Kredit (ab Kapitel 3).
+import { exchangeWorldInput, readClimate, settleExchange, type ExchangeState } from './exchange';
+// 4.16 Andockpunkt: Nebeninvestments und Lobbyist in Hallstead (ab Kapitel 3).
+import { hallsteadWorldInput, settleHallstead } from './hallstead';
+import type { HallsteadState } from './hallsteadState';
+// 4.17 Andockpunkt: Kapitel 3 (Seismik, Konsortium, Projekte, Stand).
+import type { Kapitel3State } from './kapitel3';
+import type { Kapitel3Content } from './kapitel3Content';
+import { advanceKapitel3 } from './kapitel3Runde';
+import { konsortiumWorldInput } from './konsortium';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
@@ -98,9 +121,15 @@ export interface GameState {
   sick: number;
   /** Ruth und Thomas (2.7). */
   family: FamilyState;
+  /** 4.16 Andockpunkt: Hallstead (Beteiligungen, Lobbyist) – erst da, wenn Jacob dort etwas tut (ab Kapitel 3). */
+  hallstead?: HallsteadState;
   /** Weltmodell (4.1): die neun Weltgrößen, je Runde fortgeschrieben. */
   worldModel: WorldState;
-  /** Kapitel (4.5): 1, nach Zeitsprung I 2 (vorerst Platzhalter mit den Systemen aus Kapitel 1). */
+  /**
+   * Kapitel (4.5): 1, nach Zeitsprung I 2. Alle Systeme lesen es über den gemeinsamen Helfer
+   * chapterOf (stocks.ts; fehlt es in einem Teilzustand, gilt Kapitel 1); Ereignisse fragen es mit
+   * minChapter/maxChapter ab (events.ts, chapterMet).
+   */
   chapter: number;
   /** Erste Runde des laufenden Kapitels (Kapitel 1: 1). Runden zählen über Kapitel hinweg weiter. */
   chapterStart: number;
@@ -112,9 +141,30 @@ export interface GameState {
   timeskips: TimeskipRecord[];
   /** Beteiligungen aus dem Zeitsprung (4.5): Benzinanlage, Okara. Fehlt = keine. */
   ventures?: Ventures;
+  /** 4.7 Andockpunkt: Fernleitungen – fehlt in Kapitel 1 (erst ab balance.bigPipelines.fromChapter). */
+  bigPipelines?: BigPipelineState;
+  /** 4.9 Andockpunkt: Personal (Sekretärin, Fixer, Richtlinien) – erst ab Kapitel 2, in Kapitel 1 undefined. */
+  staff?: StaffState;
+  /** 4.17 Andockpunkt: Kapitel 3 (src/sim/kapitel3.ts) – fehlt, bis Kapitel 3 beginnt. */
+  kapitel3?: Kapitel3State;
   log: string[];
+  /** Rivalen-Diplomatie und Crane-Nachfolge (4.10): erst ab Kapitel 2, in Kapitel 1 fehlt sie. */
+  diplomacy?: DiplomacyState; // 4.10 Andockpunkt
   /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
   roundLogStart: number;
+  /** 4.6 Andockpunkt: Raffinerie und Produktmix; undefined = noch nicht freigeschaltet (Kapitel 1). */
+  refinery?: RefineryState;
+  /** 4.8 Andockpunkt: Aktien, Aufsichtsrat, Anleihen ab Kapitel 2 (startStocks); fehlt in Kapitel 1. */
+  stocks?: StocksState;
+  // 4.11 Andockpunkt: entstehen erst ab Kapitel 2 (fehlen in Kapitel 1 und in älteren Spielständen).
+  /** Delaneys Ermittlungen, Spuren und Gegenmittel (src/sim/investigation.ts). */
+  investigation?: InvestigationState;
+  /** Versuchswerkstatt, Techniken, Patente (src/sim/research.ts). */
+  research?: ResearchState;
+  /** 4.14 Andockpunkt: Marke und Tankstellen – erst ab Kapitel 3 da, vorher undefined. */
+  brand?: BrandState;
+  // 4.15 Andockpunkt: Börse und Depot; erst ab Kapitel 3 da (in Kapitel 1 und 2 undefined).
+  exchange?: ExchangeState;
 }
 
 /**
@@ -194,8 +244,13 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
 function advanceWorldInGame(state: GameState, vorMarkt: GameState, balance: Balance): GameState {
   if (!state.worldModel) return state;
   const angebot = saltHillSupply(vorMarkt, balance.market, balance.rivals.bullard.ratePerWell);
-  const input = saltHillInput(angebot, balance.market.demand, balance.worldModel);
   // Gesetze (4.3): Das Parlament tagt mit dem Katalog aus content/laws/.
+  // 4.15 Andockpunkt: Jacobs Kauf auf Kredit heizt das Kreditklima (ohne Börse unverändert).
+  const salzHuegel = exchangeWorldInput(state, saltHillInput(angebot, balance.market.demand, balance.worldModel));
+  // 4.16 Andockpunkt: Die Kampagne von Jacobs eigener Zeitung in Hallstead stößt die Stimmung einmalig an (sonst 0).
+  const lobby = { ...salzHuegel, moodKick: (salzHuegel.moodKick ?? 0) + hallsteadWorldInput(state, balance).moodKick };
+  // 4.17 Andockpunkt: Die Macht des Konsortiums verschiebt Spannung, Kreditklima und Stimmung (ohne Kapitel 3 alles 0).
+  const input = mergeInput(lobby, konsortiumWorldInput(state, balance));
   return { ...state, worldModel: advanceWorld(state.worldModel, balance.worldModel, input, balance.laws) };
 }
 
@@ -220,11 +275,13 @@ function advanceWorldInGame(state: GameState, vorMarkt: GameState, balance: Bala
  * endet die Partie direkt nach den Antworten; zur neuen Runde bekommen die
  * neuen Nachbarquellen ihre Wildcatter.
  */
-export function endRound(input: GameState, balance: Balance, catalog: readonly EventDef[] = []): GameState {
+// 4.17 Andockpunkt: kapitel3 = Texte aus content/kapitel3.yaml, damit Kapitel 3 seine Ereignisse in die Kladde schreibt.
+export function endRound(input: GameState, balance: Balance, catalog: readonly EventDef[] = [], texts: { kapitel3?: Kapitel3Content } = {}): GameState {
   if (input.finished) return input;
   // Offene Ereignisse bekommen ihre Standard-Antwort, bevor die Runde abgerechnet wird.
   // Gebiete (0.2.15+5): Hat eine Antwort ein Gebiet freigeschaltet, bekommt es jetzt seine Ranches.
-  const beantwortet = openRegions(autoResolve(input, catalog, undefined, balance.events.timedRounds), balance);
+  // 4.9 Andockpunkt: Das Vorzimmer erledigt ablaufende Briefe nach Richtlinie, bevor die Standard-Antworten gelten.
+  const beantwortet = openRegions(autoResolve(delegateMail(input, balance, catalog), catalog, undefined, balance.events.timedRounds), balance);
   const roundLogStart = beantwortet.log.length;
   // Crane-Übernahme (2.8): Hat Jacob verkauft, endet die Partie hier – ohne weitere Abrechnung.
   const verkauft = settleTakeover(beantwortet, balance);
@@ -232,7 +289,11 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Familie (2.7): Familienzeit gibt Kraft, Vernachlässigung kostet Beziehung.
   const familie = settleFamily(beantwortet, balance);
   // Termine (2.3): Krankheit (2.7), ruhige Runde gibt Kraft zurück, die nächste beginnt mit frischen Terminen.
-  const ausgeruht = settleAgenda(familie, balance);
+  const terminiert = settleAgenda(familie, balance);
+  // 4.9 Andockpunkt: Personal – Verkauf nach Regel, Aufträge, Löhne, Loyalität, Hitze, Extra-Termine der nächsten Runde.
+  const besetzt = settleStaff(terminiert, balance);
+  // 4.6 Andockpunkt: Die Raffinerie nimmt, was nach den Verkäufen (auch denen des Vorzimmers) noch im Tank steht (ohne Raffinerie: unverändert).
+  const ausgeruht = advanceRefinery(besetzt, balance);
   // Lager (0.2.15+2): Kosten, Schwund und Brand für das Öl, das noch im Tank steht; neue Tanks sind fertig.
   // Nach der Förderung läuft aus, was nicht mehr in die Tanks passt.
   const gefoerdert = spillOver(advanceProduction(settleStorage(ausgeruht, balance), balance), balance);
@@ -250,10 +311,27 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const rivale = settleVentures(advanceRival(gepachtet, balance, gebohrt, input.postedPrice), balance);
   // Eigene Fuhrwerke und Pipeline (0.2.15+2): Löhne, Unterhalt, Baufortschritt, Sabotage – vor den Zinsen.
   // Türme und Pumpen (0.2.15+7): Turmmiete und Pumpenunterhalt, ebenfalls vor den Zinsen.
-  const verzinst = settleLoans(settleRigs(advanceLogistics(rivale, balance), balance), balance);
+  // 4.8 Andockpunkt: Anleihen, Kurs, Aufsichtsrat, Thorne – vor den Bankzinsen (ohne state.stocks wirkungslos).
+  // 4.14 Andockpunkt: Tankstellen rechnen ab (vor den Zinsen); vor Kapitel 3 unverändert.
+  const vertrieb = settleBrand(rivale, balance);
+  const verzinst = settleLoans(settleStocks(settleRigs(advanceLogistics(vertrieb, balance), balance), balance), balance);
+  // 4.15 Andockpunkt: Börse (ab Kapitel 3) – Kurse, Maklerzinsen, Zwangsverkäufe vor der Pleiteprüfung.
+  // Warnungen und Maklerzins zählen mit dem Kreditklima vom Rundenbeginn (das stand in der Zeitung).
+  const gehandelt = settleExchange(verzinst, balance, readClimate(input));
+  // 4.17 Andockpunkt: Kapitel 3 – Seismik-Berichte, Konsortium, Projekte, Stand (vor Kapitel 3 unverändert).
+  const konzern = advanceKapitel3(gehandelt, balance, texts.kapitel3);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
-  const gefahren = advanceTransport(verzinst, balance);
-  const state = { ...checkBankruptcy(gefahren, balance), roundLogStart };
+  // 4.7 Andockpunkt: Fernleitungen nach dem Transport – Thorne nimmt unter Druck eine Erhöhung zurück und senkt den Tarif.
+  const gefahren = advanceBigPipelines(advanceTransport(konzern, balance), balance, { railTariffBefore: konzern.railTariff });
+  // Rivalen-Diplomatie (4.10): ohne state.diplomacy (Kapitel 1) passiert nichts. // 4.10 Andockpunkt
+  const diplomatie = advanceDiplomacy(gefahren, balance);
+  // 4.10 Andockpunkt: Verkauf an Pruett (Antwort auf seinen Besuch) beendet die Partie ohne weitere Abrechnung.
+  if (diplomatie.finished) return { ...diplomatie, roundLogStart };
+  // 4.11 Andockpunkt: Ermittler und Forschung – in Kapitel 1 kommt derselbe Zustand zurück.
+  const ermittelt = advanceResearch(advanceInvestigation(diplomatie, balance), balance);
+  // 4.16 Andockpunkt: Beteiligungen und Lobby in Hallstead (ohne Hallstead-Zustand unverändert) – vor der Pleiteprüfung.
+  const hallstead = settleHallstead(ermittelt, balance);
+  const state = { ...checkBankruptcy(hallstead, balance), roundLogStart };
   if (state.ending === 'pleite') return state;
   if (state.round >= state.totalRounds) {
     // Kapitelprüfung (2.11): steht im Protokoll, der Ergebnisbildschirm zeigt die Einzelheiten.

@@ -22,6 +22,7 @@ import { answerSwitch, continueTimeskip, markChronicleRead, runTimeskip, startTi
 import { parcelLabel } from '../sim/lease';
 import { clearAutosave, loadAutosave, writeAutosave } from './autosave';
 import { balance } from './balance';
+import { k3 } from './kapitel3'; // 4.17 Andockpunkt: Texte aus content/kapitel3.yaml
 import { ChapterEndScreen } from './ChapterEndScreen';
 import { events } from './events';
 import { GameOverScreen } from './GameOverScreen';
@@ -323,7 +324,7 @@ export function App() {
 
   function end() {
     if (game.finished) return;
-    const next = endRound(game, balance, events);
+    const next = endRound(game, balance, events, { kapitel3: k3 }); // 4.17 Andockpunkt: Kapitel-3-Texte für die Kladde
     // Rundenwechsel (2c): Kalenderblatt, neues Datum. Was geschah, steht danach im Rundenbericht.
     // Am Kapitelende kommt das Tableau.
     if (!next.ending) {
@@ -659,6 +660,7 @@ export function App() {
                 onClose={() => dispatch({ type: 'ranch', id: null })}
                 onLedger={() => open('kassenbuch')}
                 onRigs={() => open('akte', { tab: 'tuerme' })}
+                onGame={onGame} // 4.17 Andockpunkt
               />
             ) : null
           }

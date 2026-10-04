@@ -1,0 +1,734 @@
+# Kapitel 2 – Alltag, Paket 3: Aktionäre, Anleihen und Personal (Phase 4). Entwurf – Philipp überarbeitet.
+# Grundlage: Story-Bibel Kapitel 2/3 §5 (Aufsichtsrat), §4 (Ada Pell, Fixer, Greaves), §9 (K2: Aktien
+# und Rat – Dividende, Kleinaktionär, Kursgerücht, Anleihe Vandermeer & Co., Martha Hale; Personal –
+# Ada Pell, Fixer-Auftrag, Unterschlagung, Gewissenhafter verweigert, Abwerbung durch Pruett).
+#
+# Alle Ereignisse nur in Kapitel 2: conditions { minChapter: 2, maxChapter: 2 }.
+# Aktien-Ereignisse setzen eine Aktiengesellschaft voraus: `minPublicShare: 1` (seit der Integration mit
+# 4.8; vorher „# TODO-Bedingung: ipo“). Die Wirkungen auf Kontrolle, Kurs und Rat stehen als
+# „# TODO-Effekt: …“ neben einer vorläufigen Wirkung in Geld, Kraft oder Förderung.
+#
+# Merkzeichen aus Kapitel 1, die hier gelesen werden:
+#   sheriff_bezahlt   → k2_fixer_tatum (der abgewählte Sheriff bietet seine Dienste an)
+#   ruth_buchhalterin → k2_unterschlagung_ruth (Ruth findet die Lücke)
+# Aus Paket 1: k2_greaves_vertrauen → k2_abwerbung_greaves_bleibt / k2_abwerbung_greaves.
+#
+# Aufsichtsrat (Bibel §5): Pettibone sitzt nur mit bank_kredit oder wechsel_gehalten im Rat, sonst
+# Thornes Strohmann Mr. Sayles. Darum tritt Pettibone hier nur als Bankier auf (Filialleiter der
+# Thorne-Bank, das ist er immer); wo der Text vom Rat spricht, steht „der Vertreter der Bank“.
+# Silas ist nur mit silas_fair/silas_freund in der Firma – hier steht „der Bohrmeister“.
+#
+# Neue Merkzeichen:
+#   k2_pruett_abwerbung → beide Abwerbungs-Ereignisse kommen höchstens einmal zusammen (jede Wahl setzt es)
+#   k2_greaves_weg      → Greaves ist zu Pruett gegangen: alle Greaves-Ereignisse (Paket 1, 3, 5) sperren
+#   k2_anleihe      → k2_anleihe_zins (4 Runden später)
+#   k2_ada_pell     → k2_ada_schublade (3 Runden später)
+#   k2_druck_erhoeht → k2_rohr_geborsten (2 Runden später)
+#   k2_sayles_aktien, k2_anleihe_verzug, k2_hale_rat, k2_tatum_fixer, k2_greaves_beteiligt,
+#   k2_sekretaer_hallstead, k2_lindqvist → content/relevance.yaml (Aufsichtsrat, Strohmänner, Kapitel 3)
+
+# --- Aktionäre und Rat -------------------------------------------------------------
+
+- id: k2_dividende
+  visitor: bankier
+  # Bedingung: Harlan Oil ist Aktiengesellschaft (minPublicShare, 4.8)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, minPublicShare: 1 }
+  chance: 0.12
+  title:
+    de: Pettibone will eine Dividende
+    en: Pettibone Wants a Dividend
+  text:
+    de: >-
+      Mr. Pettibone spricht für die Aktionäre in Hallstead, als wäre er einer von ihnen. Er
+      legt eine Aufstellung auf den Eichentisch: Sie erwarten zum Quartal etwas Bares,
+      Ambrose Vandermeer auch. „Ein Ölfeld ist schön, Mr. Harlan. Eine Dividende
+      kann man vorzeigen.“
+    en: >-
+      Mr. Pettibone speaks for the shareholders in Hallstead as though he were one of them. He
+      lays a statement on the oak desk: they expect something in cash this quarter, and so
+      does Ambrose Vandermeer. “An oilfield is lovely, Mr. Harlan. A dividend is something you
+      can show people.”
+  choices:
+    - id: zahlen
+      label: { de: "Eine volle Dividende zahlen (15.000 $)", en: "Pay a full dividend (15,000 $)" }
+      result:
+        de: "In Hallstead steigt der Kurs um zwei Punkte. Pettibone schüttelt Jacob die Hand mit beiden Händen. Am Feld fehlt der neue Turm, den der Bohrmeister wollte."
+        en: "In Hallstead the share price rises two points. Pettibone shakes Jacob's hand with both of his. At the field the new derrick the head driller wanted is missing."
+      requires: { minCash: 15000 }
+      # TODO-Effekt: sharePrice: 0.05 (befristet), boardLoyalty: { bank: 10, vandermeer: 10 } (bank = Pettibone oder Sayles, Bibel §5)
+      effects: { cash: -15000 }
+    - id: haelfte
+      label: { de: "Die Hälfte zahlen, die Hälfte bohren (7.000 $)", en: "Pay half, drill with half (7,000 $)" }
+      result:
+        de: "Pettibone nennt es einen vernünftigen Anfang. Vandermeer nennt es nichts, er schickt nur einen Brief mit seiner Unterschrift und ohne Gruß."
+        en: "Pettibone calls it a sensible beginning. Vandermeer calls it nothing; he only sends a letter with his signature and no greeting."
+      requires: { minCash: 7000 }
+      # TODO-Effekt: boardLoyalty: { vandermeer: -3 }
+      effects: { cash: -7000, production: 0.05 }
+    - id: bohren
+      label: { de: "Alles in neue Quellen stecken", en: "Put everything into new wells" }
+      result:
+        de: "Pettibone nickt langsam und schreibt etwas in sein kleines Buch. Der Kurs fällt um einen Punkt. Der Bohrmeister bekommt seinen Turm und klopft Jacob auf die Schulter, dass es wehtut."
+        en: "Pettibone nods slowly and writes something in his little book. The share price drops a point. The head driller gets his derrick and claps Jacob on the shoulder hard enough to hurt."
+      # TODO-Effekt: sharePrice: -0.05 (befristet), boardLoyalty: { bank: -10, vandermeer: -10 }, control: -1
+      effects: { production: 0.1, strength: -3 }
+      appointments: 0
+      default: true
+
+- id: k2_pell_aktien
+  mail: personal
+  deadline: 3
+  # Bedingung: Harlan Oil ist Aktiengesellschaft (minPublicShare, 4.8)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12, minPublicShare: 1 }
+  chance: 0.1
+  title:
+    de: Der Krämer Pell will seine Aktien loswerden
+    en: Pell the Grocer Wants to Sell His Shares
+  text:
+    de: >-
+      Krämer Pell hat beim Börsengang vierzig Aktien gekauft, „aus Treue“, wie er schreibt,
+      in einer Schrift, die zittert. Der Laden geht schlecht, seit Crane Eastern in Port
+      Ellis Kerosin in Blechkanistern billiger verkauft als er. Ob Mr. Harlan ihm die Aktien
+      zum alten Preis abnehmen könne. Ein Herr namens Sayles habe auch schon gefragt.
+    en: >-
+      Pell the grocer bought forty shares at the flotation, “out of loyalty”, as he writes, in
+      a shaking hand. The shop is doing badly since Crane Eastern started selling kerosene in
+      tin cans cheaper than he can in Port Ellis. Could Mr. Harlan take the shares at the old
+      price? A gentleman named Sayles has asked about them too.
+  choices:
+    - id: kaufen
+      label: { de: "Zum alten Preis kaufen (4.000 $, über dem Kurs)", en: "Buy at the old price (4,000 $, above market)" }
+      result:
+        de: "Pell weint ein wenig, als er unterschreibt, und schämt sich dafür. Die vierzig Aktien liegen jetzt in Jacobs Tresor."
+        en: "Pell weeps a little as he signs and is ashamed of it. The forty shares now lie in Jacob's safe."
+      requires: { minCash: 4000 }
+      # TODO-Effekt: shares: { jacob: 0.4 }, control: 0.4
+      effects: { cash: -4000 }
+    - id: kredit
+      label: { de: "Ihm Geld leihen, damit er die Aktien behält (2.500 $)", en: "Lend him money so he can keep the shares (2,500 $)" }
+      result:
+        de: "Pell behält Aktien und Laden, vorerst. Er grüßt Jacob seitdem über die ganze Bay Street hinweg, mit gezogenem Hut."
+        en: "Pell keeps his shares and his shop, for now. Since then he greets Jacob across the whole of Bay Street, hat raised."
+      requires: { minCash: 2500 }
+      effects: { cash: -2500, strength: 2 }
+    - id: sayles
+      label: { de: "„Verkaufen Sie an Mr. Sayles“", en: "“Sell to Mr. Sayles”" }
+      result:
+        de: "Mr. Sayles zahlt bar und mehr als der Kurs. Niemand in Port Ellis hat ihn je gesehen. Seine Adresse ist ein Postfach in Hallstead, gleich neben der Thorne-Bank."
+        en: "Mr. Sayles pays cash and above market. Nobody in Port Ellis has ever seen him. His address is a post-office box in Hallstead, right next to the Thorne bank."
+      # TODO-Effekt: shares: { sayles: 0.4 }, rivalStake: { thorne: 0.4 }
+      effects: { strength: -1 }
+      marks: [k2_sayles_aktien]
+      appointments: 0
+      default: true
+
+- id: k2_kurs_geruecht
+  group: k2_kurs
+  once: false
+  cooldown: 4
+  # Bedingung: Harlan Oil ist Aktiengesellschaft (minPublicShare, 4.8)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, minPublicShare: 1 }
+  chance: 0.1
+  title:
+    de: Ein Gerücht in Hallstead
+    en: A Rumour in Hallstead
+  text:
+    de: >-
+      Das Telefon klingelt dreimal vor dem Frühstück. In Hallstead erzählt man sich, Harlans
+      neue Quellen am Nordhang gäben Salzwasser. Es stimmt nicht. Der Kurs fällt trotzdem, um
+      sechs Punkte bis Mittag. Ruth hat die Zahlen schon, bevor Jacob fragt.
+    en: >-
+      The telephone rings three times before breakfast. In Hallstead they're saying Harlan's
+      new wells on the north slope are bringing up salt water. It isn't true. The share price falls
+      anyway, six points by noon. Ruth has the figures before Jacob asks.
+  choices:
+    - id: dementi
+      label: { de: "Mit einer Anzeige im Ledger dementieren und nach Hallstead fahren (1.500 $)", en: "Deny it with an advert in the Ledger and travel to Hallstead (1,500 $)" }
+      result:
+        de: "Jacob steht zwei Tage in Hallsteads Börsensaal und lässt sich ansehen. Der Kurs erholt sich. Er sieht in den Spiegeln der Säle älter aus, als er sich fühlt."
+        en: "Jacob stands two days in Hallstead's exchange hall and lets himself be looked at. The price recovers. In the hall mirrors he looks older than he feels."
+      requires: { minCash: 1500 }
+      # TODO-Effekt: sharePrice: 0.05 (befristet)
+      effects: { cash: -1500, strength: -8 }
+      appointments: 3
+    - id: zukaufen
+      label: { de: "Billig eigene Aktien zukaufen (10.000 $)", en: "Buy his own shares cheaply (10,000 $)" }
+      result:
+        de: "Jacobs Makler kauft still, drei Tage lang. Als das Gerücht zerfällt, gehört Harlan wieder ein Stück mehr von Harlan Oil."
+        en: "Jacob's broker buys quietly for three days. When the rumour falls apart, Harlan owns a bit more of Harlan Oil again."
+      requires: { minCash: 10000 }
+      # TODO-Effekt: control: 1, shares: { jacob: 1 }
+      effects: { cash: -10000 }
+    - id: aussitzen
+      label: { de: "Aussitzen", en: "Sit it out" }
+      result:
+        de: "Nach drei Wochen ist der Kurs wieder, wo er war. Vandermeer hat in dieser Zeit zweimal angerufen. Jacob ist beide Male nicht ans Telefon gegangen."
+        en: "After three weeks the price is back where it was. Vandermeer rang twice in that time. Jacob did not come to the telephone either time."
+      # TODO-Effekt: boardLoyalty: { vandermeer: -5 }
+      effects: { strength: -2 }
+      appointments: 0
+      default: true
+
+- id: k2_kurs_hoch
+  group: k2_kurs
+  once: false
+  cooldown: 4
+  # Bedingung: Harlan Oil ist Aktiengesellschaft (minPublicShare, 4.8) – Pettibone rät hier als Bankier, nicht als Ratsmitglied
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, minPublicShare: 1 }
+  chance: 0.08
+  title:
+    de: Der Kurs steht hoch
+    en: The Shares Are Riding High
+  text:
+    de: >-
+      Seit Wochen steigt die Harlan-Aktie, und niemand weiß genau, warum. Pettibone rät,
+      jetzt ein Paket aus Jacobs eigenem Bestand zu verkaufen: „Man verkauft nicht, wenn man
+      muss, Mr. Harlan. Man verkauft, wenn die anderen wollen.“ Ruth schreibt Jacob einen
+      Zettel mit einer einzigen Zahl darauf: 51.
+    en: >-
+      For weeks the Harlan stock has been climbing and nobody knows exactly why. Pettibone
+      advises selling a block from Jacob's own holding now: “One doesn't sell when one must,
+      Mr. Harlan. One sells when the others want to buy.” Ruth writes Jacob a note with a
+      single number on it: 51.
+  choices:
+    - id: verkaufen
+      label: { de: "Ein Paket verkaufen (+18.000 $)", en: "Sell a block (+18,000 $)" }
+      result:
+        de: "Das Geld ist da, bevor die Tinte trocken ist. Wer die Aktien gekauft hat, steht auf einer Liste, die Jacob nie ganz zu sehen bekommt."
+        en: "The money arrives before the ink is dry. Who bought the shares is on a list Jacob never quite gets to see."
+      # TODO-Effekt: shares: { jacob: -3 }, control: -3
+      effects: { cash: 18000 }
+      marks: [k2_sayles_aktien]
+    - id: halten
+      label: { de: "Halten – Ruths Zettel bleibt auf dem Tisch", en: "Hold – Ruth's note stays on the desk" }
+      result:
+        de: "Der Kurs steigt noch eine Woche, dann fällt er wieder. Pettibone sagt nichts dazu. Ruth faltet den Zettel und steckt ihn in die Westentasche, die sie Jacob genäht hat."
+        en: "The price rises another week, then falls again. Pettibone says nothing. Ruth folds the note and slips it into the waistcoat pocket she sewed for Jacob."
+      effects: { ruth: 5 }
+      appointments: 0
+      default: true
+
+- id: k2_anleihe
+  mail: offer
+  deadline: 3
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 11 }
+  chance: 0.12
+  title:
+    de: Ein Angebot von Vandermeer & Co.
+    en: An Offer from Vandermeer & Co.
+  text:
+    de: >-
+      Schweres Papier, ein geprägtes Wappen: Das Bankhaus Vandermeer & Co. bietet an, eine
+      Anleihe für Harlan Oil zu begeben, vierzigtausend Dollar zu sechs vom Hundert, fällig in
+      zehn Jahren. Unterschrieben hat Ambrose Vandermeer selbst, mit einem Zusatz in Tinte:
+      „Meine Tante lässt grüßen.“ Cornelia Vandermeer hat Jacob nie gegrüßt.
+    en: >-
+      Heavy paper, an embossed crest: the banking house of Vandermeer & Co. offers to issue a
+      bond for Harlan Oil, forty thousand dollars at six per cent, due in ten years. Ambrose
+      Vandermeer has signed it himself, with a note in ink: “My aunt sends her regards.”
+      Cornelia Vandermeer has never sent Jacob her regards.
+  choices:
+    - id: annehmen
+      label: { de: "Die Anleihe begeben (+40.000 $, Zinsen jedes Jahr)", en: "Issue the bond (+40,000 $, interest every year)" }
+      result:
+        de: "Das Geld kommt mit der Bahn in einer verplombten Kiste. Vandermeer & Co. verkauft die Papiere an Witwen und Pfarrer in Hallstead, die Harlan Oil nie gesehen haben."
+        en: "The money comes by train in a sealed box. Vandermeer & Co. sells the paper to widows and pastors in Hallstead who have never seen Harlan Oil."
+      # TODO-Effekt: credit: 40000, rating: 0
+      effects: { cash: 40000 }
+      marks: [k2_anleihe]
+    - id: ablehnen
+      label: { de: "Höflich ablehnen", en: "Decline politely" }
+      result:
+        de: "Ambrose Vandermeer antwortet mit drei Zeilen. Die dritte lautet: „Das Haus Vandermeer fragt selten zweimal.“"
+        en: "Ambrose Vandermeer replies in three lines. The third reads: “The House of Vandermeer seldom asks twice.”"
+      appointments: 0
+      default: true
+
+- id: k2_anleihe_zins
+  mail: demand
+  marked: [k2_anleihe]
+  delay: 4
+  chance: 0.9
+  deadline: 2
+  conditions: { minChapter: 2, maxChapter: 2 }
+  title:
+    de: Der Zinsschein ist fällig
+    en: The Coupon Is Due
+  text:
+    de: >-
+      Vandermeer & Co. erinnert, auf demselben schweren Papier: Der Jahreszins der Anleihe,
+      zweitausendvierhundert Dollar, sei zum Quartalsende zu zahlen. Ein Verzug werde den
+      Inhabern der Papiere mitgeteilt. Die Inhaber sind Witwen und Pfarrer in Hallstead,
+      und sie lesen Zeitung.
+    en: >-
+      Vandermeer & Co. sends a reminder on the same heavy paper: the annual interest on the
+      bond, two thousand four hundred dollars, is due at the end of the quarter. Any default
+      will be communicated to the holders. The holders are widows and pastors in Hallstead,
+      and they read the papers.
+  choices:
+    - id: zahlen
+      label: { de: "Pünktlich zahlen (2.400 $)", en: "Pay on time (2,400 $)" }
+      result:
+        de: "Ambrose Vandermeer schickt eine Quittung und eine Einladung zum Herbstball, ohne Ruths Namen auf dem Umschlag."
+        en: "Ambrose Vandermeer sends a receipt and an invitation to the autumn ball, without Ruth's name on the envelope."
+      requires: { minCash: 2400 }
+      effects: { cash: -2400 }
+    - id: verzug
+      label: { de: "Um Aufschub bitten", en: "Ask for a delay" }
+      result:
+        de: "Der Aufschub wird gewährt, mit einem Aufschlag. Im Ledger steht eine kleine Meldung auf Seite sechs: Harlan Oil bittet um Geduld."
+        en: "The delay is granted, with a surcharge. On page six of the Ledger there is a small item: Harlan Oil asks for patience."
+      # TODO-Effekt: rating: -1, sharePrice: -0.05 (befristet)
+      effects: { cash: -600, strength: -3 }
+      marks: [k2_anleihe_verzug]
+      appointments: 0
+      default: true
+
+- id: k2_martha_hale
+  # Bedingung: Harlan Oil ist Aktiengesellschaft (minPublicShare, 4.8) – Martha Hale tauscht beim Börsengang ihre Pacht gegen Aktien, Bibel §5
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4, maxRound: 14, minPublicShare: 1 }
+  chance: 0.1
+  title:
+    de: Martha Hale will Geländer
+    en: Martha Hale Wants Railings
+  text:
+    de: >-
+      Martha Hale hat beim Börsengang ihre Pacht gegen Aktien getauscht und gilt seitdem in
+      Salt Hill als die reiche Witwe. Sie trägt noch immer dasselbe schwarze Kleid. Sie will,
+      dass Harlan Oil an jedem Turm Geländer um die Plattform zieht und jedem Mann oben eine
+      Sicherheitsleine gibt. „Mein Mann ist vom Turm gefallen, Mr. Harlan. Sechzig Fuß, und
+      nichts zum Festhalten. Ich zahle nicht für Aktien, von denen Männer fallen.“
+    en: >-
+      Martha Hale traded her lease for shares at the flotation and has since been known in
+      Salt Hill as the rich widow. She still wears the same black dress. She wants Harlan Oil
+      to put railings round the platform of every derrick and give every man aloft a safety
+      line. “My husband fell from a derrick, Mr. Harlan. Sixty feet, and nothing to hold on
+      to. I don't pay for shares that men fall off.”
+  choices:
+    - id: gelaender
+      label: { de: "Geländer und Leinen an allen Türmen (6.000 $)", en: "Railings and lines on every derrick (6,000 $)" }
+      result:
+        de: "Die Schmiede in Salt Hill arbeiten zwei Monate nur an Geländern. Die Männer spotten über die Leinen, eine Woche lang, dann tragen sie sie. Martha Hale fährt die Türme ab und rüttelt an jedem Geländer selbst."
+        en: "The Salt Hill smithies work two months on nothing but railings. The men mock the lines for a week, then wear them. Martha Hale drives round the derricks and shakes every railing herself."
+      requires: { minCash: 6000 }
+      # TODO-Effekt: boardLoyalty: { hale: 10 }, reputation: { workers: 3 }
+      effects: { cash: -6000, production: 0.03 }
+    - id: rat
+      label: { de: "Ihr einen Sitz im Aufsichtsrat geben (Sitzungsgeld 1.000 $)", en: "Give her a seat on the board (1,000 $ in fees)" }
+      result:
+        de: "Der Vertreter der Bank verlässt bei ihrer ersten Sitzung den Raum für zehn Minuten. Martha Hale stellt in dieser Zeit drei Fragen zur Sicherheit, die niemand beantworten kann."
+        en: "The bank's man leaves the room for ten minutes at her first meeting. In that time Martha Hale asks three questions about safety that nobody can answer."
+      # TODO-Effekt: boardMember: hale, boardLoyalty: { hale: 15, bank: -5 }
+      effects: { cash: -1000 }
+      marks: [k2_hale_rat]
+    - id: vertroesten
+      label: { de: "„Nächstes Jahr, Mrs. Hale“", en: "“Next year, Mrs. Hale”" }
+      result:
+        de: "Martha Hale steht auf und streicht das Kleid glatt. Auf der Hauptversammlung stimmt sie mit der Bank, zum ersten Mal."
+        en: "Martha Hale stands and smooths her dress. At the shareholders' meeting she votes with the bank, for the first time."
+      # TODO-Effekt: boardLoyalty: { hale: -10 }
+      effects: { strength: -2 }
+      appointments: 0
+      default: true
+
+# --- Personal ----------------------------------------------------------------------
+
+- id: k2_ada_pell
+  conditions: { minChapter: 2, maxChapter: 2, maxRound: 8 }
+  chance: 0.18
+  title:
+    de: Ada Pell bewirbt sich
+    en: Ada Pell Applies
+  text:
+    de: >-
+      Ada Pell, die Tochter des Krämers, ist vierundzwanzig und hat Jacobs Briefe der letzten
+      Woche gelesen, die auf dem Vorzimmertisch lagen. Sie hat zwei Fehler gefunden und einen
+      Termin, der mit einem anderen kollidiert. „Sie haben heute sieben Termine, Mr. Harlan.
+      Fünf davon kann ich für Sie absagen. Bei zweien rate ich ab.“
+    en: >-
+      Ada Pell, the grocer's daughter, is twenty-four and has read last week's letters that
+      lay on the anteroom table. She found two mistakes and one appointment that clashes with
+      another. “You have seven appointments today, Mr. Harlan. I can cancel five of them for
+      you. I'd advise against cancelling two.”
+  choices:
+    - id: einstellen
+      label: { de: "Einstellen – als Sekretärin, mit Aussicht auf Prokura (1.500 $ im Jahr)", en: "Hire her – as secretary, with the prospect of signing power (1,500 $ a year)" }
+      result:
+        de: "Am ersten Tag sortiert Ada Pell die Ablage neu. Am zweiten weiß sie, welcher Bankier welchen Kaffee trinkt. Jacob hat zum ersten Mal seit Jahren einen freien Nachmittag."
+        en: "On her first day Ada Pell re-sorts the files. On the second she knows which banker takes which coffee. Jacob has a free afternoon for the first time in years."
+      requires: { minCash: 1500 }
+      # TODO-Effekt: hire: sekretaerin, appointmentsNext: 1
+      effects: { cash: -1500, strength: 6 }
+      marks: [k2_ada_pell]
+    - id: hallstead
+      label: { de: "Lieber einen Sekretär aus Hallstead (3.000 $ im Jahr)", en: "Rather a secretary from Hallstead (3,000 $ a year)" }
+      result:
+        de: "Mr. Purvis kommt mit Empfehlungen von zwei Senatoren. Er ist gründlich und langsam und schreibt jeden Abend einen Brief nach Hallstead. An wen, weiß niemand."
+        en: "Mr. Purvis arrives with references from two senators. He is thorough and slow, and every evening he writes a letter to Hallstead. Nobody knows to whom."
+      requires: { minCash: 3000 }
+      # TODO-Effekt: hire: sekretaerin, appointmentsNext: 1, trace: { severity: 0, label: Purvis }
+      effects: { cash: -3000, strength: 4 }
+      marks: [k2_sekretaer_hallstead]
+    - id: nein
+      label: { de: "„Ich schreibe meine Briefe selbst“", en: "“I write my own letters”" }
+      result:
+        de: "Ada Pell bedankt sich und geht zu Margaret Crane, die gerade ein Büro in Port Ellis eröffnet. Jacob schreibt bis Mitternacht. Die zwei Fehler stehen noch in den Briefen."
+        en: "Ada Pell thanks him and goes to Margaret Crane, who is just opening an office in Port Ellis. Jacob writes until midnight. The two mistakes are still in the letters."
+      effects: { strength: -5 }
+      appointments: 0
+      default: true
+
+- id: k2_ada_schublade
+  marked: [k2_ada_pell]
+  delay: 3
+  chance: 0.4
+  conditions: { minChapter: 2, maxChapter: 2 }
+  title:
+    de: Die unterste Schublade
+    en: The Bottom Drawer
+  text:
+    de: >-
+      Ada Pell legt einen Schlüssel auf den Schreibtisch. Sie hat ihn beim Aufräumen in der
+      Kaffeedose gefunden, und er passt in die unterste Schublade. Sie hat nicht
+      aufgeschlossen, sagt sie. Aber sie hat gesehen, dass darin Briefe mit einem roten Siegel
+      liegen und Quittungen ohne Briefkopf.
+    en: >-
+      Ada Pell lays a key on the desk. She found it in the coffee tin while tidying, and it
+      fits the bottom drawer. She did not unlock it, she says. But she saw that it holds
+      letters with a red seal and receipts with no letterhead.
+  choices:
+    - id: vertrauen
+      label: { de: "Ihr den Schlüssel lassen – und die Prokura (Gehalt +1.500 $)", en: "Let her keep the key – and signing power (salary +1,500 $)" }
+      result:
+        de: "Ada Pell steckt den Schlüssel an ihre Uhrkette. Ab jetzt sieht sie jeden Brief, auch die mit dem roten Siegel. Sie spricht nie darüber. Jacob muss nichts mehr selbst ablegen."
+        en: "Ada Pell hangs the key on her watch chain. From now on she sees every letter, even those with the red seal. She never speaks of it. Jacob no longer has to file anything himself."
+      requires: { minCash: 1500 }
+      # TODO-Effekt: staffLoyalty: { sekretaerin: 15 }, appointmentsNext: 1
+      effects: { cash: -1500, strength: 5 }
+    - id: mitnehmen
+      label: { de: "Die Schublade ausräumen und die Briefe mit nach Hause nehmen", en: "Clear the drawer and take the letters home" }
+      result:
+        de: "Die Briefe liegen jetzt in einer Hutschachtel im Kleiderschrank, neben Ruths Sachen. Ada Pell sagt nichts. Sie zählt nur die Hutschachteln nicht mit."
+        en: "The letters now lie in a hatbox in the wardrobe, next to Ruth's things. Ada Pell says nothing. She simply doesn't count the hatboxes."
+      # TODO-Effekt: staffLoyalty: { sekretaerin: -5 }
+      effects: { strength: -2 }
+      appointments: 0
+      default: true
+    - id: entlassen
+      label: { de: "Ihr mit einem Zeugnis kündigen (2.000 $)", en: "Let her go with a reference (2,000 $)" }
+      result:
+        de: "Ada Pell nimmt das Zeugnis und das Geld und bedankt sich für beides. Sie weiß jetzt, dass es etwas zu verbergen gibt. Jacob weiß, dass sie es weiß."
+        en: "Ada Pell takes the reference and the money and thanks him for both. She now knows there is something to hide. Jacob knows that she knows."
+      # TODO-Effekt: fire: sekretaerin, trace: { severity: 1, label: Ada Pell }
+      effects: { cash: -2000, strength: -3 }
+
+- id: k2_unterschlagung
+  group: k2_unterschlagung
+  notMarked: [ruth_buchhalterin]
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  chance: 0.08
+  title:
+    de: Ein Loch in der Kasse
+    en: A Hole in the Accounts
+  text:
+    de: >-
+      Der Prüfer der Bank hat es gefunden, nicht Harlan Oil: Der Hauptbuchhalter Haines hat
+      zwei Jahre lang kleine Beträge auf eine Firma in Port Ellis gebucht, die nur aus einem
+      Briefkasten besteht. Zusammen achttausend Dollar. Haines hat fünf Kinder und spielt kein
+      Karten. Wohin das Geld ist, weiß niemand.
+    en: >-
+      The bank's auditor found it, not Harlan Oil: for two years the chief bookkeeper Haines
+      booked small sums to a firm in Port Ellis that consists of nothing but a letterbox. Eight
+      thousand dollars altogether. Haines has five children and doesn't play cards. Where the
+      money went, nobody knows.
+  choices:
+    - id: anzeigen
+      label: { de: "Anzeige erstatten", en: "Press charges" }
+      result:
+        de: "Haines wird vor seinem Haus abgeführt, die Kinder stehen am Fenster. Das Gericht holt dreitausend Dollar zurück. Der Ledger meldet, bei Harlan Oil fehle Geld."
+        en: "Haines is led away outside his house, the children at the window. The court recovers three thousand dollars. The Ledger reports that money is missing at Harlan Oil."
+      # TODO-Effekt: sharePrice: -0.03 (befristet)
+      effects: { cash: 3000, strength: -4 }
+      appointments: 2
+    - id: still
+      label: { de: "Still entlassen, er zahlt zurück, was er kann", en: "Dismiss him quietly; he repays what he can" }
+      result:
+        de: "Haines verkauft sein Haus und bringt fünftausend Dollar in einem Umschlag. Er bedankt sich, und das ist schlimmer als alles andere."
+        en: "Haines sells his house and brings five thousand dollars in an envelope. He thanks Jacob, and that is worse than anything else."
+      effects: { cash: 5000, strength: -2 }
+    - id: behalten
+      label: { de: "Ihn behalten und den Lohn pfänden", en: "Keep him on and garnish his wages" }
+      result:
+        de: "Haines arbeitet weiter, für halben Lohn, gründlicher als je zuvor. Ab und zu sieht Jacob ihn in der Mittagspause auf der Treppe sitzen, ohne Brot."
+        en: "Haines works on, at half pay, more thoroughly than ever. Now and then Jacob sees him sitting on the stairs at lunchtime, with no bread."
+      effects: { cash: 1500, production: 0.03 }
+      appointments: 0
+      default: true
+
+- id: k2_unterschlagung_ruth
+  group: k2_unterschlagung
+  marked: [ruth_buchhalterin]
+  delay: 0
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  chance: 0.08
+  title:
+    de: Ruth findet die Lücke
+    en: Ruth Finds the Gap
+  text:
+    de: >-
+      Ruth legt das Hauptbuch aufgeschlagen auf den Frühstückstisch, zwischen Claras Teller
+      und die Zuckerdose. Zwei Jahre kleine Buchungen auf eine Briefkastenfirma, achttausend
+      Dollar zusammen. Der Hauptbuchhalter Haines. „Ich habe es dreimal nachgerechnet, Jacob.
+      Ich wollte mich irren.“
+    en: >-
+      Ruth lays the ledger open on the breakfast table, between Clara's plate and the sugar
+      bowl. Two years of small entries to a letterbox firm, eight thousand dollars altogether.
+      The chief bookkeeper, Haines. “I checked it three times, Jacob. I wanted to be wrong.”
+  choices:
+    - id: ruth_entscheidet
+      label: { de: "„Du hast es gefunden. Du entscheidest.“", en: "“You found it. You decide.”" }
+      result:
+        de: "Ruth fährt selbst zu Haines. Er zahlt zurück, was er hat, und geht nach Hallstead. Ruth führt seine Bücher jetzt mit, und im Kontor nennen sie sie Mrs. Harlan, nicht mehr die Frau vom Chef."
+        en: "Ruth drives to Haines herself. He repays what he has and leaves for Hallstead. Ruth now keeps his books as well, and in the counting house they call her Mrs. Harlan, no longer the boss's wife."
+      effects: { cash: 4000, ruth: 12 }
+    - id: anzeigen
+      label: { de: "Anzeige erstatten", en: "Press charges" }
+      result:
+        de: "Das Gericht holt dreitausend Dollar zurück. Ruth sagt, sie hätte es anders gemacht, aber sie sagt es nur einmal."
+        en: "The court recovers three thousand dollars. Ruth says she would have done it differently, but she says it only once."
+      effects: { cash: 3000, strength: -3, ruth: -3 }
+      appointments: 2
+    - id: danke
+      label: { de: "Ihr danken und den Rest den Anwälten überlassen", en: "Thank her and leave the rest to the lawyers" }
+      result:
+        de: "Die Anwälte holen einen Teil zurück und schreiben eine Rechnung. Ruth klappt das Hauptbuch zu und räumt den Frühstückstisch ab, langsamer als sonst."
+        en: "The lawyers recover part of it and send a bill. Ruth closes the ledger and clears the breakfast table, more slowly than usual."
+      effects: { cash: 1500, ruth: -6 }
+      appointments: 0
+      default: true
+
+- id: k2_gewissen
+  # Bedingung: eigene Leitung läuft (minPipelines, kleine Pipeline oder Fernleitung 4.7)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4, minPipelines: 1 }
+  chance: 0.1
+  title:
+    de: Lindqvist weigert sich
+    en: Lindqvist Refuses
+  text:
+    de: >-
+      Der Ingenieur Lindqvist soll den Druck in der Leitung erhöhen, damit sie mehr schafft
+      als Pruetts. Er legt die Prüfzeugnisse der Rohre neben die Anweisung. „Ich unterschreibe
+      das nicht, Mr. Harlan. Wenn sie platzt, dann in der Cottonwood-Niederung, und da wohnen
+      Leute.“
+    en: >-
+      The engineer Lindqvist is to raise the pressure in the line so it carries more than
+      Pruett's. He lays the pipes' test certificates beside the order. “I won't sign this, Mr.
+      Harlan. If it bursts, it bursts in the Cottonwood bottoms, and people live there.”
+  choices:
+    - id: ueberstimmen
+      label: { de: "Ihn entlassen, ein anderer dreht das Ventil", en: "Dismiss him; someone else turns the valve" }
+      result:
+        de: "Lindqvist packt seine Rechenschieber in eine Zigarrenkiste. Sein Nachfolger dreht das Ventil am selben Nachmittag. Die Leitung schafft ein Fünftel mehr."
+        en: "Lindqvist packs his slide rules into a cigar box. His successor turns the valve the same afternoon. The line carries a fifth more."
+      # TODO-Effekt: pipelineThroughput: 0.2
+      effects: { production: 0.12 }
+      marks: [k2_druck_erhoeht]
+    - id: zuhoeren
+      label: { de: "Auf ihn hören", en: "Listen to him" }
+      result:
+        de: "Der Druck bleibt, wie er ist. Pruett liefert in diesem Quartal mehr nach Hallstead als Harlan, und der Ledger druckt die Zahlen nebeneinander."
+        en: "The pressure stays as it is. This quarter Pruett delivers more to Hallstead than Harlan, and the Ledger prints the figures side by side."
+      effects: { price: -0.04 }
+      appointments: 0
+      default: true
+    - id: neue_rohre
+      label: { de: "Lindqvist befördern und die schwachen Rohre tauschen (9.000 $)", en: "Promote Lindqvist and replace the weak pipes (9,000 $)" }
+      result:
+        de: "Lindqvist bekommt ein eigenes Büro und vier Wochen später neue Rohre aus Hallstead. Dann dreht er das Ventil selbst, ein halbes Fünftel weit."
+        en: "Lindqvist gets an office of his own and, four weeks later, new pipes from Hallstead. Then he turns the valve himself, half a fifth."
+      requires: { minCash: 9000 }
+      # TODO-Effekt: staffLoyalty: { ingenieur: 15 }, pipelineThroughput: 0.1
+      effects: { cash: -9000, production: 0.06 }
+      marks: [k2_lindqvist]
+      appointments: 2
+
+- id: k2_rohr_geborsten
+  tableau: true
+  marked: [k2_druck_erhoeht]
+  delay: 2
+  chance: 0.4
+  draft: true                # Schlüsselszene: Folge des erhöhten Drucks (Entwurf – Philipp überarbeitet)
+  conditions: { minChapter: 2, maxChapter: 2 }
+  title:
+    de: Die Leitung platzt bei Cottonwood
+    en: The Line Bursts at Cottonwood
+  text:
+    de: >-
+      Lindqvist hatte die Meile genannt, und es ist genau diese. Die Leitung reißt auf
+      zwanzig Fuß, das Öl schießt über die Straße bis an die Schule. Es ist Sonntag, die
+      Schule ist leer. Ein Farmer, der mit dem Wagen vorbeifuhr, hat einen gebrochenen Arm und
+      ein durchgegangenes Pferd.
+    en: >-
+      Lindqvist had named the mile, and it is exactly this one. The line splits for twenty
+      feet, oil spraying across the road as far as the school. It is Sunday; the school is
+      empty. A farmer driving past has a broken arm and a bolted horse.
+  choices:
+    - id: alles_zahlen
+      label: { de: "Alles bezahlen, Lindqvist zurückholen (14.000 $)", en: "Pay for everything, bring Lindqvist back (14,000 $)" }
+      result:
+        de: "Lindqvist kommt zurück, ohne Triumph. Er verlangt, dass der Druck auf den alten Wert gesenkt wird, und Jacob unterschreibt. Die Schule bekommt ein neues Dach."
+        en: "Lindqvist comes back, without triumph. He demands the pressure go back to the old figure, and Jacob signs. The school gets a new roof."
+      requires: { minCash: 14000 }
+      # TODO-Effekt: pipelineDown: 1, reputation: { public: 3 }
+      effects: { cash: -14000, production: -0.12 }
+      appointments: 2
+    - id: flicken
+      label: { de: "Flicken und weiterpumpen (3.000 $)", en: "Patch it and keep pumping (3,000 $)" }
+      result:
+        de: "In drei Tagen fließt wieder Öl. Der Farmer mit dem gebrochenen Arm erzählt jedem, der zuhört, dass ein Ingenieur das vorhergesagt hat. Er kennt sogar den Namen."
+        en: "In three days oil flows again. The farmer with the broken arm tells anyone who will listen that an engineer predicted it. He even knows the name."
+      # TODO-Effekt: heat: 1, trace: { severity: 2, label: Lindqvist }
+      effects: { cash: -3000, oilStock: -1500, strength: -5 }
+      appointments: 0
+      default: true
+
+- id: k2_abwerbung_greaves
+  rival: crane
+  group: k2_abwerbung
+  # Pruett wirbt nur einmal: jede Wahl hier und in k2_abwerbung_greaves_bleibt setzt k2_pruett_abwerbung.
+  notMarked: [k2_greaves_vertrauen, k2_pruett_abwerbung, k2_greaves_weg]
+  # Bedingung: eigene Raffinerie (minRefineryLevel, 4.6)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 5, minRefineryLevel: 1 }
+  chance: 0.1
+  title:
+    de: Pruett will Greaves
+    en: Pruett Wants Greaves
+  text:
+    de: >-
+      Greaves kommt nicht, um zu fragen. Er legt Pruetts Brief auf den Tisch: das doppelte
+      Gehalt, ein Labor in Crane Midlands Werk, Assistenten. „Ich habe nichts gegen Sie,
+      Mr. Harlan“, zitiert Greaves aus dem Brief, mit Pruetts trockener Stimme. „Ich habe
+      etwas gegen Schwankungen. Sie sind eine.“
+    en: >-
+      Greaves doesn't come to ask. He lays Pruett's letter on the desk: double salary, a
+      laboratory at Crane Midland's works, assistants. “I have nothing against you, Mr.
+      Harlan,” Greaves quotes from the letter in Pruett's dry voice. “I have something against
+      fluctuations. You are one.”
+  choices:
+    - id: mithalten
+      label: { de: "Mithalten – doppeltes Gehalt (6.000 $ im Jahr)", en: "Match it – double salary (6,000 $ a year)" }
+      result:
+        de: "Greaves bleibt und lässt Jacob merken, dass er es für Geld tut. Er arbeitet trotzdem bis Mitternacht."
+        en: "Greaves stays and lets Jacob know he does it for the money. He still works until midnight."
+      requires: { minCash: 6000 }
+      # TODO-Effekt: staffLoyalty: { greaves: 5 }
+      effects: { cash: -6000 }
+      marks: [k2_pruett_abwerbung]
+    - id: patent
+      label: { de: "Ihm ein Zehntel an jedem Patent bieten (2.000 $ jetzt)", en: "Offer him a tenth of every patent (2,000 $ now)" }
+      result:
+        de: "Greaves liest den Vertrag zweimal, dann lacht er zum ersten Mal, seit Jacob ihn kennt. Er schreibt Pruett eine Absage auf der Rückseite von Pruetts eigenem Brief."
+        en: "Greaves reads the contract twice, then laughs for the first time since Jacob has known him. He writes Pruett a refusal on the back of Pruett's own letter."
+      requires: { minCash: 2000 }
+      # TODO-Effekt: research: { cracking: 1 }, staffLoyalty: { greaves: 15 }
+      effects: { cash: -2000, strength: -2 }
+      marks: [k2_greaves_beteiligt, k2_pruett_abwerbung]
+    - id: gehen_lassen
+      label: { de: "Gehen lassen – Chemiker gibt es genug", en: "Let him go – there are plenty of chemists" }
+      result:
+        de: "Greaves geht am Freitag. Am Montag stellt der neue Direktor die Kolonne auf Werte zurück, die Greaves vor zwei Jahren verworfen hat. Pruett schickt eine Karte mit Dank."
+        en: "Greaves leaves on Friday. On Monday the new director resets the column to figures Greaves rejected two years ago. Pruett sends a card of thanks."
+      # TODO-Effekt: fire: greaves, rivalStake: { pruett: research }
+      effects: { production: -0.08 }
+      marks: [k2_greaves_weg, k2_pruett_abwerbung]
+      appointments: 0
+      default: true
+
+- id: k2_abwerbung_greaves_bleibt
+  rival: crane
+  group: k2_abwerbung
+  marked: [k2_greaves_vertrauen]
+  notMarked: [k2_pruett_abwerbung, k2_greaves_weg]
+  # Bedingung: eigene Raffinerie (minRefineryLevel, 4.6)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 5, minRefineryLevel: 1 }
+  chance: 0.1
+  title:
+    de: Greaves zeigt Pruetts Brief
+    en: Greaves Shows Pruett's Letter
+  text:
+    de: >-
+      Greaves legt Pruetts Angebot auf den Tisch, doppeltes Gehalt, und schiebt es Jacob
+      hin wie eine Rechnung, die er nicht bezahlen will. Er bleibt, sagt er. Aber er möchte
+      ein Labor. Ein richtiges, mit Abzug und Platinschalen. Er will Öl spalten, mit Hitze und
+      Druck, bis Benzin herauskommt.
+    en: >-
+      Greaves lays Pruett's offer on the desk, double salary, and pushes it across to Jacob
+      like a bill he doesn't intend to pay. He's staying, he says. But he would like a
+      laboratory. A real one, with a fume hood and platinum dishes. He wants to crack oil with
+      heat and pressure until gasoline comes out.
+  choices:
+    - id: labor
+      label: { de: "Das Labor bauen (8.000 $)", en: "Build the laboratory (8,000 $)" }
+      result:
+        de: "Das Labor steht im Frühjahr. Greaves wohnt praktisch darin. Im Sommer explodiert eine Retorte und nimmt ihm die Augenbrauen. Er notiert die Temperatur."
+        en: "The laboratory stands by spring. Greaves practically lives in it. In summer a retort explodes and takes his eyebrows. He writes down the temperature."
+      requires: { minCash: 8000 }
+      # TODO-Effekt: research: { cracking: 2 }
+      effects: { cash: -8000, price: 0.04 }
+      marks: [k2_greaves_beteiligt, k2_pruett_abwerbung]
+    - id: spaeter
+      label: { de: "„Nächstes Jahr, Greaves“", en: "“Next year, Greaves”" }
+      result:
+        de: "Greaves nickt und nimmt Pruetts Brief wieder mit. Er geht nicht. Aber er arbeitet wieder nur bis sechs."
+        en: "Greaves nods and takes Pruett's letter back with him. He doesn't leave. But he works only until six again."
+      # TODO-Effekt: staffLoyalty: { greaves: -10 }
+      effects: { production: -0.04 }
+      marks: [k2_pruett_abwerbung]
+      appointments: 0
+      default: true
+
+- id: k2_fixer_tatum
+  visitor: sheriff
+  marked: [sheriff_bezahlt]
+  delay: 0
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12 }
+  chance: 0.12
+  title:
+    de: Boyd Tatum braucht Arbeit
+    en: Boyd Tatum Needs Work
+  text:
+    de: >-
+      Boyd Tatum ist seit der letzten Wahl nicht mehr Sheriff. Er trägt den Hut noch so, als
+      wäre er es, und hat zugenommen. Ein Farmer in der Hollins-Prärie will seine Pacht nicht
+      verlängern, hat er gehört. „Ich frage nicht, was in dem Paket ist, Mr. Harlan. Ich
+      frage, wohin.“
+    en: >-
+      Boyd Tatum has not been sheriff since the last election. He still wears his hat as if he
+      were, and he has put on weight. A farmer on the Hollins prairie won't renew his lease,
+      he's heard. “I don't ask what's in the package, Mr. Harlan. I ask where it's going.”
+  choices:
+    - id: einstellen
+      label: { de: "Ihn fest anstellen, „für Sicherheitsfragen“ (3.000 $ im Jahr)", en: "Take him on for good, “for security matters” (3,000 $ a year)" }
+      result:
+        de: "Tatum bekommt ein Büro im Lagerhaus, ohne Schild an der Tür. Der Farmer in Hollins verlängert seine Pacht nach einem Besuch. Wie der Besuch verlief, steht nirgends."
+        en: "Tatum gets an office in the warehouse with no sign on the door. The Hollins farmer renews his lease after a visit. How the visit went is written down nowhere."
+      requires: { minCash: 3000 }
+      # TODO-Effekt: hire: fixer, heat: 1
+      effects: { cash: -3000, leaseCost: -0.2 }
+      marks: [k2_tatum_fixer]
+    - id: einmal
+      label: { de: "Nur diesen einen Auftrag (800 $)", en: "Just this one job (800 $)" }
+      result:
+        de: "Tatum erledigt es in einer Nacht. Der Farmer unterschreibt am Morgen, die Hand verbunden. Tatum zählt das Geld vor Jacob, Schein für Schein."
+        en: "Tatum handles it in one night. The farmer signs in the morning, his hand bandaged. Tatum counts the money in front of Jacob, note by note."
+      requires: { minCash: 800 }
+      # TODO-Effekt: heat: 1, trace: { severity: 2, label: Hollins-Farmer }
+      effects: { cash: -800, leaseCost: -0.15, strength: -2 }
+    - id: nein
+      label: { de: "„Die Zeiten sind vorbei, Tatum“", en: "“Those days are over, Tatum”" }
+      result:
+        de: "Tatum setzt den Hut auf. „Sie wissen, wo ich trinke, Mr. Harlan.“ Zwei Wochen später sieht man ihn mit Bullard im Saloon, an Bullards Tisch."
+        en: "Tatum puts on his hat. “You know where I drink, Mr. Harlan.” Two weeks later he is seen in the saloon with Bullard, at Bullard's table."
+      effects: { leaseCost: 0.1 }
+      appointments: 0
+      default: true

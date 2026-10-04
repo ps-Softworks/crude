@@ -22,6 +22,21 @@ export const SHEET_IDS = [
   'bericht',
   /** Wer vor der Tür wartet, wenn es mehrere sind (0.2.15+11). */
   'wartende',
+  /** 4.6 Andockpunkt: Raffinerie (nur sichtbar, wenn freigeschaltet – ab Kapitel 2). */
+  'raffinerie',
+  /** 4.9 Andockpunkt: Personalakten (ab Kapitel 2). */
+  'personal',
+  // 4.11 Andockpunkt: Schattenbuch in der Schublade und Werkstatt-Mappe (beide erst ab Kapitel 2 auf dem Tisch).
+  'schattenbuch',
+  'werkstatt',
+  /** 4.14 Andockpunkt: Vertrieb – Marke und Tankstellen (erst ab Kapitel 3 auf dem Tisch). */
+  'marke',
+  // 4.15 Andockpunkt: Börsenticker (ab Kapitel 3).
+  'boerse',
+  /** 4.16 Andockpunkt: Hallstead-Mappe – Beteiligungen und Lobbyist (ab Kapitel 3). */
+  'hallstead',
+  /** 4.17 Andockpunkt: Siegelmappe – Seismik, Mr. Vale, Projekte, Hallstead (erst ab Kapitel 3 auf dem Tisch). */
+  'konzern',
 ] as const;
 export type SheetId = (typeof SHEET_IDS)[number];
 

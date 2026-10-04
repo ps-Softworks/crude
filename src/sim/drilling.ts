@@ -12,6 +12,8 @@ import type { Parcel } from './geology';
 import { leaseOf, parcelLabel } from './lease';
 import { Rng } from './rng';
 import { findRig, freeRig, noRigReason, rigLabel, rigRisk, rigStageCost, rigStageRounds, type Rig } from './rigs';
+// 4.11 Andockpunkt: Drehbohren und Rollenmeißel verkürzen und verbilligen das Bohren (ab Kapitel 2).
+import { techDrillCost, techDrillRounds } from './research';
 
 export type WellStatus = 'drilling' | 'decision' | 'stuck' | 'found' | 'dry';
 
@@ -174,8 +176,8 @@ export function drillQuote(state: Pick<GameState, 'wells' | 'rigs' | 'round'>, b
   const stufen = balance.drilling.stages.slice(0, stage);
   return {
     stage,
-    cost: stufen.reduce((s, st) => s + rigStageCost(balance, rig, st), 0),
-    rounds: stufen.reduce((s, st) => s + rigStageRounds(balance, rig, st), 0),
+    cost: techDrillCost(state, balance, stufen.reduce((s, st) => s + rigStageCost(balance, rig, st), 0)), // 4.11 Andockpunkt
+    rounds: techDrillRounds(state, balance, stufen.reduce((s, st) => s + rigStageRounds(balance, rig, st), 0)), // 4.11 Andockpunkt
     rig,
   };
 }
@@ -333,7 +335,7 @@ export function drillDeeper(state: GameState, balance: Balance, parcelId: string
   if (next > balance.drilling.stages.length) return { ok: false, reason: 'Tiefer geht es mit diesem Turm nicht.' };
   const stage = stageOf(balance, next);
   const rig = findRig(state, well.rigId);
-  const cost = rigStageCost(balance, rig, stage);
+  const cost = techDrillCost(state, balance, rigStageCost(balance, rig, stage)); // 4.11 Andockpunkt
   if (state.cash < cost) {
     return { ok: false, reason: `Nicht genug Geld: ${stage.depth} m kosten ${money(cost)}, in der Kasse sind ${money(state.cash)}.` };
   }
@@ -342,7 +344,7 @@ export function drillDeeper(state: GameState, balance: Balance, parcelId: string
     state: {
       ...state,
       cash: state.cash - cost,
-      wells: replaceWell(state, { ...well, stage: next, status: 'drilling', roundsLeft: rigStageRounds(balance, rig, stage), spent: well.spent + cost }),
+      wells: replaceWell(state, { ...well, stage: next, status: 'drilling', roundsLeft: techDrillRounds(state, balance, rigStageRounds(balance, rig, stage)), spent: well.spent + cost }), // 4.11 Andockpunkt
       log: [...state.log, `${formatDate(state)}: Auf ${labelOf(state, parcelId)} wird tiefer gebohrt, auf ${stage.depth} m (${money(cost)}).`],
     },
   };
@@ -353,7 +355,7 @@ export function deeperQuote(state: Pick<GameState, 'rigs'>, balance: Balance, we
   const stage = balance.drilling.stages[well.stage];
   if (!stage) return null;
   const rig = findRig(state, well.rigId);
-  return { cost: rigStageCost(balance, rig, stage), accident: rigRisk(balance, rig, stage).accident };
+  return { cost: techDrillCost(state, balance, rigStageCost(balance, rig, stage)), accident: rigRisk(balance, rig, stage).accident }; // 4.11 Andockpunkt
 }
 
 /** Klemmendes Werkzeug bergen: kostet Geld und eine Runde, dann wird die Stufe neu abgeschlossen. */

@@ -15,6 +15,7 @@ import { formatDate, type GameState } from '../../sim/game';
 import { storageCapacity } from '../../sim/logistics';
 import { makeNewspaper } from '../../sim/newspaper';
 import { rigSummary } from '../../sim/rigs';
+import { stocksAttention } from '../../sim/stocks'; // 4.8 Andockpunkt
 import type { TutorialView } from '../../sim/tutorial';
 import { balance } from '../balance';
 import { familyContent } from '../family';
@@ -31,6 +32,7 @@ import { Door } from './Door';
 import {
   BellShape,
   CorkShape,
+  DrawerShape,
   FolderShape,
   LampShape,
   LedgerShape,
@@ -41,6 +43,31 @@ import {
   WallMapShape,
 } from './objects/Shapes';
 import { RuthNote } from './RuthNote';
+// 4.6 Andockpunkt: Raffinerie (Gegenstand nur, wenn freigeschaltet).
+import { RefineryShape } from './objects/RefineryShape';
+import { refineryObjectStatus } from '../sheets/RefinerySheet';
+import { refineryStatus } from '../../sim/refinery';
+import { rt } from '../refinery';
+import { StaffFileShape } from '../sheets/StaffSheet'; // 4.9 Andockpunkt
+import { diplomacyPin } from '../sheets/DiplomacySheet'; // 4.10 Andockpunkt
+// 4.11 Andockpunkt: Schublade (Schattenbuch) und Blaupause (Werkstatt), erst ab Kapitel 2.
+import { localize } from '../../sim/i18n';
+import { heat, heatWord, investigationUnlocked } from '../../sim/investigation';
+import { researchUnlocked } from '../../sim/research';
+import { investigationContent } from '../investigationContent';
+import { BlueprintShape } from './objects/BlueprintShape';
+// 4.14 Andockpunkt: Vertrieb (Marke und Tankstellen), erst ab Kapitel 3 auf dem Tisch.
+import { BrandShape } from './objects/BrandShape';
+import { brandDeskBadge, brandDeskStatus } from '../sheets/BrandSheet';
+import { brandContent } from '../brand';
+// 4.15 Andockpunkt: Börsenticker (erscheint erst mit der Börse, Kapitel 3).
+import { ExchangeTicker } from './ExchangeTicker';
+// 4.16 Andockpunkt: Hallstead-Mappe (ab Kapitel 3 oder per Debug-Freischaltung).
+import { HallsteadDeskItem, hallsteadOnDesk } from '../sheets/HallsteadSheet';
+// 4.17 Andockpunkt: Siegelmappe für Kapitel 3 (vorher nur im Debug sichtbar).
+import { kapitel3Unlocked } from '../../sim/kapitel3';
+import { kapitel3Pending } from '../../sim/kapitel3View';
+import { SealFolderShape } from '../sheets/KonzernSheet';
 
 /** Wo was liegt, in Prozent der Bühne (unter der Kopfleiste). */
 const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte' | 'tuer', Placement> = {
@@ -57,7 +84,66 @@ const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte
   fracht: { left: 19, top: 75, width: 15, height: 22 },
   protokoll: { left: 36, top: 76, width: 9, height: 21 },
   glocke: { left: 86, top: 70, width: 12, height: 27 },
+  // 4.6 Andockpunkt: Raffinerie-Plan zwischen Ruths Zettel und Glocke (ab Kapitel 2).
+  raffinerie: { left: 72, top: 75, width: 13, height: 22 },
+  // 4.9 Andockpunkt: Personalakten rechts neben dem Kassenbuch, zwischen Tür und Glocke (der Platz unter dem Kassenbuch gehört der Raffinerie).
+  personal: { left: 86.5, top: 46, width: 11.5, height: 22 },
+  // 4.11 Andockpunkt: Schublade unter Ruths Zettel (zwischen Kladde und Raffinerie-Plan), Blaupause an der Wand zwischen Lampe und Kalender.
+  schattenbuch: { left: 47, top: 85, width: 22, height: 12 },
+  werkstatt: { left: 51.5, top: 8, width: 6, height: 24 },
+  // 4.14 Andockpunkt: rechts neben dem Kassenbuch, über der Glocke (der Platz unter dem
+  // Kassenbuch gehört der Raffinerie – Platzplan in docs/phase4/4.14.md). Liegen
+  // Personalakten (ab Kapitel 2) und Vertrieb (ab Kapitel 3) beide da, teilen sie sich
+  // die Spalte zwischen Tür und Glocke (RECHTE_SPALTE_GETEILT).
+  marke: { left: 86, top: 47, width: 12, height: 21 },
+  // 4.16 Andockpunkt: Hallstead-Mappe in der unteren Reihe zwischen Kladde und Raffinerie-Plan,
+  // rechts neben der Schublade (unter dem Kassenbuch liegen schon Raffinerie und Börsenticker).
+  hallstead: { left: 59, top: 85, width: 11.5, height: 12 },
+  // 4.17 Andockpunkt: Siegelmappe ebenfalls in der unteren Reihe zwischen Kladde und Raffinerie-Plan
+  // (unter dem Kassenbuch liegen Raffinerie und Börsenticker). Allein nimmt sie den rechten Platz
+  // der Reihe; mit Schublade und/oder Hallstead-Mappe teilen sich alle die Reihe (UNTERE_REIHE).
+  konzern: { left: 59, top: 85, width: 11.5, height: 12 },
 };
+
+/**
+ * 4.15 Andockpunkt: Raffinerie (ab Kapitel 2) und Börsenticker (ab Kapitel 3) teilen sich den
+ * Platz unter dem Kassenbuch (zwischen Ruths Zettel ab 71 % und Glocke ab 86 %) übereinander;
+ * allein behält jeder seinen vollen Platz (AT.raffinerie bzw. TICKER_AT).
+ */
+const UNTER_KASSENBUCH_GETEILT: Record<'raffinerie' | 'boerse', Placement> = {
+  raffinerie: { left: 72, top: 74, width: 13, height: 11.5 },
+  boerse: { left: 72, top: 86, width: 13, height: 11 },
+};
+
+/** Personal und Vertrieb gleichzeitig auf dem Tisch: übereinander zwischen Tür (bis 42 %) und Glocke (ab 70 %). */
+const RECHTE_SPALTE_GETEILT: Record<'personal' | 'marke', Placement> = {
+  personal: { left: 86.5, top: 44, width: 11.5, height: 12.5 },
+  marke: { left: 86.5, top: 57, width: 11.5, height: 12.5 },
+};
+
+/** 4.16: Liegt die Hallstead-Mappe auf dem Tisch, rückt die Schublade (4.11) in die linke Hälfte ihrer Reihe. */
+const SCHUBLADE_GETEILT: Placement = { left: 47, top: 85, width: 11.5, height: 12 };
+
+type UntereReihe = 'schattenbuch' | 'hallstead' | 'konzern';
+
+/**
+ * Integration 4.11/4.16/4.17: Die untere Reihe zwischen Kladde (bis 45 %) und Raffinerie-Plan
+ * (ab 72 %) teilen sich Schublade, Hallstead-Mappe und Siegelmappe. Allein behält jeder seinen
+ * Platz (AT), zu zweit links/rechts je eine Hälfte, zu dritt je ein Drittel (46–71 %).
+ */
+function untereReihe(da: Record<UntereReihe, boolean>): Partial<Record<UntereReihe, Placement>> {
+  const liste = (['schattenbuch', 'hallstead', 'konzern'] as const).filter((id) => da[id]);
+  if (liste.length <= 1) return {};
+  if (liste.length === 2) {
+    const [links, rechts] = liste;
+    return { [links]: SCHUBLADE_GETEILT, [rechts]: AT.hallstead! };
+  }
+  return {
+    schattenbuch: { left: 46, top: 85, width: 8, height: 12 },
+    hallstead: { left: 54.5, top: 85, width: 8, height: 12 },
+    konzern: { left: 63, top: 85, width: 8, height: 12 },
+  };
+}
 
 export interface DeskSceneProps {
   game: GameState;
@@ -105,6 +191,13 @@ export function DeskScene(p: DeskSceneProps) {
   const familieGanz = familyView(game, balance, familyContent);
   const familie = { ...familieGanz, members: familieGanz.members.filter((m) => !p.hideFamily.includes(m.id)) };
   const zeitung = game.finished ? null : makeNewspaper(game, balance, newspaperContent);
+  // 4.14 Andockpunkt: Schild am Gegenstand „Vertrieb“; null = vor Kapitel 3 unsichtbar.
+  const vertrieb = brandDeskStatus(game);
+  // 4.16 Andockpunkt: Hallstead-Mappe auf dem Tisch? (ab Kapitel 3 oder per Debug-Freischaltung)
+  const mappe = hallsteadOnDesk(game);
+  // 4.17 Andockpunkt: Siegelmappe ab Kapitel 3 (oder nach „Kapitel 3 zur Probe öffnen“ im Debug-Reiter).
+  const siegelmappe = kapitel3Unlocked(game, balance);
+  const reihe = untereReihe({ schattenbuch: investigationUnlocked(game, balance), hallstead: mappe, konzern: siegelmappe });
 
   // Akte: was die Türme gerade tun, gezählt in src/sim (rigSummary).
   const tuerme = rigSummary(game);
@@ -178,6 +271,7 @@ export function DeskScene(p: DeskSceneProps) {
               <span className="pinnwand-zettel">
                 <span>{lage.bullard}</span>
                 {lage.wildcatter && <span>{lage.wildcatter}</span>}
+                {diplomacyPin(game) && <span>{diplomacyPin(game)}</span> /* 4.10 Andockpunkt */}
               </span>
             ),
           },
@@ -288,7 +382,19 @@ export function DeskScene(p: DeskSceneProps) {
         {obj(
           'kassenbuch',
           'Kassenbuch',
-          { badge: game.bankruptcyDeadline > 0 ? { text: `Runde ${game.bankruptcyDeadline}`, urgent: true } : null, status: `Rating ${game.rating}` },
+          {
+            badge:
+              game.bankruptcyDeadline > 0
+                ? { text: `Runde ${game.bankruptcyDeadline}`, urgent: true }
+                : // 4.8 Andockpunkt: Stellvertreterkampf oder offene Forderung des Aufsichtsrats.
+                  stocksAttention(game) === 'proxy'
+                  ? { text: 'Misstrauen', urgent: true }
+                  : stocksAttention(game) === 'demand'
+                    ? { text: 'Aufsichtsrat' }
+                    : null,
+            status: `Rating ${game.rating}`,
+            onOpen: () => p.onOpen('kassenbuch', stocksAttention(game) ? 'rat' : undefined),
+          },
           <LedgerShape />,
         )}
         {obj(
@@ -319,7 +425,52 @@ export function DeskScene(p: DeskSceneProps) {
           },
           <FolderShape variant="fracht" />,
         )}
+        {/* 4.6 Andockpunkt: Raffinerie – in Kapitel 1 (ohne Freischaltung) gibt es den Gegenstand nicht. */}
+        {game.refinery &&
+          obj(
+            'raffinerie',
+            rt('object'),
+            { status: refineryObjectStatus(game), ...(game.exchange ? { at: UNTER_KASSENBUCH_GETEILT.raffinerie } : {}) },
+            <RefineryShape running={refineryStatus(game) === 'running' || refineryStatus(game) === 'expanding'} />,
+          )}
+        {/* 4.16 Andockpunkt: Hallstead-Mappe – erst ab Kapitel 3 (oder per Debug-Freischaltung im Menü). */}
+        {mappe && (
+          <HallsteadDeskItem game={game} at={reihe.hallstead ?? AT.hallstead!} glow={p.glow === 'hallstead' || p.spotlight === 'hallstead'} onOpen={() => p.onOpen('hallstead')} />
+        )}
+        {/* 4.17 Andockpunkt: Siegelmappe – ab Kapitel 3 (Debug: „Kapitel 3 zur Probe öffnen“ im Menü). */}
+        {siegelmappe && <KonzernObjekt game={game} obj={obj} at={reihe.konzern} />}
         {obj('protokoll', 'Kladde', { status: p.saved ? '✓ gesichert' : undefined }, <NotebookShape />)}
+        {/* 4.9 Andockpunkt: Personalakten – erst ab Kapitel 2 (state.staff), in Kapitel 1 unsichtbar. */}
+        {game.staff &&
+          obj(
+            'personal',
+            'Personal',
+            {
+              ...(vertrieb !== null ? { at: RECHTE_SPALTE_GETEILT.personal } : {}),
+              status: `${game.staff.hired.length} angestellt`,
+              badge: game.staff.candidates.length > 0 ? { text: `${game.staff.candidates.length} Bewerbung${game.staff.candidates.length === 1 ? '' : 'en'}` } : null,
+            },
+            <StaffFileShape />,
+          )}
+        {/* 4.11 Andockpunkt: Schattenbuch und Werkstatt – in Kapitel 1 nicht auf dem Tisch. */}
+        {investigationUnlocked(game, balance) &&
+          obj('schattenbuch', 'Schublade', { status: `Hitze: ${localize(investigationContent.heat[heatWord(heat(game, balance), balance)])}`, ...(reihe.schattenbuch ? { at: reihe.schattenbuch } : {}) }, <DrawerShape />)}
+        {researchUnlocked(game, balance) &&
+          obj(
+            'werkstatt',
+            'Werkstatt',
+            { status: game.research?.project ? 'forscht' : undefined },
+            <BlueprintShape />,
+          )}
+        {/* 4.14 Andockpunkt: Vertrieb – nur sichtbar, wenn die Marke freigeschaltet ist (Kapitel 3). */}
+        {vertrieb !== null && obj('marke', localize(brandContent.object.name), { status: vertrieb, badge: brandDeskBadge(game), ...(game.staff ? { at: RECHTE_SPALTE_GETEILT.marke } : {}) }, <BrandShape />)}
+        {/* 4.15 Andockpunkt: Börsenticker – ohne Börse (Kapitel 1 und 2) nicht da. */}
+        <ExchangeTicker
+          game={game}
+          {...(game.refinery ? { at: UNTER_KASSENBUCH_GETEILT.boerse } : {})}
+          glow={p.glow === 'boerse' || p.spotlight === 'boerse'}
+          onOpen={() => p.onOpen('boerse')}
+        />
         {obj(
           'glocke',
           game.finished ? 'Kapitel beendet' : 'Runde beenden',
@@ -328,5 +479,29 @@ export function DeskScene(p: DeskSceneProps) {
         )}
       </div>
     </div>
+  );
+}
+
+/** 4.17 Andockpunkt: die Siegelmappe mit Abzeichen für offene Entscheidungen. */
+function KonzernObjekt({
+  game,
+  obj,
+  at,
+}: {
+  game: GameState;
+  obj: (id: SheetId, name: string, extra: Partial<Parameters<typeof DeskObject>[0]>, bild: ReactNode) => ReactNode;
+  /** Geteilter Platz in der unteren Reihe; ohne Angabe AT.konzern. */
+  at?: Placement;
+}) {
+  const offen = kapitel3Pending(game, balance);
+  return obj(
+    'konzern',
+    'Siegelmappe',
+    {
+      badge: offen && offen.total > 0 ? { text: String(offen.total), urgent: offen.urgent } : null,
+      status: offen ? undefined : 'Kapitel 3',
+      ...(at ? { at } : {}),
+    },
+    <SealFolderShape />,
   );
 }

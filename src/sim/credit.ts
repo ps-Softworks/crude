@@ -14,6 +14,9 @@ import type { GameState } from './game';
 import { parcelLabel } from './lease';
 import { producingWells } from './production';
 import { worldLimitFactor, worldRateAdd } from './world';
+// 4.16 Andockpunkt: eigene Bank in Hallstead.
+import { bankRateDiscount } from './holdings';
+import { withStandDiscount } from './stand'; // 4.17 Andockpunkt
 
 /** Woher das Geld kommt: von der Bank oder als Notkredit vom Geldverleiher. */
 export type LoanSource = 'bank' | 'lender';
@@ -106,6 +109,17 @@ export function loanRate(balance: Balance, rating: Rating, secured: boolean, cli
   return rateOf(Math.max(0, roh));
 }
 
+/**
+ * 4.17 Andockpunkt: Der Zins, den die Bank Jacob heute wirklich anbietet – für
+ * Kassenbuch (Anzeige) und takeLoan (Abschluss) aus einer Hand, damit Angebot und
+ * Vertrag nie auseinanderlaufen. Enthält den Rabatt der alten Banken nach Jacobs
+ * Stand in Hallstead (ab Kapitel 3, stand.ts) und den Aufschlag aus Kreditklima (4.1)
+ * und eigener Bank (4.16) über bankRateAdd.
+ */
+export function bankRate(state: GameState, balance: Balance, secured: boolean): number {
+  return withStandDiscount(loanRate(balance, state.rating, secured, bankRateAdd(state, balance)), state, balance);
+}
+
 /** Zins für ein Quartal: ein Viertel des Jahreszinses auf die Restschuld. */
 export function quarterInterest(loan: Pick<Loan, 'principal' | 'rate'>): number {
   return cents((loan.principal * loan.rate) / 4);
@@ -152,6 +166,15 @@ function loanBlocked(state: GameState, balance: Balance, amount: number): string
 }
 
 /**
+ * Zinsaufschlag für einen neuen Bankkredit (auch negativ): Kreditklima des
+ * Weltmodells (4.1) minus den Rabatt der eigenen Bank in Hallstead (4.16).
+ */
+export function bankRateAdd(state: Pick<GameState, 'worldModel' | 'hallstead'>, balance: Balance): number {
+  // 4.16 Andockpunkt: bankRateDiscount (0, solange Jacob keine eigene Bank hat).
+  return worldRateAdd(state.worldModel, balance.worldModel) - bankRateDiscount(state, balance);
+}
+
+/**
  * Kredit bei der Bank aufnehmen. Das Geld kommt sofort in die Kasse. Eine
  * fördernde Quelle, die noch nicht verpfändet ist, dient als Pfand und senkt den
  * Zins; sonst zahlt Jacob den Aufschlag für die fehlende Sicherheit.
@@ -160,7 +183,9 @@ export function takeLoan(state: GameState, balance: Balance, amount: number): Lo
   const blocked = loanBlocked(state, balance, amount);
   if (blocked) return { ok: false, reason: blocked };
   const pfand = freeCollateral(state)[0];
-  const zins = loanRate(balance, state.rating, pfand !== undefined, worldRateAdd(state.worldModel, balance.worldModel));
+  // 4.17 Andockpunkt: bankRate = Zins nach Rating, Pfand, Kreditklima, eigener Bank (4.16) und Stand –
+  // derselbe wie im Kassenbuch.
+  const zins = bankRate(state, balance, pfand !== undefined);
   const loan: Loan = {
     id: lastId(state.loans) + 1,
     source: 'bank',

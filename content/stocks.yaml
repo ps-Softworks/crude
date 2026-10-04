@@ -1,0 +1,104 @@
+# 4.8 Aktien, Aufsichtsrat, Anleihen (GDD §8) – Namen und Texte. ENTWURF.
+# Die Zahlen stehen in content/balance.yaml (Block stocks), die Regeln in src/sim/stocks.ts.
+#
+# board: die Räte, in dieser Reihenfolge besetzt (5–9 Sitze je nach verkauftem Anteil).
+#   agenda: dividend (will Dividende) · safety (will wenig Schulden) · price (will steigenden Kurs)
+#           · growth (will mehr fördernde Quellen)
+#   loyalty: Treue zu Beginn (0–100; ab balance stocks.board.loyalFrom stimmt der Rat mit Jacob)
+# thorne: Thornes Mann – kommt in den Rat, sobald Thorne genug Aktien hält. Bis die
+#   Detektei das Aktienbuch durchleuchtet, steht er mit seiner Tarnung (cover) da.
+# straw: Namen der Strohmänner, über die Thorne Aktien kauft.
+# Platzhalter in Texten: {name} {betrag} {anzahl} {runde}
+draft: true
+
+board:
+  - id: bankier
+    agenda: dividend
+    loyalty: 55
+    name: { de: Mr. Pettibone, en: Mr. Pettibone }
+    role: { de: Bankier aus Port Ellis, en: banker from Port Ellis }
+  - id: witwe
+    agenda: safety
+    loyalty: 60
+    name: { de: Martha Hale, en: Martha Hale }
+    role: { de: "Witwe, hat ihr Erspartes in Harlan Oil gesteckt", en: widow who put her savings into Harlan Oil }
+  - id: kleinaktionaere
+    agenda: price
+    loyalty: 50
+    name: { de: Elias Grant, en: Elias Grant }
+    role: { de: Sprecher der Kleinaktionäre, en: speaker for the small shareholders }
+  - id: ingenieur
+    agenda: growth
+    loyalty: 60
+    name: { de: Otto Brandt, en: Otto Brandt }
+    role: { de: Bohringenieur aus Hallstead, en: drilling engineer from Hallstead }
+  - id: haendler
+    agenda: price
+    loyalty: 45
+    name: { de: Samuel Ward, en: Samuel Ward }
+    role: { de: Baumwollhändler aus der Cottonwood-Niederung, en: cotton trader from the Cottonwood Bottoms }
+  - id: richter
+    agenda: safety
+    loyalty: 50
+    name: { de: Richter Collins, en: Judge Collins }
+    role: { de: Richter im Ruhestand, en: retired judge }
+  - id: verleger
+    agenda: dividend
+    loyalty: 45
+    name: { de: Horace Lindqvist, en: Horace Lindqvist }
+    role: { de: Verleger des Port Ellis Courier, en: publisher of the Port Ellis Courier }
+  - id: arzt
+    agenda: growth
+    loyalty: 55
+    name: { de: Doktor Haskell, en: Doctor Haskell }
+    role: { de: "Arzt aus Salt Hill, einer der ersten Anleger", en: "physician from Salt Hill, one of the first investors" }
+  - id: reeder
+    agenda: dividend
+    loyalty: 50
+    name: { de: Cornelius Pike, en: Cornelius Pike }
+    role: { de: Reeder in Port Ellis, en: shipowner in Port Ellis }
+
+thorne:
+  name: { de: Lucius Vance, en: Lucius Vance }
+  cover: { de: vertritt eine Treuhandgesellschaft aus Hallstead, en: represents a trust company from Hallstead }
+  revealed: { de: Thornes Mann – spioniert für Thorne Rail, en: Thorne's man – spies for Thorne Rail }
+
+straw:
+  - Hallstead Treuhand
+  - Meridian & Co.
+  - Witwe Ashby
+  - Gebrüder Coleman
+  - Union Depositbank
+  - J. P. Whitcombe
+  - Golfküsten-Anlagegesellschaft
+  - Mrs. Delacroix
+
+agendas:
+  dividend: { de: will Dividende, en: wants dividends }
+  safety: { de: will wenig Schulden, en: wants little debt }
+  price: { de: will einen steigenden Kurs, en: wants a rising share price }
+  growth: { de: will neue Quellen, en: wants new wells }
+
+demands:
+  dividend:
+    de: "{name} verlangt bis Runde {runde} eine Dividende von zusammen mindestens {betrag}."
+    en: "{name} demands dividends of at least {betrag} in total by round {runde}."
+  debt:
+    de: "{name} verlangt, die Schulden bis Runde {runde} auf höchstens {betrag} zu senken."
+    en: "{name} demands that debt be cut to at most {betrag} by round {runde}."
+  buyback:
+    de: "{name} verlangt, bis Runde {runde} mindestens {anzahl} Aktien zurückzukaufen – das stützt den Kurs."
+    en: "{name} demands a buyback of at least {anzahl} shares by round {runde} to support the price."
+  wells:
+    de: "{name} verlangt bis Runde {runde} mindestens {anzahl} fördernde Quellen."
+    en: "{name} demands at least {anzahl} producing wells by round {runde}."
+  issue:
+    de: "{name} verlangt, bis Runde {runde} mindestens {anzahl} neue Aktien auszugeben – „frisches Kapital für das Wachstum“."
+    en: "{name} demands that at least {anzahl} new shares be issued by round {runde} – “fresh capital for growth”."
+
+# Wie ein Rat zu Jacob steht (nur Wörter, keine Zahl).
+moods:
+  treu: { de: steht fest zu Jacob, en: firmly behind Jacob }
+  dafuer: { de: auf Jacobs Seite, en: on Jacob's side }
+  schwankt: { de: schwankt, en: wavering }
+  dagegen: { de: gegen Jacob, en: against Jacob }

@@ -15,9 +15,36 @@ Kurzreferenz der Felder:
 - Karte (0.2.15+5): `ranch: moss` sagt, um wessen Ranch es geht (Figuren unter `figures` in
   `content/map.yaml` – jede Figur bekommt dort eine echte Ranch). `unlocks: [hollins]` an einer Wahl
   schaltet ein gesperrtes Gebiet aus `content/map.yaml` frei; seine Ranches entstehen dann aus dem Seed.
-- Bedingungen: `minRound`, `maxRound` (ab Kapitelbeginn), `minCash`, `maxCash`, `minOilStock`,
+- Bedingungen: `minRound`, `maxRound` (Runde im laufenden Kapitel, ab Kapitelbeginn wieder 1 – 4.5), `minCash`, `maxCash`, `minOilStock`,
   `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100),
-  `minChapter`, `maxChapter` (Kapitel), `minThomasAge`, `maxThomasAge` (Thomas' Alter in Jahren, vor der Geburt −1)
+  `minRefineryLevel` (fertige Raffinerie-Stufen), `minPipelines` (laufende eigene Leitungen: kleine Pipeline +
+  fertige Fernleitungen), `minPublicShare` (Prozent der Aktien in fremder Hand, nur als Aktiengesellschaft),
+  `minThomasAge`, `maxThomasAge` (Thomas' Alter in Jahren, vor der Geburt −1; 4.5),
+  `minChapter`, `maxChapter` (Kapitel; ohne Angabe im Spielstand gilt Kapitel 1 – Phase 4). Für das
+  ganze Ereignis gilt: Fehlt `minChapter`, ist es ein Kapitel-1-Ereignis – es kommt nur in Kapitel 1
+  (bzw. bis `maxChapter`, falls angegeben). Mit `minChapter` und ohne `maxChapter` kommt es ab diesem
+  Kapitel in jedem späteren. Das gilt für gewürfelte und sichere Ereignisse, Briefe und feste Termine.
+  An einer Wahl prüfen `minChapter`/`maxChapter` nur, was dasteht.
+  Die Ereignisse der Kapitel-2-Systeme (`k2-fernleitung`, `k2-personal`, `k2-diplomatie`, `k2-delaney`) tragen
+  `minChapter: 1`: Sie hängen an Merkzeichen der Simulation und kommen so in jedem Kapitel, sobald diese gesetzt sind.
+  Ereignisse für Kapitel 2 tragen `conditions: { minChapter: 2, maxChapter: 2 }` und erscheinen so nie in Kapitel 1.
+  Kapitel-1-Ereignisse brauchen keine Angabe; ein paar tragen zur Klarheit trotzdem `maxChapter: 1` (Ruths Bücher,
+  Pension, Fieber). Auch die festen Termine aus `k1-termine.yaml` gelten nur in Kapitel 1 – bis auf den
+  Familienabend mit den Kindern (`termin_familie_k2`, `minChapter: 2, maxChapter: 2`).
+  Merkzeichen gehen beim Kapitelwechsel mit (Zeitsprung, `marksIntoNextChapter`): Sie gelten als vor
+  Kapitelbeginn gesetzt, `delay` zählt also ab der ersten Runde des neuen Kapitels.
+- Kapitel 2 – Alltag (Phase 4, Entwurf): `k2-alltag-1` (Raffinerie, Geschäft), `-2` (Pipeline, Wegerechte,
+  Fracht), `-3` (Aktionäre, Anleihen, Personal), `-4` (Rivalen: Crane-Nachfolge, Thorne, Bullard, Delgado),
+  `-5` (Presse, Politik, Familie, Unglücke). Raffinerie-, Pipeline- und Aktien-Ereignisse prüfen seit der
+  Integration `minRefineryLevel`, `minPipelines` und `minPublicShare` (siehe Bedingungen). Noch fehlende
+  Wirkungen (Aktien, Rat, Ruf, Rivalen …) stehen als `# TODO-Effekt` neben den Ereignissen (Liste in
+  `docs/phase4/integration.md`).
+  Regeln für die Texte: Okara gibt es erst mit der Zeitsprung-Weiche (`okara_pachten` = Jacob
+  pachtet, `okara_bullard` = Bullard bohrt dort; sonst Salt Hill/Cordova),
+  Häfen liegen am Golf (Port Ellis); Bullards Söhne sind in Kapitel 2 noch Kinder (Wade 14–17, Cole 10–13);
+  Ada Pell, Aufsichtsrat, Pettibone als Rat und Silas in der Firma nur mit passender Bedingung; politische
+  Ausgänge (Gesetze, Wahlen) entscheidet das Weltmodell – die Texte sagen nur, wohin es sich neigt.
+  Geht Greaves zu Pruett (`k2_greaves_weg`), sperren alle Greaves-Ereignisse (`notMarked`).
 - Effekte: `cash`, `oilStock`, `railTariff`, `strength` (Kraft), `ruth`, `thomas`, `clara` (Beziehung 0–100, 2.7/4.5),
   `teams` (eigene Gespanne +/−), `teamsIdle` (eigene Fuhrwerke stehen bis Runde jetzt+n still; 0.2.15+2),
   befristet für `events.timedRounds` Runden (0.2.15+3): `price` ($ je Barrel beim Trust), `production`
@@ -76,6 +103,12 @@ Kurzreferenz der Felder:
   ist das „Gegenstück“ und erlaubt. Merkzeichen für spätere Kapitel: `content/relevance.yaml` (mit Grund).
   Neue Folgen früher folgenloser Merkzeichen: `bullard_rache_folge`, `kerrigan_zusammenbruch`,
   `wegerecht_moss_versoehnt`; Schutz durch `notMarked` (Diebe, Seil, Streik, Lohn, Schlamm, Lager).
+- Kapitel 3, Story-Bögen (Phase 4): `k3-story-1-daniel.yaml` (Daniel Moss als Bezirksstaatsanwalt),
+  `k3-story-2-thomas.yaml` (Thomas im Unternehmen oder nicht), `k3-story-3-ehe.yaml` (Wendepunkt der Ehe),
+  `k3-story-4-vale.yaml` (Mr. Vales Karte – Auftakt Bogen D, auf sie wartet Ruths zweite Probe).
+  Alle mit `minChapter: 3, maxChapter: 3`; Runden zählen innerhalb des Kapitels. Gewünschte neue Wirkungen
+  stehen als `# TODO-Effekt:` neben einer vorläufigen. `k3-story-3-ehe-k2.yaml` erzählt die Folgen von Ruths
+  Kapitel-2-Bogen (Merkzeichen aus `k2-story-3-ruth.yaml`; Test: `src/sim/k3Story.test.ts`). ENTWURF – Philipp überarbeitet.
 - Auftritt (0.2.15+10): `visitor: silas` – das Ereignis kommt als Besuch an Jacobs Schreibtisch (Person
   klopft, tritt ein, redet); die Figur braucht in `content/figures.yaml` einen Namen
   (`silas: { form: muetze, name: Silas }`). `tableau: true` – kommt als Vollbild-Szene (Geburt, Brand,
@@ -92,3 +125,22 @@ Kurzreferenz der Felder:
   `strike_break` (Streikbrecher), `charity` (Spende für die Stadt), `support_handel`, `support_volksbund`,
   `support_provinz` (Spende/Stimmen für eine Partei), `press_praise`, `press_scandal`. Ein Tankbrand im Lager
   zählt von selbst als `field_fire`. Parteinamen und Programme: `content/politics.yaml`.
+- Kapitel 2 (Phase 4): Jedes Ereignis eines späteren Kapitels trägt `minChapter`/`maxChapter`
+  (z. B. `{ minChapter: 2, maxChapter: 2 }`) – in Kapitel 1 kommt es nie (Test in `src/sim/events.test.ts`).
+  Story-Bögen Ruth, Silas, Nora: `k2-story-1-nora.yaml`, `k2-story-2-silas.yaml`, `k2-story-3-ruth.yaml`
+  (30 Ereignisse). Gewünschte neue Wirkungen stehen dort als Kommentar `# TODO-Effekt: …` neben einer
+  vorläufigen. Runden zählen im Kapitel ab 1. Der Kapitelwechsel setzt alle Merkzeichen mit
+  `marksIntoNextChapter` (src/sim/events.ts) auf Runde 0, damit `delay` ab Kapitelbeginn zählt.
+  ENTWURF – Philipp überarbeitet.
+- Kapitel 3 – Alltag (Phase 4, ENTWURF – Philipp überarbeitet): `k3-alltag-1-marke` (Marke, Tankstellen,
+  Margaret Crane), `-2-boerse` (Börse, Kauf auf Kredit, Thornes Kurspflege), `-3-lobby` (Dunmore, Grady,
+  Steuerabzug, Courier), `-4-seismik` (Dr. Hale, Konsortium, Ashcombe), `-5-stand` (Club, Kirche, Ball,
+  Stiftung), `-6-rivalen` (Bullard verschuldet, Thorne, Pruett), `-7-krise` (volle Tanks, Zinsen,
+  Flugblätter, Bankrun), `-8-familie` (Haskell, Silberhochzeit, Thomas, Clara, Silas) – 59 Ereignisse.
+  Alle mit `conditions: { minChapter: 3, maxChapter: 3 }`; kommen also nie in Kapitel 1 und ändern dort
+  auch keinen Wurf (gemischt werden nur Ereignisse des laufenden Kapitels). Umgekehrt kommen die
+  Kapitel-1-Ereignisse (ohne `minChapter`) nach dem Zeitsprung nicht mehr – auch nicht als Brief oder
+  fester Termin; Kapitel 3 braucht also eigene feste Termine (Abend mit Ruth usw.), falls gewünscht. Wirkungen, die es noch nicht
+  gibt (Marke, Aktien, Ruf, Stand, Clara …), stehen als `# TODO-Effekt: …` neben einer Ersatzwirkung.
+  Offen für den Zeitsprung (Block A): Er muss `chapter` im Spielstand setzen und beim Kapitelwechsel
+  `marksIntoNextChapter` aufrufen, damit `delay` bei Merkzeichen früherer Kapitel ab Kapitelbeginn zählt.

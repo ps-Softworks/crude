@@ -491,6 +491,124 @@ rivals:
       - O'Rourke Drilling
       - Amos Fairweather
 
+# --- 4.10 Andockpunkt: eigener Block diplomacy, bewusst neben rivals statt am Dateiende ---
+# 4.10 Rivalen-Diplomatie und Crane-Nachfolge (GDD §9, §13 Kapitel 2). Eigenes Modul:
+# src/sim/diplomacy*.ts. Erst ab Kapitel unlockChapter; in Kapitel 1 unsichtbar.
+# Texte: content/diplomacy.yaml und content/events/k2-diplomatie.yaml.
+# Alle Zahlen PLATZHALTER, bis Kapitel 2 spielbar ist und Bots darüber laufen.
+diplomacy:
+  unlockChapter: 2
+  # Beziehungen (GDD §9.3): Vertrauen −100…+100 und Groll 0…100 getrennt; Verrat verfällt nie.
+  relations:
+    trustDrift: 2            # Vertrauen wandert je Runde so viele Punkte Richtung 0
+    grudgeDecay: 4           # Groll verblasst je Runde um grudgeDecay × (6 − Nachtragen) / 5
+    respectStart: 50         # Branchen-Respekt 0–100: wie sehr die Rivalen Jacobs Wort trauen
+    betrayalTrust: 60        # Verrat: Vertrauen −60 beim Betrogenen …
+    betrayalGrudge: 50       # … Groll +50 …
+    betrayalRespect: 15      # … und Branchen-Respekt −15 bei allen
+    revengeGrudge: 60        # ab diesem Groll schlägt ein Rivale zurück (GDD §9.5) …
+    revengeChance: 0.3       # … je Runde mit dieser Chance × Aggressivität / 5
+    revengeRounds: 2         # Rache wirkt so viele Runden
+    revengePrice: 0.05       # Margaret/Pruett: Trust zahlt so viel $ je Barrel weniger
+    revengeLeaseCost: 0.15   # Bullard/Delgado: Pachten so viel teurer (Anteil am Bonus)
+    revengeRail: 0.03        # Thorne: Bahntarif dauerhaft so viel $ je Barrel höher
+    revengeRelief: 25        # nach der Rache sinkt der Groll um so viel
+    reconcileGrudge: 20      # Versöhnungsbrief nach einer Rache (Ereignis k2_rache_…): Groll − so viel
+  # Persönlichkeiten (GDD §9.2, Skala 1–5); Bullard steht unter rivals.bullard.
+  # kinds: welche Absprachen der Rivale überhaupt eingeht (price, territory, supply, cross).
+  rivals:
+    margaret: { personality: { risk: 4, aggression: 3, loyalty: 2, grudge: 3, patience: 4 }, kinds: [supply, cross] }
+    pruett:   { personality: { risk: 1, aggression: 2, loyalty: 4, grudge: 3, patience: 5 }, kinds: [price, territory, cross] }
+    bullard:  { kinds: [price, territory, cross] }
+    thorne:   { personality: { risk: 3, aggression: 4, loyalty: 1, grudge: 4, patience: 4 }, kinds: [cross] }
+    delgado:  { personality: { risk: 2, aggression: 2, loyalty: 5, grudge: 2, patience: 3 }, kinds: [] }
+  # Startbeziehung aus Kapitel 1 (Merkzeichen aus content/events/k1-rivalen.yaml).
+  carryOver:
+    bullardPactTrust: 40     # Handschlag mit Bullard
+    bullardFeudGrudge: 50    # Fehde
+    craneLoyalTrust: 15      # Treueerklärung an Cornelius: beide Erben trauen Jacob etwas mehr
+    delgadoMemberTrust: 30   # schon in Kapitel 1 in Delgados Verband
+    thorneContractTrust: 15  # Frachtvertrag mit Thorne
+    thorneRefusedGrudge: 20  # Frachtvertrag abgelehnt
+  # Nachfolge im Crane Trust (GDD §13 Kapitel 2): Margaret Crane gegen Harold Pruett.
+  succession:
+    rounds: 8                # so viele Runden ringen beide um den Aufsichtsrat
+    boardSeats: 12           # Sitze im Aufsichtsrat (nur Anzeige: Anteil × Sitze)
+    startShare: 0.5          # Margarets Anteil im Aufsichtsrat zu Beginn
+    creditDrift: 0.04        # Boom hilft Margaret, Krise Pruett: Anteil += creditDrift × (Kreditklima − 50) / 50
+    noise: 0.06              # Zufall je Runde (± noise / 2)
+    backCost: 1500           # Jacob stellt sich öffentlich hinter einen Erben: kostet so viel $ …
+    backShift: 0.08          # … und verschiebt den Anteil um so viel (× Respekt-Faktor) …
+    backAppointments: 1      # … und so viele Termine; einmal je Runde
+    visitShift: 0.05         # Zusage beim Besuch (Ereignis) verschiebt den Anteil einmalig
+    farewellTrust: 10        # Abschiedsbesuch bei Cornelius: beide Erben trauen Jacob mehr
+    winnerTrust: 25          # Wer gewinnt, vergisst Jacobs Rückhalt nicht …
+    loserGrudge: 20          # … wer verliert, auch nicht
+    doubleGameTrust: 30      # beiden zugesagt: beide trauen Jacob danach so viel weniger
+    congratsTrust: 10        # Glückwunsch an die Siegerin / den Sieger
+    partnerTrust: 20         # Margaret führt: Partneraufschlag ab diesem Vertrauen – oder mit laufendem Liefervertrag/Kreuzbeteiligung
+    margaretPremium: 0.06    # $ je Barrel, die Margarets Trust ihren Partnern mehr zahlt
+    pruettCut: 0.05          # $ je Barrel, die Pruetts Trust allen weniger zahlt (Kostenkürzer) – außer Partnern einer Preisabsprache
+    breakupPremium: 0.04     # zerschlagen: Crane Eastern und Crane Midland bieten gegeneinander, so viel $ je Barrel mehr
+    # Zerschlagung (GDD §7.2): Druck sammelt sich je Runde; ab 1 wird der Trust zerschlagen.
+    breakup:
+      law: 0.2               # je Runde mit Kartellgesetz
+      volksbund: 0.1         # je Runde, in der der Volksbund regiert
+      mood: 0.15             # × (50 − Stimmung) / 50, nur bei Unmut
+      decay: 0.05            # ohne Anlass sinkt der Druck je Runde
+      push: 0.15             # Jacob schiebt an (Unterlagen an die Presse) oder bremst (Freunde in Hallstead)
+      pushCost: 2000         # kostet so viel $ und einen Termin; einmal je Runde
+      maxWithoutLaw: 0.9     # ohne Kartellgesetz keine Zerschlagung
+  # Absprachen (GDD §9.4 Kooperation).
+  pacts:
+    appointments: 1          # ein Vorschlag am Schreibtisch kostet so viele Termine
+    acceptThreshold: 15      # Zusage, wenn Vertrauen + Respekt-Bonus + Treue-Bonus − Groll ≥ diese Zahl
+    respectWeight: 0.5       # Respekt-Bonus = respectWeight × (Respekt − 50)
+    loyaltyWeight: 6         # Treue-Bonus = loyaltyWeight × (Vertragstreue − 3)
+    acceptTrust: 5           # angenommenes Angebot: Vertrauen + so viel
+    declineGrudge: 5         # abgelehntes Angebot: Groll + so viel
+    rounds: 6                # eine Absprache gilt so viele Runden
+    pricePremium: 0.08       # Preisabsprache: so viel $ je Barrel mehr
+    territoryLeaseCost: 0.15 # Gebietsabsprache: Pachten so viel billiger (Anteil am Bonus)
+    supplyPremium: 0.10      # Exklusiver Liefervertrag mit Crane Eastern: so viel $ je Barrel mehr …
+    supplyBullardGrudge: 25  # … aber Bullard verliert seinen Abnehmer (GDD §9.7)
+    crossCost: 3000          # Kreuzbeteiligung: so viel $ für die Aktien des anderen …
+    crossShield: 0.25        # … und so viel Schutz vor Übernahmen (für 4.8)
+    cartelHeat: 3            # Preis- und Gebietsabsprachen mit Kartellgesetz: Spur der Schwere 3
+    cartelMood: 2            # jede laufende Kartellabsprache drückt die Stimmung um so viel (für 4.2)
+    breakChance: 0.03        # Rivale bricht je Runde mit Chance breakChance × (6 − Vertragstreue) + Groll / 1000
+    breakRounds: 2           # wer zuerst bricht, kassiert so viele Runden doppelt
+    offerChance: 0.35        # je Runde schlägt ein Rivale mit dieser Chance selbst etwas vor …
+    offerMaxGrudge: 40       # … aber nur, wenn sein Groll darunter liegt …
+    offerMargin: 10          # … und er selbst fast zusagen würde: acceptScore ≥ acceptThreshold − offerMargin
+    offerRounds: 2           # ein Angebot liegt so viele Runden auf dem Tisch
+  # Übernahmen (GDD §9.4, §9.6): kleine Wildcatter kaufen; Pruett kauft in Krisen auf.
+  takeovers:
+    appointments: 1
+    pricePerWell: 2500       # Kaufpreis je Quelle der Firma …
+    premium: 0.2             # … plus Aufschlag
+    barrelsPerWell: 300      # gekaufte Firma: Förderung je Quelle und Runde …
+    costPerBarrel: 0.45      # … abzüglich Kosten je Barrel; der Rest geht an Jacob
+    crisisCredit: 35         # Krise: Kreditklima unter diesem Wert
+    pruettBuyChance: 0.3     # in der Krise kauft Pruett je Runde mit dieser Chance eine Firma (als Trustchef doppelt)
+    distressPremium: 0.6     # Steht Jacob vor der Pleite, bietet Pruett Imperiumswert × 0,6 …
+    distressMin: 5000        # … mindestens so viel $
+    crisisHelpTrust: 5       # Jacob nimmt die Leute einer von Pruett geschluckten Firma auf: Delgado traut ihm mehr …
+    crisisHelpGrudge: 5      # … Pruett grollt
+  # Delgados Produzentenverband (GDD §9.2, §13 Kapitel 2).
+  guild:
+    foundDelay: 2            # Delgado gründet den Verband so viele Runden nach Kapitelbeginn
+    startMembers: 12         # Mitglieder bei der Gründung
+    fullMembers: 40          # ab so vielen Mitgliedern verhandelt der Verband mit voller Kraft
+    growChance: 0.5          # je Runde kommt mit dieser Chance ein Mitglied dazu (mit Jacob zwei)
+    dues: 150                # Beitrag je Runde
+    premium: 0.06            # $ je Barrel mehr bei voller Kraft (gemeinsam gegen den Posted Price)
+    leaveTrust: 10           # Austritt: Delgado traut Jacob so viel weniger
+    tooBigValue: 600000      # ab diesem Imperiumswert ist Jacob für Delgado selbst ein Trust
+    fightGrudge: 30          # Ausschluss im Streit: Delgados Groll + so viel
+    outsiderLeaseCost: 0.1   # zu groß und nicht (mehr) im Verband: Unabhängige verpachten nur teurer
+# --- Ende 4.10 Andockpunkt (Block diplomacy) ---
+
 # Ereignis-System (2.1): Ereignisse stehen in content/events/, hier nur die Taktung.
 events:
   maxPerRound: 1           # PLATZHALTER: höchstens so viele neue Ereignisse je Runde
@@ -566,6 +684,96 @@ tutorial:
   deeperMinChance: 25        # PLATZHALTER: tiefer bohren nur raten, wenn der Geologe der nächsten Stufe mind. 25 % gibt
   loanRounding: 100          # vorgeschlagene Kredite auf 100 $ aufgerundet (mindestens credit.minLoan)
 
+# 4.16 Andockpunkt – Nebeninvestments und Lobbyist in Hallstead (GDD §8, §10, §11).
+# Erst ab Kapitel 3; in Kapitel 1 unsichtbar. Texte stehen in content/hallstead.yaml.
+# Alle Beträge sind PLATZHALTER im Maßstab eines Konzerns (Kapitel 3), Balance mit Phase 4.
+hallstead:
+  unlockChapter: 3           # ab Kapitel 3 liegt die Hallstead-Mappe auf dem Tisch
+  fallbackElectionEvery: 16  # ohne Weltmodell (4.1): Wahl alle 16 Runden (4 Jahre)
+  bankRateDiscount: 0.02     # eigene Bank: Bankzins 2 Punkte billiger (wie credit.collateralDiscount, wirkt in credit.ts)
+  holdings:
+    sellFee: 0.05            # Verkauf kostet 5 % des Werts (Makler, Abschlag)
+    # Wert je Runde: × (1 + drift + creditBeta·(Kreditklima − 50) + demandBeta·Nachfragewachstum ± noise)
+    # crashDrop: einmal, wenn ein Crash beginnt. shock: Schlag aus heiterem Himmel, je Runde gewürfelt
+    # (crashOnly: nur einmal je Crash gewürfelt, wenn er beginnt – höchstens ein Schlag je Krise).
+    kinds:
+      land:                  # Land in Boomtowns: steigt mit der Förderung, fällt, wenn das Feld versiegt
+        price: 20000
+        single: false
+        yield: 0.012         # Pacht und Mieten je Runde
+        drift: 0.015
+        creditBeta: 0.0005
+        demandBeta: 0.5
+        noise: 0.04
+        crashDrop: 0.15
+        shock: { chance: 0.04, drop: 0.7, crashOnly: false }   # Feld versiegt: −70 %
+      bahn:                  # Eisenbahnaktien: hohe Erträge im Boom, schwere Verluste im Crash
+        price: 50000
+        single: false
+        yield: 0.015
+        drift: 0.005
+        creditBeta: 0.002
+        demandBeta: 0.3
+        noise: 0.06
+        crashDrop: 0.35
+        shock: { chance: 0, drop: 0, crashOnly: false }
+      auto:                  # Autoaktien: wachsen mit der Nachfrage, stürzen im Crash am tiefsten
+        price: 50000
+        single: false
+        yield: 0.004
+        drift: 0.012
+        creditBeta: 0.003
+        demandBeta: 1.5
+        noise: 0.1
+        crashDrop: 0.45
+        shock: { chance: 0, drop: 0, crashOnly: false }
+      zeitung:               # eigene Zeitung: kostet eher, bringt Einfluss (Kampagnen)
+        price: 150000
+        single: true
+        yield: -0.004
+        drift: 0
+        creditBeta: 0
+        demandBeta: 0
+        noise: 0.02
+        crashDrop: 0.1
+        shock: { chance: 0, drop: 0, crashOnly: false }
+      bank:                  # eigene Bank: billige Kredite, Bankrun-Gefahr in jeder Kreditkrise
+        price: 500000
+        single: true
+        yield: 0.02
+        drift: 0.004
+        creditBeta: 0.001
+        demandBeta: 0
+        noise: 0.03
+        crashDrop: 0.2
+        shock: { chance: 0.35, drop: 0.6, crashOnly: true }    # Bankrun: 35 % je Kreditkrise (einmal gewürfelt, wenn sie beginnt), −60 %
+  newspaper:
+    credibilityStart: 80     # Glaubwürdigkeit der eigenen Zeitung (0–100)
+    campaignCost: 15         # jede Kampagne kostet so viel Glaubwürdigkeit
+    recovery: 4              # Runde ohne Kampagne: +4
+    moodPerCampaign: 3       # Stimmung (Weltmodell) +3 bei voller Glaubwürdigkeit
+    favorsPerCampaign: 1     # Gefallen bei voller Glaubwürdigkeit
+    scratchedBelow: 60       # Glaubwürdigkeit unter 60: „Die Leser werden misstrauisch“
+    lostBelow: 30            # unter 30: „Niemand glaubt dem Blatt mehr“
+  lobby:
+    favorsPerCompetence: 0.5 # Gefallen je Runde = Kompetenz × 0,5 × Regierungsfaktor
+    government: { handel: 1.25, volksbund: 0.75, provinz: 1.0 }
+    maxFavors: 20            # mehr Gefallen schuldet einem niemand
+    pushCost: 2              # Gesetz fordern oder verhindern: 2 Gefallen …
+    pushStep: 25             # … für 25 Punkte Druck (−100 bis +100)
+    waterCost: 3             # verwässern: 3 Gefallen …
+    waterStep: 0.2           # … für 20 % weniger Wirkung
+    maxWater: 0.6            # höchstens 60 % weniger Wirkung
+    decay: 0.1               # Druck und Verwässerung verlieren je Runde 10 %
+    maxShift: 0.3            # voller Druck ändert die Chance eines Gesetzes um höchstens 30 Punkte (Andockpunkt 4.3)
+    bribe: { cost: 10000, favors: 4, heat: 10 }          # Umschlag: Geld gegen Gefallen, macht Hitze
+    donation: { min: 10000, perFavor: 10000, winMultiplier: 2 }  # Wahlkampfspende: gewinnt die Partei, 2 Gefallen je 10.000 $
+    drunkChance: 0.2         # Trinker: Runde ohne Gefallen
+    genieSpread: 0.5         # Genie: Gefallen ±50 % je nach Laune
+    candidates:
+      pryce:  { competence: 4, hireCost: 15000, salary: 6000, trait: gewissenhaft }
+      lowell: { competence: 3, hireCost: 8000,  salary: 4000, trait: genie }
+      tibbs:  { competence: 2, hireCost: 2000,  salary: 2000, trait: trinker }
 # Weltmodell (4.1, GDD §7.1): neun Weltgrößen, je Runde (Quartal) fortgeschrieben
 # in src/sim/world.ts. Indizes: Nachfrage, Förderkapazität und Weltpreis starten
 # bei 1; Kreditklima, Stimmung, Außenspannung, Technik und Nationalismus laufen
@@ -791,3 +999,670 @@ worldModel:
     qasirHigh: 62            # 4.4: Qasir so verstimmt → Meldung „Verstimmung in Qasir“ (knapp unter foreign.qasir.embargoFrom)
     pollFrom: 2              # 4.2: so viele Runden vor der Wahl druckt die Zeitung eine Umfrage
     pollClose: 0.015         # liegen die beiden Ersten näher als 1,5 Prozentpunkte: „Kopf an Kopf“ (gut jede vierte Umfrage; dann kippt eine einzelne Tat die Wahl am ehesten)
+
+# Raffinerie und Produktmix (4.6, GDD §6) – ab Kapitel 2, in Kapitel 1 unsichtbar.
+# Leistung = Kapazität × Technikstufe × Produktmix. Rohöl, das am Rundenende noch im
+# Tank steht, geht bis zur eingestellten Menge in die Raffinerie; die Produkte gehen
+# an den Großhandel. Logik: src/sim/refinery.ts, Texte: content/refinery.yaml.
+# Alle Werte PLATZHALTER bis zu den Bot-Läufen für Kapitel 2.
+refinery:
+  unlockChapter: 2         # GDD §13: Raffinerie und Produktmix sind neue Mechanik in Kapitel 2
+  buildCost: 150000        # $ für die erste Destillationsanlage (gut eingestellt in ~10 Runden bezahlt, achtlos in ~30; tools/raffinerieLaeufe.ts)
+  buildRounds: 3           # Bauzeit in Runden
+  unitCapacity: 25000      # bbl Rohöl je Runde und Ausbaustufe
+  maxLevel: 4              # höchstens so viele Ausbaustufen
+  expandCost: 80000        # $ je weitere Ausbaustufe
+  expandRounds: 2          # Bauzeit je Ausbau (die alte Anlage läuft weiter)
+  upkeepPerLevel: 2500     # Fixkosten je fertiger Ausbaustufe und Runde (Löhne, Kessel, Wache)
+  operatingCost: 0.40      # $ je verarbeitetem Barrel Rohöl (Kohle, Chemikalien, Fässer)
+  assetShare: 0.6          # Buchwert der Anlage im Imperiumswert (Anteil der Baukosten)
+  fire:                    # GDD §6: Raffinerien brennen
+    chance: 0.03           # je Runde, in der die Anlage läuft
+    repairCost: 15000      # $
+    repairRounds: 2        # so lange steht sie still
+  sour:                    # GDD §6: saures Rohöl braucht mehr Verarbeitung und bringt weniger
+    yieldLoss: 0.05        # zusätzlicher Verlust bei 100 % saurem Öl
+    costAdd: 0.15          # $ je Barrel mehr bei 100 % saurem Öl
+  crudeRef: 1.00           # Bezugs-Rohölpreis: Produktpreise hängen zu crudeLink am Posted Price
+  worldDefaults:           # Bezugswelt: typische Welt zu Beginn von Kapitel 2 (Median aus 300 Welten nach 40 Runden,
+                           # npm run welt); gilt auch, solange es kein Weltmodell gibt. Skalen wie state.worldModel (4.1).
+    tech: 15               # Technikstand 0–100 (Kampagnenstart 6–10, nach 40 Runden ~12–17)
+    tension: 20            # Außenspannung 0–100
+    demand: 1.55           # Nachfrage-Index der Welt (effectiveDemand; Start 1, nach 40 Runden ~1,55)
+  techs:                   # GDD §6: Technikstufen; Kapitel 2 kennt nur Stufe I
+    - stage: 1
+      label: Destillation
+      loss: 0.05           # Verlust beim Destillieren (Gas, Rückstand)
+      mix:                 # Spielraum je Produkt als Anteil der Ausbeute; Benzin ist Nebenprodukt (ca. 20 %)
+        kerosene: { min: 0.35, max: 0.60 }
+        lubricant: { min: 0.05, max: 0.15 }
+        fuelOil: { min: 0.10, max: 0.35 }
+        gasoline: { min: 0.15, max: 0.20 }
+  startMix: { kerosene: 0.55, lubricant: 0.10, fuelOil: 0.15, gasoline: 0.20 }
+  # Je Produkt: Grundpreis in $ je Barrel, Nachfrage des Großhandels in bbl je Runde (in der Bezugswelt),
+  # Preiselastizität, Bindung an den Rohölpreis, Preisgrenzen (Anteil am Grundpreis).
+  # Die Nachfrage aller Produkte zusammen (23.000 bbl) entspricht etwa der Ausbeute EINER
+  # Ausbaustufe (25.000 bbl Rohöl − 5 % Verlust): Schon in Stufe I drückt ein schiefer Mix
+  # oder zu viel Menge den Preis; erst wenn die Welt mehr Öl braucht, lohnt der Ausbau.
+  # Der Startmix (viel Kerosin, viel Benzin) liegt bewusst daneben.
+  # Wachstum: Das allgemeine Wachstum trägt der Nachfrage-Index der Welt (trend.demand =
+  # Exponent auf Welt-Nachfrage / worldDefaults.demand). perYear ist nur die Verschiebung
+  # des Produkts gegenüber dieser allgemeinen Ölnachfrage (Kerosin verliert Anteile,
+  # Benzin gewinnt); tech und tension wirken je 50 bzw. 100 Punkte über der Bezugswelt.
+  products:
+    kerosene:              # dominiert zu Beginn, verliert mit der Elektrifizierung Anteile
+      basePrice: 2.20
+      demand: 11000
+      elasticity: 1.0
+      crudeLink: 0.3
+      floor: 0.4
+      ceiling: 1.2
+      trend: { refYear: 98, perYear: -0.02, tech: -0.15, tension: 0, war: 0, demand: 1, min: 0.2 }
+    lubricant:             # Maschinen und Eisenbahn: kleine Menge, guter Preis, schnell gesättigt
+      basePrice: 3.60
+      demand: 3000
+      elasticity: 1.2
+      crudeLink: 0.2
+      floor: 0.4
+      ceiling: 1.2
+      trend: { refYear: 98, perYear: 0.0, tech: 0.10, tension: 0, war: 0.1, demand: 1, min: 0.2 }
+    fuelOil:               # Marine, Eisenbahn, Industrie
+      basePrice: 1.10
+      demand: 5500
+      elasticity: 1.0
+      crudeLink: 0.5
+      floor: 0.4
+      ceiling: 1.2
+      trend: { refYear: 98, perYear: 0.0, tech: 0.05, tension: 0.8, war: 0.6, demand: 1, min: 0.2 }
+    gasoline:              # Nebenprodukt; gewinnt mit der Automobilisierung Anteile
+      basePrice: 1.00
+      demand: 3500
+      elasticity: 1.3
+      crudeLink: 0.3
+      floor: 0.3
+      ceiling: 1.2
+      trend: { refYear: 98, perYear: 0.08, tech: 0.30, tension: 0, war: 0.3, demand: 1, min: 0.2 }
+
+# 4.7 Fernleitungen (GDD §6, Kapitel 2): große Pipelines vom Feld zum Hafen oder Bahnhof.
+# Route planen (gerade Trasse über die Karte) → vermessen → Wegerechte je Ranch verhandeln
+# (Briefe der Landbesitzer, Querköpfe, Stadtrat, Thornes Bahnkreuzung) → Bau über 1–4 Runden.
+# Eine fertige Leitung zum Hafen umgeht Thornes Bahn: Ihr Öl fließt über den Weg „Pipeline“
+# (transport.pipeline.costPerBarrel), Thorne senkt den Tarif (Druck) – und schickt Saboteure.
+# Eine Leitung zum Bahnhof ist billiger und ruhiger, bringt das Öl aber nur auf Thornes Gleise:
+# Sie erhöht die Kapazität des Wegs „Bahn“, jedes Barrel zahlt weiter Thornes Bahntarif. Code: src/sim/bigPipeline.ts. Alle Zahlen PLATZHALTER bis zur Balance von Kapitel 2.
+bigPipelines:
+  fromChapter: 2            # in Kapitel 1 unsichtbar
+  destinations:             # Landmarken aus content/map.yaml
+    - { id: hafen, bypassesRail: true }              # Hafen Port Ellis: an Thornes Bahn vorbei – Weg „Pipeline“
+    - { id: bahnhof_portellis, bypassesRail: false } # Bahnhof Port Ellis: Öl bleibt auf Thornes Gleisen – Weg „Bahn“ zu seinem Tarif
+  surveyPerUnit: 60         # Vermessung je Karteneinheit Trasse
+  costPerUnit: 3000         # Bau je Karteneinheit (Salt Hill → Hafen ≈ 17 Einheiten ≈ 51.000 $)
+  unitsPerRound: 5          # Baufortschritt je Runde …
+  minRounds: 1              # … aber immer 1–4 Runden (GDD §6)
+  maxRounds: 4
+  capacity: 120000          # bbl je Runde und fertiger Fernleitung (Hafen: Weg „Pipeline“, Bahnhof: Weg „Bahn“)
+  upkeepPerUnit: 40         # Streckenwärter je Einheit und Runde
+  maxProjects: 3
+  smallUpgradeCost: 8000    # Anschluss an die kleine Pipeline aus Kapitel 1: ihre Strecke wird aufgeweitet (Wegerechte hat Jacob schon)
+  rights:
+    pricePerArea: 400       # fairer Preis eines Wegerechts je Einheit² Ranchfläche …
+    minPrice: 500           # … mindestens so viel
+    acceptBase: 0.55        # Grundchance, dass ein faires Angebot angenommen wird
+    offerFactor: { low: 0.7, fair: 1.0, generous: 1.6 }
+    offerBonus: { low: -0.25, fair: 0, generous: 0.25 }
+    landowner: { neutral: 0, gierig: -0.10, verschuldet: 0.15, misstrauisch: -0.15, fromm: -0.05 }
+    moodWeight: 0.005       # je Punkt öffentlicher Stimmung über/unter 50 (Weltmodell 4.1)
+    reputationBonus: 0.10   # Jacob gilt als anständiger Verhandler (Ereignis „Querkopf“)
+    thorneMeddling: 0.10    # Thorne hetzt die Landbesitzer gegen eine Leitung zum Hafen auf
+    holdoutAfter: 2         # nach so vielen Absagen (oder einer Absage auf ein großzügiges Angebot) stellt er sich quer
+    holdoutDemand: 3        # der Querkopf verlangt das Dreifache
+    detourLength: 2         # Umweg um eine Ranch: so viele Einheiten mehr Trasse
+    townPrice: 3000         # Stadtrat Port Ellis: Durchleitung durch die Stadt
+    townAccept: 0.6
+    railDemand: 25000       # Thornes Preis für die Kreuzung seiner Gleise
+    courtCost: 3000         # Klage auf Kreuzungsrecht beim Bezirksrichter …
+    courtRounds: 2          # … dauert so lange …
+    courtChance: 0.5        # … und geht so oft gut aus (+ politischer Einfluss / 200)
+    expropriateInfluence: 60 # Enteignung nur mit politischem Einfluss ab 60 (GDD §6, §10)
+    expropriateShare: 0.5   # Entschädigung: halber fairer Preis
+  sabotage:
+    building: 0.06          # Chance je Runde im Bau …
+    ready: 0.08             # … und im Betrieb …
+    perUnit: 0.003          # … plus so viel je Einheit Trasse
+    thorneFactor: 1.5       # Leitung zum Hafen: Thorne schickt Leute
+    thorneFeudFactor: 1.5   # … noch mehr, wenn Jacob seinen Unterhändler hinausgeworfen hat
+    truceFactor: 0.5        # Waffenstillstand mit Thorne
+    rivalFactor: 1.5        # Fehde mit Bullard
+    revengeFactor: 1.5      # nach Einschüchterung der Landbesitzer
+    guardsPerUnit: 15       # Wachleute je Einheit und Runde …
+    guardsFactor: 0.3       # … senken die Chance auf 30 %
+    repairShare: 0.04       # Reparatur: Anteil der Baukosten
+    repairRounds: 1         # so lange steht sie still (im Bau: eine Runde Verzug)
+    maxChance: 0.6
+  thorne:
+    cut: 0.04               # Tarifsenkung je Runde bei vollem Druck ($ je Barrel): vom Starttarif 0,25 $ fünf Runden bis zum Boden
+    minTariff: 0.08         # eigener Boden in Kapitel 2 (tiefer als transport.thorne.minTariff aus Kapitel 1)
+    fullPressureCapacity: 60000 # ab so viel fertiger Kapazität zum Hafen ist der Druck voll
+  carrier:                  # Transportpflicht-Gesetz (4.3): fremdes Öl gegen Gebühr
+    fee: 0.05
+    volume: 20000
+  assetShare: 0.5           # Fernleitungen zählen mit diesem Anteil ihrer Baukosten zum Imperiumswert
+
+# 4.8 Aktien, Aufsichtsrat, Anleihen (GDD §8) – ab Kapitel 2, in Kapitel 1 unsichtbar.
+# Regeln: src/sim/stocks.ts, Zahlen lesen: src/sim/stocksBalance.ts, Namen und Texte: content/stocks.yaml.
+# Der Börsengang selbst fällt am Ende von Kapitel 1 (chapter.ipo). Alle Werte PLATZHALTER bis zu den Bot-Läufen von Kapitel 2.
+stocks:
+  fromChapter: 2             # ab diesem Kapitel gibt es Aktienbuch und Anleihen
+  totalShares: 1000          # Aktien beim Börsengang (Jacob behält 1 − verkaufter Anteil)
+  # Kurs = Imperiumswert / Aktien × Stimmung. Die Stimmung (1 = fair) folgt Gewinn, Dividende,
+  # Kreditklima (4.1: credit 0–100, 50 = normal) und öffentlicher Stimmung (mood) und zieht zurück zur 1.
+  price:
+    min: 1                   # tiefer fällt eine Aktie nie (in $)
+    sentimentMin: 0.4
+    sentimentMax: 1.8
+    profitWeight: 0.5        # Wertzuwachs der Runde (Anteil, höchstens ±0,2) × dieses Gewicht
+    creditWeight: 0.06       # Boom an der Börse hebt, Kreditklemme drückt (je voller Ausschlag)
+    moodWeight: 0.04         # schlechte Stimmung im Land drückt
+    noise: 0.04              # Gerüchte: zufälliger Ausschlag je Runde (±)
+    reversion: 0.15          # so viel des Abstands zur 1 holt die Stimmung je Runde auf
+  dividend:
+    rates: [0.01, 0.03]      # wählbare Dividende: Anteil am Börsenwert (klein, groß)
+    graceRounds: 4           # so lange ohne Dividende bleibt der Kurs ruhig (ein Jahr)
+    missPenalty: 0.04        # danach je Runde ohne Dividende: Stimmung −0,04
+    bonus: 0.03              # Runde mit Dividende: Stimmung +0,03
+  issue:
+    maxShare: 0.2            # höchstens so viele neue Aktien je Ausgabe (Anteil an allen Aktien)
+    discount: 0.1            # neue Aktien gehen mit 10 % Abschlag auf den Kurs weg (Bankprovision)
+    dilutionPenalty: 0.5     # Stimmung − Anteil neuer Aktien × 0,5
+  buyback:
+    premium: 0.1             # Rückkauf kostet Kurs + 10 %
+    bonus: 0.2               # Stimmung + Anteil zurückgekaufter Aktien × 0,2
+  # Aufsichtsrat: 5–9 Sitze (GDD §8). Sitze = seatsBase + verkaufter Anteil × seatsPerShare.
+  board:
+    seatsMin: 5
+    seatsMax: 9
+    seatsBase: 4
+    seatsPerShare: 6         # 20 % → 5 Sitze, 49 % → 7 Sitze
+    loyalFrom: 50            # ab dieser Treue (0–100) stimmt ein Rat mit Jacob
+    weight: 0.6              # loyale Räte bringen diesen Anteil der Stimmen der freien Aktionäre mit
+    gain: 3                  # Treue je Runde, in der die Agenda erfüllt ist …
+    loss: 4                  # … und je Runde, in der sie verletzt ist
+    maxDebtRatio: 0.3        # Agenda Sicherheit: Schulden höchstens 30 % des Imperiumswerts
+    courtCost: 2000          # „Rat umstimmen“: Essen, Gefälligkeiten
+    courtGain: 12            # … bringt so viel Treue (höchstens einmal je Runde)
+    bigDecision: 0.25        # Anleihen über 25 % des Firmenwerts brauchen die Mehrheit (neue Aktien immer)
+  # Forderungen des Aufsichtsrats: der unzufriedenste Rat verlangt etwas mit Frist.
+  demands:
+    chance: 0.35             # Chance je Runde ohne offene Forderung
+    dueRounds: 3             # Frist in Runden
+    dividendShare: 0.02      # Forderung Dividende: so viel vom Börsenwert
+    debtCut: 0.25            # Forderung Schulden: um ein Viertel senken
+    buybackShare: 0.03       # Forderung Rückkauf: so viele Aktien
+    issueShare: 0.1          # Thornes Mann fordert so viele neue Aktien
+    fulfillGain: 15          # zugesagt und erfüllt: Treue +15
+    quietGain: 5             # erfüllt, ohne vorher zuzusagen: nur +5 (die Zusage zählt)
+    failLoss: 20             # zugesagt, aber nicht erfüllt – oder die Zusage zurückgezogen: −20
+    rejectLoss: 10           # abgelehnt oder ignoriert: −10
+    # Thornes Mann fordert eigens (nicht als „unzufriedenster Rat“, seine Treue ist immer 0):
+    spyChance: 0.15          # Chance je Runde ohne offene Forderung, solange Thorne im Rat sitzt
+    spyPenalty: 0.08         # abgelehnt oder ignoriert: Thornes Zeitungen streuen Gerüchte, Stimmung der Börse −0,08
+  # Thorne und die Strohmänner (GDD §8, §13: „zu viele Aktien verkauft – Thorne kauft sich über Strohmänner ein“).
+  thorne:
+    minOutside: 0.4          # erst wenn mindestens 40 % der Aktien nicht bei Jacob liegen, kann Thorne unbemerkt kaufen
+    buyChance: 0.5           # Chance je Runde, dass er zukauft
+    buyShare: 0.03           # so viele Aktien (Anteil an allen) je Kauf
+    hostileFactor: 1.5       # hat Jacob ihn in Kapitel 1 abgewiesen (hostileMarks), kauft er so viel mehr
+    hostileMarks: [thorne_abgelehnt]
+    cheapBelow: 0.8          # Stimmung unter 0,8: Die Aktie ist billig – Thorne kauft doppelt
+    floatKeep: 0.05          # so viel bleibt immer bei den Kleinaktionären
+    maxStake: 0.45           # mehr will er nicht
+    seatPer: 0.1             # je 10 % Anteil bekommt Thorne einen Sitz im Aufsichtsrat (sein Mann)
+    maxSeats: 3
+    investigateCost: 1500    # Detektei durchleuchtet das Aktienbuch: alle Strohmänner fliegen auf
+    pressure: 2              # je Runde und je Mann Thornes im Rat verliert jeder andere Rat so viel Treue (er bearbeitet sie)
+    blockFrom: 0.25          # Sperrminorität: ab diesem Anteil blockiert Thorne Rückkäufe (Jacobs Mittel im Stellvertreterkampf)
+  # Misstrauensvotum und Stellvertreterkampf (GDD §8): nur wenn die Kontrolle unter 50 % liegt.
+  vote:
+    lookback: 2              # Kurs der letzten 2 Runden …
+    dropFrom: 0.15           # … um 15 % gefallen, oder …
+    moodBelow: 30            # … die Stimmung im Land (Skandale) unter 30
+    proxyRounds: 2           # Stellvertreterkampf: so viele Runden Zeit
+    pressCost: 1500          # Kleinaktionäre über die Presse mobilisieren …
+    pressBonus: 0.04         # … bringt so viel Kontrolle (bis zum Ende des Kampfs)
+  # Anleihen (GDD §8: ab Kapitel 2, große Summen, fester Zins, Zinsen laufen auch in Krisen).
+  bonds:
+    sizes: [10000, 25000, 50000]
+    terms: [8, 12]           # Laufzeit in Runden (2 oder 3 Jahre)
+    baseRate: 0.05           # Jahreszins …
+    spreads: { A: 0, B: 0.01, C: 0.03 }  # … plus Aufschlag nach Rating (D: niemand zeichnet)
+    climateSpread: 0.03      # … plus bis zu 3 Punkte in der Kreditklemme (credit 0), minus bis zu 3 im Boom (credit 100)
+    minRate: 0.03
+    fee: 0.02                # Bankprovision beim Ausgeben
+    perRound: 1              # höchstens so viele neue Anleihen je Runde
+    limitShare: 0.5          # Rahmen: alle Anleihen zusammen höchstens 50 % des Imperiumswerts …
+    limitMin: 25000          # … aber mindestens so viel (damit auch eine kleine Firma eine Anleihe bekommt)
+    loadSpread: 0.03         # Zinsaufschlag: je voll ausgeschöpftem Rahmen +3 Punkte (Anleihen-Quote nach der neuen Anleihe)
+
+# Personal (4.9, GDD §11 und §3): Sekretärin/Prokurist und Fixer ab Kapitel 2, Richtlinien
+# statt Mikromanagement, Loyalität und Löhne. Namen, Merkmale und Texte stehen in
+# content/staff.yaml, die Regeln in src/sim/staff.ts und src/sim/staffRound.ts.
+# Alles PLATZHALTER – Balance klärt sich mit den Bot-Läufen für Kapitel 2.
+staff:
+  unlockChapter: 2           # ab Kapitel 2 sichtbar (GDD §11); in Kapitel 1 gibt es kein Personal
+  hireAppointments: 1        # Vorstellungsgespräch: 1 Termin (GDD §3: Besucher empfangen)
+  recognitionAppointments: 1 # persönliche Anerkennung: 1 Termin (GDD §11)
+  candidatesPerRole: 2       # so viele Bewerber je Stelle liegen auf dem Tisch
+  candidateRefreshRounds: 4  # alle 4 Runden kommen neue Bewerbungen
+  revealRounds: 4            # so lange ist die Kompetenz nur ungefähr (±1) sichtbar (GDD §11)
+  namePool: 6                # Namen je Stelle in content/staff.yaml (muss passen)
+  candidate:                 # wie Bewerber gewürfelt werden
+    competence: { min: 1, max: 5 }
+    ambition: { min: 1, max: 5 }
+    secondTraitChance: 0.35  # Anteil mit zwei Merkmalen (GDD §11: 1–2)
+  wage:
+    secretary: 120           # $ je Runde bei Kompetenz 3, Lohnstufe „Markt“
+    fixer: 220
+    competenceStep: 0.15     # je Kompetenzstufe über/unter 3: ±15 %
+    creditSensitivity: 0.004 # Lohnniveau folgt dem Kreditklima (4.1): je Punkt über 50 +0,4 %
+    severanceRounds: 1       # Abfindung bei Entlassung: ein Rundenlohn
+    # Lohn-Richtlinie (GDD §11 „Löhne 10 % über Markt“): Faktor und Loyalität je Runde.
+    levels:
+      - { id: knapp, factor: 0.9, loyalty: -3 }
+      - { id: markt, factor: 1.0, loyalty: 0 }
+      - { id: gut, factor: 1.1, loyalty: 2 }
+      - { id: grosszuegig, factor: 1.25, loyalty: 4 }
+    startLevel: markt
+  loyalty:
+    start: 60                # Loyalität 0–100 beim Einstellen
+    recognition: 8           # persönliche Anerkennung (ein Termin, einmal je Runde und Person)
+    cut: 10                  # Lohnkürzung: sofort minus
+    scapegoat: 6             # ein Kollege wird entlassen: die anderen minus
+    illegalOrder: 15         # Gewissenhafte bekommen einen schmutzigen Auftrag
+    conscience: 2            # Gewissenhafte bei hoher Hitze: je Runde minus (sie sehen, was läuft)
+    ambitionDrift: 1         # je Ehrgeiz über 3: minus je Runde (keine Beförderung)
+    genieSwing: 4            # Genie ist launisch: ± so viel je Runde
+    loyalFloor: 40           # „Treu bis zum Tod“ fällt nie darunter
+    poachBelow: 35           # darunter kann ein Rivale abwerben …
+    poachChance: 0.15        # … mit dieser Chance je Runde (Gierige doppelt)
+    betrayBelow: 25          # darunter und …
+    betrayAmbition: 4        # … ab diesem Ehrgeiz droht Verrat …
+    betrayChance: 0.2        # … mit dieser Chance je Runde
+    words:                   # Zustandswörter: ab diesem Wert
+      treu: 75
+      zufrieden: 50
+      unzufrieden: 25        # darunter: abtrünnig
+  secretary:
+    extraAppointments: 1     # Termine mehr je Runde (GDD §3: 5, mit Sekretärin bis zu 7) …
+    extraFromCompetence: 4   # … ab dieser Kompetenz einer mehr
+    drunkChance: 0.2         # Trinker: Aussetzer in einer Runde (kein Extra-Termin, keine Post, kein Verkauf)
+    judgementNoise: 200      # $ Fehleinschätzung je Antwort bei Kompetenz 1 (bei 5: keine)
+    greedChance: 0.25        # Gierig: Chance je Verkauf, dass ein Teil verschwindet …
+    greedSkim: 0.1           # … so viel vom Erlös
+    charmBonus: 0.03         # Charmant: $ je Barrel mehr beim Verkauf nach Regel
+    mailSpendLimit: 100      # Start-Richtlinie: Antworten bis 100 $ darf das Vorzimmer selbst geben
+  sales:
+    minPrice: 1.0            # Start-Richtlinie: Mindestpreis beim Trust in $ je Barrel
+    share: 0.5               # Start-Richtlinie: so viel vom Tank je Runde
+    misjudgeChance: 0.3      # bei Kompetenz 1 hält sich das Vorzimmer nicht an die Regel (bei 5: nie; Spieler doppelt)
+  fixer:
+    defense: 0.6             # Sabotage gegen Jacob × (1 − defense × Kompetenz/5)
+    heatDecay: 5             # Hitze sinkt je Runde …
+    heatDecayDiscreet: 10    # … beim Verschwiegenen schneller
+    scandalFrom: 60          # ab dieser Hitze droht ein Skandal …
+    scandalChance: 0.25      # … mit dieser Chance je Runde
+    scandalFine: 500         # Geldstrafe und Schweigegeld
+    scandalCool: 30          # danach ist es so viel kühler
+    leakHeat: 30             # Verrat eines Fixers / Whistleblower: Hitze plus
+    eventHeat: 15            # ein Brief schickt den Fixer los (Merkzeichen fixer_auftrag_brief): Hitze plus
+    words:                   # Hitze als Wort: ab diesem Wert
+      lauwarm: 20
+      heiss: 60
+    orders:                  # Aufträge (GDD §11: Spionage, Sabotage – und Hitze)
+      spy: { cost: 150, heat: 10, successMin: 0.4, successMax: 0.95 }
+      sabotage: { cost: 300, heat: 25, successMin: 0.25, successMax: 0.85, rivalCash: 400, delay: 1, caughtHeat: 15 }
+# 4.11 Ermittler (GDD §4 „Hitze & Schattenbuch“, §10 „Ermittlungen & Justiz“), ab Kapitel 2.
+# Spuren: Merkzeichen früherer schmutziger Entscheidungen mit Schwere 1–5; ihre Summe ist die Hitze.
+# witness: true = ein Zeuge – verblasst nie und bringt Delaney zu Beginn der Vorermittlung Beweise.
+# Texte im Schattenbuch: content/investigation.yaml. Delaneys Auftritte: content/events/k2-delaney.yaml.
+# PLATZHALTER Kapitel 2: Beträge grob geschätzt (Kapitel 2 rechnet mit größerem Geld), Balance klärt sich mit 4.x.
+investigation:
+  fromChapter: 2
+  traces:
+    - { mark: moss_betrogen, severity: 3 }                 # Moss' Pachtpapier für 100 $
+    - { mark: silas_betrogen, severity: 2 }                # frisierte Bücher für Silas
+    - { mark: silas_kronzeuge, severity: 2, witness: true } # Silas redet in jedem Saloon
+    - { mark: sheriff_bezahlt, severity: 2 }               # Schutzgeld an Sheriff Tatum
+    - { mark: nora_bestechung, severity: 2 }               # Bestechung der Presse
+    - { mark: courier_gekauft, severity: 1 }               # gekaufter Zeitungsbericht
+    - { mark: bullard_rache, severity: 3 }                 # Bullards Seil anschneiden lassen (Sabotage)
+    - { mark: vale_geld, severity: 1 }                     # Geld unbekannter Herkunft (Mr. Vale)
+    - { mark: thorne_exklusiv, severity: 1 }               # geheimer Exklusivvertrag mit der Bahn
+  goodMarks: [moss_fair, silas_fair, nora_ehrlich, sheriff_umgangen, eli_versorgt]  # Leumund vor Gericht
+  worldFallback: { mood: 50, government: null }  # Ersatz bis zum Weltmodell (4.1)
+  fadeEvery: 8           # GDD §4: −1 Schwere je Spur alle 8 Runden, solange niemand ermittelt
+  jumpFade: 1            # Zeitsprung vor Kapitel 2: so viele Stufen verblassen auf einmal (Zeugen nicht)
+  rumorAt: 3             # Hitze ab hier: Gerücht (Nora fragt nach)
+  rumorRounds: 2         # so viele Runden bleibt es mindestens beim Gerücht, bevor Delaney ermittelt
+  probeAt: 5             # Hitze ab hier: Vorermittlung (Delaney kommt)
+  chargeAt: 60           # Beweise (0–100) ab hier: Anklage
+  heatWords: { warm: 3, hot: 5, glowing: 9 }  # Hitze als Wort im Schattenbuch (darunter: kühl)
+  trialDelay: 2          # Runden von der Anklage bis zum Urteil
+  cooldown: 4            # Runden nach einem Fall, bevor ein neuer beginnen kann
+  evidence:
+    perHeat: 2.5         # Beweise je Runde je Hitzepunkt
+    perWitness: 15       # einmalig je Zeuge zu Beginn der Vorermittlung
+    lawyerCut: 3         # weniger Beweise je Runde je Anwaltsstufe
+    transferredDecay: 5  # Beweise, die je Runde verfallen, solange Delaney versetzt ist
+    hostileFactor: 1.3   # hinausgeworfen: Delaney gräbt schneller
+    divertedFactor: 0.75 # Nora schreibt über Crane: Delaney schaut auch dorthin
+    candid: 10           # offen geantwortet: sofort so viel mehr Beweise …
+    slipChance: 0.3      # Interview: Risiko eines Versprechers …
+    slip: 10             # … der Delaney zur Vorermittlung so viele Beweise bringt
+  trial:
+    base: 0.25           # Grundchance einer Verurteilung
+    perEvidence: 0.006   # + je Beweispunkt
+    perLawyer: 0.08      # − je Anwaltsstufe
+    perGood: 0.05        # − je Leumund-Merkzeichen
+    moodWeight: 0.004    # + je Punkt Stimmung unter 50 (− darüber)
+    interview: 0.08      # − nach einem Interview mit Nora
+    min: 0.05
+    max: 0.9
+  fine:
+    perHeat: 800         # $ Strafe je Hitzepunkt der offenen Spuren
+    candidFactor: 0.5    # offen geantwortet: halbe Strafe
+    heavyAt: 12          # Hitze ab hier: schwere Strafe (Zwangsverkauf) …
+    heavyFactor: 2       # … und doppelte Geldstrafe
+  lawyer:
+    costPerLevel: 150    # $ je Runde je Stufe
+    max: 5               # GDD §10: Anwälte Qualität 1–5
+    early: 1             # Anwalt auf Abruf (Antwort auf Delaneys Ankunft)
+    summoned: 2          # auf den Anwalt verwiesen (Antwort auf Delaneys Besuch)
+  destroy:
+    cost: 1500           # Spur vernichten
+    cut: 2               # so viele Stufen weniger
+    chance: 0.35         # Chance, dass jemand zusieht: neue Spur „Vertuschung“ …
+    severity: 2          # … mit dieser Schwere …
+    evidence: 10         # … und, wenn ermittelt wird, so viele Beweise mehr
+  witness:
+    cost: 3000           # Zeugen kaufen
+    evidenceCut: 25      # Beweise weniger
+    severity: 3          # neue Spur „Zeugenkauf“
+  scapegoat:
+    evidenceCut: 30      # einmal je Fall
+    strength: 10         # kostet Kraft
+  pressure:
+    cost: 5000           # Spenden und Telefonate in Hallstead
+    rounds: 4            # so lange ist Delaney versetzt
+    chance: { handel: 0.7, volksbund: 0.25, provinz: 0.5, none: 0.5 }  # je regierender Partei (none: ohne Weltmodell)
+    failEvidence: 15     # misslungen: so viele Beweise mehr …
+    severity: 2          # … und eine neue Spur „Einflussnahme“
+  crown:
+    evidenceCut: 40      # Kronzeuge gegen den Crane Trust
+
+# 4.11 Forschung bis Technikstufe II (GDD §5, §6, §7.1), ab Kapitel 2.
+# Texte: content/research.yaml. Wirkung lesen andere Systeme über techEffect/hasTech/techTier (src/sim/research.ts).
+# PLATZHALTER Kapitel 2.
+research:
+  fromChapter: 2
+  workshop: 3000         # Versuchswerkstatt einrichten (einmalig)
+  funding:               # Förderstufen: Kosten je Runde und Forschungspunkte je Runde
+    - { cost: 500, points: 1 }     # sparsam
+    - { cost: 1200, points: 2.5 }  # kräftig
+  luck: { min: 0.5, max: 1.5 }     # Fortschritt je Runde schwankt
+  patentIncome: 400      # $ Lizenzgebühren je Runde und Patent, sobald die Welt die Technik braucht
+  # Technikstand der Welt (0–100), solange es kein Weltmodell gibt. Skala wie worldModel.tech
+  # auf main (4.1): Start 6–10, logistisch +1,7 % je Runde → Kapitel 2 (Jahr 11–14) etwa 11–22,
+  # Kapitel 3 (Jahr 21–24) etwa 22–35. 12 ≈ Beginn von Kapitel 2.
+  worldFallback: { tech: 12 }
+  # worldAt: ab diesem Technikstand der Welt haben andere die Technik (Lizenz kaufbar, kein Patent mehr;
+  # Jacobs Patent bringt ab dann Lizenzgebühren). Am Weltmodell von main ausgerichtet: Drehbohren ist
+  # zu Beginn von Kapitel 2 schon verbreitet, Tanklaster und Rollenmeißel ziehen im Lauf von Kapitel 2
+  # nach, Cracken gegen Ende von Kapitel 2 / in Kapitel 3. Voraussetzungen (requires) müssen weiter oben stehen.
+  techs:
+    - id: rotary         # Drehbohren (Stufe I, GDD §5): schneller, tiefer
+      tier: 1
+      domain: bohren
+      points: 4
+      worldAt: 10
+      license: 2500
+      effects: { drillTime: -0.25, depth: 150 }
+    - id: rollenmeissel  # Rollenmeißel (Stufe II): harte Schichten
+      tier: 2
+      domain: bohren
+      points: 6
+      requires: [rotary]
+      worldAt: 17
+      license: 6000
+      effects: { drillTime: -0.15, drillCost: -0.15, depth: 150 }
+    - id: thermal_cracking  # Thermisches Cracken (Stufe II, GDD §6): Benzinausbeute 20 % → 40 % (Raffinerie 4.6)
+      tier: 2
+      domain: raffinerie
+      points: 8
+      worldAt: 20
+      license: 8000
+      effects: { gasolineYield: 0.2 }
+    - id: tanklaster     # Tanklaster (Stufe II, GDD §6): klein, flexibel, für Tankstellen
+      tier: 2
+      domain: transport
+      points: 5
+      worldAt: 15
+      license: 4000
+      effects: { trucks: 1 }
+
+# 4.14 Andockpunkt – Marke und Tankstellen (Kapitel 3, GDD §6 Vertrieb, §13 Kapitel 3).
+# Eigene Marke, Tankstellennetz je Region, Marktanteil, Markenwert, Konkurrenz mit
+# Margaret Cranes Marke. Rechnung in src/sim/brand.ts, Texte in content/brand.yaml.
+# Alles PLATZHALTER bis zu den Bot-Läufen für Kapitel 3. Mengen in Barrel Benzin je Runde.
+brand:
+  unlockChapter: 3          # GDD §13: Marke und Tankstellen sind neu in Kapitel 3
+  foundCost: 20000          # $ für Name, Schilder, Lackierung der ersten Zapfsäulen
+  station:
+    cost: 6000              # $ je Tankstelle (× costFactor der Region)
+    buildRounds: 1          # so viele Runden dauert der Bau
+    buildMax: 5             # höchstens so viele auf einmal in Auftrag geben
+    upkeep: 300             # $ je Tankstelle und Runde (Pächter, Pumpe, Lieferwagen)
+    resale: 0.5             # Anteil der Baukosten beim Verkauf einer Tankstelle
+    capacity: 4000          # bbl Benzin, die eine Tankstelle je Runde höchstens verkauft
+    maxPerRegion: 40        # so viele Tankstellen je Marke und Region höchstens
+  share:                    # Anziehung = Stationen^stationExponent × (awarenessBase + Bekanntheit/100) × Preisfaktor × Ruf
+    stationExponent: 0.8    # unter 1: die zwanzigste Tankstelle bringt weniger als die erste
+    awarenessBase: 0.3      # auch eine unbekannte Marke verkauft etwas – wer vorbeifährt, tankt
+    reputationWeight: 0.4   # Ruf in der Öffentlichkeit ±100 → Anziehung ±40 % (GDD §6: ein Skandal senkt den Absatz sofort)
+    independentAwareness: 0.2  # freie Tankstellen gelten als so bekannt (Bekanntheit 20)
+  prices:                   # Preis an der Zapfsäule: Anziehung und Marge in $ je bbl
+    billig: { attract: 1.4, margin: 0.2 }
+    normal: { attract: 1.0, margin: 0.4 }
+    teuer: { attract: 0.7, margin: 0.6 }
+  priceWar:
+    marginFactor: 0.5       # beide Marken billig in einer Region: Preiskampf, die Marge halbiert sich noch einmal
+  awareness:
+    decay: 0.08             # Anteil der Bekanntheit, der je Runde verblasst
+    perStation: 1.2         # Bekanntheit je Runde × Wurzel der Tankstellen (Schilder an der Straße)
+    scandalLoss: 6          # Bekanntheit weniger je Schwere eines Skandals (1–5), in jeder Region
+  campaigns:                # Werbung (GDD §6): Kosten, Dauer in Runden, Bekanntheit je Runde
+    - { id: plakate, cost: 3000, rounds: 2, gain: 6 }
+    - { id: radio, cost: 8000, rounds: 2, gain: 12 }
+    - { id: strassenkarten, cost: 5000, rounds: 4, gain: 4 }
+  demand:
+    growth: 0.03            # Automobilisierung: Benzinnachfrage wächst je Runde um 3 % (bis 4.1 sie liefert)
+    crashDrop: 0.25         # im Kreditcrash (state.worldModel.crash > 0) tanken die Leute ein Viertel weniger – bewusst getrennt von worldModel.demand.crashDrop (Welt-Ölnachfrage): Benzin an der Zapfsäule reagiert stärker
+  supply:
+    boughtCost: 0.15        # $ je bbl, wenn die eigene Raffinerie (4.13) nicht genug Benzin liefert und zugekauft wird
+  crane:                    # Margaret Crane (Crane Eastern) führt den Kampf um die Marke (GDD §13)
+    reactShare: 0.15        # ab so viel Marktanteil Jacobs in einer Region denkt sie über einen Preiskampf nach …
+    warChance: 0.5          # … und beginnt ihn mit dieser Chance je Runde (auch, wenn Jacob billig verkauft)
+    warRounds: 3            # so lange hält sie den Preiskampf durch
+    cooldown: 2             # danach so viele Runden Ruhe in der Region
+    expandChance: 0.35      # Chance je Runde und Region, neue Tankstellen zu bauen, solange ihr Anteil unter targetShare liegt
+    expandStations: 2       # so viele auf einmal
+    targetShare: 0.45       # so viel Marktanteil will sie je Region halten
+    adGain: 2               # Bekanntheit je Runde durch ihre ständige Werbung
+  value:
+    profitMultiple: 4       # Markenwert = Gewinn des Netzes je Runde (ohne Werbewirkung, nie unter 0) × so viele Runden – ein Jahr Gewinn
+    assetShare: 0.5         # Tankstellen zählen im Imperiumswert mit diesem Anteil ihrer Baukosten
+  goal:                     # Kapitelprüfung Kapitel 3 (GDD §13): Marke in ≥ 3 Regionen oder ≥ 10 % Marktanteil
+    regions: 3
+    share: 0.10
+    presenceStations: 3     # ab so vielen Tankstellen gilt die Marke in einer Region als vertreten
+  antitrust:                # GDD §15: Kartellbehörde ab 25 % regionalem oder 15 % nationalem Marktanteil (für 4.3 Gesetze)
+    regional: 0.25
+    national: 0.15
+  regions:                  # Absatzgebiete; Namen in content/brand.yaml. demand in bbl Benzin je Runde zu Kapitelbeginn
+    - { id: cordova, demand: 60000, costFactor: 0.8, independents: 6, craneStations: 6, craneAwareness: 35, fromChapter: 3 }
+    - { id: okara, demand: 40000, costFactor: 0.9, independents: 5, craneStations: 4, craneAwareness: 25, fromChapter: 3 }
+    - { id: mittelland, demand: 70000, costFactor: 1.0, independents: 8, craneStations: 10, craneAwareness: 45, fromChapter: 3 }
+    - { id: ostkueste, demand: 110000, costFactor: 1.4, independents: 10, craneStations: 18, craneAwareness: 65, fromChapter: 3 }
+    - { id: sierra_alta, demand: 50000, costFactor: 1.2, independents: 6, craneStations: 3, craneAwareness: 20, fromChapter: 4 }
+
+# Börse und Kauf auf Kredit (4.15, GDD §8, §7.2): ab Kapitel 3. Eigener Zufall (Seed + ":boerse"),
+# Code in src/sim/exchange.ts, Texte in content/exchange.yaml.
+# Das Börsenfieber (0–100, 50 = normal) ist der Spiegel des Kreditklimas an der Börse: Es folgt dem
+# Kreditklima aus dem Weltmodell (4.4), steigenden Kursen und Jacobs Kauf auf Kredit. Über 50 schaukelt
+# es sich auf; ab crash.from kann es krachen – aber erst, wenn die Zeitung crash.minWarnings Runden
+# lang gewarnt hat (gezählt wird das Kreditklima vom Rundenbeginn, so wie es in der Zeitung stand).
+# Es gibt nur einen Kreditcrash: Ein Weltcrash (worldModel.credit) reißt die Börse mit, ein Börsencrash
+# kippt auch das Weltmodell (Kreditklima × worldModel.credit.after, Dauer wie der Börsencrash).
+# ALLES PLATZHALTER bis zur Balance von Kapitel 3.
+exchange:
+  unlockChapter: 3         # GDD §14: Börse und Kauf auf Kredit ab Kapitel 3
+  startIndex: 100          # Börsenindex bei Öffnung (nur für den Ticker)
+  history: 12              # so viele Kurse je Aktie merkt sich der Ticker (3 Jahre)
+  minPrice: 1              # tiefer fällt kein Kurs ($ je Aktie)
+  market:
+    drift: 0.01            # Grundtrend des Index je Runde
+    boom: 0.06             # Fieber 100 → +6 % je Runde zusätzlich, Fieber 0 → −6 %
+    noise: 0.04            # Zufallsschwankung des Index je Runde (±)
+  fever:
+    start: { min: 45, max: 55 }
+    revert: 0.08           # zieht je Runde so viel zur 50 zurück
+    speculation: 0.12      # über 50 heizt es sich um so viel selbst an (stärker als revert → Blase)
+    climate: 0.10          # je Punkt Weltkreditklima (worldModel.credit) über 50 so viele Punkte Fieber je Runde
+    momentum: 30           # steigende Kurse heizen an: Indexänderung × momentum
+    margin: 8              # Jacobs geliehenes Geld (voll ab margin.heatScale) heizt so viele Punkte je Runde an
+    noise: 3               # Zufall je Runde (±)
+  warnFrom: 70             # ab hier warnt die Zeitung: „Makler leihen jedem“
+  alarmFrom: 82            # ab hier zweite Warnstufe: „Zinsen steigen“
+  warnCredit: 65           # warnt auch, wenn das Kreditklima (4.4) so hoch ist
+  boomFrom: 58             # ab hier schreibt die Zeitung vom Boom (keine Warnung)
+  gloomTo: 35              # bis hier von Flaute
+  crash:
+    from: 78               # ab diesem Fieber kann es krachen
+    chance: 0.15           # Chance je Runde ab crash.from …
+    slope: 0.5             # … steigt bis Fieber 100 um so viel
+    minWarnings: 2         # so viele Runden in Folge muss die Zeitung vorher gewarnt haben
+    drop: { min: 0.40, max: 0.55 }   # Indexsturz in der Crashrunde (GDD §7.3: fast −50 %)
+    tail: 0.08             # weitere Verluste je Runde, solange der Crash nachwirkt
+    rounds: { min: 2, max: 4 }       # so lange wirkt er nach
+    after: 0.45            # Fieber nach dem Crash (× vorher)
+  margin:
+    leverages: [1, 2, 5, 10]   # wählbarer Hebel beim Kauf
+    maxLeverage: 10        # GDD §8: bis zu zehnfacher Hebel
+    call: 0.5              # Eigenkapital unter 50 % des Einsatzes → der Makler fordert Nachschuss
+    liquidate: 0.2         # unter 20 % verkauft er zwangsweise; fehlt Geld, zahlt Jacob aus der Kasse
+    rate: 0.08             # Maklerzins pro Jahr bei normalem Kreditklima
+    rateClimate: 0.08      # Kreditklima 100 → so viel Zins zusätzlich (0 → so viel weniger)
+    minBuy: 500            # kleinster Einsatz in $
+    heatScale: 100000      # so viel geliehenes Geld heizt Börse und Kreditklima voll an
+    creditShift: 4         # volle Hitze → so viele Punkte aufs Weltkreditklima der Folgerunde (worldModel.credit)
+    fee: 0.01              # Maklergebühr bei Kauf und Verkauf
+  sectors:
+    rail: { beta: 1.0, idio: 0.03, dividend: 0.012 }
+    bank: { beta: 1.3, idio: 0.02, dividend: 0.015 }
+    oil: { beta: 0.8, idio: 0.04, dividend: 0.010 }
+    auto: { beta: 1.8, idio: 0.06, dividend: 0.0 }
+    steel: { beta: 1.1, idio: 0.03, dividend: 0.012 }
+  stocks:                  # Namen und Beschreibungen in content/exchange.yaml
+    - { id: thorne_bahn, sector: rail, start: 120 }
+    - { id: handelsbank, sector: bank, start: 90 }
+    - { id: crane_trust, sector: oil, start: 150 }
+    - { id: motorwagen, sector: auto, start: 40 }
+    - { id: westmark_stahl, sector: steel, start: 70 }
+
+# Kapitel 3 – Der Konzernherr (4.17, GDD §5, §12, §13): Technikstufe III (Seismik), Mr. Vales
+# Einladung ins Konsortium, Konsortialprojekte für große Vorhaben und die Aufnahme in die
+# Gesellschaft (Stand). Erst ab fromChapter sichtbar; in Kapitel 1 und 2 ruht alles.
+# Texte stehen in content/kapitel3.yaml. Alle Zahlen PLATZHALTER: Die Wirtschaft von
+# Kapitel 3 gibt es noch nicht – grob zehn- bis zwanzigmal Kapitel 1.
+kapitel3:
+  fromChapter: 3
+  # Ersatzwerte, solange das Weltmodell (4.1) nicht im Spielstand steht (0–100 wie dort).
+  world: { tech: 50, credit: 50, tension: 30, mood: 50 }
+  seismik:
+    # Technikstand der Welt (4.1: Start 6–10, logistisch +1,7 % je Runde), ab dem Stufe I–V gilt.
+    # Kurve: Runde 40 ≈ 11–18, Runde 80 ≈ 20–30, Runde 160 ≈ 49–63, Runde 256 ≈ 83–90.
+    # Schnelle Welten erreichen eine Stufe so etwas früher; garantiert ist sie über chapterStages.
+    techStages: [0, 15, 28, 55, 85]
+    chapterStages: [1, 2, 3, 3, 4, 4, 5]  # Mindeststufe je Kapitel 1–7 (GDD §13: II in Kap. 2, III in Kap. 3, IV in Kap. 5)
+    stage: 3                 # Reflexionsseismik braucht Technikstufe III (GDD §5)
+    licenseCost: 20000       # Lizenz beim Patentinhaber (einmalig); Konsortium-Mitglieder zahlen nichts
+    surveyCost: 6000         # eine Vermessung je Ranch
+    surveyRounds: 1          # so lange ist der Spezialtrupp unterwegs
+    crews: 1                 # Trupps mit der Lizenz
+    crewCost: 15000          # jeder weitere Trupp
+    maxCrews: 3
+    width: 10                # Bandbreite der Fundchance in Prozentpunkten (Geologe: 10–50)
+    insight: 0.3             # so stark sieht die Messung die wirkliche Falle statt nur die Zone (0–1); GDD §5: „gut“, nicht „sehr gut“
+    rounding: 5              # Raster der Prozentangabe
+    sizeMiss: 0.2            # Chance, dass die Größe eine Klasse daneben liegt (dann zwei Klassen Spanne)
+    falseTrap: 0.25          # Fehlmessung: eine trockene Ranch zeigt eine Struktur – Chance und Falle wirken wie bei Öl
+    missTrap: 0.15           # Fehlmessung: die Falle einer Ranch mit Öl bleibt unsichtbar – Chance wie bei einer trockenen
+    sizeClasses:             # Größenklassen nach förderbarem Öl (GDD §5), aufsteigend
+      - { id: tasche, from: 0 }
+      - { id: klein, from: 50000 }
+      - { id: mittel, from: 500000 }
+      - { id: gross, from: 5000000 }
+      - { id: riese, from: 50000000 }
+  konsortium:
+    inviteRound: 3           # Mr. Vales Einladung kommt zu Beginn der 3. Runde des Kapitels
+    inviteDeadline: 2        # Bedenkzeit in Runden (Ankunftsrunde mitgezählt); Schweigen gilt als Absage
+    trustStart: 50           # Vales Vertrauen 0–100
+    trustValeGeld: 15        # Jacob hat in Kapitel 1 das Geld „eines Freundes“ behalten
+    trustValeAbgelehnt: -10  # … oder zurückgegeben
+    powerStart: 60           # Macht des Konsortiums 0–100 (Akteur im Weltmodell)
+    memberIncome: 8000       # Anteil am Kartellgewinn je Runde als Mitglied
+    doubleIncome: 14000      # Doppelspiel: Kartellgewinn plus Insiderwissen
+    doubleDetect: 0.06       # Chance je Runde, dass das Doppelspiel auffliegt …
+    doubleDetectGrowth: 0.03 # … plus so viel je Runde im Doppelspiel
+    feignDetect: 0.10        # ein vorgetäuschter Gefallen erhöht die Chance dauerhaft um so viel
+    favorEvery: 3            # alle so viele Runden verlangt Vale einen Gefallen
+    favorEveryControlled: 2  # nach einer Rettung: Vale hat die Hand an den Förderquoten
+    favorDeadline: 2         # Frist eines Gefallens (Ankunftsrunde mitgezählt)
+    complyTrust: 10
+    refuseTrust: -20
+    expelBelow: 20           # darunter fliegt Jacob aus dem Konsortium
+    trustWords: [35, 65]     # ab hier wirkt Vale abwartend, ab hier vertraut er (nur als Satz sichtbar)
+    expelledPenalty: 5000    # je Runde: Das Konsortium drückt Jacobs Preise (bis das Weltmodell das übernimmt)
+    expelledRounds: 6
+    power: { join: 5, refuse: -5, double: 3, exposed: -15, broken: -10 }
+    rescue: { cash: 50000, trust: 30 }  # Rettung in der Pleitefrist – gegen die Förderquoten
+    worldInput: { tension: 0.04, credit: 0.03, mood: -0.02 }  # Wirkung je Machtpunkt über 50 auf die Weltgrößen
+    favors:                  # Gefallen: Kosten beim Erfüllen (Texte in content/kapitel3.yaml)
+      - { id: drosseln, cash: 6000 }
+      - { id: spende_grady, cash: 4000, ansehen: -3 }
+      - { id: preis_halten, cash: 5000 }
+      - { id: zeitung_schweigen, cash: 3000, ansehen: -2 }
+      - { id: crane_schonen, cash: 7000 }
+  projekte:
+    offerEvery: 3            # alle so viele Runden ein neues Angebot
+    maxOffers: 2
+    offerRounds: 2           # so lange liegt ein Angebot
+    shares: [0.25, 0.5]      # Anteile, die Jacob zeichnen kann
+    fraud: 0.05              # je Baurunde: ein Partner betrügt, das Projekt verzögert sich um eine Runde
+    memberRisk: 0.5          # Konsortium-Mitglieder: Risiko mal so viel (Vale glättet die Wege)
+    list:                    # minRank: Stand nötig (0 Emporkömmling … 3 aufgenommen); members: nur fürs Konsortium
+      - { id: seismik_kampagne, cost: 120000, rounds: 2, income: 9000, risk: 0.05, minRank: 0, members: false }
+      - { id: fernpipeline, cost: 200000, rounds: 4, income: 16000, risk: 0.10, minRank: 0, members: false }
+      - { id: grossraffinerie, cost: 300000, rounds: 5, income: 24000, risk: 0.12, minRank: 2, members: false }
+      - { id: hafen_tanklager, cost: 150000, rounds: 3, income: 11000, risk: 0.08, minRank: 1, members: false }
+      - { id: costa_negra, cost: 250000, rounds: 3, income: 30000, risk: 0.25, minRank: 0, members: true }
+  stand:
+    start: 10                # Ansehen in Hallstead bei Kapitelbeginn (0–100): Ölgeld zählt dort nichts
+    ranks: [0, 25, 50]       # ab so viel Ansehen: Emporkömmling, geduldet, anerkannt (aufgenommen nur über den Club)
+    decay: 1                 # je Runde verblasst Ansehen um so viel (nicht unter start), bis Jacob aufgenommen ist
+    donation: { cost: 15000, gain: 10, falloff: 0.7, cap: 60 }  # Stiftung: jede weitere bringt 70 % der vorigen, höchstens bis cap
+    marriage: { cost: 40000, gain: 30, minRank: 1, thomas: -20 }  # Heirat in die Vandermeer-Familie: Mitgift, Thomas' Beziehung
+    breakOrder: { cost: 250000 }   # die Schulden der alten Familien aufkaufen: Türen auf, aber kein Ansehen mehr
+    club: { cost: 10000, from: 75 }  # Aufnahme in den Hallstead Union Club ab so viel Ansehen
+    member: 5                # Beitritt zum Konsortium: man gehört zu den Großen
+    exposed: -20             # Doppelspiel aufgeflogen
+    rateDiscount: [0, 0, 0.005, 0.01]  # Zinsrabatt der alten Banken je Rang (Emporkömmling … aufgenommen)
