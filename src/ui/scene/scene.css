@@ -747,6 +747,9 @@ input:focus-visible { outline: 2px solid var(--ocker); outline-offset: 1px; }
 .telegramm h2 { margin: 6px 0 8px; font-size: 1.3rem; letter-spacing: 0.06em; text-transform: uppercase; }
 .telegramm-text { margin: 0 0 12px; line-height: 1.45; letter-spacing: 0.03em; }
 .telegramm .knoepfe button { font-family: var(--schrift); }
+.telegramm-kasse { margin: -4px 0 10px; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.telegramm .knoepfe button:disabled { opacity: 0.55; cursor: not-allowed; }
+.telegramm .knopf-zusatz { font-style: italic; }
 
 .chronik .zeitung-kopf { margin: 0; }
 .chronik-titel { text-align: center; margin: 4px 0 10px !important; font-variant: small-caps; letter-spacing: 0.08em; }

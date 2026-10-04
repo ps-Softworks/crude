@@ -51,7 +51,7 @@ Zum Ausprobieren: `npm run dev`, dann im Browser `?seed=abc&debug=1`.
 - `result`: ein, zwei Sätze fürs Protokoll – was Jacob sieht, nicht was er fühlt.
 - `effects` (optional, Zahlen werden addiert, minus = weniger):
   `cash` ($), `oilStock` (Barrel), `railTariff` ($ je Barrel Bahnfracht), `strength` (Kraft),
-  `ruth`/`thomas` (Beziehung), `teams`/`teamsIdle` (eigene Fuhrwerke). Befristet für
+  `ruth`/`thomas`/`clara` (Beziehung; `clara` wirkt erst ab Claras Geburt im Zeitsprung I), `teams`/`teamsIdle` (eigene Fuhrwerke). Befristet für
   `events.timedRounds` Runden (0.2.15+3): `price` ($ je Barrel beim Trust), `production`
   (Anteil der eigenen Förderung, 0,1 = +10 %), `leaseCost` (Anteil am Pachtbonus, −0,2 = 20 % billiger).
 - Jede Antwort soll spürbar sein (0.2.15+3): `npm run check:events` listet alle Antworten mit
@@ -66,6 +66,9 @@ Zum Ausprobieren: `npm run dev`, dann im Browser `?seed=abc&debug=1`.
   Überstunden bis zu 7; jede Überstunde kostet Kraft.
 - Kraft ändert `effects: { strength: 5 }` (Familie, Ruhe: plus; Reisen, Krisen: minus).
   `conditions: { maxStrength: 60 }` lässt ein Ereignis nur kommen, wenn Jacob müde ist.
+- Kapitel und Alter (4.5): `minChapter`/`maxChapter` (z. B. `maxChapter: 1` für alles, was nur in
+  die ersten Jahre passt – Pension, Taufe), `minThomasAge`/`maxThomasAge` (Thomas' Alter in ganzen
+  Jahren; vor der Geburt −1). `minRound`/`maxRound` zählen ab dem Beginn des laufenden Kapitels.
 - `mail: offer` (oder `demand`, `info`, `personal`) macht einen **Brief** für den Posteingang:
   Angebot, Forderung, Information oder Persönliches. Ein Brief bleibt ein paar Runden liegen
   (`deadline: 2` = zwei Runden; ohne Angabe gilt der Wert aus balance.yaml); in der letzten Runde

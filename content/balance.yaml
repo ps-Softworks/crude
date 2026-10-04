@@ -330,17 +330,26 @@ chapter:
 timeskip:
   rounds: 24                  # Zeitsprung I: Jahr 5–10 = 24 Quartale
   nextChapterRounds: 16       # Kapitel 2 (vorerst Platzhalter): Jahr 11–14
+  # Haltung (GDD §2: bestimmt Ertrag und Streuung). Wagemutig bohrt mehr und riskanter, erschließt
+  # Nachbarbezirke und leiht – trifft ihn eine Kreditkrise, kündigt die Bank mehr (crisis) und er
+  # muss Quellen billig verkaufen. Vorsichtig tilgt, hält Rücklage und bohrt nur Sicheres.
   reserve: { aggressive: 1000, balanced: 3000, cautious: 6000 }    # Rücklage in $, die der Verwalter nicht anrührt
   invest: { aggressive: 0.9, balanced: 0.5, cautious: 0.2 }        # Anteil des Überschusses, der jedes Jahr in neue Bohrungen geht
   minChance: { aggressive: 0.25, balanced: 0.4, cautious: 0.55 }    # gebohrt wird nur, wo der Geologe so viel Fundchance schätzt
-  borrow: { aggressive: 0.5, balanced: 0.2, cautious: 0 }          # Anteil des freien Bankrahmens, den der Verwalter je Jahr für Bohrungen leiht
+  borrow: { aggressive: 0.6, balanced: 0.2, cautious: 0 }          # Anteil des freien Bankrahmens, den der Verwalter je Jahr leiht, wenn es etwas zu bohren gibt (Rest bleibt in der Kasse)
   repay: { aggressive: 0, balanced: 0.3, cautious: 0.8 }           # Anteil des Überschusses, der jedes Jahr Schulden tilgt
-  maxNewWells: 4              # höchstens so viele neue Bohrungen je Jahr
+  maxNewWells: { aggressive: 5, balanced: 4, cautious: 2 }         # höchstens so viele neue Bohrungen je Jahr
+  expand: { aggressive: 1, balanced: 0, cautious: 0 }              # Nachbarbezirke, die der Verwalter höchstens erschließt, wenn am offenen Land nichts mehr lohnt
+  expandCost: 8000            # $ je erschlossenem Bezirk (Landvermesser, Wege, Agenten)
   upkeepPerWell: 60           # $ je fördernde Quelle und Quartal (Vorarbeiter, Reparaturen)
   family:
     bond: { little: -6, some: -1, much: 4 }         # Beziehung zu Ruth und den Kindern je Jahr
-    growth: { little: 1.15, some: 1, much: 0.7 }    # Faktor auf das Bohrbudget (Familienzeit kostet Wachstum)
-    claraChance: { little: 0.2, some: 0.35, much: 0.5 }    # Chance je Jahr, dass Ruth ein zweites Kind erwartet (halbiert, wenn sie verbittert ist) …
+    # Familienzeit kostet Wachstum (GDD §2) – unabhängig vom Geld: Ist Jacob zu Hause, bohrt
+    # der Verwalter weniger, und ohne Jacobs Aufsicht bringt das Öl weniger ein.
+    growth: { little: 1.15, some: 1, much: 0.7 }    # Faktor auf das Bohrbudget
+    wells: { little: 1.25, some: 1, much: 0.6 }     # Faktor auf maxNewWells (abgerundet, mindestens 1)
+    revenue: { little: 1.03, some: 1, much: 0.85 }  # Faktor auf den Verkaufserlös (Preise aushandeln, Schwund, Diebstahl)
+    claraChance: { little: 0.2, some: 0.35, much: 0.5 }    # Chance je Jahr, dass Ruth Clara erwartet – nur der Zeitpunkt: im letzten Jahr kommt die Nachricht sicher (Weltbibel: Clara wird im Zeitsprung I geboren) …
     claraFromYear: 6          # … frühestens in diesem Spieljahr
     claraStart: 70            # Beziehung zu Clara bei der Geburt
     claraBond: 10             # Weiche „Zu Hause bleiben“: Ruth und Clara +10, „Die Geschäfte gehen vor“: −10
@@ -348,20 +357,24 @@ timeskip:
     decline: 0.03             # Anteil, der je Quartal versiegt oder aufgibt
     entryPrice: 0.7           # ab diesem Posted Price bohren neue Wildcatter …
     entryRate: 1              # … so viele Quellen je Quartal je 0,30 $ über entryPrice
-  crisis:                     # Kreditkrise (Bankpanik oder Crash) während des Sprungs
-    callShare: 0.4            # die Bank kündigt so viel der Schulden
-    fireSale: 0.5             # reicht das Geld nicht, verkauft der Verwalter Quellen zu diesem Anteil ihres Werts
+  crisis:                     # Kreditkrise (Bankpanik oder Crash) während des Sprungs (GDD §15: wer im Boom zu viele Schulden macht, stirbt)
+    callShare: 0.3            # die Bank kündigt so viel der Schulden …
+    callLeverage: 0.6         # … plus so viel mal die Auslastung des Bankrahmens (Schulden ÷ Rahmen), höchstens alles
+    rideCall: 0.3             # nach „weiter auf Pump“ kündigt sie zusätzlich so viel …
+    rideStopYears: 2          # … gibt danach keinen Kredit mehr, und der Verwalter bohrt so viele Jahre länger nicht
+    fireSale: 0.5             # was die Kasse über der Rücklage nicht deckt, bringen Quellen zu diesem Anteil ihres Werts; im Jahr der Kündigung bohrt er nicht
   switches:                   # Weichen (GDD §13, Zeitsprung I)
     panicRepay: 0.6           # Bankenpanik „tilgen“: so viel der Schulden sofort zurück, danach kein neuer Kredit
     rideBorrow: 0.3           # „weiter auf Pump“: so viel freier Bankrahmen zusätzlich je Jahr
     automobileYear: 7         # die ersten Motorwagen in Port Ellis
-    automobileCost: 3000      # Beteiligung an einer Benzinanlage
+    automobileCost: 3000      # Beteiligung an einer Benzinanlage (bleibt: Aufschlag auf jeden verkauften Barrel, auch in Kapitel 2)
     automobilePremium: 0.05   # $ je Barrel mehr ab dem Jahr danach
     okaraFromYear: 6          # neues Ölgebiet in der Prärieprovinz Okara …
     okaraChance: 0.6          # … kommt mit dieser Chance
     okaraCost: 4000           # Pachten in Okara
-    okaraSuccess: 0.55        # Chance, dass dort Öl kommt
-    okaraIncome: 900          # $ je Quartal bei Erfolg (mal Weltpreis-Faktor), ab dem Jahr danach
+    okaraSuccess: 0.55        # Chance, dass dort Öl kommt (gewürfelt, auch wenn Bullard die Pachten nimmt)
+    okaraIncome: 900          # $ je Quartal bei Erfolg (mal Weltpreis-Faktor), ab dem Jahr danach – für Jacob oder Bullard, auch in Kapitel 2
+    okaraValueQuarters: 8     # im Imperiumswert zählt Okara so viele Quartalseinnahmen
   rival:                      # Bullard während des Sprungs
     drillChance: 0.5          # bohrt je Jahr mit dieser Chance, wenn er die Bohrung bezahlen kann
     drillCost: 2500           # $ je Bohrung (dazu der Pachtbonus)
@@ -371,6 +384,7 @@ timeskip:
 bots:
   games: 1000              # Partien je Strategie
   seedPrefix: bot          # Seeds bot-0, bot-1, … – für jede Strategie dieselben
+  timeskipEnds: 150        # Zeitsprung I (4.5): so viele Kapitelenden des Standard-Bots springen mit allen 9 Direktiven × 2 Antwort-Sätzen
   cautious: { minChance: 0.5, cashReserve: 500, maxStage: 2 }   # vorsichtig: Fundchance ab 50 %, 500 $ Rücklage, höchstens Stufe 2
   greedy: { minChance: 0.25, maxUndrilled: 1 }                 # gierig: pachtet ab 25 % Fundchance, hält höchstens 1 ungebohrte Pacht
   random: { actionsPerRound: 3, logisticsChance: 0.15 }         # zufällig: so viele Aktionen je Runde; mit 15 % je Runde eine zufällige Anschaffung (Tank, Gespann, Pipeline, Drohung …)

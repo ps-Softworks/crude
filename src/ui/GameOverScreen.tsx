@@ -12,6 +12,8 @@ import { Silhouette } from './Silhouette';
 
 export function GameOverScreen({ game, onRestart }: { game: GameState; onRestart: () => void }) {
   const schuld = debt(game);
+  // Pleite im Zeitsprung (4.5): Der Sprung hat in diesem Jahr geendet, nicht in einer Kapitelrunde.
+  const imSprung = game.timeskips[game.timeskips.length - 1]?.bankrupt === true;
   const ergebnis = game.cash - schuld;
   const titel = useRef<HTMLHeadingElement>(null);
   // Fokus auf die Überschrift (0.2.15+12) – ein zweites Enter wirft das Ergebnis nicht ungesehen weg.
@@ -26,8 +28,10 @@ export function GameOverScreen({ game, onRestart }: { game: GameState; onRestart
               Pleite
             </h2>
             <p className="bogen-text">
-              {formatDate(game)}, Runde {chapterRound(game)} von {chapterRounds(game)}: Jacob Harlan hat die Rechnung nicht bezahlen können. Die Bank nimmt
-              die Firma in Zwangsverwaltung – der Bohrturm, die Pachten und die fördernden Quellen werden zwangsversteigert.
+              {imSprung
+                ? `${formatDate(game)}, während Jacob die Firma einem Verwalter überlassen hatte: Die Kasse ist leer, die Bank leiht nichts mehr. `
+                : `${formatDate(game)}, Runde ${chapterRound(game)} von ${chapterRounds(game)}: Jacob Harlan hat die Rechnung nicht bezahlen können. `}
+              Die Bank nimmt die Firma in Zwangsverwaltung – der Bohrturm, die Pachten und die fördernden Quellen werden zwangsversteigert.
             </p>
           </div>
         </div>

@@ -83,6 +83,7 @@ function wirkungen(choice: Pick<EventChoice, 'effects'>, balance: Balance): numb
     (e.strength ?? 0) * w.strength,
     (e.ruth ?? 0) * w.family,
     (e.thomas ?? 0) * w.family,
+    (e.clara ?? 0) * w.family,
   ];
 }
 

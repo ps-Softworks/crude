@@ -96,7 +96,9 @@ const nachSprung = (() => {
   for (let i = 0; i < 10; i++) {
     const step = runTimeskip(s, balance, events);
     if (step.status === 'done') return step.state;
-    const a = answerSwitch(s, balance, step.id, SWITCH_CHOICES[step.id][0], events);
+    // Zu teure Antworten sind gesperrt (4.5) – dann die andere.
+    let a = answerSwitch(s, balance, step.id, SWITCH_CHOICES[step.id][0], events);
+    if (!a.ok) a = answerSwitch(s, balance, step.id, SWITCH_CHOICES[step.id][1], events);
     if (!a.ok) throw new Error(a.reason);
     s = a.state;
   }

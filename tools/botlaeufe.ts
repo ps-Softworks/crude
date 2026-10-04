@@ -6,6 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { loadBalance } from '../src/sim/testBalance';
 import { blindWildcatChance, botTable, buildTable, checkTargets, crisisTable, investVariant, pipelineLine, runBots, runInvestVariant, targetTable, transportTable } from '../src/sim/bots';
 import { loadEvents } from '../src/sim/testEvents';
+import { runTimeskipBots, timeskipTables } from '../src/sim/timeskipBots';
 
 const root = new URL('../', import.meta.url);
 const balance = loadBalance();
@@ -28,12 +29,16 @@ const targets = checkTargets(rows, blindWildcatChance(balance), balance, variant
 const zielTabelle = targetTable(targets);
 const krisen = crisisTable(rows);
 const ohneSieger = Math.max(0, 1 - rows.reduce((s, r) => s + r.winRate, 0));
+// Zeitsprung I (4.5): Haltung, Familie und Bankpanik-Weiche nach dem Kapitelende des Standard-Bots.
+const sprung = runTimeskipBots(balance, balance.bots.timeskipEnds, catalog);
+const sprungTabellen = timeskipTables(sprung);
 const sekunden = ((Date.now() - start) / 1000).toFixed(1);
 
 console.log(table);
 console.log(`\n${wege}\nPipeline: ${pipelineLine(rows)}`);
 console.log(`\n${ausbau}\n„alles ausbauen“ schlägt den Standard-Bot in ${prozent(variants.all.beatsStandard)}, „nie ausbauen“ in ${prozent(variants.none.beatsStandard)} der Seeds mit unterschiedlichem Ausgang.`);
 console.log(`\nKreditzyklus (Bankpanik oder Crash im Kapitel):\n${krisen}`);
+console.log(`\nZeitsprung I (${sprung.ends} Kapitelenden des Standard-Bots):\n${sprungTabellen}`);
 console.log(`\n${zielTabelle}`);
 console.log(`\n${balance.bots.games} Partien je Strategie in ${sekunden} s.`);
 const verfehlt = targets.filter((t) => !t.ok);
@@ -94,6 +99,12 @@ ${ausbau}
 Bankrottquote je Strategie, getrennt nach Seeds, in deren Welt während des Kapitels eine Kreditkrise (Bankpanik oder Crash, 4.4) kommt, und Seeds ohne. Eingeteilt wird an der Welt allein (ohne Jacobs Handeln), damit eine frühe Pleite die Einteilung nicht verzerrt. In Kapitel 1 ist es fast immer eine Bankpanik; Crash und Embargo kommen erst in späteren Kapiteln (docs/weltmodell.md). Kein Zielwert, nur Kennzahl.
 
 ${krisen}
+
+## Zeitsprung I
+
+${sprung.ends} Kapitelenden des Standard-Bots (ausgewogen) springen mit allen neun Direktiven (Haltung × Familie), je einmal mit den ersten und einmal mit den zweiten Weichen-Antworten (zu teure Antworten ersetzt der Bot durch die andere). Imperiumswert nach dem Sprung; wer im Sprung pleitegeht, zählt 0. Die Bankpanik-Tabelle wechselt nur diese eine Antwort (Familie „wie bisher“, übrige Weichen mit der zweiten Antwort). GDD §2: Die Haltung bestimmt Ertrag und Streuung, Familienzeit kostet Wachstum; §15: wer im Boom zu viele Schulden macht, stirbt. Kein Zielwert, nur Kennzahl (Regeln in src/sim/timeskip.ts, Messung in src/sim/timeskipBots.ts).
+
+${sprungTabellen}
 
 ## Zielwerte Kapitel 1
 

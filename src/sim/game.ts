@@ -26,6 +26,7 @@ import { advanceTransport, noShipments } from './transport';
 import { settleTakeover } from './trust';
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
 import type { JumpState, TimeskipRecord } from './timeskip';
+import { settleVentures, type Ventures } from './ventures';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
@@ -109,6 +110,8 @@ export interface GameState {
   jump: JumpState | null;
   /** Abgeschlossene Zeitsprünge mit Chronik „Die Jahre dazwischen“. */
   timeskips: TimeskipRecord[];
+  /** Beteiligungen aus dem Zeitsprung (4.5): Benzinanlage, Okara. Fehlt = keine. */
+  ventures?: Ventures;
   log: string[];
   /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
   roundLogStart: number;
@@ -243,7 +246,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   );
   const gebohrt = advanceDrilling(markt, balance);
   const gepachtet = settleLeases(gebohrt, balance);
-  const rivale = advanceRival(gepachtet, balance, gebohrt, input.postedPrice);
+  // Beteiligungen aus dem Zeitsprung (4.5): Okara zahlt an Jacob oder Bullard.
+  const rivale = settleVentures(advanceRival(gepachtet, balance, gebohrt, input.postedPrice), balance);
   // Eigene Fuhrwerke und Pipeline (0.2.15+2): Löhne, Unterhalt, Baufortschritt, Sabotage – vor den Zinsen.
   // Türme und Pumpen (0.2.15+7): Turmmiete und Pumpenunterhalt, ebenfalls vor den Zinsen.
   const verzinst = settleLoans(settleRigs(advanceLogistics(rivale, balance), balance), balance);

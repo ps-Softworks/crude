@@ -538,7 +538,13 @@ export function App() {
             {chronik ? (
               <ChronicleScreen game={game} record={chronik} onContinue={chronikGelesen} />
             ) : sprungSchritt?.status === 'switch' ? (
-              <SwitchTelegram key={sprungSchritt.id} id={sprungSchritt.id} year={sprungSchritt.year} onAnswer={(c) => weicheBeantworten(sprungSchritt.id, c)} />
+              <SwitchTelegram
+                key={sprungSchritt.id}
+                id={sprungSchritt.id}
+                year={sprungSchritt.year}
+                funds={sprungSchritt.funds}
+                onAnswer={(c) => weicheBeantworten(sprungSchritt.id, c)}
+              />
             ) : brief && game.ending === 'kapitel' ? (
               <DirectivesLetter game={game} onSend={sprungStarten} onBack={() => setBrief(false)} />
             ) : game.ending === 'pleite' ? (

@@ -9,6 +9,7 @@ import { formatDate } from './calendar';
 import { empireValue } from './empire';
 import { timedEffect } from './events';
 import type { GameState } from './game';
+import { fuelPremium } from './ventures';
 
 /**
  * Merkzeichen der Rivalen. Die meisten setzt eine Wahl in content/events/,
@@ -51,7 +52,7 @@ function cents(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-type Lage = Pick<GameState, 'round'> & Partial<Pick<GameState, 'events' | 'logistics'>>;
+type Lage = Pick<GameState, 'round'> & Partial<Pick<GameState, 'events' | 'logistics' | 'ventures'>>;
 
 /**
  * Posted-Price-Druck (GDD §9.4): Hat Jacob den Abschlag hingenommen (Runde r),
@@ -90,13 +91,14 @@ export function craneCutRoundsLeft(state: Lage, balance: Balance): number {
 
 /**
  * Was der Trust Jacob je Barrel zahlt: Posted Price minus Abschlag, plus/minus
- * befristete Nachwirkungen aus Ereignissen (price, 0.2.15+3), nie unter null.
+ * befristete Nachwirkungen aus Ereignissen (price, 0.2.15+3), plus der Aufschlag der
+ * Benzinanlage aus dem Zeitsprung (4.5), nie unter null.
  */
 export function jacobPrice(
   state: Lage & Pick<GameState, 'postedPrice'>,
   balance: Balance,
 ): number {
-  return Math.max(0, cents(state.postedPrice - craneCut(state, balance) + timedEffect(state, 'price')));
+  return Math.max(0, cents(state.postedPrice - craneCut(state, balance) + timedEffect(state, 'price') + fuelPremium(state, balance)));
 }
 
 /**

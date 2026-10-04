@@ -31,12 +31,16 @@ export const CONDITION_KEYS = [
   'minLeases',
   'minStrength',
   'maxStrength',
+  'minChapter',
+  'maxChapter',
+  'minThomasAge',
+  'maxThomasAge',
 ] as const;
 export type ConditionKey = (typeof CONDITION_KEYS)[number];
 export type Conditions = Partial<Record<ConditionKey, number>>;
 
 /** Effekte: Zahlen, die auf den Zustand addiert werden (negativ = abziehen). */
-export const EFFECT_KEYS = ['cash', 'oilStock', 'railTariff', 'strength', 'ruth', 'thomas', 'teams', 'teamsIdle', 'price', 'production', 'leaseCost'] as const;
+export const EFFECT_KEYS = ['cash', 'oilStock', 'railTariff', 'strength', 'ruth', 'thomas', 'clara', 'teams', 'teamsIdle', 'price', 'production', 'leaseCost'] as const;
 export type EffectKey = (typeof EFFECT_KEYS)[number];
 export type Effects = Partial<Record<EffectKey, number>>;
 
@@ -269,7 +273,7 @@ export function marksMet(state: Pick<GameState, 'round' | 'events'>, event: Pick
   return state.round >= zuletzt + event.delay;
 }
 
-type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength'> & Partial<Pick<GameState, 'chapterStart'>>;
+type Lage = Pick<GameState, 'round' | 'cash' | 'oilStock' | 'wells' | 'leases' | 'strength'> & Partial<Pick<GameState, 'chapterStart' | 'chapter' | 'family'>>;
 
 /** Der Wert im Zustand, den eine Bedingung prüft. */
 function wertFuer(state: Lage, key: ConditionKey): number {
@@ -291,6 +295,16 @@ function wertFuer(state: Lage, key: ConditionKey): number {
     case 'minStrength':
     case 'maxStrength':
       return state.strength;
+    case 'minChapter':
+    case 'maxChapter':
+      // Kapitel (4.5): Ereignisse, die nur in Kapitel 1 passen (Pension, Taufe …), tragen maxChapter: 1.
+      return state.chapter ?? 1;
+    case 'minThomasAge':
+    case 'maxThomasAge': {
+      // Alter von Thomas in ganzen Jahren (4.5); vor der Geburt −1 – Baby-Ereignisse tragen maxThomasAge.
+      const geboren = state.family?.thomasBorn ?? 0;
+      return geboren > 0 && state.round >= geboren ? Math.floor((state.round - geboren) / 4) : -1;
+    }
   }
 }
 
@@ -334,11 +348,11 @@ function cents(value: number): number {
 
 /**
  * Effekte auf den Zustand anwenden. Öl und Tarif fallen nie unter null, Kraft
- * bleibt zwischen 0 und dem Höchstwert. ruth/thomas ändern die Beziehung (2.7);
+ * bleibt zwischen 0 und dem Höchstwert. ruth/thomas/clara ändern die Beziehung (2.7, 4.5);
  * was der Familie guttut, zählt als Familienzeit.
  */
 export function applyEffects(state: GameState, effects: Effects, source = '', timedRounds = 1): GameState {
-  return addTimed(applyFamilyEffects(applyWorldEffects(state, effects), effects.ruth, effects.thomas), effects, source, timedRounds);
+  return addTimed(applyFamilyEffects(applyWorldEffects(state, effects), effects.ruth, effects.thomas, effects.clara), effects, source, timedRounds);
 }
 
 function applyWorldEffects(state: GameState, effects: Effects): GameState {

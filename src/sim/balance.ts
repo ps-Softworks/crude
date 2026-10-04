@@ -318,18 +318,28 @@ export interface TimeskipBalance {
   minChance: Record<Stance, number>;
   borrow: Record<Stance, number>;
   repay: Record<Stance, number>;
-  maxNewWells: number;
+  /** Höchstens so viele neue Bohrungen je Jahr, je Haltung. */
+  maxNewWells: Record<Stance, number>;
+  /** Nachbarbezirke, die der Verwalter höchstens erschließt, wenn am offenen Land nichts mehr lohnt. */
+  expand: Record<Stance, number>;
+  /** $ je erschlossenem Bezirk. */
+  expandCost: number;
   upkeepPerWell: number;
   family: {
     bond: Record<FamilyTime, number>;
     growth: Record<FamilyTime, number>;
+    /** Faktor auf maxNewWells (abgerundet, mindestens 1). */
+    wells: Record<FamilyTime, number>;
+    /** Faktor auf den Verkaufserlös (Aufsicht: Preise, Schwund, Diebstahl). */
+    revenue: Record<FamilyTime, number>;
+    /** Chance je Jahr für die Clara-Weiche – nur der Zeitpunkt; im letzten Jahr kommt sie sicher. */
     claraChance: Record<FamilyTime, number>;
     claraFromYear: number;
     claraStart: number;
     claraBond: number;
   };
   neighbours: { decline: number; entryPrice: number; entryRate: number };
-  crisis: { callShare: number; fireSale: number };
+  crisis: { callShare: number; callLeverage: number; rideCall: number; rideStopYears: number; fireSale: number };
   switches: {
     panicRepay: number;
     rideBorrow: number;
@@ -341,6 +351,7 @@ export interface TimeskipBalance {
     okaraCost: number;
     okaraSuccess: number;
     okaraIncome: number;
+    okaraValueQuarters: number;
   };
   rival: { drillChance: number; drillCost: number };
 }
@@ -371,6 +382,8 @@ export interface BotsBalance {
   games: number;
   /** Seeds sind `${seedPrefix}-0`, `${seedPrefix}-1`, … */
   seedPrefix: string;
+  /** Zeitsprung I (4.5): so viele Kapitelenden des Standard-Bots springen mit allen Direktiven. */
+  timeskipEnds: number;
   /** vorsichtig: Fundchance ab minChance, Rücklage cashReserve, höchstens Stufe maxStage. */
   cautious: { minChance: number; cashReserve: number; maxStage: number };
   /** gierig: pachtet ab minChance. */
@@ -1354,6 +1367,13 @@ function nonNegative(obj: unknown, path: string): number {
   return value;
 }
 
+/** Ganze Zahl ≥ 0. */
+function nonNegativeInt(obj: unknown, path: string): number {
+  const value = num(obj, path);
+  if (!Number.isInteger(value) || value < 0) throw new BalanceError(`balance.yaml: "${path}" muss eine ganze Zahl ab 0 sein`);
+  return value;
+}
+
 function parseRivals(raw: unknown): RivalsBalance {
   const block = (raw as { rivals?: { bullard?: unknown } })?.rivals;
   if (!block || typeof block !== 'object' || !block.bullard || typeof block.bullard !== 'object') {
@@ -1466,11 +1486,15 @@ function parseTimeskip(raw: unknown): TimeskipBalance {
     minChance: jeHaltung('minChance', share),
     borrow: jeHaltung('borrow', share),
     repay: jeHaltung('repay', share),
-    maxNewWells: positiveInt(raw, p('maxNewWells')),
+    maxNewWells: jeHaltung('maxNewWells', positiveInt),
+    expand: jeHaltung('expand', nonNegativeInt),
+    expandCost: nonNegative(raw, p('expandCost')),
     upkeepPerWell: nonNegative(raw, p('upkeepPerWell')),
     family: {
       bond: jeFamilie('bond', num),
       growth: jeFamilie('growth', nonNegative),
+      wells: jeFamilie('wells', nonNegative),
+      revenue: jeFamilie('revenue', nonNegative),
       claraChance: jeFamilie('claraChance', share),
       claraFromYear: jahr('family.claraFromYear'),
       claraStart: nonNegative(raw, p('family.claraStart')),
@@ -1481,7 +1505,13 @@ function parseTimeskip(raw: unknown): TimeskipBalance {
       entryPrice: nonNegative(raw, p('neighbours.entryPrice')),
       entryRate: nonNegative(raw, p('neighbours.entryRate')),
     },
-    crisis: { callShare: share(raw, p('crisis.callShare')), fireSale: share(raw, p('crisis.fireSale')) },
+    crisis: {
+      callShare: share(raw, p('crisis.callShare')),
+      callLeverage: nonNegative(raw, p('crisis.callLeverage')),
+      rideCall: share(raw, p('crisis.rideCall')),
+      rideStopYears: nonNegativeInt(raw, p('crisis.rideStopYears')),
+      fireSale: share(raw, p('crisis.fireSale')),
+    },
     switches: {
       panicRepay: share(raw, p('switches.panicRepay')),
       rideBorrow: share(raw, p('switches.rideBorrow')),
@@ -1493,6 +1523,7 @@ function parseTimeskip(raw: unknown): TimeskipBalance {
       okaraCost: nonNegative(raw, p('switches.okaraCost')),
       okaraSuccess: share(raw, p('switches.okaraSuccess')),
       okaraIncome: nonNegative(raw, p('switches.okaraIncome')),
+      okaraValueQuarters: nonNegative(raw, p('switches.okaraValueQuarters')),
     },
     rival: { drillChance: share(raw, p('rival.drillChance')), drillCost: nonNegative(raw, p('rival.drillCost')) },
   };
@@ -1507,6 +1538,7 @@ function parseBots(raw: unknown): BotsBalance {
   return {
     games: positiveInt(raw, 'bots.games'),
     seedPrefix: text(block, 'seedPrefix', 'bots'),
+    timeskipEnds: positiveInt(raw, 'bots.timeskipEnds'),
     cautious: {
       minChance: share(raw, 'bots.cautious.minChance'),
       cashReserve: nonNegative(raw, 'bots.cautious.cashReserve'),

@@ -85,6 +85,20 @@ export function wellsOn(state: Pick<GameState, 'wells'>, parcelId: string): Well
 }
 
 /**
+ * Kennung für das nächste Bohrloch einer Ranch: höchste vergebene Nummer + 1. Nicht
+ * die Anzahl + 1 – im Zeitsprung verkauft der Verwalter einzelne Quellen (Notverkauf),
+ * danach wäre die Nummer schon vergeben (4.5).
+ */
+export function nextWellId(state: Pick<GameState, 'wells'>, parcelId: string): string {
+  const praefix = `${parcelId}#`;
+  const hoechste = wellsOn(state, parcelId).reduce((max, w) => {
+    const n = w.id.startsWith(praefix) ? Number(w.id.slice(praefix.length)) : NaN;
+    return Number.isFinite(n) ? Math.max(max, n) : max;
+  }, 0);
+  return `${praefix}${hoechste + 1}`;
+}
+
+/**
  * Das Bohrloch, um das es auf einer Ranch gerade geht: das laufende, sonst das
  * zuletzt gebohrte. Auf einer Ranch läuft höchstens eine Bohrung zugleich.
  */
@@ -199,9 +213,10 @@ export function startDrilling(state: GameState, balance: Balance, parcelId: stri
   // Immer genau ein Zufallswert, auch bei trockenem Land: so bleibt der Zufall gleichmäßig.
   const gewuerfelt = rollOilStage(balance, parcel, rng.float());
   const oilStage = quelle ? quelle.stage : gewuerfelt;
+  // Im Protokoll zählt das Loch auf der Ranch, die Kennung ist eindeutig (nextWellId).
   const nummer = bisher.length + 1;
   const well: Well = {
-    id: `${parcelId}#${nummer}`,
+    id: nextWellId(state, parcelId),
     parcelId,
     stage: quote.stage,
     status: 'drilling',

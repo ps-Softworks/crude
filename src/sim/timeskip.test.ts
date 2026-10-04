@@ -5,17 +5,22 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parseBalance, type Balance } from './balance';
 import { canGoPublic, decideIpo } from './chapter';
-import { debt, takeLoan } from './credit';
+import { creditLimit, debt, takeLoan } from './credit';
 import { applyAction } from './desk';
-import { conditionsMet } from './events';
+import { conditionsMet, resolveEvent } from './events';
 import { endRound, formatDate, newGame, type GameState } from './game';
 import { neighbourWells } from './market';
 import { deserializeGame, serializeGame } from './save';
 import { loadBalance, rawBalance } from './testBalance';
 import { loadEvents } from './testEvents';
+import { empireValue } from './empire';
+import { okaraIncome } from './ventures';
+import { chapterEnds } from './timeskipBots';
 import {
   answerSwitch,
   CHRONICLE_KINDS,
+  crisisCallShare,
+  switchChoice,
   chapterRound,
   chapterRounds,
   gameYear,
@@ -65,7 +70,10 @@ function springen(s0: GameState, directives = STANDARD, antworten: Antworten = E
   for (let i = 0; i < 10; i++) {
     const step = runTimeskip(s, b, catalog);
     if (step.status === 'done') return { state: step.state, record: step.record };
-    const a = answerSwitch(s, b, step.id, antworten(step.id, i), catalog);
+    const wahl = antworten(step.id, i);
+    let a = answerSwitch(s, b, step.id, wahl, catalog);
+    // Zu teuer (Kasse und Bankrahmen reichen nicht)? Dann die andere Antwort.
+    if (!a.ok && /reichen/.test(a.reason)) a = answerSwitch(s, b, step.id, SWITCH_CHOICES[step.id].find((c) => c !== wahl)!, catalog);
     if (!a.ok) throw new Error(a.reason);
     s = a.state;
   }
@@ -145,6 +153,36 @@ describe('Start des Sprungs', () => {
   });
 });
 
+/**
+ * Die „Welt“ des Fertig-Kriteriums (GDD §2/§13, docs/weltmodell.md): Jacobs Firma und Familie –
+ * Quellen, Kasse, Schulden, Merkzeichen, Weichen. Das Weltmodell selbst (Regierung, Gesetze,
+ * Weltpreis) reagiert auf Salt Hill nur winzig; Unterschiede dort zählen hier nicht.
+ */
+function firma(r: { state: GameState; record: TimeskipRecord }) {
+  return {
+    quellen: r.state.wells.filter((w) => w.status === 'found').length,
+    bohrungen: r.state.wells.length,
+    kasse: Math.round(r.state.cash),
+    schulden: Math.round(debt(r.state)),
+    merkzeichen: Object.keys(r.state.events.marks).sort(),
+    weichen: r.record.switches,
+    antworten: r.record.answers,
+    ruth: Math.round(r.state.family.ruth),
+  };
+}
+
+/** Wie weit liegen zwei Firmen auseinander? Mindestgrößen statt not.toEqual auf Rundungsresten. */
+function spuerbarAnders(a: ReturnType<typeof firma>, b: ReturnType<typeof firma>): boolean {
+  return (
+    Math.abs(a.quellen - b.quellen) >= 1 ||
+    Math.abs(a.kasse - b.kasse) >= 1000 ||
+    Math.abs(a.schulden - b.schulden) >= 500 ||
+    Math.abs(a.ruth - b.ruth) >= 5 ||
+    JSON.stringify(a.merkzeichen) !== JSON.stringify(b.merkzeichen) ||
+    JSON.stringify(a.antworten) !== JSON.stringify(b.antworten)
+  );
+}
+
 describe('Fertig-Kriterium: dieselbe Welt nur bei denselben Entscheidungen', () => {
   it('gleicher Seed und gleiche Entscheidungen → genau dieselbe Welt', () => {
     const a = springen(kapitelEnde('sprung-gleich', balance, mitEntscheidungen));
@@ -153,29 +191,41 @@ describe('Fertig-Kriterium: dieselbe Welt nur bei denselben Entscheidungen', () 
     expect(serializeGame(b.state, APP)).toBe(serializeGame(a.state, APP));
   });
 
-  it('gleicher Seed, andere Entscheidungen in Kapitel 1 → verschiedene Welten', () => {
+  it('gleicher Seed, andere Entscheidungen in Kapitel 1 → spürbar andere Firma', () => {
     const ohne = springen(kapitelEnde('sprung-anders'));
     const mit = springen(kapitelEnde('sprung-anders', balance, mitEntscheidungen));
-    expect(mit.state.worldModel).not.toEqual(ohne.state.worldModel);
-    expect(mit.state.wells).not.toEqual(ohne.state.wells);
+    expect(spuerbarAnders(firma(mit), firma(ohne))).toBe(true);
     expect(mit.record.after).not.toEqual(ohne.record.after);
   });
 
-  it('gleicher Seed, andere Direktiven vor dem Sprung → verschiedene Welten', () => {
+  it('gleicher Seed, andere Direktiven vor dem Sprung → spürbar andere Firma und Familie', () => {
     const ende = kapitelEnde('sprung-direktive', balance, mitEntscheidungen);
     const mutig = springen(ende, { stance: 'aggressive', family: 'little' });
     const vorsichtig = springen(ende, { stance: 'cautious', family: 'much' });
-    expect(mutig.state.worldModel).not.toEqual(vorsichtig.state.worldModel);
-    expect(mutig.state.cash).not.toBe(vorsichtig.state.cash);
-    expect(vorsichtig.state.family.ruth).toBeGreaterThan(mutig.state.family.ruth);
+    expect(spuerbarAnders(firma(mutig), firma(vorsichtig))).toBe(true);
+    expect(Math.abs(mutig.state.cash - vorsichtig.state.cash)).toBeGreaterThan(1000);
+    expect(vorsichtig.state.family.ruth).toBeGreaterThan(mutig.state.family.ruth + 10);
   });
 
-  it('gleicher Seed, andere Antworten auf die Weichen → verschiedene Welten', () => {
+  it('gleicher Seed, andere Antworten auf die Weichen → spürbar andere Firma', () => {
     const ende = kapitelEnde('sprung-weiche', balance, mitEntscheidungen);
     const ja = springen(ende, STANDARD, ERSTE);
     const nein = springen(ende, STANDARD, ZWEITE);
     expect(ja.record.switches.length).toBeGreaterThan(0);
-    expect(ja.state).not.toEqual(nein.state);
+    expect(spuerbarAnders(firma(ja), firma(nein))).toBe(true);
+  });
+
+  it('die Welt-Weichen (Okara, Clara-Zeitpunkt bei gleicher Familie) hängen nicht davon ab, wie viel der Verwalter bohrt', () => {
+    for (let i = 0; i < 8; i++) {
+      const ende = kapitelEnde(`sprung-strom-${i}`, balance, mitEntscheidungen);
+      const mutig = springen(ende, { stance: 'aggressive', family: 'some' }, ZWEITE);
+      const vorsichtig = springen(ende, { stance: 'cautious', family: 'some' }, ZWEITE);
+      // Gleiche Weichen zur gleichen Zeit – nur die Firma ist eine andere.
+      const wann = (r: { record: TimeskipRecord }, kind: string) => r.record.entries.find((e) => e.kind === kind)?.year;
+      expect(vorsichtig.record.switches.includes('okara')).toBe(mutig.record.switches.includes('okara'));
+      expect(vorsichtig.state.ventures?.okara?.oil).toBe(mutig.state.ventures?.okara?.oil);
+      expect(wann(vorsichtig, 'clara_born')).toBe(wann(mutig, 'clara_born'));
+    }
   });
 });
 
@@ -301,15 +351,24 @@ describe('Weichen', () => {
     expect(lease.record.entries.some((e) => e.kind === 'okara_found' || e.kind === 'okara_dry')).toBe(true);
   });
 
-  it('Clara: ohne Chance keine Geburt; mit sicherer Chance kommt sie zur Welt (Merkzeichen, Familie)', () => {
+  it('Clara kommt in jedem Sprung zur Welt (Weltbibel) – die Chance bestimmt nur den Zeitpunkt, spätestens im letzten Jahr', () => {
     const raw = rawBalance();
     const ts = raw.timeskip as Record<string, unknown>;
     const fam = ts.family as Record<string, unknown>;
     const mit = (c: number) => parseBalance({ ...raw, timeskip: { ...ts, family: { ...fam, claraChance: { little: c, some: c, much: c } } } });
     const nie = mit(0);
-    const keine = springen(kapitelEnde('sprung-clara', nie), STANDARD, ERSTE, nie);
-    expect(keine.record.switches).not.toContain('clara');
-    expect(keine.state.family.claraBorn ?? 0).toBe(0);
+    const spaet = springen(kapitelEnde('sprung-clara', nie), STANDARD, ZWEITE, nie);
+    expect(spaet.record.switches).toContain('clara');
+    expect(spaet.record.entries.find((e) => e.kind === 'clara_born')?.year).toBe(10);
+    expect(spaet.state.family.claraBorn).toBeGreaterThan(0);
+    // Mit dem echten Balancing: in jedem Sprung, bei jeder Familien-Direktive (außer die Firma geht vorher pleite).
+    for (let i = 0; i < 6; i++) {
+      const ende = kapitelEnde(`sprung-clara-${i}`);
+      for (const family of ['little', 'some', 'much'] as const) {
+        const r = springen(ende, { stance: 'balanced', family }, ZWEITE);
+        if (r.state.ending !== 'pleite') expect(r.state.family.claraBorn ?? 0).toBeGreaterThan(0);
+      }
+    }
     const immer = mit(1);
     const ende = kapitelEnde('sprung-clara', immer);
     const daheim = springen(ende, STANDARD, (id) => (id === 'clara' ? 'home' : SWITCH_CHOICES[id][1]), immer);
@@ -355,29 +414,208 @@ describe('Weichen', () => {
   });
 });
 
-describe('Direktiven wirken', () => {
-  it('vorsichtig tilgt mehr Schulden als wagemutig; wagemutig bohrt mehr', () => {
-    let vorsichtigSchulden = 0;
-    let mutigSchulden = 0;
-    let vorsichtigBohr = 0;
-    let mutigBohr = 0;
-    for (let i = 0; i < 6; i++) {
-      const ende = kapitelEnde(`sprung-haltung-${i}`, balance, mitEntscheidungen);
-      const v = springen(ende, { stance: 'cautious', family: 'some' }, ZWEITE);
-      const m = springen(ende, { stance: 'aggressive', family: 'some' }, ZWEITE);
-      vorsichtigSchulden += v.record.after.debt;
-      mutigSchulden += m.record.after.debt;
-      vorsichtigBohr += v.state.wells.length - ende.wells.length;
-      mutigBohr += m.state.wells.length - ende.wells.length;
-    }
-    expect(vorsichtigSchulden).toBeLessThanOrEqual(mutigSchulden);
-    expect(mutigBohr).toBeGreaterThan(vorsichtigBohr);
+describe('Direktiven wirken (GDD §2: Haltung bestimmt Ertrag und Streuung, Familienzeit kostet Wachstum)', () => {
+  // Kapitelenden des Standard-Bots (wie npm run bots) – mit Quellen, Schulden und allem.
+  const enden = chapterEnds(balance, 10, catalog);
+  const lauf = (stance: Directives['stance'], family: Directives['family']) => enden.map((e) => springen(e, { stance, family }, ZWEITE));
+  const schnitt = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+  const wert = (r: { state: GameState }) => empireValue(r.state, balance);
+  const mutig = lauf('aggressive', 'some');
+  const mittel = lauf('balanced', 'some');
+  const vorsichtig = lauf('cautious', 'some');
+
+  it('wagemutig bohrt mehr, erschließt Nachbarbezirke und bringt im Schnitt klar mehr – mit größerer Streuung', () => {
+    const bohr = (rs: typeof mutig) => schnitt(rs.map((r, i) => r.state.wells.length - enden[i].wells.length));
+    expect(bohr(mutig)).toBeGreaterThan(bohr(mittel));
+    expect(bohr(mittel)).toBeGreaterThan(bohr(vorsichtig));
+    expect(mutig.some((r) => r.record.entries.some((e) => e.kind === 'region_opened'))).toBe(true);
+    expect(mittel.some((r) => r.record.entries.some((e) => e.kind === 'region_opened'))).toBe(false);
+    expect(schnitt(mutig.map(wert))).toBeGreaterThan(1.2 * schnitt(mittel.map(wert)));
+    const spanne = (rs: typeof mutig) => Math.max(...rs.map(wert)) - Math.min(...rs.map(wert));
+    expect(spanne(mutig)).toBeGreaterThan(spanne(vorsichtig));
   });
 
-  it('viel Familienzeit hält Ruth näher als „die Firma zuerst“', () => {
-    const ende = kapitelEnde('sprung-familie');
-    const viel = springen(ende, { stance: 'balanced', family: 'much' }, ZWEITE);
-    const wenig = springen(ende, { stance: 'balanced', family: 'little' }, ZWEITE);
-    expect(viel.state.family.ruth).toBeGreaterThan(wenig.state.family.ruth);
+  it('vorsichtig tilgt mehr und hat am Ende weniger Schulden als wagemutig', () => {
+    expect(schnitt(vorsichtig.map((r) => r.record.after.debt))).toBeLessThan(schnitt(mutig.map((r) => r.record.after.debt)));
+  });
+
+  it('viel Zeit zu Hause kostet spürbar Wachstum – weniger Bohrungen, weniger Wert –, hält aber Ruth nah', () => {
+    const viel = lauf('balanced', 'much');
+    const wenig = lauf('balanced', 'little');
+    expect(schnitt(viel.map(wert))).toBeLessThan(0.92 * schnitt(mittel.map(wert)));
+    expect(schnitt(viel.map((r) => r.state.wells.length))).toBeLessThan(schnitt(mittel.map((r) => r.state.wells.length)));
+    expect(schnitt(viel.map((r) => r.state.family.ruth))).toBeGreaterThan(schnitt(wenig.map((r) => r.state.family.ruth)) + 15);
+  });
+});
+
+describe('Kreditkrise und Bankenpanik (GDD §15)', () => {
+  it('die Bank kündigt mehr, je höher der Rahmen ausgelastet ist – nach „weiter auf Pump“ noch mehr, höchstens alles', () => {
+    const c = balance.timeskip.crisis;
+    expect(crisisCallShare(balance, 1000, 10000, false)).toBeCloseTo(c.callShare + c.callLeverage * 0.1, 5);
+    expect(crisisCallShare(balance, 9000, 10000, false)).toBeGreaterThan(crisisCallShare(balance, 1000, 10000, false));
+    expect(crisisCallShare(balance, 5000, 10000, true)).toBeCloseTo(crisisCallShare(balance, 5000, 10000, false) + c.rideCall, 5);
+    expect(crisisCallShare(balance, 20000, 10000, true)).toBe(1);
+  });
+
+  it('eine Kreditkrise gleich zu Beginn: Kündigung nach Auslastung, Notverkauf, im Jahr der Kündigung keine Bohrung', () => {
+    const raw = rawBalance();
+    const wm = raw.worldModel as Record<string, unknown>;
+    const credit = wm.credit as Record<string, unknown>;
+    // Das Klima kippt sicher im ersten Quartal.
+    const krise = parseBalance({ ...raw, worldModel: { ...wm, credit: { ...credit, crashChance: 1 } } });
+    const ende = chapterEnds(krise, 8, catalog).find((e) => e.wells.filter((w) => w.status === 'found').length >= 2)!;
+    expect(ende).toBeDefined();
+    const geliehen = takeLoan({ ...ende, finished: false }, krise, Math.floor(headroomOf(ende, krise) / 100) * 100);
+    if (!geliehen.ok) throw new Error(geliehen.reason);
+    const basis: GameState = { ...geliehen.state, finished: true, cash: 0, worldModel: { ...ende.worldModel, credit: 90, leverage: 80, crash: 0, panic: 0 } };
+    const r = springen(basis, { stance: 'aggressive', family: 'some' }, ZWEITE, krise);
+    const kuendigung = r.record.entries.find((e) => e.kind === 'crisis_call');
+    expect(kuendigung?.year).toBe(5);
+    expect(r.record.entries.some((e) => e.kind === 'fire_sale' && e.year === 5)).toBe(true);
+    expect(r.record.entries.some((e) => e.kind === 'wells_found' && e.year === 5)).toBe(false);
+  });
+});
+
+/** Freier Bankrahmen – für den Test-Aufbau. */
+function headroomOf(s: GameState, b: Balance): number {
+  return Math.max(0, creditLimit(s, b) - s.loans.filter((x) => x.source === 'bank').reduce((a, x) => a + x.principal, 0));
+}
+
+describe('Geld im Sprung: Notkredit nur bis zum Bankrahmen, sonst Pleite', () => {
+  it('eine Firma ohne Quellen und mit Schulden am Rahmen geht im Sprung pleite – das Spiel endet nach der Chronik', () => {
+    const ende = kapitelEnde('sprung-pleite');
+    const rahmen = creditLimit({ ...ende, wells: [] }, balance);
+    const basis: GameState = {
+      ...ende,
+      wells: [],
+      leases: [],
+      cash: 0,
+      loans: [{ id: 1, source: 'bank', principal: rahmen - 100, rate: 0.1, takenRound: 10, collateral: null }],
+    };
+    const { state, record } = springen(basis, STANDARD, ZWEITE);
+    expect(state.ending).toBe('pleite');
+    expect(state.finished).toBe(true);
+    expect(record.bankrupt).toBe(true);
+    expect(record.toYear).toBeLessThan(10);
+    expect(record.entries.some((e) => e.kind === 'bankrupt')).toBe(true);
+    // Notkredite gab es nur, soweit der Rahmen reichte.
+    const notkredit = record.entries.filter((e) => e.kind === 'emergency_loan').reduce((a, e) => a + (e.amount ?? 0), 0);
+    expect(notkredit).toBeLessThanOrEqual(100);
+    expect(record.after.value).toBe(0);
+    expect(unreadChronicle(state)).toEqual(record);
+    const geladen = deserializeGame(serializeGame(state, APP));
+    expect(geladen.ok && geladen.state).toEqual(state);
+  });
+
+  it('Weichen-Antworten mit Kosten: aus der Kasse, sonst auf Kredit, sonst gesperrt', () => {
+    const kosten = balance.timeskip.switches.okaraCost;
+    expect(switchChoice({ cash: kosten, debt: 0, credit: 0 }, balance, 'okara', 'lease')).toEqual({ cost: kosten, onCredit: false, blocked: null });
+    expect(switchChoice({ cash: kosten - 1000, debt: 0, credit: 1000 }, balance, 'okara', 'lease').onCredit).toBe(true);
+    expect(switchChoice({ cash: kosten - 1000, debt: 0, credit: 1000 }, balance, 'okara', 'lease').blocked).toBeNull();
+    expect(switchChoice({ cash: kosten - 1000, debt: 0, credit: 900 }, balance, 'okara', 'lease').blocked).toMatch(/reichen/);
+    expect(switchChoice({ cash: 0, debt: 0, credit: 0 }, balance, 'okara', 'pass').blocked).toBeNull();
+  });
+
+  it('eine zu teure Antwort lehnt der Sprung ab; das Telegramm kennt Kasse, Schulden und Rahmen', () => {
+    const raw = rawBalance();
+    const ts = raw.timeskip as Record<string, unknown>;
+    const immer = parseBalance({ ...raw, timeskip: { ...ts, switches: { ...(ts.switches as object), okaraChance: 1 } } });
+    const ende = kapitelEnde('sprung-teuer', immer);
+    const pleiteNah: GameState = { ...ende, wells: [], leases: [], cash: 0, loans: [{ id: 1, source: 'bank', principal: creditLimit({ ...ende, wells: [] }, immer), rate: 0, takenRound: 10, collateral: null }] };
+    const los = startTimeskip(pleiteNah, immer, STANDARD);
+    if (!los.ok) throw new Error(los.reason);
+    let s = los.state;
+    let step = runTimeskip(s, immer, catalog);
+    while (step.status === 'switch' && step.id !== 'okara') {
+      const a = answerSwitch(s, immer, step.id, SWITCH_CHOICES[step.id][1], catalog);
+      if (!a.ok) throw new Error(a.reason);
+      s = a.state;
+      step = runTimeskip(s, immer, catalog);
+    }
+    expect(step.status).toBe('switch');
+    if (step.status !== 'switch') return;
+    expect(step.funds.credit).toBe(0);
+    expect(step.funds.debt).toBeGreaterThan(0);
+    const teuer = answerSwitch(s, immer, 'okara', 'lease', catalog);
+    expect(teuer.ok).toBe(false);
+    expect(answerSwitch(s, immer, 'okara', 'pass', catalog).ok).toBe(true);
+  });
+});
+
+describe('Okara und Benzin bleiben (4.5)', () => {
+  const raw = rawBalance();
+  const ts = raw.timeskip as Record<string, unknown>;
+  const mit = (okaraSuccess: number) => parseBalance({ ...raw, timeskip: { ...ts, switches: { ...(ts.switches as object), okaraChance: 1, okaraSuccess } } });
+
+  it('Pachten mit Fund: Einnahmen auch in Kapitel 2 und Wert im Imperium; „Bullard soll sie haben“: Bullard kassiert', () => {
+    const b = mit(1);
+    const ende = { ...kapitelEnde('sprung-okara-bleibt', b), cash: 30000 };
+    const jacob = springen(ende, STANDARD, (id) => (id === 'okara' ? 'lease' : SWITCH_CHOICES[id][1]), b);
+    expect(jacob.state.ventures?.okara).toMatchObject({ holder: 'jacob', oil: true });
+    expect(okaraIncome(jacob.state, b, 'jacob')).toBeGreaterThan(0);
+    const weiter = endRound(jacob.state, b, catalog);
+    expect(weiter.log.slice(jacob.state.log.length).some((z) => /Okara/.test(z))).toBe(true);
+    const bullard = springen(ende, STANDARD, (id) => (id === 'okara' ? 'pass' : SWITCH_CHOICES[id][1]), b);
+    expect(bullard.state.ventures?.okara).toMatchObject({ holder: 'bullard', oil: true });
+    expect(okaraIncome(bullard.state, b, 'bullard')).toBeGreaterThan(0);
+    expect(bullard.state.rival.cash).toBeGreaterThan(jacob.state.rival.cash);
+  });
+
+  it('die Benzinanlage zahlt ihren Aufschlag auch nach dem Sprung', () => {
+    const ende = { ...kapitelEnde('sprung-benzin-bleibt'), cash: 30000 };
+    const ja = springen(ende, STANDARD, (id) => (id === 'automobile' ? 'invest' : SWITCH_CHOICES[id][1]));
+    expect(ja.state.ventures?.benzin?.since).toBeLessThanOrEqual(ja.state.round);
+    const nein = springen(ende, STANDARD, (id) => (id === 'automobile' ? 'ignore' : SWITCH_CHOICES[id][1]));
+    expect(nein.state.ventures?.benzin).toBeUndefined();
+  });
+});
+
+describe('Kapitel 2 spielt keine Kapitel-1-Ereignisse weiter (Säugling, Pension …)', () => {
+  const NUR_K1 = ['thomas_nacht', 'thomas_wort', 'thomas_krupp', 'thomas_taufe', 'termin_familie', 'pension_miete', 'fieber', 'ruth_buecher'];
+
+  it('Bedingungen kennen Kapitel und Thomas’ Alter', () => {
+    const k2 = { ...newGame('k2-bedingung', balance), round: 41, chapter: 2, chapterStart: 41, family: { ruth: 70, thomas: 70, thomasBorn: 3, time: 0 } };
+    expect(conditionsMet(k2, { maxChapter: 1 })).toBe(false);
+    expect(conditionsMet(k2, { minChapter: 2 })).toBe(true);
+    expect(conditionsMet(k2, { maxThomasAge: 3 })).toBe(false);
+    expect(conditionsMet(k2, { minThomasAge: 9, maxThomasAge: 9 })).toBe(true);
+    expect(conditionsMet({ ...k2, round: 2, chapter: 1, chapterStart: 1, family: { ...k2.family, thomasBorn: 0 } }, { maxThomasAge: 0 })).toBe(true);
+  });
+
+  it('16 Runden Kapitel 2: keins der Kapitel-1-Ereignisse kommt auf den Schreibtisch, der Abend mit den Kindern steht im Kalender', () => {
+    for (let i = 0; i < 4; i++) {
+      let { state } = springen(kapitelEnde(`sprung-k1-ereignisse-${i}`, balance, mitEntscheidungen));
+      for (let r = 0; r < 16 && !state.finished; r++) {
+        expect(state.events.pending.filter((id) => NUR_K1.includes(id))).toEqual([]);
+        state = endRound(state, balance, catalog);
+      }
+    }
+    const { state } = springen(kapitelEnde('sprung-k2-abend'));
+    expect(resolveEvent(state, balance, catalog, 'termin_familie_k2', 'bleiben').ok).toBe(true);
+  });
+});
+
+describe('Bohrloch-Kennungen im Sprung', () => {
+  it('auch mit Notverkäufen und Nachbohren bleibt jede Kennung eindeutig', () => {
+    const raw = rawBalance();
+    const wm = raw.worldModel as Record<string, unknown>;
+    const credit = wm.credit as Record<string, unknown>;
+    const ts = raw.timeskip as Record<string, unknown>;
+    // Viele Krisen, harte Kündigungen: Der Verwalter muss oft einzelne Quellen verkaufen.
+    const hart = parseBalance({
+      ...raw,
+      worldModel: { ...wm, credit: { ...credit, crashChance: 0.5 } },
+      timeskip: { ...ts, crisis: { ...(ts.crisis as object), callShare: 1 } },
+    });
+    let notverkauf = 0;
+    for (const end of chapterEnds(hart, 8, catalog)) {
+      for (const stance of ['aggressive', 'balanced'] as const) {
+        const r = springen({ ...end, worldModel: { ...end.worldModel, credit: 80 } }, { stance, family: 'some' }, ZWEITE, hart);
+        const ids = r.state.wells.map((w) => w.id);
+        expect(new Set(ids).size).toBe(ids.length);
+        if (r.record.entries.some((e) => e.kind === 'fire_sale')) notverkauf++;
+      }
+    }
+    expect(notverkauf).toBeGreaterThan(0);
   });
 });

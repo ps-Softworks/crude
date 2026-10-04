@@ -173,6 +173,7 @@
 # --- Wohnen, Pachten, Steuern ------------------------------------------------
 
 - id: pension_miete
+  conditions: { maxChapter: 1 }   # 4.5: die Pension gehört zu den ersten Jahren in Port Ellis
   mail: demand
   once: false
   cooldown: 5

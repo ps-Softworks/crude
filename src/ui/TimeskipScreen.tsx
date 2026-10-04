@@ -11,13 +11,16 @@ import {
   fillTimeskipText,
   STANCES,
   SWITCH_CHOICES,
+  switchChoice,
   type ChronicleEntry,
   type Directives,
   type FamilyTime,
   type Stance,
+  type SwitchFunds,
   type SwitchId,
   type TimeskipRecord,
 } from '../sim/timeskip';
+import { regionById } from '../sim/worldMap';
 import { balance } from './balance';
 import { familyContent } from './family';
 import { money, NBSP } from './format';
@@ -38,10 +41,12 @@ function preis(p: number): string {
 export function chronicleLine(e: ChronicleEntry): string {
   const gesetz = e.law ? balance.laws.find((l) => l.id === e.law) : undefined;
   const text = (e.n === 1 ? T.chronicle.one[e.kind] : undefined) ?? T.chronicle.entries[e.kind];
+  // Ein erschlossener Bezirk steht mit seiner Kennung in der Chronik – der Name kommt aus der Karte.
+  const bezirk = e.kind === 'region_opened' && e.name ? regionById(balance.world, e.name) : undefined;
   return fillTimeskipText(text, {
     n: String(e.n ?? ''),
     betrag: e.amount !== undefined ? money(e.amount) : '',
-    name: e.name ?? '',
+    name: bezirk ? fillTimeskipText(bezirk.name, {}) : (e.name ?? ''),
     partei: e.party ? fillTimeskipText(politicsContent.parties[e.party].name, {}) : '',
     gesetz: gesetz ? fillTimeskipText(gesetz.name, {}) : (e.law ?? ''),
     preis: e.price !== undefined ? preis(e.price) : '',
@@ -113,10 +118,9 @@ export function DirectivesLetter({ game, onSend, onBack }: { game: GameState; on
 }
 
 /** Ein Weichen-Telegramm mitten im Sprung. */
-export function SwitchTelegram({ id, year, onAnswer }: { id: SwitchId; year: number; onAnswer: (choice: string) => void }) {
+export function SwitchTelegram({ id, year, funds, onAnswer }: { id: SwitchId; year: number; funds: SwitchFunds; onAnswer: (choice: string) => void }) {
   const ref = useTitelFokus(id);
   const s = T.switches[id];
-  const kosten: Record<string, number> = { invest: balance.timeskip.switches.automobileCost, lease: balance.timeskip.switches.okaraCost };
   return (
     <section ref={ref} className="telegramm" aria-labelledby="telegramm-titel" role="dialog">
       <p className="telegramm-kopf">
@@ -126,12 +130,21 @@ export function SwitchTelegram({ id, year, onAnswer }: { id: SwitchId; year: num
         {fillTimeskipText(s.title, {})}
       </h2>
       <p className="telegramm-text">{fillTimeskipText(s.text, {})}</p>
+      {/* Kasse und Schulden im Blick (4.5): Was kostet, ist gegen das Geld zu sehen; reicht es nicht, ist die Antwort gesperrt. */}
+      <p className="telegramm-kasse muted">
+        {fillTimeskipText(T.switches.funds, { kasse: money(funds.cash), schulden: money(funds.debt), rahmen: money(funds.credit) })}
+      </p>
       <div className="knoepfe">
-        {SWITCH_CHOICES[id].map((c) => (
-          <button key={c} type="button" onClick={() => onAnswer(c)}>
-            {fillTimeskipText(s.choices[c], { betrag: kosten[c] !== undefined ? money(kosten[c]) : '' })}
-          </button>
-        ))}
+        {SWITCH_CHOICES[id].map((c) => {
+          const w = switchChoice(funds, balance, id, c);
+          const zusatz = w.blocked ? fillTimeskipText(T.switches.blocked, {}) : w.onCredit ? fillTimeskipText(T.switches.onCredit, {}) : null;
+          return (
+            <button key={c} type="button" onClick={() => onAnswer(c)} disabled={w.blocked !== null} title={w.blocked ?? undefined}>
+              {fillTimeskipText(s.choices[c], { betrag: w.cost > 0 ? money(w.cost) : '' })}
+              {zusatz && <span className="knopf-zusatz"> – {zusatz}</span>}
+            </button>
+          );
+        })}
       </div>
     </section>
   );
@@ -192,10 +205,18 @@ export function ChronicleScreen({ game, record, onContinue }: { game: GameState;
         </dl>
       </div>
       <div className="bogen-fuss">
-        <span className="stempel-klein">{fillTimeskipText(T.chapter2.badge, {})}</span>
-        <button type="button" className="primary" onClick={onContinue}>
-          {fillTimeskipText(c.continue, { jahr: formatDate(game).split(' ').pop() ?? '' })}
-        </button>
+        {game.ending === 'pleite' ? (
+          <button type="button" className="primary" onClick={onContinue}>
+            {fillTimeskipText(c.end, {})}
+          </button>
+        ) : (
+          <>
+            <span className="stempel-klein">{fillTimeskipText(T.chapter2.badge, {})}</span>
+            <button type="button" className="primary" onClick={onContinue}>
+              {fillTimeskipText(c.continue, { jahr: formatDate(game).split(' ').pop() ?? '' })}
+            </button>
+          </>
+        )}
       </div>
     </section>
   );

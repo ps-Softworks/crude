@@ -15,9 +15,10 @@ Kurzreferenz der Felder:
 - Karte (0.2.15+5): `ranch: moss` sagt, um wessen Ranch es geht (Figuren unter `figures` in
   `content/map.yaml` – jede Figur bekommt dort eine echte Ranch). `unlocks: [hollins]` an einer Wahl
   schaltet ein gesperrtes Gebiet aus `content/map.yaml` frei; seine Ranches entstehen dann aus dem Seed.
-- Bedingungen: `minRound`, `maxRound`, `minCash`, `maxCash`, `minOilStock`,
-  `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100)
-- Effekte: `cash`, `oilStock`, `railTariff`, `strength` (Kraft), `ruth`, `thomas` (Beziehung 0–100, 2.7),
+- Bedingungen: `minRound`, `maxRound` (ab Kapitelbeginn), `minCash`, `maxCash`, `minOilStock`,
+  `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100),
+  `minChapter`, `maxChapter` (Kapitel), `minThomasAge`, `maxThomasAge` (Thomas' Alter in Jahren, vor der Geburt −1)
+- Effekte: `cash`, `oilStock`, `railTariff`, `strength` (Kraft), `ruth`, `thomas`, `clara` (Beziehung 0–100, 2.7/4.5),
   `teams` (eigene Gespanne +/−), `teamsIdle` (eigene Fuhrwerke stehen bis Runde jetzt+n still; 0.2.15+2),
   befristet für `events.timedRounds` Runden (0.2.15+3): `price` ($ je Barrel beim Trust), `production`
   (Anteil der Förderung), `leaseCost` (Anteil am Pachtbonus); dasselbe Ereignis stapelt sich nicht

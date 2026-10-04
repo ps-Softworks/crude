@@ -746,7 +746,7 @@ function effectValue(state: GameState, balance: Balance, choice: EventChoice, po
     (e.cash ?? 0) +
     (e.oilStock ?? 0) * state.postedPrice +
     wirksam * policy.strength +
-    ((e.ruth ?? 0) + (e.thomas ?? 0)) * policy.family -
+    ((e.ruth ?? 0) + (e.thomas ?? 0) + (e.clara ?? 0)) * policy.family -
     (e.railTariff ?? 0) * barrelsAhead(state) +
     timedValue(state, balance, e)
   );

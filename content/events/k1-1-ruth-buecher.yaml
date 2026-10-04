@@ -18,7 +18,7 @@
       his desk. The lumber dealer billed three of them twice – 80 $ that would
       simply have vanished. "Let me keep the books, Jacob," she says. "I did it
       for Pell the grocer for ten years."
-  conditions: { minRound: 2, maxRound: 6 }
+  conditions: { minRound: 2, maxRound: 6, maxChapter: 1 }   # 4.5: Ruth übernimmt die Bücher am Anfang – nicht zehn Jahre später
   chance: 0.35
   choices:
     - id: ueberlassen

@@ -9,11 +9,14 @@
 // Vereinfachte Regeln je Quartal: Förderung (wie im Spiel, mit Druck und
 // Erschöpfung der Felder), Posted Price aus Salt-Hill-Angebot und Weltpreis,
 // Verkauf über den billigsten eigenen Weg, Unterhalt und Zinsen, das Weltmodell
-// rückt ein Quartal weiter (Salt Hill fließt winzig ein). Je Jahr: tilgen, neue
-// Bohrungen nach Haltung, Bullard bohrt, die Familie lebt weiter.
+// rückt ein Quartal weiter (Salt Hill fließt winzig ein), Kreditkrisen kündigen Kredite.
+// Je Jahr: tilgen, neue Bohrungen nach Haltung und Familienzeit (wagemutig auch in einem
+// Nachbarbezirk), Bullard bohrt, die Familie lebt weiter; bleibt die Kasse im Minus:
+// Notkredit bis zum Bankrahmen, Notverkauf, sonst Pleite (der Sprung endet dort).
+// Benzinanlage und Okara bleiben als Beteiligungen (src/sim/ventures.ts).
 //
-// Deterministisch: Der Zufall kommt aus seed + ':zeitsprung1' und den Zufallsströmen
-// im Zustand. runTimeskip rechnet den Sprung bei jedem Aufruf von vorn – mit allen
+// Deterministisch: Der Zufall kommt aus eigenen Strömen je Zweck (seed + ':zeitsprung1:bohren',
+// ':clara', ':okara') und den Zufallsströmen im Zustand. runTimeskip rechnet den Sprung bei jedem Aufruf von vorn – mit allen
 // bisher beantworteten Weichen. Fehlt eine Antwort, hält er dort an. So steht im
 // Spielstand nur, was Jacob entschieden hat (state.jump), nie ein halber Sprung.
 // Texte: content/timeskip.yaml; Zahlen: balance.yaml → timeskip.
@@ -22,8 +25,8 @@ import { parseDocument } from 'yaml';
 import { FAMILY_TIMES, STANCES, type Balance, type FamilyTime, type Stance } from './balance';
 import { formatDate } from './calendar';
 import { canGoPublic } from './chapter';
-import { debt, headroom, loanRate, quarterInterestTotal, repay, takeLoan } from './credit';
-import { rollOilStage, stageCost, wellsOn, type Well } from './drilling';
+import { creditLimit, debt, headroom, loanRate, quarterInterestTotal, repay, takeLoan } from './credit';
+import { nextWellId, rollOilStage, stageCost, wellsOn, type Well } from './drilling';
 import { empireValue } from './empire';
 import type { ContentError } from './eventContent';
 import { drawEvents, type EventDef } from './events';
@@ -38,6 +41,8 @@ import { advanceProduction, fieldStatus, fieldWells, initialRate, producingWells
 import { rivalCandidates, rivalWellIncome, type RivalWell } from './rival';
 import { Rng, seedFromString } from './rng';
 import { newAgenda } from './agenda';
+import { openRegions, unlockRegion } from './regions';
+import { fuelPremium, okaraIncome } from './ventures';
 import { TIMESKIP_MARKS, TIMESKIP_SIM_MARKS } from './timeskipMarks';
 import { advanceWorld, creditPhase, saltHillInput, worldPriceFactor, worldRateAdd, type Party, type WorldNews } from './world';
 
@@ -82,6 +87,8 @@ export const CHRONICLE_KINDS = [
   'crisis_call',
   'fire_sale',
   'emergency_loan',
+  'bankrupt',
+  'region_opened',
   'bullard_wells',
   'wildcatters_quit',
   'panic_repay',
@@ -155,10 +162,19 @@ export interface TimeskipRecord {
   after: TimeskipSnapshot;
   /** Die Chronik wurde gelesen (danach geht es an den Schreibtisch). */
   read: boolean;
+  /** Die Firma ging im Sprung pleite – das Spiel endet nach der Chronik. */
+  bankrupt?: boolean;
+}
+
+/** Was der Verwalter beim Telegramm in der Hand hat: Kasse, Schulden, freier Bankrahmen (0 nach dem Tilgungs-Schwur). */
+export interface SwitchFunds {
+  cash: number;
+  debt: number;
+  credit: number;
 }
 
 export type TimeskipStep =
-  | { status: 'switch'; id: SwitchId; year: number; entries: ChronicleEntry[] }
+  | { status: 'switch'; id: SwitchId; year: number; entries: ChronicleEntry[]; funds: SwitchFunds }
   | { status: 'done'; state: GameState; record: TimeskipRecord };
 
 export type TimeskipResult = { ok: true; state: GameState } | { ok: false; reason: string };
@@ -217,7 +233,31 @@ export function answerSwitch(state: GameState, balance: Balance, id: SwitchId, c
   if (!(SWITCH_CHOICES[id] as readonly string[]).includes(choice)) return { ok: false, reason: 'Diese Antwort gibt es nicht.' };
   const step = runTimeskip(state, balance, catalog);
   if (step.status !== 'switch' || step.id !== id) return { ok: false, reason: 'Diese Weiche steht gerade nicht an.' };
+  const blockiert = switchChoice(step.funds, balance, id, choice).blocked;
+  if (blockiert) return { ok: false, reason: blockiert };
   return { ok: true, state: { ...state, jump: { ...state.jump, answers: { ...state.jump.answers, [id]: choice } } } };
+}
+
+/** Was eine Antwort kostet (Benzinanlage, Pachten in Okara); 0 = nichts. */
+export function switchCost(balance: Balance, id: SwitchId, choice: string): number {
+  const t = balance.timeskip.switches;
+  if (id === 'automobile' && choice === 'invest') return t.automobileCost;
+  if (id === 'okara' && choice === 'lease') return t.okaraCost;
+  return 0;
+}
+
+/**
+ * Geht eine Antwort mit dem Geld, das der Verwalter hat? Reicht die Kasse nicht, nimmt er
+ * den Rest auf Kredit (onCredit, mindestens credit.minLoan); reicht auch der freie
+ * Bankrahmen nicht, ist die Antwort gesperrt (blocked = Grund).
+ */
+export function switchChoice(funds: SwitchFunds, balance: Balance, id: SwitchId, choice: string): { cost: number; onCredit: boolean; blocked: string | null } {
+  const cost = switchCost(balance, id, choice);
+  const kasse = Math.max(0, funds.cash);
+  if (cost <= kasse) return { cost, onCredit: false, blocked: null };
+  const kredit = Math.max(balance.credit.minLoan, Math.ceil((cost - kasse) / 100) * 100);
+  if (kredit <= funds.credit) return { cost, onCredit: true, blocked: null };
+  return { cost, onCredit: true, blocked: 'Dafür reichen Kasse und Bankrahmen nicht.' };
 }
 
 /** Die Chronik ist gelesen – es geht an den Schreibtisch. */
@@ -238,26 +278,35 @@ export function unreadChronicle(state: Pick<GameState, 'timeskips'>): TimeskipRe
 
 interface Lauf {
   s: GameState;
-  rng: Rng;
+  /** Eigene Zufallsströme je Zweck (sonst entschiede die Zahl der Probebohrungen mit, ob es in Okara Öl gibt). */
+  rngBohren: Rng;
+  rngClara: Rng;
+  rngOkara: Rng;
   balance: Balance;
   directives: Directives;
   answers: Partial<Record<SwitchId, string>>;
   switches: SwitchId[];
   entries: ChronicleEntry[];
+  /** Letztes Spieljahr des Sprungs: Spätestens dann kommt die Clara-Weiche. */
+  letztesJahr: number;
   /** Nachbarquellen am Salt Hill (Bruchteile erlaubt). */
   nb: number;
-  /** Benzin-Aufschlag je Barrel und ab welcher Runde. */
-  premiumFrom: number;
-  /** Okara-Einnahmen ab dieser Runde (0 = keine). */
-  okaraFrom: number;
+  /** Kam in Okara Öl? (Gewürfelt, sobald die Weiche kommt – egal, wer die Pachten nimmt.) */
+  okaraOil: boolean;
   /** Nach „tilgen“ in der Bankenpanik: kein neuer Kredit mehr. */
   noBorrow: boolean;
-  /** Nach „weiter auf Pump“: mehr Kredit je Jahr. */
+  /** Nach „weiter auf Pump“: mehr Kredit je Jahr, und in der Kreditkrise kündigt die Bank mehr. */
   ride: boolean;
   /** Clara-Weiche „zu Hause“: in diesem Jahr keine neuen Bohrungen. */
   pauseYear: number;
+  /** Kreditkündigung: bis einschließlich dieses Jahres keine neuen Bohrungen. */
+  stopUntil: number;
   /** Clara kommt in dieser Runde zur Welt (0 = nicht unterwegs). */
   claraDue: number;
+  /** Vom Verwalter erschlossene Nachbarbezirke: Dort bohrt er nach der Zonenkarte, ohne Geologen. */
+  expanded: string[];
+  /** Die Firma ist pleite – der Sprung endet hier. */
+  pleite: boolean;
   /** Felder, deren Erschöpfung schon gemeldet ist. */
   leer: Set<string>;
   /** Preise des laufenden Jahres. */
@@ -364,20 +413,14 @@ function weltMeldungen(l: Lauf, news: readonly WorldNews[]): void {
   }
 }
 
-/** Kreditkrise: Die Bank kündigt einen Teil der Schulden; reicht das Geld nicht, gehen Quellen weg. */
-function kreditkrise(l: Lauf): void {
+/** Notverkauf: die schwächsten Quellen zuerst an den Trust, bis die Kasse ziel erreicht. */
+function notverkauf(l: Lauf, ziel: number): void {
   const { balance } = l;
-  const schulden = debt(l.s);
-  if (schulden <= 0) return;
-  const faellig = Math.round(schulden * balance.timeskip.crisis.callShare);
-  eintrag(l, 'crisis_call', { amount: faellig });
-  const fehlt = faellig;
-  // Notverkauf: die schwächsten Quellen zuerst, bis das Geld reicht.
   let verkauft = 0;
   let erloes = 0;
   const quellen = producingWells(l.s).sort((a, b) => (a.production?.lastRate ?? 0) - (b.production?.lastRate ?? 0) || (a.id < b.id ? -1 : 1));
   for (const q of quellen) {
-    if (l.s.cash >= fehlt) break;
+    if (l.s.cash >= ziel) break;
     const wert = Math.round((q.production?.lastRate ?? 0) * 8 * l.s.postedPrice * balance.timeskip.crisis.fireSale);
     erloes += wert;
     verkauft += 1;
@@ -391,21 +434,67 @@ function kreditkrise(l: Lauf): void {
     }
   }
   if (verkauft > 0) eintrag(l, 'fire_sale', { n: verkauft, amount: erloes });
-  const zahlbar = Math.min(fehlt, Math.max(0, Math.floor(l.s.cash)), Math.floor(debt(l.s)));
+}
+
+/**
+ * Anteil der Schulden, den die Bank in einer Kreditkrise kündigt: Grundanteil plus Auslastung
+ * des Bankrahmens (Schulden ÷ Rahmen) × callLeverage, nach „weiter auf Pump“ plus rideCall –
+ * höchstens alles.
+ */
+export function crisisCallShare(balance: Balance, schulden: number, rahmen: number, ride: boolean): number {
+  const c = balance.timeskip.crisis;
+  const auslastung = rahmen > 0 ? schulden / rahmen : 1;
+  return Math.min(1, c.callShare + c.callLeverage * auslastung + (ride ? c.rideCall : 0));
+}
+
+/**
+ * Kreditkrise (GDD §15: wer im Boom zu viele Schulden macht, stirbt): Die Bank kündigt einen
+ * Teil der Schulden – je höher der Bankrahmen ausgelastet ist, desto mehr, nach „weiter auf
+ * Pump“ noch mehr. Gezahlt wird aus der Kasse über der Rücklage (die rührt der Verwalter nicht
+ * an); was fehlt, bringen Quellen zum Notpreis. Im Jahr der Kündigung bohrt der Verwalter nicht.
+ * Wer auf Pump weitergebohrt hat, bekommt danach keinen Kredit mehr und bohrt rideStopYears
+ * Jahre länger nicht.
+ */
+function kreditkrise(l: Lauf): void {
+  const { balance } = l;
+  const c = balance.timeskip.crisis;
+  const reserve = balance.timeskip.reserve[l.directives.stance];
+  const schulden = debt(l.s);
+  if (schulden <= 0) return;
+  const faellig = Math.round(schulden * crisisCallShare(balance, schulden, creditLimit(l.s, balance), l.ride));
+  eintrag(l, 'crisis_call', { amount: faellig });
+  l.stopUntil = Math.max(l.stopUntil, gameYear(l.s.round) + (l.ride ? c.rideStopYears : 0));
+  if (l.ride) l.noBorrow = true;
+  notverkauf(l, faellig + reserve);
+  const zahlbar = Math.min(faellig, Math.max(0, Math.floor(l.s.cash)), Math.floor(debt(l.s)));
   if (zahlbar > 0) {
     const r = repay(l.s, balance, zahlbar);
     if (r.ok) l.s = r.state;
   }
 }
 
-/** Ein Kredit für den Verwalter (über die Bank wie im Spiel); gibt den geliehenen Betrag zurück. */
+/** Ein Kredit für den Verwalter über die Bank (auf 100 $ aufgerundet, mindestens credit.minLoan); gibt den Betrag zurück. */
 function leihen(l: Lauf, betrag: number): number {
-  const amount = Math.floor(Math.min(betrag, headroom(l.s, l.balance)) / 100) * 100;
+  if (betrag <= 0) return 0;
+  const frei = headroom(l.s, l.balance);
+  const amount = Math.min(Math.max(l.balance.credit.minLoan, Math.ceil(betrag / 100) * 100), Math.floor(frei / 100) * 100);
   if (amount < l.balance.credit.minLoan) return 0;
   const r = takeLoan(l.s, l.balance, amount);
   if (!r.ok) return 0;
   l.s = r.state;
   return amount;
+}
+
+/** Was der Verwalter für eine Weiche noch aufbringen kann: Kasse und (ohne Tilgungs-Schwur) der freie Bankrahmen. */
+function mittel(l: Lauf): SwitchFunds {
+  return { cash: Math.round(l.s.cash), debt: Math.round(debt(l.s)), credit: l.noBorrow ? 0 : Math.floor(headroom(l.s, l.balance) / 100) * 100 };
+}
+
+/** Eine Weichen-Ausgabe bezahlen: aus der Kasse, was fehlt, auf Kredit. */
+function bezahlen(l: Lauf, kosten: number): void {
+  if (kosten <= 0) return;
+  if (l.s.cash < kosten) leihen(l, kosten - Math.max(0, l.s.cash));
+  l.s = { ...l.s, cash: l.s.cash - kosten };
 }
 
 /** Weichen am Quartalsanfang; gibt die offene Weiche zurück, wenn Jacob noch antworten muss. */
@@ -415,14 +504,19 @@ function weichen(l: Lauf, q: number): SwitchId | null {
   const year = gameYear(l.s.round);
   const quartal = (l.s.round - 1) % 4;
   const kandidaten: SwitchId[] = [];
-  // Clara (GDD §12: geboren im ersten Zeitsprung): Zufall je Jahr, mehr Familienzeit = wahrscheinlicher.
+  // Clara (Weltbibel, GDD §12: geboren im ersten Zeitsprung) – sicher. Gewürfelt wird nur der
+  // Zeitpunkt (mehr Familienzeit = früher); im letzten Jahr kommt die Nachricht in jedem Fall.
   if (quartal === 0 && year >= t.family.claraFromYear && !l.switches.includes('clara') && (l.s.family.claraBorn ?? 0) === 0) {
-    // Ist Ruth verbittert oder entfremdet, halbiert sich die Chance.
-    const chance = t.family.claraChance[l.directives.family] * (l.s.family.ruth >= balance.family.bitterFrom ? 1 : 0.5);
-    if (l.rng.float() < chance) kandidaten.push('clara');
+    const wurf = l.rngClara.float();
+    if (year >= l.letztesJahr || wurf < t.family.claraChance[l.directives.family]) kandidaten.push('clara');
   }
-  // Okara: ein neues Ölgebiet – kommt mit einer Chance im Jahr okaraFromYear.
-  if (quartal === 0 && year === t.switches.okaraFromYear && !l.switches.includes('okara') && l.rng.float() < t.switches.okaraChance) kandidaten.push('okara');
+  // Okara: ein neues Ölgebiet – kommt mit einer Chance im Jahr okaraFromYear. Ob dort Öl ist,
+  // steht im selben Augenblick fest (eigener Zufall, unabhängig von Jacobs Antwort).
+  if (quartal === 0 && year === t.switches.okaraFromYear && !l.switches.includes('okara')) {
+    const kommt = l.rngOkara.float() < t.switches.okaraChance;
+    l.okaraOil = l.rngOkara.float() < t.switches.okaraSuccess;
+    if (kommt) kandidaten.push('okara');
+  }
   // Die ersten Automobile: immer, im Jahr automobileYear.
   if (quartal === 0 && year === t.switches.automobileYear && !l.switches.includes('automobile')) kandidaten.push('automobile');
   // Bankenpanik: nur, wenn das Kreditklima überhitzt (GDD §13).
@@ -461,26 +555,27 @@ function weicheAnwenden(l: Lauf, id: SwitchId, antwort: string): void {
       break;
     case 'automobile':
       if (antwort === 'invest') {
-        l.s = { ...l.s, cash: l.s.cash - t.switches.automobileCost };
-        l.premiumFrom = l.s.round + 4;
+        bezahlen(l, t.switches.automobileCost);
+        l.s = { ...l.s, ventures: { ...l.s.ventures, benzin: { since: l.s.round + 4 } } };
         merken(TIMESKIP_MARKS.benzin);
         eintrag(l, 'automobile_invest', { amount: t.switches.automobileCost });
       } else eintrag(l, 'automobile_ignore');
       break;
-    case 'okara':
-      if (antwort === 'lease') {
-        l.s = { ...l.s, cash: l.s.cash - t.switches.okaraCost };
+    case 'okara': {
+      const jacob = antwort === 'lease';
+      if (jacob) bezahlen(l, t.switches.okaraCost);
+      // Die Pachten bleiben – mit Einnahmen ab dem Jahr danach, auch in Kapitel 2 (src/sim/ventures.ts).
+      l.s = { ...l.s, ventures: { ...l.s.ventures, okara: { holder: jacob ? 'jacob' : 'bullard', oil: l.okaraOil, since: l.s.round + 4 } } };
+      if (jacob) {
         merken(TIMESKIP_MARKS.okara);
-        if (l.rng.float() < t.switches.okaraSuccess) {
-          l.okaraFrom = l.s.round + 4;
-          merken(TIMESKIP_MARKS.okaraOil);
-          eintrag(l, 'okara_found');
-        } else eintrag(l, 'okara_dry');
+        if (l.okaraOil) merken(TIMESKIP_MARKS.okaraOil);
+        eintrag(l, l.okaraOil ? 'okara_found' : 'okara_dry');
       } else {
         merken(TIMESKIP_MARKS.okaraBullard);
         eintrag(l, 'okara_bullard');
       }
       break;
+    }
     case 'clara': {
       const zuHause = antwort === 'home';
       const delta = zuHause ? t.family.claraBond : -t.family.claraBond;
@@ -494,7 +589,34 @@ function weicheAnwenden(l: Lauf, id: SwitchId, antwort: string): void {
   l.s = { ...l.s, events: { ...l.s.events, marks } };
 }
 
-/** Jahresende: tilgen, bohren, Bullard, Familie, Notkredit. */
+/**
+ * Am Jahresende darf die Kasse nicht im Minus bleiben: zuerst ein Notkredit, aber nur
+ * bis zum Bankrahmen; reicht das nicht, verkauft der Verwalter Quellen zum Notpreis;
+ * reicht auch das nicht, ist die Firma pleite (GDD §2: frühes Ende).
+ */
+function zahlungsfaehig(l: Lauf): void {
+  const { balance } = l;
+  if (l.s.cash >= 0) return;
+  const frei = Math.floor(headroom(l.s, balance) / 100) * 100;
+  const betrag = Math.min(Math.ceil(-l.s.cash / 100) * 100, frei);
+  if (betrag > 0) {
+    const zins = loanRate(balance, l.s.rating, false, worldRateAdd(l.s.worldModel, balance.worldModel));
+    const id = l.s.loans.reduce((m, x) => Math.max(m, x.id), 0) + 1;
+    l.s = {
+      ...l.s,
+      cash: l.s.cash + betrag,
+      loans: [...l.s.loans, { id, source: 'bank', principal: betrag, rate: zins, takenRound: l.s.round, collateral: null }],
+    };
+    eintrag(l, 'emergency_loan', { amount: betrag });
+  }
+  if (l.s.cash < 0) notverkauf(l, 0);
+  if (l.s.cash < 0) {
+    l.pleite = true;
+    eintrag(l, 'bankrupt', { amount: Math.round(-l.s.cash) });
+  }
+}
+
+/** Jahresende: tilgen, bohren, Bullard, Familie, Zahlungsfähigkeit. */
 function jahresende(l: Lauf): void {
   const { balance } = l;
   const t = balance.timeskip;
@@ -516,20 +638,14 @@ function jahresende(l: Lauf): void {
     }
   }
 
-  // Neue Bohrungen nach Haltung und Familienzeit (GDD §2: Haltung bestimmt Ertrag und Streuung).
-  if (l.pauseYear !== year) {
-    let budget = Math.max(0, l.s.cash - t.reserve[stance]) * t.invest[stance] * t.family.growth[family];
-    if (!l.noBorrow) {
-      const anteil = Math.min(1, t.borrow[stance] + (l.ride ? t.switches.rideBorrow : 0));
-      if (anteil > 0) budget += leihen(l, headroom(l.s, balance) * anteil);
-    }
-    bohren(l, budget);
-  }
+  // Neue Bohrungen nach Haltung und Familienzeit (GDD §2) – nicht im Jahr der Geburt (zu Hause)
+  // und nicht im Jahr einer Kreditkündigung.
+  if (l.pauseYear !== year && year > l.stopUntil) bohren(l);
 
   // Bullard bohrt weiter (eigener Zufall).
   bullard(l);
 
-  // Familie: Beziehung nach Familienzeit, Clara kommt zur Welt, Thomas wird älter.
+  // Familie: Beziehung nach Familienzeit, Thomas wird älter.
   const bond = t.family.bond[family];
   const f = l.s.family;
   l.s = {
@@ -552,18 +668,7 @@ function jahresende(l: Lauf): void {
     }
   }
 
-  // Notkredit: Die Kasse darf am Jahresende nicht im Minus bleiben.
-  if (l.s.cash < 0) {
-    const betrag = Math.ceil(-l.s.cash / 100) * 100;
-    const zins = loanRate(balance, l.s.rating, false, worldRateAdd(l.s.worldModel, balance.worldModel));
-    const id = l.s.loans.reduce((m, x) => Math.max(m, x.id), 0) + 1;
-    l.s = {
-      ...l.s,
-      cash: l.s.cash + betrag,
-      loans: [...l.s.loans, { id, source: 'bank', principal: betrag, rate: zins, takenRound: l.s.round, collateral: null }],
-    };
-    eintrag(l, 'emergency_loan', { amount: betrag });
-  }
+  zahlungsfaehig(l);
 }
 
 /** Kosten einer Bohrung bis zur Stufe stage (alle Stufen bis dahin). */
@@ -573,12 +678,16 @@ function bohrkosten(balance: Balance, bisStufe: number): number {
   return summe;
 }
 
-/** Wie der Verwalter die Fundchance einer Ranch einschätzt (Geologe, sonst die Zone). */
-function geschaetzt(state: GameState, balance: Balance, parcelId: string): number {
-  const f = state.forecasts[parcelId];
-  if (f) return Math.min(1, Math.max(0, f.center / 100));
-  const p = state.parcels.find((x) => x.id === parcelId);
-  return p ? trueChance(balance, p) : 0;
+/**
+ * Wie der Verwalter die Fundchance einer Ranch einschätzt: nach dem Geologen, sonst nach der
+ * Zone. In einem Bezirk, den er selbst erschlossen hat, gibt es noch keinen Geologen – dort
+ * bohrt er nach der Zonenkarte (das macht die Expansion zum Wagnis).
+ */
+function geschaetzt(l: Lauf, parcelId: string): number {
+  const p = l.s.parcels.find((x) => x.id === parcelId);
+  const f = l.s.forecasts[parcelId];
+  if (f && !(p && l.expanded.includes(p.region))) return Math.min(1, Math.max(0, f.center / 100));
+  return p ? trueChance(l.balance, p) : 0;
 }
 
 interface Ziel {
@@ -588,10 +697,9 @@ interface Ziel {
   pacht: boolean;
 }
 
-/** Neue Bohrungen des Verwalters: eigene ungebohrte Pachten, Nachbohrungen auf eigenen Funden, freie Ranches. */
-function bohren(l: Lauf, budget: number): void {
+/** Bohrziele des Verwalters: eigene ungebohrte Pachten, Nachbohrungen auf eigenen Funden, freie Ranches – ab der Mindestchance seiner Haltung. */
+function bohrziele(l: Lauf): Ziel[] {
   const { balance } = l;
-  const t = balance.timeskip;
   const s = l.s;
   const genommen = new Set([...s.leases.map((x) => x.parcelId), ...s.wells.map((w) => w.parcelId), ...s.rival.wells.map((w) => w.parcelId)]);
   const ziele: Ziel[] = [];
@@ -600,7 +708,7 @@ function bohren(l: Lauf, budget: number): void {
     const auf = wellsOn(s, lease.parcelId);
     const parcel = s.parcels.find((p) => p.id === lease.parcelId);
     if (!parcel) continue;
-    if (!lease.drilled && auf.length === 0) ziele.push({ parcelId: lease.parcelId, chance: geschaetzt(s, balance, lease.parcelId), pacht: false });
+    if (!lease.drilled && auf.length === 0) ziele.push({ parcelId: lease.parcelId, chance: geschaetzt(l, lease.parcelId), pacht: false });
     else if (auf.some((w) => w.status === 'found') && auf.length < parcel.slots) {
       // Nachbohren nur, solange das Feld nicht überfördert wird.
       const feld = fieldOf(s, lease.parcelId);
@@ -611,25 +719,59 @@ function bohren(l: Lauf, budget: number): void {
   }
   for (const p of s.parcels) {
     if (p.discovery || genommen.has(p.id) || !s.regions.includes(p.region)) continue;
-    ziele.push({ parcelId: p.id, chance: geschaetzt(s, balance, p.id), pacht: true });
+    ziele.push({ parcelId: p.id, chance: geschaetzt(l, p.id), pacht: true });
   }
-  const auswahl = ziele
-    .filter((z) => z.chance >= t.minChance[l.directives.stance])
+  return ziele
+    .filter((z) => z.chance >= balance.timeskip.minChance[l.directives.stance])
     .sort((a, b) => b.chance - a.chance || (a.parcelId < b.parcelId ? -1 : a.parcelId > b.parcelId ? 1 : 0));
+}
+
+/**
+ * Neue Bohrungen des Verwalters (GDD §2: die Haltung bestimmt Ertrag und Streuung). Budget:
+ * Überschuss über der Rücklage × Anteil × Familienfaktor, dazu ein Kredit über einen Anteil
+ * des freien Bankrahmens (nur, wenn es etwas zu bohren gibt). Höchstens
+ * maxNewWells × Familienfaktor Bohrungen. Lohnt am offenen Land nichts mehr, erschließt
+ * er (je nach Haltung) einen Nachbarbezirk.
+ */
+function bohren(l: Lauf): void {
+  const { balance } = l;
+  const t = balance.timeskip;
+  const { stance, family } = l.directives;
+  const eigen = Math.max(0, l.s.cash - t.reserve[stance]) * t.invest[stance] * t.family.growth[family];
+  // Auf Pump (GDD §15): Ein Teil des freien Bankrahmens wird jedes Jahr geliehen, sobald es
+  // etwas zu bohren gibt – was nicht verbohrt wird, bleibt als Polster in der Kasse. Das ist
+  // das Risiko der mutigen Haltung: In einer Kreditkrise kündigt die Bank nach Auslastung.
+  const kreditAnteil = l.noBorrow ? 0 : Math.min(1, t.borrow[stance] + (l.ride ? t.switches.rideBorrow : 0));
+  const geliehen = kreditAnteil > 0 && bohrziele(l).length > 0 ? leihen(l, Math.floor((headroom(l.s, balance) * kreditAnteil) / 100) * 100) : 0;
+  const budget = eigen + geliehen;
+  const hoechstens = Math.max(1, Math.floor(t.maxNewWells[stance] * t.family.wells[family]));
   const letzte = balance.drilling.stages.length;
+  const vollBohrung = bohrkosten(balance, letzte);
+  let rest = budget;
+  let ziele = bohrziele(l);
+  // Nachbarbezirke: erst, wenn am offenen Land kaum noch etwas lohnt (weniger als die Hälfte dessen, was er bohren darf).
+  while (ziele.length < hoechstens / 2 && l.expanded.length < t.expand[stance] && rest >= t.expandCost + vollBohrung) {
+    const bezirk = balance.world.regions.find((r) => r.kind === 'drillable' && !l.s.regions.includes(r.id));
+    if (!bezirk) break;
+    l.s = openRegions(unlockRegion(l.s, bezirk.id), balance);
+    l.s = { ...l.s, cash: l.s.cash - t.expandCost };
+    rest -= t.expandCost;
+    l.expanded.push(bezirk.id);
+    eintrag(l, 'region_opened', { name: bezirk.id, amount: t.expandCost });
+    ziele = bohrziele(l);
+  }
   let funde = 0;
   let trocken = 0;
-  let rest = budget;
-  for (const ziel of auswahl) {
-    if (funde + trocken >= t.maxNewWells) break;
+  for (const ziel of ziele) {
+    if (funde + trocken >= hoechstens) break;
     const parcel = l.s.parcels.find((p) => p.id === ziel.parcelId)!;
     const terms = ziel.pacht ? leaseTerms(l.s, balance, ziel.parcelId) : null;
     const pacht = terms?.bonus ?? 0;
     // Planen mit der teuersten Bohrung (alle Stufen): sonst reicht das Geld am Ende nicht.
-    if (rest < pacht + bohrkosten(balance, letzte)) continue;
+    if (rest < pacht + vollBohrung) continue;
     const auf = wellsOn(l.s, ziel.parcelId);
     const quelle = auf.find((w) => w.status === 'found');
-    const oilStage = quelle ? quelle.stage : rollOilStage(balance, parcel, l.rng.float());
+    const oilStage = quelle ? quelle.stage : rollOilStage(balance, parcel, l.rngBohren.float());
     const kosten = pacht + bohrkosten(balance, oilStage ?? letzte);
     rest -= kosten;
     const leases: Lease[] = terms
@@ -640,7 +782,7 @@ function bohren(l: Lauf, budget: number): void {
       : l.s.leases.map((x) => (x.parcelId === ziel.parcelId && x.holder === 'jacob' ? { ...x, drilled: true } : x));
     const result = parcel.geology === 'gusher' ? 'gusher' : 'small';
     const well: Well = {
-      id: `${ziel.parcelId}#${auf.length + 1}`,
+      id: nextWellId(l.s, ziel.parcelId),
       parcelId: ziel.parcelId,
       stage: oilStage ?? letzte,
       status: oilStage === null ? 'dry' : 'found',
@@ -713,16 +855,18 @@ function quartal(l: Lauf): void {
   l.s = { ...l.s, worldModel: welt, postedPrice: preis, priceHistory: [...l.s.priceHistory, preis] };
   weltMeldungen(l, welt.news);
   // Verkauf: alles im Tank, über den billigsten eigenen Weg; das Förderzins-Öl geht an die Landbesitzer.
-  const aufschlag = l.premiumFrom > 0 && l.s.round >= l.premiumFrom ? t.switches.automobilePremium : 0;
+  // Die Benzinanlage zahlt ihren Aufschlag, Okara seine Einnahmen (src/sim/ventures.ts).
+  const aufschlag = fuelPremium(l.s, balance);
   const eigen = Math.max(0, l.s.oilStock - l.s.royaltyOil);
-  const erloes = Math.round(eigen * Math.max(0, preis + aufschlag - frachtJeBarrel(l.s, balance)));
-  const okara = l.okaraFrom > 0 && l.s.round >= l.okaraFrom ? Math.round(t.switches.okaraIncome * worldPriceFactor(welt, balance.worldModel)) : 0;
+  // Familienzeit (GDD §2): Ohne Jacobs Aufsicht bringt das Öl weniger ein (family.revenue).
+  const erloes = Math.round(eigen * Math.max(0, preis + aufschlag - frachtJeBarrel(l.s, balance)) * t.family.revenue[l.directives.family]);
+  const okara = okaraIncome(l.s, balance, 'jacob');
   const unterhalt = producingWells(l.s).length * t.upkeepPerWell + l.s.logistics.teams * balance.transport.teams.wagePerRound;
   const zinsen = quarterInterestTotal(l.s);
   l.s = { ...l.s, oilStock: 0, royaltyOil: 0, cash: Math.round((l.s.cash + erloes + okara - unterhalt - zinsen) * 100) / 100 };
-  // Bullard verkauft, seine Quellen lassen nach.
+  // Bullard verkauft, seine Quellen lassen nach; hat er Okara, zahlt es an ihn.
   const decline = balance.production.decline;
-  const einnahmen = l.s.rival.wells.reduce((sum, w) => sum + rivalWellIncome(w, balance, preis), 0);
+  const einnahmen = l.s.rival.wells.reduce((sum, w) => sum + rivalWellIncome(w, balance, preis), 0) + okaraIncome(l.s, balance, 'bullard');
   l.s = {
     ...l.s,
     rival: {
@@ -762,61 +906,90 @@ function wildcatterNachSprung(l: Lauf, ziel: number): void {
 /**
  * Rechnet den Zeitsprung von vorn bis zur nächsten unbeantworteten Weiche oder bis
  * zum Ende. Am Ende beginnt Kapitel 2 (Platzhalter): Runde nach dem Sprung, frische
- * Termine, neue Ereignisse aus dem Katalog.
+ * Termine, neue Ereignisse aus dem Katalog. Geht die Firma unterwegs pleite, endet
+ * das Spiel dort (nach der Chronik).
  */
 export function runTimeskip(start: GameState, balance: Balance, catalog: readonly EventDef[] = []): TimeskipStep {
   if (!start.jump) throw new Error('runTimeskip: Es läuft kein Zeitsprung.');
   const t = balance.timeskip;
   const vorher = snapshot(start, balance);
   const ersteRunde = start.round + 1;
+  const strom = (zweck: string) => new Rng(seedFromString(`${start.seed}:zeitsprung1:${zweck}`));
   const l: Lauf = {
     s: vorbereiten(start, balance),
-    rng: new Rng(seedFromString(`${start.seed}:zeitsprung1`)),
+    rngBohren: strom('bohren'),
+    rngClara: strom('clara'),
+    rngOkara: strom('okara'),
     balance,
     directives: start.jump.directives,
     answers: start.jump.answers,
     switches: [],
     entries: [],
+    letztesJahr: gameYear(start.round + t.rounds),
     nb: neighbourWells(balance.market, start.round, start.neighbourOffset ?? 0),
-    premiumFrom: 0,
-    okaraFrom: 0,
+    okaraOil: false,
     noBorrow: false,
     ride: false,
     pauseYear: 0,
+    stopUntil: 0,
     claraDue: 0,
+    expanded: [],
+    pleite: false,
     leer: new Set(start.fields.filter((f) => fieldWells(start, f.id).length > 0 && fieldStatus(start, balance, f).remaining <= 0).map((f) => f.id)),
     preise: [],
   };
   for (let q = 1; q <= t.rounds; q++) {
     l.s = { ...l.s, round: start.round + q };
     const offen = weichen(l, q);
-    if (offen) return { status: 'switch', id: offen, year: gameYear(l.s.round), entries: l.entries };
+    if (offen) return { status: 'switch', id: offen, year: gameYear(l.s.round), entries: l.entries, funds: mittel(l) };
     quartal(l);
     if (q % 4 === 0) jahresende(l);
+    if (l.pleite) break;
   }
   // Ruths Stimmung am Ende – ein Wort für die Chronik.
   eintrag(l, 'ruth_word', { word: bondWord(l.s.family.ruth, balance) });
+  const record = (s: GameState): TimeskipRecord => ({
+    number: 1,
+    fromYear: gameYear(ersteRunde),
+    toYear: gameYear(l.s.round),
+    directives: { ...start.jump!.directives },
+    answers: { ...start.jump!.answers },
+    switches: [...l.switches],
+    entries: l.entries,
+    before: vorher,
+    after: snapshot(s, balance),
+    read: false,
+  });
+
+  // Pleite im Sprung (GDD §2: frühes Ende): Das Spiel endet in diesem Jahr; nach der Chronik kommt der Pleite-Bildschirm.
+  if (l.pleite) {
+    const date = formatDate(l.s);
+    const pleite: GameState = {
+      ...l.s,
+      totalRounds: l.s.round,
+      finished: true,
+      ending: 'pleite',
+      jump: null,
+      log: [
+        ...start.log,
+        `${formatDate(start)}: Jacob übergibt das Tagesgeschäft für sechs Jahre an einen Verwalter.`,
+        `${date}: Die Kasse ist leer, die Bank leiht nichts mehr, die Quellen sind verkauft. Jacob Harlan ist pleite – die Bank nimmt die Firma in Zwangsverwaltung.`,
+      ],
+      roundLogStart: start.log.length,
+    };
+    const r: TimeskipRecord = { ...record(pleite), bankrupt: true };
+    return { status: 'done', state: { ...pleite, timeskips: [...(start.timeskips ?? []), r] }, record: r };
+  }
 
   // Kapitel 2 beginnt (Platzhalter): Jahr 11, Jacob 35.
   const round = start.round + t.rounds + 1;
   const ziel = Math.max(0, Math.round(l.nb));
   // Wer aufgibt, steht noch im letzten Jahr des Sprungs in der Chronik.
   wildcatterNachSprung(l, ziel);
+  const r = record(l.s);
   l.s = { ...l.s, round };
   const s = l.s;
   const pipeline = s.logistics.pipeline === 'building' || s.logistics.pipeline === 'damaged' ? 'ready' : s.logistics.pipeline;
-  const record: TimeskipRecord = {
-    number: 1,
-    fromYear: gameYear(ersteRunde),
-    toYear: gameYear(start.round + t.rounds),
-    directives: { ...start.jump.directives },
-    answers: { ...start.jump.answers },
-    switches: [...l.switches],
-    entries: l.entries,
-    before: vorher,
-    after: snapshot(s, balance),
-    read: false,
-  };
   const date = formatDate({ round, startYear: s.startYear });
   const kapitel2: GameState = {
     ...s,
@@ -827,7 +1000,7 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
     finished: false,
     ending: null,
     jump: null,
-    timeskips: [...(start.timeskips ?? []), record],
+    timeskips: [...(start.timeskips ?? []), r],
     // Unbebohrte Pachten sind in sechs Jahren verfallen.
     leases: s.leases.filter((x) => x.drilled),
     logistics: { ...s.logistics, pipeline, pipelineRounds: pipeline === 'ready' ? 0 : s.logistics.pipelineRounds, traderSold: 0 },
@@ -843,10 +1016,10 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
     ],
     roundLogStart: start.log.length,
   };
-  return { status: 'done', state: drawEvents(kapitel2, balance, catalog), record };
+  return { status: 'done', state: drawEvents(kapitel2, balance, catalog), record: r };
 }
 
-/** Bequem für die Oberfläche: Weiche beantworten und gleich weiterrechnen. Fertig → Kapitel 2. */
+/** Bequem für die Oberfläche: Weiche beantworten und gleich weiterrechnen. Fertig → Kapitel 2 (oder Pleite). */
 export function continueTimeskip(state: GameState, balance: Balance, catalog: readonly EventDef[] = []): GameState {
   if (!state.jump) return state;
   const step = runTimeskip(state, balance, catalog);
@@ -869,8 +1042,8 @@ export interface TimeskipContent {
     send: LocalizedText;
     back: LocalizedText;
   };
-  switches: { telegram: LocalizedText } & { [S in SwitchId]: { title: LocalizedText; text: LocalizedText; choices: Record<string, LocalizedText> } };
-  chronicle: Texte<'title' | 'paper' | 'year' | 'quiet' | 'balance' | 'continue'> & {
+  switches: Texte<'telegram' | 'funds' | 'onCredit' | 'blocked'> & { [S in SwitchId]: { title: LocalizedText; text: LocalizedText; choices: Record<string, LocalizedText> } };
+  chronicle: Texte<'title' | 'paper' | 'year' | 'quiet' | 'balance' | 'continue' | 'end'> & {
     entries: Record<ChronicleKind, LocalizedText>;
     /** Einzahl, wenn {n} = 1 ist (z. B. „eine neue Quelle“); fehlt sie, gilt der Text aus entries. */
     one: Partial<Record<ChronicleKind, LocalizedText>>;
@@ -951,7 +1124,7 @@ export function parseTimeskipContent(file: string, text: string): { content: Tim
     back: sprachtext(d.back, 'directives.back'),
   };
   const sw = block(raw, 'switches', 'switches');
-  const switches = { telegram: sprachtext(sw.telegram, 'switches.telegram') } as TimeskipContent['switches'];
+  const switches = texte(sw, ['telegram', 'funds', 'onCredit', 'blocked'] as const, 'switches') as TimeskipContent['switches'];
   for (const id of SWITCH_IDS) {
     const b = block(sw, id, `switches.${id}`);
     switches[id] = {
@@ -968,7 +1141,7 @@ export function parseTimeskipContent(file: string, text: string): { content: Tim
   const fremd = Object.keys(o).filter((k) => !(CHRONICLE_KINDS as readonly string[]).includes(k));
   if (fremd.length > 0) fehler(`chronicle.one: unbekannte Einträge ${fremd.join(', ')} – Tippfehler?`);
   const chronicle = {
-    ...texte(c, ['title', 'paper', 'year', 'quiet', 'balance', 'continue'] as const, 'chronicle'),
+    ...texte(c, ['title', 'paper', 'year', 'quiet', 'balance', 'continue', 'end'] as const, 'chronicle'),
     entries: texte(e, CHRONICLE_KINDS, 'chronicle.entries'),
     one: Object.fromEntries(Object.keys(o).filter((k) => !fremd.includes(k)).map((k) => [k, sprachtext(o[k], `chronicle.one.${k}`)])) as Partial<Record<ChronicleKind, LocalizedText>>,
   };

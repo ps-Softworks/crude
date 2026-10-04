@@ -3,7 +3,9 @@
 // vernachlässigt, verbittert, entfremdet) – mit einem Satz aus content/family.yaml.
 //
 // Regeln:
-// - Familienzeit sind Antworten, deren Effekt Ruth oder Thomas guttut (ruth/thomas > 0).
+// - Familienzeit sind Antworten, deren Effekt Ruth oder einem Kind guttut (ruth/thomas/clara > 0).
+// - Clara (4.5, geboren im Zeitsprung I) zählt wie Thomas: eigener Effekt clara, Vernachlässigung,
+//   Zustandswort im Protokoll und im Schnitt der Familie.
 // - Am Rundenende gibt Familienzeit Kraft: strengthFrom bis strengthTo, je nach Beziehung.
 // - Eine Runde ohne Familienzeit kostet jede Beziehung family.neglect – außer
 //   Jacob liegt krank zu Hause, dann ist er ja da.
@@ -65,29 +67,38 @@ export function bondWord(value: number, balance: Balance): BondWord {
   return 'estranged';
 }
 
+export function claraBorn(state: Pick<GameState, 'family'>): boolean {
+  return (state.family.claraBorn ?? 0) > 0;
+}
+
 /**
- * Effekte ruth/thomas einer Antwort: Beziehung ändern (0–100, Thomas erst ab
+ * Effekte ruth/thomas/clara einer Antwort: Beziehung ändern (0–100, Kinder erst ab
  * der Geburt) und Familienzeit zählen, wenn es der Familie guttut.
  */
-export function applyFamilyEffects(state: GameState, ruth: number | undefined, thomas: number | undefined): GameState {
-  if (ruth === undefined && thomas === undefined) return state;
+export function applyFamilyEffects(state: GameState, ruth: number | undefined, thomas: number | undefined, clara?: number): GameState {
+  if (ruth === undefined && thomas === undefined && clara === undefined) return state;
   const geboren = thomasBorn(state);
+  const mitClara = claraBorn(state);
   const f = state.family;
-  const gut = (ruth ?? 0) > 0 || (geboren && (thomas ?? 0) > 0);
+  const gut = (ruth ?? 0) > 0 || (geboren && (thomas ?? 0) > 0) || (mitClara && (clara ?? 0) > 0);
   return {
     ...state,
     family: {
       ...f,
       ruth: ruth === undefined ? f.ruth : klemmen(f.ruth + ruth),
       thomas: thomas === undefined || !geboren ? f.thomas : klemmen(f.thomas + thomas),
+      ...(clara !== undefined && mitClara ? { clara: klemmen((f.clara ?? 0) + clara) } : {}),
       time: gut ? f.time + 1 : f.time,
     },
   };
 }
 
-/** Wie gut es in der Familie gerade steht: Ruth, nach der Geburt der Schnitt aus Ruth und Thomas. */
+/** Wie gut es in der Familie gerade steht: der Schnitt aus Ruth und den Kindern, die schon geboren sind. */
 export function familyBond(state: Pick<GameState, 'family'>): number {
-  return thomasBorn(state) ? (state.family.ruth + state.family.thomas) / 2 : state.family.ruth;
+  const werte = [state.family.ruth];
+  if (thomasBorn(state)) werte.push(state.family.thomas);
+  if (claraBorn(state)) werte.push(state.family.clara ?? 0);
+  return werte.reduce((a, b) => a + b, 0) / werte.length;
 }
 
 /** Kraft, die Familienzeit am Rundenende gibt (GDD §4: +3 bis +8, je nach Beziehung). */
@@ -123,14 +134,17 @@ export function settleFamily(state: GameState, balance: Balance): GameState {
   } else if (state.sick === 0) {
     ruth = klemmen(ruth - balance.family.neglect);
     if (thomasBorn(state)) thomas = klemmen(thomas - balance.family.neglect);
-    if ((f.claraBorn ?? 0) > 0) clara = klemmen((f.clara ?? 0) - balance.family.neglect);
+    if (claraBorn(state)) clara = klemmen((f.clara ?? 0) - balance.family.neglect);
   }
   const geboren = thomasBorn(state);
+  const mitClara = claraBorn(state);
   for (const [wer, vorher, nachher] of [
     ['ruth', f.ruth, ruth],
     ['thomas', f.thomas, thomas],
+    ['clara', f.clara ?? 0, clara ?? 0],
   ] as const) {
     if (wer === 'thomas' && !geboren) continue;
+    if (wer === 'clara' && !mitClara) continue;
     const alt = bondWord(vorher, balance);
     const neu = bondWord(nachher, balance);
     if (alt !== neu) log.push(`${date}: ${NAMEN[wer]} wirkt jetzt ${WORT[neu]}.`);

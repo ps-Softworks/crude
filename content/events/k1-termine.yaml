@@ -29,6 +29,7 @@
       effects: { ruth: 6 }
 
 - id: termin_familie
+  conditions: { maxThomasAge: 3 }   # 4.5: Abend mit dem Kleinkind; ab Kapitel 2 gilt termin_familie_k2
   routine: true
   appointments: 1
   marked: [thomas_geboren]
@@ -51,6 +52,32 @@
         en: Jacob sits late in the rocking chair with the child in his arms. The drilling cable can wait.
       # Familienzeit (2.7): Die Kraft kommt am Rundenende, +3 bis +8 je nach Beziehung.
       effects: { ruth: 5, thomas: 6 }
+
+- id: termin_familie_k2
+  routine: true
+  appointments: 1
+  draft: true                # 4.5: Familienabend ab Kapitel 2 – Thomas ist ein Schuljunge, Clara klein
+  marked: [thomas_geboren]
+  delay: 0
+  conditions: { minThomasAge: 4 }
+  title:
+    de: Ein Abend mit den Kindern
+    en: An Evening with the Children
+  text:
+    de: >-
+      Thomas will Jacob am Küchentisch seine Rechenaufgaben zeigen, und Clara will
+      auf den Schoß, sobald jemand sitzt. Ruth hält Jacob den Teller warm.
+    en: >-
+      Thomas wants to show Jacob his sums at the kitchen table, and Clara wants a lap
+      the moment anyone sits down. Ruth keeps Jacob's plate warm.
+  choices:
+    - id: bleiben
+      label: { de: "Den Abend zu Hause bleiben", en: "Stay home for the evening" }
+      result:
+        de: Jacob rechnet mit Thomas, bis Clara auf seinem Arm einschläft. Die Post bleibt bis morgen liegen.
+        en: Jacob does sums with Thomas until Clara falls asleep in his arms. The mail waits until morning.
+      # Familienzeit (2.7, 4.5): Ruth und beide Kinder; clara wirkt erst ab Claras Geburt.
+      effects: { ruth: 5, thomas: 6, clara: 6 }
 
 - id: termin_sonntag
   routine: true

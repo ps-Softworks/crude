@@ -9,6 +9,7 @@ import {
   applyFamilyEffects,
   bondWord,
   checkBirth,
+  familyBond,
   familyStrength,
   familyView,
   parseFamilyContent,
@@ -324,5 +325,60 @@ describe('Balance und Spielstand (2.7)', () => {
     const { family: _f, ...ohne } = newGame('ohne', balance);
     const geladen = deserializeGame(JSON.stringify({ format: 6, appVersion: '0.2.7', savedRound: 1, state: { ...ohne, family: 'x' } }));
     expect(geladen.ok).toBe(false);
+  });
+});
+
+describe('Familie: Clara (4.5)', () => {
+  /** Ein Stand mit Thomas und Clara (wie nach dem Zeitsprung). */
+  function mitClara(clara = 70): GameState {
+    const s = bisRunde(newGame('clara-familie', balance, katalog), balance.family.thomasBirthRound);
+    return { ...s, family: { ...s.family, ruth: 70, thomas: 70, clara, claraBorn: s.round } };
+  }
+
+  it('der Effekt clara wirkt erst ab Claras Geburt und zählt als Familienzeit', () => {
+    const vorher = bisRunde(newGame('clara-vorher', balance, katalog), 2);
+    const ohne = applyFamilyEffects(vorher, undefined, undefined, 10);
+    expect(ohne.family.clara).toBeUndefined();
+    expect(ohne.family.time).toBe(0);
+    const s = mitClara(50);
+    const mit = applyFamilyEffects(s, undefined, undefined, 10);
+    expect(mit.family.clara).toBe(60);
+    expect(mit.family.time).toBe(1);
+    expect(applyEffects(s, { clara: 80 }).family.clara).toBe(100);
+  });
+
+  it('Clara zählt im Schnitt der Familie mit (Kraft aus Familienzeit)', () => {
+    const s = mitClara(10);
+    expect(familyBond(s)).toBeCloseTo((70 + 70 + 10) / 3, 5);
+    expect(familyStrength(s, balance)).toBeLessThan(familyStrength(mitClara(100), balance));
+  });
+
+  it('ohne Familienzeit leidet Clara – und ihr Wortwechsel steht im Protokoll', () => {
+    const s = mitClara(balance.family.contentFrom);
+    const danach = settleFamily(s, balance);
+    expect(danach.family.clara).toBe(balance.family.contentFrom - balance.family.neglect);
+    expect(danach.log.some((z) => /Clara wirkt jetzt vernachlässigt/.test(z))).toBe(true);
+  });
+
+  it('mit Familienzeit (Abend mit den Kindern) bleibt Clara stabil – auch über viele Runden', () => {
+    let s: GameState = { ...mitClara(70), chapter: 2, round: 41, chapterStart: 41, totalRounds: 56 };
+    for (let i = 0; i < 12; i++) {
+      const r = resolveEvent(s, balance, katalog, 'termin_familie_k2', 'bleiben');
+      expect(r.ok).toBe(true);
+      if (!r.ok) return;
+      s = settleFamily(r.state, balance);
+      s = { ...s, agenda: { ...s.agenda, done: [], used: 0 } };
+    }
+    expect(s.family.clara).toBeGreaterThanOrEqual(70);
+    expect(s.family.thomas).toBeGreaterThanOrEqual(70);
+  });
+
+  it('der Kleinkind-Abend gilt nur in den ersten Jahren, der Abend mit den Kindern danach', () => {
+    const k1 = bisRunde(newGame('abende', balance, katalog), balance.family.thomasBirthRound);
+    expect(resolveEvent(k1, balance, katalog, 'termin_familie', 'bleiben').ok).toBe(true);
+    expect(resolveEvent(k1, balance, katalog, 'termin_familie_k2', 'bleiben').ok).toBe(false);
+    const k2: GameState = { ...k1, round: 41, chapter: 2, chapterStart: 41, totalRounds: 56 };
+    expect(resolveEvent(k2, balance, katalog, 'termin_familie', 'bleiben').ok).toBe(false);
+    expect(resolveEvent(k2, balance, katalog, 'termin_familie_k2', 'bleiben').ok).toBe(true);
   });
 });

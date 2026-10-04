@@ -2,7 +2,7 @@
 // Bohrlöcher setzen, bis alle Bohrplätze der Ranch belegt sind.
 import { describe, expect, it } from 'vitest';
 import type { Balance } from './balance';
-import { advanceDrilling, freeSlots, startDrilling, wellOf, wellsOn, type DrillResult } from './drilling';
+import { advanceDrilling, freeSlots, nextWellId, startDrilling, wellOf, wellsOn, type DrillResult } from './drilling';
 import { newGame, type GameState } from './game';
 import { advanceProduction, initialRate } from './production';
 import { areaFactor } from './geology';
@@ -102,5 +102,27 @@ describe('Mehrere Bohrlöcher je Ranch', () => {
     // Zwei Quellen fördern mehr als eine.
     const nurEine = advanceProduction({ ...state, wells: state.wells.filter((w) => w.id !== b.id) }, balance);
     expect(danach.oilStock).toBeGreaterThan(nurEine.oilStock);
+  });
+});
+
+describe('Eindeutige Bohrloch-Kennungen (4.5)', () => {
+  it('nach einem Notverkauf (#1 weg, #2 bleibt) bekommt das nächste Loch #3, nicht wieder #2', () => {
+    let { state, id } = spiel(3);
+    state = bisFertig(ok(startDrilling(state, SICHER, id)), id);
+    state = bisFertig(ok(startDrilling(state, SICHER, id)), id);
+    expect(wellsOn(state, id).map((w) => w.id)).toEqual([`${id}#1`, `${id}#2`]);
+    // Der Verwalter hat im Zeitsprung #1 verkauft – die Pacht bleibt, weil #2 noch fördert.
+    const verkauft = { ...state, wells: state.wells.filter((w) => w.id !== `${id}#1`) };
+    expect(nextWellId(verkauft, id)).toBe(`${id}#3`);
+    const weiter = bisFertig(ok(startDrilling(verkauft, SICHER, id)), id);
+    const ids = weiter.wells.map((w) => w.id);
+    expect(ids).toContain(`${id}#3`);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('ohne Lücke zählt die Kennung wie bisher hoch', () => {
+    expect(nextWellId({ wells: [] }, 'r1')).toBe('r1#1');
+    const w = (wid: string) => ({ id: wid, parcelId: 'r1' }) as never;
+    expect(nextWellId({ wells: [w('r1#1'), w('r1#2')] }, 'r1')).toBe('r1#3');
   });
 });

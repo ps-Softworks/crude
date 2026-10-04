@@ -246,7 +246,7 @@
       Fever has broken out in the harbour district. The boarding house has two sick
       people in the attic, and Ruth boils the water until the kitchen steams. Those
       with money send their families inland for a few weeks.
-  conditions: { minRound: 4, maxRound: 13 }
+  conditions: { minRound: 4, maxRound: 13, maxChapter: 1 }   # 4.5: Fieber in der Pension – Kapitel 1
   chance: 0.06
   choices:
     - id: wegschicken
@@ -275,6 +275,7 @@
 # --- Familie -----------------------------------------------------------------
 
 - id: thomas_nacht
+  conditions: { maxThomasAge: 3 }   # 4.5: Kleinkind-Nächte – nicht mit einem Zehnjährigen in Kapitel 2
   once: false
   cooldown: 4
   marked: [thomas_geboren]
@@ -309,6 +310,7 @@
       default: true
 
 - id: thomas_wort
+  conditions: { maxThomasAge: 3 }   # 4.5: das erste Wort kommt in den ersten Jahren, nicht in Kapitel 2
   draft: true                # Schlüsselszene: Thomas' erstes Wort – war Jacob dabei?
   marked: [thomas_geboren]
   delay: 6

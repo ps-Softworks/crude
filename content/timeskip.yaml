@@ -24,7 +24,7 @@ directives:
     label: { de: "Haltung", en: "Stance" }
     aggressive:
       label: { de: "Wagemutig", en: "Bold" }
-      text: { de: "Jeden Dollar in neue Bohrungen, auch auf Pump. Viel Gewinn – oder viel Verlust.", en: "Every dollar into new wells, borrowed money too. Big gains – or big losses." }
+      text: { de: "Jeden Dollar in neue Bohrungen, auch auf Pump und in Nachbarbezirken. Viel Gewinn – oder, wenn die Bank Kredite kündigt, viel Verlust.", en: "Every dollar into new wells, borrowed money and neighbouring districts too. Big gains – or, if the bank calls in its loans, big losses." }
     balanced:
       label: { de: "Ausgewogen", en: "Balanced" }
       text: { de: "Die Hälfte in neue Bohrungen, ein wenig tilgen, ein Polster behalten.", en: "Half into new wells, pay down a little, keep a cushion." }
@@ -35,19 +35,22 @@ directives:
     label: { de: "Familie", en: "Family" }
     little:
       label: { de: "Die Firma zuerst", en: "Business first" }
-      text: { de: "Jacob ist kaum zu Hause. Mehr Wachstum – Ruth und die Kinder leiden.", en: "Jacob is hardly home. More growth – Ruth and the children suffer." }
+      text: { de: "Jacob ist kaum zu Hause und treibt den Verwalter an. Mehr Bohrungen – Ruth und die Kinder leiden.", en: "Jacob is hardly home and drives the manager hard. More wells – Ruth and the children suffer." }
     some:
       label: { de: "Wie bisher", en: "As before" }
       text: { de: "Sonntags zu Hause, unter der Woche im Büro.", en: "Home on Sundays, at the office during the week." }
     much:
       label: { de: "Viel Zeit zu Hause", en: "Plenty of time at home" }
-      text: { de: "Jacob sieht seine Kinder aufwachsen. Die Firma wächst langsamer.", en: "Jacob watches his children grow up. The company grows more slowly." }
+      text: { de: "Jacob sieht seine Kinder aufwachsen. Der Verwalter bohrt weniger, und ohne Aufsicht bringt das Öl weniger ein.", en: "Jacob watches his children grow up. The manager drills less, and without oversight the oil earns less." }
   send: { de: "Brief abschicken", en: "Send the letter" }
   back: { de: "Zurück zum Kapitelende", en: "Back to the chapter's end" }
 
 # Weichen-Telegramme: unterbrechen den Sprung, wenn die Welt sie hergibt (GDD §13, Zeitsprung I).
 switches:
   telegram: { de: "Telegramm", en: "Telegram" }
+  funds: { de: "Kasse {kasse} · Schulden {schulden} · Bankrahmen frei {rahmen}", en: "Cash {kasse} · debt {schulden} · free credit line {rahmen}" }
+  onCredit: { de: "auf Kredit", en: "on credit" }
+  blocked: { de: "Kasse und Bankrahmen reichen nicht", en: "Cash and credit line won't cover it" }
   bank_panic:
     title: { de: "Das Geld ist zu billig", en: "Money Is Too Cheap" }
     text:
@@ -85,6 +88,7 @@ chronicle:
   quiet: { de: "Ein ruhiges Jahr am Salt Hill.", en: "A quiet year at Salt Hill." }
   balance: { de: "Was die Jahre gebracht haben", en: "What the Years Brought" }
   continue: { de: "An den Schreibtisch – Frühjahr {jahr}", en: "Back to the desk – spring {jahr}" }
+  end: { de: "Das Ende der Firma", en: "The end of the company" }
   entries:
     world_crash: { de: "Börsenkrach! Banken schließen, Firmen gehen reihenweise pleite.", en: "Market crash! Banks close, firms go bust by the dozen." }
     world_panic: { de: "Bankenpanik – vor den Schaltern stehen die Sparer Schlange.", en: "Bank panic – savers queue at the counters." }
@@ -107,6 +111,8 @@ chronicle:
     crisis_call: { de: "Die Bank kündigt Kredite: Harlan Oil muss {betrag} sofort zurückzahlen.", en: "The bank calls in loans: Harlan Oil must repay {betrag} at once." }
     fire_sale: { de: "Notverkauf: {n} Quellen gehen für {betrag} an den Trust.", en: "Fire sale: {n} wells go to the Trust for {betrag}." }
     emergency_loan: { de: "Die Kasse ist leer – die Bank leiht {betrag} zu hohem Zins.", en: "The till is empty – the bank lends {betrag} at a steep rate." }
+    bankrupt: { de: "Harlan Oil ist pleite: {betrag} fehlen, die Bank leiht nichts mehr, die Quellen sind verkauft. Die Firma kommt unter Zwangsverwaltung.", en: "Harlan Oil is bankrupt: {betrag} short, the bank lends no more, the wells are sold. The company goes into receivership." }
+    region_opened: { de: "Der Verwalter erschließt {name} – Landvermesser und Pachtagenten kosten {betrag}.", en: "The manager opens up {name} – surveyors and lease agents cost {betrag}." }
     bullard_wells: { de: "Bullard bohrt weiter: {n} neue Quellen.", en: "Bullard keeps drilling: {n} new wells." }
     wildcatters_quit: { de: "{name} gibt auf und verkauft die Quellen an den Trust.", en: "{name} gives up and sells out to the Trust." }
     panic_repay: { de: "Jacob lässt {betrag} Schulden zurückzahlen, bevor die Blase platzt.", en: "Jacob has {betrag} of debt repaid before the bubble bursts." }
