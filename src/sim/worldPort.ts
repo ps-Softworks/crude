@@ -4,12 +4,16 @@
 // 4.11 nicht darauf warten muss, liest dieses Modul nur ganz schmal, was es
 // braucht – und nimmt Ersatzwerte (aus balance.yaml), solange es das noch nicht gibt:
 //   chapter          Kapitelnummer im Spielzustand (fehlt sie: Kapitel 1)
-//   world.mood       öffentliche Stimmung 0–100 (Geschworene)
-//   world.tech       Technikstand aller Firmen 0–100 (Patente und Lizenzen)
-//   world.government regierende Partei: handel | volksbund | provinz (Delaney versetzen)
+//   worldModel.mood       öffentliche Stimmung 0–100 (Geschworene)
+//   worldModel.tech       Technikstand aller Firmen 0–100 (Patente und Lizenzen)
+//   worldModel.government regierende Partei: handel | volksbund | provinz (Delaney versetzen)
 //
-// 4.x Andockpunkt: Bei der Zusammenführung können chapterOf und worldPort direkt
-// auf die echten Felder von GameState zeigen (state.chapter, state.world).
+// Block A (4.1, main 9d1d837) legt das Weltmodell unter state.worldModel ab (WorldState
+// in world.ts, Felder mood/tech/government). Gelesen wird zuerst worldModel, ersatzweise
+// ein älteres state.world, sonst gelten die Ersatzwerte.
+//
+// 4.11 Andockpunkt: Bei der Zusammenführung können chapterOf und worldPort direkt
+// auf die echten Felder von GameState zeigen (state.chapter, state.worldModel).
 
 /** Parteien der Föderation (GDD §7.1) – gleiche Namen wie im Weltmodell 4.1. */
 export const PORT_PARTIES = ['handel', 'volksbund', 'provinz'] as const;
@@ -35,9 +39,10 @@ export function chapterOf(state: object): number {
   return zahl(c) && c >= 1 ? Math.floor(c) : 1;
 }
 
-/** Liest Stimmung, Technikstand und Regierung aus state.world – fehlt etwas, gilt der Ersatzwert. */
+/** Liest Stimmung, Technikstand und Regierung aus state.worldModel (Block A, 4.1), ersatzweise state.world – fehlt etwas, gilt der Ersatzwert. */
 export function worldPort(state: object, fallback: WorldPort): WorldPort {
-  const w = (state as { world?: unknown }).world;
+  const s = state as { worldModel?: unknown; world?: unknown };
+  const w = typeof s.worldModel === 'object' && s.worldModel !== null ? s.worldModel : s.world;
   if (typeof w !== 'object' || w === null) return fallback;
   const welt = w as { mood?: unknown; tech?: unknown; government?: unknown };
   const regierung = welt.government;

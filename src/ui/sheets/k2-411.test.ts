@@ -48,6 +48,10 @@ describe('Schattenbuch und Werkstatt (4.11)', () => {
     const ohne = renderToString(createElement(WorkshopSheet, { ctx: ctx(kapitel2([])) }));
     expect(ohne).toContain('Versuchswerkstatt einrichten');
     expect(ohne).toContain('Thermisches Cracken');
+    // was jede Technik bewirkt – und was noch nicht wirkt
+    expect(ohne).toContain('Bohrzeit');
+    expect(ohne).toContain('Benzinausbeute');
+    expect(ohne).toContain('wirkt noch nicht');
     const r = buildWorkshop(kapitel2([]), balance);
     if (!r.ok) throw new Error(r.reason);
     const mit = renderToString(createElement(WorkshopSheet, { ctx: ctx(r.state) }));

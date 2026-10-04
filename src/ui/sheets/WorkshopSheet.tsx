@@ -3,6 +3,7 @@
 
 import { localize } from '../../sim/i18n';
 import {
+  ACTIVE_TECH_EFFECTS,
   buildWorkshop,
   buyLicense,
   startResearch,
@@ -10,6 +11,7 @@ import {
   techViews,
   toggleRefuse,
   type ResearchResult,
+  type TechEffectKey,
   type TechView,
 } from '../../sim/research';
 import { balance } from '../balance';
@@ -26,6 +28,14 @@ function Aktion({ result, onDone, children }: { result: ResearchResult; onDone: 
       {children}
     </button>
   );
+}
+
+/** Wert einer Kennzahl lesbar: Anteile in Prozent, Tiefe in Metern, Tanklaster als Ja. */
+function wirkWert(key: TechEffectKey, v: number): string {
+  if (key === 'trucks') return '';
+  if (key === 'depth') return ` ${v > 0 ? '+' : '−'}${Math.abs(v)} m`;
+  const p = Math.round(Math.abs(v) * 100);
+  return key === 'gasolineYield' ? ` +${p} Prozentpunkte` : ` ${v > 0 ? '+' : '−'}${p} %`;
 }
 
 function stand(v: TechView): string {
@@ -77,6 +87,18 @@ export function WorkshopSheet({ ctx }: { ctx: SheetContext }) {
               </span>
             </div>
             {T.techs[v.id] && <p className="klein">{localize(T.techs[v.id].text)}</p>}
+            <ul className="klein wirkung">
+              {Object.entries(R.techs.find((t) => t.id === v.id)?.effects ?? {}).map(([k, wert]) => {
+                const key = k as TechEffectKey;
+                const wirkt = ACTIVE_TECH_EFFECTS.includes(key);
+                return (
+                  <li key={k}>
+                    {`${localize(T.effects[key])}${wirkWert(key, wert ?? 0)}`}
+                    {!wirkt && <em>{` (${localize(T.pending)})`}</em>}
+                  </li>
+                );
+              })}
+            </ul>
             {v.status !== 'eigen' && (
               <div className="actions zeile">
                 {r?.workshop &&
@@ -96,6 +118,15 @@ export function WorkshopSheet({ ctx }: { ctx: SheetContext }) {
                   </Aktion>
                 )}
               </div>
+            )}
+            {v.source === 'patent' && (
+              <p className="klein">
+                {v.refused
+                  ? 'Jacob verweigert die Lizenz: Die Rivalen haben diese Technik nicht.'
+                  : v.paying
+                    ? `Die Rivalen zahlen Lizenzgebühren: ${money(R.patentIncome)} je Runde.`
+                    : 'Die Rivalen brauchen die Technik noch nicht – noch keine Lizenzgebühren.'}
+              </p>
             )}
             {v.source === 'patent' && (
               <div className="actions zeile">

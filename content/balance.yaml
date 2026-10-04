@@ -599,15 +599,20 @@ research:
     - { cost: 1200, points: 2.5 }  # kräftig
   luck: { min: 0.5, max: 1.5 }     # Fortschritt je Runde schwankt
   patentIncome: 400      # $ Lizenzgebühren je Runde und Patent, sobald die Welt die Technik braucht
-  worldFallback: { tech: 25 }      # Technikstand der Welt (0–100) bis zum Weltmodell (4.1)
-  # worldAt: ab diesem Technikstand der Welt haben andere die Technik (Lizenz kaufbar, kein Patent mehr).
-  # Voraussetzungen (requires) müssen weiter oben stehen.
+  # Technikstand der Welt (0–100), solange es kein Weltmodell gibt. Skala wie worldModel.tech
+  # auf main (4.1): Start 6–10, logistisch +1,7 % je Runde → Kapitel 2 (Jahr 11–14) etwa 11–22,
+  # Kapitel 3 (Jahr 21–24) etwa 22–35. 12 ≈ Beginn von Kapitel 2.
+  worldFallback: { tech: 12 }
+  # worldAt: ab diesem Technikstand der Welt haben andere die Technik (Lizenz kaufbar, kein Patent mehr;
+  # Jacobs Patent bringt ab dann Lizenzgebühren). Am Weltmodell von main ausgerichtet: Drehbohren ist
+  # zu Beginn von Kapitel 2 schon verbreitet, Tanklaster und Rollenmeißel ziehen im Lauf von Kapitel 2
+  # nach, Cracken gegen Ende von Kapitel 2 / in Kapitel 3. Voraussetzungen (requires) müssen weiter oben stehen.
   techs:
     - id: rotary         # Drehbohren (Stufe I, GDD §5): schneller, tiefer
       tier: 1
       domain: bohren
       points: 4
-      worldAt: 20
+      worldAt: 10
       license: 2500
       effects: { drillTime: -0.25, depth: 150 }
     - id: rollenmeissel  # Rollenmeißel (Stufe II): harte Schichten
@@ -615,20 +620,20 @@ research:
       domain: bohren
       points: 6
       requires: [rotary]
-      worldAt: 40
+      worldAt: 17
       license: 6000
       effects: { drillTime: -0.15, drillCost: -0.15, depth: 150 }
     - id: thermal_cracking  # Thermisches Cracken (Stufe II, GDD §6): Benzinausbeute 20 % → 40 % (Raffinerie 4.6)
       tier: 2
       domain: raffinerie
       points: 8
-      worldAt: 45
+      worldAt: 20
       license: 8000
       effects: { gasolineYield: 0.2 }
     - id: tanklaster     # Tanklaster (Stufe II, GDD §6): klein, flexibel, für Tankstellen
       tier: 2
       domain: transport
       points: 5
-      worldAt: 35
+      worldAt: 15
       license: 4000
       effects: { trucks: 1 }

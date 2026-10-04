@@ -63,9 +63,10 @@ const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte
   fracht: { left: 19, top: 75, width: 15, height: 22 },
   protokoll: { left: 36, top: 76, width: 9, height: 21 },
   glocke: { left: 86, top: 70, width: 12, height: 27 },
-  // 4.11 Andockpunkt: unter Ruths Zettel und neben dem Kassenbuch.
+  // 4.11 Andockpunkt: Schublade unter Ruths Zettel, Blaupause an der Wand zwischen Lampe und Kalender.
+  // Achtung Integration: 73/75 (unter dem Kassenbuch) belegen 4.6, 4.9, 4.14, 4.16, 4.17 – Plätze gemeinsam vergeben.
   schattenbuch: { left: 47, top: 85, width: 22, height: 12 },
-  werkstatt: { left: 73, top: 75, width: 12, height: 22 },
+  werkstatt: { left: 51.5, top: 8, width: 6, height: 24 },
 };
 
 export interface DeskSceneProps {

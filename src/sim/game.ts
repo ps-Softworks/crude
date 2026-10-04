@@ -219,9 +219,10 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Türme und Pumpen (0.2.15+7): Turmmiete und Pumpenunterhalt, ebenfalls vor den Zinsen.
   const verzinst = settleLoans(settleRigs(advanceLogistics(rivale, balance), balance), balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
+  const gefahren = advanceTransport(verzinst, balance);
   // 4.11 Andockpunkt: Ermittler und Forschung – in Kapitel 1 kommt derselbe Zustand zurück.
-  const gefahren = advanceResearch(advanceInvestigation(advanceTransport(verzinst, balance), balance), balance);
-  const state = { ...checkBankruptcy(gefahren, balance), roundLogStart };
+  const ermittelt = advanceResearch(advanceInvestigation(gefahren, balance), balance);
+  const state = { ...checkBankruptcy(ermittelt, balance), roundLogStart };
   if (state.ending === 'pleite') return state;
   if (state.round >= state.totalRounds) {
     // Kapitelprüfung (2.11): steht im Protokoll, der Ergebnisbildschirm zeigt die Einzelheiten.

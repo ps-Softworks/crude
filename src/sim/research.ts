@@ -15,9 +15,10 @@
 // die Rivalen Lizenzgebühren (patentIncome je Runde) – es sei denn, Jacob verweigert
 // sie (refused): Dann haben die Rivalen die Technik nicht (rivalsHaveTech).
 //
-// Wirkung: Dieses Modul schaltet nur frei und liefert Kennzahlen (hasTech, techTier,
-// techEffect). Bohren (drilling.ts), Raffinerie (4.6) und Transport lesen sie – das
-// ist der Andockpunkt; in Kapitel 1 ändert sich nichts.
+// Wirkung: Dieses Modul schaltet frei und liefert Kennzahlen (hasTech, techTier,
+// techEffect). Bohrzeit und Bohrkosten wirken schon (drilling.ts über techDrillCost/
+// techDrillRounds, ab Kapitel 2). Bohrtiefe, Raffinerie (4.6) und Tanklaster lesen sie
+// noch nicht – das ist der Andockpunkt; in Kapitel 1 ändert sich nichts.
 //
 // Rein und deterministisch: eigener Zufall (Seed + ":forschung").
 
@@ -212,6 +213,27 @@ export function techEffect(state: GameState, balance: Pick<Balance, 'research'>,
   return balance.research.techs.filter((t) => owned[t.id] !== undefined).reduce((s, t) => s + (t.effects[key] ?? 0), 0);
 }
 
+/**
+ * Kennzahlen, die schon wirken: Bohrzeit und Bohrkosten (drilling.ts über techDrillCost/techDrillRounds).
+ * depth, gasolineYield und trucks warten auf ihre Systeme (Bohrtiefe, Raffinerie 4.6, Tanklaster).
+ */
+export const ACTIVE_TECH_EFFECTS: readonly TechEffectKey[] = ['drillTime', 'drillCost'];
+
+/** Bohrkosten mit Jacobs Techniken (ab Kapitel 2; vorher und ohne Technik unverändert). */
+export function techDrillCost(state: object, balance: Pick<Balance, 'research'>, cost: number): number {
+  if (!researchUnlocked(state, balance)) return cost;
+  const anteil = techEffect(state as GameState, balance, 'drillCost');
+  return anteil === 0 ? cost : Math.round(cost * Math.max(0.1, 1 + anteil));
+}
+
+/** Bohrdauer in Runden mit Jacobs Techniken (ab Kapitel 2), mindestens 1; halbe Runden zählen zugunsten von Jacob. */
+export function techDrillRounds(state: object, balance: Pick<Balance, 'research'>, rounds: number): number {
+  if (!researchUnlocked(state, balance)) return rounds;
+  const anteil = techEffect(state as GameState, balance, 'drillTime');
+  if (anteil === 0) return rounds;
+  return Math.max(1, Math.ceil(rounds * Math.max(0.1, 1 + anteil) - 0.5));
+}
+
 /** Technikstand der Welt (4.1) oder der Ersatzwert. */
 export function worldTech(state: GameState, balance: Pick<Balance, 'research'>): number {
   return worldPort(state, balance.research.worldFallback).tech;
@@ -243,6 +265,8 @@ export interface TechView {
   licensable: boolean;
   license: number;
   refused: boolean;
+  /** Jacobs Patent bringt diese Runde Lizenzgebühren (die Welt braucht die Technik, Jacob verweigert nicht). */
+  paying: boolean;
 }
 
 export function techViews(state: GameState, balance: Pick<Balance, 'research'>): TechView[] {
@@ -263,6 +287,7 @@ export function techViews(state: GameState, balance: Pick<Balance, 'research'>):
       licensable: !source && welt >= t.worldAt,
       license: t.license,
       refused: r.refused.includes(t.id),
+      paying: source === 'patent' && !r.refused.includes(t.id) && welt >= t.worldAt,
     };
   });
 }
@@ -432,6 +457,10 @@ export interface ResearchContent {
   techs: Record<string, { name: LocalizedText; text: LocalizedText }>;
   domains: Record<TechDomain, LocalizedText>;
   funding: LocalizedText[];
+  /** Name je Kennzahl (Bohrzeit, Bohrkosten, …) für die Anzeige der Wirkung. */
+  effects: Record<TechEffectKey, LocalizedText>;
+  /** Hinweis bei Kennzahlen, die noch nicht wirken (nicht in ACTIVE_TECH_EFFECTS). */
+  pending: LocalizedText;
 }
 
 /** Liest content/research.yaml; prüft gegen balance.yaml, dass jede Technik und jede Förderstufe einen Text hat. */
@@ -478,6 +507,15 @@ export function parseResearchContent(file: string, text: string, balance?: Pick<
       const t = sprachtext(f, `funding Nr. ${i + 1}`);
       if (t) funding.push(t);
     });
+  const effects: Partial<Record<TechEffectKey, LocalizedText>> = {};
+  const effRaw = raw?.effects;
+  if (!istObjekt(effRaw)) fehler('„effects“ fehlt – je Kennzahl ein Name.');
+  else
+    for (const k of TECH_EFFECT_KEYS) {
+      const t = sprachtext(effRaw[k], `effects.${k}`);
+      if (t) effects[k] = t;
+    }
+  const pending = sprachtext(raw?.pending, 'pending');
   if (balance) {
     for (const t of balance.research.techs) if (!techs[t.id] && istObjekt(techsRaw) && !(t.id in techsRaw)) fehler(`techs.${t.id}: Text fehlt (Technik aus balance.yaml).`);
     for (const id of Object.keys(techs)) if (!balance.research.techs.some((t) => t.id === id)) fehler(`techs.${id}: Diese Technik steht nicht in balance.yaml.`);
@@ -486,5 +524,8 @@ export function parseResearchContent(file: string, text: string, balance?: Pick<
     }
   }
   if (errors.length > 0) return { content: null, errors };
-  return { content: { techs, domains: domains as Record<TechDomain, LocalizedText>, funding }, errors };
+  return {
+    content: { techs, domains: domains as Record<TechDomain, LocalizedText>, funding, effects: effects as Record<TechEffectKey, LocalizedText>, pending: pending as LocalizedText },
+    errors,
+  };
 }

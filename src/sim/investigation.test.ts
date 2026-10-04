@@ -241,6 +241,59 @@ describe('Ablauf: Gerücht → Vorermittlung → Anklage → Urteil (GDD §10)',
     expect(inv(s).verdict).toBe('eingestellt');
     expect(s.events.marks[DELANEY_MARKS.dropped]).toBeDefined();
   });
+
+  it('Hitze 0 und kein Anwalt: die Beweise verfallen, Delaney stellt ein – kein ewiger Fall', () => {
+    const b = mitInv({ jumpFade: 0, evidence: { ...balance.investigation.evidence, perWitness: 0 } });
+    let s = runden(kapitel2(['moss_betrogen', 'bullard_rache']), 3, b);
+    expect(inv(s).stage).toBe('vorermittlung');
+    expect(inv(s).evidence).toBeGreaterThan(0);
+    const ohneZeugen = mitInv({ ...b.investigation, destroy: { ...b.investigation.destroy, chance: 0, cut: 5 } });
+    for (const id of ['moss_betrogen', 'bullard_rache']) {
+      const r = destroyTrace(s, ohneZeugen, id);
+      if (!r.ok) throw new Error(r.reason);
+      s = r.state as K2;
+    }
+    expect(heat(s, b)).toBe(0);
+    expect(inv(s).lawyer).toBe(0);
+    const vorher = inv(s).evidence;
+    s = runden(s, 1, b);
+    expect(inv(s).evidence).toBe(Math.max(0, vorher - b.investigation.evidence.transferredDecay));
+    let n = 0;
+    while (inv(s).stage === 'vorermittlung' && n++ < 20) s = runden(s, 1, b);
+    expect(inv(s).verdict).toBe('eingestellt');
+    expect(n).toBeLessThanOrEqual(Math.ceil(vorher / b.investigation.evidence.transferredDecay));
+  });
+
+  it('ein Anwalt, der jeden Zuwachs abfängt: ohne Beweise gibt Delaney auf, auch wenn die Hitze bleibt', () => {
+    // moss + bullard = Hitze 6 → Zuwachs 15 je Runde; Anwalt 5 fängt 15 ab.
+    const b = mitInv({ jumpFade: 0, evidence: { ...balance.investigation.evidence, perWitness: 0 } });
+    let s = runden(kapitel2(['moss_betrogen', 'bullard_rache']), 1, b);
+    expect(inv(s).stage).toBe('geruecht');
+    const r = setLawyer(s, b, 5);
+    if (!r.ok) throw new Error(r.reason);
+    s = runden(r.state, 1, b);
+    expect(inv(s).stage).toBe('vorermittlung');
+    expect(heat(s, b)).toBeGreaterThanOrEqual(b.investigation.probeAt);
+    s = runden(s, 1, b);
+    expect(inv(s).verdict).toBe('eingestellt');
+  });
+
+  it('nach dem Urteil ist der Anwalt entlassen: keine Anwaltskosten mehr, eine Zeile im Protokoll', () => {
+    const b = mitInv({ jumpFade: 0, trial: { ...balance.investigation.trial, min: 1, max: 1 } });
+    let s = runden(kapitel2(schmutzig), 2, b);
+    expect(inv(s).stage).toBe('vorermittlung');
+    // wie bei Delaneys Besuch ignoriert: Standard-Wahl „Anwalt“ (Stufe lawyer.summoned)
+    s = { ...s, events: { ...s.events, marks: { ...s.events.marks, [DELANEY_CHOICE_MARKS.lawyer]: s.round } } };
+    s = runden(s, 1, b);
+    expect(inv(s).lawyer).toBe(b.investigation.lawyer.summoned);
+    let n = 0;
+    while (inv(s).stage !== 'abgeschlossen' && n++ < 40) s = runden(s, 1, b);
+    expect(inv(s).stage).toBe('abgeschlossen');
+    expect(inv(s).lawyer).toBe(0);
+    expect(s.log.some((l) => l.includes('Ashby & Lowe'))).toBe(true);
+    const nach = advanceInvestigation(s, b);
+    expect(nach.cash).toBe(s.cash);
+  });
 });
 
 describe('Antworten auf Delaneys Ereignisse', () => {
@@ -306,6 +359,9 @@ describe('Antworten auf Delaneys Ereignisse', () => {
     expect(convictionChance(mit(C.fight), b)).toBeLessThan(p);
     expect(convictionChance(mit('moss_fair'), b)).toBeLessThan(p);
     expect(convictionChance({ ...s, world: { mood: 10 } } as K2, b)).toBeGreaterThan(p);
+    // Weltmodell in der Form von main (4.1): state.worldModel
+    expect(convictionChance({ ...s, worldModel: { mood: 10, tech: 9, government: 'handel' } } as K2, b)).toBeGreaterThan(p);
+    expect(convictionChance({ ...s, worldModel: { mood: 90, tech: 9, government: 'handel' } } as K2, b)).toBeLessThan(p);
   });
 });
 
@@ -353,6 +409,7 @@ describe('Gegenmittel im Schattenbuch', () => {
     expect(pressureChance({ ...s, world: { government: 'handel' } } as K2, b)).toBe(b.investigation.pressure.chance.handel);
     expect(pressureChance({ ...s, world: { government: 'volksbund' } } as K2, b)).toBe(b.investigation.pressure.chance.volksbund);
     expect(pressureChance(s, b)).toBe(b.investigation.pressure.chance.none);
+    expect(pressureChance({ ...s, worldModel: { mood: 50, tech: 9, government: 'provinz' } } as K2, b)).toBe(b.investigation.pressure.chance.provinz);
     const sicher = mitInv({ ...b.investigation, pressure: { ...b.investigation.pressure, chance: { handel: 1, volksbund: 1, provinz: 1, none: 1 } } });
     const r = applyPressure(s, sicher);
     if (!r.ok) throw new Error(r.reason);

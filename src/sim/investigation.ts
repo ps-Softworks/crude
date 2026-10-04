@@ -422,7 +422,7 @@ export function fineFor(state: GameState, balance: Balance): { amount: number; h
   return { amount: Math.round(h * f.perHeat * (heavy ? f.heavyFactor : 1) * offen), heavy };
 }
 
-/** Schließt den laufenden Fall ab: offene Spuren gelten als erledigt. */
+/** Schließt den laufenden Fall ab: offene Spuren gelten als erledigt, der Anwalt wird entlassen (kostet nichts mehr). */
 function abschliessen(state: MitErmittlung, inv: InvestigationState, verdict: Verdict, balance: Balance): InvestigationState {
   const erledigt = offeneSpuren(state, balance).map((t) => t.id);
   return {
@@ -430,6 +430,7 @@ function abschliessen(state: MitErmittlung, inv: InvestigationState, verdict: Ve
     stage: 'abgeschlossen',
     since: state.round,
     evidence: 0,
+    lawyer: 0,
     closed: [...inv.closed, ...erledigt.filter((id) => !inv.closed.includes(id))],
     verdict,
     cases: inv.cases + 1,
@@ -557,14 +558,18 @@ export function advanceInvestigation(input: GameState, balance: Balance): GameSt
       let faktor = 1;
       if (marks[C.hostile] !== undefined) faktor *= b.evidence.hostileFactor;
       if (marks[C.noraCrane] !== undefined) faktor *= b.evidence.divertedFactor;
-      const zuwachs = b.evidence.perHeat * h * faktor - b.evidence.lawyerCut * inv.lawyer;
+      let zuwachs = b.evidence.perHeat * h * faktor - b.evidence.lawyerCut * inv.lawyer;
+      // Ist die Hitze unter die Schwelle der Vorermittlung gefallen (Spuren vernichtet),
+      // verlieren die Beweise an Wert – sonst bliebe der Fall bei Zuwachs 0 ewig offen.
+      if (h < b.probeAt) zuwachs = Math.min(zuwachs, -b.evidence.transferredDecay);
       const beweise = clamp(inv.evidence + zuwachs, 0, 100);
       inv = { ...inv, evidence: Math.round(beweise * 10) / 10 };
       if (inv.evidence >= b.chargeAt) {
         inv = { ...inv, stage: 'anklage', since: runde };
         marks = setMark(marks, DELANEY_MARKS.charge, runde);
         log.push(zeile(input, 'Delaney erhebt Anklage. Das Bundesgericht in Cordova lädt Jacob Harlan vor.'));
-      } else if (inv.evidence <= 0 && h < b.probeAt) {
+      } else if (inv.evidence <= 0 && (h < b.probeAt || zuwachs <= 0)) {
+        // Keine Beweise und kein Weiterkommen (zu wenig Hitze oder ein Anwalt, der alles abfängt): Delaney gibt auf.
         inv = abschliessen(state, inv, 'eingestellt', balance);
         marks = setMark(marks, DELANEY_MARKS.dropped, runde);
         log.push(zeile(input, 'Delaney stellt die Vorermittlung ein. Für diesmal.'));
@@ -609,6 +614,10 @@ export function advanceInvestigation(input: GameState, balance: Balance): GameSt
       for (const t of traces({ ...state, investigation: inv }, balance)) if (!t.witness) faded[t.id] = (faded[t.id] ?? 0) + 1;
       inv = { ...inv, faded, fadeClock: 0 };
     } else inv = { ...inv, fadeClock: uhr };
+  }
+
+  if ((start.investigation?.lawyer ?? 0) > 0 && inv.lawyer === 0 && inv.stage === 'abgeschlossen') {
+    log.push(zeile(input, 'Der Fall ist erledigt. Ashby & Lowe schicken die letzte Rechnung – der Anwalt kostet nichts mehr.'));
   }
 
   inv = { ...inv, rng: rng.state };

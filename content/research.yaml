@@ -4,6 +4,7 @@
 # techs   – je Technik aus balance.yaml (research.techs) ein Name und ein Satz.
 # domains – Bereiche, in denen eine Technik wirkt.
 # funding – je Förderstufe aus balance.yaml (research.funding) ein Name, in derselben Reihenfolge.
+# effects – Name je Kennzahl (Wirkung einer Technik); pending – Hinweis, wenn eine Kennzahl noch nicht wirkt.
 # npm run check:content prüft, dass jede Technik und jede Förderstufe einen Text hat.
 
 techs:
@@ -36,3 +37,12 @@ domains:
 funding:
   - { de: "sparsam", en: "frugal" }
   - { de: "kräftig", en: "generous" }
+
+effects:
+  drillTime: { de: "Bohrzeit", en: "Drilling time" }
+  drillCost: { de: "Bohrkosten", en: "Drilling cost" }
+  depth: { de: "Bohrtiefe", en: "Drilling depth" }
+  gasolineYield: { de: "Benzinausbeute", en: "Gasoline yield" }
+  trucks: { de: "Tanklaster fahren", en: "Tank trucks run" }
+
+pending: { de: "wirkt noch nicht – das kommt mit einem späteren Schritt", en: "no effect yet – comes with a later step" }
