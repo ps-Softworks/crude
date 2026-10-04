@@ -87,6 +87,12 @@ Kurzreferenz der Felder:
   ist das „Gegenstück“ und erlaubt. Merkzeichen für spätere Kapitel: `content/relevance.yaml` (mit Grund).
   Neue Folgen früher folgenloser Merkzeichen: `bullard_rache_folge`, `kerrigan_zusammenbruch`,
   `wegerecht_moss_versoehnt`; Schutz durch `notMarked` (Diebe, Seil, Streik, Lohn, Schlamm, Lager).
+- Kapitel 3, Story-Bögen (Phase 4): `k3-story-1-daniel.yaml` (Daniel Moss als Bezirksstaatsanwalt),
+  `k3-story-2-thomas.yaml` (Thomas im Unternehmen oder nicht), `k3-story-3-ehe.yaml` (Wendepunkt der Ehe),
+  `k3-story-4-vale.yaml` (Mr. Vales Karte – Auftakt Bogen D, auf sie wartet Ruths zweite Probe).
+  Alle mit `minChapter: 3, maxChapter: 3`; Runden zählen innerhalb des Kapitels. Gewünschte neue Wirkungen
+  stehen als `# TODO-Effekt:` neben einer vorläufigen. `k3-story-3-ehe-k2.yaml` erzählt die Folgen von Ruths
+  Kapitel-2-Bogen (Merkzeichen aus `k2-story-3-ruth.yaml`; Test: `src/sim/k3Story.test.ts`). ENTWURF – Philipp überarbeitet.
 - Auftritt (0.2.15+10): `visitor: silas` – das Ereignis kommt als Besuch an Jacobs Schreibtisch (Person
   klopft, tritt ein, redet); die Figur braucht in `content/figures.yaml` einen Namen
   (`silas: { form: muetze, name: Silas }`). `tableau: true` – kommt als Vollbild-Szene (Geburt, Brand,

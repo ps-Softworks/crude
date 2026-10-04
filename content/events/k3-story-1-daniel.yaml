@@ -1,0 +1,1818 @@
+# Kapitel 3 – Story-Bogen Daniel Moss wird Bezirksstaatsanwalt (Phase 4, Story-Bibel §7 A).
+# Entwurf – Philipp überarbeitet. Alle Texte hier sind Entwürfe von Claude.
+#
+# Zwanzig Jahre nach Kapitel 1 ist Daniel Moss 35 und will Bezirksstaatsanwalt
+# von Cordova werden. Ziel: dass das Gesetz auch für Reiche gilt. Er ist unbestechlich –
+# Bestechung macht alles schlimmer. Alle Ereignisse nur in Kapitel 3 (minChapter/maxChapter).
+# Runden zählen innerhalb des Kapitels (1–16), wie in der Story-Bibel.
+#
+#   R1–3   k3_daniel_wahl            Daniel kandidiert: unterstützen, Gegner finanzieren, heraushalten
+#          k3_daniel_wahlnacht       (daniel_bekaempft) Er gewinnt trotzdem – der Ledger druckt die Spender
+#   R2+    k3_daniel_antritt         Antrittsbesuch – Fassungen je nach Kapitel 1:
+#          _antritt (moss_fair) · _antritt_feind (moss_feind) · _antritt_entschuldigung
+#          (moss_feind + daniel_entschuldigung: „Trost oder Beweis“) · _antritt_neutral (abgewiesen)
+#          · _antritt_fremd (moss_verloren: erst beim Namen versteht Jacob)
+#   R3–4   k3_daniel_vorwarnung      (daniel_gefoerdert) Dankbarkeit gegen Pflicht: Vorwarnung, nie Gefälligkeit
+#   R5+    k3_daniel_akte_*          Schlüsselszene: was Daniel gegen Jacob in der Hand hat (genau eine Fassung)
+#          _moss (moss_feind) · _sheriff (sheriff_bezahlt) · _kerrigan (kerrigan_verheizt)
+#          · _pike (pike_urkunde_falsch) · _zeuge (nichts – er braucht Jacob gegen Thorne)
+#          kooperieren · Anwälte · bestechen (scheitert immer) · wegloben ins Richteramt
+#   R7–12  k3_daniel_wegerecht       (wegerecht_moss) „Keine Enteignung zu finden.“
+#   R6–10  k3_moss_beerdigung        Ezekiel stirbt (tableau): Sarg tragen / hinten mit Ruth / Hauptversammlung
+#          _feind: Daniel stellt sich zwischen Jacob und das Grab · k3_moss_grab (moss_verloren)
+#
+# Wie es nach der Akte weitergeht – jeder Weg endet in einem Ausgang für Kapitel 4:
+#   kooperieren   _moss → k3_daniel_ergebnis_moss      Geständnis, Land zurück oder Anklage
+#                 _sheriff → k3_daniel_kronzeuge       Aussage gegen Tatum (Vergleich) oder Anklage
+#                 _kerrigan → k3_daniel_ergebnis_kerrigan  Geständnis, Unfallkasse oder Anklage
+#                 _pike → daniel_entlastet (sofort)    Pike lügt – die Bücher beweisen es
+#                 _zeuge → k3_daniel_zeuge_folge       Thorne schlägt zurück; mit Daniel: daniel_verbuendet
+#   Anwälte       → k3_daniel_angebot (+3, Tür nicht zu) · _angebot_trost (Feind mit Trost)
+#                 · sonst k3_daniel_anklage (+5) bzw. _anklage_feind (moss_feind)
+#   bestechen     → k3_daniel_bestechung_folge (+1) → k3_daniel_anklage_bestechung (+3) – teurer als
+#                 jeder Anwalts-Weg (Bibel: „ein Bestechungsversuch macht es schlimmer, nicht besser“)
+#   wegloben      → k3_daniel_weggelobt_folge
+#   Zeuge ablehnen → k3_daniel_vorladung → aussagen / Attest (daniel_vertagt) / fernbleiben
+#                 → k3_daniel_missachtung (Beugehaft – keine Anklage gegen Jacob, er hat ja nichts getan)
+#
+# Ausgänge für Kapitel 4 (content/relevance.yaml): daniel_verbuendet, daniel_anklage,
+# daniel_vergleich, daniel_entlastet, daniel_weggelobt, daniel_bestechung_versuch (K4-Prüfung:
+# keine Anklage!), daniel_zeuge_thorne, daniel_beugehaft, daniel_thorne_gedeckt, daniel_vertagt,
+# daniel_unfallkasse, moss_land_zurueck.
+#
+# Anknüpfung Kapitel 2 (nach Merge von phase4/inhalte-k2-story nachtragen, bis dahin setzt
+# keine Wahl diese Merkzeichen – check:content würde sie als Tippfehler melden):
+#   daniel_angestellt  → eigene Fassung von k3_daniel_akte („Er kennt die Akten von innen.“)
+#   silas_k2_geopfert  → weitere Fassung von k3_daniel_akte (der tote Arbeiter)
+#   zs2_grady_reserveland → weitere Fassung von k3_daniel_akte (Gradys Reserveland)
+#   delaney_akte_harlan → Daniel und Delaney streiten um die Zuständigkeit
+# WUNSCH (Story-Bibel §10): Bedingungen anyMarked, investigationStage, minControl; Effekte
+# heat, trace, investigation, evidence, reputation, favors. Bis dahin stehen sie als TODO-Effekt.
+
+# Entwurf – Philipp überarbeitet.
+- id: k3_daniel_wahl
+  title:
+    de: Ein Name auf den Wahlplakaten
+    en: A Name on the Election Posters
+  text:
+    de: >-
+      An jedem Telegrafenmast zwischen Salt Hill und Port Ellis klebt dasselbe Plakat:
+      DANIEL MOSS – DAS GESETZ GILT FÜR ALLE. Das Foto zeigt einen Mann mit früh
+      ergrauten Schläfen, wie sein Vater sie hatte. Am Abend sitzen zwei Herren der
+      Handelspartei in Jacobs Salon. Ihr Kandidat brauche Geld, sagen sie. Viel Geld.
+      Moss rede zu oft von „Ölbaronen“.
+    en: >-
+      Every telegraph pole between Salt Hill and Port Ellis carries the same poster:
+      DANIEL MOSS – THE LAW IS FOR EVERYONE. The photograph shows a man with temples
+      gone grey early, as his father's did. In the evening two gentlemen of the Trade
+      Party sit in Jacob's parlour. Their candidate needs money, they say. A great
+      deal. Moss talks too often about "oil barons".
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 1, maxRound: 3 }
+  certain: true
+  choices:
+    - id: unterstuetzen
+      label: { de: "Daniels Wahlkampf unterstützen (1.500 $)", en: "Back Daniel's campaign (1,500 $)" }
+      result:
+        de: >-
+          Daniel schickt die Spende nicht zurück. Er schickt eine Quittung, mit Datum
+          und Unterschrift, und eine Zeile: „Das ändert nichts. Aber ich weiß es.“
+        en: >-
+          Daniel does not send the money back. He sends a receipt, dated and signed,
+          and one line: "This changes nothing. But I know it."
+      requires: { minCash: 1500 }
+      effects: { cash: -1500 }
+      marks: [daniel_unterstuetzt]
+    - id: gegner
+      label: { de: "Den Kandidaten der Handelspartei finanzieren (2.500 $)", en: "Fund the Trade Party's candidate (2,500 $)" }
+      result:
+        de: >-
+          Die Herren bedanken sich mit einem festen Händedruck. Zwei Wochen lang hängen
+          neue Plakate über Daniels. Dann regnet es, und das Papier löst sich.
+        en: >-
+          The gentlemen thank him with a firm handshake. For two weeks new posters hang
+          over Daniel's. Then it rains, and the paper peels away.
+      requires: { minCash: 2500 }
+      effects: { cash: -2500 } # TODO-Effekt: party: { handel: +2 }, favors: +1
+      marks: [daniel_bekaempft]
+    - id: heraushalten
+      label: { de: "Sich heraushalten", en: "Stay out of it" }
+      result:
+        de: Jacob schenkt den Herren nach und sagt nichts. Sie gehen früher als geplant.
+        en: Jacob refills the gentlemen's glasses and says nothing. They leave earlier than planned.
+      default: true
+
+# Nachwirkung: Jacob hat den Gegner bezahlt. Daniel gewinnt trotzdem.
+- id: k3_daniel_wahlnacht
+  title:
+    de: Dreihundertzwölf Stimmen
+    en: Three Hundred and Twelve Votes
+  text:
+    de: >-
+      Daniel Moss gewinnt mit dreihundertzwölf Stimmen Vorsprung. Am Morgen danach
+      druckt der Ledger die Liste der Spender seines Gegners. Jacobs Name steht an
+      zweiter Stelle, gleich hinter einer Bank aus Hallstead. In der Arbeiterkirche
+      liest Bruder Abel die Liste vor, Name für Name, ohne ein Wort dazu.
+    en: >-
+      Daniel Moss wins by three hundred and twelve votes. The morning after, the Ledger
+      prints the list of his opponent's donors. Jacob's name stands second, just behind
+      a bank from Hallstead. In the workers' church Brother Abel reads the list aloud,
+      name by name, without a word of his own.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  marked: [daniel_bekaempft]
+  delay: 1
+  certain: true
+  choices:
+    - id: dazu_stehen
+      label: { de: "Dazu stehen: „Wahlspenden sind kein Verbrechen.“", en: "Own it: \"Campaign money is no crime.\"" }
+      result:
+        de: >-
+          Der Satz steht am nächsten Tag auf Seite eins. Darunter, kleiner: „Noch nicht.“
+          Jacob schläft schlecht in dieser Woche.
+        en: >-
+          The sentence is on the front page the next day. Below it, smaller: "Not yet."
+          Jacob sleeps badly that week.
+      effects: { strength: -15 } # TODO-Effekt: reputation: { public: -3, workers: -3 }
+      default: true
+    - id: zuschuetten
+      label: { de: "Den Ledger mit Anzeigen besänftigen (1.200 $)", en: "Soothe the Ledger with advertising (1,200 $)" }
+      result:
+        de: >-
+          Der Verleger nimmt die Anzeigen und druckt keine Liste mehr. Daniel liest beide
+          Ausgaben, die mit und die ohne. Er legt sie zusammen ab.
+        en: >-
+          The publisher takes the advertising and prints no more lists. Daniel reads both
+          editions, with and without. He files them together.
+      requires: { minCash: 1200 }
+      effects: { cash: -1200 } # TODO-Effekt: trace: { severity: 1, label: "Anzeigen gegen Schweigen" }
+
+# Entwurf – Philipp überarbeitet.
+# Antritt – Fassung fair: Jacob hat Ezekiel in Kapitel 1 geholfen.
+- id: k3_daniel_antritt
+  visitor: daniel
+  draft: true
+  title:
+    de: Der Bezirksstaatsanwalt
+    en: The District Attorney
+  text:
+    de: >-
+      Daniel Moss behält den Mantel an. Er ist größer als sein Vater, schmaler, und er
+      schreibt mit, während er redet. „Mein Vater lässt grüßen, Mr. Harlan. Er sagt,
+      ich soll mich vor Ihnen in Acht nehmen. Ich habe ihm gesagt, es sei umgekehrt.“
+      Er lächelt dabei nicht. Auf dem Tisch liegt sein Notizbuch, aufgeschlagen auf
+      einer leeren Seite.
+    en: >-
+      Daniel Moss keeps his coat on. He is taller than his father, narrower, and he
+      takes notes while he talks. "My father sends his regards, Mr. Harlan. He says I
+      should beware of you. I told him it was the other way round." He does not smile.
+      His notebook lies on the desk, open at an empty page.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 2 }
+  marked: [moss_fair]
+  notMarked: [moss_feind]
+  certain: true
+  choices:
+    - id: buecher
+      label: { de: "Ihm die Bücher zeigen, bevor er fragt", en: "Show him the books before he asks" }
+      result:
+        de: >-
+          Daniel blättert eine Stunde lang. Dann schickt er zwei Prüfer auf die Felder,
+          und die Bohrtrupps stehen drei Wochen lang Rede und Antwort statt am Gestänge.
+          „Danke“, sagt er. „Das hat noch keiner gemacht.“
+        en: >-
+          Daniel leafs through them for an hour. Then he sends two inspectors to the
+          fields, and for three weeks the crews answer questions instead of working the
+          rods. "Thank you," he says. "No one has done that before."
+      effects: { production: -0.1 } # TODO-Effekt: investigation: -1, reputation: { politics: +2 }
+      marks: [daniel_offen]
+    - id: anwalt
+      label: { de: "Freundlich bleiben – der Firmenanwalt wartet im Nebenzimmer (800 $)", en: "Stay friendly – the company lawyer waits next door (800 $)" }
+      result:
+        de: >-
+          Daniel bemerkt die angelehnte Tür. Er spricht danach etwas lauter, damit auch
+          der Herr nebenan alles versteht.
+        en: >-
+          Daniel notices the door left ajar. After that he speaks a little louder, so the
+          gentleman next door can follow everything.
+      effects: { cash: -800 }
+      default: true
+    - id: kalt
+      label: { de: "Ihn spüren lassen, wem Cordova gehört", en: "Let him feel who owns Cordova" }
+      result:
+        de: >-
+          Daniel schreibt einen Satz in sein Notizbuch und klappt es zu. „Mein Vater hat
+          sich geirrt“, sagt er an der Tür. „Er hält Sie für einen anständigen Mann.“
+        en: >-
+          Daniel writes one sentence in his notebook and closes it. "My father was
+          wrong," he says at the door. "He thinks you are a decent man."
+      marks: [daniel_kalt]
+
+# Entwurf – Philipp überarbeitet.
+# Antritt – Fassung Feind: Jacob hat Moss betrogen oder die Farm ersteigert.
+- id: k3_daniel_antritt_feind
+  visitor: daniel
+  draft: true
+  title:
+    de: „Ich lese es Ihnen vor“
+    en: '"I Will Read It to You"'
+  text:
+    de: >-
+      Daniel Moss setzt sich nicht. Er zieht ein abgegriffenes Schulheft aus der
+      Manteltasche, das Papier gelb, die Schrift die eines Jungen. „Ich habe mir damals
+      etwas aufgeschrieben, Mr. Harlan. Ich lese es Ihnen vor.“ Ein Datum. Eine Summe.
+      Der Name seines Vaters. Draußen schlägt die Kirchenuhr, und Jacob merkt, dass er
+      die Hände auf dem Tisch gefaltet hat wie ein Angeklagter.
+    en: >-
+      Daniel Moss does not sit down. He takes a worn school exercise book from his coat
+      pocket, the paper yellow, the handwriting a boy's. "I wrote something down back
+      then, Mr. Harlan. I will read it to you." A date. A sum. His father's name.
+      Outside the church clock strikes, and Jacob notices he has folded his hands on
+      the desk like a defendant.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 2 }
+  marked: [moss_feind]
+  notMarked: [daniel_entschuldigung]
+  certain: true
+  choices:
+    - id: zuhoeren
+      label: { de: "Zuhören bis zum Ende", en: "Listen to the end" }
+      result:
+        de: >-
+          Es dauert elf Minuten. Daniel klappt das Heft zu. „Mehr wollte ich nicht. Noch
+          nicht.“ Jacob sitzt danach lange allein im Büro und lässt niemanden herein.
+        en: >-
+          It takes eleven minutes. Daniel closes the book. "That is all I wanted. For
+          now." Afterwards Jacob sits alone in the office for a long time and lets no one in.
+      effects: { strength: -15 }
+      default: true
+    - id: geld
+      label: { de: "Wiedergutmachung anbieten (3.000 $ für die Familie Moss)", en: "Offer amends (3,000 $ for the Moss family)" }
+      result:
+        de: >-
+          Daniel nimmt den Scheck und betrachtet ihn. „Den nehme ich für meinen Vater. Er
+          hat es verdient.“ Er steckt ihn ein. „Das Heft behalte ich für mich.“
+        en: >-
+          Daniel takes the cheque and studies it. "I will take this for my father. He has
+          earned it." He pockets it. "The book I keep for myself."
+      requires: { minCash: 3000 }
+      effects: { cash: -3000 }
+    - id: unterbrechen
+      label: { de: "Ihn unterbrechen: „Das ist zwanzig Jahre her.“", en: "Cut him off: \"That was twenty years ago.\"" }
+      result:
+        de: >-
+          „Neunzehn“, sagt Daniel und schreibt die Zahl dazu. „Verjährt ist es nicht. Ich
+          habe nachgesehen.“
+        en: >-
+          "Nineteen," says Daniel, and writes the number down. "It has not lapsed. I
+          checked."
+      marks: [daniel_kalt]
+
+# Entwurf – Philipp überarbeitet.
+# Antritt – Fassung Feind mit Entschuldigung (Kapitel 1: Trost oder Beweis – hier entscheidet es sich).
+- id: k3_daniel_antritt_entschuldigung
+  visitor: daniel
+  draft: true
+  title:
+    de: Trost oder Beweis
+    en: Comfort or Evidence
+  text:
+    de: >-
+      Daniel Moss legt ein altes Schulheft auf den Tisch und schlägt es an einer
+      markierten Stelle auf. „Darunter steht, dass Sie zu mir gekommen sind und sich
+      entschuldigt haben. Ich habe zwanzig Jahre lang nicht gewusst, wofür ich das
+      aufgeschrieben habe, Mr. Harlan. Als Trost oder als Beweis.“ Er wartet. Auf
+      seinem Ärmel ist ein Tintenfleck, den niemand mehr herauswaschen wird.
+    en: >-
+      Daniel Moss lays an old exercise book on the desk and opens it at a marked page.
+      "Below this it says you came to me and apologised. For twenty years I have not
+      known why I wrote that down, Mr. Harlan. As comfort or as evidence." He waits.
+      There is an ink stain on his sleeve that no one will ever wash out.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 2 }
+  marked: [moss_feind, daniel_entschuldigung]
+  certain: true
+  choices:
+    - id: ernst
+      label: { de: "„Es war ernst gemeint. Es ist es noch.“", en: "\"I meant it. I still do.\"" }
+      result:
+        de: >-
+          Daniel sieht ihn lange an. Dann schreibt er etwas unter die alte Zeile, in der
+          Schrift eines Mannes. Was, sagt er nicht. Er gibt Jacob zum Abschied die Hand.
+        en: >-
+          Daniel looks at him a long time. Then he writes something under the old line,
+          in a man's hand. What, he does not say. He shakes Jacob's hand on leaving.
+      effects: { strength: -10 }
+      marks: [daniel_trost]
+      sharp: true
+    - id: beweis
+      label: { de: "„Dann lesen Sie es vor Gericht vor.“", en: "\"Then read it out in court.\"" }
+      result:
+        de: Daniel klappt das Heft zu. „Das werde ich“, sagt er. Es klingt nicht wie eine Drohung, sondern wie ein Termin.
+        en: Daniel closes the book. "I will," he says. It does not sound like a threat. It sounds like an appointment.
+      marks: [daniel_kalt]
+      default: true
+    - id: schweigen
+      label: { de: "Nichts sagen", en: "Say nothing" }
+      result:
+        de: >-
+          Das Schweigen dauert, bis die Sekretärin klopft. Daniel steht auf. „Das ist
+          auch eine Antwort“, sagt er. „Ich weiß nur noch nicht, welche.“
+        en: >-
+          The silence lasts until the secretary knocks. Daniel stands. "That is an answer
+          too," he says. "I just don't know yet which one."
+      effects: { strength: -15 }
+
+# Entwurf – Philipp überarbeitet.
+# Antritt – Fassung neutral: Jacob hat Moss damals abgewiesen (Farm verloren oder doch nicht).
+- id: k3_daniel_antritt_neutral
+  visitor: daniel
+  draft: true
+  title:
+    de: „Das ist kein Verbrechen“
+    en: '"That Is No Crime"'
+  text:
+    de: >-
+      Daniel Moss nimmt den angebotenen Stuhl, aber keinen Kaffee. „Sie haben meinem
+      Vater damals Nein gesagt, Mr. Harlan. Das ist kein Verbrechen. Ich wollte nur,
+      dass Sie wissen, dass ich es weiß.“ Er spricht leise, wie jemand, der gelernt hat,
+      dass Leute sich vorbeugen, wenn man leise spricht. Jacob beugt sich vor.
+    en: >-
+      Daniel Moss takes the offered chair but no coffee. "You told my father no, back
+      then, Mr. Harlan. That is no crime. I only wanted you to know that I know." He
+      speaks quietly, like someone who has learned that people lean in when you speak
+      quietly. Jacob leans in.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 2 }
+  marked: [moss_abgewiesen]
+  notMarked: [moss_fair, moss_feind, moss_verloren]
+  certain: true
+  choices:
+    - id: buecher
+      label: { de: "Ihm die Bücher zeigen, bevor er fragt", en: "Show him the books before he asks" }
+      result:
+        de: >-
+          Daniel schickt zwei Prüfer auf die Felder. Drei Wochen lang stehen die Trupps
+          Rede und Antwort. „Ich hatte Sie anders erwartet“, sagt er zum Schluss.
+        en: >-
+          Daniel sends two inspectors to the fields. For three weeks the crews answer
+          questions. "I expected you to be different," he says at the end.
+      effects: { production: -0.1 } # TODO-Effekt: investigation: -1
+      marks: [daniel_offen]
+    - id: anwalt
+      label: { de: "Höflich bleiben und den Anwalt schreiben lassen (800 $)", en: "Stay polite and let the lawyer write (800 $)" }
+      result:
+        de: Daniel bekommt einen Brief mit vier Seiten und keiner Auskunft. Er bedankt sich schriftlich, mit einer Seite.
+        en: Daniel receives a letter of four pages and no information. He thanks them in writing, in one page.
+      effects: { cash: -800 }
+      default: true
+    - id: kalt
+      label: { de: "„Dann wissen Sie ja, wo die Tür ist.“", en: "\"Then you know where the door is.\"" }
+      result:
+        de: Daniel steht auf, ohne Eile. „Jetzt weiß ich noch etwas“, sagt er.
+        en: Daniel rises without hurry. "Now I know something else," he says.
+      marks: [daniel_kalt]
+
+# Entwurf – Philipp überarbeitet.
+# Antritt – Fassung fremd: Die Familie Moss ist fort (moss_verloren). Erst beim Namen versteht Jacob.
+- id: k3_daniel_antritt_fremd
+  visitor: daniel
+  draft: true
+  title:
+    de: Ein Name, den Jacob sucht
+    en: A Name Jacob Searches For
+  text:
+    de: >-
+      Ein schmaler Mann Mitte dreißig, die Schläfen früh ergraut, stellt sich als neuer
+      Bezirksstaatsanwalt vor. „Daniel Moss.“ Jacob gibt ihm die Hand und sucht nach dem
+      Namen. Er findet ihn nicht, und dann doch: eine Farm am Salt Hill, ein Farmer mit
+      einer Bibel, eine Versteigerung, zu der Jacob nicht gegangen ist. Daniel sieht ihm
+      dabei zu, wie er sich erinnert. Er hat Zeit. Er hat zwanzig Jahre gehabt.
+    en: >-
+      A narrow man in his mid-thirties, temples grey too early, introduces himself as
+      the new district attorney. "Daniel Moss." Jacob shakes his hand and searches for
+      the name. He cannot find it, and then he does: a farm on Salt Hill, a farmer with a
+      Bible, an auction Jacob did not attend. Daniel watches him remember. He has time.
+      He has had twenty years.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 2 }
+  marked: [moss_verloren]
+  notMarked: [moss_fair, moss_feind]
+  certain: true
+  choices:
+    - id: fragen
+      label: { de: "„Ihr Vater. Was ist aus ihm geworden?“", en: "\"Your father. What became of him?\"" }
+      result:
+        de: >-
+          „Das erzähle ich Ihnen ein andermal“, sagt Daniel. „Wenn Sie es dann noch wissen
+          wollen.“ Er bleibt eine Stunde. Er fragt nach nichts, was mit Öl zu tun hat.
+        en: >-
+          "I'll tell you another time," says Daniel. "If you still want to know by then."
+          He stays an hour. He asks about nothing that has to do with oil.
+      effects: { strength: -5 }
+      appointments: 2
+    - id: anwalt
+      label: { de: "Höflich bleiben und den Anwalt schreiben lassen (800 $)", en: "Stay polite and let the lawyer write (800 $)" }
+      result:
+        de: Daniel bekommt einen Brief mit vier Seiten und keiner Auskunft. Er bedankt sich schriftlich, mit einer Seite.
+        en: Daniel receives a letter of four pages and no information. He thanks them in writing, in one page.
+      effects: { cash: -800 }
+      default: true
+    - id: vergessen
+      label: { de: "So tun, als sage ihm der Name nichts", en: "Pretend the name means nothing to him" }
+      result:
+        de: >-
+          „Natürlich nicht“, sagt Daniel. „Warum sollte er.“ Er schreibt einen Satz in sein
+          Notizbuch, ohne hinzusehen, als hätte er ihn schon vorher gewusst.
+        en: >-
+          "Of course not," says Daniel. "Why would it." He writes a sentence in his notebook
+          without looking, as if he had known it beforehand.
+      marks: [daniel_kalt]
+
+# Entwurf – Philipp überarbeitet.
+# Jacob hat Daniel in Kapitel 1 die Fahrkarte nach Hallstead bezahlt (daniel_gefoerdert).
+# Story-Bibel: Er zahlt mit Fairness zurück – Vorwarnung, nie Gefälligkeit. Kommt vor der Akte.
+- id: k3_daniel_vorwarnung
+  visitor: daniel
+  draft: true
+  title:
+    de: Die Fahrkarte nach Hallstead
+    en: The Ticket to Hallstead
+  text:
+    de: >-
+      Daniel Moss kommt ohne Termin, kurz vor Büroschluss, und bleibt in der Tür stehen.
+      Aus der Brieftasche zieht er eine Fahrkarte nach Hallstead, entwertet, das Papier
+      weich wie Stoff nach zwanzig Jahren. „Nächste Woche eröffne ich eine Ermittlung, die
+      Harlan Oil betrifft. Ich sage es Ihnen vorher, Mr. Harlan. Das ist alles, was ich
+      Ihnen schulde. Ich bezahle es heute.“
+    en: >-
+      Daniel Moss comes without an appointment, shortly before closing, and stays in the
+      doorway. From his wallet he takes a ticket to Hallstead, punched, the paper soft as
+      cloth after twenty years. "Next week I open an investigation that concerns Harlan
+      Oil. I am telling you beforehand, Mr. Harlan. That is all I owe you. I am paying it
+      today."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 3, maxRound: 4 }
+  marked: [daniel_gefoerdert]
+  certain: true
+  choices:
+    - id: danken
+      label: { de: "Ihm danken und ihn gehen lassen", en: "Thank him and let him go" }
+      result:
+        de: >-
+          Daniel nickt und geht. Am nächsten Morgen liegt die alte Fahrkarte in Jacobs Post,
+          ohne Brief. Jacob legt sie in die Schublade zu den Dingen, die er nicht wegwirft.
+        en: >-
+          Daniel nods and leaves. The next morning the old ticket lies in Jacob's post,
+          with no letter. Jacob puts it in the drawer with the things he does not throw away.
+      default: true
+    - id: aufraeumen
+      label: { de: "Die eigenen Bücher prüfen lassen und melden, was falsch ist (1.500 $)", en: "Have his own books audited and report what is wrong (1,500 $)" }
+      result:
+        de: >-
+          Die Prüfer aus Hallstead finden drei Dinge. Jacob schickt die Liste an Daniels Büro,
+          bevor die Ermittlung beginnt. Daniel antwortet mit einer Zeile: „Dafür war die
+          Warnung nicht gedacht. Ich nehme es trotzdem zur Kenntnis.“
+        en: >-
+          The auditors from Hallstead find three things. Jacob sends the list to Daniel's
+          office before the investigation begins. Daniel answers in one line: "That is not
+          what the warning was for. I take note of it all the same."
+      requires: { minCash: 1500 }
+      effects: { cash: -1500 } # TODO-Effekt: investigation: -1, heat: -1
+      marks: [daniel_offen]
+      sharp: true
+    - id: gefaelligkeit
+      label: { de: "Ihn an die Fahrkarte erinnern – unter Freunden ließe sich das regeln", en: "Remind him of the ticket – between friends this could be settled" }
+      result:
+        de: >-
+          Daniel legt die Fahrkarte auf den Tisch, zwischen sie beide. „Die ist jetzt
+          bezahlt“, sagt er. „Ab morgen bin ich für Sie nur noch der Staatsanwalt.“ Er lässt
+          sie liegen.
+        en: >-
+          Daniel lays the ticket on the desk, between the two of them. "That is paid now," he
+          says. "From tomorrow I am only the district attorney to you." He leaves it there.
+      effects: { strength: -10 }
+      marks: [daniel_kalt]
+    - id: verbrennen
+      label: { de: "Die Akten aus den ersten Jahren noch heute Nacht verbrennen lassen", en: "Have the files from the early years burned tonight" }
+      result:
+        de: >-
+          Am Morgen riecht der Hof nach Rauch. Daniel kommt nicht. Er schickt eine Karte mit
+          vier Wörtern: „Ich habe Sie gewarnt.“ Darunter, kleiner: „Damit Sie aufräumen.
+          Nicht damit Sie verbrennen.“
+        en: >-
+          In the morning the yard smells of smoke. Daniel does not come. He sends a card with
+          four words: "I did warn you." Below, smaller: "So that you would tidy up. Not so
+          that you would burn."
+      effects: { strength: -10 } # TODO-Effekt: trace: { severity: 3, label: "Akten verbrannt nach Warnung" }, heat: +2
+      marks: [daniel_kalt, daniel_beweise_vernichtet]
+
+# Entwurf – Philipp überarbeitet.
+# Ezekiel Moss stirbt (fair). Schlüsselszene.
+- id: k3_moss_beerdigung
+  tableau: true
+  ranch: moss
+  draft: true
+  title:
+    de: Der Zaun, den er gebaut hat
+    en: The Fence He Built
+  text:
+    de: >-
+      Ezekiel Moss wird auf seiner eigenen Weide begraben, neben dem Zaun, den er vor
+      vierzig Jahren gesetzt hat. Unter der Erde laufen zwei Rohre von Jacobs Pipeline,
+      und keiner der Trauergäste erwähnt es. Daniel steht am Kopfende, barhäuptig im
+      Nieselregen. Am selben Vormittag tagt in Port Ellis die Hauptversammlung. Der
+      Sarg ist schwerer, als ein alter Mann sein dürfte. Es fehlt ein Träger.
+    en: >-
+      Ezekiel Moss is buried on his own pasture, beside the fence he set forty years
+      ago. Beneath the ground run two pipes of Jacob's line, and none of the mourners
+      mentions it. Daniel stands at the head, bareheaded in the drizzle. The same
+      morning the shareholders' meeting sits in Port Ellis. The coffin is heavier than
+      an old man should be. One bearer is missing.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 6, maxRound: 10 }
+  marked: [moss_fair]
+  notMarked: [moss_feind]
+  certain: true
+  choices:
+    - id: sarg
+      label: { de: "Den Sarg mittragen", en: "Help carry the coffin" }
+      result:
+        de: >-
+          Jacob nimmt die freie Ecke. Daniel sieht ihn über den Sarg hinweg an und nickt
+          einmal. Auf dem Rückweg spürt Jacob sein Herz, wie Doktor Haskell es ihm
+          vorausgesagt hat.
+        en: >-
+          Jacob takes the free corner. Daniel looks at him across the coffin and nods
+          once. On the way back Jacob feels his heart, just as Doctor Haskell said he would.
+      effects: { strength: -15 }
+      appointments: 2
+      marks: [daniel_sarg_getragen]
+    - id: mit_ruth
+      label: { de: "Mit Ruth hingehen und hinten stehen", en: "Go with Ruth and stand at the back" }
+      result:
+        de: >-
+          Ruth hält seinen Arm. Sie singen das Lied, das Ezekiel jeden Sonntag falsch
+          gesungen hat. Auf dem Heimweg sagt sie: „Das war richtig.“ Mehr nicht.
+        en: >-
+          Ruth holds his arm. They sing the hymn Ezekiel sang off-key every Sunday. On
+          the way home she says, "That was right." Nothing more.
+      effects: { ruth: 15, strength: -5 }
+    - id: kranz
+      label: { de: "Einen Kranz schicken – die Hauptversammlung geht vor", en: "Send a wreath – the shareholders' meeting comes first" }
+      result:
+        de: >-
+          Der Kranz ist der größte am Grab. Daniel liest die Schleife, „In Dankbarkeit,
+          J. Harlan“, und lässt sie umdrehen, sodass man die Schrift nicht mehr sieht.
+        en: >-
+          The wreath is the largest at the grave. Daniel reads the ribbon, "In gratitude,
+          J. Harlan", and has it turned so the writing no longer shows.
+      marks: [moss_beerdigung_verpasst]
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Ezekiel Moss stirbt (Feind). Daniel stellt sich zwischen Jacob und das Grab.
+- id: k3_moss_beerdigung_feind
+  tableau: true
+  draft: true
+  title:
+    de: Zwischen Jacob und dem Grab
+    en: Between Jacob and the Grave
+  text:
+    de: >-
+      Ezekiel Moss wird auf dem Armenfriedhof von Port Ellis begraben, weit weg von dem
+      Land, das einmal seins war. Als Jacob durch das Tor kommt, löst sich Daniel aus
+      der Reihe der Trauernden und stellt sich mitten auf den Weg. Er sagt nichts. Er
+      steht nur da, die Hände in den Manteltaschen, bis alle anderen sich umgedreht haben.
+    en: >-
+      Ezekiel Moss is buried in the paupers' cemetery at Port Ellis, far from the land
+      that was once his. As Jacob comes through the gate, Daniel steps out of the line
+      of mourners and stands in the middle of the path. He says nothing. He simply
+      stands there, hands in his coat pockets, until everyone else has turned round.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 6, maxRound: 10 }
+  marked: [moss_feind]
+  certain: true
+  choices:
+    - id: umkehren
+      label: { de: "Umkehren", en: "Turn back" }
+      result:
+        de: >-
+          Jacob geht zurück zur Kutsche. Hinter ihm beginnt der Pfarrer zu sprechen. Den
+          Rest des Tages redet Jacob mit niemandem.
+        en: >-
+          Jacob walks back to the carriage. Behind him the pastor begins to speak. For
+          the rest of the day Jacob talks to no one.
+      effects: { strength: -15 }
+      default: true
+    - id: vorbei
+      label: { de: "An ihm vorbei zum Grab gehen", en: "Walk past him to the grave" }
+      result:
+        de: >-
+          Daniel tritt einen halben Schritt zur Seite, gerade genug. Als Jacob die Erde
+          wirft, hört er hinter sich, wie ein Bleistift über Papier geht.
+        en: >-
+          Daniel steps half a pace aside, just enough. As Jacob throws the earth, he hears
+          a pencil moving over paper behind him.
+      marks: [daniel_kalt]
+    - id: warten
+      label: { de: "Am Tor warten, bis alle gegangen sind – dann allein hin", en: "Wait at the gate until everyone has gone – then go alone" }
+      result:
+        de: >-
+          Es regnet zwei Stunden. Als Jacob endlich am Grab steht, sieht er Daniel auf
+          der Straße stehen geblieben. Er hat zugesehen. Er geht, ohne sich umzudrehen.
+        en: >-
+          It rains for two hours. When Jacob finally stands at the grave, he sees Daniel
+          has stopped in the street. He has been watching. He leaves without turning.
+      effects: { strength: -20 }
+      marks: [daniel_trost]
+
+# Nachwirkung: Moss hat die Farm in Kapitel 1 verloren – er ist schon lange tot.
+- id: k3_moss_grab
+  title:
+    de: Ein Grabstein aus Port Ellis
+    en: A Headstone from Port Ellis
+  text:
+    de: >-
+      Der Bezirksstaatsanwalt lässt seinen Vater umbetten. Ezekiel Moss starb vor sechs
+      Jahren in einer Kammer über einer Futterhandlung in Port Ellis. Niemand hat es
+      Jacob geschrieben. Jetzt soll er auf den Friedhof von Salt Hill, mit Blick auf
+      die Felder, auf denen einmal Baumwolle stand. Der Steinmetz fragt, wer den Stein bezahlt.
+    en: >-
+      The district attorney is having his father reburied. Ezekiel Moss died six years
+      ago in a room above a feed store in Port Ellis. No one wrote to Jacob. Now he is
+      to lie in the Salt Hill cemetery, overlooking the fields where cotton once grew.
+      The stonemason asks who is paying for the stone.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 6, maxRound: 10 }
+  marked: [moss_verloren]
+  notMarked: [moss_fair, moss_feind]
+  certain: true
+  choices:
+    - id: stein
+      label: { de: "Den Stein bezahlen, ohne Namen (600 $)", en: "Pay for the stone, anonymously (600 $)" }
+      result:
+        de: >-
+          Der Steinmetz hält dicht, eine Woche lang. Dann weiß es ganz Salt Hill. Daniel
+          schickt den Betrag zurück, auf den Cent genau, und eine Zeile: „Wir kommen zurecht.“
+        en: >-
+          The stonemason keeps quiet for a week. Then all of Salt Hill knows. Daniel sends
+          the sum back, to the cent, with one line: "We manage."
+      requires: { minCash: 600 }
+      effects: { cash: -600 }
+    - id: hingehen
+      label: { de: "Zur Umbettung gehen", en: "Attend the reburial" }
+      result:
+        de: >-
+          Es sind sieben Leute da. Daniel bemerkt Jacob erst am Ende. „Sie kannten ihn
+          kaum“, sagt er. „Doch“, sagt Jacob. „Ich habe Nein zu ihm gesagt.“
+        en: >-
+          Seven people are there. Daniel notices Jacob only at the end. "You hardly knew
+          him," he says. "I did," says Jacob. "I told him no."
+      effects: { strength: -10 }
+      appointments: 2
+      marks: [daniel_trost]
+    - id: nichts
+      label: { de: "Es nicht zu seiner Sache machen", en: "Not make it his business" }
+      result:
+        de: Jacob liest die Anzeige im Ledger und blättert weiter. Am Abend liest er sie noch einmal.
+        en: Jacob reads the notice in the Ledger and turns the page. In the evening he reads it again.
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Die Akte – Fassung Moss: Daniel hat das Papier von damals (Betrug oder Versteigerung).
+- id: k3_daniel_akte_moss
+  visitor: daniel
+  draft: true
+  title:
+    de: Die Akte Moss
+    en: The Moss File
+  text:
+    de: >-
+      Daniel Moss legt einen Aktendeckel auf Jacobs Tisch. Darin: das Papier, unter das
+      sein Vater sein Kreuz gesetzt hat, oder der Zuschlag der Versteigerung, je nachdem,
+      wie man die Geschichte erzählt. Dazu drei Aussagen von Nachbarn, beglaubigt. „Ich
+      klage noch nicht an, Mr. Harlan. Ich frage zuerst. So hat mein Vater es mir
+      beigebracht.“
+    en: >-
+      Daniel Moss lays a folder on Jacob's desk. Inside: the paper his father put his
+      cross under, or the auction award, depending on how one tells the story. With it,
+      three statements from neighbours, notarised. "I am not charging you yet, Mr.
+      Harlan. I am asking first. That is how my father taught me."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 5 }
+  marked: [moss_feind]
+  certain: true
+  choices:
+    - id: kooperieren
+      label: { de: "Kooperieren: alle Unterlagen, alle Zeugen", en: "Cooperate: every paper, every witness" }
+      result:
+        de: >-
+          Zwei Monate lang sitzen Daniels Leute in Jacobs Archiv. Die Prüfer legen drei
+          Bohrstellen still, bis die Grenzen neu vermessen sind. Daniel sagt zum Schluss:
+          „Damit habe ich nicht gerechnet.“ Er klingt fast enttäuscht.
+        en: >-
+          For two months Daniel's people sit in Jacob's archive. The inspectors shut three
+          well sites until the boundaries are re-surveyed. At the end Daniel says, "I did
+          not expect that." He sounds almost disappointed.
+      effects: { production: -0.15, cash: -1000 } # TODO-Effekt: investigation: -1, heat: -2
+      marks: [daniel_kooperation_moss]
+    - id: anwaelte
+      label: { de: "Die Anwälte antworten lassen (1.500 $)", en: "Let the lawyers answer (1,500 $)" }
+      result:
+        de: >-
+          Die Kanzlei aus Hallstead schickt einen Herrn mit drei Koffern. Daniel empfängt
+          ihn höflich und notiert, wie viele Stunden er abrechnet.
+        en: >-
+          The firm from Hallstead sends a gentleman with three trunks. Daniel receives him
+          politely and notes how many hours he bills.
+      effects: { cash: -1500 } # TODO-Effekt: investigation: +1
+      marks: [daniel_anwaelte]
+      default: true
+    - id: bestechen
+      label: { de: "Ihm einen Umschlag anbieten (3.000 $)", en: "Offer him an envelope (3,000 $)" }
+      result:
+        de: >-
+          Daniel öffnet den Umschlag nicht. Er lässt ihn von seinem Gehilfen in eine
+          Beweismitteltüte legen, beschriften und versiegeln. „Danke“, sagt er. „Das
+          spart mir ein Jahr.“
+        en: >-
+          Daniel does not open the envelope. He has his clerk place it in an evidence bag,
+          label it and seal it. "Thank you," he says. "That saves me a year."
+      requires: { minCash: 3000 }
+      effects: { cash: -3000 } # TODO-Effekt: heat: +3, trace: { severity: 3, label: "Umschlag an den Staatsanwalt" }
+      marks: [daniel_bestechung_versuch]
+    - id: wegloben
+      label: { de: "Ihn über Senator Grady ins Richteramt loben (5.000 $)", en: "Have Senator Grady promote him to the bench (5,000 $)" }
+      result:
+        de: >-
+          Drei Monate später ist Daniel Moss Richter in Port Ellis, jünger als jeder vor
+          ihm. Sein Nachfolger ist ein freundlicher Mann, der gern Zigarren nimmt.
+        en: >-
+          Three months later Daniel Moss is a judge in Port Ellis, younger than anyone
+          before him. His successor is a friendly man who likes to accept cigars.
+      requires: { minCash: 5000 }
+      effects: { cash: -5000 } # TODO-Effekt: favors: -2, influence: -1
+      marks: [daniel_weggelobt]
+
+# Entwurf – Philipp überarbeitet.
+# Die Akte – Fassung Sheriff: Tatum, abgewählt, redet über das Geld von damals.
+- id: k3_daniel_akte_sheriff
+  visitor: daniel
+  draft: true
+  title:
+    de: Was Tatum erzählt
+    en: What Tatum Tells
+  text:
+    de: >-
+      Boyd Tatum ist seit sechs Jahren kein Sheriff mehr, und er trinkt. Jetzt hat er
+      Daniel Moss ein Notizbuch verkauft, in dem jeder Dollar steht, den er in Salt Hill
+      bekommen hat, mit Datum und Namen. Daniel liest Jacob eine Zeile vor. „Er hat eine
+      schöne Handschrift, Ihr Sheriff. Das hätte ich ihm nicht zugetraut.“
+    en: >-
+      Boyd Tatum has not been sheriff for six years, and he drinks. Now he has sold
+      Daniel Moss a notebook listing every dollar he took in Salt Hill, with date and
+      name. Daniel reads Jacob one line. "He has fine handwriting, your sheriff. I would
+      not have credited him with it."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 5 }
+  marked: [sheriff_bezahlt]
+  notMarked: [moss_feind]
+  certain: true
+  choices:
+    - id: kooperieren
+      label: { de: "Kooperieren: zugeben, was stimmt", en: "Cooperate: admit what is true" }
+      result:
+        de: >-
+          Jacob unterschreibt eine Aussage über drei Seiten. Daniel nimmt sie für den
+          Prozess gegen Tatum, nicht gegen ihn. „Diesmal“, sagt er.
+        en: >-
+          Jacob signs a three-page statement. Daniel uses it for the case against Tatum,
+          not against him. "This time," he says.
+      effects: { strength: -15, cash: -1000 } # TODO-Effekt: reputation: { public: -2 }, investigation: -1
+      marks: [daniel_kooperation_sheriff]
+    - id: anwaelte
+      label: { de: "Die Anwälte antworten lassen (1.500 $)", en: "Let the lawyers answer (1,500 $)" }
+      result:
+        de: Die Anwälte nennen Tatum einen Trinker, was stimmt. Daniel nennt ihn einen Zeugen, was auch stimmt.
+        en: The lawyers call Tatum a drunk, which is true. Daniel calls him a witness, which is also true.
+      effects: { cash: -1500 }
+      marks: [daniel_anwaelte]
+      default: true
+    - id: bestechen
+      label: { de: "Ihm einen Umschlag anbieten (3.000 $)", en: "Offer him an envelope (3,000 $)" }
+      result:
+        de: >-
+          Daniel lässt den Umschlag liegen, wo er ist, und ruft seinen Gehilfen als
+          Zeugen herein. „Bitte wiederholen Sie das Angebot, Mr. Harlan. Langsam.“
+        en: >-
+          Daniel leaves the envelope where it lies and calls his clerk in as a witness.
+          "Please repeat the offer, Mr. Harlan. Slowly."
+      requires: { minCash: 3000 }
+      effects: { cash: -3000 } # TODO-Effekt: heat: +3, trace: { severity: 3, label: "Umschlag an den Staatsanwalt" }
+      marks: [daniel_bestechung_versuch]
+    - id: wegloben
+      label: { de: "Ihn über Senator Grady ins Richteramt loben (5.000 $)", en: "Have Senator Grady promote him to the bench (5,000 $)" }
+      result:
+        de: Daniel Moss wird Richter. Tatums Notizbuch verschwindet aus der Asservatenkammer, und niemand sucht es.
+        en: Daniel Moss becomes a judge. Tatum's notebook vanishes from the evidence room, and no one looks for it.
+      requires: { minCash: 5000 }
+      effects: { cash: -5000 } # TODO-Effekt: favors: -2
+      marks: [daniel_weggelobt]
+
+# Entwurf – Philipp überarbeitet.
+# Die Akte – Fassung Kerrigan: Jacob hat den kranken Dan Kerrigan in Kapitel 1 weiterarbeiten lassen
+# (kerrigan_verheizt). Story-Bibel §8: Daniels Akte, Arbeiterschutz.
+- id: k3_daniel_akte_kerrigan
+  visitor: daniel
+  draft: true
+  title:
+    de: Der erste Name auf der Liste
+    en: The First Name on the List
+  text:
+    de: >-
+      Daniel Moss legt zwei Seiten auf den Tisch: Namen und Daten, Männer, die auf
+      Harlan-Feldern gestorben oder krank geworden sind, seit es Harlan Oil gibt. Der
+      erste Name ist Dan Kerrigan. Hollister, Jacobs alter Vormann, inzwischen fast blind,
+      hat ausgesagt, was er damals gesehen hat: das Blut im Taschentuch, und dass Jacob es
+      wusste. „Kerrigan ist der Anfang der Liste, Mr. Harlan. Nicht das Ende.“
+    en: >-
+      Daniel Moss lays two pages on the desk: names and dates, men who have died or
+      fallen sick on Harlan fields since there has been a Harlan Oil. The first name is
+      Dan Kerrigan. Hollister, Jacob's old foreman, almost blind now, has testified to
+      what he saw back then: the blood in the handkerchief, and that Jacob knew. "Kerrigan
+      is the beginning of the list, Mr. Harlan. Not the end."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 5 }
+  marked: [kerrigan_verheizt]
+  notMarked: [moss_feind, sheriff_bezahlt]
+  certain: true
+  choices:
+    - id: kooperieren
+      label: { de: "Kooperieren: Lohnbücher, Unfallmeldungen, alles", en: "Cooperate: wage books, accident reports, everything" }
+      result:
+        de: >-
+          Daniels Leute gehen sechs Wochen lang über die Felder und reden mit jedem Mann am
+          Gestänge. Zwei Türme stehen still, bis die Kessel geprüft sind. Hollister kommt
+          einmal ins Büro, am Stock, und sagt nur: „Gut so, Jacob.“
+        en: >-
+          For six weeks Daniel's people walk the fields and talk to every man on the rods.
+          Two derricks stand idle until the boilers are inspected. Hollister comes into the
+          office once, on a stick, and says only: "That's right, Jacob."
+      effects: { production: -0.15, cash: -1000 } # TODO-Effekt: investigation: -1, reputation: { workers: +2 }
+      marks: [daniel_kooperation_kerrigan]
+    - id: anwaelte
+      label: { de: "Die Anwälte antworten lassen (1.500 $)", en: "Let the lawyers answer (1,500 $)" }
+      result:
+        de: >-
+          Die Anwälte nennen Hollister einen alten Mann mit schlechten Augen, was stimmt.
+          Daniel lässt sich von Hollister die Liste vorlesen, auswendig, alle Namen.
+        en: >-
+          The lawyers call Hollister an old man with bad eyes, which is true. Daniel has
+          Hollister recite the list to him, from memory, every name.
+      effects: { cash: -1500 } # TODO-Effekt: investigation: +1, reputation: { workers: -2 }
+      marks: [daniel_anwaelte]
+      default: true
+    - id: bestechen
+      label: { de: "Ihm einen Umschlag anbieten (3.000 $)", en: "Offer him an envelope (3,000 $)" }
+      result:
+        de: >-
+          Daniel schiebt den Umschlag mit dem Bleistift zu seinem Gehilfen hinüber. „Legen
+          Sie das zu Kerrigan“, sagt er. „Unter H wie Harlan.“
+        en: >-
+          Daniel pushes the envelope across to his clerk with his pencil. "File that with
+          Kerrigan," he says. "Under H for Harlan."
+      requires: { minCash: 3000 }
+      effects: { cash: -3000 } # TODO-Effekt: heat: +3, trace: { severity: 3, label: "Umschlag an den Staatsanwalt" }
+      marks: [daniel_bestechung_versuch]
+    - id: wegloben
+      label: { de: "Ihn über Senator Grady ins Richteramt loben (5.000 $)", en: "Have Senator Grady promote him to the bench (5,000 $)" }
+      result:
+        de: Daniel Moss wird Richter in Port Ellis. Die Liste bleibt in einer Schublade seines Nachfolgers, zwei Seiten, nicht abgeheftet.
+        en: Daniel Moss becomes a judge in Port Ellis. The list stays in his successor's drawer, two pages, unfiled.
+      requires: { minCash: 5000 }
+      effects: { cash: -5000 } # TODO-Effekt: favors: -2
+      marks: [daniel_weggelobt]
+
+# Entwurf – Philipp überarbeitet.
+# Die Akte – Fassung Pike: Jacob hat in Kapitel 1 die gefälschte Urkunde von Amos Pike gekauft
+# (pike_urkunde_falsch). Pike ist gefasst und behauptet, Jacob habe es gewusst. Wer offen ist, kommt frei.
+- id: k3_daniel_akte_pike
+  visitor: daniel
+  draft: true
+  title:
+    de: Was Amos Pike behauptet
+    en: What Amos Pike Claims
+  text:
+    de: >-
+      Amos Pike ist in Hallstead gefasst worden, mit vierzehn falschen Urkunden im Koffer.
+      Um seine Haut zu retten, erzählt er dem Staatsanwalt, Jacob Harlan habe damals
+      gewusst, dass Parzelle 41 nicht ihm gehörte, und sie trotzdem gekauft, billig.
+      Daniel Moss legt die alte Urkunde auf den Tisch, das Papier ist braun geworden. „Ich
+      glaube Pike kein Wort, Mr. Harlan. Aber ich muss fragen.“
+    en: >-
+      Amos Pike has been caught in Hallstead with fourteen forged deeds in his trunk. To
+      save his skin he tells the district attorney that Jacob Harlan knew back then that
+      parcel 41 was not his to sell, and bought it anyway, cheap. Daniel Moss lays the old
+      deed on the desk; the paper has turned brown. "I don't believe a word Pike says, Mr.
+      Harlan. But I have to ask."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 5 }
+  marked: [pike_urkunde_falsch]
+  notMarked: [moss_feind, sheriff_bezahlt, kerrigan_verheizt]
+  certain: true
+  choices:
+    - id: kooperieren
+      label: { de: "Alles vorlegen: Quittung, Vergleich, Ruths Abschrift aus dem Bezirksamt", en: "Produce everything: receipt, settlement, Ruth's copy from the county office" }
+      result:
+        de: >-
+          Daniel liest eine Stunde lang. Dann legt er Ruths Abschrift obenauf. „Sie sind auf
+          ihn hereingefallen“, sagt er. „Das ist kein Verbrechen. Es ist nur peinlich.“ Pike
+          bekommt vier Jahre. Jacob bekommt einen Brief: Die Sache ist für ihn erledigt. Die
+          beglaubigten Abschriften haben 400 $ gekostet, so viel, wie Pike damals bekam.
+        en: >-
+          Daniel reads for an hour. Then he puts Ruth's copy on top. "You fell for him," he
+          says. "That is no crime. It is merely embarrassing." Pike gets four years. Jacob
+          gets a letter: as far as he is concerned, the matter is closed. The certified copies
+          cost 400 $, as much as Pike got back then.
+      effects: { cash: -400, strength: -5, ruth: 5 } # TODO-Effekt: investigation: -2
+      appointments: 2
+      marks: [daniel_entlastet]
+      sharp: true
+    - id: anwaelte
+      label: { de: "Die Anwälte antworten lassen (1.500 $)", en: "Let the lawyers answer (1,500 $)" }
+      result:
+        de: >-
+          Die Anwälte schicken keine Unterlagen, nur Einwände. Damit steht Pikes Wort gegen
+          Jacobs Schweigen. Daniel notiert, dass Jacob nichts vorgelegt hat, obwohl er
+          etwas hätte vorlegen können.
+        en: >-
+          The lawyers send no documents, only objections. That leaves Pike's word against
+          Jacob's silence. Daniel notes that Jacob produced nothing, though he could have.
+      effects: { cash: -1500 } # TODO-Effekt: investigation: +1
+      marks: [daniel_anwaelte]
+      default: true
+    - id: bestechen
+      label: { de: "Ihm einen Umschlag anbieten (3.000 $)", en: "Offer him an envelope (3,000 $)" }
+      result:
+        de: >-
+          Daniel sieht den Umschlag an, dann Jacob. „Bis eben waren Sie ein Mann, den ein
+          Betrüger betrogen hat“, sagt er leise. „Warum tun Sie das?“
+        en: >-
+          Daniel looks at the envelope, then at Jacob. "Until a moment ago you were a man a
+          swindler had swindled," he says quietly. "Why are you doing this?"
+      requires: { minCash: 3000 }
+      effects: { cash: -3000 } # TODO-Effekt: heat: +3, trace: { severity: 3, label: "Umschlag an den Staatsanwalt" }
+      marks: [daniel_bestechung_versuch]
+    - id: wegloben
+      label: { de: "Ihn über Senator Grady ins Richteramt loben (5.000 $)", en: "Have Senator Grady promote him to the bench (5,000 $)" }
+      result:
+        de: Daniel Moss wird Richter. Pike wird ohne Jacobs Namen verurteilt. Teuer war es trotzdem, für eine Sache, die nichts gekostet hätte.
+        en: Daniel Moss becomes a judge. Pike is convicted without Jacob's name coming up. It was expensive all the same, for a matter that would have cost nothing.
+      requires: { minCash: 5000 }
+      effects: { cash: -5000 } # TODO-Effekt: favors: -2
+      marks: [daniel_weggelobt]
+
+# Entwurf – Philipp überarbeitet.
+# Die Akte – Fassung ohne Belastendes: Daniel ermittelt gegen Thorne und braucht Jacob als Zeugen.
+- id: k3_daniel_akte_zeuge
+  visitor: daniel
+  draft: true
+  title:
+    de: Ein Zeuge gegen Thorne
+    en: A Witness Against Thorne
+  text:
+    de: >-
+      Daniel Moss hat nichts gegen Jacob in der Hand. Er sagt es gleich, damit es aus
+      dem Weg ist. Er ermittelt gegen Augustus Thorne: Strohmänner im Aktienbuch,
+      Frachtrabatte für Freunde, ein Richter in Port Ellis mit einem neuen Haus. „Sie
+      sind der einzige Mann in Cordova, der lange genug mit Thorne Geschäfte gemacht
+      hat, um es zu beschwören. Und groß genug, um es zu überleben.“
+    en: >-
+      Daniel Moss has nothing on Jacob. He says so at once, to get it out of the way.
+      He is investigating Augustus Thorne: straw men in the share register, freight
+      rebates for friends, a judge in Port Ellis with a new house. "You are the only man
+      in Cordova who has done business with Thorne long enough to swear to it. And big
+      enough to survive it."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 5 }
+  notMarked: [moss_feind, sheriff_bezahlt, kerrigan_verheizt, pike_urkunde_falsch]
+  certain: true
+  rival: thorne
+  choices:
+    - id: aussagen
+      label: { de: "Gegen Thorne aussagen", en: "Testify against Thorne" }
+      result:
+        de: >-
+          Jacob sagt vier Stunden lang aus. Eine Woche später erhöht die Thorne-Linie die
+          Fracht für Harlan Oil, „aus betrieblichen Gründen“. Daniel schickt eine Karte:
+          „Ich weiß, was das kostet.“
+        en: >-
+          Jacob testifies for four hours. A week later the Thorne line raises Harlan Oil's
+          freight "for operational reasons". Daniel sends a card: "I know what this costs."
+      effects: { railTariff: 0.05 } # TODO-Effekt: rival: { thorne: { relation: -20, aggression: +10 } }
+      marks: [daniel_zeuge_thorne]
+    - id: verweigern
+      label: { de: "Höflich ablehnen", en: "Decline politely" }
+      result:
+        de: >-
+          Daniel nickt, als hätte er damit gerechnet. „Dann sehen wir uns vor der Grand
+          Jury, Mr. Harlan. Dort ist Ablehnen weniger höflich.“
+        en: >-
+          Daniel nods as if he expected it. "Then we will meet before the grand jury, Mr.
+          Harlan. There, declining is less polite."
+      marks: [daniel_zeuge_verweigert]
+      default: true
+    - id: bestechen
+      label: { de: "Ihn bitten, Harlan Oil herauszuhalten (3.000 $ für die Wahlkasse)", en: "Ask him to keep Harlan Oil out of it (3,000 $ for his campaign fund)" }
+      result:
+        de: >-
+          Daniel legt das Geld in eine Beweismitteltüte. „Jetzt habe ich doch etwas gegen
+          Sie in der Hand“, sagt er. „Sie haben es mir gerade gegeben.“
+        en: >-
+          Daniel puts the money in an evidence bag. "Now I do have something on you," he
+          says. "You just handed it to me."
+      requires: { minCash: 3000 }
+      effects: { cash: -3000 } # TODO-Effekt: heat: +3, trace: { severity: 3, label: "Geld an den Staatsanwalt" }
+      marks: [daniel_bestechung_versuch]
+    - id: wegloben
+      label: { de: "Ihn über Senator Grady ins Richteramt loben (5.000 $)", en: "Have Senator Grady promote him to the bench (5,000 $)" }
+      result:
+        de: >-
+          Daniel wird Richter in Port Ellis. Die Ermittlung gegen Thorne schläft ein.
+          Thorne schickt Jacob eine Kiste Zigarren ohne Karte.
+        en: >-
+          Daniel becomes a judge in Port Ellis. The investigation into Thorne goes to
+          sleep. Thorne sends Jacob a box of cigars with no card.
+      requires: { minCash: 5000 }
+      effects: { cash: -5000 } # TODO-Effekt: favors: -2, rival: { thorne: { trust: +10 } }
+      marks: [daniel_weggelobt]
+
+# Entwurf – Philipp überarbeitet.
+# Kapitel 1: Jacob hat das Wegerecht über die Moss-Weide sauber gekauft (wegerecht_moss).
+# Story-Bibel §8: „Daniel: keine Enteignung zu finden.“ Gilt in jeder Fassung, auch beim Feind.
+- id: k3_daniel_wegerecht
+  visitor: daniel
+  draft: true
+  title:
+    de: Die einzige saubere Akte
+    en: The Only Clean File
+  text:
+    de: >-
+      Daniel Moss bringt eine dünne Akte zurück, die einzige, die er nicht behalten will:
+      die Pipeline über die Weide seines Vaters. Zwei Wochen lang hat er nach einer
+      Enteignung gesucht, nach einer Drohung, nach einem gefälschten Kreuz. „Es gibt
+      keine“, sagt er. „Mein Vater hat unterschrieben, und Sie haben bezahlt, jedes Jahr
+      pünktlich.“ Er legt die Akte hin, als wäre sie schwerer als die anderen.
+    en: >-
+      Daniel Moss brings back a thin file, the only one he does not want to keep: the
+      pipeline across his father's pasture. For two weeks he searched for an
+      expropriation, a threat, a forged cross. "There is none," he says. "My father
+      signed, and you paid, punctually, every year." He lays the file down as if it were
+      heavier than the others.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 7, maxRound: 12 }
+  marked: [wegerecht_moss]
+  notMarked: [daniel_weggelobt]
+  certain: true
+  choices:
+    - id: erzaehlen
+      label: { de: "Ihm erzählen, wie sein Vater damals verhandelt hat", en: "Tell him how his father bargained back then" }
+      result:
+        de: >-
+          Jacob erzählt, wie Ezekiel um jeden Dollar gefeilscht hat, die Bibel in der Hand,
+          und wie er am Ende doch unterschrieben hat. Daniel hört zu, ohne mitzuschreiben.
+          Zum ersten Mal.
+        en: >-
+          Jacob tells how Ezekiel haggled over every dollar, Bible in hand, and how in the
+          end he signed all the same. Daniel listens without taking notes. For the first time.
+      effects: { strength: -5 }
+      appointments: 2
+      marks: [daniel_trost]
+    - id: schliessen
+      label: { de: "„Dann schließen Sie die Akte.“", en: "\"Then close the file.\"" }
+      result:
+        de: Daniel nickt und schließt sie. „Das tue ich“, sagt er. „Nur diese.“
+        en: Daniel nods and closes it. "I will," he says. "Just this one."
+      default: true
+
+# Nachwirkung: Jacob wollte nicht aussagen – Daniel lädt ihn vor.
+- id: k3_daniel_vorladung
+  mail: demand
+  deadline: 2
+  title:
+    de: Vorladung vor die Grand Jury
+    en: Summons Before the Grand Jury
+  text:
+    de: >-
+      Ein Bote bringt das Papier persönlich, mit Unterschrift und Siegel des Bezirks
+      Cordova: Jacob Harlan hat als Zeuge in der Sache Thorne zu erscheinen. Unten, mit
+      der Hand: „Ich hätte es Ihnen lieber erspart. D. M.“
+    en: >-
+      A messenger delivers the paper in person, signed and sealed by Cordova County:
+      Jacob Harlan is to appear as a witness in the Thorne matter. At the bottom, by
+      hand: "I would rather have spared you this. D. M."
+  conditions: { minChapter: 3, maxChapter: 3 }
+  marked: [daniel_zeuge_verweigert]
+  delay: 2
+  certain: true
+  choices:
+    - id: erscheinen
+      label: { de: "Erscheinen und aussagen", en: "Appear and testify" }
+      result:
+        de: >-
+          Jacob sagt aus, knapp und genau. Die Thorne-Linie erhöht die Fracht. Daniel
+          nickt ihm im Flur zu, mehr nicht.
+        en: >-
+          Jacob testifies, brief and precise. The Thorne line raises its freight. Daniel
+          nods to him in the corridor, no more.
+      effects: { railTariff: 0.05 }
+      marks: [daniel_zeuge_thorne]
+    - id: attest
+      label: { de: "Doktor Haskell ein Attest schreiben lassen (500 $)", en: "Have Doctor Haskell write a certificate (500 $)" }
+      result:
+        de: >-
+          Haskell schreibt das Attest, und es stimmt sogar. „Ihr Herz, Jacob. Das war
+          keine Gefälligkeit.“ Daniel vertagt um drei Monate.
+        en: >-
+          Haskell writes the certificate, and it is even true. "Your heart, Jacob. That
+          was no favour." Daniel adjourns for three months.
+      effects: { cash: -500, strength: -10 }
+      marks: [daniel_vertagt]
+    - id: fernbleiben
+      label: { de: "Nicht erscheinen", en: "Do not appear" }
+      result:
+        de: >-
+          Das Gericht verhängt eine Ordnungsstrafe wegen Missachtung. Der Ledger druckt
+          den Beschluss auf Seite eins, neben einem alten Foto von Jacob am Bohrturm.
+        en: >-
+          The court imposes a fine for contempt. The Ledger prints the order on the front
+          page, next to an old photograph of Jacob at the derrick.
+      effects: { cash: -2000 } # TODO-Effekt: reputation: { public: -3 }, heat: +1
+      marks: [daniel_missachtung]
+      default: true
+
+# Nachwirkung: Jacob ist der Vorladung ferngeblieben. Daniel hat nichts gegen ihn in der Hand –
+# also keine Anklage, sondern Beugehaft, bis er aussagt. Eine eigene Folge statt des Anwalts-Wegs.
+- id: k3_daniel_missachtung
+  title:
+    de: Beugehaft
+    en: Held in Contempt
+  text:
+    de: >-
+      Um acht Uhr morgens stehen zwei Hilfssheriffs im Vorzimmer, die Hüte in der Hand,
+      verlegen. Das Gericht hat Beugehaft angeordnet, bis Jacob Harlan in der Sache Thorne
+      aussagt. Der Ältere hat vor zwanzig Jahren auf Jacobs Feldern Rohre geschleppt.
+      „Tut mir leid, Mr. Harlan“, sagt er. „Der Staatsanwalt lässt ausrichten, Sie sollen
+      einen warmen Mantel mitnehmen. Die Zellen sind kalt.“
+    en: >-
+      At eight in the morning two deputies stand in the outer office, hats in hand,
+      embarrassed. The court has ordered Jacob Harlan held until he testifies in the
+      Thorne matter. The older one hauled pipe on Jacob's fields twenty years ago. "Sorry,
+      Mr. Harlan," he says. "The district attorney says you should bring a warm coat. The
+      cells are cold."
+  conditions: { minChapter: 3, maxChapter: 3 }
+  marked: [daniel_missachtung]
+  delay: 1
+  certain: true
+  rival: thorne
+  choices:
+    - id: aussagen
+      label: { de: "Mitgehen und aussagen", en: "Go with them and testify" }
+      result:
+        de: >-
+          Jacob sagt am selben Vormittag aus, drei Stunden lang. Daniel bedankt sich nicht.
+          „Das hätten wir billiger haben können, Mr. Harlan“, sagt er nur. „Für uns beide.“
+        en: >-
+          Jacob testifies that same morning, for three hours. Daniel does not thank him.
+          "We could have had this cheaper, Mr. Harlan," is all he says. "Both of us."
+      effects: { strength: -10, railTariff: 0.05 }
+      appointments: 2
+      marks: [daniel_zeuge_thorne]
+    - id: zelle
+      label: { de: "Mitgehen und schweigen", en: "Go with them and stay silent" }
+      result:
+        de: >-
+          Jacob sitzt eine Woche in der Zelle unter dem Gericht von Port Ellis. Der Ledger
+          druckt ein Foto der vergitterten Tür. Ruth bringt jeden Abend Decken und sagt
+          nichts. Thorne schickt eine Kiste Zigarren in die Zelle. Am achten Tag lässt Daniel
+          ihn gehen: „Ich bin nicht hier, um Sie zu brechen.“
+        en: >-
+          Jacob spends a week in the cell beneath the Port Ellis courthouse. The Ledger
+          prints a photograph of the barred door. Ruth brings blankets every evening and
+          says nothing. Thorne sends a box of cigars to the cell. On the eighth day Daniel
+          lets him go: "I am not here to break you."
+      effects: { strength: -25, production: -0.1 } # TODO-Effekt: reputation: { public: -3 }, rival: { thorne: { trust: +10 } }
+      appointments: 3
+      marks: [daniel_beugehaft]
+      default: true
+    - id: thorne
+      label: { de: "Thornes Anwälte holen lassen – Thorne bietet es an", en: "Send for Thorne's lawyers – Thorne is offering" }
+      result:
+        de: >-
+          Thornes Anwälte finden bis Mittag einen Formfehler in der Anordnung. Jacob ist
+          zum Essen zu Hause. Am Nachmittag senkt die Thorne-Linie seine Fracht. Daniel
+          schreibt ihm eine Zeile: „Jetzt wissen wir beide, für wen Sie schweigen.“
+        en: >-
+          By noon Thorne's lawyers have found a flaw in the order. Jacob is home for lunch.
+          In the afternoon the Thorne line lowers his freight. Daniel writes him one line:
+          "Now we both know whom you are keeping silent for."
+      effects: { railTariff: -0.03, strength: -5 } # TODO-Effekt: rival: { thorne: { trust: +15 } }, heat: +2
+      marks: [daniel_thorne_gedeckt]
+
+# Entwurf – Philipp überarbeitet.
+# Nachwirkung: Jacob hat im Moss-Fall kooperiert. Daniel hat alles gesehen und bietet an, was er
+# einem Mann anbietet, der nichts verschwiegen hat. Ausgang für Kapitel 4: Vergleich oder Anklage.
+- id: k3_daniel_ergebnis_moss
+  visitor: daniel
+  draft: true
+  title:
+    de: Was im Heft stand
+    en: What the Book Said
+  text:
+    de: >-
+      Daniels Leute haben Jacobs Archiv verlassen. Daniel kommt allein, mit dem Schulheft
+      und einem Bericht von neun Seiten. Die Bücher bestätigen, was der Junge damals
+      aufgeschrieben hat. „Sie haben mir nichts verschwiegen, Mr. Harlan. Darum biete ich
+      Ihnen an, was ich einem Mann anbiete, der nichts verschwiegen hat.“ Ein Geständnis in
+      einem Punkt, eine Strafe, kein Prozess. Über seinen Ohren ist das Haar grau geworden,
+      in diesen zwei Monaten oder schon lange.
+    en: >-
+      Daniel's people have left Jacob's archive. Daniel comes alone, with the exercise
+      book and a report of nine pages. The books confirm what the boy wrote down back then.
+      "You concealed nothing from me, Mr. Harlan. So I offer you what I offer a man who
+      concealed nothing." An admission on one count, a fine, no trial. Above his ears the
+      hair has gone grey, in these two months or long before.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  marked: [daniel_kooperation_moss]
+  delay: 2
+  certain: true
+  choices:
+    - id: gestehen
+      label: { de: "Das Geständnis unterschreiben (4.000 $ Strafe)", en: "Sign the admission (4,000 $ fine)" }
+      result:
+        de: >-
+          Jacob unterschreibt. Daniel liest es zweimal, faltet es und legt es in das
+          Schulheft, zwischen die Seiten von damals. „Jetzt steht es an der richtigen
+          Stelle“, sagt er.
+        en: >-
+          Jacob signs. Daniel reads it twice, folds it and lays it in the exercise book,
+          between the pages from back then. "Now it is in the right place," he says.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000, strength: -10 } # TODO-Effekt: reputation: { public: -2 }, investigation: -2
+      marks: [daniel_vergleich]
+    - id: land
+      label: { de: "Kein Geständnis – aber das Land an die Familie Moss zurückgeben", en: "No admission – but return the land to the Moss family" }
+      result:
+        de: >-
+          Daniel sieht lange auf die Urkunde. „Das ist kein Geständnis“, sagt er. „Es ist
+          mehr.“ Er nimmt an. Im Frühjahr lässt er den Zaun neu setzen, an der alten Stelle,
+          mit eigenen Händen.
+        en: >-
+          Daniel looks at the deed a long time. "That is no admission," he says. "It is
+          more." He accepts. In spring he has the fence set again, in the old place, with
+          his own hands.
+      effects: { production: -0.2, strength: -10 } # TODO-Effekt: leases: -1 (die alte Moss-Farm), reputation: { public: +2 }
+      marks: [daniel_vergleich, moss_land_zurueck]
+      sharp: true
+    - id: schweigen
+      label: { de: "Nicht unterschreiben – Daniel soll tun, was er muss", en: "Do not sign – let Daniel do what he must" }
+      result:
+        de: >-
+          Daniel steckt den Bericht wieder ein. „Sie haben mir alles gezeigt, und jetzt
+          wollen Sie nicht unterschreiben, was ich gesehen habe“, sagt er. „Das verstehe ich
+          nicht. Ich muss es auch nicht verstehen.“
+        en: >-
+          Daniel puts the report away again. "You showed me everything, and now you will not
+          sign what I saw," he says. "I don't understand that. I don't have to."
+      effects: { cash: -2000, strength: -10 } # TODO-Effekt: investigation: +2
+      marks: [daniel_anklage]
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Nachwirkung: Jacob hat im Sheriff-Fall kooperiert („Diesmal“). Daniel braucht ihn im Zeugenstand
+# gegen Tatum – dafür Straffreiheit. Ausgang für Kapitel 4: Vergleich oder Anklage.
+- id: k3_daniel_kronzeuge
+  draft: true
+  title:
+    de: Der Zeugenstand
+    en: The Witness Stand
+  text:
+    de: >-
+      Der Prozess gegen Boyd Tatum beginnt. Daniel Moss will Jacob im Zeugenstand haben,
+      nicht auf Papier: jeden Dollar, laut, vor den Geschworenen und vor dem Ledger. Dafür
+      liegt eine Zusage bei, mit Siegel, dass der Bezirk Jacob Harlan in dieser Sache nicht
+      anklagt. Tatum sitzt auf der Anklagebank in einem geliehenen Anzug. Er sieht Jacob
+      nicht an. Er hat seit Jahren niemanden angesehen.
+    en: >-
+      The trial of Boyd Tatum begins. Daniel Moss wants Jacob on the stand, not on paper:
+      every dollar, aloud, before the jury and before the Ledger. In exchange there is a
+      sealed undertaking that the county will not charge Jacob Harlan in this matter.
+      Tatum sits in the dock in a borrowed suit. He does not look at Jacob. He has not
+      looked at anyone for years.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  marked: [daniel_kooperation_sheriff]
+  delay: 2
+  certain: true
+  choices:
+    - id: aussagen
+      label: { de: "In den Zeugenstand gehen und alles sagen", en: "Take the stand and say everything" }
+      result:
+        de: >-
+          Jacob redet vierzig Minuten. Im Saal ist es so still, dass man den Stenografen
+          hört. Am nächsten Tag steht jeder Dollar im Ledger. Daniel nickt ihm im Flur zu.
+          „Das war der teure Teil“, sagt er. „Der Rest ist Papier.“
+        en: >-
+          Jacob speaks for forty minutes. The courtroom is so quiet you can hear the
+          stenographer. The next day every dollar is in the Ledger. Daniel nods to him in
+          the corridor. "That was the expensive part," he says. "The rest is paper."
+      effects: { strength: -20 } # TODO-Effekt: reputation: { public: -3, politics: +2 }, investigation: -2
+      appointments: 2
+      marks: [daniel_vergleich]
+      sharp: true
+    - id: zurueckziehen
+      label: { de: "Die Aussage zurückziehen – die Anwälte übernehmen", en: "Withdraw the statement – the lawyers take over" }
+      result:
+        de: >-
+          Daniel streicht die Zusage durch, vor Jacobs Augen, mit einem einzigen Strich.
+          „Diesmal“, sagt er, „war ein Angebot. Kein Versprechen.“ Tatum wird trotzdem
+          verurteilt. Jacob ist der Nächste auf der Liste.
+        en: >-
+          Daniel strikes out the undertaking before Jacob's eyes, with a single line. "This
+          time," he says, "was an offer. Not a promise." Tatum is convicted anyway. Jacob is
+          next on the list.
+      effects: { cash: -2500, strength: -10 } # TODO-Effekt: investigation: +2
+      marks: [daniel_anklage]
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Nachwirkung: Jacob hat im Kerrigan-Fall kooperiert. Ausgang für Kapitel 4: Vergleich oder Anklage.
+- id: k3_daniel_ergebnis_kerrigan
+  visitor: daniel
+  draft: true
+  title:
+    de: Jemand muss für Kerrigan unterschreiben
+    en: Someone Must Sign for Kerrigan
+  text:
+    de: >-
+      Daniel Moss bringt die Liste zurück, jetzt mit Hollisters Aussage und einem
+      Totenschein aus Port Ellis: Dan Kerrigan, Lungenblutung, vier Jahre nach dem Tag an
+      der Plattform. „Ich klage nicht gern einen Mann an, der mir alles gezeigt hat“, sagt
+      Daniel. „Aber jemand muss für Kerrigan unterschreiben.“ Er legt zwei Papiere hin:
+      ein Geständnis, und den Entwurf einer Satzung.
+    en: >-
+      Daniel Moss brings the list back, now with Hollister's statement and a death
+      certificate from Port Ellis: Dan Kerrigan, haemorrhage of the lungs, four years after
+      the day on the platform. "I don't like charging a man who showed me everything," says
+      Daniel. "But someone has to sign for Kerrigan." He lays down two papers: an admission,
+      and the draft of a charter.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  marked: [daniel_kooperation_kerrigan]
+  delay: 2
+  certain: true
+  choices:
+    - id: gestehen
+      label: { de: "Das Geständnis unterschreiben (4.000 $ Strafe)", en: "Sign the admission (4,000 $ fine)" }
+      result:
+        de: >-
+          Jacob unterschreibt mit Kerrigans Namen im ersten Satz. Daniel schickt eine
+          Abschrift an Kerrigans Schwester in den Kohleprovinzen. Sie schreibt nicht zurück.
+        en: >-
+          Jacob signs, with Kerrigan's name in the first sentence. Daniel sends a copy to
+          Kerrigan's sister in the coal provinces. She does not write back.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000, strength: -10 } # TODO-Effekt: reputation: { workers: +1, public: -2 }
+      marks: [daniel_vergleich]
+    - id: unfallkasse
+      label: { de: "Eine Unfallkasse für alle Arbeiter gründen, mit Kerrigans Namen (6.000 $)", en: "Found an accident fund for every worker, in Kerrigan's name (6,000 $)" }
+      result:
+        de: >-
+          Die Kerrigan-Kasse zahlt im ersten Jahr an elf Familien. Daniel nimmt die Satzung
+          statt des Geständnisses. „Das hätte er lieber gehabt“, sagt Hollister, der nichts
+          mehr sieht und alles weiß.
+        en: >-
+          In its first year the Kerrigan Fund pays out to eleven families. Daniel accepts the
+          charter in place of the admission. "He'd have liked that better," says Hollister,
+          who sees nothing any more and knows everything.
+      requires: { minCash: 6000 }
+      effects: { cash: -6000 } # TODO-Effekt: reputation: { workers: +4 }, union: -1
+      marks: [daniel_vergleich, daniel_unfallkasse]
+      sharp: true
+    - id: ablehnen
+      label: { de: "Beides ablehnen", en: "Refuse both" }
+      result:
+        de: >-
+          Daniel nimmt beide Papiere wieder mit. „Dann unterschreibt das Gericht“, sagt er.
+          Auf den Feldern erzählt man sich am Abend, der Alte habe Kerrigan ein zweites Mal
+          im Stich gelassen.
+        en: >-
+          Daniel takes both papers away again. "Then the court will sign," he says. That
+          evening on the fields they say the old man has let Kerrigan down a second time.
+      effects: { cash: -2000, strength: -10 } # TODO-Effekt: reputation: { workers: -3 }, investigation: +2
+      marks: [daniel_anklage]
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Das Angebot: Jacob hat sich mit Anwälten gewehrt, aber die Tür stand nie ganz zu.
+- id: k3_daniel_angebot
+  visitor: daniel
+  draft: true
+  title:
+    de: „Mehr kann ich nicht“
+    en: '"I Can Do No More"'
+  text:
+    de: >-
+      Daniel Moss kommt spät am Abend, ohne Gehilfen. Er legt einen Vergleich auf den
+      Tisch: eine Zahlung an den Bezirk, ein Eingeständnis in einem Punkt, kein Prozess.
+      „Mein Vater hätte gewollt, dass ich Ihnen das anbiete. Mehr kann ich nicht.“ Er
+      sieht müde aus. Jacob merkt, dass Daniel jetzt so alt ist wie er selbst damals in
+      Port Ellis, und rechnet nach, ob das stimmt.
+    en: >-
+      Daniel Moss comes late in the evening, without his clerk. He lays a settlement on
+      the desk: a payment to the county, an admission on one count, no trial. "My father
+      would have wanted me to offer you this. I can do no more." He looks tired. Jacob
+      realises Daniel is now as old as he himself was back in Port Ellis, and counts to
+      check.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  marked: [daniel_anwaelte]
+  notMarked: [daniel_kalt, moss_feind, moss_beerdigung_verpasst]
+  delay: 3
+  certain: true
+  choices:
+    - id: vergleich
+      label: { de: "Den Vergleich annehmen (6.000 $)", en: "Accept the settlement (6,000 $)" }
+      result:
+        de: >-
+          Jacob unterschreibt. Daniel faltet das Papier zweimal und steckt es ein. „Er
+          hätte Sie gemocht, heute“, sagt er. „Ich bin nicht sicher, ob ich es tue.“
+        en: >-
+          Jacob signs. Daniel folds the paper twice and puts it away. "He would have liked
+          you, today," he says. "I am not sure I do."
+      effects: { cash: -6000 } # TODO-Effekt: investigation: -2, reputation: { public: -1 }
+      marks: [daniel_vergleich]
+    - id: prozess
+      label: { de: "Ablehnen – dann eben vor Gericht", en: "Refuse – court it is" }
+      result:
+        de: >-
+          Daniel nimmt das Papier wieder mit. An der Tür bleibt er stehen. „Ich hatte
+          gehofft, dass Sie es nicht tun. Ich weiß nicht, warum.“
+        en: >-
+          Daniel takes the paper back. At the door he stops. "I hoped you would not. I
+          don't know why."
+      effects: { cash: -2000, strength: -10 } # TODO-Effekt: investigation: +2
+      marks: [daniel_anklage]
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Das Angebot an den Feind: Jacob hat Daniel in Kapitel 3 einmal Trost gegeben. Nur moss_feind –
+# das Schulheft aus dem Antritt gibt es nur in den Feind-Fassungen.
+- id: k3_daniel_angebot_trost
+  visitor: daniel
+  draft: true
+  title:
+    de: Etwas anderes
+    en: Something Else
+  text:
+    de: >-
+      Daniel Moss legt das alte Schulheft neben einen Vergleich. „Ich habe lange
+      überlegt, ob ich das, was ich über Sie aufgeschrieben habe, als Beweis lese oder
+      als etwas anderes. Heute lese ich es als etwas anderes, Mr. Harlan.“ Er schiebt
+      das Papier über den Tisch. „Morgen vielleicht nicht mehr.“
+    en: >-
+      Daniel Moss lays the old exercise book beside a settlement. "I have thought a long
+      time about whether I read what I wrote about you as evidence or as something else.
+      Today I read it as something else, Mr. Harlan." He pushes the paper across the
+      desk. "Tomorrow perhaps not."
+  conditions: { minChapter: 3, maxChapter: 3 }
+  marked: [daniel_anwaelte, daniel_trost, moss_feind]
+  notMarked: [daniel_kalt]
+  delay: 3
+  certain: true
+  choices:
+    - id: vergleich
+      label: { de: "Den Vergleich annehmen (5.000 $)", en: "Accept the settlement (5,000 $)" }
+      result:
+        de: Jacob unterschreibt. Daniel nimmt das Heft und den Vergleich und lässt die Tür offen, als er geht.
+        en: Jacob signs. Daniel takes the book and the settlement and leaves the door open as he goes.
+      effects: { cash: -5000 }
+      marks: [daniel_vergleich]
+    - id: prozess
+      label: { de: "Ablehnen", en: "Refuse" }
+      result:
+        de: >-
+          Daniel nickt. Er reißt eine Seite aus dem Heft, faltet sie und lässt sie auf
+          Jacobs Tisch liegen. Es ist die mit der Entschuldigung. Oder die vom Friedhof.
+          Jacob liest sie nicht.
+        en: >-
+          Daniel nods. He tears a page from the book, folds it and leaves it on Jacob's
+          desk. It is the one with the apology. Or the one from the cemetery. Jacob does
+          not read it.
+      effects: { cash: -2000, strength: -10 }
+      marks: [daniel_anklage]
+      default: true
+
+# Entwurf – Philipp überarbeitet.
+# Kein Angebot: Daniel erhebt Anklage (kalte Antworten, Beerdigung verpasst). Fassung ohne Moss-Unrecht –
+# die Feind-Fassung mit dem Datum aus Kapitel 1 ist k3_daniel_anklage_feind.
+- id: k3_daniel_anklage
+  mail: demand
+  deadline: 2
+  draft: true
+  title:
+    de: Die Anklageschrift
+    en: The Indictment
+  text:
+    de: >-
+      Die Anklageschrift umfasst einundsechzig Seiten. Auf der ersten steht „Bezirk
+      Cordova gegen Jacob Harlan“. Auf der letzten, unter Daniels Unterschrift, steht
+      nichts weiter, kein Gruß, keine Zeile. Jacob blättert zweimal zurück, um sicher zu
+      sein, dass er nichts übersehen hat. Seine Lesebrille liegt seit diesem Jahr neben
+      dem Tintenfass.
+    en: >-
+      The indictment runs to sixty-one pages. The first reads "Cordova County versus
+      Jacob Harlan". The last, below Daniel's signature, bears nothing more, no greeting,
+      not a line. Jacob leafs back twice to be sure he has missed nothing. Since this
+      year his reading glasses have lain beside the inkwell.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  marked: [daniel_anwaelte]
+  notMarked: [moss_feind, daniel_vergleich, daniel_anklage]
+  delay: 5
+  certain: true
+  choices:
+    - id: kaempfen
+      label: { de: "Kämpfen – die beste Kanzlei aus Hallstead (4.000 $)", en: "Fight – the best firm in Hallstead (4,000 $)" }
+      result:
+        de: >-
+          Die Kanzlei verlangt einen Vorschuss und ein eigenes Büro in Port Ellis. Der
+          Prozess wird Jahre dauern. Daniel hat Zeit.
+        en: >-
+          The firm demands a retainer and its own office in Port Ellis. The trial will
+          take years. Daniel has time.
+      effects: { cash: -4000, strength: -10 } # TODO-Effekt: heat: +2, investigation: +1
+      marks: [daniel_anklage]
+      default: true
+    - id: einraeumen
+      label: { de: "Einen Punkt einräumen und um einen Vergleich bitten (7.000 $)", en: "Admit one count and ask for a settlement (7,000 $)" }
+      result:
+        de: >-
+          Daniel lässt Jacob eine Woche warten. Dann nimmt er an, zu seinen Bedingungen.
+          „Sie haben gefragt“, sagt er. „Mein Vater musste damals auch fragen.“
+        en: >-
+          Daniel makes Jacob wait a week. Then he accepts, on his own terms. "You asked,"
+          he says. "My father had to ask too, back then."
+      effects: { cash: -7000, strength: -10 }
+      marks: [daniel_vergleich]
+    - id: verbrennen
+      label: { de: "Die Bücher, nach denen er fragt, verbrennen lassen", en: "Have the ledgers he is asking for burned" }
+      result:
+        de: >-
+          Im Hof hinter dem Büro brennt eine Nacht lang ein Feuer. Der Prokurist, der es
+          angezündet hat, kündigt am nächsten Morgen. Er weiß jetzt etwas über Jacob, das
+          Daniel noch nicht weiß.
+        en: >-
+          A fire burns all night in the yard behind the office. The clerk who lit it
+          resigns the next morning. He now knows something about Jacob that Daniel does
+          not yet know.
+      effects: { strength: -20 } # TODO-Effekt: trace: { severity: 3, label: "Bücher verbrannt" }, heat: +3
+      marks: [daniel_anklage, daniel_beweise_vernichtet]
+
+# Entwurf – Philipp überarbeitet.
+# Kein Angebot an den Feind (moss_feind ohne Trost): Anklageschrift mit dem Datum aus Kapitel 1.
+- id: k3_daniel_anklage_feind
+  mail: demand
+  deadline: 2
+  draft: true
+  title:
+    de: Ein Datum unter der Unterschrift
+    en: A Date Below the Signature
+  text:
+    de: >-
+      Die Anklageschrift umfasst einundsechzig Seiten. Auf der ersten steht „Bezirk
+      Cordova gegen Jacob Harlan“. Auf der letzten, unter Daniels Unterschrift, ein Datum,
+      das Jacob kennt: der Tag, an dem Ezekiel Moss sein Land verlor. Es gehört nicht zur
+      Anklage. Daniel hat es trotzdem hingeschrieben, in der Schrift des Jungen aus dem Heft.
+    en: >-
+      The indictment runs to sixty-one pages. The first reads "Cordova County versus Jacob
+      Harlan". The last, below Daniel's signature, bears a date Jacob knows: the day
+      Ezekiel Moss lost his land. It is not part of the charges. Daniel wrote it there
+      anyway, in the hand of the boy from the exercise book.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  marked: [daniel_anwaelte, moss_feind]
+  notMarked: [daniel_vergleich, daniel_anklage]
+  delay: 5
+  certain: true
+  choices:
+    - id: kaempfen
+      label: { de: "Kämpfen – die beste Kanzlei aus Hallstead (4.000 $)", en: "Fight – the best firm in Hallstead (4,000 $)" }
+      result:
+        de: >-
+          Die Kanzlei verlangt einen Vorschuss und ein eigenes Büro in Port Ellis. Der
+          Prozess wird Jahre dauern. Daniel hat Zeit. Er hat schon zwanzig Jahre gewartet.
+        en: >-
+          The firm demands a retainer and its own office in Port Ellis. The trial will take
+          years. Daniel has time. He has already waited twenty years.
+      effects: { cash: -4000, strength: -10 } # TODO-Effekt: heat: +2, investigation: +1
+      marks: [daniel_anklage]
+      default: true
+    - id: einraeumen
+      label: { de: "Einen Punkt einräumen und um einen Vergleich bitten (7.000 $)", en: "Admit one count and ask for a settlement (7,000 $)" }
+      result:
+        de: >-
+          Daniel lässt Jacob eine Woche warten. Dann nimmt er an, zu seinen Bedingungen.
+          „Sie haben gefragt“, sagt er. „Mein Vater musste damals auch fragen.“
+        en: >-
+          Daniel makes Jacob wait a week. Then he accepts, on his own terms. "You asked," he
+          says. "My father had to ask too, back then."
+      requires: { minCash: 7000 }
+      effects: { cash: -7000, strength: -10 }
+      marks: [daniel_vergleich]
+    - id: verbrennen
+      label: { de: "Die Bücher, nach denen er fragt, verbrennen lassen", en: "Have the ledgers he is asking for burned" }
+      result:
+        de: >-
+          Im Hof hinter dem Büro brennt eine Nacht lang ein Feuer. Der Prokurist, der es
+          angezündet hat, kündigt am nächsten Morgen. Er weiß jetzt etwas über Jacob, das
+          Daniel noch nicht weiß.
+        en: >-
+          A fire burns all night in the yard behind the office. The clerk who lit it resigns
+          the next morning. He now knows something about Jacob that Daniel does not yet know.
+      effects: { strength: -20 } # TODO-Effekt: trace: { severity: 3, label: "Bücher verbrannt" }, heat: +3
+      marks: [daniel_anklage, daniel_beweise_vernichtet]
+
+# Nachwirkung: der Umschlag. Bestechung scheitert immer.
+- id: k3_daniel_bestechung_folge
+  title:
+    de: Beweisstück Nummer eins
+    en: Exhibit Number One
+  text:
+    de: >-
+      Der Ledger bringt es auf Seite eins: Der Bezirksstaatsanwalt hat ein Bestechungsgeld
+      als Beweisstück registriert. Der Name des Gebers wird „aus Rücksicht auf das
+      laufende Verfahren“ nicht genannt. In Hallstead weiß jeder, wer gemeint ist. Am
+      Nachmittag sagt Cornelia Vandermeer ein Abendessen ab.
+    en: >-
+      The Ledger runs it on the front page: the district attorney has logged a bribe as
+      evidence. The giver's name is withheld "out of regard for the ongoing
+      proceedings". In Hallstead everyone knows who is meant. In the afternoon Cornelia
+      Vandermeer cancels a dinner.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  marked: [daniel_bestechung_versuch]
+  delay: 1
+  certain: true
+  choices:
+    - id: leugnen
+      label: { de: "Alles leugnen", en: "Deny everything" }
+      result:
+        de: >-
+          Jacob leugnet in drei Zeitungen. Daniel antwortet in keiner. Er wartet einfach,
+          und das Warten liegt Jacob schwerer im Magen als jeder Artikel.
+        en: >-
+          Jacob denies it in three newspapers. Daniel answers in none. He simply waits,
+          and the waiting sits heavier in Jacob's stomach than any article.
+      effects: { strength: -20 } # TODO-Effekt: reputation: { public: -3, politics: -3 }
+      default: true
+    - id: suendenbock
+      label: { de: "Einen Prokuristen opfern – „ohne mein Wissen“ (1.500 $ Abfindung)", en: "Sacrifice a clerk – \"without my knowledge\" (1,500 $ severance)" }
+      result:
+        de: >-
+          Der Prokurist nimmt die Abfindung und die Schuld. Seine Frau spuckt vor Jacobs
+          Kutsche aus. Daniel lässt ihn vorladen und fragt ihn nur eines: wer ihm das
+          Geld gegeben hat.
+        en: >-
+          The clerk takes the severance and the blame. His wife spits in front of Jacob's
+          carriage. Daniel summons him and asks him only one thing: who gave him the money.
+      effects: { cash: -1500 } # TODO-Effekt: staffLoyalty: -10, trace: { severity: 2, label: "Sündenbock" }
+      marks: [daniel_suendenbock]
+
+# Entwurf – Philipp überarbeitet.
+# Der Umschlag wird zur Anklage. Bibel/GDD: „Ein Bestechungsversuch macht es schlimmer, nicht besser.“
+# Darum teurer als jeder Anwalts-Weg: Umschlag (3.000 $) + Folge + hier mindestens 6.000 $ und Kraft.
+- id: k3_daniel_anklage_bestechung
+  mail: demand
+  deadline: 2
+  draft: true
+  title:
+    de: Punkt eins
+    en: Count One
+  text:
+    de: >-
+      Die Anklageschrift ist dünner als erwartet, neun Seiten. Mehr braucht sie nicht.
+      Punkt eins: versuchte Bestechung eines Beamten des Bezirks Cordova. Beweisstück
+      Nummer eins: ein Umschlag, versiegelt, beschriftet, datiert. Die übrigen Punkte
+      folgen auf den Seiten danach. Daniel hat keinen davon gestrichen. Er hat sie nur
+      hinter den Umschlag gestellt.
+    en: >-
+      The indictment is thinner than expected, nine pages. It needs no more. Count one:
+      attempted bribery of an official of Cordova County. Exhibit number one: an envelope,
+      sealed, labelled, dated. The remaining counts follow on the pages after. Daniel has
+      struck none of them. He has only put them behind the envelope.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  marked: [daniel_bestechung_versuch]
+  notMarked: [daniel_vergleich, daniel_anklage]
+  delay: 3
+  certain: true
+  choices:
+    - id: kaempfen
+      label: { de: "Kämpfen – die teuerste Kanzlei aus Hallstead (6.000 $)", en: "Fight – the most expensive firm in Hallstead (6,000 $)" }
+      result:
+        de: >-
+          Die Kanzlei nimmt den Fall und sagt Jacob ehrlich, wie er steht: schlecht. Einen
+          Umschlag kann man nicht wegerklären. Man kann nur hoffen, dass die Geschworenen
+          selbst einmal einen angeboten haben.
+        en: >-
+          The firm takes the case and tells Jacob honestly where he stands: badly. An
+          envelope cannot be explained away. One can only hope the jurors once offered one
+          themselves.
+      effects: { cash: -6000, strength: -15 } # TODO-Effekt: heat: +3, reputation: { politics: -3 }
+      marks: [daniel_anklage]
+      default: true
+    - id: gestehen
+      label: { de: "Den Bestechungsversuch öffentlich gestehen (8.000 $ Strafe)", en: "Confess the bribery attempt in public (8,000 $ fine)" }
+      result:
+        de: >-
+          Jacob steht im Gerichtssaal von Port Ellis und sagt einen Satz. Daniel lässt die
+          übrigen Punkte fallen, alle. „Das ist das Erste, was Sie mir freiwillig gegeben
+          haben“, sagt er im Flur. „Es hat Sie elftausend Dollar gekostet.“
+        en: >-
+          Jacob stands in the Port Ellis courtroom and says one sentence. Daniel drops the
+          remaining counts, all of them. "That is the first thing you have given me
+          freely," he says in the corridor. "It cost you eleven thousand dollars."
+      requires: { minCash: 8000 }
+      effects: { cash: -8000, strength: -10 } # TODO-Effekt: reputation: { public: -3, politics: -2 }, heat: -2
+      marks: [daniel_vergleich]
+
+# Nachwirkung: Jacob hat gegen Thorne ausgesagt (Zeugen-Fassung oder Vorladung) – Thorne schlägt zurück.
+# Nur hier passt „Nötigung eines Zeugen“; die Kooperation in den Fällen gegen Jacob hat eigene Folgen.
+- id: k3_daniel_zeuge_folge
+  visitor: bankier
+  rival: thorne
+  title:
+    de: Pettibone kündigt
+    en: Pettibone Gives Notice
+  text:
+    de: >-
+      Mr. Pettibone ist grau geworden, aber nicht weicher. Er legt ein Schreiben der
+      Thorne-Bank vor: Die Kreditlinie von Harlan Oil wird zum Quartalsende gekündigt,
+      „wegen veränderter Risikolage“. Er sagt nicht, welches Risiko. Er sieht dabei auf
+      das Foto von Daniel Moss in der Zeitung auf Jacobs Tisch.
+    en: >-
+      Mr. Pettibone has gone grey but no softer. He presents a letter from the Thorne
+      bank: Harlan Oil's line of credit is cancelled at quarter's end "owing to a changed
+      risk position". He does not say which risk. As he speaks he looks at the
+      photograph of Daniel Moss in the newspaper on Jacob's desk.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  marked: [daniel_zeuge_thorne]
+  delay: 2
+  certain: true
+  choices:
+    - id: abloesen
+      label: { de: "Den Kredit sofort ablösen (3.000 $)", en: "Pay off the credit at once (3,000 $)" }
+      result:
+        de: >-
+          Jacob schreibt den Scheck, während Pettibone noch sitzt. Pettibone faltet ihn
+          sorgfältig. „Mr. Thorne wird beeindruckt sein“, sagt er. Es klingt nicht wie
+          ein Kompliment.
+        en: >-
+          Jacob writes the cheque while Pettibone is still seated. Pettibone folds it
+          carefully. "Mr. Thorne will be impressed," he says. It does not sound like a
+          compliment.
+      effects: { cash: -3000 } # TODO-Effekt: credit: -1
+      default: true
+    - id: mit_daniel
+      label: { de: "Daniel sagen, was Thorne tut – und weitermachen", en: "Tell Daniel what Thorne is doing – and carry on" }
+      result:
+        de: >-
+          Daniel nimmt das Kündigungsschreiben zu den Akten. „Nötigung eines Zeugen“,
+          sagt er, fast zufrieden. Die Thorne-Linie verteuert die Fracht. Jacob und
+          Daniel essen zum ersten Mal zusammen zu Mittag. Sie reden über Ezekiel.
+        en: >-
+          Daniel adds the cancellation letter to his files. "Intimidation of a witness,"
+          he says, almost pleased. The Thorne line raises its freight. Jacob and Daniel
+          have lunch together for the first time. They talk about Ezekiel.
+      effects: { railTariff: 0.05 } # TODO-Effekt: rival: { thorne: { aggression: +10 } }
+      marks: [daniel_verbuendet]
+
+# Nachwirkung: Daniel wurde ins Richteramt gelobt. Er weiß, warum.
+- id: k3_daniel_weggelobt_folge
+  mail: personal
+  deadline: 2
+  title:
+    de: Ein Brief vom Richter
+    en: A Letter from the Judge
+  text:
+    de: >-
+      Briefpapier des Bezirksgerichts Port Ellis, die Handschrift ruhig. „Sie haben mich
+      befördert, Mr. Harlan. Mein Nachfolger heißt so, wie Mr. Thorne es sich wünscht.
+      Ich habe das aufgeschrieben, mit Datum. Richter sitzen länger als Staatsanwälte.
+      Hochachtungsvoll, D. Moss.“
+    en: >-
+      Letterhead of the Port Ellis district court, the handwriting calm. "You have
+      promoted me, Mr. Harlan. My successor bears the name Mr. Thorne wished for. I have
+      written that down, with the date. Judges sit longer than prosecutors. Respectfully,
+      D. Moss."
+  conditions: { minChapter: 3, maxChapter: 3 }
+  marked: [daniel_weggelobt]
+  delay: 2
+  certain: true
+  choices:
+    - id: thornes_mann
+      label: { de: "Thornes Staatsanwalt eine Wahlspende schicken (2.000 $)", en: "Send Thorne's prosecutor a campaign donation (2,000 $)" }
+      result:
+        de: Der neue Staatsanwalt bedankt sich persönlich, mit Zigarre. Jacob hat jetzt zwei Männer im Bezirk, die ihm etwas schulden – und einen, dem er etwas schuldet.
+        en: The new prosecutor thanks him in person, with a cigar. Jacob now has two men in the county who owe him something – and one to whom he owes something.
+      requires: { minCash: 2000 }
+      effects: { cash: -2000 } # TODO-Effekt: favors: +1, heat: +1
+    - id: nichts
+      label: { de: "Den Brief in die Schublade legen", en: "Put the letter in the drawer" }
+      result:
+        de: >-
+          Der neue Staatsanwalt ist Thornes Mann, und Thorne lässt es Jacob spüren: Die
+          Frachtsätze steigen, und keiner im Bezirk findet das untersuchenswert.
+        en: >-
+          The new prosecutor is Thorne's man, and Thorne lets Jacob feel it: freight rates
+          rise, and no one in the county thinks it worth investigating.
+      effects: { railTariff: 0.05 } # TODO-Effekt: rival: { thorne: { trust: +5 } }
+      default: true
