@@ -101,6 +101,8 @@ function istObjekt(wert: unknown): wert is Record<string, unknown> {
 export function validateState(value: unknown): LoadResult {
   if (!istObjekt(value) || !istText(value.seed) || !istText(value.rating)) return { ok: false, reason: UNVOLLSTAENDIG };
   if (!ZAHLEN.every((key) => istZahl(value[key]))) return { ok: false, reason: UNVOLLSTAENDIG };
+  // Kapitel (Phase 4): darf fehlen (= Kapitel 1), sonst eine Zahl.
+  if (value.chapter !== undefined && !istZahl(value.chapter)) return { ok: false, reason: KAPUTT };
   if (!LISTEN.every((key) => istListe(value[key]))) return { ok: false, reason: UNVOLLSTAENDIG };
   if (!OBJEKTE.every((key) => istObjekt(value[key]))) return { ok: false, reason: UNVOLLSTAENDIG };
 

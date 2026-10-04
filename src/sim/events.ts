@@ -20,7 +20,11 @@ import type { PublicAct } from './world';
 import { Rng, seedFromString, type RngState } from './rng';
 import { chapterOf } from './stocks'; // gemeinsamer Kapitel-Helfer aller Phase-4-Systeme (state.chapter, sonst 1)
 
-/** Bedingungen: jede ist eine Untergrenze (min…) oder Obergrenze (max…). */
+/**
+ * Bedingungen: jede ist eine Untergrenze (min…) oder Obergrenze (max…).
+ * minChapter/maxChapter (Phase 4): Kapitel 1–7; ein Spielstand ohne Kapitelangabe ist in Kapitel 1.
+ * Ereignisse ohne Kapitel-Bedingung kommen in jedem Kapitel.
+ */
 export const CONDITION_KEYS = [
   'minRound',
   'maxRound',
@@ -316,6 +320,16 @@ function erfuellt(state: Lage, key: ConditionKey, grenze: number): boolean {
   return key.startsWith('min') ? wert >= grenze : wert <= grenze;
 }
 
+/**
+ * Passt das Ereignis ins Kapitel des Spielstands (minChapter/maxChapter)? drawEvents sortiert
+ * Ereignisse anderer Kapitel aus, bevor gemischt wird – so würfelt Kapitel 1 genau wie vorher,
+ * egal wie viele Ereignisse für spätere Kapitel dazukommen.
+ */
+export function chapterFits(state: Partial<Pick<GameState, 'chapter'>>, conditions: Conditions): boolean {
+  const kapitel = chapterOf(state);
+  return (conditions.minChapter === undefined || kapitel >= conditions.minChapter) && (conditions.maxChapter === undefined || kapitel <= conditions.maxChapter);
+}
+
 /** Stimmen alle Bedingungen? Keine Bedingung = immer. */
 export function conditionsMet(state: Lage, conditions: Conditions): boolean {
   return CONDITION_KEYS.every((key) => conditions[key] === undefined || erfuellt(state, key, conditions[key]!));
@@ -445,10 +459,11 @@ export function drawEvents(state: GameState, balance: Balance, catalog: readonly
   const log = [...state.log];
   let neu = 0;
   // Sichere Ereignisse (2.8) zuerst: ohne Würfel, ohne Platz in maxPerRound.
-  const sicher = catalog.filter((e) => e.certain && !e.routine && !e.mail);
+  const imKapitel = catalog.filter((e) => chapterFits(state, e.conditions));
+  const sicher = imKapitel.filter((e) => e.certain && !e.routine && !e.mail);
   // Gewürfelte Ereignisse (2.10b) in zufälliger Reihenfolge: Sonst gewinnen bei maxPerRound
   // immer die Dateien vorn im Alphabet, und späte Ereignisse kämen kaum je vor.
-  const gewuerfelt = rng.shuffle(catalog.filter((e) => !e.certain && !e.routine && !e.mail));
+  const gewuerfelt = rng.shuffle(imKapitel.filter((e) => !e.certain && !e.routine && !e.mail));
   for (const event of [...sicher, ...gewuerfelt]) {
     if (!event.certain && neu >= balance.events.maxPerRound) break;
     // Feste Termine (2.3) werden nicht gewürfelt, Briefe kommen mit der Post (2.4).

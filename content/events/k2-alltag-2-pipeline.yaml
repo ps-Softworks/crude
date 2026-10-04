@@ -1,0 +1,520 @@
+# Kapitel 2 – Alltag, Paket 2: Pipeline, Wegerechte und Fracht (Phase 4). Entwurf – Philipp überarbeitet.
+# Grundlage: Story-Bibel Kapitel 2/3 §9 (K2: Pipeline – Wegerechte Moss/Witwe Pruitt, Sabotage,
+# Wachleute, Transportpflicht, Leck), GDD §13 (eigene Pipeline zum Hafen), Weltbibel (Provinzliga:
+# Pipelines sollen fremdes Öl transportieren).
+#
+# Alle Ereignisse nur in Kapitel 2: conditions { minChapter: 2, maxChapter: 2 }.
+# Eine eigene Pipeline als Bedingung gibt es noch nicht (kommt mit 4.7) – „# TODO-Bedingung: hasPipeline“.
+#
+# Merkzeichen aus Kapitel 1, die hier gelesen werden:
+#   moss_fair            → k2_moss_brunnen (Ezekiel kommt selbst)
+#   moss_feind           → k2_moss_zaun (ohne moss_verloren und moss_vertrieben: nur nach dem Betrug,
+#                          da hat Moss die Farm noch – siehe moss_wagenweg in Kapitel 1)
+#   moss_vertrieben      → k2_moss_daniel_brief (Jacob hat die Farm ersteigert; Ezekiel kommt nie wieder,
+#                          Bibel §3 – es schreibt Daniel)
+#   eli_waechter         → k2_pipeline_angezapft_eli (Eli Ward führt die Wachleute)
+#   thorne_vertrag       → k2_fracht_vertrag (Thorne will verlängern)
+#   ohne thorne_vertrag  → k2_fracht_druck (Thorne erhöht einfach)
+#   delgado_verband      → k2_transportpflicht (Delgado spricht als alte Verbündete)
+# Neue Merkzeichen:
+#   k2_leck_geleugnet → k2_leck_klage (2 Runden später)
+#   k2_pipeline_offen / k2_pipeline_wucher → Paket 4 (Delgados Beitrag)
+#   k2_quill_detektiv → content/relevance.yaml (Thornes Detektei, später)
+#   k2_thorne_klausel → content/relevance.yaml (4.7 Pipelines: Thornes Vertrag verbietet eine eigene
+#                       Leitung zu einem anderen Hafen – Bau sperren oder als Vertragsbruch werten)
+#   k2_daniel_brief_beantwortet → content/relevance.yaml (Daniel Moss in Kapitel 3)
+
+# --- Wegerechte ------------------------------------------------------------------
+
+- id: k2_wegerecht_pruitt
+  ranch: pruitt
+  # TODO-Bedingung: hasPipeline
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12 }
+  chance: 0.12
+  title:
+    de: Agnes Pruitt will mitverdienen
+    en: Agnes Pruitt Wants a Share
+  text:
+    de: >-
+      Witwe Pruitt ist grauer geworden und nicht freundlicher. Die neue, dickere Leitung
+      zum Hafen soll über ihre Weide, gleich neben der alten. Sie will diesmal keine
+      Einmalzahlung. Sie will einen Viertelcent je Barrel, das durch ihr Land läuft, solange
+      es läuft. „Ich habe zehn Jahre zugesehen, Mr. Harlan. Jetzt rechne ich mit.“
+    en: >-
+      Widow Pruitt has grown greyer and no friendlier. The new, thicker line to the harbour
+      is to cross her pasture, right beside the old one. This time she wants no lump sum. She
+      wants a quarter cent on every barrel that runs through her land, for as long as it runs.
+      “I've watched for ten years, Mr. Harlan. Now I'm doing sums.”
+  choices:
+    - id: anteil
+      label: { de: "Den Viertelcent zugestehen (auf Dauer)", en: "Grant the quarter cent (for good)" }
+      result:
+        de: "Agnes Pruitt unterschreibt mit einer Feder, die sie selbst mitgebracht hat. Bei jedem Abrechnungstag sitzt jetzt ihr Neffe im Kontor und zählt mit."
+        en: "Agnes Pruitt signs with a pen she brought herself. Every settlement day her nephew now sits in the counting house, counting along."
+      # TODO-Effekt: transportFee: +0.0025 je Barrel, rightOfWay: { pruitt: true }
+      effects: { price: -0.05 }
+      default: true
+    - id: einmal
+      label: { de: "Eine große Einmalzahlung anbieten (6.000 $)", en: "Offer a large lump sum (6,000 $)" }
+      result:
+        de: "Sie nimmt das Geld nach einer Woche Bedenkzeit. Der Neffe nennt Jacob in der Kirche einen Mann, der die Leute mit Scheinen zum Schweigen bringt. Die Leitung liegt."
+        en: "She takes the money after a week's thought. In church the nephew calls Jacob a man who silences people with banknotes. The line is laid."
+      requires: { minCash: 6000 }
+      effects: { cash: -6000 }
+    - id: umweg
+      label: { de: "Um ihre Weide herum bauen (12.000 $, drei Meilen mehr)", en: "Build around her pasture (12,000 $, three miles more)" }
+      result:
+        de: "Die Leitung macht einen Bogen, den man von der Bahn aus sieht. In Salt Hill nennen sie ihn den Pruitt-Knick. Agnes Pruitt bekommt nichts und erzählt es jedem."
+        en: "The line makes a bend you can see from the train. In Salt Hill they call it the Pruitt Kink. Agnes Pruitt gets nothing and tells everyone."
+      requires: { minCash: 12000 }
+      effects: { cash: -12000 }
+      appointments: 2
+
+- id: k2_moss_brunnen
+  visitor: moss
+  ranch: moss
+  marked: [moss_fair]
+  delay: 0
+  # TODO-Bedingung: hasPipeline
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  chance: 0.15
+  title:
+    de: Ezekiel Moss und das Wasser
+    en: Ezekiel Moss and the Water
+  text:
+    de: >-
+      Ezekiel Moss sitzt im Vorzimmer, den Hut auf den Knien, und steht nicht auf, als
+      Jacob kommt. Er ist sechsundfünfzig und hat die Hände eines Siebzigjährigen. Der
+      Brunnen hinter seinem Haus schmeckt nach Petroleum, seit die Bautrupps die neue
+      Leitung verlegt haben. „Ich hab Ihnen damals getraut, Harlan. Ich frage, ob das
+      noch gilt.“
+    en: >-
+      Ezekiel Moss sits in the anteroom with his hat on his knees and does not stand when
+      Jacob comes in. He is fifty-six and has the hands of a man of seventy. The well behind
+      his house tastes of kerosene since the crews laid the new line. “I trusted you back
+      then, Harlan. I'm asking if that still holds.”
+  choices:
+    - id: neuer_brunnen
+      label: { de: "Einen neuen Brunnen bohren lassen, tiefer (3.500 $)", en: "Have a new, deeper well drilled (3,500 $)" }
+      result:
+        de: "Silas' alter Trupp bohrt den Brunnen in vier Tagen. Das Wasser ist kalt und schmeckt nach Eisen. Moss trinkt zuerst, dann reicht er Jacob die Kelle."
+        en: "Silas's old crew drills the well in four days. The water is cold and tastes of iron. Moss drinks first, then hands Jacob the dipper."
+      requires: { minCash: 3500 }
+      effects: { cash: -3500, strength: 3 }
+    - id: geld
+      label: { de: "Eine Entschädigung zahlen (1.500 $)", en: "Pay compensation (1,500 $)" }
+      result:
+        de: "Moss nimmt das Geld, ohne es zu zählen. „Geld trinkt man nicht“, sagt er an der Tür. Er fährt Wasser jetzt in Fässern von der Kirche heran."
+        en: "Moss takes the money without counting it. “You can't drink money,” he says at the door. He now hauls water in barrels from the church."
+      requires: { minCash: 1500 }
+      effects: { cash: -1500, strength: -2 }
+    - id: bestreiten
+      label: { de: "„Das kommt nicht von meiner Leitung“", en: "“That isn't from my line”" }
+      result:
+        de: "Moss setzt den Hut auf und geht. Am Sonntag erzählt er dem Pfarrer davon, und der Pfarrer erzählt es der Gemeinde. Die Bautrupps bekommen in Cottonwood kein Wasser mehr verkauft."
+        en: "Moss puts on his hat and leaves. On Sunday he tells the pastor, and the pastor tells the congregation. The crews can no longer buy water in Cottonwood."
+      effects: { strength: -4, production: -0.05 }
+      appointments: 0
+      default: true
+
+- id: k2_moss_zaun
+  ranch: moss
+  marked: [moss_feind]
+  notMarked: [moss_verloren, moss_vertrieben]
+  delay: 0
+  # TODO-Bedingung: hasPipeline
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  chance: 0.15
+  title:
+    de: Der Zaun steht wieder
+    en: The Fence Is Back
+  text:
+    de: >-
+      Über Nacht hat jemand den Zaun quer über die Trasse gezogen, Stacheldraht auf
+      Zedernpfählen. Davor sitzen zwei Knechte von Moss mit Schrotflinten auf einem
+      Wagen. Ezekiel selbst steht auf der Veranda und rührt sich nicht. Zehn Jahre, und er
+      hat nichts vergessen.
+    en: >-
+      Overnight someone has run the fence straight across the right of way, barbed wire on
+      cedar posts. In front of it two of Moss's hands sit on a wagon with shotguns. Ezekiel
+      himself stands on the porch and does not move. Ten years, and he has forgotten nothing.
+  choices:
+    - id: richter
+      label: { de: "Den Bezirksrichter anrufen (Anwälte, Zeit)", en: "Call on the district judge (lawyers, time)" }
+      result:
+        de: "Der Richter gibt Jacob recht, nach sechs Wochen. In dieser Zeit fließt durch die Leitung nichts. Moss legt den Zaun selbst nieder, Pfahl für Pfahl, und schaut Jacob dabei nicht an."
+        en: "The judge rules for Jacob, after six weeks. In that time nothing flows through the line. Moss takes the fence down himself, post by post, and never looks at Jacob."
+      # TODO-Effekt: pipelineDown: 1
+      effects: { cash: -2000, strength: -5, production: -0.15 }
+      appointments: 2
+    - id: angebot
+      label: { de: "Ein neues Angebot machen, großzügig (8.000 $)", en: "Make a new, generous offer (8,000 $)" }
+      result:
+        de: "Moss lässt das Angebot drei Tage auf dem Verandatisch liegen. Dann unterschreibt er, mit einem Kreuz statt mit seinem Namen. Der Zaun bleibt stehen, nur das Tor ist offen."
+        en: "Moss leaves the offer on the porch table for three days. Then he signs, with a cross instead of his name. The fence stays up; only the gate is open."
+      requires: { minCash: 8000 }
+      effects: { cash: -8000 }
+    - id: niederreissen
+      label: { de: "Den Zaun nachts niederreißen lassen", en: "Have the fence torn down at night" }
+      result:
+        de: "Am Morgen liegt der Draht im Graben. Einer der Knechte hat eine Platzwunde. Ezekiel Moss schreibt einen Brief nach Hallstead, an seinen Sohn. Was darin steht, erfährt Jacob nicht."
+        en: "In the morning the wire lies in the ditch. One of the hands has a split scalp. Ezekiel Moss writes a letter to Hallstead, to his son. Jacob never learns what it says."
+      # TODO-Effekt: heat: 1, trace: { severity: 2, label: Moss-Zaun }
+      effects: { strength: -3 }
+      appointments: 0
+      default: true
+
+# Die Farm gehört Jacob (ersteigert, moss_vertrieben) oder dem Herrn aus Hallstead, an den er sie
+# verkauft hat. Erfunden: Das Grab von Daniels Mutter hinter dem Farmhaus (Kapitel 1 nennt sie nie). Ezekiel lebt bei Verwandten und kommt nie (Bibel §3). Daniel ist Mitte zwanzig und
+# Anwalt (mit moss_feind: Hilfsanwalt bei Frank Delaney, Bibel §3) – er schreibt.
+- id: k2_moss_daniel_brief
+  mail: personal
+  ranch: moss
+  marked: [moss_vertrieben]
+  delay: 0
+  deadline: 3
+  # TODO-Bedingung: hasPipeline
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  chance: 0.15
+  title:
+    de: Ein Brief von Daniel Moss
+    en: A Letter from Daniel Moss
+  text:
+    de: >-
+      Ein Brief aus Hallstead, auf dem Papier einer Behörde, mit der Maschine geschrieben und
+      von Hand unterzeichnet: Daniel Moss. Die neue Leitung läuft über das Land, auf dem er
+      aufgewachsen ist. Bei den Bauarbeiten haben die Trupps das Grab seiner Mutter hinter
+      dem alten Farmhaus eingeebnet. Er verlangt nichts. Er teilt es nur mit, „für die Akten“.
+    en: >-
+      A letter from Hallstead on the paper of a government office, typed and signed by hand:
+      Daniel Moss. The new line runs across the land he grew up on. During the works the
+      crews levelled his mother's grave behind the old farmhouse. He asks for nothing. He
+      merely informs Jacob, “for the record”.
+  choices:
+    - id: grab
+      label: { de: "Das Grab wiederherstellen lassen, mit Stein und Zaun (2.500 $)", en: "Have the grave restored, with a stone and a fence (2,500 $)" }
+      result:
+        de: "Ein Steinmetz aus Port Ellis setzt einen grauen Stein mit dem Namen, den Daniel genannt hat. Die Leitung macht einen kleinen Bogen darum. Daniel antwortet nicht, aber er schickt den Brief auch nicht zurück."
+        en: "A stonemason from Port Ellis sets a grey stone with the name Daniel gave. The line makes a small bend around it. Daniel does not reply, but he does not send the letter back either."
+      requires: { minCash: 2500 }
+      effects: { cash: -2500, strength: 2 }
+      marks: [k2_daniel_brief_beantwortet]
+    - id: antworten
+      label: { de: "Selbst antworten, mit der Hand", en: "Reply himself, by hand" }
+      result:
+        de: "Jacob schreibt vier Seiten und streicht drei davon. Was bleibt, ist eine Entschuldigung ohne das Wort. Daniel legt den Brief in eine Mappe, auf der schon Jacobs Name steht."
+        en: "Jacob writes four pages and strikes out three. What remains is an apology without the word. Daniel puts the letter in a folder that already bears Jacob's name."
+      effects: { strength: -4 }
+      marks: [k2_daniel_brief_beantwortet]
+      appointments: 2
+    - id: anwalt
+      label: { de: "Den Anwälten übergeben", en: "Hand it to the lawyers" }
+      result:
+        de: "Harlans Anwälte antworten in drei Sätzen: Das Wegerecht sei rechtmäßig erworben, die Arbeiten genehmigt. Beides stimmt. In Hallstead wird der Brief abgeheftet, zu den anderen."
+        en: "Harlan's lawyers reply in three sentences: the right of way was lawfully acquired, the works approved. Both are true. In Hallstead the letter is filed, with the others."
+      # TODO-Effekt: trace: { severity: 1, label: Moss-Grab }
+      effects: { cash: -400, strength: -2 }
+      appointments: 0
+      default: true
+
+# --- Störungen an der Leitung (Variantengruppe) ------------------------------------
+
+- id: k2_pipeline_angezapft
+  group: k2_pipeline
+  once: false
+  cooldown: 5
+  notMarked: [eli_waechter]
+  # TODO-Bedingung: hasPipeline
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  chance: 0.1
+  title:
+    de: Löcher in der Leitung
+    en: Holes in the Line
+  text:
+    de: >-
+      Bei Meile elf hat jemand die Leitung angebohrt, sauber, mit Hahn und Gewinde. Nachts
+      fahren Wagen mit Fässern vor und wieder weg. Der Druckmesser am Hafen zeigt seit
+      einem Monat zu wenig, und niemand hat es gemeldet.
+    en: >-
+      At mile eleven someone has tapped the line, neatly, with a tap and a thread. At night
+      wagons with barrels drive up and away again. For a month the gauge at the harbour has
+      shown too little, and no one reported it.
+  choices:
+    - id: wachen
+      label: { de: "Wachleute entlang der Trasse (4.000 $)", en: "Guards along the right of way (4,000 $)" }
+      result:
+        de: "Zwölf Mann mit Laternen und Gewehren, alle drei Meilen ein Posten. Die Löcher hören auf. Einer der Wachleute verkauft im zweiten Monat selbst Fässer."
+        en: "Twelve men with lanterns and rifles, a post every three miles. The tapping stops. In the second month one of the guards starts selling barrels himself."
+      requires: { minCash: 4000 }
+      effects: { cash: -4000 }
+    - id: quill
+      label: { de: "Thornes Detektei beauftragen (2.000 $)", en: "Hire Thorne's detective agency (2,000 $)" }
+      result:
+        de: "Ein Mr. Quill kommt mit der Bahn, trägt Handschuhe und findet die Diebe in neun Tagen: zwei Fuhrleute und ein Lagerhalter. Er findet auch heraus, wie viel Öl Harlan im Monat bewegt. Er schreibt es auf."
+        en: "A Mr. Quill arrives by train, wears gloves and finds the thieves in nine days: two teamsters and a storekeeper. He also finds out how much oil Harlan moves each month. He writes it down."
+      requires: { minCash: 2000 }
+      effects: { cash: -2000, oilStock: 500 }
+      marks: [k2_quill_detektiv]
+    - id: hinnehmen
+      label: { de: "Abdichten, nicht weiter verfolgen", en: "Seal it, don't pursue it" }
+      result:
+        de: "Der Hahn wird abgeschlagen, das Loch verschweißt. Drei Wochen später ist ein neues da, bei Meile vierzehn."
+        en: "The tap is knocked off, the hole sealed. Three weeks later there is a new one, at mile fourteen."
+      effects: { oilStock: -2500 }
+      appointments: 0
+      default: true
+
+- id: k2_pipeline_angezapft_eli
+  group: k2_pipeline
+  once: false
+  cooldown: 5
+  marked: [eli_waechter]
+  delay: 0
+  # TODO-Bedingung: hasPipeline
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  chance: 0.1
+  title:
+    de: Eli Ward hat die Diebe
+    en: Eli Ward Has the Thieves
+  text:
+    de: >-
+      Eli Ward ist grau an den Schläfen und hinkt seit dem Winter. Er hat zwei Männer
+      erwischt, die bei Meile elf Öl abzapften, und sie im Werkzeugschuppen eingeschlossen.
+      Einer ist fast noch ein Junge, Bruder eines Kesselwärters. „Ich pass auf Ihre Leitung
+      auf, Mr. Harlan. Was mit denen passiert, sagen Sie.“
+    en: >-
+      Eli Ward is grey at the temples and has limped since winter. He caught two men
+      tapping oil at mile eleven and locked them in the tool shed. One is barely more than a
+      boy, a stillman's brother. “I watch your line, Mr. Harlan. What happens to them is your
+      call.”
+  choices:
+    - id: sheriff
+      label: { de: "Dem Sheriff übergeben", en: "Hand them to the sheriff" }
+      result:
+        de: "Beide bekommen zwei Jahre. Der Kesselwärter kündigt am selben Tag. Die Löcher hören auf, für lange Zeit."
+        en: "Both get two years. The stillman quits the same day. The tapping stops, for a long time."
+      effects: { production: 0.05, strength: -3 }
+    - id: arbeit
+      label: { de: "Dem Jungen Arbeit geben, den anderen laufen lassen (1.200 $)", en: "Give the boy work, let the other go (1,200 $)" }
+      result:
+        de: "Der Junge schleppt Rohre und sagt kein Wort, sechs Monate lang. Eli behält ihn im Auge. Der andere zapft woanders."
+        en: "The boy hauls pipe and says not a word for six months. Eli keeps an eye on him. The other man taps somewhere else."
+      requires: { minCash: 1200 }
+      effects: { cash: -1200, oilStock: -800 }
+    - id: eli_entscheidet
+      label: { de: "„Machen Sie es, wie Sie es für richtig halten, Eli“", en: "“Do as you think right, Eli”" }
+      result:
+        de: "Eli lässt beide laufen, nachdem sie das Öl bezahlt haben, mit dem Lohn eines Monats. Es spricht sich herum. Eli ist danach der Mann, mit dem man an der Leitung nicht streitet."
+        en: "Eli lets both go after they've paid for the oil with a month's wages. Word gets around. After that Eli is the man nobody argues with along the line."
+      effects: { oilStock: 400, strength: 2 }
+      appointments: 0
+      default: true
+
+- id: k2_pipeline_leck
+  group: k2_pipeline
+  once: false
+  cooldown: 5
+  # TODO-Bedingung: hasPipeline
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4 }
+  chance: 0.1
+  title:
+    de: Schwarze Baumwolle
+    en: Black Cotton
+  text:
+    de: >-
+      In der Cottonwood-Niederung ist eine Muffe gerissen. Auf zwei Feldern steht das Öl
+      knöcheltief zwischen den Baumwollreihen, kurz vor der Ernte. Die Farmer stehen am
+      Feldrand und warten, wer zuerst kommt: Harlans Leute oder der Anwalt.
+    en: >-
+      In the Cottonwood bottoms a coupling has burst. On two fields oil stands ankle-deep
+      between the cotton rows, just before harvest. The farmers stand at the edge of the
+      field, waiting to see who comes first: Harlan's men or the lawyer.
+  choices:
+    - id: zahlen
+      label: { de: "Die Ernte bezahlen und die Felder säubern (5.000 $)", en: "Pay for the harvest and clean the fields (5,000 $)" }
+      result:
+        de: "Harlans Leute graben die schwarze Erde ab und fahren neue heran. Die Farmer bekommen den Preis einer guten Ernte. Einer sagt, so viel habe ihm die Baumwolle nie gebracht."
+        en: "Harlan's men dig away the black soil and haul in new. The farmers get the price of a good harvest. One says cotton never paid him that well."
+      requires: { minCash: 5000 }
+      effects: { cash: -5000 }
+    - id: abschalten
+      label: { de: "Die Leitung zwei Wochen abstellen und richtig reparieren", en: "Shut the line for two weeks and repair it properly" }
+      result:
+        de: "Alle Muffen auf zwanzig Meilen werden geprüft, drei weitere getauscht. In der Zeit fährt das Öl wieder mit der Bahn, zu Thornes Preisen."
+        en: "Every coupling for twenty miles is checked, three more replaced. Meanwhile the oil goes by rail again, at Thorne's prices."
+      # TODO-Effekt: pipelineDown: 1
+      effects: { cash: -1500, production: -0.1 }
+    - id: leugnen
+      label: { de: "Nachts abdichten, sonst nichts", en: "Seal it at night, nothing else" }
+      result:
+        de: "Am Morgen ist das Leck dicht und die Muffe neu gestrichen. Die Felder bleiben schwarz. Die Farmer gehen zum Anwalt."
+        en: "By morning the leak is sealed and the coupling freshly painted. The fields stay black. The farmers go to the lawyer."
+      effects: { oilStock: -600 }
+      marks: [k2_leck_geleugnet]
+      appointments: 0
+      default: true
+
+- id: k2_leck_klage
+  mail: demand
+  marked: [k2_leck_geleugnet]
+  delay: 2
+  chance: 0.7
+  deadline: 2
+  conditions: { minChapter: 2, maxChapter: 2 }
+  title:
+    de: Die Farmer aus Cottonwood klagen
+    en: The Cottonwood Farmers Sue
+  text:
+    de: >-
+      Ein Schreiben vom Bezirksgericht: Sieben Farmer aus der Cottonwood-Niederung klagen
+      auf Schadenersatz für zwei Ernten und vergiftete Erde. Ihr Anwalt hat Fotografien
+      beigelegt. Auf einer steht ein Kind bis zu den Knöcheln im Öl und lacht.
+    en: >-
+      A letter from the district court: seven farmers from the Cottonwood bottoms are suing
+      for damages for two harvests and poisoned soil. Their lawyer has enclosed photographs.
+      In one a child stands ankle-deep in oil, laughing.
+  choices:
+    - id: vergleich
+      label: { de: "Vergleich anbieten (9.000 $)", en: "Offer a settlement (9,000 $)" }
+      result:
+        de: "Die Farmer nehmen an. Das Foto mit dem Kind liegt danach in einer Schublade des Anwalts, nicht im Feuer."
+        en: "The farmers accept. Afterwards the photograph of the child lies in the lawyer's drawer, not in the fire."
+      requires: { minCash: 9000 }
+      effects: { cash: -9000 }
+    - id: prozess
+      label: { de: "Es auf einen Prozess ankommen lassen", en: "Let it come to trial" }
+      result:
+        de: "Der Prozess dauert ein Jahr. Harlans Anwälte gewinnen, weil die Muffe frisch gestrichen war. Die Fotografie erscheint im Hallstead Ledger."
+        en: "The trial lasts a year. Harlan's lawyers win, because the coupling was freshly painted. The photograph appears in the Hallstead Ledger."
+      # TODO-Effekt: reputation: { public: -8 }, heat: 1
+      effects: { cash: -3000, strength: -6 }
+      appointments: 2
+      default: true
+
+# --- Transport und Fracht ----------------------------------------------------------
+
+- id: k2_transportpflicht
+  # TODO-Bedingung: hasPipeline
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4, maxRound: 14 }
+  chance: 0.12
+  title:
+    de: Fremdes Öl in Harlans Leitung
+    en: Other Men's Oil in Harlan's Line
+  text:
+    de: >-
+      Die Provinzliga hat im Landtag von Cordova ein Gesetz eingebracht: Wer eine Pipeline
+      besitzt, muss das Öl der kleinen Produzenten zu einem fairen Satz mitnehmen. Rosa
+      Delgado schreibt, bevor es ein Gesetz wird, wäre es klug, es freiwillig zu tun. „Gegen
+      den Trust waren wir uns einig. Jetzt sind Sie der mit der Leitung.“
+    en: >-
+      The Provincial League has introduced a bill in the Cordova assembly: whoever owns a
+      pipeline must carry the small producers' oil at a fair rate. Rosa Delgado writes that,
+      before it becomes law, it would be wise to do it voluntarily. “Against the Trust we
+      agreed. Now you're the one with the line.”
+  choices:
+    - id: fair
+      label: { de: "Freiwillig zum fairen Satz transportieren", en: "Carry their oil voluntarily at a fair rate" }
+      result:
+        de: "Die Leitung läuft voller, die Marge je Barrel wird dünner. Die kleinen Produzenten nennen Jacob in Salt Hill wieder einen von ihnen. Pruett schreibt ihm einen spöttischen Brief."
+        en: "The line runs fuller, the margin per barrel thinner. In Salt Hill the small producers call Jacob one of their own again. Pruett writes him a mocking letter."
+      # TODO-Effekt: transportFee: niedrig, reputation: { industryRespect: 5 }, party: { provinz: 2 }
+      effects: { cash: 3000, price: -0.05 }
+      marks: [k2_pipeline_offen]
+    - id: teuer
+      label: { de: "Transportieren, aber zu Harlans Preis", en: "Carry it, but at Harlan's price" }
+      result:
+        de: "Die Kleinen zahlen, weil die Bahn noch teurer ist. Sie zahlen und merken es sich. Delgado nennt den Satz in einer Rede „den Harlan-Zoll“."
+        en: "The small men pay, because the railway costs even more. They pay and remember. In a speech Delgado calls the rate “the Harlan toll”."
+      # TODO-Effekt: transportFee: hoch, reputation: { industryFear: 5 }, lawPressure: { transportpflicht: 1 }
+      effects: { cash: 8000 }
+      marks: [k2_pipeline_wucher]
+    - id: ablehnen
+      label: { de: "Ablehnen – die Leitung gehört Harlan Oil", en: "Refuse – the line belongs to Harlan Oil" }
+      result:
+        de: "Delgado antwortet nicht. Drei Monate später steht ihr Name unter dem Gesetzentwurf, gleich neben dem des Abgeordneten aus Salt Hill."
+        en: "Delgado does not reply. Three months later her name stands under the bill, right beside the member for Salt Hill."
+      # TODO-Effekt: lawPressure: { transportpflicht: 2 }
+      effects: { strength: -2 }
+      marks: [k2_pipeline_wucher]
+      appointments: 0
+      default: true
+
+- id: k2_fracht_vertrag
+  rival: thorne
+  group: k2_fracht
+  marked: [thorne_vertrag]
+  delay: 0
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 10 }
+  chance: 0.15
+  title:
+    de: Thorne will verlängern
+    en: Thorne Wants to Renew
+  text:
+    de: >-
+      Der Frachtvertrag mit der Thorne-Bahn stammt aus Jacobs erstem Jahr in Cordova. Jetzt
+      schickt Thorne einen neuen, in Leder gebunden, mit einer Klausel auf Seite neun: Wer
+      verlängert, verpflichtet sich, keine eigene Leitung zu einem anderen Hafen zu bauen.
+      Der Tarif ist gut. Seite neun ist es nicht.
+    en: >-
+      The freight contract with the Thorne railway dates from Jacob's first year in Cordova.
+      Now Thorne sends a new one, bound in leather, with a clause on page nine: whoever renews
+      undertakes not to build a line of his own to any other harbour. The tariff is good. Page
+      nine is not.
+  choices:
+    - id: verlaengern
+      label: { de: "Verlängern – der Tarif sinkt", en: "Renew – the tariff falls" }
+      result:
+        de: "Thornes Sekretär holt den Vertrag persönlich ab und bedankt sich für die lange Freundschaft. Die Frachtkosten sinken. Die Pläne für eine eigene Leitung an die Küste wandern in den Schrank."
+        en: "Thorne's secretary collects the contract in person and gives thanks for the long friendship. Freight costs fall. The plans for a line of his own to the coast go into the cupboard."
+      # TODO-Effekt (4.7 Pipelines): Bau einer eigenen Leitung zu einem anderen Hafen sperren – oder als Vertragsbruch werten (Thorne erhöht, klagt)
+      effects: { railTariff: -0.04 }
+      marks: [k2_thorne_klausel]
+    - id: streichen
+      label: { de: "Seite neun streichen und zurückschicken", en: "Strike page nine and send it back" }
+      result:
+        de: "Der Vertrag kommt nicht zurück. Stattdessen ein Brief: Der alte Tarif gelte bis zum Jahresende. Danach gelte der Tarif, der dann gelte."
+        en: "The contract does not come back. Instead, a letter: the old tariff stands until the year's end. After that, the tariff will be whatever it is then."
+      effects: { railTariff: 0.03 }
+      appointments: 0
+      default: true
+
+- id: k2_fracht_druck
+  rival: thorne
+  group: k2_fracht
+  notMarked: [thorne_vertrag]
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12 }
+  chance: 0.12
+  title:
+    de: Thorne erhöht die Fracht
+    en: Thorne Raises the Freight
+  text:
+    de: >-
+      Neuer Aushang am Bahnhof Salt Hill: Rohöl in Kesselwagen, plus vier Cent je Barrel,
+      „wegen gestiegener Kosten des Streckenunterhalts“. Der Stationsvorsteher Gaffney ist
+      alt geworden und entschuldigt sich, als hätte er den Aushang selbst geschrieben.
+    en: >-
+      A new notice at Salt Hill station: crude in tank cars, plus four cents a barrel, “owing
+      to increased costs of track maintenance”. Stationmaster Gaffney has grown old and
+      apologises as though he had written the notice himself.
+  choices:
+    - id: zahlen
+      label: { de: "Zahlen", en: "Pay" }
+      result:
+        de: "Die Kesselwagen rollen wie immer. Jedes Quartal steht eine Zeile mehr in Ruths Büchern, rot unterstrichen."
+        en: "The tank cars roll as always. Every quarter there is one more line in Ruth's books, underlined in red."
+      effects: { railTariff: 0.04 }
+      appointments: 0
+      default: true
+    - id: fuhrwerke
+      label: { de: "Einen Teil wieder mit Fuhrwerken fahren (2 Gespanne, 500 $)", en: "Haul part of it by wagon again (2 teams, 500 $)" }
+      result:
+        de: "Zwei neue Gespanne, junge Fuhrleute, die Silas' alte Lieder nicht kennen. Thorne bemerkt die fehlenden Wagen nach einem Monat und schickt einen höflichen Brief."
+        en: "Two new teams, young teamsters who don't know Silas's old songs. Thorne notices the missing cars after a month and sends a polite letter."
+      requires: { minCash: 500 }
+      effects: { cash: -500, teams: 2 }
+    - id: tank
+      label: { de: "Im Tank halten und auf Thornes Einsicht warten", en: "Hold oil in the tank and wait for Thorne to see sense" }
+      result:
+        de: "Die Tanks füllen sich. Thorne sieht nichts ein. Nach zwei Monaten verkauft Jacob doch, zu einem schlechteren Preis, weil im Hafen inzwischen alle Tanks voll sind."
+        en: "The tanks fill up. Thorne sees no sense. After two months Jacob sells after all, at a worse price, because by now every tank in the harbour is full."
+      effects: { price: -0.06, strength: -2 }

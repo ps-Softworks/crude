@@ -1,0 +1,768 @@
+# Kapitel 2 – Alltag, Paket 5: Presse, Politik, Familie, Unglücke (Phase 4). Entwurf – Philipp überarbeitet.
+# Grundlage: Story-Bibel Kapitel 2/3 §1 (Alter: Thomas 10–13, Clara 5–8), §3 (Bixby, Haskell, Bruder
+# Abel, Eli Ward, Dan Kerrigan, Hannah, Senator Grady), §9 (K2: Familie/Presse/Politik – Schule,
+# Claras Fragen, Einkommensteuer, Volksbund), GDD §13 (Einkommensteuer als Weltlage).
+#
+# Alle Ereignisse nur in Kapitel 2: conditions { minChapter: 2, maxChapter: 2 }.
+# Noras Serie, Ruths Wunsch, Thomas' Schulwahl und Claras große Frage sind Story-Bögen
+# (k2-1-ruth, k2-3-nora, Kinder) – hier nur der Alltag daneben.
+# Clara hat noch keinen eigenen Beziehungswert: vorläufig über ruth, „# TODO-Effekt: clara: …“.
+#
+# Merkzeichen aus Kapitel 1, die hier gelesen werden:
+#   courier_gekauft  → k2_courier_portraet (Bixby erinnert sich gern)
+#   silas_fair       → k2_thomas_turm_silas (Silas zeigt dem Jungen das Seil) / ohne: k2_thomas_turm
+#                      (silas_freund gibt es nur nach silas_fair – marked: [silas_fair] deckt beide ab)
+#   eli_versorgt     → k2_clara_freundin (Eli Wards Tochter)
+#   kerrigan_lager   → k2_kerrigan_alt (Kerrigan zählt noch Fässer)
+#   kerrigan_verheizt → k2_kerrigan_witwe
+# Aus Paket 1: k2_verbrennung_vertuscht → k2_courier_verbrennung.
+# Neue Merkzeichen → content/relevance.yaml: k2_grady_spende, k2_courier_anteil, k2_thomas_turm_sommer.
+#
+# Politik: Ob ein Gesetz kommt oder wer eine Wahl gewinnt, entscheiden Weltmodell und Gesetze-System
+# (Block A). Die Texte sagen darum nur, wohin es sich neigt („gewinnt Stimmen“, „liegt vorn“); die
+# Wirkung steht als TODO-Effekt lawPressure / party.
+# Ohne Bedingung kommen hier weder Ada Pell (sie muss nicht eingestellt sein) noch Aufsichtsrat
+# (die Aktiengesellschaft ist nur eine Möglichkeit, Bibel §2) noch Greaves' Labor vor.
+# Ort: Okara (Prärieprovinz im Binnenland) gibt es erst mit zs1_okara; Häfen liegen am Golf (Port Ellis).
+
+# --- Presse und Politik ------------------------------------------------------------
+
+- id: k2_courier_verbrennung
+  mail: demand
+  marked: [k2_verbrennung_vertuscht]
+  delay: 1
+  deadline: 2
+  chance: 0.5
+  conditions: { minChapter: 2, maxChapter: 2 }
+  title:
+    de: Bixby hat von Ott gehört
+    en: Bixby Has Heard About Ott
+  text:
+    de: >-
+      Redakteur Bixby vom Port Ellis Courier schreibt höflich und lang. Er habe von einem
+      Kesselwärter namens Ott gehört, der im Werk verbrüht und danach entlassen worden sei,
+      „wegen eigenen Verschuldens“. Er bitte um eine Stellungnahme, bevor er drucke. Er werde
+      in jedem Fall drucken.
+    en: >-
+      Editor Bixby of the Port Ellis Courier writes politely and at length. He has heard of a
+      stillman called Ott who was scalded at the works and afterwards dismissed “for his own
+      fault”. He requests a statement before he prints. He will print in any case.
+  choices:
+    - id: wiedergutmachen
+      label: { de: "Ott eine Rente zahlen und es Bixby sagen (3.000 $)", en: "Pay Ott a pension and tell Bixby (3,000 $)" }
+      result:
+        de: "Bixby druckt eine kurze Meldung: Harlan Oil zahle einem verletzten Arbeiter eine Rente. Ott liest sie nicht, er kann nicht lesen. Seine Frau liest sie ihm vor."
+        en: "Bixby prints a short item: Harlan Oil is paying an injured worker a pension. Ott doesn't read it; he can't read. His wife reads it to him."
+      requires: { minCash: 3000 }
+      # TODO-Effekt: reputation: { workers: 3, public: 2 }
+      effects: { cash: -3000, strength: 2 }
+    - id: anzeigen
+      label: { de: "Dem Courier die Anzeigen streichen", en: "Pull Harlan's advertising from the Courier" }
+      result:
+        de: "Bixby druckt trotzdem, auf Seite drei, mit einer Zeichnung des Ablassventils. Dem Courier fehlt das Geld für eine Woche. Dann inseriert Crane Eastern auf Harlans altem Platz."
+        en: "Bixby prints anyway, on page three, with a drawing of the drain valve. The Courier is short of money for a week. Then Crane Eastern advertises in Harlan's old space."
+      # TODO-Effekt: reputation: { public: -5 }, heat: 1
+      effects: { strength: -3, price: -0.03 }
+    - id: schweigen
+      label: { de: "Nicht antworten", en: "Don't reply" }
+      result:
+        de: "Die Meldung steht auf Seite fünf: „Harlan Oil schweigt.“ Im Werk wird sie ausgeschnitten und an die Tür des Waschraums genagelt."
+        en: "The item appears on page five: “Harlan Oil is silent.” At the works it's cut out and nailed to the washroom door."
+      # TODO-Effekt: reputation: { workers: -5 }
+      effects: { production: -0.04 }
+      appointments: 0
+      default: true
+
+- id: k2_courier_portraet
+  marked: [courier_gekauft]
+  delay: 0
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12 }
+  chance: 0.1
+  title:
+    de: Bixby plant eine Serie
+    en: Bixby Plans a Series
+  text:
+    de: >-
+      Redakteur Bixby trägt jetzt eine Brille mit Goldrand und erinnert sich gern an den ersten
+      Bericht über „einen Mann der Zukunft“. Er plant eine Serie, „Männer, die Cordova
+      gebaut haben“, in sechs Folgen. Die erste Folge sei noch frei. Die Druckkosten seien
+      leider hoch.
+    en: >-
+      Editor Bixby now wears gold-rimmed spectacles and fondly recalls his first report on “a
+      man of the future”. He is planning a series, “Men Who Built Cordova”, in six parts. The
+      first part is still open. The printing costs are, regrettably, high.
+  choices:
+    - id: zahlen
+      label: { de: "Die erste Folge kaufen (2.000 $)", en: "Buy the first part (2,000 $)" }
+      result:
+        de: "Die Folge über Jacob ist die längste der Serie und hat ein Bild. Nora Whitlock schneidet sie aus und legt sie zu dem alten Ausschnitt in ihr Notizbuch."
+        en: "The part about Jacob is the longest in the series and has a picture. Nora Whitlock cuts it out and puts it with the old clipping in her notebook."
+      requires: { minCash: 2000 }
+      # TODO-Effekt: reputation: { public: 3 }, trace: { severity: 1, label: Courier }
+      effects: { cash: -2000, price: 0.02 }
+    - id: anteil
+      label: { de: "Sich am Courier beteiligen (15.000 $)", en: "Buy into the Courier (15,000 $)" }
+      result:
+        de: "Bixby bekommt neue Druckmaschinen und einen stillen Teilhaber. Die Serie erscheint ohne Rechnung. Der Courier schreibt jetzt seltener über Leitungen und Lecks."
+        en: "Bixby gets new presses and a silent partner. The series appears with no bill attached. The Courier now writes less often about pipelines and leaks."
+      requires: { minCash: 15000 }
+      # TODO-Effekt: investment: { zeitung: 1 }, heat: 1
+      effects: { cash: -15000, price: 0.03 }
+      marks: [k2_courier_anteil]
+    - id: nein
+      label: { de: "„Schreiben Sie, was Sie wollen, Bixby“", en: "“Write what you like, Bixby”" }
+      result:
+        de: "Die erste Folge handelt von Augustus Thorne. Die zweite von Bullard. Jacob kommt nicht vor, in keiner der sechs."
+        en: "The first part is about Augustus Thorne. The second about Bullard. Jacob doesn't appear, in any of the six."
+      appointments: 0
+      default: true
+
+- id: k2_einkommensteuer
+  mail: offer
+  deadline: 3
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4, maxRound: 13 }
+  chance: 0.12
+  title:
+    de: Die Einkommensteuer
+    en: The Income Tax
+  text:
+    de: >-
+      Der Volksbund hat im Parlament von Hallstead eine Einkommensteuer eingebracht: zwei vom
+      Hundert auf alles über fünftausend Dollar im Jahr. Senator Hollis Grady schreibt, die
+      Handelspartei könne das Gesetz in einem Ausschuss begraben. Ausschüsse seien teuer.
+      Er unterschreibt „Ihr Freund in Hallstead“, obwohl sie sich nie begegnet sind.
+    en: >-
+      The People's League has introduced an income tax in the Hallstead parliament: two per
+      cent on everything above five thousand dollars a year. Senator Hollis Grady writes that
+      the Trade Party could bury the bill in committee. Committees are expensive. He signs
+      “Your friend in Hallstead”, although they have never met.
+  choices:
+    - id: grady
+      label: { de: "Grady unterstützen (6.000 $)", en: "Back Grady (6,000 $)" }
+      result:
+        de: "Der Entwurf wandert in den Ausschuss für Haushalt und Verkehr und bleibt dort liegen, vorerst. Grady schickt eine Zigarrenkiste und ein Foto mit Widmung. Man wird sich wiedersehen, steht darauf."
+        en: "The bill goes to the committee for budget and transport and stays there, for now. Grady sends a box of cigars and a signed photograph. We shall meet again, it says."
+      requires: { minCash: 6000 }
+      # TODO-Effekt: favors: 1, party: { handel: 2 }, heat: 1, lawPressure: { einkommensteuer: -1 }
+      effects: { cash: -6000 }
+      marks: [k2_grady_spende]
+    - id: dafuer
+      label: { de: "Öffentlich für die Steuer eintreten", en: "Come out publicly for the tax" }
+      result:
+        de: "Jacob sagt dem Ledger: Wer verdient, zahlt. Der Volksbund druckt den Satz auf Flugblätter. In Hallstead lädt man ihn zu einem Essen weniger ein, und Thornes Bahn erinnert sich."
+        en: "Jacob tells the Ledger: whoever earns, pays. The People's League prints the line on leaflets. In Hallstead he's invited to one dinner fewer, and Thorne's railway remembers."
+      # TODO-Effekt: party: { volksbund: 3, handel: -2 }, reputation: { public: 5 }
+      effects: { railTariff: 0.02, strength: 2 }
+    - id: abwarten
+      label: { de: "Sich heraushalten", en: "Stay out of it" }
+      result:
+        de: "Der Entwurf gewinnt Stimmen, Woche für Woche, und niemand hält ihn auf. Ruth bezahlt vorsorglich einen Steuerberater aus Hallstead, der drei Tage in ihren Büchern liest und am Ende seufzt."
+        en: "The bill gains votes week by week, and nobody stops it. As a precaution Ruth pays a tax adviser from Hallstead, who spends three days reading her books and sighs at the end."
+      # TODO-Effekt: lawPressure: { einkommensteuer: 1 } – ob das Gesetz kommt, entscheidet das Gesetze-System (Block A)
+      effects: { cash: -1500 }
+      appointments: 0
+      default: true
+
+- id: k2_provinzwahl
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 6, maxRound: 12 }
+  chance: 0.12
+  title:
+    de: Ein neuer Gouverneur für Cordova
+    en: A New Governor for Cordova
+  text:
+    de: >-
+      Cordova wählt einen Gouverneur. Die Provinzliga schickt einen Rancher aus der
+      Hollins-Prärie, der Staatsland für kleine Pächter öffnen will. Die Handelspartei schickt
+      einen Anwalt aus Port Ellis, der mit Thorne zur Jagd geht. Beide Lager haben Jacob
+      geschrieben. Beide meinen dasselbe: Geld.
+    en: >-
+      Cordova is electing a governor. The Provincial League is running a rancher from the
+      Hollins prairie who wants to open state land to small leaseholders. The Trade Party is
+      running a Port Ellis lawyer who goes hunting with Thorne. Both camps have written to
+      Jacob. Both mean the same thing: money.
+  choices:
+    - id: liga
+      label: { de: "Den Rancher der Provinzliga unterstützen (5.000 $)", en: "Back the Provincial League rancher (5,000 $)" }
+      result:
+        de: "Mit Harlans Geld holt der Rancher auf; im Courier liegt er plötzlich vorn. Er verspricht, das Staatsland zu öffnen, und schickt Harlan Oil vorab die Liste der Parzellen."
+        en: "With Harlan's money the rancher catches up; in the Courier he is suddenly ahead. He promises to open the state land and sends Harlan Oil the list of parcels in advance."
+      requires: { minCash: 5000 }
+      # TODO-Effekt: party: { provinz: 3 }, influence: 1 – wer gewinnt, entscheidet das Weltmodell (Block A, Parteien)
+      effects: { cash: -5000, leaseCost: -0.15 }
+    - id: handel
+      label: { de: "Den Anwalt der Handelspartei unterstützen (5.000 $)", en: "Back the Trade Party lawyer (5,000 $)" }
+      result:
+        de: "Der Anwalt liegt vorn. Thorne dankt Jacob schon vor der Wahl, mit einem Telegramm: Die Fracht nach Port Ellis werde im neuen Jahr etwas günstiger."
+        en: "The lawyer is ahead. Thorne thanks Jacob before the vote is even held, by telegram: freight to Port Ellis will be a little cheaper in the new year."
+      requires: { minCash: 5000 }
+      # TODO-Effekt: party: { handel: 3 }, influence: 1 – wer gewinnt, entscheidet das Weltmodell (Block A, Parteien)
+      effects: { cash: -5000, railTariff: -0.03 }
+    - id: keiner
+      label: { de: "Keinem Geld geben", en: "Give money to neither" }
+      result:
+        de: "Der Anwalt liegt vorn, mit Thornes Geld. In jeder Rede verspricht er eine neue Gebühr für Pipelines, die Bahnlinien kreuzen."
+        en: "The lawyer is ahead, with Thorne's money. In every speech he promises a new fee for pipelines that cross railway lines."
+      # TODO-Effekt: lawPressure: { pipelinegebuehr: 1 } – wer gewinnt, entscheidet das Weltmodell (Block A, Parteien)
+      effects: { railTariff: 0.02 }
+      appointments: 0
+      default: true
+
+# --- Familie -----------------------------------------------------------------------
+
+- id: k2_thomas_zeugnis
+  visitor: thomas
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12 }
+  chance: 0.12
+  title:
+    de: Thomas bringt das Zeugnis
+    en: Thomas Brings His School Report
+  text:
+    de: >-
+      Thomas ist elf und klopft an die Bürotür wie ein Kunde. Er legt das Zeugnis auf den
+      Eichentisch, mit der Schrift nach unten. Rechnen gut, Betragen schlecht, Schreiben
+      ungenügend. Der Lehrer hat dazugeschrieben: „Der Junge prügelt sich, wenn man ihn
+      Ölkind nennt.“
+    en: >-
+      Thomas is eleven and knocks at the office door like a customer. He lays the report on
+      the oak desk, face down. Arithmetic good, conduct poor, writing unsatisfactory. The
+      teacher has added: “The boy fights when they call him an oil brat.”
+  choices:
+    - id: abends
+      label: { de: "Jeden Abend mit ihm üben (zwei Termine)", en: "Practise with him every evening (two appointments)" }
+      result:
+        de: "Sie sitzen am Küchentisch, Jacob mit der Brille, die er niemandem zeigt. Thomas schreibt langsam und sehr gerade, wie seine Mutter. Nach drei Wochen fragt er, ob das jetzt immer so ist."
+        en: "They sit at the kitchen table, Jacob in the spectacles he shows no one. Thomas writes slowly and very straight, like his mother. After three weeks he asks if it's going to be like this always."
+      # TODO-Effekt: heirValues: { thomas: { loyalty: 1 } }
+      effects: { thomas: 15, strength: -4 }
+      appointments: 2
+    - id: lehrer
+      label: { de: "Einen Hauslehrer aus Hallstead holen (1.800 $)", en: "Bring a tutor from Hallstead (1,800 $)" }
+      result:
+        de: "Der Hauslehrer heißt Mr. Ashby und spricht durch die Nase, wie man in Hallstead spricht. Thomas' Schrift wird besser. Er prügelt sich trotzdem, nur seltener vor Zeugen."
+        en: "The tutor is called Mr. Ashby and talks through his nose, the Hallstead way. Thomas's handwriting improves. He still fights, only less often in front of witnesses."
+      requires: { minCash: 1800 }
+      # TODO-Effekt: heirValues: { thomas: { ambition: 1 } }
+      effects: { cash: -1800, thomas: 2 }
+    - id: egal
+      label: { de: "„Ein Harlan braucht keine Noten, er braucht eine Faust“", en: "“A Harlan doesn't need marks, he needs a fist”" }
+      result:
+        de: "Thomas grinst und nimmt das Zeugnis wieder mit. Ruth findet es am Abend unterschrieben in seiner Schultasche und fragt Jacob, ob er das so gemeint hat."
+        en: "Thomas grins and takes the report back. That evening Ruth finds it signed in his satchel and asks Jacob if he meant it that way."
+      # TODO-Effekt: heirValues: { thomas: { moral: -1, ambition: 1 } }
+      effects: { thomas: 3, ruth: -8 }
+      appointments: 0
+      default: true
+
+- id: k2_thomas_turm
+  group: k2_thomas_turm
+  notMarked: [silas_fair, silas_freund]
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  chance: 0.1
+  title:
+    de: Der Junge auf dem Turm
+    en: The Boy on the Derrick
+  text:
+    de: >-
+      Ein Vorarbeiter bringt Thomas am Kragen ins Büro. Er ist auf einen Bohrturm in Salt
+      Hill geklettert, bis zur Plattform, sechzig Fuß, und hat oben gesessen und gewinkt. Er
+      ist voller Öl und strahlt. „Ich wollte sehen, was du siehst, wenn du da oben stehst.“
+    en: >-
+      A foreman brings Thomas into the office by the collar. He climbed a derrick at Salt
+      Hill, up to the platform, sixty feet, and sat at the top and waved. He's covered in oil
+      and beaming. “I wanted to see what you see when you're up there.”
+  choices:
+    - id: sommer
+      label: { de: "Ihn im Sommer am Turm arbeiten lassen", en: "Let him work at the rig in summer" }
+      result:
+        de: "Thomas schleppt Rohre und holt Wasser, für einen Dollar die Woche. Er kommt jeden Abend schwarz nach Hause und schläft beim Essen ein. Ruth sagt nichts, aber sie wäscht seine Hemden selbst."
+        en: "Thomas hauls pipe and fetches water for a dollar a week. He comes home black every evening and falls asleep over supper. Ruth says nothing, but she washes his shirts herself."
+      # TODO-Effekt: heirValues: { thomas: { business: 1, loyalty: 1 } }
+      effects: { thomas: 14, ruth: -6, strength: 1 }
+      marks: [k2_thomas_turm_sommer]
+    - id: verbieten
+      label: { de: "Verbieten – die Felder sind kein Spielplatz", en: "Forbid it – the fields are no playground" }
+      result:
+        de: "Thomas nickt und sieht dabei aus dem Fenster, in Richtung Salt Hill. Ruth ist erleichtert. Thomas fragt nicht wieder."
+        en: "Thomas nods while looking out of the window towards Salt Hill. Ruth is relieved. Thomas doesn't ask again."
+      effects: { thomas: -10, ruth: 6 }
+      appointments: 0
+      default: true
+    - id: mitnehmen
+      label: { de: "Ihn zur nächsten Inspektion mitnehmen (zwei Termine)", en: "Take him on the next inspection (two appointments)" }
+      result:
+        de: "Thomas steht neben Jacob auf der Plattform, mit einem Seil um den Bauch. Jacob zeigt ihm die eigenen Türme, einen nach dem anderen, bis hinunter zum Bahnhof. Auf dem Rückweg sagt keiner von beiden etwas, und es ist gut so."
+        en: "Thomas stands beside Jacob on the platform with a rope round his waist. Jacob shows him their own derricks, one after another, all the way down to the station. On the way back neither says a word, and that's fine."
+      effects: { thomas: 13, strength: -5 }
+      appointments: 2
+
+- id: k2_thomas_turm_silas
+  group: k2_thomas_turm
+  # silas_fair oder silas_freund – silas_freund gibt es nur nach silas_fair (k1-2-silas), marked ist UND.
+  marked: [silas_fair]
+  delay: 0
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  chance: 0.1
+  title:
+    de: Silas und der Junge
+    en: Silas and the Boy
+  text:
+    de: >-
+      Silas bringt Thomas ins Büro, beide voller Öl, beide grinsend. Silas ist vierundfünfzig
+      und steigt keine Türme mehr hinauf, aber er hat dem Jungen von unten gezeigt, wie man das
+      Seil hält. „Er hat's in den Händen, Jacob. Wie du damals. Gib ihn mir für den Sommer.“
+    en: >-
+      Silas brings Thomas into the office, both covered in oil, both grinning. Silas is
+      fifty-four and no longer climbs derricks, but he showed the boy from below how to hold
+      the rope. “He's got it in his hands, Jacob. Like you back then. Give him to me for the
+      summer.”
+  choices:
+    - id: silas
+      label: { de: "„Nimm ihn, Silas“", en: "“Take him, Silas”" }
+      result:
+        de: "Thomas verbringt den Sommer an Silas' Turm. Er lernt fluchen, Seile spleißen und einen Psalm über Öl, den es in keiner Bibel gibt. Silas trinkt in diesem Sommer weniger."
+        en: "Thomas spends the summer at Silas's derrick. He learns to swear, splice rope and a psalm about oil that's in no Bible. Silas drinks less that summer."
+      # TODO-Effekt: heirValues: { thomas: { business: 1, loyalty: 2 } }, boardLoyalty: { silas: 5 }
+      effects: { thomas: 14, ruth: -4, strength: 2 }
+      marks: [k2_thomas_turm_sommer]
+    - id: schule
+      label: { de: "„Er soll lernen, nicht schleppen“", en: "“He's to learn, not haul”" }
+      result:
+        de: "Silas setzt die Mütze auf. „Wie du meinst, Herr Direktor.“ Er hat Jacob nie zuvor so genannt. Thomas sieht ihm nach, bis er um die Ecke ist."
+        en: "Silas puts his cap on. “As you like, Mr. Director.” He's never called Jacob that before. Thomas watches him until he's round the corner."
+      # TODO-Effekt: boardLoyalty: { silas: -5 }
+      effects: { thomas: -8, ruth: 5 }
+      appointments: 0
+      default: true
+
+- id: k2_clara_fieber
+  visitor: arzt
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  chance: 0.08
+  title:
+    de: Clara hat Fieber
+    en: Clara Has a Fever
+  text:
+    de: >-
+      Doktor Haskell kommt ins Büro statt ins Haus, weil er Jacob dort sicherer antrifft. Clara
+      ist sechs und hat seit drei Tagen Fieber, Scharlach vielleicht. Sie fragt nach ihrem
+      Vater, sagt Haskell, und zwar jede Stunde. Am Mittwoch soll Jacob in Hallstead vor den
+      Bankiers stehen, die Harlan Oil Geld leihen.
+    en: >-
+      Doctor Haskell comes to the office rather than the house, because he's surer of finding
+      Jacob there. Clara is six and has had a fever for three days, scarlet fever perhaps. She
+      asks for her father, Haskell says, every hour. On Wednesday Jacob is due in Hallstead
+      before the bankers who lend Harlan Oil money.
+  choices:
+    - id: bleiben
+      label: { de: "Zu Hause bleiben, die Reise absagen (zwei Termine)", en: "Stay home, cancel the trip (two appointments)" }
+      result:
+        de: "Jacob sitzt drei Nächte an Claras Bett und liest ihr aus der Zeitung vor, weil kein Märchenbuch im Haus ist. Sie schläft bei den Ölpreisen ein. Die Besprechung in Hallstead findet ohne ihn statt."
+        en: "Jacob sits three nights at Clara's bed reading her the newspaper, because there's no storybook in the house. She falls asleep to the oil prices. The Hallstead meeting goes ahead without him."
+      # TODO-Effekt: clara: 15, boardLoyalty: { vandermeer: -5 }
+      effects: { ruth: 10, strength: -2, production: -0.03 }
+      appointments: 2
+    - id: schwester
+      label: { de: "Eine Krankenschwester aus Hallstead holen und fahren (1.200 $)", en: "Bring a nurse from Hallstead and go (1,200 $)" }
+      result:
+        de: "Die Schwester ist tüchtig und streng. Clara wird gesund. Als Jacob zurückkommt, zeigt sie ihm, wie die Schwester das Fieberthermometer hält, und nicht, wie sie ihn vermisst hat."
+        en: "The nurse is capable and strict. Clara recovers. When Jacob gets back she shows him how the nurse holds the thermometer, not how she missed him."
+      requires: { minCash: 1200 }
+      # TODO-Effekt: clara: -3
+      effects: { cash: -1200, ruth: -3 }
+    - id: fahren
+      label: { de: "Nach Hallstead fahren – Haskell weiß, was er tut", en: "Go to Hallstead – Haskell knows what he's doing" }
+      result:
+        de: "Die Besprechung läuft gut. Als Jacob zurückkommt, ist das Fieber gesunken. Clara fragt nicht mehr nach ihm. Ruth hat ihr gesagt, Papa sei bei wichtigen Männern."
+        en: "The meeting goes well. When Jacob gets back the fever has fallen. Clara no longer asks for him. Ruth told her Papa was with important men."
+      # TODO-Effekt: clara: -10, boardLoyalty: { vandermeer: 5 }
+      effects: { ruth: -10, production: 0.03 }
+      appointments: 0
+      default: true
+
+- id: k2_clara_freundin
+  marked: [eli_versorgt]
+  delay: 0
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  chance: 0.12
+  title:
+    de: Claras Freundin
+    en: Clara's Friend
+  text:
+    de: >-
+      Clara wird sieben und will zum Geburtstag nur einen Gast: Eli Wards Tochter, mit der sie
+      jeden Tag hinter dem Lagerhaus spielt. Ruth hat schon Einladungen an drei Damen aus
+      Hallstead verschickt, die Töchter im selben Alter haben. Eine davon ist eine Nichte von
+      Cornelia Vandermeer.
+    en: >-
+      Clara is turning seven and wants only one guest for her birthday: Eli Ward's daughter,
+      who plays with her every day behind the warehouse. Ruth has already sent invitations to
+      three ladies from Hallstead who have daughters the same age. One of them is a niece of
+      Cornelia Vandermeer.
+  choices:
+    - id: einladen
+      label: { de: "Elis Tochter einladen und ihr ein Kleid kaufen (300 $)", en: "Invite Eli's daughter and buy her a dress (300 $)" }
+      result:
+        de: "Elis Tochter sitzt in einem gelben Kleid neben Clara und isst nichts vor Aufregung. Die Damen aus Hallstead sehen sie an, dann einander. Die Vandermeer-Nichte geht als Erste."
+        en: "Eli's daughter sits beside Clara in a yellow dress and eats nothing from excitement. The ladies from Hallstead look at her, then at each other. The Vandermeer niece leaves first."
+      # TODO-Effekt: clara: 10, standing: -1, staffLoyalty: { eli: 10 }
+      effects: { cash: -300, ruth: 4 }
+    - id: zwei_feste
+      label: { de: "Zwei Feste: eines im Haus, eines hinter dem Lagerhaus (900 $)", en: "Two parties: one at the house, one behind the warehouse (900 $)" }
+      result:
+        de: "Am Samstag Tee mit den Damen, am Sonntag Kuchen mit den Arbeiterkindern. Clara mag den Sonntag lieber und sagt es den Damen. Ruth lacht, zum ersten Mal an diesem Wochenende."
+        en: "Saturday tea with the ladies, Sunday cake with the workers' children. Clara prefers Sunday and tells the ladies so. Ruth laughs, for the first time that weekend."
+      requires: { minCash: 900 }
+      # TODO-Effekt: clara: 5
+      effects: { cash: -900, ruth: 8, strength: -2 }
+    - id: nicht
+      label: { de: "„Nicht dieses Jahr, Clara“", en: "“Not this year, Clara”" }
+      result:
+        de: "Clara sitzt zwischen drei Mädchen in Spitzen und sagt den ganzen Nachmittag nichts. Am Abend bringt sie Elis Tochter ein Stück Kuchen, in eine Serviette gewickelt."
+        en: "Clara sits among three girls in lace and says nothing all afternoon. In the evening she takes Eli's daughter a slice of cake wrapped in a napkin."
+      # TODO-Effekt: clara: -10, standing: 1
+      effects: { ruth: -4 }
+      appointments: 0
+      default: true
+
+- id: k2_hochzeitstag
+  group: k2_familie
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, maxRound: 14 }
+  chance: 0.1
+  title:
+    de: Fünfzehn Jahre
+    en: Fifteen Years
+  text:
+    de: >-
+      Ruth hat den Hochzeitstag nicht erwähnt, und das ist das Zeichen. Fünfzehn Jahre seit der
+      Kapelle neben der Zeche. Am selben Abend gibt Ambrose Vandermeer in Hallstead ein Essen
+      für seine Geschäftsfreunde, und Harlan Oil ist eingeladen. Im Kalender auf Jacobs
+      Schreibtisch steht beides untereinander. Jemand hat ein Fragezeichen dahintergesetzt.
+    en: >-
+      Ruth hasn't mentioned the anniversary, and that is the sign. Fifteen years since the
+      chapel by the colliery. The same evening Ambrose Vandermeer is giving a dinner in
+      Hallstead for his business friends, and Harlan Oil is invited. In the diary on Jacob's
+      desk the two stand one under the other. Someone has added a question mark.
+  choices:
+    - id: ruth
+      label: { de: "Mit Ruth essen gehen, im Gulf Hotel", en: "Take Ruth to dinner at the Gulf Hotel" }
+      result:
+        de: "Ruth trägt das grüne Kleid aus Port Ellis, das ihr nicht mehr ganz passt, und es ist ihr egal. Sie reden über die Kohlestadt und nicht über Öl. Vandermeer schickt eine kühle Karte."
+        en: "Ruth wears the green dress from Port Ellis that no longer quite fits, and she doesn't care. They talk about the coal town and not about oil. Vandermeer sends a cool card."
+      # TODO-Effekt: boardLoyalty: { vandermeer: -3 }
+      effects: { ruth: 15, strength: 5 }
+    - id: vandermeer
+      label: { de: "Zum Essen nach Hallstead – es geht um eine Anleihe", en: "Dinner in Hallstead – a loan is at stake" }
+      result:
+        de: "Jacob sitzt zwischen zwei Bankiers und hört zu. Am Ende steht ein Abschluss, der Harlan Oil Geld spart. Ruth hat den Tisch für zwei gedeckt und um zehn wieder abgeräumt."
+        en: "Jacob sits between two bankers and listens. At the end there's a deal that saves Harlan Oil money. Ruth laid the table for two and cleared it again at ten."
+      # TODO-Effekt: boardLoyalty: { vandermeer: 5 }
+      effects: { cash: 4000, ruth: -12 }
+      appointments: 2
+      default: true
+    - id: beides
+      label: { de: "Beides – früh zurück mit dem Nachtzug", en: "Both – back early on the night train" }
+      result:
+        de: "Jacob kommt um zwei Uhr nachts nach Hause, mit Blumen vom Bahnhof. Ruth schläft schon. Die Blumen stehen am Morgen in einer Vase, ohne Kommentar."
+        en: "Jacob gets home at two in the morning with flowers from the station. Ruth is already asleep. In the morning the flowers stand in a vase, without comment."
+      effects: { ruth: 3, strength: -7 }
+      appointments: 2
+
+- id: k2_grube_heimat
+  mail: personal
+  deadline: 2
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  chance: 0.06
+  title:
+    de: Ein Unglück in der Kohlestadt
+    en: A Disaster in the Coal Town
+  text:
+    de: >-
+      Hannah schreibt aus den Kohleprovinzen, die Schrift verlaufen. Schlagwetter in der
+      Zeche, in der Jacobs Vater gearbeitet hat. Einundsechzig Tote, die meisten unter dreißig.
+      Die Grubengesellschaft gehört einer Bank in Hallstead. Die Bank hat ein Beileidsschreiben
+      geschickt.
+    en: >-
+      Hannah writes from the coal provinces, the ink smudged. Firedamp in the colliery where
+      Jacob's father worked. Sixty-one dead, most of them under thirty. The mining company
+      belongs to a bank in Hallstead. The bank has sent a letter of condolence.
+  choices:
+    - id: fahren
+      label: { de: "Mit Ruth hinfahren (eine Reise, 2.000 $)", en: "Go there with Ruth (a journey, 2,000 $)" }
+      result:
+        de: "Jacob steht am Grubentor in einem Mantel, der mehr kostet als ein Bergmann im Jahr verdient. Niemand erkennt ihn, bis ein alter Mann sagt: Du bist der Junge vom alten Harlan. Das Geld für die Witwen verteilt Ruth selbst."
+        en: "Jacob stands at the pit gate in a coat that costs more than a miner earns in a year. Nobody recognises him until an old man says: you're old Harlan's boy. Ruth hands out the money for the widows herself."
+      requires: { minCash: 2000 }
+      effects: { cash: -2000, ruth: 10, strength: -6 }
+      appointments: 3
+    - id: spenden
+      label: { de: "Einen Fonds für die Witwen stiften (10.000 $)", en: "Endow a fund for the widows (10,000 $)" }
+      result:
+        de: "Der Fonds trägt keinen Namen, darauf besteht Jacob. Hannah schreibt, in der Kohlestadt wisse trotzdem jeder, von wem er ist."
+        en: "The fund bears no name; Jacob insists on that. Hannah writes that everyone in the coal town knows whose it is all the same."
+      requires: { minCash: 10000 }
+      effects: { cash: -10000, strength: 4 }
+    - id: brief
+      label: { de: "Einen Brief schreiben", en: "Write a letter" }
+      result:
+        de: "Jacob schreibt drei Entwürfe und schickt den kürzesten. In der Nacht träumt er von der Grube, zum ersten Mal seit Jahren."
+        en: "Jacob writes three drafts and sends the shortest. That night he dreams of the pit, for the first time in years."
+      effects: { strength: -6 }
+      appointments: 0
+      default: true
+
+- id: k2_kerrigan_alt
+  marked: [kerrigan_lager]
+  delay: 0
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  chance: 0.1
+  title:
+    de: Kerrigan zählt noch
+    en: Kerrigan Is Still Counting
+  text:
+    de: >-
+      Dan Kerrigan zählt seit zehn Jahren die Fässer im Lager. Seine Lunge ist schlechter
+      geworden; er braucht für die Leiter zum Tankdeckel jetzt fünf Minuten und zwei Pausen.
+      Der Lagerverwalter will ihn loswerden. Kerrigan hat davon gehört und kommt zuerst.
+      „Ich zähle richtig, Mr. Harlan. Ich zähle nur langsamer.“
+    en: >-
+      Dan Kerrigan has counted the barrels in the depot for ten years. His lungs have got
+      worse; the ladder to the tank lid now takes him five minutes and two rests. The depot
+      manager wants rid of him. Kerrigan has heard and comes first. “I count right, Mr.
+      Harlan. I just count slower.”
+  choices:
+    - id: rente
+      label: { de: "Eine Rente zahlen (3.000 $)", en: "Pay him a pension (3,000 $)" }
+      result:
+        de: "Kerrigan sitzt jetzt jeden Morgen auf der Bank vor dem Lager und zählt die Fässer trotzdem, von unten, ohne Leiter. Der Verwalter lässt ihn."
+        en: "Every morning Kerrigan now sits on the bench outside the depot and counts the barrels anyway, from below, without the ladder. The manager lets him."
+      requires: { minCash: 3000 }
+      effects: { cash: -3000, strength: 3 }
+    - id: bleiben
+      label: { de: "Er bleibt – ein Junge steigt für ihn die Leiter", en: "He stays – a boy climbs the ladder for him" }
+      result:
+        de: "Kerrigan bekommt einen Gehilfen, sechzehn, der für ihn klettert und ruft. Kerrigan schreibt. Es fehlt nie ein Fass."
+        en: "Kerrigan gets an assistant, sixteen, who climbs for him and calls out. Kerrigan writes it down. Not a barrel goes missing."
+      effects: { cash: -600, oilStock: 400 }
+    - id: gehen
+      label: { de: "Den Verwalter entscheiden lassen", en: "Let the manager decide" }
+      result:
+        de: "Der Verwalter entscheidet. Kerrigan bekommt einen Monatslohn und ein Händeschütteln. Im Lager fehlen danach jeden Monat ein paar Fässer, und niemand weiß, wo."
+        en: "The manager decides. Kerrigan gets a month's wages and a handshake. After that a few barrels go missing from the depot every month, and nobody knows where."
+      effects: { oilStock: -800, strength: -2 }
+      appointments: 0
+      default: true
+
+- id: k2_kerrigan_witwe
+  marked: [kerrigan_verheizt]
+  delay: 0
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  chance: 0.1
+  title:
+    de: Kerrigans Witwe
+    en: Kerrigan's Widow
+  text:
+    de: >-
+      Eine Frau in Schwarz wartet am Tor des Lagerhauses, nicht im Vorzimmer; sie traut sich nicht weiter.
+      Kerrigans Witwe. Ihr Mann hat für Jacob gebohrt, bis seine Lunge nicht mehr wollte. Ihr
+      Sohn ist sechzehn und sucht Arbeit. Sie sagt nicht, dass Jacob ihr etwas schuldet. Sie
+      muss es nicht sagen.
+    en: >-
+      A woman in black waits at the warehouse gate, not in the anteroom; she doesn't dare go
+      further. Kerrigan's widow. Her husband drilled for Jacob until his lungs gave out. Her son
+      is sixteen and looking for work. She doesn't say Jacob owes her anything. She doesn't
+      have to.
+  choices:
+    - id: lehre
+      label: { de: "Den Sohn in die Lehre nehmen, in der Werkstatt (800 $)", en: "Take the son as an apprentice in the workshop (800 $)" }
+      result:
+        de: "Der junge Kerrigan ist still und hat gute Hände. Der Werkstattmeister sagt nach einem Monat, er sei der Einzige, der nicht im Weg stehe. Das ist sein höchstes Lob."
+        en: "Young Kerrigan is quiet and has good hands. After a month the workshop foreman says he's the only one who doesn't get in the way. That is his highest praise."
+      requires: { minCash: 800 }
+      effects: { cash: -800, strength: 3 }
+    - id: geld
+      label: { de: "Ihr Geld geben (2.500 $)", en: "Give her money (2,500 $)" }
+      result:
+        de: "Sie nimmt es, weil sie muss, und bedankt sich nicht. Der Sohn heuert zwei Monate später bei Bullard an."
+        en: "She takes it because she must, and doesn't thank him. Two months later the son signs on with Bullard."
+      requires: { minCash: 2500 }
+      effects: { cash: -2500 }
+    - id: abweisen
+      label: { de: "Sie vom Pförtner abweisen lassen", en: "Have the gatekeeper turn her away" }
+      result:
+        de: "Der Pförtner schickt sie weg. Sie geht, ohne sich umzudrehen. Bruder Abel erwähnt sie am Sonntag in der Predigt, ohne einen Namen zu nennen."
+        en: "The gatekeeper sends her away. She leaves without looking back. On Sunday Brother Abel mentions her in his sermon without naming any names."
+      # TODO-Effekt: reputation: { workers: -3 }
+      effects: { strength: -5 }
+      appointments: 0
+      default: true
+
+- id: k2_abel_schule
+  visitor: prediger
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  chance: 0.1
+  title:
+    de: Bruder Abel will eine Schule
+    en: Brother Abel Wants a School
+  text:
+    de: >-
+      Bruder Abel ist grau geworden, seine Predigten nicht milder. In den Baracken hinter dem
+      Bahnhof Salt Hill gibt es zweihundert Kinder und keine Schule; die Älteren arbeiten an
+      den Türmen. Er will
+      ein Schulhaus, einen Lehrer und Bänke. „Sie haben Ihren Sohn auf eine gute Schule
+      geschickt, Mr. Harlan. Diese Kinder haben auch Väter. Sie arbeiten für Sie.“
+    en: >-
+      Brother Abel has gone grey; his sermons have not grown milder. In the shacks behind
+      Salt Hill station there are two hundred children and no school; the older ones work at
+      the derricks. He wants a schoolhouse, a teacher and benches. “You sent your son to a good
+      school, Mr. Harlan. These children have fathers too. They work for you.”
+  choices:
+    - id: schule
+      label: { de: "Die Schule bezahlen, Bruder Abel stellt den Lehrer (5.000 $)", en: "Pay for the school, Brother Abel picks the teacher (5,000 $)" }
+      result:
+        de: "Das Schulhaus steht im Herbst. Der Lehrer, den Abel aussucht, bringt den Kindern Lesen bei und am Freitag die Geschichte der Bergarbeiterstreiks."
+        en: "The schoolhouse stands by autumn. The teacher Abel chooses teaches the children to read, and on Fridays the history of the miners' strikes."
+      requires: { minCash: 5000 }
+      # TODO-Effekt: reputation: { workers: 5 }
+      effects: { cash: -5000, strength: 3 }
+    - id: firmenschule
+      label: { de: "Eine Firmenschule bauen, mit Harlans Lehrer (4.000 $)", en: "Build a company school with Harlan's teacher (4,000 $)" }
+      result:
+        de: "Über der Tür steht „Harlan-Schule“. Der Lehrer bringt den Kindern Lesen bei, Rechnen und Pünktlichkeit. Bruder Abel predigt am Sonntag über Pharao und die Ziegel."
+        en: "Above the door it says “Harlan School”. The teacher teaches the children reading, arithmetic and punctuality. On Sunday Brother Abel preaches about Pharaoh and the bricks."
+      requires: { minCash: 4000 }
+      # TODO-Effekt: reputation: { workers: 1, public: 2 }
+      effects: { cash: -4000, production: 0.02 }
+    - id: nein
+      label: { de: "„Die Provinz ist für Schulen zuständig“", en: "“Schools are the province's business”" }
+      result:
+        de: "Bruder Abel nickt, als habe er es gewusst. Die Kinder bleiben an den Türmen. Im Winter verliert einer drei Finger an einer Winde."
+        en: "Brother Abel nods as though he'd known. The children stay at the derricks. In winter one loses three fingers to a winch."
+      effects: { strength: -4 }
+      appointments: 0
+      default: true
+
+# --- Gesundheit und Unglücke -------------------------------------------------------
+
+- id: k2_haskell_herz
+  visitor: arzt
+  group: k2_gesundheit
+  once: false
+  cooldown: 6
+  conditions: { minChapter: 2, maxChapter: 2, maxStrength: 55 }
+  chance: 0.15
+  title:
+    de: Haskell hört zu
+    en: Haskell Listens
+  text:
+    de: >-
+      Doktor Haskell hat das Stethoskop schon um den Hals, als er hereinkommt. Ruth hat ihn
+      geschickt, sagt er, und das Vorzimmer hat ihm einen Termin gegeben, ohne Jacob zu fragen. Er
+      hört lange auf Jacobs Brust. „Sie sind noch keine vierzig, Harlan, und Ihr Herz klingt
+      wie das von Silas.“
+    en: >-
+      Doctor Haskell already has the stethoscope round his neck when he comes in. Ruth sent
+      him, he says, and the anteroom gave him an appointment without asking Jacob. He listens to
+      Jacob's chest for a long time. “You're not yet forty, Harlan, and your heart sounds like
+      Silas's.”
+  choices:
+    - id: kur
+      label: { de: "Zwei Wochen an die Küste, ohne Telefon (drei Termine)", en: "Two weeks on the coast, no telephone (three appointments)" }
+      result:
+        de: "Jacob sitzt zwei Wochen auf einer Veranda am Golf und tut nichts, was ihm schwerer fällt als jede Bohrung. Am Ende schläft er wieder durch."
+        en: "Jacob sits on a porch on the Gulf for two weeks doing nothing, which is harder for him than any well. At the end he sleeps through the night again."
+      effects: { strength: 18, ruth: 5, production: -0.03 }
+      appointments: 3
+    - id: tropfen
+      label: { de: "Tropfen nehmen und weiterarbeiten (300 $)", en: "Take the drops and keep working (300 $)" }
+      result:
+        de: "Die Tropfen schmecken nach Bittermandel. Sie helfen, ein wenig. Ruth stellt das Fläschchen jeden Morgen neben seine Kaffeetasse."
+        en: "The drops taste of bitter almond. They help, a little. Every morning Ruth sets the bottle next to his coffee cup."
+      requires: { minCash: 300 }
+      effects: { cash: -300, strength: 6 }
+    - id: abwinken
+      label: { de: "„Mein Vater hat in der Grube länger durchgehalten“", en: "“My father lasted longer than this down the pit”" }
+      result:
+        de: "Haskell packt das Stethoskop ein. „Ihr Vater hatte keine Wahl, Harlan.“ Er geht, ohne die Rechnung dazulassen."
+        en: "Haskell packs away his stethoscope. “Your father had no choice, Harlan.” He leaves without leaving the bill."
+      effects: { strength: -4 }
+      appointments: 0
+      default: true
+
+- id: k2_tankbrand_hafen
+  tableau: true
+  group: k2_unglueck
+  once: false
+  cooldown: 6
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, minOilStock: 3000 }
+  chance: 0.06
+  title:
+    de: Blitz über dem Hafen
+    en: Lightning over the Harbour
+  text:
+    de: >-
+      Ein Sommergewitter über Port Ellis, und der Blitz sucht sich den höchsten Punkt: Harlans
+      großen Tank an der Kaimauer. Das Dach fliegt hundert Fuß hoch. Das Öl brennt mit einer
+      Säule, die man in Salt Hill sieht. Die Dampfspritze kommt, und sie ist zu klein.
+    en: >-
+      A summer storm over Port Ellis, and the lightning finds the highest point: Harlan's big
+      tank on the quay wall. The roof flies a hundred feet up. The oil burns in a column you
+      can see from Salt Hill. The steam pump arrives, and it is too small.
+  choices:
+    - id: abpumpen
+      label: { de: "Den Tank leerpumpen lassen, solange es geht (Männer, Gefahr)", en: "Pump the tank out while it can be done (men, danger)" }
+      result:
+        de: "Zwölf Mann pumpen unter dem brennenden Dach in Kesselwagen um. Sie retten die Hälfte. Einer von ihnen, ein Junge aus der Hollins-Prärie, verliert das Augenlicht auf einer Seite."
+        en: "Twelve men pump into tank cars beneath the burning roof. They save half. One of them, a boy from the Hollins prairie, loses the sight of one eye."
+      # TODO-Effekt: reputation: { workers: -2 }
+      effects: { oilStock: -1500, cash: -1500, strength: -6 }
+    - id: brennen
+      label: { de: "Brennen lassen und die Nachbartanks kühlen", en: "Let it burn and cool the neighbouring tanks" }
+      result:
+        de: "Der Tank brennt drei Tage aus. Die Nachbartanks bleiben stehen. Die Schiffe im Hafen weichen auf die Reede vor der Rio-Salado-Mündung aus, bis der Rauch weg ist."
+        en: "The tank burns out over three days. The neighbouring tanks survive. The ships in the harbour move out to the roads off the mouth of the Rio Salado until the smoke has cleared."
+      effects: { oilStock: -3000, price: -0.03 }
+      appointments: 0
+      default: true
+
+- id: k2_sturm_golf
+  group: k2_unglueck
+  once: false
+  cooldown: 6
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, minOilStock: 1000 }
+  chance: 0.06
+  title:
+    de: Sturmwarnung am Golf
+    en: Storm Warning on the Gulf
+  text:
+    de: >-
+      Das Telegrafenamt hängt die schwarze Flagge aus: Ein Sturm kommt aus Costa Negra, in zwei
+      Tagen ist er an der Küste. Im Hafen liegt ein Tanker halb beladen mit Harlans Öl. Der
+      Kapitän will auslaufen, solange noch Zeit ist. Die Versicherung zahlt nur, wenn er
+      bleibt.
+    en: >-
+      The telegraph office hoists the black flag: a storm is coming up from Costa Negra and
+      will reach the coast in two days. In the harbour a tanker lies half-loaded with Harlan's
+      oil. The captain wants to sail while there's still time. The insurance pays only if he
+      stays.
+  choices:
+    - id: auslaufen
+      label: { de: "Auslaufen lassen – die Ladung ist verkauft", en: "Let him sail – the cargo is sold" }
+      result:
+        de: "Der Tanker erreicht Hallstead mit gebrochenem Mast und zwei Mann weniger. Die Ladung ist vollständig. Der Käufer zahlt pünktlich. Die Witwen zahlt Harlan Oil."
+        en: "The tanker reaches Hallstead with a broken mast and two men fewer. The cargo is complete. The buyer pays on time. Harlan Oil pays the widows."
+      effects: { cash: 5000, strength: -8 }
+    - id: sichern
+      label: { de: "Bleiben, Tanks und Verladung sichern (4.000 $)", en: "Stay, secure tanks and loading (4,000 $)" }
+      result:
+        de: "Sandsäcke, Ketten, verschlossene Ventile. Der Sturm reißt die Hälfte der Kaimauer weg, aber kein Tank läuft aus. Der Käufer in Hallstead storniert wegen Verzögerung."
+        en: "Sandbags, chains, closed valves. The storm tears away half the quay wall, but no tank leaks. The buyer in Hallstead cancels for delay."
+      requires: { minCash: 4000 }
+      effects: { cash: -4000, price: -0.03 }
+    - id: abwarten
+      label: { de: "Abwarten, was der Sturm macht", en: "Wait and see what the storm does" }
+      result:
+        de: "Der Sturm macht, was Stürme machen. Ein Tank kippt, der Tanker liegt auf der Seite, und das Öl schwimmt bis an den Fischmarkt."
+        en: "The storm does what storms do. A tank topples, the tanker lies on its side, and the oil floats as far as the fish market."
+      effects: { oilStock: -1000, cash: -3000 }
+      appointments: 0
+      default: true

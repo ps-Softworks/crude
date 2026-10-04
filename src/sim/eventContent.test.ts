@@ -36,6 +36,23 @@ describe('echte Inhalte in content/events/', () => {
     expect(loadEvents().map((e) => e.id)).toEqual(expect.arrayContaining(['k2_delaney_ankunft', 'k2_nora_geruecht', 'k2_delaney_besuch', 'k2_delaney_anklage']));
   });
 
+  it('Kapitel 2 – Alltag (Phase 4): content/events/k2-alltag-*.yaml, jedes nur in Kapitel 2 und mit Präfix k2_', () => {
+    // Integration: Nur die Alltagsdateien – Story-Bögen und Kapitel-2-Systeme (4.7–4.11) grenzen
+    // ihr Kapitel teils über Merkzeichen statt minChapter ein und prüfen das in events.test.ts.
+    const k2 = readEventFiles(EVENTS_DIR)
+      .filter((f) => /k2-alltag-[^/]*\.ya?ml$/.test(f.file))
+      .flatMap((f) => parseEventFile(f.file, f.text).events);
+    expect(k2.length).toBeGreaterThanOrEqual(45);
+    for (const e of k2) {
+      expect(e.id.startsWith('k2_'), e.id).toBe(true);
+      expect(e.conditions.minChapter, e.id).toBe(2);
+      expect(e.conditions.maxChapter, e.id).toBe(2);
+    }
+    // Und alle diese Ereignisse sind im echten Katalog geladen.
+    const ids = new Set(loadEvents().map((e) => e.id));
+    for (const e of k2) expect(ids.has(e.id), e.id).toBe(true);
+  });
+
   it('jedes Probe-Ereignis hat 1–4 Wahlen (GDD §3: 2–4 Antworten) und eine Standard-Wahl ohne Sperre', () => {
     for (const event of loadEvents()) {
       expect(event.choices.length).toBeGreaterThanOrEqual(1);

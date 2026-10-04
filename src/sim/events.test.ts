@@ -86,6 +86,46 @@ describe('Bedingungen', () => {
     }
   });
 
+  it('Kapitel (Phase 4): ohne Angabe ist der Spielstand in Kapitel 1; minChapter/maxChapter grenzen ein', () => {
+    expect(state.chapter).toBeUndefined();
+    expect(conditionsMet(state, { minChapter: 2 })).toBe(false);
+    expect(conditionsMet(state, { maxChapter: 1 })).toBe(true);
+    const k2 = { ...state, chapter: 2 };
+    expect(conditionsMet(k2, { minChapter: 2, maxChapter: 2 })).toBe(true);
+    expect(conditionsMet(k2, { maxChapter: 1 })).toBe(false);
+    expect(conditionsMet({ ...state, chapter: 3 }, { minChapter: 2, maxChapter: 2 })).toBe(false);
+  });
+
+  it('Kapitel 2-Ereignisse kommen in Kapitel 1 nie auf den Schreibtisch, in Kapitel 2 schon', () => {
+    const k2 = ereignis('k2_test', { conditions: { minChapter: 2, maxChapter: 2 } });
+    let k1State: GameState = newGame('kapitel', balance, [k2]);
+    for (let round = 1; round <= 16; round++) k1State = drawEvents(autoResolve({ ...k1State, round }, [k2]), balance, [k2]);
+    expect(k1State.events.seen).not.toContain('k2_test');
+    const k2State = drawEvents({ ...newGame('kapitel', balance, [k2]), chapter: 2 }, balance, [k2]);
+    expect(k2State.events.seen).toContain('k2_test');
+  });
+
+  it('Ereignisse späterer Kapitel ändern das Würfeln in Kapitel 1 nicht (gleicher Seed, gleiche Ereignisse)', () => {
+    const k1 = [ereignis('a', { chance: 0.5, once: false, cooldown: 0 }), ereignis('b', { chance: 0.5, once: false, cooldown: 0 })];
+    const k2 = Array.from({ length: 30 }, (_, i) => ereignis(`k2_${i}`, { conditions: { minChapter: 2, maxChapter: 2 } }));
+    const lauf = (katalog: EventDef[]) => {
+      let s: GameState = newGame('gleich', balance, katalog);
+      const out: string[][] = [];
+      for (let round = 1; round <= 16; round++) {
+        s = drawEvents(autoResolve({ ...s, round }, katalog), balance, katalog);
+        out.push([...s.events.pending]);
+      }
+      return out;
+    };
+    expect(lauf([...k1, ...k2])).toEqual(lauf(k1));
+  });
+
+  it('Spielstand: chapter darf fehlen, muss sonst eine Zahl sein', () => {
+    expect(validateState({ ...state }).ok).toBe(true);
+    expect(validateState({ ...state, chapter: 2 }).ok).toBe(true);
+    expect(validateState({ ...state, chapter: 'zwei' }).ok).toBe(false);
+  });
+
   it('nennt den Grund, warum eine Wahl gesperrt ist', () => {
     expect(unmetReason(state, { minCash: 1000 })).toBe('Dafür fehlt das Geld (1.000 $ nötig).');
     expect(unmetReason(state, { minOilStock: 500 })).toBe('Dafür fehlt Öl im Tank (500 bbl nötig).');

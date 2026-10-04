@@ -1,0 +1,411 @@
+# Kapitel 2 – Alltag, Paket 1: Raffinerie und Geschäft (Phase 4). Entwurf – Philipp überarbeitet.
+# Grundlage: Story-Bibel Kapitel 2/3 (docs/story/kapitel2-3-bibel.md, §9 Themen K2: Raffinerie),
+# GDD §13 (Kapitel 2: Raffinerie und Produktmix, Marine stellt auf Öl um, Spannung Aldmark–Varenhold).
+#
+# Alle Ereignisse nur in Kapitel 2: conditions { minChapter: 2, maxChapter: 2 }.
+# Zehn Jahre sind vergangen: Jacob ist 35–38, Thomas 10–13, Clara 5–8 (Bibel §1).
+#
+# Die Raffinerie-Ereignisse setzen eine eigene Raffinerie voraus. Diese Bedingung gibt es noch
+# nicht (kommt mit 4.6) – darum steht bei ihnen „# TODO-Bedingung: hasRefinery“.
+# Gewünschte neue Wirkungen stehen als „# TODO-Effekt: …“ neben einer vorläufigen vorhandenen.
+#
+# Figuren aus der Bibel: Walter Greaves (Raffineriedirektor, V), Bullard, Margaret Crane,
+# Doktor Haskell. Ohne Besucher-Figur für Greaves (kein Eintrag in figures.yaml): Vorfälle und Briefe.
+# Greaves kann zu Pruett gehen (Paket 3, k2_abwerbung_greaves → k2_greaves_weg): Dann sperren alle
+# Ereignisse, in denen er auftritt (notMarked: [k2_greaves_weg]); k2_kessel_undicht_neu ersetzt die
+# Kessel-Panne. Der Brand (Folge des Flickens) nennt keinen Namen und kommt in beiden Fällen.
+# Okara (Prärieprovinz im Binnenland) gibt es erst mit der Zeitsprung-Weiche zs1_okara.
+#
+# Merkzeichen (neu, hier und in Paket 3/5 gelesen):
+#   k2_raffinerie_geflickt → k2_raffinerie_brand (2 Runden später, Würfel)
+#   k2_greaves_vertrauen   → k2_abwerbung_greaves (Paket 3: Greaves bleibt)
+#   k2_verbrennung_vertuscht → k2_ledger_verbrennung (Paket 5: die Zeitung fragt nach)
+#   k2_werksarzt, k2_benzin_frueh, k2_marine_vertrag → content/relevance.yaml (spätere Kapitel)
+
+# --- Die Raffinerie: drei Pannen (Variantengruppe) ---------------------------------
+
+- id: k2_kessel_undicht
+  group: k2_raffinerie
+  once: false
+  cooldown: 4
+  notMarked: [k2_greaves_weg]
+  # TODO-Bedingung: hasRefinery
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  chance: 0.12
+  title:
+    de: Der dritte Kessel schwitzt
+    en: The Third Still Is Sweating
+  text:
+    de: >-
+      An der Naht des dritten Destillierkessels steht ein dunkler Rand, handbreit.
+      Walter Greaves hat ihn mit Kreide umfahren und die Uhrzeit danebengeschrieben.
+      „Er hält noch einen Monat, Mr. Harlan. Oder bis heute Nacht. Das kann Ihnen
+      kein Chemiker sagen, nur ein Kessel.“
+    en: >-
+      A dark stain the width of a hand stands on the seam of the third still. Walter
+      Greaves has circled it in chalk and written the time beside it. “It will hold
+      for a month, Mr. Harlan. Or until tonight. No chemist can tell you that, only
+      a still.”
+  choices:
+    - id: abschalten
+      label: { de: "Abschalten und neu nieten (6.000 $, die Raffinerie steht)", en: "Shut it down and re-rivet (6,000 $, the refinery stands idle)" }
+      result:
+        de: "Zwei Wochen kein Rauch über dem Werk. Die Nieter arbeiten nachts bei Fackeln. Danach ist die Naht sauber, und Greaves schreibt die neue Uhrzeit nicht mehr auf."
+        en: "Two weeks without smoke over the works. The riveters work at night by torchlight. Afterwards the seam is clean, and Greaves no longer writes down the time."
+      requires: { minCash: 6000 }
+      # TODO-Effekt: refineryDown: 1
+      effects: { cash: -6000, production: -0.1 }
+    - id: flicken
+      label: { de: "Flicken lassen und weiterfahren (800 $)", en: "Patch it and keep running (800 $)" }
+      result:
+        de: "Ein Blech, ein Kitt, zwei Schellen. Der dunkle Rand ist weg. Greaves sagt nichts, aber er stellt einen Eimer Sand neben den Kessel."
+        en: "A plate, some putty, two clamps. The dark stain is gone. Greaves says nothing, but he sets a bucket of sand beside the still."
+      effects: { cash: -800 }
+      marks: [k2_raffinerie_geflickt]
+      appointments: 0
+      default: true
+    - id: greaves
+      label: { de: "Greaves soll seine neuen Dichtungen probieren (2.500 $)", en: "Let Greaves try his new gaskets (2,500 $)" }
+      result:
+        de: "Greaves schläft drei Nächte im Werk. Die Dichtungen sind aus Asbest und Leinen und einer Mischung, die er niemandem verrät. Sie halten. Er ist danach höflicher zu Jacob als vorher."
+        en: "Greaves sleeps three nights at the works. The gaskets are asbestos and linen and a mixture he tells no one about. They hold. Afterwards he is more polite to Jacob than before."
+      requires: { minCash: 2500 }
+      # TODO-Effekt: research: { refining: 1 }, staffLoyalty: { greaves: 10 }
+      effects: { cash: -2500, strength: -3 }
+      marks: [k2_greaves_vertrauen]
+      appointments: 2
+
+# Dieselbe Panne, wenn Greaves zu Pruett gegangen ist: sein Nachfolger kennt den Kessel nicht.
+- id: k2_kessel_undicht_neu
+  group: k2_raffinerie
+  once: false
+  cooldown: 4
+  marked: [k2_greaves_weg]
+  # TODO-Bedingung: hasRefinery
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  chance: 0.12
+  title:
+    de: Der neue Direktor und der dritte Kessel
+    en: The New Director and the Third Still
+  text:
+    de: >-
+      An der Naht des dritten Destillierkessels steht ein dunkler Rand, handbreit. Der neue
+      Direktor hat ihn erst bemerkt, als ein Kesselwärter ihn darauf hinwies. Greaves hätte
+      ihn vor einer Woche gesehen und mit Kreide umfahren. Der Neue fragt Jacob, was er tun
+      soll, und schreibt die Antwort mit.
+    en: >-
+      A dark stain the width of a hand stands on the seam of the third still. The new
+      director only noticed it when a stillman pointed it out. Greaves would have seen it a
+      week ago and circled it in chalk. The new man asks Jacob what he should do and writes
+      the answer down.
+  choices:
+    - id: abschalten
+      label: { de: "Abschalten und neu nieten (6.000 $, die Raffinerie steht)", en: "Shut it down and re-rivet (6,000 $, the refinery stands idle)" }
+      result:
+        de: "Zwei Wochen kein Rauch über dem Werk. Die Nieter arbeiten nachts bei Fackeln. Der neue Direktor steht jede Nacht dabei und lernt, wie ein Kessel klingt, der hält."
+        en: "Two weeks without smoke over the works. The riveters work at night by torchlight. The new director stands by every night and learns what a still sounds like when it holds."
+      requires: { minCash: 6000 }
+      # TODO-Effekt: refineryDown: 1
+      effects: { cash: -6000, production: -0.1 }
+    - id: flicken
+      label: { de: "Flicken lassen und weiterfahren (800 $)", en: "Patch it and keep running (800 $)" }
+      result:
+        de: "Ein Blech, ein Kitt, zwei Schellen. Der dunkle Rand ist weg. Niemand stellt einen Eimer Sand neben den Kessel."
+        en: "A plate, some putty, two clamps. The dark stain is gone. Nobody sets a bucket of sand beside the still."
+      effects: { cash: -800 }
+      marks: [k2_raffinerie_geflickt]
+      appointments: 0
+      default: true
+
+- id: k2_verbrennung
+  group: k2_raffinerie
+  once: false
+  cooldown: 4
+  # TODO-Bedingung: hasRefinery
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  chance: 0.1
+  title:
+    de: Verbrüht am Ablassventil
+    en: Scalded at the Drain Valve
+  text:
+    de: >-
+      Ein Kesselwärter namens Ott hat das Ablassventil aufgedreht, bevor der Druck
+      unten war. Arme und Brust. Er liegt im Lazarett der Seemannsmission, weil das
+      Spital in Port Ellis keine Arbeiter aus dem Werk mehr nimmt, ohne dass jemand
+      für sie zeichnet.
+    en: >-
+      A stillman called Ott opened the drain valve before the pressure was down.
+      Arms and chest. He lies in the seamen's mission infirmary, because the Port
+      Ellis hospital no longer takes men from the works unless someone signs for them.
+  choices:
+    - id: zeichnen
+      label: { de: "Für Ott zeichnen, Lohn weiterzahlen (1.500 $)", en: "Sign for Ott, keep paying his wage (1,500 $)" }
+      result:
+        de: "Ott kommt ins Spital, in ein Bett am Fenster. Im Werk erzählen sie es weiter. Am Ablassventil hängt jetzt ein Schild mit der Druckzahl."
+        en: "Ott goes to the hospital, a bed by the window. At the works they pass it on. A sign with the pressure figure now hangs at the drain valve."
+      requires: { minCash: 1500 }
+      effects: { cash: -1500, strength: 2 }
+    - id: werksarzt
+      label: { de: "Einen Werksarzt fest anstellen (5.000 $ im Jahr)", en: "Hire a works doctor for good (5,000 $ a year)" }
+      result:
+        de: "Doktor Haskell schickt einen jungen Kollegen aus Hallstead, Dr. Fenn, der zu schnell spricht. Er bekommt ein Zimmer neben der Waage. Die Männer misstrauen ihm eine Woche lang, dann nicht mehr."
+        en: "Doctor Haskell sends a young colleague from Hallstead, Dr. Fenn, who talks too fast. He gets a room next to the weighbridge. The men distrust him for a week, then no longer."
+      requires: { minCash: 5000 }
+      # TODO-Effekt: reputation: { workers: 5 }
+      effects: { cash: -5000, production: 0.05 }
+      marks: [k2_werksarzt]
+    - id: eigene_schuld
+      label: { de: "„Er kannte die Vorschrift“", en: "“He knew the rules”" }
+      result:
+        de: "Der Vorarbeiter trägt in das Buch ein: eigenes Verschulden. Ott verliert die Stelle und zwei Finger. Seine Frau kommt einmal ans Werkstor und dann nicht wieder."
+        en: "The foreman writes in the book: own fault. Ott loses the job and two fingers. His wife comes to the works gate once and then never again."
+      # TODO-Effekt: reputation: { workers: -5 }, trace: { severity: 1, label: Ott }
+      effects: { strength: -4 }
+      marks: [k2_verbrennung_vertuscht]
+      appointments: 0
+      default: true
+
+- id: k2_gestank_klage
+  group: k2_raffinerie
+  once: false
+  cooldown: 5
+  # TODO-Bedingung: hasRefinery
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4 }
+  chance: 0.1
+  title:
+    de: Der Fischmarkt riecht nach Schwefel
+    en: The Fish Market Smells of Sulphur
+  text:
+    de: >-
+      Vierzig Unterschriften aus dem Fischerviertel unter einem Brief an den
+      Bezirksrichter: Der Fisch rieche nach Schwefel, die Wäsche werde grau, die Kinder
+      husteten. Der Anwalt der Fischer ist jung und hat sich die Haare frisch schneiden lassen.
+    en: >-
+      Forty signatures from the fishermen's quarter beneath a letter to the district
+      judge: the fish smells of sulphur, the washing turns grey, the children cough.
+      The fishermen's lawyer is young and has had a fresh haircut.
+  choices:
+    - id: schornstein
+      label: { de: "Einen höheren Schornstein bauen (7.000 $)", en: "Build a taller chimney (7,000 $)" }
+      result:
+        de: "Der neue Schornstein ist der höchste Bau von Port Ellis, höher als der Kirchturm. Jetzt riecht es in Salt Hill nach Schwefel. Dort wohnen weniger Leute mit Anwälten."
+        en: "The new chimney is the tallest building in Port Ellis, taller than the church spire. Now Salt Hill smells of sulphur. Fewer people with lawyers live there."
+      requires: { minCash: 7000 }
+      effects: { cash: -7000 }
+    - id: vergleich
+      label: { de: "Den Fischern einen Vergleich zahlen (2.500 $)", en: "Pay the fishermen a settlement (2,500 $)" }
+      result:
+        de: "Jeder Haushalt bekommt Geld und unterschreibt, dass es nie gerochen hat. Der junge Anwalt bekommt ein Drittel. Im nächsten Frühjahr riecht es wieder."
+        en: "Every household gets money and signs that it never smelled. The young lawyer gets a third. Next spring it smells again."
+      requires: { minCash: 2500 }
+      effects: { cash: -2500 }
+    - id: prozess
+      label: { de: "Vor Gericht gehen (Anwälte, Zeit)", en: "Go to court (lawyers, time)" }
+      result:
+        de: "Der Bezirksrichter ist langsam. Jacob sitzt zwei Tage auf einer harten Bank und hört, wie man über ihn spricht, als wäre er nicht da. Am Ende ein Urteil, das niemand versteht, und eine Rechnung."
+        en: "The district judge is slow. Jacob sits two days on a hard bench listening to people talk about him as though he were not there. In the end a ruling nobody understands, and a bill."
+      # TODO-Effekt: reputation: { public: -5 }
+      effects: { cash: -1200, strength: -8 }
+      appointments: 2
+      default: true
+
+# --- Rohöl, Produkte, Märkte -------------------------------------------------------
+
+- id: k2_okara_sauer
+  rival: bullard
+  notMarked: [k2_greaves_weg]
+  # TODO-Bedingung: hasRefinery
+  # TODO-Bedingung: Region Okara offen / zs1_okara (Bullards Okara-Funde, Bibel §2/§3)
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12 }
+  chance: 0.12
+  title:
+    de: Billiges Öl aus Okara
+    en: Cheap Oil from Okara
+  text:
+    de: >-
+      Bullard bietet zwanzigtausend Barrel aus Okara an, ein Drittel unter dem
+      Posted Price. Greaves hält eine Probe gegen das Licht und riecht daran wie an
+      verdorbener Milch. „Sauer. Schwefel. Das frisst Ihnen die Kessel von innen,
+      Mr. Harlan. Langsam, aber es frisst.“
+    en: >-
+      Bullard offers twenty thousand barrels from Okara, a third below the posted
+      price. Greaves holds a sample up to the light and sniffs it like sour milk.
+      “Sour. Sulphur. It eats your stills from the inside, Mr. Harlan. Slowly, but it eats.”
+  choices:
+    - id: kaufen
+      label: { de: "Kaufen und verarbeiten (Gewinn 6.000 $, die Kessel leiden)", en: "Buy and refine it (6,000 $ profit, the stills suffer)" }
+      result:
+        de: "Das Okara-Öl läuft durch, und die Rechnung stimmt. Im Herbst stehen an zwei Kesseln die ersten Rostblüten. Greaves zeigt sie Jacob, ohne etwas zu sagen."
+        en: "The Okara oil runs through and the sums work. In autumn the first rust blooms appear on two stills. Greaves shows them to Jacob without a word."
+      # TODO-Effekt: refineryOutput: -0.1 (befristet), productYield: { kerosene: -0.05 }
+      effects: { cash: 6000, production: -0.1 }
+      marks: [k2_raffinerie_geflickt]
+    - id: verfahren
+      label: { de: "Greaves soll ein Waschverfahren entwickeln (4.000 $)", en: "Have Greaves develop a washing process (4,000 $)" }
+      result:
+        de: "Greaves bestellt Kupferoxid aus Hallstead und verbrennt sich zweimal die Augenbrauen. Nach drei Monaten wäscht er den Schwefel aus dem Okara-Öl, zumindest das meiste. Bullard verkauft jetzt gern an Harlan."
+        en: "Greaves orders copper oxide from Hallstead and singes his eyebrows twice. After three months he washes the sulphur out of the Okara oil, most of it anyway. Bullard is glad to sell to Harlan now."
+      requires: { minCash: 4000 }
+      # TODO-Effekt: research: { refining: 1 }
+      effects: { cash: -4000, price: 0.05 }
+      appointments: 2
+    - id: ablehnen
+      label: { de: "Ablehnen", en: "Decline" }
+      result:
+        de: "Bullard verkauft an Pruett. Pruett zahlt noch weniger, aber er zahlt. „Du bist vorsichtig geworden, Harlan“, lässt Bullard ausrichten. Es klingt nicht wie ein Lob."
+        en: "Bullard sells to Pruett. Pruett pays even less, but he pays. “You've grown careful, Harlan,” Bullard sends word. It does not sound like praise."
+      appointments: 0
+      default: true
+
+- id: k2_kerosin_faellt
+  mail: info
+  deadline: 3
+  notMarked: [k2_greaves_weg]
+  # TODO-Bedingung: hasRefinery
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 5 }
+  chance: 0.15
+  title:
+    de: Kerosin fällt, Benzin steigt
+    en: Kerosene Falls, Gasoline Rises
+  text:
+    de: >-
+      Greaves legt die Preisliste aus Hallstead auf den Tisch, zwei Zeilen
+      angestrichen. Lampenöl billiger als vor fünf Jahren, Benzin teurer. In Hallstead
+      fahren angeblich zweihundert Automobile. „Kerosin ist eine Lampe, Mr. Harlan.
+      Benzin ist eine Straße. Wollen Sie Lampen verkaufen, bis Sie sterben?“
+    en: >-
+      Greaves lays the Hallstead price list on the desk, two lines marked. Lamp oil
+      cheaper than five years ago, gasoline dearer. They say two hundred automobiles
+      drive in Hallstead. “Kerosene is a lamp, Mr. Harlan. Gasoline is a road. Do you
+      want to sell lamps until you die?”
+  choices:
+    - id: umbauen
+      label: { de: "Die Kolonne auf mehr Benzin umbauen (9.000 $)", en: "Rebuild the column for more gasoline (9,000 $)" }
+      result:
+        de: "Greaves bekommt seine Kolonne. Ein Jahr lang verdient das Werk weniger als vorher. Dann kommt aus Hallstead die erste Bestellung über Benzin, die größer ist als die über Lampenöl."
+        en: "Greaves gets his column. For a year the works earns less than before. Then the first order for gasoline comes from Hallstead that is larger than the one for lamp oil."
+      requires: { minCash: 9000 }
+      # TODO-Effekt: productYield: { gasoline: 0.1, kerosene: -0.1 }
+      effects: { cash: -9000, price: 0.1 }
+      marks: [k2_benzin_frueh]
+    - id: kerosin
+      label: { de: "Bei Kerosin bleiben – die Welt hat noch genug Lampen", en: "Stay with kerosene – the world still has plenty of lamps" }
+      result:
+        de: "Greaves faltet die Liste zusammen und steckt sie ein. Das Werk läuft wie immer. Die Zahlen werden jedes Quartal ein wenig kleiner, nicht so, dass man es merkt."
+        en: "Greaves folds the list and pockets it. The works runs as always. The figures grow a little smaller every quarter, not so that anyone notices."
+      # TODO-Effekt: productPrice: { kerosene: -0.1 }
+      effects: { price: -0.08 }
+      appointments: 0
+      default: true
+
+- id: k2_marine_heizoel
+  mail: offer
+  deadline: 3
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 6 }
+  chance: 0.1
+  title:
+    de: Die Marine fragt nach Heizöl
+    en: The Navy Asks About Fuel Oil
+  text:
+    de: >-
+      Ein Kapitän der Bundesmarine schreibt aus Hallstead, in einer Handschrift wie
+      gestochen. Zwei Kreuzer sollen versuchsweise mit Öl statt Kohle fahren. Die
+      Marine sucht einen Lieferanten für ein Jahr, zu festem Preis, unter Geheimhaltung.
+      Der Preis ist anständig, nicht mehr.
+    en: >-
+      A captain of the Federal Navy writes from Hallstead in an engraver's hand. Two
+      cruisers are to run on oil instead of coal, on trial. The Navy seeks a supplier
+      for one year at a fixed price, in confidence. The price is decent, no more.
+  choices:
+    - id: liefern
+      label: { de: "Den Vertrag unterschreiben (fester Preis, ein Jahr)", en: "Sign the contract (fixed price, one year)" }
+      result:
+        de: "Ein Leutnant holt die Unterschrift persönlich ab und salutiert vor Ruth, die nicht weiß, was sie mit der Hand machen soll. Ein Jahr lang fragt niemand nach dem Marktpreis."
+        en: "A lieutenant collects the signature in person and salutes Ruth, who doesn't know what to do with her hand. For a year nobody asks about the market price."
+      # TODO-Effekt: productPrice: { fuelOil: 0.1 }, party: { handel: 2 }
+      effects: { price: 0.08, production: -0.05 }
+      marks: [k2_marine_vertrag]
+    - id: hoeher
+      label: { de: "Mehr verlangen – die Marine braucht uns mehr als wir sie", en: "Ask for more – the Navy needs us more than we need it" }
+      result:
+        de: "Der Kapitän antwortet nach drei Wochen, kühl und knapp. Die Marine bezieht ihr Öl von Crane Midland. Pruett hat offenbar nicht mehr verlangt."
+        en: "The captain replies after three weeks, cool and brief. The Navy will get its oil from Crane Midland. Pruett apparently did not ask for more."
+      effects: { price: -0.05 }
+      appointments: 0
+      default: true
+
+- id: k2_varenhold_kaeufer
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 8 }
+  chance: 0.08
+  title:
+    de: Ein Käufer, der seinen Hafen nicht nennt
+    en: A Buyer Who Won't Name His Port
+  text:
+    de: >-
+      Herr Brandauer spricht Westmärkisch mit einem Akzent, den er für unsichtbar hält.
+      Er will fünfzigtausend Barrel, bar, mit Aufpreis, verladen auf ein Schiff unter der
+      Flagge von Costa Negra. Wohin es dann fährt, sei nicht Jacobs Sorge. In den Zeitungen
+      steht jede Woche etwas über Aldmark und Varenhold.
+    en: >-
+      Herr Brandauer speaks Westmark English with an accent he believes invisible. He
+      wants fifty thousand barrels, cash, at a premium, loaded onto a ship flying the
+      flag of Costa Negra. Where it sails then is not Jacob's concern. Every week the
+      papers carry something about Aldmark and Varenhold.
+  choices:
+    - id: verkaufen
+      label: { de: "Verkaufen (bar, mit Aufpreis)", en: "Sell (cash, at a premium)" }
+      result:
+        de: "Das Schiff legt nachts ab. Brandauer zahlt in Goldmünzen mit einem Adler, den man in Port Ellis nicht kennt. Ein Mann vom Zoll schreibt sich den Namen des Schiffs auf."
+        en: "The ship sails at night. Brandauer pays in gold coins with an eagle nobody in Port Ellis recognises. A customs man writes down the ship's name."
+      requires: { minOilStock: 2000 }
+      # TODO-Effekt: heat: 1, tension: 1
+      effects: { cash: 9000, oilStock: -2000 }
+    - id: ablehnen
+      label: { de: "Ablehnen", en: "Decline" }
+      result:
+        de: "Brandauer verbeugt sich, als hätte er gewonnen. Eine Woche später liegt das Schiff in Port Ellis vor Bullards Verladesteg."
+        en: "Brandauer bows as though he had won. A week later the ship lies in Port Ellis, off Bullard's loading jetty."
+      appointments: 0
+      default: true
+
+# --- Folgen ----------------------------------------------------------------------
+
+- id: k2_raffinerie_brand
+  tableau: true
+  marked: [k2_raffinerie_geflickt]
+  delay: 2
+  chance: 0.45
+  draft: true                # Schlüsselszene: Folge des Flickens (Entwurf – Philipp überarbeitet)
+  conditions: { minChapter: 2, maxChapter: 2 }
+  title:
+    de: Feuer im Werk
+    en: Fire at the Works
+  text:
+    de: >-
+      Um drei Uhr nachts weckt die Werksglocke halb Port Ellis. Ein Kessel, der längst
+      hätte raus müssen, hat nachgegeben, das Feuer läuft die Rinne entlang zu den
+      Kerosintanks. Der Werksdirektor steht in Hemdsärmeln im Hof und brüllt Zahlen, die
+      niemand versteht. Jacob ist keine fünfundzwanzig mehr und rennt trotzdem.
+    en: >-
+      At three in the morning the works bell wakes half of Port Ellis. A still that
+      should have come out long ago has given way, and the fire runs along the gutter
+      towards the kerosene tanks. The works director stands in his shirtsleeves in the yard
+      shouting figures nobody understands. Jacob is no longer twenty-five and runs anyway.
+  choices:
+    - id: graben
+      label: { de: "Selbst mit anpacken: Gräben ziehen, Tanks fluten", en: "Lend a hand himself: dig trenches, flood the tanks" }
+      result:
+        de: "Bis zum Morgen stehen die Tanks noch. Jacob hat Brandblasen an beiden Händen und hustet drei Wochen. Die Männer erzählen in Hallstead, der Chef habe geschaufelt wie ein Bohrarbeiter."
+        en: "By morning the tanks are still standing. Jacob has burn blisters on both hands and coughs for three weeks. The men tell people in Hallstead the boss dug like a roughneck."
+      # TODO-Effekt: refineryDown: 1, reputation: { workers: 5 }
+      effects: { cash: -8000, strength: -15, production: -0.1 }
+      appointments: 2
+    - id: brennen
+      label: { de: "Die Tanks aufgeben, die Männer zurückziehen", en: "Give up the tanks, pull the men back" }
+      result:
+        de: "Die Kerosintanks brennen zwei Tage. Niemand stirbt. Der Rauch steht über dem Golf, und die Zeitung in Hallstead druckt ein Bild davon, auf der ersten Seite."
+        en: "The kerosene tanks burn for two days. Nobody dies. The smoke hangs over the Gulf, and the Hallstead paper prints a picture of it on the front page."
+      # TODO-Effekt: refineryDown: 2, reputation: { public: -5 }
+      effects: { cash: -20000, oilStock: -3000, production: -0.15 }
+      appointments: 0
+      default: true
