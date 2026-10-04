@@ -59,7 +59,7 @@
   draft: true                # 4.5: Familienabend ab Kapitel 2 – Thomas ist ein Schuljunge, Clara klein
   marked: [thomas_geboren]
   delay: 0
-  conditions: { minThomasAge: 4 }
+  conditions: { minChapter: 2, maxChapter: 2, minThomasAge: 4 }   # nur Kapitel 2 (Kapitel-1-Ereignisse ohne minChapter kommen nur in Kapitel 1; in Kapitel 3 ist Thomas erwachsen)
   title:
     de: Ein Abend mit den Kindern
     en: An Evening with the Children

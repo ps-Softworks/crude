@@ -77,7 +77,7 @@ Mögliche Weichen (GDD §13), je als Merkzeichen für Kapitel 2 *(V: Namen)*:
 |---|---|---|
 | Bankenpanik (wenn Kreditklima überhitzt) | `zs1_bankpanik` | Pettibones Filiale hat geschlossen und wieder geöffnet; Leute erinnern sich, wer sein Geld abhob. |
 | Erste Automobile, früh auf Benzin gesetzt | `zs1_benzin_frueh` | Thomas will in ein Automobil steigen; Margaret Crane hat es auch gemerkt. |
-| Neues Ölgebiet in Okara | `zs1_okara` | Bullard bohrt dort; Delgados Verband wächst über Cordova hinaus. |
+| Neues Ölgebiet in Okara | `okara_bullard` (Bullard pachtet) bzw. `okara_pachten` (Jacob) | Bullard bohrt dort; Delgados Verband wächst über Cordova hinaus. |
 | Jacob hat im Zeitsprung keinen Kredit bedient / Firma knapp | `zs1_knapp` | Kapitel 2 beginnt mit einer Mahnung statt mit einem Empfang. |
 
 Dazu kommt das Ergebnis des Börsengangs (Anteil verkauft) aus dem Kapitelende 1 – das liest die
@@ -266,7 +266,7 @@ fehlende Schlüssel stehen in §10.
 
 ### „Big“ Jim Bullard – Bullard Oil (`visitor: bullard`, `rival: bullard`)
 
-- **Kapitel 2 (46–49): auf dem Höhepunkt.** Okara-Funde (`zs1_okara`), eigene Trupps, ein Haus mit
+- **Kapitel 2 (46–49): auf dem Höhepunkt.** Okara-Funde (`okara_bullard`), eigene Trupps, ein Haus mit
   Säulen. Er will Kartellpartner oder Todfeind sein – dazwischen kennt er nichts.
   - **Ziel:** größer werden als der Trust, ohne Hallstead zu fragen. **Konflikt:** Schulden, Jähzorn,
     Ehrenkodex. **Stimme:** laut, Saloon, Handschlag. *„Zehn Jahre, Harlan. Du hast Aktien, ich hab

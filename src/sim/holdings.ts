@@ -120,7 +120,7 @@ export function runCampaign(state: GameState, balance: Balance): HallsteadResult
 }
 
 /**
- * Stimmungsschub der Kampagne dieser Runde (Andockpunkt Weltmodell 4.1: WorldInput.moodShift).
+ * Stimmungsschub der Kampagne dieser Runde (Andockpunkt Weltmodell: einmalig als WorldInput.moodKick).
  * Die Glaubwürdigkeit ist schon um die Kampagne gesunken – gerechnet wird mit der davor.
  */
 export function campaignMoodShift(state: GameState, balance: Balance): number {

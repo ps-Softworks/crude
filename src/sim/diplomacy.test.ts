@@ -267,6 +267,11 @@ describe('Welt-Schnittstelle (4.1–4.4) mit Ersatzwerten', () => {
     expect(antitrustInForce({ ...g, laws: { kartellgesetz: true } } as GameState)).toBe(true);
     expect(antitrustInForce({ ...g, laws: { kartellgesetz: { active: false } } } as GameState)).toBe(false);
     expect(antitrustInForce(mitMarken(g, { gesetz_kartell: 3 }))).toBe(true);
+    // Zusammenführung mit 4.3: das beschlossene Kartellgesetz im Weltmodell zählt.
+    const beschlossen = { ...g.worldModel, laws: { ...g.worldModel.laws, bills: { antitrust: { ...(g.worldModel.laws.bills.antitrust ?? {}), stage: 'passed' } } } };
+    expect(antitrustInForce({ ...g, worldModel: beschlossen } as GameState)).toBe(true);
+    const beantragt = { ...g.worldModel, laws: { ...g.worldModel.laws, bills: { antitrust: { ...(g.worldModel.laws.bills.antitrust ?? {}), stage: 'debate' } } } };
+    expect(antitrustInForce({ ...g, worldModel: beantragt } as GameState)).toBe(false);
   });
 });
 

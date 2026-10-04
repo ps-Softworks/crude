@@ -65,7 +65,11 @@ describe('Bedingungen', () => {
   });
 
   it('Kapitel: ohne Angabe gilt Kapitel 1, minChapter/maxChapter grenzen ein', () => {
-    expect(state.chapter).toBeUndefined();
+    // Seit 4.5 steht das Kapitel im Spielstand (neues Spiel: 1); fehlt es in einem Teilzustand, gilt Kapitel 1.
+    expect(state.chapter).toBe(1);
+    const { chapter: _ohne, ...ohneKapitel } = state;
+    expect(conditionsMet(ohneKapitel, { minChapter: 2 })).toBe(false);
+    expect(conditionsMet(ohneKapitel, { maxChapter: 1 })).toBe(true);
     expect(conditionsMet(state, { minChapter: 1, maxChapter: 1 })).toBe(true);
     expect(conditionsMet(state, { minChapter: 2 })).toBe(false);
     expect(conditionsMet({ ...state, chapter: 2 }, { minChapter: 2, maxChapter: 2 })).toBe(true);
@@ -113,7 +117,7 @@ describe('Bedingungen', () => {
   });
 
   it('Kapitel (Phase 4): ohne Angabe ist der Spielstand in Kapitel 1; minChapter/maxChapter grenzen ein', () => {
-    expect(state.chapter).toBeUndefined();
+    expect(state.chapter).toBe(1);
     expect(conditionsMet(state, { minChapter: 2 })).toBe(false);
     expect(conditionsMet(state, { maxChapter: 1 })).toBe(true);
     const k2 = { ...state, chapter: 2 };
@@ -162,14 +166,19 @@ describe('Bedingungen', () => {
       for (let round = 1; round <= balance.start.rounds; round++) expect(conditionsMet({ ...state, round }, e.conditions), e.id).toBe(false);
     }
     // Kapitel-1-Ereignisse brauchen keine Kapitel-Angabe: Ohne minChapter gelten sie nur in Kapitel 1.
-    // (Die Fernleitungs-Ereignisse aus 4.7 gehören zu Kapitel 2 und tragen minChapter: 1.)
-    const k1 = katalog.filter((x) => !/^k[2-9]_/.test(x.id) && !x.id.startsWith('fernleitung_'));
+    // (Die Fernleitungs-Ereignisse aus 4.7 gehören zu Kapitel 2 und tragen minChapter: 1; der Familienabend
+    // mit den Kindern aus 4.5 steht bei den festen Terminen, gilt aber nur in Kapitel 2.)
+    const k1 = katalog.filter((x) => !/^k[2-9]_/.test(x.id) && !x.id.startsWith('fernleitung_') && x.id !== 'termin_familie_k2');
     expect(k1.length).toBeGreaterThan(0);
     for (const e of k1) {
       expect(e.conditions.minChapter, e.id).toBeUndefined();
       expect(chapterMet(state, e.conditions), e.id).toBe(true);
       expect(chapterMet({ chapter: 3 }, e.conditions), e.id).toBe(false);
     }
+    const abend = katalog.find((x) => x.id === 'termin_familie_k2')!;
+    expect(chapterMet(state, abend.conditions)).toBe(false);
+    expect(chapterMet({ chapter: 2 }, abend.conditions)).toBe(true);
+    expect(chapterMet({ chapter: 3 }, abend.conditions)).toBe(false);
   });
 
   it('chapterMet: ohne minChapter nur Kapitel 1 (bis maxChapter), mit minChapter offen nach oben (Phase 4)', () => {

@@ -17,7 +17,7 @@
 # Alter (Bibel §1/§3): Bullards Söhne Wade und Cole sind in Kapitel 3 erst 24 und 20, hier also
 # 14–17 und 10–13 – Halbwüchsige, keine Bohrleute. Schlägereien im Saloon führt Bullards Vorarbeiter.
 # Ort: Bullards Alltag spielt in Salt Hill. Okara (Prärieprovinz im Binnenland) gibt es erst mit der
-# Zeitsprung-Weiche zs1_okara – darum nennt hier kein Ereignis Okara als festen Ort.
+# Zeitsprung-Weiche okara (okara_pachten / okara_bullard, 4.5) – darum nennt hier kein Ereignis Okara als festen Ort.
 # Erfunden (nicht in der Bibel): Hap Cutler, Bullards Vorarbeiter.
 #   delgado_verband    → k2_delgado_gruendung (als Gründungsmitglied) / ohne: k2_delgado_einkauf
 # Aus Paket 2: k2_pipeline_wucher → k2_delgado_rede; k2_pipeline_offen → k2_kleine_produzenten.

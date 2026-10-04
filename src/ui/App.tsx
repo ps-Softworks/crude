@@ -25,6 +25,7 @@ import { balance } from './balance';
 import { k3 } from './kapitel3'; // 4.17 Andockpunkt: Texte aus content/kapitel3.yaml
 import { ChapterEndScreen } from './ChapterEndScreen';
 import { events } from './events';
+import { stocksContent } from './stocks';
 import { GameOverScreen } from './GameOverScreen';
 import { ChronicleScreen, DirectivesLetter, SwitchTelegram } from './TimeskipScreen';
 import { figures } from './figureContent';
@@ -62,6 +63,9 @@ import { tourSteps } from './tourContent';
 import { loadTutorialOn, mapTutorialContent, saveTutorialOn, tutorialContent } from './tutorial';
 import { VisitorScene } from './visitor/VisitorScene';
 import { appearances } from './visitorContent';
+
+/** Kapitelstart nach dem Zeitsprung (Integration Phase 4): Räte für das Aktienbuch aus content/stocks.yaml. */
+const kapitelTexte = { stocksBoard: stocksContent.board };
 
 function randomSeed(): string {
   return Math.random().toString(36).slice(2, 8);
@@ -150,7 +154,7 @@ export function App() {
   // Zeitsprung (4.5): Der Brief an den Verwalter liegt offen.
   const [brief, setBrief] = useState(false);
   // Läuft ein Sprung, steht die nächste Weiche fest (src/sim rechnet ihn von vorn).
-  const sprungSchritt = useMemo(() => (game.jump ? runTimeskip(game, balance, events) : null), [game]);
+  const sprungSchritt = useMemo(() => (game.jump ? runTimeskip(game, balance, events, kapitelTexte) : null), [game]);
   const chronik = unreadChronicle(game);
   // Sicherheitsnetz: Ist ein geladener Sprung schon ganz beantwortet, beginnt Kapitel 2 sofort.
   useEffect(() => {
@@ -351,16 +355,16 @@ export function App() {
       return;
     }
     setBrief(false);
-    setGame(continueTimeskip(r.state, balance, events));
+    setGame(continueTimeskip(r.state, balance, events, kapitelTexte));
   }
 
   function weicheBeantworten(id: Parameters<typeof answerSwitch>[2], choice: string) {
-    const r = answerSwitch(game, balance, id, choice, events);
+    const r = answerSwitch(game, balance, id, choice, events, kapitelTexte);
     if (!r.ok) {
       setNotice(r.reason);
       return;
     }
-    setGame(continueTimeskip(r.state, balance, events));
+    setGame(continueTimeskip(r.state, balance, events, kapitelTexte));
   }
 
   function chronikGelesen() {

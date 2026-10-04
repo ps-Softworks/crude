@@ -311,7 +311,7 @@ describe('Eigene Zeitung und eigene Bank', () => {
     expect(g.hallstead!.holdings.credibility).toBe(nb.credibilityStart - nb.campaignCost);
     expect(g.hallstead!.lobby.favors).toBeCloseTo((nb.favorsPerCampaign * nb.credibilityStart) / 100, 5);
     expect(campaignMoodShift(g, balance)).toBeCloseTo((nb.moodPerCampaign * nb.credibilityStart) / 100, 5);
-    expect(hallsteadWorldInput(g, balance).moodShift).toBe(campaignMoodShift(g, balance));
+    expect(hallsteadWorldInput(g, balance).moodKick).toBe(campaignMoodShift(g, balance));
     // Rundenende in der Kampagnenrunde: keine Erholung; danach erholt sie sich.
     g = settleHallstead(g, balance);
     expect(g.hallstead!.holdings.credibility).toBe(nb.credibilityStart - nb.campaignCost);
@@ -344,7 +344,7 @@ describe('Eigene Zeitung und eigene Bank', () => {
     expect(schub).toBeGreaterThan(0);
     const ohne = endRound(g, balance).worldModel.mood;
     const mit = endRound(kampagne, balance).worldModel.mood;
-    // Weltmodell 4.2: moodShift wirkt sofort in voller Höhe auf die Stimmung (world.ts, WorldInput.moodShift).
+    // Weltmodell 4.2: Ein einmaliger Stoß (WorldInput.moodKick) wirkt sofort in voller Höhe auf die Stimmung.
     expect(mit - ohne).toBeCloseTo(schub, 6);
   });
 });

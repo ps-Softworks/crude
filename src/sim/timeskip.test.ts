@@ -7,10 +7,11 @@ import { parseBalance, type Balance } from './balance';
 import { canGoPublic, decideIpo } from './chapter';
 import { creditLimit, debt, takeLoan } from './credit';
 import { applyAction } from './desk';
-import { conditionsMet, resolveEvent } from './events';
+import { conditionsMet, marksMet, resolveEvent } from './events';
 import { endRound, formatDate, newGame, type GameState } from './game';
 import { neighbourWells } from './market';
-import { deserializeGame, serializeGame } from './save';
+import { deserializeGame, SAVE_FORMAT, serializeGame } from './save';
+import { parseStocksContent } from './stocksContent';
 import { loadBalance, rawBalance } from './testBalance';
 import { loadEvents } from './testEvents';
 import { empireValue } from './empire';
@@ -44,6 +45,10 @@ const balance = loadBalance();
 const catalog = loadEvents();
 const APP = '0.4.5';
 const STANDARD: Directives = { stance: 'balanced', family: 'some' };
+/** Räte für das Aktienbuch beim Kapitelstart (wie die Oberfläche sie aus content/stocks.yaml mitgibt). */
+const TEXTE = {
+  stocksBoard: parseStocksContent('content/stocks.yaml', readFileSync(new URL('../../content/stocks.yaml', import.meta.url), 'utf8'), balance.stocks.board.seatsMax).content!.board,
+};
 
 /** Kapitel 1 ohne eigene Züge zu Ende spielen. */
 function kapitelEnde(seed: string, b: Balance = balance, vorher: (s: GameState) => GameState = (s) => s): GameState {
@@ -68,12 +73,12 @@ function springen(s0: GameState, directives = STANDARD, antworten: Antworten = E
   if (!start.ok) throw new Error(start.reason);
   s = start.state;
   for (let i = 0; i < 10; i++) {
-    const step = runTimeskip(s, b, catalog);
+    const step = runTimeskip(s, b, catalog, TEXTE);
     if (step.status === 'done') return { state: step.state, record: step.record };
     const wahl = antworten(step.id, i);
-    let a = answerSwitch(s, b, step.id, wahl, catalog);
+    let a = answerSwitch(s, b, step.id, wahl, catalog, TEXTE);
     // Zu teuer (Kasse und Bankrahmen reichen nicht)? Dann die andere Antwort.
-    if (!a.ok && /reichen/.test(a.reason)) a = answerSwitch(s, b, step.id, SWITCH_CHOICES[step.id].find((c) => c !== wahl)!, catalog);
+    if (!a.ok && /reichen/.test(a.reason)) a = answerSwitch(s, b, step.id, SWITCH_CHOICES[step.id].find((c) => c !== wahl)!, catalog, TEXTE);
     if (!a.ok) throw new Error(a.reason);
     s = a.state;
   }
@@ -268,7 +273,7 @@ describe('Kapitel 2 beginnt (Platzhalter)', () => {
     expect(wildcatterWells(weiter)).toBe(Math.max(0, Math.floor(neighbourWells(balance.market, weiter.round, weiter.neighbourOffset))));
   });
 
-  it('Kapitel 2 läuft mit den Kapitel-1-Systemen bis zu seinem Ende – ohne Aktien und ohne weiteren Sprung', () => {
+  it('Kapitel 2 läuft mit den Systemen aus Kapitel 1 und 2 bis zu seinem Ende – ohne neuen Börsengang und ohne weiteren Sprung', () => {
     let { state } = springen(kapitelEnde('sprung-weiter', balance, mitEntscheidungen));
     for (let i = 0; i < 40 && !state.finished; i++) state = endRound(state, balance, catalog);
     expect(state.finished).toBe(true);
@@ -279,6 +284,64 @@ describe('Kapitel 2 beginnt (Platzhalter)', () => {
       expect(timeskipBlocked(state, balance)).toMatch(/im Bau/);
       expect(state.log[state.log.length - 1]).toMatch(/Kapitel 2 ist zu Ende/);
     }
+  });
+
+  it('Kapitelstart (Integration Phase 4): Raffinerie, Fernleitungen, Aktienbuch, Personal, Diplomatie, Ermittler und Forschung gehen auf', () => {
+    const { state } = springen(kapitelEnde('sprung-systeme', balance, mitEntscheidungen));
+    expect(state.chapter).toBe(2);
+    expect(state.refinery).toBeDefined();
+    expect(state.bigPipelines).toBeDefined();
+    expect(state.stocks).toBeDefined();
+    expect(state.staff).toBeDefined();
+    expect(state.diplomacy).toBeDefined();
+    expect(state.investigation).toBeDefined();
+    expect(state.research).toBeDefined();
+    // Kapitel-3-Systeme noch nicht.
+    expect(state.brand).toBeUndefined();
+    expect(state.exchange).toBeUndefined();
+    expect(state.kapitel3).toBeUndefined();
+    expect(state.hallstead).toBeUndefined();
+    // Ohne Räte (texts) kein Aktienbuch – der Rest geht trotzdem auf.
+    const ende = kapitelEnde('sprung-systeme', balance, mitEntscheidungen);
+    let s = ende;
+    if (canGoPublic(s, balance)) {
+      const ipo = decideIpo(s, balance, 0);
+      if (ipo.ok) s = ipo.state;
+    }
+    const start = startTimeskip(s, balance, STANDARD);
+    if (!start.ok) throw new Error(start.reason);
+    let j = start.state;
+    for (let i = 0; i < 10 && j.jump; i++) {
+      const step = runTimeskip(j, balance, catalog);
+      if (step.status === 'done') {
+        j = step.state;
+        break;
+      }
+      const a = answerSwitch(j, balance, step.id, SWITCH_CHOICES[step.id][1], catalog);
+      if (!a.ok) throw new Error(a.reason);
+      j = a.state;
+    }
+    expect(j.chapter).toBe(2);
+    expect(j.stocks).toBeUndefined();
+    expect(j.refinery).toBeDefined();
+  });
+
+  it('Merkzeichen gehen ins neue Kapitel mit und gelten als vor Kapitelbeginn gesetzt (delay zählt ab Runde 1 des Kapitels)', () => {
+    const ende = kapitelEnde('sprung-marken', balance, mitEntscheidungen);
+    const { state } = springen(ende);
+    const marken = Object.keys(state.events.marks);
+    // Alle Merkzeichen aus Kapitel 1 (und aus dem Sprung) sind noch da.
+    for (const m of Object.keys(ende.events.marks)) expect(marken, m).toContain(m);
+    expect(marken).toContain(TIMESKIP_MARKS.clara);
+    // Was aus Kapitel 1 und dem Sprung kommt, gilt als vor Kapitelbeginn gesetzt; was der Kapitelstart selbst setzt
+    // (z. B. k2_diplomatie), steht auf der ersten Runde des Kapitels.
+    const vorher = [...Object.keys(ende.events.marks), TIMESKIP_MARKS.clara];
+    for (const m of vorher) expect(state.events.marks[m], m).toBe(state.chapterStart - 1);
+    for (const m of marken.filter((x) => !vorher.includes(x))) expect(state.events.marks[m], m).toBeGreaterThanOrEqual(state.chapterStart - 1);
+    // delay 3 → ab der dritten Runde des Kapitels.
+    const folge = { marked: [TIMESKIP_MARKS.clara], notMarked: [], delay: 3 };
+    expect(marksMet({ ...state, round: state.chapterStart + 1 }, folge)).toBe(false);
+    expect(marksMet({ ...state, round: state.chapterStart + 2 }, folge)).toBe(true);
   });
 
   it('Ereignis-Bedingungen minRound/maxRound zählen ab dem Kapitelbeginn', () => {
@@ -316,6 +379,19 @@ describe('Spielstand übersteht den Kapitelwechsel', () => {
     const geladen = deserializeGame(JSON.stringify({ format: 17, appVersion: '0.4.4', savedRound: 1, state: alt }));
     expect(geladen.ok).toBe(true);
     expect(geladen.ok && geladen.state).toEqual(s);
+  });
+
+  it('ein Spielstand aus Format 18 (0.4.5, Kapitel 2 ohne die neuen Systeme) lädt weiter', () => {
+    expect(SAVE_FORMAT).toBe(19);
+    const { state } = springen(kapitelEnde('sprung-format18'));
+    const alt: Record<string, unknown> = { ...state };
+    for (const k of ['refinery', 'bigPipelines', 'stocks', 'staff', 'diplomacy', 'investigation', 'research']) delete alt[k];
+    const geladen = deserializeGame(JSON.stringify({ format: 18, appVersion: '0.4.5', savedRound: state.round, state: alt }));
+    expect(geladen.ok).toBe(true);
+    if (!geladen.ok) return;
+    let s = geladen.state;
+    for (let i = 0; i < 3; i++) s = endRound(s, balance, catalog);
+    expect(JSON.stringify(s)).not.toMatch(/NaN|Infinity/);
   });
 
   it('ein kaputter Sprung im Spielstand wird abgelehnt', () => {

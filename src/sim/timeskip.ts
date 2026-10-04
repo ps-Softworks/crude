@@ -29,7 +29,8 @@ import { creditLimit, debt, headroom, loanRate, quarterInterestTotal, repay, tak
 import { nextWellId, rollOilStage, stageCost, wellsOn, type Well } from './drilling';
 import { empireValue } from './empire';
 import type { ContentError } from './eventContent';
-import { drawEvents, type EventDef } from './events';
+import { drawEvents, marksIntoNextChapter, type EventDef } from './events';
+import { openChapterSystems, type ChapterSystemTexts } from './chapterSystems';
 import { bondWord, type BondWord } from './family';
 import { fieldOf, fieldLabel } from './field';
 import { trueChance } from './forecast';
@@ -228,10 +229,10 @@ export function startTimeskip(state: GameState, balance: Balance, directives: Di
 }
 
 /** Eine Weiche beantworten. Sie muss gerade anstehen (runTimeskip hält an ihr). */
-export function answerSwitch(state: GameState, balance: Balance, id: SwitchId, choice: string, catalog: readonly EventDef[] = []): TimeskipResult {
+export function answerSwitch(state: GameState, balance: Balance, id: SwitchId, choice: string, catalog: readonly EventDef[] = [], texts: ChapterSystemTexts = {}): TimeskipResult {
   if (!state.jump) return { ok: false, reason: 'Es läuft kein Zeitsprung.' };
   if (!(SWITCH_CHOICES[id] as readonly string[]).includes(choice)) return { ok: false, reason: 'Diese Antwort gibt es nicht.' };
-  const step = runTimeskip(state, balance, catalog);
+  const step = runTimeskip(state, balance, catalog, texts);
   if (step.status !== 'switch' || step.id !== id) return { ok: false, reason: 'Diese Weiche steht gerade nicht an.' };
   const blockiert = switchChoice(step.funds, balance, id, choice).blocked;
   if (blockiert) return { ok: false, reason: blockiert };
@@ -905,11 +906,14 @@ function wildcatterNachSprung(l: Lauf, ziel: number): void {
 
 /**
  * Rechnet den Zeitsprung von vorn bis zur nächsten unbeantworteten Weiche oder bis
- * zum Ende. Am Ende beginnt Kapitel 2 (Platzhalter): Runde nach dem Sprung, frische
- * Termine, neue Ereignisse aus dem Katalog. Geht die Firma unterwegs pleite, endet
- * das Spiel dort (nach der Chronik).
+ * zum Ende. Am Ende beginnt Kapitel 2: Runde nach dem Sprung, frische Termine, die
+ * Merkzeichen gelten als vor Kapitelbeginn gesetzt (marksIntoNextChapter), die
+ * Kapitel-2-Systeme gehen auf (openChapterSystems: Raffinerie, Fernleitungen, Aktienbuch,
+ * Personal, Diplomatie, Ermittler, Forschung), dann neue Ereignisse aus dem Katalog.
+ * texts.stocksBoard (content/stocks.yaml) braucht das Aktienbuch für den Aufsichtsrat.
+ * Geht die Firma unterwegs pleite, endet das Spiel dort (nach der Chronik).
  */
-export function runTimeskip(start: GameState, balance: Balance, catalog: readonly EventDef[] = []): TimeskipStep {
+export function runTimeskip(start: GameState, balance: Balance, catalog: readonly EventDef[] = [], texts: ChapterSystemTexts = {}): TimeskipStep {
   if (!start.jump) throw new Error('runTimeskip: Es läuft kein Zeitsprung.');
   const t = balance.timeskip;
   const vorher = snapshot(start, balance);
@@ -1016,13 +1020,15 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
     ],
     roundLogStart: start.log.length,
   };
-  return { status: 'done', state: drawEvents(kapitel2, balance, catalog), record: r };
+  // Kapitelstart (Integration Phase 4): Merkzeichen ins neue Kapitel, dann alle Systeme des Kapitels anlegen.
+  const mitMarken: GameState = { ...kapitel2, events: marksIntoNextChapter(kapitel2.events, round - 1) };
+  return { status: 'done', state: drawEvents(openChapterSystems(mitMarken, balance, texts), balance, catalog), record: r };
 }
 
 /** Bequem für die Oberfläche: Weiche beantworten und gleich weiterrechnen. Fertig → Kapitel 2 (oder Pleite). */
-export function continueTimeskip(state: GameState, balance: Balance, catalog: readonly EventDef[] = []): GameState {
+export function continueTimeskip(state: GameState, balance: Balance, catalog: readonly EventDef[] = [], texts: ChapterSystemTexts = {}): GameState {
   if (!state.jump) return state;
-  const step = runTimeskip(state, balance, catalog);
+  const step = runTimeskip(state, balance, catalog, texts);
   return step.status === 'done' ? step.state : state;
 }
 

@@ -11,7 +11,6 @@ import { tester } from '../tester';
 import type { SheetContext } from './types';
 // 4.6 Andockpunkt: Raffinerie im Debug-Reiter freischalten.
 import { unlockRefinery } from '../../sim/refinery';
-import { balance } from '../balance';
 import { rt } from '../refinery';
 // 4.7 Andockpunkt: Debug-Knopf für die Fernleitungen.
 import { TrunkDebugButton } from './TrunkPipelineTab';

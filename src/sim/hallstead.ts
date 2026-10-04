@@ -27,10 +27,11 @@ export function hallsteadAssets(state: Pick<GameState, 'hallstead'>): number {
 
 /**
  * Was Hallstead in die Welt gibt (Andockpunkt Weltmodell 4.1, Form wie WorldInput):
- * die Kampagne der eigenen Zeitung hebt die Stimmung.
+ * die Kampagne der eigenen Zeitung hebt die Stimmung – einmalig in der Runde der Kampagne
+ * (WorldInput.moodKick seit 4.2; moodShift ist dort ein dauerhafter Eingriff).
  */
-export function hallsteadWorldInput(state: GameState, balance: Balance): { moodShift: number } {
-  return { moodShift: campaignMoodShift(state, balance) };
+export function hallsteadWorldInput(state: GameState, balance: Balance): { moodKick: number } {
+  return { moodKick: campaignMoodShift(state, balance) };
 }
 
 export { hallsteadUnlocked } from './hallsteadState';

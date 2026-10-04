@@ -14,7 +14,7 @@
 # Greaves kann zu Pruett gehen (Paket 3, k2_abwerbung_greaves → k2_greaves_weg): Dann sperren alle
 # Ereignisse, in denen er auftritt (notMarked: [k2_greaves_weg]); k2_kessel_undicht_neu ersetzt die
 # Kessel-Panne. Der Brand (Folge des Flickens) nennt keinen Namen und kommt in beiden Fällen.
-# Okara (Prärieprovinz im Binnenland) gibt es erst mit der Zeitsprung-Weiche zs1_okara.
+# Okara (Prärieprovinz im Binnenland) gibt es erst mit der Zeitsprung-Weiche (okara_pachten / okara_bullard, 4.5).
 #
 # Merkzeichen (neu, hier und in Paket 3/5 gelesen):
 #   k2_raffinerie_geflickt → k2_raffinerie_brand (2 Runden später, Würfel)
@@ -213,9 +213,11 @@
 
 - id: k2_okara_sauer
   rival: bullard
+  # Okara: Bullard hat im Zeitsprung die Pachten genommen (Weiche okara → okara_bullard, 4.5).
+  marked: [okara_bullard]
+  delay: 0
   notMarked: [k2_greaves_weg]
   # Bedingung: eigene Raffinerie (minRefineryLevel, 4.6)
-  # TODO-Bedingung: Region Okara offen / zs1_okara (Bullards Okara-Funde, Bibel §2/§3)
   conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12, minRefineryLevel: 1 }
   chance: 0.12
   title:

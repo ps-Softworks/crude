@@ -18,6 +18,7 @@ import { DIPLO_RIVALS, type DiploRival, type PactKind } from './diplomacyBalance
 import type { TimedEffect } from './events';
 import type { GameState } from './game';
 import type { RngState } from './rng';
+import { lawInForce } from './laws';
 import { PARTIES, type Party, type WorldState } from './world';
 
 export { DIPLO_RIVALS, PACT_KINDS, type DiploRival, type PactKind } from './diplomacyBalance';
@@ -331,12 +332,17 @@ function zahlOder(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
+/** Id des Kartellgesetzes im Gesetzeskatalog (content/laws/kartellgesetz.yaml, 4.3) – es verbietet Absprachen (cartelBan). */
+export const ANTITRUST_LAW_ID = 'antitrust';
+
 /**
  * Gilt ein Kartellgesetz? // 4.3 Andockpunkt
- * Bis der Gesetzeskatalog da ist: state.laws als Liste mit „kartellgesetz“ oder als
- * Nachschlagewerk { kartellgesetz: wahr }, sonst das Merkzeichen gesetz_kartell.
+ * Seit der Zusammenführung mit 4.3: das Kartellgesetz im Weltmodell (state.worldModel.laws) ist
+ * beschlossen. Dazu wie bisher state.laws als Liste mit „kartellgesetz“ oder als Nachschlagewerk
+ * { kartellgesetz: wahr } (Tests) und das Merkzeichen gesetz_kartell.
  */
-export function antitrustInForce(state: Partial<Pick<GameState, 'events'>>): boolean {
+export function antitrustInForce(state: Partial<Pick<GameState, 'events'>> & { worldModel?: Partial<Pick<WorldState, 'laws'>> }): boolean {
+  if (lawInForce(state.worldModel?.laws, ANTITRUST_LAW_ID)) return true;
   const laws = (state as { laws?: unknown }).laws;
   if (Array.isArray(laws) && laws.includes('kartellgesetz')) return true;
   if (laws && typeof laws === 'object' && !Array.isArray(laws)) {
