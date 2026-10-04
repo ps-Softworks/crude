@@ -40,6 +40,7 @@ import {
   WallMapShape,
 } from './objects/Shapes';
 import { RuthNote } from './RuthNote';
+import { StaffFileShape } from '../sheets/StaffSheet'; // 4.9 Andockpunkt
 
 /** Wo was liegt, in Prozent der Bühne (unter der Kopfleiste). */
 const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte' | 'tuer', Placement> = {
@@ -56,6 +57,7 @@ const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte
   fracht: { left: 19, top: 75, width: 15, height: 22 },
   protokoll: { left: 36, top: 76, width: 9, height: 21 },
   glocke: { left: 86, top: 70, width: 12, height: 27 },
+  personal: { left: 73, top: 75, width: 12, height: 22 }, // 4.9 Andockpunkt: unter dem Kassenbuch
 };
 
 export interface DeskSceneProps {
@@ -319,6 +321,17 @@ export function DeskScene(p: DeskSceneProps) {
           <FolderShape variant="fracht" />,
         )}
         {obj('protokoll', 'Kladde', { status: p.saved ? '✓ gesichert' : undefined }, <NotebookShape />)}
+        {/* 4.9 Andockpunkt: Personalakten – erst ab Kapitel 2 (state.staff), in Kapitel 1 unsichtbar. */}
+        {game.staff &&
+          obj(
+            'personal',
+            'Personal',
+            {
+              status: `${game.staff.hired.length} angestellt`,
+              badge: game.staff.candidates.length > 0 ? { text: `${game.staff.candidates.length} Bewerbung${game.staff.candidates.length === 1 ? '' : 'en'}` } : null,
+            },
+            <StaffFileShape />,
+          )}
         {obj(
           'glocke',
           game.finished ? 'Kapitel beendet' : 'Runde beenden',

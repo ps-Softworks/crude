@@ -14,6 +14,7 @@
 import type { Balance, TransportMode } from './balance';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
+import { fixerDefense } from './staff'; // 4.9 Andockpunkt
 import { Rng, seedFromString, type RngState } from './rng';
 import { markRound, RIVAL_MARKS } from './trust';
 
@@ -294,7 +295,7 @@ export function setGuards(state: GameState, on: boolean): LogisticsResult {
 }
 
 /** Chance je Runde, dass die laufende Pipeline sabotiert wird. */
-export function sabotageChance(state: Pick<GameState, 'events' | 'logistics'>, balance: Balance): number {
+export function sabotageChance(state: Pick<GameState, 'events' | 'logistics'> & Partial<Pick<GameState, 'staff'>>, balance: Balance): number {
   const p = balance.transport.pipeline;
   const feinde =
     markRound(state, RIVAL_MARKS.bullardFeud) !== undefined ||
@@ -302,7 +303,8 @@ export function sabotageChance(state: Pick<GameState, 'events' | 'logistics'>, b
     markRound(state, RIVAL_MARKS.thorneRefused) !== undefined ||
     state.logistics.threatRound > 0;
   const basis = p.sabotageChance * (feinde ? p.sabotageFactor : 1);
-  return Math.min(1, state.logistics.guards ? basis * p.guardsFactor : basis);
+  // 4.9 Andockpunkt: Ein Fixer im Dienst hält Saboteure fern (fixerDefense = 1 ohne Fixer).
+  return Math.min(1, (state.logistics.guards ? basis * p.guardsFactor : basis) * fixerDefense(state, balance));
 }
 
 /** Fixkosten je Runde: Lohn der Fuhrleute, Streckenwärter, Wachleute. */

@@ -3,6 +3,7 @@
 // Seit 0.2.15+5 gehört die Karte (content/map.yaml) mit dazu: parseGameData.
 
 import { parseWorldMap, type WorldMap } from './worldMap';
+import { parseStaff, type StaffBalance } from './staff'; // 4.9 Andockpunkt: Personal
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
 
@@ -523,6 +524,8 @@ export interface Balance {
   family: FamilyBalance;
   newspaper: NewspaperBalance;
   tutorial: TutorialBalance;
+  /** 4.9 Andockpunkt: Personal (Kapitel 2). */
+  staff: StaffBalance;
 }
 
 /** Einstieg (2.13): Tutorial-Hinweise in den ersten Runden. */
@@ -1536,6 +1539,7 @@ export function parseBalance(raw: unknown): Balance {
     family: parseFamily(raw),
     newspaper: parseNewspaper(raw),
     tutorial: parseTutorial(raw),
+    staff: parseStaff(raw), // 4.9 Andockpunkt
   };
 
   for (const r of balance.transport.pipeline.rights) {

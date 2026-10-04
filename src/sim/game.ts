@@ -24,6 +24,8 @@ import { advanceLogistics, newLogistics, settleStorage, spillOver, type Logistic
 import { advanceTransport, noShipments } from './transport';
 import { settleTakeover } from './trust';
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
+import type { StaffState } from './staff'; // 4.9 Andockpunkt: Personal
+import { delegateMail, settleStaff } from './staffRound'; // 4.9 Andockpunkt: Personal
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
 
@@ -95,6 +97,8 @@ export interface GameState {
   sick: number;
   /** Ruth und Thomas (2.7). */
   family: FamilyState;
+  /** 4.9 Andockpunkt: Personal (Sekretärin, Fixer, Richtlinien) – erst ab Kapitel 2, in Kapitel 1 undefined. */
+  staff?: StaffState;
   log: string[];
   /** Länge von log beim letzten Rundenende: alles danach gehört zum Protokoll der laufenden Runde. */
   roundLogStart: number;
@@ -191,7 +195,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   if (input.finished) return input;
   // Offene Ereignisse bekommen ihre Standard-Antwort, bevor die Runde abgerechnet wird.
   // Gebiete (0.2.15+5): Hat eine Antwort ein Gebiet freigeschaltet, bekommt es jetzt seine Ranches.
-  const beantwortet = openRegions(autoResolve(input, catalog, undefined, balance.events.timedRounds), balance);
+  // 4.9 Andockpunkt: Das Vorzimmer erledigt ablaufende Briefe nach Richtlinie, bevor die Standard-Antworten gelten.
+  const beantwortet = openRegions(autoResolve(delegateMail(input, balance, catalog), catalog, undefined, balance.events.timedRounds), balance);
   const roundLogStart = beantwortet.log.length;
   // Crane-Übernahme (2.8): Hat Jacob verkauft, endet die Partie hier – ohne weitere Abrechnung.
   const verkauft = settleTakeover(beantwortet, balance);
@@ -199,7 +204,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Familie (2.7): Familienzeit gibt Kraft, Vernachlässigung kostet Beziehung.
   const familie = settleFamily(beantwortet, balance);
   // Termine (2.3): Krankheit (2.7), ruhige Runde gibt Kraft zurück, die nächste beginnt mit frischen Terminen.
-  const ausgeruht = settleAgenda(familie, balance);
+  // 4.9 Andockpunkt: Personal – Verkauf nach Regel, Aufträge, Löhne, Loyalität, Hitze, Extra-Termine der nächsten Runde.
+  const ausgeruht = settleStaff(settleAgenda(familie, balance), balance);
   // Lager (0.2.15+2): Kosten, Schwund und Brand für das Öl, das noch im Tank steht; neue Tanks sind fertig.
   // Nach der Förderung läuft aus, was nicht mehr in die Tanks passt.
   const gefoerdert = spillOver(advanceProduction(settleStorage(ausgeruht, balance), balance), balance);

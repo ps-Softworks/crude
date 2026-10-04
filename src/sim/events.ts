@@ -548,6 +548,30 @@ export function resolveEvent(
   return { ok: true, state: openRegions(erledigen(belegt.state, event, choice, lang, '', balance.events.timedRounds), balance) };
 }
 
+// 4.9 Andockpunkt: Personal (src/sim/staffRound.ts) erledigt Briefe nach Richtlinie –
+// ohne Jacobs Termine und unabhängig von seiner Erschöpfung (sharp gilt nicht).
+/** Ist eine Wahl ohne Blick auf Termine und Kraft möglich? Bedingungen und Dokumentenprüfung. */
+export function choicePossible(state: GameState, event: EventDef, choice: EventChoice): boolean {
+  return waehlbar(state, event, choice);
+}
+
+/** Jemand aus dem Personal beantwortet ein offenes Ereignis; vorsatz steht vor dem Eintrag im Protokoll. */
+export function resolveDelegated(
+  state: GameState,
+  balance: Balance,
+  catalog: readonly EventDef[],
+  eventId: string,
+  choiceId: string,
+  vorsatz: string,
+  lang: Lang = DEFAULT_LANG,
+): EventResult {
+  const event = finde(catalog, eventId);
+  if (!event || event.routine || !state.events.pending.includes(eventId)) return { ok: false, reason: 'Dieses Ereignis liegt nicht auf dem Schreibtisch.' };
+  const choice = event.choices.find((c) => c.id === choiceId);
+  if (!choice || !waehlbar(state, event, choice)) return { ok: false, reason: 'Diese Antwort geht gerade nicht.' };
+  return { ok: true, state: openRegions(erledigen(state, event, choice, lang, vorsatz, balance.events.timedRounds), balance) };
+}
+
 function erledigen(state: GameState, event: EventDef, choice: EventChoice, lang: Lang, vorsatz: string, timedRounds: number): GameState {
   // Gebiete (0.2.15+5): nur den Schalter umlegen – die Ranches kommen mit openRegions.
   const offen = (choice.unlocks ?? []).reduce(unlockRegion, state);

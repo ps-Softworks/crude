@@ -24,6 +24,7 @@ import type { Balance } from './balance';
 import type { ContentError } from './eventContent';
 import type { EventChoice, EventDef } from './events';
 import { RIVAL_MARKS } from './trust';
+import { STAFF_EVENT_MARKS } from './staff'; // 4.9 Andockpunkt
 
 export type Verdict = 'stark' | 'gegenstueck' | 'schwach' | 'termin';
 
@@ -54,7 +55,8 @@ export interface RelevanceReport {
 
 /** Merkzeichen, die die Simulation liest (Rivalen, Wegerechte der Pipeline). */
 export function simReadMarks(balance: Balance): string[] {
-  return [...Object.values(RIVAL_MARKS), ...balance.transport.pipeline.rights.map((r) => r.mark)];
+  // 4.9 Andockpunkt: Merkzeichen, die das Personal liest (STAFF_EVENT_MARKS).
+  return [...Object.values(RIVAL_MARKS), ...balance.transport.pipeline.rights.map((r) => r.mark), ...Object.values(STAFF_EVENT_MARKS)];
 }
 
 /**

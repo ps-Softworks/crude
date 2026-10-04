@@ -6,6 +6,8 @@ import { keyLabel, SHORTCUTS } from '../keys';
 import { Tabs, activeTab } from '../sheet/Tabs';
 import { tester } from '../tester';
 import type { SheetContext } from './types';
+import { openStaff } from '../../sim/staff'; // 4.9 Andockpunkt
+import { balance } from '../balance';
 
 export interface MenuProps {
   ctx: SheetContext;
@@ -127,6 +129,14 @@ export function MenuSheet(p: MenuProps) {
               Spielstand löschen
             </button>
           </form>
+          {/* 4.9 Andockpunkt: Personal vorab ansehen, solange es Kapitel 2 noch nicht gibt. */}
+          {!ctx.game.staff && (
+            <p>
+              <button type="button" onClick={() => ctx.onGame(openStaff(ctx.game, balance))}>
+                Personal freischalten (Vorschau Kapitel 2)
+              </button>
+            </p>
+          )}
         </section>
       )}
     </Tabs>

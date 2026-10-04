@@ -508,3 +508,81 @@ tutorial:
   endAfterProducedRounds: 2  # fertig, wenn die erste Quelle 2 Runden gefördert hat (die Verkaufsrunde ist vorbei)
   deeperMinChance: 25        # PLATZHALTER: tiefer bohren nur raten, wenn der Geologe der nächsten Stufe mind. 25 % gibt
   loanRounding: 100          # vorgeschlagene Kredite auf 100 $ aufgerundet (mindestens credit.minLoan)
+
+# Personal (4.9, GDD §11 und §3): Sekretärin/Prokurist und Fixer ab Kapitel 2, Richtlinien
+# statt Mikromanagement, Loyalität und Löhne. Namen, Merkmale und Texte stehen in
+# content/staff.yaml, die Regeln in src/sim/staff.ts und src/sim/staffRound.ts.
+# Alles PLATZHALTER – Balance klärt sich mit den Bot-Läufen für Kapitel 2.
+staff:
+  unlockChapter: 2           # ab Kapitel 2 sichtbar (GDD §11); in Kapitel 1 gibt es kein Personal
+  hireAppointments: 1        # Vorstellungsgespräch: 1 Termin (GDD §3: Besucher empfangen)
+  recognitionAppointments: 1 # persönliche Anerkennung: 1 Termin (GDD §11)
+  candidatesPerRole: 2       # so viele Bewerber je Stelle liegen auf dem Tisch
+  candidateRefreshRounds: 4  # alle 4 Runden kommen neue Bewerbungen
+  revealRounds: 4            # so lange ist die Kompetenz nur ungefähr (±1) sichtbar (GDD §11)
+  namePool: 6                # Namen je Stelle in content/staff.yaml (muss passen)
+  candidate:                 # wie Bewerber gewürfelt werden
+    competence: { min: 1, max: 5 }
+    ambition: { min: 1, max: 5 }
+    secondTraitChance: 0.35  # Anteil mit zwei Merkmalen (GDD §11: 1–2)
+  wage:
+    secretary: 120           # $ je Runde bei Kompetenz 3, Lohnstufe „Markt“
+    fixer: 220
+    competenceStep: 0.15     # je Kompetenzstufe über/unter 3: ±15 %
+    creditSensitivity: 0.004 # Lohnniveau folgt dem Kreditklima (4.1): je Punkt über 50 +0,4 %
+    severanceRounds: 1       # Abfindung bei Entlassung: ein Rundenlohn
+    # Lohn-Richtlinie (GDD §11 „Löhne 10 % über Markt“): Faktor und Loyalität je Runde.
+    levels:
+      - { id: knapp, factor: 0.9, loyalty: -3 }
+      - { id: markt, factor: 1.0, loyalty: 0 }
+      - { id: gut, factor: 1.1, loyalty: 2 }
+      - { id: grosszuegig, factor: 1.25, loyalty: 4 }
+    startLevel: markt
+  loyalty:
+    start: 60                # Loyalität 0–100 beim Einstellen
+    recognition: 8           # persönliche Anerkennung (ein Termin, einmal je Runde und Person)
+    cut: 10                  # Lohnkürzung: sofort minus
+    scapegoat: 6             # ein Kollege wird entlassen: die anderen minus
+    illegalOrder: 15         # Gewissenhafte bekommen einen schmutzigen Auftrag
+    conscience: 2            # Gewissenhafte bei hoher Hitze: je Runde minus (sie sehen, was läuft)
+    ambitionDrift: 1         # je Ehrgeiz über 3: minus je Runde (keine Beförderung)
+    genieSwing: 4            # Genie ist launisch: ± so viel je Runde
+    loyalFloor: 40           # „Treu bis zum Tod“ fällt nie darunter
+    poachBelow: 35           # darunter kann ein Rivale abwerben …
+    poachChance: 0.15        # … mit dieser Chance je Runde (Gierige doppelt)
+    betrayBelow: 25          # darunter und …
+    betrayAmbition: 4        # … ab diesem Ehrgeiz droht Verrat …
+    betrayChance: 0.2        # … mit dieser Chance je Runde
+    words:                   # Zustandswörter: ab diesem Wert
+      treu: 75
+      zufrieden: 50
+      unzufrieden: 25        # darunter: abtrünnig
+  secretary:
+    extraAppointments: 1     # Termine mehr je Runde (GDD §3: 5, mit Sekretärin bis zu 7) …
+    extraFromCompetence: 4   # … ab dieser Kompetenz einer mehr
+    drunkChance: 0.2         # Trinker: Aussetzer in einer Runde (kein Extra-Termin, keine Post, kein Verkauf)
+    judgementNoise: 200      # $ Fehleinschätzung je Antwort bei Kompetenz 1 (bei 5: keine)
+    greedChance: 0.25        # Gierig: Chance je Verkauf, dass ein Teil verschwindet …
+    greedSkim: 0.1           # … so viel vom Erlös
+    charmBonus: 0.03         # Charmant: $ je Barrel mehr beim Verkauf nach Regel
+    mailSpendLimit: 100      # Start-Richtlinie: Antworten bis 100 $ darf das Vorzimmer selbst geben
+  sales:
+    minPrice: 1.0            # Start-Richtlinie: Mindestpreis beim Trust in $ je Barrel
+    share: 0.5               # Start-Richtlinie: so viel vom Tank je Runde
+    misjudgeChance: 0.3      # bei Kompetenz 1 hält sich das Vorzimmer nicht an die Regel (bei 5: nie; Spieler doppelt)
+  fixer:
+    defense: 0.6             # Sabotage gegen Jacob × (1 − defense × Kompetenz/5)
+    heatDecay: 5             # Hitze sinkt je Runde …
+    heatDecayDiscreet: 10    # … beim Verschwiegenen schneller
+    scandalFrom: 60          # ab dieser Hitze droht ein Skandal …
+    scandalChance: 0.25      # … mit dieser Chance je Runde
+    scandalFine: 500         # Geldstrafe und Schweigegeld
+    scandalCool: 30          # danach ist es so viel kühler
+    leakHeat: 30             # Verrat eines Fixers / Whistleblower: Hitze plus
+    eventHeat: 15            # ein Brief schickt den Fixer los (Merkzeichen fixer_auftrag_brief): Hitze plus
+    words:                   # Hitze als Wort: ab diesem Wert
+      lauwarm: 20
+      heiss: 60
+    orders:                  # Aufträge (GDD §11: Spionage, Sabotage – und Hitze)
+      spy: { cost: 150, heat: 10, successMin: 0.4, successMax: 0.95 }
+      sabotage: { cost: 300, heat: 25, successMin: 0.25, successMax: 0.85, rivalCash: 400, delay: 1, caughtHeat: 15 }
