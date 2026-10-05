@@ -16,7 +16,7 @@ import { timedEffect } from './events';
 import { bigPipelineCapacity, harborTrunkRunning } from './bigPipeline';
 // Termine als Hauptwerkzeug, Etappe 2: Liefervertrag (Händler), Brennans Fuhrleute, Fremdöl der Transportgemeinschaft.
 import { activeContract } from './pricing';
-import { brennanActive, poolPipelineShare } from './freight';
+import { brennanActive, poolDiscount, poolPipelineShare } from './freight';
 // Etappe 3: billigerer Exklusivvertrag aus dem Brief.
 import { cheapExclusive } from './letters';
 import {
@@ -38,7 +38,7 @@ function dollars(value: number): string {
 }
 
 /** Was eine Verkaufsrechnung vom Zustand braucht. */
-type Verkaufslage = Pick<GameState, 'railTariff' | 'postedPrice' | 'round'> & Partial<Pick<GameState, 'events' | 'logistics' | 'pricing' | 'freight' | 'ventures'>>;
+type Verkaufslage = Pick<GameState, 'railTariff' | 'postedPrice' | 'round'> & Partial<Pick<GameState, 'events' | 'logistics' | 'pricing' | 'freight' | 'ventures' | 'wildcatters' | 'rival'>>;
 
 /** Strafe je Barrel, die Thorne während eines Exklusivvertrags für andere Wege verlangt. */
 export function exclusiveSurcharge(state: Verkaufslage, balance: Balance, mode: TransportMode): number {
@@ -49,14 +49,14 @@ export function exclusiveSurcharge(state: Verkaufslage, balance: Balance, mode: 
 
 /**
  * Fracht in $ je Barrel: Fuhrwerk, eigene Fuhrwerke und Pipeline fest, Bahn nach
- * Thornes aktuellem Tarif (mit Mengenrabatt weniger). Während eines
+ * Thornes aktuellem Tarif (mit Mengenrabatt und Rabatt der Transportgemeinschaft weniger). Während eines
  * Exklusivvertrags kommt auf jeden anderen Weg Thornes Strafe dazu.
  */
 export function tariff(state: Verkaufslage, balance: Balance, mode: TransportMode): number {
   const t = balance.transport;
   const basis =
     mode === 'rail'
-      ? Math.max(0, state.railTariff - (volumeDealActive(state, balance) ? t.thorne.volumeDiscount : 0))
+      ? Math.max(0, state.railTariff - (volumeDealActive(state, balance) ? t.thorne.volumeDiscount : 0) - poolDiscount(state, balance))
       : mode === 'wagon' && brennanActive(state)
         ? balance.freight.brennan.costPerBarrel
         : t[mode].costPerBarrel;

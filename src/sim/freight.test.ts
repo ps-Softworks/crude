@@ -3,11 +3,14 @@ import { describe, expect, it } from 'vitest';
 import type { Balance } from './balance';
 import {
   brennanActive,
+  brennanPenalty,
   freightLevers,
   freightPressure,
   freightView,
   newFreight,
+  poolDiscount,
   poolJoinChance,
+  poolPenalty,
   poolVolume,
   settleFreight,
   thorneResistance,
@@ -69,17 +72,21 @@ describe('Druckmittel und Widerstand (Plan 2.3)', () => {
     expect(thorneResistance(fehde, balance)).toBe(F.resistance.base + 2 + F.resistance.feud);
   });
 
-  it('Ergebnisstufen: ≤ 0 Abfuhr (Erhöhung × 2 für 4 Runden), 1 −0,05, 2 −0,10 und 2 Runden Ruhe, ≥ 3 −0,15 und 4 Runden Ruhe', () => {
+  it('Ergebnisstufen: ≤ 0 Abfuhr (Tarif sofort + raise, Erhöhung × 2 für 4 Runden), 1–3 Senkung nach cuts mit Ruhe nach freeze', () => {
     const s = { ...spiel('stufen'), railTariff: 0.55 };
     const abfuhr = visitThorne(s, NEUTRAL, false);
-    expect(abfuhr.railTariff).toBe(0.55);
+    // Spielspaß K1: Die Abfuhr kostet sofort.
+    expect(abfuhr.railTariff).toBeCloseTo(0.55 + F.rebuff.raise, 9);
+    expect(abfuhr.log.at(-1)).toMatch(/hebt er den Tarif sofort/);
     expect(abfuhr.freight.hikeDoubleUntil).toBe(s.round + F.rebuff.rounds - 1);
     expect(hikeChance(abfuhr, balance)).toBeCloseTo(Math.min(1, TH.hikeChance * F.rebuff.factor), 9);
     expect(hikeChance({ ...abfuhr, round: s.round + F.rebuff.rounds }, balance)).toBeCloseTo(TH.hikeChance, 9);
     // Stufe 1: drei Druckmittel gegen Widerstand 2.
     const drei = { ...bahn(s, 20000), worldModel: { ...s.worldModel, laws: { ...s.worldModel.laws, bills: { ...s.worldModel.laws.bills, antitrust: { ...s.worldModel.laws.bills.antitrust, stage: 'debate' as const } } } } };
     expect(freightPressure(drei, balance)).toBe(3);
-    expect(visitThorne(drei, NEUTRAL, false).railTariff).toBeCloseTo(0.55 - F.cuts[0], 9);
+    const eins = visitThorne(drei, NEUTRAL, false);
+    expect(eins.railTariff).toBeCloseTo(0.55 - F.cuts[0], 9);
+    expect(eins.freight.freezeUntil).toBe(s.round + F.freeze[0] - 1);
     const vier = { ...drei, logistics: { ...drei.logistics, teams: 5 } };
     const zwei = visitThorne(vier, NEUTRAL, false);
     expect(zwei.railTariff).toBeCloseTo(0.55 - F.cuts[1], 9);
@@ -95,6 +102,12 @@ describe('Druckmittel und Widerstand (Plan 2.3)', () => {
     const vorbei = settleFreight({ ...sonder, round: s.round + F.special.rounds }, balance);
     expect(vorbei.railTariff).toBe(0.55);
     expect(vorbei.freight.special).toBeNull();
+  });
+
+  it('Spielspaß K1: die Abfuhr hebt den Tarif nie über maxTariff', () => {
+    const s = { ...spiel('abfuhr-dach'), railTariff: TH.maxTariff - 0.01 };
+    expect(visitThorne(s, NEUTRAL, false).railTariff).toBe(TH.maxTariff);
+    expect(visitThorne({ ...s, railTariff: TH.maxTariff }, NEUTRAL, false).railTariff).toBe(TH.maxTariff);
   });
 
   it('nie unter minTariff', () => {
@@ -129,21 +142,49 @@ describe('Bluff-Prüfung (Plan 2.3)', () => {
     expect(v.freight.bluffsRisked).toBe(1);
   });
 
-  it('gehen danach mehr als 80 % per Bahn: +0,10 $ und Groll (Erhöhung × 2 für 4 Runden)', () => {
+  /** Spielspaß K1: Thorne zählt je Runde mit Chance check nach – hier immer bzw. nie. */
+  const ZAEHLT: Balance = { ...balance, freight: { ...F, bluff: { ...F.bluff, check: 1 } } };
+  const NIE: Balance = { ...balance, freight: { ...F, bluff: { ...F.bluff, check: 0 } } };
+
+  it('zählt Thorne nach und geht in der Runde mehr als railShare per Bahn: Aufschlag sofort und Groll (Erhöhung × 2 für 4 Runden)', () => {
     const v = geblufft('bluff-fang');
-    let s: GameState = { ...v, round: v.round + 1, shipped: { wagon: 0, rail: 10000, teams: 0, pipeline: 0 } };
-    s = settleFreight(s, balance);
-    s = settleFreight({ ...s, round: s.round + 1 }, balance);
+    const s = settleFreight({ ...v, round: v.round + 1, shipped: { wagon: 0, rail: 10000, teams: 0, pipeline: 0 } }, ZAEHLT);
     expect(s.railTariff).toBeCloseTo(v.railTariff + F.bluff.penalty, 9);
     expect(s.freight.bluffsCaught).toBe(1);
-    expect(s.freight.hikeDoubleUntil).toBe(v.round + 2 + F.rebuff.rounds - 1);
+    expect(s.freight.bluffCheck).toBeNull();
+    expect(s.freight.hikeDoubleUntil).toBe(v.round + 1 + F.rebuff.rounds - 1);
   });
 
-  it('hält Jacob die Drohung ein (Bahnanteil unter 80 %), passiert nichts', () => {
+  it('es zählt jede Runde für sich: eine ehrliche erste Runde schützt die zweite nicht', () => {
+    const v = geblufft('bluff-runde');
+    let s: GameState = settleFreight({ ...v, round: v.round + 1, shipped: { wagon: 0, rail: 2000, teams: 8000, pipeline: 0 } }, ZAEHLT);
+    expect(s.freight.bluffsCaught).toBe(0);
+    expect(s.freight.bluffCheck).not.toBeNull();
+    s = settleFreight({ ...s, round: v.round + 2, shipped: { wagon: 0, rail: 7000, teams: 3000, pipeline: 0 } }, ZAEHLT);
+    expect(s.freight.bluffsCaught).toBe(1);
+  });
+
+  it('zählt Thorne nicht nach, fällt der Bluff nicht auf – nach der letzten Prüfrunde ist er vorbei', () => {
+    const v = geblufft('bluff-glueck');
+    let s: GameState = settleFreight({ ...v, round: v.round + 1, shipped: { wagon: 0, rail: 10000, teams: 0, pipeline: 0 } }, NIE);
+    s = settleFreight({ ...s, round: v.round + 2 }, NIE);
+    expect(s.railTariff).toBe(v.railTariff);
+    expect(s.freight.bluffCheck).toBeNull();
+    expect(s.freight.bluffsCaught).toBe(0);
+  });
+
+  it('das Nachzählen würfelt aus dem eigenen Strang: gleicher Seed und Runde ⇒ gleiches Ergebnis, Weltzufall unberührt', () => {
+    const v = geblufft('bluff-strang');
+    const s = { ...v, round: v.round + 1, shipped: { wagon: 0, rail: 10000, teams: 0, pipeline: 0 } };
+    expect(settleFreight(s, balance).freight.bluffsCaught).toBe(settleFreight(s, balance).freight.bluffsCaught);
+    expect(settleFreight(s, balance).rng).toBe(s.rng);
+  });
+
+  it('hält Jacob die Drohung ein (Bahnanteil höchstens railShare), passiert nichts', () => {
     const v = geblufft('bluff-ehrlich');
     let s: GameState = { ...v, round: v.round + 1, shipped: { wagon: 0, rail: 5000, teams: 5000, pipeline: 0 } };
-    s = settleFreight(s, balance);
-    s = settleFreight({ ...s, round: s.round + 1 }, balance);
+    s = settleFreight(s, ZAEHLT);
+    s = settleFreight({ ...s, round: s.round + 1 }, ZAEHLT);
     expect(s.railTariff).toBe(v.railTariff);
     expect(s.freight.bluffCheck).toBeNull();
     expect(s.freight.bluffsCaught).toBe(0);
@@ -151,7 +192,7 @@ describe('Bluff-Prüfung (Plan 2.3)', () => {
 });
 
 describe('Brennan (Plan 2.3)', () => {
-  it('ersetzt die Mietfuhrwerke: 0,35 $ je bbl, 5.000 bbl, 4 Runden', () => {
+  it('ersetzt die Mietfuhrwerke: Brennans Preis, Kapazität und Laufzeit aus balance.yaml', () => {
     const s = ok(bookCard(spiel('brennan'), balance, katalog, 'brennan'));
     expect(brennanActive(s)).toBe(true);
     expect(tariff(s, balance, 'wagon')).toBe(F.brennan.costPerBarrel);
@@ -159,10 +200,13 @@ describe('Brennan (Plan 2.3)', () => {
     expect(brennanActive({ ...s, round: s.round + F.brennan.rounds })).toBe(false);
   });
 
-  it('unter der Mindestmenge kostet jedes fehlende Barrel 0,15 $', () => {
+  it('unter der Mindestmenge kostet jedes fehlende Barrel brennan.shortfall', () => {
     const s = ok(bookCard(spiel('brennan-min'), balance, katalog, 'brennan'));
     const n = settleFreight({ ...s, shipped: { ...s.shipped, wagon: 500 } }, balance);
     expect(n.cash).toBeCloseTo(s.cash - (F.brennan.minimum - 500) * F.brennan.shortfall, 6);
+    expect(brennanPenalty({ ...s, shipped: { ...s.shipped, wagon: 500 } }, balance)).toEqual({ missing: F.brennan.minimum - 500, fine: (F.brennan.minimum - 500) * F.brennan.shortfall });
+    expect(brennanPenalty({ ...s, shipped: { ...s.shipped, wagon: F.brennan.minimum } }, balance).fine).toBe(0);
+    expect(brennanPenalty({ ...s, round: s.round + F.brennan.rounds, shipped: { ...s.shipped, wagon: 0 } }, balance).fine).toBe(0);
   });
 
   it('bei laufendem Exklusivvertrag warnt die Karte', () => {
@@ -209,11 +253,52 @@ describe('Transportgemeinschaft (Plan 2.3)', () => {
     const s0 = spiel('pool-pipe');
     const s = { ...s0, freight: { ...newFreight(), pool: [s0.wildcatters.firms[0].name], poolPipeline: true, poolSince: 1, poolHeldRound: 99 } };
     expect(pipelineBuildCost(s, balance)).toBe(Math.round(balance.transport.pipeline.buildCost * (1 - F.pool.pipelineDiscount)));
-    const laeuft = { ...s, round: 2, logistics: { ...s.logistics, pipeline: 'ready' as const } };
+    // Genug Bahnfracht, damit die Zusage an Thorne hält (sonst käme die Strafe dazu).
+    const laeuft = { ...s, round: 2, logistics: { ...s.logistics, pipeline: 'ready' as const }, shipped: { ...s.shipped, rail: F.pool.minimum } };
     expect(capacityLeft(laeuft, balance, 'pipeline')).toBe(Math.round(balance.transport.pipeline.capacity * (1 - F.pool.foreignShare)));
     const n = settleFreight(laeuft, balance);
     const fremd = Math.min(Math.round(balance.transport.pipeline.capacity * F.pool.foreignShare), poolVolume(laeuft, balance));
     expect(n.cash).toBeCloseTo(laeuft.cash + fremd * F.pool.transitFee, 6);
+  });
+});
+
+describe('Transportgemeinschaft: Rabatt und Zusage (Spielspaß K1)', () => {
+  function gemeinschaft(seed: string, mitglieder = 1): GameState {
+    const s0 = spiel(seed);
+    return { ...s0, round: 3, freight: { ...newFreight(), pool: s0.wildcatters.firms.slice(0, mitglieder).map((f) => f.name), poolSince: 2, poolHeldRound: 3 } };
+  }
+
+  it('Rabatt auf Jacobs Bahnfracht: discountStep je volle discountPer bbl Gemeinschaftsmenge, höchstens discountMax', () => {
+    const s = gemeinschaft('pool-rabatt');
+    const menge = poolVolume(s, balance);
+    const erwartet = Math.min(F.pool.discountMax, Math.floor(menge / F.pool.discountPer) * F.pool.discountStep);
+    expect(poolDiscount(s, balance)).toBeCloseTo(erwartet, 9);
+    expect(tariff({ ...s, railTariff: 0.55 }, balance, 'rail')).toBeCloseTo(0.55 - erwartet, 9);
+    const gross: Balance = { ...balance, freight: { ...F, pool: { ...F.pool, discountPer: 1 } } };
+    expect(poolDiscount(s, gross)).toBe(F.pool.discountMax);
+    expect(poolDiscount({ ...s, freight: newFreight() }, balance)).toBe(0);
+  });
+
+  it('Zusage verfehlt: Jacobs Bahnfracht + Gemeinschaft unter minimum kostet shortfall je Barrel – nicht in der Gründungsrunde', () => {
+    const s = gemeinschaft('pool-strafe');
+    const fehlt = Math.max(0, F.pool.minimum - 1000 - poolVolume(s, balance));
+    expect(fehlt).toBeGreaterThan(0);
+    const knapp = { ...s, shipped: { ...s.shipped, rail: 1000 } };
+    expect(poolPenalty(knapp, balance)).toEqual({ missing: fehlt, fine: Math.round(fehlt * F.pool.shortfall * 100) / 100 });
+    const n = settleFreight(knapp, balance);
+    expect(n.cash).toBeCloseTo(s.cash - fehlt * F.pool.shortfall, 6);
+    expect(n.log.at(-1)).toMatch(/Zusage an Thorne/);
+    expect(poolPenalty({ ...knapp, shipped: { ...knapp.shipped, rail: F.pool.minimum } }, balance).fine).toBe(0);
+    expect(poolPenalty({ ...knapp, round: 2 }, balance).fine).toBe(0);
+    expect(poolPenalty({ ...knapp, freight: newFreight() }, balance).fine).toBe(0);
+  });
+
+  it('die Karte nennt Rabatt und Zusage, das Frachtfenster zeigt sie', () => {
+    const s = spiel('pool-text');
+    expect(FREIGHT_HANDLERS.transportgemeinschaft.detail?.(s, balance)).toMatch(/Zusage/);
+    const v = freightView(gemeinschaft('pool-ansicht'), balance);
+    expect(v.pool?.minimum).toBe(F.pool.minimum);
+    expect(v.pool?.discount).toBe(poolDiscount(gemeinschaft('pool-ansicht'), balance));
   });
 });
 

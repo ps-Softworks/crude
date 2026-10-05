@@ -461,3 +461,126 @@ Alle Kennzahlen zu Funden bleiben im Rahmen: kleine Funde mit 50–500 bbl/Tag 9
 - Gesamt-Balance Kapitel 1 (Kapitelziel 80 %, vorläufige Grenze 82 %).
 - Jacobs Wissen ist bei hohen Chancen zu optimistisch (Nachbarhinweise zählen voll mit) – betrifft auch die erste Bohrung, gehört zur Erkundung.
 - Die Rechenhilfe sieht nur eine Stufe voraus: Dass nach trockenen 600 m noch 900 m kämen, zählt sie nicht mit (vorsichtige Schwelle).
+
+---
+
+# Spielspaß-Durchgang: Preis- und Fracht-Karten
+
+Schritt 1 des Spielspaß-Durchgangs für Kapitel 1: Die Karten auf den Reitern Markt und Fracht fühlten sich folgenlos an. Gemessen vorher: alle Fracht-Karten zusammen +0,4 % Imperium (freightGain 1,00), Thorne erwischte einen Bluff in unter 1 % der Fälle, ein Gerücht brachte einmalig etwa 750 $, eine Abfuhr kostete meist nur eine verdeckt höhere Erhöhungs-Wahrscheinlichkeit. Ziel: Jede Karte wirkt spürbar (grob ein Quartalserlös, 1.500–5.000 $ über ihre Laufzeit) und trägt echtes Risiko – etwa 20–45 % der Anwendungen gehen schief, und ein Fehlschlag kostet **sofort** etwas Sichtbares. Philipp war krank, darum ohne Rückfrage entschieden.
+
+Erzeugt mit `npx tsx tools/termineMessung2.ts 500 --schreiben` (Block zwischen den Marken), der Rest ist von Hand geschrieben. Der Block der Etappe 2 weiter oben bleibt als Vorher-Stand stehen.
+
+## Was jetzt anders ist (kurz)
+
+- **Bei Thorne vorsprechen:** Erfolg senkt den Tarif deutlicher (−0,10 / −0,15 / −0,20 $ statt −0,05 / −0,10 / −0,15 $) und bringt immer Ruhe (2 / 3 / 4 Runden ohne Erhöhung statt 0 / 2 / 4). Eine **Abfuhr hebt den Tarif sofort um 0,05 $** (höchstens bis zum Höchsttarif), dazu wie bisher 4 Runden lang doppelt so oft Erhöhungen.
+- **Bluff:** Hing das Zugeständnis an Ausweichwegen oder der Pipeline, lässt Thorne in den 2 Folgerunden **je Runde mit 35 % am Bahnhof nachzählen**. Geht in so einer Runde mehr als 60 % per Bahn, fliegt der Bluff auf: +0,15 $ sofort (vorher +0,10 $) und Groll. Vorher zählte nur die Summe beider Runden gegen 80 % – das schaffte so gut wie niemand. Eigener Zufallsstrang (`…:fracht:<Runde>:bluff`).
+- **Transportgemeinschaft:** Solange sie läuft, gibt Thorne **Rabatt auf Jacobs Bahnfracht**: 0,01 $ je volle 2.000 bbl Gemeinschaftsmenge, höchstens 0,08 $ (`poolDiscount`, in `tariff()` von transport.ts). Dafür die **Zusage**: Jacobs Bahnfracht plus Gemeinschaftsmenge müssen jede Runde mindestens 8.000 bbl sein, sonst kostet jedes fehlende Barrel sofort 0,10 $ (`poolPenalty`, ab der Runde nach der Gründung, mit den Mitgliedern vor dem Abspringen). Springen Mitglieder ab oder hält Jacob Öl zurück, wird die Zusage teuer.
+- **Brennan:** 8.000 statt 5.000 bbl je Runde, Fehlmenge 0,25 statt 0,15 $ je Barrel (Mindestmenge bleibt 2.000).
+- **Liefervertrag:** bis 10.000 statt 6.000 bbl je Runde, Fehlmenge 0,20 statt 0,15 $.
+- **Gerücht streuen:** wirkt **2 Runden** auf den Preis statt einer (`rumour.rounds`, `rumourShockNow`). Fliegt „Quellen versiegen“ auf, **fällt der Preis sofort um 10 %** (eine Runde, `exposed.backlash`), dazu wie bisher Cranes Abschlag, Nora und der Ruf.
+- **Mit Crane feilschen:** Crane hat jetzt **Gegendruck** (1 Punkt, +1, wenn er in den letzten 4 Runden schon nachgegeben hat – `craneResistance`) und **Laune** (−1 / 0 / +1 mit 35 / 45 / 20 %). Bleiben weniger als 2 Punkte, gibt es die Abfuhr: Der Abschlag kommt sofort und dauert 6 Runden. Die Stufen selbst (2: Abschlag weg, 3: Angebot, 4: Abnahmevertrag) sind unverändert.
+- **Förderbremse:** unverändert (Preiswirkung, Platzen und Mehrerlös liegen weiter im Ziel).
+- **Texte:** Karten (content/plans.yaml), Kartendetails und Ergebnisse (pricing.ts, freight.ts) und das Frachtfenster nennen die neuen Folgen: sofortige Tariferhöhung, Stichproben am Bahnhof, Rabatt und Zusage der Gemeinschaft, Preissturz nach einem entlarvten Gerücht, Cranes Gegendruck und Laune. Zufallszahlen nennen sie nur, wo es vorher auch so war (Beitritts- und Entlarvungschance).
+- **Bots:** Jeder planende Bot spielt Karten nach Charakter (balance.yaml `bots.plans`): vorsichtig Liefervertrag und Gemeinschaft, gierig Gerücht und Crane, ausgewogen Thorne und Gemeinschaft. Neuer Schalter `bluff` (der Bot schickt während Thornes Prüfung zuerst alles per Bahn) – nur für die Messung. Die Bots füllen Brennans Mindestmenge zuerst, wenn der Umweg je Barrel weniger kostet als die Strafe, buchen Brennan nur mit Polster (2 × Mindestmenge) und nicht, solange die eigene Pipeline gebaut wird, gründen die Gemeinschaft erst, wenn ihre eigene Bahnfracht die Zusage allein trägt (vorher ab 4.000 bbl), und rechnen bei Crane den Gegendruck mit.
+- **Messhilfe:** `src/sim/cardStats.ts` schätzt je Anwendung einer Karte den Geldeffekt und ob sie schiefging (siehe „Wie gemessen wird“); `playGame` liefert die Liste in `plans.cards`.
+
+<!-- Messung Spielspaß K1: npx tsx tools/termineMessung2.ts 500 --schreiben ersetzt bis zur nächsten Marke. -->
+
+Stand: 2026-10-05 · Version 0.4.20+4 · 500 Seeds (`bot-0` bis `bot-499`), Standard-Bot mit allen 387 Ereignissen, je Seed 5 Varianten der Karten
+
+| Kriterium | Ziel (Plan) | Ist | erfüllt |
+| --- | --- | ---: | :---: |
+| Förderbremse: Preis der Folgerunde bei Kartellanteil ≥ 40 % (Median gegen „ohne Bremse“) | +10–18 % | +15,2 % (418 Gründungen; alle Bremsrunden +12,3 %) | ja |
+| cartelCollapse: Anteil geplatzter Förderbremsen | 0,3–0,6 | 0,56 (356 von 631) | ja |
+| pactValue: Ø Mehrerlös je Förderbremse | 300–2.500 $ | 2.096 $ (631 Pakte) | ja |
+| priceGain: Ø Imperium mit Preis-Aktionen ÷ ohne | 1,05–1,25 | 1,064 (121.368 $ gegen 114.105 $) | ja |
+| contractLoss: Anteil verlustreicher Lieferverträge | 0,2–0,5 | 0,32 (1129 Verträge) | ja |
+| Ø Tarifsenkung beim ausgewogenen Bot (je Partie) | 0,05–0,15 $ | 0,13 $ (1,4 Besuche je Partie; nur Thorne: 0,11 $) | ja |
+| freightGain: Ø Imperium mit Fracht-Aktionen ÷ ohne | 1,03–1,15 | 1,041 (118.077 $ gegen 113.473 $) | ja |
+| Bluff erwischt (Anteil der riskierten Fälle, Bluff-Bot) | 20–60 % | 28,2 % (153 von 542; Standard-Bot, der den Bluff meidet: 9,5 %, 46 von 486) | ja |
+| Höchster Posted Price in allen Varianten | ≤ 1,60 $ (priceMax) | 1,58 $ | ja |
+
+| Variante (Standard-Bot) | Ø Imperium | Kapitelziel | Pleite |
+| --- | ---: | ---: | ---: |
+| grund | 114.105 $ | 66,4 % | 0,0 % |
+| preis | 121.368 $ | 71,8 % | 0,2 % |
+| ohneFracht | 113.473 $ | 67,2 % | 0,0 % |
+| fracht | 118.077 $ | 68,8 % | 0,2 % |
+| bluff | 116.730 $ | 68,0 % | 0,2 % |
+
+| Karte | Anwendungen | schlecht | Ø Geldeffekt | Ø \|Effekt\| | Ø gut | Ø schlecht | im Ziel (20–45 %, ≥ 1.000 $) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | :---: |
+| Bei Thorne vorsprechen | 701 | 21,4 % | 4.360 $ | 5.138 $ | 5.944 $ | -1.457 $ | ja |
+| Bei Thorne vorsprechen (Bluff-Bot) | 801 | 36,1 % | 4.325 $ | 5.470 $ | 7.238 $ | -838 $ | ja |
+| Brennan unter Vertrag | 295 | 40,3 % | 5.364 $ | 5.404 $ | 6.471 $ | 3.727 $ | ja |
+| Transportgemeinschaft | 580 | 43,6 % | 2.029 $ | 2.219 $ | 3.614 $ | -21 $ | ja |
+| Liefervertrag | 1129 | 31,6 % | 1.262 $ | 2.081 $ | 2.445 $ | -1.295 $ | ja |
+| Gerücht streuen | 930 | 32,2 % | 1.178 $ | 4.620 $ | 3.939 $ | -4.650 $ | ja |
+| Mit Crane feilschen | 2618 | 21,5 % | 1.219 $ | 3.476 $ | 2.841 $ | -4.714 $ | ja |
+| Förderbremse (Pakte, geplatzt = schlecht) | 631 | 56,4 % | 2.096 $ | 4.425 $ | – | – | – |
+
+<!-- Ende der Messung Spielspaß K1 -->
+
+## Wie gemessen wird
+
+- **Varianten** wie in Etappe 2 (*grund* = Standard-Bot spricht nur bei Thorne vor, *preis* = dazu Förderbremse, Liefervertrag, Gerücht, Crane, *ohneFracht* = keine Karte, *fracht* = Thorne, Brennan, Gemeinschaft), neu *bluff* = wie *fracht*, aber der Bot blufft bewusst: Während Thornes Prüfung schickt er zuerst alles per Bahn. Die Messung nimmt aus `bots.plans` nur, ob der Standard-Bot bei Thorne vorspricht – die Charaktere der Bots für `npm run bots` verschieben sie nicht.
+- **Bluff erwischt:** erwischte ÷ riskierte Zugeständnisse beim Bluff-Bot (offene Prüfungen am Kapitelende zählen nicht); in Klammern der Standard-Bot, der den Bluff meidet, wo es sich lohnt.
+- **Je Karte** (Preis-Karten aus *preis*, Fracht-Karten aus *fracht*): Anteil schlechter Ausgänge und Ø Geldeffekt je Anwendung, jeweils minus Barpreis der Karte. Geschätzt in `src/sim/cardStats.ts`:
+  - *Thorne:* Tarifänderung × Bahnfracht der nächsten 8 Runden (Erfolg: Senkung; Abfuhr: sofortige Erhöhung); ein erwischter Bluff zählt mit seinem Aufschlag × Bahnfracht gegen den Besuch. Schlecht = Abfuhr oder erwischter Bluff. Die verhinderten Erhöhungen (Ruhe) zählen nicht mit – eher zu wenig als zu viel.
+  - *Brennan:* (Mietfuhrwerk − Brennans Preis) × Barrel über Brennan, minus Strafen. Schlecht = in einer Runde Strafe gezahlt oder abgeworben.
+  - *Gemeinschaft:* Rabatt × Bahnfracht, solange sie läuft, minus Strafen für die verfehlte Zusage. Schlecht = kommt nicht zustande oder zahlt mindestens einmal Strafe.
+  - *Liefervertrag:* Mehrerlös wie `contractLoss`. Schlecht = Verlust.
+  - *Gerücht:* Preisplus je Schockrunde × Verkauf der Folgerunde (Preis × (1 − 1/Schock)); entlarvt: Rückschlag ebenso, dazu Cranes Abschlag × Verkauf an Crane, solange er gilt. Schlecht = entlarvt (oder verpufft).
+  - *Crane:* Cranes Abzug je Barrel vorher gegen nachher × Verkauf an Crane der nächsten 8 Runden. Schlecht = Abfuhr.
+  - *Förderbremse:* wie bisher `pactValue`, schlecht = geplatzt.
+
+## Abweichungen vom Auftrag (mit Grund)
+
+| Auftrag / Idee | jetzt | Grund |
+| --- | --- | --- |
+| Abfuhr: Tarif +0,05 $ „für einige Runden“ | +0,05 $ dauerhaft (bis zur nächsten Senkung), höchstens bis maxTariff | Thornes Erhöhungen sind sonst auch dauerhaft; ein befristeter Aufschlag bräuchte neuen Zustand im Spielstand. |
+| Bluff fliegt früher auf (Bahnanteil > 60 %) | > 60 % **je Runde**, aber Thorne zählt nur mit 35 % je Runde nach | Mit einer festen Prüfung hinge die Quote nur daran, ob jemand blufft (der bluffende Bot würde immer erwischt, der ehrliche nie). Die Stichprobe macht den Bluff zum Wagnis: zweimal Glück ≈ 42 %. |
+| Bluff-Quote 20–60 % | gemessen am Bluff-Bot (Variante *bluff*) | Der Standard-Bot hält sich an die Grenze, wenn es sich lohnt – riskiert ist dort oft gar kein Bluff. Seine Quote steht in Klammern. |
+| Gemeinschaft: Mindestmenge, wenn Mitglieder abspringen | feste Zusage 8.000 bbl je Runde (Jacobs Bahnfracht + Gemeinschaft) | Ohne neuen Zustand im Spielstand; 8.000 bbl ist zugleich das erste Druckmittel gegen Thorne. |
+| Crane: größere Einsätze | Gegendruck + Laune | Mit Laune allein ging Crane fast nie schief (6 %): Große Förderer haben fast immer 3 und mehr Punkte (Marktanteil, eigene Wege, voller Tank). Der Gegendruck macht wiederholtes Feilschen zum Wagnis. |
+| Brennan: Mindestmenge höher | bleibt 2.000 bbl (Fehlmenge teurer) | Mit 3.000–4.000 bbl zahlte der Standard-Bot in über 60 % der Verträge Strafe – Brennan fährt nur das, was über Bahn, Gespanne und Pipeline hinausgeht, und das schwankt stark. |
+| Bots nach Charakter: gierig auch Bluff, ausgewogen auch Brennan | gierig nur Gerücht und Crane, ausgewogen Thorne und Gemeinschaft | Thorne (mit oder ohne Bluff) kostete den gierigen Bot etwa 9.000 $ Imperium (300 Seeds): Mit billiger Bahn baut er die Pipeline nicht und zahlt später, wenn Thorne wieder erhöht. Mit Brennan dazu lag der Standard-Bot bei 71,1 % Kapitelziel und 43,9 % Siegen (Grenzen 70 / 40 %); mit Thorne + Gemeinschaft (alte Gründungsregel) bei 70,7 %. |
+| Spielstand-Format hochzählen | bleibt Format 22 | Kein neuer Zustand: Der längere Gerüchteschock rechnet aus der vorhandenen Runde, der Rückschlag liegt im vorhandenen Feld `rumours.shock`, Rabatt und Zusage der Gemeinschaft rechnen aus den Mitgliedern, Cranes Gegendruck aus `clearedRound`. |
+
+## Kapitel-1-Zielwerte (npm run bots, 1.000 Partien je Strategie)
+
+Alle 15 Zielwerte im Rahmen, keiner nachgezogen – aber zwei liegen knapp unter der Grenze (Siegquote ausgewogen 39,6 %, Kapitelziel 69,2 %). Die Unterschiede kommen fast nur von den Karten, die die Bots jetzt spielen: Der Standard-Bot gewinnt mit Thorne und Gemeinschaft, der gierige verliert durch Gerüchte und Crane etwas, der vorsichtige bleibt gleich.
+
+| Kennzahl | vorher (0.4.20+4) | jetzt | Ziel |
+| --- | ---: | ---: | --- |
+| Höchste Siegquote (ausgewogen) | 35,6 % | 39,6 % | ≤ 40 % |
+| Pleitequote Standard-Bot | 0,2 % | 0,3 % | ≤ 15 % |
+| Pleitequote gierig | 4,5 % | 5,5 % | 3–45 % |
+| Ø Imperium vorsichtig ÷ bester Mutiger | 0,81 | 0,78 | ≤ 0,95 |
+| Kapitelziel Standard-Bot | 66,9 % | 69,2 % | 20–70 % |
+| Ø Imperium vorsichtig / gierig / ausgewogen | 90.992 / 106.313 / 112.063 $ | 91.392 / 102.133 / 116.676 $ | – |
+| Kleine Funde 50–500 bbl/Tag | 99,7 % | 99,6 % | 90–100 % |
+| Gusher ÷ kleiner Fund | 5,04 | 5,03 | 2–20 |
+| Gemessener Rückgang je Quartal | 12,3 % | 12,2 % | 8–15 % |
+| Blinde Wildcat-Bohrung (Rand, 300 m) | 14,5 % | 14,5 % | 5–25 % |
+| Ø Termine je Runde (Standard-Bot) | 5,00 | 5,00 | 4,5–5 |
+| Höchster Anteil eines Transportwegs | 41,6 % | 42,0 % | ≤ 75 % |
+| Pipeline in Partien mit Kapitelziel | 77,4 % | 73,1 % | ≤ 80 % |
+| Ausgebaute Quellen | 27,5 % | 26,9 % | 5–70 % |
+| Imperium mit ÷ ohne Ausbau | 1,20 | 1,21 | 1,02–10 |
+| „alles ausbauen“ schlägt den Standard-Bot | 20,4 % | 21,1 % | ≤ 50 % |
+
+Zwischenstände (je 1.000 Partien): gierig mit Thorne und Bluff, ausgewogen mit Thorne, Brennan und Gemeinschaft – Siegquote ausgewogen 43,9 %, Kapitelziel 71,1 %, Ø Imperium gierig 92.510 $; gierig nur Gerücht und Crane, ausgewogen Thorne und Gemeinschaft (alte Gründungsregel) – 39,6 % / 70,7 %.
+
+## Offen
+
+- **Knappe Zielwerte:** Siegquote ausgewogen 39,6 % und Kapitelziel 69,2 % liegen dicht an der Grenze – bei der Gesamt-Balance im Blick behalten (Hebel: Kapitelziel, Rabatt der Gemeinschaft, Thornes Senkungen).
+- **„Schlecht“ bei Brennan und Gemeinschaft** heißt: mindestens einmal Strafe gezahlt. Im Schnitt bleiben auch diese Verträge im Plus bzw. bei null (Ø schlecht +3.700 $ bzw. −20 $) – richtig weh tun Abfuhr bei Thorne, entlarvtes Gerücht, Abfuhr bei Crane und der verlustreiche Liefervertrag.
+- **Geldeffekte sind Schätzungen** (feste 8 Runden für Tarif- und Abschlagsänderungen, Brennan gegen das Mietfuhrwerk gerechnet). Der Imperiumsvergleich (priceGain, freightGain) ist das härtere Maß: Thorne allein bringt dem Standard-Bot dort kaum etwas (114.105 gegen 113.473 $), weil das Vorsprechen zwei Termine kostet, die sonst in Erkundung und Briefe gehen.
+- **Gieriger Bot und Thorne:** Mit billiger Bahn baut der gierige Bot die Pipeline nicht (`pipelineWorth` rechnet mit dem heutigen Tarif) – ein Bot-Problem, kein Regelproblem; deshalb spricht er nicht vor.
+- **Förderbremse** platzt weiter in 56 % der Pakte (Ziel 30–60 %) – unverändert gelassen.
+- `bots.targets` für die Karten (`priceGain`, `freightGain`, Bluff-Quote, Anteil schlechter Ausgänge je Karte) gibt es noch nicht; die Messung hier ist die Abnahme.
+
+## Spielstand
+
+Unverändert Format 22 (siehe Tabelle oben: kein neuer Zustand).

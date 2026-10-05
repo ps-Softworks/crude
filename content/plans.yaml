@@ -114,15 +114,15 @@ cards:
   geruecht:
     title: { de: "Gerücht streuen", en: "Spread a Rumour" }
     text:
-      de: "Ein paar Dollar für einen Zeilenschinder des Courier und ein paar Runden im Saloon: Was die Händler glauben, bewegt den Preis der nächsten Runde."
-      en: "A few dollars for a Courier hack and a few rounds in the saloon: what the traders believe moves next round's price."
-    risk: { de: "Jedes Gerücht wirkt schwächer als das letzte – und fliegt leichter auf. Dann deckt Nora Whitlock auf, woher es kam: Sie redet nie wieder mit Jacob, und Crane zahlt weniger.", en: "Each rumour works less than the last – and is easier to expose. Then Nora Whitlock finds out where it came from: she never speaks to Jacob again, and Crane pays less." }
+      de: "Ein paar Dollar für einen Zeilenschinder des Courier und ein paar Runden im Saloon: Was die Händler glauben, bewegt den Preis – nicht nur eine Runde lang."
+      en: "A few dollars for a Courier hack and a few rounds in the saloon: what the traders believe moves the price – for more than one round."
+    risk: { de: "Jedes Gerücht wirkt schwächer als das letzte – und fliegt leichter auf. Dann deckt Nora Whitlock auf, woher es kam: Sie redet nie wieder mit Jacob, Crane zahlt sofort weniger, und nach einem falschen Versiegen fällt der Preis, weil sich die Händler betrogen fühlen.", en: "Each rumour works less than the last – and is easier to expose. Then Nora Whitlock finds out where it came from: she never speaks to Jacob again, Crane pays less at once, and after a false drying-up the price falls because the traders feel cheated." }
   crane_feilschen:
     title: { de: "Mit Crane feilschen", en: "Haggle with Crane" }
     text:
       de: "Ins Kontor des Trusts, mit allem, was Jacob in der Hand hat: Verträge, eigene Wege, einen Pakt, volle Tanks. Je mehr, desto weiter gibt Crane nach."
       en: "Into the Trust's office with everything Jacob holds: contracts, his own routes, a pact, full tanks. The more, the further Crane gives way."
-    risk: { de: "Mit zu wenig in der Hand gilt Jacob als Bittsteller. Cranes bestes Angebot hat einen Preis: Verrat an den Unabhängigen.", en: "With too little in hand Jacob counts as a supplicant. Crane's best offer has a price: betraying the independents." }
+    risk: { de: "Crane ist launisch, gibt nie gern nach und schon gar nicht zweimal kurz hintereinander. Reicht es nicht, gilt Jacob als Bittsteller: Der Abschlag kommt sofort und dauert länger. Cranes bestes Angebot hat einen Preis: Verrat an den Unabhängigen.", en: "Crane is moody, never likes to give way, least of all twice in a short time. If it is not enough, Jacob counts as a supplicant: the discount comes at once and lasts longer. Crane's best offer has a price: betraying the independents." }
 
   # --- Reiter Fracht (Etappe 2): die Frachtkosten drücken ---
   thorne_vorsprechen:
@@ -130,19 +130,19 @@ cards:
     text:
       de: "In Thornes Büro am Bahnhof: Druck gegen Widerstand. Gebündelte Mengen, Ausweichwege, eine Pipeline oder ein Gesetz in Hallstead – je mehr Jacob in der Hand hat, desto weiter geht der Tarif herunter."
       en: "In Thorne's office at the station: pressure against resistance. Bundled volumes, other routes, a pipeline or a bill in Hallstead – the more Jacob holds, the further the rate comes down."
-    risk: { de: "Thornes Laune ist nicht vorherzusagen. Ohne genug Druck gibt es eine Abfuhr, und er erhöht danach öfter. Wer mit Ausweichwegen droht und dann doch alles per Bahn schickt, wird erwischt.", en: "Thorne's mood cannot be predicted. Without enough pressure he sends Jacob away and raises the rate more often. Whoever threatens other routes and then ships everything by rail gets caught." }
+    risk: { de: "Thornes Laune ist nicht vorherzusagen. Ohne genug Druck gibt es eine Abfuhr: Der Tarif steigt sofort, und er erhöht danach öfter. Wer mit Ausweichwegen droht, dem lässt Thorne am Bahnhof nachzählen – nicht jede Woche, aber wer dann das meiste per Bahn schickt, zahlt sofort deutlich mehr.", en: "Thorne's mood cannot be predicted. Without enough pressure he sends Jacob away: the rate rises at once, and he raises it more often afterwards. Whoever threatens other routes gets counted at the station – not every week, but whoever then ships most by rail pays a lot more at once." }
   brennan:
     title: { de: "Brennan unter Vertrag nehmen", en: "Put Brennan Under Contract" }
     text:
       de: "Brennan und seine Fuhrleute fahren vier Runden lang nur für Jacob – billiger als die Mietfuhrwerke und mit mehr Platz."
       en: "Brennan and his teamsters haul only for Jacob for four rounds – cheaper than hired wagons and with more room."
-    risk: { de: "Unter der Mindestmenge zahlt Jacob die wartenden Fuhrleute trotzdem. Thorne wird versuchen, Brennan abzuwerben.", en: "Below the minimum Jacob still pays the waiting teamsters. Thorne will try to lure Brennan away." }
+    risk: { de: "Unter der Mindestmenge zahlt Jacob die wartenden Fuhrleute jede Runde trotzdem – auch wenn die Bahn gerade billiger ist. Thorne wird versuchen, Brennan abzuwerben.", en: "Below the minimum Jacob still pays the waiting teamsters every round – even when the railway happens to be cheaper. Thorne will try to lure Brennan away." }
   transportgemeinschaft:
     title: { de: "Transportgemeinschaft gründen", en: "Found a Freight Pool" }
     text:
-      de: "Die kleinen Wildcatter verladen ihr Öl gemeinsam mit Jacobs – große Mengen sind ein Druckmittel gegen Thorne. Auf Wunsch bauen sie eine Pipeline zusammen."
-      en: "The small wildcatters load their oil together with Jacob's – big volumes are leverage against Thorne. If wanted, they build a pipeline together."
-    risk: { de: "Wer sich vernachlässigt fühlt, springt ab. Eine gemeinsame Pipeline ist billiger, trägt aber auch fremdes Öl.", en: "Whoever feels neglected jumps ship. A shared pipeline is cheaper but also carries others' oil." }
+      de: "Die kleinen Wildcatter verladen ihr Öl gemeinsam mit Jacobs – große Mengen sind ein Druckmittel gegen Thorne, und solange die Gemeinschaft läuft, gibt er Rabatt auf Jacobs Bahnfracht. Auf Wunsch bauen sie eine Pipeline zusammen."
+      en: "The small wildcatters load their oil together with Jacob's – big volumes are leverage against Thorne, and while the pool lasts he gives a discount on Jacob's rail freight. If wanted, they build a pipeline together."
+    risk: { de: "Der Rabatt gilt gegen eine Zusage an Thorne: Fährt die Gemeinschaft zusammen weniger als vereinbart, zahlt Jacob jede Runde Strafe. Wer sich vernachlässigt fühlt, springt ab – dann wird die Zusage schnell zu groß. Eine gemeinsame Pipeline ist billiger, trägt aber auch fremdes Öl.", en: "The discount comes with a promise to Thorne: if the pool ships less than agreed, Jacob pays a penalty every round. Whoever feels neglected jumps ship – and the promise soon becomes too big. A shared pipeline is cheaper but also carries others' oil." }
   gemeinschaft_halten:
     title: { de: "Gemeinschaft zusammenhalten", en: "Hold the Pool Together" }
     text:

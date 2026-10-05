@@ -496,9 +496,9 @@ describe('Bot-Läufe: Transportwege (0.2.15+4)', () => {
     }
   });
 
-  it('vorsichtig verkauft nie an den Händler und droht Thorne nie', () => {
+  it('vorsichtig verkauft an den Händler nur mit Liefervertrag (Spielspaß K1) und droht Thorne nie', () => {
     for (const r of spiele('vorsichtig')) {
-      expect(r.transport.trader.barrels).toBe(0);
+      if (!r.plans.cards.some((u) => u.card === 'liefervertrag')) expect(r.transport.trader.barrels).toBe(0);
       expect(r.state.logistics.threatRound).toBe(0);
     }
   });

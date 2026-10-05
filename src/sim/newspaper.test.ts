@@ -123,6 +123,8 @@ describe('Zeitung: Frühwarnzeichen (GDD §7.2)', () => {
   });
 
   it('die Schätzung trifft den Preis vom Rundenende, wenn nichts Unerwartetes passiert (viele Partien mit Bots)', () => {
+    // Spielspaß K1: Der gierige Bot streut Gerüchte; ein gebuchtes wirkt erst am Rundenende – das wäre „unerwartet“.
+    const ohneGeruecht: Balance = { ...balance, botPlans: { ...balance.botPlans, greedy: { ...balance.botPlans.greedy, rumour: false } } };
     const gesehen = new Set<Outlook>();
     for (let s = 0; s < 15; s++) {
       const seed = `zeitung-${s}`;
@@ -131,7 +133,7 @@ describe('Zeitung: Frühwarnzeichen (GDD §7.2)', () => {
       while (!state.finished) {
         // Der Spieler handelt, dann endet die Runde. Seit 0.2.15+7 kann ein Zug die Förderung
         // dieser Runde ändern (Pumpe nachrüsten) – die Schätzung gilt für den Stand nach seinen Zügen.
-        const gespielt = botTurn(state, balance, 'gierig', rng);
+        const gespielt = botTurn(state, ohneGeruecht, 'gierig', rng);
         const outlook = marketOutlook(gespielt, balance);
         gesehen.add(outlook);
         // Etappe 2: Der Preis rechnet mit Jacobs Verkauf – nach seinem Zug steht der fest.

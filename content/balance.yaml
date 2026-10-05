@@ -269,20 +269,21 @@ priceActions:
     antitrust: { chance: 0.10, fine: 1000 }   # Kartellgesetz in Kraft: je Runde 10 % Verfahren, 1.000 $ Strafe
   contract:                  # Liefervertrag mit dem Händler in Port Ellis
     minQty: 2000             # Menge je Runde: 2.000 bis min(6.000, Förderung der Vorrunde)
-    maxQty: 6000
+    maxQty: 10000            # Spielspaß K1: 6.000 → 10.000 – größere Mengen, damit Gewinn und Verlust spürbar werden
     qtyStep: 1000
     rounds: [4, 8]
     premium: 0.04            # Festpreis = Posted Price + 0,04 − 0,02 × Laufzeit (Plan: + 0,10 – weil der Preis am Salt Hill mit jeder neuen Nachbarquelle fällt, war damit fast jeder Vertrag ein Gewinn, Ziel 20–50 % Verlustverträge)
     perRound: 0.02
-    shortfall: 0.15          # Fehlmenge kostet 0,15 $ je bbl
+    shortfall: 0.20          # Fehlmenge kostet 0,20 $ je bbl (Spielspaß K1: 0,15 → 0,20)
     grudgeAfter: 2           # Cranes Groll (transport.trader.grudgeCut) für Laufzeit + 2 Runden
     failChance: 0.30         # Bankpanik oder Crash: Händler zu 30 % pleite, die laufende Runde bleibt unbezahlt
   rumour:                    # Gerücht streuen
     cooldown: 3
-    dry: { shock: 0.15, minTank: 5000 }                    # „Quellen versiegen“: Preis +15 % in der Folgerunde, nur mit vollem Tank
+    dry: { shock: 0.15, minTank: 5000 }                    # „Quellen versiegen“: Preis +15 %, nur mit vollem Tank
+    rounds: 2                # Spielspaß K1: Ein Gerücht wirkt 2 Runden auf den Preis (vorher 1)
     bullard: { shock: -0.12, leaseCost: -0.15, rounds: 2 }  # „Riesenfund bei Bullard“: Preis −12 %, Pachten 15 % billiger, Bullard pachtet 2 Runden nichts
     wear: 0.6                # jedes weitere Gerücht wirkt × 0,6
-    exposed: { base: 0.20, perRumour: 0.15 }   # Entlarvung 20 % + 15 % je früheres Gerücht
+    exposed: { base: 0.20, perRumour: 0.15, backlash: -0.10 }   # Entlarvung 20 % + 15 % je früheres Gerücht; Spielspaß K1: „Quellen versiegen“ entlarvt – der Preis fällt sofort 10 % (eine Runde)
   crane:                     # Mit Crane feilschen
     points: { contract: 1, freight: 1, cartel: 2, alliance: 1, share: 1, antitrust: 1, tank: 1 }
     freightTeams: 2          # „eigene Wege“: mindestens 2 Gespanne oder Pipeline
@@ -291,6 +292,8 @@ priceActions:
     rebuffExtra: 2           # 1 Punkt: Abfuhr, der Abschlag kommt sofort und dauert 2 Runden länger
     deal: { bonus: 0.08, rounds: 6 }        # ab 3: +0,08 $ je bbl für 6 Runden (nur gegen Austritt aus Pakt oder Händlervertrag)
     contract: { premium: 0.05, rounds: 6 }  # ab 4: fester Abnahmevertrag zu Posted Price + 0,05
+    mood: { down: 0.35, up: 0.20 }          # Spielspaß K1: Cranes Laune −1 / 0 / +1 Punkt mit 35 / 45 / 20 % – der Trust ist öfter schlecht gelaunt als gut
+    resistance: { base: 1, recent: 1, rounds: 4 }   # Spielspaß K1: Cranes Gegendruck 1 Punkt, +1, wenn er in den letzten 4 Runden schon nachgegeben hat (vorher keiner)
 
 # Bohren (GDD §5): Stufe 1 ist die Zieltiefe, jede weitere Stufe heißt
 # "tiefer bohren". Tiefer = teurer und gefährlicher (Push your luck).
@@ -402,12 +405,15 @@ transport:
     fallbackShare: 0.5      # Druckmittel 3: Ausweichkapazität (Gespanne, Brennan, Pipeline) ≥ 50 % der Bahnmenge der Vorrunde
     resistance: { base: 1, perConcession: 1, concessionRounds: 4, feud: 1 }   # Widerstand: 1 + 1 je Zugeständnis der letzten 4 Runden + 1, wenn Bullard in Fehde Jacobs Mengen verrät (Plan: 2 – damit gab Thorne kaum je nach, Ø Tarifsenkung 0,02 $ statt 0,05–0,15 $)
     mood: { down: 0.25, up: 0.25 }   # Thornes Laune: −1 / 0 / +1 mit 25 / 50 / 25 %
-    cuts: [0.05, 0.10, 0.15]         # Tarifsenkung bei Druck − Widerstand = 1, 2, ≥ 3
-    freeze: [0, 2, 4]                # … und so viele Runden keine Erhöhung
+    cuts: [0.10, 0.15, 0.20]         # Tarifsenkung bei Druck − Widerstand = 1, 2, ≥ 3 (Spielspaß K1: vorher 0,05 / 0,10 / 0,15)
+    freeze: [2, 3, 4]                # … und so viele Runden keine Erhöhung (Spielspaß K1: vorher 0 / 2 / 4)
     special: { tariff: 0.20, rounds: 6 }   # ab 3 wahlweise: Sondertarif fest für 6 Runden
-    rebuff: { factor: 2, rounds: 4 }       # Abfuhr (≤ 0) oder erwischter Bluff: Erhöhungschance × 2 für 4 Runden
-    bluff: { rounds: 2, railShare: 0.8, penalty: 0.10 }   # hing das Zugeständnis an Ausweichwegen oder Pipeline und gehen in 2 Folgerunden > 80 % per Bahn: +0,10 $
-    brennan: { costPerBarrel: 0.35, capacity: 5000, rounds: 4, minimum: 2000, shortfall: 0.15, raise: 200 }   # Brennans Fuhrleute ersetzen die Mietfuhrwerke
+    rebuff: { factor: 2, rounds: 4, raise: 0.05 }   # Abfuhr (≤ 0) oder erwischter Bluff: Erhöhungschance × 2 für 4 Runden; Spielspaß K1: bei der Abfuhr steigt der Tarif sofort um 0,05 $
+    # Hing das Zugeständnis an Ausweichwegen oder Pipeline, zählt Thorne in den 2 Folgerunden je Runde mit 35 % nach; geht in so einer
+    # Runde mehr als 60 % per Bahn: +0,15 $. Spielspaß K1: vorher Summe beider Runden > 80 %, +0,10 $ – damit erwischte Thorne fast nie jemanden (0,6 %).
+    bluff: { rounds: 2, railShare: 0.6, penalty: 0.15, check: 0.35 }
+    # Brennans Fuhrleute ersetzen die Mietfuhrwerke. Spielspaß K1: 5.000 → 8.000 bbl, Mindestmenge bleibt 2.000, Fehlmenge 0,15 → 0,25 $.
+    brennan: { costPerBarrel: 0.35, capacity: 8000, rounds: 4, minimum: 2000, shortfall: 0.25, raise: 200 }
     pool:                   # Transportgemeinschaft
       base: 0.25            # Zusage je Firma: 0,25 + (Tarif − 0,25) + Ruf (+0,20 Verband, −0,10 Fehde Bullard) …
       tariffRef: 0.25
@@ -421,6 +427,12 @@ transport:
       pipelineDiscount: 0.4 # Pipeline gemeinsam: −40 % Baukosten …
       foreignShare: 0.3     # … dafür 30 % der Kapazität für Fremdöl …
       transitFee: 0.05      # … gegen 0,05 $ Durchleitung je Barrel
+      # Spielspaß K1: Rabatt auf Jacobs Bahnfracht, solange die Gemeinschaft läuft – 0,01 $ je 2.000 bbl Gemeinschaftsmenge, höchstens 0,08 $ …
+      discountPer: 2000
+      discountStep: 0.01
+      discountMax: 0.08
+      minimum: 8000         # … gegen die Zusage, gemeinsam (Jacobs Bahnfracht + Gemeinschaft) mindestens 8.000 bbl je Runde zu verladen …
+      shortfall: 0.10       # … sonst 0,10 $ je fehlendem Barrel (ab der Runde nach der Gründung)
     cancelPressure: 2       # Exklusivvertrag kündigen geht erst ab so viel Druck
   # 0.2.15+2: zweiter Käufer – unabhängiger Händler in Port Ellis.
   trader:
@@ -720,13 +732,16 @@ bots:
     cautious: { rides: 1, until: 0.55, known: 1 }
     greedy: { rides: 1, until: 0.40, known: 1 }
     balanced: { rides: 1, until: 0.6, known: 3 }
-  # Preis- und Fracht-Karten (Etappe 2): Welcher Bot welche Karte spielt. Die Feinarbeit (wer wann was) ist
-  # Etappe 4; bis dahin verhandelt nur der Standard-Bot mit Thorne – das ersetzt die alte Drohung mit der Pipeline.
-  # Die Messung der Etappe 2 (tools/termineMessung2.ts) schaltet die übrigen Karten für den Standard-Bot an.
+  # Preis- und Fracht-Karten (Etappe 2): Welcher Bot welche Karte spielt (bluff: hält sich nach einem Zugeständnis
+  # nicht an Thornes Bahngrenze). Die Messung (tools/termineMessung2.ts) nimmt für den Standard-Bot nur „thorne“
+  # von hier und schaltet die übrigen Karten je Variante selbst.
   plans:
-    cautious: { cartel: false, contract: false, rumour: false, crane: false, thorne: false, brennan: false, pool: false }
-    greedy: { cartel: false, contract: false, rumour: false, crane: false, thorne: false, brennan: false, pool: false }
-    balanced: { cartel: false, contract: false, rumour: false, crane: false, thorne: true, brennan: false, pool: false }
+    # Spielspaß K1: Jeder planende Bot spielt die Karten nach Charakter – vorsichtig sichert ab (Liefervertrag, Gemeinschaft),
+    # gierig zockt (Gerücht, Crane), ausgewogen drückt die Fracht (Thorne, Gemeinschaft). Thorne mit Bluff kostete den gierigen
+    # Bot etwa 9.000 $ (mit billiger Bahn baut er die Pipeline nicht), Brennan dazu hob das Kapitelziel des Standard-Bots über 70 %.
+    cautious: { cartel: false, contract: true, rumour: false, crane: false, thorne: false, brennan: false, pool: true, bluff: false }
+    greedy: { cartel: false, contract: false, rumour: true, crane: true, thorne: false, brennan: false, pool: false, bluff: false }
+    balanced: { cartel: false, contract: false, rumour: false, crane: false, thorne: true, brennan: false, pool: true, bluff: false }
   rightsEstimate: 600      # grobe Schätzung der Bots: so viel kosten die Wegerechte für die Pipeline zusammen
   # Zielwerte Kapitel 1 (2.15, GDD §15 und §17): Toleranzbereich min–max je Kennzahl.
   # Was gemessen wird, steht in src/sim/bots.ts (TARGETS); die Tabelle Ist/Ziel in docs/botlaeufe.md.

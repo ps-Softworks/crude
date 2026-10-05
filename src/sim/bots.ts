@@ -10,6 +10,7 @@
 // gehört der Welt und wird nie angefasst; Math.random kommt nicht vor.
 // Die Zahlen stehen in content/balance.yaml unter bots.
 
+import { type CardUse, finishCards, newCardTracker, trackCards } from './cardStats';
 import { TRANSPORT_MODES, type Balance, type BotEventWeights, type BotInvest, type BotTargetId, type BotTransport, type Buyer, type TransportMode } from './balance';
 import { overtimeFor } from './agenda';
 import { creditLimit, debt, headroom, takeLoan } from './credit';
@@ -49,7 +50,7 @@ import { choiceCost, choiceReason, resolveEvent, routineOffered, type EventChoic
 import { knowledgeOf, suggestRide } from './exploration';
 import { bookCard, exploreAppointments } from './plans';
 // Etappe 2: Preis- und Transport-Aktionen über das Planungsbrett.
-import { activeContract, cartelActive, cranePressure, type PricingState } from './pricing';
+import { activeContract, cartelActive, cranePressure, craneResistance, type PricingState } from './pricing';
 import { brennanActive, freightPressure, thorneResistance } from './freight';
 
 export type Strategy = 'vorsichtig' | 'gierig' | 'ausgewogen' | 'zufaellig';
@@ -112,15 +113,40 @@ function roundsLeft(state: GameState): number {
  * Ein Weg, bei dem nach Fracht nichts übrig bleibt, wird nicht benutzt. An den
  * Händler nur mit trader = true. Jeder Verkauf landet in der Buchführung.
  */
-function sell(state: GameState, balance: Balance, share: number, ledger: TransportLedger, trader = false, margin = true): GameState {
+function sell(state: GameState, balance: Balance, share: number, ledger: TransportLedger, trader = false, margin = true, bluff = false): GameState {
   let rest = Math.floor(Math.floor(state.oilStock) * share);
   // Etappe 2: Ein Liefervertrag mit dem Händler wird zuerst erfüllt (Fehlmenge kostet Strafe).
   const vertrag = activeContract(state, 'haendler') !== null;
   const buyers: Buyer[] = trader || vertrag ? ['trader', 'crane'] : ['crane'];
   const wege = TRANSPORT_MODES.flatMap((mode) => buyers.map((buyer) => ({ mode, buyer })));
-  wege.sort((a, b) => (vertrag ? Number(b.buyer === 'trader') - Number(a.buyer === 'trader') : 0) || netPrice(state, balance, b.mode, b.buyer) - netPrice(state, balance, a.mode, a.buyer));
-  // Etappe 2: Läuft Thornes Bluff-Prüfung, bleibt der Bahnanteil unter der Grenze – wenn es sich lohnt.
-  let bahnFrei = bluffRailCap(state, balance, rest);
+  // Spielspaß K1: Der bluffende Bot schickt während Thornes Prüfung zuerst alles per Bahn – die Drohung war Luft.
+  const pruefung = bluff && state.freight?.bluffCheck != null && state.round >= state.freight.bluffCheck.from;
+  wege.sort(
+    (a, b) =>
+      (pruefung ? Number(b.mode === 'rail') - Number(a.mode === 'rail') : 0) ||
+      (vertrag ? Number(b.buyer === 'trader') - Number(a.buyer === 'trader') : 0) ||
+      netPrice(state, balance, b.mode, b.buyer) - netPrice(state, balance, a.mode, a.buyer),
+  );
+  // Etappe 2: Läuft Thornes Bluff-Prüfung, bleibt der Bahnanteil unter der Grenze – wenn es sich lohnt
+  // (Spielspaß K1: ein Bot mit bots.plans.bluff pfeift darauf und riskiert, erwischt zu werden).
+  let bahnFrei = bluff ? Infinity : bluffRailCap(state, balance, rest);
+  // Spielspaß K1: Brennans Mindestmenge zuerst füllen, wenn der Umweg je Barrel weniger kostet als seine Strafe.
+  const fehltBrennan = brennanActive(state) ? Math.max(0, balance.freight.brennan.minimum - state.shipped.wagon) : 0;
+  if (fehltBrennan > 0 && rest > 0) {
+    // Verglichen wird die Fracht (an Crane); der Händler nimmt ohnehin nur eine kleine Menge.
+    const besterWeg = Math.max(...TRANSPORT_MODES.filter((m) => modeUnavailable(state, m) === null).map((m) => netPrice(state, balance, m, 'crane')));
+    const ueberBrennan = netPrice(state, balance, 'wagon', 'crane');
+    if (ueberBrennan > 0 && besterWeg - ueberBrennan <= balance.freight.brennan.shortfall) {
+      const menge = Math.min(rest, fehltBrennan, capacityLeft(state, balance, 'wagon'), Math.floor(state.oilStock));
+      const r = menge > 0 ? sellOil(state, balance, 'wagon', menge, 'crane') : null;
+      if (r && r.ok) {
+        state = r.state;
+        rest -= menge;
+        ledger.wagon.barrels += menge;
+        ledger.wagon.net += r.quote.net;
+      }
+    }
+  }
   for (const { mode, buyer } of wege) {
     if (rest <= 0) break;
     // margin: Nach Fracht und Förderzins muss etwas übrig bleiben – sonst bleibt das Öl lieber im
@@ -150,15 +176,16 @@ function sell(state: GameState, balance: Balance, share: number, ledger: Transpo
 
 /**
  * Bluff-Prüfung (Etappe 2): Hing Thornes Zugeständnis an Ausweichwegen oder Pipeline, darf in den
- * Folgerunden höchstens bluff.railShare per Bahn gehen. Der Bot hält sich daran, wenn Wege, die je
- * Barrel höchstens Thornes Aufschlag mehr kosten, die Menge schaffen; sonst nimmt er das Risiko
- * (Infinity = keine Grenze).
+ * Folgerunden höchstens bluff.railShare je Runde per Bahn gehen (Spielspaß K1: Thorne zählt je Runde
+ * nach, nicht mehr über beide Runden). Der Bot hält sich daran, wenn Wege, die je Barrel höchstens
+ * Thornes Aufschlag mehr kosten, die Menge schaffen; sonst nimmt er das Risiko (Infinity = keine Grenze).
  */
 function bluffRailCap(state: GameState, balance: Balance, total: number): number {
   const bc = state.freight?.bluffCheck;
   if (!bc || state.round < bc.from || state.round > bc.until || total <= 0) return Infinity;
   const f = balance.freight.bluff;
-  const erlaubt = Math.max(0, Math.floor(f.railShare * (bc.total + total) - bc.rail) - 1);
+  const schon = Object.values(state.shipped).reduce((s, v) => s + v, 0);
+  const erlaubt = Math.max(0, Math.floor(f.railShare * (schon + total) - state.shipped.rail) - 1);
   const bahn = Math.min(total, capacityLeft(state, balance, 'rail'));
   const verschieben = bahn - erlaubt;
   if (verschieben <= 0) return Infinity;
@@ -391,7 +418,8 @@ function transportTurn(
   // Etappe 2: Ist das Gerücht „Quellen versiegen“ gebucht, bleibt genug im Tank, damit man es glaubt.
   const halten = rumourHold(state, balance);
   const anteil = halten > 0 && state.oilStock > 0 ? Math.min(sellShare(state, cfg), Math.max(0, (state.oilStock - halten) / state.oilStock)) : sellShare(state, cfg);
-  state = sell(state, balance, anteil, ledger, useTrader(state, balance, cfg, anteil), cfg.margin);
+  const blufft = balance.botPlans[strategyKey(strategy)].bluff;
+  state = sell(state, balance, anteil, ledger, useTrader(state, balance, cfg, anteil), cfg.margin, blufft);
 
   // Bleibt nach dem Verkauf Öl liegen, weil alle Wege voll sind: ein Gespann mehr.
   if (cfg.teams !== 'never') {
@@ -456,15 +484,21 @@ function planTurn(state: GameState, balance: Balance, strategy: Exclude<Strategy
     if ((state.freight?.pool.length ?? 0) === 0) {
       // Steht die eigene Pipeline noch aus, baut er sie lieber mit der Gemeinschaft (billiger, dazu Durchleitungsgebühr).
       const ohnePipeline = state.logistics.pipeline === 'none' || state.logistics.pipeline === 'surveyed';
-      if ((state.freight?.railLast ?? 0) >= balance.freight.bundle[0] / 2 && leisten(state, 100) && !ende) state = buchen(state, 'transportgemeinschaft', ohnePipeline ? 'pipeline' : 'ohne');
+      // Spielspaß K1: erst, wenn Jacobs eigene Bahnfracht die Zusage an Thorne allein trägt (vorher ab der Hälfte von bundle[0]) –
+      // sonst kostet jedes abspringende Mitglied Strafe.
+      if ((state.freight?.railLast ?? 0) >= balance.freight.pool.minimum && leisten(state, 100) && !ende) state = buchen(state, 'transportgemeinschaft', ohnePipeline ? 'pipeline' : 'ohne');
     } else if (state.freight.pool.length >= 3) state = buchen(state, 'gemeinschaft_halten');
   }
   // Brennan nur, wenn Öl übrig bleibt, das sonst teuer per Mietfuhrwerk ginge (Bahn, Gespanne und Pipeline voll),
   // oder die Bahn deutlich teurer ist als Brennan – und nach Gespannen und Pipeline genug für die Mindestmenge bleibt.
   const fuerBrennan = prod - modeCapacity(state, balance, 'teams') - modeCapacity(state, balance, 'pipeline');
   const ueberlauf = fuerBrennan - modeCapacity(state, balance, 'rail');
-  const bahnTeuer = tariff(state, balance, 'rail') >= balance.freight.brennan.costPerBarrel + 0.1;
-  if (cfg.brennan && !brennanActive(state) && fuerBrennan >= balance.freight.brennan.minimum * 1.5 && (ueberlauf >= balance.freight.brennan.minimum || bahnTeuer) && !exclusiveActive(state, balance) && leisten(state, 150) && !ende) {
+  // Spielspaß K1: + 0,2 statt + 0,1 – bei knappem Abstand drückt Thorne den Tarif oft darunter, und Brennans Mindestmenge kostet.
+  const bahnTeuer = tariff(state, balance, 'rail') >= balance.freight.brennan.costPerBarrel + 0.2;
+  // Spielspaß K1: mit Polster (2 × Mindestmenge statt 1,5 ×) und nicht, solange die eigene Pipeline gebaut wird – sonst steht Brennan bald still und kostet Strafe.
+  const mindest = balance.freight.brennan.minimum;
+  const pipelineKommt = state.logistics.pipeline === 'building';
+  if (cfg.brennan && !brennanActive(state) && !pipelineKommt && fuerBrennan >= mindest * 2 && (ueberlauf >= mindest * 1.5 || bahnTeuer) && !exclusiveActive(state, balance) && leisten(state, 150) && !ende) {
     state = buchen(state, 'brennan');
   }
   if (cfg.cartel && prod > 0) {
@@ -487,7 +521,8 @@ function planTurn(state: GameState, balance: Balance, strategy: Exclude<Strategy
     state = buchen(state, 'liefervertrag', `${pa.contract.rounds[0]}x${q}`);
   }
   if (cfg.rumour && state.oilStock >= pa.rumour.dry.minTank * 1.5 && state.pricing.rumours.count < 2 && leisten(state, 150)) state = buchen(state, 'geruecht', 'versiegen');
-  if (cfg.crane && craneCut(state, balance) > 0 && cranePressure(state, balance) >= 2) state = buchen(state, 'crane_feilschen', 'abschlag');
+  // Spielspaß K1: Cranes Gegendruck nach einem frischen Nachgeben zählt mit; Cranes Laune bleibt das Risiko.
+  if (cfg.crane && craneCut(state, balance) > 0 && cranePressure(state, balance) - craneResistance(state, balance) >= 2) state = buchen(state, 'crane_feilschen', 'abschlag');
   return state;
 }
 
@@ -1092,10 +1127,12 @@ export interface PlanStats {
   bluffsCaught: number;
   /** Höchster Posted Price der Partie. */
   maxPrice: number;
+  /** Spielspaß K1: jede Anwendung einer Preis- oder Fracht-Karte mit Geldeffekt und Ausgang (src/sim/cardStats.ts). */
+  cards: CardUse[];
 }
 
 function newPlanStats(): PlanStats {
-  return { cartels: 0, collapses: 0, effects: [], pactValues: [], contracts: [], visits: 0, tariffCut: 0, bluffsRisked: 0, bluffsCaught: 0, maxPrice: 0 };
+  return { cartels: 0, collapses: 0, effects: [], pactValues: [], contracts: [], visits: 0, tariffCut: 0, bluffsRisked: 0, bluffsCaught: 0, maxPrice: 0, cards: [] };
 }
 
 /** Nach jeder Runde: Wirkung der Förderbremse und ihr Mehrerlös (Preisplus wirkt auf die Verkäufe der Folgerunde). */
@@ -1207,6 +1244,7 @@ export function playGame(seed: string, balance: Balance, strategy: Strategy, cat
   const explore: ExploreStats = { appointmentsEarly: 0, roundsEarly: 0, leases: [], forecasts: [] };
   const plans = newPlanStats();
   let offen: { dp: number; pakt: number } | null = null;
+  const karten = newCardTracker();
   while (!state.finished) {
     if (rounds >= state.totalRounds + 5) {
       throw new Error(`Partie ${seed} (${strategy}) endet nicht nach ${rounds} Runden.`);
@@ -1220,6 +1258,7 @@ export function playGame(seed: string, balance: Balance, strategy: Strategy, cat
     state = endRound(gezogen, balance, catalog);
     bookRound(gezogen, state, balance, ledger);
     offen = recordPlans(plans, gezogen, state, offen, balance);
+    if (gezogen.chapter === 1) trackCards(karten, gezogen, state, balance);
     rounds++;
   }
   const bankrupt = state.ending === 'pleite';
@@ -1231,6 +1270,8 @@ export function playGame(seed: string, balance: Balance, strategy: Strategy, cat
   plans.bluffsRisked = state.freight?.bluffsRisked ?? 0;
   plans.bluffsCaught = state.freight?.bluffsCaught ?? 0;
   plans.maxPrice = Math.max(...state.priceHistory);
+  finishCards(karten, state);
+  plans.cards = karten.uses;
   return {
     bankrupt,
     goal: !bankrupt && chapterCheck(state, balance).passed,
