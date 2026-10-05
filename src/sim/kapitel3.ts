@@ -52,6 +52,7 @@ export const KAPITEL3_REASONS = [
   'verstossen',
   'kein_sohn',
   'schon_verheiratet',
+  'thomas_vergeben',
   'gebrochen',
   'aufgenommen',
   'ansehen',

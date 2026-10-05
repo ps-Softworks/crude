@@ -10,6 +10,8 @@
 #   Runde 2+   k2_nora_besuch      Nora will Material über den Trust – Listen, Interview oder abweisen
 #              k2_nora_absatz      … mit nora_bestechung (K1): sie sagt den Courier-Absatz von damals auf
 #              k2_nora_ausschnitt  … mit courier_gekauft (K1): „Ein Mann der Zukunft“, Seite zwei
+#              k2_nora_schweigegeld … mit nora_schweigegeld (K1, 150 $ nach dem Gerücht): das Geld mit Zinsen zurück (0.4.19+3)
+#              k2_nora_beschwert   … mit nora_beschwert (K1): sie kommt nicht, der Artikel kommt trotzdem (0.4.19+3)
 #   +2         k2_nora_artikel     Schlüsselszene: „Wie der Trust Cordova melkt“
 #   Runde 9+   k2_nora_rivale      (nora_verbuendet) Bullards Frachtrabatt – bestätigen oder schweigen
 #   danach     k2_nora_harlan      (nora_feindin)    Teil fünf: Harlan Oil
@@ -50,7 +52,7 @@
       about the Crane Trust: railway rebates, the posted price, judges with new
       carriages. "You sell to the Trust, Mr. Harlan. You know how it does its sums."
   conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
-  notMarked: [nora_bestechung, courier_gekauft, nora_beschwert]
+  notMarked: [nora_bestechung, courier_gekauft, nora_beschwert, nora_respekt]   # 0.4.19+3: nora_respekt → k2_nora_besuch_respekt
   certain: true
   choices:
     - id: material
@@ -90,6 +92,185 @@
       appointments: 0
       default: true
 
+# Entwurf – Philipp überarbeitet (0.4.19+3).
+# Mit nora_respekt aus Kapitel 1 (Jacob schrieb ihr, dass ihr Artikel stimmt). Story-Bibel: Sie kommt zuerst zu
+# Jacob und duzt ihn fast. Dieselben Wahlen und Merkzeichen wie k2_nora_besuch, wärmer erzählt.
+- id: k2_nora_besuch_respekt
+  visitor: nora
+  title:
+    de: Nora kommt zuerst zu Jacob
+    en: Nora Comes to Jacob First
+  text:
+    de: >-
+      Nora Whitlock schreibt jetzt für den Hallstead Ledger, und bevor sie mit irgendwem
+      in Cordova redet, sitzt sie auf Jacobs Besucherstuhl. „Sie sind der Einzige, der mir
+      je geschrieben hat, dass ein Artikel stimmt, Harlan. Das habe ich mir gemerkt.“ Ihre
+      Serie gilt dem Crane Trust: Bahnrabatte, der Posted Price, Richter mit neuen Kutschen.
+      „Ich fange bei Ihnen an, weil Sie mir die Wahrheit sagen. Auch die unbequeme.“
+    en: >-
+      Nora Whitlock writes for the Hallstead Ledger now, and before she talks to anyone in
+      Cordova she is sitting in Jacob's visitor's chair. "You're the only one who ever wrote
+      to tell me an article was accurate, Harlan. I remembered that." Her series is on the
+      Crane Trust: railway rebates, the posted price, judges with new carriages. "I'm
+      starting with you because you tell me the truth. Even the awkward kind."
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  marked: [nora_respekt]
+  notMarked: [nora_bestechung, courier_gekauft]
+  certain: true
+  choices:
+    - id: material
+      label: { de: "Ihr Lusks alte Preislisten geben", en: "Give her Lusk's old price lists" }
+      result:
+        de: >-
+          Nora liest die Listen und lacht kurz. „Das hätten Sie keinem anderen gegeben“, sagt
+          sie. Jacobs Namen nennt sie nicht. Lusk zieht trotzdem zwei Cent je Barrel ab – er
+          ahnt, woher die Listen kommen.
+        en: >-
+          Nora reads the lists and laughs briefly. "You wouldn't have given these to anyone
+          else," she says. She doesn't name Jacob. Lusk docks two cents a barrel anyway – he
+          can guess where the lists came from.
+      effects: { rival: { crane: { trust: -10 } }, heat: 1, price: -0.02 }
+      marks: [nora_quelle, nora_k2_besucht]
+    - id: interview
+      label: { de: "Ihr ein Interview geben – mit Namen", en: "Give her an interview – on the record" }
+      result:
+        de: >-
+          Sie reden zwei Stunden, und es fühlt sich weniger nach Verhör an als bei den Bankiers.
+          Bei der Frage nach den Rabatten der eigenen Firma zögert Jacob. Nora schreibt das
+          Zögern nicht auf. Diesmal nicht.
+        en: >-
+          They talk for two hours, and it feels less like an interrogation than with the bankers.
+          At the question about his own company's rebates Jacob hesitates. Nora doesn't write the
+          hesitation down. Not this time.
+      effects: { strength: -2, reputation: { public: 5 } }
+      marks: [nora_interview_k2, nora_k2_besucht]
+      appointments: 2
+    - id: abweisen
+      label: { de: "„Diesmal nicht, Nora.“", en: "\"Not this time, Nora.\"" }
+      result:
+        de: Nora steht auf, ohne gekränkt zu wirken. „Dann schreibe ich es ohne Sie. Aber fair.“ Sie schreibt die Serie trotzdem.
+        en: Nora stands without seeming hurt. "Then I'll write it without you. But fairly." She writes the series anyway.
+      marks: [nora_ohne_jacob, nora_k2_besucht]
+      appointments: 0
+      default: true
+
+# Entwurf – Philipp überarbeitet (0.4.19+3).
+# Mit nora_schweigegeld aus Kapitel 1 (nora_entlarvt/geld): Jacob gab ihr 150 $ Schweigegeld, und sie behielt
+# es – mit Datum im Notizbuch. Story-Bibel: Sie legt es „mit Zinsen“ zurück auf den Tisch.
+- id: k2_nora_schweigegeld
+  visitor: nora
+  title:
+    de: Hundertfünfzig Dollar mit Zinsen
+    en: A Hundred and Fifty Dollars with Interest
+  text:
+    de: >-
+      Nora Whitlock legt einen Umschlag auf Jacobs Schreibtisch, bevor sie sich setzt.
+      Darin: hundertfünfzig Dollar und eine Aufstellung, sauber gerechnet, zehn Jahre zu
+      vier Prozent. „Ihr Schweigegeld, Mr. Harlan. Ich habe es nie ausgegeben. Ich wollte
+      nur wissen, wie lange ein Mann wie Sie glaubt, dass er jemanden gekauft hat.“ Sie
+      schreibt jetzt für den Hallstead Ledger, eine Serie über den Crane Trust. „Wir sind
+      quitt. Jetzt reden wir.“
+    en: >-
+      Nora Whitlock lays an envelope on Jacob's desk before she sits down. Inside: a
+      hundred and fifty dollars and a statement, neatly worked out, ten years at four per
+      cent. "Your hush money, Mr. Harlan. I never spent it. I only wanted to know how long
+      a man like you believes he has bought someone." She writes for the Hallstead Ledger
+      now, a series on the Crane Trust. "We're square. Now we talk."
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  marked: [nora_schweigegeld]
+  delay: 0
+  certain: true
+  choices:
+    - id: material
+      label: { de: "Das Geld liegen lassen und ihr Lusks alte Preislisten geben", en: "Leave the money and give her Lusk's old price lists" }
+      result:
+        de: >-
+          Nora schiebt den Umschlag nicht zurück, und Jacob nimmt ihn nicht. Die Listen
+          steckt sie ein. „Das ist die erste ehrliche Zahlung zwischen uns“, sagt sie. Lusk
+          zieht zwei Cent je Barrel ab; er ahnt, woher die Listen kommen.
+        en: >-
+          Nora does not push the envelope back, and Jacob does not take it. She pockets the
+          lists. "That's the first honest payment between us," she says. Lusk docks two
+          cents a barrel; he can guess where the lists came from.
+      effects: { rival: { crane: { trust: -10 } }, heat: 1, price: -0.02 }
+      marks: [nora_quelle, nora_k2_besucht]
+    - id: interview
+      label: { de: "Das Geld nehmen und ihr ein Interview geben – mit Namen", en: "Take the money and give her an interview – on the record" }
+      result:
+        de: >-
+          Jacob steckt den Umschlag ein. Nora nickt, als hätte sie genau das aufgeschrieben.
+          Sie fragt zwei Stunden. Die letzte Frage ist, was hundertfünfzig Dollar damals für
+          ihn waren. Jacob sagt es ihr. Sie druckt die Antwort ungekürzt.
+        en: >-
+          Jacob pockets the envelope. Nora nods, as if she had written exactly that down. She
+          asks questions for two hours. The last is what a hundred and fifty dollars meant to
+          him back then. Jacob tells her. She prints the answer uncut.
+      effects: { cash: 210, strength: -4, reputation: { public: 3 } }
+      marks: [nora_interview_k2, nora_k2_besucht]
+      appointments: 2
+    - id: abweisen
+      label: { de: "„Behalten Sie es. Und gehen Sie.“", en: "\"Keep it. And go.\"" }
+      result:
+        de: >-
+          Nora lässt den Umschlag liegen und geht. Im zweiten Teil der Serie steht eine
+          Fußnote: „Ein Förderer aus Cordova zahlte dieser Zeitung einst Schweigegeld. Es
+          liegt noch auf seinem Schreibtisch.“
+        en: >-
+          Nora leaves the envelope and goes. Part two of the series carries a footnote: "A
+          producer from Cordova once paid this newspaper hush money. It is still lying on
+          his desk."
+      effects: { reputation: { public: -3 } }
+      marks: [nora_ohne_jacob, nora_k2_besucht]
+      appointments: 0
+      default: true
+
+# Entwurf – Philipp überarbeitet (0.4.19+3).
+# Mit nora_beschwert aus Kapitel 1 (Jacob beschwerte sich bei Bixby über ihren Artikel). Story-Bibel:
+# „sie kommt nicht, der Artikel kommt trotzdem“ – darum setzt auch diese Fassung nora_k2_besucht.
+- id: k2_nora_beschwert
+  mail: personal
+  deadline: 2
+  title:
+    de: Nora recherchiert in Cordova
+    en: Nora Is Researching in Cordova
+  text:
+    de: >-
+      Lusk erwähnt es beim Essen, wie nebenbei: Nora Whitlock vom Hallstead Ledger ist seit
+      einer Woche in Cordova und fragt nach dem Crane Trust, nach Bahnrabatten und Richtern
+      mit neuen Kutschen. Bei jedem Förderer am Salt Hill war sie schon. Bei Jacob nicht.
+      „Sie hat ein gutes Gedächtnis“, sagt Lusk. „Für Beschwerden besonders.“
+    en: >-
+      Lusk mentions it over dinner, in passing: Nora Whitlock of the Hallstead Ledger has
+      been in Cordova for a week asking about the Crane Trust, railway rebates and judges
+      with new carriages. She has called on every producer on Salt Hill. Not on Jacob.
+      "She has a good memory," says Lusk. "For complaints especially."
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  marked: [nora_beschwert]
+  notMarked: [nora_bestechung, courier_gekauft]
+  certain: true
+  choices:
+    - id: listen
+      label: { de: "Ihr Lusks alte Preislisten schicken – ohne Absender", en: "Send her Lusk's old price lists – without a sender" }
+      result:
+        de: >-
+          Der Umschlag geht mit der Abendpost ins Hotel. Nora antwortet nicht. Aber im dritten
+          Teil der Serie stehen Lusks Zahlen, auf den Cent. Lusk zieht zwei Cent je Barrel ab;
+          er ahnt, woher die Listen kommen.
+        en: >-
+          The envelope goes to the hotel with the evening post. Nora does not reply. But part
+          three of the series carries Lusk's figures, to the cent. Lusk docks two cents a
+          barrel; he can guess where the lists came from.
+      effects: { rival: { crane: { trust: -10 } }, heat: 1, price: -0.02 }
+      marks: [nora_quelle, nora_k2_besucht]
+    - id: abwarten
+      label: { de: "Sie recherchieren lassen", en: "Let her research" }
+      result:
+        de: Nora fährt nach Hallstead zurück, ohne bei Jacob gewesen zu sein. Sie schreibt die Serie trotzdem.
+        en: Nora goes back to Hallstead without having called on Jacob. She writes the series anyway.
+      marks: [nora_ohne_jacob, nora_k2_besucht]
+      appointments: 0
+      default: true
+
 # Entwurf – Philipp überarbeitet.
 # Mit nora_bestechung aus Kapitel 1: Jacob bot ihr nach dem Brand 50 $ an. Nora ließ das Geld liegen
 # (k1-4-nora-brand.yaml) – es hat nie den Besitzer gewechselt. Am Freitag stand im Courier ein Absatz
@@ -119,6 +300,7 @@
       something: your side of the story. Free of charge."
   conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
   marked: [nora_bestechung]
+  notMarked: [nora_schweigegeld]   # 0.4.19+3: wer ihr 150 $ Schweigegeld gab, bekommt k2_nora_schweigegeld
   delay: 0
   certain: true
   choices:

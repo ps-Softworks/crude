@@ -35,8 +35,9 @@ export function ExchangeTicker({ game, at = TICKER_AT, glow, onOpen }: { game: G
     const d = priceChange(ex, s.id);
     return (
       <span key={s.id} className={d < 0 ? 'ab' : d > 0 ? 'auf' : undefined}>
-        {s.id.slice(0, 3).toUpperCase()} {Math.round(ex.prices[s.id])}
-        {d < 0 ? '▼' : d > 0 ? '▲' : ''}{' '}
+        {/* 0.4.19+3: nur Kürzel und Pfeil – mit Kurs passte das Band nicht auf den Ticker („CRA 1…“). Kurse stehen im Fenster. */}
+        {s.id.slice(0, 3).toUpperCase()}
+        {d < 0 ? '▼' : d > 0 ? '▲' : '·'}{' '}
       </span>
     );
   });

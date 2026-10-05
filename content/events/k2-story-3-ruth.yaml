@@ -30,6 +30,8 @@
 #
 # Merkzeichen aus Kapitel 1: ruth_vertroestet, ruth_teilhaberin, ruth_zurueckgewiesen.
 # Neu, liest Kapitel 2: ruth_aufsichtsrat, ruth_k2_abgewiesen.
+# 0.4.19+3: ruth_mitarbeit steht zusätzlich bei jedem ruth_aufsichtsrat und ruth_finanzen – Ruth arbeitet in der
+#   Firma mit (der Wendepunkt in Kapitel 3 liest es: k3_ruth_wendepunkt_partner).
 # Neu für Kapitel 3 (content/relevance.yaml): ruth_finanzen, ruth_vertroestet_k2, ruth_zuhause,
 #   ruth_eigenes_geschaeft, ruth_verboten, ruth_rat_behauptet, ruth_rat_stumm, clara_k2_vater_da,
 #   clara_k2_vater_fehlte.
@@ -121,7 +123,7 @@
           Oil's line of credit as of quarter's end, without explanation, with the
           most respectful regards.
       effects: { ruth: 15, boardLoyalty: { vandermeer: -10, bankier: -5 }, control: 2, rating: -1 }
-      marks: [ruth_aufsichtsrat]
+      marks: [ruth_aufsichtsrat, ruth_mitarbeit]
     - id: finanzen
       label: { de: "Sie zur Finanzchefin machen – mit Titel und Unterschrift", en: "Make her head of finance – with title and signature" }
       result:
@@ -134,7 +136,7 @@
           her first week Ruth finds freight bills paid twice, 2,000 $ worth. The
           bookkeeper resigns.
       effects: { ruth: 12, rating: 1, staffLoyalty: { all: -10 } }
-      marks: [ruth_finanzen]
+      marks: [ruth_finanzen, ruth_mitarbeit]
     - id: vertroesten
       label: { de: "„Wenn die Raffinerie steht“", en: "\"When the refinery is running\"" }
       result:
@@ -197,7 +199,7 @@
           her first week Ruth finds freight bills paid twice, 2,000 $ worth. The
           bookkeeper resigns.
       effects: { ruth: 12, rating: 1, staffLoyalty: { all: -10 } }
-      marks: [ruth_finanzen]
+      marks: [ruth_finanzen, ruth_mitarbeit]
     - id: vertroesten
       label: { de: "„Wenn die Raffinerie steht“", en: "\"When the refinery is running\"" }
       result:
@@ -260,7 +262,7 @@
           Ruth signs the old deed first, then the new one. She takes the box home,
           empty. Vandermeer & Co. raises the rate on the next bond by half a point.
       effects: { ruth: 20, boardLoyalty: { vandermeer: -10 }, control: 2 }
-      marks: [ruth_aufsichtsrat]
+      marks: [ruth_aufsichtsrat, ruth_mitarbeit]
     - id: finanzen
       label: { de: "Ihr die Finanzen geben – den Rat noch nicht", en: "Give her the finances – not the board yet" }
       result:
@@ -271,7 +273,7 @@
           "Not yet," Ruth repeats, and takes the key to the cash box anyway. By the
           end of the month she has found 2,000 $ nobody had missed.
       effects: { ruth: 8, rating: 1 }
-      marks: [ruth_finanzen]
+      marks: [ruth_finanzen, ruth_mitarbeit]
     - id: vertroesten
       label: { de: "„Nächstes Jahr, Ruth. Ganz sicher.“", en: "\"Next year, Ruth. For certain.\"" }
       result:
@@ -319,7 +321,7 @@
           "Not yet," Ruth repeats, and takes the key to the cash box anyway. By the
           end of the month she has found 2,000 $ nobody had missed.
       effects: { ruth: 8, rating: 1 }
-      marks: [ruth_finanzen]
+      marks: [ruth_finanzen, ruth_mitarbeit]
     - id: vertroesten
       label: { de: "„Nächstes Jahr, Ruth. Ganz sicher.“", en: "\"Next year, Ruth. For certain.\"" }
       result:
@@ -371,7 +373,7 @@
           doesn't come to the next meeting, nor to the one after. Without his
           signature the bond sits unsigned for a quarter.
       effects: { ruth: 15, cash: -1500, boardLoyalty: { bankier: -5, vandermeer: -25 }, control: 3 }
-      marks: [ruth_aufsichtsrat]
+      marks: [ruth_aufsichtsrat, ruth_mitarbeit]
     - id: anteil_reicht
       label: { de: "„Dein Anteil spricht für dich – der Stuhl muss nicht sein“", en: "\"Your share speaks for you – the chair isn't needed\"" }
       result:
@@ -418,7 +420,7 @@
         en: >-
           The lawyer drafts the power of attorney; Ruth signs it first. Vandermeer doesn't come to the next meeting, nor to the one after. Without his signature the line of credit sits unsigned for a quarter.
       effects: { ruth: 15, cash: -1500 }
-      marks: [ruth_finanzen]
+      marks: [ruth_finanzen, ruth_mitarbeit]
     - id: anteil_reicht
       label: { de: "„Dein Anteil spricht für dich – der Stuhl muss nicht sein“", en: "\"Your share speaks for you – the chair isn't needed\"" }
       result:
@@ -445,13 +447,13 @@
       Beim Umzug ins neue Büro fällt aus der alten Schublade eine Feder: Ruths
       Feder, mit der sie vor zehn Jahren ihren Namen auf die Urkunde setzen
       wollte. Ruth hat seitdem nicht mehr gefragt. Sie führt die Haushaltsbücher,
-      pünktlich, und spricht beim Essen über Clara und das Wetter. Ihre Schwester
-      Hannah war in diesem Quartal dreimal zu Besuch.
+      pünktlich, und spricht beim Essen über Clara und das Wetter. Ihrer Schwester
+      Hannah in den Kohleprovinzen schreibt sie jede Woche, längere Briefe als früher.
     en: >-
       During the move to the new office a pen falls out of the old drawer: Ruth's
       pen, the one she meant to sign the deed with ten years ago. Ruth hasn't asked
       since. She keeps the household books, punctually, and at supper talks about
-      Clara and the weather. Her sister Hannah has visited three times this quarter.
+      Clara and the weather. She writes to her sister Hannah in the coal provinces every week, longer letters than before.
   conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
   marked: [ruth_zurueckgewiesen]
   delay: 0
@@ -469,12 +471,12 @@
           says. Then she accepts. On Monday she sits over the company books as if she
           had never stopped, and by Friday she has found 1,500 $.
       effects: { ruth: 20, rating: 1 }
-      marks: [ruth_finanzen]
+      marks: [ruth_finanzen, ruth_mitarbeit]
     - id: liegen_lassen
       label: { de: "Die Feder zurück in die Schublade legen", en: "Put the pen back in the drawer" }
       result:
-        de: Die Feder bleibt, wo sie war. Ruth fragt weiter nicht. Hannah kommt im nächsten Quartal öfter.
-        en: The pen stays where it was. Ruth still doesn't ask. Hannah comes more often next quarter.
+        de: Die Feder bleibt, wo sie war. Ruth fragt weiter nicht. Ihre Briefe an Hannah werden dicker.
+        en: The pen stays where it was. Ruth still doesn't ask. Her letters to Hannah grow thicker.
       marks: [ruth_k2_abgewiesen]
       appointments: 0
       default: true
@@ -560,14 +562,16 @@
       stehen zwei Bauplätze und ein Laden am Bahnhof Salt Hill, wo die Bohrstadt
       jedes Jahr eine Straße weiter wächst, auf Ruth Harlan und ihre Schwester
       Hannah. Bezahlt hat Ruth mit Geld, das sie zehn
-      Jahre lang vom Haushaltsgeld zurückgelegt hat. Sie hat es Jacob nicht
+      Jahre lang vom Haushaltsgeld zurückgelegt hat. Hannah zieht dafür aus den
+      Kohleprovinzen herüber und wohnt über dem Laden. Ruth hat es Jacob nicht
       gesagt. Sie hat ihn auch nicht angelogen – er hat nie gefragt.
     en: >-
       Out of habit the notary in Port Ellis sends a copy: in the land register, two
       building plots and a shop by Salt Hill station, where the oil town grows by
       another street every year, stand in the names of Ruth Harlan and her sister
       Hannah. Ruth paid with money she put aside
-      from the housekeeping for ten years. She didn't tell Jacob. Nor did she lie
+      from the housekeeping for ten years. Hannah is moving over from the coal
+      provinces for it and will live above the shop. Ruth didn't tell Jacob. Nor did she lie
       to him – he never asked.
   conditions: { minChapter: 2, maxChapter: 2, minRound: 6 }
   marked: [ruth_k2_abgewiesen]
@@ -612,7 +616,7 @@
           The Salt Hill farmers who shop there have preferred leasing to Harlan ever since.
       requires: { minCash: 3000 }
       effects: { ruth: 12, cash: -3000, leaseCost: -0.1 }
-      marks: [ruth_finanzen]
+      marks: [ruth_finanzen, ruth_mitarbeit]
 
 # Entwurf – Philipp überarbeitet.
 # Spät im Kapitel: Familie gegen Rat. Doktor Haskell ist alt geworden.

@@ -59,6 +59,7 @@
 - id: k3_herz_ruth
   visitor: ruth
   marked: [k3_herz_verschwiegen]
+  notMarked: [ehe_trennung]   # 0.4.19+3
   delay: 2
   chance: 0.6
   conditions: { minChapter: 3, maxChapter: 3 }
@@ -68,12 +69,12 @@
   text:
     de: >-
       Ruth legt Haskells Rezept auf den Schreibtisch, glattgestrichen, als wäre es ein
-      Beweisstück. Sie hat es in Jacobs Weste gefunden. Sie setzt sich nicht. „Zwanzig
+      Beweisstück. Sie hat es in Jacobs Weste gefunden. Sie setzt sich nicht. „Fünfundzwanzig
       Jahre habe ich dir angesehen, wenn du müde warst, Jacob. Und das hier versteckst
       du in der Weste.“
     en: >-
       Ruth lays Haskell's prescription on the desk, smoothed out as if it were evidence.
-      She found it in Jacob's waistcoat. She doesn't sit down. "Twenty years I've seen
+      She found it in Jacob's waistcoat. She doesn't sit down. "Twenty-five years I've seen
       it in your face when you were tired, Jacob. And this you hide in your waistcoat."
   choices:
     - id: wahrheit
@@ -93,18 +94,20 @@
 
 - id: k3_silberhochzeit
   conditions: { minChapter: 3, maxChapter: 3 }
+  # 0.4.19+3: Kapitel 2 feiert fünfzehn Jahre (k2_hochzeitstag), zehn Jahre später sind es fünfundzwanzig. Nach der Trennung keine Feier.
+  notMarked: [ehe_trennung]
   chance: 0.3
   title:
-    de: Zwanzig Jahre
-    en: Twenty Years
+    de: Fünfundzwanzig Jahre
+    en: Twenty-Five Years
   text:
     de: >-
-      In zwei Wochen sind Jacob und Ruth zwanzig Jahre verheiratet – Porzellanhochzeit. Die Sekretärin
+      In zwei Wochen sind Jacob und Ruth fünfundzwanzig Jahre verheiratet – Silberhochzeit. Die Sekretärin
       hat es im Kalender rot angestrichen, Ruth hat es nicht erwähnt. In Hallstead würde
       man ein Fest erwarten, mit Kapelle und Gästen, deren Namen in der Zeitung stehen.
       In Port Ellis steht noch die Pension, in der sie im ersten Frühjahr wohnten.
     en: >-
-      In two weeks Jacob and Ruth will have been married twenty years – their china anniversary. The secretary
+      In two weeks Jacob and Ruth will have been married twenty-five years – their silver wedding. The secretary
       has marked it red in the calendar; Ruth hasn't mentioned it. Hallstead would expect
       a party, with a band and guests whose names appear in the paper. In Port Ellis the
       boarding house where they lived that first spring still stands.
@@ -249,8 +252,8 @@
     - id: stipendium
       label: { de: "Ein Stipendium für Arbeiterkinder stiften, mit Prüfung (3.500 $)", en: "Endow a scholarship for workers' children, with an exam (3,500 $)" }
       result:
-        de: Eli Wards Tochter besteht die Prüfung als Beste. Mit ihr fahren drei andere Kinder aus Okara. Clara sagt, das sei gerecht, aber nicht das, worum sie gebeten habe.
-        en: Eli Ward's daughter passes the exam top of the list. Three other children from Okara go with her. Clara says that is fair, but not what she asked for.
+        de: Eli Wards Tochter besteht die Prüfung als Beste. Mit ihr fahren drei andere Kinder aus Salt Hill. Clara sagt, das sei gerecht, aber nicht das, worum sie gebeten habe.
+        en: Eli Ward's daughter passes the exam top of the list. Three other children from Salt Hill go with her. Clara says that is fair, but not what she asked for.
       requires: { minCash: 3500 }
       effects: { cash: -3500, clara: 5, reputation: { workers: 3, public: 1 } }
     - id: nein

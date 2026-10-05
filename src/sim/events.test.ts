@@ -169,7 +169,9 @@ describe('Bedingungen', () => {
     // Kapitel-1-Ereignisse brauchen keine Kapitel-Angabe: Ohne minChapter gelten sie nur in Kapitel 1.
     // (Die Fernleitungs-Ereignisse aus 4.7 gehören zu Kapitel 2 und tragen minChapter: 1; der Familienabend
     // mit den Kindern aus 4.5 steht bei den festen Terminen, gilt aber nur in Kapitel 2.)
-    const k1 = katalog.filter((x) => !/^k[2-9]_/.test(x.id) && !x.id.startsWith('fernleitung_') && x.id !== 'termin_familie_k2');
+    // 0.4.19+3: dazu das Sonntagsessen in Kapitel 3 (termin_familie_k3, termin_kinder_k3).
+    const spaeteTermine = ['termin_familie_k2', 'termin_familie_k3', 'termin_kinder_k3'];
+    const k1 = katalog.filter((x) => !/^k[2-9]_/.test(x.id) && !x.id.startsWith('fernleitung_') && !spaeteTermine.includes(x.id));
     expect(k1.length).toBeGreaterThan(0);
     for (const e of k1) {
       expect(e.conditions.minChapter, e.id).toBeUndefined();
@@ -180,6 +182,12 @@ describe('Bedingungen', () => {
     expect(chapterMet(state, abend.conditions)).toBe(false);
     expect(chapterMet({ chapter: 2 }, abend.conditions)).toBe(true);
     expect(chapterMet({ chapter: 3 }, abend.conditions)).toBe(false);
+    for (const id of ['termin_familie_k3', 'termin_kinder_k3']) {
+      const sonntag = katalog.find((x) => x.id === id)!;
+      expect(chapterMet(state, sonntag.conditions), id).toBe(false);
+      expect(chapterMet({ chapter: 2 }, sonntag.conditions), id).toBe(false);
+      expect(chapterMet({ chapter: 3 }, sonntag.conditions), id).toBe(true);
+    }
   });
 
   it('sichere Kapitel-1-Ereignisse (thomas_geburt, Silas, Moss, Rivalen …) tragen ausdrücklich maxChapter: 1', () => {

@@ -193,12 +193,12 @@
       Die alten Quellen am Salt Hill fördern nur noch Salzwasser und Erinnerungen. Die
       Hälfte der Häuser steht leer. Der Lehrer der Schule, die Harlan seit Jahren
       bezahlt, schreibt, es seien noch einunddreißig Kinder da. Im selben Brief: Der
-      Firmenladen macht Verlust, und die Arbeiter in Okara brauchen Baracken.
+      Firmenladen macht Verlust, und die Arbeiter an den neuen Bohrplätzen draußen brauchen Baracken.
     en: >-
       The old wells at Salt Hill produce nothing but salt water and memories. Half the
       houses stand empty. The teacher of the school Harlan has paid for years writes
       that thirty-one children are left. In the same letter: the company store is losing
-      money, and the workers at Okara need barracks.
+      money, and the workers at the new drilling sites further out need barracks.
   conditions: { minChapter: 3, maxChapter: 3 }
   chance: 0.25
   choices:
@@ -209,10 +209,10 @@
         en: The school stays, the store closes. The families now shop at the general store in Port Ellis, half a day's journey away.
       effects: { cash: -1500, strength: 5, reputation: { workers: 2 } }
     - id: abreissen
-      label: { de: "Häuser abreißen, Holz nach Okara für die Baracken (+2.000 $)", en: "Tear down houses, timber to Okara for the barracks (+2,000 $)" }
+      label: { de: "Häuser abreißen, Holz zu den neuen Bohrplätzen für die Baracken (+2.000 $)", en: "Tear down houses, timber to the new drilling sites for the barracks (+2,000 $)" }
       result:
-        de: Die Abrisstrupps fangen am Hügel an, wo Jacobs erste Pension stand. Der Lehrer schickt die Schulglocke nach Okara mit. Sie hängt jetzt an einer Baracke.
-        en: The demolition crews start on the hill where Jacob's first boarding house stood. The teacher sends the school bell to Okara. It now hangs on a barracks.
+        de: Die Abrisstrupps fangen am Hügel an, wo Jacobs erste Pension stand. Der Lehrer schickt die Schulglocke mit hinaus. Sie hängt jetzt an einer Baracke.
+        en: The demolition crews start on the hill where Jacob's first boarding house stood. The teacher sends the school bell out with them. It now hangs on a barracks.
       effects: { cash: 2000, strength: -10, reputation: { workers: -2, public: -1 } }
     - id: laufen
       label: { de: "Alles laufen lassen, wie es ist", en: "Let everything run as it is" }
@@ -309,17 +309,17 @@
 
 - id: k3_witwe_okara
   title:
-    de: Eine Witwe aus Okara
-    en: A Widow from Okara
+    de: Eine Witwe vom Nordhang
+    en: A Widow from the North Slope
   text:
     de: >-
       Eine junge Frau mit einem Säugling im Tuch sitzt seit dem Morgen im Vorzimmer. Ihr
-      Mann ist vor drei Wochen in Okara von einem Gestänge erschlagen worden. Die Firma
+      Mann ist vor drei Wochen am Nordhang von Salt Hill von einem Gestänge erschlagen worden. Die Firma
       hat 50 $ und einen Sarg bezahlt. Sie will keine Almosen, sagt sie. Sie will Arbeit,
       und eine Wohnung, in der es nicht durchregnet.
     en: >-
       A young woman with an infant in a shawl has sat in the anteroom since morning. Her
-      husband was struck dead by a drill string at Okara three weeks ago. The company paid
+      husband was struck dead by a drill string on the north slope of Salt Hill three weeks ago. The company paid
       50 $ and a coffin. She wants no charity, she says. She wants work, and a flat where
       the rain doesn't come in.
   conditions: { minChapter: 3, maxChapter: 3 }
@@ -328,16 +328,16 @@
     - id: rente
       label: { de: "Eine Witwenrente, bis das Kind vierzehn ist (2.500 $)", en: "A widow's pension until the child is fourteen (2,500 $)" }
       result:
-        de: Die Frau unterschreibt mit ihrem vollen Namen, langsam. Im Saloon in Okara erzählt man es weiter. Die Männer reden anders über den Alten.
-        en: The woman signs with her full name, slowly. In the Okara saloon it gets passed on. The men talk differently about the old man.
+        de: Die Frau unterschreibt mit ihrem vollen Namen, langsam. Im Saloon in Salt Hill erzählt man es weiter. Die Männer reden anders über den Alten.
+        en: The woman signs with her full name, slowly. In the Salt Hill saloon it gets passed on. The men talk differently about the old man.
       requires: { minCash: 2500 }
       effects: { cash: -2500, reputation: { workers: 3 } }
     - id: arbeit
-      label: { de: "Ihr Arbeit im Büro geben – Ruth lernt sie an", en: "Give her work in the office – Ruth trains her" }
+      label: { de: "Ihr Arbeit im Büro geben – der Buchhalter lernt sie an", en: "Give her work in the office – the bookkeeper trains her" }
       result:
-        de: Ruth nimmt die Frau unter ihre Fittiche und bringt ihr das Rechnen bei. Nach einem Jahr ist sie schneller als die Männer im Büro. Ruth erzählt es Jacob an jedem zweiten Abend.
-        en: Ruth takes the woman under her wing and teaches her figures. After a year she is faster than the men in the office. Ruth tells Jacob so every other evening.
-      effects: { cash: -500, ruth: 10, staffLoyalty: { all: 5 } }
+        de: Der alte Buchhalter murrt eine Woche, dann bringt er ihr das Rechnen bei. Nach einem Jahr ist sie schneller als die Männer im Büro. Er erzählt es Jacob bei jeder Abrechnung.
+        en: The old bookkeeper grumbles for a week, then teaches her figures. After a year she is faster than the men in the office. He tells Jacob so at every settling of accounts.
+      effects: { cash: -500, staffLoyalty: { all: 5 }, reputation: { workers: 2 } }
       appointments: 2
     - id: verweisen
       label: { de: "An die Personalabteilung verweisen", en: "Refer her to personnel" }
@@ -387,5 +387,94 @@
       result:
         de: Die Bank hält bis zum Abend. Am nächsten Tag stehen wieder Leute an, weniger. Die Lohnkasse ist noch da. Vorerst.
         en: The bank holds until evening. The next day people queue again, fewer. The payroll is still there. For now.
+      appointments: 0
+      default: true
+
+# 0.4.19+3: Weiche zs2_export_krieg aus Zeitsprung II (Story-Bibel §2: „Ein Tanker kam nicht zurück; eine Witwe in
+# Port Ellis weiß, wessen Öl er trug.“)
+- id: k3_tanker_witwe
+  visitor: witwe
+  marked: [zs2_export_krieg]
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 2, maxRound: 8 }
+  certain: true
+  title:
+    de: Wessen Öl er trug
+    en: Whose Oil It Carried
+  text:
+    de: >-
+      Eine Frau in Schwarz wartet seit dem Morgen im Vorzimmer, ohne sich zu setzen. Ihr
+      Mann war Maschinist auf der „Sarah Ellis“, dem Tanker, der im Krieg nicht aus Übersee
+      zurückkam. Sie hat die Ladeliste aufgehoben. Darauf steht: Harlan Oil, 9.000 Barrel.
+      „Ich will kein Geld“, sagt sie. „Ich will, dass Sie wissen, wie er hieß.“
+    en: >-
+      A woman in black has been waiting in the anteroom since morning, without sitting down.
+      Her husband was an engineer on the "Sarah Ellis", the tanker that did not come back from
+      overseas during the war. She has kept the cargo list. It says: Harlan Oil, 9,000
+      barrels. "I don't want money," she says. "I want you to know his name."
+  choices:
+    - id: zuhoeren
+      label: { de: "Sie hereinbitten und zuhören", en: "Ask her in and listen" }
+      result:
+        de: Sie heißt Martha Quill, er hieß Samuel. Jacob hört eine Stunde zu und schreibt den Namen selbst auf. Danach lässt er der Familie eine Rente anweisen, ohne dass sie darum gebeten hat.
+        en: Her name is Martha Quill; his was Samuel. Jacob listens for an hour and writes the name down himself. Afterwards he has a pension paid to the family without her having asked.
+      effects: { cash: -2500, strength: -5, reputation: { workers: 3, public: 2 } }
+      appointments: 2
+    - id: denkmal
+      label: { de: "Den Toten am Hafen eine Tafel setzen lassen (5.000 $)", en: "Have a plaque set up at the harbour for the dead (5,000 $)" }
+      result:
+        de: Die Tafel trägt vierzehn Namen und keinen Firmennamen. Martha Quill kommt zur Enthüllung und geht wieder, bevor Jacob spricht.
+        en: The plaque bears fourteen names and no company name. Martha Quill comes to the unveiling and leaves before Jacob speaks.
+      requires: { minCash: 5000 }
+      effects: { cash: -5000, reputation: { public: 4 }, ansehen: 1 }
+    - id: abweisen
+      label: { de: "Sie an die Reederei verweisen", en: "Refer her to the shipping line" }
+      result:
+        de: Die Frau nickt, als hätte sie es gewusst. Eine Woche später steht ihr Brief im Ledger, mit der Ladeliste.
+        en: The woman nods as if she had known. A week later her letter is in the Ledger, with the cargo list.
+      effects: { strength: -10, reputation: { public: -4 } }
+      appointments: 0
+      default: true
+
+# 0.4.19+3: Weiche zs2_marine_vertrag aus Zeitsprung II (Story-Bibel §2: „Ein Admiral schreibt Weihnachtskarten; der
+# Vertrag läuft in Kapitel 3 aus.“)
+- id: k3_admiral_karte
+  mail: offer
+  deadline: 3
+  marked: [zs2_marine_vertrag]
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 3, maxRound: 10 }
+  certain: true
+  title:
+    de: Eine Weihnachtskarte vom Admiral
+    en: A Christmas Card from the Admiral
+  text:
+    de: >-
+      Admiral Pryce schreibt jedes Jahr eine Weihnachtskarte, mit einem gezeichneten
+      Kreuzer darauf. Dieses Jahr liegt ein zweites Blatt dabei: Der Heizölvertrag läuft im
+      Frühjahr aus. Die Marine will verlängern, aber zu einem Preis, den Crane Eastern schon
+      geboten hat. „Ich hätte lieber Sie, Harlan“, schreibt er. „Machen Sie es mir leicht.“
+    en: >-
+      Admiral Pryce writes a Christmas card every year, with a cruiser drawn on it. This
+      year a second sheet is enclosed: the fuel-oil contract runs out in spring. The Navy
+      wants to renew, but at a price Crane Eastern has already offered. "I'd rather have you,
+      Harlan," he writes. "Make it easy for me."
+  choices:
+    - id: verlaengern
+      label: { de: "Zu Cranes Preis verlängern", en: "Renew at Crane's price" }
+      result:
+        de: Die Marine verlängert um drei Jahre. Die Marge ist dünn, aber sie ist sicher. Zu Weihnachten kommt wieder eine Karte, diesmal mit zwei Kreuzern.
+        en: The Navy renews for three years. The margin is thin but safe. At Christmas another card arrives, this time with two cruisers.
+      effects: { productPrice: { fuelOil: 0.05 }, rival: { margaret: { grudge: 3 } } }
+      public: [support_handel]
+    - id: hoeher
+      label: { de: "Mehr verlangen – die Marine kennt unser Öl", en: "Ask for more – the Navy knows our oil" }
+      result:
+        de: Der Admiral antwortet nach einem Monat, kühl. Die Marine fährt künftig mit Crane-Öl. Die Weihnachtskarte kommt trotzdem, ohne Kreuzer.
+        en: The Admiral replies after a month, coolly. The Navy will run on Crane oil in future. The Christmas card comes all the same, without a cruiser.
+      effects: { price: -0.03, rival: { margaret: { trust: -5 } } }
+    - id: auslaufen
+      label: { de: "Auslaufen lassen", en: "Let it run out" }
+      result:
+        de: Im Frühjahr holt kein Leutnant mehr eine Unterschrift ab. Die Karten kommen noch zwei Jahre, dann nicht mehr.
+        en: In spring no lieutenant comes for a signature any more. The cards keep coming for two years, then stop.
       appointments: 0
       default: true

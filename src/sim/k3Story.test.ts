@@ -58,7 +58,9 @@ describe('Kapitel 3 – Story-Bögen', () => {
   describe('Daniel Moss', () => {
     it('genau eine Akte je Vorgeschichte (Moss, Sheriff, Kerrigan, Pike, sonst Zeuge)', () => {
       const akten = (k1: string[]) => spiele(k1).seen.filter((id) => id.startsWith('k3_daniel_akte_'));
-      expect(akten(['moss_feind', 'moss_betrogen', 'sheriff_bezahlt', 'kerrigan_verheizt'])).toEqual(['k3_daniel_akte_moss']);
+      // 0.4.19+3: Vertrag (moss_betrogen, die Farm blieb Moss') und Versteigerung (moss_vertrieben) haben eigene Fassungen.
+      expect(akten(['moss_feind', 'moss_betrogen', 'sheriff_bezahlt', 'kerrigan_verheizt'])).toEqual(['k3_daniel_akte_moss_vertrag']);
+      expect(akten(['moss_feind', 'moss_vertrieben', 'sheriff_bezahlt', 'kerrigan_verheizt'])).toEqual(['k3_daniel_akte_moss']);
       expect(akten(['moss_fair', 'sheriff_bezahlt', 'pike_urkunde_falsch'])).toEqual(['k3_daniel_akte_sheriff']);
       expect(akten(['moss_fair', 'kerrigan_verheizt', 'pike_urkunde_falsch'])).toEqual(['k3_daniel_akte_kerrigan']);
       expect(akten(['moss_abgewiesen', 'pike_urkunde_falsch'])).toEqual(['k3_daniel_akte_pike']);
@@ -90,11 +92,16 @@ describe('Kapitel 3 – Story-Bögen', () => {
     });
 
     it('Kooperation im Moss-Fall: eigener Ausgang, keine Thorne-Rache, kein Bündnis über Ezekiel', () => {
-      const { seen, marks } = spiele(['moss_feind', 'moss_betrogen'], { k3_daniel_akte_moss: 'kooperieren' });
+      const { seen, marks } = spiele(['moss_feind', 'moss_vertrieben'], { k3_daniel_akte_moss: 'kooperieren' });
       expect(seen).toContain('k3_daniel_ergebnis_moss');
       expect(seen).not.toContain('k3_daniel_zeuge_folge');
       expect(marks.has('daniel_verbuendet')).toBe(false);
       expect(marks.has('daniel_anklage') || marks.has('daniel_vergleich')).toBe(true);
+      // 0.4.19+3: Nach dem Vertrag (moss_betrogen) geht es um Förderrechte, nicht um das Land.
+      const vertrag = spiele(['moss_feind', 'moss_betrogen'], { k3_daniel_akte_moss_vertrag: 'kooperieren' });
+      expect(vertrag.seen).toContain('k3_daniel_ergebnis_moss_vertrag');
+      expect(vertrag.seen).not.toContain('k3_daniel_ergebnis_moss');
+      expect(vertrag.marks.has('moss_land_zurueck')).toBe(false);
     });
 
     it('Kooperation im Sheriff- und Kerrigan-Fall endet in Vergleich oder Anklage, im Pike-Fall entlastet', () => {

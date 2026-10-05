@@ -16,6 +16,11 @@ export interface ObjectBadge {
   text: string;
   /** Rotes Siegel – immer zusammen mit Text („Frist!“), nie nur Farbe. */
   urgent?: boolean;
+  /**
+   * 0.4.19+3: Auch lange Abzeichen in der Ecke statt über dem Gegenstand – für Gegenstände, über denen ein
+   * anderer liegt (Vertrieb unter den Personalakten: „1 neu“ verdeckte sonst die Beschriftung „Personal“).
+   */
+  corner?: boolean;
 }
 
 export function DeskObject({
@@ -87,7 +92,7 @@ export function DeskObject({
       )}
       {badge && (
         // 0.4.19+2: Längere Abzeichen („4 Bewerbungen“) stehen über dem Gegenstand statt auf seinem Bild.
-        <span className={`abzeichen${badge.urgent ? ' dringend' : ''}${badge.text.length > 4 ? ' lang' : ''}`}>
+        <span className={`abzeichen${badge.urgent ? ' dringend' : ''}${badge.text.length > 4 && !badge.corner ? ' lang' : ''}`}>
           {badge.urgent && <span className="siegel" aria-hidden="true" />}
           {badge.text}
           {badge.urgent && ' · Frist!'}

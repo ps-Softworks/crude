@@ -31,8 +31,13 @@
 #   k3_ruth_laden  (ruth_eigenes_geschaeft) Der Laden am Bahnhof Salt Hill, zehn Jahre später
 #   k3_ruth_kiste  (ruth_vertroestet_k2)    Die Kiste ist jetzt abgeschlossen
 #   k3_ruth_plaetze (ruth_verboten)         Die Bauplätze, die sie verkaufen musste
-# Offen: ruth_aufsichtsrat / ruth_finanzen
-# → k3_ruth_wendepunkt (sie sitzt schon im Rat) noch nachtragen.
+# 0.4.19+3: Der Wendepunkt liest jetzt auch die Ausgänge aus Kapitel 2 (Story-Bibel §7 C):
+#   _partner  (ruth_mitarbeit = ruth_aufsichtsrat oder ruth_finanzen) Ruth stimmt mit – die Vale-Probe mit Stimmrecht
+#   _verboten (ruth_verboten)      Jacob hat ihr Geschäft verhindert – fast sicher die Trennung
+#   _k2       (ruth_k2_abgewiesen) „Der Rat ist kein Ort für dich“, vertröstet, abgewiesen – sie fragt nicht mehr
+# Jeweils nur ohne ruth_riss/ruth_sechs_wochen (die haben ihre eigenen Fassungen). Die Grundfassung
+# („Du hast mich gefragt, Jacob. Jedes Mal.“) kommt nur noch, wenn Kapitel 2 keinen dieser Ausgänge setzte.
+# Trennungen nennen keine Anteile mehr (Ruth hat nur auf manchen Wegen welche): „Was ihr gehört, nimmt sie mit.“
 # WUNSCH (Story-Bibel §10): Effekte shares: { ruth: ±% }, control, boardLoyalty, standing;
 # Bedingung minRuth/maxRuth – dann braucht der Wendepunkt keine vier Fassungen mehr.
 
@@ -363,7 +368,7 @@
       future. His and hers. "You asked me, Jacob. Every time. I only want it on paper,
       for the time when you forget." She does not say "if". She says "when".
   conditions: { minChapter: 3, maxChapter: 3, minRound: 13, maxRound: 16 }
-  notMarked: [ruth_riss, ruth_sechs_wochen]
+  notMarked: [ruth_riss, ruth_sechs_wochen, ruth_mitarbeit, ruth_k2_abgewiesen, ruth_zuhause, ruth_verboten, ruth_vertroestet_k2]
   certain: true
   choices:
     - id: unterschreiben
@@ -440,14 +445,14 @@
       label: { de: "„Wenn dir das Haus zu groß ist, geh zu Hannah.“", en: "\"If the house is too big for you, go to Hannah.\"" }
       result:
         de: >-
-          Ruth sieht ihn an, als hätte sie auf diesen Satz zwanzig Jahre gewartet. Sie
-          packt noch am Abend. Ihre Anteile nimmt sie mit. An wen sie verkauft, sagt sie
+          Ruth sieht ihn an, als hätte sie auf diesen Satz fünfundzwanzig Jahre gewartet. Sie
+          packt noch am Abend. Was ihr gehört, nimmt sie mit. Was sie damit macht, sagt sie
           ihm nicht.
         en: >-
-          Ruth looks at him as if she had waited twenty years for that sentence. She packs
-          that same evening. She takes her shares with her. To whom she sells, she does not
-          tell him.
-      effects: { ruth: -40, control: -5 }
+          Ruth looks at him as if she had waited twenty-five years for that sentence. She packs
+          that same evening. What is hers, she takes with her. What she does with it, she
+          does not tell him.
+      effects: { ruth: -40 }
       marks: [ehe_trennung]
 
 # Entwurf – Philipp überarbeitet.
@@ -525,39 +530,237 @@
       label: { de: "Um sie kämpfen – alles absagen, mitfahren zu Hannah", en: "Fight for her – cancel everything, go with her to Hannah's" }
       result:
         de: >-
-          Jacob fährt mit, in denselben Zug, ohne Gepäck. Drei Wochen lang wohnt er in
-          Hannahs Pension, und die Geschäfte laufen ohne ihn schlechter, als er gedacht
+          Jacob fährt mit, in denselben Zug, ohne Gepäck. Drei Wochen lang schläft er bei
+          Hannah auf dem Sofa, und die Geschäfte laufen ohne ihn schlechter, als er gedacht
           hat. Ruth kommt zurück. Nicht ganz, aber sie kommt.
         en: >-
-          Jacob goes along, on the same train, without luggage. For three weeks he lives in
-          Hannah's boarding house, and business runs worse without him than he thought.
-          Ruth comes back. Not entirely, but she comes.
+          Jacob goes along, on the same train, without luggage. For three weeks he sleeps on
+          Hannah's sofa, and business runs worse without him than he thought. Ruth comes
+          back. Not entirely, but she comes.
       effects: { ruth: 30, strength: -25, production: -0.1 }
       appointments: 3
       marks: [ehe_waffenstillstand]
       sharp: true
     - id: abkaufen
-      label: { de: "Ihr die Anteile abkaufen, bevor sie geht (8.000 $)", en: "Buy her shares before she leaves (8,000 $)" }
+      label: { de: "Ihr auszahlen, was ihr zusteht, bevor sie geht (8.000 $)", en: "Pay her what she is owed before she leaves (8,000 $)" }
       result:
         de: >-
-          Ruth unterschreibt, ohne zu verhandeln. Das hat Jacob am meisten getroffen,
-          sagt er später zu niemandem. Die Kontrolle bleibt bei ihm. Der Koffer bleibt
-          nicht im Flur.
+          Ruth unterschreibt die Vereinbarung, ohne zu verhandeln. Das hat Jacob am meisten
+          getroffen, sagt er später zu niemandem. Was sie an der Firma hatte, bleibt bei ihm.
+          Der Koffer bleibt nicht im Flur.
         en: >-
-          Ruth signs without negotiating. That hurt Jacob most, he says later, to no one.
-          Control stays with him. The trunk does not stay in the hall.
+          Ruth signs the agreement without negotiating. That hurt Jacob most, he says later,
+          to no one. Whatever she had in the company stays with him. The trunk does not stay
+          in the hall.
       requires: { minCash: 8000 }
-      effects: { cash: -8000, ruth: -20, control: 5 }
+      effects: { cash: -8000, ruth: -20 }
       marks: [ehe_trennung]
     - id: gehen_lassen
-      label: { de: "Sie gehen lassen – mit ihren Anteilen", en: "Let her go – with her shares" }
+      label: { de: "Sie gehen lassen – mit allem, was ihr gehört", en: "Let her go – with everything that is hers" }
       result:
         de: >-
           Jacob trägt ihr den Koffer zur Kutsche. Es ist das Letzte, was er für sie tut,
-          und er tut es gut. Wem sie ihre Anteile verkauft, erfährt er aus der Zeitung.
+          und er tut es gut. Was sie mit dem macht, was ihr gehört, erfährt er aus der Zeitung.
         en: >-
           Jacob carries her trunk to the carriage. It is the last thing he does for her,
-          and he does it well. To whom she sells her shares, he learns from the newspaper.
-      effects: { ruth: -30, control: -5 }
+          and he does it well. What she does with what is hers, he learns from the newspaper.
+      effects: { ruth: -30 }
       marks: [ehe_trennung]
       default: true
+
+# Entwurf – Philipp überarbeitet (0.4.19+3).
+# Der Wendepunkt – Fassung Partnerin: Ruth arbeitet seit Kapitel 2 in der Firma mit (Rat oder Finanzen).
+# Die Vale-Probe mit Stimmrecht: Diesmal fragt sie nicht, ob er sie gefragt hätte – sie stimmt.
+- id: k3_ruth_wendepunkt_partner
+  visitor: ruth
+  draft: true
+  title:
+    de: Ihre Stimme
+    en: Her Vote
+  text:
+    de: >-
+      Ruth hat die Zahlen zum Konsortium auf Kerrow gelesen, bevor Jacob sie gelesen hat,
+      wie immer. Sie legt ein einziges Blatt vor ihn hin: was Harlan Oil an Vales Tisch
+      gewinnt, und was es dort nie wieder allein entscheiden würde. „Seit zehn Jahren
+      führe ich deine Bücher, Jacob. Diesmal will ich nicht gefragt werden. Ich will
+      mitstimmen. Und ich stimme dagegen.“
+    en: >-
+      Ruth has read the figures on the Kerrow consortium before Jacob has, as always. She
+      lays a single sheet before him: what Harlan Oil gains at Vale's table, and what it
+      would never again decide alone there. "For ten years I've kept your books, Jacob.
+      This time I don't want to be asked. I want a vote. And I vote against."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 13, maxRound: 16 }
+  marked: [ruth_mitarbeit]
+  notMarked: [ruth_riss, ruth_sechs_wochen]
+  certain: true
+  choices:
+    - id: stimme
+      label: { de: "Ihre Stimme gelten lassen – zwei Unterschriften für alles, was die Firma bindet", en: "Let her vote count – two signatures for everything that binds the company" }
+      result:
+        de: >-
+          Jacob streicht seinen Entwurf an Vale durch und schreibt darunter: „Nach Rücksprache
+          mit meiner Teilhaberin.“ Ruth liest es zweimal. Dann unterschreibt sie daneben, mit
+          demselben Füller. Auf Kerrow wird man das Wort „Teilhaberin“ eine Weile wiederholen.
+        en: >-
+          Jacob strikes out his draft to Vale and writes beneath it: "After consultation with
+          my partner." Ruth reads it twice. Then she signs beside it, with the same pen. At
+          Kerrow they will repeat the word "partner" for some time.
+      effects: { ruth: 20, control: 3, consortium: { trust: -5 } }
+      marks: [ehe_partner, ruth_gefragt]
+    - id: allein
+      label: { de: "„Das hier entscheide ich allein, Ruth.“", en: "\"This one I decide alone, Ruth.\"" }
+      result:
+        de: >-
+          Ruth nickt, nimmt das Blatt wieder an sich und legt es in ihre Mappe, nicht in den
+          Papierkorb. Am nächsten Morgen sitzt sie wieder über den Büchern. Sie redet über
+          Zahlen. Nur über Zahlen.
+        en: >-
+          Ruth nods, takes the sheet back and puts it in her folder, not the wastepaper basket.
+          Next morning she is back over the books. She talks about figures. Only figures.
+      effects: { ruth: -15 }
+      marks: [ehe_waffenstillstand]
+      default: true
+    - id: entziehen
+      label: { de: "Ihr die Vollmacht für die Bücher entziehen", en: "Take away her authority over the books" }
+      result:
+        de: >-
+          Ruth legt den Schlüssel zum Kontor auf den Tisch, ohne ein Wort. Am Abend steht ihr
+          Koffer im Flur. „Zehn Jahre war ich gut genug für deine Zahlen“, sagt sie. „Für deine
+          Entscheidungen offenbar nie.“ Was ihr gehört, nimmt sie mit.
+        en: >-
+          Ruth lays the key to the counting house on the table without a word. By evening her
+          trunk is in the hall. "For ten years I was good enough for your figures," she says.
+          "Never, it seems, for your decisions." What is hers, she takes with her.
+      effects: { ruth: -40, rating: -1 }
+      marks: [ehe_trennung]
+
+# Entwurf – Philipp überarbeitet (0.4.19+3).
+# Der Wendepunkt – Fassung verboten: Jacob hat in Kapitel 2 Ruths eigenes Geschäft verhindert.
+# Story-Bibel §7 C: „ruth_verboten → fast sicher Trennung“. Umkehr ist teuer und rettet höchstens den Frieden.
+- id: k3_ruth_wendepunkt_verboten
+  visitor: ruth
+  draft: true
+  title:
+    de: Die Bahnhofstraße
+    en: Station Street
+  text:
+    de: >-
+      Ruth steht am Fenster und sieht auf die Bahnhofstraße hinunter, wo jetzt Geschäfte
+      stehen, auf den Bauplätzen, die sie verkaufen musste. „Zehn Jahre habe ich gewartet,
+      ob du es je bereust“, sagt sie, ohne sich umzudrehen. „Du hast es nicht einmal
+      erwähnt.“ Im Flur steht ihr Koffer. Sie hat ihn nicht versteckt.
+    en: >-
+      Ruth stands at the window looking down on Station Street, where shops now stand on
+      the plots she was made to sell. "For ten years I waited to see whether you would ever
+      regret it," she says, without turning round. "You never even mentioned it." Her trunk
+      stands in the hall. She has not hidden it.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 13, maxRound: 16 }
+  marked: [ruth_verboten]
+  notMarked: [ruth_riss, ruth_sechs_wochen, ruth_mitarbeit]
+  certain: true
+  choices:
+    - id: zurueckgeben
+      label: { de: "Ihr ein Haus an der Bahnhofstraße kaufen – auf ihren Namen, ohne Bedingungen (10.000 $)", en: "Buy her a building on Station Street – in her name, no conditions (10,000 $)" }
+      result:
+        de: >-
+          Der Notar kommt am selben Abend. Ruth liest die Urkunde, dann noch einmal. Sie packt
+          den Koffer nicht aus, aber sie stellt ihn in den Schrank. „Das ist kein Frieden,
+          Jacob“, sagt sie. „Das ist eine Anzahlung.“
+        en: >-
+          The notary comes the same evening. Ruth reads the deed, then reads it again. She does
+          not unpack the trunk, but she puts it in the wardrobe. "This isn't peace, Jacob," she
+          says. "It's a down payment."
+      requires: { minCash: 10000 }
+      effects: { cash: -10000, ruth: 25 }
+      marks: [ehe_waffenstillstand]
+    - id: bitten
+      label: { de: "Sie bitten zu bleiben – alles absagen, eine Woche nur für sie", en: "Ask her to stay – cancel everything, a week just for her" }
+      result:
+        de: >-
+          Jacob sagt alles ab. Eine Woche lang gehen sie jeden Tag die Bahnhofstraße entlang,
+          und Ruth erzählt, was in jedem Laden hätte sein können. Am Ende bleibt sie. Sie sagt
+          nicht, wie lange.
+        en: >-
+          Jacob cancels everything. For a week they walk down Station Street every day, and Ruth
+          tells him what could have been in each shop. In the end she stays. She does not say
+          for how long.
+      effects: { ruth: 10, strength: -25 }
+      appointments: 3
+      marks: [ehe_waffenstillstand]
+      sharp: true
+    - id: gehen_lassen
+      label: { de: "Sie gehen lassen", en: "Let her go" }
+      result:
+        de: >-
+          Jacob trägt den Koffer zur Kutsche. Ruth bedankt sich, höflich wie bei einem Fremden.
+          Was ihr gehört, nimmt sie mit. Es ist nicht viel. Er hat dafür gesorgt.
+        en: >-
+          Jacob carries the trunk to the carriage. Ruth thanks him, politely, as she would a
+          stranger. What is hers, she takes with her. It is not much. He saw to that.
+      effects: { ruth: -30 }
+      marks: [ehe_trennung]
+      default: true
+
+# Entwurf – Philipp überarbeitet (0.4.19+3).
+# Der Wendepunkt – Fassung Kapitel 2 abgewiesen: „Der Rat ist kein Ort für dich“, vertröstet oder
+# die Feder in der Schublade (ruth_k2_abgewiesen, auch ruth_zuhause/ruth_vertroestet_k2). Sie fragt nicht mehr.
+- id: k3_ruth_wendepunkt_k2
+  visitor: ruth
+  draft: true
+  title:
+    de: Die letzten Haushaltsbücher
+    en: The Last Household Books
+  text:
+    de: >-
+      Ruth stellt einen Stapel Haushaltsbücher auf Jacobs Schreibtisch, sauber gebunden,
+      zehn Jahre. „Ab dem Frühjahr führt sie die Haushälterin“, sagt sie. „Ich habe dich
+      zweimal gefragt, ob ich mehr tun darf als das. Ein drittes Mal frage ich nicht. Ich
+      wollte nur, dass du weißt, dass ich aufgehört habe zu fragen.“
+    en: >-
+      Ruth sets a stack of household books on Jacob's desk, neatly bound, ten years of them.
+      "From spring the housekeeper will keep them," she says. "Twice I asked you whether I
+      might do more than this. I won't ask a third time. I only wanted you to know that I
+      have stopped asking."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 13, maxRound: 16 }
+  marked: [ruth_k2_abgewiesen]
+  notMarked: [ruth_riss, ruth_sechs_wochen, ruth_mitarbeit, ruth_verboten]
+  certain: true
+  choices:
+    - id: fragen
+      label: { de: "Diesmal er fragen: „Was willst du tun, Ruth?“ – und es möglich machen (3.000 $)", en: "This time he asks: \"What do you want to do, Ruth?\" – and makes it possible (3,000 $)" }
+      result:
+        de: >-
+          Ruth sieht ihn lange an. Dann setzt sie sich. Es ist eine lange Nacht, und am Ende
+          steht ihr Name auf einer Vollmacht für die Bücher der Firma. „Zehn Jahre zu spät“,
+          sagt sie. „Aber nicht zu spät.“
+        en: >-
+          Ruth looks at him for a long time. Then she sits down. It is a long night, and at the
+          end her name stands on a power of attorney for the company's books. "Ten years too
+          late," she says. "But not too late."
+      requires: { minCash: 3000 }
+      effects: { cash: -3000, ruth: 25, strength: -10 }
+      marks: [ehe_partner, ruth_gefragt]
+      sharp: true
+    - id: danken
+      label: { de: "„Danke, Ruth. Für die zehn Jahre.“", en: "\"Thank you, Ruth. For the ten years.\"" }
+      result:
+        de: >-
+          „Bitte“, sagt Ruth, und es klingt wie eine Quittung. Sie bleibt. Sie liest abends
+          wieder Romane, die Jacob nicht kennt, und lacht über Stellen, die sie ihm nicht vorliest.
+        en: >-
+          "You're welcome," says Ruth, and it sounds like a receipt. She stays. In the evenings
+          she reads novels Jacob doesn't know again, and laughs at passages she doesn't read to him.
+      effects: { ruth: -10 }
+      marks: [ehe_waffenstillstand]
+      default: true
+    - id: schweigen
+      label: { de: "Die Bücher wortlos in den Schrank stellen", en: "Put the books in the cupboard without a word" }
+      result:
+        de: >-
+          Ruth wartet, bis der Schrank zu ist. Dann geht sie hinaus. Drei Wochen später steht
+          ihr Koffer im Flur, und sie hat Hannah geschrieben. Was ihr gehört, nimmt sie mit.
+        en: >-
+          Ruth waits until the cupboard is shut. Then she goes out. Three weeks later her trunk
+          stands in the hall, and she has written to Hannah. What is hers, she takes with her.
+      effects: { ruth: -35 }
+      marks: [ehe_trennung]

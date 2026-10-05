@@ -172,6 +172,8 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
           {fehler}
         </p>
       )}
+      {/* 0.4.19+3: Ergebnisse oben statt unter allen Karten – sonst sah man nach einem Ritt nicht, was er gebracht hat. */}
+      <Wochenbericht report={v.report} />
       <Tabs sheet="termine" tabs={tabs} active={tab} onChange={ctx.onTab}>
         {tab === 'land' && <GeologenAkte game={game} />}
         {hand.length === 0 ? (
@@ -184,7 +186,6 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
           </div>
         )}
       </Tabs>
-      <Wochenbericht report={v.report} />
     </>
   );
 }

@@ -208,6 +208,11 @@ export interface TimeskipRecord {
   read: boolean;
   /** Die Firma ging im Sprung pleite – das Spiel endet nach der Chronik. */
   bankrupt?: boolean;
+  /**
+   * 0.4.19+3: Schwächung nach verfehlter Kapitelprüfung (missedPenalty), damit die Chronik sie zeigt:
+   * so viel $ weg aus der Kasse, Kraft zum Kapitelstart statt der vollen. Fehlt = keine Schwächung.
+   */
+  penalty?: { cash: number; strength: number; strengthMax: number };
 }
 
 /** Was der Verwalter beim Telegramm in der Hand hat: Kasse, Schulden, freier Bankrahmen (0 nach dem Tilgungs-Schwur). */
@@ -225,6 +230,14 @@ export type TimeskipResult = { ok: true; state: GameState } | { ok: false; reaso
 
 // ---------------------------------------------------------------------------
 // Kalender und Kapitel
+
+/**
+ * 0.4.19+3: Bis wann das Kapitel nach diesem Sprung läuft – in Föderationsjahren wie Kalender und Kopfleiste
+ * (z. B. „Winter 101“), statt „Jahr 14“ in Spieljahren.
+ */
+export function chapterGoalDate(record: Pick<TimeskipRecord, 'toYear'>, state: Pick<GameState, 'startYear'>, balance: Balance): string {
+  return formatDate({ round: record.toYear * 4 + balance.timeskip.nextChapterRounds, startYear: state.startYear });
+}
 
 /** Spieljahr seit Spielbeginn: Runde 1–4 = Jahr 1. */
 export function gameYear(round: number): number {
@@ -373,6 +386,10 @@ interface Lauf {
   navySince: number;
   /** Zeitsprung II: Gradys Reserveland zahlt ab dieser Runde (0 = keins). */
   gradySince: number;
+  /** 0.4.19+3: So viele neue Quellen darf der Verwalter in diesem Sprung noch finden (timeskip.manager). */
+  fundeRest: number;
+  /** 0.4.19+3: Höchste Anfangsrate einer neuen Quelle des Verwalters (bbl je Runde). */
+  rateCap: number;
 }
 
 function eintrag(l: Lauf, kind: ChronicleKind, extra: Omit<ChronicleEntry, 'year' | 'kind'> = {}): void {
@@ -885,6 +902,19 @@ interface Ziel {
   pacht: boolean;
 }
 
+/**
+ * 0.4.19+3: Deckel des Verwalters für einen Sprung – höchstens so viele neue Quellen, wie vor dem Sprung
+ * förderten (mindestens manager.minNewWells), und Anfangsraten höchstens im Schnitt von Jacobs Quellen
+ * (mindestens manager.minRate). So hängt der Sprung an dem, was vorher gespielt wurde, nicht an einem Gusher.
+ */
+export function verwalterDeckel(start: Pick<GameState, 'wells'>, balance: Balance): { fundeRest: number; rateCap: number } {
+  const m = balance.timeskip.manager;
+  const quellen = producingWells(start);
+  const raten = quellen.map((w) => w.production?.initialRate ?? 0).filter((r) => r > 0);
+  const schnitt = raten.length > 0 ? raten.reduce((a, b) => a + b, 0) / raten.length : 0;
+  return { fundeRest: Math.max(m.minNewWells, quellen.length), rateCap: Math.max(m.minRate, Math.round(schnitt)) };
+}
+
 /** Bohrziele des Verwalters: eigene ungebohrte Pachten, Nachbohrungen auf eigenen Funden, freie Ranches – ab der Mindestchance seiner Haltung. */
 function bohrziele(l: Lauf): Ziel[] {
   const { balance } = l;
@@ -951,7 +981,7 @@ function bohren(l: Lauf): void {
   let funde = 0;
   let trocken = 0;
   for (const ziel of ziele) {
-    if (funde + trocken >= hoechstens) break;
+    if (funde + trocken >= hoechstens || funde >= l.fundeRest) break;
     const parcel = l.s.parcels.find((p) => p.id === ziel.parcelId)!;
     const terms = ziel.pacht ? leaseTerms(l.s, balance, ziel.parcelId) : null;
     const pacht = terms?.bonus ?? 0;
@@ -980,12 +1010,13 @@ function bohren(l: Lauf): void {
       startRound: l.s.round,
       ...(oilStage === null
         ? {}
-        : { result, production: { initialRate: initialRate(balance, l.s, { parcelId: ziel.parcelId, result }), roundsProduced: 0, lastRate: 0, total: 0 } }),
+        : { result, production: { initialRate: Math.min(l.rateCap, initialRate(balance, l.s, { parcelId: ziel.parcelId, result })), roundsProduced: 0, lastRate: 0, total: 0 } }),
     };
     if (oilStage === null) trocken += 1;
     else funde += 1;
     l.s = { ...l.s, cash: l.s.cash - kosten, leases, wells: [...l.s.wells, well] };
   }
+  l.fundeRest -= funde;
   if (funde > 0) eintrag(l, 'wells_found', { n: funde });
   if (trocken > 0) eintrag(l, 'wells_dry', { n: trocken });
 }
@@ -1141,6 +1172,7 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
     warExport: false,
     navySince: 0,
     gradySince: 0,
+    ...verwalterDeckel(start, balance),
   };
   if (nr >= 2) {
     l.s = { ...l.s, round: ersteRunde };
@@ -1195,13 +1227,17 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
   const ziel = Math.max(0, Math.round(l.nb));
   // Wer aufgibt, steht noch im letzten Jahr des Sprungs in der Chronik.
   wildcatterNachSprung(l, ziel);
-  const r = record(l.s);
+  const r0 = record(l.s);
   l.s = { ...l.s, round };
   const s = l.s;
   const pipeline = s.logistics.pipeline === 'building' || s.logistics.pipeline === 'damaged' ? 'ready' : s.logistics.pipeline;
   const date = formatDate({ round, startYear: s.startYear });
   // Verfehlte Prüfung (GDD §2): Das nächste Kapitel beginnt geschwächt – weniger Kasse, weniger Kraft.
   const schwach = missedPenalty(start, s, balance);
+  // 0.4.19+3: Die Chronik zeigt die Schwächung als eigene Zeile (vorher nur in der Kladde – 53.000 $ verschwanden ohne Grund).
+  const r: TimeskipRecord = schwach.line
+    ? { ...r0, penalty: { cash: Math.round(s.cash - schwach.cash), strength: schwach.strength, strengthMax: s.strengthMax } }
+    : r0;
   const naechstes: GameState = {
     ...s,
     chapter: kapitel,
@@ -1291,7 +1327,7 @@ export interface TimeskipContent {
     back: LocalizedText;
   };
   switches: Texte<'telegram' | 'funds' | 'onCredit' | 'blocked'> & { [S in SwitchId]: { title: LocalizedText; text: LocalizedText; choices: Record<string, LocalizedText> } };
-  chronicle: Texte<'title' | 'paper' | 'year' | 'quiet' | 'balance' | 'continue' | 'end'> & {
+  chronicle: Texte<'title' | 'paper' | 'year' | 'quiet' | 'balance' | 'continue' | 'end' | 'penalty' | 'penaltyLabel'> & {
     entries: Record<ChronicleKind, LocalizedText>;
     /** Einzahl, wenn {n} = 1 ist (z. B. „eine neue Quelle“); fehlt sie, gilt der Text aus entries. */
     one: Partial<Record<ChronicleKind, LocalizedText>>;
@@ -1395,7 +1431,7 @@ export function parseTimeskipContent(file: string, text: string): { content: Tim
   const fremd = Object.keys(o).filter((k) => !(CHRONICLE_KINDS as readonly string[]).includes(k));
   if (fremd.length > 0) fehler(`chronicle.one: unbekannte Einträge ${fremd.join(', ')} – Tippfehler?`);
   const chronicle = {
-    ...texte(c, ['title', 'paper', 'year', 'quiet', 'balance', 'continue', 'end'] as const, 'chronicle'),
+    ...texte(c, ['title', 'paper', 'year', 'quiet', 'balance', 'continue', 'end', 'penalty', 'penaltyLabel'] as const, 'chronicle'),
     entries: texte(e, CHRONICLE_KINDS, 'chronicle.entries'),
     one: Object.fromEntries(Object.keys(o).filter((k) => !fremd.includes(k)).map((k) => [k, sprachtext(o[k], `chronicle.one.${k}`)])) as Partial<Record<ChronicleKind, LocalizedText>>,
   };

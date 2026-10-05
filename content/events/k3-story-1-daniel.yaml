@@ -728,18 +728,94 @@
     en: The Moss File
   text:
     de: >-
+      Daniel Moss legt einen Aktendeckel auf Jacobs Tisch. Darin: der Zuschlag der
+      Versteigerung, bei der sein Vater die Farm verlor, und wer an diesem Tag geboten hat.
+      Dazu drei Aussagen von Nachbarn, beglaubigt. „Ich
+      klage noch nicht an, Mr. Harlan. Ich frage zuerst. So hat mein Vater es mir
+      beigebracht.“
+    en: >-
+      Daniel Moss lays a folder on Jacob's desk. Inside: the auction award by which his
+      father lost the farm, and who bid that day. With it, three statements from
+      neighbours, notarised. "I am not charging you yet, Mr.
+      Harlan. I am asking first. That is how my father taught me."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 5 }
+  marked: [moss_feind]
+  notMarked: [moss_betrogen]   # 0.4.19+3: Versteigerung (moss_vertrieben); der Vertrag (moss_betrogen) → k3_daniel_akte_moss_vertrag
+  certain: true
+  choices:
+    - id: kooperieren
+      label: { de: "Kooperieren: alle Unterlagen, alle Zeugen", en: "Cooperate: every paper, every witness" }
+      result:
+        de: >-
+          Zwei Monate lang sitzen Daniels Leute in Jacobs Archiv. Die Prüfer legen drei
+          Bohrstellen still, bis die Grenzen neu vermessen sind. Daniel sagt zum Schluss:
+          „Damit habe ich nicht gerechnet.“ Er klingt fast enttäuscht.
+        en: >-
+          For two months Daniel's people sit in Jacob's archive. The inspectors shut three
+          well sites until the boundaries are re-surveyed. At the end Daniel says, "I did
+          not expect that." He sounds almost disappointed.
+      effects: { production: -0.15, cash: -1000, evidence: -1, heat: -2 }
+      marks: [daniel_kooperation_moss]
+    - id: anwaelte
+      label: { de: "Die Anwälte antworten lassen (1.500 $)", en: "Let the lawyers answer (1,500 $)" }
+      result:
+        de: >-
+          Die Kanzlei aus Hallstead schickt einen Herrn mit drei Koffern. Daniel empfängt
+          ihn höflich und notiert, wie viele Stunden er abrechnet.
+        en: >-
+          The firm from Hallstead sends a gentleman with three trunks. Daniel receives him
+          politely and notes how many hours he bills.
+      effects: { cash: -1500, evidence: 1 }
+      marks: [daniel_anwaelte]
+      default: true
+    - id: bestechen
+      label: { de: "Ihm einen Umschlag anbieten (3.000 $)", en: "Offer him an envelope (3,000 $)" }
+      result:
+        de: >-
+          Daniel öffnet den Umschlag nicht. Er lässt ihn von seinem Gehilfen in eine
+          Beweismitteltüte legen, beschriften und versiegeln. „Danke“, sagt er. „Das
+          spart mir ein Jahr.“
+        en: >-
+          Daniel does not open the envelope. He has his clerk place it in an evidence bag,
+          label it and seal it. "Thank you," he says. "That saves me a year."
+      requires: { minCash: 3000 }
+      effects: { cash: -3000, heat: 3, trace: { severity: 3, label: "Umschlag an den Staatsanwalt" } }
+      marks: [daniel_bestechung_versuch]
+    - id: wegloben
+      label: { de: "Ihn über Senator Grady ins Richteramt loben (5.000 $)", en: "Have Senator Grady promote him to the bench (5,000 $)" }
+      result:
+        de: >-
+          Drei Monate später ist Daniel Moss Richter in Hallstead, jünger als jeder vor
+          ihm. Sein Nachfolger ist ein freundlicher Mann, der gern Zigarren nimmt.
+        en: >-
+          Three months later Daniel Moss is a judge in Hallstead, younger than anyone
+          before him. His successor is a friendly man who likes to accept cigars.
+      requires: { minCash: 5000 }
+      effects: { cash: -5000, favors: -3 }
+      marks: [daniel_weggelobt]
+
+# Entwurf – Philipp überarbeitet (0.4.19+3).
+# Die Akte Moss – Fassung Vertrag (moss_betrogen): Ezekiel unterschrieb einen schlechten Vertrag, die Farm blieb seine.
+- id: k3_daniel_akte_moss_vertrag
+  visitor: daniel
+  draft: true
+  title:
+    de: Die Akte Moss
+    en: The Moss File
+  text:
+    de: >-
       Daniel Moss legt einen Aktendeckel auf Jacobs Tisch. Darin: das Papier, unter das
-      sein Vater sein Kreuz gesetzt hat, oder der Zuschlag der Versteigerung, je nachdem,
-      wie man die Geschichte erzählt. Dazu drei Aussagen von Nachbarn, beglaubigt. „Ich
+      sein Vater sein Kreuz gesetzt hat – die Förderrechte für ein paar Dollar, die Farm
+      blieb seine. Dazu drei Aussagen von Nachbarn, beglaubigt, was das Öl darunter wert war. „Ich
       klage noch nicht an, Mr. Harlan. Ich frage zuerst. So hat mein Vater es mir
       beigebracht.“
     en: >-
       Daniel Moss lays a folder on Jacob's desk. Inside: the paper his father put his
-      cross under, or the auction award, depending on how one tells the story. With it,
-      three statements from neighbours, notarised. "I am not charging you yet, Mr.
+      cross under – the drilling rights for a few dollars; the farm stayed his. With it,
+      three statements from neighbours, notarised, on what the oil beneath was worth. "I am not charging you yet, Mr.
       Harlan. I am asking first. That is how my father taught me."
   conditions: { minChapter: 3, maxChapter: 3, minRound: 5 }
-  marked: [moss_feind]
+  marked: [moss_feind, moss_betrogen]
   certain: true
   choices:
     - id: kooperieren
@@ -1278,6 +1354,7 @@
       hair has gone grey, in these two months or long before.
   conditions: { minChapter: 3, maxChapter: 3 }
   marked: [daniel_kooperation_moss]
+  notMarked: [moss_betrogen]   # 0.4.19+3: nach dem Vertrag (Farm blieb Moss') → k3_daniel_ergebnis_moss_vertrag
   delay: 2
   certain: true
   choices:
@@ -1307,6 +1384,75 @@
           his own hands.
       effects: { production: -0.2, strength: -10, reputation: { public: 2 } }
       marks: [daniel_vergleich, moss_land_zurueck]
+      sharp: true
+    - id: schweigen
+      label: { de: "Nicht unterschreiben – Daniel soll tun, was er muss", en: "Do not sign – let Daniel do what he must" }
+      result:
+        de: >-
+          Daniel steckt den Bericht wieder ein. „Sie haben mir alles gezeigt, und jetzt
+          wollen Sie nicht unterschreiben, was ich gesehen habe“, sagt er. „Das verstehe ich
+          nicht. Ich muss es auch nicht verstehen.“
+        en: >-
+          Daniel puts the report away again. "You showed me everything, and now you will not
+          sign what I saw," he says. "I don't understand that. I don't have to."
+      effects: { cash: -2000, strength: -10, evidence: 2 }
+      marks: [daniel_anklage]
+      default: true
+
+# Entwurf – Philipp überarbeitet (0.4.19+3).
+# Fassung Vertrag (moss_betrogen): Es geht um die Förderrechte, nicht um das Land.
+- id: k3_daniel_ergebnis_moss_vertrag
+  visitor: daniel
+  draft: true
+  title:
+    de: Was im Heft stand
+    en: What the Book Said
+  text:
+    de: >-
+      Daniels Leute haben Jacobs Archiv verlassen. Daniel kommt allein, mit dem Schulheft
+      und einem Bericht von neun Seiten. Die Bücher bestätigen, was der Junge damals
+      aufgeschrieben hat. „Sie haben mir nichts verschwiegen, Mr. Harlan. Darum biete ich
+      Ihnen an, was ich einem Mann anbiete, der nichts verschwiegen hat.“ Ein Geständnis in
+      einem Punkt, eine Strafe, kein Prozess. Über seinen Ohren ist das Haar grau geworden,
+      in diesen zwei Monaten oder schon lange.
+    en: >-
+      Daniel's people have left Jacob's archive. Daniel comes alone, with the exercise
+      book and a report of nine pages. The books confirm what the boy wrote down back then.
+      "You concealed nothing from me, Mr. Harlan. So I offer you what I offer a man who
+      concealed nothing." An admission on one count, a fine, no trial. Above his ears the
+      hair has gone grey, in these two months or long before.
+  conditions: { minChapter: 3, maxChapter: 3 }
+  marked: [daniel_kooperation_moss, moss_betrogen]
+  delay: 2
+  certain: true
+  choices:
+    - id: gestehen
+      label: { de: "Das Geständnis unterschreiben (4.000 $ Strafe)", en: "Sign the admission (4,000 $ fine)" }
+      result:
+        de: >-
+          Jacob unterschreibt. Daniel liest es zweimal, faltet es und legt es in das
+          Schulheft, zwischen die Seiten von damals. „Jetzt steht es an der richtigen
+          Stelle“, sagt er.
+        en: >-
+          Jacob signs. Daniel reads it twice, folds it and lays it in the exercise book,
+          between the pages from back then. "Now it is in the right place," he says.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000, strength: -10, reputation: { public: -2 }, evidence: -2 }
+      marks: [daniel_vergleich]
+    - id: vertrag
+      label: { de: "Kein Geständnis – aber den Vertrag neu aufsetzen und den Förderzins nachzahlen (5.000 $)", en: "No admission – but redraw the contract and pay the back royalties (5,000 $)" }
+      result:
+        de: >-
+          Daniel liest den neuen Vertrag Zeile für Zeile, wie sein Vater es nie konnte. „Das
+          ist kein Geständnis“, sagt er. „Es ist eine Rechnung, die endlich stimmt.“ Er nimmt an.
+          Seine Mutter bekommt den Scheck. Sie hängt ihn nicht an die Wand.
+        en: >-
+          Daniel reads the new contract line by line, as his father never could. "That is no
+          admission," he says. "It is a bill that finally adds up." He accepts. His mother gets
+          the cheque. She does not hang it on the wall.
+      requires: { minCash: 5000 }
+      effects: { cash: -5000, strength: -10, reputation: { public: 2 } }
+      marks: [daniel_vergleich, moss_vertrag_neu]
       sharp: true
     - id: schweigen
       label: { de: "Nicht unterschreiben – Daniel soll tun, was er muss", en: "Do not sign – let Daniel do what he must" }
@@ -1622,12 +1768,12 @@
     de: >-
       Die Anklageschrift umfasst einundsechzig Seiten. Auf der ersten steht „Bezirk
       Cordova gegen Jacob Harlan“. Auf der letzten, unter Daniels Unterschrift, ein Datum,
-      das Jacob kennt: der Tag, an dem Ezekiel Moss sein Land verlor. Es gehört nicht zur
+      das Jacob kennt: der Tag, an dem Ezekiel Moss zum letzten Mal in Jacobs Büro saß. Es gehört nicht zur
       Anklage. Daniel hat es trotzdem hingeschrieben, in der Schrift des Jungen aus dem Heft.
     en: >-
       The indictment runs to sixty-one pages. The first reads "Cordova County versus Jacob
       Harlan". The last, below Daniel's signature, bears a date Jacob knows: the day
-      Ezekiel Moss lost his land. It is not part of the charges. Daniel wrote it there
+      Ezekiel Moss last sat in Jacob's office. It is not part of the charges. Daniel wrote it there
       anyway, in the hand of the boy from the exercise book.
   conditions: { minChapter: 3, maxChapter: 3 }
   marked: [daniel_anwaelte, moss_feind]

@@ -7,7 +7,8 @@
 # Kapitel 2 erzählt schon „Das Datum aus der Kiste“ (k2_ruth_datum) und den Grundbuch-Fund
 # (k2_ruth_eigenes). Kapitel 3 erzählt sie nicht noch einmal, sondern was zehn Jahre daraus gemacht haben:
 #   k3_ruth_laden   (ruth_eigenes_geschaeft) Der Laden am Bahnhof Salt Hill ist ein Geschäft geworden – Ruth braucht
-#                   Kredit, Thornes Bank will ihre Anteile als Pfand
+#                   Kredit, Thornes Bank will das Kaufhaus als Pfand (0.4.19+3: nicht mehr Harlan-Anteile, die
+#                   Ruth auf diesem Weg nie bekam; ohne Pettibone, den es in der Familienfirma nicht gibt)
 #   k3_ruth_kiste   (ruth_vertroestet_k2)    Zweimal vertröstet: Die Kiste ist abgeschlossen, der Schlüssel
 #                   liegt auf Jacobs Tisch
 #   k3_ruth_plaetze (ruth_verboten)          Die Bauplätze, die Ruth verkaufen musste, sind jetzt die Bahnhofstraße
@@ -25,17 +26,19 @@
     de: >-
       Aus dem Laden am Bahnhof Salt Hill sind drei geworden und ein Kaufhaus mit zwei Stockwerken.
       Über der Tür steht „Harlan & Schwester“, und gemeint ist nicht Jacob. Ruth will ein
-      viertes eröffnen, in Port Ellis. Die Trust-Bank gibt ihr den Kredit, aber nur gegen
-      ihre Anteile an Harlan Oil als Pfand. Sie legt den Vertrag vor Jacob hin, die
+      viertes eröffnen, in Port Ellis. Thornes Trust-Bank gibt ihr den Kredit, aber nur gegen
+      das Kaufhaus selbst als Pfand – und gegen eine Klausel, nach der die Bank die Häuser
+      übernimmt, wenn eine Rate ausbleibt. Sie legt den Vertrag vor Jacob hin, die
       Lesebrille an der Kette. „Ich frage nicht um Erlaubnis. Ich sage es dir, bevor
-      Pettibone es tut.“
+      Thornes Leute es tun.“
     en: >-
       The shop by Salt Hill station has become three, and a department store on two floors. Above
       the door it says "Harlan & Sister", and it does not mean Jacob. Ruth wants to open a
-      fourth, in Port Ellis. The Trust Bank will give her the loan, but only against her
-      Harlan Oil shares as security. She lays the contract before Jacob, her reading
-      glasses on their chain. "I'm not asking permission. I'm telling you before Pettibone
-      does."
+      fourth, in Port Ellis. Thorne's Trust Bank will give her the loan, but only against the
+      department store itself as security – and a clause letting the bank take over the
+      stores if a single instalment is missed. She lays the contract before Jacob, her
+      reading glasses on their chain. "I'm not asking permission. I'm telling you before
+      Thorne's people do."
   conditions: { minChapter: 3, maxChapter: 3, minRound: 2, maxRound: 8 }
   marked: [ruth_eigenes_geschaeft]
   certain: true
@@ -70,7 +73,7 @@
       marks: [ruth_gefragt]
       sharp: true
     - id: sabotieren
-      label: { de: "Den Kredit über Pettibone platzen lassen (1.000 $)", en: "Have Pettibone sink the loan (1,000 $)" }
+      label: { de: "Den Kredit über Thornes Bank platzen lassen (1.000 $)", en: "Have Thorne's bank sink the loan (1,000 $)" }
       result:
         de: >-
           Der Kredit platzt, aus „formalen Gründen“. Ruth braucht drei Tage, um herauszufinden,
@@ -87,11 +90,11 @@
       result:
         de: >-
           Ruth wartet einen Moment, dann nimmt sie den Vertrag wieder an sich. Sie
-          unterschreibt ihn am Nachmittag, mit Thornes Klausel. Jacob erfährt es von Pettibone.
+          unterschreibt ihn am Nachmittag, mit Thornes Klausel. Jacob erfährt es aus Thornes Bank.
         en: >-
           Ruth waits a moment, then takes the contract back. She signs it that afternoon,
-          with Thorne's clause. Jacob hears of it from Pettibone.
-      effects: { ruth: -10, control: -2 }
+          with Thorne's clause. Jacob hears of it from Thorne's bank.
+      effects: { ruth: -10 }
       marks: [ruth_riss]
       default: true
 
@@ -192,12 +195,13 @@
       result:
         de: >-
           Jacob findet sie am Bahnhof, auf dem Weg zu Hannah. Er sagt den Satz, den er seit
-          zehn Jahren nicht gesagt hat. Ruth hört zu und steigt trotzdem in den Zug. Aber am
-          Sonntag kommt sie zurück, einen Tag früher als angekündigt.
+          zehn Jahren nicht gesagt hat. Ruth hört zu und steigt trotzdem in den Zug, eine Woche
+          bis in die Kohleprovinzen. Aber nach einem Monat kommt sie zurück, eine Woche früher als
+          angekündigt.
         en: >-
           Jacob finds her at the station, on her way to Hannah's. He says the sentence he has
-          not said for ten years. Ruth listens and boards the train all the same. But she comes
-          back on Sunday, a day earlier than she said.
+          not said for ten years. Ruth listens and boards the train all the same, a week's journey
+          to the coal provinces. But after a month she comes back, a week earlier than she said.
       effects: { ruth: 15, strength: -10 }
       appointments: 2
       sharp: true

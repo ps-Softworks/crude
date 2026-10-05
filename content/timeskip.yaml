@@ -126,6 +126,11 @@ chronicle:
   balance: { de: "Was die Jahre gebracht haben", en: "What the Years Brought" }
   continue: { de: "An den Schreibtisch – Frühjahr {jahr}", en: "Back to the desk – spring {jahr}" }
   end: { de: "Das Ende der Firma", en: "The end of the company" }
+  # 0.4.19+3: Schwächung nach verfehltem Kapitelziel (missedPenalty) als eigene Zeile unter der Bilanz.
+  penaltyLabel: { de: "Verfehltes Kapitelziel", en: "Missed chapter goal" }
+  penalty:
+    de: "Die Bank verlangt Sicherheiten: −{betrag} aus der Kasse. Jacob beginnt müde (Kraft {kraft} statt {voll})."
+    en: "The bank demands collateral: −{betrag} from the cash box. Jacob starts out tired (strength {kraft} instead of {voll})."
   entries:
     world_crash: { de: "Börsenkrach! Banken schließen, Firmen gehen reihenweise pleite.", en: "Market crash! Banks close, firms go bust by the dozen." }
     world_panic: { de: "Bankenpanik – vor den Schaltern stehen die Sparer Schlange.", en: "Bank panic – savers queue at the counters." }
@@ -185,27 +190,28 @@ chronicle:
     bullard_wells: { de: "Bullard bohrt weiter: eine neue Quelle.", en: "Bullard keeps drilling: one new well." }
 
 # Kapitel 2 „Der Herausforderer“ (4.12): Stempel unter der Chronik, Überschrift zum Kapitelstart.
+# {bis} = letztes Quartal des neuen Kapitels in Föderationsjahren (0.4.19+3, chapterGoalDate – wie Kalender und Kopfleiste).
 chapter2:
   badge: { de: "Kapitel 2 · Der Herausforderer", en: "Chapter 2 · The Challenger" }
   title: { de: "Kapitel 2 – Der Herausforderer", en: "Chapter 2 – The Challenger" }
   text:
-    de: Harlan Oil ist eine ernstzunehmende Firma, aber der Crane Trust beherrscht Raffinerien und Pipelines. Ziel bis Jahr 14 – eigene Raffinerie oder Pipeline zum Hafen, Kontrolle über die Firma, ein Imperium von {ziel}.
-    en: Harlan Oil is a company to be reckoned with, but the Crane Trust controls the refineries and pipelines. Goal by year 14 – your own refinery or pipeline to the harbour, control of the company, an empire worth {ziel}.
+    de: Harlan Oil ist eine ernstzunehmende Firma, aber der Crane Trust beherrscht Raffinerien und Pipelines. Ziel bis {bis} – eigene Raffinerie oder Pipeline zum Hafen, Kontrolle über die Firma, ein Imperium von {ziel}.
+    en: Harlan Oil is a company to be reckoned with, but the Crane Trust controls the refineries and pipelines. Goal by {bis} – your own refinery or pipeline to the harbour, control of the company, an empire worth {ziel}.
   # 0.4.19+2: wenn die Firma schwach aus dem Sprung kommt (balance.yaml timeskip.weakStart).
   textWeak:
-    de: Harlan Oil hat die sechs Jahre überstanden, mehr nicht – kaum Quellen, wenig Geld, und der Crane Trust beherrscht Raffinerien und Pipelines. Ziel bis Jahr 14 – eigene Raffinerie oder Pipeline zum Hafen, Kontrolle über die Firma, ein Imperium von {ziel}. Ein weiter Weg.
-    en: Harlan Oil has survived the six years, nothing more – few wells, little money, and the Crane Trust controls the refineries and pipelines. Goal by year 14 – your own refinery or pipeline to the harbour, control of the company, an empire worth {ziel}. A long way to go.
+    de: Harlan Oil hat die sechs Jahre überstanden, mehr nicht – kaum Quellen, wenig Geld, und der Crane Trust beherrscht Raffinerien und Pipelines. Ziel bis {bis} – eigene Raffinerie oder Pipeline zum Hafen, Kontrolle über die Firma, ein Imperium von {ziel}. Ein weiter Weg.
+    en: Harlan Oil has survived the six years, nothing more – few wells, little money, and the Crane Trust controls the refineries and pipelines. Goal by {bis} – your own refinery or pipeline to the harbour, control of the company, an empire worth {ziel}. A long way to go.
 
 # Kapitel 3 „Der Konzernherr“ (4.19): Stempel unter der Chronik von Zeitsprung II, Ziel zum Kapitelstart.
 chapter3:
   badge: { de: "Kapitel 3 · Der Konzernherr", en: "Chapter 3 · The Magnate" }
   title: { de: "Kapitel 3 – Der Konzernherr", en: "Chapter 3 – The Magnate" }
   text:
-    de: Harlan Oil ist ein Konzern. Die Börse lockt, und Hallsteads alte Familien öffnen die ersten Türen – oder schlagen sie zu. Ziel bis Jahr 24 – eine eigene Marke in drei Regionen oder zehn Prozent Marktanteil, und am Ende mindestens Rating C bei der Bank.
-    en: Harlan Oil is a corporation. The stock exchange beckons, and Hallstead's old families open the first doors – or slam them shut. Goal by year 24 – your own brand in three regions or ten per cent market share, and at least a C rating with the bank at the end.
+    de: Harlan Oil ist ein Konzern. Die Börse lockt, und Hallsteads alte Familien öffnen die ersten Türen – oder schlagen sie zu. Ziel bis {bis} – eine eigene Marke in drei Regionen mit je 6 Tankstellen oder zehn Prozent Marktanteil, und am Ende mindestens Rating C bei der Bank.
+    en: Harlan Oil is a corporation. The stock exchange beckons, and Hallstead's old families open the first doors – or slam them shut. Goal by {bis} – your own brand in three regions with 6 filling stations each or ten per cent market share, and at least a C rating with the bank at the end.
   textWeak:
-    de: Harlan Oil ist kein Konzern – noch nicht. Die Börse lockt trotzdem, und Hallsteads alte Familien sehen in Jacob einen Ölmann, der es nicht ganz geschafft hat. Ziel bis Jahr 24 – eine eigene Marke in drei Regionen oder zehn Prozent Marktanteil, und am Ende mindestens Rating C bei der Bank.
-    en: Harlan Oil is not a corporation – not yet. The stock exchange beckons all the same, and Hallstead's old families see in Jacob an oilman who didn't quite make it. Goal by year 24 – your own brand in three regions or ten per cent market share, and at least a C rating with the bank at the end.
+    de: Harlan Oil ist kein Konzern – noch nicht. Die Börse lockt trotzdem, und Hallsteads alte Familien sehen in Jacob einen Ölmann, der es nicht ganz geschafft hat. Ziel bis {bis} – eine eigene Marke in drei Regionen mit je 6 Tankstellen oder zehn Prozent Marktanteil, und am Ende mindestens Rating C bei der Bank.
+    en: Harlan Oil is not a corporation – not yet. The stock exchange beckons all the same, and Hallstead's old families see in Jacob an oilman who didn't quite make it. Goal by {bis} – your own brand in three regions with 6 filling stations each or ten per cent market share, and at least a C rating with the bank at the end.
 
 # Ein Kapitel nach dem Early-Access-Umfang (Kopfleiste; im Spiel nicht erreichbar).
 preview:

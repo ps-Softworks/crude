@@ -66,14 +66,24 @@ export function donate(input: GameState, balance: Balance): Kapitel3Result {
   return { ok: true, state: { ...state, cash: state.cash - d.cost, kapitel3: note(k, { round: state.round, key: 'spende', vars: { betrag: d.cost } }) } };
 }
 
+/**
+ * 0.4.19+3: Merkzeichen aus Thomas' Bogen, die eine Vandermeer-Heirat ausschließen – er hat gebrochen, arbeitet bei
+ * Crane Eastern oder umwirbt schon Evelyn Crane. Umgekehrt setzt die Heirat THOMAS_MARRIED (k3_thomas_evelyn fragt es ab).
+ */
+export const MARRIAGE_BLOCKS = ['thomas_bruch', 'thomas_eigener_weg', 'heirat_crane_saat'] as const;
+export const THOMAS_MARRIED = 'thomas_verheiratet';
+/** Merkzeichen, die der Stand setzt (für die Inhaltsprüfung). */
+export const STAND_SIM_MARKS: readonly string[] = [THOMAS_MARRIED];
+
 export function arrangeMarriage(input: GameState, balance: Balance): Kapitel3Result {
   const b = begin(input, balance);
   if (!b.ok) return b;
   const { state, k3 } = b;
   const m = balance.kapitel3.stand.marriage;
   if (k3.stand.broken) return { ok: false, reason: 'gebrochen' };
-  if (k3.stand.married) return { ok: false, reason: 'schon_verheiratet' };
+  if (k3.stand.married || state.events.marks[THOMAS_MARRIED] !== undefined) return { ok: false, reason: 'schon_verheiratet' };
   if (state.family.thomasBorn <= 0) return { ok: false, reason: 'kein_sohn' };
+  if (MARRIAGE_BLOCKS.some((mk) => state.events.marks[mk] !== undefined)) return { ok: false, reason: 'thomas_vergeben' };
   if (standRank(k3, balance) < m.minRank) return { ok: false, reason: 'rang' };
   if (state.cash < m.cost) return { ok: false, reason: 'geld' };
   const k = adjustAnsehen({ ...k3, stand: { ...k3.stand, married: true } }, m.gain);
@@ -84,6 +94,7 @@ export function arrangeMarriage(input: GameState, balance: Balance): Kapitel3Res
       cash: state.cash - m.cost,
       // Thomas wurde nicht gefragt (GDD §12: die Erziehung formt den Erben).
       family: { ...state.family, thomas: clamp(state.family.thomas + m.thomas, 0, 100) },
+      events: { ...state.events, marks: { ...state.events.marks, [THOMAS_MARRIED]: state.round } },
       kapitel3: note(k, { round: state.round, key: 'heirat', vars: { betrag: m.cost } }),
     },
   };

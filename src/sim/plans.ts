@@ -35,9 +35,11 @@ import {
   rideParcels,
   rollClue,
   addClues,
+  suggestRide,
   type Clue,
   type ClueKind,
 } from './exploration';
+import { formatForecast } from './forecast';
 import type { GameState } from './game';
 import { leaseOf, leaseTerms, optionOf, parcelLabel } from './lease';
 import type { PlanHandler } from './planHandler';
@@ -106,6 +108,22 @@ function gesehenText(state: GameState, eintraege: { parcelId: string; clues: Clu
   return gesehen.length > 0 ? gesehen.join(', ') : 'nichts, was auf Öl deutet';
 }
 
+/**
+ * 0.4.19+3: Was der Ritt an der Prognose geändert hat, je Ranch („Moss-Farm 40–80 % → 55–95 %“) –
+ * sonst fühlte sich Erkundung folgenlos an, obwohl sie es nicht ist.
+ */
+function prognoseText(vorher: GameState, nachher: GameState, ids: string[]): string {
+  const kurz = (f: { low: number; high: number }) => `${f.low}–${f.high} %`;
+  const teile = ids.map((id) => {
+    const a = vorher.forecasts[id];
+    const b = nachher.forecasts[id];
+    if (!b) return `${label(nachher, id)} ohne Prognose`;
+    if (!a) return `${label(nachher, id)} neu ${kurz(b)}`;
+    return a.low === b.low && a.high === b.high ? `${label(nachher, id)} bleibt ${kurz(b)}` : `${label(nachher, id)} ${kurz(a)} → ${kurz(b)}`;
+  });
+  return `Fundchance: ${teile.join(', ')}.`;
+}
+
 /** Regel einer Karte (src/sim/planHandler.ts). */
 type Handler = PlanHandler;
 
@@ -133,7 +151,7 @@ const LAND_HANDLERS: Record<string, Handler> = {
       const ziele = rideParcels(s, t!);
       const n = ride(s, b, t!);
       const eintraege = ziele.map((p) => ({ parcelId: p.id, clues: knowledgeOf(n, p.id).clues.filter((c) => c.round === s.round && c.source === 'ritt') }));
-      return log(n, `Ritt übers Land (${ziele.map(parcelLabel).join(', ')}): ${gesehenText(n, eintraege)}.`);
+      return log(n, `Ritt übers Land (${ziele.map(parcelLabel).join(', ')}): ${gesehenText(n, eintraege)}. ${prognoseText(s, n, ziele.map((p) => p.id))}`);
     },
   },
   farmer: {
@@ -459,7 +477,11 @@ export function planView(state: GameState, balance: Balance, catalog: readonly E
   const plans = state.plans?.round === state.round ? state.plans : newPlans(state.round);
   const karten = planCards(balance, catalog).filter((c) => onHand(state, c, catalog, balance));
   const ranches = state.parcels.filter((p) => !p.discovery);
+  // 0.4.19+3: Für den Ritt steht der Vorschlag des Einstiegs (suggestRide) oben – vorher lag dort meist eine schon
+  // berittene, unbezahlbare Ranch am Fund, und „Buchen“ verschenkte den halben Ritt.
+  const rittVorschlag = suggestRide(state, balance, state.cash);
   const cards: PlanCardView[] = karten.map((c) => {
+    const ritt = c.handler === 'ritt';
     const targets: PlanTargetView[] =
       c.target === 'ranch'
         ? ranches
@@ -467,13 +489,28 @@ export function planView(state: GameState, balance: Balance, catalog: readonly E
               const r = cardReason(state, balance, catalog, c, p.id);
               const terms = leaseTerms(state, balance, p.id);
               const frei = !leaseOf(state, p.id) && !optionOf(state, p.id);
-              const detail = frei ? `${terms.location.label} · Pacht ${terms.bonus.toLocaleString('de-DE')} $` : `${terms.location.label} · vergeben`;
+              const f = state.forecasts[p.id];
+              const teile = [terms.location.label, frei ? `Pacht ${terms.bonus.toLocaleString('de-DE')} $` : 'vergeben'];
+              if (f) teile.push(formatForecast(f));
+              const neu = ritt ? rideNews(state, p.id) : true;
+              if (ritt && !neu) teile.push('nichts Neues zu sehen');
+              const vorschlag = ritt && p.id === rittVorschlag;
+              if (vorschlag) teile.unshift('Vorschlag');
               const nähe = balance.lease.locations.findIndex((l) => l.name === terms.location.name);
-              return { parcelId: p.id, label: parcelLabel(p), level: knowledgeOf(state, p.id).level, ok: r === null, ...(r ? { reason: r } : {}), detail, nähe };
+              const bezahlbar = frei && terms.bonus <= state.cash;
+              const level = knowledgeOf(state, p.id).level;
+              return { parcelId: p.id, label: parcelLabel(p), level, ok: r === null, ...(r ? { reason: r } : {}), detail: teile.join(' · '), nähe, vorschlag, neu, bezahlbar };
             })
-            // Was nach öffentlichem Wissen am meisten verspricht, steht oben: nah am Fund zuerst, dann nach Namen (0.4.19+2).
-            .sort((a, b) => Number(b.ok) - Number(a.ok) || a.nähe - b.nähe || a.label.localeCompare(b.label, 'de'))
-            .map(({ nähe: _n, ...t }) => t)
+            // Ritt: Vorschlag, dann wo es Neues zu sehen gibt, bezahlbar, unbekannt. Sonst: nah am Fund zuerst (0.4.19+2).
+            .sort(
+              (a, b) =>
+                Number(b.ok) - Number(a.ok) ||
+                Number(b.vorschlag) - Number(a.vorschlag) ||
+                (ritt ? Number(b.neu) - Number(a.neu) || Number(b.bezahlbar) - Number(a.bezahlbar) || a.level - b.level : 0) ||
+                a.nähe - b.nähe ||
+                a.label.localeCompare(b.label, 'de'),
+            )
+            .map(({ nähe: _n, vorschlag: _v, neu: _neu, bezahlbar: _b, ...t }) => t)
         : [];
     const options =
       c.target === 'option'

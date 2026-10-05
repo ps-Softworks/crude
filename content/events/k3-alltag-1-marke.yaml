@@ -63,12 +63,12 @@
     en: Billboards on the Highway
   text:
     de: >-
-      Die ersten Automobile fahren die Straße von Port Ellis nach Hallstead in zwei
-      Tagen. Margaret Crane hat an jeder Kurve eine Tafel aufstellen lassen, blau und
+      Mit dem Automobil schafft man die Straße von Port Ellis nach Hallstead jetzt in zwei
+      Tagen, und jede Woche sind es mehr. Margaret Crane hat an jeder Kurve eine Tafel aufstellen lassen, blau und
       weiß, mit der Entfernung zur nächsten Crane-Eastern-Säule. Die Farmer verpachten
       ihr Zaunholz dafür. Jacobs Vertriebsleiter will dasselbe – oder etwas Klügeres.
     en: >-
-      The first automobiles drive the road from Port Ellis to Hallstead in two days.
+      By automobile the road from Port Ellis to Hallstead now takes two days, and there are more every week.
       Margaret Crane has had a board put up at every bend, blue and white, giving the
       distance to the next Crane Eastern pump. The farmers lease out their fence posts
       for it. Jacob's sales manager wants the same – or something cleverer.
@@ -91,7 +91,7 @@
       requires: { minCash: 1500 }
       effects: { cash: -1500, brand: { cordova: 5, ostkueste: 2 } }
     - id: abwarten
-      label: { de: "Abwarten, ob Automobile bleiben", en: "Wait and see whether automobiles last" }
+      label: { de: "Keine Tafeln – gutes Benzin spricht sich herum", en: "No boards – good gasoline gets talked about" }
       result:
         de: Die blauen Tafeln bleiben allein an der Straße. Wer zum ersten Mal tankt, tankt bei Crane.
         en: The blue boards stand alone by the road. Whoever fills up for the first time fills up at Crane's.

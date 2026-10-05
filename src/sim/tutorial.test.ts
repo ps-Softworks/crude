@@ -156,7 +156,10 @@ describe('Schritt 1: Pacht', () => {
     let state = newGame('einstieg', balance);
     const option = state.options[0].parcelId;
     state = prognose(state, option, 99, 100);
-    const h = hint(state);
+    // 0.4.19+3: Der erste Ritt kommt immer zuerst – auch bei einer glänzenden Startoption.
+    expect(hint(state)).toMatchObject({ id: 'explore', action: { kind: 'plan', cardId: 'ritt' } });
+    // Passt kein Ritt mehr in die Runde, rät er zur Option.
+    const h = hint(ohneZeit(state));
     expect(h).toMatchObject({ id: 'lease_option', action: { kind: 'exercise', parcelId: option } });
     expect(h.vars.chance).toBe('99–100 % Fundchance');
     expect(h.vars.ort).toBe(parcelLabel(state.parcels.find((p) => p.id === option)!));

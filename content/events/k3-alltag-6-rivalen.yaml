@@ -8,7 +8,8 @@
 # Nur Kapitel 3 (minChapter/maxChapter 3). Seit 4.19 wirken Vertrauen, Groll und Stärke der
 # Rivalen (rival) und Thornes Aktien (rivalStake) als Systemwirkungen.
 #
-# Merkzeichen aus Kapitel 1: bullard_fehde (Schrägbohrung in Okara).
+# Merkzeichen aus Kapitel 1: bullard_fehde (Schrägbohrung am Nordhang).
+# 0.4.19+3: Okara gibt es nur in manchen Partien (Zeitsprung-Weiche) – die Bullard-Szenen spielen am Nordhang von Salt Hill.
 # Merkzeichen aus Paket 1: k3_margaret_absprache → k3_absprache_beamter.
 # Merkzeichen dieses Pakets:
 #   k3_bullard_wechsel_gekauft → k3_bullard_soehne
@@ -25,12 +26,12 @@
   text:
     de: >-
       Mr. Pettibone legt ein Bündel Wechsel auf den Tisch, mit Bullards breiter
-      Unterschrift. Big Jim hat in Okara auf Kredit gebohrt, drei trockene Löcher in
+      Unterschrift. Big Jim hat am Nordhang auf Kredit gebohrt, drei trockene Löcher in
       Folge. Thornes Bank will die Papiere loswerden, mit einem Drittel Abschlag. „Wer
       sie hält, Mr. Harlan, hält Bullard. Ich dachte, das interessiert Sie.“
     en: >-
       Mr. Pettibone lays a bundle of notes on the desk, with Bullard's broad signature.
-      Big Jim drilled on credit at Okara, three dry holes in a row. Thorne's bank wants
+      Big Jim drilled on credit on the north slope, three dry holes in a row. Thorne's bank wants
       to be rid of the paper, at a third off. "Whoever holds them, Mr. Harlan, holds
       Bullard. I thought that might interest you."
   conditions: { minChapter: 3, maxChapter: 3 }
@@ -47,8 +48,8 @@
     - id: warnen
       label: { de: "Bullard warnen, dass seine Wechsel auf dem Markt sind", en: "Warn Bullard that his notes are on the market" }
       result:
-        de: Jacob schickt einen Boten nach Okara mit einer einzigen Zeile. Pettibone erfährt es und schreibt Jacobs Namen in ein anderes Buch.
-        en: Jacob sends a messenger to Okara with a single line. Pettibone finds out and writes Jacob's name in a different book.
+        de: Jacob schickt einen Boten an den Nordhang mit einer einzigen Zeile. Pettibone erfährt es und schreibt Jacobs Namen in ein anderes Buch.
+        en: Jacob sends a messenger to the north slope with a single line. Pettibone finds out and writes Jacob's name in a different book.
       effects: { railTariff: 0.03, rival: { bullard: { trust: 15 }, thorne: { trust: -10 } } }
       marks: [k3_bullard_gewarnt]
     - id: nein
@@ -70,12 +71,12 @@
     en: Wade and Cole
   text:
     de: >-
-      Bullards Söhne stehen am Harlan-Bohrplatz in Okara, Wade mit verschränkten Armen,
+      Bullards Söhne stehen am Harlan-Bohrplatz am Nordhang, Wade mit verschränkten Armen,
       Cole mit einem Stein in der Hand, den er nicht wirft. Sie sagen nichts. Sie sehen
       zu, wie Jacobs Männer arbeiten, den ganzen Tag lang. Am Abend fehlt ein Seil.
       Vom Vater kommt ein Brief: „Du hast meine Schulden. Meine Söhne hast du nicht.“
     en: >-
-      Bullard's sons stand at the Harlan drilling site at Okara, Wade with arms folded,
+      Bullard's sons stand at the Harlan drilling site on the north slope, Wade with arms folded,
       Cole with a stone in his hand he doesn't throw. They say nothing. They watch Jacob's
       men work all day long. In the evening a cable is missing. A letter comes from the
       father: "You have my debts. You don't have my sons."
@@ -83,20 +84,20 @@
     - id: erlassen
       label: { de: "Bullard die Hälfte der Schulden erlassen", en: "Forgive Bullard half the debt" }
       result:
-        de: Bullard schickt keinen Dank, aber die Söhne verschwinden vom Bohrplatz. Im Saloon in Okara erzählt man, Harlan sei weich geworden. Oder klug.
-        en: Bullard sends no thanks, but the sons disappear from the drilling site. In the Okara saloon they say Harlan has gone soft. Or clever.
+        de: Bullard schickt keinen Dank, aber die Söhne verschwinden vom Bohrplatz. Im Saloon in Salt Hill erzählt man, Harlan sei weich geworden. Oder klug.
+        en: Bullard sends no thanks, but the sons disappear from the drilling site. In the Salt Hill saloon they say Harlan has gone soft. Or clever.
       effects: { cash: -2500, rival: { bullard: { strength: -1, trust: 10 } } }
     - id: eintreiben
       label: { de: "Die Wechsel eintreiben – Bullards Quellen als Pfand", en: "Collect on the notes – Bullard's wells as security" }
       result:
-        de: Die Anwälte pfänden zwei Quellen in Okara. Bullard steht am Zaun, als die Harlan-Männer die Schilder wechseln. Wade steht neben ihm und merkt sich jedes Gesicht.
-        en: The lawyers seize two wells at Okara. Bullard stands at the fence as the Harlan men change the signs. Wade stands beside him, memorising every face.
+        de: Die Anwälte pfänden zwei Quellen am Nordhang. Bullard steht am Zaun, als die Harlan-Männer die Schilder wechseln. Wade steht neben ihm und merkt sich jedes Gesicht.
+        en: The lawyers seize two wells on the north slope. Bullard stands at the fence as the Harlan men change the signs. Wade stands beside him, memorising every face.
       effects: { production: 0.2, strength: -10, rival: { bullard: { trust: -30, grudge: 20 } } }
     - id: nichts
       label: { de: "Nichts tun – die Söhne bleiben", en: "Do nothing – the sons stay" }
       result:
-        de: Wade und Cole stehen drei Wochen lang am Bohrplatz. Es fehlen noch zwei Seile und eine Rohrzange. Dann kommen sie nicht mehr. Im Saloon in Okara erzählt man, Harlan lasse sich anstarren.
-        en: Wade and Cole stand at the drilling site for three weeks. Two more cables go missing, and a pipe wrench. Then they stop coming. In the Okara saloon they say Harlan lets himself be stared at.
+        de: Wade und Cole stehen drei Wochen lang am Bohrplatz. Es fehlen noch zwei Seile und eine Rohrzange. Dann kommen sie nicht mehr. Im Saloon in Salt Hill erzählt man, Harlan lasse sich anstarren.
+        en: Wade and Cole stand at the drilling site for three weeks. Two more cables go missing, and a pipe wrench. Then they stop coming. In the Salt Hill saloon they say Harlan lets himself be stared at.
       effects: { cash: -300, strength: -5, rival: { bullard: { trust: -5 } } }
       appointments: 0
       default: true
@@ -115,12 +116,12 @@
     de: >-
       Big Jim Bullard ist schwer geworden und geht am Stock, aber er bittet nicht. Er
       bietet an. Er stellt eine Kiste Whiskey auf den Tisch und legt eine Karte daneben:
-      ein Feld bei Okara, das er nicht mehr bohren kann. „Du hast mich gewarnt, Harlan.
+      ein Feld am Nordhang, das er nicht mehr bohren kann. „Du hast mich gewarnt, Harlan.
       Ich zahle meine Schulden. Auch die, die nicht auf Papier stehen.“
     en: >-
       Big Jim Bullard has grown heavy and walks with a stick, but he doesn't beg. He
       offers. He sets a crate of whiskey on the desk and lays a map beside it: a field
-      near Okara he can no longer drill. "You warned me, Harlan. I pay my debts. Even the
+      on the north slope he can no longer drill. "You warned me, Harlan. I pay my debts. Even the
       ones not on paper."
   choices:
     - id: gemeinsam
@@ -155,12 +156,12 @@
     en: A Well That Runs Crooked
   text:
     de: >-
-      Bullards neuer Turm steht drei Schritte vor Jacobs Grenze in Okara. Jacobs
+      Bullards neuer Turm steht drei Schritte vor Jacobs Grenze am Nordhang. Jacobs
       Bohrmeister schwört, dass Bullards Gestänge schräg läuft, unter die Grenze, in
       Harlans Sand. Beweisen kann er es nicht ohne Bohrlochmessung. Bullard steht auf
       der Plattform und winkt, wie vor zwanzig Jahren am Salt Hill.
     en: >-
-      Bullard's new rig stands three paces from Jacob's line at Okara. Jacob's drilling
+      Bullard's new rig stands three paces from Jacob's line on the north slope. Jacob's drilling
       foreman swears Bullard's string runs crooked, under the line, into Harlan sand. He
       can't prove it without a well survey. Bullard stands on the platform and waves, as
       he did twenty years ago at Salt Hill.
@@ -180,7 +181,7 @@
         en: Now two holes run crooked, against each other. Both lose pressure. The workers on both sides call the site "the fork".
       effects: { production: -0.1, cash: 1000, heat: 1, rival: { bullard: { grudge: 10 } } }
     - id: hinnehmen
-      label: { de: "Hinnehmen – Okara ist groß", en: "Let it be – Okara is big" }
+      label: { de: "Hinnehmen – der Nordhang ist groß", en: "Let it be – the north slope is big" }
       result:
         de: Bullards Quelle fördert gut. Jacobs Nachbarloch fördert ein Viertel weniger. Bullard winkt jetzt jeden Morgen.
         en: Bullard's well produces well. Jacob's neighbouring hole produces a quarter less. Bullard waves every morning now.

@@ -21,6 +21,7 @@
 #               k2_silas_turm           (silas_quellen_gekauft) Silas' Turm: noch einmal bohren
 #   B3 Silas als Zeuge (silas_betrogen – auch versöhnt oder Kronzeuge)
 #     Runde 6+  k2_silas_hauptversammlung  Schlüsselszene: zehn Aktien und eine alte Geschichte
+#               k2_silas_fuer_andere    (silas_versoehnt, 0.4.19+3) Silas fragt nicht für sich, sondern für die alten Trupps
 #     +2–4      k2_silas_delaney        (silas_k2_nachgezahlt)    Delaney liest mit: „Bücher ohne Gewinn“
 #               k2_silas_saloon         (silas_k2_hinausgeworfen) Der Saloon erzählt es jeden Abend
 #               k2_silas_kreuz          (silas_schweigegeld)      Ein Kreuz ist keine Unterschrift
@@ -813,6 +814,7 @@
       listen the way one listens to a play. Pettibone takes notes.
   conditions: { minChapter: 2, maxChapter: 2, minRound: 6, minPublicShare: 1 }
   marked: [silas_betrogen]
+  notMarked: [silas_versoehnt]   # 0.4.19+3: versöhnt (600 $ nachgezahlt) → k2_silas_fuer_andere
   delay: 0
   certain: true
   appointments: 2
@@ -883,6 +885,7 @@
       listen the way one listens to a play. The man from the Courier takes notes.
   conditions: { minChapter: 2, maxChapter: 2, minRound: 6, maxPublicShare: 0 }
   marked: [silas_betrogen]
+  notMarked: [silas_versoehnt]   # 0.4.19+3
   delay: 0
   certain: true
   appointments: 2
@@ -1132,5 +1135,68 @@
           drilling bosses ask whether there's something for silence in their
           envelopes too.
       effects: { reputation: { workers: -6 }, heat: 2 }
+      appointments: 0
+      default: true
+
+# Entwurf – Philipp überarbeitet (0.4.19+3).
+# Mit silas_versoehnt aus Kapitel 1: Jacob hat ihm im Saloon doch noch seinen Anteil gezahlt. Silas verlangt nichts
+# mehr für sich – er fragt für die Männer, die damals mit ihm am Turm standen. Folgeszenen wie die Hauptversammlung.
+- id: k2_silas_fuer_andere
+  visitor: silas
+  title:
+    de: Nicht für mich
+    en: Not for Me
+  text:
+    de: >-
+      Silas kommt ins Büro, nüchtern, den Hut in der Hand. „Du hast mir damals bezahlt,
+      Junge, spät, aber in bar. Ich bin nicht deswegen hier.“ Er legt eine Liste auf den
+      Tisch, mit Bleistift geschrieben: sieben Namen, die Männer, die mit ihm am ersten Turm
+      standen. Zwei sind tot, die Witwen leben. „Die haben nie etwas gesehen. Nicht einmal
+      spät.“
+    en: >-
+      Silas comes into the office, sober, hat in hand. "You paid me back then, boy, late,
+      but in cash. That's not why I'm here." He lays a list on the desk, written in pencil:
+      seven names, the men who stood with him at the first derrick. Two are dead; the widows
+      are alive. "They never saw anything. Not even late."
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 6 }
+  marked: [silas_betrogen, silas_versoehnt]
+  delay: 0
+  certain: true
+  choices:
+    - id: nachzahlen
+      label: { de: "Jedem auf der Liste seinen Anteil zahlen (4.000 $)", en: "Pay everyone on the list their share (4,000 $)" }
+      result:
+        de: >-
+          Silas bringt die Umschläge selbst vorbei, einen nach dem anderen, zwei Wochen lang. Am
+          Ende kommt er mit leeren Händen zurück und sagt nur: „In Tinte.“ Im Saloon erzählt man
+          es anders als früher.
+        en: >-
+          Silas delivers the envelopes himself, one after another, for two weeks. At the end he
+          comes back empty-handed and says only: "In ink." In the saloon they tell it
+          differently from before.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000, reputation: { workers: 6, public: 2 } }
+      marks: [silas_k2_nachgezahlt]
+    - id: witwen
+      label: { de: "Nur den Witwen etwas geben (1.500 $)", en: "Give something to the widows only (1,500 $)" }
+      result:
+        de: >-
+          Silas nickt langsam. „Besser als nichts“, sagt er. Er streicht fünf Namen durch, nicht
+          zwei, und geht. Die Liste lässt er liegen.
+        en: >-
+          Silas nods slowly. "Better than nothing," he says. He crosses out five names, not two,
+          and leaves. He leaves the list behind.
+      requires: { minCash: 1500 }
+      effects: { cash: -1500, reputation: { workers: 2 } }
+    - id: ablehnen
+      label: { de: "„Das ist zehn Jahre her, Silas.“", en: "\"That was ten years ago, Silas.\"" }
+      result:
+        de: >-
+          „Elf“, sagt Silas. Er nimmt die Liste wieder mit. Er erzählt die Geschichte nicht
+          im Saloon. Er erzählt sie den Trupps, einem nach dem anderen.
+        en: >-
+          "Eleven," says Silas. He takes the list back. He doesn't tell the story in the saloon.
+          He tells it to the crews, one by one.
+      effects: { strength: -5, reputation: { workers: -5 } }
       appointments: 0
       default: true

@@ -23,6 +23,7 @@
 jacob: { form: hut, name: Jacob }
 ruth: { form: frau, name: Ruth }
 thomas: { form: kind, name: Thomas }
+clara: { form: frau, name: Clara }
 silas: { form: muetze, name: Silas }
 moss: { form: strohhut, name: Ezekiel Moss }
 crane: { form: zylinder, name: Mr. Crane }
@@ -51,3 +52,5 @@ delaney: { form: hut, name: Bundesanwalt Delaney }
 # (Margaret Crane und Harold Pruett stehen schon oben bei 4.10).
 grady: { form: zylinder, name: Senator Grady }
 dunmore: { form: zylinder, name: Lionel Dunmore }
+# 0.4.19+3: Die Witwe des Tanker-Maschinisten (k3_tanker_witwe, Weiche zs2_export_krieg).
+witwe: { form: frau, name: Martha Quill }

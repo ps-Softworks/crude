@@ -51,6 +51,8 @@ export interface ExplorationBalance {
   /** Freundliche Farmer (Landbesitzer-Arten) geben beim Gespräch Nachlass auf den Pachtbonus. */
   friendlyOwners: string[];
   friendlyDiscount: number;
+  /** 0.4.19+3: So viele Nachbarn kartiert der Geologe zusätzlich zur Ranch (vorher fest 1). */
+  mapNeighbours: number;
   /** Bohrbericht kaufen: Preis bei trockener bzw. fündiger Bohrung. */
   reportCost: { dry: number; found: number };
   /** Bullards Bohrtagebuch: so viele Ranches höchstens, so oft erwischt. */
@@ -157,6 +159,7 @@ export function parseExplorationBalance(raw: unknown): ExplorationBalance {
     greedyLie: anteil(raw, `${p}.greedyLie`),
     friendlyOwners: texte(raw, `${p}.friendlyOwners`),
     friendlyDiscount: anteil(raw, `${p}.friendlyDiscount`),
+    mapNeighbours: nichtNegativ(raw, `${p}.mapNeighbours`),
     reportCost: { dry: nichtNegativ(raw, `${p}.reportCost.dry`), found: nichtNegativ(raw, `${p}.reportCost.found`) },
     diary: { ranches: nichtNegativ(raw, `${p}.diary.ranches`), caught: anteil(raw, `${p}.diary.caught`) },
     clues,

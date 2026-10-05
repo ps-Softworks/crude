@@ -152,8 +152,8 @@
     - id: abwarten
       label: { de: "Sich heraushalten", en: "Stay out of it" }
       result:
-        de: "Der Entwurf gewinnt Stimmen, Woche für Woche, und niemand hält ihn auf. Ruth bezahlt vorsorglich einen Steuerberater aus Hallstead, der drei Tage in ihren Büchern liest und am Ende seufzt."
-        en: "The bill gains votes week by week, and nobody stops it. As a precaution Ruth pays a tax adviser from Hallstead, who spends three days reading her books and sighs at the end."
+        de: "Der Entwurf gewinnt Stimmen, Woche für Woche, und niemand hält ihn auf. Jacob bezahlt vorsorglich einen Steuerberater aus Hallstead, der drei Tage in den Büchern der Firma liest und am Ende seufzt."
+        en: "The bill gains votes week by week, and nobody stops it. As a precaution Jacob pays a tax adviser from Hallstead, who spends three days reading the company's books and sighs at the end."
       effects: { cash: -1500, lawPressure: { income_tax: 1 } }
       appointments: 0
       default: true
@@ -451,6 +451,8 @@
   mail: personal
   deadline: 2
   conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  # 0.4.19+3: Mit Ruths eigenem Laden ist Hannah nach Salt Hill gezogen (k2_ruth_eigenes) – dann schreibt sie nicht mehr aus den Kohleprovinzen.
+  notMarked: [ruth_eigenes_geschaeft]
   chance: 0.06
   title:
     de: Ein Unglück in der Kohlestadt
@@ -740,5 +742,77 @@
         de: "Der Sturm macht, was Stürme machen. Ein Tank kippt, der Tanker liegt auf der Seite, und das Öl schwimmt bis an den Fischmarkt."
         en: "The storm does what storms do. A tank topples, the tanker lies on its side, and the oil floats as far as the fish market."
       effects: { oilStock: -1000, cash: -3000 }
+      appointments: 0
+      default: true
+
+# 0.4.19+3: Thomas' erstes Wort aus Kapitel 1 (thomas_wort_dabei / thomas_wort_verpasst) – Story-Bibel: Startwert
+# für Thomas' Loyalität. Thomas ist hier 10–13 und hört die Geschichte zum ersten Mal selbst.
+- id: k2_thomas_wort_dabei
+  marked: [thomas_wort_dabei]
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 10 }
+  chance: 0.25
+  title:
+    de: „Erzähl das mit dem Öl“
+    en: '"Tell the One About the Oil"'
+  text:
+    de: >-
+      Beim Abendessen will Thomas zum dritten Mal in dieser Woche die Geschichte hören:
+      wie er auf dem Küchenboden saß und „Öl“ sagte, und wie Papa vom Feld hereinkam, noch
+      im Arbeitshemd. Ruth verdreht die Augen und lacht trotzdem. Thomas kennt jedes Wort.
+      Er will, dass Jacob sie erzählt.
+    en: >-
+      At supper Thomas wants to hear the story for the third time this week: how he sat on
+      the kitchen floor and said "oil", and how Papa came in from the field still in his work
+      shirt. Ruth rolls her eyes and laughs all the same. Thomas knows every word. He wants
+      Jacob to tell it.
+  choices:
+    - id: erzaehlen
+      label: { de: "Die Geschichte erzählen, mit allen Ausschmückungen", en: "Tell the story, with every embellishment" }
+      result:
+        de: In Jacobs Fassung kommt diesmal ein Pferd vor, das es nie gab. Thomas besteht darauf, dass es so war. Am nächsten Tag erzählt er es in der Schule.
+        en: In Jacob's version this time there is a horse that never existed. Thomas insists that's how it was. Next day he tells it at school.
+      effects: { thomas: 8, ruth: 3, heirValues: { thomas: { loyalty: 5 } } }
+      appointments: 1
+    - id: spaeter
+      label: { de: "„Morgen, Thomas. Heute bin ich müde.“", en: "\"Tomorrow, Thomas. I'm tired tonight.\"" }
+      result:
+        de: Ruth erzählt sie, ohne das Pferd. Thomas hört höflich zu und fragt am nächsten Abend nicht wieder.
+        en: Ruth tells it, without the horse. Thomas listens politely and doesn't ask the next evening.
+      effects: { thomas: -3 }
+      appointments: 0
+      default: true
+
+- id: k2_thomas_wort_verpasst
+  marked: [thomas_wort_verpasst]
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 10 }
+  chance: 0.25
+  title:
+    de: Das erste Wort
+    en: The First Word
+  text:
+    de: >-
+      Thomas hat in der Schule einen Aufsatz geschrieben: „Mein erstes Wort“. Die Lehrerin
+      hat ein Sternchen daneben gemalt. Er hat es von Ruth: „Papa“, an einem Abend, an dem
+      Papa auf dem Feld war, bis der Turm stand. Den letzten Satz hat er durchgestrichen,
+      aber man kann ihn noch lesen. Der Aufsatz liegt auf Jacobs Schreibtisch.
+    en: >-
+      Thomas has written an essay at school: "My First Word". The teacher has drawn a star
+      beside it. He got it from Ruth: "Papa", one evening when Papa stayed in the field until
+      the derrick stood. He has crossed out the last sentence, but it can still be read. The
+      essay lies on Jacob's desk.
+  choices:
+    - id: reden
+      label: { de: "Mit Thomas über den Abend reden – und warum der Turm wichtiger schien", en: "Talk to Thomas about that evening – and why the derrick seemed more important" }
+      result:
+        de: Thomas hört zu, ohne etwas zu sagen. Am Ende fragt er, ob der Turm Öl gebracht hat. Jacob sagt ja. Thomas nickt, als hätte er etwas verstanden, das Jacob nicht gesagt hat.
+        en: Thomas listens without saying anything. At the end he asks whether the derrick brought oil. Jacob says yes. Thomas nods as if he had understood something Jacob didn't say.
+      effects: { thomas: 6, strength: -3, heirValues: { thomas: { loyalty: 3 } } }
+      appointments: 1
+    - id: unterschreiben
+      label: { de: "Den Aufsatz unterschreiben und zurücklegen", en: "Sign the essay and put it back" }
+      result:
+        de: Thomas findet den Aufsatz am nächsten Morgen in seiner Schultasche, unterschrieben. Den durchgestrichenen Satz hat niemand erwähnt.
+        en: Thomas finds the essay in his satchel next morning, signed. Nobody has mentioned the crossed-out sentence.
+      effects: { thomas: -4, heirValues: { thomas: { loyalty: -5, ambition: 3 } } }
       appointments: 0
       default: true

@@ -493,8 +493,8 @@
     - id: zahlen
       label: { de: "Zahlen", en: "Pay" }
       result:
-        de: "Die Kesselwagen rollen wie immer. Jedes Quartal steht eine Zeile mehr in Ruths Büchern, rot unterstrichen."
-        en: "The tank cars roll as always. Every quarter there is one more line in Ruth's books, underlined in red."
+        de: "Die Kesselwagen rollen wie immer. Jedes Quartal steht eine Zeile mehr in den Büchern der Firma, rot unterstrichen."
+        en: "The tank cars roll as always. Every quarter there is one more line in the company's books, underlined in red."
       effects: { railTariff: 0.04 }
       appointments: 0
       default: true

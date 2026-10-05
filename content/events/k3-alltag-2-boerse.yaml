@@ -146,6 +146,7 @@
 - id: k3_ruth_raet_ab
   visitor: ruth
   marked: [k3_aktien_kredit]
+  notMarked: [ehe_trennung]   # 0.4.19+3: nach der Trennung liest Ruth Jacobs Abrechnungen nicht mehr
   delay: 1
   chance: 0.5
   conditions: { minChapter: 3, maxChapter: 3 }

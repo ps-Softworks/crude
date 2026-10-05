@@ -27,11 +27,13 @@ endings:
       de: >-
         Vier Jahre in Cordova, und Jacob ist noch immer ein kleiner Wildcatter. Die
         Firma lebt, aber sie ist zu klein, um Anleger oder Banker zu beeindrucken.
-        Er wird geschwächt in die nächsten Jahre gehen.
+        Er wird geschwächt in die nächsten Jahre gehen: Nach dem Zeitsprung verlangt die
+        Bank 15 % der Kasse als Sicherheit, und Jacob beginnt mit 20 Kraft weniger.
       en: >-
         Four years in Cordova, and Jacob is still a small wildcatter. The company is
         alive, but too small to impress investors or bankers. He goes into the next
-        years weakened.
+        years weakened: after the time skip the bank takes 15 % of the cash as
+        collateral, and Jacob starts with 20 less strength.
   verkauft:
     title: { de: "Der kluge Mann", en: "The Wise Man" }
     text:
@@ -109,11 +111,13 @@ chapter2:
         de: >-
           Vier Jahre Kampf, und der Trust sitzt noch immer zwischen Jacobs Quellen und dem Markt.
           Harlan Oil lebt – aber als Herausforderer, den niemand mehr fürchtet. Jacob geht geschwächt
-          in die nächsten Jahre.
+          in die nächsten Jahre: Nach dem Zeitsprung verlangt die Bank 15 % der Kasse als Sicherheit,
+          und Jacob beginnt mit 20 Kraft weniger.
         en: >-
           Four years of fighting, and the Trust still sits between Jacob's wells and the market.
           Harlan Oil lives on – but as a challenger nobody fears any more. Jacob goes into the next
-          years weakened.
+          years weakened: after the time skip the bank takes 15 % of the cash as collateral, and
+          Jacob starts with 20 less strength.
     verkauft:
       title: { de: "Der kluge Mann", en: "The Wise Man" }
       text:

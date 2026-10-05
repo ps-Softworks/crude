@@ -20,6 +20,7 @@ import {
   type SwitchFunds,
   type SwitchId,
   type TimeskipRecord,
+  chapterGoalDate,
 } from '../sim/timeskip';
 import { regionById } from '../sim/worldMap';
 import { balance } from './balance';
@@ -205,9 +206,18 @@ export function ChronicleScreen({ game, record, onContinue }: { game: GameState;
           {zeile('Fördernde Quellen', String(v.wells), String(n.wells))}
           {zeile('Ruth', wort(v.ruth), wort(n.ruth))}
           {zeile('Kinder', String(v.children), String(n.children))}
+          {/* 0.4.19+3: Schwächung nach verfehltem Kapitelziel – sonst verschwand Geld ohne Grund. */}
+          {record.penalty && (
+            <>
+              <dt>{fillTimeskipText(c.penaltyLabel, {})}</dt>
+              <dd>
+                {fillTimeskipText(c.penalty, { betrag: money(record.penalty.cash), kraft: String(record.penalty.strength), voll: String(record.penalty.strengthMax) })}
+              </dd>
+            </>
+          )}
         </dl>
         {/* 4.12/4.19: Ausgangslage und Ziel des nächsten Kapitels – der Spieler weiß vor der ersten Runde, worum es geht. */}
-        {game.ending !== 'pleite' && <p className="bogen-text sprung-ziel">{fillTimeskipText(weakStart(record, balance) ? kapitel.textWeak : kapitel.text, { ziel: money(balance.chapter.chapter2.goalValue) })}</p>}
+        {game.ending !== 'pleite' && <p className="bogen-text sprung-ziel">{fillTimeskipText(weakStart(record, balance) ? kapitel.textWeak : kapitel.text, { ziel: money(balance.chapter.chapter2.goalValue), bis: chapterGoalDate(record, game, balance) })}</p>}
       </div>
       <div className="bogen-fuss">
         {game.ending === 'pleite' ? (

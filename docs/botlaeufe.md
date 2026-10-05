@@ -1,10 +1,10 @@
 # Bot-Läufe
 
-Stand: 2026-10-05 · Version 0.4.19+2
+Stand: 2026-10-05 · Version 0.4.19+3
 
 - Partien je Strategie: 1.000
 - Seeds: `bot-0` bis `bot-999` (für jede Strategie dieselben)
-- Mit allen 365 Ereignissen aus content/events/ (Briefe, feste Termine, Rivalen, Story-Bögen)
+- Mit allen 387 Ereignissen aus content/events/ (Briefe, feste Termine, Rivalen, Story-Bögen)
 - Erzeugt mit `npm run bots` (tools/botlaeufe.ts, Regeln in src/sim/bots.ts)
 
 | Strategie | Partien | Bankrottquote | Kapitelziel | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen | Ø Termine |
@@ -12,7 +12,7 @@ Stand: 2026-10-05 · Version 0.4.19+2
 | vorsichtig | 1.000 | 0,0 % | 28,8 % | 42.899 $ | 12,2 % | 13.723 $ | 7,2 | 5,0 |
 | gierig | 1.000 | 6,2 % | 40,6 % | 54.819 $ | 25,5 % | 11.444 $ | 7,0 | 5,0 |
 | ausgewogen | 1.000 | 0,3 % | 51,6 % | 68.646 $ | 36,3 % | 10.831 $ | 6,9 | 5,0 |
-| zufaellig | 1.000 | 37,5 % | 0,0 % | -670 $ | 0,7 % | 17.102 $ | 6,9 | 5,0 |
+| zufaellig | 1.000 | 11,7 % | 0,0 % | -1.101 $ | 0,7 % | 20.267 $ | 8,0 | 5,0 |
 
 - **vorsichtig:** bohrt und kauft nur, wenn danach noch die Rücklage in der Kasse bleibt, kauft nur Optionen, deren Bonus er danach auch zahlen kann, nimmt nie selbst einen Kredit.
 - **gierig:** bohrt jede Pacht, bohrt immer tiefer (gibt auf, wenn auch ein Kredit nicht mehr reicht), pachtet die beste bezahlbare Prognose, solange Kasse und Bankrahmen reichen und höchstens so viele Pachten ungebohrt sind, wie in balance.yaml steht; leiht fehlendes Geld und behält Bargeld für den Verzögerungszins.
@@ -49,7 +49,7 @@ Je Partie: Ø höchste Zahl Türme zugleich (Silas' Turm mitgezählt), Ø Quelle
 | vorsichtig | 1,00 | 0,13 | 0,26 | 19,2 % | 42.899 $ | 0,0 % |
 | gierig | 1,45 | 0,27 | 1,08 | 41,2 % | 54.819 $ | 6,2 % |
 | ausgewogen | 1,00 | 0,26 | 0,45 | 22,6 % | 68.646 $ | 0,3 % |
-| zufaellig | 1,00 | 0,01 | 0,01 | 54,5 % | -670 $ | 37,5 % |
+| zufaellig | 1,00 | 0,01 | 0,01 | 54,5 % | -1.101 $ | 11,7 % |
 | ausgewogen, nie ausbauen | 1,00 | 0,00 | 0,00 | 0,0 % | 54.567 $ | 0,3 % |
 | ausgewogen, alles ausbauen | 1,79 | 3,41 | 2,06 | 93,4 % | 35.814 $ | 21,2 % |
 
@@ -66,7 +66,7 @@ Bankrottquote je Strategie, getrennt nach Seeds, in deren Welt während des Kapi
 | vorsichtig | 81 | 0,0 % | 919 | 0,0 % |
 | gierig | 81 | 11,1 % | 919 | 5,8 % |
 | ausgewogen | 81 | 2,5 % | 919 | 0,1 % |
-| zufaellig | 81 | 33,3 % | 919 | 37,9 % |
+| zufaellig | 81 | 14,8 % | 919 | 11,4 % |
 
 ## Zeitsprung I
 
@@ -74,20 +74,20 @@ Bankrottquote je Strategie, getrennt nach Seeds, in deren Welt während des Kapi
 
 | Haltung | Sprünge | Ø Imperium | p10 | Median | p90 | Ø Schulden | pleite | Kreditkündigung | Notverkauf | Nachbarbezirk |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| wagemutig | 900 | 271.142 $ | -4.767 $ | 287.985 $ | 593.875 $ | 14.944 $ | 17,4 % | 27,7 % | 1,9 % | 64,0 % |
-| ausgewogen | 900 | 126.751 $ | -4.493 $ | 114.569 $ | 290.729 $ | 1.815 $ | 15,1 % | 14,3 % | 1,7 % | 0,0 % |
-| vorsichtig | 900 | 121.536 $ | -4.203 $ | 102.673 $ | 293.231 $ | 1.568 $ | 11,3 % | 11,8 % | 1,7 % | 0,0 % |
+| wagemutig | 900 | 169.461 $ | -4.767 $ | 135.666 $ | 415.551 $ | 13.057 $ | 17,4 % | 27,7 % | 1,9 % | 54,4 % |
+| ausgewogen | 900 | 118.176 $ | -4.493 $ | 101.797 $ | 275.298 $ | 2.121 $ | 15,1 % | 16,4 % | 1,7 % | 0,0 % |
+| vorsichtig | 900 | 117.933 $ | -4.203 $ | 92.369 $ | 291.694 $ | 1.589 $ | 11,3 % | 11,9 % | 1,7 % | 0,0 % |
 
 | Familie | Ø Imperium | Ø Ruth | mit Clara |
 | --- | ---: | ---: | ---: |
-| die Firma zuerst | 188.454 $ | 64 | 98,0 % |
-| wie bisher | 183.468 $ | 90 | 98,9 % |
-| viel Zeit zu Hause | 147.507 $ | 100 | 99,1 % |
+| die Firma zuerst | 144.289 $ | 64 | 98,0 % |
+| wie bisher | 141.429 $ | 90 | 98,9 % |
+| viel Zeit zu Hause | 119.851 $ | 100 | 99,1 % |
 
 | Haltung | Seeds mit Bankpanik-Weiche | Ø Pump − Tilgen | Pump schlechter | pleite Pump / Tilgen | Notverkauf Pump / Tilgen |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| wagemutig | 40 | -2.289 $ | 57,5 % | 17,5 % / 17,5 % | 0,0 % / 0,0 % |
-| ausgewogen | 40 | -670 $ | 37,5 % | 17,5 % / 17,5 % | 2,5 % / 0,0 % |
+| wagemutig | 40 | -3.763 $ | 65,0 % | 17,5 % / 17,5 % | 0,0 % / 0,0 % |
+| ausgewogen | 40 | -762 $ | 42,5 % | 17,5 % / 17,5 % | 2,5 % / 0,0 % |
 
 ## Zielwerte Kapitel 1
 
@@ -112,6 +112,20 @@ Toleranzbereiche stehen in balance.yaml unter bots.targets; gemessen wird in src
 | Seeds, in denen „alles ausbauen“ den Standard-Bot schlägt | Blind alles ausbauen ist keine Siegformel | 0,0 % – 50,0 % | 29,8 % | ja |
 
 <!-- Ab hier von Hand geschrieben: npm run bots lässt den Rest stehen. -->
+
+## 0.4.19+3 – Der Standard-Bot spielt Bohren schlechter als ein Mensch (offen)
+
+Nachprüfung: Der ausgewogene Bot löst jede Startoption ein (auch bei 17–20 % Prognose) und bohrt immer bis Stufe 3,
+ohne auf die Prognose zu schauen. „Ein Drittel der Partien findet nie Öl“ beschreibt also den Bot, nicht das Spiel:
+Wer den Einstiegshinweisen folgt, findet in 95 % der Partien in den ersten 8 Runden Öl.
+
+Probelauf (300 Seeds) mit Prognose-Regeln wie im Einstieg (Option nur ab `minChance`, tiefer nur ab
+`tutorial.deeperMinChance`): Kapitelziel ausgewogen 50 % → 78 %, Ø Imperium 63.500 $ → 98.600 $, Siegquote 34 % → 56–60 %.
+Nur die Options-Regel: 63 % / 48 %; nur die Tiefen-Regel: 74 % / 54 %. Dieselben Regeln auch für vorsichtig und gierig
+senken die Siegquote nur auf 50 %, und der gierige Bot fällt mit 3 % Pleiten unter seine Untergrenze (5 %).
+**Folge:** Mit einem vernünftig bohrenden Bot reißen `standardGoal` (≤ 70 %) und `winRate` (≤ 40 %). Kapitel 1 ist für
+gutes Spiel leichter, als die Tabelle sagt. Bevor der Bot umgestellt wird, muss Kapitel 1 neu balanciert werden
+(z. B. Kapitelziel anheben) – deshalb bleibt der Bot in 0.4.19+3 unverändert.
 
 ## 0.4.19+2 – Notfallregel des Standard-Bots
 

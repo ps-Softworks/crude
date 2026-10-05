@@ -428,11 +428,12 @@ export function mapParcels(state: GameState, balance: Balance, parcelId: string)
   const g = state.exploration?.geologist;
   const ziel = parcelOf(state, parcelId);
   if (!g || !ziel) return state;
-  const zweite = explorableNeighbours(state, ziel)
+  const weitere = explorableNeighbours(state, ziel)
     .filter((p) => !hasClue(state, p.id, 'kartierung', g.id))
-    .sort((a, b) => knowledgeOf(state, a.id).level - knowledgeOf(state, b.id).level || (a.id < b.id ? -1 : 1))[0];
+    .sort((a, b) => knowledgeOf(state, a.id).level - knowledgeOf(state, b.id).level || (a.id < b.id ? -1 : 1))
+    .slice(0, balance.exploration.mapNeighbours);
   let next = state;
-  for (const p of [ziel, ...(zweite ? [zweite] : [])]) {
+  for (const p of [ziel, ...weitere]) {
     next = addCluesRaw(next, p.id, [rollClue(state, balance, p, 'kartierung', 'geologe', { accuracy: g.accuracy, bias: g.bias, geologist: g.id })]);
   }
   return refreshForecasts(next, balance);

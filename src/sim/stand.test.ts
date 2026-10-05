@@ -5,7 +5,7 @@ import { bankRate, freeCollateral, takeLoan } from './credit';
 import type { GameState } from './game';
 import { newGame } from './game';
 import { kapitel3Of, type Kapitel3State } from './kapitel3';
-import { arrangeMarriage, breakOrder, donate, donationGain, joinClub, settleStand, standRank, standRateDiscount, standStatus } from './stand';
+import { arrangeMarriage, breakOrder, donate, donationGain, joinClub, MARRIAGE_BLOCKS, settleStand, standRank, standRateDiscount, standStatus, THOMAS_MARRIED } from './stand';
 import { loadBalance } from './testBalance';
 import { k3Game, k3Round, ok } from './testKapitel3';
 
@@ -77,6 +77,16 @@ describe('Anerkennung erheiraten', () => {
     expect(t.kapitel3!.stand.ansehen).toBe(S.ranks[1] + S.marriage.gain);
     expect(t.family.thomas).toBe(70 + S.marriage.thomas);
     expect(arrangeMarriage(t, balance)).toEqual({ ok: false, reason: 'schon_verheiratet' });
+  });
+
+  it('0.4.19+3: nicht mit Thomas’ Bruch, eigenem Weg oder Evelyn Crane; die Heirat setzt thomas_verheiratet', () => {
+    const s = mitThomas(mitAnsehen('h3', S.ranks[1]));
+    for (const mk of MARRIAGE_BLOCKS) {
+      const mit = { ...s, events: { ...s.events, marks: { ...s.events.marks, [mk]: 1 } } };
+      expect(arrangeMarriage(mit, balance)).toEqual({ ok: false, reason: 'thomas_vergeben' });
+    }
+    const t = ok(arrangeMarriage(s, balance));
+    expect(t.events.marks[THOMAS_MARRIED]).toBe(s.round);
   });
 });
 

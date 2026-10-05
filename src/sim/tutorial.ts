@@ -176,7 +176,10 @@ export function recommendedParcel(
  * in die Runde passt – sonst null.
  */
 function exploreSuggestion(state: GameState, balance: Balance, ziel: { parcelId: string } | null): string | null {
-  if (ziel && shownChance(state, ziel.parcelId) >= balance.tutorial.exploreBelow) return null;
+  // 0.4.19+3: Der erste Ritt kommt immer – auch wenn die Startoption schon gut aussieht. Sonst erfuhren Erstspieler
+  // nie, dass die Termine das Hauptwerkzeug sind (Seed erst1: Option bei 40–80 % eingelöst, kein Ritt).
+  const geritten = Object.values(state.knowledge ?? {}).some((k) => k.clues.some((c) => c.source === 'ritt'));
+  if (geritten && ziel && shownChance(state, ziel.parcelId) >= balance.tutorial.exploreBelow) return null;
   const termine = balance.plans.cards.ritt?.appointments ?? 0;
   if (state.sick > 0 || state.agenda.used + termine > state.agenda.budget) return null;
   const ziel2 = suggestRide(state, balance, state.cash + headroom(state, balance) - stageCost(balance, 1));

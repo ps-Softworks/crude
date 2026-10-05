@@ -187,6 +187,10 @@ exploration:
   greedyLie: 0.30              # gieriger Farmer: erzählt in 30 % der Fälle von Öl, das er nie sah
   friendlyOwners: [fromm]      # freundliche Farmer geben beim Gespräch Nachlass auf den Pachtbonus …
   friendlyDiscount: 0.10       # … 10 %
+  # 0.4.19+3: Der Geologe kartiert die Ranch und so viele Nachbarn (vorher 1). Gemessen brachte Geologe + Karte
+  # (300 $ und Lohn) nur so viel wie ein kostenloser Farmer; jetzt deckt eine Karte so viele Ranches ab wie ein Ritt,
+  # mit dem stärkeren Hinweis – dafür kostet sie Lohn.
+  mapNeighbours: 2
   reportCost: { dry: 150, found: 300 }   # Bohrbericht kaufen: trockenes bzw. fündiges Loch
   diary: { ranches: 3, caught: 0.25 }    # Bullards Bohrtagebuch: bis zu 3 Ranches, zu 25 % erwischt (Fehde)
   clues:                       # P(gesehen | Öl) und P(gesehen | trocken)
@@ -216,7 +220,7 @@ plans:
     # und der Konzernherr bricht nicht selbst in Bohrhütten ein.
     geologe_hale: { tab: land, appointments: 1, cash: 100, handler: geologe_hale, requires: { maxChapter: 1 } }   # Genauigkeit 1, Verzerrung +15
     geologe_hallstead: { tab: land, appointments: 3, cash: 600, handler: geologe_hallstead }   # Genauigkeit 5
-    geologe_besprechung: { tab: land, appointments: 1, target: ranch, handler: geologe_besprechung }  # 2 Ranches kartiert
+    geologe_besprechung: { tab: land, appointments: 1, target: ranch, handler: geologe_besprechung }  # Ranch + exploration.mapNeighbours Nachbarn kartiert
     bohrbericht: { tab: land, appointments: 1, target: ranch, handler: bohrbericht }           # Preis: exploration.reportCost
     tagebuch: { tab: land, appointments: 2, strength: -5, handler: tagebuch, requires: { maxChapter: 1 } }   # 1 Termin + 1 Nacht (Überstunden-Kraft)
     rute: { tab: land, appointments: 1, cash: 20, strength: 1, target: ranch, handler: rute }  # Faktor 1, hebt die Laune
@@ -580,6 +584,11 @@ timeskip:
   expand: { aggressive: 1, balanced: 0, cautious: 0 }              # Nachbarbezirke, die der Verwalter höchstens erschließt, wenn am offenen Land nichts mehr lohnt
   expandCost: 8000            # $ je erschlossenem Bezirk (Landvermesser, Wege, Agenten)
   upkeepPerWell: 60           # $ je fördernde Quelle und Quartal (Vorarbeiter, Reparaturen)
+  # 0.4.19+3: Deckel für den Verwalter. Vorher machten zwei Gusher mit 10.000–14.500 bbl je Runde aus 28.585 $
+  # über 500.000 $ – der Sprung belohnte Glück statt das Spiel davor. Jetzt: höchstens so viele neue Quellen je
+  # Sprung, wie vorher förderten (mindestens minNewWells), und keine neue Quelle startet stärker als der Schnitt
+  # von Jacobs Quellen vor dem Sprung (mindestens minRate bbl je Runde).
+  manager: { minNewWells: 2, minRate: 3000 }
   family:
     bond: { little: -6, some: -1, much: 4 }         # Beziehung zu Ruth und den Kindern je Jahr
     # Familienzeit kostet Wachstum (GDD §2) – unabhängig vom Geld: Ist Jacob zu Hause, bohrt
@@ -1795,7 +1804,9 @@ brand:
   goal:                     # Kapitelprüfung Kapitel 3 (GDD §13): Marke in ≥ 3 Regionen oder ≥ 10 % Marktanteil
     regions: 3
     share: 0.10
-    presenceStations: 3     # ab so vielen Tankstellen gilt die Marke in einer Region als vertreten
+    # 0.4.19+3: vorher 3 – 4 Regionen mit je 3 Tankstellen reichten bei etwa 9 % Marktanteil, 22 von 25 Bot-Läufen
+    # bestanden. Mit 6 deckt sich der Weg über die Regionen mit dem über den Marktanteil (gemessen 39 von 66).
+    presenceStations: 6     # ab so vielen Tankstellen gilt die Marke in einer Region als vertreten
   antitrust:                # GDD §15: Kartellbehörde ab 25 % regionalem oder 15 % nationalem Marktanteil (für 4.3 Gesetze)
     regional: 0.25
     national: 0.15
@@ -1952,7 +1963,7 @@ kapitel3:
     ranks: [0, 25, 50]       # ab so viel Ansehen: Emporkömmling, geduldet, anerkannt (aufgenommen nur über den Club)
     decay: 1                 # je Runde verblasst Ansehen um so viel (nicht unter start), bis Jacob aufgenommen ist
     donation: { cost: 15000, gain: 10, falloff: 0.7, cap: 60 }  # Stiftung: jede weitere bringt 70 % der vorigen, höchstens bis cap
-    marriage: { cost: 40000, gain: 30, minRank: 1, thomas: -20 }  # Heirat in die Vandermeer-Familie: Mitgift, Thomas' Beziehung
+    marriage: { cost: 40000, gain: 30, minRank: 1, thomas: -20 }  # Heirat in die Vandermeer-Familie: Ehevertrag (die Brautseite zahlt keine Mitgift an Jacob), Thomas' Beziehung
     breakOrder: { cost: 250000 }   # die Schulden der alten Familien aufkaufen: Türen auf, aber kein Ansehen mehr
     club: { cost: 10000, from: 75 }  # Aufnahme in den Hallstead Union Club ab so viel Ansehen
     member: 5                # Beitritt zum Konsortium: man gehört zu den Großen

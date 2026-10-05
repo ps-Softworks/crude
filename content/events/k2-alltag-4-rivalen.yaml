@@ -21,11 +21,10 @@
 # Ort: Bullards Alltag spielt in Salt Hill. Okara (Prärieprovinz im Binnenland) gibt es erst mit der
 # Zeitsprung-Weiche okara (okara_pachten / okara_bullard, 4.5) – darum nennt hier kein Ereignis Okara als festen Ort.
 # Erfunden (nicht in der Bibel): Hap Cutler, Bullards Vorarbeiter.
-#   delgado_verband    → k2_delgado_gruendung (als Gründungsmitglied) / ohne: k2_delgado_einkauf
 # Aus Paket 2: k2_pipeline_wucher → k2_delgado_rede; k2_pipeline_offen → k2_kleine_produzenten.
 # Neue Merkzeichen:
-#   k2_delgado_mitglied → k2_delgado_kundgebung (hier) und content/relevance.yaml (Kapitel 3: Delgado mit Clara)
-#   k2_margaret_zahlen, k2_pruett_zahlen, k2_margaret_marke, k2_thorne_ratssitz, k2_delgado_fern,
+#   k2_verband_beitritt (Diplomatie) → k2_delgado_kundgebung (hier)
+#   k2_margaret_zahlen, k2_pruett_zahlen, k2_margaret_marke, k2_thorne_ratssitz,
 #   k2_tilly_gekauft → content/relevance.yaml
 
 # --- Crane: der Nachfolgekampf am Rand --------------------------------------------
@@ -184,15 +183,15 @@
     - id: sitz
       label: { de: "Thornes Mann hereinlassen – der Kredit bleibt", en: "Let Thorne's man in – the credit stays" }
       result:
-        de: "Mr. Sayles erscheint am nächsten Montag pünktlich, mit leerem Notizbuch. Er bekommt einen Stuhl in Ruths Kontor. Er sagt nichts. Er schreibt viel."
-        en: "Mr. Sayles arrives punctually the next Monday with an empty notebook. He is given a chair in Ruth's counting house. He says nothing. He writes a great deal."
+        de: "Mr. Sayles erscheint am nächsten Montag pünktlich, mit leerem Notizbuch. Er bekommt einen Stuhl im Kontor. Er sagt nichts. Er schreibt viel."
+        en: "Mr. Sayles arrives punctually the next Monday with an empty notebook. He is given a chair in the counting house. He says nothing. He writes a great deal."
       effects: { strength: -3, boardMember: thorne, control: -2, rivalStake: { thorne: 2 } }
       marks: [k2_thorne_ratssitz]
     - id: zurueckzahlen
       label: { de: "Den Kredit sofort zurückzahlen (20.000 $)", en: "Repay the credit at once (20,000 $)" }
       result:
-        de: "Ruth zählt das Geld zweimal, dann unterschreibt Jacob. Pettibone nimmt den Scheck mit Bedauern, das echt aussieht. In der Kasse ist es danach sehr still."
-        en: "Ruth counts the money twice, then Jacob signs. Pettibone takes the cheque with regret that looks genuine. Afterwards the cash box is very quiet."
+        de: "Der Buchhalter zählt das Geld zweimal, dann unterschreibt Jacob. Pettibone nimmt den Scheck mit Bedauern, das echt aussieht. In der Kasse ist es danach sehr still."
+        en: "The bookkeeper counts the money twice, then Jacob signs. Pettibone takes the cheque with regret that looks genuine. Afterwards the cash box is very quiet."
       requires: { minCash: 20000 }
       effects: { cash: -20000 }
     - id: vandermeer
@@ -425,86 +424,12 @@
 
 # --- Delgado und die Kleinen --------------------------------------------------------
 
-- id: k2_delgado_gruendung
-  mail: demand
-  marked: [delgado_verband]
-  delay: 0
-  deadline: 3
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 1, maxRound: 8 }
-  chance: 0.2
-  title:
-    de: Delgados Verband wird offiziell
-    en: Delgado's Association Goes Official
-  text:
-    de: >-
-      Rosa Delgado gründet den Verband unabhängiger Produzenten jetzt mit Satzung, Siegel und
-      Eintrag in Hallstead. Jacob war vor zehn Jahren einer der Ersten. Sie bittet um den
-      Jahresbeitrag eines großen Mitglieds und schreibt dazu: „Ich weiß, dass Sie inzwischen
-      ein großer Mann sind. Ich frage trotzdem den Mann, der damals bei uns saß.“
-    en: >-
-      Rosa Delgado is founding the Association of Independent Producers properly now, with
-      articles, seal and registration in Hallstead. Ten years ago Jacob was one of the first.
-      She asks for a large member's annual dues and adds: “I know you're a big man now.
-      I'm asking the man who sat with us back then anyway.”
-  choices:
-    - id: beitreten
-      label: { de: "Beitreten (3.000 $ im Jahr)", en: "Join (3,000 $ a year)" }
-      result:
-        de: "Jacobs Name steht auf der Gründungsurkunde an dritter Stelle. Delgado schickt eine Abschrift, gerahmt. Pruett schickt einen Brief, ungerahmt."
-        en: "Jacob's name is third on the founding charter. Delgado sends a copy, framed. Pruett sends a letter, unframed."
-      requires: { minCash: 3000 }
-      effects: { cash: -3000, rival: { delgado: { trust: 10 } } }
-      public: [support_provinz]
-      marks: [k2_delgado_mitglied]
-    - id: fern
-      label: { de: "„Ich bin kein kleiner Produzent mehr“", en: "“I'm not a small producer any more”" }
-      result:
-        de: "Delgado antwortet mit einem einzigen Satz: Das habe sie befürchtet. Der Verband wählt einen Vorstand ohne Harlan."
-        en: "Delgado replies with a single sentence: she had feared as much. The Association elects a board without Harlan."
-      effects: { strength: -2, rival: { delgado: { trust: -10 } } }
-      marks: [k2_delgado_fern]
-      appointments: 0
-      default: true
-
-- id: k2_delgado_einkauf
-  mail: offer
-  notMarked: [delgado_verband]
-  deadline: 3
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 10 }
-  chance: 0.15
-  title:
-    de: Der Verband nimmt neue Mitglieder
-    en: The Association Takes New Members
-  text:
-    de: >-
-      Rosa Delgados Verband unabhängiger Produzenten hat jetzt eine Satzung und ein Büro in
-      Port Ellis. Wer vor zehn Jahren nicht dabei war, kann sich einkaufen, schreibt sie,
-      mit der Aufnahmegebühr eines großen Mitglieds. „Gegen den Trust waren wir uns einig. Wo
-      waren Sie damals, Mr. Harlan?“
-    en: >-
-      Rosa Delgado's Association of Independent Producers now has articles and an office in
-      Port Ellis. Whoever wasn't there ten years ago can buy in, she writes, for a large
-      member's admission fee. “Against the Trust we agreed. Where were you back then, Mr. Harlan?”
-  choices:
-    - id: einkaufen
-      label: { de: "Sich einkaufen (8.000 $)", en: "Buy in (8,000 $)" }
-      result:
-        de: "Delgado nimmt das Geld und gibt Jacob einen Platz am Ende des Tisches. Bei der ersten Versammlung wird er nicht angesprochen. Bei der zweiten schon."
-        en: "Delgado takes the money and gives Jacob a seat at the end of the table. At the first meeting nobody speaks to him. At the second, they do."
-      requires: { minCash: 8000 }
-      effects: { cash: -8000, rival: { delgado: { trust: 5 } } }
-      marks: [k2_delgado_mitglied]
-    - id: nein
-      label: { de: "Ablehnen", en: "Decline" }
-      result:
-        de: "Delgado schreibt nicht zurück. Ihr Verband wächst trotzdem, nur ohne Harlan, und bald gegen ihn."
-        en: "Delgado doesn't write back. Her Association grows anyway, only without Harlan, and soon against him."
-      marks: [k2_delgado_fern]
-      appointments: 0
-      default: true
+# 0.4.19+3: k2_delgado_gruendung und k2_delgado_einkauf gestrichen – Gründung und Beitritt erzählt die Diplomatie
+# (k2-diplomatie.yaml: k2_verband_gruendung, k2_verband_mitglied; Merkzeichen k2_verband_*). Sonst wurde der Verband
+# zweimal gegründet, und Jacob konnte im einen System Mitglied sein und im anderen abgelehnt haben.
 
 - id: k2_delgado_kundgebung
-  marked: [k2_delgado_mitglied]
+  marked: [k2_verband_beitritt]   # 0.4.19+3: Mitglied laut Diplomatie (vorher k2_delgado_mitglied aus dem gestrichenen Alltagsereignis)
   delay: 2
   conditions: { minChapter: 2, maxChapter: 2, maxRound: 15 }
   chance: 0.2

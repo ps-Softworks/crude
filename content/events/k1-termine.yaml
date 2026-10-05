@@ -79,6 +79,60 @@
       # Familienzeit (2.7, 4.5): Ruth und beide Kinder; clara wirkt erst ab Claras Geburt.
       effects: { ruth: 5, thomas: 6, clara: 6 }
 
+- id: termin_familie_k3
+  routine: true
+  appointments: 1
+  draft: true                # 0.4.19+3: Sonntagsessen in Kapitel 3 – vorher gab es dort keine Familienkarte mehr
+  marked: [thomas_geboren]
+  notMarked: [ehe_trennung]
+  delay: 0
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Sonntagsessen
+    en: Sunday Dinner
+  text:
+    de: >-
+      Ruth hat den großen Tisch decken lassen, obwohl sie nur zu viert sind. Thomas kommt
+      mit Stiefeln, die nach Feld riechen, Clara mit einem Buch, das sie unter dem Tisch
+      weiterliest. Für einen Abend fragt niemand nach dem Kurs.
+    en: >-
+      Ruth has had the big table laid, though there are only four of them. Thomas comes in
+      boots that smell of the fields, Clara with a book she goes on reading under the table.
+      For one evening nobody asks about the share price.
+  choices:
+    - id: bleiben
+      label: { de: "Den Sonntag mit der Familie verbringen", en: "Spend Sunday with the family" }
+      result:
+        de: Thomas und Clara streiten über Automobile, Ruth schlichtet, und Jacob merkt erst beim Kaffee, dass er den ganzen Abend nicht an Hallstead gedacht hat.
+        en: Thomas and Clara argue about automobiles, Ruth makes peace, and only over coffee does Jacob notice he hasn't thought about Hallstead all evening.
+      # Familienzeit (GDD §4: wichtigste Kraftquelle) – Ruth und beide Kinder.
+      effects: { ruth: 5, thomas: 5, clara: 6, strength: 4 }
+
+- id: termin_kinder_k3
+  routine: true
+  appointments: 1
+  draft: true                # 0.4.19+3: nach der Trennung – die Kinder kommen sonntags allein
+  marked: [ehe_trennung]
+  delay: 0
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Sonntag mit den Kindern
+    en: Sunday with the Children
+  text:
+    de: >-
+      Seit Ruth ausgezogen ist, kommen Thomas und Clara sonntags zum Essen, abwechselnd
+      pünktlich. Der große Tisch ist zu groß. Sie sitzen an einem Ende.
+    en: >-
+      Since Ruth moved out, Thomas and Clara come to dinner on Sundays, taking turns at being
+      on time. The big table is too big. They sit at one end of it.
+  choices:
+    - id: bleiben
+      label: { de: "Den Sonntag mit den Kindern verbringen", en: "Spend Sunday with the children" }
+      result:
+        de: Clara erzählt von der Schule, Thomas von den Türmen. Von Ruth erzählt keiner. Beim Abschied sagt Clara, Mama lasse grüßen. Jacob weiß nicht, ob das stimmt.
+        en: Clara talks about school, Thomas about the derricks. Nobody talks about Ruth. As she leaves, Clara says Mama sends her regards. Jacob doesn't know if that's true.
+      effects: { thomas: 5, clara: 7, strength: 2 }
+
 - id: termin_sonntag
   routine: true
   appointments: 2

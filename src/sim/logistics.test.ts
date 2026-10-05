@@ -353,4 +353,16 @@ describe('Inhalte (0.2.15+2)', () => {
     const marks = brief.choices.flatMap((c) => c.marks);
     expect(marks).toEqual(expect.arrayContaining(['thorne_vertrag', 'thorne_exklusiv', 'thorne_mengenrabatt', 'thorne_abgelehnt']));
   });
+
+  it('0.4.19+3: der Mengenrabatt nennt Rabatt, Mindestmenge, Strafe und Laufzeit aus balance.yaml und braucht eine fördernde Quelle', () => {
+    const brief = catalog.find((e) => e.id === 'thorne_frachtvertrag')!;
+    const rabatt = brief.choices.find((c) => c.id === 'mengenrabatt')!;
+    const de = (x: number) => x.toLocaleString('de-DE', { minimumFractionDigits: 2 });
+    const etikett = rabatt.label.de;
+    expect(etikett).toContain(`${de(T.thorne.volumeDiscount)} $`);
+    expect(etikett).toContain(`${T.thorne.minVolume.toLocaleString('de-DE')} bbl`);
+    expect(etikett).toContain(`${de(T.thorne.shortfallPenalty)} $ Strafe`);
+    expect(etikett).toContain(`${balance.rivals.thorne.contractRounds} Runden`);
+    expect(rabatt.requires.minProducingWells).toBe(1);
+  });
 });

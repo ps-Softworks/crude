@@ -40,6 +40,7 @@ reasons:
   verstossen: { de: "Das Konsortium hat Jacob verstoßen.", en: "The Consortium has cast Jacob out." }
   kein_sohn: { de: "Es gibt keinen Sohn, der heiraten könnte.", en: "There is no son who could marry." }
   schon_verheiratet: { de: "Thomas ist schon verheiratet.", en: "Thomas is already married." }
+  thomas_vergeben: { de: "Thomas geht seinen eigenen Weg – oder hat schon eine andere gewählt.", en: "Thomas is going his own way – or has already chosen someone else." }
   gebrochen: { de: "Jacob hat die alte Ordnung gebrochen – diese Tür bleibt zu.", en: "Jacob broke the old order – this door stays shut." }
   aufgenommen: { de: "Jacob gehört schon dazu.", en: "Jacob already belongs." }
   ansehen: { de: "Der Club nimmt Jacob noch nicht auf.", en: "The club will not admit Jacob yet." }
@@ -75,7 +76,7 @@ notes:
   projekt_gescheitert: { de: "Gescheitert: {projekt}. Der Anteil ({betrag}) ist verloren.", en: "Failed: {projekt}. The share ({betrag}) is lost." }
   projekt_ertrag: { de: "Erträge aus den Konsortialprojekten: {betrag}.", en: "Income from joint ventures: {betrag}." }
   spende: { de: "Eine Stiftung im Namen Harlan ({betrag}).", en: "A foundation in the Harlan name ({betrag})." }
-  heirat: { de: "Thomas heiratet in die Familie Vandermeer (Mitgift {betrag}).", en: "Thomas marries into the Vandermeer family (dowry {betrag})." }
+  heirat: { de: "Thomas heiratet in die Familie Vandermeer (Ehevertrag {betrag}).", en: "Thomas marries into the Vandermeer family (marriage settlement {betrag})." }
   ordnung_gebrochen: { de: "Jacob kauft die Schulden der alten Familien ({betrag}). Hallstead gehorcht – aus Angst.", en: "Jacob buys up the old families' debts ({betrag}). Hallstead obeys – out of fear." }
   club: { de: "Aufnahme in den Hallstead Union Club ({betrag}).", en: "Admitted to the Hallstead Union Club ({betrag})." }
 

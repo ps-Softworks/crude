@@ -375,6 +375,11 @@ export interface TimeskipBalance {
   /** $ je erschlossenem Bezirk. */
   expandCost: number;
   upkeepPerWell: number;
+  /**
+   * 0.4.19+3: Deckel für die Bohrungen des Verwalters – höchstens so viele neue Quellen je Sprung wie vorher
+   * förderten (mindestens minNewWells), Anfangsrate höchstens der Schnitt von Jacobs Quellen (mindestens minRate).
+   */
+  manager: { minNewWells: number; minRate: number };
   family: {
     bond: Record<FamilyTime, number>;
     growth: Record<FamilyTime, number>;
@@ -1648,6 +1653,7 @@ function parseTimeskip(raw: unknown): TimeskipBalance {
     expandCost: nonNegative(raw, p('expandCost')),
     weakStart: { wells: nonNegativeInt(raw, p('weakStart.wells')), value2: nonNegative(raw, p('weakStart.value2')), value3: nonNegative(raw, p('weakStart.value3')) },
     upkeepPerWell: nonNegative(raw, p('upkeepPerWell')),
+    manager: { minNewWells: nonNegativeInt(raw, p('manager.minNewWells')), minRate: nonNegative(raw, p('manager.minRate')) },
     family: {
       bond: jeFamilie('bond', num),
       growth: jeFamilie('growth', nonNegative),

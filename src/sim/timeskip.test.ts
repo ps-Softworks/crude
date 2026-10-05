@@ -20,6 +20,7 @@ import { okaraIncome } from './ventures';
 import { chapterEnds } from './timeskipBots';
 import {
   answerSwitch,
+  chapterGoalDate,
   CHRONICLE_KINDS,
   crisisCallShare,
   switchChoice,
@@ -36,6 +37,7 @@ import {
   timeskipBlocked,
   TIMESKIP_MARKS,
   unreadChronicle,
+  verwalterDeckel,
   weakStart,
   type Directives,
   type SwitchId,
@@ -815,5 +817,72 @@ describe('Ausgangslage im Kapitelstart-Text (0.4.19+2)', () => {
     const c = parseTimeskipContent('content/timeskip.yaml', readFileSync(new URL('../../content/timeskip.yaml', import.meta.url), 'utf8')).content!;
     expect(c.chapter2.textWeak.de).not.toMatch(/ernstzunehmende/);
     expect(c.chapter3.textWeak.de).not.toMatch(/ist ein Konzern/);
+  });
+});
+
+describe('Deckel des Verwalters (0.4.19+3)', () => {
+  it('höchstens so viele neue Quellen wie vorher (mindestens minNewWells), Rate höchstens im Schnitt von Jacobs Quellen', () => {
+    const m = balance.timeskip.manager;
+    const quelle = (rate: number) => ({ status: 'found', production: { initialRate: rate } }) as unknown as GameState['wells'][number];
+    expect(verwalterDeckel({ wells: [] }, balance)).toEqual({ fundeRest: m.minNewWells, rateCap: m.minRate });
+    const viele = Array.from({ length: m.minNewWells + 3 }, () => quelle(m.minRate * 2));
+    expect(verwalterDeckel({ wells: viele }, balance)).toEqual({ fundeRest: viele.length, rateCap: m.minRate * 2 });
+  });
+
+  it('im Sprung startet keine neue Quelle des Verwalters stärker als der Deckel, und es kommen nicht mehr neue als erlaubt', () => {
+    const mutig: Directives = { stance: 'aggressive', family: 'little' };
+    for (const seed of ['deckel-1', 'deckel-2', 'deckel-3']) {
+      const ende = kapitelEnde(seed);
+      const deckel = verwalterDeckel(ende, balance);
+      const { state } = springen(ende, mutig);
+      const alt = new Set(ende.wells.map((w) => w.id));
+      const neu = state.wells.filter((w) => !alt.has(w.id) && w.status === 'found' && (w.production?.initialRate ?? 0) > 0 && w.startRound > ende.round);
+      expect(neu.length).toBeLessThanOrEqual(deckel.fundeRest);
+      for (const w of neu) expect(w.production!.initialRate).toBeLessThanOrEqual(deckel.rateCap);
+    }
+  });
+});
+
+describe('Kapitelziel mit Föderationsjahr (0.4.19+3)', () => {
+  it('das Ziel nennt das letzte Quartal des neuen Kapitels wie Kalender und Kopfleiste', () => {
+    const ende = [...chapterEnds(balance, 10, catalog)].filter((e) => e.ending === 'kapitel').sort((a, b) => b.cash - a.cash)[0];
+    const { state, record } = springen(ende);
+    expect(record.bankrupt).toBeFalsy();
+    expect(chapterGoalDate(record, state, balance)).toBe(formatDate({ round: state.totalRounds, startYear: state.startYear }));
+    expect(chapterGoalDate(record, state, balance)).toMatch(/^Winter /);
+    const text = readFileSync(new URL('../../content/timeskip.yaml', import.meta.url), 'utf8');
+    expect(text).not.toMatch(/Jahr 1\d|Jahr 2\d|year 1\d|year 2\d/);
+    expect(text.match(/(Ziel bis|Goal by) \{bis\}/g)?.length).toBe(8);
+  });
+});
+
+describe('Schwächung in der Chronik (0.4.19+3)', () => {
+  it('nach verfehltem Kapitelziel steht die Schwächung mit Betrag und Kraft im Sprung-Bericht', () => {
+    const ende = chapterEnds(balance, 20, catalog).find((e) => e.ending === 'kapitel' && !chapterPassed(e, balance) && e.cash > 3000);
+    expect(ende).toBeDefined();
+    const { state, record } = springen(ende!);
+    if (record.bankrupt) return;
+    expect(record.penalty).toBeDefined();
+    expect(record.penalty!.cash).toBeCloseTo(record.after.cash - state.cash, -1);
+    expect(record.penalty!.strength).toBe(state.strength);
+    expect(record.penalty!.strengthMax - record.penalty!.strength).toBe(balance.chapter.missed.strength);
+  });
+
+  it('wer das Ziel schafft, bekommt keine Zeile – und die Endtexte nennen dieselben Zahlen wie balance.yaml', () => {
+    const ende = chapterEnds(balance, 20, catalog).find((e) => e.ending === 'kapitel' && chapterPassed(e, balance));
+    expect(ende).toBeDefined();
+    expect(springen(ende!).record.penalty).toBeUndefined();
+    const text = readFileSync(new URL('../../content/chapter.yaml', import.meta.url), 'utf8');
+    const { cashShare, strength } = balance.chapter.missed;
+    expect(text.match(new RegExp(`${Math.round(cashShare * 100)} % der Kasse als Sicherheit`, 'g'))?.length).toBe(2);
+    expect(text.match(new RegExp(`mit ${strength} Kraft weniger`, 'g'))?.length).toBe(2);
+  });
+});
+
+describe('Kapitel-3-Ziel im Text (0.4.19+3)', () => {
+  it('der Kapitelstart nennt Regionen und Tankstellen wie brand.goal', () => {
+    const text = readFileSync(new URL('../../content/timeskip.yaml', import.meta.url), 'utf8');
+    expect(text.match(new RegExp(`mit je ${balance.brand.goal.presenceStations} Tankstellen`, 'g'))?.length).toBe(2);
+    expect(balance.brand.goal.regions).toBe(3);
   });
 });

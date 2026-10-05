@@ -125,11 +125,11 @@
     de: >-
       Der Streckenwärter bringt einen Fetzen Stoff, der am Stacheldraht hing: das
       Futter einer Jacke mit dem eingestickten Zeichen der Thorne Rail. Ein Beweis
-      ist das nicht. Aber Nora Whitlock vom Port Ellis Courier würde es gern sehen.
+      ist das nicht. Aber Nora Whitlock würde es gern sehen.
     en: >-
       The line-walker brings a scrap of cloth that was caught on the barbed wire:
       the lining of a jacket embroidered with the Thorne Rail emblem. It is not
-      proof. But Nora Whitlock of the Port Ellis Courier would like to see it.
+      proof. But Nora Whitlock would like to see it.
   choices:
     - id: presse
       label: { de: "Den Fetzen der Zeitung geben", en: "Give the scrap to the newspaper" }

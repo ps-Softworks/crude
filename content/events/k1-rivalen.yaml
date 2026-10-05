@@ -249,15 +249,15 @@
       persönlich. Zwei Angebote für anderthalb Jahre: Gegen eine Bürgschaft von
       150 $ friert die Bahn Mr. Harlans Tarif ein – sofern er sein Öl
       ausschließlich der Bahn anvertraut. Oder Thorne gewährt einen Mengenrabatt,
-      wenn Mr. Harlan jede Runde eine feste Menge verlädt; was fehlt, wird
-      berechnet. „Andernfalls“, so Thorne, „müssen wir uns die übliche Freiheit
+      wenn Mr. Harlan jede Runde mindestens 5.000 Barrel verlädt; für jedes
+      fehlende Barrel berechnet die Bahn 0,10 $. „Andernfalls“, so Thorne, „müssen wir uns die übliche Freiheit
       vorbehalten.“
     en: >-
       Letterhead of Thorne Rail & Trust Bank, signed by Augustus Thorne himself.
       Two offers for a year and a half: against a bond of 150 $ the railway
       freezes Mr. Harlan's tariff – provided he entrusts his oil to the railway
-      alone. Or Thorne grants a volume discount if Mr. Harlan loads a fixed amount
-      every round; any shortfall will be charged. "Otherwise," writes Thorne, "we
+      alone. Or Thorne grants a volume discount if Mr. Harlan loads at least 5,000
+      barrels every round; the railway charges 0.10 $ for every missing barrel. "Otherwise," writes Thorne, "we
       must reserve our usual freedom."
   choices:
     - id: unterschreiben
@@ -274,16 +274,22 @@
       effects: { cash: -150 }
       marks: [thorne_vertrag, thorne_exklusiv]
     - id: mengenrabatt
-      label: { de: "Mengenrabatt aushandeln: billiger, aber Mindestmenge je Runde", en: "Negotiate a volume discount: cheaper, but a minimum per round" }
+      # 0.4.19+3: Zahlen stehen im Etikett (transport.thorne volumeDiscount/minVolume/shortfallPenalty,
+      # rivals.thorne.contractRounds – ein Test prüft, dass sie zu balance.yaml passen). Nur mit fördernder Quelle:
+      # ohne Öl war die Mindestmenge eine versteckte Pleite (45 % beim Standard-Bot).
+      label: { de: "Mengenrabatt aushandeln: 0,08 $ Rabatt je Barrel, aber 6 Runden lang mindestens 5.000 bbl je Runde per Bahn – je fehlendem Barrel 0,10 $ Strafe", en: "Negotiate a volume discount: 0.08 $ off per barrel, but for 6 rounds at least 5,000 bbl per round by rail – 0.10 $ penalty per missing barrel" }
       result:
         de: >-
-          Zwei Tage im Kontor der Bahn, dann steht es auf Papier: Thorne gibt
-          Rabatt je Barrel. Verlädt Jacob weniger als die Mindestmenge, zahlt er
-          für jedes fehlende Fass. Erhöhen darf Thorne trotzdem.
+          Zwei Tage im Kontor der Bahn, dann steht es auf Papier: 0,08 $ Rabatt je
+          Barrel, sechs Runden lang. Verlädt Jacob in einer Runde weniger als
+          5.000 Barrel per Bahn, zahlt er für jedes fehlende Fass 0,10 $. Erhöhen
+          darf Thorne trotzdem.
         en: >-
-          Two days in the railway office, then it's on paper: Thorne gives a
-          discount per barrel. If Jacob loads less than the minimum, he pays for
-          every missing barrel. Thorne may still raise the tariff.
+          Two days in the railway office, then it's on paper: 0.08 $ off per
+          barrel, for six rounds. If Jacob loads less than 5,000 barrels by rail in
+          a round, he pays 0.10 $ for every missing barrel. Thorne may still raise
+          the tariff.
+      requires: { minProducingWells: 1 }
       marks: [thorne_mengenrabatt]
       appointments: 2
     - id: ablehnen

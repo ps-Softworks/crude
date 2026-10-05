@@ -457,7 +457,11 @@ export function DeskScene(p: DeskSceneProps) {
             {
               ...(vertrieb !== null ? { at: RECHTE_SPALTE_GETEILT.personal } : {}),
               status: `${game.staff.hired.length} angestellt`,
-              badge: game.staff.candidates.length > 0 ? { text: `${game.staff.candidates.length} Bewerbung${game.staff.candidates.length === 1 ? '' : 'en'}` } : null,
+              // 0.4.19+3: In der geteilten Spalte bleibt das Abzeichen in der Ecke – darüber liegt die Beschriftung der Tür.
+              badge:
+                game.staff.candidates.length > 0
+                  ? { text: `${game.staff.candidates.length} Bewerbung${game.staff.candidates.length === 1 ? '' : 'en'}`, ...(vertrieb !== null ? { corner: true } : {}) }
+                  : null,
             },
             <StaffFileShape />,
           )}
@@ -472,7 +476,13 @@ export function DeskScene(p: DeskSceneProps) {
             <BlueprintShape />,
           )}
         {/* 4.14 Andockpunkt: Vertrieb – nur sichtbar, wenn die Marke freigeschaltet ist (Kapitel 3). */}
-        {vertrieb !== null && obj('marke', localize(brandContent.object.name), { status: vertrieb, badge: brandDeskBadge(game), ...(game.staff ? { at: RECHTE_SPALTE_GETEILT.marke } : {}) }, <BrandShape />)}
+        {vertrieb !== null &&
+          (() => {
+            const b = brandDeskBadge(game);
+            // 0.4.19+3: Unter den Personalakten bleibt das Abzeichen in der Ecke, sonst verdeckt es „Personal“.
+            const badge = b && game.staff ? { ...b, corner: true } : b;
+            return obj('marke', localize(brandContent.object.name), { status: vertrieb, badge, ...(game.staff ? { at: RECHTE_SPALTE_GETEILT.marke } : {}) }, <BrandShape />);
+          })()}
         {/* 4.15 Andockpunkt: Börsenticker – ohne Börse (Kapitel 1 und 2) nicht da. */}
         <ExchangeTicker
           game={game}

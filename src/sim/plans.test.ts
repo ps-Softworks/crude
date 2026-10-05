@@ -186,7 +186,9 @@ describe('Erkundungs-Karten (Plan 1.3)', () => {
     state = ok(bookCard(state, balance, katalog, 'geologe_besprechung', ziel));
     expect(knowledgeOf(state, ziel).level).toBe(2);
     const kartiert = state.parcels.filter((p) => knowledgeOf(state, p.id).clues.some((c) => c.kind === 'kartierung'));
-    expect(kartiert).toHaveLength(2);
+    // 0.4.19+3: Ranch + exploration.mapNeighbours Nachbarn (sofern die Ranch so viele hat).
+    const nachbarn = rideParcels(state, ziel).length - 1;
+    expect(kartiert).toHaveLength(1 + Math.min(balance.exploration.mapNeighbours, nachbarn));
     const vorher = state.cash;
     expect(settlePlans(state, balance).cash).toBe(vorher - balance.exploration.geologists.standard.wage);
   });
@@ -296,5 +298,33 @@ describe('Inhalte und Spielstand (Plan 1.3, 1.5)', () => {
     state = ok(bookCard(state, balance, katalog, 'ritt', unbekannt(state)));
     const geladen = deserializeGame(serializeGame(state, 'test'));
     expect(geladen.ok && geladen.state).toEqual(state);
+  });
+});
+
+describe('Ritt-Ziele und Wochenbericht (0.4.19+3)', () => {
+  it('der Vorschlag des Einstiegs steht beim Ritt oben, die Liste nennt die Prognose', async () => {
+    const { suggestRide } = await import('./exploration');
+    let geprueft = 0;
+    for (const seed of ['ritt-a', 'ritt-b', 'ritt-c', 'ritt-d', 'ritt-e']) {
+      const state = newGame(seed, balance, katalog);
+      const vorschlag = suggestRide(state, balance, state.cash);
+      const karte = planView(state, balance, katalog).cards.find((c) => c.id === 'ritt')!;
+      if (vorschlag === null) continue;
+      geprueft++;
+      expect(karte.targets[0].parcelId).toBe(vorschlag);
+      expect(karte.targets[0].detail).toMatch(/^Vorschlag · /);
+      const mitPrognose = karte.targets.find((t) => state.forecasts[t.parcelId]);
+      if (mitPrognose) expect(mitPrognose.detail).toMatch(/% Fundchance/);
+    }
+    expect(geprueft).toBeGreaterThan(0);
+  });
+
+  it('der Ritt schreibt die Fundchance vorher und nachher je Ranch in den Wochenbericht', () => {
+    const state = newGame('ritt-bericht', balance, katalog);
+    const ziel = unbekannt(state);
+    const nach = ok(bookCard(state, balance, katalog, 'ritt', ziel));
+    const zeile = nach.plans.report.at(-1)!;
+    expect(zeile).toMatch(/Fundchance: /);
+    for (const p of rideParcels(state, ziel)) expect(zeile).toContain(p.name);
   });
 });

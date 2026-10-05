@@ -1,7 +1,7 @@
 # Kapitel 3 – Story-Bogen Thomas im Unternehmen oder nicht (Phase 4, Story-Bibel §7 B).
 # Entwurf – Philipp überarbeitet. Alle Texte hier sind Entwürfe von Claude.
 #
-# Thomas ist 20–23. Er kommt zurück aus dem Osten, mit Ideen zu Marke und Automobil, die
+# Thomas ist 19–23 (0.4.19+3: College-Weiche mit 17, drei Jahre im Osten, das letzte Jahr bricht er ab). Er kommt zurück aus dem Osten, mit Ideen zu Marke und Automobil, die
 # Jacob für Spielerei hält und Margaret Crane nicht. Jacob will einen Nachfolger, Thomas
 # einen Vater. Alle Ereignisse nur in Kapitel 3 (minChapter/maxChapter); Runden 1–16.
 #
@@ -37,13 +37,16 @@
     en: The Noon Train from the East
   text:
     de: >-
-      Thomas kommt mit dem Mittagszug. Er ist neunzehn, trägt einen Anzug aus Hallstead
-      und einen Koffer voller Bücher, und er ist inzwischen einen Fingerbreit größer
-      als sein Vater. Die Bankiers aus Hallstead sind auf zwölf Uhr bestellt. Ruth fragt beim
+      Thomas kommt mit dem Mittagszug, nach drei Jahren College im Osten. Das letzte
+      Studienjahr will er nicht mehr abwarten. Er ist fast zwanzig, trägt einen Anzug aus
+      Hallstead und einen Koffer voller Bücher, und er ist inzwischen einen Fingerbreit
+      größer als sein Vater. Die Bankiers aus Hallstead sind auf zwölf Uhr bestellt. Ruth fragt beim
       Frühstück, wer zum Bahnhof fährt, und sieht dabei nicht von der Zeitung auf.
     en: >-
-      Thomas arrives on the noon train. He is nineteen, wears a Hallstead suit and carries
-      a trunk full of books, and he is now a finger's breadth taller than his father.
+      Thomas arrives on the noon train, after three years of college in the east. He
+      doesn't want to wait for the last year of study. He is almost twenty, wears a Hallstead suit
+      and carries a trunk full of books, and he is now a finger's breadth taller than his
+      father.
       The bankers from Hallstead are expected at twelve o'clock. At breakfast Ruth asks who is going
       to the station, without looking up from the newspaper.
   conditions: { minChapter: 3, maxChapter: 3, minRound: 1, maxRound: 2 }
@@ -90,18 +93,18 @@
 - id: k3_thomas_aufstieg
   visitor: thomas
   title:
-    de: Vier Jahre am Turm
-    en: Four Years at the Rig
+    de: Drei Jahre am Turm
+    en: Three Years at the Rig
   text:
     de: >-
-      Thomas arbeitet seit vier Jahren bei Harlan Oil, seit er siebzehn war: erst im
+      Thomas arbeitet seit drei Jahren bei Harlan Oil, seit er siebzehn war: erst im
       Frachtbüro, dann draußen an den Türmen. Die Trupps nennen ihn nicht „den Sohn“,
       sondern bei seinem Spitznamen. Heute steht er in Arbeitshosen in Jacobs Büro und
       ist inzwischen einen Fingerbreit größer als sein Vater. „Ich will nicht ewig
       Vorarbeiter sein. Entweder ich lerne bei dir, wie man die Firma führt – oder ich
       lerne es woanders.“
     en: >-
-      Thomas has worked at Harlan Oil for four years, since he was seventeen: first in
+      Thomas has worked at Harlan Oil for three years, since he was seventeen: first in
       the freight office, then out at the rigs. The crews don't call him "the son" but
       by his nickname. Today he stands in Jacob's office in work trousers, now a
       finger's breadth taller than his father. "I don't want to be a foreman forever.
@@ -182,14 +185,16 @@
       effects: { thomas: 10, heirValues: { thomas: { business: 1, ambition: 1 } } }
       marks: [thomas_firma]
     - id: feld
-      label: { de: "Ihn auf die Felder schicken, zu den Bohrtrupps", en: "Send him to the fields, to the drilling crews" }
+      label: { de: "Ihn auf die Felder schicken – mit einem eigenen Bohrtrupp", en: "Send him to the fields – with a drilling crew of his own" }
       result:
         de: >-
-          „Wie du damals“, sagt Thomas und weiß nicht, ob er sich freuen soll. Am Ende der
-          ersten Woche hat er Blasen an den Händen und einen Spitznamen, den er niemandem verrät.
+          „Wie du damals“, sagt Thomas und weiß nicht, ob er sich freuen soll. Er bekommt
+          einen eigenen Trupp am Nordhang und kommt nur noch sonntags in die Stadt, mit
+          Schlamm an den Stiefeln und Ideen, die er jetzt an den Türmen ausprobiert.
         en: >-
-          "Like you back then," says Thomas, unsure whether to be glad. By the end of the
-          first week he has blistered hands and a nickname he tells no one.
+          "Like you back then," says Thomas, unsure whether to be glad. He gets a crew of
+          his own on the north slope and only comes into town on Sundays, with mud on his
+          boots and ideas he now tries out at the rigs.
       effects: { thomas: 10, heirValues: { thomas: { loyalty: 1, moral: 1 } } }
       marks: [thomas_feld]
     - id: eigener_weg
@@ -255,14 +260,16 @@
       effects: { thomas: 10, heirValues: { thomas: { business: 1, ambition: 1 } } }
       marks: [thomas_firma]
     - id: feld
-      label: { de: "Ihn auf die Felder schicken, zu den Bohrtrupps", en: "Send him to the fields, to the drilling crews" }
+      label: { de: "Ihn auf die Felder schicken – mit einem eigenen Bohrtrupp", en: "Send him to the fields – with a drilling crew of his own" }
       result:
         de: >-
-          „Wie du damals“, sagt Thomas und weiß nicht, ob er sich freuen soll. Am Ende der
-          ersten Woche hat er Blasen an den Händen und einen Spitznamen, den er niemandem verrät.
+          „Wie du damals“, sagt Thomas und weiß nicht, ob er sich freuen soll. Er bekommt
+          einen eigenen Trupp am Nordhang und kommt nur noch sonntags in die Stadt, mit
+          Schlamm an den Stiefeln und Ideen, die er jetzt an den Türmen ausprobiert.
         en: >-
-          "Like you back then," says Thomas, unsure whether to be glad. By the end of the
-          first week he has blistered hands and a nickname he tells no one.
+          "Like you back then," says Thomas, unsure whether to be glad. He gets a crew of
+          his own on the north slope and only comes into town on Sundays, with mud on his
+          boots and ideas he now tries out at the rigs.
       effects: { thomas: 10, heirValues: { thomas: { loyalty: 1, moral: 1 } } }
       marks: [thomas_feld]
     - id: eigener_weg
@@ -590,6 +597,7 @@
       Margaret stands at the far end of the hall and raises her glass towards Jacob.
       Cornelia Vandermeer says beside him: "How pretty. And how practical."
   conditions: { minChapter: 3, maxChapter: 3, minRound: 8 }
+  notMarked: [thomas_verheiratet]   # 0.4.19+3: schon in die Vandermeer-Familie verheiratet (src/sim/stand.ts)
   chance: 0.5
   rival: crane
   choices:

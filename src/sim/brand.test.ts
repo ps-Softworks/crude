@@ -465,7 +465,10 @@ describe('Kennzahlen', () => {
 
   it('Kapitelziel: Marke in 3 Regionen erfüllt es', () => {
     let s = ok(foundBrand(kapitel3(), balance, K3, 'harlan'));
-    for (const id of ['cordova', 'okara', 'mittelland']) s = ok(buildStations(s, balance, K3, id, B.goal.presenceStations));
+    // 0.4.19+3: presenceStations kann über buildMax liegen – dann in mehreren Aufträgen bauen.
+    for (const id of ['cordova', 'okara', 'mittelland']) {
+      for (let rest = B.goal.presenceStations; rest > 0; rest -= B.station.buildMax) s = ok(buildStations(s, balance, K3, id, Math.min(rest, B.station.buildMax)));
+    }
     expect(brandGoal(s.brand, balance).regions).toBe(0);
     s = settleBrand({ ...s, round: s.round + 1 }, balance, K3);
     const g = brandGoal(s.brand, balance);

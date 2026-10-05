@@ -43,8 +43,8 @@ schritte:
       en: In the freight folder (F, V) you sell oil and plan transport.
   - objekt: termine
     text:
-      de: Der Kalender (T) zählt Jacobs Termine. Zu viele kosten Kraft.
-      en: The calendar (T) counts Jacob's appointments. Too many cost strength.
+      de: Der Kalender (T) ist Jacobs Planungsbrett – sein wichtigstes Werkzeug. Hier reitet er übers Land, spricht mit Farmern und Geologen (Reiter Land), macht Preise (Markt) und verhandelt mit der Bahn (Fracht). Jede Karte kostet Termine; zu viele kosten Kraft.
+      en: The calendar (T) is Jacob's planning board – his most important tool. Here he rides the country, talks to farmers and geologists (Land tab), sets prices (Market) and bargains with the railway (Freight). Every card costs appointments; too many cost strength.
   - objekt: familie
     text:
       de: Das Familienfoto (H) zeigt, wie es um deine Familie steht. Vergiss sie nicht.

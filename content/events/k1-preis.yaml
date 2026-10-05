@@ -142,7 +142,9 @@
         en: Nora doesn't send the money back. She writes the sum in her notebook, with the date.
       requires: { minCash: 150 }
       effects: { cash: -150 }
-      marks: [nora_bestechung]
+      # 0.4.19+3: nora_schweigegeld dazu – Nora hat dieses Geld behalten (anders als die 50 $ nach dem Brand);
+      # Kapitel 2 erzählt das in k2_nora_schweigegeld statt im Courier-Absatz.
+      marks: [nora_bestechung, nora_schweigegeld]
     - id: schweigen
       label: { de: "Nicht antworten", en: "Don't reply" }
       result:

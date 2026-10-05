@@ -35,13 +35,13 @@
     en: A New Federal Prosecutor in Cordova
   text:
     de: >-
-      Ruth legt Jacob den Cordova Herald hin, eine Meldung ist mit Bleistift
+      Beim Frühstück schiebt Ruth Jacob den Hallstead Ledger hin, eine Meldung ist mit Bleistift
       umrandet: Das Justizministerium hat einen Bundesanwalt in die Ölprovinz
       geschickt, Frank Delaney. Er habe in Hallstead zwei Eisenbahndirektoren
       ins Gefängnis gebracht, steht da, und er nehme keine Einladungen zum Essen an.
       „Ich dachte, das willst du wissen“, sagt Ruth.
     en: >-
-      Ruth puts the Cordova Herald in front of Jacob, one item circled in pencil:
+      At breakfast Ruth pushes the Hallstead Ledger across to Jacob, one item circled in pencil:
       the Department of Justice has sent a federal prosecutor to the oil province,
       Frank Delaney. He put two railroad directors in prison in Hallstead, it says,
       and he accepts no dinner invitations. "I thought you'd want to know," says Ruth.
@@ -76,12 +76,12 @@
     en: Nora Whitlock Has Heard Something
   text:
     de: >-
-      Nora Whitlock schreibt jetzt für den Herald und hat immer noch keine Eile.
+      Nora Whitlock schreibt jetzt für den Hallstead Ledger und hat immer noch keine Eile.
       Sie setzt sich, ohne zu fragen. „Man erzählt sich Dinge über Sie, Mr. Harlan.
       Über die alten Zeiten am Salt Hill. Delaney hört sich das an – ich auch.
       Wollen Sie mir Ihre Seite erzählen, bevor es ein anderer tut?“
     en: >-
-      Nora Whitlock writes for the Herald now and still has no hurry. She sits
+      Nora Whitlock writes for the Hallstead Ledger now and still has no hurry. She sits
       down without asking. "People are telling stories about you, Mr. Harlan.
       About the old days at Salt Hill. Delaney is listening – so am I. Do you want
       to tell me your side before someone else does?"
@@ -92,10 +92,10 @@
       result:
         de: >-
           Jacob redet eine Stunde. Nora schreibt alles mit und unterstreicht manches.
-          Am Samstag steht im Herald ein Mann, der hart rechnet – aber ehrlich, meistens.
+          Am Samstag steht im Ledger ein Mann, der hart rechnet – aber ehrlich, meistens.
         en: >-
           Jacob talks for an hour. Nora writes everything down and underlines some of it.
-          On Saturday the Herald has a man who drives a hard bargain – but honest, mostly.
+          On Saturday the Ledger has a man who drives a hard bargain – but honest, mostly.
       marks: [delaney_interview]
     - id: crane
       label: { de: "Ihr erzählen, was der Crane Trust mit kleinen Förderern macht", en: "Tell her what the Crane Trust does to small producers" }

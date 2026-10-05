@@ -254,7 +254,7 @@
 - id: k2_kerosin_faellt
   mail: info
   deadline: 3
-  notMarked: [k2_greaves_weg]
+  notMarked: [k2_greaves_weg, benzin_frueh]   # 0.4.19+3: mit der Benzin-Weiche aus Zeitsprung I → k2_kerosin_faellt_frueh
   # Bedingung: eigene Raffinerie (minRefineryLevel, 4.6)
   conditions: { minChapter: 2, maxChapter: 2, minRound: 5, minRefineryLevel: 1 }
   chance: 0.15
@@ -290,6 +290,48 @@
       appointments: 0
       default: true
 
+# 0.4.19+3: Dieselbe Lage mit der Weiche benzin_frueh aus Zeitsprung I (Story-Bibel §2: „früh auf Benzin gesetzt“).
+- id: k2_kerosin_faellt_frueh
+  mail: info
+  deadline: 3
+  marked: [benzin_frueh]
+  notMarked: [k2_greaves_weg]
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 5, minRefineryLevel: 1 }
+  chance: 0.15
+  title:
+    de: „Sie waren früh dran“
+    en: '"You Were Early"'
+  text:
+    de: >-
+      Greaves legt die Preisliste aus Hallstead auf den Tisch, zwei Zeilen angestrichen:
+      Lampenöl billiger als vor fünf Jahren, Benzin teurer. In Hallstead fahren angeblich
+      zweihundert Automobile. „Sie haben vor Jahren in die Benzinanlage in Port Ellis
+      gesteckt, Mr. Harlan, als alle gelacht haben. Sie waren früh dran. Jetzt fehlt nur
+      noch die Kolonne, die das Benzin auch macht.“
+    en: >-
+      Greaves lays the Hallstead price list on the desk, two lines marked: lamp oil cheaper
+      than five years ago, gasoline dearer. They say two hundred automobiles drive in
+      Hallstead. "Years ago you put money into the gasoline plant in Port Ellis, Mr.
+      Harlan, when everyone laughed. You were early. Now all that's missing is the column
+      that makes the gasoline too."
+  choices:
+    - id: umbauen
+      label: { de: "Die Kolonne auf mehr Benzin umbauen – die Händler kennen uns schon (6.000 $)", en: "Rebuild the column for more gasoline – the dealers know us already (6,000 $)" }
+      result:
+        de: "Greaves bekommt seine Kolonne, und die Händler aus der alten Benzinanlage kaufen die ersten Fässer, bevor sie abgekühlt sind. Margaret Crane schickt einen Mann, der sich das Werk von außen ansieht."
+        en: "Greaves gets his column, and the dealers from the old gasoline plant buy the first barrels before they've cooled. Margaret Crane sends a man to look at the works from outside."
+      requires: { minCash: 6000 }
+      effects: { cash: -6000, productYield: { gasoline: 0.12, kerosene: -0.1 }, rival: { margaret: { grudge: 3 } } }
+      marks: [k2_benzin_frueh]
+    - id: kerosin
+      label: { de: "Bei Kerosin bleiben – die Benzinanlage reicht", en: "Stay with kerosene – the gasoline plant is enough" }
+      result:
+        de: "Greaves faltet die Liste zusammen. „Früh dran sein nützt nur, wenn man dranbleibt“, sagt er, nicht unfreundlich. Das Werk läuft wie immer."
+        en: "Greaves folds the list. \"Being early only helps if you keep at it,\" he says, not unkindly. The works runs as always."
+      effects: { productPrice: { kerosene: -0.1 } }
+      appointments: 0
+      default: true
+
 - id: k2_marine_heizoel
   mail: offer
   deadline: 3
@@ -312,8 +354,8 @@
     - id: liefern
       label: { de: "Den Vertrag unterschreiben (fester Preis, ein Jahr)", en: "Sign the contract (fixed price, one year)" }
       result:
-        de: "Ein Leutnant holt die Unterschrift persönlich ab und salutiert vor Ruth, die nicht weiß, was sie mit der Hand machen soll. Ein Jahr lang fragt niemand nach dem Marktpreis."
-        en: "A lieutenant collects the signature in person and salutes Ruth, who doesn't know what to do with her hand. For a year nobody asks about the market price."
+        de: "Ein Leutnant holt die Unterschrift persönlich ab und salutiert vor dem alten Buchhalter, der nicht weiß, was er mit der Hand machen soll. Ein Jahr lang fragt niemand nach dem Marktpreis."
+        en: "A lieutenant collects the signature in person and salutes the old bookkeeper, who doesn't know what to do with his hand. For a year nobody asks about the market price."
       effects: { productPrice: { fuelOil: 0.1 } }
       public: [support_handel]
       marks: [k2_marine_vertrag]

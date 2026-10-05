@@ -1,0 +1,309 @@
+# Kapitel 3 – Nachklang aus Kapitel 2 (0.4.19+3). Entwurf – Philipp überarbeitet. Alle Texte hier sind Entwürfe von Claude.
+#
+# Die Nachprüfung fand: Fast alle Ausgänge aus Kapitel 2 verpufften in Kapitel 3 (Story-Bibel §7 A/D/E/F, §8).
+# Hier je ein Ereignis für Nora, Silas, Delaney und Clara – nur Kapitel 3, nur mit dem passenden Merkzeichen.
+#
+#   k3_nora_buch          (nora_verbuendet)      Nora schreibt ein Buch über die Ölprovinz – Jacobs Kapitel
+#   k3_nora_feindin       (nora_feindin)         Nora schreibt wieder – diesmal über Harlans Tankstellen
+#   k3_silas_krank        (silas_geschuetzt)     Silas' letztes Kapitel: krank, Erinnerungen, ein Wunsch
+#   k3_silas_krank_bitter (silas_k2_geopfert)    Derselbe Silas, den der Rat damals gebraucht hat
+#   k3_delaney_kronzeuge  (delaney_kronzeuge)    Delaney kommt noch einmal – und Crane Eastern weiß, warum
+#   k3_clara_vater_fehlte (clara_k2_vater_fehlte) Clara erinnert sich an das Fieber, und wer nicht da war
+#   k3_clara_vater_da     (clara_k2_vater_da)     … und an den Vater, der an ihrem Bett saß
+
+- id: k3_nora_buch
+  visitor: nora
+  marked: [nora_verbuendet]
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 3, maxRound: 12 }
+  chance: 0.5
+  title:
+    de: Ein Buch über die Ölprovinz
+    en: A Book About the Oil Province
+  text:
+    de: >-
+      Nora Whitlock hat graue Strähnen und denselben Bleistift hinter dem Ohr. Sie schreibt
+      ein Buch über die Ölprovinz, zwanzig Jahre von Salt Hill bis Hallstead. Ein Kapitel
+      soll Jacob heißen. „Sie waren damals ehrlich zu mir, als es Sie etwas gekostet hat“,
+      sagt sie. „Ich will die ganze Geschichte. Auch die Teile, die Sie lieber nicht lesen.“
+    en: >-
+      Nora Whitlock has grey streaks and the same pencil behind her ear. She is writing a
+      book about the oil province, twenty years from Salt Hill to Hallstead. One chapter is
+      to be called Jacob. "You were honest with me back then, when it cost you something,"
+      she says. "I want the whole story. Including the parts you'd rather not read."
+  choices:
+    - id: alles
+      label: { de: "Ihr alles erzählen – auch über Thorne und den Trust (3 Termine)", en: "Tell her everything – about Thorne and the Trust too (3 appointments)" }
+      result:
+        de: Drei Abende lang erzählt Jacob, und Nora schreibt. Das Kapitel über Thorne wird das längste im Buch. Thorne lässt seinen Anwalt das Manuskript anfordern. Er bekommt es nicht.
+        en: For three evenings Jacob talks and Nora writes. The chapter on Thorne becomes the longest in the book. Thorne has his lawyer request the manuscript. He doesn't get it.
+      effects: { strength: -8, reputation: { public: 6 }, rival: { thorne: { grudge: 10 } }, ansehen: 1 }
+      appointments: 3
+    - id: auswahl
+      label: { de: "Ihr die Geschichte erzählen, die er erzählen will", en: "Tell her the story he wants told" }
+      result:
+        de: Nora hört höflich zu und klappt das Notizbuch erst am Ende zu. „Das ist ein gutes Kapitel“, sagt sie. „Nur nicht Ihres.“ Im Buch kommt Jacob auf vier Seiten vor.
+        en: Nora listens politely and only closes the notebook at the end. "That's a good chapter," she says. "Just not yours." In the book Jacob appears on four pages.
+      effects: { reputation: { public: 3 }, rival: { thorne: { trust: 5 } } }
+      appointments: 1
+    - id: absagen
+      label: { de: "„Schreiben Sie es, wenn ich tot bin, Nora.“", en: "\"Write it when I'm dead, Nora.\"" }
+      result:
+        de: Nora lacht, zum ersten Mal seit Jahren in diesem Büro. „Ich bin jünger als Sie, Harlan. Ich kann warten.“
+        en: Nora laughs, for the first time in years in this office. "I'm younger than you, Harlan. I can wait."
+      effects: { strength: 5, reputation: { public: -4 } }
+      appointments: 0
+      default: true
+
+- id: k3_nora_feindin
+  mail: info
+  deadline: 2
+  marked: [nora_feindin]
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 3, maxRound: 12 }
+  chance: 0.5
+  title:
+    de: Nora schreibt wieder
+    en: Nora Is Writing Again
+  text:
+    de: >-
+      Im Ledger beginnt eine neue Serie von Nora Whitlock: „Die Säulen an der Landstraße“.
+      Teil eins handelt davon, was ein Gallon Benzin an Harlans Tankstellen kostet und was
+      es in der Raffinerie kostet. Die Zahlen stimmen, auf den Cent. Teil zwei, steht unten,
+      folgt nächste Woche.
+    en: >-
+      A new series by Nora Whitlock begins in the Ledger: "The Pumps by the Highway". Part one
+      is about what a gallon of gasoline costs at Harlan's pumps and what it costs at the
+      refinery. The figures are right, to the cent. Part two, it says at the bottom, follows
+      next week.
+  choices:
+    - id: preise
+      label: { de: "Die Preise an den Säulen senken, bevor Teil zwei erscheint", en: "Lower the pump prices before part two appears" }
+      result:
+        de: >-
+          Teil zwei erscheint trotzdem, mit einer Fußnote: Harlan habe die Preise gesenkt, „eine Woche nach Teil eins“. Die Kunden kommen wieder, die Marge nicht ganz.
+        en: >-
+          Part two appears all the same, with a footnote: Harlan lowered his prices "a week after part one". The customers come back; the margin doesn't quite.
+      effects: { price: -0.05, reputation: { public: 3 }, brand: 3 }
+    - id: anwalt
+      label: { de: "Den Anwalt einen Brief an den Ledger schreiben lassen (1.000 $)", en: "Have the lawyer write to the Ledger (1,000 $)" }
+      result:
+        de: Der Ledger druckt den Brief des Anwalts ungekürzt, neben Teil zwei. Es ist die beste Werbung, die Noras Serie je hatte.
+        en: The Ledger prints the lawyer's letter uncut, next to part two. It is the best advertising Nora's series ever had.
+      requires: { minCash: 1000 }
+      effects: { cash: -1000, reputation: { public: -3 }, brand: -2 }
+    - id: aushalten
+      label: { de: "Es aushalten", en: "Put up with it" }
+      result:
+        de: Die Serie läuft fünf Wochen. In Cordova sinkt der Absatz ein wenig, in Hallstead liest man sie beim Frühstück und tankt trotzdem.
+        en: The series runs for five weeks. In Cordova sales dip a little; in Hallstead people read it over breakfast and fill up all the same.
+      effects: { brand: -4, strength: -3 }
+      appointments: 0
+      default: true
+
+- id: k3_silas_krank
+  visitor: arzt
+  marked: [silas_geschuetzt]
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 4, maxRound: 14 }
+  chance: 0.5
+  title:
+    de: Silas ist krank
+    en: Silas Is Ill
+  text:
+    de: >-
+      Doktor Haskell kommt nicht wegen Jacob. Silas liegt seit drei Wochen in seiner Kammer
+      über dem Saloon, die Lunge, sagt Haskell, zwanzig Jahre Bohrschlamm. Er frage nach
+      niemandem. Nur einmal, im Fieber, habe er gesagt, der Junge habe ihn damals im Rat
+      nicht fallen lassen. „Ich dachte, das sollten Sie wissen“, sagt Haskell.
+    en: >-
+      Doctor Haskell has not come about Jacob. Silas has been lying in his room above the
+      saloon for three weeks, the lungs, says Haskell, twenty years of drilling mud. He asks
+      for no one. Only once, in the fever, did he say the boy didn't drop him back then on
+      the board. "I thought you should know," says Haskell.
+  choices:
+    - id: besuchen
+      label: { de: "Jeden Sonntag hinfahren, solange es geht (2 Termine)", en: "Drive out every Sunday while it lasts (2 appointments)" }
+      result:
+        de: Sie reden über den ersten Turm, über das Seil, das riss, und über Ruth, die damals den Kaffee brachte. Silas lacht, bis er husten muss. Beim dritten Besuch erzählt er dieselbe Geschichte zweimal. Jacob unterbricht ihn nicht.
+        en: They talk about the first derrick, the rope that snapped, and Ruth bringing the coffee back then. Silas laughs until he coughs. On the third visit he tells the same story twice. Jacob doesn't interrupt.
+      effects: { strength: 6, reputation: { workers: 5 } }
+      appointments: 2
+    - id: sanatorium
+      label: { de: "Ihn in ein Sanatorium in den Bergen schicken (3.000 $)", en: "Send him to a sanatorium in the mountains (3,000 $)" }
+      result:
+        de: Silas schimpft zwei Tage, dann fährt er. Aus den Bergen schickt er eine Postkarte mit einem Bohrturm darauf, den er selbst dazugezeichnet hat.
+        en: Silas grumbles for two days, then goes. From the mountains he sends a postcard with a derrick on it that he drew in himself.
+      requires: { minCash: 3000 }
+      effects: { cash: -3000, strength: 3, reputation: { workers: 4 } }
+    - id: blumen
+      label: { de: "Blumen schicken lassen", en: "Have flowers sent" }
+      result:
+        de: Die Blumen stehen am Fenster, bis sie welken. Silas sagt zu Haskell, er habe nie verstanden, was ein Bohrmann mit Blumen soll.
+        en: The flowers stand at the window until they wilt. Silas tells Haskell he never understood what a driller is supposed to do with flowers.
+      effects: { strength: -6, reputation: { workers: -5 } }
+      appointments: 0
+      default: true
+
+- id: k3_silas_krank_bitter
+  mail: personal
+  deadline: 3
+  marked: [silas_k2_geopfert]
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 4, maxRound: 14 }
+  chance: 0.5
+  title:
+    de: Ein Brief von Doktor Haskell
+    en: A Letter from Doctor Haskell
+  text:
+    de: >-
+      Doktor Haskell schreibt kurz: Silas Brandt liege krank über dem Saloon, die Lunge. Er
+      habe ihn gefragt, ob er Jacob Bescheid geben solle. Silas habe gesagt, der Rat habe
+      damals einen Schuldigen gebraucht, und er brauche jetzt keinen Besuch. „Ich schreibe
+      Ihnen trotzdem“, schließt Haskell. „Er hat nicht Nein zu einem Brief gesagt.“
+    en: >-
+      Doctor Haskell writes briefly: Silas Brandt lies ill above the saloon, the lungs. He
+      asked whether he should tell Jacob. Silas said the board needed a culprit back then,
+      and he doesn't need a visitor now. "I'm writing to you anyway," Haskell concludes. "He
+      didn't say no to a letter."
+  choices:
+    - id: brief
+      label: { de: "Ihm selbst schreiben – was damals im Rat wirklich geschah", en: "Write to him yourself – what really happened on the board" }
+      result:
+        de: Jacob schreibt vier Seiten und streicht drei davon. Silas antwortet nicht. Aber Haskell schreibt, er habe den Brief unter dem Kopfkissen gefunden, mehrmals gefaltet.
+        en: Jacob writes four pages and crosses out three. Silas doesn't reply. But Haskell writes that he found the letter under the pillow, folded many times.
+      effects: { strength: -4, reputation: { workers: 5 } }
+      appointments: 1
+    - id: arzt
+      label: { de: "Den Arzt bezahlen, ohne Namen (2.000 $)", en: "Pay for the doctor, without a name (2,000 $)" }
+      result:
+        de: Silas fragt nicht, wer bezahlt. Er weiß es. Er sagt zu Haskell, Harlans Geld sei das einzige an Harlan, das je pünktlich war.
+        en: Silas doesn't ask who is paying. He knows. He tells Haskell that Harlan's money is the only thing about Harlan that was ever on time.
+      requires: { minCash: 2000 }
+      effects: { cash: -2000, reputation: { workers: 2 } }
+    - id: nichts
+      label: { de: "Den Brief in die Schublade legen", en: "Put the letter in the drawer" }
+      result:
+        de: Im Saloon erzählt man, Harlan habe nicht einmal geschrieben. Es stimmt.
+        en: In the saloon they say Harlan didn't even write. It's true.
+      effects: { strength: -5, reputation: { workers: -5 } }
+      appointments: 0
+      default: true
+
+- id: k3_delaney_kronzeuge
+  visitor: delaney
+  marked: [delaney_kronzeuge]
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 2, maxRound: 10 }
+  chance: 0.5
+  title:
+    de: Delaney hat ein gutes Gedächtnis
+    en: Delaney Has a Good Memory
+  text:
+    de: >-
+      Bundesanwalt Delaney ist älter geworden und nicht freundlicher. Er setzt sich nicht.
+      Damals habe Jacob gegen den Crane Trust ausgesagt, und das sei nützlich gewesen. Jetzt
+      ermittle er gegen Crane Eastern, und Margaret Crane wisse genau, wer ihm damals den Weg
+      gezeigt habe. „Ich brauche Sie noch einmal, Mr. Harlan. Diesmal vor Gericht, mit Namen.“
+    en: >-
+      Federal prosecutor Delaney has grown older and no friendlier. He doesn't sit down. Back
+      then Jacob testified against the Crane Trust, and that was useful. Now he is
+      investigating Crane Eastern, and Margaret Crane knows exactly who showed him the way
+      back then. "I need you once more, Mr. Harlan. In court this time, by name."
+  choices:
+    - id: aussagen
+      label: { de: "Aussagen – mit Namen", en: "Testify – by name" }
+      result:
+        de: Jacob sagt einen Tag lang aus. Am Abend steht im Ledger sein Bild neben Margarets. Crane Eastern senkt am nächsten Morgen in Cordova die Preise an jeder Säule.
+        en: Jacob testifies for a whole day. That evening the Ledger prints his picture beside Margaret's. Next morning Crane Eastern cuts its prices at every pump in Cordova.
+      effects: { strength: -8, evidence: -1, reputation: { public: 4 }, rival: { margaret: { grudge: 15 } }, brand: -3 }
+      appointments: 2
+    - id: papiere
+      label: { de: "Ihm die alten Papiere geben, aber nicht aussagen", en: "Give him the old papers, but don't testify" }
+      result:
+        de: Delaney nimmt die Mappe und sieht Jacob lange an. „Halbe Wahrheiten sind auch Wahrheiten“, sagt er. „Nur billiger.“
+        en: Delaney takes the folder and looks at Jacob for a long time. "Half-truths are truths too," he says. "Just cheaper."
+      effects: { rival: { margaret: { grudge: 5 } }, heat: 1 }
+    - id: ablehnen
+      label: { de: "„Einmal war genug, Mr. Delaney.“", en: "\"Once was enough, Mr. Delaney.\"" }
+      result:
+        de: Delaney nickt, als hätte er es erwartet. Im Hinausgehen sagt er, er habe auch über Harlan Oil noch eine Akte. Sie sei dünn. Noch.
+        en: Delaney nods as if he had expected it. On his way out he says he has a file on Harlan Oil too. It's thin. For now.
+      effects: { evidence: 1 }
+      appointments: 0
+      default: true
+
+- id: k3_clara_vater_fehlte
+  visitor: clara
+  marked: [clara_k2_vater_fehlte]
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 2, maxRound: 12 }
+  chance: 0.4
+  title:
+    de: Clara erinnert sich an das Fieber
+    en: Clara Remembers the Fever
+  text:
+    de: >-
+      Clara will Ärztin werden. Sie sagt es beim Abendessen, als wäre es längst entschieden.
+      Als Jacob fragt, wie sie darauf komme, sagt sie: „Ich hatte einmal Fieber, als ich klein
+      war. Doktor Haskell saß die ganze Nacht an meinem Bett. Du warst in einer Sitzung.“ Sie
+      sagt es nicht vorwurfsvoll. Sie sagt es, als lese sie ein Datum vor.
+    en: >-
+      Clara wants to be a doctor. She says it at supper as if it had long been decided. When
+      Jacob asks how she came to that, she says: "I had a fever once when I was little. Doctor
+      Haskell sat by my bed all night. You were in a meeting." She doesn't say it
+      reproachfully. She says it as if reading out a date.
+  choices:
+    - id: unterstuetzen
+      label: { de: "Ihr das Medizinstudium in Hallstead bezahlen, ohne Bedingungen (4.000 $)", en: "Pay for her medical studies in Hallstead, no conditions (4,000 $)" }
+      result:
+        de: Clara sieht ihn an, als hätte sie mit einem Streit gerechnet. Dann bedankt sie sich, förmlich, und am nächsten Morgen umarmt sie ihn auf der Treppe, ohne etwas zu sagen.
+        en: Clara looks at him as if she had expected an argument. Then she thanks him, formally, and next morning she hugs him on the stairs without a word.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000, clara: 15, heirValues: { clara: { moral: 5, loyalty: 5 } } }
+    - id: entschuldigen
+      label: { de: "Sich für die Nacht damals entschuldigen", en: "Apologise for that night" }
+      result:
+        de: „Ich weiß“, sagt Clara. „Mama hat es mir erzählt. Du hast Blumen geschickt.“ Sie lächelt ein wenig. Es ist ein Anfang.
+        en: >-
+          "I know," says Clara. "Mama told me. You sent flowers." She smiles a little. It's a beginning.
+      effects: { clara: 8, strength: -3 }
+      appointments: 1
+    - id: firma
+      label: { de: "„Ärzte gibt es genug. Die Firma braucht dich.“", en: "\"There are doctors enough. The company needs you.\"" }
+      result:
+        de: Clara legt die Serviette hin und geht nach oben. Ruth sieht Jacob über den Tisch hinweg an und sagt nichts. Es ist das zweite Mal, dass er nicht da war.
+        en: Clara puts down her napkin and goes upstairs. Ruth looks at Jacob across the table and says nothing. It is the second time he wasn't there.
+      effects: { clara: -15, heirValues: { clara: { loyalty: -5, ambition: 5 } } }
+      appointments: 0
+      default: true
+
+- id: k3_clara_vater_da
+  visitor: clara
+  marked: [clara_k2_vater_da]
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 2, maxRound: 12 }
+  chance: 0.4
+  title:
+    de: „Du hast mir vorgelesen“
+    en: '"You Read to Me"'
+  text:
+    de: >-
+      Clara hat in Hallstead eine Rede gehalten, vor der Schule, über die Arbeiter am Salt
+      Hill. Hinterher erzählt sie Jacob, woher sie das Wort „Bohrschlamm“ kenne: „Du hast mir
+      vorgelesen, als ich Fieber hatte. Aus den Bohrberichten. Mama war wütend.“ Sie lacht.
+      Dann fragt sie, ob sie im Sommer mit auf die Felder darf.
+    en: >-
+      Clara has given a speech in Hallstead, at school, about the workers on Salt Hill.
+      Afterwards she tells Jacob where she learned the word "drilling mud": "You read to me
+      when I had a fever. From the drilling reports. Mama was furious." She laughs. Then she
+      asks whether she may come out to the fields this summer.
+  choices:
+    - id: mitnehmen
+      label: { de: "Sie den Sommer über mitnehmen (2 Termine)", en: "Take her along for the summer (2 appointments)" }
+      result:
+        de: Clara trägt Stiefel, die ihr zu groß sind, und schreibt alles auf. Die Bohrleute nennen sie „Fräulein Bohrbericht“. Sie ist stolz darauf.
+        en: Clara wears boots too big for her and writes everything down. The drillers call her "Miss Drilling Report". She is proud of it.
+      effects: { clara: 10, strength: -4, heirValues: { clara: { business: 5, loyalty: 3 } } }
+      appointments: 2
+    - id: schule
+      label: { de: "„Erst die Schule, Clara.“", en: "\"School first, Clara.\"" }
+      result:
+        de: Clara nickt. Sie fragt im nächsten Sommer wieder, und im übernächsten.
+        en: Clara nods. She asks again the next summer, and the one after.
+      effects: { clara: -4 }
+      appointments: 0
+      default: true

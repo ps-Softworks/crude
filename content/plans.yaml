@@ -47,8 +47,8 @@ cards:
   geologe_besprechung:
     title: { de: "Mit dem Geologen kartieren", en: "Map with the Geologist" }
     text:
-      de: "Einen Tag mit dem Geologen über der Karte und draußen auf dem Land: Er kartiert die Ranch und einen Nachbarn."
-      en: "A day with the geologist over the map and out on the land: he maps the ranch and one neighbour."
+      de: "Einen Tag mit dem Geologen über der Karte und draußen auf dem Land: Er kartiert die Ranch und zwei Nachbarn."
+      en: "A day with the geologist over the map and out on the land: he maps the ranch and two neighbours."
     risk: { de: "So gut wie der Geologe – nicht besser.", en: "As good as the geologist – no better." }
   bohrbericht:
     title: { de: "Bohrbericht kaufen", en: "Buy a Drilling Log" }

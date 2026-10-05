@@ -132,11 +132,11 @@
     de: >-
       Das Telefon klingelt dreimal vor dem Frühstück. In Hallstead erzählt man sich, Harlans
       neue Quellen am Nordhang gäben Salzwasser. Es stimmt nicht. Der Kurs fällt trotzdem, um
-      sechs Punkte bis Mittag. Ruth hat die Zahlen schon, bevor Jacob fragt.
+      sechs Punkte bis Mittag. Der Buchhalter hat die Zahlen schon, bevor Jacob fragt.
     en: >-
       The telephone rings three times before breakfast. In Hallstead they're saying Harlan's
       new wells on the north slope are bringing up salt water. It isn't true. The share price falls
-      anyway, six points by noon. Ruth has the figures before Jacob asks.
+      anyway, six points by noon. The bookkeeper has the figures before Jacob asks.
   choices:
     - id: dementi
       label: { de: "Mit einer Anzeige im Ledger dementieren und nach Hallstead fahren (1.500 $)", en: "Deny it with an advert in the Ledger and travel to Hallstead (1,500 $)" }
@@ -176,13 +176,13 @@
     de: >-
       Seit Wochen steigt die Harlan-Aktie, und niemand weiß genau, warum. Pettibone rät,
       jetzt ein Paket aus Jacobs eigenem Bestand zu verkaufen: „Man verkauft nicht, wenn man
-      muss, Mr. Harlan. Man verkauft, wenn die anderen wollen.“ Ruth schreibt Jacob einen
-      Zettel mit einer einzigen Zahl darauf: 51.
+      muss, Mr. Harlan. Man verkauft, wenn die anderen wollen.“ Beim Abendessen schiebt Ruth Jacob
+      einen Zettel hin, mit einer einzigen Zahl darauf: 51.
     en: >-
       For weeks the Harlan stock has been climbing and nobody knows exactly why. Pettibone
       advises selling a block from Jacob's own holding now: “One doesn't sell when one must,
-      Mr. Harlan. One sells when the others want to buy.” Ruth writes Jacob a note with a
-      single number on it: 51.
+      Mr. Harlan. One sells when the others want to buy.” At supper Ruth pushes a note across to
+      Jacob with a single number on it: 51.
   choices:
     - id: verkaufen
       label: { de: "Ein Paket verkaufen (+18.000 $)", en: "Sell a block (+18,000 $)" }
@@ -700,5 +700,43 @@
         de: "Tatum setzt den Hut auf. „Sie wissen, wo ich trinke, Mr. Harlan.“ Zwei Wochen später sieht man ihn mit Bullard im Saloon, an Bullards Tisch."
         en: "Tatum puts on his hat. “You know where I drink, Mr. Harlan.” Two weeks later he is seen in the saloon with Bullard, at Bullard's table."
       effects: { leaseCost: 0.1 }
+      appointments: 0
+      default: true
+
+# 0.4.19+3: Weiche schulden_vor_panik_getilgt aus Zeitsprung I (Story-Bibel §2: „Leute erinnern sich, wer sein
+# Geld abhob“) – die Bank erinnert sich, wer in der Panik zurückgezahlt hat.
+- id: k2_panik_erinnerung
+  mail: offer
+  deadline: 3
+  marked: [schulden_vor_panik_getilgt]
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 1, maxRound: 6 }
+  certain: true
+  title:
+    de: Die Bank hat ein gutes Gedächtnis
+    en: The Bank Has a Good Memory
+  text:
+    de: >-
+      Der Direktor der Bank in Port Ellis schreibt selbst, auf dem Papier mit dem neuen
+      Briefkopf. Während der Panik habe die Filiale drei Tage geschlossen, und in diesen drei
+      Tagen habe Harlan Oil als einzige Firma am Salt Hill zurückgezahlt statt abgehoben. „Das
+      vergisst ein Bankier nicht, Mr. Harlan. Sagen Sie uns, was Sie brauchen.“
+    en: >-
+      The director of the bank in Port Ellis writes himself, on the paper with the new
+      letterhead. During the panic the branch was closed for three days, and in those three
+      days Harlan Oil was the only firm on Salt Hill that paid back instead of withdrawing. "A
+      banker does not forget that, Mr. Harlan. Tell us what you need."
+  choices:
+    - id: kredit
+      label: { de: "Einen Kredit zu guten Bedingungen annehmen (10.000 $)", en: "Take a loan on good terms (10,000 $)" }
+      result:
+        de: Das Geld ist am nächsten Tag auf dem Konto. Der Direktor schickt eine Flasche Wein dazu, aus dem Keller, den er in der Panik nicht verkauft hat.
+        en: The money is in the account the next day. The director sends a bottle of wine with it, from the cellar he didn't sell during the panic.
+      effects: { loan: 10000, rating: 1 }
+    - id: danken
+      label: { de: "Danken – und das Vertrauen für später aufheben", en: "Thank him – and save the goodwill for later" }
+      result:
+        de: Jacob schreibt drei Zeilen zurück. Bei der nächsten Abrechnung steht Harlan Oil eine Stufe besser da, ohne dass jemand darüber spricht.
+        en: Jacob writes three lines back. At the next assessment Harlan Oil stands a grade higher, without anyone mentioning it.
+      effects: { rating: 1 }
       appointments: 0
       default: true

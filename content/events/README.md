@@ -33,7 +33,8 @@ Kurzreferenz der Felder:
   Ereignisse für Kapitel 2 tragen `conditions: { minChapter: 2, maxChapter: 2 }` und erscheinen so nie in Kapitel 1.
   Kapitel-1-Ereignisse brauchen keine Angabe; ein paar tragen zur Klarheit trotzdem `maxChapter: 1` (Ruths Bücher,
   Pension, Fieber). Auch die festen Termine aus `k1-termine.yaml` gelten nur in Kapitel 1 – bis auf den
-  Familienabend mit den Kindern (`termin_familie_k2`, `minChapter: 2, maxChapter: 2`).
+  Familienabend mit den Kindern (`termin_familie_k2`, `minChapter: 2, maxChapter: 2`) und dem Sonntagsessen in Kapitel 3
+  (`termin_familie_k3`; nach der Trennung `termin_kinder_k3`, 0.4.19+3).
   Merkzeichen gehen beim Kapitelwechsel mit (Zeitsprung, `marksIntoNextChapter`): Sie gelten als vor
   Kapitelbeginn gesetzt, `delay` zählt also ab der ersten Runde des neuen Kapitels.
 - Kapitel 2 – Alltag (Phase 4, Entwurf): `k2-alltag-1` (Raffinerie, Geschäft), `-2` (Pipeline, Wegerechte,
