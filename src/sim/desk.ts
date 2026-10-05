@@ -297,6 +297,11 @@ export function nextStep(state: GameState, balance: Balance): NextStep | null {
   // 5. Weder Pacht noch Option: ohne Recht auf Land geht kein Bohren.
   // Pachten und Optionen der Konkurrenz zählen nicht – sie bringen Jacob kein Land.
   if (!state.leases.some((l) => l.holder === 'jacob') && !state.options.some((o) => o.holder === 'jacob')) {
+    // Etappe 1: Wer noch nie selbst hingesehen hat, reitet erst übers Land – sonst pachtet er auf Gerede hin.
+    const erkundet = Object.values(state.knowledge ?? {}).some((k) => k.clues.some((c) => c.source !== 'start'));
+    if (!erkundet) {
+      return { text: 'Reite übers Land, bevor du pachtest: Im Kalender (T) „Übers Land reiten“ buchen – dann weißt du, wo es sich lohnt.', parcelIds: [] };
+    }
     return { text: 'Pachte eine Ranch auf der Karte, dann kannst du bohren.', parcelIds: [] };
   }
 

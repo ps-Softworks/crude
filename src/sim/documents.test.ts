@@ -367,16 +367,17 @@ describe('Fertig, wenn: eine übersehene Fälschung später spürbar Geld kostet
     return state;
   }
 
-  it('gefälschte Urkunde gekauft: das Gericht schreibt, und am Ende fehlen 400 $ plus Prozess', () => {
+  it('Etappe 3: gefälschte Bohrliste gekauft – 300 $ weg und kein Hinweis; die echte wird ein Bohrbericht auf einer Ranch', () => {
     const ohne = partie('parzelle', 'ablehnen');
     const falsch = partie('parzelle', 'kaufen');
     const echt = partie(null, 'kaufen');
-    expect(falsch.log.some((l) => l.includes('Das Bezirksgericht schreibt'))).toBe(true);
-    expect(echt.log.some((l) => l.includes('Das Bezirksgericht schreibt'))).toBe(false);
-    // Ohne Antwort gilt der Prozess: 450 $ zusätzlich zu den 400 $ für die wertlose Urkunde.
-    expect(ohne.cash - falsch.cash).toBe(850);
-    // Die echte Urkunde bringt dagegen Gewinn.
-    expect(echt.cash - ohne.cash).toBe(350);
+    expect(falsch.log.some((l) => l.includes('Pikes Bohrliste gegen das Bohrregister'))).toBe(true);
+    expect(echt.log.some((l) => l.includes('Pikes Bohrliste gehört zur Ranch'))).toBe(true);
+    const berichte = (s: GameState) => Object.values(s.knowledge ?? {}).filter((k) => k.clues.some((c) => c.kind === 'bohrbericht' && c.source === 'bericht')).length;
+    expect(berichte(echt)).toBe(berichte(ohne) + 1);
+    expect(berichte(falsch)).toBe(berichte(ohne));
+    // Kapitel 3 (Daniels Akte) liest weiter, dass Jacob eine gefälschte Urkunde gekauft hat.
+    expect(falsch.events.marks.pike_urkunde_falsch).toBeDefined();
   });
 });
 

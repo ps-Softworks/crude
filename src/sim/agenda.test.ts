@@ -17,6 +17,7 @@ import { endRound, newGame, type GameState } from './game';
 import { deserializeGame, serializeGame } from './save';
 import { loadBalance } from './testBalance';
 import { loadEvents } from './testEvents';
+import { bookCard, planView } from './plans';
 
 const balance = loadBalance();
 
@@ -237,11 +238,12 @@ describe('feste Termine (routine)', () => {
 describe('Fertig-Kriterium 2.3 mit den echten Inhalten', () => {
   const katalog = loadEvents();
 
-  /** Alles, was in dieser Runde Termine kosten würde: feste Termine plus offene Ereignisse (je billigste Wahl mit Zeit). */
+  /** Alles, was in dieser Runde Termine kosten würde: feste Termine, offene Ereignisse (je billigste Wahl mit Zeit) und die Karten des Planungsbretts (Etappe 1). */
   function bedarf(state: GameState): number {
     const termine = deskRoutines(state, balance, katalog).reduce((s, e) => s + Math.min(...e.choices.map((c) => c.cost)), 0);
     const ereignisse = deskEvents(state, balance, katalog).reduce((s, e) => s + Math.max(...e.choices.map((c) => c.cost)), 0);
-    return termine + ereignisse;
+    const karten = planView(state, balance, katalog).cards.filter((c) => !c.event && c.reason === null).reduce((s, c) => s + c.appointments, 0);
+    return termine + ereignisse + karten;
   }
 
   it('in jeder Runde gibt es mehr Termine, als selbst mit Überstunden gehen – vor und nach der ersten Quelle', () => {
@@ -254,14 +256,21 @@ describe('Fertig-Kriterium 2.3 mit den echten Inhalten', () => {
 
   it('wer mehr will, macht Überstunden: sie kosten Kraft, und irgendwann ist Schluss', () => {
     let state = newGame('gierig', balance, katalog);
-    for (const id of ['termin_port_ellis', 'termin_lohnbohren', 'termin_ruth']) {
+    // Etappe 1: Ritt übers Land (2 Termine, −3 Kraft) und ein Gespräch mit dem Farmer (1) über das Planungsbrett.
+    const ziel = state.parcels.find((p) => !p.discovery)!.id;
+    for (const card of ['ritt', 'farmer']) {
+      const r = bookCard(state, balance, katalog, card, ziel);
+      if (!r.ok) throw new Error(r.reason);
+      state = r.state;
+    }
+    for (const id of ['termin_lohnbohren', 'termin_ruth']) {
       const r = resolveEvent(state, balance, katalog, id, katalog.find((e) => e.id === id)!.choices[0].id);
       if (!r.ok) throw new Error(r.reason);
       state = r.state;
     }
-    // 3 + 2 Termine sind die Runde, Ruth ist die erste Überstunde.
+    // 2 + 1 + 2 Termine sind die Runde, Ruth ist die erste Überstunde.
     expect(state.agenda.used).toBe(6);
-    // 100 − 3 (Reise) − 3 (Bohren) − 5 (Überstunde); Ruths Abend gibt erst am Rundenende Kraft (2.7).
+    // 100 − 3 (Ritt) − 3 (Bohren) − 5 (Überstunde); Ruths Abend gibt erst am Rundenende Kraft (2.7).
     expect(state.strength).toBe(89);
     const [sonntag] = deskRoutines(state, balance, katalog);
     expect(sonntag.id).toBe('termin_sonntag');

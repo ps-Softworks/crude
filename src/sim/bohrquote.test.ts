@@ -32,15 +32,16 @@ describe('Bohr-Trefferquote im echten Spielablauf', () => {
       if (records[0]) erste.push(records[0]);
     }
     const gut = erste.filter((r) => r.shown >= 60);
-    expect(gut.length).toBeGreaterThan(420);
-    const chance = mittel(gut.map((r) => r.chance));
-    // Prognose ≥ 60 % heißt wirklich etwa 60–70 % Öl unter der Ranch …
+    expect(gut.length).toBeGreaterThan(250);
+    // Etappe 1: Die Prognose rechnet mit Hinweisen, die am echten Ausgang hängen – ihre Mitte ist die Theorie.
+    const chance = mittel(gut.map((r) => r.shown / 100));
     expect(chance).toBeGreaterThan(0.6);
-    // (Toleranz gut drei Standardabweichungen bei etwa 470 Ranches)
-    expect(Math.abs(mittel(gut.map((r) => (r.dry ? 0 : 1))) - chance)).toBeLessThan(0.07);
-    // … und die erste Stufe trifft davon etwa 70 % (Unfälle wiederholen die Stufe, Werkzeug wird geborgen).
+    // Prognose ≥ 60 % heißt wirklich so oft Öl unter der Ranch, wie die Prognose sagt
+    // (Toleranz gut drei Standardabweichungen bei etwa 330 Ranches) …
+    expect(Math.abs(mittel(gut.map((r) => (r.dry ? 0 : 1))) - chance)).toBeLessThan(0.08);
+    // … und die erste Stufe trifft davon den Anteil oilShare (Unfälle wiederholen die Stufe, Werkzeug wird geborgen).
     const ersteStufe = mittel(gut.map((r) => (r.foundStage === 1 ? 1 : 0)));
-    expect(Math.abs(ersteStufe - chance * stufe1)).toBeLessThan(0.07);
+    expect(Math.abs(ersteStufe - chance * stufe1)).toBeLessThan(0.08);
     expect(ersteStufe).toBeGreaterThan(0.35);
   }, 120_000);
 

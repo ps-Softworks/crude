@@ -19,7 +19,6 @@ import {
   spillOver,
   storageCapacity,
   surveyPipeline,
-  threatenThorne,
   traderGain,
   type RouteScenario,
 } from './logistics';
@@ -210,22 +209,10 @@ describe('Pipeline (0.2.15+2)', () => {
   });
 });
 
-describe('Thorne verhandeln (0.2.15+2)', () => {
-  it('Drohung ohne Geld und Wegerechte ist ein Bluff: kein Rabatt, Thorne erhöht danach öfter', () => {
-    const s = spiel({ cash: 100 });
-    expect(pipelineCredible(s, balance)).toBe(false);
-    const r = ok(threatenThorne(s, balance));
-    expect(r.railTariff).toBe(s.railTariff);
-    expect(r.events.marks.thorne_abgelehnt).toBe(1);
-  });
-
-  it('glaubwürdige Drohung (Geld für die Pipeline) senkt den Tarif, nie unter minTariff, dann Wartezeit', () => {
-    const s = spiel({ cash: T.pipeline.buildCost, railTariff: 0.5 });
-    const r = ok(threatenThorne(s, balance));
-    expect(r.railTariff).toBeCloseTo(0.5 - T.thorne.threatCut, 9);
-    expect(threatenThorne(r, balance).ok).toBe(false);
-    const spaeter = { ...r, round: r.round + T.thorne.threatCooldown, railTariff: T.thorne.minTariff + 0.01 };
-    expect(ok(threatenThorne(spaeter, balance)).railTariff).toBe(T.thorne.minTariff);
+describe('Glaubwürdigkeit der Pipeline (Druckmittel gegen Thorne, Etappe 2 – die alte Drohung entfällt)', () => {
+  it('ohne Geld und Wegerechte glaubt Thorne nicht an die Pipeline, mit dem Geld für den Bau schon', () => {
+    expect(pipelineCredible(spiel({ cash: 100 }), balance)).toBe(false);
+    expect(pipelineCredible(spiel({ cash: T.pipeline.buildCost }), balance)).toBe(true);
   });
 
   it('auch mit allen Wegerechten (ohne Geld) glaubt Thorne die Drohung', () => {

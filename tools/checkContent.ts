@@ -37,6 +37,9 @@ import { parsePipelineContent } from '../src/sim/bigPipelineContent';
 // 4.11 Andockpunkt: Texte für Schattenbuch (Ermittler) und Werkstatt (Forschung).
 import { checkInvestigationContent, parseInvestigationContent } from '../src/sim/investigation';
 import { parseResearchContent } from '../src/sim/research';
+// Termine als Hauptwerkzeug (Etappe 1): Planungsbrett.
+import { checkPlanContent, parsePlanContent } from '../src/sim/planContent';
+import { planRefErrors } from '../src/sim/plans';
 
 const dir = process.argv[2] ? resolve(process.argv[2]) : EVENTS_DIR;
 const files = readEventFiles(dir);
@@ -136,6 +139,14 @@ if (marke.content) errors.push(...checkBrandRefs('content/brand.yaml', marke.con
 const hallstead = parseHallsteadContent('content/hallstead.yaml', readFileSync(new URL('../content/hallstead.yaml', import.meta.url), 'utf8'));
 errors.push(...hallstead.errors);
 if (hallstead.content) errors.push(...checkHallsteadContent('content/hallstead.yaml', hallstead.content, loadBalance()));
+// Termine als Hauptwerkzeug (Etappe 1): Texte des Planungsbretts, passend zu balance.yaml (plans.cards) und den festen Terminen.
+{
+  const balance = loadBalance();
+  const brett = parsePlanContent('content/plans.yaml', readFileSync(new URL('../content/plans.yaml', import.meta.url), 'utf8'));
+  errors.push(...brett.errors);
+  if (brett.content) errors.push(...checkPlanContent('content/plans.yaml', brett.content, balance));
+  if (parsed.errors.length === 0) for (const m of planRefErrors(balance, events)) errors.push({ file: 'content/balance.yaml', line: 1, message: m });
+}
 if (errors.length > 0) {
   for (const error of errors) console.error(formatContentError(error));
   console.error(`\n${errors.length} Fehler in ${files.length} Datei(en). Inhalte nicht in Ordnung.`);

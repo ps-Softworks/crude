@@ -9,6 +9,14 @@
 # Merkzeichen, die die Simulation liest (transport.pipeline.rights in balance.yaml):
 #   wegerecht_moss, wegerecht_bahndamm  – erst mit beiden kann die Pipeline gebaut werden
 # Effekte für eigene Fuhrwerke: teams (Gespanne +/−), teamsIdle n (stehen bis Runde jetzt+n still).
+# Termine als Hauptwerkzeug, Etappe 2 (src/sim/freight.ts, FREIGHT_MARKS):
+#   brennan_vertrag       Brennans Fuhrleute fahren für Jacob (setzt die Simulation)
+#   brennan_abgeworben    Antwort: Thorne hat Brennan abgeworben – die Simulation beendet den Vertrag
+# Etappe 3 (gekoppelte Briefe, src/sim/letters.ts):
+#   brennan_faehrt               solange Brennan unter Vertrag fährt → fuhrleute_bestochen, fuhre_aufschlag
+#   gemeinschaft_abgesprungen    Mitglieder sind abgesprungen → gemeinschaft_abgesprungen (Brief)
+#   gemeinschaft_zurueck         Antwort: Die Abgesprungenen verladen wieder mit Jacob
+#   wildcatter_geholfen/_verprellt  Antwort: Ruf bei den Wildcattern ± letters.standing
 
 # --- Eigene Fuhrleute ----------------------------------------------------------
 
@@ -17,7 +25,7 @@
   marked: [fuhrleute_eigen]
   once: false
   cooldown: 4
-  chance: 0.15
+  chance: 0.1
   conditions: { minRound: 2 }
   title:
     de: Jacobs Fuhrleute legen die Peitschen hin
@@ -59,39 +67,41 @@
       appointments: 0
       default: true
 
+# Etappe 3: Thorne besticht einen von Brennans Fuhrleuten (vorher: Jacobs eigene Fuhrleute).
 - id: fuhrleute_bestochen
   rival: thorne
-  marked: [fuhrleute_eigen]
+  mail: info
+  marked: [brennan_faehrt]
   once: false
-  cooldown: 5
-  chance: 0.1
-  conditions: { minRound: 3, minOilStock: 300 }
+  cooldown: 4
+  chance: 0.3
+  conditions: { minOilStock: 300 }
   title:
     de: Ein Fuhrmann zählt zu viel Geld
     en: A Teamster Counts Too Much Money
   text:
     de: >-
-      Im Saloon zahlt einer von Jacobs Fuhrleuten eine Runde für alle – mit
-      frischen Scheinen der Thorne Rail & Trust Bank. Seit zwei Wochen kommen am
-      Hafen weniger Fässer an, als am Feld aufgeladen werden.
+      Brennan schreibt: Im Saloon zahlt einer seiner Fuhrleute eine Runde für alle –
+      mit frischen Scheinen der Thorne Rail & Trust Bank. Seit zwei Wochen kommen am
+      Hafen weniger von Jacobs Fässern an, als am Feld aufgeladen werden.
     en: >-
-      At the saloon one of Jacob's teamsters buys a round for everyone – with
-      crisp notes from the Thorne Rail & Trust Bank. For two weeks fewer barrels
-      have reached the harbour than were loaded at the field.
+      Brennan writes: at the saloon one of his teamsters buys a round for everyone –
+      with crisp notes from the Thorne Rail & Trust Bank. For two weeks fewer of
+      Jacob's barrels have reached the harbour than were loaded at the field.
   choices:
     - id: entlassen
-      label: { de: "Den Mann entlassen – samt Gespann", en: "Fire the man – team and all" }
+      label: { de: "Brennan soll ihn vor allen davonjagen", en: "Have Brennan run him off in front of everyone" }
       result:
-        de: Der Fuhrmann geht und nimmt die Ochsen mit, die er „gekauft“ habe. Jacob hat ein Gespann weniger.
-        en: The teamster leaves and takes the oxen he says he "bought". Jacob has one team fewer.
-      effects: { teams: -1 }
+        de: Brennan jagt den Mann vom Hof. Bis ein neuer Fuhrmann gefunden ist, fährt Jacob selbst Tag und Nacht, und ein Mietgespann kostet extra.
+        en: Brennan runs the man off the yard. Until a new teamster is found, Jacob drives day and night himself, and a hired team costs extra.
+      effects: { cash: -100, strength: -7 }
     - id: lohn
-      label: { de: "Allen mehr zahlen, als Thorne bietet (150 $)", en: "Pay them all more than Thorne offers (150 $)" }
+      label: { de: "Brennans Leuten mehr zahlen, als Thorne bietet (200 $)", en: "Pay Brennan's men more than Thorne offers (200 $)" }
       result:
         de: Loyalität hat einen Preis, und Jacob hat ihn gezahlt. Die Fässer kommen wieder vollzählig an.
         en: Loyalty has a price, and Jacob has paid it. The barrels arrive in full again.
-      requires: { minCash: 150 }
-      effects: { cash: -150 }
+      requires: { minCash: 200 }
+      effects: { cash: -200 }
       appointments: 0
     - id: nichts
       label: { de: "Nichts tun", en: "Do nothing" }
@@ -316,5 +326,94 @@
       result:
         de: Mrs. Pruitt wartet. Lange wird sie es nicht tun.
         en: Mrs. Pruitt waits. She won't for long.
+      appointments: 0
+      default: true
+
+# --- Brennans Fuhrleute (Etappe 2) ------------------------------------------------
+
+- id: brennan_abwerben
+  rival: thorne
+  mail: demand
+  chance: 1                  # Etappe 3: nicht „certain“ – höchstens ein Thorne-Brief je Runde
+  once: true
+  marked: [brennan_vertrag]
+  delay: 1
+  conditions: { maxChapter: 1 }
+  title:
+    de: Thorne bietet Brennan mehr
+    en: Thorne Offers Brennan More
+  text:
+    de: >-
+      Brennan steht mit dem Hut in der Hand im Kontor. Thorne hat ihm Geld
+      geboten, wenn seine Fuhrleute nicht mehr für Jacob fahren. „Ich bleib bei
+      dir, Harlan – wenn du drauflegst. Zweihundert, und Thorne kann pfeifen.“
+    en: >-
+      Brennan stands in the office, hat in hand. Thorne has offered him money if
+      his teamsters stop hauling for Jacob. "I'll stay with you, Harlan – if you
+      top it. Two hundred, and Thorne can whistle."
+  choices:
+    - id: drauflegen
+      label: { de: "Zweihundert drauflegen (200 $)", en: "Top it up (200 $)" }
+      result:
+        de: Brennan zählt die Scheine und setzt den Hut wieder auf. Seine Wagen rollen weiter für Jacob.
+        en: Brennan counts the notes and puts his hat back on. His wagons keep rolling for Jacob.
+      requires: { minCash: 200 }
+      effects: { cash: -200 }
+      appointments: 0
+    - id: ziehen_lassen
+      label: { de: "Ihn ziehen lassen", en: "Let him go" }
+      result:
+        de: Brennan nickt und geht. Ab morgen fahren seine Fuhrleute für Thorne – Jacobs Vertrag ist dahin.
+        en: Brennan nods and leaves. From tomorrow his teamsters haul for Thorne – Jacob's contract is gone.
+      marks: [brennan_abgeworben]
+      appointments: 0
+      default: true
+
+# --- Transportgemeinschaft (Etappe 3) --------------------------------------------
+
+- id: gemeinschaft_abgesprungen
+  mail: info
+  once: false
+  cooldown: 4
+  marked: [gemeinschaft_abgesprungen]
+  chance: 1
+  deadline: 2
+  conditions: { maxChapter: 1 }
+  title:
+    de: Haskell & Dunn sind abgesprungen
+    en: Haskell & Dunn Have Pulled Out
+  text:
+    de: >-
+      Ein kurzer Brief von Haskell & Dunn, im Namen aller, die diese Woche nicht mehr
+      mit Jacob verladen: Man habe sich vernachlässigt gefühlt. Wer eine Gemeinschaft
+      gründe, müsse sich auch blicken lassen. Thornes Agent sei schon zweimal da gewesen.
+    en: >-
+      A short letter from Haskell & Dunn, on behalf of everyone who stopped shipping
+      with Jacob this week: they felt neglected. Whoever founds a pool has to show his
+      face too. Thorne's agent has already called twice.
+  choices:
+    - id: hinreiten
+      label: { de: "Hinreiten und sie zurückholen", en: "Ride out and bring them back" }
+      result:
+        de: Jacob sitzt einen Abend in ihren Kontoren, hört sich jeden Groll an und trinkt jeden Whiskey. Am Morgen verladen sie wieder mit ihm.
+        en: Jacob spends an evening in their offices, hears every grievance and drinks every whiskey. In the morning they ship with him again.
+      effects: { strength: -3 }
+      marks: [gemeinschaft_zurueck]
+      appointments: 2
+    - id: zuschuss
+      label: { de: "Ihnen einen Frachtzuschuss bieten (150 $)", en: "Offer them a freight subsidy (150 $)" }
+      result:
+        de: Geld redet leiser als Jacob, aber schneller. Sie verladen wieder mit ihm – vorerst.
+        en: Money talks quieter than Jacob, but faster. They ship with him again – for now.
+      requires: { minCash: 150 }
+      effects: { cash: -150 }
+      marks: [gemeinschaft_zurueck]
+      appointments: 0
+    - id: ziehen
+      label: { de: "Ziehen lassen", en: "Let them go" }
+      result:
+        de: Jacob legt den Brief weg. Bei den Wildcattern heißt es bald, auf Harlans Gemeinschaften sei kein Verlass.
+        en: Jacob puts the letter away. Soon the wildcatters are saying Harlan's pools can't be relied on.
+      marks: [wildcatter_verprellt]
       appointments: 0
       default: true

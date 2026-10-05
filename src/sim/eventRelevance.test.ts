@@ -130,34 +130,31 @@ describe('Wirkung der Antworten (0.2.15+3)', () => {
   });
 });
 
-describe('Nachwirkungen früher folgenloser Merkzeichen (0.2.15+3)', () => {
+describe('Nachwirkungen früher folgenloser Merkzeichen (0.2.15+3, nach Etappe 3)', () => {
   const events = loadEvents();
   const ev = (id: string) => events.find((e) => e.id === id)!;
 
-  it('Schutz vor Dieben: Sheriff, eigener Nachtwächter oder Eli als Wächter', () => {
-    expect(ev('diebe_tank').notMarked).toEqual(expect.arrayContaining(['sheriff_bezahlt', 'sheriff_umgangen', 'eli_waechter']));
+  it('Schutz vor Dieben: Mit Eli als Wächter kommen keine Diebe; Sheriff und eigener Nachtwächter sind jetzt Antworten auf die Diebe', () => {
+    expect(ev('diebe_tank').notMarked).toEqual(['eli_waechter']);
+    expect(ev('diebe_tank').choices.flatMap((c) => c.marks)).toEqual(expect.arrayContaining(['sheriff_bezahlt', 'sheriff_umgangen']));
   });
 
-  it('Bullard sägt kein Seil an, wenn Jacob beim Brand geholfen hat oder den Drohzettel hat', () => {
-    expect(ev('bullard_seil').notMarked).toEqual(expect.arrayContaining(['brand_geholfen', 'drohung_aufgehoben', 'drohung_sheriff']));
+  it('Bullard sägt kein Seil an, wenn Jacob beim Brand geholfen hat', () => {
+    expect(ev('bullard_seil').notMarked).toEqual(['brand_geholfen']);
   });
 
-  it('Trupp: gedeckt → kein Streik, Sonntag gegeben → keine Lohnforderung, Crabb entlassen → kein Sonntagsstreit, Kerrigan im Lager → kein Diebstahl', () => {
-    expect(ev('streik').notMarked).toContain('trupp_gedeckt');
-    expect(ev('trupp_lohn').notMarked).toContain('trupp_sonntag');
-    expect(ev('trupp_sonntag').notMarked).toContain('crabb_entlassen');
-    expect(ev('crabb_lager').notMarked).toContain('kerrigan_lager');
+  it('Trupp: Wer den Sonntag verweigert, riskiert den Streik; der Kumpel aus der Grube kommt mit dem fehlenden Seil', () => {
+    expect(ev('trupp_lohn').choices.find((c) => c.id === 'nein')!.marks).toEqual(['trupp_unmut']);
+    expect(ev('streik').marked).toEqual(['trupp_unmut']);
+    expect(ev('crabb_lager').choices.find((c) => c.id === 'entlassen')!.marks).toEqual(['kerrigan_eingestellt']);
   });
 
-  it('Folgeereignisse: Bullards Rache, Kerrigans Zusammenbruch, Moss nach der Entschuldigung', () => {
-    expect(ev('bullard_rache_folge').marked).toEqual(['bullard_rache']);
+  it('Folgeereignisse: Bullards Rache steckt in der Antwort selbst, Kerrigans Zusammenbruch, Moss nach der Entschuldigung', () => {
+    const zurueck = ev('bullard_seil').choices.find((c) => c.id === 'zurueck')!;
+    expect(zurueck.marks).toEqual(['bullard_rache']);
+    expect(zurueck.effects.cash).toBeLessThan(0);
     expect(ev('kerrigan_zusammenbruch').marked).toEqual(['kerrigan_verheizt']);
     expect(ev('wegerecht_moss_versoehnt').marked).toEqual(['pipeline_geplant', 'daniel_entschuldigung']);
     expect(ev('wegerecht_moss_feind').notMarked).toContain('daniel_entschuldigung');
-  });
-
-  it('Bohlenweg: Wer ihn baut, bleibt nicht mehr im Schlamm stecken', () => {
-    expect(ev('fuhre_schlamm').notMarked).toContain('bohlenweg');
-    expect(ev('fuhre_schlamm').choices.find((c) => c.id === 'bohlen')!.marks).toEqual(['bohlenweg']);
   });
 });

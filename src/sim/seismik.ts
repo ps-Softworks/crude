@@ -7,11 +7,17 @@
 //
 // Ablauf: Lizenz kaufen (Konsortium-Mitglieder bekommen sie umsonst) → Trupp auf
 // eine Ranch schicken → nach surveyRounds liegt der Bericht auf dem Tisch
-// (Rundenabrechnung in kapitel3Runde.ts). Der Geologe bleibt, wie er ist; der
-// Bericht steht daneben (bestForecast für alle, die die beste Schätzung wollen).
+// (Rundenabrechnung in kapitel3Runde.ts).
+//
+// Seismik ergänzt die Erkundung (Termine als Hauptwerkzeug), sie ersetzt sie nicht:
+// Die Messung rechnet auf dem auf, was Jacob über die Ranch schon weiß (Ritte, Karten,
+// Berichte, Nachbarn – posteriorChance), statt nur auf der Zone. Ihr Ergebnis geht als
+// Hinweis „Seismik“ (Stufe 3) zurück ins Wissen: Das Band wird die Prognose der Ranch,
+// und die Nachbarn lernen mit. Wer vorher erkundet hat, bekommt den schärferen Bericht.
 
 import type { Balance } from './balance';
-import { trueChance, type Forecast } from './forecast';
+import { zoneChance, type Forecast } from './forecast';
+import { addClues, knowledgeOf, posteriorChance, seismikForecast } from './exploration';
 import type { GameState } from './game';
 import type { Parcel } from './geology';
 import { begin, chapterOf, clamp, kapitel3Of, note, withRng, type Kapitel3Reason, type Kapitel3Result, type Kapitel3State, type SeismikReport, worldOf } from './kapitel3';
@@ -138,20 +144,22 @@ export function sizeClassOf(balance: Balance, reserves: number): number {
 
 /**
  * Der Bericht für eine Ranch. Die Messung sieht die wirkliche Falle nur zum Teil
- * (insight), der Rest kommt aus der Zone – eine bessere Prognose, kein Orakel.
+ * (insight), der Rest kommt aus dem, was Jacob schon weiß (prior, 0–1: Chance nach allen
+ * Hinweisen der Erkundung; ohne Angabe das öffentliche Wissen der Zone) – nie aus der
+ * verdeckten Wahrheit. Eine bessere Prognose, kein Orakel.
  * Sie kann sich auch täuschen: Eine trockene Ranch zeigt mit falseTrap eine
  * Struktur (Chance und Falle wie bei Öl), eine Falle mit Öl bleibt mit missTrap
  * unsichtbar (Chance wie trocken, keine Falle). Zieht immer genau vier
  * Zufallszahlen (Fehler der Chance, Fehlmessung, Irrtum der Größe, Richtung),
  * damit die Folge stabil bleibt.
  */
-export function makeReport(balance: Balance, parcel: Parcel, round: number, rng: Rng): SeismikReport {
+export function makeReport(balance: Balance, parcel: Parcel, round: number, rng: Rng, prior?: number): SeismikReport {
   const s = balance.kapitel3.seismik;
   const uError = rng.float();
   const uRead = rng.float();
   const uMiss = rng.float();
   const uDir = rng.float();
-  const zone = 100 * trueChance(balance, parcel);
+  const zone = 100 * (prior ?? zoneChance(balance, parcel));
   const oil = parcel.geology !== 'dry' && parcel.reserves > 0;
   // Was die Messung zu sehen glaubt.
   const falseTrap = !oil && uRead < s.falseTrap;
@@ -192,15 +200,30 @@ export function settleSurveys(state: GameState, balance: Balance, k3: Kapitel3St
   for (const survey of fertig) {
     const parcel = state.parcels.find((p) => p.id === survey.parcelId);
     if (!parcel) continue;
-    const [report, k] = withRng(out, (rng) => makeReport(balance, parcel, next, rng));
+    // Erkundung zuerst: Was Jacob über die Ranch (und ihre Nachbarn) weiß, ist die Grundlage der Messung.
+    const prior = posteriorChance(state, balance, parcel.id);
+    const [report, k] = withRng(out, (rng) => makeReport(balance, parcel, next, rng, prior));
     out = note({ ...k, seismik: { ...k.seismik, reports: { ...k.seismik.reports, [parcel.id]: report } } }, { round: next, key: 'seismik_bericht', vars: { ranch: parcel.id } });
   }
   return out;
 }
 
-/** Die beste Schätzung für eine Ranch: der Seismik-Bericht, sonst der Geologe. */
+/**
+ * Seismik zurück ins Wissen: Jeder Bericht ohne Hinweis „Seismik“ auf seiner Ranch wird einer
+ * (gesehen = Struktur im Bild). Stufe 3, die Nachbarn rechnen ihn mit, die Prognose der Ranch
+ * wird das Band des Berichts (seismikForecast). Kein Zufall; schon eingetragene zählen nicht doppelt.
+ */
+export function seismikClues(state: GameState, balance: Balance): GameState {
+  let out = state;
+  for (const r of Object.values(state.kapitel3?.seismik.reports ?? {})) {
+    if (!state.parcels.some((p) => p.id === r.parcelId)) continue;
+    if (knowledgeOf(out, r.parcelId).clues.some((c) => c.kind === 'seismik')) continue;
+    out = addClues(out, balance, r.parcelId, [{ kind: 'seismik', source: 'seismik', round: r.round, seen: r.sizeLow !== null }]);
+  }
+  return out;
+}
+
+/** Die beste Schätzung für eine Ranch: der Seismik-Bericht (solange kein Bohrbericht vorliegt), sonst die Prognose aus der Erkundung. */
 export function bestForecast(state: GameState, parcelId: string): Forecast | undefined {
-  const r = state.kapitel3?.seismik.reports[parcelId];
-  if (r) return { parcelId, low: r.low, high: r.high, center: (r.low + r.high) / 2 };
-  return state.forecasts[parcelId];
+  return seismikForecast(state, parcelId) ?? state.forecasts[parcelId];
 }

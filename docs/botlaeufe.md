@@ -1,26 +1,27 @@
 # Bot-Läufe
 
-Stand: 2026-10-05 · Version 0.4.19
+Stand: 2026-10-05 · Version 0.4.19+1
 
 - Partien je Strategie: 1.000
 - Seeds: `bot-0` bis `bot-999` (für jede Strategie dieselben)
-- Mit allen 384 Ereignissen aus content/events/ (Briefe, feste Termine, Rivalen, Story-Bögen)
+- Mit allen 354 Ereignissen aus content/events/ (Briefe, feste Termine, Rivalen, Story-Bögen)
 - Erzeugt mit `npm run bots` (tools/botlaeufe.ts, Regeln in src/sim/bots.ts)
 
 | Strategie | Partien | Bankrottquote | Kapitelziel | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen | Ø Termine |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| vorsichtig | 1.000 | 0,0 % | 46,3 % | 62.354 $ | 17,3 % | 16.842 $ | 7,9 | 5,0 |
-| gierig | 1.000 | 17,7 % | 52,3 % | 69.653 $ | 26,5 % | 10.888 $ | 7,5 | 5,0 |
-| ausgewogen | 1.000 | 1,3 % | 68,3 % | 90.901 $ | 38,2 % | 10.664 $ | 7,9 | 5,0 |
-| zufaellig | 1.000 | 37,9 % | 0,4 % | -881 $ | 0,3 % | 24.505 $ | 7,2 | 5,0 |
+| vorsichtig | 1.000 | 0,0 % | 28,8 % | 42.899 $ | 12,2 % | 13.723 $ | 7,2 | 5,0 |
+| gierig | 1.000 | 6,2 % | 40,6 % | 54.819 $ | 26,5 % | 11.444 $ | 7,0 | 5,0 |
+| ausgewogen | 1.000 | 0,1 % | 48,0 % | 65.318 $ | 32,0 % | 11.438 $ | 7,0 | 5,0 |
+| zufaellig | 1.000 | 37,5 % | 0,0 % | -670 $ | 0,8 % | 17.102 $ | 6,9 | 5,0 |
 
 - **vorsichtig:** bohrt und kauft nur, wenn danach noch die Rücklage in der Kasse bleibt, kauft nur Optionen, deren Bonus er danach auch zahlen kann, nimmt nie selbst einen Kredit.
 - **gierig:** bohrt jede Pacht, bohrt immer tiefer (gibt auf, wenn auch ein Kredit nicht mehr reicht), pachtet die beste bezahlbare Prognose, solange Kasse und Bankrahmen reichen und höchstens so viele Pachten ungebohrt sind, wie in balance.yaml steht; leiht fehlendes Geld und behält Bargeld für den Verzögerungszins.
 - **ausgewogen (Standard-Bot):** pachtet die beste Prognose ab 40,0 % Fundchance, bohrt bis Stufe 3, behält 300 $ Rücklage und leiht, aber höchstens 50,0 % des Bankrahmens.
 - **zufällig:** wählt jede Runde einige erlaubte Aktionen per Zufall und beantwortet Ereignisse zufällig.
+- **Erkundung (Etappe 1):** Die drei planenden Bots reiten vor den Briefen übers Land (Karte „Übers Land reiten“), solange sie zu wenige bezahlbare freie Ranches mit guter Prognose kennen (balance.yaml bots.explore). Prognosen gibt es nur, wo Jacob etwas weiß.
 - **Ereignisse:** Die drei planenden Bots bewerten jede Antwort in $ (Geld, Öl, Kraft, Familie, Bahntarif, Termine; Gewichte in balance.yaml unter bots.events) und antworten, wenn das mehr bringt als liegen lassen. Den Verkauf an Crane wählt kein Bot.
 - **Kapitelziel:** Anteil der Partien, in denen die Kapitelprüfung bestanden ist (nicht bankrott und Imperiumswert ≥ 50.000 $ oder 5 fördernde Quellen, Zahlen in balance.yaml unter chapter).
-- **Siegquote:** Anteil der Seeds, in denen die Strategie den höchsten Imperiumswert hat. Eine Pleite zählt immer als letzter Platz, Gleichstand wird geteilt. Seit 2.15 gewinnt nur, wer mindestens die Startkasse (2.500 $) erreicht – sonst hat niemand gewonnen (diesmal 17,7 % der Seeds).
+- **Siegquote:** Anteil der Seeds, in denen die Strategie den höchsten Imperiumswert hat. Eine Pleite zählt immer als letzter Platz, Gleichstand wird geteilt. Seit 2.15 gewinnt nur, wer mindestens die Startkasse (2.500 $) erreicht – sonst hat niemand gewonnen (diesmal 28,5 % der Seeds).
 - **Ø Termine:** Termine je Runde zu Rundenbeginn (krank = 0).
 
 ## Transportwege
@@ -29,15 +30,15 @@ Anteil an allen verkauften Barrel (gesamt und je Strategie). Erlös = was nach F
 
 | Weg | Anteil Barrel | vorsichtig | gierig | ausgewogen | zufaellig | Ø Erlös je bbl | Ø Anlagen/Fixkosten je bbl | Ø Gewinn je bbl |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Mietfuhrwerk | 2,3 % | 0,4 % | 4,7 % | 1,1 % | 16,3 % | 0,06 $ | 0,00 $ | 0,06 $ |
-| Bahn (Thorne) | 48,4 % | 68,2 % | 33,9 % | 48,5 % | 76,0 % | 0,35 $ | 0,00 $ | 0,35 $ |
-| Eigene Fuhrwerke | 24,3 % | 15,6 % | 17,7 % | 38,9 % | 7,8 % | 0,45 $ | 0,15 $ | 0,30 $ |
-| Pipeline | 25,1 % | 15,9 % | 43,6 % | 11,5 % | 0,0 % | 0,49 $ | 0,04 $ | 0,45 $ |
-| davon an den Händler | 6,5 % | 0,0 % | 13,0 % | 4,2 % | 24,7 % | 0,57 $ | 0,03 $ | 0,54 $ |
+| Mietfuhrwerk | 2,7 % | 1,1 % | 4,7 % | 1,5 % | 20,1 % | 0,07 $ | 0,00 $ | 0,07 $ |
+| Bahn (Thorne) | 39,6 % | 50,8 % | 31,8 % | 39,6 % | 70,4 % | 0,33 $ | 0,00 $ | 0,33 $ |
+| Eigene Fuhrwerke | 19,9 % | 11,7 % | 14,3 % | 32,1 % | 9,5 % | 0,49 $ | 0,16 $ | 0,33 $ |
+| Pipeline | 37,8 % | 36,4 % | 49,2 % | 26,8 % | 0,0 % | 0,49 $ | 0,04 $ | 0,45 $ |
+| davon an den Händler | 6,3 % | 0,0 % | 12,6 % | 4,0 % | 26,8 % | 0,59 $ | 0,04 $ | 0,55 $ |
 
-Pipeline lief in: vorsichtig 20,1 % (mit Kapitelziel 43,2 %), gierig 48,5 % (mit Kapitelziel 85,9 %), ausgewogen 13,9 % (mit Kapitelziel 19,6 %), zufaellig 0,0 % (mit Kapitelziel 0,0 %).
+Pipeline lief in: vorsichtig 20,1 % (mit Kapitelziel 67,7 %), gierig 41,2 % (mit Kapitelziel 89,4 %), ausgewogen 26,8 % (mit Kapitelziel 51,0 %), zufaellig 0,0 % (mit Kapitelziel –).
 
-- **Transport-Charakter** (balance.yaml bots.transport): vorsichtig {"trader":"never","teams":"overflow","tanks":true,"pipelinePayback":2,"thorne":"exclusive","threaten":false,"guards":"always","holdShare":0,"margin":true}; gierig {"trader":"always","teams":"overflow","tanks":true,"pipelinePayback":1,"thorne":"refuse","threaten":false,"guards":"never","holdShare":0.5,"margin":false}; ausgewogen {"trader":"calc","teams":"cheaper","tanks":true,"pipelinePayback":1.5,"thorne":"calc","threaten":true,"guards":"enemies","holdShare":0,"margin":true}; zufällig: mit 15,0 % je Runde eine zufällige Anschaffung, verkauft zufällig auch an den Händler.
+- **Transport-Charakter** (balance.yaml bots.transport): vorsichtig {"trader":"never","teams":"overflow","tanks":true,"pipelinePayback":2,"thorne":"exclusive","guards":"always","holdShare":0,"margin":true}; gierig {"trader":"always","teams":"overflow","tanks":true,"pipelinePayback":1,"thorne":"refuse","guards":"never","holdShare":0.5,"margin":false}; ausgewogen {"trader":"calc","teams":"cheaper","tanks":true,"pipelinePayback":1.5,"thorne":"calc","guards":"enemies","holdShare":0,"margin":true}; zufällig: mit 15,0 % je Runde eine zufällige Anschaffung, verkauft zufällig auch an den Händler.
 
 ## Ausbau: Bohrtürme, Pumpen, weitere Bohrlöcher
 
@@ -45,14 +46,14 @@ Je Partie: Ø höchste Zahl Türme zugleich (Silas' Turm mitgezählt), Ø Quelle
 
 | Bot | Ø Bohrtürme (höchstens zugleich) | Ø Pumpen | Ø weitere Bohrlöcher | Anteil ausgebauter Quellen | Ø Imperiumswert | Bankrottquote |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| vorsichtig | 1,00 | 0,23 | 0,10 | 9,8 % | 62.354 $ | 0,0 % |
-| gierig | 1,67 | 0,50 | 1,66 | 37,5 % | 69.653 $ | 17,7 % |
-| ausgewogen | 1,00 | 0,42 | 0,34 | 17,3 % | 90.901 $ | 1,3 % |
-| zufaellig | 1,00 | 0,01 | 0,00 | 32,1 % | -881 $ | 37,9 % |
-| ausgewogen, nie ausbauen | 1,00 | 0,00 | 0,00 | 0,0 % | 76.727 $ | 0,1 % |
-| ausgewogen, alles ausbauen | 2,19 | 3,47 | 2,77 | 84,3 % | 27.263 $ | 50,3 % |
+| vorsichtig | 1,00 | 0,13 | 0,26 | 19,2 % | 42.899 $ | 0,0 % |
+| gierig | 1,45 | 0,27 | 1,08 | 41,2 % | 54.819 $ | 6,2 % |
+| ausgewogen | 1,00 | 0,24 | 0,39 | 21,3 % | 65.318 $ | 0,1 % |
+| zufaellig | 1,00 | 0,01 | 0,01 | 54,5 % | -670 $ | 37,5 % |
+| ausgewogen, nie ausbauen | 1,00 | 0,00 | 0,00 | 0,0 % | 51.725 $ | 0,2 % |
+| ausgewogen, alles ausbauen | 1,77 | 3,29 | 1,97 | 93,0 % | 31.333 $ | 21,2 % |
 
-„Alles ausbauen“ schlägt den Standard-Bot in 20,1 %, „nie ausbauen“ in 34,7 % der Seeds mit unterschiedlichem Ausgang.
+„Alles ausbauen“ schlägt den Standard-Bot in 27,5 %, „nie ausbauen“ in 33,4 % der Seeds mit unterschiedlichem Ausgang.
 
 - **Ausbau-Charakter** (balance.yaml bots.invest): vorsichtig {"pumpPayback":2,"wellPayback":3,"rigs":1,"rent":false,"steam":false,"rods":true}; gierig {"pumpPayback":2,"wellPayback":4,"rigs":2,"rent":true,"steam":true,"rods":false}; ausgewogen {"pumpPayback":3,"wellPayback":4,"rigs":1,"rent":false,"steam":true,"rods":true}.
 
@@ -63,9 +64,9 @@ Bankrottquote je Strategie, getrennt nach Seeds, in deren Welt während des Kapi
 | Strategie | Seeds mit Kreditkrise | Bankrottquote dort | Seeds ohne | Bankrottquote dort |
 | --- | ---: | ---: | ---: | ---: |
 | vorsichtig | 81 | 0,0 % | 919 | 0,0 % |
-| gierig | 81 | 16,0 % | 919 | 17,8 % |
-| ausgewogen | 81 | 2,5 % | 919 | 1,2 % |
-| zufaellig | 81 | 30,9 % | 919 | 38,5 % |
+| gierig | 81 | 11,1 % | 919 | 5,8 % |
+| ausgewogen | 81 | 0,0 % | 919 | 0,1 % |
+| zufaellig | 81 | 33,3 % | 919 | 37,9 % |
 
 ## Zeitsprung I
 
@@ -73,20 +74,20 @@ Bankrottquote je Strategie, getrennt nach Seeds, in deren Welt während des Kapi
 
 | Haltung | Sprünge | Ø Imperium | p10 | Median | p90 | Ø Schulden | pleite | Kreditkündigung | Notverkauf | Nachbarbezirk |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| wagemutig | 900 | 383.161 $ | 0 $ | 410.214 $ | 686.620 $ | 20.178 $ | 9,2 % | 23,7 % | 1,4 % | 74,2 % |
-| ausgewogen | 900 | 197.195 $ | 0 $ | 182.014 $ | 385.703 $ | 1.096 $ | 7,7 % | 10,8 % | 1,4 % | 0,0 % |
-| vorsichtig | 900 | 194.041 $ | -2.557 $ | 166.581 $ | 412.625 $ | 846 $ | 7,0 % | 5,3 % | 1,7 % | 0,0 % |
+| wagemutig | 900 | 254.000 $ | -4.722 $ | 260.540 $ | 588.636 $ | 14.024 $ | 12,2 % | 28,3 % | 1,8 % | 59,8 % |
+| ausgewogen | 900 | 117.311 $ | -4.331 $ | 91.044 $ | 282.912 $ | 1.812 $ | 9,1 % | 14,4 % | 0,8 % | 0,0 % |
+| vorsichtig | 900 | 110.871 $ | -3.958 $ | 74.795 $ | 286.408 $ | 1.447 $ | 7,3 % | 11,4 % | 1,0 % | 0,0 % |
 
 | Familie | Ø Imperium | Ø Ruth | mit Clara |
 | --- | ---: | ---: | ---: |
-| die Firma zuerst | 284.344 $ | 63 | 97,7 % |
-| wie bisher | 271.509 $ | 90 | 99,3 % |
-| viel Zeit zu Hause | 218.544 $ | 100 | 99,3 % |
+| die Firma zuerst | 175.895 $ | 64 | 96,9 % |
+| wie bisher | 169.384 $ | 90 | 97,4 % |
+| viel Zeit zu Hause | 136.903 $ | 100 | 98,4 % |
 
 | Haltung | Seeds mit Bankpanik-Weiche | Ø Pump − Tilgen | Pump schlechter | pleite Pump / Tilgen | Notverkauf Pump / Tilgen |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| wagemutig | 39 | -34.392 $ | 87,2 % | 5,1 % / 5,1 % | 5,1 % / 0,0 % |
-| ausgewogen | 39 | -4.152 $ | 43,6 % | 5,1 % / 5,1 % | 0,0 % / 0,0 % |
+| wagemutig | 40 | -4.795 $ | 77,5 % | 5,0 % / 5,0 % | 2,5 % / 2,5 % |
+| ausgewogen | 40 | -942 $ | 60,0 % | 5,0 % / 5,0 % | 2,5 % / 2,5 % |
 
 ## Zielwerte Kapitel 1
 
@@ -94,23 +95,40 @@ Toleranzbereiche stehen in balance.yaml unter bots.targets; gemessen wird in src
 
 | Kennzahl | Ziel (Quelle) | Toleranz | Ist | im Rahmen |
 | --- | --- | ---: | ---: | :---: |
-| Höchste Siegquote einer Strategie | GDD §17: keine Einzelstrategie gewinnt in mehr als 40 % | 0,0 % – 40,0 % | 38,2 % | ja |
-| Pleitequote Standard-Bot (ausgewogen) | Kapitel 1 ist der Einstieg (GDD §17: Kapitel 4 übersteht er in 55–70 %) | 0,0 % – 15,0 % | 1,3 % | ja |
-| Pleitequote gierig | GDD §15: wer im Boom zu viele Schulden macht, stirbt (Krisen erst ab Kapitel 2) | 5,0 % – 45,0 % | 17,7 % | ja |
-| Ø Imperium vorsichtig ÷ bester Ø der Mutigeren | GDD §15: wer nie Schulden macht, wird überholt (unter 1) | 0,00 – 0,95 | 0,69 | ja |
-| Kapitelziel Standard-Bot (ausgewogen) | Kapitelprüfung erreichbar, aber nicht geschenkt | 20,0 % – 70,0 % | 68,3 % | ja |
-| Kleine Funde mit 50–500 bbl/Tag | GDD §15: Anfangsrate 50–500 bbl/Tag | 90,0 % – 100,0 % | 99,3 % | ja |
-| Ø Anfangsrate Gusher ÷ kleiner Fund | GDD §15: Gusher deutlich mehr | 2,00 – 20,00 | 5,06 | ja |
-| Gemessener Rückgang je Quartal | GDD §15: 8–15 % | 8,0 % – 15,0 % | 14,5 % | ja |
-| Trefferquote blinde Wildcat-Bohrung (Randlage, 300 m) | GDD §15: etwa 1 von 5 bis 1 von 10 | 5,0 % – 25,0 % | 21,2 % | ja |
+| Höchste Siegquote einer Strategie | GDD §17: keine Einzelstrategie gewinnt in mehr als 40 % | 0,0 % – 40,0 % | 32,0 % | ja |
+| Pleitequote Standard-Bot (ausgewogen) | Kapitel 1 ist der Einstieg (GDD §17: Kapitel 4 übersteht er in 55–70 %) | 0,0 % – 15,0 % | 0,1 % | ja |
+| Pleitequote gierig | GDD §15: wer im Boom zu viele Schulden macht, stirbt (Krisen erst ab Kapitel 2) | 5,0 % – 45,0 % | 6,2 % | ja |
+| Ø Imperium vorsichtig ÷ bester Ø der Mutigeren | GDD §15: wer nie Schulden macht, wird überholt (unter 1) | 0,00 – 0,95 | 0,66 | ja |
+| Kapitelziel Standard-Bot (ausgewogen) | Kapitelprüfung erreichbar, aber nicht geschenkt | 20,0 % – 70,0 % | 48,0 % | ja |
+| Kleine Funde mit 50–500 bbl/Tag | GDD §15: Anfangsrate 50–500 bbl/Tag | 90,0 % – 100,0 % | 99,6 % | ja |
+| Ø Anfangsrate Gusher ÷ kleiner Fund | GDD §15: Gusher deutlich mehr | 2,00 – 20,00 | 4,96 | ja |
+| Gemessener Rückgang je Quartal | GDD §15: 8–15 % | 8,0 % – 15,0 % | 11,8 % | ja |
+| Trefferquote blinde Wildcat-Bohrung (Randlage, 300 m) | GDD §15: etwa 1 von 5 bis 1 von 10 | 5,0 % – 25,0 % | 14,5 % | ja |
 | Ø Termine je Runde (Standard-Bot) | GDD §15: 5 je Quartal | 4,50 – 5,00 | 5,00 | ja |
-| Höchster Anteil eines Transportwegs an allen verkauften Barrel | GDD §6: kein Weg dominiert, jeder hat seinen Preis | 0,0 % – 75,0 % | 48,4 % | ja |
-| Partien mit Kapitelziel, in denen eine Pipeline läuft | Pipeline ist eine Wahl, kein Pflichtweg | 0,0 % – 60,0 % | 46,9 % | ja |
-| Ausgebaute Quellen (Pumpe oder weiteres Bohrloch), planende Bots | Ausbau lohnt für gute Quellen, nicht für jede | 5,0 % – 70,0 % | 22,7 % | ja |
-| Ø Imperium Standard-Bot ÷ derselbe Bot ohne Ausbau | Investitionen in gute Quellen zahlen sich aus (über 1) | 1,02 – 10,00 | 1,18 | ja |
-| Seeds, in denen „alles ausbauen“ den Standard-Bot schlägt | Blind alles ausbauen ist keine Siegformel | 0,0 % – 50,0 % | 20,1 % | ja |
+| Höchster Anteil eines Transportwegs an allen verkauften Barrel | GDD §6: kein Weg dominiert, jeder hat seinen Preis | 0,0 % – 75,0 % | 39,6 % | ja |
+| Partien mit Kapitelziel, in denen eine Pipeline läuft | Pipeline ist eine Wahl, kein Pflichtweg | 0,0 % – 70,0 % | 68,4 % | ja |
+| Ausgebaute Quellen (Pumpe oder weiteres Bohrloch), planende Bots | Ausbau lohnt für gute Quellen, nicht für jede | 5,0 % – 70,0 % | 28,0 % | ja |
+| Ø Imperium Standard-Bot ÷ derselbe Bot ohne Ausbau | Investitionen in gute Quellen zahlen sich aus (über 1) | 1,02 – 10,00 | 1,26 | ja |
+| Seeds, in denen „alles ausbauen“ den Standard-Bot schlägt | Blind alles ausbauen ist keine Siegformel | 0,0 % – 50,0 % | 27,5 % | ja |
 
 <!-- Ab hier von Hand geschrieben: npm run bots lässt den Rest stehen. -->
+
+## Termine als Hauptwerkzeug, Etappe 2 (Zweig feature/termine-etappe2)
+
+Preis- und Transport-Aktionen auf dem Planungsbrett, der Preis rechnet in Kapitel 1 mit Jacobs Verkauf statt seiner Förderung, die alte Drohung mit der Pipeline entfällt. Abnahme und alle Abweichungen vom Plan: `docs/plan-termine-messung.md` (Abschnitt Etappe 2).
+
+- **Ergebnis:** alle 15 Zielwerte im Rahmen, keiner nachgezogen. Kapitelziel ausgewogen 48,7 → 50,0 %, Ø Imperium ausgewogen 61.940 → 69.140 $, gierig 44.820 → 59.968 $ (er hält bei steigendem Preis die Hälfte zurück – das hebt jetzt den Preis), Pleitequote gierig 12,7 → 7,8 %.
+- **Bots:** Welche Preis- und Fracht-Karten ein Bot spielt, steht in `bots.plans`. Voreingestellt spricht nur der Standard-Bot bei Thorne vor (Ersatz für `threaten`); die übrigen Karten schaltet die Messung `tools/termineMessung2.ts` an. Charaktere je Strategie: Etappe 4.
+- **Thorne:** Mit Widerstand-Grundwert 2 (Planwert) lag „Pipeline in Partien mit Kapitelziel“ bei 68,3 % (Thorne gab kaum nach); mit Grundwert 1 bei 64,3 %.
+
+## Termine als Hauptwerkzeug, Etappe 1 (Zweig feature/termine)
+
+Verdeckte Fundchance je Ranch mit Salzrücken, Erkundung über das Planungsbrett, keine Gratis-Prognosen mehr. Abnahme und alle Abweichungen vom Plan: `docs/plan-termine-messung.md`. Philipp war krank, darum ohne Rückfrage entschieden.
+
+- **Ergebnis:** alle 15 Zielwerte im Rahmen. Kapitel 1 ist schwerer: Kapitelziel ausgewogen 68,3 % → 48,7 %, Ø Imperium 90.901 → 61.940 $, Pleitequote gierig 17,7 → 12,7 %, blinde Wildcat-Bohrung 21,2 → 14,5 %, Rückgang 14,5 → 11,8 %.
+- **Nachgezogen:** „Pipeline in Partien mit Kapitelziel“ ≤ 60 % → ≤ 65 % (Ist 62,6 %): Die erfolgreichen Partien sind jetzt die großen Förderer; über alle Partien der planenden Bots zusammen läuft die Pipeline nicht öfter. Geprüft und verworfen: gieriger Bot baut die Pipeline erst bei doppelter Ersparnis (dann schafft er seltener das Ziel, der Anteil blieb bei 60 %).
+- **Bullard** ahnt die Hälfte der Wahrheit (`rivals.bullard.insight`), sonst bohrte er mit reinem Zonenwissen nur noch 3,8 statt 7,9 Quellen (jetzt 7,1).
+
 
 ## Frühes Öl (nach 0.4.4)
 

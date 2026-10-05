@@ -10,6 +10,8 @@ import { empireValue } from './empire';
 import { timedEffect } from './events';
 import type { GameState } from './game';
 import { fuelPremium } from './ventures';
+// Termine als Hauptwerkzeug, Etappe 2: Preis-Aktionen (Abschlag, Handel, Abnahmevertrag) und Transport-Aktionen (Thorne).
+import { activeContract, contractGrudge, cutCleared, dealBonus, punishCut } from './pricing';
 
 /**
  * Merkzeichen der Rivalen. Die meisten setzt eine Wahl in content/events/,
@@ -52,7 +54,7 @@ function cents(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-type Lage = Pick<GameState, 'round'> & Partial<Pick<GameState, 'events' | 'logistics' | 'ventures'>>;
+type Lage = Pick<GameState, 'round'> & Partial<Pick<GameState, 'events' | 'logistics' | 'ventures' | 'pricing' | 'freight'>>;
 
 /**
  * Posted-Price-Druck (GDD §9.4): Hat Jacob den Abschlag hingenommen (Runde r),
@@ -62,7 +64,7 @@ type Lage = Pick<GameState, 'round'> & Partial<Pick<GameState, 'events' | 'logis
 export function cartelCut(state: Lage, balance: Balance): number {
   const r = markRound(state, RIVAL_MARKS.craneCut);
   const { priceCut, cutRounds, allianceFactor } = balance.rivals.crane;
-  if (r === undefined || state.round <= r || state.round > r + cutRounds) return 0;
+  if (r === undefined || state.round <= r || state.round > r + cutRounds || cutCleared(state, r)) return 0;
   const faktor = markRound(state, RIVAL_MARKS.alliance) !== undefined ? allianceFactor : 1;
   return cents(priceCut * faktor);
 }
@@ -74,12 +76,16 @@ export function cartelCut(state: Lage, balance: Balance): number {
 export function grudgeCut(state: Lage, balance: Balance): number {
   const h = state.logistics?.traderLast ?? 0;
   const { grudgeCut: cut, grudgeRounds } = balance.transport.trader;
-  return h > 0 && state.round > h && state.round <= h + grudgeRounds ? cut : 0;
+  return h > 0 && state.round > h && state.round <= h + grudgeRounds && !cutCleared(state, h) ? cut : 0;
 }
 
-/** Alles, was der Trust Jacob je Barrel abzieht: Abschlag (2.8) plus Groll (0.2.15+2). */
+/**
+ * Alles, was der Trust Jacob je Barrel abzieht: Abschlag (2.8) plus Groll (0.2.15+2), seit
+ * Etappe 2 dazu Cranes Abschlag aus den Preis-Aktionen (zu hoher Preis, Gerücht, Abfuhr); der
+ * Groll wegen eines Händlervertrags zählt nicht doppelt.
+ */
 export function craneCut(state: Lage, balance: Balance): number {
-  return cents(cartelCut(state, balance) + grudgeCut(state, balance));
+  return cents(cartelCut(state, balance) + Math.max(grudgeCut(state, balance), contractGrudge(state, balance)) + punishCut(state));
 }
 
 /** Runden, die der Abschlag noch gilt (diese mitgezählt); 0 = keiner. */
@@ -98,38 +104,51 @@ export function jacobPrice(
   state: Lage & Pick<GameState, 'postedPrice'>,
   balance: Balance,
 ): number {
-  return Math.max(0, cents(state.postedPrice - craneCut(state, balance) + timedEffect(state, 'price') + fuelPremium(state, balance)));
+  // Etappe 2: Ein fester Abnahmevertrag mit Crane ersetzt Posted Price und Abschläge; ein Handel bringt einen Aufschlag.
+  const vertrag = activeContract(state, 'crane');
+  const basis = vertrag ? vertrag.price : state.postedPrice - craneCut(state, balance);
+  return Math.max(0, cents(basis + dealBonus(state) + timedEffect(state, 'price') + fuelPremium(state, balance)));
 }
 
 /**
  * Frachtvertrag (Runde r): In den Runden r … r+contractRounds−1 erhöht Thorne
  * den Tarif nicht.
  */
-export function railFrozen(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'events'>>, balance: Balance): boolean {
-  const r = markRound(state, RIVAL_MARKS.thorneContract);
-  return r !== undefined && state.round >= r && state.round < r + balance.rivals.thorne.contractRounds;
+export function railFrozen(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'events' | 'freight'>>, balance: Balance): boolean {
+  // Etappe 2: Nach einem Zugeständnis beim Vorsprechen (freezeUntil) erhöht Thorne ebenfalls nicht.
+  if ((state.freight?.freezeUntil ?? 0) >= state.round) return true;
+  return contractActive(state, balance, RIVAL_MARKS.thorneContract);
 }
 
-/** Chance je Runde mit Bahnfracht, dass Thorne erhöht: nach einer Absage × refusedHikeFactor (höchstens 1). */
-export function hikeChance(state: Partial<Pick<GameState, 'events'>>, balance: Balance): number {
+/**
+ * Chance je Runde mit Bahnfracht, dass Thorne erhöht: nach einer Absage × refusedHikeFactor,
+ * nach einer Abfuhr beim Vorsprechen oder einem erwischten Bluff (Etappe 2) befristet ×
+ * transport.negotiation.rebuff.factor – nicht beides zusammen, höchstens 1.
+ */
+export function hikeChance(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'events' | 'freight'>>, balance: Balance): number {
   const base = balance.transport.thorne.hikeChance;
-  const refused = markRound(state, RIVAL_MARKS.thorneRefused) !== undefined;
-  return Math.min(1, refused ? base * balance.rivals.thorne.refusedHikeFactor : base);
+  const refused = markRound(state, RIVAL_MARKS.thorneRefused) !== undefined ? balance.rivals.thorne.refusedHikeFactor : 1;
+  const abfuhr = (state.freight?.hikeDoubleUntil ?? 0) >= state.round ? balance.freight.rebuff.factor : 1;
+  return Math.min(1, base * Math.max(refused, abfuhr));
 }
 
-/** Läuft gerade ein Vertrag dieser Art (Runde r … r+contractRounds−1)? */
-function contractActive(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'events'>>, balance: Balance, mark: string): boolean {
+/**
+ * Läuft gerade ein Vertrag dieser Art (Runde r … r+contractRounds−1)? Hat Jacob den
+ * Exklusivvertrag gekündigt (Etappe 2), gilt nichts mehr, was davor unterschrieben wurde.
+ */
+function contractActive(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'events' | 'freight'>>, balance: Balance, mark: string): boolean {
   const r = markRound(state, mark);
+  if (r !== undefined && (state.freight?.exclusiveEnded ?? 0) >= r) return false;
   return r !== undefined && state.round >= r && state.round < r + balance.rivals.thorne.contractRounds;
 }
 
 /** Exklusivvertrag (0.2.15+2): Tarif fest, jeder Barrel über einen anderen Weg kostet exclusivePenalty. */
-export function exclusiveActive(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'events'>>, balance: Balance): boolean {
+export function exclusiveActive(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'events' | 'freight'>>, balance: Balance): boolean {
   return contractActive(state, balance, RIVAL_MARKS.thorneExclusive);
 }
 
 /** Mengenrabatt (0.2.15+2): Bahntarif minus volumeDiscount, solange der Vertrag läuft. */
-export function volumeDealActive(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'events'>>, balance: Balance): boolean {
+export function volumeDealActive(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'events' | 'freight'>>, balance: Balance): boolean {
   return contractActive(state, balance, RIVAL_MARKS.thorneVolume);
 }
 

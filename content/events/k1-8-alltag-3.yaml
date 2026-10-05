@@ -4,23 +4,24 @@
 
 # --- Stadt -------------------------------------------------------------------
 
+# Etappe 3: Antwort auf Thornes Abfuhr beim Vorsprechen (Merkzeichen thorne_abfuhr aus src/sim/letters.ts).
 - id: geruecht_tarif
   mail: info
-  group: geruecht
+  marked: [thorne_abfuhr]
+  rival: thorne
   title:
     de: Thorne erhöht bald den Tarif
     en: Thorne Will Raise the Tariff Soon
   text:
     de: >-
       Ein Bahnbeamter, dem Jacob einmal einen Whiskey ausgegeben hat, schreibt
-      in Eile: In Hallstead liege ein neuer Tarif für Cordova auf Thornes Tisch.
-      Wer noch zum alten Preis verladen wolle, müsse sich beeilen.
+      in Eile: Nach Jacobs Besuch liege in Hallstead ein neuer Tarif für Cordova auf
+      Thornes Tisch. Wer noch zum alten Preis verladen wolle, müsse sich beeilen.
     en: >-
-      A railway clerk Jacob once stood a whiskey writes in haste: in Hallstead a new
-      tariff for Cordova is lying on Thorne's desk. Anyone who wants to ship at the
-      old price had better hurry.
-  conditions: { minRound: 3 }
-  chance: 0.1
+      A railway clerk Jacob once stood a whiskey writes in haste: since Jacob's visit
+      a new tariff for Cordova has been lying on Thorne's desk in Hallstead. Anyone
+      who wants to ship at the old price had better hurry.
+  chance: 0.5
   choices:
     - id: danken
       label: { de: "Dem Beamten 20 $ als Dank schicken", en: "Send the clerk 20 $ as thanks" }
@@ -33,115 +34,36 @@
     - id: lesen
       label: { de: "Zur Kenntnis nehmen", en: "Take note" }
       result:
-        de: Jacob rechnet nach, was ein Cent mehr je Barrel kostet. Es ist mehr, als er dachte.
-        en: Jacob works out what one cent more a barrel will cost him. It's more than he thought.
+        de: Jacob rechnet nach, was ein Cent mehr je Barrel kostet. Es ist mehr, als er dachte – und der neue Tarif kommt.
+        en: Jacob works out what one cent more a barrel will cost him. It's more than he thought – and the new tariff comes.
+      effects: { railTariff: 0.01 }
       appointments: 0
       default: true
 
-- id: prediger
-  visitor: prediger
-  title:
-    de: Der Prediger vom Hafen
-    en: The Preacher from the Harbour
-  text:
-    de: >-
-      Bruder Abel predigt jeden Abend am Hafen gegen Whiskey, Karten und Öl,
-      „den Schweiß des Teufels“. Jetzt steht er vor Jacobs Tür. Er will eine
-      Kirche bauen, aus Brettern, für die Bohrarbeiter. Und er nimmt Spenden
-      auch vom Teufel.
-    en: >-
-      Brother Abel preaches every evening at the harbour against whiskey, cards and
-      oil, "the devil's sweat". Now he's standing at Jacob's door. He wants to build
-      a church, of planks, for the drillers. And he takes donations even from the devil.
-  conditions: { minRound: 3 }
-  chance: 0.08
-  choices:
-    - id: spenden
-      public: [charity]
-      label: { de: "100 $ für die Bretterkirche", en: "100 $ for the plank church" }
-      result:
-        de: "Bruder Abel nennt Jacobs Namen am Sonntag von der Kanzel. Ruth sitzt in der ersten Reihe und tut, als höre sie es nicht. Die Bohrarbeiter sitzen sonntags in Jacobs Kirche und montags pünktlich am Turm."
-        en: "On Sunday Brother Abel names Jacob from the pulpit. Ruth sits in the front row and pretends not to hear. The drillers sit in Jacob's church on Sundays and at the derrick on time on Mondays."
-      requires: { minCash: 100 }
-      effects: { cash: -100, ruth: 5, production: 0.05 }
-    - id: bretter
-      label: { de: "Bretter vom alten Turm geben", en: "Give him planks from the old derrick" }
-      result:
-        de: Die Kirche riecht nach Öl. Bruder Abel predigt trotzdem darin.
-        en: The church smells of oil. Brother Abel preaches in it anyway.
-      appointments: 0
-    - id: tuer
-      label: { de: "Die Tür zumachen", en: "Close the door" }
-      result:
-        de: "Am Abend predigt Bruder Abel am Hafen über Männer, die ihre Türen zumachen. Ein paar von Jacobs Männern hören ihm zu und kommen montags später."
-        en: "That evening Brother Abel preaches at the harbour about men who close their doors. A few of Jacob's men listen and turn up later on Mondays."
-      effects: { production: -0.05 }
-      appointments: 0
-      default: true
-
-- id: sheriff_schutz
-  visitor: sheriff
-  draft: true                # Schlüsselszene: erste Begegnung mit der käuflichen Ordnung Cordovas
-  title:
-    de: Der Sheriff bietet Schutz an
-    en: The Sheriff Offers Protection
-  text:
-    de: >-
-      Sheriff Boyd Tatum setzt sich, ohne zu fragen, und legt die Stiefel auf
-      Jacobs Kiste. In Salt Hill werde viel gestohlen, sagt er. Öl, Werkzeug,
-      manchmal ein ganzer Turm. Für 50 $ im Monat schaue er bei Jacob öfter vorbei.
-    en: >-
-      Sheriff Boyd Tatum sits down without asking and puts his boots on Jacob's
-      crate. A lot gets stolen on Salt Hill, he says. Oil, tools, sometimes a whole
-      derrick. For 50 $ a month he'll look in on Jacob more often.
-  conditions: { minLeases: 1, minRound: 4 }
-  chance: 0.1
-  choices:
-    - id: zahlen
-      label: { de: "Zahlen (50 $)", en: "Pay (50 $)" }
-      result:
-        de: Tatum steckt das Geld ein, ohne es zu zählen. Er kommt wirklich öfter vorbei – meistens zum Essen.
-        en: Tatum pockets the money without counting it. He really does look in more often – mostly at mealtimes.
-      requires: { minCash: 50 }
-      effects: { cash: -50 }
-      appointments: 0
-      marks: [sheriff_bezahlt]
-    - id: eigene_wache
-      label: { de: "Lieber einen eigenen Nachtwächter anstellen (70 $)", en: "Hire your own night watchman instead (70 $)" }
-      result:
-        de: "Der Nachtwächter ist ein Veteran mit einer Schrotflinte und einem Hund. Tatum sieht das gar nicht gern. Seitdem schleicht nachts niemand mehr um den Tank."
-        en: "The watchman is a veteran with a shotgun and a dog. Tatum doesn't like it one bit. Since then nobody creeps round the tank at night."
-      requires: { minCash: 70 }
-      effects: { cash: -70 }
-      marks: [sheriff_umgangen]
-    - id: ablehnen
-      label: { de: "Höflich ablehnen", en: "Decline politely" }
-      result:
-        de: Tatum nimmt die Stiefel von der Kiste. In der Woche darauf fehlen zwei Fässer und eine Rolle Seil.
-        en: Tatum takes his boots off the crate. The week after, two barrels and a coil of rope go missing.
-      effects: { oilStock: -60, cash: -40 }
-      appointments: 0
-      default: true
-
+# Etappe 3: Nora kommt, wenn Jacob ein Gerücht gestreut hat (geruecht_gestreut). Das Angebot des Couriers
+# („freundlicher Bericht“) ist hier hineingelegt.
 - id: nora_interview
   visitor: nora
   draft: true                # Schlüsselszene: Noras erstes Gespräch mit Jacob (Weltbibel: sie verfolgt seinen Aufstieg)
+  marked: [geruecht_gestreut]
   title:
     de: Nora Whitlock will ein Gespräch
     en: Nora Whitlock Wants an Interview
   text:
     de: >-
-      Nora Whitlock vom Port Ellis Courier hat ein Notizbuch und keine Eile. Sie
-      schreibt eine Reihe über „die neuen Männer vom Salt Hill“. Ob Jacob ihr
-      erzählen wolle, woher er kommt. Und was die neuen Männer den Farmern für
-      ihr Land zahlen.
+      Nora Whitlock vom Port Ellis Courier hat ein Notizbuch und keine Eile. Am
+      Hafen redet man über das, was Jacob in Umlauf gebracht hat, und sie will
+      wissen, was daran stimmt. Sie schreibt eine Reihe über „die neuen Männer vom
+      Salt Hill“. Ob Jacob ihr erzählen wolle, woher er kommt. Redakteur Bixby lässt
+      ausrichten, ein freundlicher „Bericht“ auf Seite zwei koste 120 $.
     en: >-
-      Nora Whitlock of the Port Ellis Courier has a notebook and no hurry. She's
-      writing a series on "the new men of Salt Hill". Would Jacob tell her where he
-      comes from? And what the new men pay the farmers for their land?
-  conditions: { minRound: 5 }
+      Nora Whitlock of the Port Ellis Courier has a notebook and no hurry. At the
+      harbour they are talking about what Jacob put about, and she wants to know
+      what's true in it. She's writing a series on "the new men of Salt Hill". Would
+      Jacob tell her where he comes from? Editor Bixby sends word that a friendly
+      "report" on page two costs 120 $.
   notMarked: [nora_bestechung]
-  chance: 0.1
+  chance: 0.5
   choices:
     - id: erzaehlen
       public: [press_praise]
@@ -157,6 +79,15 @@
         de: Nora schreibt Barrel und Dollar mit und klappt das Notizbuch zu. „Sie sind vorsichtig, Mr. Harlan. Das merke ich mir.“
         en: Nora notes barrels and dollars and snaps the notebook shut. "You're careful, Mr. Harlan. I'll remember that."
       marks: [nora_interview]
+    - id: bericht
+      public: [press_praise]
+      label: { de: "Lieber Bixby den Bericht abkaufen (120 $)", en: "Buy Bixby's report instead (120 $)" }
+      result:
+        de: "Auf Seite zwei steht, Jacob sei „ein Mann der Zukunft“. Nora Whitlock hat den Artikel ausgeschnitten und in ihr Notizbuch geklebt. Die Farmer am Hügel lesen ihn auch und verpachten an Jacob eine Weile billiger."
+        en: "Page two says Jacob is \"a man of the future\". Nora Whitlock has clipped the article and pasted it into her notebook. The farmers on the hill read it too and for a while lease to Jacob cheaper."
+      requires: { minCash: 120 }
+      effects: { cash: -120, leaseCost: -0.15 }
+      marks: [courier_gekauft]
     - id: keine_zeit
       label: { de: "Keine Zeit", en: "No time" }
       result:
@@ -165,72 +96,6 @@
       appointments: 0
       default: true
       marks: [nora_kein_gespraech]
-
-- id: poker
-  once: false
-  cooldown: 5
-  title:
-    de: Eine Pokerrunde im Gilded Lamp
-    en: A Poker Game at the Gilded Lamp
-  text:
-    de: >-
-      Am Hinterzimmertisch im Gilded Lamp sitzen drei Bohrmeister, ein Pachtmakler
-      und ein Mann aus Bullards Lohnbüro. Ein Stuhl ist frei. Man spielt um Geld
-      und redet über Pachten.
-    en: >-
-      At the back-room table of the Gilded Lamp sit three drillers, a lease broker
-      and a man from Bullard's pay office. One chair is empty. They play for money
-      and talk about leases.
-  conditions: { minRound: 2, minCash: 300 }
-  chance: 0.07
-  choices:
-    - id: spielen
-      label: { de: "Mitspielen und zuhören (100 $ Einsatz)", en: "Sit in and listen (100 $ stake)" }
-      result:
-        de: "Jacob verliert das Geld bis zum letzten Dollar und erfährt, welche Parzellen Bullard als Nächstes will – und welche Farmer verkaufen müssen."
-        en: "Jacob loses the money down to the last dollar and learns which parcels Bullard wants next – and which farmers must sell."
-      requires: { minCash: 100 }
-      effects: { cash: -100, strength: -2, leaseCost: -0.2 }
-    - id: heim
-      label: { de: "Nach Hause zu Ruth", en: "Go home to Ruth" }
-      result:
-        de: Ruth sieht auf, als Jacob so früh kommt, und legt die Flickarbeit weg.
-        en: Ruth looks up when Jacob comes home so early and puts her mending aside.
-      effects: { ruth: 4 }
-      appointments: 0
-      default: true
-
-- id: kumpel
-  title:
-    de: Ein Kumpel aus der Grube
-    en: A Mate from the Pit
-  text:
-    de: >-
-      Vor der Pension steht Dan Kerrigan, mit dem Jacob als Junge in der Grube
-      gearbeitet hat. Er hustet wie Jacobs Vater. Er habe gehört, Jacob sei jetzt
-      ein Ölmann. Er brauche Arbeit, egal welche.
-    en: >-
-      Outside the boarding house stands Dan Kerrigan, who worked the pit with Jacob
-      as a boy. He coughs like Jacob's father. He heard Jacob was an oil man now. He
-      needs work, any work.
-  conditions: { minRound: 3 }
-  chance: 0.08
-  choices:
-    - id: einstellen
-      label: { de: "Ihn in den Trupp nehmen (60 $ Vorschuss)", en: "Take him onto the crew (60 $ advance)" }
-      result:
-        de: Dan schuftet für zwei und hustet für drei. Abends erzählen sie sich von der Grube und lachen, obwohl nichts daran lustig war.
-        en: Dan works for two and coughs for three. In the evenings they tell each other about the pit and laugh, though none of it was funny.
-      requires: { minCash: 60 }
-      effects: { cash: -60, strength: 3 }
-      marks: [kerrigan_eingestellt]
-    - id: nein
-      label: { de: "Kein Platz im Trupp", en: "No room on the crew" }
-      result:
-        de: Dan nickt, als hätte er es gewusst. Eine Woche später arbeitet er für Bullard.
-        en: Dan nods as if he'd known. A week later he's working for Bullard.
-      appointments: 0
-      default: true
 
 - id: fieber
   draft: true                # Schlüsselszene: Fieber in Port Ellis, Ruth und das Kind in Gefahr
@@ -276,6 +141,7 @@
 
 - id: thomas_nacht
   conditions: { maxThomasAge: 3 }   # 4.5: Kleinkind-Nächte – nicht mit einem Zehnjährigen in Kapitel 2
+  group: thomas                     # Etappe 3: Thomas-Ereignisse höchstens einmal in 4 Runden („Thomas bellt wie ein Hund“ ist gestrichen)
   once: false
   cooldown: 4
   marked: [thomas_geboren]
@@ -311,6 +177,8 @@
 
 - id: thomas_wort
   conditions: { maxThomasAge: 3 }   # 4.5: das erste Wort kommt in den ersten Jahren, nicht in Kapitel 2
+  group: thomas
+  cooldown: 4
   draft: true                # Schlüsselszene: Thomas' erstes Wort – war Jacob dabei?
   marked: [thomas_geboren]
   delay: 6

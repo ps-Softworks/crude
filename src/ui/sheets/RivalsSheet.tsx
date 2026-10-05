@@ -2,6 +2,7 @@
 // kleinen Wildcatter – die Zahlen, die früher in der Statuszeile standen.
 
 import { wildcatterWells } from '../../sim/wildcatters';
+import { pricingView } from '../../sim/pricing'; // Etappe 2: Förderbremse und Ruf bei den Wildcattern
 import { balance } from '../balance';
 import { money } from '../format';
 import type { SheetContext } from './types';
@@ -60,11 +61,43 @@ function Revier({ ctx }: { ctx: SheetContext }) {
             {game.wildcatters.firms.map((f) => (
               <li key={f.name}>
                 {f.name}: {f.wells} {f.wells === 1 ? 'Quelle' : 'Quellen'}
+                {pricingView(game).cartel?.members.includes(f.name) && ' · in der Förderbremse'}
               </li>
             ))}
           </ul>
+          <Foerderbremse game={game} />
         </>
       )}
+    </>
+  );
+}
+
+/** Förderbremse und Ruf bei den Wildcattern (Etappe 2) – alles aus pricingView. */
+function Foerderbremse({ game }: { game: GameState }) {
+  const v = pricingView(game);
+  const c = v.cartel;
+  return (
+    <>
+      <p className="klein">Jacobs Ruf bei den Wildcattern: {v.standingWord}.</p>
+      {c ? (
+        <>
+          <h3>Förderbremse</h3>
+          <ul className="pinnwand-liste klein">
+            <li>
+              Mitglieder: {c.members.join(', ')} – {Math.round(c.share * 100)} % der Nachbarquellen drosseln
+            </li>
+            <li>
+              Jacob drosselt {Math.round(c.jacobCut * 100)} % · noch {c.roundsLeft} {c.roundsLeft === 1 ? 'Runde' : 'Runden'} ·{' '}
+              Bullard {c.bullard === 'in' ? 'macht mit' : c.bullard === 'out' ? 'bleibt draußen' : 'ist noch nicht gefragt'}
+            </li>
+            <li>{c.held ? 'Diese Runde gehalten.' : 'Diese Runde noch nicht gehalten – die Versuchung wächst.'}</li>
+            {c.gossip && <li>Gerede: {c.gossip}</li>}
+            {v.lastEffect !== null && <li>Wirkung auf den Preis dieser Runde: {v.lastEffect >= 0 ? '+' : ''}{Math.round(v.lastEffect * 100)} %</li>}
+          </ul>
+        </>
+      ) : v.banRounds > 0 ? (
+        <p className="klein">Nach dem letzten Pakt will noch {v.banRounds} {v.banRounds === 1 ? 'Runde' : 'Runden'} niemand von einer Förderbremse hören.</p>
+      ) : null}
     </>
   );
 }

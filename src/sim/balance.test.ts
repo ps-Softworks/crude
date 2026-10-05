@@ -9,11 +9,14 @@ describe('Spielzahlen (balance.yaml)', () => {
     expect(balance.start.rounds).toBe(16);
   });
 
-  it('meldet Zonen, deren Wahrscheinlichkeiten nicht 1 ergeben', () => {
-    const raw = structuredClone(loadBalance()) as unknown as { geology: { zones: { dry: number }[] } };
-    raw.geology.zones[0].dry = 0.9;
+  it('meldet Zonen mit Grundwert außerhalb von 0–1 und Salzrücken mit qMin über qMax (Etappe 1)', () => {
+    const raw = structuredClone(loadBalance()) as unknown as { geology: { zones: { base: number }[] } };
+    raw.geology.zones[0].base = 1.2;
     expect(() => parseBalance(raw)).toThrow(BalanceError);
-    expect(() => parseBalance(raw)).toThrow(/ergibt .* statt 1/);
+    expect(() => parseBalance(raw)).toThrow(/"base" muss zwischen 0 und 1/);
+    const raw2 = structuredClone(loadBalance()) as unknown as { geology: { trends: { qMin: number; qMax: number } } };
+    raw2.geology.trends.qMin = 0.9;
+    expect(() => parseBalance(raw2)).toThrow(/qMin" ist größer/);
   });
 
   it('meldet fehlende Zahlen mit ihrem Namen', () => {

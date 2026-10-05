@@ -125,21 +125,38 @@ Kurzreferenz der Felder:
   macht Varianten eines wiederkehrenden Ereignisses (z. B. drei Bohrpannen): Nach einer Variante kommt
   keine aus derselben Gruppe, bis der Abstand um ist. `draft: true` markiert eine Schlüsselszene als
   Entwurf – ändert nichts am Spiel, `npm run check:content` listet sie auf.
-- Alltag (2.10a): `k1-8-alltag-1.yaml` (Bohrstelle), `-2` (Geschäft), `-3` (Menschen) – je 10 Ereignisse.
-- Alltag (2.10b): `-4` (Rivalen und Bank, 13), `-5` (Arbeiter und Unglücke, 13), `-6` (Familie, Presse,
-  Politik in Cordova, 11) – zusammen 67 Alltagsereignisse. Viele greifen Merkzeichen aus Teil 1 auf
-  (Kerrigan, Eli, Sheriff, Nora, Ruths Bücher); die Liste steht oben in jeder Datei.
+- Alltag (2.10a): `k1-8-alltag-1.yaml` (Bohrstelle), `-2` (Geschäft), `-3` (Menschen).
+- Alltag (2.10b): `-4` (Rivalen und Bank), `-5` (Arbeiter und Unglücke), `-6` (Familie, Presse,
+  Politik in Cordova). Ursprünglich 67 Alltagsereignisse, seit Etappe 3 noch 42. Viele greifen Merkzeichen
+  aus Teil 1 auf (Kerrigan, Eli, Sheriff, Nora, Ruths Bücher); die Liste steht oben in jeder Datei.
 - Gewürfelt wird in zufälliger Reihenfolge (seit 2.10b – vorher hatten Dateien vorn im Alphabet
   Vorrang), höchstens `events.maxPerRound` (balance.yaml) neue je Runde. Was sicher kommen muss,
   bekommt `certain: true` (z. B. die Geburt von Thomas).
-- Transport (0.2.15+2): `k1-9-transport.yaml` – Streik/Bestechung eigener Fuhrleute, Wegerechte für die
+- Transport (0.2.15+2): `k1-9-transport.yaml` – Streik eigener Fuhrleute, Bestechung von Brennans Fuhrleuten (Etappe 3), Wegerechte für die
   Pipeline. Merkzeichen der Simulation: `fuhrleute_eigen`, `pipeline_geplant`, `pipeline_gebaut`, `haendler_kunde`.
 - Wirkung (0.2.15+3): `npm run check:events` (`-- --alle` für alle) bewertet jede Antwort und meldet
   schwache: Wirkung unter 2 % des Kapitel-Gelds (balance.yaml `events.relevance`, 200 $), keine dauerhafte
   Folge, kein Merkzeichen, das später etwas abfragt. Eine einzelne schwache Antwort neben einer starken
   ist das „Gegenstück“ und erlaubt. Merkzeichen für spätere Kapitel: `content/relevance.yaml` (mit Grund).
-  Neue Folgen früher folgenloser Merkzeichen: `bullard_rache_folge`, `kerrigan_zusammenbruch`,
-  `wegerecht_moss_versoehnt`; Schutz durch `notMarked` (Diebe, Seil, Streik, Lohn, Schlamm, Lager).
+  Neue Folgen früher folgenloser Merkzeichen: `kerrigan_zusammenbruch`, `wegerecht_moss_versoehnt`
+  (Bullards Rache steckt seit Etappe 3 direkt in „Das Seil ist angeschnitten“); Schutz durch `notMarked`
+  (Diebe, Seil).
+- Gekoppelte Briefe (Termine als Hauptwerkzeug, Etappe 3, nur Kapitel 1): Briefe und Ereignisse sind
+  ausgedünnt (123 → 92) und hängen, wo es geht, an Jacobs Plänen. Die Simulation setzt dafür Merkzeichen
+  (`src/sim/letters.ts`, `LETTER_MARKS`): frisch nach einem Plan und `letters.window` Runden lang
+  `erkundet`, `thorne_besucht`, `thorne_abfuhr`, `geruecht_gestreut`, `kartell_klausel`,
+  `gemeinschaft_abgesprungen`, `liefervertrag_fehlmenge`; solange etwas läuft `foerderbremse_laeuft`,
+  `liefervertrag_laeuft`, `brennan_faehrt`, `gemeinschaft_laeuft`, `oel_zurueckgehalten`; dauerhaft
+  `thorne_meldet_sich` (Thornes Frachtvertrag nach dem ersten Besuch, spätestens Runde `letters.thorneLatest`).
+  Antworten, die die Simulation liest (`LETTER_ACTIONS`): `hale_gutachten_gekauft`/`_falsch` und
+  `pike_pacht_gekauft`/`pike_urkunde_falsch` (Hinweis auf einer Ranch bzw. wertlos), `bohrliste_gekauft`
+  (Bohrbericht), `nora_versoehnt`, `liefervertrag_aufgeloest`, `gemeinschaft_zurueck`,
+  `wildcatter_geholfen`/`_verprellt` (Ruf ± `letters.standing`), `thorne_exklusiv_billig`.
+  Regeln der Post in Kapitel 1: Antworten (Briefe mit `marked`) gehen bei Garantie und Würfeln den
+  Alltagsbriefen vor; höchstens `events.mail.perRival` Briefe je Rivale und Runde (alle Kapitel).
+  Gruppen in Kapitel 1 (`trupp`, `tank`, `thomas`) halten 4 Runden Abstand – alle Varianten einer Gruppe
+  brauchen denselben `cooldown` (prüft `npm run check:content`). Jede Antwort in Kapitel 1 hat Wirkung
+  (≥ 100 $, ein Merkzeichen mit Folge oder eine Beziehung; Test in `src/sim/letters.test.ts`).
 - Kapitel 3, Story-Bögen (Phase 4): `k3-story-1-daniel.yaml` (Daniel Moss als Bezirksstaatsanwalt),
   `k3-story-2-thomas.yaml` (Thomas im Unternehmen oder nicht), `k3-story-3-ehe.yaml` (Wendepunkt der Ehe),
   `k3-story-4-vale.yaml` (Mr. Vales Karte – Auftakt Bogen D, auf sie wartet Ruths zweite Probe).

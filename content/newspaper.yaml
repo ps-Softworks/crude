@@ -10,6 +10,47 @@ name:
   en: Port Ellis Courier
 
 headlines:
+  # --- Etappe 2: Preis-Aktionen (Termine als Hauptwerkzeug) ---
+  # Jacobs Gerücht „Quellen versiegen“ hat gewirkt.
+  rumour_dry:
+    title:
+      de: Versiegen die Quellen am Salt Hill?
+      en: Are the Salt Hill wells running dry?
+    text:
+      de: Man hört von Brunnen, die plötzlich nur noch Wasser geben. Die Händler kaufen, solange es noch etwas zu kaufen gibt.
+      en: There is talk of wells that suddenly give nothing but water. The traders are buying while there is still something to buy.
+  # Jacobs Gerücht „Riesenfund bei Bullard“ hat gewirkt.
+  rumour_bullard:
+    title:
+      de: Riesenfund bei Bullard?
+      en: A giant strike at Bullard's?
+    text:
+      de: Im Saloon schwört einer, er habe bei Bullard eine Fontäne über den Turm schießen sehen. Die Farmer werden kleinlaut, die Käufer warten ab.
+      en: In the saloon a man swears he saw a gusher shoot over Bullard's derrick. The farmers grow quiet, the buyers wait.
+  # Ein Gerücht ist aufgeflogen.
+  rumour_exposed:
+    title:
+      de: Wer streut die Gerüchte am Salt Hill?
+      en: Who is spreading the Salt Hill rumours?
+    text:
+      de: Der Courier hat nachgefragt und weiß jetzt, woher die Geschichten kamen. Ein Ölmann aus Port Ellis steht schlecht da – und Nora Brand ist wütend.
+      en: The Courier has asked around and now knows where the stories came from. An oilman from Port Ellis looks bad – and Nora Brand is furious.
+  # Jacobs Förderbremse ist geplatzt.
+  cartel_collapse:
+    title:
+      de: Absprache der Wildcatter geplatzt
+      en: Wildcatters' agreement collapses
+    text:
+      de: Wochenlang drosselten die kleinen Firmen am Salt Hill ihre Pumpen. Jetzt fördert jeder, was er kann, und die Tanks am Hafen laufen voll.
+      en: For weeks the small outfits at Salt Hill throttled their pumps. Now everyone pumps what he can, and the harbour tanks are filling up.
+  # Kartellverfahren gegen Jacobs Förderbremse.
+  cartel_court:
+    title:
+      de: Staatsanwalt geht gegen Preisabsprache vor
+      en: Prosecutor moves against price fixing
+    text:
+      de: Nach dem neuen Kartellgesetz hat Hallstead die erste Absprache am Salt Hill aufgelöst. Der Organisator muss zahlen.
+      en: Under the new antitrust act Hallstead has broken up the first agreement at Salt Hill. The organiser has to pay.
   # --- Titelseite: Aussicht für den Ölpreis (Frühwarnzeichen) ---
   # Der Preis wird am Ende dieser Runde fallen – und zwar stark.
   outlook_crash:

@@ -102,6 +102,16 @@ export function spendAppointments(state: GameState, balance: Balance, n: number)
 }
 
 /**
+ * Gibt n Termine zurück (Planungsbrett: eine Karte, die noch nicht gewirkt hat,
+ * wird zurückgenommen). Waren davon overtime Überstunden, kommt deren Kraft zurück.
+ */
+export function refundAppointments(state: GameState, balance: Balance, n: number, overtime = 0): GameState {
+  if (n <= 0) return state;
+  const strength = Math.min(state.strengthMax, state.strength + overtime * balance.agenda.overtimeCost);
+  return { ...state, strength, agenda: { ...state.agenda, used: Math.max(0, state.agenda.used - n) } };
+}
+
+/**
  * Rundenende: Erst die Krankheit (2.7) – liegt Jacob schon krank, ist eine
  * Runde überstanden und er gewinnt sickRecovery Kraft; sonst wird er krank,
  * wenn die Kraft unter sickBelow liegt (bei 0: Zusammenbruch). Dann gibt eine

@@ -40,6 +40,9 @@ import {
   type TimeskipRecord,
 } from './timeskip';
 import { wildcatterWells } from './wildcatters';
+import { explorableNeighbours, knowledgeOf } from './exploration';
+import { bookCard, cardReason, planCards } from './plans';
+import { openRegions, unlockRegion } from './regions';
 
 const balance = loadBalance();
 const catalog = loadEvents();
@@ -347,7 +350,10 @@ describe('Kapitel 2 beginnt (Platzhalter)', () => {
   });
 
   it('Ereignis-Bedingungen minRound/maxRound zählen ab dem Kapitelbeginn', () => {
-    const { state } = springen(kapitelEnde('sprung-ereignis'));
+    // Seed mit Kapitel 2 (Etappe 3: mit weniger Briefen hat der passive Jacob mehr Geld, und sein Verwalter
+    // verspekuliert sich bei manchem Seed im Sprung – „sprung-ereignis“ endet jetzt in der Pleite).
+    const { state } = springen(kapitelEnde('sprung-ereignis-1'));
+    expect(state.chapter).toBe(2);
     expect(conditionsMet(state, { maxRound: 2 })).toBe(true);
     expect(conditionsMet(state, { minRound: 3 })).toBe(false);
   });
@@ -384,7 +390,7 @@ describe('Spielstand übersteht den Kapitelwechsel', () => {
   });
 
   it('ein Spielstand aus Format 18 (0.4.5, Kapitel 2 ohne die neuen Systeme) lädt weiter', () => {
-    expect(SAVE_FORMAT).toBe(21);
+    expect(SAVE_FORMAT).toBe(22);
     const { state } = springen(kapitelEnde('sprung-format18'));
     const alt: Record<string, unknown> = { ...state };
     for (const k of ['refinery', 'bigPipelines', 'stocks', 'staff', 'diplomacy', 'investigation', 'research']) delete alt[k];
@@ -509,8 +515,13 @@ describe('Direktiven wirken (GDD §2: Haltung bestimmt Ertrag und Streuung, Fami
     expect(mutig.some((r) => r.record.entries.some((e) => e.kind === 'region_opened'))).toBe(true);
     expect(mittel.some((r) => r.record.entries.some((e) => e.kind === 'region_opened'))).toBe(false);
     expect(schnitt(mutig.map(wert))).toBeGreaterThan(1.2 * schnitt(mittel.map(wert)));
-    const spanne = (rs: typeof mutig) => Math.max(...rs.map(wert)) - Math.min(...rs.map(wert));
-    expect(spanne(mutig)).toBeGreaterThan(spanne(vorsichtig));
+    // Streuung als Standardabweichung (Etappe 3: Die Spanne max − min hing an einem einzigen Ausreißer
+    // der vorsichtigen Haltung – 790.663 gegen 780.625 –, die Standardabweichung ist bei wagemutig klar größer).
+    const streuung = (rs: typeof mutig) => {
+      const m = schnitt(rs.map(wert));
+      return Math.sqrt(schnitt(rs.map((r) => (wert(r) - m) ** 2)));
+    };
+    expect(streuung(mutig)).toBeGreaterThan(streuung(vorsichtig));
   });
 
   it('vorsichtig tilgt mehr und hat am Ende weniger Schulden als wagemutig', () => {
@@ -541,7 +552,11 @@ describe('Kreditkrise und Bankenpanik (GDD §15)', () => {
     const credit = wm.credit as Record<string, unknown>;
     // Das Klima kippt sicher im ersten Quartal.
     const krise = parseBalance({ ...raw, worldModel: { ...wm, credit: { ...credit, crashChance: 1 } } });
-    const ende = chapterEnds(krise, 8, catalog).find((e) => e.wells.filter((w) => w.status === 'found').length >= 2)!;
+    // Die schwächste Firma mit mindestens zwei Quellen: Ihre Einnahmen im ersten Quartal decken die Kündigung nicht.
+    const foerderung = (e: GameState) => e.wells.reduce((s, w) => s + (w.status === 'found' ? (w.production?.lastRate ?? 0) : 0), 0);
+    const ende = chapterEnds(krise, 20, catalog)
+      .filter((e) => e.wells.filter((w) => w.status === 'found').length >= 2)
+      .sort((a, b) => foerderung(a) - foerderung(b))[0];
     expect(ende).toBeDefined();
     const geliehen = takeLoan({ ...ende, finished: false }, krise, Math.floor(headroomOf(ende, krise) / 100) * 100);
     if (!geliehen.ok) throw new Error(geliehen.reason);
@@ -649,7 +664,7 @@ describe('Okara und Benzin bleiben (4.5)', () => {
 });
 
 describe('Kapitel 2 spielt keine Kapitel-1-Ereignisse weiter (Säugling, Pension …)', () => {
-  const NUR_K1 = ['thomas_nacht', 'thomas_wort', 'thomas_krupp', 'thomas_taufe', 'termin_familie', 'pension_miete', 'fieber', 'ruth_buecher'];
+  const NUR_K1 = ['thomas_nacht', 'thomas_wort', 'thomas_taufe', 'termin_familie', 'fieber', 'ruth_buecher'];
 
   it('Bedingungen kennen Kapitel und Thomas’ Alter', () => {
     const k2 = { ...newGame('k2-bedingung', balance), round: 41, chapter: 2, chapterStart: 41, family: { ruth: 70, thomas: 70, thomasBorn: 3, time: 0 } };
@@ -668,7 +683,9 @@ describe('Kapitel 2 spielt keine Kapitel-1-Ereignisse weiter (Säugling, Pension
         state = endRound(state, balance, catalog);
       }
     }
-    const { state } = springen(kapitelEnde('sprung-k2-abend'));
+    // Seed mit Kapitel 2 (Etappe 3: „sprung-k2-abend“ endet jetzt im Sprung in der Pleite, siehe oben).
+    const { state } = springen(kapitelEnde('sprung-k2-abend-1'));
+    expect(state.chapter).toBe(2);
     expect(resolveEvent(state, balance, catalog, 'termin_familie_k2', 'bleiben').ok).toBe(true);
   });
 });
@@ -699,5 +716,61 @@ describe('Bohrloch-Kennungen im Sprung', () => {
       }
     }
     expect(notverkauf).toBeGreaterThan(0);
+  });
+});
+
+// Termine als Hauptwerkzeug über die Zeitsprünge: Erkundung und Planungsbrett gelten in Kapitel 2 und 3 weiter.
+describe('Erkundung und Planungsbrett nach dem Zeitsprung', () => {
+  const enden = chapterEnds(balance, 3, catalog);
+  const spruenge = enden.map((e) => ({ vorher: e, nachher: springen(e, { stance: 'aggressive', family: 'some' }).state }));
+
+  it('altes Wissen bleibt; was der Verwalter gebohrt hat, ist Bohrbericht; um Funde redet man – auch im neuen Land', () => {
+    let gesprungen = 0;
+    for (const { vorher, nachher } of spruenge) {
+      if (nachher.finished) continue;
+      for (const p of vorher.parcels) {
+        const alt = knowledgeOf(vorher, p.id);
+        const neu = knowledgeOf(nachher, p.id);
+        expect(neu.level).toBeGreaterThanOrEqual(alt.level);
+        for (const c of alt.clues.filter((x) => x.source !== 'bohrung')) expect(neu.clues.some((d) => d.kind === c.kind && (c.kind !== 'bohrbericht' || d.seen === c.seen || d.source === 'bohrung'))).toBe(true);
+      }
+      for (const p of nachher.parcels) {
+        const auf = nachher.wells.filter((w) => w.parcelId === p.id);
+        const fund = auf.some((w) => w.status === 'found');
+        if (fund || (auf.length > 0 && auf.every((w) => w.status === 'dry'))) {
+          expect(knowledgeOf(nachher, p.id).clues.some((c) => c.source === 'bohrung' && c.seen === fund)).toBe(true);
+        }
+      }
+      const funde = new Set([...nachher.wells, ...nachher.rival.wells].filter((w) => w.status === 'found').map((w) => w.parcelId));
+      for (const id of funde) {
+        const f = nachher.parcels.find((p) => p.id === id)!;
+        for (const n of explorableNeighbours(nachher, f)) expect(knowledgeOf(nachher, n.id).level).toBeGreaterThanOrEqual(1);
+      }
+      gesprungen += 1;
+    }
+    expect(gesprungen).toBeGreaterThan(0);
+  });
+
+  it('in Kapitel 2 liegen die Land-Karten auf dem Brett, Preis- und Frachtkarten aus Kapitel 1 nicht; ein Ritt bringt Wissen', () => {
+    const k2 = spruenge.map((x) => x.nachher).find((s) => !s.finished && s.chapter === 2)!;
+    expect(k2).toBeDefined();
+    const karten = planCards(balance, catalog);
+    const karte = (id: string) => karten.find((c) => c.id === id)!;
+    expect(cardReason(k2, balance, catalog, karte('foerderbremse'))).toMatch(/nicht auf der Hand/);
+    expect(cardReason(k2, balance, catalog, karte('thorne_vorsprechen'))).toMatch(/nicht auf der Hand/);
+    // Neues Land in Kapitel 2 (Ereignis oder Verwalter) ergänzt die Karte: Altes Wissen bleibt, das neue Gebiet ist Gerücht.
+    const zu = balance.world.regions.find((r) => r.kind === 'drillable' && !k2.regions.includes(r.id))!;
+    expect(zu).toBeDefined();
+    const offen = openRegions(unlockRegion(k2, zu.id), balance);
+    const neu = offen.parcels.filter((p) => p.region === zu.id);
+    expect(neu.length).toBeGreaterThan(0);
+    for (const p of neu) expect(knowledgeOf(offen, p.id).level).toBe(0);
+    for (const p of k2.parcels) expect(offen.knowledge[p.id]).toEqual(k2.knowledge[p.id]);
+    const ziel = neu.find((p) => !p.discovery)!;
+    expect(cardReason(offen, balance, catalog, karte('ritt'), ziel.id)).toBeNull();
+    const r = bookCard(offen, balance, catalog, 'ritt', ziel.id);
+    if (!r.ok) throw new Error(r.reason);
+    expect(knowledgeOf(r.state, ziel.id).level).toBe(1);
+    expect(r.state.forecasts[ziel.id]).toBeDefined();
   });
 });

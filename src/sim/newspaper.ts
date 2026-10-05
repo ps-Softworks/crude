@@ -16,6 +16,9 @@ import { lawReport, type LawReport } from './laws';
 import { electionReport, loudestAct, type ElectionReport, type PoliticsContent } from './politics';
 import { PUBLIC_ACTS, worldPriceFactor } from './world';
 import { MAJOR_WORLD_HEADLINES, worldHeadline, WORLD_HEADLINES } from './worldNews';
+// Termine als Hauptwerkzeug, Etappe 2: Gerüchte, Förderbremse, Noras Vorwarnungen.
+import { marketMods, soldThisRound } from './pricing';
+import { chapterOf } from './chapterOf';
 
 /** Meldungen über Jacobs öffentliches Handeln (4.2): eine je Tat, Schlüssel public_<tat>. */
 export const PUBLIC_HEADLINES = PUBLIC_ACTS.map((a) => `public_${a}` as const);
@@ -36,6 +39,12 @@ export const HEADLINE_IDS = [
   'jacob_gusher',
   'jacob_find',
   'classifieds',
+  // Etappe 2: Gerüchte, ihre Entlarvung, Förderbremse geplatzt, Kartellverfahren.
+  'rumour_dry',
+  'rumour_bullard',
+  'rumour_exposed',
+  'cartel_collapse',
+  'cartel_court',
   ...PUBLIC_HEADLINES,
   ...WORLD_HEADLINES,
 ] as const;
@@ -72,22 +81,33 @@ export interface Newspaper {
 
 /**
  * Der Posted Price, den der Trust am Ende dieser Runde festlegen wird – wenn
- * nichts Unerwartetes passiert. Gerechnet wie im Marktschritt von endRound:
+ * nichts Unerwartetes passiert (seit Etappe 2: und Jacob verkauft, was er fördert). Gerechnet wie im Marktschritt von endRound:
  * Jacobs Förderung dieser Runde (fündige Quellen, auch gerade fertig gewordene),
  * die Nachbarn dieser Runde und Bullards fündige Quellen (auch neue Funde der
  * letzten Runde – die gehen jetzt erstmals in den Markt).
  */
-export function expectedPrice(state: GameState, balance: Balance): number {
+export function expectedPrice(state: GameState, balance: Balance, jacobSales?: number): number {
   const gefoerdert = advanceProduction(state, balance);
-  const supply =
-    jacobSupply(gefoerdert) +
-    neighbourSupply(balance.market, state.round, state.neighbourOffset ?? 0) +
-    rivalSupply(state, balance.rivals.bullard.ratePerWell);
-  return computePrice(balance.market, supply, worldPriceFactor(state.worldModel, balance.worldModel));
+  if (!state.pricing) {
+    const supply =
+      jacobSupply(gefoerdert) +
+      neighbourSupply(balance.market, state.round, state.neighbourOffset ?? 0) +
+      rivalSupply(state, balance.rivals.bullard.ratePerWell);
+    return computePrice(balance.market, supply, worldPriceFactor(state.worldModel, balance.worldModel));
+  }
+  // Etappe 2: Der Markt rechnet in Kapitel 1 mit Jacobs Verkauf – die Zeitung nimmt an, dass er
+  // verkauft, was er fördert (oder schon mehr verkauft hat); jacobSales setzt den Verkauf fest.
+  // Förderbremse und Gerüchte zählen mit.
+  const jacob = chapterOf(state) > 1 ? jacobSupply(gefoerdert) : (jacobSales ?? Math.max(soldThisRound(state), jacobSupply(gefoerdert)));
+  const mods = marketMods(gefoerdert, balance, jacob);
+  const shock = mods.shock !== 1 ? { ...balance.market, shock: balance.market.shock * mods.shock } : balance.market;
+  return computePrice(shock, mods.supply, worldPriceFactor(state.worldModel, balance.worldModel));
 }
 
 /** Welche Aussicht die Titelseite zeigt (Schwellen in balance.yaml, newspaper). */
 export function marketOutlook(state: GameState, balance: Balance): Outlook {
+  // Etappe 2: Nach einem aufgeflogenen Gerücht schreibt Nora nichts mehr für Jacob – keine Vorwarnungen.
+  if (state.pricing?.noraBurned) return 'steady';
   const { fallFrom, crashFrom, riseFrom } = balance.newspaper;
   const change = (expectedPrice(state, balance) - state.postedPrice) / state.postedPrice;
   // Kleine Toleranz, damit genau die Schwelle trotz Rundung zählt.
@@ -120,6 +140,15 @@ export function newsItems(state: GameState, balance: Balance): HeadlineId[] {
   const ratePerWell = balance.rivals.bullard.ratePerWell;
   if (state.rival.wells.some((w) => w.status === 'found' && w.rate === ratePerWell)) {
     ids.push('rival_find');
+  }
+  // Etappe 2: Gerüchte, Entlarvung, geplatzte Förderbremse, Kartellverfahren der letzten Runde.
+  const p = state.pricing;
+  if (p) {
+    const letzte = state.round - 1;
+    if (p.rumours.exposedRound === letzte && letzte > 0) ids.unshift('rumour_exposed');
+    else if (p.rumours.shock?.round === letzte) ids.push(p.rumours.kind === 'riesenfund' ? 'rumour_bullard' : 'rumour_dry');
+    if (p.courtRound === letzte && letzte > 0) ids.unshift('cartel_court');
+    else if (p.collapseRound === letzte && letzte > 0) ids.push('cartel_collapse');
   }
   // Öffentliches Handeln (4.2): Worüber man über Jacob redet – die lauteste Tat der letzten Runde.
   const tat = loudestAct(state.worldModel);

@@ -7,6 +7,7 @@ import { kapitel3Of, previewKapitel3, worldOf, type SeismikReport } from './kapi
 import { answerInvitation } from './konsortium';
 import { newResearch } from './research';
 import { Rng } from './rng';
+import { addClues, explorableNeighbours, knowledgeForecast, knowledgeOf, posteriorChance } from './exploration';
 import { bestForecast, buyLicense, chapterTechStage, hireCrew, licenseCost, makeReport, orderSurvey, sizeClassOf, surveyBlocker, techStage, worldTechStage } from './seismik';
 import { loadBalance } from './testBalance';
 import { K3_TECH, k3Game, k3Round, ok, withK3, withTech } from './testKapitel3';
@@ -232,5 +233,53 @@ describe('Bericht (makeReport)', () => {
     expect(sizeClassOf(balance, 0)).toBe(0);
     expect(sizeClassOf(balance, S.sizeClasses[2].from)).toBe(2);
     expect(sizeClassOf(balance, 1e12)).toBe(S.sizeClasses.length - 1);
+  });
+});
+
+// Termine als Hauptwerkzeug × Kapitel 3: Seismik ergänzt die Erkundung, sie ersetzt sie nicht.
+describe('Seismik schärft die Erkundung', () => {
+  it('die Hinweisart „seismik“ passt zu den Fehlmessungen der Seismik (1 − missTrap, falseTrap)', () => {
+    expect(balance.exploration.clues.seismik.oil).toBeCloseTo(1 - S.missTrap, 9);
+    expect(balance.exploration.clues.seismik.dry).toBeCloseTo(S.falseTrap, 9);
+  });
+
+  it('der Bericht rechnet auf Jacobs Wissen auf: höheres Vorwissen, höheres Band – die verdeckte Wahrheit q zählt nie', () => {
+    const p = ranch(newGame('vorwissen', balance), true);
+    const hoch = makeReport(balance, p, 1, new Rng(5), 0.8);
+    const tief = makeReport(balance, p, 1, new Rng(5), 0.2);
+    expect(hoch.low + hoch.high).toBeGreaterThan(tief.low + tief.high);
+    // Ohne Vorwissen gilt die Zone, nicht q: zwei Ranches, die sich nur in q unterscheiden, bekommen denselben Bericht.
+    const a = makeReport(balance, { ...p, chance: 0.05 }, 1, new Rng(9));
+    const b = makeReport(balance, { ...p, chance: 0.95 }, 1, new Rng(9));
+    expect(a).toEqual(b);
+  });
+
+  it('wer vorher erkundet hat, bekommt einen anderen (auf seinem Wissen aufbauenden) Bericht', () => {
+    const s0 = mitLizenz('erkundet');
+    const p = ranch(s0, true);
+    const erkundet = addClues(s0, balance, p.id, [{ kind: 'bohrbericht', source: 'bericht', round: s0.round, seen: true }]);
+    const blind = k3Round(ok(orderSurvey(s0, balance, p.id)), balance).kapitel3!.seismik.reports[p.id];
+    const mitWissen = k3Round(ok(orderSurvey(erkundet, balance, p.id)), balance).kapitel3!.seismik.reports[p.id];
+    expect(mitWissen.low + mitWissen.high).toBeGreaterThan(blind.low + blind.high);
+  });
+
+  it('der Bericht geht als Hinweis ins Wissen: Stufe 3, Band = Prognose, Nachbarn lernen mit; ein Bohrbericht geht wieder vor', () => {
+    const s0 = mitLizenz('wissen');
+    const p = ranch(s0, true);
+    const nachbar = explorableNeighbours(s0, p)[0];
+    const vorher = posteriorChance(s0, balance, nachbar.id);
+    const t = k3Round(ok(orderSurvey(s0, balance, p.id)), balance);
+    const r = t.kapitel3!.seismik.reports[p.id];
+    const k = knowledgeOf(t, p.id);
+    expect(k.level).toBe(3);
+    expect(k.clues.filter((c) => c.kind === 'seismik')).toEqual([{ kind: 'seismik', source: 'seismik', round: r.round, seen: r.sizeLow !== null }]);
+    expect(t.forecasts[p.id]).toMatchObject({ low: r.low, high: r.high });
+    expect(posteriorChance(t, balance, nachbar.id)).not.toBeCloseTo(vorher, 9);
+    // Noch eine Runde: kein zweiter Hinweis.
+    expect(knowledgeOf(k3Round(t, balance), p.id).clues.filter((c) => c.kind === 'seismik')).toHaveLength(1);
+    // Bohrbericht (gekauft, Tagebuch, eigene Bohrung) sieht mehr als die Messung.
+    const bericht = addClues(t, balance, p.id, [{ kind: 'bohrbericht', source: 'bericht', round: t.round, seen: false }]);
+    expect(bericht.forecasts[p.id]).toEqual(knowledgeForecast(bericht, balance, p.id));
+    expect(bestForecast(bericht, p.id)).toEqual(bericht.forecasts[p.id]);
   });
 });

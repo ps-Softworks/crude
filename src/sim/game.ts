@@ -13,6 +13,14 @@ import { advanceDrilling, type Well } from './drilling';
 import { assignFields, buildFields, type Field } from './field';
 import { makeForecasts, type Forecast } from './forecast';
 import { generateParcels, type Parcel } from './geology';
+// Termine als Hauptwerkzeug (Etappe 1): Erkundung und Planungsbrett.
+import { initialKnowledge, learnFromWells, newExploration, type ExplorationState, type ParcelKnowledge } from './exploration';
+import { appendReport, newPlans, settlePlans, type PlansState } from './plans';
+// Termine als Hauptwerkzeug, Etappe 3: gekoppelte Briefe.
+import { settleLetters } from './letters';
+// Termine als Hauptwerkzeug (Etappe 2): Preis- und Transport-Aktionen.
+import { marketMods, newPricing, settlePricingAfterMarket, type PricingState } from './pricing';
+import { newFreight, type FreightState } from './freight';
 import { initialRegions } from './ranches';
 import { openRegions } from './regions';
 import { checkBirth, newFamily, settleFamily, type FamilyState } from './family';
@@ -94,8 +102,20 @@ export interface GameState {
   logistics: LogisticsState;
   leases: Lease[];
   options: LeaseOption[];
-  /** Geologen-Prognose je Parzelle; für die Entdeckungsquelle gibt es keine. */
+  /** Prognose je Parzelle – nur, wo Jacob etwas weiß (Wissensstufe ab 1, src/sim/exploration.ts); für die Entdeckungsquelle gibt es keine. */
   forecasts: Record<string, Forecast>;
+  /** Wissensstand je Ranch (Etappe 1): Stufe und Hinweise. Fehlt eine Ranch, weiß Jacob nur, was alle wissen. */
+  knowledge: Record<string, ParcelKnowledge>;
+  /** Erkundung (Etappe 1): eingestellter Geologe und seine Trefferbilanz. */
+  exploration: ExplorationState;
+  /** Planungsbrett (Etappe 1): gebuchte Karten der Runde und Wochenbericht. */
+  plans: PlansState;
+  /** Preis-Aktionen (Etappe 2): Verkauf der Runde, Förderbremse, Liefervertrag, Gerüchte, Crane. */
+  pricing: PricingState;
+  /** Transport-Aktionen (Etappe 2): Thorne, Brennan, Transportgemeinschaft. */
+  freight: FreightState;
+  /** Ruf bei den kleinen Wildcattern (Etappe 2, −0,3 bis +0,3): gilt für Förderbremse und Transportgemeinschaft. */
+  wildcatterStanding: number;
   /** Bohrungen, auch abgeschlossene. */
   wells: Well[];
   /** Bohrtürme (0.2.15+7): Silas' geliehener, gekaufte und gemietete. */
@@ -216,6 +236,12 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
     leases: [],
     options: [],
     forecasts: {},
+    knowledge: {},
+    exploration: newExploration(),
+    plans: newPlans(1),
+    pricing: newPricing(),
+    freight: newFreight(),
+    wildcatterStanding: 0,
     wells: [],
     rigs: startRigs(balance),
     postedPrice: startPrice,
@@ -247,8 +273,12 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
   // Erst die Startoptionen, dann die Prognosen: so bleiben Karte und Startoptionen
   // bei gleichem Seed so, wie sie es vor der Prognose waren.
   state.options = startOptions(state, balance, rng);
-  state.forecasts = makeForecasts(balance, parcels, balance.forecast.geologist, rng);
+  // Etappe 1: Keine Gratis-Prognosen mehr für die ganze Karte. Die alten Prognosen werden nur
+  // noch gewürfelt, damit der Weltzufall danach (Bohrungen …) bei gleichem Seed derselbe bleibt.
+  makeForecasts(balance, parcels, balance.forecast.geologist, rng);
   state.rng = rng.state;
+  // Wissen zu Spielbeginn: Startoptionen und die Nachbarn des Salt-Hill-Funds sind beritten.
+  Object.assign(state, initialKnowledge(state, balance));
   const date = formatDate(state);
   state.log = [`${date}: Jacob Harlan kommt in Port Ellis an.`];
   if (state.options.length > 0) {
@@ -306,8 +336,13 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   if (verkauft.ending === 'verkauft') return { ...verkauft, roundLogStart };
   // Familie (2.7): Familienzeit gibt Kraft, Vernachlässigung kostet Beziehung.
   const familie = settleFamily(beantwortet, balance);
+  // Planungsbrett (Etappe 1): Karten mit Wirkung am Rundenende, Lohn des Geologen, Wochenbericht.
+  // Etappe 2: dazu Förderbremse, Liefervertrag und Fracht-Verträge (die Verkäufe der Runde stehen fest).
+  // Etappe 3: Merkzeichen aus Jacobs Plänen für die gekoppelten Briefe, Antworten aus Briefen wirken (letters.ts).
+  const nachBrett = settlePlans(familie, balance);
+  const geplant = appendReport(settleLetters(familie, nachBrett, balance), nachBrett.log.length);
   // Termine (2.3): Krankheit (2.7), ruhige Runde gibt Kraft zurück, die nächste beginnt mit frischen Terminen.
-  const terminiert = settleAgenda(familie, balance);
+  const terminiert = settleAgenda(geplant, balance);
   // 4.9 Andockpunkt: Personal – Verkauf nach Regel, Aufträge, Löhne, Loyalität, Hitze, Extra-Termine der nächsten Runde.
   // 4.12 Andockpunkt: Folgen der Ereignisse – Durchleitungsgebühr, Termine der nächsten Runde (nach dem Personal).
   const besetzt = settleEventSystems(settleStaff(terminiert, balance));
@@ -319,12 +354,13 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Weltmodell (4.1): Der Preis dieser Runde folgt dem Welttrend von heute, danach rückt die Welt ein Quartal weiter.
   // Salt Hill fließt mit seinem Über- oder Unterangebot (winzig) in die Welt ein.
   const rivalRate = balance.rivals.bullard.ratePerWell;
-  const markt = advanceWorldInGame(
-    advanceMarket(gefoerdert, balance.market, rivalRate, worldPriceFactor(gefoerdert.worldModel, balance.worldModel)),
-    gefoerdert,
-    balance,
-  );
-  const gebohrt = advanceDrilling(markt, balance);
+  // Etappe 2: Kapitel 1 rechnet mit Jacobs Verkauf statt seiner Förderung, dazu Förderbremse und Gerüchte (pricing.ts).
+  const trend = worldPriceFactor(gefoerdert.worldModel, balance.worldModel);
+  const mods = marketMods(gefoerdert, balance);
+  const bepreist = advanceMarket(gefoerdert, balance.market, rivalRate, trend, mods);
+  const markt = advanceWorldInGame(appendReport(settlePricingAfterMarket(bepreist, balance, mods, trend), bepreist.log.length), gefoerdert, balance);
+  // Erkundung (Etappe 1): Was die eigene Bohrung zeigt, wird zum Bohrbericht der Ranch.
+  const gebohrt = learnFromWells(advanceDrilling(markt, balance), balance);
   const gepachtet = settleLeases(gebohrt, balance);
   // Beteiligungen aus dem Zeitsprung (4.5): Okara zahlt an Jacob oder Bullard.
   const rivale = settleVentures(advanceRival(gepachtet, balance, gebohrt, input.postedPrice), balance);

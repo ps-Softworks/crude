@@ -1,5 +1,5 @@
 // Nur für Tests und Werkzeuge: spielt den Bohr-Ablauf so, wie ein Spieler ihn
-// spielt – Ranch mit der besten Prognose pachten, bohren, Runde beenden (offene
+// spielt – übers Land reiten (Etappe 1), Ranch mit der besten Prognose pachten, bohren, Runde beenden (offene
 // Ereignisse bekommen ihre Standard-Antwort), klemmendes Werkzeug bergen, bei
 // „trocken“ tiefer bohren, auf Wunsch nach jeder Runde speichern und laden.
 // Damit lässt sich die Trefferquote im echten Spielablauf mit der Theorie vergleichen.
@@ -12,6 +12,8 @@ import { endRound, newGame, type GameState } from './game';
 import { buyLease, exerciseOption, leaseOf, optionOf } from './lease';
 import { deserializeGame, serializeGame } from './save';
 import { shownChance } from './tutorial';
+import { suggestRide } from './exploration';
+import { bookCard } from './plans';
 
 export interface DrillRunOptions {
   /** Offene Ereignisse mit Standard-Antwort (sonst Partie ohne Ereignisse). */
@@ -22,6 +24,8 @@ export interface DrillRunOptions {
   deeper?: boolean;
   /** So viele Runden höchstens. */
   rounds?: number;
+  /** Etappe 1: vor der Wahl so oft übers Land reiten (Standard 2), wie ein Spieler es täte. */
+  rides?: number;
 }
 
 /** Eine angebohrte Ranch: was der Spieler sah, was wirklich darunter lag, was herauskam. */
@@ -29,7 +33,7 @@ export interface DrillRecord {
   parcelId: string;
   /** Mitte der angezeigten Bandbreite in %. */
   shown: number;
-  /** Wahre Fundchance der Zone. */
+  /** Wahre Fundchance der Ranch (q). */
   chance: number;
   dry: boolean;
   /** Stufe, in der das Öl kam; 0 = nichts gefunden. */
@@ -51,6 +55,13 @@ export function playDrillRun(seed: string, balance: Balance, options: DrillRunOp
   const records: DrillRecord[] = [];
   for (let r = 0; r < (options.rounds ?? 12) && !state.finished; r++) {
     if (activeWells(state).length === 0) {
+      // Etappe 1: Erst übers Land reiten – ohne Erkundung kennt der Spieler kaum eine Ranch.
+      for (let i = 0; i < (options.rides ?? 2); i++) {
+        const ziel = suggestRide(state, balance, state.cash);
+        const ritt = ziel ? bookCard(state, balance, catalog, 'ritt', ziel) : null;
+        if (!ritt?.ok) break;
+        state = merke(ritt.state);
+      }
       const s = state;
       const kandidaten = s.parcels
         .filter((p) => !p.discovery && !leaseOf(s, p.id) && (optionOf(s, p.id)?.holder ?? 'jacob') === 'jacob')

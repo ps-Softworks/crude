@@ -31,21 +31,24 @@ import {
   hireTeam,
   LOGISTICS_MARKS,
   missingRights,
-  pipelineCredible,
   sabotageChance,
   setGuards,
   storageCapacity,
   surveyPipeline,
-  threatenThorne,
-  threatWait,
   traderGain,
 } from './logistics';
 import { jacobSupply } from './market';
-import { buyerCapacityLeft, capacityLeft, modeCapacity, netPrice, quoteSale, sellOil, tariff } from './transport';
-import { grudgeCut, RIVAL_MARKS, volumeObligation } from './trust';
+import { buyerCapacityLeft, capacityLeft, modeCapacity, modeUnavailable, netPrice, quoteSale, sellOil, tariff } from './transport';
+import { craneCut, exclusiveActive, grudgeCut, RIVAL_MARKS, volumeObligation } from './trust';
 import { tutorialHint } from './tutorial';
 import { advanceWorld, newWorld } from './world';
 import { choiceCost, choiceReason, resolveEvent, routineOffered, type EventChoice, type EventDef } from './events';
+// Termine als Hauptwerkzeug (Etappe 1): Erkundung über das Planungsbrett.
+import { knowledgeOf, suggestRide } from './exploration';
+import { bookCard, exploreAppointments } from './plans';
+// Etappe 2: Preis- und Transport-Aktionen über das Planungsbrett.
+import { activeContract, cartelActive, cranePressure, type PricingState } from './pricing';
+import { brennanActive, freightPressure, thorneResistance } from './freight';
 
 export type Strategy = 'vorsichtig' | 'gierig' | 'ausgewogen' | 'zufaellig';
 export const STRATEGIES: readonly Strategy[] = ['vorsichtig', 'gierig', 'ausgewogen', 'zufaellig'];
@@ -109,16 +112,22 @@ function roundsLeft(state: GameState): number {
  */
 function sell(state: GameState, balance: Balance, share: number, ledger: TransportLedger, trader = false, margin = true): GameState {
   let rest = Math.floor(Math.floor(state.oilStock) * share);
-  const buyers: Buyer[] = trader ? ['trader', 'crane'] : ['crane'];
+  // Etappe 2: Ein Liefervertrag mit dem Händler wird zuerst erfüllt (Fehlmenge kostet Strafe).
+  const vertrag = activeContract(state, 'haendler') !== null;
+  const buyers: Buyer[] = trader || vertrag ? ['trader', 'crane'] : ['crane'];
   const wege = TRANSPORT_MODES.flatMap((mode) => buyers.map((buyer) => ({ mode, buyer })));
-  wege.sort((a, b) => netPrice(state, balance, b.mode, b.buyer) - netPrice(state, balance, a.mode, a.buyer));
+  wege.sort((a, b) => (vertrag ? Number(b.buyer === 'trader') - Number(a.buyer === 'trader') : 0) || netPrice(state, balance, b.mode, b.buyer) - netPrice(state, balance, a.mode, a.buyer));
+  // Etappe 2: Läuft Thornes Bluff-Prüfung, bleibt der Bahnanteil unter der Grenze – wenn es sich lohnt.
+  let bahnFrei = bluffRailCap(state, balance, rest);
   for (const { mode, buyer } of wege) {
     if (rest <= 0) break;
     // margin: Nach Fracht und Förderzins muss etwas übrig bleiben – sonst bleibt das Öl lieber im
     // Tank. Ohne margin (gierig: Menge vor Marge) reicht, dass der Preis die Fracht deckt.
-    if (netPrice(state, balance, mode, buyer) <= 0 || (margin && quoteSale(state, balance, mode, 1, buyer).net <= 0)) continue;
-    const menge = Math.min(rest, capacityLeft(state, balance, mode), buyerCapacityLeft(state, balance, buyer), Math.floor(state.oilStock));
+    const pflicht = vertrag && buyer === 'trader';
+    if (netPrice(state, balance, mode, buyer) <= 0 || (margin && !pflicht && quoteSale(state, balance, mode, 1, buyer).net <= 0)) continue;
+    const menge = Math.min(rest, capacityLeft(state, balance, mode), buyerCapacityLeft(state, balance, buyer), Math.floor(state.oilStock), mode === 'rail' ? bahnFrei : Infinity);
     if (menge <= 0) continue;
+    if (mode === 'rail') bahnFrei -= menge;
     const groll = buyer === 'crane' ? grudgeCut(state, balance) : 0;
     const r = sellOil(state, balance, mode, menge, buyer);
     if (r.ok) {
@@ -135,6 +144,28 @@ function sell(state: GameState, balance: Balance, share: number, ledger: Transpo
     }
   }
   return state;
+}
+
+/**
+ * Bluff-Prüfung (Etappe 2): Hing Thornes Zugeständnis an Ausweichwegen oder Pipeline, darf in den
+ * Folgerunden höchstens bluff.railShare per Bahn gehen. Der Bot hält sich daran, wenn Wege, die je
+ * Barrel höchstens Thornes Aufschlag mehr kosten, die Menge schaffen; sonst nimmt er das Risiko
+ * (Infinity = keine Grenze).
+ */
+function bluffRailCap(state: GameState, balance: Balance, total: number): number {
+  const bc = state.freight?.bluffCheck;
+  if (!bc || state.round < bc.from || state.round > bc.until || total <= 0) return Infinity;
+  const f = balance.freight.bluff;
+  const erlaubt = Math.max(0, Math.floor(f.railShare * (bc.total + total) - bc.rail) - 1);
+  const bahn = Math.min(total, capacityLeft(state, balance, 'rail'));
+  const verschieben = bahn - erlaubt;
+  if (verschieben <= 0) return Infinity;
+  const andere = TRANSPORT_MODES.filter((m) => m !== 'rail' && modeUnavailable(state, m) === null).map((m) => ({ cap: capacityLeft(state, balance, m), t: tariff(state, balance, m) }));
+  // Je Barrel abgewogen: Ein Umweg lohnt nur, wenn er höchstens so viel mehr kostet wie Thornes Aufschlag
+  // je Barrel (bluff.penalty). Schaffen die Wege, die das erfüllen, die Menge nicht, riskiert der Bot den Bluff.
+  const bahnTarif = tariff(state, balance, 'rail');
+  const platz = andere.filter((w) => w.t <= bahnTarif + f.penalty).reduce((s, w) => s + w.cap, 0);
+  return platz >= verschieben ? erlaubt : Infinity;
 }
 
 /** Wie ein Bot bezahlt: Rücklage, die bleiben muss, und wie viel er dafür höchstens leihen darf. */
@@ -300,7 +331,7 @@ function transportTurn(
 ): GameState {
   const cfg = balance.bots.transport[strategyKey(strategy)];
   const purse = purseFor(balance, strategy);
-  const { teams, storage, pipeline, thorne } = balance.transport;
+  const { teams, storage, pipeline } = balance.transport;
   state = answerThorne(state, balance, catalog, cfg, purse, ledger);
 
   // Pipeline: vermessen, Wegerechte kaufen, bauen – nur, wenn sie sich lohnt.
@@ -333,11 +364,6 @@ function transportTurn(
       if (r.ok) state = r.state;
     }
   }
-  // Drohung: nur, wenn sie glaubwürdig ist und die Bahn etwas trägt.
-  if (cfg.threaten && production(state) > 0 && state.railTariff > thorne.minTariff && threatWait(state, balance) === 0 && pipelineCredible(state, balance)) {
-    const r = threatenThorne(state, balance);
-    if (r.ok) state = r.state;
-  }
   // Gespanne, die billiger sind als die Bahn – vor dem Verkauf, damit sie gleich fahren.
   if (cfg.teams === 'cheaper') {
     while (
@@ -359,7 +385,9 @@ function transportTurn(
     }
   }
 
-  const anteil = sellShare(state, cfg);
+  // Etappe 2: Ist das Gerücht „Quellen versiegen“ gebucht, bleibt genug im Tank, damit man es glaubt.
+  const halten = rumourHold(state, balance);
+  const anteil = halten > 0 && state.oilStock > 0 ? Math.min(sellShare(state, cfg), Math.max(0, (state.oilStock - halten) / state.oilStock)) : sellShare(state, cfg);
   state = sell(state, balance, anteil, ledger, useTrader(state, balance, cfg, anteil), cfg.margin);
 
   // Bleibt nach dem Verkauf Öl liegen, weil alle Wege voll sind: ein Gespann mehr.
@@ -387,6 +415,79 @@ function transportTurn(
   return state;
 }
 
+/** Barrel, die für ein gebuchtes Gerücht „Quellen versiegen“ im Tank bleiben müssen (sonst 0). */
+function rumourHold(state: GameState, balance: Balance): number {
+  const gebucht = state.plans?.round === state.round && state.plans.booked.some((b) => b.cardId === 'geruecht' && b.target === 'versiegen' && !b.done);
+  return gebucht ? balance.priceActions.rumour.dry.minTank + 1 : 0;
+}
+
+// --- Preis- und Transport-Aktionen (Etappe 2) ----------------------------------------
+
+/**
+ * Preis- und Fracht-Karten nach bots.plans (Etappe 2): bei Thorne vorsprechen, wenn der Druck den
+ * Widerstand übersteigt; Förderbremse ab vollem Tank, halten, verlängern, Bullard einladen, Betrüger
+ * zur Rede stellen; Liefervertrag über 4 Runden; Gerücht bei vollem Tank; mit Crane feilschen, wenn er
+ * Abschlag zahlt; Brennan, wenn die Bahn teurer ist; Transportgemeinschaft gründen und halten.
+ * Die Feinarbeit je Charakter ist Etappe 4.
+ */
+function planTurn(state: GameState, balance: Balance, strategy: Exclude<Strategy, 'zufaellig'>, catalog: readonly EventDef[]): GameState {
+  const cfg = balance.botPlans[strategyKey(strategy)];
+  if (!Object.values(cfg).some(Boolean) || state.chapter > 1) return state;
+  const purse = purseFor(balance, strategy);
+  const buchen = (s: GameState, id: string, target?: string): GameState => {
+    const r = bookCard(s, balance, catalog, id, target);
+    return r.ok ? r.state : s;
+  };
+  const leisten = (s: GameState, cash: number) => s.cash - cash >= purse.reserve;
+  const prod = production(state);
+  const ende = state.round >= state.totalRounds - 1;
+  const pa = balance.priceActions;
+  if (cfg.thorne && prod > 0 && (state.freight?.railLast ?? 0) > 0 && state.railTariff > balance.transport.thorne.minTariff + 0.001 && state.strength >= 40 && leisten(state, 30)) {
+    // Ab Stufe 1 bei normaler Laune; bei hohem Tarif lohnt der Sondertarif mehr als jede Senkung.
+    const sonder = state.railTariff - balance.freight.cuts[2] > balance.freight.special.tariff;
+    if (!exclusiveActive(state, balance) && freightPressure(state, balance) - thorneResistance(state, balance) >= 1) state = buchen(state, 'thorne_vorsprechen', sonder ? 'sondertarif' : 'senkung');
+  }
+  // Gemeinschaft nur, wenn Jacob selbst schon nennenswert per Bahn fährt (sonst bringt das Bündeln keinen Druck);
+  // halten nur, solange sie groß genug ist, dass ihr Zerfall Druckmittel kosten würde.
+  if (cfg.pool && prod > 0) {
+    if ((state.freight?.pool.length ?? 0) === 0) {
+      // Steht die eigene Pipeline noch aus, baut er sie lieber mit der Gemeinschaft (billiger, dazu Durchleitungsgebühr).
+      const ohnePipeline = state.logistics.pipeline === 'none' || state.logistics.pipeline === 'surveyed';
+      if ((state.freight?.railLast ?? 0) >= balance.freight.bundle[0] / 2 && leisten(state, 100) && !ende) state = buchen(state, 'transportgemeinschaft', ohnePipeline ? 'pipeline' : 'ohne');
+    } else if (state.freight.pool.length >= 3) state = buchen(state, 'gemeinschaft_halten');
+  }
+  // Brennan nur, wenn Öl übrig bleibt, das sonst teuer per Mietfuhrwerk ginge (Bahn, Gespanne und Pipeline voll),
+  // oder die Bahn deutlich teurer ist als Brennan – und nach Gespannen und Pipeline genug für die Mindestmenge bleibt.
+  const fuerBrennan = prod - modeCapacity(state, balance, 'teams') - modeCapacity(state, balance, 'pipeline');
+  const ueberlauf = fuerBrennan - modeCapacity(state, balance, 'rail');
+  const bahnTeuer = tariff(state, balance, 'rail') >= balance.freight.brennan.costPerBarrel + 0.1;
+  if (cfg.brennan && !brennanActive(state) && fuerBrennan >= balance.freight.brennan.minimum * 1.5 && (ueberlauf >= balance.freight.brennan.minimum || bahnTeuer) && !exclusiveActive(state, balance) && leisten(state, 150) && !ende) {
+    state = buchen(state, 'brennan');
+  }
+  if (cfg.cartel && prod > 0) {
+    const p: PricingState = state.pricing;
+    if (!p.cartel) {
+      // Plan Etappe 4: gründen bei vollem Tank (ab 5.000 bbl) – dann trifft der höhere Preis auch das gelagerte Öl.
+      // Mit der Organisatoren-Klausel: Ehrlich 20 % zu drosseln kostet Jacob etwa so viel, wie der höhere Preis bringt
+      // (das Öl bleibt im Boden und zählt am Kapitelende nur noch × 0,4); nur der vorsichtige Bot drosselt ehrlich.
+      if (state.oilStock >= pa.rumour.dry.minTank && leisten(state, 100) && !ende) state = buchen(state, 'foerderbremse', strategy === 'vorsichtig' ? 'ehrlich' : 'klausel');
+    } else if (cartelActive(state)) {
+      state = buchen(state, 'zur_rede');
+      if (state.events.marks[RIVAL_MARKS.bullardPact] !== undefined) state = buchen(state, 'bullard_einladen');
+      state = buchen(state, 'pakt_halten');
+      // Verlängern nur, solange keiner betrügt – sonst lieber auslaufen lassen, bevor der Pakt platzt.
+      if (!ende && state.pricing.cartel && state.pricing.cartel.cheaters.length === 0 && state.pricing.cartel.suspect === null) state = buchen(state, 'pakt_verlaengern');
+    }
+  }
+  if (cfg.contract && !state.pricing.contract && prod >= pa.contract.minQty + pa.contract.qtyStep && !ende) {
+    const q = Math.min(pa.contract.maxQty, Math.max(pa.contract.minQty, Math.floor((0.6 * prod) / pa.contract.qtyStep) * pa.contract.qtyStep));
+    state = buchen(state, 'liefervertrag', `${pa.contract.rounds[0]}x${q}`);
+  }
+  if (cfg.rumour && state.oilStock >= pa.rumour.dry.minTank * 1.5 && state.pricing.rumours.count < 2 && leisten(state, 150)) state = buchen(state, 'geruecht', 'versiegen');
+  if (cfg.crane && craneCut(state, balance) > 0 && cranePressure(state, balance) >= 2) state = buchen(state, 'crane_feilschen', 'abschlag');
+  return state;
+}
+
 function strategyKey(strategy: Exclude<Strategy, 'zufaellig'>): 'cautious' | 'greedy' | 'balanced' {
   return strategy === 'vorsichtig' ? 'cautious' : strategy === 'gierig' ? 'greedy' : 'balanced';
 }
@@ -395,14 +496,14 @@ function strategyKey(strategy: Exclude<Strategy, 'zufaellig'>): 'cautious' | 'gr
 function randomLogistics(state: GameState, balance: Balance, rng: Rng, ledger: TransportLedger): GameState {
   if (rng.float() >= balance.bots.random.logisticsChance) return state;
   const t = balance.transport;
-  const wahl = rng.pick(['tank', 'team', 'survey', 'build', 'guards', 'threat'] as const);
+  // Etappe 2: Die alte Drohung gegenüber Thorne gibt es nicht mehr; Verhandlungen laufen über das Planungsbrett.
+  const wahl = rng.pick(['tank', 'team', 'survey', 'build', 'guards'] as const);
   const kosten: Record<typeof wahl, [RouteKey, number] | null> = {
     tank: null,
     team: ['teams', t.teams.hireCost * (1 - t.teams.resale)],
     survey: ['pipeline', t.pipeline.surveyCost],
     build: ['pipeline', t.pipeline.buildCost * (1 - t.assetShare)],
     guards: null,
-    threat: null,
   };
   const r =
     wahl === 'tank'
@@ -413,9 +514,7 @@ function randomLogistics(state: GameState, balance: Balance, rng: Rng, ledger: T
           ? surveyPipeline(state, balance)
           : wahl === 'build'
             ? buildPipeline(state, balance)
-            : wahl === 'guards'
-              ? setGuards(state, !state.logistics.guards)
-              : threatenThorne(state, balance);
+            : setGuards(state, !state.logistics.guards);
   if (!r.ok) return state;
   const k = kosten[wahl];
   if (k) ledger[k[0]].costs += k[1];
@@ -694,6 +793,44 @@ function balancedTurn(state: GameState, balance: Balance, catalog: readonly Even
   return state;
 }
 
+// --- Erkundung (Etappe 1) ---------------------------------------------------------
+
+/**
+ * So viel Geld hätte der Bot für einen Pachtbonus übrig – fürs Erkunden zählt nicht,
+ * ob er gerade noch ungebohrtes Land hält: Er schaut sich schon nach dem nächsten um.
+ */
+function landBudget(state: GameState, balance: Balance, strategy: Exclude<Strategy, 'zufaellig'>): number {
+  const stufe1 = stageCost(balance, 1);
+  switch (strategy) {
+    case 'ausgewogen':
+      return state.cash + balancedBorrowable(state, balance) - balance.bots.balanced.cashReserve - stufe1;
+    case 'vorsichtig':
+      return state.cash - balance.bots.cautious.cashReserve - stufe1;
+    case 'gierig':
+      return state.cash + headroom(state, balance) - (undrilled(state).length + 1) * stufe1;
+  }
+}
+
+/**
+ * Erkunden vor dem Pachten (Etappe 1): Kennt der Bot weniger als known bezahlbare
+ * freie Ranches mit mindestens bots.explore.until Fundchance, reitet er übers
+ * Land – höchstens rides Mal je Runde, vor den Briefen (die Zeit ist sonst weg).
+ */
+function exploreTurn(state: GameState, balance: Balance, strategy: Exclude<Strategy, 'zufaellig'>, catalog: readonly EventDef[]): GameState {
+  const { rides, until, known } = balance.bots.explore[strategyKey(strategy)];
+  for (let i = 0; i < rides; i++) {
+    // Auch wer gerade knapp bei Kasse ist, sieht sich um: Reiten kostet nur Zeit, und das Geld kommt wieder.
+    const budget = Math.max(landBudget(state, balance, strategy), balance.start.cash);
+    if (freeParcels(state, until).filter((id) => leaseTerms(state, balance, id).bonus <= budget).length >= known) break;
+    const ziel = suggestRide(state, balance, budget);
+    if (ziel === null) break;
+    const r = bookCard(state, balance, catalog, 'ritt', ziel);
+    if (!r.ok) break;
+    state = r.state;
+  }
+  return state;
+}
+
 // --- Ereignisse (2.15) -----------------------------------------------------------
 
 /** Wie der Bot eine Antwort bewertet; reserve = Bargeld, das danach bleiben muss. */
@@ -851,6 +988,10 @@ export function botTurn(
   ledger: TransportLedger = newLedger(),
 ): GameState {
   if (state.finished) return state;
+  // Erkundung (Etappe 1): Die planenden Bots reiten übers Land, bevor die Briefe die Zeit fressen.
+  if (strategy !== 'zufaellig') state = exploreTurn(state, balance, strategy, catalog);
+  // Etappe 2: Preis- und Fracht-Karten nach bots.plans – ebenfalls vor den Briefen.
+  if (strategy !== 'zufaellig') state = planTurn(state, balance, strategy, catalog);
   if (catalog.length > 0) {
     state = strategy === 'zufaellig' ? randomAnswers(state, balance, catalog, rng) : answerEvents(state, balance, catalog, eventPolicy(balance, strategy));
   }
@@ -882,7 +1023,103 @@ export interface GameResult {
   pipeline: boolean;
   /** Ausbau (0.2.15+8): höchste Zahl Türme zugleich, Pumpen, Ranches mit Quelle und davon ausgebaute. */
   build: BuildStats;
+  /** Erkundung (Etappe 1): Termine dafür, gewählte Pachten, Prognosen zum Nachprüfen. */
+  explore: ExploreStats;
+  /** Preis- und Transport-Aktionen (Etappe 2). */
+  plans: PlanStats;
   state: GameState;
+}
+
+/** Preis- und Transport-Aktionen einer Partie (Etappe 2) – für die Abnahme. */
+export interface PlanStats {
+  /** Gegründete und geplatzte Förderbremsen. */
+  cartels: number;
+  collapses: number;
+  /** Je Runde mit Förderbremse: Kartellanteil, Preisplus gegenüber „ohne“ (Anteil), Gründungsrunde? */
+  effects: { share: number; uplift: number; first: boolean }[];
+  /**
+   * Mehrerlös je Förderbremse ($): Preisplus × verkaufte Barrel der Folgerunde − Bewirtung − Wert des
+   * Öls, das Jacob selbst gedrosselt hat (zum Preis der Runde, abzüglich dessen, was es im Boden noch zählt).
+   */
+  pactValues: number[];
+  /** Mehrerlös je beendetem Liefervertrag ($, negativ = Verlust). */
+  contracts: number[];
+  /** Besuche bei Thorne, Tarifsenkung insgesamt, riskierte und erwischte Bluffs. */
+  visits: number;
+  tariffCut: number;
+  bluffsRisked: number;
+  bluffsCaught: number;
+  /** Höchster Posted Price der Partie. */
+  maxPrice: number;
+}
+
+function newPlanStats(): PlanStats {
+  return { cartels: 0, collapses: 0, effects: [], pactValues: [], contracts: [], visits: 0, tariffCut: 0, bluffsRisked: 0, bluffsCaught: 0, maxPrice: 0 };
+}
+
+/** Nach jeder Runde: Wirkung der Förderbremse und ihr Mehrerlös (Preisplus wirkt auf die Verkäufe der Folgerunde). */
+function recordPlans(stats: PlanStats, vorher: GameState, nachher: GameState, offen: { dp: number; pakt: number } | null, balance: Balance): { dp: number; pakt: number } | null {
+  const p = nachher.pricing;
+  if (!p) return null;
+  if (offen && stats.pactValues[offen.pakt] !== undefined) stats.pactValues[offen.pakt] += offen.dp * p.sold;
+  while (stats.pactValues.length < p.founded) stats.pactValues.push(-(balance.plans.cards.foerderbremse?.cash ?? 0));
+  const e = p.effect;
+  if (e && e.round === vorher.round && e.cartel && e.without > 0) {
+    stats.effects.push({ share: e.share, uplift: e.price / e.without - 1, first: e.first });
+    // Gedrosseltes eigenes Öl: Förderung dieser Runde × Drossel ÷ (1 − Drossel).
+    const gefoerdert = nachher.wells.reduce((s, w) => s + (w.status === 'found' ? (w.production?.lastRate ?? 0) : 0), 0);
+    const gedrosselt = e.jacobCut < 1 ? (gefoerdert * e.jacobCut) / (1 - e.jacobCut) : 0;
+    if (stats.pactValues[p.founded - 1] !== undefined) stats.pactValues[p.founded - 1] -= gedrosselt * e.price * (1 - balance.empire.reserveFactor);
+    return { dp: e.price - e.without, pakt: p.founded - 1 };
+  }
+  return null;
+}
+
+/** Eine selbst gewählte Pacht (nicht aus einer Option) – fürs Nachprüfen der Erkundung. */
+export interface LeaseChoice {
+  /** Wusste Jacob etwas über die Ranch (Wissensstufe ab 1)? */
+  known: boolean;
+  /** Liegt dort wirklich Öl? */
+  oil: boolean;
+  /** Ölanteil aller freien Ranches in diesem Moment – so oft hätte eine blinde Wahl getroffen. */
+  blind: number;
+  /** Mitte der Prognose, die Jacob sah (null ohne Prognose). */
+  shown: number | null;
+}
+
+/** Erkundung einer Partie (Etappe 1). */
+export interface ExploreStats {
+  /** Termine in Erkundungs-Karten in den Runden 1–6 (Summe). */
+  appointmentsEarly: number;
+  /** Davon gezählte Runden (gesund und gespielt). */
+  roundsEarly: number;
+  leases: LeaseChoice[];
+  /** Prognosen aller bekannten, noch nicht selbst gebohrten Ranches zu Beginn von Runde 7: Mitte und Wahrheit. */
+  forecasts: { shown: number; oil: boolean }[];
+}
+
+/** Erkundungs-Kennzahlen einer Runde: Termine, neue selbst gewählte Pachten. */
+function recordExplore(stats: ExploreStats, vorher: GameState, nachher: GameState, balance: Balance): void {
+  if (vorher.round <= 6) {
+    stats.appointmentsEarly += exploreAppointments(nachher, balance);
+    stats.roundsEarly++;
+  }
+  const frei = vorher.parcels.filter((p) => !p.discovery && !leaseOf(vorher, p.id) && !optionOf(vorher, p.id));
+  const blind = frei.length > 0 ? frei.filter((p) => p.geology !== 'dry').length / frei.length : 0;
+  for (const l of nachher.leases) {
+    if (l.holder !== 'jacob' || leaseOf(vorher, l.parcelId) || optionOf(vorher, l.parcelId)?.holder === 'jacob') continue;
+    const p = nachher.parcels.find((x) => x.id === l.parcelId)!;
+    const f = nachher.forecasts[p.id];
+    stats.leases.push({ known: knowledgeOf(nachher, p.id).level >= 1, oil: p.geology !== 'dry', blind, shown: f ? (f.low + f.high) / 2 : null });
+  }
+}
+
+/** Prognosen zum Nachprüfen: jede bekannte Ranch mit Prognose, auf der Jacob noch nicht gebohrt hat. */
+function forecastSnapshot(state: GameState): { shown: number; oil: boolean }[] {
+  const gebohrt = new Set(state.wells.map((w) => w.parcelId));
+  return state.parcels
+    .filter((p) => !p.discovery && !gebohrt.has(p.id) && knowledgeOf(state, p.id).level >= 1 && state.forecasts[p.id])
+    .map((p) => ({ shown: (state.forecasts[p.id].low + state.forecasts[p.id].high) / 2, oil: p.geology !== 'dry' }));
 }
 
 /** Ausbau einer Partie (0.2.15+8). */
@@ -926,19 +1163,33 @@ export function playGame(seed: string, balance: Balance, strategy: Strategy, cat
   let sickRounds = 0;
   const ledger = newLedger();
   let maxRigs = state.rigs.length;
+  const explore: ExploreStats = { appointmentsEarly: 0, roundsEarly: 0, leases: [], forecasts: [] };
+  const plans = newPlanStats();
+  let offen: { dp: number; pakt: number } | null = null;
   while (!state.finished) {
     if (rounds >= state.totalRounds + 5) {
       throw new Error(`Partie ${seed} (${strategy}) endet nicht nach ${rounds} Runden.`);
     }
     if (state.sick > 0) sickRounds++;
     else appointments += state.agenda.budget;
+    if (state.round === 7) explore.forecasts = forecastSnapshot(state);
     const gezogen = botTurn(state, balance, strategy, rng, catalog, ledger);
+    recordExplore(explore, state, gezogen, balance);
     maxRigs = Math.max(maxRigs, gezogen.rigs.length);
     state = endRound(gezogen, balance, catalog);
     bookRound(gezogen, state, balance, ledger);
+    offen = recordPlans(plans, gezogen, state, offen, balance);
     rounds++;
   }
   const bankrupt = state.ending === 'pleite';
+  plans.cartels = state.pricing?.founded ?? 0;
+  plans.collapses = state.pricing?.collapsed ?? 0;
+  plans.contracts = [...(state.pricing?.contractResults ?? []), ...(state.pricing?.contract ? [state.pricing.contract.gain] : [])];
+  plans.visits = state.freight?.visits ?? 0;
+  plans.tariffCut = state.freight?.cutTotal ?? 0;
+  plans.bluffsRisked = state.freight?.bluffsRisked ?? 0;
+  plans.bluffsCaught = state.freight?.bluffsCaught ?? 0;
+  plans.maxPrice = Math.max(...state.priceHistory);
   return {
     bankrupt,
     goal: !bankrupt && chapterCheck(state, balance).passed,
@@ -949,6 +1200,8 @@ export function playGame(seed: string, balance: Balance, strategy: Strategy, cat
     transport: ledger,
     pipeline: state.events.marks[LOGISTICS_MARKS.built] !== undefined,
     build: buildStats(state, maxRigs),
+    explore,
+    plans,
     state,
   };
 }
@@ -983,7 +1236,9 @@ export function hintTurn(state: GameState, balance: Balance, maxSteps = 20): Gam
         ? sellOil(state, balance, action.mode, action.barrels)
         : action.kind === 'loan'
           ? takeLoan(state, balance, action.amount)
-          : applyAction(state, balance, action.parcelId, action.kind);
+          : action.kind === 'plan'
+            ? bookCard(state, balance, [], action.cardId, action.parcelId)
+            : applyAction(state, balance, action.parcelId, action.kind);
     if (!r.ok) return state;
     state = r.state;
   }

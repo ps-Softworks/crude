@@ -255,14 +255,16 @@
       result:
         de: "Daniel steckt die Karte und den Umschlag in die Innentasche, als wären sie aus Glas. „Ich vergesse das nicht, Mr. Harlan.“"
         en: "Daniel slips the ticket and the envelope into his breast pocket as if they were glass. \"I won't forget this, Mr. Harlan.\""
+      public: [charity]
       requires: { minCash: 200 }
       effects: { cash: -200 }
       marks: [daniel_gefoerdert]
     - id: glueck
       label: { de: "Ihm Glück wünschen", en: "Wish him luck" }
       result:
-        de: Jacob schüttelt ihm die Hand. Der Junge hat den festen Griff seines Vaters.
-        en: Jacob shakes his hand. The boy has his father's firm grip.
+        de: Jacob schüttelt ihm die Hand. Der Junge hat den festen Griff seines Vaters. Ruth fragt am Abend, warum er ihm nicht geholfen hat.
+        en: Jacob shakes his hand. The boy has his father's firm grip. That evening Ruth asks why he didn't help him.
+      effects: { ruth: -2 }
       appointments: 0
       default: true
 
@@ -295,7 +297,8 @@
     - id: weitergehen
       label: { de: "Weitergehen", en: "Walk on" }
       result:
-        de: Jacob geht weiter. Hinter ihm pfeift der Zug nach Hallstead.
-        en: Jacob walks on. Behind him the train to Hallstead whistles.
+        de: Jacob geht weiter. Hinter ihm pfeift der Zug nach Hallstead. Die Farmer am Bahnsteig haben es gesehen und verlangen seitdem mehr für ihr Land.
+        en: Jacob walks on. Behind him the train to Hallstead whistles. The farmers on the platform saw it and have asked more for their land ever since.
+      effects: { leaseCost: 0.1 }
       appointments: 0
       default: true

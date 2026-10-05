@@ -187,7 +187,7 @@ describe('Rivalen in Kapitel 3', () => {
     expect(r.ok).toBe(true);
     expect(validRivalsK3({ bullardDebt: 'viel' })).toBe(false);
     expect(validRivalsK3(undefined)).toBe(true);
-    expect(SAVE_FORMAT).toBe(21);
+    expect(SAVE_FORMAT).toBe(22);
     // Format 20 (0.4.12) lädt weiter.
     const alt = deserializeGame(JSON.stringify({ format: 20, appVersion: '0.4.12', savedRound: s.round, state: { ...s, rivalsK3: undefined } }));
     expect(alt.ok).toBe(true);
@@ -308,6 +308,7 @@ describe('Ein ganzer Durchlauf Kapitel 1 → 3 mit Bots', () => {
   it('der Standard-Bot spielt alle drei Kapitel mit beiden Zeitsprüngen ohne Absturz; jeder Stand lädt wieder', () => {
     const enden = chapterEnds(balance, 8, catalog);
     let bisKapitel3 = 0;
+    let mitMarkeGegruendet = 0;
     for (const [i, e] of enden.entries()) {
       let s = e;
       const ipo = decideIpo(s, balance, canGoPublic(s, balance) ? 0.33 : 0);
@@ -321,18 +322,23 @@ describe('Ein ganzer Durchlauf Kapitel 1 → 3 mit Bots', () => {
       s = springen(s, (i % 2) as 0 | 1);
       if (s.finished) continue;
       expect(s.chapter).toBe(3);
-      expect(s.events.pending.every((id) => !id.startsWith('k2_'))).toBe(true);
+      // Keine Kapitel-2-Geschichte in Kapitel 3. Angebote der Rivalen-Diplomatie (k2_angebot_*) gelten in jedem
+      // Kapitel ab 2 (minChapter 1, die Merkzeichen der Diplomatie entscheiden) und dürfen schon am Kapitelstart liegen.
+      expect(s.events.pending.every((id) => !id.startsWith('k2_') || id.startsWith('k2_angebot_'))).toBe(true);
       s = kapitelSpielen(s, true);
       expect(s.finished).toBe(true);
       expect(['kapitel', 'pleite', 'verkauft', 'abgesetzt', 'geschluckt', 'haft']).toContain(s.ending);
       expect(s.events.seen.some((id) => id.startsWith('k3_'))).toBe(true);
-      expect(brandOf(s, balance).founded).toBe(true);
+      // Die Marke gründet der Bot nur mit genug Geld (Gründung + Rücklage); seit der verdeckten Geologie
+      // kommen auch arme Partien in Kapitel 3 an, die sie sich nie leisten können.
+      if (brandOf(s, balance).founded) mitMarkeGegruendet += 1;
       const r = deserializeGame(serializeGame(s, '0.4.19'));
       expect(r.ok).toBe(true);
       expect(JSON.stringify(s)).not.toMatch(/NaN|Infinity/);
       bisKapitel3 += 1;
     }
     expect(bisKapitel3).toBeGreaterThanOrEqual(2);
+    expect(mitMarkeGegruendet).toBeGreaterThanOrEqual(1);
   });
 
   it('der Bot-Zug an der Marke ändert vor Kapitel 3 nichts und baut in Kapitel 3 Tankstellen', () => {

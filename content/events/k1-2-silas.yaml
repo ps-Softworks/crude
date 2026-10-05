@@ -175,8 +175,9 @@
     - id: fernbleiben
       label: { de: "Keine Zeit – der Turm läuft", en: "No time – the rig is running" }
       result:
-        de: Der Zug fährt ohne Jacob auf dem Bahnsteig ab. Silas winkt trotzdem.
-        en: The train leaves with no Jacob on the platform. Silas waves anyway.
+        de: Der Zug fährt ohne Jacob auf dem Bahnsteig ab. Silas winkt trotzdem. Der Turm läuft in der Zeit eine Schicht länger.
+        en: The train leaves with no Jacob on the platform. Silas waves anyway. The derrick runs an extra shift meanwhile.
+      effects: { production: 0.05 }
       appointments: 0
       default: true
 

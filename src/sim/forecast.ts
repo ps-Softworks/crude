@@ -21,13 +21,22 @@ export interface Forecast {
 }
 
 /**
- * Wahre Fundchance einer Parzelle: alles, was in ihrer Zone nicht trocken ist.
- * Nur für die Simulation und die Debug-Ansicht, nie für den Spieler.
+ * Öffentliches Wissen über die Zone (Etappe 1, zones.prior): was jeder über eine
+ * Ranch in dieser Lage zum Salzdom weiß, ohne hinzusehen – die Ø Fundchance der Zone.
  */
-export function trueChance(balance: Balance, parcel: Parcel): number {
+export function zoneChance(balance: Balance, parcel: Pick<Parcel, 'zone'>): number {
   const zone = balance.geology.zones.find((z) => z.name === parcel.zone);
   if (!zone) throw new Error(`Unbekannte Zone "${parcel.zone}".`);
-  return 1 - zone.dry;
+  return zone.prior;
+}
+
+/**
+ * Wahre Fundchance einer Parzelle: q aus Zone, Salzrücken und Rauschen (Etappe 1).
+ * Ohne gespeichertes q (alter Spielstand) gilt das öffentliche Wissen der Zone (prior).
+ * Nur für die Simulation und die Debug-Ansicht, nie für den Spieler.
+ */
+export function trueChance(balance: Balance, parcel: Pick<Parcel, 'zone' | 'chance'>): number {
+  return parcel.chance ?? zoneChance(balance, parcel);
 }
 
 /**
@@ -60,11 +69,18 @@ export function makeForecast(
   /** Wahre Chance (0–1), falls nicht die der Zone gilt, z. B. nach einer Bohrstufe. */
   chanceOverride?: number,
 ): Forecast {
-  const { rounding } = balance.forecast;
   const width = forecastWidth(balance, geologist.accuracy);
   const chance = 100 * (chanceOverride ?? trueChance(balance, parcel));
   const error = (rng.float() * 2 - 1) * width;
-  const center = chance + geologist.bias + error;
+  return forecastAround(balance, parcel.id, chance + geologist.bias + error, width);
+}
+
+/**
+ * Bandbreite um eine Mitte (in Prozent) mit der Breite width, auf das Raster aus
+ * balance.yaml gerundet und auf 0–100 begrenzt. Kein Zufall.
+ */
+export function forecastAround(balance: Balance, parcelId: string, center: number, width: number): Forecast {
+  const { rounding } = balance.forecast;
   let low = clamp(roundTo(clamp(center - width / 2, 0, 100), rounding), 0, 100);
   let high = clamp(roundTo(clamp(center + width / 2, 0, 100), rounding), 0, 100);
   // An den Grenzen kann das Raster die Bandbreite zusammendrücken.
@@ -72,7 +88,7 @@ export function makeForecast(
     if (low + rounding <= 100) high = low + rounding;
     else low = high - rounding;
   }
-  return { parcelId: parcel.id, low, high, center };
+  return { parcelId, low, high, center };
 }
 
 /** Prognosen für alle pachtbaren Parzellen, in der Reihenfolge der Liste. */

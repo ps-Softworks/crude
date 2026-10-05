@@ -13,6 +13,8 @@ import { areaFactor } from './geology';
 import { reputationOf } from './reputation';
 import { timedEffect } from './events';
 import { leaseOf, parcelLabel } from './lease';
+// Termine als Hauptwerkzeug, Etappe 2: In der Förderbremse drosselt Jacob seine eigene Förderung (das Öl bleibt im Boden).
+import { throttleFactor } from './pricing';
 
 /**
  * Druckfaktor eines Feldes mit so vielen fördernden Quellen: Die ersten
@@ -168,7 +170,8 @@ export function advanceProduction(input: GameState, balance: Balance): GameState
   }
 
   // 4.12: Ruf bei den Arbeitern (GDD §4: Moral, Unfälle, Streiks) hebt oder senkt die Förderung dauerhaft.
-  const faktor = Math.max(0, 1 + timedEffect(input, 'production') + reputationOf(input, 'workers') * balance.eventSystems.reputation.production);
+  // Etappe 2: Förderbremse drosselt die eigene Förderung.
+  const faktor = Math.max(0, 1 + timedEffect(input, 'production') + reputationOf(input, 'workers') * balance.eventSystems.reputation.production) * throttleFactor(input);
   const neuenStand = new Map<string, { lastRate: number; total: number }>();
   const hoechststand = new Map<string, number>();
   let gefoerdert = 0;

@@ -81,8 +81,8 @@ describe('Ruf (GDD §4)', () => {
   });
 
   it('Arbeiter: guter Ruf hebt die eigene Förderung, schlechter senkt sie', () => {
-    // Ein Kapitel-1-Ende des Standard-Bots hat fördernde Quellen.
-    const [ende] = chapterEnds(balance, 1, catalog);
+    // Ein Kapitel-1-Ende des Standard-Bots mit fördernden Quellen (seit der verdeckten Geologie bohrt nicht jeder fündig).
+    const ende = chapterEnds(balance, 4, catalog).find((e) => e.wells.some((w) => w.status === 'found'))!;
     const s = { ...ende, finished: false, ending: null, chapter: 2 } as GameState;
     expect(s.wells.some((w) => w.status === 'found')).toBe(true);
     const gut = advanceProduction(wirk(s, { reputation: { workers: 100 } }), balance);

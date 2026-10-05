@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { soldThisRound } from './pricing';
 import { describe, expect, it } from 'vitest';
 import type { Balance } from './balance';
 import { botTurn } from './bots';
@@ -133,12 +134,15 @@ describe('Zeitung: Frühwarnzeichen (GDD §7.2)', () => {
         const gespielt = botTurn(state, balance, 'gierig', rng);
         const outlook = marketOutlook(gespielt, balance);
         gesehen.add(outlook);
-        const schaetzung = expectedPrice(gespielt, balance);
+        // Etappe 2: Der Preis rechnet mit Jacobs Verkauf – nach seinem Zug steht der fest.
+        const schaetzung = expectedPrice(gespielt, balance, soldThisRound(gespielt));
         const naechste = endRound(gespielt, balance);
         expect(naechste.priceHistory.at(-1)).toBe(schaetzung);
         const change = aenderung(state.postedPrice, naechste.priceHistory.at(-1)!);
-        if (outlook === 'fall' || outlook === 'crash') expect(change).toBeLessThanOrEqual(-balance.newspaper.fallFrom + 1e-9);
-        if (outlook === 'steady') expect(Math.abs(change)).toBeLessThan(balance.newspaper.fallFrom);
+        // Die Zeitung nimmt an, dass Jacob verkauft, was er fördert; hält er Öl zurück, darf sie danebenliegen.
+        const wieAngenommen = expectedPrice(gespielt, balance) === schaetzung;
+        if (wieAngenommen && (outlook === 'fall' || outlook === 'crash')) expect(change).toBeLessThanOrEqual(-balance.newspaper.fallFrom + 1e-9);
+        if (wieAngenommen && outlook === 'steady') expect(Math.abs(change)).toBeLessThan(balance.newspaper.fallFrom);
         if (naechste.ending === 'pleite') break;
         state = naechste;
       }

@@ -19,6 +19,12 @@
 #   bullard_handschlag  Bullard pachtet nicht direkt neben Jacobs Land
 #   bullard_fehde       Bullard pachtet erst recht neben Jacob (rivals.bullard.feudFactor)
 #   bullard_verraten    setzt die Simulation: Jacob hat trotz Handschlag neben Bullard gepachtet
+#
+# Etappe 3 (gekoppelte Briefe, src/sim/letters.ts): Die Rivalen antworten jetzt auf Jacobs Pläne.
+#   foerderbremse        → bullard_treue (Bullard hört davon); crane_abschlag bleibt fester Rivalenzug ab Runde 6
+#   kartell_klausel      → bullard_verrat (Jacob drosselt selbst nur halb)
+#   thorne_meldet_sich   → thorne_frachtvertrag (nach dem ersten Besuch bei Thorne, spätestens Runde 4)
+#   thorne_bluff         → thorne_nachgezaehlt;  thorne_besucht + thorne_abgelehnt → thorne_exklusiv_billiger
 
 # --- Bullard ----------------------------------------------------------------
 
@@ -55,12 +61,12 @@
       marks: [bullard_handschlag]
       appointments: 2
     - id: whisky
-      label: { de: "Höflich ablehnen und einen Whisky ausgeben (10 $)", en: "Decline politely and buy him a whisky (10 $)" }
+      label: { de: "Höflich ablehnen und eine Runde für den ganzen Saloon ausgeben (100 $)", en: "Decline politely and buy the whole saloon a round (100 $)" }
       result:
-        de: Bullard trinkt, zuckt die Schultern. „Dann eben jeder für sich. Nichts für ungut.“
-        en: Bullard drinks and shrugs. "Every man for himself, then. No hard feelings."
-      requires: { minCash: 10 }
-      effects: { cash: -10 }
+        de: Bullard trinkt, zuckt die Schultern. „Dann eben jeder für sich. Nichts für ungut.“ Der ganze Saloon trinkt auf Harlan.
+        en: Bullard drinks and shrugs. "Every man for himself, then. No hard feelings." The whole saloon drinks to Harlan.
+      requires: { minCash: 100 }
+      effects: { cash: -100 }
     - id: stehenlassen
       label: { de: "Ihn stehen lassen", en: "Leave him standing" }
       result:
@@ -74,24 +80,28 @@
       appointments: 0
       default: true
 
+# Etappe 3: Bullard merkt, dass Jacob die Förderbremse mit Organisatoren-Klausel gegründet hat – die anderen
+# drosseln, Jacob nur halb (kartell_klausel, src/sim/letters.ts). Pachtet Jacob Bullard eine Ranch vor der
+# Nase weg (bullard_verraten), wirkt das weiter in der Simulation, aber ohne eigenen Brief.
 - id: bullard_verrat
   visitor: bullard
   rival: bullard
   certain: true
   conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
-  marked: [bullard_verraten]
+  marked: [kartell_klausel]
+  notMarked: [bullard_fehde]
   title:
     de: Bullard hat es gemerkt
     en: Bullard Found Out
   text:
     de: >-
-      Bullard steht im Büro, den Hut in der Faust. „Ein Handschlag, Harlan. Und du
-      pachtest mir die Parzelle vor der Nase weg.“ Er wird es nie vergessen. Die
-      Frage ist nur, was es Jacob jetzt kostet.
+      Bullard steht im Büro, den Hut in der Faust. „Die Jungs drosseln, und du
+      drosselst halb, Harlan. Organisatoren-Klausel nennt dein Papier das. Ich nenn
+      es anders.“ Er wird es nicht vergessen. Die Frage ist nur, was es Jacob jetzt kostet.
     en: >-
-      Bullard stands in the office, hat crushed in his fist. "A handshake, Harlan.
-      And you lease the parcel right under my nose." He will never forget it. The
-      only question is what it costs Jacob now.
+      Bullard stands in the office, hat crushed in his fist. "The boys throttle, and
+      you throttle half, Harlan. Organiser's clause, your paper calls it. I call it
+      something else." He won't forget it. The only question is what it costs Jacob now.
   choices:
     - id: entschaedigen
       label: { de: "Ihn entschädigen (200 $)", en: "Compensate him (200 $)" }
@@ -105,11 +115,13 @@
       result:
         de: >-
           In der Nacht verschwinden Seile und ein Meißel von Jacobs Bohrstelle. Der
-          Sheriff zuckt die Schultern. Neues Werkzeug kostet 400 $ und eine schlaflose Woche.
+          Sheriff zuckt die Schultern. Neues Werkzeug kostet 400 $ und eine schlaflose
+          Woche. Bullard redet nicht mehr mit Jacob.
         en: >-
           That night rope and a bit vanish from Jacob's rig. The sheriff shrugs. New
-          tools cost 400 $ and a sleepless week.
+          tools cost 400 $ and a sleepless week. Bullard no longer speaks to Jacob.
       effects: { cash: -400, strength: -5 }
+      marks: [bullard_fehde]
       appointments: 0
       default: true
 
@@ -143,8 +155,9 @@
     - id: ablehnen
       label: { de: "Nicht antworten", en: "Don't reply" }
       result:
-        de: Bullard leiht sich das Geld woanders. Er erwähnt es nie wieder.
-        en: Bullard borrows the money elsewhere. He never mentions it again.
+        de: Bullard leiht sich das Geld woanders. Er erwähnt es nie wieder. Bullard pachtet aus Trotz zwei Ranches neben Jacob – die Farmer reiben sich die Hände.
+        en: Bullard borrows the money elsewhere. He never mentions it again. Out of spite Bullard leases two ranches next to Jacob – the farmers rub their hands.
+      effects: { leaseCost: 0.1 }
       appointments: 0
       default: true
 
@@ -175,49 +188,58 @@
       appointments: 0
       default: true
 
+# Etappe 3: Bullard hört von der Förderbremse (foerderbremse, setzt src/sim/pricing.ts).
 - id: bullard_treue
   rival: bullard
+  mail: personal
   certain: true
   conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
-  marked: [crane_treue]
+  marked: [foerderbremse]
   notMarked: [bullard_fehde, bullard_verraten]
   title:
-    de: Bullard hat von Crane gehört
-    en: Bullard Heard About Crane
+    de: Bullard hat von der Förderbremse gehört
+    en: Bullard Heard About the Pact
   text:
     de: >-
-      Bullard fängt Jacob vor der Bank ab. „Du hast Crane die Hand geleckt, hab ich
-      gehört. Treueerklärung. Der Trust frisst Leute wie uns zum Frühstück, Harlan.
-      Erklär mir das.“
+      Ein Zettel in großer, ungelenker Schrift: „Harlan – ihr dreht den Hahn zu, hab
+      ich gehört. Die halben Wildcatter vom Hügel, und keiner fragt Jim Bullard. Du
+      weißt, was passiert, wenn ich voll fördere, während ihr drosselt. Komm in den
+      Silver Dollar und erklär mir das. J. B.“
     en: >-
-      Bullard catches Jacob outside the bank. "Heard you licked Crane's hand. A
-      loyalty pledge. The Trust eats men like us for breakfast, Harlan. Explain
-      that to me."
+      A note in a large, clumsy hand: "Harlan – heard you're closing the taps. Half
+      the wildcatters on the hill, and nobody asks Jim Bullard. You know what happens
+      if I pump full while you lot throttle. Come to the Silver Dollar and explain
+      that to me. J. B."
   choices:
     - id: erklaeren
-      label: { de: "Sich mit ihm hinsetzen und es erklären", en: "Sit down with him and explain" }
+      label: { de: "In den Silver Dollar gehen und es erklären", en: "Go to the Silver Dollar and explain" }
       result:
-        de: Es dauert zwei Stunden und eine Flasche. Am Ende brummt Bullard. „Hätt ich vielleicht auch gemacht.“
-        en: It takes two hours and a bottle. In the end Bullard grunts. "Might have done the same."
+        de: Es dauert zwei Stunden und eine Flasche. Am Ende schlägt Bullard ein. „Keiner pachtet dem anderen vor der Nase, und über den Hahn reden wir.“
+        en: It takes two hours and a bottle. In the end Bullard shakes on it. "Nobody leases under the other's nose, and we talk about the taps."
+      marks: [bullard_handschlag]
       appointments: 2
       sharp: true
     - id: schweigen
-      label: { de: "Weitergehen", en: "Walk on" }
+      label: { de: "Nicht hingehen", en: "Don't go" }
       result:
-        de: Bullard ruft Jacob etwas hinterher, das die ganze Straße hört. Ab jetzt ist er Jacobs Feind.
-        en: Bullard shouts something after Jacob that the whole street hears. From now on he is Jacob's enemy.
+        de: Bullard wartet bis Mitternacht im Silver Dollar. Dann sagt er etwas, das der ganze Saloon hört. Ab jetzt ist er Jacobs Feind.
+        en: Bullard waits in the Silver Dollar until midnight. Then he says something the whole saloon hears. From now on he is Jacob's enemy.
       marks: [bullard_fehde]
       appointments: 0
       default: true
 
 # --- Thorne -----------------------------------------------------------------
 
+# Etappe 3: Thorne bietet den Vertrag an, sobald Jacob bei ihm vorgesprochen hat – spätestens ab Runde
+# letters.thorneLatest (thorne_meldet_sich, src/sim/letters.ts). Kein Thorne-Brief ist „certain“ – so bringt
+# die Post höchstens einen Thorne-Brief je Runde (events.mail.maxPerRound = 1).
 - id: thorne_frachtvertrag
   rival: thorne
   mail: offer
-  certain: true
+  marked: [thorne_meldet_sich]
+  chance: 1
   deadline: 2
-  conditions: { minRound: 4, maxChapter: 1 }
+  conditions: { minRound: 2, maxChapter: 1 }
   title:
     de: Thorne Rail bietet einen Frachtvertrag
     en: Thorne Rail Offers a Freight Contract
@@ -273,8 +295,96 @@
       appointments: 0
       default: true
 
+# Etappe 3: Thorne hat einen Bluff durchschaut (thorne_bluff, setzt src/sim/freight.ts).
+- id: thorne_nachgezaehlt
+  rival: thorne
+  mail: demand
+  marked: [thorne_bluff]
+  chance: 1
+  deadline: 2
+  conditions: { maxChapter: 1 }
+  title:
+    de: Thorne hat nachgezählt
+    en: Thorne Has Counted
+  text:
+    de: >-
+      Ein Brief von Thornes Kontor, mit einer Liste: Runde für Runde, wie viele
+      Fässer Mr. Harlan per Bahn verladen hat. Es sind fast alle. „Ihre Fuhrwerke und
+      Ihr Rohr“, schreibt Thorne, „scheinen eher in Ihren Reden zu fahren als auf der
+      Straße.“ Darunter: Der Tarif steigt. Es sei denn, man einige sich.
+    en: >-
+      A letter from Thorne's office, with a list: round by round, how many barrels
+      Mr. Harlan has shipped by rail. It is nearly all of them. "Your wagons and your
+      pipe," Thorne writes, "seem to travel in your speeches rather than on the road."
+      Below: the tariff goes up. Unless an arrangement is reached.
+  choices:
+    - id: mindestmenge
+      label: { de: "Thorne eine feste Menge je Runde zusagen (Mengenrabatt)", en: "Promise Thorne a fixed amount per round (volume discount)" }
+      result:
+        de: Thorne nimmt die Zusage schriftlich. Der Aufschlag bleibt, aber auf jede Fuhre gibt es Rabatt – solange Jacob liefert, was er versprochen hat.
+        en: Thorne takes the promise in writing. The surcharge stays, but every load gets a discount – as long as Jacob delivers what he promised.
+      marks: [thorne_mengenrabatt]
+      appointments: 2
+    - id: abkaufen
+      label: { de: "Den Aufschlag mit 250 $ abkaufen", en: "Buy off the surcharge for 250 $" }
+      result:
+        de: Thornes Kontor quittiert das Geld und streicht die Erhöhung. Bluffen, steht unter der Quittung, sei ein teures Spiel.
+        en: Thorne's office receipts the money and strikes the increase. Bluffing, it says under the receipt, is an expensive game.
+      requires: { minCash: 250 }
+      effects: { cash: -250, railTariff: -0.10 }
+    - id: schweigen
+      label: { de: "Schweigen", en: "Stay silent" }
+      result:
+        de: Thorne merkt sich das Schweigen. Die nächste Erhöhung kommt früher als sonst.
+        en: Thorne makes a note of the silence. The next increase comes sooner than usual.
+      marks: [thorne_abgelehnt]
+      appointments: 0
+      default: true
+
+# Etappe 3: Jacob hat Thornes Vertrag abgelehnt und spricht später wieder vor – Thorne bessert nach.
+- id: thorne_exklusiv_billiger
+  rival: thorne
+  mail: offer
+  marked: [thorne_besucht, thorne_abgelehnt]
+  chance: 1
+  deadline: 2
+  conditions: { maxChapter: 1 }
+  title:
+    de: Exklusiv – jetzt billiger
+    en: Exclusive – Now Cheaper
+  text:
+    de: >-
+      Nach Mr. Harlans Besuch, schreibt Thorne, habe man das Angebot noch einmal
+      geprüft. Exklusivvertrag wie gehabt, aber der Tarif sinke um fünf Cent, und wer
+      doch einmal ein Fass auf eigenem Weg schicke, zahle nur zwanzig Cent Strafe
+      statt dreißig. „Wir sind ja keine Unmenschen.“
+    en: >-
+      Since Mr. Harlan's visit, Thorne writes, the offer has been reviewed. Exclusive
+      contract as before, but the tariff drops by five cents, and anyone who does send
+      a barrel by his own route pays only twenty cents' penalty instead of thirty.
+      "We are not monsters, after all."
+  choices:
+    - id: unterschreiben
+      label: { de: "Unterschreiben (100 $): −0,05 $ Tarif, Strafe 0,20 $ für andere Wege", en: "Sign (100 $): tariff −0.05 $, penalty 0.20 $ for other routes" }
+      result:
+        de: Thorne schickt die Abschrift noch am selben Tag. Der Tarif sinkt und bleibt eine Weile, wie er ist – solange Jacobs Öl mit der Bahn fährt.
+        en: Thorne sends the copy the same day. The tariff drops and stays put for a while – as long as Jacob's oil goes by rail.
+      requires: { minCash: 100 }
+      effects: { cash: -100, railTariff: -0.05 }
+      marks: [thorne_vertrag, thorne_exklusiv, thorne_exklusiv_billig]
+    - id: ablehnen
+      label: { de: "Wieder nicht antworten", en: "Again, don't reply" }
+      result:
+        de: Thorne lässt ausrichten, die Geduld der Bahn habe Grenzen. Die nächste Tariftabelle ist einen Cent teurer.
+        en: Thorne sends word that the railway's patience has limits. The next tariff table is a cent dearer.
+      effects: { railTariff: 0.01 }
+      appointments: 0
+      default: true
+
 # --- Crane ------------------------------------------------------------------
 
+# Etappe 3: bleibt ein fester Rivalenzug (2.8: Crane erzwingt in jeder Partie eine Entscheidung). Auf die
+# Förderbremse antwortet Crane seit Etappe 2 ohnehin mit eigenem Abschlag, wenn der Preis zu hoch steigt.
 - id: crane_abschlag
   rival: crane
   mail: demand

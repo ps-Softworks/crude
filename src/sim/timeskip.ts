@@ -41,15 +41,19 @@ import { openChapterSystems, type ChapterSystemTexts } from './chapterSystems';
 import { chapterOf } from './chapterOf';
 import { bondWord, type BondWord } from './family';
 import { fieldOf, fieldLabel } from './field';
-import { trueChance } from './forecast';
+// Etappe 1: Ohne Prognose schätzt der Verwalter nach dem öffentlichen Zonenwissen, nie nach der verdeckten Wahrheit.
+import { zoneChance } from './forecast';
 import type { GameState } from './game';
 import { LANGUAGES, localize, type Lang, type LocalizedText } from './i18n';
 import { leaseTerms, type Lease } from './lease';
 import { computePrice, jacobSupply, neighbourWells, rivalSupply } from './market';
 import { advanceProduction, fieldStatus, fieldWells, initialRate, producingWells } from './production';
-import { rivalCandidates, rivalWellIncome, type RivalWell } from './rival';
+import { rivalCandidates, rivalChance, rivalWellIncome, type RivalWell } from './rival';
 import { Rng, seedFromString } from './rng';
 import { newAgenda } from './agenda';
+import { hearsayAroundFinds, learnFromWells } from './exploration';
+import { newPricing } from './pricing'; // Etappe 2
+import { newFreight } from './freight'; // Etappe 2
 import { openRegions, unlockRegion } from './regions';
 import { fuelPremium, okaraIncome } from './ventures';
 import { TIMESKIP_MARKS, TIMESKIP_SIM_MARKS } from './timeskipMarks';
@@ -858,7 +862,7 @@ function geschaetzt(l: Lauf, parcelId: string): number {
   const p = l.s.parcels.find((x) => x.id === parcelId);
   const f = l.s.forecasts[parcelId];
   if (f && !(p && l.expanded.includes(p.region))) return Math.min(1, Math.max(0, f.center / 100));
-  return p ? trueChance(l.balance, p) : 0;
+  return p ? zoneChance(l.balance, p) : 0;
 }
 
 interface Ziel {
@@ -980,7 +984,7 @@ function bullard(l: Lauf): void {
   const rng = new Rng(l.s.rival.rng);
   const kandidaten = rivalCandidates(l.s, balance)
     .filter((p) => l.s.regions.includes(p.region))
-    .sort((a, b) => trueChance(balance, b) - trueChance(balance, a) || (a.id < b.id ? -1 : 1));
+    .sort((a, b) => rivalChance(l.s, balance, b) - rivalChance(l.s, balance, a) || (a.id < b.id ? -1 : 1));
   const wurf = rng.float();
   const wahl = rng.int(0, Math.max(0, Math.min(2, kandidaten.length - 1)));
   const parcel = kandidaten[wahl];
@@ -1199,6 +1203,9 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
     agenda: newAgenda(s.strengthMax, balance),
     family: { ...s.family, time: 0 },
     missedPayments: 0,
+    // Etappe 2: Pakte, Verträge und Verhandlungen aus Kapitel 1 sind nach sechs Jahren erledigt; der Ruf bleibt.
+    pricing: newPricing(),
+    freight: newFreight(),
     log: [
       ...start.log,
       `${formatDate(start)}: Jacob übergibt das Tagesgeschäft für sechs Jahre an einen Verwalter.`,
@@ -1210,7 +1217,10 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
   };
   // Kapitelstart (Integration Phase 4): Merkzeichen ins neue Kapitel, dann alle Systeme des Kapitels anlegen;
   // in Kapitel 3 dazu die Ausgangslage der Rivalen (4.19, src/sim/rivalsK3.ts).
-  const mitMarken: GameState = { ...naechstes, events: marksIntoNextChapter(naechstes.events, round - 1) };
+  const mitMarken0: GameState = { ...naechstes, events: marksIntoNextChapter(naechstes.events, round - 1) };
+  // Erkundung über den Sprung (Termine als Hauptwerkzeug): Altes Wissen bleibt; was der Verwalter gebohrt hat,
+  // steht gleich als Bohrbericht auf der Karte, und um bekannte Funde – auch im neuen Land – redet man.
+  const mitMarken = hearsayAroundFinds(learnFromWells(mitMarken0, balance), balance);
   const offen = startRivalsK3(openChapterSystems(mitMarken, balance, texts), balance);
   return { status: 'done', state: drawEvents(offen, balance, catalog), record: r };
 }

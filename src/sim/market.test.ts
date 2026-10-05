@@ -6,6 +6,8 @@ import { endRound, newGame, type GameState } from './game';
 import { buyLease, leaseOf } from './lease';
 import { advanceMarket, computePrice, jacobSupply, neighbourSupply, neighbourWells } from './market';
 import { loadBalance } from './testBalance';
+import { TRANSPORT_MODES } from './balance';
+import { capacityLeft, sellOil } from './transport';
 
 const balance = loadBalance();
 const market = balance.market;
@@ -70,9 +72,21 @@ function bohrtAlles(state: GameState, bal: Balance): GameState {
 }
 
 /** Ganze Partie (alle Runden); mit oder ohne Jacobs Bohrungen. */
-function partie(seed: string, bal: Balance, jacobBohrt: boolean): GameState {
+/** Etappe 2: Der Preis rechnet mit Jacobs Verkauf – also verkauft er, was in den Tank passt und die Wege schaffen. */
+function verkauftAlles(state: GameState, bal: Balance): GameState {
+  let s = state;
+  for (const mode of TRANSPORT_MODES) {
+    const menge = Math.min(Math.floor(s.oilStock), capacityLeft(s, bal, mode));
+    if (menge <= 0) continue;
+    const r = sellOil(s, bal, mode, menge);
+    if (r.ok) s = r.state;
+  }
+  return s;
+}
+
+function partie(seed: string, bal: Balance, jacobBohrt: boolean, verkauft = true): GameState {
   let s = newGame(seed, bal);
-  while (!s.finished) s = endRound(jacobBohrt ? bohrtAlles(s, bal) : s, bal);
+  while (!s.finished) s = endRound(jacobBohrt ? (verkauft ? verkauftAlles(bohrtAlles(s, bal), bal) : bohrtAlles(s, bal)) : s, bal);
   return s;
 }
 
@@ -172,13 +186,13 @@ describe('Ölpreis (1.9)', () => {
       expect(s.log.some((l) => l.includes('Posted Price'))).toBe(false);
     });
 
-    it('Szenario 3: Jacobs eigene Bohrungen drücken den Preis', () => {
-      // Ohne neue Nachbarn, sonst landen beide Partien am Preisboden.
+    it('Szenario 3 (seit Etappe 2): Jacobs Verkäufe drücken den Preis – wer sein Öl im Tank lässt, nicht', () => {
+      // Ohne neue Nachbarn, sonst landen beide Partien am Preisboden. Der Preis rechnet mit dem Verkauf, nicht der Förderung.
       const nurJacob = mitMarkt(viel, { neighbours: { ...market.neighbours, newWellsPerRound: 0 } });
-      const mit = partie('salt-hill', nurJacob, true);
-      const ohne = partie('salt-hill', nurJacob, false);
-      expect(mit.priceHistory.at(-1)!).toBeLessThan(ohne.priceHistory.at(-1)!);
-      mit.priceHistory.forEach((p, i) => expect(p).toBeLessThanOrEqual(ohne.priceHistory[i]));
+      const verkauft = partie('salt-hill', nurJacob, true, true);
+      const behalten = partie('salt-hill', nurJacob, true, false);
+      expect(behalten.priceHistory.at(-1)!).toBeGreaterThan(verkauft.priceHistory.at(-1)!);
+      behalten.priceHistory.forEach((p, i) => expect(p).toBeGreaterThanOrEqual(verkauft.priceHistory[i]));
     });
 
     it('Determinismus: gleicher Seed und gleiche Züge ergeben dieselbe Preisliste', () => {

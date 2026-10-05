@@ -285,7 +285,16 @@ export function DeskScene(p: DeskSceneProps) {
           'Kalender',
           // Feste Termine kommen jede Runde wieder – kein „neu“, und ein eigenes Wort, damit
           // sie nicht mit den freien Terminen oben in der Leiste verwechselt werden (0.2.15+12).
-          { status: badges.termine.count > 0 ? `${badges.termine.count} feste${badges.termine.count === 1 ? 'r' : ''} Termin${badges.termine.count === 1 ? '' : 'e'}` : undefined },
+          // Etappe 1: Der Kalender ist das Planungsbrett; liegt ein Wochenbericht bei, steht das darauf.
+          {
+            status:
+              [
+                (game.plans?.report.length ?? 0) > 0 ? 'Wochenbericht' : null,
+                badges.termine.count > 0 ? `${badges.termine.count} feste${badges.termine.count === 1 ? 'r' : ''} Termin${badges.termine.count === 1 ? '' : 'e'}` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ') || undefined,
+          },
           <span className="kalenderblatt">
             <span className="kalender-band" />
             <span className="kalender-zeit">{formatDate(game)}</span>

@@ -15,7 +15,7 @@ import type { Kapitel3Content } from './kapitel3Content';
 import { logKapitel3Notes } from './kapitel3Log';
 import { settleKonsortium } from './konsortium';
 import { settleProjekte } from './projekte';
-import { settleSurveys } from './seismik';
+import { seismikClues, settleSurveys } from './seismik';
 import { settleStand } from './stand';
 
 /** Merkzeichen für Jacobs Weg mit dem Konsortium (4.19): Der Bogen „Mr. Vale“ (content/arcs.yaml) liest sie. */
@@ -44,5 +44,7 @@ export function advanceKapitel3(input: GameState, balance: Balance, texts?: Kapi
   const [k3b, cashB] = settleProjekte(state, balance, k3a);
   k3 = settleStand(k3b, balance);
   const neu = k3.notes.filter((n) => !vorher.has(n));
-  return syncKonsortiumMarks(logKapitel3Notes({ ...state, cash: state.cash + cashA + cashB, kapitel3: k3 }, neu, texts, lang));
+  // Seismik schärft die Erkundung: neue Berichte gehen als Hinweis ins Wissen der Ranch.
+  const mitWissen = seismikClues({ ...state, cash: state.cash + cashA + cashB, kapitel3: k3 }, balance);
+  return syncKonsortiumMarks(logKapitel3Notes(mitWissen, neu, texts, lang));
 }

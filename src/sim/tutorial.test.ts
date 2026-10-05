@@ -14,6 +14,7 @@ import {
   parseTutorialContent,
   recommendedParcel,
   recommendScore,
+  shownChance,
   TUTORIAL_HINT_IDS,
   tutorialActive,
   tutorialHint,
@@ -27,6 +28,11 @@ const text = readFileSync(new URL('../../content/tutorial.yaml', import.meta.url
 function ok(result: { ok: true; state: GameState } | { ok: false; reason: string }): GameState {
   if (!result.ok) throw new Error(result.reason);
   return result.state;
+}
+
+/** Alle Termine der Runde belegt – ein Ritt ginge nur noch mit Überstunden. */
+function ohneZeit(state: GameState): GameState {
+  return { ...state, agenda: { ...state.agenda, used: state.agenda.budget } };
 }
 
 function hint(state: GameState): TutorialHint {
@@ -111,8 +117,23 @@ describe('Wann der Einstieg läuft (tutorialActive)', () => {
 });
 
 describe('Schritt 1: Pacht', () => {
-  it('empfiehlt die beste bezahlbare Wertung (Schätzung minus Pachtkosten) und zeigt auf sie', () => {
+  it('Etappe 1: sieht nichts Bezahlbares gut aus, rät er erst zum Ritt übers Land – ohne Überstunden', () => {
     const state = newGame('einstieg', balance);
+    const ziel = recommendedParcel(state, balance);
+    expect(ziel === null || shownChance(state, ziel.parcelId) < balance.tutorial.exploreBelow).toBe(true);
+    const h = hint(state);
+    expect(h).toMatchObject({ id: 'explore', step: 'lease', action: { kind: 'plan', cardId: 'ritt' } });
+    if (h.action.kind !== 'plan') throw new Error('kein Ritt');
+    expect(h.parcelIds).toEqual([h.action.parcelId]);
+    const geritten = hintTurn(state, balance, 1);
+    expect(geritten.knowledge[h.action.parcelId].level).toBeGreaterThanOrEqual(1);
+    expect(geritten.agenda.used).toBe(balance.plans.cards.ritt.appointments);
+    // Ist die Runde schon voll, rät er nicht zu Überstunden, sondern zur Pacht.
+    expect(hint(ohneZeit(state)).id).not.toBe('explore');
+  });
+
+  it('empfiehlt die beste bezahlbare Wertung (Schätzung minus Pachtkosten) und zeigt auf sie', () => {
+    const state = ohneZeit(newGame('einstieg', balance));
     const h = hint(state);
     expect(h.step).toBe('lease');
     expect(['lease_option', 'lease_buy']).toContain(h.id);
@@ -167,7 +188,7 @@ describe('Schritt 1: Pacht', () => {
   });
 
   it('ohne Geld rät er zu einem Kredit, aufgerundet und mindestens so groß wie der kleinste Bankkredit', () => {
-    const state = { ...newGame('einstieg', balance), cash: 0, options: [] };
+    const state = ohneZeit({ ...newGame('einstieg', balance), cash: 0, options: [] });
     const h = hint(state);
     expect(h.id).toBe('loan_lease');
     if (h.action.kind !== 'loan') throw new Error('kein Kredit');
@@ -257,7 +278,7 @@ describe('Ein Bot, der nur den Hinweisen folgt (Fertig-Kriterium 2.13)', () => {
           if (!h || h.action.kind === 'endRound') break;
           const a = h.action;
           const r =
-            a.kind === 'sell' || a.kind === 'loan'
+            a.kind === 'sell' || a.kind === 'loan' || a.kind === 'plan'
               ? hintTurn(state, balance, 1)
               : ok(applyAction(state, balance, a.parcelId, a.kind));
           expect(r).not.toBe(state);

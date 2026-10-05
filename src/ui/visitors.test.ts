@@ -27,14 +27,15 @@ describe('Besucher am Schreibtisch', () => {
     expect(a.ruth_buecher).toMatchObject({ kind: 'visitor', figure: 'ruth' });
     for (const id of ['thomas_geburt', 'brand_nachbar', 'blitz_tank', 'sturm_golf']) expect(a[id], id).toEqual({ kind: 'tableau' });
     // Ein Brief bleibt ein Brief, ein Zettel ein Zettel.
-    expect(a.post_seil).toBeUndefined();
+    expect(a.post_kurier).toBeUndefined();
     expect(a.panne_meissel).toBeUndefined();
   });
 
   it('wer nicht ins Büro kommt, ist kein Besuch, sondern ein Vorfall (0.2.15+11)', () => {
     const a = appearancesOf(events, figureCatalog);
     // Saloon, Bahnsteig, Veranda, Bohrturm, Bank: Der Text spielt woanders.
-    for (const id of ['silas_schnaps', 'silas_abschied', 'silas_saloon', 'moss_wagenweg', 'moss_daniel_zorn', 'wegerecht_moss', 'bullard_saloon', 'bullard_treue', 'bank_kredit', 'crane_pruefer', 'fuhrleute_bestochen', 'nora_brand']) {
+    // Etappe 3: Prüfer Lusk ist gestrichen; Bullards Frage zur Förderbremse und Brennans Fuhrleute kommen als Brief.
+    for (const id of ['silas_schnaps', 'silas_abschied', 'silas_saloon', 'moss_wagenweg', 'moss_daniel_zorn', 'wegerecht_moss', 'bullard_saloon', 'bullard_treue', 'bank_kredit', 'fuhrleute_bestochen', 'nora_brand']) {
       expect(events.some((e) => e.id === id), id).toBe(true);
       expect(a[id], id).toBeUndefined();
     }

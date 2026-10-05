@@ -61,10 +61,18 @@ function formatPrice(value: number): string {
  * Posted Price für die nächste Runde. Große Sprünge kommen ins Protokoll.
  * trend: Faktor des Weltmodells auf den Trendpreis (4.1).
  */
-export function advanceMarket(input: GameState, marketBalance: MarketBalance, rivalRatePerWell = 0, trend = 1): GameState {
-  const supply = saltHillSupply(input, marketBalance, rivalRatePerWell);
+export function advanceMarket(
+  input: GameState,
+  marketBalance: MarketBalance,
+  rivalRatePerWell = 0,
+  trend = 1,
+  // Termine als Hauptwerkzeug, Etappe 2 (src/sim/pricing.ts marketMods): Angebot mit Verkauf statt
+  // Förderung, Förderbremse und Gerüchteschock. Ohne Angabe wie bisher.
+  mods?: { supply: number; shock: number },
+): GameState {
+  const supply = mods ? mods.supply : saltHillSupply(input, marketBalance, rivalRatePerWell);
   const oldPrice = input.postedPrice;
-  const newPrice = computePrice(marketBalance, supply, trend);
+  const newPrice = computePrice(mods && mods.shock !== 1 ? { ...marketBalance, shock: marketBalance.shock * mods.shock } : marketBalance, supply, trend);
 
   let log = input.log;
   const change = Math.abs(newPrice - oldPrice) / oldPrice;
