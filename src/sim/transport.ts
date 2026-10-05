@@ -16,6 +16,8 @@ import { bigPipelineCapacity, harborTrunkRunning } from './bigPipeline';
 // Termine als Hauptwerkzeug, Etappe 2: Liefervertrag (Händler), Brennans Fuhrleute, Fremdöl der Transportgemeinschaft.
 import { activeContract } from './pricing';
 import { brennanActive, poolPipelineShare } from './freight';
+// Etappe 3: billigerer Exklusivvertrag aus dem Brief.
+import { cheapExclusive } from './letters';
 import {
   exclusiveActive,
   hikeChance as thorneHikeChance,
@@ -39,7 +41,9 @@ type Verkaufslage = Pick<GameState, 'railTariff' | 'postedPrice' | 'round'> & Pa
 
 /** Strafe je Barrel, die Thorne während eines Exklusivvertrags für andere Wege verlangt. */
 export function exclusiveSurcharge(state: Verkaufslage, balance: Balance, mode: TransportMode): number {
-  return mode !== 'rail' && exclusiveActive(state, balance) ? balance.transport.thorne.exclusivePenalty : 0;
+  if (mode === 'rail' || !exclusiveActive(state, balance)) return 0;
+  // Etappe 3: Brief „Exklusiv jetzt billiger“ – derselbe Vertrag mit kleinerer Strafe.
+  return cheapExclusive(state) ? balance.letters.cheapExclusivePenalty : balance.transport.thorne.exclusivePenalty;
 }
 
 /**

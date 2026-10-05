@@ -9,54 +9,17 @@
 # Folgen früherer Pakete, die hier aufgegriffen werden:
 #   kerrigan_eingestellt (Kumpel aus der Grube)  → kerrigan_husten
 #   eli_versorgt / eli_im_stich (Unfall am Turm) → eli_zurueck / eli_mutter
-#   sheriff_bezahlt (Sheriff bietet Schutz an)   → diebe_gefasst statt diebe_tank (Gruppe diebe)
 # Neu: trupp_unmut (Sonntagsarbeit verlangt) → streik.
+# Etappe 3 (Briefe ausdünnen): Der Kumpel aus der Grube kommt jetzt mit dem fehlenden Seil (crabb_lager),
+# der Sheriff mit den Dieben am Tank (diebe_tank). Gruppen: trupp (Lohn, Streik) und tank (Blitz, Diebe) –
+# je höchstens einmal in 4 Runden. Mateo, „Diebe gefasst“ und die Schlägerei im Lager sind gestrichen.
 
 # --- Arbeiter -----------------------------------------------------------------
 
-- id: trupp_sonntag
-  notMarked: [crabb_entlassen]
-  title:
-    de: Der Trupp will den Sonntag
-    en: The Crew Wants Sunday Off
-  text:
-    de: >-
-      Seit Bruder Abel am Hafen predigt, wollen die Männer sonntags nicht mehr an den
-      Turm. Vorarbeiter Crabb hat die Mütze in der Hand, aber er sagt es deutlich:
-      sechs Tage, nicht sieben. Bei Bullard arbeiten sie sieben.
-    en: >-
-      Since Brother Abel started preaching at the harbour, the men won't come to the
-      derrick on Sundays. Foreman Crabb holds his cap, but he says it plainly: six
-      days, not seven. At Bullard's they work seven.
-  conditions: { minLeases: 1, minRound: 3 }
-  chance: 0.1
-  choices:
-    - id: geben
-      label: { de: "Den Sonntag geben", en: "Give them Sunday" }
-      result:
-        de: Sonntags steht der Turm still, und der Lohn bleibt gleich. Am Montag arbeiten die Männer, als hätten sie etwas zu beweisen.
-        en: On Sundays the derrick stands still and the wages stay the same. On Monday the men work as if they had something to prove.
-      effects: { cash: -60, strength: 2 }
-      marks: [trupp_sonntag]
-    - id: zuschlag
-      label: { de: "Sonntagszuschlag zahlen (100 $)", en: "Pay a Sunday bonus (100 $)" }
-      result:
-        de: Die meisten nehmen das Geld. Zwei gehen trotzdem in die Kirche und kommen nicht wieder.
-        en: Most of them take the money. Two go to church anyway and don't come back.
-      requires: { minCash: 100 }
-      effects: { cash: -100 }
-    - id: nein
-      label: { de: "Sieben Tage, wie überall", en: "Seven days, like everywhere" }
-      result:
-        de: Crabb setzt die Mütze auf und geht. Am Turm wird weniger gesungen.
-        en: Crabb puts his cap on and leaves. There is less singing at the derrick.
-      marks: [trupp_unmut]
-      appointments: 0
-      default: true
-
 - id: streik
+  group: trupp
+  cooldown: 4
   marked: [trupp_unmut]
-  notMarked: [trupp_gedeckt]
   delay: 2
   chance: 0.35
   title:
@@ -116,17 +79,18 @@
       handkerchief. He hides it badly. "Don't, Jacob. I need the work."
   choices:
     - id: arzt
-      label: { de: "Ihn zu Doktor Haskell schicken und weiterbezahlen (90 $)", en: "Send him to Doctor Haskell and keep paying him (90 $)" }
+      label: { de: "Ihn zu Doktor Haskell schicken und weiterbezahlen (110 $)", en: "Send him to Doctor Haskell and keep paying him (110 $)" }
       result:
         de: Haskell verschreibt trockene Luft und keine Arbeit. Kerrigan lacht darüber. Er kommt trotzdem jeden Tag zum Zaun und schaut zu.
         en: Haskell prescribes dry air and no work. Kerrigan laughs at that. He still comes to the fence every day to watch.
-      requires: { minCash: 90 }
-      effects: { cash: -90 }
+      requires: { minCash: 110 }
+      effects: { cash: -110 }
     - id: buero
       label: { de: "Ihm die Bücher und das Lager geben", en: "Give him the books and the store shed" }
       result:
         de: Kerrigan zählt jetzt Fässer und Seile, im Sitzen. Er ist gründlich. Ruth sagt, er sei der Erste, der ihre Zahlen nicht verbessert.
         en: Kerrigan now counts barrels and rope, sitting down. He is thorough. Ruth says he's the first who doesn't correct her figures.
+      effects: { production: 0.05 }
       appointments: 2
       sharp: true
       marks: [kerrigan_lager]
@@ -204,8 +168,9 @@
     - id: nein
       label: { de: "Bedauern – es gibt keine Stelle", en: "Regret – there's no position" }
       result:
-        de: Eli nickt, als hätte er es gewusst. Er humpelt zum Hafen, wo Bullards Leute anheuern.
-        en: Eli nods as if he knew. He limps to the harbour, where Bullard's people hire.
+        de: Eli nickt, als hätte er es gewusst. Er humpelt zum Hafen, wo Bullards Leute anheuern. Ruth hat Eli gemocht. Sie sagt nichts.
+        en: Eli nods as if he knew. He limps to the harbour, where Bullard's people hire. Ruth liked Eli. She says nothing.
+      effects: { ruth: -3 }
       appointments: 0
       default: true
 
@@ -232,6 +197,7 @@
       result:
         de: Jacob schreibt drei Sätze und legt das Geld dazu. Den dritten Satz streicht er wieder.
         en: Jacob writes three sentences and encloses the money. He crosses out the third sentence.
+      public: [charity]
       requires: { minCash: 120 }
       effects: { cash: -120, strength: 4, ruth: 3 }
     - id: weglegen
@@ -243,8 +209,8 @@
       appointments: 0
       default: true
 
+# Etappe 3: Der Kumpel aus der Grube (Dan Kerrigan) kommt jetzt hier – er ersetzt Crabb.
 - id: crabb_lager
-  notMarked: [kerrigan_lager]
   title:
     de: Im Lager fehlt Seil
     en: Rope Is Missing from the Store
@@ -252,29 +218,34 @@
     de: >-
       Ruth hat nachgezählt: Es fehlen zweihundert Fuß Seil und ein Satz
       Rohrzangen. Vorarbeiter Crabb hat den Schlüssel. In Salt Hill verkauft einer
-      gebrauchtes Werkzeug, billig, ohne zu sagen, woher.
+      gebrauchtes Werkzeug, billig, ohne zu sagen, woher. Und vor dem Tor wartet
+      seit Tagen Dan Kerrigan, mit dem Jacob als Junge in der Grube war. Er hustet
+      wie Jacobs Vater und fragt nach Arbeit, egal welcher.
     en: >-
       Ruth has counted again: two hundred feet of rope and a set of pipe tongs are
       missing. Foreman Crabb has the key. In Salt Hill someone is selling used tools,
-      cheap, without saying where from.
+      cheap, without saying where from. And for days Dan Kerrigan, who worked the
+      pit with Jacob as a boy, has been waiting at the gate. He coughs like Jacob's
+      father and asks for work, any work.
   conditions: { minLeases: 1, minRound: 4 }
   chance: 0.08
   choices:
     - id: stellen
       label: { de: "Crabb unter vier Augen fragen", en: "Ask Crabb in private" }
       result:
-        de: "Crabb leugnet erst, dann nicht mehr. Seine Tochter ist krank. Er zahlt es vom Lohn ab, und er bleibt. Seitdem ist er der Erste am Turm und der Letzte am Kessel."
-        en: "Crabb denies it, then stops denying it. His daughter is sick. He pays it back from his wages, and he stays. Since then he is the first at the derrick and the last at the boiler."
+        de: "Crabb leugnet erst, dann nicht mehr. Seine Tochter ist krank. Er zahlt es vom Lohn ab, und er bleibt. Seitdem ist er der Erste am Turm und der Letzte am Kessel. Kerrigan zieht weiter zu Bullard."
+        en: "Crabb denies it, then stops denying it. His daughter is sick. He pays it back from his wages, and he stays. Since then he is the first at the derrick and the last at the boiler. Kerrigan moves on to Bullard's."
       effects: { production: 0.05 }
       appointments: 2
       sharp: true
     - id: entlassen
-      label: { de: "Crabb vor dem Trupp entlassen", en: "Fire Crabb in front of the crew" }
+      label: { de: "Crabb entlassen und Dan Kerrigan nehmen (60 $ Vorschuss)", en: "Fire Crabb and take on Dan Kerrigan (60 $ advance)" }
       result:
-        de: Crabb geht ohne ein Wort. Der Trupp arbeitet eine Woche schneller und redet nicht mit Jacob.
-        en: Crabb leaves without a word. The crew works faster for a week and doesn't talk to Jacob.
-      effects: { cash: -40 }
-      marks: [crabb_entlassen]
+        de: Crabb geht ohne ein Wort. Dan schuftet für zwei und hustet für drei. Abends erzählen sie sich von der Grube und lachen, obwohl nichts daran lustig war.
+        en: Crabb leaves without a word. Dan works for two and coughs for three. In the evenings they tell each other about the pit and laugh, though none of it was funny.
+      requires: { minCash: 60 }
+      effects: { cash: -60, strength: 3 }
+      marks: [kerrigan_eingestellt]
     - id: neues_schloss
       label: { de: "Ein neues Schloss kaufen und nichts sagen", en: "Buy a new lock and say nothing" }
       result:
@@ -284,52 +255,10 @@
       appointments: 0
       default: true
 
-- id: mateo_papiere
-  title:
-    de: Ein Mann ohne Papiere
-    en: A Man Without Papers
-  text:
-    de: >-
-      Hilfssheriff Pruitt will Mateo Ruiz mitnehmen, Jacobs besten Heizer. Mateo
-      kommt aus Costa Negra und hat keine Papiere; auf jeden Kopf ohne Papiere gibt
-      es fünf Dollar Prämie. Mateo steht neben dem Kessel und schaut Jacob an.
-    en: >-
-      Deputy Pruitt wants to take Mateo Ruiz, Jacob's best fireman. Mateo comes from
-      Costa Negra and has no papers; there's a five-dollar bounty on every head
-      without them. Mateo stands by the boiler and looks at Jacob.
-  conditions: { minLeases: 1, minRound: 3 }
-  chance: 0.08
-  choices:
-    - id: buergen
-      label: { de: "Für Mateo bürgen und mit zum Richter gehen", en: "Vouch for Mateo and go to the judge with him" }
-      result:
-        de: "Ein ganzer Tag im Bezirksgericht, ein Stempel, ein Formular. Mateo bleibt. Pruitt merkt sich, wer sich eingemischt hat. Mateo heizt seitdem wie für zwei."
-        en: "A whole day at the county court, a stamp, a form. Mateo stays. Pruitt remembers who interfered. Since then Mateo stokes like two men."
-      effects: { cash: -20, strength: -3, production: 0.05 }
-      requires: { minCash: 20 }
-      appointments: 2
-    - id: zahlen
-      label: { de: "Pruitt die Prämie selbst zahlen (25 $)", en: "Pay Pruitt the bounty yourself (25 $)" }
-      result:
-        de: Pruitt nimmt fünfundzwanzig statt fünf und tippt an den Hut. Er kommt nächsten Monat wieder, sagt er.
-        en: Pruitt takes twenty-five instead of five and touches his hat. He'll be back next month, he says.
-      requires: { minCash: 25 }
-      effects: { cash: -25 }
-      appointments: 0
-    - id: ausliefern
-      label: { de: "Mateo gehen lassen", en: "Let Mateo go" }
-      result:
-        de: Pruitt nimmt Mateo am Arm. Der Kessel läuft am Nachmittag schlechter. Niemand im Trupp sagt etwas.
-        en: Pruitt takes Mateo by the arm. The boiler runs worse in the afternoon. Nobody in the crew says anything.
-      effects: { production: -0.1 }
-      appointments: 0
-      default: true
-
-# --- Unglücke -----------------------------------------------------------------
-
 - id: blitz_tank
   tableau: true
-  group: unglueck
+  group: tank
+  cooldown: 4
   title:
     de: Der Blitz schlägt in den Tank
     en: Lightning Strikes the Tank
@@ -372,7 +301,6 @@
 
 - id: sturm_golf
   tableau: true
-  group: unglueck
   title:
     de: Ein Sturm vom Golf
     en: A Gale off the Gulf
@@ -441,8 +369,9 @@
     - id: nein
       label: { de: "Den Wagen weiterfahren lassen", en: "Let the wagon roll on" }
       result:
-        de: Haller fährt zu Bullard. Am Abend hört man einen Knall bis zur Pension. Bullards Quelle fließt jetzt wie am ersten Tag.
-        en: Haller drives on to Bullard's. That evening a bang is heard as far as the boarding house. Bullard's well now flows like the first day.
+        de: Haller fährt zu Bullard. Am Abend hört man einen Knall bis zur Pension. Bullards Quelle fließt jetzt wie am ersten Tag – und der Trust zahlt bei so viel Öl am Hügel weniger.
+        en: Haller drives on to Bullard's. That evening a bang is heard as far as the boarding house. Bullard's well now flows like the first day – and with so much oil on the hill the Trust pays less.
+      effects: { price: -0.02 }
       appointments: 0
       default: true
 
@@ -486,9 +415,11 @@
       appointments: 0
       default: true
 
+# Etappe 3: Sheriff Tatums Schutzgeld kommt jetzt mit den Dieben (vorher eigener Besuch).
 - id: diebe_tank
-  group: diebe
-  notMarked: [sheriff_bezahlt, sheriff_umgangen, eli_waechter]
+  group: tank
+  cooldown: 4
+  notMarked: [eli_waechter]
   title:
     de: Jemand zapft den Tank an
     en: Someone Is Tapping the Tank
@@ -496,11 +427,15 @@
     de: >-
       Am Morgen ist der Boden um den Tank nass und riecht nach Öl. Unten im Holz
       steckt ein Zapfhahn, den niemand eingebaut hat. Wagenspuren führen zur Straße
-      nach Port Ellis. Es fehlen etwa zweihundert Barrel.
+      nach Port Ellis. Es fehlen etwa zweihundert Barrel. Mittags setzt sich Sheriff
+      Boyd Tatum, ohne zu fragen, und legt die Stiefel auf Jacobs Kiste: In Salt
+      Hill werde viel gestohlen. Für 50 $ im Monat schaue er öfter vorbei.
     en: >-
       In the morning the ground around the tank is wet and smells of oil. A tap that
       nobody fitted is stuck in the bottom stave. Wagon tracks lead to the Port
-      Ellis road. About two hundred barrels are gone.
+      Ellis road. About two hundred barrels are gone. At noon Sheriff Boyd Tatum
+      sits down without asking and puts his boots on Jacob's crate: a lot gets
+      stolen on Salt Hill. For 50 $ a month he'll look in more often.
   conditions: { minOilStock: 300, minRound: 3 }
   chance: 0.08
   choices:
@@ -513,11 +448,21 @@
       appointments: 2
       sharp: true
     - id: sheriff
-      label: { de: "Den Sheriff holen", en: "Fetch the sheriff" }
+      label: { de: "Tatum zahlen (50 $)", en: "Pay Tatum (50 $)" }
       result:
-        de: Sheriff Tatum schaut sich den Zapfhahn an, schreibt etwas auf und reitet wieder. Er schaut dabei nicht in Richtung Mietstall.
-        en: Sheriff Tatum looks at the tap, writes something down and rides off. He doesn't look toward the livery stable.
-      effects: { oilStock: -200 }
+        de: Tatum steckt das Geld ein, ohne es zu zählen. Drei Fässer tauchen wieder auf. Er kommt wirklich öfter vorbei – meistens zum Essen.
+        en: Tatum pockets the money without counting it. Three barrels turn up again. He really does look in more often – mostly at mealtimes.
+      requires: { minCash: 50 }
+      effects: { cash: -50, oilStock: -140 }
+      marks: [sheriff_bezahlt]
+    - id: eigene_wache
+      label: { de: "Lieber einen eigenen Nachtwächter anstellen (70 $)", en: "Hire your own night watchman instead (70 $)" }
+      result:
+        de: "Der Nachtwächter ist ein Veteran mit einer Schrotflinte und einem Hund. Tatum sieht das gar nicht gern. Seitdem schleicht nachts niemand mehr um den Tank."
+        en: "The watchman is a veteran with a shotgun and a dog. Tatum doesn't like it one bit. Since then nobody creeps round the tank at night."
+      requires: { minCash: 70 }
+      effects: { cash: -70, oilStock: -200 }
+      marks: [sheriff_umgangen]
     - id: abschreiben
       label: { de: "Den Hahn ausbauen und abschreiben", en: "Pull the tap and write it off" }
       result:
@@ -526,39 +471,3 @@
       effects: { oilStock: -200 }
       appointments: 0
       default: true
-
-- id: diebe_gefasst
-  group: diebe
-  marked: [sheriff_bezahlt]
-  delay: 1
-  title:
-    de: Der Sheriff hat die Diebe
-    en: The Sheriff Has the Thieves
-  text:
-    de: >-
-      Sheriff Tatum steht morgens vor dem Tank, zwei Männer gefesselt auf einem Wagen,
-      daneben sechs Fässer mit Jacobs Öl. Die beiden hätten nachts gezapft. „Dafür
-      zahlen Sie mich ja“, sagt Tatum. Er wartet. Ein Fass für die Mühe, meint er,
-      sei üblich.
-    en: >-
-      Sheriff Tatum stands at the tank in the morning, two men tied up on a wagon,
-      beside them six barrels of Jacob's oil. They were tapping at night. "That's
-      what you pay me for," Tatum says. He waits. One barrel for the trouble, he
-      reckons, is customary.
-  conditions: { minOilStock: 300, minRound: 3 }
-  chance: 0.12
-  choices:
-    - id: fass
-      label: { de: "Ihm das Fass geben", en: "Give him the barrel" }
-      result:
-        de: Tatum lädt das Fass selbst auf. Die beiden Diebe sind am Sonntag wieder frei; einer arbeitet jetzt für Tatum.
-        en: Tatum loads the barrel himself. The two thieves are free again on Sunday; one of them now works for Tatum.
-      effects: { oilStock: -40 }
-      default: true
-    - id: gericht
-      label: { de: "Auf einem Prozess bestehen", en: "Insist on a trial" }
-      result:
-        de: "Der Bezirksrichter verhandelt in drei Wochen, Jacob muss aussagen. Die Diebe bekommen ein halbes Jahr, und Jacob 200 $ Schadenersatz aus ihrem Wagen. Tatum grüßt seitdem knapper."
-        en: "The district judge hears it in three weeks; Jacob has to testify. The thieves get half a year, and Jacob 200 $ damages from the sale of their wagon. Tatum greets him more curtly since."
-      effects: { strength: -4, cash: 200 }
-      appointments: 2

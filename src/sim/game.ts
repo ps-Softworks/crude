@@ -16,6 +16,8 @@ import { generateParcels, type Parcel } from './geology';
 // Termine als Hauptwerkzeug (Etappe 1): Erkundung und Planungsbrett.
 import { initialKnowledge, learnFromWells, newExploration, type ExplorationState, type ParcelKnowledge } from './exploration';
 import { appendReport, newPlans, settlePlans, type PlansState } from './plans';
+// Termine als Hauptwerkzeug, Etappe 3: gekoppelte Briefe.
+import { settleLetters } from './letters';
 // Termine als Hauptwerkzeug (Etappe 2): Preis- und Transport-Aktionen.
 import { marketMods, newPricing, settlePricingAfterMarket, type PricingState } from './pricing';
 import { newFreight, type FreightState } from './freight';
@@ -319,7 +321,9 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const familie = settleFamily(beantwortet, balance);
   // Planungsbrett (Etappe 1): Karten mit Wirkung am Rundenende, Lohn des Geologen, Wochenbericht.
   // Etappe 2: dazu Förderbremse, Liefervertrag und Fracht-Verträge (die Verkäufe der Runde stehen fest).
-  const geplant = settlePlans(familie, balance);
+  // Etappe 3: Merkzeichen aus Jacobs Plänen für die gekoppelten Briefe, Antworten aus Briefen wirken (letters.ts).
+  const nachBrett = settlePlans(familie, balance);
+  const geplant = appendReport(settleLetters(familie, nachBrett, balance), nachBrett.log.length);
   // Termine (2.3): Krankheit (2.7), ruhige Runde gibt Kraft zurück, die nächste beginnt mit frischen Terminen.
   const terminiert = settleAgenda(geplant, balance);
   // 4.9 Andockpunkt: Personal – Verkauf nach Regel, Aufträge, Löhne, Loyalität, Hitze, Extra-Termine der nächsten Runde.

@@ -49,6 +49,8 @@ export interface FreightState {
   brennan: { from: number; until: number } | null;
   /** Mitglieder der Transportgemeinschaft (Firmennamen, „Bullard“). */
   pool: string[];
+  /** Etappe 3: Wer zuletzt abgesprungen ist – der Brief „Die Gemeinschaft bröckelt“ kann sie zurückholen (letters.ts). Fehlt in alten Ständen. */
+  poolLeft?: string[];
   /** Gemeinsame Pipeline vereinbart. */
   poolPipeline: boolean;
   poolSince: number;
@@ -472,6 +474,7 @@ export function isFreightState(value: unknown): value is FreightState {
   const zahlen = ['poolSince', 'poolHeldRound', 'freezeUntil', 'hikeDoubleUntil', 'exclusiveEnded', 'railLast', 'visits', 'cutTotal', 'bluffsRisked', 'bluffsCaught'];
   if (!zahlen.every((k) => typeof v[k] === 'number' && Number.isFinite(v[k] as number))) return false;
   if (!Array.isArray(v.pool) || !Array.isArray(v.concessions) || typeof v.poolPipeline !== 'boolean') return false;
+  if (v.poolLeft !== undefined && (!Array.isArray(v.poolLeft) || !v.poolLeft.every((m) => typeof m === 'string'))) return false;
   const b = v.brennan as Record<string, unknown> | null;
   if (b !== null && (typeof b !== 'object' || typeof b.from !== 'number' || typeof b.until !== 'number')) return false;
   return true;

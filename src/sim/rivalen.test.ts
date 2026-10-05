@@ -12,6 +12,7 @@ import { Rng, seedFromString } from './rng';
 import { loadBalance } from './testBalance';
 import { loadEvents } from './testEvents';
 import { RIVAL_MARKS, RIVAL_SIM_MARKS } from './trust';
+import { LETTER_MARKS } from './letters';
 
 const balance = loadBalance();
 const catalog = loadEvents();
@@ -83,9 +84,14 @@ describe('Rivalen-Inhalte in content/events/', () => {
     for (const m of Object.values(RIVAL_MARKS)) expect(gesetzt, m).toContain(m);
   });
 
-  it('jeder der drei hat ein sicheres Ereignis ohne Merkzeichen-Bedingung mit echter Wahl (≥ 2 Antworten, verschiedene Folgen)', () => {
+  it('jeder der drei hat in Kapitel 1 einen Zug, der in jeder Partie kommt, mit echter Wahl (≥ 2 Antworten, verschiedene Folgen)', () => {
+    // Etappe 3: Thornes Frachtvertrag ist kein sicheres Ereignis mehr (höchstens ein Thorne-Brief je Runde), kommt
+    // aber in jeder Partie: nach Jacobs erstem Besuch bei Thorne, spätestens ab letters.thorneLatest – das Merkzeichen
+    // thorne_meldet_sich setzt die Simulation (src/sim/letters.ts) – und mit chance 1, sobald die Post Platz hat.
+    const k1 = catalog.filter((e) => (e.conditions.minChapter ?? 1) <= 1 && !e.id.startsWith('k2_') && !e.id.startsWith('fernleitung_'));
+    const kommtImmer = (e: EventDef) => (e.certain && e.marked.length === 0) || (e.chance === 1 && e.marked.length === 1 && e.marked[0] === LETTER_MARKS.thorneMet);
     for (const rival of RIVAL_IDS) {
-      const zuege = catalog.filter((e) => e.rival === rival && e.certain && e.marked.length === 0);
+      const zuege = k1.filter((e) => e.rival === rival && kommtImmer(e));
       expect(zuege.length, rival).toBeGreaterThan(0);
       for (const e of zuege) {
         expect(e.choices.length).toBeGreaterThanOrEqual(2);

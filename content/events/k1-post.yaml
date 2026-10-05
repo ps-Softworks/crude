@@ -10,107 +10,16 @@
 #   personal = Persönliches (Familie, Freunde, Feinde)
 #
 # Garantie: Kam von einer Briefart events.mail.guaranteeRounds Runden keiner, bringt die Post
-# sicher einen davon. Damit das immer klappt, gibt es je Art einen „Alltagsbrief“ ohne
-# Bedingungen, der öfter kommen darf (once: false).
-
-# --- Angebote ---------------------------------------------------------------
-
-- id: post_seil
-  mail: offer
-  once: false
-  title:
-    de: Kessler & Söhne, Seilerei
-    en: Kessler & Sons, Ropemakers
-  text:
-    de: >-
-      Ein gedruckter Zettel aus Port Ellis: Kessler & Söhne bieten Hanfseil aus
-      Kentucky-Hanf, „reißt nicht, auch wenn der Bohrmeister es tut“. 80 $ die
-      Rolle, frei Bohrstelle.
-    en: >-
-      A printed handbill from Port Ellis: Kessler & Sons offer rope of Kentucky
-      hemp, "won't snap, even if your driller does". 80 $ a coil, delivered to the rig.
-  chance: 0.15
-  choices:
-    - id: kaufen
-      label: { de: "Eine Rolle bestellen (80 $)", en: "Order a coil (80 $)" }
-      result:
-        de: Das neue Seil singt am Turm. Die Männer fluchen weniger, Jacob schläft besser.
-        en: The new rope hums on the derrick. The men curse less, Jacob sleeps better.
-      requires: { minCash: 80 }
-      effects: { cash: -80, strength: 3, production: 0.05 }
-    - id: ablegen
-      label: { de: "In den Ofen damit", en: "Into the stove" }
-      result:
-        de: Der Zettel brennt gut. Das alte Seil hält – noch.
-        en: The handbill burns well. The old rope holds – for now.
-      appointments: 0
-      default: true
-
-- id: post_oelkauf
-  mail: offer
-  title:
-    de: Ein Händler will Öl auf Vorkasse
-    en: A Dealer Wants Oil, Cash Up Front
-  text:
-    de: >-
-      Ein Ölhändler aus dem Osten schreibt auf feinem Papier: Er nimmt 300 Barrel
-      zu einem festen Preis, zahlbar sofort, abzuholen am Hafen. Der Preis liegt
-      unter dem Posted Price, aber Geld in der Hand ist Geld in der Hand.
-    en: >-
-      An oil dealer from the East writes on fine paper: he will take 300 barrels
-      at a fixed price, paid at once, collected at the harbour. The price is below
-      the posted price, but money in hand is money in hand.
-  conditions: { minRound: 4, minOilStock: 300 }
-  chance: 0.3
-  choices:
-    - id: verkaufen
-      label: { de: "300 Barrel für 210 $ abgeben", en: "Sell 300 barrels for 210 $" }
-      result:
-        de: Der Händler zahlt in Gold. Jacob fragt sich, was er weiß, das Jacob nicht weiß.
-        en: The dealer pays in gold. Jacob wonders what he knows that Jacob doesn't.
-      requires: { minOilStock: 300 }
-      effects: { oilStock: -300, cash: 210 }
-    - id: ablehnen
-      label: { de: "Nicht antworten", en: "Don't reply" }
-      result:
-        de: Der Brief bleibt unbeantwortet. Am Hafen kauft ein anderer.
-        en: The letter goes unanswered. Someone else sells at the harbour.
-      appointments: 0
-      default: true
+# sicher einen davon (sofern einer kommen kann).
+#
+# Etappe 3 (Briefe ausdünnen): Die meisten Briefe in Kapitel 1 antworten jetzt auf Jacobs Pläne
+# (src/sim/letters.ts). Hier bleiben die Witwe (Forderung, selten; die Hale-Ranch der Karte hängt an ihr)
+# und der Courier (Information, einmal je Partie), damit jede Briefart in jeder Partie kommen kann:
+# Forderungen bringt sicher Crane (Abschlag, Runde 6), Angebote Thorne (Frachtvertrag, spätestens Runde 4)
+# und Crane (Übernahme, Runde 15), Persönliches Ruths Geburtstag. Gestrichen: Seilerei, Ölkauf, Mietstall,
+# falscher Geologe (steckt jetzt in Hales Gutachten), Brief der Mutter, Drohzettel.
 
 # --- Forderungen ------------------------------------------------------------
-
-- id: post_mietstall
-  mail: demand
-  once: false
-  title:
-    de: Rechnung vom Mietstall
-    en: A Bill from the Livery Stable
-  text:
-    de: >-
-      Der Mietstall in Port Ellis schickt seine Rechnung für Futter und Hufeisen
-      der Fuhrpferde: 60 $. Darunter, mit Bleistift: „Wer nicht zahlt, läuft.“
-    en: >-
-      The livery stable in Port Ellis sends its bill for the dray horses' feed and
-      shoes: 60 $. Below, in pencil: "Them as don't pay, walk."
-  chance: 0.15
-  choices:
-    - id: zahlen
-      label: { de: "Bezahlen (60 $)", en: "Pay (60 $)" }
-      result:
-        de: Der Stallknecht quittiert mit einem Kreuz.
-        en: The stable hand signs the receipt with a cross.
-      requires: { minCash: 60 }
-      effects: { cash: -60 }
-      appointments: 0
-    - id: liegen
-      label: { de: "Liegen lassen", en: "Let it lie" }
-      result:
-        de: "Der Stallbesitzer holt sich das Geld mit Aufschlag – vor allen Leuten im Saloon. Bis es bezahlt ist, rührt kein Gespann von Jacob einen Huf."
-        en: "The stable owner collects the money with a surcharge – in front of everyone in the saloon. Until it's paid, none of Jacob's teams moves a hoof."
-      effects: { cash: -100, teamsIdle: 1 }
-      appointments: 0
-      default: true
 
 - id: post_witwe
   ranch: hale
@@ -129,7 +38,7 @@
       derrick at Salt Hill in the spring. She asks 200 $ in compensation. Otherwise,
       says Pruitt, "the district judge will take up the matter".
   conditions: { minRound: 5 }
-  chance: 0.25
+  chance: 0.06
   choices:
     - id: zahlen
       label: { de: "Der Witwe 200 $ zahlen", en: "Pay the widow 200 $" }
@@ -160,7 +69,6 @@
 
 - id: post_kurier
   mail: info
-  once: false
   title:
     de: Der Port Ellis Courier
     en: The Port Ellis Courier
@@ -173,7 +81,7 @@
       Yesterday's paper, grease-stained. On page three: new derricks at Salt Hill,
       full tanks at the harbour, a rumour about Bullard's next lease. Read between
       the lines and you know where the price is heading.
-  chance: 0.15
+  chance: 0.05
   choices:
     - id: lesen
       label: { de: "In Ruhe lesen", en: "Read it properly" }
@@ -184,130 +92,8 @@
     - id: ueberfliegen
       label: { de: "Überfliegen", en: "Skim it" }
       result:
-        de: Die Zeitung landet unter dem Kaffeebecher.
-        en: The paper ends up under the coffee mug.
-      appointments: 0
-      default: true
-
-- id: post_geologe
-  mail: info
-  title:
-    de: Ein Bericht, der zu schön ist
-    en: A Report That Is Too Good
-  text:
-    de: >-
-      Ein Geologe namens Dr. Ambrose Pike schickt ungefragt einen Bericht: Unter
-      der Parzelle am Bach liege „ohne jeden Zweifel“ ein zweiter Salzdom. Für
-      weitere 200 $ verrate er, wo genau. Die Proben im Umschlag riechen nach Lampenöl.
-    en: >-
-      A geologist named Dr. Ambrose Pike sends an unsolicited report: beneath the
-      parcel by the creek lies "beyond all doubt" a second salt dome. For another
-      200 $ he will say exactly where. The samples in the envelope smell of lamp oil.
-  conditions: { minRound: 3 }
-  chance: 0.25
-  choices:
-    - id: bezahlen
-      label: { de: "Pike 200 $ schicken", en: "Send Pike 200 $" }
-      result:
-        de: Pikes Antwort kommt nie. In Port Ellis erzählt man, er habe dasselbe an zwölf Männer verkauft.
-        en: Pike's answer never comes. In Port Ellis they say he sold the same report to twelve men.
-      requires: { minCash: 200 }
-      effects: { cash: -200 }
-    - id: entlarven
-      label: { de: "Die Proben Silas zeigen", en: "Show the samples to Silas" }
-      result:
-        de: "Silas riecht daran und lacht, bis er husten muss. „Lampenöl und Bahnschotter, Junge.“ Dann erzählt er, wo am Bach wirklich Öl riecht – bei einem Farmer, der billig verpachtet."
-        en: "Silas sniffs them and laughs until he coughs. \"Lamp oil and railway ballast, boy.\" Then he tells where oil really smells by the creek – on a farm that leases cheap."
-      effects: { strength: 2, leaseCost: -0.15 }
-      sharp: true              # beste Antwort (2.7): fehlt, wenn Jacob erschöpft ist
-    - id: wegwerfen
-      label: { de: "Wegwerfen", en: "Throw it away" }
-      result:
-        de: Der Bericht wandert in den Ofen.
-        en: The report goes into the stove.
-      appointments: 0
-      default: true
-
-# --- Persönliches -----------------------------------------------------------
-
-- id: post_mutter
-  mail: personal
-  once: false
-  title:
-    de: Ein Brief aus den Kohleprovinzen
-    en: A Letter from the Coal Provinces
-  text:
-    de: >-
-      Jacobs Mutter schreibt in großer, vorsichtiger Schrift. Der Vater hustet
-      schlimmer, das Dach ist dicht, der Pfarrer lässt grüßen. Ob Jacob genug
-      isst. Ob Ruth gesund ist. Ob er bald einmal schreibt.
-    en: >-
-      Jacob's mother writes in a large, careful hand. Father's cough is worse, the
-      roof holds, the pastor sends his regards. Is Jacob eating enough. Is Ruth well.
-      Will he write soon.
-  chance: 0.15
-  choices:
-    - id: antworten
-      label: { de: "Einen langen Brief zurückschreiben", en: "Write a long letter back" }
-      result:
-        de: Jacob schreibt bis spät in die Nacht. Danach ist ihm leichter.
-        en: Jacob writes late into the night. Afterwards he feels lighter.
-      effects: { strength: 14 }
-    - id: geld
-      label: { de: "Ein paar Zeilen und 150 $ für den Doktor des Vaters schicken", en: "Send a few lines and 150 $ for father's doctor" }
-      result:
-        de: Das Geld kommt an. Die Mutter schreibt zurück, sie hätte lieber mehr Zeilen gehabt.
-        en: The money arrives. His mother writes back that she would rather have had more lines.
-      requires: { minCash: 150 }
-      effects: { cash: -150, strength: 4 }
-      appointments: 0
-    - id: liegen
-      label: { de: "Später antworten", en: "Answer later" }
-      result:
-        de: Der Brief liegt in der Schublade. Jacob denkt öfter an ihn, als ihm lieb ist.
-        en: The letter lies in the drawer. Jacob thinks of it more often than he would like.
-      effects: { strength: -3 }
-      appointments: 0
-      default: true
-
-- id: post_drohung
-  mail: personal
-  deadline: 1
-  title:
-    de: Ein Zettel unter der Tür
-    en: A Note Under the Door
-  text:
-    de: >-
-      Kein Umschlag, keine Unterschrift, nur ein Zettel unter der Tür der Pension:
-      „Salt Hill ist voll. Fahr heim, Kohlenjunge, solange du noch fahren kannst.“
-      Die Schrift ist ungelenk, das Papier stammt aus Bullards Lohnbüro.
-    en: >-
-      No envelope, no signature, just a note under the boarding-house door: "Salt
-      Hill is full. Go home, coal boy, while you still can." The hand is clumsy;
-      the paper comes from Bullard's pay office.
-  conditions: { minRound: 4, minLeases: 1 }
-  chance: 0.25
-  choices:
-    - id: sheriff
-      label: { de: "Den Zettel zum Sheriff bringen (50 $ für seine Mühe)", en: "Take the note to the sheriff (50 $ for his trouble)" }
-      result:
-        de: "Der Sheriff liest ihn, faltet ihn und steckt ihn ein. „Ich kümmere mich drum“, sagt er, ohne aufzustehen. Bullards Männer wissen am Abend, dass der Sheriff den Zettel hat."
-        en: "The sheriff reads it, folds it and pockets it. \"I'll see to it,\" he says without getting up. By evening Bullard's men know the sheriff has the note."
-      marks: [drohung_sheriff]
-      effects: { cash: -50 }
-      requires: { minCash: 50 }
-    - id: aufheben
-      label: { de: "Aufheben – für später", en: "Keep it – for later" }
-      result:
-        de: "Jacob legt den Zettel zu seinen Papieren. Man weiß nie, wann Bullards Briefpapier noch nützlich wird. Bullard erfährt, dass Jacob den Zettel hat. Seine Männer halten sich seitdem von Jacobs Turm fern."
-        en: "Jacob puts the note with his papers. You never know when Bullard's stationery might come in handy. Bullard learns that Jacob has the note. His men keep away from Jacob's derrick since."
-      appointments: 0
-      marks: [drohung_aufgehoben]
-    - id: verbrennen
-      label: { de: "Verbrennen und nicht mehr daran denken", en: "Burn it and think no more of it" }
-      result:
-        de: Der Zettel brennt. Der Gedanke nicht – Jacob schläft schlecht.
-        en: The note burns. The thought does not – Jacob sleeps badly.
-      effects: { strength: -4 }
+        de: Die Zeitung landet unter dem Kaffeebecher. Jacob legt die Füße hoch, zum ersten Mal seit Tagen.
+        en: The paper ends up under the coffee mug. Jacob puts his feet up for the first time in days.
+      effects: { strength: 7 }
       appointments: 0
       default: true

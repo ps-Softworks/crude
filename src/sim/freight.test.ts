@@ -239,7 +239,7 @@ describe('Gemeinsam (Plan 2.6)', () => {
   });
 
   it('Migration: ein Spielstand aus Format 20 lädt ohne Preis- und Transport-Aktionen', () => {
-    expect(SAVE_FORMAT).toBe(21);
+    expect(SAVE_FORMAT).toBe(22); // Etappe 3: freight.poolLeft (freiwillig)
     const s = spiel('migration');
     const alt: Record<string, unknown> = { ...s };
     delete alt.pricing;

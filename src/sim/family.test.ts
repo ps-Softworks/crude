@@ -155,16 +155,17 @@ describe('Kraft-Schwellen (2.7, GDD §4)', () => {
   const a = balance.agenda;
 
   it('unter errorsBelow fehlen die besten Antworten (sharp)', () => {
-    const basis = aufDenTisch({ ...newGame('fehler', balance, katalog), cash: 5000 }, 'post_witwe');
-    const frisch = deskEvents(basis, balance, katalog).find((e) => e.id === 'post_witwe')!;
-    expect(frisch.choices.find((c) => c.id === 'verhandeln')!.ok).toBe(true);
+    // Etappe 3: Die Witwe ist gestrichen – jetzt am Trupp, der mehr will („reden“ ist die beste Antwort).
+    const basis = aufDenTisch({ ...newGame('fehler', balance, katalog), cash: 5000 }, 'trupp_lohn');
+    const frisch = deskEvents(basis, balance, katalog).find((e) => e.id === 'trupp_lohn')!;
+    expect(frisch.choices.find((c) => c.id === 'reden')!.ok).toBe(true);
     const muede = { ...basis, strength: a.errorsBelow - 1 };
-    const gesperrt = deskEvents(muede, balance, katalog).find((e) => e.id === 'post_witwe')!.choices.find((c) => c.id === 'verhandeln')!;
+    const gesperrt = deskEvents(muede, balance, katalog).find((e) => e.id === 'trupp_lohn')!.choices.find((c) => c.id === 'reden')!;
     expect(gesperrt).toMatchObject({ ok: false, reason: 'Jacob ist zu erschöpft – diese Antwort fällt ihm gerade nicht ein.' });
-    const r = resolveEvent(muede, balance, katalog, 'post_witwe', 'verhandeln');
+    const r = resolveEvent(muede, balance, katalog, 'trupp_lohn', 'reden');
     expect(r.ok).toBe(false);
     // Die anderen Antworten gehen weiter.
-    expect(resolveEvent(muede, balance, katalog, 'post_witwe', 'zahlen').ok).toBe(true);
+    expect(resolveEvent(muede, balance, katalog, 'trupp_lohn', 'zahlen').ok).toBe(true);
   });
 
   it('unter errorsBelow prüft die Lupe weniger Felder', () => {

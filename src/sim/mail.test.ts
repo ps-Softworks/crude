@@ -89,12 +89,13 @@ describe('Fertig-Kriterium 2.4: jede Briefart kommt mindestens einmal pro Partie
     }
   }, 30000);
 
-  it('jede Briefart hat in content/ einen Alltagsbrief ohne Bedingungen, der öfter kommen darf', () => {
+  it('jede Briefart hat in content/ einen Brief, der in jeder Partie kommen kann – ohne Merkzeichen, nur mit Runde oder Kapitel als Bedingung', () => {
+    // Etappe 3: Die meisten Briefe antworten jetzt auf Jacobs Pläne. Die Garantie trägt weiter, weil es je Art
+    // einen Brief gibt, der ohne Pläne kommt: Thornes bzw. Cranes Angebote, Cranes Abschlag, der Courier, Ruths Geburtstag.
+    const nurZeit = (e: EventDef) => Object.keys(e.conditions).every((k) => ['minRound', 'maxRound', 'maxChapter'].includes(k));
     for (const kind of MAIL_KINDS) {
-      const alltag = inhalte.filter(
-        (e) => e.mail === kind && !e.once && Object.keys(e.conditions).length === 0 && e.marked.length === 0 && e.notMarked.length === 0,
-      );
-      expect(alltag.length, kind).toBeGreaterThanOrEqual(1);
+      const immer = inhalte.filter((e) => e.mail === kind && e.marked.length === 0 && e.notMarked.length === 0 && nurZeit(e) && (e.conditions.minChapter ?? 1) <= 1);
+      expect(immer.length, kind).toBeGreaterThanOrEqual(1);
     }
   });
 
@@ -253,7 +254,7 @@ describe('Inhalte und Zahlen', () => {
 
   it('balance.yaml braucht den Block events.mail mit ganzen Zahlen ab 1', () => {
     const raw = rawBalance() as any;
-    expect(parseBalance(raw).events.mail).toEqual({ maxPerRound: 1, deadlineRounds: 2, guaranteeRounds: 6 });
+    expect(parseBalance(raw).events.mail).toEqual({ maxPerRound: 1, deadlineRounds: 2, guaranteeRounds: 8, perRival: 1 });
     expect(() => parseBalance({ ...raw, events: { maxPerRound: 1 } })).toThrow(/events.mail/);
     expect(() => parseBalance({ ...raw, events: { ...raw.events, mail: { ...raw.events.mail, deadlineRounds: 0 } } })).toThrow(
       /events.mail.deadlineRounds/,

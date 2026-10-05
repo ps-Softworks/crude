@@ -421,9 +421,10 @@ describe('Post nach Richtlinie', () => {
     expect(delegatedMail(s2, [nurBesuch])).toEqual([]);
   });
 
-  it('echte Briefe: Mutters Brief und die Reporterin – keine geschenkte Kraft, kein Empfang ohne Jacob', () => {
+  it('echte Briefe: Ruths Geburtstag und die Reporterin – keine geschenkte Kraft, kein Empfang ohne Jacob', () => {
+    // Etappe 3: Mutters Brief ist gestrichen – Ruths Zettel zum Geburtstag hat dieselbe Falle (Kraft nur mit Jacob).
     const katalog = loadEvents();
-    const mutter = katalog.find((e) => e.id === 'post_mutter')!;
+    const mutter = katalog.find((e) => e.id === 'ruth_geburtstag')!;
     const reporterin = katalog.find((e) => e.id === 'k2_hitze_reporterin')!;
     for (const event of [mutter, reporterin]) {
       expect(event.mail).toBe('personal');
@@ -436,11 +437,11 @@ describe('Post nach Richtlinie', () => {
       expect(gewaehlt).toBeDefined();
       expect(choiceCost(event, gewaehlt)).toBe(0);
     }
-    // Mutter: „antworten“ (Kraft +14, ein Termin) bleibt Jacob vorbehalten.
-    const basis = imPosteingang(mitRegel(mitPersonal([person('secretary', { competence: 5 })]), 'personal'), 'post_mutter');
+    // Ruth: „ausfahrt“ (Kraft +8, zwei Termine) bleibt Jacob vorbehalten.
+    const basis = imPosteingang(mitRegel(mitPersonal([person('secretary', { competence: 5 })]), 'personal'), 'ruth_geburtstag');
     const r = setMailSpendLimit({ ...basis, strength: 20 }, 1000);
     if (!r.ok) throw new Error(r.reason);
-    expect(delegateMail(r.state, balance, [mutter]).strength).toBeLessThan(20 + 14);
+    expect(delegateMail(r.state, balance, [mutter]).strength).toBeLessThan(20 + 8);
   });
 
   it('am Rundenende ersetzt das Vorzimmer die Standard-Antwort', () => {

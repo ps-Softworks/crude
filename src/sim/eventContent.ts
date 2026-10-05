@@ -20,6 +20,8 @@ import { DELANEY_SIM_MARKS } from './investigation'; // 4.11 Andockpunkt
 // Termine als Hauptwerkzeug, Etappe 2: Merkzeichen der Preis- und Transport-Aktionen.
 import { PRICING_SIM_MARKS } from './pricing';
 import { FREIGHT_SIM_MARKS } from './freight';
+// Etappe 3: Merkzeichen aus Jacobs Plänen, auf die gekoppelte Briefe warten.
+import { LETTER_SIM_MARKS } from './letters';
 
 export interface ContentError {
   file: string;
@@ -517,7 +519,7 @@ export function parseEventFiles(files: readonly { file: string; text: string }[]
   // 4.7 Andockpunkt: BIG_PIPELINE_SIM_MARKS. 4.9 Andockpunkt: STAFF_SIM_MARKS. 4.10 Andockpunkt: DIPLOMACY_SIM_MARKS.
   // 4.11 Andockpunkt: DELANEY_SIM_MARKS (Delaney im Amt, Gerücht, Vorermittlung, Anklage, Urteil).
   // Zeitsprung I (4.5): TIMESKIP_SIM_MARKS (Clara, Benzin, Okara …); Zeitsprung II (noch nicht gebaut): ZEITSPRUNG_MARKS.
-  const gesetzt = new Set<string>([...SIM_MARKS, ...RIVAL_SIM_MARKS, ...LOGISTICS_SIM_MARKS, ...BIG_PIPELINE_SIM_MARKS, ...STAFF_SIM_MARKS, ...DIPLOMACY_SIM_MARKS, ...DELANEY_SIM_MARKS, ...TIMESKIP_SIM_MARKS, ...ZEITSPRUNG_MARKS, ...PRICING_SIM_MARKS, ...FREIGHT_SIM_MARKS, ...events.flatMap((e) => e.choices.flatMap((c) => [...c.marks, ...(c.marksIfForged ?? [])]))]);
+  const gesetzt = new Set<string>([...SIM_MARKS, ...RIVAL_SIM_MARKS, ...LOGISTICS_SIM_MARKS, ...BIG_PIPELINE_SIM_MARKS, ...STAFF_SIM_MARKS, ...DIPLOMACY_SIM_MARKS, ...DELANEY_SIM_MARKS, ...TIMESKIP_SIM_MARKS, ...ZEITSPRUNG_MARKS, ...PRICING_SIM_MARKS, ...FREIGHT_SIM_MARKS, ...LETTER_SIM_MARKS, ...events.flatMap((e) => e.choices.flatMap((c) => [...c.marks, ...(c.marksIfForged ?? [])]))]);
   for (const event of events) {
     for (const m of [...event.marked, ...event.notMarked]) {
       if (gesetzt.has(m)) continue;
@@ -531,7 +533,35 @@ export function parseEventFiles(files: readonly { file: string; text: string }[]
       });
     }
   }
+  errors.push(...groupErrors(events, files, herkunft));
   return errors.length > 0 ? { events: [], errors } : { events, errors };
+}
+
+/**
+ * Gruppen in Kapitel 1 (Etappe 3: Briefe zusammenlegen): Varianten einer Gruppe halten gemeinsam Abstand –
+ * „höchstens einmal in N Runden“. Das geht nur, wenn alle denselben Abstand (cooldown) nennen;
+ * sonst hinge es davon ab, welche Variante zuletzt kam.
+ */
+function groupErrors(events: readonly EventDef[], files: readonly { file: string; text: string }[], herkunft: Map<string, string>): ContentError[] {
+  const out: ContentError[] = [];
+  const gruppen = new Map<string, EventDef[]>();
+  // Nur Kapitel 1 (ohne minChapter): Die Gruppen der Kapitel 2/3 sind Entwurf und noch nicht nachgezogen
+  // (k2_raffinerie mischt 4 und 5 Runden).
+  for (const e of events) if (e.group && e.conditions.minChapter === undefined) gruppen.set(e.group, [...(gruppen.get(e.group) ?? []), e]);
+  for (const [name, liste] of gruppen) {
+    const abstaende = new Set(liste.map((e) => e.cooldown ?? 'Standard'));
+    if (abstaende.size <= 1) continue;
+    const e = liste[liste.length - 1];
+    const file = herkunft.get(e.id)!;
+    const text = files.find((f) => f.file === file)?.text ?? '';
+    const line = text.split('\n').findIndex((l) => new RegExp(`id:\\s*['"]?${e.id}['"]?\\s*$`).test(l)) + 1;
+    out.push({
+      file,
+      line: Math.max(1, line),
+      message: `Gruppe „${name}“: Alle Varianten brauchen denselben Abstand (cooldown) – gefunden ${[...abstaende].join(', ')} (${liste.map((x) => x.id).join(', ')}).`,
+    });
+  }
+  return out;
 }
 
 /**

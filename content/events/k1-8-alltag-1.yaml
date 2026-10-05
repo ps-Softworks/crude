@@ -8,10 +8,9 @@
 #                   nach einer Bohrpanne kommt so schnell keine zweite, egal welche.
 #   draft: true   = Schlüsselszene, Entwurf – Philipp soll sie sich ansehen.
 
-# --- Bohrpannen (Gruppe bohrpanne: drei Varianten) ----------------------------
+# --- Bohrpanne (Etappe 3: drei Varianten zu einer zusammengelegt, höchstens einmal in 4 Runden) ---
 
 - id: panne_meissel
-  group: bohrpanne
   once: false
   cooldown: 4
   title:
@@ -27,7 +26,7 @@
       at four hundred feet and is stuck in the hole. The smith in Port Ellis has
       a new one, he says, but not cheap.
   conditions: { minLeases: 1 }
-  chance: 0.12
+  chance: 0.08
   choices:
     - id: neu
       label: { de: "Einen neuen Meißel kaufen (220 $)", en: "Buy a new bit (220 $)" }
@@ -54,103 +53,27 @@
       appointments: 0
       default: true
 
-- id: panne_kessel
-  group: bohrpanne
-  once: false
-  cooldown: 4
-  title:
-    de: Der Dampfkessel pfeift
-    en: The Boiler Whistles
-  text:
-    de: >-
-      Der Kessel der Dampfmaschine pfeift an einer Naht, die gestern noch dicht
-      war. Der Heizer will weiterfeuern, „bis Sonntag hält der“. Silas schüttelt
-      den Kopf und geht ein Stück weiter weg.
-    en: >-
-      The steam engine's boiler is whistling at a seam that was tight yesterday.
-      The fireman wants to keep stoking, "she'll hold till Sunday". Silas shakes
-      his head and walks a little further off.
-  conditions: { minLeases: 1, minRound: 2 }
-  chance: 0.1
-  choices:
-    - id: flicken
-      label: { de: "Anhalten und flicken lassen (70 $)", en: "Shut down and have it patched (70 $)" }
-      result:
-        de: Zwei Tage Stillstand, ein neuer Flicken. Der Heizer murrt, der Kessel schweigt.
-        en: Two days idle, a new patch. The fireman grumbles; the boiler falls silent.
-      requires: { minCash: 70 }
-      effects: { cash: -70 }
-    - id: weiter
-      label: { de: "Weiterfeuern", en: "Keep stoking" }
-      result:
-        de: Am Donnerstag reißt die Naht. Niemand stirbt. Der Heizer hat keine Augenbrauen mehr, und der Kessel muss neu.
-        en: On Thursday the seam bursts. Nobody dies. The fireman has no eyebrows left, and the boiler must be replaced.
-      effects: { cash: -220, strength: -4 }
-      appointments: 0
-      default: true
-
-- id: panne_gestaenge
-  group: bohrpanne
-  title:
-    de: Das Gestänge sitzt fest
-    en: The Tools Are Stuck
-  text:
-    de: >-
-      Auf sechshundert Fuß ist das Loch eingebrochen, das Bohrgestänge sitzt fest.
-      Ein Fangspezialist aus Salt Hill, ein dürrer Mann namens Wexler, bietet an,
-      es herauszuholen. Er nimmt nur Bargeld und redet nicht über seine Werkzeuge.
-    en: >-
-      At six hundred feet the hole has caved in and the drilling tools are stuck.
-      A fishing man from Salt Hill, a thin fellow named Wexler, offers to get them
-      out. He takes cash only and won't talk about his tools.
-  conditions: { minLeases: 1, minRound: 3 }
-  chance: 0.1
-  choices:
-    - id: wexler
-      label: { de: "Wexler holen (200 $)", en: "Fetch Wexler (200 $)" }
-      result:
-        de: Wexler arbeitet eine Nacht allein. Am Morgen liegt das Gestänge neben dem Turm, verbogen, aber ganz.
-        en: Wexler works one night alone. By morning the tools lie beside the derrick, bent but whole.
-      requires: { minCash: 200 }
-      effects: { cash: -200 }
-    - id: selbst
-      label: { de: "Selbst mit Silas fischen", en: "Fish for them yourself with Silas" }
-      result:
-        de: Vier Tage, zwei gerissene Seile, ein Haken aus einer Wagenachse. Dann kommt das Gestänge hoch. Silas grinst wie ein Junge.
-        en: Four days, two snapped ropes, a hook made from a wagon axle. Then the tools come up. Silas grins like a boy.
-      effects: { strength: -6 }
-      appointments: 2
-      sharp: true              # beste Antwort (2.7): fehlt, wenn Jacob erschöpft ist
-    - id: aufgeben
-      label: { de: "Das Gestänge abschreiben", en: "Write the tools off" }
-      result:
-        de: Das Gestänge bleibt im Loch. Neues kostet mehr, als Jacob gedacht hat.
-        en: The tools stay in the hole. New ones cost more than Jacob had thought.
-      effects: { cash: -250 }
-      appointments: 0
-      default: true
-
-# --- Der Bohrtrupp (Gruppe trupp: drei Varianten) ------------------------------
-
+# Etappe 3: „Der Trupp will den Sonntag“ ist hier hineingelegt. Gruppe trupp (mit dem Streik): höchstens einmal in 4 Runden.
 - id: trupp_lohn
-  notMarked: [trupp_sonntag]
   group: trupp
   once: false
-  cooldown: 5
+  cooldown: 4
   title:
     de: Der Trupp will mehr
     en: The Crew Wants More
   text:
     de: >-
       Der Vorarbeiter, ein breiter Mann namens Hollister, steht mit dem Hut auf
-      dem Kopf in der Tür. Bei Bullard zahle man fünfzig Cent mehr am Tag. Die
-      Männer seien zufrieden, sagt er. Noch.
+      dem Kopf in der Tür. Bei Bullard zahle man fünfzig Cent mehr am Tag. Und
+      seit Bruder Abel am Hafen predigt, wollen die Männer sonntags nicht mehr an
+      den Turm. Die Männer seien zufrieden, sagt er. Noch.
     en: >-
       The foreman, a broad man named Hollister, stands in the doorway with his hat
-      still on. At Bullard's they pay fifty cents more a day. The men are content,
-      he says. For now.
+      still on. At Bullard's they pay fifty cents more a day. And since Brother Abel
+      started preaching at the harbour, the men won't come to the derrick on
+      Sundays. The men are content, he says. For now.
   conditions: { minLeases: 1, minRound: 2 }
-  chance: 0.1
+  chance: 0.08
   choices:
     - id: zahlen
       label: { de: "Den Lohn erhöhen (150 $)", en: "Raise the wages (150 $)" }
@@ -160,66 +83,31 @@
       requires: { minCash: 150 }
       effects: { cash: -150, production: 0.1 }
       appointments: 0
+    - id: sonntag
+      label: { de: "Den Sonntag geben", en: "Give them Sunday" }
+      result:
+        de: Sonntags steht der Turm still, und der Lohn bleibt gleich. Am Montag arbeiten die Männer, als hätten sie etwas zu beweisen.
+        en: On Sundays the derrick stands still and the wages stay the same. On Monday the men work as if they had something to prove.
+      effects: { cash: -60, strength: 2, production: 0.05 }
     - id: reden
       label: { de: "Mit den Männern am Feuer reden", en: "Talk to the men by the fire" }
       result:
         de: Jacob erzählt von der Grube, in der sein Vater alt wurde. Die Männer bleiben – für diesmal und für ein Fass Bier.
         en: Jacob tells them about the pit where his father grew old. The men stay – this time, and for a barrel of beer.
-      effects: { cash: -30, strength: -3 }
+      effects: { cash: -30, strength: -3, production: 0.05 }
       requires: { minCash: 30 }
       sharp: true              # beste Antwort (2.7): fehlt, wenn Jacob erschöpft ist
     - id: nein
-      label: { de: "Ablehnen", en: "Refuse" }
+      label: { de: "Sieben Tage, wie überall – und kein Cent mehr", en: "Seven days, like everywhere – and not a cent more" }
       result:
-        de: "Am Montag fehlen drei Männer. Bullards Turm schlägt lauter als sonst, Jacobs leiser."
-        en: "On Monday three men are missing. Bullard's derrick pounds louder than usual, Jacob's quieter."
+        de: "Hollister setzt den Hut auf und geht. Am Montag fehlen drei Männer, am Turm wird weniger gesungen."
+        en: "Hollister puts his hat on and leaves. On Monday three men are missing, and there is less singing at the derrick."
       effects: { production: -0.1 }
-      appointments: 0
-      default: true
-
-- id: trupp_schlaegerei
-  group: trupp
-  title:
-    de: Schlägerei im Lager
-    en: A Brawl in the Camp
-  text:
-    de: >-
-      Samstagnacht. Zwei von Jacobs Männern und drei von Bullards haben sich im
-      Lager an den Kragen gefasst; einer blutet am Kopf. Der Sheriff kommt am
-      Morgen und will wissen, wer angefangen hat.
-    en: >-
-      Saturday night. Two of Jacob's men and three of Bullard's went at each other
-      in the camp; one is bleeding from the head. The sheriff comes in the morning
-      and wants to know who started it.
-  conditions: { minLeases: 1, minRound: 3 }
-  chance: 0.1
-  choices:
-    - id: decken
-      label: { de: "Die eigenen Männer decken", en: "Cover for your own men" }
-      result:
-        de: "Jacob sagt, seine Männer hätten geschlafen. Der Sheriff schreibt es auf, ohne es zu glauben. Der Trupp vergisst es nicht – und legt sich ins Zeug."
-        en: "Jacob says his men were asleep. The sheriff writes it down without believing it. The crew does not forget – and puts its back into it."
-      effects: { strength: -2, production: 0.05 }
-      marks: [trupp_gedeckt]
-    - id: strafe
-      label: { de: "Dem Sheriff die Strafe zahlen (60 $)", en: "Pay the sheriff the fine (60 $)" }
-      result:
-        de: Der Sheriff zählt das Geld zweimal. Die Sache ist erledigt, sagt er.
-        en: The sheriff counts the money twice. The matter is closed, he says.
-      requires: { minCash: 60 }
-      effects: { cash: -60 }
-      appointments: 0
-    - id: entlassen
-      label: { de: "Die beiden entlassen", en: "Dismiss the two of them" }
-      result:
-        de: "Zwei Männer gehen mit ihrem Bündel, zwei Löhne gespart. Beim nächsten Lohntag ist es still im Lager, und am Turm fehlen zwei Paar Hände."
-        en: "Two men leave with their bundles, two wages saved. On the next payday the camp is quiet, and two pairs of hands are missing at the derrick."
-      effects: { cash: 80, production: -0.1 }
+      marks: [trupp_unmut]
       appointments: 0
       default: true
 
 - id: trupp_unfall
-  group: trupp
   title:
     de: Ein Mann vom Turm
     en: A Man Off the Derrick
@@ -244,12 +132,12 @@
       effects: { cash: -200 }
       marks: [eli_versorgt]
     - id: arzt_nur
-      label: { de: "Nur den Arzt bezahlen (80 $)", en: "Pay only the doctor (80 $)" }
+      label: { de: "Nur den Arzt bezahlen (100 $)", en: "Pay only the doctor (100 $)" }
       result:
         de: Das Bein wird gerichtet. Eli fährt mit dem nächsten Wagen nach Hause.
         en: The leg is set. Eli rides home on the next wagon.
-      requires: { minCash: 80 }
-      effects: { cash: -80 }
+      requires: { minCash: 100 }
+      effects: { cash: -100 }
       appointments: 0
     - id: nichts
       label: { de: "Das ist Sache des Trupps", en: "That's the crew's business" }
@@ -330,7 +218,7 @@
       result:
         de: Jacob sitzt drei Nächte im Dunkeln neben dem Bohrloch. Nichts passiert. Er schläft im Sattel ein.
         en: Jacob sits three nights in the dark beside the wellhead. Nothing happens. He falls asleep in the saddle.
-      effects: { strength: -6 }
+      effects: { strength: -7 }
       appointments: 2
     - id: ignorieren
       label: { de: "Den Männern sagen, sie sollen aufpassen", en: "Tell the men to be careful" }
@@ -357,7 +245,7 @@
       burning, and the wind is turning towards Jacob's parcels. Bullard's men are
       shouting for anyone who can hold a shovel.
   conditions: { minLeases: 1, minRound: 3 }
-  chance: 0.08
+  chance: 0.06
   choices:
     - id: helfen
       public: [press_praise]
@@ -371,9 +259,9 @@
     - id: graben
       label: { de: "Einen Graben um die eigenen Türme ziehen", en: "Dig a trench around your own derricks" }
       result:
-        de: Jacobs Türme bleiben stehen. Bullards brennt bis auf die Grundmauern. Am Morgen weiß jeder am Hügel, wo Jacob gestanden hat.
-        en: Jacob's derricks stand. Bullard's burns to the ground. By morning everyone on the hill knows where Jacob stood.
-      effects: { strength: -3 }
+        de: Jacobs Türme bleiben stehen. Bullards brennt bis auf die Grundmauern. Am Morgen weiß jeder am Hügel, wo Jacob gestanden hat. Ein paar Fässer am Rand verbrennen trotzdem.
+        en: Jacob's derricks stand. Bullard's burns to the ground. By morning everyone on the hill knows where Jacob stood. A few barrels at the edge burn all the same.
+      effects: { strength: -4, oilStock: -60 }
     - id: schlafen
       public: [field_fire]
       label: { de: "Das ist Bullards Feuer", en: "That's Bullard's fire" }
@@ -381,36 +269,5 @@
         de: Das Feuer springt auf Jacobs Öltank über. Bullards Männer sehen zu.
         en: The fire leaps to Jacob's oil tank. Bullard's men watch.
       effects: { oilStock: -200, cash: -150 }
-      appointments: 0
-      default: true
-
-- id: rutengaenger
-  title:
-    de: Der Mann mit der Wünschelrute
-    en: The Man with the Divining Rod
-  text:
-    de: >-
-      Ein alter Mann in einem Gehrock, der einmal schwarz war, hält eine
-      Haselrute vor sich. Er habe im Osten drei Quellen gefunden, sagt er, und
-      für 25 $ finde er Jacob die vierte. Die Rute zittert schon, als er das sagt.
-    en: >-
-      An old man in a frock coat that was black once holds a hazel rod out in front
-      of him. He found three wells back East, he says, and for 25 $ he'll find Jacob
-      the fourth. The rod is already trembling as he says it.
-  conditions: { minRound: 2, maxRound: 10 }
-  chance: 0.08
-  choices:
-    - id: essen
-      label: { de: "Ihm ein Essen spendieren und zuhören", en: "Buy him a meal and listen" }
-      result:
-        de: "Die Rute taugt nichts, die Geschichten schon. Er kennt jeden Bohrmeister zwischen hier und dem Golf – und jeden Farmer, der verpachten muss."
-        en: "The rod is worthless, the stories are not. He knows every drilling boss between here and the Gulf – and every farmer who has to lease."
-      requires: { minCash: 5 }
-      effects: { cash: -5, strength: 2, leaseCost: -0.15 }
-    - id: weg
-      label: { de: "Ihn wegschicken", en: "Send him off" }
-      result:
-        de: Der Alte zieht weiter zu Bullard. Man hört, Bullard habe bezahlt.
-        en: The old man moves on to Bullard. They say Bullard paid.
       appointments: 0
       default: true

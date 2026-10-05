@@ -1,4 +1,4 @@
-# Termine als Hauptwerkzeug – Messung Etappe 1
+# Termine als Hauptwerkzeug – Messung Etappe 1–3
 
 Etappe 1 aus dem Bauplan „Termine als Hauptwerkzeug“: verdeckte Geologie mit Salzrücken, Erkundung mit Hinweisen und Wissensstufen, echte Bohrchancen und das Planungsbrett im Kalender. Hier stehen die Abnahmekriterien des Plans, gemessen über 500 Seeds mit dem Standard-Bot (ausgewogen) und allen Ereignissen, dazu die Kapitel-1-Zielwerte aus `npm run bots` und alles, was vom Plan abweicht – mit Grund. Philipp war krank, darum ohne Rückfrage entschieden.
 
@@ -100,7 +100,7 @@ Format 20. Ältere Stände (Format 12–19) laden weiter: Jede Ranch, die eine P
 
 - ~~Reiter Markt und Fracht sind noch leer~~ – seit Etappe 2 gefüllt (unten).
 - `exploreGain` und die übrigen neuen Kennzahlen sind noch keine `bots.targets` (Plan: Etappe 4).
-- Briefe, die zur Erkundung passen (`geruecht_fund`, `post_geologe`, `dok_hale_gutachten`, `rutengaenger`, `dok_pike_urkunde`), sind noch nicht umgebaut (Etappe 3).
+- ~~Briefe, die zur Erkundung passen (`geruecht_fund`, `post_geologe`, `dok_hale_gutachten`, `rutengaenger`, `dok_pike_urkunde`), sind noch nicht umgebaut~~ – seit Etappe 3 umgebaut (unten).
 
 ---
 
@@ -216,5 +216,115 @@ Format 21. Ältere Stände (Format 12–20) laden weiter: keine Förderbremse, k
 
 ## Offen für Etappe 3–4
 
-- Briefe koppeln (Etappe 3): Reaktionen auf Förderbremse, Händler, Gerücht, Thorne, Brennan und Gemeinschaft als Briefe in der Folgerunde; bisher gibt es nur „Bei einem von uns läuft die Pumpe nachts“ und „Thorne bietet Brennan mehr“.
+- ~~Briefe koppeln (Etappe 3)~~ – erledigt (unten).
 - `pactValue`, `priceGain`, `cartelCollapse`, `contractLoss`, `freightGain` werden `bots.targets`; Bot-Charaktere für die Karten (Etappe 4).
+
+---
+
+# Etappe 3: Briefe und Ereignisse ausdünnen und koppeln
+
+Etappe 3 aus dem Bauplan: weniger Briefe, und die übrigen hängen, wo es geht, an dem, was Jacob mit seinen Terminen plant. Nur Kapitel 1 – die Ereignisse der Kapitel 2 und 3 sind unverändert. Gemessen über 500 Seeds mit dem Standard-Bot und allen Ereignissen, in zwei Varianten (siehe unten). Philipp war krank, darum ohne Rückfrage entschieden.
+
+Erzeugt mit `npx tsx tools/termineMessung3.ts 500 --schreiben` (Block zwischen den Marken), der Rest ist von Hand geschrieben.
+
+## Was jetzt anders ist (kurz)
+
+- **Katalog Kapitel 1: 123 → 92 Ereignisse** (Plan-Ausgangswert 122). Gestrichen: Wirtin, Mietstall, Seilerei, Poker, Prediger, Böttcher, Serviette, Ölkauf auf Vorkasse, Wechsel (beide), Rutengänger (ist eine Karte), Prüfer Lusk, Bullards Ausbruch, Haus an der Bay Street, langsamer Richter, Thomas' Krupp, Mateo, „Diebe gefasst“, Brief der Mutter, Drohzettel, Pikes und Hales Folgebriefe. **Zusammengelegt:** drei Bohrpannen → eine; „Sonntag“ steckt in „Der Trupp will mehr“; „Sumpf“ in Brennans Aufschlag; der Kumpel aus der Grube (Kerrigan) kommt mit dem fehlenden Seil; Sheriff Tatums Schutzgeld mit den Dieben am Tank; Wahltag in „Zwei Kandidaten“; das Angebot des Couriers in „Nora will ein Gespräch“; Bullards Rache direkt in „Das Seil ist angeschnitten“; der falsche Geologe in Hales Gutachten.
+- **Gruppen** (höchstens einmal in 4 Runden): Trupp (Lohn, Streik), Tank (Blitz, Diebe), Thomas (Nächte, erstes Wort). `npm run check:content` prüft, dass alle Varianten einer Gruppe in Kapitel 1 denselben Abstand haben.
+- **Gekoppelte Briefe.** Die Simulation setzt am Rundenende Merkzeichen aus Jacobs Plänen (`src/sim/letters.ts`): frisch nach einem Plan (4 Runden lang) `erkundet`, `thorne_besucht`, `thorne_abfuhr`, `geruecht_gestreut`, `kartell_klausel`, `gemeinschaft_abgesprungen`, `liefervertrag_fehlmenge`; solange etwas läuft `foerderbremse_laeuft`, `liefervertrag_laeuft`, `brennan_faehrt`, `gemeinschaft_laeuft`, `oel_zurueckgehalten` (nach dem Verkauf ≥ 2.000 bbl im Tank). Darauf warten:
+
+  | Plan | Briefe |
+  | --- | --- |
+  | Förderbremse | „Bullard hat von der Förderbremse gehört“ (Brief, sicher), „Bullard hat es gemerkt“ (Organisatoren-Klausel), „Bei einem von uns läuft die Pumpe nachts“ |
+  | Händler / Zurückhalten | „Der Trust will vorkaufen“ und „Volle Tanks im Hafen“ (wiederkehrend, solange Öl zurückgehalten wird), **neu** „Der Händler mahnt“ (Nachliefern, Vertrag gegen 300 $ auflösen, oder Crane zahlt weniger) |
+  | Gerücht | „Nora will ein Gespräch“ (mit dem Bericht des Couriers), „Noras Artikel“, **neu** „Ein Brief von Nora Whitlock“ nach der Entlarvung (Wahrheit sagen → Nora warnt wieder vor; Schweigegeld; schweigen → Pachten teurer) |
+  | Thorne | „Thorne erhöht bald den Tarif“ (nach einer Abfuhr), „Die Kesselwagen kommen nicht“ (nach dem Besuch), Thornes Frachtvertrag (nach dem ersten Besuch, spätestens Runde 4), **neu** „Thorne hat nachgezählt“ (Bluff: Mengenrabatt zusagen, Aufschlag für 250 $ abkaufen, schweigen), **neu** „Exklusiv – jetzt billiger“ (nach Ablehnung und neuem Besuch: −0,05 $ Tarif, Strafe 0,20 $ statt 0,30 $) |
+  | Brennan | „Brennans Fuhrleute wollen Aufschlag“, „Ein Fuhrmann zählt zu viel Geld“ (beide jetzt Brennans Leute, wiederkehrend), „Thorne bietet Brennan mehr“ |
+  | Gemeinschaft | Pickett gibt auf, Tilly will einen Tank (nur solange die Gemeinschaft läuft; Ruf bei den Wildcattern ±), **neu** „Haskell & Dunn sind abgesprungen“ (zurückholen, Zuschuss, oder ziehen lassen) |
+  | Erkundung | „Ein Bohrmeister verkauft seine Bohrliste“ (statt „Fund im Nachbarbezirk“: wird ein Bohrbericht auf einer Ranch), Hales Gutachten (100 $: Kartierung wie von Hale; gefälscht ein „Ölsand“ auf einer trockenen Ranch – die Lupe schützt), Pikes Bohrliste (300 $: echter Bohrbericht oder wertlos) |
+  | Pipeline-Route | die Wegerechte (Moss, Witwe am Bahndamm) – unverändert, zählen aber als Antwort auf Jacobs Plan |
+
+- **Post.** `events.mail.guaranteeRounds` 6 → 8. In Kapitel 1 gehen Antworten (Briefe mit `marked`) bei der Garantie und beim Würfeln den Alltagsbriefen vor. Neu `events.mail.perRival: 1`: höchstens ein Brief je Rivale und Runde (alle Kapitel) – nie zwei Thorne-Briefe zugleich. Tilly, Pickett, Gaffney (Kesselwagen), Brennan (beide) und Bullard (Förderbremse) schreiben jetzt, statt am Schreibtisch zu stehen.
+- **Kein Brief ohne Wirkung.** Jede Antwort in Kapitel 1 kostet oder bringt ≥ 100 $, setzt ein Merkzeichen mit Folge oder bewegt eine Beziehung (Test in `src/sim/letters.test.ts`). Vor allem „Nicht antworten“ hat jetzt meist eine Folge (Pachten teurer, Crane zahlt weniger, der Ruf bei den Wildcattern sinkt …). Ausnahme: die Wegerechte, die wiederkommen, bis Jacob antwortet – „später“ verschiebt nur.
+
+<!-- Messung Etappe 3: npx tsx tools/termineMessung3.ts 500 --schreiben ersetzt bis zur nächsten Marke. -->
+
+Stand: 2026-10-05 · Version 0.4.5+1 · 500 Seeds (`bot-0` bis `bot-499`), Standard-Bot mit allen 354 Ereignissen, je Seed zwei Varianten der Karten
+
+| Kriterium | Ziel (Plan) | Ist | erfüllt |
+| --- | --- | ---: | :---: |
+| Katalog Kapitel 1 (Ereignisse in content/events/k1-*.yaml) | −25 % (von 122 auf ≤ 92) | 92 (-24,6 %), davon 34 Briefe und 5 feste Termine | ja |
+| Ab Runde 6: Briefe, die an Merkzeichen aus Jacobs Plänen hängen (alle Karten) | ≥ 50 % | 52,3 % (3028 von 5790); alles auf dem Tisch 30,9 % | ja |
+| Ø Briefe je Runde (alle Karten) | ≤ 1,2 | 0,94; alles auf dem Tisch 2,16 | ja |
+| Höchstens ein Thorne-Brief je Runde | 1 | höchstens 1 | ja |
+
+| Variante (Standard-Bot) | Ø Briefe je Runde | Ø alles auf dem Tisch je Runde | ab Runde 6: Briefe an Plänen | ab Runde 6: alles an Plänen |
+| --- | ---: | ---: | ---: | ---: |
+| voreingestellt | 0,81 | 1,98 | 32,9 % | 17,4 % |
+| alle Karten | 0,94 | 2,16 | 52,3 % | 30,9 % |
+
+Häufigste Ereignisse je Partie (alle Karten): geruecht_fund (Plan) 1,81 · wegerecht_moss (Plan) 1,24 · wegerecht_bahndamm (Plan) 1,16 · silas_schnaps 1,00 · bullard_saloon 1,00 · thomas_geburt 1,00 · moss_schulden 1,00 · crane_abschlag 1,00 · moss_versteigerung 1,00 · silas_abrechnung 1,00 · silas_saloon 1,00 · crane_uebernahme 1,00 · dok_hale_gutachten (Plan) 0,97 · thorne_frachtvertrag 0,97 · dok_pike_urkunde (Plan) 0,95
+
+<!-- Ende der Messung Etappe 3 -->
+
+Zum Vergleich vorher (Etappe 2, gleiche Zählung über 100 Seeds, ohne die Kette über Merkzeichen): voreingestellt 1,14 Briefe und 2,51 Ereignisse insgesamt je Runde, alle Karten 1,21 bzw. 2,60; ab Runde 6 hingen 0 % bzw. 3 % der Briefe an einem Plan.
+
+## Wie gemessen wird
+
+- **Katalog:** alle Ereignisse in `content/events/k1-*.yaml`, die in Kapitel 1 kommen können (feste Termine mitgezählt, der Familienabend aus Kapitel 2 nicht). Der Plan nennt 122 (Stand main 0.4.5+1); nach Etappe 2 waren es 123.
+- **Varianten:** *voreingestellt* = balance.yaml (der Standard-Bot spricht bei Thorne vor, sonst keine Preis- oder Fracht-Karte); *alle Karten* = dazu Förderbremse, Liefervertrag, Gerücht, Crane, Brennan, Transportgemeinschaft – ein Spieler, der seine Termine für Pläne nutzt. Die Abnahme rechnet mit *alle Karten*: Wer keine Pläne macht, bekommt die gekoppelten Briefe gar nicht (das ist der Sinn der Kopplung), entsprechend weniger Post.
+- **Briefe** = alles mit Briefart (Post, auch sichere Briefe). **Alles auf dem Tisch** = Briefe, Besuche, Vorfälle und sichere Ereignisse (ohne feste Termine). Gezählt wird das Eintreffen (`events.lastSeen`).
+- **Hängt an einem Plan:** Das Ereignis wartet (`marked`) auf ein Merkzeichen aus `planMarks()` (`src/sim/letters.ts`: die Plan- und Lage-Merkzeichen, alles, was Preis- und Fracht-Aktionen setzen, und die vermessene Pipeline-Route) – oder auf ein Merkzeichen, das nur Antworten solcher Briefe setzen (Kette: Nora will ein Gespräch → Noras Artikel). Thornes Frachtvertrag zählt nur, wenn Jacob vorher wirklich bei Thorne war (sonst meldet sich Thorne von selbst).
+- **Thorne-Briefe:** Briefe mit `rival: thorne`, je Runde.
+
+## Abweichungen vom Plan (mit Grund)
+
+| Plan | jetzt | Grund |
+| --- | --- | --- |
+| `crane_abschlag` an die Förderbremse koppeln | bleibt fester Rivalenzug ab Runde 6 | Fertig-Kriterium 2.8 (jeder Rivale erzwingt in jeder Partie eine Entscheidung) und ein großer Geldhebel in Kapitel 1: Mit beiden Kopplungen (Crane und Thorne) fiel die Pleitequote des gierigen Bots unter 5 % und die Pipeline-Quote stieg auf 76 %. Auf die Förderbremse antwortet Crane seit Etappe 2 ohnehin mit eigenem Abschlag, wenn der Preis zu hoch steigt. |
+| `thorne_frachtvertrag` an Thorne koppeln | nach dem ersten Besuch, spätestens Runde 4 (`letters.thorneLatest`), nicht mehr „certain“ | Wie oben (2.8: Thorne erzwingt in jeder Partie eine Entscheidung). Nicht „certain“, damit nie zwei Thorne-Briefe in einer Runde kommen. |
+| `bullard_verrat` an die Förderbremse | wartet auf `kartell_klausel` (Jacob drosselt mit Organisatoren-Klausel nur halb) | „Bullard hat es gemerkt“ passt genau dazu. Pachtet Jacob Bullard eine Ranch vor der Nase weg, wirkt `bullard_verraten` weiter in der Simulation, nur ohne eigenen Brief. |
+| `bullard_treue` an die Förderbremse | jetzt Bullards Zettel zur Förderbremse (Erklären → Handschlag, Schweigen → Fehde) | Die alte Reaktion auf Cranes Treueerklärung passt nicht zur Förderbremse; Cranes Treueerklärung wirkt weiter (kein Abschlag). |
+| `geruecht_fund` wird Bohrbericht-Angebot | „Ein Bohrmeister verkauft seine Bohrliste“, wiederkehrend (höchstens alle 6 Runden) | Ein einmaliges Angebot kam fast nur in den ersten Runden; so antwortet es auf jede Erkundungsphase. |
+| `dok_pike_urkunde` liefert Pikes Bohrbericht | Pike verkauft jetzt eine Bohrliste (300 $), echt → Bohrbericht, gefälscht → wertlos; Folgebriefe gestrichen | Eine „Pacht“, die keine Ranch auf der Karte ist, kann keinen Bohrbericht liefern. Die Merkzeichen heißen weiter `pike_pacht_gekauft`/`pike_urkunde_falsch`, weil Kapitel 3 (Daniels Akte) sie liest. |
+| Hale-Folgebriefe | gestrichen; das Gutachten wirkt sofort auf einer Ranch, `hale_beteiligt` bleibt für Kapitel 3 | Katalog-Ziel; die Folge ist jetzt der (falsche) Hinweis selbst. |
+| Gruppen-Feld neu | `group` gab es schon (2.10a); neu ist die Prüfung „gleicher Abstand“ – nur für Kapitel 1 | `k2_raffinerie` mischt 4 und 5 Runden; Kapitel 2/3 sind nicht Teil dieser Etappe. |
+| Gruppen Pannen/Lager mit je 3–4 Varianten | Pannen und Lager sind je **ein** Ereignis, Tank und Thomas je zwei | Mit fünf vollen Gruppen blieb der Katalog bei gut 100 – das Ziel ≤ 92 verlangt echtes Zusammenlegen. |
+| Behalten: alle genannten | `post_witwe` bleibt (selten), dazu `post_kurier` einmal je Partie | Die Hale-Ranch der Karte hängt an der Witwe; der Courier sorgt dafür, dass in jeder Partie ein Informationsbrief kommen kann (Fertig-Kriterium 2.4). |
+| „Ø Briefe je Runde ≤ 1,2“ | gemessen an der Post; alles auf dem Tisch steht daneben (2,51 → 2,16) | „Briefe“ im Plan = Post (dieselbe Stelle regelt `mail.maxPerRound`). Besuche und Vorfälle sind weniger geworden, aber `events.maxPerRound = 1` füllt den Platz fast jede Runde – das ist ein Thema für Etappe 4. |
+| neu | Antworten zuerst (nur Kapitel 1), `events.mail.perRival` | Ohne Vorrang nahm die Garantie fast immer einen Alltagsbrief (44 % statt 52 % an Plänen); ohne Rivalen-Grenze kamen Witwe am Bahndamm und Thornes Bank in derselben Runde. |
+| Zielwert „Pipeline in Partien mit Kapitelziel“ ≤ 65 % | ≤ 70 % | Weniger Briefe kosten weniger Geld und Termine: Der Standard-Bot baut in erfolgreichen Partien öfter die Pipeline (39 → 51 %). Kein Weg dominiert (höchster Anteil 39,6 %), in knapp einem Drittel der erfolgreichen Partien läuft keine. |
+
+## Kapitel-1-Zielwerte (npm run bots, 1.000 Partien je Strategie)
+
+Alle 15 Zielwerte im Rahmen; einer nachgezogen (Pipeline, siehe oben).
+
+| Kennzahl | Etappe 2 | jetzt | Ziel |
+| --- | ---: | ---: | --- |
+| Höchste Siegquote (ausgewogen) | 34,7 % | 32,0 % | ≤ 40 % |
+| Pleitequote Standard-Bot | 0,1 % | 0,1 % | ≤ 15 % |
+| Pleitequote gierig | 7,8 % | 6,2 % | 5–45 % |
+| Kapitelziel Standard-Bot | 50,0 % | 48,0 % | 20–70 % |
+| Ø Imperium vorsichtig / gierig / ausgewogen | 42.750 / 59.968 / 69.140 $ | 42.899 / 54.819 / 65.318 $ | – |
+| Blinde Wildcat-Bohrung (Rand, 300 m) | 14,5 % | 14,5 % | 5–25 % |
+| Gemessener Rückgang je Quartal | 12,0 % | 11,8 % | 8–15 % |
+| Ø Termine je Runde (Standard-Bot) | 5,00 | 5,00 | 4,5–5 |
+| Höchster Anteil eines Transportwegs | 42,7 % | 39,6 % | ≤ 75 % |
+| Pipeline in Partien mit Kapitelziel | 64,3 % | 68,4 % | ≤ 70 % (vorher ≤ 65 %) |
+
+Zeitsprung I (Kapitelenden des Standard-Bots): Pleite im Sprung wagemutig / ausgewogen / vorsichtig 12,2 / 9,1 / 7,3 % (Etappe 2: 23,2 / 15,3 / 13,7 %).
+
+## Etappe 2 nachgemessen (`npx tsx tools/termineMessung2.ts 500`, nicht neu geschrieben)
+
+Förderbremse +15,5 %, cartelCollapse 0,53, pactValue 865 $ (vorher 1.141 $), contractLoss 0,29, Tarifsenkung 0,06 $, höchster Preis 1,57 $ – erfüllt. **priceGain 1,049** (vorher 1,078) liegt jetzt knapp unter 1,05: Die Förderbremse hat Folgen bekommen – Bullards Zorn über die Organisatoren-Klausel (200–400 $), Bullards Zettel, Cranes Rundschreiben –, die der Standard-Bot (er gründet mit Klausel) bezahlt. freightGain 0,99 und Bluff 1,6 % waren schon nach Etappe 2 offen. Alles drei gehört zur Bot-Feinarbeit in Etappe 4.
+
+## Spielstand
+
+Format 22. Neu ist nur `freight.poolLeft` (wer zuletzt aus der Transportgemeinschaft abgesprungen ist, freiwillig). Ältere Stände (Format 12–21) laden weiter. Die Plan-Merkzeichen stehen in den gewöhnlichen Merkzeichen.
+
+## Offen für Etappe 4
+
+- **Alles auf dem Tisch** liegt bei gut 2 Ereignissen je Runde (vorher 2,5): Besuche und Vorfälle füllen den einen Platz je Runde fast immer. Hebel: `events.maxPerRound` als Wahrscheinlichkeit, oder die Chancen der Alltagsereignisse senken.
+- **priceGain** knapp unter 1,05 (siehe oben); `pactValue`, `priceGain` usw. werden `bots.targets`.
+- **Passiver Jacob im Zeitsprung:** Wer in Kapitel 1 gar nichts tut, hat jetzt mehr Geld am Kapitelende (weniger Briefe, die Geld kosten), und sein Verwalter verspekuliert sich im Sprung öfter (Pleite 21 % statt 10 % über 200 Seeds). Zwei Zeitsprung-Tests nehmen darum einen anderen Seed; ein Test misst die Streuung jetzt als Standardabweichung statt als Spanne (ein einzelner Ausreißer kippte sie). Für den Standard-Bot ist die Pleite im Sprung gesunken (siehe oben).
+

@@ -91,10 +91,11 @@ describe('Fertig-Kriterium 4.2: Jacobs Handeln verschiebt die Stimmung messbar',
     expect(catalog.some((e) => e.choices.some((c) => c.public?.includes('price_war')))).toBe(false);
   });
 
-  it('Spende für die Bretterkirche hebt die Stimmung', () => {
-    const start = mitEreignis('kirche', 'prediger', { round: 3 });
-    const spende = endRound(antworten(start, 'prediger', 'spenden'), balance);
-    const tuer = endRound(antworten(start, 'prediger', 'tuer'), balance);
+  it('Geld für Elis Mutter (Spende) hebt die Stimmung', () => {
+    // Etappe 3: Der Prediger mit der Bretterkirche ist gestrichen – die Spende steckt jetzt in Elis Mutter (und Daniels Fahrkarte).
+    const start = mitEreignis('kirche', 'eli_mutter', { round: 3, cash: 1000 });
+    const spende = endRound(antworten(start, 'eli_mutter', 'geld'), balance);
+    const tuer = endRound(antworten(start, 'eli_mutter', 'weglegen'), balance);
     expect(spende.worldModel.mood - tuer.worldModel.mood).toBeCloseTo(wb.acts.charity.mood, 9);
   });
 
@@ -313,7 +314,7 @@ describe('Inhalte und Spielstand', () => {
     expect(tat('crane_abschlag', 'verband')).toEqual(['independents_stand']);
     expect(tat('brand_nachbar', 'schlafen')).toEqual(['field_fire']);
     expect(tat('streik', 'ersetzen')).toEqual(['strike_break']);
-    expect(tat('prediger', 'spenden')).toEqual(['charity']);
+    expect(tat('eli_mutter', 'geld')).toEqual(['charity']);
     expect(tat('nora_interview', 'erzaehlen')).toEqual(['press_praise']);
   });
 

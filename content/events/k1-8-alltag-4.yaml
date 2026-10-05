@@ -9,8 +9,11 @@
 # Nachwirkungen (Merkzeichen) – nur innerhalb dieses Pakets gelesen:
 #   bank_kredit → bank_tilgung (4 Runden später, Brief)
 #   wucher_kredit → wucher_faellig (2 Runden später)
-#   wechsel_gehalten → wechsel_geplatzt (Würfel; kommt nicht in jeder Partie)
-# Merkzeichen aus Paket 1–3 / Rivalen, die hier gelesen werden: bullard_handschlag, bullard_fehde.
+# Merkzeichen aus Paket 1–3 / Rivalen, die hier gelesen werden: bullard_fehde.
+# Etappe 3 (gekoppelte Briefe, src/sim/letters.ts): Der Trust will vorkaufen, wenn Jacob Öl zurückhält
+# (oel_zurueckgehalten); die Kesselwagen bleiben aus, nachdem er bei Thorne war (thorne_besucht); Tilly und
+# Pickett kommen nur, solange die Transportgemeinschaft läuft (gemeinschaft_laeuft). Gestrichen: Wechsel,
+# Prüfer Lusk, Bullards Ausbruch, Bullards Antwort (steckt jetzt in „Das Seil ist angeschnitten“).
 
 # --- Bank und Geld ---------------------------------------------------------------
 
@@ -43,8 +46,9 @@
     - id: ablehnen
       label: { de: "Danken und gehen", en: "Thank him and leave" }
       result:
-        de: Pettibone nickt, als habe er nichts anderes erwartet. „Die Tür steht offen. Noch.“
-        en: Pettibone nods as if he expected nothing else. "The door is open. For now."
+        de: Pettibone nickt, als habe er nichts anderes erwartet. „Die Tür steht offen. Noch.“ Die Sorgen um die Kasse gehen mit Jacob nach Hause.
+        en: Pettibone nods as if he expected nothing else. "The door is open. For now." The worries about money follow Jacob home.
+      effects: { strength: -7 }
       appointments: 0
       default: true
 
@@ -119,8 +123,9 @@
     - id: nein
       label: { de: "Weitergehen", en: "Walk on" }
       result:
-        de: Rourke zuckt die Schultern. „Du kommst wieder. Alle kommen wieder.“
-        en: Rourke shrugs. "You'll be back. Everybody comes back."
+        de: Rourke zuckt die Schultern. „Du kommst wieder. Alle kommen wieder.“ Die Sorgen um die Kasse gehen mit ihm nach Hause.
+        en: Rourke shrugs. "You'll be back. Everybody comes back." The worries about money follow him home.
+      effects: { strength: -7 }
       appointments: 0
       default: true
 
@@ -164,83 +169,11 @@
       appointments: 0
       default: true
 
-- id: wechsel_angebot
-  mail: offer
-  title:
-    de: Ein Wechsel aus Hallstead
-    en: A Bill of Exchange from Hallstead
-  text:
-    de: >-
-      Der Händler Merriwether will 300 Barrel kaufen und bietet 360 $ – mehr als der
-      Trust zahlt. Allerdings nicht in bar, sondern mit einem Wechsel auf eine Bank
-      in Hallstead, fällig in einem halben Jahr. Pettibone würde ihn sofort
-      ankaufen, mit Abschlag.
-    en: >-
-      The trader Merriwether wants 300 barrels and offers 360 $ – more than the
-      Trust pays. Not in cash, though, but with a bill on a Hallstead bank, due in
-      half a year. Pettibone would buy the bill at once, at a discount.
-  conditions: { minOilStock: 300, minRound: 3 }
-  chance: 0.12
-  choices:
-    - id: abschlag
-      label: { de: "Verkaufen und den Wechsel gleich bei der Bank einlösen (+270 $)", en: "Sell and cash the bill at the bank right away (+270 $)" }
-      result:
-        de: Pettibone prüft das Papier mit einer Lupe und zieht ein Viertel ab. Ein Viertel ist viel. Bargeld ist Bargeld.
-        en: Pettibone examines the paper through a glass and takes off a quarter. A quarter is a lot. Cash is cash.
-      effects: { oilStock: -300, cash: 270 }
-    - id: halten
-      label: { de: "Verkaufen und den Wechsel behalten", en: "Sell and keep the bill" }
-      result:
-        de: Der Wechsel kommt in die Kiste unter dem Bett. Ruth liest ihn zweimal und legt ihn zurück, ohne etwas zu sagen.
-        en: The bill goes in the box under the bed. Ruth reads it twice and puts it back without a word.
-      effects: { oilStock: -300 }
-      marks: [wechsel_gehalten]
-    - id: nein
-      label: { de: "Ablehnen – nur Bargeld", en: "Decline – cash only" }
-      result:
-        de: Merriwether kauft woanders. Ein Händler, der nicht bar zahlt, hat meistens einen Grund.
-        en: Merriwether buys elsewhere. A trader who won't pay cash usually has a reason.
-      appointments: 0
-      default: true
-
-- id: wechsel_geplatzt
-  mail: demand
-  marked: [wechsel_gehalten]
-  delay: 2
-  chance: 0.4
-  title:
-    de: Die Bank in Hallstead zahlt nicht
-    en: The Hallstead Bank Won't Pay
-  text:
-    de: >-
-      Der Wechsel kommt zurück, mit einem roten Stempel: „Protestiert“. Die Bank in
-      Hallstead kennt Merriwether nicht mehr. Ein Anwalt dort würde es versuchen,
-      für einen Vorschuss.
-    en: >-
-      The bill comes back with a red stamp: "Protested". The Hallstead bank no
-      longer knows Merriwether. A lawyer there would try, for a retainer.
-  choices:
-    - id: anwalt
-      label: { de: "Den Anwalt bezahlen (100 $) und auf einen Teil hoffen", en: "Pay the lawyer (100 $) and hope for a share" }
-      result:
-        de: "Nach Monaten kommt ein Scheck über 300 $. Abzüglich des Anwalts bleiben 200 $, und ein Brief, der länger ist als der Scheck wert."
-        en: "After months a cheque for 300 $ arrives. Less the lawyer, 200 $ remain – and a letter longer than the cheque is worth."
-      requires: { minCash: 100 }
-      effects: { cash: 200 }
-      appointments: 2
-    - id: abschreiben
-      label: { de: "Abschreiben", en: "Write it off" }
-      result:
-        de: Jacob legt den Wechsel in die Kiste zurück, als Erinnerung. 300 Barrel für ein Stück Papier.
-        en: Jacob puts the bill back in the box, as a reminder. 300 barrels for a piece of paper.
-      appointments: 0
-      default: true
-
-# --- Rivalen -------------------------------------------------------------------
-
 - id: crane_vorkauf
   rival: crane
   mail: offer
+  once: false
+  cooldown: 4
   title:
     de: Der Trust will vorkaufen
     en: The Trust Wants to Buy Ahead
@@ -254,8 +187,9 @@
       A young man from the Crane Trust office, a suit, no calluses. The Trust will
       empty Jacob's tank now, at five cents over the posted price, if Jacob signs
       to deliver only to Crane for a year. He has already filled in the contract.
-  conditions: { minOilStock: 400, minRound: 4 }
-  chance: 0.12
+  marked: [oel_zurueckgehalten]
+  conditions: { minOilStock: 400, minRound: 3 }
+  chance: 0.4
   choices:
     - id: unterschreiben
       label: { de: "Unterschreiben (400 Barrel gegen 440 $)", en: "Sign (400 barrels for 440 $)" }
@@ -266,99 +200,16 @@
     - id: ablehnen
       label: { de: "Ablehnen", en: "Decline" }
       result:
-        de: Er faltet den Vertrag sorgfältig. „Das Angebot gilt nicht zweimal.“
-        en: He folds the contract carefully. "The offer isn't made twice."
-      appointments: 0
-      default: true
-
-- id: crane_pruefer
-  rival: crane
-  title:
-    de: Der Prüfer findet Wasser
-    en: The Inspector Finds Water
-  text:
-    de: >-
-      Lusk, der Prüfer des Trust am Verladeplatz, hält Jacobs Probe gegen das Licht
-      und schüttelt den Kopf. Zu viel Wasser, zu viel Sand. Zweite Klasse, zwanzig
-      Prozent Abzug. Bei Bullards Fässern, die neben Jacobs stehen, hat er nicht
-      hingesehen.
-    en: >-
-      Lusk, the Trust's inspector at the loading yard, holds Jacob's sample to the
-      light and shakes his head. Too much water, too much sand. Second grade, twenty
-      percent off. He didn't look at Bullard's barrels standing next to Jacob's.
-  conditions: { minProducingWells: 1, minOilStock: 200, minRound: 3 }
-  chance: 0.1
-  choices:
-    - id: nachpruefen
-      label: { de: "Eine zweite Probe verlangen und danebenstehen", en: "Demand a second sample and stand beside him" }
-      result:
-        de: Jacob schöpft selbst, aus der Mitte des Fasses. Lusk misst noch einmal und findet nichts mehr. Er notiert sich Jacobs Namen.
-        en: Jacob draws it himself, from the middle of the barrel. Lusk measures again and finds nothing. He writes down Jacob's name.
-      effects: { strength: -4 }
-      appointments: 2
-      sharp: true
-    - id: schmieren
-      label: { de: "Lusk eine Zigarre und 60 $ anbieten", en: "Offer Lusk a cigar and 60 $" }
-      result:
-        de: "Die Probe ist plötzlich klar. Lusk steckt die Zigarre ein und das Geld schneller. Seitdem bekommt Jacobs Öl immer erste Klasse."
-        en: "Suddenly the sample is clear. Lusk pockets the cigar, and the money faster. Since then Jacob's oil always gets first grade."
-      requires: { minCash: 60 }
-      effects: { cash: -60, price: 0.02 }
-    - id: hinnehmen
-      label: { de: "Den Abzug hinnehmen", en: "Accept the deduction" }
-      result:
-        de: "Zweite Klasse – und Lusk bleibt dabei. Eine Weile zahlt der Trust Jacob fünf Cent weniger je Barrel und verkauft dasselbe Öl in Hallstead als erste."
-        en: "Second grade – and Lusk sticks to it. For a while the Trust pays Jacob five cents less a barrel and sells the same oil in Hallstead as first."
-      effects: { price: -0.05 }
-      appointments: 0
-      default: true
-
-- id: bullard_ausbruch
-  rival: bullard
-  marked: [bullard_handschlag]
-  delay: 2
-  title:
-    de: Bullards Quelle bricht aus
-    en: Bullard's Well Blows Out
-  text:
-    de: >-
-      Mitten in der Nacht hämmert Bullards Vorarbeiter an die Tür. Bullards neue
-      Quelle ist durchgegangen, das Öl steht hundert Fuß hoch, und wenn ein Funke
-      kommt, brennt der halbe Hügel. Bullard braucht jeden Mann, der eine Schaufel
-      halten kann.
-    en: >-
-      In the middle of the night Bullard's foreman pounds on the door. Bullard's
-      new well has blown wild, oil a hundred feet high, and one spark will burn
-      half the hill. Bullard needs every man who can hold a shovel.
-  conditions: { minRound: 4 }
-  chance: 0.15
-  choices:
-    - id: helfen
-      label: { de: "Mit dem ganzen Trupp hinfahren", en: "Ride over with the whole crew" }
-      result:
-        de: "Bis zum Morgen schaufeln sie einen Wall und fangen das Öl in einer Grube. Bullard sagt nichts, er drückt Jacob nur die Schulter. Das ist bei ihm viel. Das Öl aus der Grube, sagt er, gehöre Jacob: 300 Barrel."
-        en: "By morning they have shovelled a dike and caught the oil in a pit. Bullard says nothing; he only grips Jacob's shoulder. For him that is a lot. The oil in the pit, he says, belongs to Jacob: 300 barrels."
-      effects: { strength: -8, oilStock: 300 }
-      appointments: 3
-    - id: maenner
-      label: { de: "Den Trupp schicken, selbst bleiben (80 $ Nachtlohn)", en: "Send the crew, stay behind (80 $ night wages)" }
-      result:
-        de: "Die Männer kommen bei Sonnenaufgang zurück, schwarz bis zu den Augen, mit 150 Barrel aus der Grube. Bullard lässt ausrichten, er habe Jacob nicht gesehen."
-        en: "The men come back at sunrise, black to the eyes, with 150 barrels from the pit. Bullard sends word that he did not see Jacob."
-      requires: { minCash: 80 }
-      effects: { cash: -80, oilStock: 150 }
-    - id: schlafen
-      label: { de: "Die Tür zumachen", en: "Close the door" }
-      result:
-        de: Das Feuer kommt nicht. Aber am nächsten Abend sitzt Bullard im Saloon mit dem Rücken zu Jacob.
-        en: The fire never comes. But the next evening Bullard sits in the saloon with his back to Jacob.
+        de: Er faltet den Vertrag sorgfältig. „Das Angebot gilt nicht zweimal.“ Lusk am Verladeplatz findet in Jacobs Fässern eine Weile mehr Wasser als sonst.
+        en: He folds the contract carefully. "The offer isn't made twice." For a while Lusk at the loading yard finds more water than usual in Jacob's barrels.
+      effects: { price: -0.02 }
       appointments: 0
       default: true
 
 - id: bullard_seil
   rival: bullard
   marked: [bullard_fehde]
-  notMarked: [brand_geholfen, drohung_aufgehoben, drohung_sheriff]
+  notMarked: [brand_geholfen]
   delay: 1
   title:
     de: Das Seil ist angeschnitten
@@ -373,7 +224,7 @@
       pulley, where nobody looks at start-up. Would it have held the next stroke?
       Nobody saw anybody. Bullard's men were laughing yesterday.
   conditions: { minLeases: 1 }
-  chance: 0.2
+  chance: 0.15
   choices:
     - id: wache
       label: { de: "Eine Nachtwache für die ganze Saison bezahlen (200 $)", en: "Pay for a night watch all season (200 $)" }
@@ -385,8 +236,9 @@
     - id: zurueck
       label: { de: "Bullards Seil auch anschneiden lassen", en: "Have Bullard's cable cut too" }
       result:
-        de: Drei Tage später reißt bei Bullard das Seil, das Gestänge fällt ins Loch. Im Saloon wird es still, wenn Jacob hereinkommt.
-        en: Three days later Bullard's cable snaps and the tools fall down the hole. The saloon goes quiet when Jacob walks in.
+        de: "Drei Tage später reißt bei Bullard das Seil, das Gestänge fällt ins Loch. Im Saloon wird es still, wenn Jacob hereinkommt. In der Nacht darauf brennt der Schuppen neben Jacobs Tank. „Quitt, Harlan?“, ruft einer von Bullards Männern am Zaun."
+        en: "Three days later Bullard's cable snaps and the tools fall down the hole. The saloon goes quiet when Jacob walks in. The next night the shed beside Jacob's tank burns. \"Square, Harlan?\" one of Bullard's men calls from the fence."
+      effects: { cash: -160, strength: -4 }
       marks: [bullard_rache]
       appointments: 0
     - id: ersetzen
@@ -397,62 +249,24 @@
       effects: { cash: -60, production: -0.1 }
       default: true
 
-- id: bullard_rache_folge
-  draft: true
-  marked: [bullard_rache]
-  delay: 1
-  chance: 0.5
-  title:
-    de: Bullards Antwort
-    en: Bullard's Answer
-  text:
-    de: >-
-      Bullard hat das angeschnittene Seil nicht vergessen. In der Nacht brennt der
-      Schuppen neben Jacobs Tank, und am Morgen steht einer von Bullards Männern
-      am Zaun und raucht. „Quitt, Harlan?“, ruft er herüber. „Oder noch eine Runde?“
-    en: >-
-      Bullard has not forgotten the cut rope. In the night the shed beside Jacob's
-      tank burns, and in the morning one of Bullard's men stands at the fence,
-      smoking. "Even, Harlan?" he calls over. "Or another round?"
-  choices:
-    - id: quitt
-      label: { de: "„Quitt.“ Den Schuppen neu bauen (150 $)", en: "\"Even.\" Rebuild the shed (150 $)" }
-      result:
-        de: Jacob nickt zum Zaun hinüber. Der Mann tippt an den Hut und geht. Der neue Schuppen riecht nach frischem Holz und nach Waffenstillstand.
-        en: Jacob nods toward the fence. The man touches his hat and leaves. The new shed smells of fresh timber and of truce.
-      requires: { minCash: 150 }
-      effects: { cash: -150 }
-    - id: noch_eine
-      label: { de: "„Noch eine Runde.“", en: "\"Another round.\"" }
-      result:
-        de: In der Woche darauf brennt auch Bullards Kesselhaus. Am Salt Hill schläft jetzt keiner mehr ruhig – Jacobs Männer am wenigsten, und am Turm fehlt es an Händen.
-        en: The week after, Bullard's boiler house burns too. Nobody at Salt Hill sleeps soundly now – Jacob's men least of all, and the derrick is short of hands.
-      effects: { strength: -6, production: -0.15 }
-    - id: abschreiben
-      label: { de: "Nichts sagen und das Öl umfüllen", en: "Say nothing and move the oil" }
-      result:
-        de: Mit dem Schuppen ist ein Teil des Öls verbrannt. Jacob schreibt es ab. Der Mann am Zaun lacht.
-        en: Part of the oil burned with the shed. Jacob writes it off. The man at the fence laughs.
-      effects: { oilStock: -300 }
-      appointments: 0
-      default: true
-
 - id: thorne_waggons
   rival: thorne
+  mail: demand
+  marked: [thorne_besucht]
   title:
     de: Die Kesselwagen kommen nicht
     en: The Tank Cars Don't Come
   text:
     de: >-
       Seit zwei Wochen stehen Jacobs Fässer am Gleis. Stationsvorsteher Gaffney
-      bedauert: Thorne Rail habe zu wenig Kesselwagen, die Großen gehen vor. Er sagt
-      es zu Jacobs Hut, nicht zu Jacob. Dann schaut er auf seine Uhr, lange.
+      schreibt, er bedauere: Thorne Rail habe zu wenig Kesselwagen, die Großen gingen
+      vor. Unter der Unterschrift ist Platz gelassen, als warte er auf etwas.
     en: >-
       For two weeks Jacob's barrels have stood at the siding. Stationmaster Gaffney
-      is sorry: Thorne Rail has too few tank cars, the big shippers come first. He
-      says it to Jacob's hat, not to Jacob. Then he looks at his watch, a long time.
-  conditions: { minOilStock: 200, minRound: 3 }
-  chance: 0.12
+      writes that he is sorry: Thorne Rail has too few tank cars, the big shippers come
+      first. Below the signature he has left a space, as if waiting for something.
+  conditions: { minOilStock: 200, minRound: 2 }
+  chance: 0.35
   choices:
     - id: trinkgeld
       label: { de: "Gaffney ein „Trinkgeld“ geben (40 $)", en: "Give Gaffney a \"tip\" (40 $)" }
@@ -462,12 +276,12 @@
       requires: { minCash: 40 }
       effects: { cash: -40, railTariff: -0.01 }
     - id: fuhrwerk
-      label: { de: "Mit Fuhrwerken zum Hafen fahren (90 $)", en: "Haul it to the harbour by wagon (90 $)" }
+      label: { de: "Mit Fuhrwerken zum Hafen fahren (110 $)", en: "Haul it to the harbour by wagon (110 $)" }
       result:
         de: Sechs Wagen, zwei Tage, ein gebrochenes Rad. Das Öl kommt an, Thorne bekommt nichts.
         en: Six wagons, two days, one broken wheel. The oil arrives; Thorne gets nothing.
-      requires: { minCash: 90 }
-      effects: { cash: -90 }
+      requires: { minCash: 110 }
+      effects: { cash: -110 }
       appointments: 2
     - id: warten
       label: { de: "Warten", en: "Wait" }
@@ -479,20 +293,24 @@
       default: true
 
 - id: tilly_tank
+  mail: offer
+  marked: [gemeinschaft_laeuft]
   title:
     de: Two-Rig Tilly schlägt einen Tank vor
     en: Two-Rig Tilly Proposes a Tank
   text:
     de: >-
-      Tilly bohrt mit zwei Türmen am Nordhang und raucht Pfeife wie ein Fuhrmann.
-      Sie will mit Jacob einen gemeinsamen Erdtank graben, halbe-halbe, damit
-      keiner von beiden an Lusks Verladeplatz verkaufen muss, wenn der Preis fällt.
+      Ein Zettel von Two-Rig Tilly, die mit zwei Türmen am Nordhang bohrt, Pfeife
+      raucht wie ein Fuhrmann und seit ein paar Wochen mit Jacob verlädt. Sie will mehr: einen gemeinsamen
+      Erdtank, halbe-halbe, damit keiner aus der Gemeinschaft an Lusks Verladeplatz
+      verkaufen muss, wenn der Preis fällt.
     en: >-
-      Tilly drills with two rigs on the north slope and smokes a pipe like a
-      teamster. She wants to dig a shared earthen tank with Jacob, half and half,
-      so neither of them has to sell at Lusk's yard when the price drops.
-  conditions: { minProducingWells: 1, minRound: 3 }
-  chance: 0.1
+      A note from Two-Rig Tilly, who drills with two rigs on the north slope, smokes
+      a pipe like a teamster and has been shipping with Jacob for a few weeks. She wants more: a shared
+      earthen tank, half and half, so nobody in the pool has to sell at Lusk's yard
+      when the price drops.
+  conditions: { minProducingWells: 1, minRound: 2 }
+  chance: 0.35
   choices:
     - id: graben
       label: { de: "Mitmachen (150 $ und eine Woche Arbeit)", en: "Join in (150 $ and a week's work)" }
@@ -501,30 +319,36 @@
         en: "The tank is a pit with clay walls and a plank roof. Tilly fills her half first, and Jacob stores a hundred barrels alongside. Whoever need not sell at once sells better: for a while Jacob gets a few cents more."
       requires: { minCash: 150 }
       effects: { cash: -150, oilStock: 100, strength: -3, price: 0.03 }
+      marks: [wildcatter_geholfen]
       appointments: 2
     - id: nein
       label: { de: "Lieber allein bleiben", en: "Rather stay on his own" }
       result:
-        de: Tilly klopft die Pfeife aus. „Allein bist du billiger zu kaufen, Harlan. Denk dran.“
-        en: Tilly knocks out her pipe. "Alone you're cheaper to buy, Harlan. Remember that."
+        de: Tilly klopft die Pfeife aus. „Allein bist du billiger zu kaufen, Harlan. Denk dran.“ Bei den Wildcattern spricht es sich herum.
+        en: Tilly knocks out her pipe. "Alone you're cheaper to buy, Harlan. Remember that." Word gets round among the wildcatters.
+      marks: [wildcatter_verprellt]
       appointments: 0
       default: true
 
 - id: pickett_pleite
+  mail: personal
+  marked: [gemeinschaft_laeuft]
   title:
     de: Ezra Pickett gibt auf
     en: Ezra Pickett Gives Up
   text:
     de: >-
-      Ezra Pickett hat drei trockene Löcher gebohrt und keine Kraft für ein viertes.
-      Auf einem Brett vor seinem Zelt steht „Alles muss weg“. Sein Öl im Tank, zwei
-      Kessel, ein Pferd. Er will nach Hause, bevor der Winter kommt.
+      Ezra Pickett aus der Transportgemeinschaft hat drei trockene Löcher gebohrt und
+      keine Kraft für ein viertes. Auf einem Brett vor seinem Zelt steht „Alles muss
+      weg“. Sein Öl im Tank, zwei Kessel, ein Pferd. Er will nach Hause, bevor der
+      Winter kommt. Die anderen aus der Gemeinschaft schauen, was Jacob tut.
     en: >-
-      Ezra Pickett has drilled three dry holes and has no strength for a fourth. A
-      board outside his tent reads "Everything must go". His oil in the tank, two
-      boilers, a horse. He wants to go home before winter.
-  conditions: { minRound: 4, minCash: 200 }
-  chance: 0.1
+      Ezra Pickett from the shipping pool has drilled three dry holes and has no
+      strength for a fourth. A board outside his tent reads "Everything must go". His
+      oil in the tank, two boilers, a horse. He wants to go home before winter. The
+      others in the pool watch what Jacob does.
+  conditions: { minRound: 3, minCash: 200 }
+  chance: 0.35
   choices:
     - id: billig
       label: { de: "Sein Öl billig kaufen (300 Barrel für 150 $)", en: "Buy his oil cheap (300 barrels for 150 $)" }
@@ -533,6 +357,7 @@
         en: Pickett takes the money without haggling. He doesn't cry; he just looks at the derricks a long time.
       requires: { minCash: 150 }
       effects: { cash: -150, oilStock: 300 }
+      marks: [wildcatter_verprellt]
     - id: fair
       label: { de: "Den vollen Preis zahlen (300 Barrel für 300 $)", en: "Pay full price (300 barrels for 300 $)" }
       result:
@@ -540,10 +365,12 @@
         en: "Pickett counts twice. \"Nobody would have done that.\" He tells everyone at the harbour before his boat sails. The farmers on the hill like to hear it – for a while they lease to Jacob cheaper."
       requires: { minCash: 300 }
       effects: { cash: -300, oilStock: 300, leaseCost: -0.15 }
+      marks: [wildcatter_geholfen]
     - id: vorbei
       label: { de: "Vorbeigehen", en: "Walk past" }
       result:
-        de: Am nächsten Tag hat Bullard alles gekauft, das Pferd eingeschlossen.
-        en: The next day Bullard has bought the lot, horse included.
+        de: Am nächsten Tag hat Bullard alles gekauft, das Pferd eingeschlossen. In der Gemeinschaft redet man darüber, wer nicht geholfen hat.
+        en: The next day Bullard has bought the lot, horse included. In the pool they talk about who didn't help.
+      marks: [wildcatter_verprellt]
       appointments: 0
       default: true

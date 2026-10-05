@@ -12,11 +12,14 @@ import { loadEvents } from './testEvents';
 
 const balance = loadBalance();
 
-/** Die 30 Alltagsereignisse aus content/events/k1-8-alltag-*.yaml. */
+/**
+ * Die Alltagsereignisse 1–30 aus content/events/k1-8-alltag-1/2/3.yaml, die nach Etappe 3 (Briefe ausdünnen)
+ * übrig sind: 13 gestrichen oder in andere hineingelegt (Bohrpannen, Sonntag, Sumpf, Kumpel, Sheriff …).
+ */
 const ALLTAG = [
-  'panne_meissel', 'panne_kessel', 'panne_gestaenge', 'trupp_lohn', 'trupp_schlaegerei', 'trupp_unfall', 'quelle_salzwasser', 'quelle_gas', 'brand_nachbar', 'rutengaenger',
-  'fuhre_aufschlag', 'fuhre_schlamm', 'faesser_angebot', 'tank_leck', 'pension_miete', 'saloon_serviette', 'spekulant_angebot', 'bezirk_steuer', 'geruecht_fund', 'geruecht_tanks',
-  'geruecht_tarif', 'prediger', 'sheriff_schutz', 'nora_interview', 'poker', 'kumpel', 'fieber', 'thomas_nacht', 'thomas_wort', 'ruth_geburtstag',
+  'panne_meissel', 'trupp_lohn', 'trupp_unfall', 'quelle_salzwasser', 'quelle_gas', 'brand_nachbar',
+  'fuhre_aufschlag', 'spekulant_angebot', 'bezirk_steuer', 'geruecht_fund', 'geruecht_tanks',
+  'geruecht_tarif', 'nora_interview', 'fieber', 'thomas_nacht', 'thomas_wort', 'ruth_geburtstag',
 ];
 
 const t = (de: string) => ({ de, en: '' });
@@ -138,20 +141,25 @@ describe('Alltagsereignisse 1–30 für Kapitel 1 (2.10a)', () => {
   const quelle = { status: 'found' } as Well;
   const pacht = { holder: 'jacob' } as Lease;
 
-  it('es sind 30 in drei Paketen à 10, mit Schlüsselszenen als Entwurf und Wiederholungsschutz', () => {
-    expect(neu.length).toBe(30);
+  it('nach Etappe 3 sind es 17, mit Schlüsselszenen als Entwurf und Wiederholungsschutz', () => {
+    expect(neu.length).toBe(17);
     expect(neu.filter((e) => e.draft).length).toBeGreaterThanOrEqual(4);
     expect(neu.filter((e) => !e.once).length).toBeGreaterThanOrEqual(5);
-    expect(new Set(neu.flatMap((e) => (e.group ? [e.group] : []))).size).toBeGreaterThanOrEqual(3);
+    expect(new Set(neu.flatMap((e) => (e.group ? [e.group] : []))).size).toBeGreaterThanOrEqual(2);
   });
 
   it('jedes wiederkehrende Ereignis im ganzen Katalog hat einen Abstand von mindestens einer Runde', () => {
     for (const e of katalog.filter((x) => !x.once && !x.routine)) expect(cooldownOf(e, balance), e.id).toBeGreaterThanOrEqual(1);
   });
 
+  // Etappe 3: Einige Ereignisse antworten auf Jacobs Pläne – in der Hälfte der Partien sind diese Merkzeichen gesetzt.
+  const plaene = [...new Set(neu.flatMap((e) => e.marked))].filter((m) => m !== 'thomas_geboren');
+
   /** Eine Partie über 16 Runden in einer Lage, in der fast alles geht; Ankünfte mit Runde. */
-  function partie(seed: string): { id: string; round: number }[] {
-    let state: GameState = { ...newGame(seed, balance, katalog), cash: 3000, oilStock: 800, wells: [quelle], leases: [pacht, pacht] };
+  function partie(seed: string, i: number): { id: string; round: number }[] {
+    const start = newGame(seed, balance, katalog);
+    const vorgeschichte = i % 2 === 0 ? Object.fromEntries(plaene.map((m) => [m, 1])) : {};
+    let state: GameState = { ...start, cash: 3000, oilStock: 800, wells: [quelle], leases: [pacht, pacht], events: { ...start.events, marks: { ...start.events.marks, ...vorgeschichte } } };
     const out: { id: string; round: number }[] = [];
     const merke = (s: GameState, vorher: Record<string, number>) => {
       for (const [id, r] of Object.entries(s.events.lastSeen)) if (!id.startsWith('@') && r === s.round && vorher[id] !== r) out.push({ id, round: r });
@@ -169,7 +177,7 @@ describe('Alltagsereignisse 1–30 für Kapitel 1 (2.10a)', () => {
   }
 
   const SEEDS = Array.from({ length: 150 }, (_, i) => `wdh-${i}`);
-  const partien = SEEDS.map(partie);
+  const partien = SEEDS.map((seed, i) => partie(seed, i));
 
   it('über viele Seeds keine ungewollte Wiederholung: einmalige nie doppelt, wiederkehrende und Varianten mit Abstand', () => {
     const def = new Map(katalog.map((e) => [e.id, e]));
@@ -191,7 +199,7 @@ describe('Alltagsereignisse 1–30 für Kapitel 1 (2.10a)', () => {
     }
   });
 
-  it('jedes der 30 Ereignisse kommt in manchen Partien vor, keins in allen', () => {
+  it('jedes der 17 Ereignisse kommt in manchen Partien vor, keins in allen', () => {
     for (const e of neu) {
       const anteil = partien.filter((p) => p.some((a) => a.id === e.id)).length / partien.length;
       expect(anteil, e.id).toBeGreaterThan(0);
@@ -200,11 +208,11 @@ describe('Alltagsereignisse 1–30 für Kapitel 1 (2.10a)', () => {
   });
 });
 
-/** Die 37 Alltagsereignisse 31–67 aus content/events/k1-8-alltag-4/5/6.yaml (2.10b). */
+/** Die Alltagsereignisse 31–67 aus content/events/k1-8-alltag-4/5/6.yaml (2.10b), die nach Etappe 3 übrig sind (12 gestrichen oder hineingelegt). */
 const ALLTAG_2 = [
-  'bank_kredit', 'bank_tilgung', 'wucher_kredit', 'wucher_faellig', 'wechsel_angebot', 'wechsel_geplatzt', 'crane_vorkauf', 'crane_pruefer', 'bullard_ausbruch', 'bullard_seil', 'thorne_waggons', 'tilly_tank', 'pickett_pleite',
-  'trupp_sonntag', 'streik', 'kerrigan_husten', 'eli_zurueck', 'eli_mutter', 'crabb_lager', 'mateo_papiere', 'blitz_tank', 'sturm_golf', 'torpedo', 'kind_grube', 'diebe_tank', 'diebe_gefasst',
-  'ruth_anteil', 'ruth_schwester', 'haus_kaufen', 'thomas_krupp', 'thomas_taufe', 'courier_anzeige', 'nora_artikel', 'wahl_spende', 'liga_petition', 'richter_schreiber', 'wahl_stimmen',
+  'bank_kredit', 'bank_tilgung', 'wucher_kredit', 'wucher_faellig', 'crane_vorkauf', 'bullard_seil', 'thorne_waggons', 'tilly_tank', 'pickett_pleite',
+  'streik', 'kerrigan_husten', 'eli_zurueck', 'eli_mutter', 'crabb_lager', 'blitz_tank', 'sturm_golf', 'torpedo', 'kind_grube', 'diebe_tank',
+  'ruth_anteil', 'ruth_schwester', 'thomas_taufe', 'nora_artikel', 'wahl_spende', 'liga_petition',
 ];
 
 describe('Alltagsereignisse 31–67 für Kapitel 1 (2.10b)', () => {
@@ -213,11 +221,10 @@ describe('Alltagsereignisse 31–67 für Kapitel 1 (2.10b)', () => {
   const quelle = { status: 'found' } as Well;
   const pacht = { holder: 'jacob' } as Lease;
 
-  it('zusammen mit Teil 1 sind es 60–70 Alltagsereignisse, mit Schlüsselszenen als Entwurf', () => {
+  it('zusammen mit Teil 1 sind es nach Etappe 3 noch 42 Alltagsereignisse (vorher 67), mit Schlüsselszenen als Entwurf', () => {
     expect(neu.length).toBe(ALLTAG_2.length);
     const alle = katalog.filter((e) => ALLTAG.includes(e.id) || ALLTAG_2.includes(e.id));
-    expect(alle.length).toBeGreaterThanOrEqual(60);
-    expect(alle.length).toBeLessThanOrEqual(70);
+    expect(alle.length).toBe(42);
     expect(neu.filter((e) => e.draft).length).toBeGreaterThanOrEqual(4);
   });
 
@@ -274,7 +281,7 @@ describe('Alltagsereignisse 31–67 für Kapitel 1 (2.10b)', () => {
     }
   });
 
-  it('jedes der 37 neuen Ereignisse kommt in manchen Partien vor, keins in allen', () => {
+  it('jedes dieser 25 Ereignisse kommt in manchen Partien vor, keins in allen', () => {
     for (const e of neu) {
       const anteil = partien.filter((p) => p.some((a) => a.id === e.id)).length / partien.length;
       expect(anteil, e.id).toBeGreaterThan(0);
@@ -282,12 +289,13 @@ describe('Alltagsereignisse 31–67 für Kapitel 1 (2.10b)', () => {
     }
   });
 
-  it('Varianten schließen sich aus: Diebe kommen ohne Sheriff-Schutz, gefasst nur mit', () => {
+  it('Etappe 3: Der Sheriff kommt mit den Dieben – Schutzgeld oder eigener Wächter; mit Eli als Wächter kommen keine Diebe', () => {
     const diebe = katalog.find((e) => e.id === 'diebe_tank')!;
-    const gefasst = katalog.find((e) => e.id === 'diebe_gefasst')!;
-    expect(diebe.group).toBe(gefasst.group);
-    expect(diebe.notMarked).toContain('sheriff_bezahlt');
-    expect(gefasst.marked).toContain('sheriff_bezahlt');
-    for (const p of partien) expect(p.some((a) => a.id === 'diebe_tank') && p.some((a) => a.id === 'diebe_gefasst')).toBe(false);
+    expect(diebe.group).toBe('tank');
+    expect(diebe.notMarked).toEqual(['eli_waechter']);
+    const marks = diebe.choices.flatMap((c) => c.marks);
+    expect(marks).toContain('sheriff_bezahlt');
+    expect(marks).toContain('sheriff_umgangen');
+    expect(katalog.some((e) => e.id === 'sheriff_schutz' || e.id === 'diebe_gefasst')).toBe(false);
   });
 });

@@ -22,6 +22,7 @@
 // Termine als Hauptwerkzeug, Etappe 2.
 import { PRICING_READ_MARKS } from './pricing';
 import { FREIGHT_READ_MARKS } from './freight';
+import { LETTER_READ_MARKS } from './letters'; // Etappe 3: Antworten in gekoppelten Briefen
 import { DIPLOMACY_READ_MARKS } from './diplomacyCore'; // 4.10 Andockpunkt
 import { parseDocument } from 'yaml';
 import type { Balance } from './balance';
@@ -78,6 +79,8 @@ export function simReadMarks(balance: Balance): string[] {
     // Etappe 2: Antworten, die die Preis- und Transport-Aktionen lesen.
     ...PRICING_READ_MARKS,
     ...FREIGHT_READ_MARKS,
+    // Etappe 3: Antworten in gekoppelten Briefen (Hales Gutachten, Bohrlisten, Nora, Liefervertrag, Gemeinschaft, Ruf).
+    ...LETTER_READ_MARKS,
   ];
 }
 

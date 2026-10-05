@@ -26,6 +26,8 @@ import { parseHallstead, type HallsteadBalance } from './hallsteadBalance';
 import { parseExplorationBalance, parsePlansBalance, type ExplorationBalance, type PlansBalance } from './plansBalance';
 // Termine als Hauptwerkzeug, Etappe 2: Preis- und Transport-Aktionen.
 import { parseBotPlans, parseFreightBalance, parsePriceActions, type BotPlans, type FreightBalance, type PriceActionsBalance } from './pricingBalance';
+// Termine als Hauptwerkzeug, Etappe 3: gekoppelte Briefe.
+import { parseLettersBalance, type LettersBalance } from './lettersBalance';
 // 4.17 Andockpunkt: Kapitel 3 (Seismik, Konsortium, Projekte, Stand) prüft seinen Block selbst.
 import { parseKapitel3Balance, type Kapitel3Balance } from './kapitel3Balance';
 
@@ -817,6 +819,8 @@ export interface Balance {
   freight: FreightBalance;
   /** Welche Preis- und Fracht-Karten die Bots spielen (balance.yaml bots.plans). */
   botPlans: Record<'cautious' | 'greedy' | 'balanced', BotPlans>;
+  /** Gekoppelte Briefe (Etappe 3, src/sim/letters.ts). */
+  letters: LettersBalance;
   drilling: DrillingBalance;
   production: ProductionBalance;
   market: MarketBalance;
@@ -977,6 +981,8 @@ export interface MailBalance {
   deadlineRounds: number;
   /** Kam von einer Briefart so viele Runden keiner, bringt die Post sicher einen. */
   guaranteeRounds: number;
+  /** Etappe 3: Höchstens so viele Briefe je Rivale und Runde (sichere Briefe kommen trotzdem, zählen aber mit). */
+  perRival: number;
 }
 
 export class BalanceError extends Error {}
@@ -1773,6 +1779,7 @@ function parseEvents(raw: unknown): EventsBalance {
       maxPerRound: positiveInt(raw, 'events.mail.maxPerRound'),
       deadlineRounds: positiveInt(raw, 'events.mail.deadlineRounds'),
       guaranteeRounds: positiveInt(raw, 'events.mail.guaranteeRounds'),
+      perRival: positiveInt(raw, 'events.mail.perRival'),
     },
     documents: {
       forgeryChance: share(raw, 'events.documents.forgeryChance'),
@@ -2250,6 +2257,7 @@ export function parseBalance(raw: unknown): Balance {
     priceActions: parsePriceActions(raw),
     freight: parseFreightBalance(raw),
     botPlans: parseBotPlans(raw),
+    letters: parseLettersBalance(raw),
     drilling: parseDrilling(raw),
     production: parseProduction(raw),
     market: parseMarket(raw),

@@ -558,7 +558,11 @@ export function drawMail(state: GameState, balance: Balance, alle: readonly Even
   const rng = new Rng(state.events.rng);
   let out = state;
   let neu = 0;
+  // Etappe 3: höchstens events.mail.perRival Briefe je Rivale und Runde (sichere zählen mit).
+  const jeRivale = new Map<string, number>();
+  const rivaleFrei = (e: EventDef) => e.rival === undefined || (jeRivale.get(e.rival) ?? 0) < balance.events.mail.perRival;
   const zustellen = (event: EventDef) => {
+    if (event.rival) jeRivale.set(event.rival, (jeRivale.get(event.rival) ?? 0) + 1);
     const ev = out.events;
     const doc = rollDocument(event, balance, rng);
     out = {
@@ -580,14 +584,19 @@ export function drawMail(state: GameState, balance: Balance, alle: readonly Even
   for (const event of catalog) {
     if (event.certain && briefMoeglich(out, event, balance)) zustellen(event);
   }
+  // Etappe 3 (nur Kapitel 1): Antworten zuerst. Briefe, die auf ein Merkzeichen warten (Jacobs Pläne und
+  // frühere Entscheidungen), gehen bei der Garantie und beim Würfeln den Alltagsbriefen vor.
+  const antwortenZuerst = chapterOf(state) === 1;
+  const reihenfolge = antwortenZuerst ? [...catalog.filter((e) => e.marked.length > 0), ...catalog.filter((e) => e.marked.length === 0)] : catalog;
   for (const kind of dueMailKinds(out, balance)) {
     if (neu >= balance.events.mail.maxPerRound) break;
-    const moeglich = catalog.filter((e) => e.mail === kind && briefMoeglich(out, e, balance));
-    if (moeglich.length > 0) zustellen(rng.pick(moeglich));
+    const moeglich = catalog.filter((e) => e.mail === kind && briefMoeglich(out, e, balance) && rivaleFrei(e));
+    const antworten = antwortenZuerst ? moeglich.filter((e) => e.marked.length > 0) : [];
+    if (moeglich.length > 0) zustellen(rng.pick(antworten.length > 0 ? antworten : moeglich));
   }
-  for (const event of catalog) {
+  for (const event of reihenfolge) {
     if (neu >= balance.events.mail.maxPerRound) break;
-    if (event.certain || !briefMoeglich(out, event, balance)) continue;
+    if (event.certain || !briefMoeglich(out, event, balance) || !rivaleFrei(event)) continue;
     if (rng.float() >= event.chance) continue;
     zustellen(event);
   }
