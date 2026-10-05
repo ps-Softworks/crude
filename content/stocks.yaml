@@ -67,6 +67,12 @@ guests:
   - id: vandermeer
     name: { de: Ambrose Vandermeer, en: Ambrose Vandermeer }
     role: { de: "Bankhaus Vandermeer & Co., Hallstead", en: "Vandermeer & Co. bank, Hallstead" }
+  - id: hale
+    name: { de: Martha Hale, en: Martha Hale }
+    role: { de: "Witwe von der Hale-Ranch, Aktien statt Pacht", en: "widow of the Hale ranch, shares instead of a lease" }
+  - id: ruth
+    name: { de: Ruth Harlan, en: Ruth Harlan }
+    role: { de: "Jacobs Frau, rechnet genauer als der Rat", en: "Jacob's wife, counts more carefully than the board" }
 
 thorne:
   name: { de: Lucius Vance, en: Lucius Vance }

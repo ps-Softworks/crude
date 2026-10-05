@@ -64,7 +64,9 @@ Zum Ausprobieren: `npm run dev`, dann im Browser `?seed=abc&debug=1`.
   `control`, `rivalStake`, `sharePrice`, `dividendPressure`), Personal (`staffLoyalty`, `hire`, `fire`),
   Raffinerie (`refineryDown`, `refineryOutput`, `productYield`, `productPrice`), Leitungen (`pipelineDown`,
   `pipelineThroughput`, `transportFee`), Welt (`mood`, `tension`, `lawPressure`), Forschung (`research`), Bank
-  (`rating`, `loan`), `appointmentsNext` und `heirValues`. Genaue Schreibweise: `content/events/README.md`.
+  (`rating`, `loan`), `appointmentsNext` und `heirValues`; ab Kapitel 3 (4.19) Marke (`brand`, `stations`), Stand
+  (`ansehen`), Lobby (`favors`), Konsortium (`consortium`), Börse (`stock`, `leverage`, `fever`), Parteien (`party`)
+  und Seismik (`seismik`). Genaue Schreibweise: `content/events/README.md`.
   Eine Wirkung „in Geld“ nur dann, wenn der Text Geld nennt – der Preis eines Ratssitzes ist Treue oder Kontrolle.
 - Jede Antwort soll spürbar sein (0.2.15+3): `npm run check:events` listet alle Antworten mit
   ihrer Wirkung und meldet schwache – unter 200 $ Wirkung, ohne dauerhafte Folge und ohne

@@ -5,8 +5,8 @@
 # Die großen Bögen (Thomas' Weg, Wendepunkt der Ehe, Claras Weichen) schreibt das Story-Paket
 # k3-*.yaml – hier nur der Alltag dazwischen.
 #
-# Nur Kapitel 3 (minChapter/maxChapter 3). Clara hat noch keinen Beziehungswert: Wo es um sie
-# geht, steht „# TODO-Effekt: clara: …“ neben einer Ersatzwirkung (meist ruth oder Kraft).
+# Nur Kapitel 3 (minChapter/maxChapter 3). Claras Beziehung (clara, seit 4.5) und das Ansehen in
+# Hallstead (ansehen) wirken direkt.
 #
 # Merkzeichen aus Kapitel 1: geburt_verpasst, silas_fair, eli_waechter.
 # Merkzeichen aus Paket 5: k3_portraet_allein → k3_portraet_flur.
@@ -115,7 +115,7 @@
         de: Zweihundert Gäste, ein Orchester, ein Foto im Ledger. Ruth tanzt mit Senator Grady und mit einem Bankier. Mit Jacob tanzt sie einmal, spät, als fast alle weg sind.
         en: Two hundred guests, an orchestra, a photograph in the Ledger. Ruth dances with Senator Grady and with a banker. With Jacob she dances once, late, when almost everyone has gone.
       requires: { minCash: 4000 }
-      effects: { cash: -4000, ruth: 5, strength: -5 }  # TODO-Effekt: standing: +2
+      effects: { cash: -4000, ruth: 5, strength: -5, ansehen: 2 }
       appointments: 2
     - id: pension
       label: { de: "Mit Ruth allein nach Port Ellis, in die alte Pension (3 Termine)", en: "Alone with Ruth to Port Ellis, to the old boarding house (3 appointments)" }
@@ -245,20 +245,20 @@
         de: Die beiden Mädchen fahren zusammen mit dem Zug nach Hallstead. Eli steht am Bahnsteig und hält den Hut in beiden Händen. Clara schreibt, die Vandermeer-Mädchen seien jetzt sehr höflich zu ihr. Zu ihrer Freundin nicht.
         en: The two girls take the train to Hallstead together. Eli stands on the platform holding his hat in both hands. Clara writes that the Vandermeer girls are very polite to her now. Not to her friend.
       requires: { minCash: 2000 }
-      effects: { cash: -2000, ruth: 5 }  # TODO-Effekt: clara: +12, reputation: { workers: +1 }, standing: -1
+      effects: { cash: -2000, ruth: 5, clara: 12, reputation: { workers: 1 }, ansehen: -1 }
     - id: stipendium
       label: { de: "Ein Stipendium für Arbeiterkinder stiften, mit Prüfung (3.500 $)", en: "Endow a scholarship for workers' children, with an exam (3,500 $)" }
       result:
         de: Eli Wards Tochter besteht die Prüfung als Beste. Mit ihr fahren drei andere Kinder aus Okara. Clara sagt, das sei gerecht, aber nicht das, worum sie gebeten habe.
         en: Eli Ward's daughter passes the exam top of the list. Three other children from Okara go with her. Clara says that is fair, but not what she asked for.
       requires: { minCash: 3500 }
-      effects: { cash: -3500 }  # TODO-Effekt: clara: +5, reputation: { workers: +3 }, legacy: +1
+      effects: { cash: -3500, clara: 5, reputation: { workers: 3, public: 1 } }
     - id: nein
       label: { de: "„Jeder geht auf die Schule, die zu ihm passt.“", en: "\"Everyone goes to the school that suits them.\"" }
       result:
         de: Clara fährt allein nach Hallstead. Am Bahnsteig sagt sie kein Wort zu Jacob. Sie schreibt den ganzen Winter nur ihrer Mutter.
         en: Clara travels to Hallstead alone. On the platform she says not a word to Jacob. All winter she writes only to her mother.
-      effects: { ruth: -10, strength: -5 }  # TODO-Effekt: clara: -15
+      effects: { ruth: -10, strength: -5, clara: -15 }
       appointments: 0
       default: true
 
@@ -298,7 +298,7 @@
         de: Der Turm bleibt stehen, allein auf dem leeren Hügel. Silas lacht, bis er husten muss. „Ein Denkmal. Für einen Bohrturm. Du bist wirklich reich geworden, Junge.“
         en: The derrick stays standing, alone on the empty hill. Silas laughs until he coughs. "A monument. To a derrick. You really have got rich, boy."
       requires: { minCash: 1500 }
-      effects: { cash: -1500, strength: 5 }  # TODO-Effekt: legacy: +1
+      effects: { cash: -1500, strength: 5, reputation: { public: 1 } }
       appointments: 0
     - id: nein
       label: { de: "„Ich kann am Samstag nicht.“", en: "\"I can't on Saturday.\"" }
@@ -334,20 +334,20 @@
         de: Der Maler kommt und malt die Hände, murrend. Sie sind zu groß für den Anzug. Clara bleibt jeden Morgen kurz vor dem Bild stehen.
         en: The painter comes and paints the hands, grumbling. They are too big for the suit. Clara stops briefly before the picture every morning.
       requires: { minCash: 1500 }
-      effects: { cash: -1500, ruth: 5 }  # TODO-Effekt: clara: +10
+      effects: { cash: -1500, ruth: 5, clara: 10 }
     - id: erzaehlen
       label: { de: "Sich zu ihr setzen und vom Salt Hill erzählen", en: "Sit down with her and tell her about Salt Hill" }
       result:
         de: Sie sitzen auf der Treppe bis nach Mitternacht. Clara fragt nach dem Brand, nach Silas, nach dem Abschlag des Trusts. Bei der letzten Frage weicht Jacob aus. Sie merkt es.
         en: They sit on the stairs past midnight. Clara asks about the fire, about Silas, about the Trust's discount. At the last question Jacob evades. She notices.
-      effects: { strength: 10, ruth: 5 }  # TODO-Effekt: clara: +8
+      effects: { strength: 10, ruth: 5, clara: 8 }
       appointments: 2
     - id: bett
       label: { de: "„Es ist spät, Clara. Ins Bett.“", en: "\"It's late, Clara. Bed.\"" }
       result:
         de: 'Clara geht. Am nächsten Morgen hängt ein Zettel am Rahmen, in ihrer Schrift: „Der Herr im Flur“. Die Dienstboten lassen ihn hängen, bis Jacob ihn selbst abnimmt.'
         en: 'Clara goes. Next morning a note hangs on the frame in her hand: "The gentleman in the hall". The servants leave it until Jacob takes it down himself.'
-      effects: { strength: -5 }  # TODO-Effekt: clara: -8
+      effects: { strength: -5, clara: -8 }
       appointments: 0
       default: true
 

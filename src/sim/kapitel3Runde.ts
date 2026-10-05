@@ -18,6 +18,23 @@ import { settleProjekte } from './projekte';
 import { settleSurveys } from './seismik';
 import { settleStand } from './stand';
 
+/** Merkzeichen für Jacobs Weg mit dem Konsortium (4.19): Der Bogen „Mr. Vale“ (content/arcs.yaml) liest sie. */
+export const KONSORTIUM_MARKS = {
+  mitglied: 'k3_konsortium_mitglied',
+  abgelehnt: 'k3_konsortium_abgelehnt',
+  doppelspiel: 'k3_konsortium_doppelspiel',
+  verstossen: 'k3_konsortium_verstossen',
+} as const;
+
+/** Setzt das Merkzeichen zum heutigen Weg mit dem Konsortium (einmal je Weg). */
+export function syncKonsortiumMarks(state: GameState): GameState {
+  const pfad = state.kapitel3?.konsortium.path;
+  if (!pfad) return state;
+  const mark = KONSORTIUM_MARKS[pfad];
+  if (state.events.marks[mark] !== undefined) return state;
+  return { ...state, events: { ...state.events, marks: { ...state.events.marks, [mark]: state.round } } };
+}
+
 export function advanceKapitel3(input: GameState, balance: Balance, texts?: Kapitel3Content, lang?: Lang): GameState {
   if (input.finished || !kapitel3Unlocked(input, balance)) return input;
   const vorher = new Set(input.kapitel3?.notes ?? []);
@@ -27,5 +44,5 @@ export function advanceKapitel3(input: GameState, balance: Balance, texts?: Kapi
   const [k3b, cashB] = settleProjekte(state, balance, k3a);
   k3 = settleStand(k3b, balance);
   const neu = k3.notes.filter((n) => !vorher.has(n));
-  return logKapitel3Notes({ ...state, cash: state.cash + cashA + cashB, kapitel3: k3 }, neu, texts, lang);
+  return syncKonsortiumMarks(logKapitel3Notes({ ...state, cash: state.cash + cashA + cashB, kapitel3: k3 }, neu, texts, lang));
 }

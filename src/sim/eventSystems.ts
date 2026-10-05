@@ -27,6 +27,11 @@ import { clampLoyalty, memberOf, staffLog, syncStaffMarks, type StaffRole } from
 import { bankRate } from './credit';
 import { traces } from './investigation';
 import { NEUTRAL_REPUTATION, REPUTATION_AXES, type Reputation } from './reputation';
+import { PARTIES, type Party } from './parties';
+import { brandOf, brandUnlocked, brandWorldFrom } from './brand';
+import { hallsteadOf, hallsteadUnlocked } from './hallsteadState';
+import { ensureKapitel3, kapitel3Unlocked } from './kapitel3';
+import { adjustAnsehen } from './stand';
 
 export { REPUTATION_AXES, reputationOf, reputationWord, validReputation, type Reputation, type ReputationAxis } from './reputation';
 
@@ -82,6 +87,17 @@ export const SYSTEM_EFFECT_KEYS = [
   'loan',
   'appointmentsNext',
   'heirValues',
+  // Kapitel 3 (4.19): Marke und Tankstellen, Stand in Hallstead, Lobby, Konsortium, Börse, Parteien, Seismik.
+  'brand',
+  'stations',
+  'ansehen',
+  'favors',
+  'consortium',
+  'stock',
+  'leverage',
+  'fever',
+  'party',
+  'seismik',
 ] as const;
 export type SystemEffectKey = (typeof SYSTEM_EFFECT_KEYS)[number];
 
@@ -143,6 +159,27 @@ export interface SystemEffects {
   appointmentsNext?: number;
   /** Werte der Erben ±n (−10…10). */
   heirValues?: Partial<Record<Heir, Partial<HeirValues>>>;
+  // --- Kapitel 3 (4.19) ---
+  /** Bekanntheit der Marke ±n Punkte (0–100) je Region (ids aus balance.yaml → brand.regions); ohne gegründete Marke verpufft es. */
+  brand?: Record<string, number>;
+  /** Tankstellen ±n je Region (sofort fertig bzw. geschlossen; das Geld steht unter cash). Nur mit gegründeter Marke. */
+  stations?: Record<string, number>;
+  /** Ansehen in Hallstead ±n × eventSystems.ansehenStep (Stand, Kapitel 3). */
+  ansehen?: number;
+  /** Gefallen, die Hallstead Jacob schuldet, ±n (Lobby, Kapitel 3). */
+  favors?: number;
+  /** Mr. Vales Vertrauen und die Macht des Konsortiums ±n (0–100). */
+  consortium?: Partial<Record<'trust' | 'power', number>>;
+  /** Aktien an der Börse in $ je Aktie (ids aus balance.yaml → exchange.stocks): + kauft (das Geld steht unter cash), − verkauft so viel Kurswert (Erlös unter cash). */
+  stock?: Record<string, number>;
+  /** Hebel für die Käufe unter stock (einer aus exchange.margin.leverages): Der Makler leiht (Hebel − 1) × Einsatz dazu. */
+  leverage?: number;
+  /** Börsenfieber ±n (0–100): heizt die Spekulation an oder kühlt sie. */
+  fever?: number;
+  /** Anteil einer Partei ±n × eventSystems.partyStep (Summe bleibt 1). */
+  party?: Partial<Record<Party, number>>;
+  /** Seismik (4.17): +1 = Lizenz (hat Jacob sie schon: ein Trupp mehr), −1 = ein Trupp weniger. */
+  seismik?: number;
 }
 
 /** Was Systemwirkungen dauerhaft hinterlassen (state.consequences). Fehlt, solange nichts davon geschah. */
@@ -172,6 +209,10 @@ export interface EventSystemsBalance {
   sharePrice: number;
   dividendPressure: number;
   heirMax: number;
+  /** ansehen ±1 = so viele Punkte Ansehen in Hallstead (0–100). */
+  ansehenStep: number;
+  /** party ±1 = so viel Anteil (0–1) für die Partei; die anderen geben im Verhältnis ab. */
+  partyStep: number;
   /** Gäste, die eine Wirkung in den Aufsichtsrat holen kann (Silas, Vandermeer …). */
   boardGuests: Record<string, BoardGuest>;
   /** Gäste, die ab Kapitelbeginn im Rat sitzen, wenn Harlan Oil eine Aktiengesellschaft ist. */
@@ -228,6 +269,8 @@ export function parseEventSystemsBalance(raw: unknown): EventSystemsBalance {
     sharePrice: zahl(raw, `${p}.sharePrice`, 0),
     dividendPressure: zahl(raw, `${p}.dividendPressure`, 0, 100),
     heirMax: zahl(raw, `${p}.heirMax`, 1),
+    ansehenStep: zahl(raw, `${p}.ansehenStep`, 0, 100),
+    partyStep: zahl(raw, `${p}.partyStep`, 0, 0.5),
     boardGuests,
     boardStartGuests: start as string[],
     reputation: {
@@ -368,6 +411,41 @@ export function parseSystemEffects(raw: Record<string, unknown>, fehler: (key: s
   if (price) out.productPrice = price;
   const laws = tabelle('lawPressure');
   if (laws) out.lawPressure = laws as Record<string, number>;
+  // Kapitel 3 (4.19)
+  if (raw.brand !== undefined) {
+    // brand: 5 (alle Regionen mit eigenen Tankstellen) oder brand: { cordova: 5 }
+    if (endlich(raw.brand)) out.brand = { alle: raw.brand };
+    else {
+      const t = tabelle('brand');
+      if (t) out.brand = t as Record<string, number>;
+    }
+  }
+  const stations = tabelle('stations');
+  if (stations) {
+    if (Object.values(stations).some((n) => !Number.isInteger(n))) falsch('stations', '„stations“ braucht ganze Zahlen.');
+    else out.stations = stations as Record<string, number>;
+  }
+  for (const key of ['ansehen', 'favors', 'fever'] as const) {
+    const v = zahlBei(key);
+    if (v !== undefined) out[key] = v;
+  }
+  const kons = tabelle('consortium', ['trust', 'power'] as const);
+  if (kons) out.consortium = kons;
+  const stock = tabelle('stock');
+  if (stock) out.stock = stock as Record<string, number>;
+  const hebel = zahlBei('leverage');
+  if (hebel !== undefined) {
+    if (!Number.isInteger(hebel) || hebel < 1) falsch('leverage', '„leverage“ muss eine ganze Zahl ab 1 sein.');
+    else if (!out.stock) falsch('leverage', '„leverage“ gilt nur zusammen mit „stock“.');
+    else out.leverage = hebel;
+  }
+  const partei = tabelle('party', PARTIES);
+  if (partei) out.party = partei;
+  const seismik = zahlBei('seismik');
+  if (seismik !== undefined) {
+    if (!Number.isInteger(seismik) || seismik === 0) falsch('seismik', '„seismik“ muss eine ganze Zahl außer 0 sein (+1 Lizenz bzw. Trupp, −1 Trupp weniger).');
+    else out.seismik = seismik;
+  }
   if (raw.heirValues !== undefined) {
     if (!istObjekt(raw.heirValues)) falsch('heirValues', '„heirValues“ muss eine Tabelle sein, z. B. heirValues: { thomas: { loyalty: 1 } }.');
     else {
@@ -406,6 +484,10 @@ export interface SystemRefs {
   boardIds: readonly string[];
   laws: readonly Pick<LawDef, 'id'>[];
   techs: readonly string[];
+  /** Absatzregionen der Marke (balance.yaml → brand.regions), Aktien der Börse und ihre Hebel (exchange). */
+  brandRegions?: readonly string[];
+  stocks?: readonly string[];
+  leverages?: readonly number[];
 }
 
 /** Inhaltsprüfung: Verweist eine Systemwirkung auf etwas, das es nicht gibt? */
@@ -427,6 +509,13 @@ export function checkSystemEffects(
       if (s.boardMember && !rat.has(s.boardMember)) errors.push({ file, line: 1, message: `${wer}: boardMember „${s.boardMember}“ gibt es nicht.` });
       for (const g of Object.keys(s.lawPressure ?? {})) if (!gesetze.has(g)) errors.push({ file, line: 1, message: `${wer}: Gesetz „${g}“ in lawPressure gibt es nicht (content/laws/).` });
       for (const t of Object.keys(s.research ?? {})) if (!techniken.has(t)) errors.push({ file, line: 1, message: `${wer}: Technik „${t}“ in research gibt es nicht (balance.yaml → research.techs).` });
+      const regionen = new Set(['alle', ...(refs.brandRegions ?? [])]);
+      if (refs.brandRegions) {
+        for (const r of Object.keys(s.brand ?? {})) if (!regionen.has(r)) errors.push({ file, line: 1, message: `${wer}: Region „${r}“ in brand gibt es nicht (balance.yaml → brand.regions).` });
+        for (const r of Object.keys(s.stations ?? {})) if (!regionen.has(r) || r === 'alle') errors.push({ file, line: 1, message: `${wer}: Region „${r}“ in stations gibt es nicht (balance.yaml → brand.regions).` });
+      }
+      if (refs.stocks) for (const a of Object.keys(s.stock ?? {})) if (!refs.stocks.includes(a)) errors.push({ file, line: 1, message: `${wer}: Aktie „${a}“ in stock gibt es nicht (balance.yaml → exchange.stocks).` });
+      if (refs.leverages && s.leverage !== undefined && !refs.leverages.includes(s.leverage)) errors.push({ file, line: 1, message: `${wer}: Hebel ${s.leverage} gibt es nicht (exchange.margin.leverages).` });
     }
   }
   return errors;
@@ -721,6 +810,107 @@ function erben(state: GameState, balance: Balance, sys: SystemEffects): GameStat
   return { ...state, consequences: { ...c, heirValues } };
 }
 
+// --- Kapitel 3 (4.19) ---
+
+/** Marke und Tankstellen (4.14): Bekanntheit und Tankstellen je Region; ohne gegründete Marke verpufft beides. */
+function marke(state: GameState, balance: Balance, sys: SystemEffects): GameState {
+  if ((!sys.brand && !sys.stations) || !brandUnlocked(brandWorldFrom(state), balance)) return state;
+  const b0 = brandOf(state, balance);
+  if (!b0.founded) return state;
+  const regions = { ...b0.regions };
+  const ids = Object.keys(regions);
+  for (const [wo, n] of Object.entries(sys.brand ?? {})) {
+    // „alle“: jede Region, in der Harlan schon Tankstellen hat.
+    const ziele = wo === 'alle' ? ids.filter((id) => regions[id].stations > 0) : ids.filter((id) => id === wo);
+    for (const id of ziele) regions[id] = { ...regions[id], awareness: clamp(rund(regions[id].awareness + n, 1), 0, 100) };
+  }
+  for (const [wo, n] of Object.entries(sys.stations ?? {})) {
+    const r = regions[wo];
+    if (r) regions[wo] = { ...r, stations: Math.max(0, r.stations + Math.round(n)) };
+  }
+  return { ...state, brand: { ...b0, regions } };
+}
+
+/** Stand, Lobby und Konsortium (4.16, 4.17): Ansehen, Gefallen, Vales Vertrauen, Macht des Konsortiums, Seismik. */
+function hallstead(state: GameState, balance: Balance, sys: SystemEffects): GameState {
+  let out = state;
+  const b = balance.eventSystems;
+  if ((sys.ansehen || sys.consortium || sys.seismik) && kapitel3Unlocked(out, balance)) {
+    out = ensureKapitel3(out, balance);
+    let k3 = out.kapitel3!;
+    if (sys.ansehen) k3 = adjustAnsehen(k3, sys.ansehen * b.ansehenStep);
+    if (sys.consortium) {
+      const k = k3.konsortium;
+      k3 = { ...k3, konsortium: { ...k, trust: clamp(rund(k.trust + (sys.consortium.trust ?? 0)), 0, 100), power: clamp(rund(k.power + (sys.consortium.power ?? 0)), 0, 100) } };
+    }
+    if (sys.seismik) {
+      const se = k3.seismik;
+      const max = balance.kapitel3.seismik.maxCrews;
+      const seismik = sys.seismik > 0 ? (se.license ? { ...se, crews: Math.min(max, se.crews + sys.seismik) } : { ...se, license: true, crews: Math.min(max, se.crews + sys.seismik - 1) }) : { ...se, crews: Math.max(0, se.crews + sys.seismik) };
+      k3 = { ...k3, seismik };
+    }
+    out = { ...out, kapitel3: k3 };
+  }
+  if (sys.favors && hallsteadUnlocked(out, balance)) {
+    const h = hallsteadOf(out, balance);
+    out = { ...out, hallstead: { ...h, lobby: { ...h.lobby, favors: Math.max(0, rund(h.lobby.favors + sys.favors)) } } };
+  }
+  return out;
+}
+
+/** Börse (4.15): Käufe und Verkäufe ohne Geld (das steht unter cash), Börsenfieber. */
+function boerse(state: GameState, balance: Balance, sys: SystemEffects): GameState {
+  const ex0 = state.exchange;
+  if (!ex0 || (!sys.stock && !sys.fever)) return state;
+  const eb = balance.exchange;
+  let ex = ex0;
+  for (const [aktie, betrag] of Object.entries(sys.stock ?? {})) {
+    const kurs = ex.prices[aktie];
+    if (kurs === undefined || kurs <= 0 || betrag === 0) continue;
+    if (betrag > 0) {
+      const hebel = sys.leverage && eb.margin.leverages.includes(sys.leverage) ? sys.leverage : 1;
+      const volumen = betrag * hebel;
+      const p = { id: ex.nextId, stock: aktie, shares: (volumen * (1 - eb.margin.fee)) / kurs, stake: betrag, loan: volumen - betrag, round: state.round, called: false };
+      ex = { ...ex, positions: [...ex.positions, p], nextId: ex.nextId + 1 };
+    } else {
+      // Verkauf: so viel Kurswert, jüngste Käufe zuerst; der Maklerkredit schrumpft mit.
+      let rest = -betrag;
+      const positions = [...ex.positions];
+      for (let i = positions.length - 1; i >= 0 && rest > 0; i--) {
+        const p = positions[i];
+        if (p.stock !== aktie) continue;
+        const wert = p.shares * kurs;
+        if (wert <= rest + 1e-9) {
+          positions.splice(i, 1);
+          rest -= wert;
+        } else {
+          const anteil = rest / wert;
+          positions[i] = { ...p, shares: p.shares * (1 - anteil), stake: rund(p.stake * (1 - anteil)), loan: rund(p.loan * (1 - anteil)) };
+          rest = 0;
+        }
+      }
+      ex = { ...ex, positions };
+    }
+  }
+  if (sys.fever) ex = { ...ex, fever: clamp(rund(ex.fever + sys.fever, 1), 0, 100) };
+  return ex === ex0 ? state : { ...state, exchange: ex };
+}
+
+/** Parteien im Weltmodell: Anteil ±n × partyStep, die anderen geben im Verhältnis ab (Summe bleibt 1). */
+function parteien(state: GameState, balance: Balance, sys: SystemEffects): GameState {
+  const w = state.worldModel;
+  if (!w || !sys.party) return state;
+  let parties = { ...w.parties };
+  for (const [partei, n] of Object.entries(sys.party) as [Party, number][]) {
+    const alt = parties[partei];
+    const neu = clamp(alt + n * balance.eventSystems.partyStep, 0.02, 0.9);
+    const restAlt = 1 - alt;
+    const restNeu = 1 - neu;
+    parties = Object.fromEntries(PARTIES.map((p) => [p, p === partei ? neu : restAlt > 0 ? (parties[p] / restAlt) * restNeu : restNeu / (PARTIES.length - 1)])) as Record<Party, number>;
+  }
+  return { ...state, worldModel: { ...w, parties } };
+}
+
 /**
  * Wendet die Systemwirkungen einer Antwort an (Quelle = Ereignis-id, für befristete Wirkungen
  * und die Beschriftung neuer Spuren). Reihenfolge ohne Bedeutung – jede Wirkung trifft ihr eigenes System.
@@ -745,6 +935,10 @@ export function applySystemEffects(state: GameState, sys: SystemEffects | undefi
   out = forschung(out, balance, sys);
   out = kredit(out, balance, sys);
   out = erben(out, balance, sys);
+  out = marke(out, balance, sys);
+  out = hallstead(out, balance, sys);
+  out = boerse(out, balance, sys);
+  out = parteien(out, balance, sys);
   if (sys.transportFee) {
     const c = folgen(out);
     out = { ...out, consequences: { ...c, transportFee: Math.max(0, Math.round(c.transportFee + sys.transportFee)) } };
@@ -822,6 +1016,11 @@ export function systemImpact(sys: SystemEffects | undefined, balance: Balance): 
   x += Math.abs(sys.loan ?? 0) * w.loan;
   x += Math.abs(sys.appointmentsNext ?? 0) * w.appointmentsNext;
   x += Object.values(sys.heirValues ?? {}).reduce((s, f) => s + summe(f), 0) * w.heirValues;
+  x += summe(sys.brand) * w.brand + summe(sys.stations) * w.stations;
+  x += Math.abs(sys.ansehen ?? 0) * w.ansehen + Math.abs(sys.favors ?? 0) * w.favors;
+  x += summe(sys.consortium) * w.consortium;
+  x += summe(sys.stock) * w.stock * (sys.leverage ?? 1) + (sys.leverage ? sys.leverage * w.leverage : 0);
+  x += Math.abs(sys.fever ?? 0) * w.fever + summe(sys.party) * w.party + Math.abs(sys.seismik ?? 0) * w.seismik;
   return Math.round(x);
 }
 

@@ -5,8 +5,8 @@
 # Kapitel 3 („Hallsteads alte Familien öffnen die ersten Türen – oder schlagen sie zu“),
 # Weltbibel (Jacobs Groll auf die alten Familien).
 #
-# Nur Kapitel 3 (minChapter/maxChapter 3). Stand und Ruf gibt es als Wirkung noch nicht –
-# Ersatz: Kraft (Jacob zahlt mit Nerven) und Geld, siehe „# TODO-Effekt“.
+# Nur Kapitel 3 (minChapter/maxChapter 3). Seit 4.19 wirken Ansehen in Hallstead (ansehen, Stand
+# 4.17), Ruf und Aufsichtsrat als Systemwirkungen; Kraft und Geld bleiben, wo der Text sie nennt.
 #
 # Merkzeichen aus Kapitel 1: kerrigan_lager (Dan Kerrigan lebt und zählt Fässer).
 # Merkzeichen dieses Pakets:
@@ -38,14 +38,14 @@
         de: Der Antrag liegt aus, drei Wochen lang, in einem Glaskasten neben der Garderobe. Jacob liest, wer unterschrieben hat. Es sind wenige.
         en: The application lies on display for three weeks in a glass case by the cloakroom. Jacob reads who has signed. They are few.
       requires: { minCash: 2000 }
-      effects: { cash: -2000 }  # TODO-Effekt: standing: Abstimmung läuft
+      effects: { cash: -2000, ansehen: 1 }
       marks: [k3_club_antrag]
     - id: nein
       label: { de: "„Ich habe ein eigenes Haus mit Sesseln.“", en: "\"I have a house of my own with armchairs.\"" }
       result:
         de: Der Bankier lacht höflich. Danach verkauft er Jacobs Anleihen mit einem Viertelpunkt mehr Zins. Er sagt, es sei der Markt.
         en: The banker laughs politely. Afterwards he sells Jacob's bonds at a quarter point more interest. He says it's the market.
-      effects: { cash: -500 }  # TODO-Effekt: credit: -1, standing: 0
+      effects: { cash: -500, rating: -1 }
       default: true
 
 - id: k3_club_kugel
@@ -73,20 +73,20 @@
         de: Im nächsten Jahr liegen nur weiße Kugeln in der Urne. Über der Bibliothekstür steht in Messing ein Name, der nicht Harlan ist – Jacob hat es so verlangt. Er geht nie hinein.
         en: The next year the urn holds only white balls. Above the library door a name stands in brass that is not Harlan – Jacob insisted. He never goes in.
       requires: { minCash: 5000 }
-      effects: { cash: -5000 }  # TODO-Effekt: standing: +3, boardLoyalty: { vandermeer: +5 }
+      effects: { cash: -5000, ansehen: 3, boardLoyalty: { vandermeer: 5 } }
     - id: druck
       label: { de: "Herausfinden, wessen Bank am Club hängt – und Kredite kündigen", en: "Find out whose bank the club depends on – and call in loans" }
       result:
         de: Drei Clubmitglieder bekommen Briefe von Harlans Anwälten. Im nächsten Jahr wird Jacob aufgenommen. Niemand setzt sich im Lesesaal neben ihn.
         en: Three club members get letters from Harlan's lawyers. The next year Jacob is admitted. No one sits beside him in the reading room.
-      effects: { cash: 1500, strength: -10 }  # TODO-Effekt: standing: +1, reputation: { industryFear: +3 }, rival: { vandermeer: -10 }
+      effects: { cash: 1500, strength: -10, ansehen: 1, reputation: { industryFear: 3 }, boardLoyalty: { vandermeer: -10 } }
       appointments: 2
     - id: hinnehmen
       label: { de: "Hinnehmen", en: "Accept it" }
       result:
         de: Jacob nimmt es hin. Abends steht er lange am Fenster. Ruth fragt nicht, woran er denkt. Sie weiß es seit zwanzig Jahren.
         en: Jacob accepts it. In the evening he stands at the window a long time. Ruth doesn't ask what he is thinking. She has known for twenty years.
-      effects: { strength: -15 }  # TODO-Effekt: standing: -1
+      effects: { strength: -15, ansehen: -1 }
       appointments: 0
       default: true
 
@@ -117,14 +117,14 @@
         de: Am Sonntag nach dem Richtfest predigt Bruder Abel über den reichen Mann und das Nadelöhr. Er sieht Jacob dabei nicht an. Es ist trotzdem freundlich gemeint.
         en: On the Sunday after the roofing, Brother Abel preaches on the rich man and the eye of the needle. He doesn't look at Jacob. It is kindly meant all the same.
       requires: { minCash: 2000 }
-      effects: { cash: -2000, strength: 5 }  # TODO-Effekt: reputation: { workers: +3 }
+      effects: { cash: -2000, strength: 5, reputation: { workers: 3 } }
     - id: vorstand
       label: { de: "Den Sitz im Vorstand nehmen und die Orgel stiften (4.000 $)", en: "Take the board seat and donate the organ (4,000 $)" }
       result:
         de: Die neue Orgel ist so laut, dass man sie bis zum Hafen hört. Der Bürgermeister gibt Jacob nach dem Gottesdienst die Hand. Bruder Abel predigt weiter unter freiem Himmel.
         en: The new organ is so loud it can be heard down at the harbour. After the service the mayor shakes Jacob's hand. Brother Abel keeps preaching under the open sky.
       requires: { minCash: 4000 }
-      effects: { cash: -4000 }  # TODO-Effekt: standing: +2, reputation: { workers: -2 }
+      effects: { cash: -4000, ansehen: 2, reputation: { workers: -2 } }
     - id: keins
       label: { de: "„Gott hat genug Dächer.“", en: "\"God has roofs enough.\"" }
       result:
@@ -157,7 +157,7 @@
         de: Das Bild hängt sechs Monate später in der Halle. Der Mann darauf sieht reich aus und ein wenig fremd. Die Dienstboten nennen ihn „der Herr im Flur“.
         en: Six months later the picture hangs in the hall. The man in it looks rich and a little strange. The servants call him "the gentleman in the hall".
       requires: { minCash: 2500 }
-      effects: { cash: -2500 }  # TODO-Effekt: standing: +1, legacy: +1
+      effects: { cash: -2500, ansehen: 1, reputation: { public: 1 } }
       marks: [k3_portraet_allein]
     - id: familie
       label: { de: "Mit Ruth und den Kindern, die Hände sichtbar (3.000 $, 2 Termine)", en: "With Ruth and the children, hands showing (3,000 $, 2 appointments)" }
@@ -165,7 +165,7 @@
         de: Die Sitzungen dauern Wochen. Ruth und Jacob reden dabei mehr als seit Jahren, weil man stillhalten muss. Auf dem Bild hält Jacob einen Bohrmeißel, wie früher.
         en: The sittings take weeks. Ruth and Jacob talk more than in years, because one has to keep still. In the picture Jacob holds a drill bit, as he once did.
       requires: { minCash: 3000 }
-      effects: { cash: -3000, ruth: 10, thomas: 8 }  # TODO-Effekt: clara: +8, standing: 0
+      effects: { cash: -3000, ruth: 10, thomas: 8, clara: 8 }
       appointments: 2
     - id: nein
       label: { de: "„Ich hänge mich nicht an die Wand.“", en: "\"I won't hang myself on a wall.\"" }
@@ -199,20 +199,20 @@
         de: Über dem Eingang steht HARLAN in Stein. Bei der Eröffnung hält der Bürgermeister eine Rede, der Ledger bringt ein Foto. Haskell steht am Rand und zählt Betten.
         en: HARLAN stands in stone above the entrance. At the opening the mayor gives a speech and the Ledger runs a photograph. Haskell stands at the edge counting beds.
       requires: { minCash: 6000 }
-      effects: { cash: -6000 }  # TODO-Effekt: standing: +2, reputation: { public: +3 }, legacy: +2
+      effects: { cash: -6000, ansehen: 2, reputation: { public: 5 } }
     - id: anonym
       label: { de: "Anonym stiften (6.000 $)", en: "Endow it anonymously (6,000 $)" }
       result:
         de: Der Flügel heißt nach einer Heiligen. Niemand weiß, wer bezahlt hat, außer Haskell und Ruth. Ruth sieht Jacob an diesem Abend lange an.
         en: The wing is named after a saint. No one knows who paid except Haskell and Ruth. Ruth looks at Jacob a long time that evening.
       requires: { minCash: 6000 }
-      effects: { cash: -6000, ruth: 8, strength: 5 }  # TODO-Effekt: reputation: { workers: +1 }
+      effects: { cash: -6000, ruth: 8, strength: 5, reputation: { workers: 1 } }
     - id: nein
       label: { de: "„Die Stadt soll ihr Krankenhaus selbst bauen.“", en: "\"Let the town build its own hospital.\"" }
       result:
         de: Haskell nickt. Im Winter liegen die Kranken auf den Fluren. Zwei davon arbeiten auf Harlan-Feldern.
         en: Haskell nods. In winter the sick lie in the corridors. Two of them work on Harlan fields.
-      effects: { production: -0.05 }  # TODO-Effekt: reputation: { workers: -2 }
+      effects: { production: -0.05, reputation: { workers: -2 } }
       appointments: 0
       default: true
 
@@ -240,7 +240,7 @@
         de: Jacob bietet, bis alle anderen aufhören. Applaus, kurz und kühl. Cornelia Vandermeer dankt ihm öffentlich für seine „bemerkenswerte Entschlossenheit“. Alle hören, was sie meint.
         en: Jacob bids until everyone else stops. Applause, brief and cool. Cornelia Vandermeer thanks him publicly for his "remarkable determination". Everyone hears what she means.
       requires: { minCash: 5000 }
-      effects: { cash: -5000, strength: -5 }  # TODO-Effekt: standing: +1, reputation: { public: +1 }
+      effects: { cash: -5000, strength: -5, ansehen: 1, reputation: { public: 1 } }
       appointments: 2
     - id: massvoll
       label: { de: "Maßvoll bieten und früh gehen (1.000 $)", en: "Bid modestly and leave early (1,000 $)" }
@@ -248,13 +248,13 @@
         de: Ein Bankier aus Hallstead ersteigert das Bild. Jacob ist um elf zu Hause. Ruth hat auf ihn gewartet.
         en: A Hallstead banker wins the painting. Jacob is home by eleven. Ruth waited up for him.
       requires: { minCash: 1000 }
-      effects: { cash: -1000, ruth: 5 }  # TODO-Effekt: standing: 0
+      effects: { cash: -1000, ruth: 5 }
     - id: waisen
       label: { de: "Nicht hingehen, den Waisenhäusern direkt spenden (2.000 $)", en: "Stay away, give to the orphanages directly (2,000 $)" }
       result:
         de: Das Geld kommt in den Kohleprovinzen an, ohne Ball. Jemand in Hallstead nennt es ungehobelt. In einer Kohlestadt, die Jacob kennt, hängt danach sein Bild in der Schule.
         en: The money reaches the coal provinces without a ball. Someone in Hallstead calls it uncouth. In a coal town Jacob knows, his picture hangs in the school afterwards.
-      effects: { cash: -2000, strength: 10 }  # TODO-Effekt: standing: -1, reputation: { workers: +2 }
+      effects: { cash: -2000, strength: 10, ansehen: -1, reputation: { workers: 2 } }
       default: true
 
 - id: k3_kerrigan_tor
@@ -282,19 +282,19 @@
       result:
         de: Kerrigan sitzt zwischen dem Richter und dessen Frau und erzählt vom Brand am Salt Hill. Der Richter hört zu, die Frau nicht. Jacob lacht an diesem Abend zum ersten Mal seit Wochen.
         en: Kerrigan sits between the judge and his wife and tells of the fire at Salt Hill. The judge listens, the wife doesn't. Jacob laughs that evening for the first time in weeks.
-      effects: { strength: 15 }  # TODO-Effekt: standing: -1, reputation: { workers: +2 }
+      effects: { strength: 15, ansehen: -1, reputation: { workers: 2 } }
     - id: kueche
       label: { de: "In die Küche bitten, mit einem Umschlag (1.000 $)", en: "Ask him into the kitchen, with an envelope (1,000 $)" }
       result:
         de: Jacob geht zwischen zwei Gängen in die Küche. Kerrigan nimmt den Umschlag und lässt die Flasche da. Er sagt „Mr. Harlan“, zum ersten Mal.
         en: Jacob slips into the kitchen between two courses. Kerrigan takes the envelope and leaves the bottle. He says "Mr. Harlan", for the first time.
       requires: { minCash: 1000 }
-      effects: { cash: -1000 }  # TODO-Effekt: reputation: { workers: +1 }
+      effects: { cash: -1000, reputation: { workers: 1 } }
     - id: weg
       label: { de: "„Sagen Sie ihm, ich komme morgen vorbei.“", en: "\"Tell him I'll call tomorrow.\"" }
       result:
         de: Jacob kommt am nächsten Tag nicht vorbei und am übernächsten auch nicht. Die Flasche steht noch Wochen im Pförtnerhaus.
         en: Jacob doesn't call the next day, nor the day after. The bottle stands in the gatehouse for weeks.
-      effects: { strength: -15 }  # TODO-Effekt: reputation: { workers: -2 }
+      effects: { strength: -15, reputation: { workers: -2 } }
       appointments: 0
       default: true

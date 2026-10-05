@@ -172,8 +172,80 @@ chapter2:
     title: { de: "Kapitel 3 – Der Konzernherr", en: "Chapter 3 – The Magnate" }
     text:
       de: >-
-        Zeitsprung II und Kapitel 3 sind noch im Bau. Bis dahin endet die Geschichte hier – danke
-        fürs Spielen!
+        Sechs Jahre führt ein Verwalter das Tagesgeschäft. Danach ist Harlan Oil ein Konzern – die
+        Börse lockt, und Hallsteads alte Familien öffnen die ersten Türen. Oder schlagen sie zu.
       en: >-
-        Time skip II and chapter 3 are still under construction. Until then the story ends here –
-        thanks for playing!
+        For six years a manager runs the daily business. After that Harlan Oil is a corporation – the
+        stock exchange beckons, and Hallstead's old families open the first doors. Or slam them shut.
+
+# Kapitel 3 „Der Konzernherr“ (4.19, GDD §13/§14): Ausgänge, Prüfung, Ende des Early-Access-Umfangs.
+# Platzhalter: {regionen} Ziel Regionen, {anteil} Ziel Marktanteil, {rating} Mindest-Rating.
+chapter3:
+  endings:
+    erreicht:
+      title: { de: "Kapitel 3 geschafft", en: "Chapter 3 Complete" }
+      text:
+        de: >-
+          Vier Jahre als Konzernherr. Harlans Schild hängt über Tankstellen in mehreren Provinzen,
+          die Banken in Hallstead nehmen Jacobs Anrufe entgegen, und Margaret Crane grüßt ihn
+          inzwischen zuerst.
+        en: >-
+          Four years as a magnate. Harlan's sign hangs over filling stations in several provinces,
+          the banks in Hallstead take Jacob's calls, and Margaret Crane now greets him first.
+    verfehlt:
+      title: { de: "Kapitel 3 verfehlt", en: "Chapter 3 Missed" }
+      text:
+        de: >-
+          Harlan Oil ist groß, aber nicht dort, wo die Kunden tanken – oder die Bank zweifelt an den
+          Büchern. In Hallstead spricht man von einem Ölmann, nicht von einem Konzernherrn.
+        en: >-
+          Harlan Oil is big, but not where the customers fill up – or the bank doubts its books. In
+          Hallstead they speak of an oilman, not of a magnate.
+    verkauft:
+      title: { de: "Der kluge Mann", en: "The Wise Man" }
+      text:
+        de: >-
+          Jacob Harlan hat verkauft. Harold Pruett zahlt bar, wie immer, und Harlan Oil verschwindet
+          in einem größeren Namen. Jacob hat Zeit – zum ersten Mal seit Salt Hill.
+        en: >-
+          Jacob Harlan has sold. Harold Pruett pays in cash, as always, and Harlan Oil disappears into
+          a bigger name. Jacob has time – for the first time since Salt Hill.
+    abgesetzt:
+      title: { de: "Abgesetzt", en: "Ousted" }
+      text:
+        de: >-
+          Der Aufsichtsrat hat Jacob Harlan abgesetzt, mitten im Kampf um die Marke. Die Herren
+          sprechen von einer neuen Zeit. Jacob hört das Wort zum ersten Mal über sich selbst.
+        en: >-
+          The board has ousted Jacob Harlan in the middle of the battle for the brand. The gentlemen
+          speak of a new era. Jacob hears the phrase used about himself for the first time.
+    geschluckt:
+      title: { de: "Geschluckt", en: "Swallowed" }
+      text:
+        de: >-
+          Thornes Strohmänner haben über Jahre gekauft, Block um Block. Jetzt gehört ihm mehr von
+          Harlan Oil als Jacob – und die Tankstellen tragen bald seinen Namen.
+        en: >-
+          Thorne's straw men bought for years, block by block. Now he owns more of Harlan Oil than
+          Jacob – and the filling stations will soon bear his name.
+    haft:
+      title: { de: "Hinter Gittern", en: "Behind Bars" }
+      text:
+        de: >-
+          Die Akten haben gereicht. Jacob Harlan geht ins Bundesgefängnis, und in Cordova erzählt man
+          sich, wer die Akte geöffnet hat.
+        en: >-
+          The files were enough. Jacob Harlan goes to federal prison, and in Cordova people tell each
+          other who opened the file.
+  goals:
+    brand: { de: "Eigene Marke in mindestens {regionen} Regionen oder {anteil} Marktanteil", en: "Own brand in at least {regionen} regions or {anteil} market share" }
+    rating: { de: "Am Kapitelende mindestens Rating {rating}", en: "At least rating {rating} at the chapter's end" }
+  next:
+    title: { de: "Ende des Early-Access-Umfangs – Kapitel 4 folgt", en: "End of the Early Access Scope – Chapter 4 Follows" }
+    text:
+      de: >-
+        Hier endet, was CRUDE bisher erzählt: drei Kapitel, zwei Zeitsprünge, vierundzwanzig Jahre
+        im Leben von Jacob Harlan. Kapitel 4 „Der Magnat“ folgt – danke fürs Spielen!
+      en: >-
+        This is where CRUDE's story ends for now: three chapters, two time skips, twenty-four years
+        in the life of Jacob Harlan. Chapter 4 “The Tycoon” follows – thanks for playing!

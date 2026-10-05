@@ -4,9 +4,8 @@
 # Spezialtrupp; Patente und Lizenzen), §9.2 (Sir Reginald Ashcombe – Royal Aldmark Petroleum,
 # ab Kapitel 5: hier nur als Vorschau), Weltbibel (Mr. Vale, das Konsortium).
 #
-# Nur Kapitel 3 (minChapter/maxChapter 3). Forschung, Seismik und Konsortium gibt es als
-# Wirkung noch nicht (System 4.17) – Ersatz: production (bessere Funde), leaseCost (genauere
-# Pachtpreise), siehe „# TODO-Effekt“.
+# Nur Kapitel 3 (minChapter/maxChapter 3). Seit 4.19 wirken Seismik (seismik: +1 Lizenz bzw.
+# Trupp, −1 Trupp weniger) und Konsortium (consortium: Vales Vertrauen, Macht) als Systemwirkungen.
 #
 # Merkzeichen aus Kapitel 1: hale_beteiligt, hale_gutachten_falsch (Dr. L. Hales Gutachten am
 # Cedar Creek – echt oder gefälscht).
@@ -44,7 +43,7 @@
         de: Hales Trupp fährt mit zwei Wagen voller Kisten hinaus. In der Prärie hört man jetzt manchmal ein dumpfes Knallen, und die Vögel fliegen auf.
         en: Hale's crew drives out with two wagons full of crates. On the prairie one now sometimes hears a dull bang, and the birds fly up.
       requires: { minCash: 5000 }
-      effects: { cash: -5000 }  # TODO-Effekt: research: { seismik: +1 }
+      effects: { cash: -5000, seismik: 1 }
       marks: [k3_seismik_hale]
     - id: lizenz
       label: { de: "Lieber eine fertige Lizenz aus Aldmark kaufen (3.500 $)", en: "Rather buy a finished licence from Aldmark (3,500 $)" }
@@ -52,7 +51,7 @@
         de: Die Lizenz kommt mit einem Handbuch auf Aldmärkisch und einem Ingenieur, der kein Wort Westmärkisch spricht. Die Messungen sind gut, wenn man sie versteht.
         en: The licence comes with a manual in Aldmarkian and an engineer who speaks not a word of Westmark. The readings are good, if one understands them.
       requires: { minCash: 3500 }
-      effects: { cash: -3500, leaseCost: -0.2 }  # TODO-Effekt: research: { seismik: Lizenz }
+      effects: { cash: -3500, seismik: 1 }
     - id: nein
       label: { de: "„Ich bohre lieber.“", en: "\"I'd rather drill.\"" }
       result:
@@ -89,20 +88,20 @@
         de: Jacobs Landmänner kaufen über drei Strohmänner Sumpfland, das niemand will. Die Farmer am Rand lachen über die dummen Städter.
         en: Jacob's landmen buy marshland nobody wants through three straw men. The farmers on the edge laugh at the foolish city folk.
       requires: { minCash: 4000 }
-      effects: { cash: -4000, production: 0.25 }  # TODO-Effekt: neues Gebiet (unlocks: bitterwasser), research: { seismik: +1 }
+      effects: { cash: -4000, production: 0.1, seismik: 1 }
     - id: verkaufen
       label: { de: "Die Streifen verkaufen – an die, die gut bezahlen (+6.000 $)", en: "Sell the strips – to those who pay well (+6,000 $)" }
       result:
         de: Ein Umschlag ohne Absender, darin ein Wechsel auf eine Bank in Aldmark. Hales Streifen verschwinden. Hale sieht Jacob danach nicht mehr in die Augen.
         en: An envelope with no sender, inside it a draft on a bank in Aldmark. Hale's strips disappear. Afterwards Hale no longer looks Jacob in the eye.
-      effects: { cash: 6000, strength: -5 }  # TODO-Effekt: consortiumDebt: +1, consortiumPower: +1
+      effects: { cash: 6000, strength: -5, consortium: { trust: 10, power: 5 } }
       marks: [k3_seismik_verkauft]
     - id: warten
       label: { de: "Erst eine Probebohrung abwarten", en: "Wait for a test well first" }
       result:
         de: Die Probebohrung dauert ein Quartal. Als sie Öl zeigt, stehen am Sumpfrand schon zwei fremde Landmänner mit Pachtverträgen.
         en: The test well takes a quarter. When it shows oil, two strange landmen are already standing at the marsh's edge with leases.
-      effects: { leaseCost: 0.2 }  # TODO-Effekt: Konkurrenz kennt den Fund
+      effects: { leaseCost: 0.2, rival: { bullard: { strength: 1 } } }
       default: true
 
 - id: k3_hale_schwindler
@@ -130,13 +129,13 @@
         de: Die Anwälte legen das gefälschte Gutachten vom Cedar Creek vor. Hale verschwindet aus Hallstead, bevor die Polizei kommt. Der Zahnarzt schickt einen Dankesbrief.
         en: The lawyers present the forged Cedar Creek survey. Hale vanishes from Hallstead before the police arrive. The dentist sends a letter of thanks.
       requires: { minCash: 1000 }
-      effects: { cash: -1000, leaseCost: -0.1 }  # TODO-Effekt: reputation: { public: +2 }
+      effects: { cash: -1000, leaseCost: -0.1, reputation: { public: 2 } }
     - id: schweigen
       label: { de: "Schweigen – man gibt nicht zu, dass man reingefallen ist", en: "Stay silent – one doesn't admit having been fooled" }
       result:
         de: Hale verkauft weiter, mit Jacobs Namen als Empfehlung. Ein halbes Jahr später verklagt der Zahnarzt Harlan als Mitwisser. Die Anwälte einigen sich still.
         en: Hale keeps selling, with Jacob's name as a reference. Half a year later the dentist sues Harlan as an accessory. The lawyers settle quietly.
-      effects: { cash: -800, price: -0.1 }  # TODO-Effekt: reputation: { public: -3 }, heat: +1
+      effects: { cash: -800, price: -0.1, reputation: { public: -3 }, heat: 1 }
       default: true
 
 - id: k3_messtrupp
@@ -163,20 +162,20 @@
         de: Der Rancher nimmt das Geld und lässt den Trupp weitermessen, wenn er vorher Bescheid bekommt. Seine Nachbarn hören davon.
         en: The rancher takes the money and lets the crew keep surveying if he is told beforehand. His neighbours hear of it.
       requires: { minCash: 1500 }
-      effects: { cash: -1500, leaseCost: -0.1 }  # TODO-Effekt: reputation: { public: +1 }
+      effects: { cash: -1500, leaseCost: -0.1, reputation: { public: 1 } }
     - id: sheriff
       label: { de: "Den Sheriff schicken – die Messrechte sind bezahlt", en: "Send the sheriff – the survey rights are paid for" }
       result:
         de: Der Sheriff nimmt dem Alten die Flinte ab. Die Messungen gehen weiter. Auf der ganzen Prärie verlangen die Rancher jetzt das Doppelte für jede Pacht.
         en: The sheriff takes the old man's shotgun. The surveying continues. All over the prairie the ranchers now ask double for every lease.
-      effects: { leaseCost: 0.25, strength: -5 }  # TODO-Effekt: reputation: { public: -2 }
+      effects: { leaseCost: 0.25, strength: -5, reputation: { public: -2 } }
       default: true
     - id: abziehen
       label: { de: "Den Trupp abziehen", en: "Withdraw the crew" }
       result:
         de: Die Weide bleibt ungemessen. Die Linien auf Hales Karte haben jetzt ein weißes Loch, genau dort, wo sie interessant werden.
         en: The pasture stays unsurveyed. The lines on the map now have a white hole, exactly where they get interesting.
-      effects: { production: -0.1 }  # TODO-Effekt: research: { seismik: -1 }
+      effects: { seismik: -1 }
 
 - id: k3_quoten
   mail: info
@@ -202,14 +201,14 @@
       result:
         de: Harlan fördert weniger, die anderen auch. Der Preis steigt, still und gleichmäßig, als hätte ihn jemand an einer Schnur gezogen.
         en: Harlan produces less, so do the others. The price rises, quietly and evenly, as if someone had pulled it on a string.
-      effects: { production: -0.1, price: 0.25 }  # TODO-Effekt: consortiumPower: +1, mood: 0
+      effects: { price: 0.25, consortium: { power: 5 } }
       marks: [k3_quote_eingehalten]
     - id: ignorieren
       label: { de: "Mehr fördern, solange die anderen sparen", en: "Produce more while the others hold back" }
       result:
         de: Harlan verkauft in die Lücke, die die anderen lassen. Drei Monate lang. Dann liegt ein zweites Rundschreiben auf dem Tisch, nur mit Harlans Zeile, rot unterstrichen.
         en: Harlan sells into the gap the others leave. For three months. Then a second circular lies on the desk, with only Harlan's line, underlined in red.
-      effects: { production: 0.15 }  # TODO-Effekt: consortium: { relation: -10 }, rival: alle { aggression: +5 }
+      effects: { production: 0.15, consortium: { trust: -10 }, rival: { bullard: { grudge: 5 }, thorne: { grudge: 5 }, crane: { grudge: 5 } } }
       marks: [k3_quote_ignoriert]
       default: true
 
@@ -238,7 +237,7 @@
         de: Ein Tanker unter aldmärkischer Flagge legt in Port Ellis an. Die Matrosen sprechen eine Sprache, die die Hafenarbeiter nicht verstehen. Das Geld verstehen alle.
         en: A tanker under the Aldmark flag docks at Port Ellis. The sailors speak a language the dockers don't understand. Everyone understands the money.
       requires: { minOilStock: 2000 }
-      effects: { oilStock: -2000, cash: 3200 }  # TODO-Effekt: tension: +1, contract: { aldmark: 10 Jahre }
+      effects: { oilStock: -2000, cash: 3200, tension: 3, consortium: { power: -3 } }
       marks: [k3_ashcombe_kontakt]
     - id: ablehnen
       label: { de: "„Westmärkisches Öl bleibt in Westmark.“", en: "\"Westmark oil stays in Westmark.\"" }

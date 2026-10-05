@@ -19,6 +19,10 @@
 // (Stellvertreterkampf verloren, stocks.ousted), „Geschluckt“ (Thorne hält mehr Aktien als Jacob und
 // Jacobs Kontrolle liegt unter swallowedControl) und „Hinter Gittern“ (Delaney: Verurteilung zu langer
 // Haft, Merkzeichen delaney_haft). Der Verkauf an Pruett (4.10) ist dort „Der kluge Mann“.
+//
+// Kapitel 3 „Der Konzernherr“ (4.19, GDD §13): geschafft mit eigener Marke in ≥ brand.goal.regions
+// Regionen ODER ≥ brand.goal.share Marktanteil UND am Kapitelende mindestens Rating
+// chapter.chapter3.minRating. Die frühen Enden gelten weiter. Danach endet der Early-Access-Umfang.
 
 import { parseDocument } from 'yaml';
 import { arcOutcome, type ArcContent } from './arcs';
@@ -36,6 +40,8 @@ import { ownsRefinery } from './refinery';
 import { ownsHarborPipeline } from './bigPipeline';
 import { control, ownStake, thorneStake } from './stocks';
 import { DELANEY_MARKS } from './investigation';
+import { brandGoal } from './brand';
+import { RATINGS } from './balance';
 import { REPUTATION_AXES, REPUTATION_WORDS, type ReputationAxis, type ReputationWord } from './reputation';
 
 /** Wie das Kapitel ausgegangen ist, oder null, solange es läuft. */
@@ -92,9 +98,42 @@ export function chapter2Check(state: GameState, balance: Balance): Chapter2Check
   return { refinery, harbor, transport: refinery || harbor, control: kontrolle, controlReached, value, valueReached, passed: (refinery || harbor) && controlReached && valueReached };
 }
 
-/** Hat Jacob die Prüfung seines Kapitels bestanden (Kapitel 1 oder 2)? */
+/** Kapitelprüfung Kapitel 3 (4.19, GDD §13). */
+export interface Chapter3Check {
+  /** Regionen mit eigener Marke (mindestens brand.goal.presenceStations Tankstellen). */
+  regions: number;
+  regionsReached: boolean;
+  /** Nationaler Marktanteil 0–1 aus der letzten Abrechnung. */
+  share: number;
+  shareReached: boolean;
+  /** Marke in genug Regionen oder genug Marktanteil. */
+  brand: boolean;
+  rating: GameState['rating'];
+  ratingReached: boolean;
+  passed: boolean;
+}
+
+/** Die Kapitelprüfung von Kapitel 3 zum aktuellen Stand. */
+export function chapter3Check(state: GameState, balance: Balance): Chapter3Check {
+  const g = brandGoal(state.brand, balance);
+  const ratingReached = RATINGS.indexOf(state.rating) <= RATINGS.indexOf(balance.chapter.chapter3.minRating);
+  return {
+    regions: g.regions,
+    regionsReached: g.regionsReached,
+    share: g.share,
+    shareReached: g.shareReached,
+    brand: g.reached,
+    rating: state.rating,
+    ratingReached,
+    passed: g.reached && ratingReached,
+  };
+}
+
+/** Hat Jacob die Prüfung seines Kapitels bestanden (Kapitel 1, 2 oder 3)? */
 export function chapterPassed(state: GameState, balance: Balance): boolean {
-  return chapterOf(state) >= 2 ? chapter2Check(state, balance).passed : chapterCheck(state, balance).passed;
+  const k = chapterOf(state);
+  if (k >= 3) return chapter3Check(state, balance).passed;
+  return k === 2 ? chapter2Check(state, balance).passed : chapterCheck(state, balance).passed;
 }
 
 /** Ausgang des Kapitels: erst am Ende (ending gesetzt), vorher null. */
@@ -230,6 +269,12 @@ export interface ChapterContent {
     reputation: { title: LocalizedText; axes: Record<ReputationAxis, LocalizedText>; words: Record<ReputationWord, LocalizedText> };
     next: { title: LocalizedText; text: LocalizedText };
   };
+  /** Kapitel 3 (4.19): Ausgänge, Prüfung und das Ende des Early-Access-Umfangs. */
+  chapter3: {
+    endings: Record<Chapter2EndingId, { title: LocalizedText; text: LocalizedText }>;
+    goals: { brand: LocalizedText; rating: LocalizedText };
+    next: { title: LocalizedText; text: LocalizedText };
+  };
 }
 
 /** Setzt Platzhalter wie {anteil} in einen Text ein. */
@@ -346,6 +391,24 @@ export function parseChapterContent(file: string, text: string): { content: Chap
     goals: { transport: sprachtext(k2g.transport, 'chapter2.goals.transport'), control: sprachtext(k2g.control, 'chapter2.goals.control'), value: sprachtext(k2g.value, 'chapter2.goals.value') },
     next: { title: sprachtext(k2n.title, 'chapter2.next.title'), text: sprachtext(k2n.text, 'chapter2.next.text') },
   };
+  const k3 = block('chapter3');
+  const k3e = istObjekt(k3.endings) ? k3.endings : {};
+  if (!istObjekt(k3.endings)) fehler('chapter3.endings fehlt.');
+  const endings3 = {} as ChapterContent['chapter3']['endings'];
+  for (const id of CHAPTER2_ENDING_IDS) {
+    const x = istObjekt(k3e[id]) ? k3e[id] : {};
+    if (!istObjekt(k3e[id])) fehler(`chapter3.endings.${id} fehlt.`);
+    endings3[id] = { title: sprachtext(x.title, `chapter3.endings.${id}.title`), text: sprachtext(x.text, `chapter3.endings.${id}.text`) };
+  }
+  const k3g = istObjekt(k3.goals) ? k3.goals : {};
+  if (!istObjekt(k3.goals)) fehler('chapter3.goals fehlt.');
+  const k3n = istObjekt(k3.next) ? k3.next : {};
+  if (!istObjekt(k3.next)) fehler('chapter3.next fehlt.');
+  const chapter3 = {
+    endings: endings3,
+    goals: { brand: sprachtext(k3g.brand, 'chapter3.goals.brand'), rating: sprachtext(k3g.rating, 'chapter3.goals.rating') },
+    next: { title: sprachtext(k3n.title, 'chapter3.next.title'), text: sprachtext(k3n.text, 'chapter3.next.text') },
+  };
   if (errors.length > 0) return { content: null, errors };
-  return { content: { draft: raw.draft === true, endings, goals, bonus, ipo, chapter2 }, errors };
+  return { content: { draft: raw.draft === true, endings, goals, bonus, ipo, chapter2, chapter3 }, errors };
 }

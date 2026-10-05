@@ -46,8 +46,8 @@
 #   silas_k2_geopfert  → weitere Fassung von k3_daniel_akte (der tote Arbeiter)
 #   zs2_grady_reserveland → weitere Fassung von k3_daniel_akte (Gradys Reserveland)
 #   delaney_akte_harlan → Daniel und Delaney streiten um die Zuständigkeit
-# WUNSCH (Story-Bibel §10): Bedingungen anyMarked, investigationStage, minControl; Effekte
-# heat, trace, investigation, evidence, reputation, favors. Bis dahin stehen sie als TODO-Effekt.
+# WUNSCH (Story-Bibel §10): Bedingungen anyMarked, investigationStage, minControl. Die Effekte
+# heat, trace, evidence (Daniels Ermittlung), reputation und favors wirken seit 4.19.
 
 # Entwurf – Philipp überarbeitet.
 - id: k3_daniel_wahl
@@ -92,7 +92,7 @@
           The gentlemen thank him with a firm handshake. For two weeks new posters hang
           over Daniel's. Then it rains, and the paper peels away.
       requires: { minCash: 2500 }
-      effects: { cash: -2500 } # TODO-Effekt: party: { handel: +2 }, favors: +1
+      effects: { cash: -2500, party: { handel: 2 }, favors: 1 }
       marks: [daniel_bekaempft]
     - id: heraushalten
       label: { de: "Sich heraushalten", en: "Stay out of it" }
@@ -131,7 +131,7 @@
         en: >-
           The sentence is on the front page the next day. Below it, smaller: "Not yet."
           Jacob sleeps badly that week.
-      effects: { strength: -15 } # TODO-Effekt: reputation: { public: -3, workers: -3 }
+      effects: { strength: -15, reputation: { public: -3, workers: -3 } }
       default: true
     - id: zuschuetten
       label: { de: "Den Ledger mit Anzeigen besänftigen (1.200 $)", en: "Soothe the Ledger with advertising (1,200 $)" }
@@ -143,7 +143,7 @@
           The publisher takes the advertising and prints no more lists. Daniel reads both
           editions, with and without. He files them together.
       requires: { minCash: 1200 }
-      effects: { cash: -1200 } # TODO-Effekt: trace: { severity: 1, label: "Anzeigen gegen Schweigen" }
+      effects: { cash: -1200, trace: { severity: 1, label: "Anzeigen gegen Schweigen" } }
 
 # Entwurf – Philipp überarbeitet.
 # Antritt – Fassung fair: Jacob hat Ezekiel in Kapitel 1 geholfen.
@@ -181,7 +181,7 @@
           Daniel leafs through them for an hour. Then he sends two inspectors to the
           fields, and for three weeks the crews answer questions instead of working the
           rods. "Thank you," he says. "No one has done that before."
-      effects: { production: -0.1 } # TODO-Effekt: investigation: -1, reputation: { politics: +2 }
+      effects: { production: -0.1, evidence: -1, reputation: { politics: 2 } }
       marks: [daniel_offen]
     - id: anwalt
       label: { de: "Freundlich bleiben – der Firmenanwalt wartet im Nebenzimmer (800 $)", en: "Stay friendly – the company lawyer waits next door (800 $)" }
@@ -351,7 +351,7 @@
         en: >-
           Daniel sends two inspectors to the fields. For three weeks the crews answer
           questions. "I expected you to be different," he says at the end.
-      effects: { production: -0.1 } # TODO-Effekt: investigation: -1
+      effects: { production: -0.1, evidence: -1 }
       marks: [daniel_offen]
     - id: anwalt
       label: { de: "Höflich bleiben und den Anwalt schreiben lassen (800 $)", en: "Stay polite and let the lawyer write (800 $)" }
@@ -470,7 +470,7 @@
           office before the investigation begins. Daniel answers in one line: "That is not
           what the warning was for. I take note of it all the same."
       requires: { minCash: 1500 }
-      effects: { cash: -1500 } # TODO-Effekt: investigation: -1, heat: -1
+      effects: { cash: -1500, evidence: -1, heat: -1 }
       marks: [daniel_offen]
       sharp: true
     - id: gefaelligkeit
@@ -496,7 +496,7 @@
           In the morning the yard smells of smoke. Daniel does not come. He sends a card with
           four words: "I did warn you." Below, smaller: "So that you would tidy up. Not so
           that you would burn."
-      effects: { strength: -10 } # TODO-Effekt: trace: { severity: 3, label: "Akten verbrannt nach Warnung" }, heat: +2
+      effects: { strength: -10, trace: { severity: 3, label: "Akten verbrannt nach Warnung" }, heat: 2 }
       marks: [daniel_kalt, daniel_beweise_vernichtet]
 
 # Entwurf – Philipp überarbeitet.
@@ -703,7 +703,7 @@
           For two months Daniel's people sit in Jacob's archive. The inspectors shut three
           well sites until the boundaries are re-surveyed. At the end Daniel says, "I did
           not expect that." He sounds almost disappointed.
-      effects: { production: -0.15, cash: -1000 } # TODO-Effekt: investigation: -1, heat: -2
+      effects: { production: -0.15, cash: -1000, evidence: -1, heat: -2 }
       marks: [daniel_kooperation_moss]
     - id: anwaelte
       label: { de: "Die Anwälte antworten lassen (1.500 $)", en: "Let the lawyers answer (1,500 $)" }
@@ -714,7 +714,7 @@
         en: >-
           The firm from Hallstead sends a gentleman with three trunks. Daniel receives him
           politely and notes how many hours he bills.
-      effects: { cash: -1500 } # TODO-Effekt: investigation: +1
+      effects: { cash: -1500, evidence: 1 }
       marks: [daniel_anwaelte]
       default: true
     - id: bestechen
@@ -728,7 +728,7 @@
           Daniel does not open the envelope. He has his clerk place it in an evidence bag,
           label it and seal it. "Thank you," he says. "That saves me a year."
       requires: { minCash: 3000 }
-      effects: { cash: -3000 } # TODO-Effekt: heat: +3, trace: { severity: 3, label: "Umschlag an den Staatsanwalt" }
+      effects: { cash: -3000, heat: 3, trace: { severity: 3, label: "Umschlag an den Staatsanwalt" } }
       marks: [daniel_bestechung_versuch]
     - id: wegloben
       label: { de: "Ihn über Senator Grady ins Richteramt loben (5.000 $)", en: "Have Senator Grady promote him to the bench (5,000 $)" }
@@ -740,7 +740,7 @@
           Three months later Daniel Moss is a judge in Port Ellis, younger than anyone
           before him. His successor is a friendly man who likes to accept cigars.
       requires: { minCash: 5000 }
-      effects: { cash: -5000 } # TODO-Effekt: favors: -2, influence: -1
+      effects: { cash: -5000, favors: -3 }
       marks: [daniel_weggelobt]
 
 # Entwurf – Philipp überarbeitet.
@@ -776,7 +776,7 @@
         en: >-
           Jacob signs a three-page statement. Daniel uses it for the case against Tatum,
           not against him. "This time," he says.
-      effects: { strength: -15, cash: -1000 } # TODO-Effekt: reputation: { public: -2 }, investigation: -1
+      effects: { strength: -15, cash: -1000, reputation: { public: -2 }, evidence: -1 }
       marks: [daniel_kooperation_sheriff]
     - id: anwaelte
       label: { de: "Die Anwälte antworten lassen (1.500 $)", en: "Let the lawyers answer (1,500 $)" }
@@ -796,7 +796,7 @@
           Daniel leaves the envelope where it lies and calls his clerk in as a witness.
           "Please repeat the offer, Mr. Harlan. Slowly."
       requires: { minCash: 3000 }
-      effects: { cash: -3000 } # TODO-Effekt: heat: +3, trace: { severity: 3, label: "Umschlag an den Staatsanwalt" }
+      effects: { cash: -3000, heat: 3, trace: { severity: 3, label: "Umschlag an den Staatsanwalt" } }
       marks: [daniel_bestechung_versuch]
     - id: wegloben
       label: { de: "Ihn über Senator Grady ins Richteramt loben (5.000 $)", en: "Have Senator Grady promote him to the bench (5,000 $)" }
@@ -804,7 +804,7 @@
         de: Daniel Moss wird Richter. Tatums Notizbuch verschwindet aus der Asservatenkammer, und niemand sucht es.
         en: Daniel Moss becomes a judge. Tatum's notebook vanishes from the evidence room, and no one looks for it.
       requires: { minCash: 5000 }
-      effects: { cash: -5000 } # TODO-Effekt: favors: -2
+      effects: { cash: -5000, favors: -2 }
       marks: [daniel_weggelobt]
 
 # Entwurf – Philipp überarbeitet.
@@ -845,7 +845,7 @@
           For six weeks Daniel's people walk the fields and talk to every man on the rods.
           Two derricks stand idle until the boilers are inspected. Hollister comes into the
           office once, on a stick, and says only: "That's right, Jacob."
-      effects: { production: -0.15, cash: -1000 } # TODO-Effekt: investigation: -1, reputation: { workers: +2 }
+      effects: { production: -0.15, cash: -1000, evidence: -1, reputation: { workers: 2 } }
       marks: [daniel_kooperation_kerrigan]
     - id: anwaelte
       label: { de: "Die Anwälte antworten lassen (1.500 $)", en: "Let the lawyers answer (1,500 $)" }
@@ -856,7 +856,7 @@
         en: >-
           The lawyers call Hollister an old man with bad eyes, which is true. Daniel has
           Hollister recite the list to him, from memory, every name.
-      effects: { cash: -1500 } # TODO-Effekt: investigation: +1, reputation: { workers: -2 }
+      effects: { cash: -1500, evidence: 1, reputation: { workers: -2 } }
       marks: [daniel_anwaelte]
       default: true
     - id: bestechen
@@ -869,7 +869,7 @@
           Daniel pushes the envelope across to his clerk with his pencil. "File that with
           Kerrigan," he says. "Under H for Harlan."
       requires: { minCash: 3000 }
-      effects: { cash: -3000 } # TODO-Effekt: heat: +3, trace: { severity: 3, label: "Umschlag an den Staatsanwalt" }
+      effects: { cash: -3000, heat: 3, trace: { severity: 3, label: "Umschlag an den Staatsanwalt" } }
       marks: [daniel_bestechung_versuch]
     - id: wegloben
       label: { de: "Ihn über Senator Grady ins Richteramt loben (5.000 $)", en: "Have Senator Grady promote him to the bench (5,000 $)" }
@@ -877,7 +877,7 @@
         de: Daniel Moss wird Richter in Port Ellis. Die Liste bleibt in einer Schublade seines Nachfolgers, zwei Seiten, nicht abgeheftet.
         en: Daniel Moss becomes a judge in Port Ellis. The list stays in his successor's drawer, two pages, unfiled.
       requires: { minCash: 5000 }
-      effects: { cash: -5000 } # TODO-Effekt: favors: -2
+      effects: { cash: -5000, favors: -2 }
       marks: [daniel_weggelobt]
 
 # Entwurf – Philipp überarbeitet.
@@ -920,7 +920,7 @@
           says. "That is no crime. It is merely embarrassing." Pike gets four years. Jacob
           gets a letter: as far as he is concerned, the matter is closed. The certified copies
           cost 400 $, as much as Pike got back then.
-      effects: { cash: -400, strength: -5, ruth: 5 } # TODO-Effekt: investigation: -2
+      effects: { cash: -400, strength: -5, ruth: 5, evidence: -2 }
       appointments: 2
       marks: [daniel_entlastet]
       sharp: true
@@ -934,7 +934,7 @@
         en: >-
           The lawyers send no documents, only objections. That leaves Pike's word against
           Jacob's silence. Daniel notes that Jacob produced nothing, though he could have.
-      effects: { cash: -1500 } # TODO-Effekt: investigation: +1
+      effects: { cash: -1500, evidence: 1 }
       marks: [daniel_anwaelte]
       default: true
     - id: bestechen
@@ -947,7 +947,7 @@
           Daniel looks at the envelope, then at Jacob. "Until a moment ago you were a man a
           swindler had swindled," he says quietly. "Why are you doing this?"
       requires: { minCash: 3000 }
-      effects: { cash: -3000 } # TODO-Effekt: heat: +3, trace: { severity: 3, label: "Umschlag an den Staatsanwalt" }
+      effects: { cash: -3000, heat: 3, trace: { severity: 3, label: "Umschlag an den Staatsanwalt" } }
       marks: [daniel_bestechung_versuch]
     - id: wegloben
       label: { de: "Ihn über Senator Grady ins Richteramt loben (5.000 $)", en: "Have Senator Grady promote him to the bench (5,000 $)" }
@@ -955,7 +955,7 @@
         de: Daniel Moss wird Richter. Pike wird ohne Jacobs Namen verurteilt. Teuer war es trotzdem, für eine Sache, die nichts gekostet hätte.
         en: Daniel Moss becomes a judge. Pike is convicted without Jacob's name coming up. It was expensive all the same, for a matter that would have cost nothing.
       requires: { minCash: 5000 }
-      effects: { cash: -5000 } # TODO-Effekt: favors: -2
+      effects: { cash: -5000, favors: -2 }
       marks: [daniel_weggelobt]
 
 # Entwurf – Philipp überarbeitet.
@@ -994,7 +994,7 @@
         en: >-
           Jacob testifies for four hours. A week later the Thorne line raises Harlan Oil's
           freight "for operational reasons". Daniel sends a card: "I know what this costs."
-      effects: { railTariff: 0.05 } # TODO-Effekt: rival: { thorne: { relation: -20, aggression: +10 } }
+      effects: { railTariff: 0.05, rival: { thorne: { trust: -20, grudge: 10 } } }
       marks: [daniel_zeuge_thorne]
     - id: verweigern
       label: { de: "Höflich ablehnen", en: "Decline politely" }
@@ -1017,7 +1017,7 @@
           Daniel puts the money in an evidence bag. "Now I do have something on you," he
           says. "You just handed it to me."
       requires: { minCash: 3000 }
-      effects: { cash: -3000 } # TODO-Effekt: heat: +3, trace: { severity: 3, label: "Geld an den Staatsanwalt" }
+      effects: { cash: -3000, heat: 3, trace: { severity: 3, label: "Geld an den Staatsanwalt" } }
       marks: [daniel_bestechung_versuch]
     - id: wegloben
       label: { de: "Ihn über Senator Grady ins Richteramt loben (5.000 $)", en: "Have Senator Grady promote him to the bench (5,000 $)" }
@@ -1029,7 +1029,7 @@
           Daniel becomes a judge in Port Ellis. The investigation into Thorne goes to
           sleep. Thorne sends Jacob a box of cigars with no card.
       requires: { minCash: 5000 }
-      effects: { cash: -5000 } # TODO-Effekt: favors: -2, rival: { thorne: { trust: +10 } }
+      effects: { cash: -5000, favors: -2, rival: { thorne: { trust: 10 } } }
       marks: [daniel_weggelobt]
 
 # Entwurf – Philipp überarbeitet.
@@ -1131,7 +1131,7 @@
         en: >-
           The court imposes a fine for contempt. The Ledger prints the order on the front
           page, next to an old photograph of Jacob at the derrick.
-      effects: { cash: -2000 } # TODO-Effekt: reputation: { public: -3 }, heat: +1
+      effects: { cash: -2000, reputation: { public: -3 }, heat: 1 }
       marks: [daniel_missachtung]
       default: true
 
@@ -1185,7 +1185,7 @@
           prints a photograph of the barred door. Ruth brings blankets every evening and
           says nothing. Thorne sends a box of cigars to the cell. On the eighth day Daniel
           lets him go: "I am not here to break you."
-      effects: { strength: -25, production: -0.1 } # TODO-Effekt: reputation: { public: -3 }, rival: { thorne: { trust: +10 } }
+      effects: { strength: -25, production: -0.1, reputation: { public: -3 }, rival: { thorne: { trust: 10 } } }
       appointments: 3
       marks: [daniel_beugehaft]
       default: true
@@ -1200,7 +1200,7 @@
           By noon Thorne's lawyers have found a flaw in the order. Jacob is home for lunch.
           In the afternoon the Thorne line lowers his freight. Daniel writes him one line:
           "Now we both know whom you are keeping silent for."
-      effects: { railTariff: -0.03, strength: -5 } # TODO-Effekt: rival: { thorne: { trust: +15 } }, heat: +2
+      effects: { railTariff: -0.03, strength: -5, rival: { thorne: { trust: 15 } }, heat: 2 }
       marks: [daniel_thorne_gedeckt]
 
 # Entwurf – Philipp überarbeitet.
@@ -1242,7 +1242,7 @@
           Jacob signs. Daniel reads it twice, folds it and lays it in the exercise book,
           between the pages from back then. "Now it is in the right place," he says.
       requires: { minCash: 4000 }
-      effects: { cash: -4000, strength: -10 } # TODO-Effekt: reputation: { public: -2 }, investigation: -2
+      effects: { cash: -4000, strength: -10, reputation: { public: -2 }, evidence: -2 }
       marks: [daniel_vergleich]
     - id: land
       label: { de: "Kein Geständnis – aber das Land an die Familie Moss zurückgeben", en: "No admission – but return the land to the Moss family" }
@@ -1255,7 +1255,7 @@
           Daniel looks at the deed a long time. "That is no admission," he says. "It is
           more." He accepts. In spring he has the fence set again, in the old place, with
           his own hands.
-      effects: { production: -0.2, strength: -10 } # TODO-Effekt: leases: -1 (die alte Moss-Farm), reputation: { public: +2 }
+      effects: { production: -0.2, strength: -10, reputation: { public: 2 } }
       marks: [daniel_vergleich, moss_land_zurueck]
       sharp: true
     - id: schweigen
@@ -1268,7 +1268,7 @@
         en: >-
           Daniel puts the report away again. "You showed me everything, and now you will not
           sign what I saw," he says. "I don't understand that. I don't have to."
-      effects: { cash: -2000, strength: -10 } # TODO-Effekt: investigation: +2
+      effects: { cash: -2000, strength: -10, evidence: 2 }
       marks: [daniel_anklage]
       default: true
 
@@ -1309,7 +1309,7 @@
           Jacob speaks for forty minutes. The courtroom is so quiet you can hear the
           stenographer. The next day every dollar is in the Ledger. Daniel nods to him in
           the corridor. "That was the expensive part," he says. "The rest is paper."
-      effects: { strength: -20 } # TODO-Effekt: reputation: { public: -3, politics: +2 }, investigation: -2
+      effects: { strength: -20, reputation: { public: -3, politics: 2 }, evidence: -2 }
       appointments: 2
       marks: [daniel_vergleich]
       sharp: true
@@ -1324,7 +1324,7 @@
           Daniel strikes out the undertaking before Jacob's eyes, with a single line. "This
           time," he says, "was an offer. Not a promise." Tatum is convicted anyway. Jacob is
           next on the list.
-      effects: { cash: -2500, strength: -10 } # TODO-Effekt: investigation: +2
+      effects: { cash: -2500, strength: -10, evidence: 2 }
       marks: [daniel_anklage]
       default: true
 
@@ -1364,7 +1364,7 @@
           Jacob signs, with Kerrigan's name in the first sentence. Daniel sends a copy to
           Kerrigan's sister in the coal provinces. She does not write back.
       requires: { minCash: 4000 }
-      effects: { cash: -4000, strength: -10 } # TODO-Effekt: reputation: { workers: +1, public: -2 }
+      effects: { cash: -4000, strength: -10, reputation: { workers: 1, public: -2 } }
       marks: [daniel_vergleich]
     - id: unfallkasse
       label: { de: "Eine Unfallkasse für alle Arbeiter gründen, mit Kerrigans Namen (6.000 $)", en: "Found an accident fund for every worker, in Kerrigan's name (6,000 $)" }
@@ -1378,7 +1378,7 @@
           charter in place of the admission. "He'd have liked that better," says Hollister,
           who sees nothing any more and knows everything.
       requires: { minCash: 6000 }
-      effects: { cash: -6000 } # TODO-Effekt: reputation: { workers: +4 }, union: -1
+      effects: { cash: -6000, reputation: { workers: 6 } }
       marks: [daniel_vergleich, daniel_unfallkasse]
       sharp: true
     - id: ablehnen
@@ -1391,7 +1391,7 @@
         en: >-
           Daniel takes both papers away again. "Then the court will sign," he says. That
           evening on the fields they say the old man has let Kerrigan down a second time.
-      effects: { cash: -2000, strength: -10 } # TODO-Effekt: reputation: { workers: -3 }, investigation: +2
+      effects: { cash: -2000, strength: -10, reputation: { workers: -3 }, evidence: 2 }
       marks: [daniel_anklage]
       default: true
 
@@ -1431,7 +1431,7 @@
         en: >-
           Jacob signs. Daniel folds the paper twice and puts it away. "He would have liked
           you, today," he says. "I am not sure I do."
-      effects: { cash: -6000 } # TODO-Effekt: investigation: -2, reputation: { public: -1 }
+      effects: { cash: -6000, evidence: -2, reputation: { public: -1 } }
       marks: [daniel_vergleich]
     - id: prozess
       label: { de: "Ablehnen – dann eben vor Gericht", en: "Refuse – court it is" }
@@ -1442,7 +1442,7 @@
         en: >-
           Daniel takes the paper back. At the door he stops. "I hoped you would not. I
           don't know why."
-      effects: { cash: -2000, strength: -10 } # TODO-Effekt: investigation: +2
+      effects: { cash: -2000, strength: -10, evidence: 2 }
       marks: [daniel_anklage]
       default: true
 
@@ -1531,7 +1531,7 @@
         en: >-
           The firm demands a retainer and its own office in Port Ellis. The trial will
           take years. Daniel has time.
-      effects: { cash: -4000, strength: -10 } # TODO-Effekt: heat: +2, investigation: +1
+      effects: { cash: -4000, strength: -10, heat: 2, evidence: 1 }
       marks: [daniel_anklage]
       default: true
     - id: einraeumen
@@ -1556,7 +1556,7 @@
           A fire burns all night in the yard behind the office. The clerk who lit it
           resigns the next morning. He now knows something about Jacob that Daniel does
           not yet know.
-      effects: { strength: -20 } # TODO-Effekt: trace: { severity: 3, label: "Bücher verbrannt" }, heat: +3
+      effects: { strength: -20, trace: { severity: 3, label: "Bücher verbrannt" }, heat: 3 }
       marks: [daniel_anklage, daniel_beweise_vernichtet]
 
 # Entwurf – Philipp überarbeitet.
@@ -1594,7 +1594,7 @@
         en: >-
           The firm demands a retainer and its own office in Port Ellis. The trial will take
           years. Daniel has time. He has already waited twenty years.
-      effects: { cash: -4000, strength: -10 } # TODO-Effekt: heat: +2, investigation: +1
+      effects: { cash: -4000, strength: -10, heat: 2, evidence: 1 }
       marks: [daniel_anklage]
       default: true
     - id: einraeumen
@@ -1619,7 +1619,7 @@
         en: >-
           A fire burns all night in the yard behind the office. The clerk who lit it resigns
           the next morning. He now knows something about Jacob that Daniel does not yet know.
-      effects: { strength: -20 } # TODO-Effekt: trace: { severity: 3, label: "Bücher verbrannt" }, heat: +3
+      effects: { strength: -20, trace: { severity: 3, label: "Bücher verbrannt" }, heat: 3 }
       marks: [daniel_anklage, daniel_beweise_vernichtet]
 
 # Nachwirkung: der Umschlag. Bestechung scheitert immer.
@@ -1652,7 +1652,7 @@
         en: >-
           Jacob denies it in three newspapers. Daniel answers in none. He simply waits,
           and the waiting sits heavier in Jacob's stomach than any article.
-      effects: { strength: -20 } # TODO-Effekt: reputation: { public: -3, politics: -3 }
+      effects: { strength: -20, reputation: { public: -3, politics: -3 } }
       default: true
     - id: suendenbock
       label: { de: "Einen Prokuristen opfern – „ohne mein Wissen“ (1.500 $ Abfindung)", en: "Sacrifice a clerk – \"without my knowledge\" (1,500 $ severance)" }
@@ -1664,7 +1664,7 @@
         en: >-
           The clerk takes the severance and the blame. His wife spits in front of Jacob's
           carriage. Daniel summons him and asks him only one thing: who gave him the money.
-      effects: { cash: -1500 } # TODO-Effekt: staffLoyalty: -10, trace: { severity: 2, label: "Sündenbock" }
+      effects: { cash: -1500, staffLoyalty: { all: -10 }, trace: { severity: 2, label: Sündenbock } }
       marks: [daniel_suendenbock]
 
 # Entwurf – Philipp überarbeitet.
@@ -1706,7 +1706,7 @@
           The firm takes the case and tells Jacob honestly where he stands: badly. An
           envelope cannot be explained away. One can only hope the jurors once offered one
           themselves.
-      effects: { cash: -6000, strength: -15 } # TODO-Effekt: heat: +3, reputation: { politics: -3 }
+      effects: { cash: -6000, strength: -15, heat: 3, reputation: { politics: -3 } }
       marks: [daniel_anklage]
       default: true
     - id: gestehen
@@ -1721,7 +1721,7 @@
           remaining counts, all of them. "That is the first thing you have given me
           freely," he says in the corridor. "It cost you eleven thousand dollars."
       requires: { minCash: 8000 }
-      effects: { cash: -8000, strength: -10 } # TODO-Effekt: reputation: { public: -3, politics: -2 }, heat: -2
+      effects: { cash: -8000, strength: -10, reputation: { public: -3, politics: -2 }, heat: -2 }
       marks: [daniel_vergleich]
 
 # Nachwirkung: Jacob hat gegen Thorne ausgesagt (Zeugen-Fassung oder Vorladung) – Thorne schlägt zurück.
@@ -1759,7 +1759,7 @@
           Jacob writes the cheque while Pettibone is still seated. Pettibone folds it
           carefully. "Mr. Thorne will be impressed," he says. It does not sound like a
           compliment.
-      effects: { cash: -3000 } # TODO-Effekt: credit: -1
+      effects: { cash: -3000, rating: -1 }
       default: true
     - id: mit_daniel
       label: { de: "Daniel sagen, was Thorne tut – und weitermachen", en: "Tell Daniel what Thorne is doing – and carry on" }
@@ -1772,7 +1772,7 @@
           Daniel adds the cancellation letter to his files. "Intimidation of a witness,"
           he says, almost pleased. The Thorne line raises its freight. Jacob and Daniel
           have lunch together for the first time. They talk about Ezekiel.
-      effects: { railTariff: 0.05 } # TODO-Effekt: rival: { thorne: { aggression: +10 } }
+      effects: { railTariff: 0.05, rival: { thorne: { grudge: 10 } } }
       marks: [daniel_verbuendet]
 
 # Nachwirkung: Daniel wurde ins Richteramt gelobt. Er weiß, warum.
@@ -1804,7 +1804,7 @@
         de: Der neue Staatsanwalt bedankt sich persönlich, mit Zigarre. Jacob hat jetzt zwei Männer im Bezirk, die ihm etwas schulden – und einen, dem er etwas schuldet.
         en: The new prosecutor thanks him in person, with a cigar. Jacob now has two men in the county who owe him something – and one to whom he owes something.
       requires: { minCash: 2000 }
-      effects: { cash: -2000 } # TODO-Effekt: favors: +1, heat: +1
+      effects: { cash: -2000, favors: 1, heat: 1 }
     - id: nichts
       label: { de: "Den Brief in die Schublade legen", en: "Put the letter in the drawer" }
       result:
@@ -1814,5 +1814,5 @@
         en: >-
           The new prosecutor is Thorne's man, and Thorne lets Jacob feel it: freight rates
           rise, and no one in the county thinks it worth investigating.
-      effects: { railTariff: 0.05 } # TODO-Effekt: rival: { thorne: { trust: +5 } }
+      effects: { railTariff: 0.05, rival: { thorne: { trust: 5 } } }
       default: true

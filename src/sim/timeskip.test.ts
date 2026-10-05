@@ -106,7 +106,8 @@ describe('Inhalte: content/timeskip.yaml', () => {
     for (const id of SWITCH_IDS) for (const c of SWITCH_CHOICES[id]) expect(content!.switches[id].choices[c].de).not.toBe('');
     for (const k of CHRONICLE_KINDS) expect(content!.chronicle.entries[k].de).not.toBe('');
     expect(content!.chapter2.badge.de).toMatch(/Kapitel 2/);
-    expect(content!.chapter3.badge.de).toMatch(/im Bau/);
+    expect(content!.chapter3.badge.de).toMatch(/Kapitel 3/);
+    expect(content!.preview.badge.de).toMatch(/Kapitel 4/);
     expect(content!.chronicle.one.wells_found?.de).toMatch(/eine neue Quelle/);
   });
 
@@ -274,7 +275,7 @@ describe('Kapitel 2 beginnt (Platzhalter)', () => {
     expect(wildcatterWells(weiter)).toBe(Math.max(0, Math.floor(neighbourWells(balance.market, weiter.round, weiter.neighbourOffset))));
   });
 
-  it('Kapitel 2 läuft mit den Systemen aus Kapitel 1 und 2 bis zu seinem Ende – ohne neuen Börsengang und ohne weiteren Sprung', () => {
+  it('Kapitel 2 läuft mit den Systemen aus Kapitel 1 und 2 bis zu seinem Ende – ohne neuen Börsengang, danach Zeitsprung II (4.19)', () => {
     let { state } = springen(kapitelEnde('sprung-weiter', balance, mitEntscheidungen));
     for (let i = 0; i < 40 && !state.finished; i++) state = endRound(state, balance, catalog);
     expect(state.finished).toBe(true);
@@ -282,7 +283,7 @@ describe('Kapitel 2 beginnt (Platzhalter)', () => {
       expect(state.round).toBe(state.totalRounds);
       expect(canGoPublic(state, balance)).toBe(false);
       expect(decideIpo(state, balance, 0).ok).toBe(false);
-      expect(timeskipBlocked(state, balance)).toMatch(/im Bau/);
+      expect(timeskipBlocked(state, balance)).toBeUndefined();
       expect(state.log[state.log.length - 1]).toMatch(/Kapitel 2 ist zu Ende/);
     }
   });
@@ -383,7 +384,7 @@ describe('Spielstand übersteht den Kapitelwechsel', () => {
   });
 
   it('ein Spielstand aus Format 18 (0.4.5, Kapitel 2 ohne die neuen Systeme) lädt weiter', () => {
-    expect(SAVE_FORMAT).toBe(20);
+    expect(SAVE_FORMAT).toBe(21);
     const { state } = springen(kapitelEnde('sprung-format18'));
     const alt: Record<string, unknown> = { ...state };
     for (const k of ['refinery', 'bigPipelines', 'stocks', 'staff', 'diplomacy', 'investigation', 'research']) delete alt[k];

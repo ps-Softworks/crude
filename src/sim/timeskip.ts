@@ -6,6 +6,13 @@
 // dazwischen“, und Kapitel 2 „Der Herausforderer“ beginnt (4.12) – mit Quellen, Kasse,
 // Firma bzw. Aktiengesellschaft und Familie aus dem Sprung und allen Kapitel-2-Systemen.
 //
+// Zeitsprung II (4.19, Jahr 15–20) läuft mit denselben Regeln je Quartal – dazu die Firma aus
+// Kapitel 2: Eine fertige Raffinerie bringt je Barrel mehr, eine eigene Fernleitung zum Hafen spart
+// Fracht, Baustellen (Raffinerie, Fernleitungen) bringt der Verwalter zu Ende, Anleihen löst er
+// durch Bankkredite ab. Weichen (GDD §13): Kriegsgefahr in Übersee (Export trotz Risiko?), ein
+// Heizölvertrag mit der Marine, Senator Gradys Reserveland (Skandal-Saat) und Thomas' College.
+// Danach beginnt Kapitel 3 „Der Konzernherr“ mit allen Kapitel-3-Systemen und den Rivalen K3.
+//
 // Vereinfachte Regeln je Quartal: Förderung (wie im Spiel, mit Druck und
 // Erschöpfung der Felder), Posted Price aus Salt-Hill-Angebot und Weltpreis,
 // Verkauf über den billigsten eigenen Weg, Unterhalt und Zinsen, das Weltmodell
@@ -46,6 +53,9 @@ import { newAgenda } from './agenda';
 import { openRegions, unlockRegion } from './regions';
 import { fuelPremium, okaraIncome } from './ventures';
 import { TIMESKIP_MARKS, TIMESKIP_SIM_MARKS } from './timeskipMarks';
+import { ownsHarborPipeline } from './bigPipeline';
+import { applySystemEffects } from './eventSystems';
+import { startRivalsK3 } from './rivalsK3';
 import { advanceWorld, creditPhase, saltHillInput, worldPriceFactor, worldRateAdd, type Party, type WorldNews } from './world';
 
 export { FAMILY_TIMES, STANCES, type FamilyTime, type Stance };
@@ -53,8 +63,8 @@ export { FAMILY_TIMES, STANCES, type FamilyTime, type Stance };
 // ---------------------------------------------------------------------------
 // Typen
 
-/** Die Weichen von Zeitsprung I (GDD §13). */
-export const SWITCH_IDS = ['bank_panic', 'automobile', 'okara', 'clara'] as const;
+/** Die Weichen der Zeitsprünge (GDD §13): die ersten vier gehören zu Zeitsprung I, die anderen zu Zeitsprung II. */
+export const SWITCH_IDS = ['bank_panic', 'automobile', 'okara', 'clara', 'war_export', 'navy', 'grady', 'college'] as const;
 export type SwitchId = (typeof SWITCH_IDS)[number];
 
 /** Die zwei Antworten je Weiche (Schlüssel in content/timeskip.yaml). */
@@ -63,8 +73,24 @@ export const SWITCH_CHOICES = {
   automobile: ['invest', 'ignore'],
   okara: ['lease', 'pass'],
   clara: ['home', 'business'],
+  war_export: ['export', 'hold'],
+  navy: ['accept', 'decline'],
+  grady: ['take', 'refuse'],
+  college: ['college', 'company'],
 } as const satisfies Record<SwitchId, readonly [string, string]>;
 export type SwitchChoice<S extends SwitchId = SwitchId> = (typeof SWITCH_CHOICES)[S][number];
+
+/** Welche Weichen zu welchem Zeitsprung gehören. */
+export const JUMP_SWITCHES: Record<number, readonly SwitchId[]> = {
+  1: ['bank_panic', 'automobile', 'okara', 'clara'],
+  2: ['war_export', 'navy', 'grady', 'college'],
+};
+
+/** Der letzte Zeitsprung im Early-Access-Umfang: danach kommt Kapitel 3, Kapitel 4 folgt. */
+export const LAST_JUMP = 2;
+
+/** Titel der Kapitel (für das Protokoll; die Oberfläche nimmt die Texte aus content/timeskip.yaml). */
+export const CHAPTER_TITLES: Record<number, string> = { 1: 'Der Wildcatter', 2: 'Der Herausforderer', 3: 'Der Konzernherr' };
 
 /** Was in der Chronik stehen kann (Texte unter chronicle.entries). */
 export const CHRONICLE_KINDS = [
@@ -106,6 +132,18 @@ export const CHRONICLE_KINDS = [
   'clara_business',
   'thomas_school',
   'ruth_word',
+  // Zeitsprung II (4.19)
+  'projects_finished',
+  'bonds_refinanced',
+  'war_export',
+  'war_hold',
+  'war_tanker',
+  'navy_accept',
+  'navy_decline',
+  'grady_take',
+  'grady_refuse',
+  'college_go',
+  'college_firm',
 ] as const;
 export type ChronicleKind = (typeof CHRONICLE_KINDS)[number];
 
@@ -150,7 +188,7 @@ export interface TimeskipSnapshot {
 
 /** Ein abgeschlossener Zeitsprung. */
 export interface TimeskipRecord {
-  /** 1 = Zeitsprung I. */
+  /** 1 = Zeitsprung I (nach Kapitel 1), 2 = Zeitsprung II (nach Kapitel 2). */
   number: number;
   /** Erstes und letztes Spieljahr des Sprungs. */
   fromYear: number;
@@ -204,9 +242,14 @@ export function chapterRounds(state: Pick<GameState, 'totalRounds' | 'chapterSta
   return state.totalRounds - (state.chapterStart ?? 1) + 1;
 }
 
-/** Ist das Kapitel noch im Bau? Kapitel 2 ist seit 4.12 spielbar; Kapitel 3 gibt es nur als Vorschau. */
+/** Ist das Kapitel noch im Bau? Kapitel 2 ist seit 4.12 spielbar, Kapitel 3 seit 4.19; Kapitel 4 folgt. */
 export function chapterUnderConstruction(state: Pick<GameState, 'chapter'>): boolean {
-  return chapterOf(state) >= 3;
+  return chapterOf(state) > LAST_JUMP + 1;
+}
+
+/** Welcher Zeitsprung am Ende dieses Kapitels kommt (1 nach Kapitel 1, 2 nach Kapitel 2). */
+export function jumpNumber(state: Pick<GameState, 'chapter'>): number {
+  return chapterOf(state);
 }
 
 // ---------------------------------------------------------------------------
@@ -214,10 +257,10 @@ export function chapterUnderConstruction(state: Pick<GameState, 'chapter'>): boo
 
 /** Warum der Sprung (noch) nicht geht; undefined = er geht. */
 export function timeskipBlocked(state: GameState, balance: Balance): string | undefined {
-  if (chapterOf(state) !== 1) return 'Zeitsprung II und Kapitel 3 sind noch im Bau – weiter geht es noch nicht.';
+  if (jumpNumber(state) > LAST_JUMP) return 'Kapitel 4 folgt – der Early-Access-Umfang endet mit Kapitel 3.';
   if (state.ending !== 'kapitel') return 'Der Zeitsprung kommt erst am Ende des Kapitels.';
   if (state.jump) return 'Der Zeitsprung läuft schon.';
-  if (canGoPublic(state, balance) && state.ipo === null) return 'Erst über die Aktiengesellschaft entscheiden.';
+  if (chapterOf(state) === 1 && canGoPublic(state, balance) && state.ipo === null) return 'Erst über die Aktiengesellschaft entscheiden.';
   return undefined;
 }
 
@@ -245,6 +288,8 @@ export function switchCost(balance: Balance, id: SwitchId, choice: string): numb
   const t = balance.timeskip.switches;
   if (id === 'automobile' && choice === 'invest') return t.automobileCost;
   if (id === 'okara' && choice === 'lease') return t.okaraCost;
+  if (id === 'grady' && choice === 'take') return balance.timeskip.second.gradyCost;
+  if (id === 'college' && choice === 'college') return balance.timeskip.second.collegeCost;
   return 0;
 }
 
@@ -279,11 +324,16 @@ export function unreadChronicle(state: Pick<GameState, 'timeskips'>): TimeskipRe
 // Der Sprung
 
 interface Lauf {
+  /** Welcher Zeitsprung (1 oder 2). */
+  nr: number;
   s: GameState;
   /** Eigene Zufallsströme je Zweck (sonst entschiede die Zahl der Probebohrungen mit, ob es in Okara Öl gibt). */
   rngBohren: Rng;
   rngClara: Rng;
   rngOkara: Rng;
+  /** Zeitsprung II: Tanker im Krieg, Gradys Angebot. */
+  rngKrieg: Rng;
+  rngGrady: Rng;
   balance: Balance;
   directives: Directives;
   answers: Partial<Record<SwitchId, string>>;
@@ -313,6 +363,12 @@ interface Lauf {
   leer: Set<string>;
   /** Preise des laufenden Jahres. */
   preise: number[];
+  /** Zeitsprung II: Export trotz Kriegsgefahr. */
+  warExport: boolean;
+  /** Zeitsprung II: Marinevertrag zahlt ab dieser Runde (0 = keiner). */
+  navySince: number;
+  /** Zeitsprung II: Gradys Reserveland zahlt ab dieser Runde (0 = keins). */
+  gradySince: number;
 }
 
 function eintrag(l: Lauf, kind: ChronicleKind, extra: Omit<ChronicleEntry, 'year' | 'kind'> = {}): void {
@@ -375,9 +431,45 @@ function vorbereiten(state: GameState, balance: Balance): GameState {
   };
 }
 
+/**
+ * Zeitsprung II: Die Firma aus Kapitel 2 geht an den Verwalter. Baustellen (Raffinerie,
+ * Fernleitungen) bringt er zu Ende, Anleihen löst er durch einen Bankkredit ab, offene
+ * Forderungen im Rat und Angebote der Rivalen sind in sechs Jahren erledigt.
+ */
+function firmaUebergeben(l: Lauf): void {
+  const { balance } = l;
+  let fertig = 0;
+  const r = l.s.refinery;
+  if (r && r.project) {
+    fertig += 1;
+    l.s = { ...l.s, refinery: { ...r, level: r.project === 'build' ? Math.max(1, r.level) : r.level + 1, project: null, projectLeft: 0, repairLeft: 0 } };
+  } else if (r && r.repairLeft > 0) l.s = { ...l.s, refinery: { ...r, repairLeft: 0 } };
+  const bp = l.s.bigPipelines;
+  if (bp) {
+    const offen = bp.projects.filter((p) => p.status === 'building' || p.status === 'damaged').length;
+    fertig += offen;
+    if (offen > 0) l.s = { ...l.s, bigPipelines: { ...bp, projects: bp.projects.map((p) => (p.status === 'building' || p.status === 'damaged' ? { ...p, status: 'ready' as const, roundsLeft: 0 } : p)) } };
+  }
+  if (fertig > 0) eintrag(l, 'projects_finished', { n: fertig });
+  const st = l.s.stocks;
+  if (st) {
+    const anleihen = Math.round(st.bonds.reduce((sum, b) => sum + b.principal, 0));
+    if (anleihen > 0) {
+      const zins = loanRate(balance, l.s.rating, false, worldRateAdd(l.s.worldModel, balance.worldModel));
+      const id = l.s.loans.reduce((m, x) => Math.max(m, x.id), 0) + 1;
+      l.s = { ...l.s, loans: [...l.s.loans, { id, source: 'bank', principal: anleihen, rate: zins, takenRound: l.s.round, collateral: null }] };
+      eintrag(l, 'bonds_refinanced', { amount: anleihen });
+    }
+    l.s = { ...l.s, stocks: { ...l.s.stocks!, bonds: [], demand: null, proxy: null } };
+  }
+  if (l.s.diplomacy) l.s = { ...l.s, diplomacy: { ...l.s.diplomacy, offers: [] } };
+}
+
 /** Transportkosten je Barrel über den billigsten eigenen Weg (Pipeline, Fuhrwerke, sonst Bahn). */
 function frachtJeBarrel(state: GameState, balance: Balance): number {
   const t = balance.transport;
+  // Zeitsprung II: Eine eigene Fernleitung zum Hafen ist der billigste Weg.
+  if (ownsHarborPipeline(state)) return Math.min(balance.timeskip.second.harborFreight, state.railTariff);
   if (state.logistics.pipeline === 'ready') return t.pipeline.costPerBarrel;
   if (state.logistics.teams > 0) return Math.min(t.teams.costPerBarrel, state.railTariff);
   return state.railTariff;
@@ -501,6 +593,7 @@ function bezahlen(l: Lauf, kosten: number): void {
 
 /** Weichen am Quartalsanfang; gibt die offene Weiche zurück, wenn Jacob noch antworten muss. */
 function weichen(l: Lauf, q: number): SwitchId | null {
+  if (l.nr >= 2) return weichenII(l);
   const { balance } = l;
   const t = balance.timeskip;
   const year = gameYear(l.s.round);
@@ -523,6 +616,34 @@ function weichen(l: Lauf, q: number): SwitchId | null {
   if (quartal === 0 && year === t.switches.automobileYear && !l.switches.includes('automobile')) kandidaten.push('automobile');
   // Bankenpanik: nur, wenn das Kreditklima überhitzt (GDD §13).
   if (q > 1 && !l.switches.includes('bank_panic') && creditPhase(l.s.worldModel, balance.worldModel) === 'overheated') kandidaten.push('bank_panic');
+  for (const id of kandidaten) {
+    l.switches.push(id);
+    const antwort = l.answers[id];
+    if (antwort === undefined) return id;
+    weicheAnwenden(l, id, antwort);
+  }
+  return null;
+}
+
+/** Weichen von Zeitsprung II (GDD §13): Kriegsgefahr, Marine, Grady, College. */
+function weichenII(l: Lauf): SwitchId | null {
+  const t2 = l.balance.timeskip.second;
+  const year = gameYear(l.s.round);
+  const quartal = (l.s.round - 1) % 4;
+  const kandidaten: SwitchId[] = [];
+  const neu = (id: SwitchId) => !l.switches.includes(id);
+  // Kriegsgefahr in Übersee: nur, wenn die Welt sie hergibt (Außenspannung oder Krieg).
+  const w = l.s.worldModel;
+  if (neu('war_export') && year >= t2.warFromYear && (w.tension >= t2.warTension || w.war > 0)) kandidaten.push('war_export');
+  // Die Marine stellt auf Öl um – sicher im Jahr navyYear.
+  if (neu('navy') && quartal === 0 && year === t2.navyYear) kandidaten.push('navy');
+  // Senator Grady: mit einer Chance, sicher, wenn er Jacob einen Gefallen schuldet.
+  if (neu('grady') && quartal === 0 && year === t2.gradyYear) {
+    const wurf = l.rngGrady.float();
+    if (l.s.events.marks.k2_grady_spende !== undefined || wurf < t2.gradyChance) kandidaten.push('grady');
+  }
+  // Thomas geht aufs College (Story-Bibel: fast immer).
+  if (neu('college') && quartal === 0 && year >= t2.collegeYear && l.s.family.thomasBorn > 0) kandidaten.push('college');
   for (const id of kandidaten) {
     l.switches.push(id);
     const antwort = l.answers[id];
@@ -587,6 +708,45 @@ function weicheAnwenden(l: Lauf, id: SwitchId, antwort: string): void {
       eintrag(l, zuHause ? 'clara_home' : 'clara_business');
       break;
     }
+    case 'war_export':
+      if (antwort === 'export') {
+        l.warExport = true;
+        merken(TIMESKIP_MARKS.warExport);
+        eintrag(l, 'war_export');
+      } else eintrag(l, 'war_hold');
+      break;
+    case 'navy':
+      if (antwort === 'accept') {
+        l.navySince = l.s.round + 1;
+        merken(TIMESKIP_MARKS.navy);
+        eintrag(l, 'navy_accept', { amount: l.balance.timeskip.second.navyIncome });
+      } else eintrag(l, 'navy_decline');
+      break;
+    case 'grady':
+      if (antwort === 'take') {
+        const t2 = l.balance.timeskip.second;
+        bezahlen(l, t2.gradyCost);
+        l.gradySince = l.s.round + 4;
+        merken(TIMESKIP_MARKS.grady);
+        // Skandal-Saat: eine Spur im Schattenbuch, die Daniel Moss oder Nora finden können.
+        l.s = applySystemEffects(l.s, { trace: { severity: t2.gradyTrace, label: 'Reserveland' } }, l.balance, 'zeitsprung2', 'Reserveland');
+        eintrag(l, 'grady_take', { amount: t2.gradyCost });
+      } else {
+        merken(TIMESKIP_MARKS.gradyRefused);
+        eintrag(l, 'grady_refuse');
+      }
+      break;
+    case 'college': {
+      const t2 = l.balance.timeskip.second;
+      const college = antwort === 'college';
+      if (college) bezahlen(l, t2.collegeCost);
+      const f = l.s.family;
+      l.s = { ...l.s, family: { ...f, thomas: klemmen(f.thomas + (college ? t2.collegeBond : -t2.collegeBond)) } };
+      l.s = applySystemEffects(l.s, { heirValues: { thomas: college ? { business: 1, moral: 1 } : { business: 2, loyalty: 1, moral: -1 } } }, l.balance);
+      merken(college ? TIMESKIP_MARKS.college : TIMESKIP_MARKS.noCollege);
+      eintrag(l, college ? 'college_go' : 'college_firm', college ? { amount: t2.collegeCost } : {});
+      break;
+    }
   }
   l.s = { ...l.s, events: { ...l.s.events, marks } };
 }
@@ -646,6 +806,15 @@ function jahresende(l: Lauf): void {
 
   // Bullard bohrt weiter (eigener Zufall).
   bullard(l);
+
+  // Zeitsprung II: Wer trotz Kriegsgefahr exportiert, verliert manchmal einen Tanker.
+  if (l.warExport) {
+    const t2 = balance.timeskip.second;
+    if (l.rngKrieg.float() < t2.warLossChance) {
+      l.s = { ...l.s, cash: l.s.cash - t2.warLossCost };
+      eintrag(l, 'war_tanker', { amount: t2.warLossCost });
+    }
+  }
 
   // Familie: Beziehung nach Familienzeit, Thomas wird älter.
   const bond = t.family.bond[family];
@@ -858,11 +1027,15 @@ function quartal(l: Lauf): void {
   weltMeldungen(l, welt.news);
   // Verkauf: alles im Tank, über den billigsten eigenen Weg; das Förderzins-Öl geht an die Landbesitzer.
   // Die Benzinanlage zahlt ihren Aufschlag, Okara seine Einnahmen (src/sim/ventures.ts).
-  const aufschlag = fuelPremium(l.s, balance);
+  // Zeitsprung II: Eine fertige Raffinerie verkauft Produkte statt Rohöl (je Stufe mehr je Barrel).
+  const aufschlag = fuelPremium(l.s, balance) + (l.nr >= 2 && l.s.refinery ? l.s.refinery.level * t.second.refineryMargin : 0);
   const eigen = Math.max(0, l.s.oilStock - l.s.royaltyOil);
   // Familienzeit (GDD §2): Ohne Jacobs Aufsicht bringt das Öl weniger ein (family.revenue).
-  const erloes = Math.round(eigen * Math.max(0, preis + aufschlag - frachtJeBarrel(l.s, balance)) * t.family.revenue[l.directives.family]);
-  const okara = okaraIncome(l.s, balance, 'jacob');
+  const krieg = l.warExport ? 1 + t.second.warPremium : 1;
+  const erloes = Math.round(eigen * Math.max(0, preis + aufschlag - frachtJeBarrel(l.s, balance)) * t.family.revenue[l.directives.family] * krieg);
+  // Zeitsprung II: Marinevertrag und Gradys Reserveland zahlen je Quartal.
+  const vertraege = (l.navySince > 0 && l.s.round >= l.navySince ? t.second.navyIncome : 0) + (l.gradySince > 0 && l.s.round >= l.gradySince ? t.second.gradyIncome : 0);
+  const okara = okaraIncome(l.s, balance, 'jacob') + vertraege;
   const unterhalt = producingWells(l.s).length * t.upkeepPerWell + l.s.logistics.teams * balance.transport.teams.wagePerRound;
   const zinsen = quarterInterestTotal(l.s);
   l.s = { ...l.s, oilStock: 0, royaltyOil: 0, cash: Math.round((l.s.cash + erloes + okara - unterhalt - zinsen) * 100) / 100 };
@@ -917,14 +1090,18 @@ function wildcatterNachSprung(l: Lauf, ziel: number): void {
 export function runTimeskip(start: GameState, balance: Balance, catalog: readonly EventDef[] = [], texts: ChapterSystemTexts = {}): TimeskipStep {
   if (!start.jump) throw new Error('runTimeskip: Es läuft kein Zeitsprung.');
   const t = balance.timeskip;
+  const nr = jumpNumber(start);
   const vorher = snapshot(start, balance);
   const ersteRunde = start.round + 1;
-  const strom = (zweck: string) => new Rng(seedFromString(`${start.seed}:zeitsprung1:${zweck}`));
+  const strom = (zweck: string) => new Rng(seedFromString(`${start.seed}:zeitsprung${nr}:${zweck}`));
   const l: Lauf = {
+    nr,
     s: vorbereiten(start, balance),
     rngBohren: strom('bohren'),
     rngClara: strom('clara'),
     rngOkara: strom('okara'),
+    rngKrieg: strom('krieg'),
+    rngGrady: strom('grady'),
     balance,
     directives: start.jump.directives,
     answers: start.jump.answers,
@@ -942,7 +1119,14 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
     pleite: false,
     leer: new Set(start.fields.filter((f) => fieldWells(start, f.id).length > 0 && fieldStatus(start, balance, f).remaining <= 0).map((f) => f.id)),
     preise: [],
+    warExport: false,
+    navySince: 0,
+    gradySince: 0,
   };
+  if (nr >= 2) {
+    l.s = { ...l.s, round: ersteRunde };
+    firmaUebergeben(l);
+  }
   for (let q = 1; q <= t.rounds; q++) {
     l.s = { ...l.s, round: start.round + q };
     const offen = weichen(l, q);
@@ -954,7 +1138,7 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
   // Ruths Stimmung am Ende – ein Wort für die Chronik.
   eintrag(l, 'ruth_word', { word: bondWord(l.s.family.ruth, balance) });
   const record = (s: GameState): TimeskipRecord => ({
-    number: 1,
+    number: nr,
     fromYear: gameYear(ersteRunde),
     toYear: gameYear(l.s.round),
     directives: { ...start.jump!.directives },
@@ -986,7 +1170,8 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
     return { status: 'done', state: { ...pleite, timeskips: [...(start.timeskips ?? []), r] }, record: r };
   }
 
-  // Kapitel 2 beginnt: Jahr 11, Jacob 35.
+  // Das nächste Kapitel beginnt: Kapitel 2 in Jahr 11 (Jacob 35), Kapitel 3 in Jahr 21 (Jacob 45).
+  const kapitel = nr + 1;
   const round = start.round + t.rounds + 1;
   const ziel = Math.max(0, Math.round(l.nb));
   // Wer aufgibt, steht noch im letzten Jahr des Sprungs in der Chronik.
@@ -996,9 +1181,9 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
   const s = l.s;
   const pipeline = s.logistics.pipeline === 'building' || s.logistics.pipeline === 'damaged' ? 'ready' : s.logistics.pipeline;
   const date = formatDate({ round, startYear: s.startYear });
-  const kapitel2: GameState = {
+  const naechstes: GameState = {
     ...s,
-    chapter: 2,
+    chapter: kapitel,
     chapterStart: round,
     totalRounds: round + t.nextChapterRounds - 1,
     neighbourOffset: ziel - neighbourWells(balance.market, round),
@@ -1017,13 +1202,17 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
     log: [
       ...start.log,
       `${formatDate(start)}: Jacob übergibt das Tagesgeschäft für sechs Jahre an einen Verwalter.`,
-      `${date}: Kapitel 2 „Der Herausforderer“ beginnt – Jacob ist ${jacobAge({ round })}.`,
+      `${date}: Kapitel ${kapitel} „${CHAPTER_TITLES[kapitel] ?? ''}“ beginnt – Jacob ist ${jacobAge({ round })}.`,
     ],
     roundLogStart: start.log.length,
+    // Die Dividendenfrist im Rat zählt ab Kapitelbeginn.
+    ...(s.stocks ? { stocks: { ...s.stocks, dividendRound: round - 1 } } : {}),
   };
-  // Kapitelstart (Integration Phase 4): Merkzeichen ins neue Kapitel, dann alle Systeme des Kapitels anlegen.
-  const mitMarken: GameState = { ...kapitel2, events: marksIntoNextChapter(kapitel2.events, round - 1) };
-  return { status: 'done', state: drawEvents(openChapterSystems(mitMarken, balance, texts), balance, catalog), record: r };
+  // Kapitelstart (Integration Phase 4): Merkzeichen ins neue Kapitel, dann alle Systeme des Kapitels anlegen;
+  // in Kapitel 3 dazu die Ausgangslage der Rivalen (4.19, src/sim/rivalsK3.ts).
+  const mitMarken: GameState = { ...naechstes, events: marksIntoNextChapter(naechstes.events, round - 1) };
+  const offen = startRivalsK3(openChapterSystems(mitMarken, balance, texts), balance);
+  return { status: 'done', state: drawEvents(offen, balance, catalog), record: r };
 }
 
 /** Bequem für die Oberfläche: Weiche beantworten und gleich weiterrechnen. Fertig → Kapitel 2 (oder Pleite). */
@@ -1041,6 +1230,8 @@ type Texte<K extends string> = Record<K, LocalizedText>;
 export interface TimeskipContent {
   draft: boolean;
   start: Texte<'title' | 'text' | 'button' | 'blockedIpo'>;
+  /** Zeitsprung II (4.19): Angebot am Ende von Kapitel 2. */
+  start2: Texte<'title' | 'text' | 'button'>;
   directives: {
     title: LocalizedText;
     text: LocalizedText;
@@ -1057,8 +1248,10 @@ export interface TimeskipContent {
   };
   /** Kapitel 2 (4.12): Stempel unter der Chronik, Überschrift und Ziel zum Kapitelstart. */
   chapter2: Texte<'badge' | 'title' | 'text'>;
-  /** Kapitel 3 ist noch im Bau (Kopfleiste in der Vorschau). */
-  chapter3: Texte<'badge' | 'text'>;
+  /** Kapitel 3 (4.19): Stempel unter der Chronik von Zeitsprung II, Überschrift und Ziel. */
+  chapter3: Texte<'badge' | 'title' | 'text'>;
+  /** Ein Kapitel nach dem Early-Access-Umfang (Kopfleiste, „im Bau“). */
+  preview: Texte<'badge' | 'text'>;
 }
 
 /** Setzt Platzhalter wie {betrag} in einen Text ein. */
@@ -1081,7 +1274,7 @@ export function parseTimeskipContent(file: string, text: string): { content: Tim
   }
   const raw: unknown = doc.toJS();
   if (!istObjekt(raw)) {
-    fehler('Die Datei braucht start, directives, switches, chronicle, chapter2 und chapter3.');
+    fehler('Die Datei braucht start, start2, directives, switches, chronicle, chapter2, chapter3 und preview.');
     return { content: null, errors };
   }
   const leer: LocalizedText = { de: '', en: '' };
@@ -1113,6 +1306,7 @@ export function parseTimeskipContent(file: string, text: string): { content: Tim
 
   if (raw.draft !== undefined && typeof raw.draft !== 'boolean') fehler('draft: muss true oder false sein.');
   const start = texte(block(raw, 'start', 'start'), ['title', 'text', 'button', 'blockedIpo'] as const, 'start');
+  const start2 = texte(block(raw, 'start2', 'start2'), ['title', 'text', 'button'] as const, 'start2');
   const d = block(raw, 'directives', 'directives');
   const ds = block(d, 'stance', 'directives.stance');
   const df = block(d, 'family', 'directives.family');
@@ -1156,7 +1350,8 @@ export function parseTimeskipContent(file: string, text: string): { content: Tim
     one: Object.fromEntries(Object.keys(o).filter((k) => !fremd.includes(k)).map((k) => [k, sprachtext(o[k], `chronicle.one.${k}`)])) as Partial<Record<ChronicleKind, LocalizedText>>,
   };
   const chapter2 = texte(block(raw, 'chapter2', 'chapter2'), ['badge', 'title', 'text'] as const, 'chapter2');
-  const chapter3 = texte(block(raw, 'chapter3', 'chapter3'), ['badge', 'text'] as const, 'chapter3');
+  const chapter3 = texte(block(raw, 'chapter3', 'chapter3'), ['badge', 'title', 'text'] as const, 'chapter3');
+  const preview = texte(block(raw, 'preview', 'preview'), ['badge', 'text'] as const, 'preview');
   if (errors.length > 0) return { content: null, errors };
-  return { content: { draft: raw.draft === true, start, directives, switches, chronicle, chapter2, chapter3 }, errors };
+  return { content: { draft: raw.draft === true, start, start2, directives, switches, chronicle, chapter2, chapter3, preview }, errors };
 }

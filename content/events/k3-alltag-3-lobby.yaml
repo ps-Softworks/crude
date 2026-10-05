@@ -5,9 +5,9 @@
 # Steuerabzug), GDD §10 (Steuerabzug für Ölvorkommen, wenn die Förderer-Lobby stark ist und
 # die Handelspartei regiert), Weltbibel (Parteien, Grady).
 #
-# Nur Kapitel 3 (minChapter/maxChapter 3). Gefallen, Hitze, Parteien und Gesetze gibt es als
-# Wirkung noch nicht (System 4.16 Investments/Lobbyist, Block A Weltmodell) – Ersatz siehe
-# „# TODO-Effekt“.
+# Nur Kapitel 3 (minChapter/maxChapter 3). Seit 4.19 wirken Gefallen (favors, Lobby 4.16),
+# Hitze und Spuren (heat, trace), Parteien (party) und Ruf als Systemwirkungen. Ein Gesetz
+# „Steuerabzug“ gibt es noch nicht – dafür steht Druck über die Handelspartei.
 #
 # Merkzeichen dieses Pakets:
 #   k3_dunmore_angestellt → k3_dunmore_schulden, k3_steuerabzug_dunmore
@@ -45,7 +45,7 @@
         de: Dunmore nimmt den Scheck mit zwei Fingern, als wäre er warm. Eine Woche später kennt Jacob drei Senatoren beim Vornamen, und einer schuldet ihm ein Essen.
         en: Dunmore takes the cheque with two fingers as if it were warm. A week later Jacob knows three senators by first name, and one owes him a dinner.
       requires: { minCash: 3000 }
-      effects: { cash: -3000, railTariff: -0.03 }  # TODO-Effekt: influence: +2, staff: { lobbyist: dunmore }; railTariff steht für die Bahnkommission
+      effects: { cash: -3000, railTariff: -0.03, favors: 3 }
       marks: [k3_dunmore_angestellt]
     - id: ablehnen
       label: { de: "„Ich esse lieber zu Hause.“", en: "\"I prefer to dine at home.\"" }
@@ -81,21 +81,21 @@
         de: Der Herr streicht die Zahl in seinem Notizbuch durch. Dunmore bedankt sich mit Tränen in den Augen und mit einem Satz, den er wahrscheinlich schon oft gesagt hat.
         en: The gentleman crosses out the figure in his notebook. Dunmore thanks Jacob with tears in his eyes and a sentence he has probably said many times.
       requires: { minCash: 2500 }
-      effects: { cash: -2500 }  # TODO-Effekt: staffLoyalty: { dunmore: +20 }, heat: +1
+      effects: { cash: -2500, favors: 1, heat: 1 }
       marks: [k3_dunmore_gedeckt]
     - id: entlassen
       label: { de: "Dunmore entlassen", en: "Dismiss Dunmore" }
       result:
         de: Dunmore geht mit einem Koffer voller Briefe, die er für Harlan geschrieben hat, und mit den Namen der Senatoren, mit denen er gegessen hat.
         en: Dunmore leaves with a case full of letters he wrote for Harlan, and with the names of the senators he dined with.
-      effects: { railTariff: 0.03, strength: -5 }  # TODO-Effekt: influence: -2, trace: { severity: 1, label: "Dunmores Koffer" }
+      effects: { railTariff: 0.03, strength: -5, favors: -2, trace: { severity: 1, label: "Dunmores Koffer" } }
       marks: [k3_dunmore_entlassen]
     - id: vorschuss
       label: { de: "Ihm einen Vorschuss aufs Gehalt geben, sonst nichts (1.000 $)", en: "Give him an advance on salary, nothing more (1,000 $)" }
       result:
         de: Der Herr mit dem Notizbuch nimmt die Hälfte und kommt in drei Monaten wieder. Dunmore arbeitet jetzt doppelt so hart. Für wen, ist nicht ganz klar.
         en: The man with the notebook takes half and will come back in three months. Dunmore now works twice as hard. For whom isn't quite clear.
-      effects: { cash: -1000 }  # TODO-Effekt: staffLoyalty: { dunmore: -10 }, Abwerbung möglich
+      effects: { cash: -1000, favors: -1 }
       default: true
 
 - id: k3_steuerabzug
@@ -125,14 +125,14 @@
         de: Das Gesetz geht mit zwei Stimmen Mehrheit durch. Grady schickt eine Zigarrenkiste. Im Ledger steht eine Liste der Spender. Jacobs Name ist darauf, an dritter Stelle.
         en: The bill passes by two votes. Grady sends a box of cigars. The Ledger prints a list of donors. Jacob's name is on it, third.
       requires: { minCash: 4000 }
-      effects: { cash: -4000, price: 0.3 }  # TODO-Effekt: lawPressure: { steuerabzug: +20 }, favors: +1, party: { handel: +2, volksbund: -2 }, heat: +1
+      effects: { cash: -4000, price: 0.3, favors: 1, party: { handel: 2, volksbund: -2 }, heat: 1 }
     - id: kleine
       label: { de: "Mit Delgados Kleinproduzenten für einen Abzug nur bis zu einer Grenze werben (1.500 $)", en: "Back a capped allowance with Delgado's small producers (1,500 $)" }
       result:
         de: Das Gesetz kommt, aber mit einer Grenze, die die Großen trifft – auch Harlan. Rosa Delgado nickt Jacob im Ausschuss zu. Grady sieht weg.
         en: The bill passes, but with a cap that hits the big firms – Harlan too. Rosa Delgado nods to Jacob in committee. Grady looks away.
       requires: { minCash: 1500 }
-      effects: { cash: -1500, price: 0.1 }  # TODO-Effekt: party: { provinz: +2 }, rival: { delgado: { trust: +10 } }, favors: -1
+      effects: { cash: -1500, price: 0.1, party: { provinz: 2 }, rival: { delgado: { trust: 10 } }, favors: -1 }
     - id: nichts
       label: { de: "„Wer zahlen muss, soll zahlen.“", en: "\"Whoever owes, should pay.\"" }
       result:
@@ -168,7 +168,7 @@
         de: Jacob sitzt zwischen einem Richter und dessen Frau, die über Pferde redet. Beim Kaffee sagt der Richter, Cordova sei ein Land mit Zukunft. Mehr sagt er nicht. Es reicht.
         en: Jacob sits between a judge and his wife, who talks about horses. Over coffee the judge says Cordova is a land with a future. He says no more. It is enough.
       requires: { minCash: 2000 }
-      effects: { cash: -2000, strength: -10, railTariff: -0.03 }  # TODO-Effekt: influence: +2, standing: +1
+      effects: { cash: -2000, strength: -10, railTariff: -0.03, favors: 2, ansehen: 1 }
       appointments: 2
     - id: zahlen
       label: { de: "Zahlen, aber nicht hingehen (2.000 $)", en: "Pay but stay away (2,000 $)" }
@@ -176,7 +176,7 @@
         de: Das Essen findet ohne Jacob statt. Dunmore erzählt hinterher, man habe auf ihn getrunken. Auf wen genau, weiß nur Dunmore.
         en: The dinner takes place without Jacob. Dunmore says afterwards they drank to him. To whom exactly, only Dunmore knows.
       requires: { minCash: 2000 }
-      effects: { cash: -2000 }  # TODO-Effekt: influence: +1
+      effects: { cash: -2000, favors: 1 }
       appointments: 0
     - id: streichen
       label: { de: "Das Essen streichen", en: "Cancel the dinner" }
@@ -214,7 +214,7 @@
         de: Der Pachtvertrag trägt drei Stempel und keine Unterschrift eines Ministers. Die Bohrtrupps fahren nachts hinaus. Das Öl ist gut.
         en: The lease carries three stamps and no minister's signature. The crews drive out at night. The oil is good.
       requires: { minCash: 5000 }
-      effects: { cash: -5000, production: 0.2 }  # TODO-Effekt: heat: +3, trace: { severity: 3, label: "Reserveland" }, favors: -1
+      effects: { cash: -5000, production: 0.2, heat: 3, trace: { severity: 3, label: Reserveland }, favors: -1 }
       marks: [k3_reserveland]
     - id: ablehnen
       label: { de: "Den Kaffee bezahlen und gehen", en: "Pay for the coffee and leave" }
@@ -254,14 +254,14 @@
         de: Der neue Vertrag trägt vier Stempel statt drei. Die Bohrtrupps fahren weiter nachts hinaus. Wer im Grundbuchamt gefragt hat, erfährt Jacob nicht.
         en: The new contract carries four stamps instead of three. The crews keep driving out at night. Jacob never learns who asked at the land registry.
       requires: { minCash: 4000 }
-      effects: { cash: -4000, production: 0.15 }  # TODO-Effekt: heat: +2, trace: { severity: 3, label: "Reserveland" }, favors: -1
+      effects: { cash: -4000, production: 0.15, heat: 2, trace: { severity: 3, label: Reserveland }, favors: -1 }
       marks: [k3_reserveland]
     - id: auslaufen
       label: { de: "Die Pacht auslaufen lassen", en: "Let the lease run out" }
       result:
         de: Am Quartalsende ziehen die Bohrtrupps ab und lassen die Türme stehen. Das Land ist wieder Reserve. Die alten Stempel bleiben in den Akten des Marineamts.
         en: At the end of the quarter the crews pull out and leave the derricks standing. The land is reserve again. The old stamps stay in the Naval Office's files.
-      effects: { production: -0.05 }  # TODO-Effekt: trace bleibt (zs2_grady_reserveland), heat: -1
+      effects: { production: -0.05, heat: -1 }
       appointments: 0
       default: true
 
@@ -289,7 +289,7 @@
         de: Am Montag steht Jacobs Name im Impressum, ganz klein. Bixby bleibt Redakteur. Er fragt nicht, was er schreiben soll. Noch nicht.
         en: On Monday Jacob's name appears in the masthead, very small. Bixby stays on as editor. He doesn't ask what to write. Not yet.
       requires: { minCash: 6000 }
-      effects: { cash: -6000 }  # TODO-Effekt: investment: { zeitung: courier }, reputation: { public: +1 }, heat: -1
+      effects: { cash: -6000, reputation: { public: 3 }, heat: -1 }
       marks: [k3_courier_besitz]
     - id: anzeigen
       label: { de: "Nur einen Anzeigenvertrag auf drei Jahre (1.500 $)", en: "Only an advertising contract for three years (1,500 $)" }
@@ -297,13 +297,13 @@
         de: Der Courier überlebt das Jahr. Auf Seite zwei steht jetzt jede Woche eine Harlan-Anzeige. Auf Seite eins steht, was Bixby will.
         en: The Courier survives the year. Page two now carries a Harlan advertisement every week. Page one carries what Bixby wants.
       requires: { minCash: 1500 }
-      effects: { cash: -1500, price: 0.05 }  # TODO-Effekt: brand: { cordova: +2 }
+      effects: { cash: -1500, price: 0.05, brand: { cordova: 2 } }
     - id: nein
       label: { de: "„Ich lese Zeitungen. Ich kaufe keine.“", en: "\"I read newspapers. I don't buy them.\"" }
       result:
         de: Margaret Crane kauft den Courier einen Monat später. Die erste Ausgabe unter ihr berichtet über Tankwagen und Bremsen.
         en: Margaret Crane buys the Courier a month later. The first issue under her reports on tank trucks and brakes.
-      effects: { price: -0.05 }  # TODO-Effekt: rival: { margaret: Zeitung }, reputation: { public: -1 }
+      effects: { price: -0.05, reputation: { public: -1 }, rival: { margaret: { strength: 1 } } }
       appointments: 0
       default: true
 
@@ -333,13 +333,13 @@
       result:
         de: Bixby nickt langsam und steckt den Ausschnitt wieder ein. In der nächsten Woche steht im Courier eine kritische Meldung über Harlans Abschlag. Jacob liest sie zweimal.
         en: Bixby nods slowly and pockets the clipping. The next week the Courier carries a critical item on Harlan's discount. Jacob reads it twice.
-      effects: { price: -0.1, strength: 10 }  # TODO-Effekt: reputation: { public: +2 }, heat: -1
+      effects: { price: -0.1, strength: 10, reputation: { public: 2 }, heat: -1 }
     - id: lenken
       label: { de: "Bixby eine Linie vorgeben", en: "Give Bixby a line to follow" }
       result:
         de: Der Courier schreibt jetzt freundlich über Harlan, jede Woche. Die Leser merken es nach einem Monat. Bixby trinkt wieder.
         en: The Courier now writes kindly about Harlan, every week. The readers notice after a month. Bixby drinks again.
-      effects: { price: 0.1, strength: -10 }  # TODO-Effekt: reputation: { public: -2 }, staff: { pressesprecher: bixby }, trace: { severity: 1, label: "Linie des Courier" }
+      effects: { price: 0.1, strength: -10, reputation: { public: -2 }, trace: { severity: 1, label: "Linie des Courier" } }
       default: true
 
 # Briefe-Garantie in Kapitel 3: Forderung, wiederkehrend.
@@ -369,7 +369,7 @@
         de: Eine gedruckte Quittung kommt zurück, mit einer echten Unterschrift. Man wird sich erinnern, steht darunter.
         en: A printed receipt comes back, with a real signature. It says one will remember.
       requires: { minCash: 1000 }
-      effects: { cash: -1000 }  # TODO-Effekt: party: { handel: +1 }, favors: +1
+      effects: { cash: -1000, party: { handel: 1 }, favors: 1 }
     - id: nicht
       label: { de: "Nicht antworten", en: "Don't reply" }
       result:

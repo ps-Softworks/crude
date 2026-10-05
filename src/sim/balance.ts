@@ -24,6 +24,7 @@ import { parseBrandBalance, type BrandBalance } from './brand';
 import { parseHallstead, type HallsteadBalance } from './hallsteadBalance';
 // 4.17 Andockpunkt: Kapitel 3 (Seismik, Konsortium, Projekte, Stand) prüft seinen Block selbst.
 import { parseKapitel3Balance, type Kapitel3Balance } from './kapitel3Balance';
+import { parseRivalsK3Balance, type RivalsK3Balance } from './rivalsK3';
 import { parseEventSystemsBalance, type EventSystemsBalance } from './eventSystems'; // 4.12
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
@@ -374,6 +375,26 @@ export interface TimeskipBalance {
     okaraValueQuarters: number;
   };
   rival: { drillChance: number; drillCost: number };
+  /** Zeitsprung II (4.19). */
+  second: {
+    refineryMargin: number;
+    harborFreight: number;
+    warFromYear: number;
+    warTension: number;
+    warPremium: number;
+    warLossChance: number;
+    warLossCost: number;
+    navyYear: number;
+    navyIncome: number;
+    gradyYear: number;
+    gradyChance: number;
+    gradyCost: number;
+    gradyIncome: number;
+    gradyTrace: number;
+    collegeYear: number;
+    collegeCost: number;
+    collegeBond: number;
+  };
 }
 
 /** Imperiumswert (GDD §4). */
@@ -394,6 +415,10 @@ export interface ChapterBalance {
     goalValue: number;
     goalControl: number;
     swallowedControl: number;
+  };
+  /** Kapitel 3 (4.19, GDD §13): mindestens dieses Rating am Kapitelende (die Marke prüft brand.goal). */
+  chapter3: {
+    minRating: Rating;
   };
 }
 
@@ -822,6 +847,8 @@ export interface Balance {
   exchange: ExchangeBalance;
   /** 4.17 Andockpunkt: Kapitel 3 – Seismik, Konsortium, Projekte, Stand (src/sim/kapitel3Balance.ts). */
   kapitel3: Kapitel3Balance;
+  /** Rivalen in Kapitel 3 (4.19). */
+  rivalsK3: RivalsK3Balance;
   /** 4.12: Systemwirkungen der Ereignisse (src/sim/eventSystems.ts). */
   eventSystems: EventSystemsBalance;
 }
@@ -1502,6 +1529,12 @@ function parseEmpire(raw: unknown): EmpireBalance {
   return { reserveFactor: share(raw, 'empire.reserveFactor') };
 }
 
+function ratingAt(raw: unknown, path: string): Rating {
+  const v = path.split('.').reduce<unknown>((o, k) => (o && typeof o === 'object' ? (o as Record<string, unknown>)[k] : undefined), raw);
+  if (!(RATINGS as readonly unknown[]).includes(v)) throw new BalanceError(`balance.yaml: "${path}" muss ${RATINGS.join(', ')} sein`);
+  return v as Rating;
+}
+
 function parseChapter(raw: unknown): ChapterBalance {
   const block = (raw as { chapter?: unknown })?.chapter;
   if (!block || typeof block !== 'object') throw new BalanceError('balance.yaml: Block "chapter" fehlt');
@@ -1518,6 +1551,7 @@ function parseChapter(raw: unknown): ChapterBalance {
       goalControl: share(raw, 'chapter.chapter2.goalControl'),
       swallowedControl: share(raw, 'chapter.chapter2.swallowedControl'),
     },
+    chapter3: { minRating: ratingAt(raw, 'chapter.chapter3.minRating') },
   };
 }
 
@@ -1532,6 +1566,11 @@ function parseTimeskip(raw: unknown): TimeskipBalance {
   const jahr = (key: string) => {
     const v = positiveInt(raw, p(key));
     if (v < 5 || v > 10) throw new BalanceError(`balance.yaml: "${p(key)}" muss ein Jahr im Zeitsprung I (5–10) sein`);
+    return v;
+  };
+  const jahr2 = (key: string) => {
+    const v = positiveInt(raw, p(key));
+    if (v < 15 || v > 20) throw new BalanceError(`balance.yaml: "${p(key)}" muss ein Jahr im Zeitsprung II (15–20) sein`);
     return v;
   };
   const t: TimeskipBalance = {
@@ -1582,6 +1621,25 @@ function parseTimeskip(raw: unknown): TimeskipBalance {
       okaraValueQuarters: nonNegative(raw, p('switches.okaraValueQuarters')),
     },
     rival: { drillChance: share(raw, p('rival.drillChance')), drillCost: nonNegative(raw, p('rival.drillCost')) },
+    second: {
+      refineryMargin: nonNegative(raw, p('second.refineryMargin')),
+      harborFreight: nonNegative(raw, p('second.harborFreight')),
+      warFromYear: jahr2('second.warFromYear'),
+      warTension: nonNegative(raw, p('second.warTension')),
+      warPremium: nonNegative(raw, p('second.warPremium')),
+      warLossChance: share(raw, p('second.warLossChance')),
+      warLossCost: nonNegative(raw, p('second.warLossCost')),
+      navyYear: jahr2('second.navyYear'),
+      navyIncome: nonNegative(raw, p('second.navyIncome')),
+      gradyYear: jahr2('second.gradyYear'),
+      gradyChance: share(raw, p('second.gradyChance')),
+      gradyCost: nonNegative(raw, p('second.gradyCost')),
+      gradyIncome: nonNegative(raw, p('second.gradyIncome')),
+      gradyTrace: positiveInt(raw, p('second.gradyTrace')),
+      collegeYear: jahr2('second.collegeYear'),
+      collegeCost: nonNegative(raw, p('second.collegeCost')),
+      collegeBond: nonNegative(raw, p('second.collegeBond')),
+    },
   };
   if (t.rounds % 4 !== 0) throw new BalanceError('balance.yaml: "timeskip.rounds" muss ganze Jahre (Vielfaches von 4) umfassen');
   if (t.family.claraStart > 100) throw new BalanceError('balance.yaml: "timeskip.family.claraStart" muss zwischen 0 und 100 liegen');
@@ -2229,6 +2287,7 @@ export function parseBalance(raw: unknown): Balance {
     // 4.15 Andockpunkt: Börse und Kauf auf Kredit.
     exchange: parseExchangeBalance(raw),
     kapitel3: parseKapitel3Balance(raw), // 4.17 Andockpunkt
+    rivalsK3: parseRivalsK3Balance(raw), // 4.19 Andockpunkt
     eventSystems: parseEventSystemsBalance(raw), // 4.12
   };
 

@@ -60,7 +60,7 @@
           Thomas stands on the platform looking for the carriage, not his father. When he
           sees Jacob he stops for a moment. Then he laughs. On the drive home they talk
           about nothing for a whole hour.
-      effects: { thomas: 15, strength: -5 } # TODO-Effekt: boardLoyalty: { vandermeer: -5 }
+      effects: { thomas: 15, strength: -5, boardLoyalty: { vandermeer: -5 } }
       sharp: true
     - id: ruth
       label: { de: "Ruth fahren lassen – die Sitzung geht vor", en: "Let Ruth go – the meeting comes first" }
@@ -118,7 +118,7 @@
         en: >-
           Thomas gets a desk in the basement next to the bills of lading. On the first day
           he is in at six. Jacob learns it from the porter, not from him.
-      effects: { thomas: 10 } # TODO-Effekt: heirValues: { thomas: { business: +1, ambition: +1 } }
+      effects: { thomas: 10, heirValues: { thomas: { business: 1, ambition: 1 } } }
       marks: [thomas_firma]
     - id: feld
       label: { de: "Ihn auf die Felder schicken, zu den Bohrtrupps", en: "Send him to the fields, to the drilling crews" }
@@ -129,7 +129,7 @@
         en: >-
           "Like you back then," says Thomas, unsure whether to be glad. By the end of the
           first week he has blistered hands and a nickname he tells no one.
-      effects: { thomas: 10 } # TODO-Effekt: heirValues: { thomas: { loyalty: +1, moral: +1 } }
+      effects: { thomas: 10, heirValues: { thomas: { loyalty: 1, moral: 1 } } }
       marks: [thomas_feld]
     - id: eigener_weg
       label: { de: "„Geh, wohin du willst. Auch zu Margaret.“", en: "\"Go wherever you like. Even to Margaret.\"" }
@@ -142,7 +142,7 @@
           Thomas stares at him as if he had expected anything but this. He takes the post
           at Crane Eastern. On leaving he hugs his father, awkwardly, the way you hug
           someone you have not hugged in a long time.
-      effects: { thomas: 15 } # TODO-Effekt: heirValues: { thomas: { ambition: +2, loyalty: -1 } }, rival: { margaret: { trust: +5 } }
+      effects: { thomas: 15, heirValues: { thomas: { ambition: 2, loyalty: -1 } }, rival: { margaret: { trust: 5 } } }
       marks: [thomas_eigener_weg]
     - id: zwingen
       label: { de: "„Montag fängst du als mein Stellvertreter an. Ende.“", en: "\"Monday you start as my deputy. That's that.\"" }
@@ -153,7 +153,7 @@
         en: >-
           Thomas folds his plans away, very neatly. "Yes, Father." He has never called him
           Father before. He always said Dad.
-      effects: { thomas: -20 } # TODO-Effekt: heirValues: { thomas: { loyalty: +1, ambition: -2 } }
+      effects: { thomas: -20, heirValues: { thomas: { loyalty: 1, ambition: -2 } } }
       marks: [thomas_gezwungen]
       default: true
 
@@ -257,7 +257,7 @@
           After three months the maps lie in every hotel in Port Ellis. In the bottom
           corner, small: "Designed by T. Harlan". Thomas pretends not to have noticed.
       requires: { minCash: 3000 }
-      effects: { cash: -3000, thomas: 15, price: 0.1 } # TODO-Effekt: brand: { cordova: +1 }, heirValues: { thomas: { business: +1 } }
+      effects: { cash: -3000, thomas: 15, price: 0.1, brand: { cordova: 5 }, heirValues: { thomas: { business: 1 } } }
     - id: spielerei
       label: { de: "„Spielerei. Wir verkaufen Öl, keine Landkarten.“", en: "\"A toy. We sell oil, not maps.\"" }
       result:
@@ -267,7 +267,7 @@
         en: >-
           Thomas rolls the map up again. Half a year later a similar map lies in every
           hotel in Port Ellis. The sign on it belongs to Crane Eastern.
-      effects: { thomas: -15 } # TODO-Effekt: brand: { cordova: -1 }, rival: { margaret: { aggression: +5 } }
+      effects: { thomas: -15, brand: { cordova: -5 }, rival: { margaret: { grudge: 5 } } }
       marks: [thomas_gekraenkt]
       default: true
     - id: uebernehmen
@@ -280,7 +280,7 @@
           The maps are printed, with Jacob's portrait on the back. They sell well. Thomas
           thanks him at dinner, politely, as one thanks a stranger.
       requires: { minCash: 3000 }
-      effects: { cash: -3000, thomas: -20, price: 0.1 } # TODO-Effekt: brand: { cordova: +1 }
+      effects: { cash: -3000, thomas: -20, price: 0.1, brand: { cordova: 5 } }
       marks: [thomas_gekraenkt]
 
 # Nachwirkung: Thomas ist bei den Bohrtrupps.
@@ -313,7 +313,7 @@
         en: >-
           The crews work faster for Thomas than for any foreman before him. Ruth does not
           speak to Jacob for three days. Then she asks whether the boilers are being inspected.
-      effects: { thomas: 15, ruth: -10, production: 0.05 } # TODO-Effekt: reputation: { workers: +2 }
+      effects: { thomas: 15, ruth: -10, production: 0.05, reputation: { workers: 2 } }
     - id: buero
       label: { de: "Ihn ins Büro holen – zu gefährlich", en: "Bring him into the office – too dangerous" }
       result:
@@ -374,7 +374,7 @@
         en: >-
           Jacob cuts his prices a month before Crane Eastern. Thomas does not answer the
           next letter. Margaret does: "He gave it to you, Harlan. You took it."
-      effects: { thomas: -25, price: 0.2 } # TODO-Effekt: rival: { margaret: { relation: -15 } }
+      effects: { thomas: -25, price: 0.2, rival: { margaret: { trust: -15 } } }
       marks: [thomas_benutzt]
     - id: zurueck
       label: { de: "Ihn zurückbefehlen", en: "Order him home" }
@@ -416,7 +416,7 @@
           Jacob takes the blame himself, in front of everyone. Thomas says nothing
           afterwards. But he is on time the next morning, and the morning after.
       requires: { minCash: 2500 }
-      effects: { cash: -2500, thomas: 10 } # TODO-Effekt: boardLoyalty: { vandermeer: -10 }, control: -2
+      effects: { cash: -2500, thomas: 10, boardLoyalty: { vandermeer: -10 }, control: -2 }
     - id: zurechtweisen
       label: { de: "Ihn vor dem Rat zurechtweisen", en: "Reprimand him before the board" }
       result:
@@ -426,7 +426,7 @@
         en: >-
           Jacob speaks for five minutes. Vandermeer nods, satisfied. Thomas rises when
           Jacob has finished and leaves the room without slamming the door.
-      effects: { thomas: -20, railTariff: 0.03 } # TODO-Effekt: boardLoyalty: { vandermeer: +5 }
+      effects: { thomas: -20, railTariff: 0.03, boardLoyalty: { vandermeer: 5 } }
       marks: [thomas_gekraenkt]
       default: true
     - id: gehen_lassen
@@ -472,7 +472,7 @@
         en: >-
           Evelyn comes to dinner and contradicts Jacob twice, politely and with figures.
           Ruth likes her at once. Thomas looks at his father as if he had given him something.
-      effects: { thomas: 15, ruth: 5 } # TODO-Effekt: rival: { margaret: { trust: +10 } }
+      effects: { thomas: 15, ruth: 5, rival: { margaret: { trust: 10 } } }
       marks: [heirat_crane_saat]
     - id: verbieten
       label: { de: "Es Thomas verbieten – keine Crane in diesem Haus", en: "Forbid it – no Crane in this house" }
@@ -483,7 +483,7 @@
         en: >-
           Thomas does not argue. He simply stops going to balls his father attends.
           Margaret sends a wreath for Ruth's birthday, as if someone had died.
-      effects: { thomas: -20 } # TODO-Effekt: rival: { margaret: { relation: -10 } }
+      effects: { thomas: -20, rival: { margaret: { trust: -10 } } }
       marks: [heirat_crane_verboten]
     - id: nichts
       label: { de: "Nichts sagen", en: "Say nothing" }
@@ -555,7 +555,7 @@
           Thomas stays, with a budget and a title. "So you gave me a department after
           all," he says. He says it kindly. It is a reproach all the same.
       requires: { minCash: 5000 }
-      effects: { cash: -5000, thomas: 10 } # TODO-Effekt: brand: { cordova: +1 }, boardLoyalty: { vandermeer: -5 }
+      effects: { cash: -5000, thomas: 10, brand: { cordova: 5 }, boardLoyalty: { vandermeer: -5 } }
       marks: [thomas_abteilung]
 
 # Entwurf – Philipp überarbeitet.
@@ -597,7 +597,7 @@
           "Luck," says Jacob, and it sounds like a business letter. Thomas puts his hat on.
           By autumn a filling station stands on the Port Ellis road under a sign no one
           knows, between one of Harlan's and one of Crane's.
-      effects: { thomas: -20, price: -0.1 } # TODO-Effekt: rival: { thomas: neu }, brand: { cordova: -1 }
+      effects: { thomas: -20, price: -0.1, brand: { cordova: -5 } }
       marks: [thomas_bruch]
       default: true
     - id: verzeihung
@@ -626,7 +626,7 @@
           Crane Eastern. "So you are giving me a department after all," he says. Margaret
           sends Jacob a card: "Well bought, Harlan."
       requires: { minCash: 5000 }
-      effects: { cash: -5000, thomas: 10 } # TODO-Effekt: brand: { cordova: +1 }, rival: { margaret: { relation: -10 } }
+      effects: { cash: -5000, thomas: 10, brand: { cordova: 5 }, rival: { margaret: { trust: -10 } } }
       marks: [thomas_abteilung]
     - id: teilhaber
       label: { de: "Still mit einsteigen – Jacobs Geld, Thomas' Zeichen (4.000 $)", en: "Buy in quietly – Jacob's money, Thomas's sign (4,000 $)" }
@@ -640,5 +640,5 @@
           nowhere. "If I beat you," says Thomas, "you'll profit from it. That's the kindest
           thing I can offer you."
       requires: { minCash: 4000 }
-      effects: { cash: -4000, thomas: 10 } # TODO-Effekt: investment: { thomas_tankstellen: 4000 }, rival: { thomas: neu }
+      effects: { cash: -4000, thomas: 10, rival: { margaret: { strength: 1 } } }
       marks: [thomas_bruch, thomas_teilhaber]

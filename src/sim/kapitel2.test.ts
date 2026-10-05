@@ -77,7 +77,8 @@ describe('Kapitelstart nach Zeitsprung I', () => {
     expect(chapterUnderConstruction(s)).toBe(false);
     expect(s.log.some((l) => l.includes('Der Herausforderer'))).toBe(true);
     expect(s.log.some((l) => l.includes('im Bau'))).toBe(false);
-    expect(timeskipBlocked({ ...s, ending: 'kapitel' }, balance)).toMatch(/Zeitsprung II/);
+    // 4.19: Am Ende von Kapitel 2 geht es in den Zeitsprung II.
+    expect(timeskipBlocked({ ...s, ending: 'kapitel' }, balance)).toBeUndefined();
   });
 
   it('Quellen, Kasse, Aktiengesellschaft und Familie kommen aus Kapitel 1 und dem Sprung', () => {
@@ -147,10 +148,11 @@ describe('Kapitelprüfung Kapitel 2 (GDD §13)', () => {
     expect(chapterResult(ende, balance)).toBe(chapterPassed(ende, balance) ? 'erreicht' : 'verfehlt');
   });
 
-  it('kein Börsengang und kein Zeitsprung am Ende von Kapitel 2', () => {
+  it('kein Börsengang am Ende von Kapitel 2, aber der Zeitsprung II (4.19); nach einem frühen Ende keiner', () => {
     const ende = { ...basis, finished: true, ending: 'kapitel' as const };
     expect(canGoPublic(ende, balance)).toBe(false);
-    expect(timeskipBlocked(ende, balance)).toBeDefined();
+    expect(timeskipBlocked(ende, balance)).toBeUndefined();
+    expect(timeskipBlocked({ ...ende, ending: 'abgesetzt' as const }, balance)).toBeDefined();
   });
 });
 

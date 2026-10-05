@@ -15,6 +15,14 @@ start:
   button: { de: "Die Jahre ziehen ins Land …", en: "The years go by …" }
   blockedIpo: { de: "Erst über die Aktiengesellschaft entscheiden.", en: "Decide on the stock company first." }
 
+# Zeitsprung II (4.19): Angebot am Ende von Kapitel 2.
+start2:
+  title: { de: "Die Jahre bis Kapitel 3", en: "The Years Until Chapter 3" }
+  text:
+    de: Wieder sechs Jahre in der Hand eines Verwalters – diesmal mit Raffinerie, Leitungen und Aufsichtsrat. Jacob schreibt ihm, wie er es halten soll, und bleibt für Telegramme erreichbar.
+    en: Another six years in the hands of a manager – this time with refinery, pipelines and board. Jacob writes to him how to go about it and stays reachable by telegram.
+  button: { de: "Die Jahre ziehen ins Land …", en: "The years go by …" }
+
 directives:
   title: { de: "An den Verwalter", en: "To the Manager" }
   text:
@@ -79,6 +87,35 @@ switches:
       en: "RUTH TO JACOB – WE ARE HAVING A SECOND CHILD – THOMAS IS THRILLED – WILL YOU COME HOME"
     home: { de: "Die Monate zu Hause bleiben", en: "Stay home for those months" }
     business: { de: "Die Geschäfte gehen vor", en: "Business comes first" }
+  # Zeitsprung II (4.19, GDD §13, Story-Bibel §2)
+  war_export:
+    title: { de: "Kriegsgefahr in Übersee", en: "War Clouds Overseas" }
+    text:
+      de: "VERWALTER AN HARLAN – ALDMARK UND VARENHOLD RÜSTEN – REEDER ZAHLEN JEDEN PREIS FÜR ÖL – TANKER FAHREN DURCH MINENFELDER – EXPORTIEREN ODER IM LAND VERKAUFEN"
+      en: "MANAGER TO HARLAN – ALDMARK AND VARENHOLD ARE ARMING – SHIPOWNERS PAY ANY PRICE FOR OIL – TANKERS SAIL THROUGH MINEFIELDS – EXPORT OR SELL AT HOME"
+    export: { de: "Exportieren – trotz des Risikos", en: "Export – despite the risk" }
+    hold: { de: "Im Land verkaufen", en: "Sell at home" }
+  navy:
+    title: { de: "Die Marine braucht Heizöl", en: "The Navy Needs Fuel Oil" }
+    text:
+      de: "VERWALTER AN HARLAN – DIE MARINE STELLT AUF ÖL UM – EIN ADMIRAL BIETET FESTPREIS FÜR HEIZÖL BIS ZUM ENDE DES JAHRZEHNTS – ANNEHMEN"
+      en: "MANAGER TO HARLAN – THE NAVY IS SWITCHING TO OIL – AN ADMIRAL OFFERS A FIXED PRICE FOR FUEL OIL TO THE END OF THE DECADE – ACCEPT"
+    accept: { de: "Den Vertrag annehmen", en: "Accept the contract" }
+    decline: { de: "Ablehnen – der Markt zahlt mehr", en: "Decline – the market pays more" }
+  grady:
+    title: { de: "Ein Angebot von Senator Grady", en: "An Offer from Senator Grady" }
+    text:
+      de: "GRADY AN HARLAN – PACHTEN AUF STAATLICHEM RESERVELAND – NIEMAND FRAGT NACH – EINE BETEILIGUNG FÜR ALTE FREUNDE – DISKRETION SELBSTVERSTÄNDLICH"
+      en: "GRADY TO HARLAN – LEASES ON STATE RESERVE LAND – NOBODY ASKS QUESTIONS – A STAKE FOR OLD FRIENDS – DISCRETION GUARANTEED"
+    take: { de: "Einsteigen ({betrag})", en: "Buy in ({betrag})" }
+    refuse: { de: "Die Finger davon lassen", en: "Keep well clear" }
+  college:
+    title: { de: "Thomas und das College", en: "Thomas and College" }
+    text:
+      de: "RUTH AN JACOB – THOMAS HAT DEN BRIEF VOM COLLEGE IM OSTEN – ER WILL HIN – ODER SOFORT IN DIE FIRMA WENN DU ES SAGST – ER WARTET AUF DEIN WORT"
+      en: "RUTH TO JACOB – THOMAS HAS THE LETTER FROM THE COLLEGE IN THE EAST – HE WANTS TO GO – OR STRAIGHT INTO THE COMPANY IF YOU SAY SO – HE AWAITS YOUR WORD"
+    college: { de: "Aufs College ({betrag})", en: "Off to college ({betrag})" }
+    company: { de: "Gleich in die Firma", en: "Straight into the company" }
 
 # Die Chronik „Die Jahre dazwischen“: eine Zeitungsseite je Spieljahr.
 chronicle:
@@ -128,6 +165,17 @@ chronicle:
     clara_business: { de: "Jacob ist bei der Geburt auf Geschäftsreise.", en: "Jacob is away on business at the birth." }
     thomas_school: { de: "Thomas kommt in die Schule.", en: "Thomas starts school." }
     ruth_word: { de: "Ruth ist {wort}.", en: "Ruth is {wort}." }
+    projects_finished: { de: "Der Verwalter bringt die Baustellen zu Ende – {n} Anlagen laufen.", en: "The manager finishes the building sites – {n} installations are running." }
+    bonds_refinanced: { de: "Die Anleihen von Harlan Oil werden durch einen Bankkredit über {betrag} abgelöst.", en: "Harlan Oil's bonds are replaced by a bank loan of {betrag}." }
+    war_export: { de: "Harlan-Öl fährt über den Ozean – zu Kriegspreisen.", en: "Harlan oil crosses the ocean – at wartime prices." }
+    war_hold: { de: "Jacob verkauft sein Öl nur im eigenen Land.", en: "Jacob sells his oil at home only." }
+    war_tanker: { de: "Ein Tanker mit Harlan-Öl kommt nicht zurück. Verlust: {betrag}. In Port Ellis trägt eine Witwe Schwarz.", en: "A tanker carrying Harlan oil does not come back. Loss: {betrag}. In Port Ellis a widow wears black." }
+    navy_accept: { de: "Die Marine tankt Harlan-Heizöl – {betrag} je Quartal zum Festpreis.", en: "The navy fuels up on Harlan fuel oil – {betrag} a quarter at a fixed price." }
+    navy_decline: { de: "Jacob lehnt den Marinevertrag ab.", en: "Jacob turns down the navy contract." }
+    grady_take: { de: "Harlan Oil beteiligt sich an Pachten auf Reserveland ({betrag}). Niemand schreibt darüber – noch nicht.", en: "Harlan Oil takes a stake in leases on reserve land ({betrag}). Nobody writes about it – not yet." }
+    grady_refuse: { de: "Jacob lässt Senator Gradys Angebot unbeantwortet.", en: "Jacob leaves Senator Grady's offer unanswered." }
+    college_go: { de: "Thomas geht aufs College im Osten ({betrag}).", en: "Thomas goes off to college in the east ({betrag})." }
+    college_firm: { de: "Thomas fängt in der Firma an – ohne College.", en: "Thomas starts at the company – without college." }
 
   # Einzahl, wenn {n} = 1 ist.
   one:
@@ -144,9 +192,17 @@ chapter2:
     de: Harlan Oil ist eine ernstzunehmende Firma, aber der Crane Trust beherrscht Raffinerien und Pipelines. Ziel bis Jahr 14 – eigene Raffinerie oder Pipeline zum Hafen, Kontrolle über die Firma, ein Imperium von einer Million Dollar.
     en: Harlan Oil is a company to be reckoned with, but the Crane Trust controls the refineries and pipelines. Goal by year 14 – your own refinery or pipeline to the harbour, control of the company, an empire worth a million dollars.
 
-# Kapitel 3 gibt es noch nicht als Spiel (nur die Systeme zum Vorab-Freischalten im Debug-Menü).
+# Kapitel 3 „Der Konzernherr“ (4.19): Stempel unter der Chronik von Zeitsprung II, Ziel zum Kapitelstart.
 chapter3:
-  badge: { de: "Kapitel 3 · im Bau", en: "Chapter 3 · under construction" }
+  badge: { de: "Kapitel 3 · Der Konzernherr", en: "Chapter 3 · The Magnate" }
+  title: { de: "Kapitel 3 – Der Konzernherr", en: "Chapter 3 – The Magnate" }
   text:
-    de: Kapitel 3 ist noch im Bau. Was hier läuft, ist eine Vorschau mit den Systemen aus Kapitel 2 und 3.
-    en: Chapter 3 is still under construction. What runs here is a preview with the systems from chapters 2 and 3.
+    de: Harlan Oil ist ein Konzern. Die Börse lockt, und Hallsteads alte Familien öffnen die ersten Türen – oder schlagen sie zu. Ziel bis Jahr 24 – eine eigene Marke in drei Regionen oder zehn Prozent Marktanteil, und am Ende mindestens Rating C bei der Bank.
+    en: Harlan Oil is a corporation. The stock exchange beckons, and Hallstead's old families open the first doors – or slam them shut. Goal by year 24 – your own brand in three regions or ten per cent market share, and at least a C rating with the bank at the end.
+
+# Ein Kapitel nach dem Early-Access-Umfang (Kopfleiste; im Spiel nicht erreichbar).
+preview:
+  badge: { de: "Kapitel 4 · folgt", en: "Chapter 4 · coming" }
+  text:
+    de: Kapitel 4 ist noch im Bau – der Early-Access-Umfang endet mit Kapitel 3.
+    en: Chapter 4 is still under construction – the early access scope ends with chapter 3.

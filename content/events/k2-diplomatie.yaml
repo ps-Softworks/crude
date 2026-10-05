@@ -48,7 +48,7 @@
 # --- Nachfolge im Crane Trust -------------------------------------------------
 
 - id: k2_crane_rueckzug
-  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
+  conditions: { minChapter: 1, maxChapter: 2 }   # Der Nachfolgekampf beginnt mit der Diplomatie in Kapitel 2 – in Kapitel 3 (4.19) ist er entschieden
   visitor: crane
   certain: true
   marked: [k2_diplomatie]
@@ -90,7 +90,7 @@
       default: true
 
 - id: k2_margaret_besuch
-  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
+  conditions: { minChapter: 1, maxChapter: 2 }   # Der Nachfolgekampf beginnt mit der Diplomatie in Kapitel 2 – in Kapitel 3 (4.19) ist er entschieden
   visitor: margaret
   certain: true
   marked: [k2_diplomatie]
@@ -125,7 +125,7 @@
       default: true
 
 - id: k2_pruett_besuch
-  conditions: { minChapter: 1 }   # jedes Kapitel – die Merkzeichen der Simulation entscheiden (Phase 4)
+  conditions: { minChapter: 1, maxChapter: 2 }   # Der Nachfolgekampf beginnt mit der Diplomatie in Kapitel 2 – in Kapitel 3 (4.19) ist er entschieden
   visitor: pruett
   certain: true
   marked: [k2_diplomatie]

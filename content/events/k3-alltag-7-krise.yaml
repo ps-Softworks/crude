@@ -6,9 +6,9 @@
 # Ölpreis bald fällt“), Story-Bibel §9 (K3 Thema 6: Firmenladen vs. Schule, Flugblätter,
 # sterbende Stadt, Witwe), §3 (Eli Ward, ehrlicher Sicherheitschef).
 #
-# Nur Kapitel 3 (minChapter/maxChapter 3). Stimmung, Kreditklima und Crash liefert Block A
-# (Weltmodell) – bis dahin Ersatzwirkungen, siehe „# TODO-Effekt“. Sobald es die Bedingungen
-# crash/minMood gibt, sollten die Vorboten daran hängen statt nur am Zufall.
+# Nur Kapitel 3 (minChapter/maxChapter 3). Seit 4.19 wirken Stimmung (mood), Börsenfieber (fever),
+# Rating, Kredit (loan) und Ruf als Systemwirkungen. Sobald es die Bedingungen crash/minMood gibt,
+# sollten die Vorboten daran hängen statt nur am Zufall.
 #
 # Merkzeichen aus Kapitel 1: eli_waechter (Eli Ward wurde Wächter und ist heute Sicherheitschef).
 # Merkzeichen aus Paket 2: k3_hale_aktien_gehalten → k3_hale_verlust.
@@ -41,20 +41,20 @@
         de: Jacob verkauft, solange noch jemand kauft. Die anderen lachen eine Woche lang über ihn. Dann nicht mehr.
         en: Jacob sells while someone is still buying. The others laugh at him for a week. Then no longer.
       requires: { minOilStock: 2000 }
-      effects: { oilStock: -2000, cash: 2000 }  # TODO-Effekt: Weltmodell mood/crash – Verkauf vor dem Fall
+      effects: { oilStock: -2000, cash: 2000, fever: -2 }
       appointments: 0
     - id: drosseln
       label: { de: "Die Förderung drosseln", en: "Throttle production" }
       result:
         de: Die Pumpen auf den Harlan-Feldern laufen langsamer. Die Arbeiter fragen, ob Entlassungen kommen. Jacob sagt nein. Er hofft, dass er recht behält.
         en: The pumps on the Harlan fields run slower. The workers ask whether layoffs are coming. Jacob says no. He hopes he'll be right.
-      effects: { production: -0.15 }  # TODO-Effekt: Öl bleibt im Boden statt im Preisfall
+      effects: { production: -0.15 }
     - id: weiter
       label: { de: "Weiterpumpen – diesmal ist es anders", en: "Keep pumping – this time it's different" }
       result:
         de: Die Zeitungen schreiben, diesmal sei es anders. Die Automobile brauchen alles. Zwei Wochen später fällt der Preis trotzdem.
         en: The papers write that this time it's different. The automobiles need everything. Two weeks later the price falls anyway.
-      effects: { price: -0.3 }  # TODO-Effekt: crash-Risiko +, productPrice: -10 %
+      effects: { price: -0.3, fever: 3, productPrice: { gasoline: -0.1 } }
       default: true
 
 - id: k3_zinsen
@@ -82,14 +82,14 @@
         de: Jacob zahlt zurück, was er kann. Die Kasse ist danach dünn. Ruth sagt, so habe sie ihn schon lange nicht schlafen sehen.
         en: Jacob pays back what he can. The till is thin afterwards. Ruth says she hasn't seen him sleep like this in a long time.
       requires: { minCash: 4000 }
-      effects: { cash: -4000, strength: 10 }  # TODO-Effekt: credit: -4000, rating: +1
+      effects: { cash: -4000, strength: 10, rating: 1 }
       appointments: 0
     - id: verlaengern
       label: { de: "Verlängern und weiter leihen (+3.000 $)", en: "Renew and keep borrowing (+3,000 $)" }
       result:
         de: Die neue Linie ist teurer und läuft kürzer. Vandermeer & Co. bedankt sich für das Vertrauen.
         en: The new line is dearer and runs shorter. Vandermeer & Co. thanks him for his confidence.
-      effects: { cash: 3000 }  # TODO-Effekt: credit: +3000, Zins höher
+      effects: { loan: 3000, rating: -1 }
       marks: [k3_kredit_verlaengert]
       appointments: 0
       default: true
@@ -122,7 +122,7 @@
         de: Jacob zahlt. In derselben Woche gehen in Port Ellis zwei Firmen pleite, die nicht zahlen konnten.
         en: Jacob pays. The same week two firms in Port Ellis go bankrupt that couldn't.
       requires: { minCash: 3600 }
-      effects: { cash: -3600 }  # TODO-Effekt: credit: -3000
+      effects: { cash: -3600, rating: 1 }
     - id: oel
       label: { de: "Öl zum Tiefstpreis verkaufen, um zu zahlen (5.000 Barrel)", en: "Sell oil at rock bottom to pay (5,000 barrels)" }
       result:
@@ -135,7 +135,7 @@
       result:
         de: Die Bank pfändet, was schnell zu Geld wird. In Hallstead erzählt man, Harlan sei überdehnt. Cornelia Vandermeer lässt Mrs. Harlan nicht mehr grüßen.
         en: The bank seizes whatever turns into money quickly. In Hallstead they say Harlan is overextended. Cornelia Vandermeer no longer sends her regards to Mrs. Harlan.
-      effects: { cash: -2500, oilStock: -1500, strength: -10 }  # TODO-Effekt: rating: -1, standing: -2
+      effects: { cash: -2500, oilStock: -1500, strength: -10, rating: -1, ansehen: -2 }
       appointments: 0
       default: true
 
@@ -167,20 +167,20 @@
         de: Der Neffe nimmt den Scheck und sieht Jacob an, als suche er den Haken. Es gibt keinen. Martha Hale schickt eine Karte, wie damals.
         en: The nephew takes the cheque and looks at Jacob as if searching for the catch. There is none. Martha Hale sends a card, as she did back then.
       requires: { minCash: 3000 }
-      effects: { cash: -3000, strength: 5 }  # TODO-Effekt: boardLoyalty: { hale: +15 }
+      effects: { cash: -3000, strength: 5, boardLoyalty: { hale: 15 } }
     - id: sitz
       label: { de: "Ihr einen Sitz im Aufsichtsrat anbieten", en: "Offer her a seat on the board" }
       result:
         de: Martha Hale nimmt an. In der ersten Sitzung sagt sie kein Wort. In der zweiten stimmt sie gegen eine Dividende, die Pettibone wollte.
         en: Martha Hale accepts. At the first meeting she doesn't say a word. At the second she votes against a dividend Pettibone wanted.
-      effects: { cash: -500, strength: -5 }  # TODO-Effekt: boardMember: hale, control: +2, boardLoyalty: { hale: +10 }
+      effects: { cash: -500, strength: -5, boardMember: hale, control: 2, boardLoyalty: { hale: 10 } }
       appointments: 2
     - id: nichts
       label: { de: "„Aktien steigen und fallen.“", en: "\"Shares rise and fall.\"" }
       result:
         de: Der Neffe faltet den Brief wieder zusammen. Er verkauft die Aktien seiner Tante noch in derselben Woche. An wen, steht im Aktienbuch.
         en: The nephew folds the letter up again. He sells his aunt's shares that same week. To whom is in the share register.
-      effects: { railTariff: 0.02 }  # TODO-Effekt: shares: { thorne: +1 }, control: -1
+      effects: { railTariff: 0.02, rivalStake: { thorne: 1 }, control: -1 }
       appointments: 0
       default: true
 
@@ -207,19 +207,19 @@
       result:
         de: Die Schule bleibt, der Laden schließt. Die Familien kaufen jetzt beim Krämer in Port Ellis, eine halbe Tagesreise entfernt.
         en: The school stays, the store closes. The families now shop at the general store in Port Ellis, half a day's journey away.
-      effects: { cash: -1500, strength: 5 }  # TODO-Effekt: reputation: { workers: +2 }
+      effects: { cash: -1500, strength: 5, reputation: { workers: 2 } }
     - id: abreissen
       label: { de: "Häuser abreißen, Holz nach Okara für die Baracken (+2.000 $)", en: "Tear down houses, timber to Okara for the barracks (+2,000 $)" }
       result:
         de: Die Abrisstrupps fangen am Hügel an, wo Jacobs erste Pension stand. Der Lehrer schickt die Schulglocke nach Okara mit. Sie hängt jetzt an einer Baracke.
         en: The demolition crews start on the hill where Jacob's first boarding house stood. The teacher sends the school bell to Okara. It now hangs on a barracks.
-      effects: { cash: 2000, strength: -10 }  # TODO-Effekt: reputation: { workers: -2 }, legacy: -1
+      effects: { cash: 2000, strength: -10, reputation: { workers: -2, public: -1 } }
     - id: laufen
       label: { de: "Alles laufen lassen, wie es ist", en: "Let everything run as it is" }
       result:
         de: Der Laden macht weiter Verlust, die Schule bekommt kein Geld für Kohle. Im Winter unterrichtet der Lehrer in Mänteln.
         en: The store keeps losing money; the school gets no money for coal. In winter the teacher teaches in coats.
-      effects: { cash: -800 }  # TODO-Effekt: reputation: { workers: -1 }
+      effects: { cash: -800, reputation: { workers: -1 } }
       default: true
 
 - id: k3_flugblaetter
@@ -246,13 +246,13 @@
         de: Die Kasse zahlt im ersten Jahr an elf Familien. Die Flugblätter liegen weiter am Tor, aber weniger Männer heben sie auf.
         en: The fund pays out to eleven families in its first year. The leaflets still lie at the gate, but fewer men pick them up.
       requires: { minCash: 3000 }
-      effects: { cash: -3000 }  # TODO-Effekt: reputation: { workers: +4 }, party: { volksbund: +1 }
+      effects: { cash: -3000, reputation: { workers: 4 }, party: { volksbund: 1 } }
     - id: einsammeln
       label: { de: "Die Flugblätter jeden Morgen einsammeln lassen", en: "Have the leaflets collected every morning" }
       result:
         de: Die Wachleute sammeln, die Drucker drucken. Bald liegen die Blätter in den Spinden, in den Henkelmännern, in den Stiefeln.
         en: The guards collect, the printers print. Soon the sheets lie in the lockers, in the lunch pails, in the boots.
-      effects: { production: -0.05, strength: -5 }  # TODO-Effekt: reputation: { workers: -2 }
+      effects: { production: -0.05, strength: -5, reputation: { workers: -2 } }
       marks: [k3_flugblaetter_eingesammelt]
       default: true
     - id: entlassen
@@ -260,7 +260,7 @@
       result:
         de: Vier Männer verlieren ihre Arbeit. Einer hat sieben Kinder. Am nächsten Morgen steht keiner am Tor, aber zweihundert Männer arbeiten langsamer als sonst.
         en: Four men lose their jobs. One has seven children. Next morning no one is at the gate, but two hundred men work slower than usual.
-      effects: { production: -0.15 }  # TODO-Effekt: reputation: { workers: -5 }, Gewerkschaftssaat
+      effects: { production: -0.15, reputation: { workers: -5 } }
       marks: [k3_raedelsfuehrer_entlassen]
 
 - id: k3_eli_werkstor
@@ -290,14 +290,14 @@
       result:
         de: Jacob steht eine Stunde im Regen vor den Männern. Er verspricht nichts außer einer Antwort in einem Monat. Sie gehen nach Hause. Eli steht die ganze Zeit neben ihm, ohne Gewehr.
         en: Jacob stands an hour in the rain before the men. He promises nothing but an answer within a month. They go home. Eli stands beside him the whole time, unarmed.
-      effects: { strength: -15, production: -0.05 }  # TODO-Effekt: reputation: { workers: +3 }, staffLoyalty: { eli: +10 }
+      effects: { strength: -15, production: -0.05, reputation: { workers: 3 }, staffLoyalty: { fixer: 10 } }
       appointments: 2
     - id: gewehre
       label: { de: "Die Wachleute aufstellen lassen – ohne Eli", en: "Have the guards lined up – without Eli" }
       result:
         de: Es fällt kein Schuss. Aber die Männer haben die Gewehre gesehen. Eli gibt am selben Abend seine Marke ab und geht. Er humpelt zum Hafen, wie vor zwanzig Jahren.
         en: No shot is fired. But the men saw the rifles. Eli hands in his badge that evening and leaves. He limps to the harbour, as he did twenty years ago.
-      effects: { production: 0.05, strength: -10 }  # TODO-Effekt: reputation: { workers: -6 }, fire: eli, heat: +1
+      effects: { production: 0.05, strength: -10, reputation: { workers: -6 }, fire: fixer, heat: 1 }
       default: true
     - id: nachgeben
       label: { de: "Den Achtstundentag für die Werke zugestehen (3.000 $)", en: "Grant the eight-hour day at the works (3,000 $)" }
@@ -305,7 +305,7 @@
         de: Die Männer jubeln, die Buchhalter nicht. Margaret Crane schreibt, Jacob habe einen Präzedenzfall geschaffen. Es klingt nicht wie ein Vorwurf. Eher wie Neid.
         en: The men cheer, the bookkeepers don't. Margaret Crane writes that Jacob has set a precedent. It doesn't sound like a reproach. More like envy.
       requires: { minCash: 3000 }
-      effects: { cash: -3000, production: -0.1 }  # TODO-Effekt: reputation: { workers: +6 }, sharePrice: -3 und dividendPressure: +1 (nur mit Börsengang)
+      effects: { cash: -3000, production: -0.1, reputation: { workers: 6 }, sharePrice: -0.03 }
 
 - id: k3_witwe_okara
   title:
@@ -331,20 +331,20 @@
         de: Die Frau unterschreibt mit ihrem vollen Namen, langsam. Im Saloon in Okara erzählt man es weiter. Die Männer reden anders über den Alten.
         en: The woman signs with her full name, slowly. In the Okara saloon it gets passed on. The men talk differently about the old man.
       requires: { minCash: 2500 }
-      effects: { cash: -2500 }  # TODO-Effekt: reputation: { workers: +3 }
+      effects: { cash: -2500, reputation: { workers: 3 } }
     - id: arbeit
       label: { de: "Ihr Arbeit im Büro geben – Ruth lernt sie an", en: "Give her work in the office – Ruth trains her" }
       result:
         de: Ruth nimmt die Frau unter ihre Fittiche und bringt ihr das Rechnen bei. Nach einem Jahr ist sie schneller als die Männer im Büro. Ruth erzählt es Jacob an jedem zweiten Abend.
         en: Ruth takes the woman under her wing and teaches her figures. After a year she is faster than the men in the office. Ruth tells Jacob so every other evening.
-      effects: { cash: -500, ruth: 10 }  # TODO-Effekt: staff: { buchhaltung: +1 }
+      effects: { cash: -500, ruth: 10, staffLoyalty: { all: 5 } }
       appointments: 2
     - id: verweisen
       label: { de: "An die Personalabteilung verweisen", en: "Refer her to personnel" }
       result:
         de: Die Personalabteilung zahlt noch einmal 50 $. Die Frau geht mit dem Säugling hinaus. Jacob sieht sie vom Fenster aus an der Straßenbahn warten.
         en: Personnel pays another 50 $. The woman walks out with the infant. From the window Jacob sees her waiting for the streetcar.
-      effects: { strength: -15 }  # TODO-Effekt: reputation: { workers: -2 }
+      effects: { strength: -15, reputation: { workers: -2 } }
       appointments: 0
       default: true
 
@@ -372,7 +372,7 @@
       result:
         de: Harlans Kassierer geht an der Schlange vorbei durch den Hintereingang. Die Leute sehen ihn trotzdem. Bis Mittag ist die Schlange doppelt so lang.
         en: Harlan's cashier walks past the queue through the back door. People see him anyway. By noon the queue is twice as long.
-      effects: { cash: -400, strength: -5 }  # TODO-Effekt: rival: { thorne: { relation: -20 } }, mood: -1
+      effects: { cash: -400, strength: -5, rival: { thorne: { trust: -20 } }, mood: -1 }
       marks: [k3_bank_abgezogen]
     - id: einzahlen
       label: { de: "Vor aller Augen einzahlen (3.000 $ festgelegt)", en: "Deposit in full view (3,000 $ locked in)" }
@@ -380,7 +380,7 @@
         de: Jacob geht selbst durch den Haupteingang, mit einer Tasche voller Scheine. Die Schlange wird kürzer. Pettibone schüttelt ihm die Hand, länger als nötig. Thorne schreibt nicht.
         en: Jacob walks in through the main door himself, with a bag full of notes. The queue grows shorter. Pettibone shakes his hand longer than necessary. Thorne doesn't write.
       requires: { minCash: 3000 }
-      effects: { cash: -3000 }  # TODO-Effekt: Einlage gesperrt, rival: { thorne: { trust: +10 } }, mood: +1
+      effects: { cash: -3000, rival: { thorne: { trust: 10 } }, mood: 1 }
       marks: [k3_bank_gestuetzt]
     - id: abwarten
       label: { de: "Abwarten", en: "Wait and see" }

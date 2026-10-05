@@ -54,7 +54,7 @@
           Ada Pell enters three weeks in spring and does not ask where. The reply goes with
           the evening post. By next morning Mr. Vale's thanks have already arrived, as if he had
           known the answer beforehand.
-      effects: { strength: -5 } # TODO-Effekt: consortium: { invited: true }
+      effects: { strength: -5, consortium: { trust: 5 } }
       marks: [vale_karte, vale_k3_zugesagt]
     - id: absagen
       label: { de: "Höflich absagen", en: "Decline politely" }
@@ -65,7 +65,7 @@
         en: >-
           Jacob writes three lines. A week later a dealer in Hallstead lowers his price for
           Harlan oil for no reason. It is probably coincidence.
-      effects: { price: -0.1 } # TODO-Effekt: consortium: { refused: 1 }
+      effects: { price: -0.1, consortium: { trust: -5 } }
       marks: [vale_karte, vale_k3_abgesagt]
 
 # Die Karte – Jacob hat in Kapitel 1 Vales 500 $ behalten (vale_geld).
@@ -110,7 +110,7 @@
           Jacob writes the acceptance himself, by hand. Mr. Vale's thanks arrive with a list:
           the prices at which Crane Eastern will sell in the autumn. This time there is no
           money enclosed. It is worth more than money.
-      effects: { price: 0.1, strength: -5 } # TODO-Effekt: consortium: { invited: true }, favors: { vale: -1 }
+      effects: { price: 0.1, strength: -5, consortium: { trust: -5 } }
       marks: [vale_karte, vale_k3_zugesagt]
     - id: absagen
       label: { de: "Absagen – und die 500 $ mit Zinsen zurückschicken (1.500 $)", en: "Decline – and send back the 500 $ with interest (1,500 $)" }
@@ -124,7 +124,7 @@
           Jacob has paid what he owed. Whether Mr. Vale sees it the same way, he does not
           know.
       requires: { minCash: 1500 }
-      effects: { cash: -1500 } # TODO-Effekt: consortium: { refused: 1 }, favors: { vale: 0 }
+      effects: { cash: -1500, consortium: { trust: -5 } }
       marks: [vale_karte, vale_k3_abgesagt]
 
 # Die Karte – Jacob hat in Kapitel 1 Vales Umschlag zurückgegeben (vale_abgelehnt).
@@ -169,7 +169,7 @@
           The acceptance goes off. Mr. Vale replies not with thanks but with a figure: a fixed
           price for Harlan oil, five years long, if the gentlemen agree. The figure is high.
           It is too high to be honest.
-      effects: { strength: -5 } # TODO-Effekt: consortium: { invited: true, offer: hoch }
+      effects: { strength: -5, consortium: { trust: 10 } }
       marks: [vale_karte, vale_k3_zugesagt]
     - id: absagen
       label: { de: "Wieder absagen", en: "Decline again" }
@@ -182,5 +182,5 @@
           Jacob writes one line, the same as back then at the hotel. A week later a second card
           arrives, the offer doubled, and one sentence: "I expected nothing else." Jacob puts
           it with the first.
-      effects: { strength: -5 } # TODO-Effekt: consortium: { refused: 1, offer: verdoppelt }
+      effects: { strength: -5, consortium: { trust: -10 } }
       marks: [vale_karte, vale_k3_abgesagt]

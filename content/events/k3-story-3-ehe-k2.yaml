@@ -53,7 +53,7 @@
           with another bank. "No conditions," she repeats. "You've never said that before."
           The fourth store opens in the autumn.
       requires: { minCash: 4000 }
-      effects: { cash: -4000, ruth: 20 } # TODO-Effekt: shares: { ruth: gesichert }, rival: { thorne: { trust: -5 } }
+      effects: { cash: -4000, ruth: 20, rival: { thorne: { trust: -5 } } }
       marks: [ruth_gefragt]
     - id: raten
       label: { de: "Ihr sagen, was er von Thornes Bedingungen hält – und es ihr überlassen", en: "Tell her what he thinks of Thorne's terms – and leave it to her" }
@@ -91,7 +91,7 @@
         en: >-
           Ruth waits a moment, then takes the contract back. She signs it that afternoon,
           with Thorne's clause. Jacob hears of it from Pettibone.
-      effects: { ruth: -10 } # TODO-Effekt: shares: { ruth: verpfaendet_thorne }, control: -2
+      effects: { ruth: -10, control: -2 }
       marks: [ruth_riss]
       default: true
 
@@ -145,7 +145,7 @@
           when she was not allowed to. "Now," is all she says. She pockets the key again. The
           box stays open.
       requires: { minCash: 3000 }
-      effects: { cash: -3000, ruth: 25 } # TODO-Effekt: shares: { ruth: +5 }, boardMember: ruth, control: -1
+      effects: { cash: -3000, ruth: 25, boardMember: ruth, control: -1 }
       marks: [ruth_gefragt]
       sharp: true
     - id: zuruecklegen
@@ -213,7 +213,7 @@
           the box with the other papers. "A gift isn't the same, Jacob," she says. "But it isn't
           nothing."
       requires: { minCash: 5000 }
-      effects: { cash: -5000, ruth: 10 } # TODO-Effekt: rival: { bullard: { trust: +5 } }
+      effects: { cash: -5000, ruth: 10, rival: { bullard: { trust: 5 } } }
     - id: weglegen
       label: { de: "Die Zeitung zusammenfalten", en: "Fold up the newspaper" }
       result:

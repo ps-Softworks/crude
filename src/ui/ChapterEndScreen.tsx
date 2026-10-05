@@ -7,11 +7,13 @@
 // 4.5: Weiter in den Zeitsprung bis Kapitel 2.
 // 4.12: Kapitel 2 „Der Herausforderer“ – eigene Prüfung (Raffinerie oder Hafen-Pipeline, Kontrolle,
 // Imperiumswert), Verkauf an Pruett und die frühen Enden (abgesetzt, geschluckt, hinter Gittern),
-// Story-Bögen des Kapitels, Ausblick auf Kapitel 3 (noch im Bau).
+// Story-Bögen des Kapitels; danach weiter in den Zeitsprung II (4.19).
+// 4.19: Kapitel 3 „Der Konzernherr“ – Prüfung (Marke in Regionen oder Marktanteil, Rating), „Was aus ihnen
+// wurde“ (Daniel, Thomas, Ruth, Mr. Vale) und das Ende des Early-Access-Umfangs („Kapitel 4 folgt“).
 
 import { useEffect, useRef } from 'react';
 import { arcSummaries } from '../sim/arcs';
-import { canGoPublic, chapter2Check, chapterBonuses, chapterCheck, chapterResult, fillText, ipoProceeds, type Chapter2EndingId } from '../sim/chapter';
+import { canGoPublic, chapter2Check, chapter3Check, chapterBonuses, chapterCheck, chapterResult, fillText, ipoProceeds, type Chapter2EndingId } from '../sim/chapter';
 import { chapterOf } from '../sim/chapterOf';
 import { debt } from '../sim/credit';
 import { empireValue } from '../sim/empire';
@@ -61,17 +63,20 @@ export function ChapterEndScreen({
   }, [game.ipo === null]);
   const ergebnis = chapterResult(game, balance);
   const verkauft = ergebnis === 'verkauft';
-  // Kapitel 2 (4.12): eigene Ausgänge, eigene Prüfung, keine Aktiengesellschaft und (noch) kein Zeitsprung II.
-  const k2 = chapterOf(game) >= 2;
-  const k2Text = chapterContent.chapter2;
+  // Kapitel 2 (4.12) und 3 (4.19): eigene Ausgänge, eigene Prüfung, keine Aktiengesellschaft.
+  const kapitel = chapterOf(game);
+  const k2 = kapitel >= 2;
+  const k3 = kapitel >= 3;
+  const k2Text = k3 ? chapterContent.chapter3 : chapterContent.chapter2;
   const k2Ende: Chapter2EndingId = ergebnis === null || ergebnis === 'pleite' ? 'verfehlt' : ergebnis;
   const ende = k2 ? k2Text.endings[k2Ende] : chapterContent.endings[ergebnis === 'erreicht' || ergebnis === 'verkauft' ? ergebnis : 'verfehlt'];
-  const k1 = !k2;
   const imBau = k2;
   const pruefung2 = chapter2Check(game, balance);
-  const sprung = timeskipContent.start;
+  const pruefung3 = chapter3Check(game, balance);
+  // Nach Kapitel 1 Zeitsprung I, nach Kapitel 2 Zeitsprung II (4.19); nach Kapitel 3 endet der Early-Access-Umfang.
+  const sprung = kapitel === 2 ? { ...timeskipContent.start2, blockedIpo: timeskipContent.start.blockedIpo } : timeskipContent.start;
   const sprungGesperrt = timeskipBlocked(game, balance);
-  const sprungMoeglich = k1 && !verkauft && game.ending === 'kapitel';
+  const sprungMoeglich = !k3 && !verkauft && game.ending === 'kapitel';
   const quellen = game.wells.filter((w) => w.status === 'found');
   const pruefung = chapterCheck(game, balance);
   const boni = chapterBonuses(game, chapterContent, arcContent);
@@ -92,19 +97,34 @@ export function ChapterEndScreen({
         </div>
         <div className="bogen-spalten">
           <div>
-            {k2 && game.ending === 'kapitel' && (
+            {k3 && game.ending === 'kapitel' && (
               <>
                 <h3>Kapitelprüfung</h3>
                 <ul className="pruefung">
                   <li>
-                    <Haken ok={pruefung2.transport} /> {fillText(k2Text.goals.transport, {})}
+                    <Haken ok={pruefung3.brand} />{' '}
+                    {fillText(chapterContent.chapter3.goals.brand, { regionen: String(balance.brand.goal.regions), anteil: prozent(balance.brand.goal.share) })} ({pruefung3.regions} Regionen ·{' '}
+                    {prozent(pruefung3.share)})
+                  </li>
+                  <li>
+                    <Haken ok={pruefung3.ratingReached} /> {fillText(chapterContent.chapter3.goals.rating, { rating: balance.chapter.chapter3.minRating })} ({pruefung3.rating})
+                  </li>
+                </ul>
+              </>
+            )}
+            {k2 && !k3 && game.ending === 'kapitel' && (
+              <>
+                <h3>Kapitelprüfung</h3>
+                <ul className="pruefung">
+                  <li>
+                    <Haken ok={pruefung2.transport} /> {fillText(chapterContent.chapter2.goals.transport, {})}
                     {pruefung2.refinery ? ' (Raffinerie)' : pruefung2.harbor ? ' (Fernleitung zum Hafen)' : ''}
                   </li>
                   <li>
-                    <Haken ok={pruefung2.controlReached} /> {fillText(k2Text.goals.control, { ziel: prozent(balance.chapter.chapter2.goalControl) })} ({prozent(pruefung2.control)})
+                    <Haken ok={pruefung2.controlReached} /> {fillText(chapterContent.chapter2.goals.control, { ziel: prozent(balance.chapter.chapter2.goalControl) })} ({prozent(pruefung2.control)})
                   </li>
                   <li>
-                    <Haken ok={pruefung2.valueReached} /> {fillText(k2Text.goals.value, { ziel: money(balance.chapter.chapter2.goalValue) })} ({money(pruefung2.value)})
+                    <Haken ok={pruefung2.valueReached} /> {fillText(chapterContent.chapter2.goals.value, { ziel: money(balance.chapter.chapter2.goalValue) })} ({money(pruefung2.value)})
                   </li>
                 </ul>
               </>
@@ -153,6 +173,14 @@ export function ChapterEndScreen({
                   <dd>{prozent(pruefung2.control)}</dd>
                 </>
               )}
+              {k3 && (
+                <>
+                  <dt>Tankstellen</dt>
+                  <dd>{Object.values(game.brand?.regions ?? {}).reduce((n, r) => n + r.stations, 0)}</dd>
+                  <dt>Marktanteil</dt>
+                  <dd>{prozent(pruefung3.share)}</dd>
+                </>
+              )}
             </dl>
             {k2 && <ReputationLine game={game} />}
           </div>
@@ -181,7 +209,7 @@ export function ChapterEndScreen({
                 )}
               </div>
             )}
-            {k2 && (
+            {k2 && (k3 || !sprungMoeglich) && (
               <div className="ipo sprung-angebot">
                 <h3>{fillText(k2Text.next.title, {})}</h3>
                 <p>{fillText(k2Text.next.text, {})}</p>

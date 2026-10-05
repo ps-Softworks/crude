@@ -5,8 +5,8 @@
 # Krisen Pleitefirmen auf), Story-Bibel §3 (Bullard K3 „bietet an“ statt zu bitten; Söhne Wade
 # und Cole; Pruett: „Ich habe nichts gegen Sie, Mr. Harlan. Ich habe etwas gegen Schwankungen.“).
 #
-# Nur Kapitel 3 (minChapter/maxChapter 3). Rivalen-Beziehungen und Anteile gibt es als
-# Wirkung noch nicht (System 4.10 Diplomatie, 4.8 Aktien) – Ersatz siehe „# TODO-Effekt“.
+# Nur Kapitel 3 (minChapter/maxChapter 3). Seit 4.19 wirken Vertrauen, Groll und Stärke der
+# Rivalen (rival) und Thornes Aktien (rivalStake) als Systemwirkungen.
 #
 # Merkzeichen aus Kapitel 1: bullard_fehde (Schrägbohrung in Okara).
 # Merkzeichen aus Paket 1: k3_margaret_absprache → k3_absprache_beamter.
@@ -42,14 +42,14 @@
         de: Pettibone zählt das Geld mit sichtbarem Vergnügen. Jacob schließt die Wechsel in den Safe. Er weiß noch nicht, was er damit tun will. Bullard weiß es schon am nächsten Tag.
         en: Pettibone counts the money with visible pleasure. Jacob locks the notes in the safe. He doesn't yet know what he'll do with them. Bullard knows by the next day.
       requires: { minCash: 5000 }
-      effects: { cash: -5000 }  # TODO-Effekt: rivalStake: { bullard: +15 }, rival: { bullard: { trust: -20 } }
+      effects: { cash: -5000, rival: { bullard: { strength: 1, trust: -20 } } }
       marks: [k3_bullard_wechsel_gekauft]
     - id: warnen
       label: { de: "Bullard warnen, dass seine Wechsel auf dem Markt sind", en: "Warn Bullard that his notes are on the market" }
       result:
         de: Jacob schickt einen Boten nach Okara mit einer einzigen Zeile. Pettibone erfährt es und schreibt Jacobs Namen in ein anderes Buch.
         en: Jacob sends a messenger to Okara with a single line. Pettibone finds out and writes Jacob's name in a different book.
-      effects: { railTariff: 0.03 }  # TODO-Effekt: rival: { bullard: { trust: +15 }, thorne: { relation: -10 } }
+      effects: { railTariff: 0.03, rival: { bullard: { trust: 15 }, thorne: { trust: -10 } } }
       marks: [k3_bullard_gewarnt]
     - id: nein
       label: { de: "„Ich kaufe keine Männer.“", en: "\"I don't buy men.\"" }
@@ -85,19 +85,19 @@
       result:
         de: Bullard schickt keinen Dank, aber die Söhne verschwinden vom Bohrplatz. Im Saloon in Okara erzählt man, Harlan sei weich geworden. Oder klug.
         en: Bullard sends no thanks, but the sons disappear from the drilling site. In the Okara saloon they say Harlan has gone soft. Or clever.
-      effects: { cash: -2500 }  # TODO-Effekt: rivalStake: { bullard: -8 }, rival: { bullard: { trust: +10 } }
+      effects: { cash: -2500, rival: { bullard: { strength: -1, trust: 10 } } }
     - id: eintreiben
       label: { de: "Die Wechsel eintreiben – Bullards Quellen als Pfand", en: "Collect on the notes – Bullard's wells as security" }
       result:
         de: Die Anwälte pfänden zwei Quellen in Okara. Bullard steht am Zaun, als die Harlan-Männer die Schilder wechseln. Wade steht neben ihm und merkt sich jedes Gesicht.
         en: The lawyers seize two wells at Okara. Bullard stands at the fence as the Harlan men change the signs. Wade stands beside him, memorising every face.
-      effects: { production: 0.2, strength: -10 }  # TODO-Effekt: rival: { bullard: { relation: -30, aggression: +20 } }, Söhne erben den Groll
+      effects: { production: 0.2, strength: -10, rival: { bullard: { trust: -30, grudge: 20 } } }
     - id: nichts
       label: { de: "Nichts tun – die Söhne bleiben", en: "Do nothing – the sons stay" }
       result:
         de: Wade und Cole stehen drei Wochen lang am Bohrplatz. Es fehlen noch zwei Seile und eine Rohrzange. Dann kommen sie nicht mehr. Im Saloon in Okara erzählt man, Harlan lasse sich anstarren.
         en: Wade and Cole stand at the drilling site for three weeks. Two more cables go missing, and a pipe wrench. Then they stop coming. In the Okara saloon they say Harlan lets himself be stared at.
-      effects: { cash: -300, strength: -5 }  # TODO-Effekt: rival: { bullard: { relation: -5 } }, Schulden bleiben offen
+      effects: { cash: -300, strength: -5, rival: { bullard: { trust: -5 } } }
       appointments: 0
       default: true
 
@@ -128,14 +128,14 @@
       result:
         de: Bullards Trupps und Harlans Turm arbeiten zum ersten Mal auf demselben Platz. Nach drei Wochen raufen sie, nach sechs trinken sie zusammen.
         en: Bullard's crews and Harlan's rig work the same site for the first time. After three weeks they brawl, after six they drink together.
-      effects: { production: 0.15, cash: -1500 }  # TODO-Effekt: rival: { bullard: { trust: +15 } }, Kartellsaat
+      effects: { production: 0.15, cash: -1500, rival: { bullard: { trust: 15 } } }
     - id: kaufen
       label: { de: "Bullard das Feld zu einem fairen Preis abkaufen (4.000 $)", en: "Buy the field from Bullard at a fair price (4,000 $)" }
       result:
         de: Bullard nimmt das Geld und zahlt am selben Tag seine Bank. Er sagt, das sei das erste Mal seit Jahren, dass er Thornes Leuten ins Gesicht lachen konnte.
         en: Bullard takes the money and pays his bank that same day. He says it's the first time in years he could laugh in the face of Thorne's people.
       requires: { minCash: 4000 }
-      effects: { cash: -4000, production: 0.2 }  # TODO-Effekt: rival: { bullard: { relation: +10 } }
+      effects: { cash: -4000, production: 0.2, rival: { bullard: { trust: 10 } } }
     - id: whiskey
       label: { de: "Nur den Whiskey nehmen", en: "Take only the whiskey" }
       result:
@@ -171,14 +171,14 @@
         de: Die Messung zeigt, dass Bullards Loch elf Grad abweicht. Der Bezirksrichter verurteilt ihn. Bullard zahlt mit einem Wechsel, der wenig wert ist.
         en: The survey shows Bullard's hole deviates eleven degrees. The district judge rules against him. Bullard pays with a note worth little.
       requires: { minCash: 2500 }
-      effects: { cash: -2500, production: 0.1 }  # TODO-Effekt: rival: { bullard: { relation: -10 } }
+      effects: { cash: -2500, production: 0.1, rival: { bullard: { trust: -10 } } }
       appointments: 2
     - id: selbst
       label: { de: "Selbst schräg zurückbohren", en: "Drill crooked back at him" }
       result:
         de: Jetzt laufen zwei Löcher schräg, gegeneinander. Beide verlieren Druck. Die Arbeiter beider Seiten nennen den Platz „die Gabel“.
         en: Now two holes run crooked, against each other. Both lose pressure. The workers on both sides call the site "the fork".
-      effects: { production: -0.1, cash: 1000 }  # TODO-Effekt: heat: +1, rival: { bullard: { aggression: +10 } }
+      effects: { production: -0.1, cash: 1000, heat: 1, rival: { bullard: { grudge: 10 } } }
     - id: hinnehmen
       label: { de: "Hinnehmen – Okara ist groß", en: "Let it be – Okara is big" }
       result:
@@ -215,7 +215,7 @@
       result:
         de: Das Geld ist am nächsten Tag auf dem Konto. Die Option steht auf Seite elf des Vertrags, in einer Schrift, für die Ruth die Lupe braucht.
         en: The money is in the account the next day. The option is on page eleven of the contract, in a type for which Ruth needs the magnifying glass.
-      effects: { cash: 8000 }  # TODO-Effekt: credit: +8000, rivalStake: { thorne: Option 5 % }
+      effects: { loan: 8000, rival: { thorne: { trust: 5 } }, rivalStake: { thorne: 2 } }
       marks: [k3_thorne_kredit]
       appointments: 0
     - id: ablehnen
@@ -223,7 +223,7 @@
       result:
         de: Thorne antwortet nicht. Die nächste Frachtrechnung der Bahn ist um einen Cent höher. Thorne vergisst nicht, er bucht.
         en: Thorne doesn't reply. The railway's next freight bill is a cent higher. Thorne doesn't forget; he books.
-      effects: { railTariff: 0.03 }  # TODO-Effekt: rival: { thorne: { relation: -5 } }
+      effects: { railTariff: 0.03, rival: { thorne: { trust: -5 } } }
       appointments: 0
       default: true
 
@@ -259,7 +259,7 @@
         de: Pettibone nimmt den Scheck und lächelt nicht. Er hatte auf etwas anderes gehofft.
         en: Pettibone takes the cheque and doesn't smile. He had hoped for something else.
       requires: { minCash: 9000 }
-      effects: { cash: -9000 }  # TODO-Effekt: credit: -8000
+      effects: { cash: -9000, rival: { thorne: { grudge: 5 } } }
     - id: oel
       label: { de: "Mit Öl und Bargeld zahlen (4.000 $ und 4.000 Barrel)", en: "Pay in oil and cash (4,000 $ and 4,000 barrels)" }
       result:
@@ -273,7 +273,7 @@
       result:
         de: Am nächsten Morgen steht Thornes Bank im Aktienbuch, mit einem Anteil, der für einen Sitz im Aufsichtsrat reicht. Pettibone wird ihn einnehmen.
         en: Next morning Thorne's bank is in the share register, with a stake large enough for a board seat. Pettibone will take it.
-      effects: { cash: -2000, strength: -15 }  # TODO-Effekt: shares: { thorne: +5 }, control: -5, boardMember: pettibone
+      effects: { cash: -2000, strength: -15, rivalStake: { thorne: 5 }, control: -5, boardMember: thorne }
       appointments: 0
       default: true
 
@@ -305,7 +305,7 @@
       result:
         de: Pruett unterschreibt mit einem Füller, den er nach jeder Zeile zuschraubt. Dann geht er, ohne etwas zu trinken. Der Preis im Vertrag ist niedrig. Er ist für schlechte Zeiten gemacht.
         en: Pruett signs with a pen he caps after every line. Then he leaves without a drink. The price in the contract is low. It is made for bad times.
-      effects: { cash: 5000 }  # TODO-Effekt: rivalStake: { pruett: Vorkaufsrecht }, crash: Übernahme möglich
+      effects: { cash: 5000, rival: { pruett: { trust: 10 } } }
       marks: [k3_pruett_option]
     - id: ablehnen
       label: { de: "„Harlan verkauft nicht.“", en: "\"Harlan doesn't sell.\"" }
@@ -340,20 +340,20 @@
       result:
         de: Der Beamte schreibt drei Tage lang ab. Am Montag darauf kostet Harlan einen Cent weniger als Crane. Margaret schickt wieder eine Karte ohne Text.
         en: The official copies for three days. The Monday after, Harlan costs a cent less than Crane. Margaret again sends a card with no text.
-      effects: { price: -0.3, strength: -5 }  # TODO-Effekt: heat: -1, rival: { margaret: { relation: -10 } }
+      effects: { price: -0.3, strength: -5, heat: -1, rival: { margaret: { trust: -10 } } }
       appointments: 2
     - id: vernichten
       label: { de: "Die Listen verschwinden lassen", en: "Make the lists disappear" }
       result:
         de: Im Archiv brennt nachts ein Papierkorb. Der Beamte kommt mit einer Vorladung wieder, diesmal mit einem älteren Kollegen.
         en: At night a wastepaper basket burns in the archive. The official returns with a summons, this time with an older colleague.
-      effects: { cash: -1500, strength: -10 }  # TODO-Effekt: heat: +3, trace: { severity: 3, label: "Verbrannte Preislisten" }, investigation: +1
+      effects: { cash: -1500, strength: -10, heat: 3, trace: { severity: 3, label: "Verbrannte Preislisten" }, evidence: 1 }
       marks: [k3_preislisten_vernichtet]
     - id: hinhalten
       label: { de: "Die Anwälte hinhalten lassen", en: "Have the lawyers stall him" }
       result:
         de: Die Anwälte schreiben Briefe, der Beamte schreibt zurück. An den Kreuzungen bleibt der Preis auf den Cent gleich. Im Ministerium wird eine Akte dicker, ganz langsam.
         en: The lawyers write letters, the official writes back. At the crossroads the price stays the same to the cent. In the ministry a file grows thicker, very slowly.
-      effects: { cash: -400 }  # TODO-Effekt: heat: +1, Absprache läuft weiter
+      effects: { cash: -400, heat: 1 }
       appointments: 0
       default: true

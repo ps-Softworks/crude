@@ -16,18 +16,40 @@ import { chapterOf } from './chapterOf';
  * Merkzeichen, die die Simulation setzt und die ein Bogen lesen darf: Ausgang der Crane-Nachfolge
  * (DIPLO_MARKS in diplomacyCore.ts, 4.10 – wörtlich, damit arcs.ts beim Laden nichts Fremdes liest; ein Test vergleicht).
  */
-export const ARC_SIM_MARKS: readonly string[] = ['k2_nachfolge_margaret', 'k2_nachfolge_pruett', 'k2_trust_zerschlagen'];
+export const ARC_SIM_MARKS: readonly string[] = [
+  'k2_nachfolge_margaret',
+  'k2_nachfolge_pruett',
+  'k2_trust_zerschlagen',
+  // Mr. Vale und das Konsortium (4.17): Jacobs Weg, gesetzt am Rundenende (KONSORTIUM_MARKS in kapitel3Runde.ts, 4.19).
+  'k3_konsortium_mitglied',
+  'k3_konsortium_abgelehnt',
+  'k3_konsortium_doppelspiel',
+  'k3_konsortium_verstossen',
+];
 
 /**
  * Die Story-Bögen je Kapitel. Kapitel 1: Silas und Moss. Kapitel 2 (4.12): Noras erster Artikel,
  * Silas gegen den Aufsichtsrat, Ruths Wunsch mitzuarbeiten (content/events/k2-story-*.yaml) und die
- * Crane-Nachfolge (Merkzeichen der Diplomatie, 4.10).
+ * Crane-Nachfolge (Merkzeichen der Diplomatie, 4.10). Kapitel 3 (4.19): Daniel Moss, Thomas, der
+ * Wendepunkt der Ehe (content/events/k3-story-*.yaml) und Mr. Vale (Konsortium, 4.17).
  */
-export const ARC_IDS = ['silas', 'moss', 'nora_k2', 'silas_k2', 'ruth_k2', 'crane_k2'] as const;
+export const ARC_IDS = ['silas', 'moss', 'nora_k2', 'silas_k2', 'ruth_k2', 'crane_k2', 'daniel_k3', 'thomas_k3', 'ruth_k3', 'vale_k3'] as const;
 export type ArcId = (typeof ARC_IDS)[number];
 
 /** In welchem Kapitel ein Bogen spielt – der Kapitelabschluss zeigt nur die Bögen seines Kapitels. */
-export const ARC_CHAPTER: Record<ArcId, number> = { silas: 1, moss: 1, nora_k2: 2, silas_k2: 2, ruth_k2: 2, crane_k2: 2 };
+export const ARC_CHAPTER: Record<ArcId, number> = {
+  silas: 1,
+  moss: 1,
+  nora_k2: 2,
+  silas_k2: 2,
+  ruth_k2: 2,
+  crane_k2: 2,
+  // Kapitel 3 (4.19): Daniel Moss, Thomas im Unternehmen, Wendepunkt der Ehe, Mr. Vale und das Konsortium.
+  daniel_k3: 3,
+  thomas_k3: 3,
+  ruth_k3: 3,
+  vale_k3: 3,
+};
 
 /** Die Bögen eines Kapitels. */
 export function arcsOfChapter(chapter: number): ArcId[] {

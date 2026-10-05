@@ -78,7 +78,7 @@ const errors = [...aktien.errors, ...diplomatie.errors, ...wirkung.errors, ...wi
   const balance = loadBalance();
   const gaeste = Object.keys(balance.eventSystems.boardGuests);
   const raete = [...(aktien.content?.board.map((b) => b.id) ?? []), ...gaeste];
-  if (parsed.errors.length === 0) errors.push(...checkSystemEffects('content/events', events, { boardIds: raete, laws: gesetze.laws, techs: balance.research.techs.map((t) => t.id) }));
+  if (parsed.errors.length === 0) errors.push(...checkSystemEffects('content/events', events, { boardIds: raete, laws: gesetze.laws, techs: balance.research.techs.map((t) => t.id), brandRegions: balance.brand.regions.map((r) => r.id), stocks: balance.exchange.stocks.map((x) => x.id), leverages: balance.exchange.margin.leverages }));
   for (const g of gaeste) if (aktien.content && !aktien.content.guests.some((x) => x.id === g)) errors.push({ file: 'content/stocks.yaml', line: 1, message: `guests: Der Gast „${g}“ aus balance.yaml (eventSystems.boardGuests) hat keinen Namen.` });
 }
 

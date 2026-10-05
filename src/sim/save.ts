@@ -26,18 +26,20 @@ import { validExchange } from './exchange';
 // 4.16 Andockpunkt
 import { validHallstead } from './hallsteadState';
 import { isKapitel3State } from './kapitel3'; // 4.17 Andockpunkt
+import { validRivalsK3 } from './rivalsK3'; // 4.19 Andockpunkt
 
-/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2), 11 = mit befristeten Nachwirkungen der Ereignisse (0.2.15+3), 12 = Karte mit Gebieten und Ranches statt Raster, mehrere Bohrlöcher je Ranch (0.2.15+5), 13 = Bohrtürme und Pumpen (0.2.15+7), 14 = mit Weltmodell (4.1), 15 = mit öffentlichem Handeln und Wahlergebnis im Weltmodell (4.2), 16 = mit Gesetzgebung im Weltmodell (4.3), 17 = mit Kreditzyklus (Verschuldung, Bankpanik) und Ausland (Costa Negra, Qasir) im Weltmodell (4.4), 18 = mit Kapitel, Zeitsprung und Chronik (4.5; Beteiligungen `ventures` sind freiwillig – fehlen sie, gibt es keine), 19 = mit den Systemen der Kapitel 2 und 3 (4.6–4.17: refinery, bigPipelines, stocks, staff, diplomacy, investigation, research, brand, exchange, hallstead, kapitel3 – alle freiwillig, fehlen sie, ist das System noch nicht offen), 20 = Kapitel 2 spielbar (4.12): frühe Enden abgesetzt/geschluckt/haft, Ruf (reputation) und Folgen der Ereignisse (consequences) – beide freiwillig, fehlen sie, ist noch nichts geschehen; Spuren aus Ereignissen mit Beschriftung. */
-export const SAVE_FORMAT = 20;
+/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2), 11 = mit befristeten Nachwirkungen der Ereignisse (0.2.15+3), 12 = Karte mit Gebieten und Ranches statt Raster, mehrere Bohrlöcher je Ranch (0.2.15+5), 13 = Bohrtürme und Pumpen (0.2.15+7), 14 = mit Weltmodell (4.1), 15 = mit öffentlichem Handeln und Wahlergebnis im Weltmodell (4.2), 16 = mit Gesetzgebung im Weltmodell (4.3), 17 = mit Kreditzyklus (Verschuldung, Bankpanik) und Ausland (Costa Negra, Qasir) im Weltmodell (4.4), 18 = mit Kapitel, Zeitsprung und Chronik (4.5; Beteiligungen `ventures` sind freiwillig – fehlen sie, gibt es keine), 19 = mit den Systemen der Kapitel 2 und 3 (4.6–4.17: refinery, bigPipelines, stocks, staff, diplomacy, investigation, research, brand, exchange, hallstead, kapitel3 – alle freiwillig, fehlen sie, ist das System noch nicht offen), 20 = Kapitel 2 spielbar (4.12): frühe Enden abgesetzt/geschluckt/haft, Ruf (reputation) und Folgen der Ereignisse (consequences) – beide freiwillig, fehlen sie, ist noch nichts geschehen; Spuren aus Ereignissen mit Beschriftung, 21 = Zeitsprung II und Kapitel 3 spielbar (4.19): Rivalen in Kapitel 3 (rivalsK3, freiwillig – fehlt er, hat Kapitel 3 noch nicht begonnen), Chronik mit Zeitsprung-Nummer 2. */
+export const SAVE_FORMAT = 21;
 
 /**
  * Ältere Formate, die mit Ersatzwerten noch geladen werden. Vor Format 12 keins
  * mehr: Die Rasterparzellen der alten Stände passen nicht auf die neue Karte.
  * Format 12 bekommt Silas' Turm (0.2.15+7), Format 12 und 13 eine ruhige Durchschnittswelt (4.1), Format 14 leere Listen für öffentliches Handeln und keine gemerkte Wahl (4.2),
  * bis Format 17 Kapitel 1 ohne Zeitsprung (4.5). Format 19 lädt unverändert: Ruf und Folgen fehlen dort noch (= nichts geschehen).
+ * Format 20 lädt unverändert: Die Rivalen in Kapitel 3 fehlen dort (Kapitel 3 war noch nicht spielbar).
  * Die Umrisse der Ranches stehen nie im Spielstand – sie kommen aus dem Seed.
  */
-const ALTE_FORMATE: number[] = [12, 13, 14, 15, 16, 17, 18, 19];
+const ALTE_FORMATE: number[] = [12, 13, 14, 15, 16, 17, 18, 19, 20];
 
 export interface SaveFile {
   format: number;
@@ -234,6 +236,7 @@ export function validateState(value: unknown): LoadResult {
   if (!validExchange(value.exchange)) return { ok: false, reason: UNVOLLSTAENDIG };
   // 4.17 Andockpunkt: Kapitel 3 ist freiwillig – fehlt in älteren Ständen und in Kapitel 1.
   if (value.kapitel3 !== undefined && !isKapitel3State(value.kapitel3)) return { ok: false, reason: UNVOLLSTAENDIG };
+  if (!validRivalsK3(value.rivalsK3)) return { ok: false, reason: UNVOLLSTAENDIG };
   const round = value.round as number;
   const totalRounds = value.totalRounds as number;
   return round >= 1 && round <= totalRounds ? { ok: true, state: value as unknown as GameState } : { ok: false, reason: UNVOLLSTAENDIG };

@@ -329,6 +329,10 @@ chapter:
     goalValue: 1000000         # GDD §13: Imperiumswert ≥ 1 Mio. $ …
     goalControl: 0.5           # … Kontrolle ≥ 50 % (Familienfirma: immer) und eigene Raffinerie oder Fernleitung zum Hafen
     swallowedControl: 0.5      # Ende „Geschluckt“: Thorne hält mehr Aktien als Jacob und Jacobs Kontrolle liegt darunter
+  # Kapitel 3 „Der Konzernherr“ (4.19, GDD §13): Marke in ≥ brand.goal.regions Regionen oder ≥ brand.goal.share
+  # Marktanteil (Zahlen unter brand.goal) und am Kapitelende mindestens dieses Rating. Texte: content/chapter.yaml → chapter3.
+  chapter3:
+    minRating: C
 
 # Systemwirkungen der Ereignisse (4.12): Antworten ab Kapitel 2 greifen in Ruf, Rivalen,
 # Schattenbuch, Aufsichtsrat, Personal, Raffinerie, Leitungen, Gesetze und Familie ein
@@ -341,10 +345,14 @@ eventSystems:
   sharePrice: 1               # sharePrice ±0,05 wirkt × dies auf die Stimmung der Börse (zieht von selbst zur 1 zurück)
   dividendPressure: 5         # dividendPressure +1 = Treue −5 bei allen Räten, die Dividende wollen
   heirMax: 10                 # Werte der Erben bleiben zwischen −10 und 10
+  ansehenStep: 3              # ansehen ±1 = so viele Punkte Ansehen in Hallstead (Kapitel 3, 0–100)
+  partyStep: 0.01             # party ±1 = ein Prozentpunkt mehr (weniger) für die Partei
   # Gäste, die ein Ereignis in den Aufsichtsrat holen kann (boardMember); Namen in content/stocks.yaml → guests.
   boardGuests:
     silas: { agenda: growth, loyalty: 65 }        # Silas will Bohrtrupps und Quellen
     vandermeer: { agenda: dividend, loyalty: 45 }  # Ambrose Vandermeer, Bankhaus Vandermeer & Co. (Hallstead)
+    hale: { agenda: dividend, loyalty: 55 }        # Martha Hale, Witwe (Kapitel 3: Aktien statt Pacht)
+    ruth: { agenda: safety, loyalty: 70 }          # Ruth Harlan (Kapitel 3: Sitz im Rat)
   boardStartGuests: [vandermeer]  # sitzen ab Kapitelbeginn im Rat, wenn Harlan Oil eine AG ist (Anleger aus Hallstead, Bibel §5)
   # Was der Ruf (−100…100, GDD §4) bewirkt – je Punkt:
   reputation:
@@ -383,6 +391,16 @@ eventSystems:
     loan: 0.05
     appointmentsNext: 300
     heirValues: 250
+    brand: 150                # je Punkt Bekanntheit
+    stations: 2500            # je Tankstelle
+    ansehen: 300
+    favors: 1500
+    consortium: 40
+    stock: 1                  # je $ Aktien (mal Hebel)
+    leverage: 300
+    fever: 100
+    party: 150
+    seismik: 3000
 
 # Zeitsprünge (4.5, GDD §2/§13): Zwischen den Kapiteln rechnet die Welt die Jahre weiter –
 # mit vereinfachten Regeln (src/sim/timeskip.ts), Texte in content/timeskip.yaml. Vor dem Sprung
@@ -439,6 +457,26 @@ timeskip:
   rival:                      # Bullard während des Sprungs
     drillChance: 0.5          # bohrt je Jahr mit dieser Chance, wenn er die Bohrung bezahlen kann
     drillCost: 2500           # $ je Bohrung (dazu der Pachtbonus)
+  # Zeitsprung II (Jahr 15–20, 4.19, GDD §13): dieselben Regeln je Quartal wie Zeitsprung I, dazu
+  # die Kapitel-2-Firma (Raffinerie, Fernleitung, Anleihen) und die Weichen nach GDD §13. Alle Werte PLATZHALTER.
+  second:
+    refineryMargin: 0.12      # $ je verkauftem Barrel mehr je Raffinerie-Stufe (Produkte statt Rohöl)
+    harborFreight: 0.03       # $ je Barrel Fracht, wenn eine eigene Fernleitung zum Hafen läuft
+    warFromYear: 16           # Kriegsgefahr in Übersee: frühestens in diesem Spieljahr …
+    warTension: 35            # … sobald die Außenspannung im Weltmodell so hoch ist (oder Krieg herrscht)
+    warPremium: 0.25          # Export trotz Risiko: Erlös je Barrel × (1 + so viel), solange der Sprung läuft
+    warLossChance: 0.25       # Chance je Jahr, dass ein Tanker nicht zurückkommt …
+    warLossCost: 15000        # … und so viel $ kostet
+    navyYear: 17              # die Marine sucht Heizöl zum Festpreis (sicher in diesem Spieljahr)
+    navyIncome: 6000          # $ je Quartal aus dem Marinevertrag (ab dem Quartal danach, bis zum Ende des Sprungs)
+    gradyYear: 18             # Senator Grady bietet Reserveland an …
+    gradyChance: 0.7          # … mit dieser Chance (sicher, wenn Grady Jacob einen Gefallen schuldet: k2_grady_spende)
+    gradyCost: 12000          # Einlage für die Beteiligung an den Pachten
+    gradyIncome: 2500         # $ je Quartal ab dem Jahr danach
+    gradyTrace: 3             # Schwere der Spur „Reserveland“ im Schattenbuch (Skandal-Saat)
+    collegeYear: 18           # Thomas geht aufs College (Weiche im Jahr, in dem er 17 wird, spätestens jetzt)
+    collegeCost: 6000         # Studiengeld für vier Jahre
+    collegeBond: 8            # College: Thomas +8; gleich in die Firma: Thomas −8
 
 # Bot-Läufe (GDD §17, Schritt 1.14/2.15): Partien ohne Grafik mit vier Strategien.
 # Was die Bots damit machen, steht in src/sim/bots.ts. Alle Werte PLATZHALTER.
@@ -1729,3 +1767,24 @@ kapitel3:
     member: 5                # Beitritt zum Konsortium: man gehört zu den Großen
     exposed: -20             # Doppelspiel aufgeflogen
     rateDiscount: [0, 0, 0.005, 0.01]  # Zinsrabatt der alten Banken je Rang (Emporkömmling … aufgenommen)
+
+# Rivalen in Kapitel 3 (4.19, GDD §13: „Margaret Crane führt den Kampf um die Marke. Thorne bläht
+# Aktien auf. Bullard verschuldet sich.“). Regeln in src/sim/rivalsK3.ts. Alle Werte PLATZHALTER.
+rivalsK3:
+  margaret:
+    startAwareness: 5         # Kapitelbeginn: Crane Eastern ist in jeder Region so viel bekannter
+    push: 2                   # je Runde Bekanntheit für Crane Eastern in jeder Region, in der Harlan Tankstellen hat
+    buildEvery: 4             # alle so viele Runden baut Margaret eine Tankstelle in Harlans stärkster Region
+  thorne:
+    stakePerRound: 0.5        # Prozentpunkte der Harlan-Aktien, die Thorne je Runde über Strohmänner kauft (nur Aktiengesellschaft) …
+    grudgeFrom: 30            # … ab diesem Groll doppelt so viele
+    stock: thorne_bahn        # die Aktie, die Thorne aufbläht (exchange.stocks)
+    bubble: 0.04              # ihr Kurs steigt je Runde um so viel (außer im Crash) …
+    crashDrop: 0.5            # … und fällt beim nächsten Börsencrash auf so viel
+  bullard:
+    startDebt: 20000          # Schulden zu Beginn von Kapitel 3 ($)
+    borrowBelow: 10000        # leiht, sobald seine Kasse darunter liegt …
+    borrow: 8000              # … so viel je Runde
+    rate: 0.03                # Zins je Runde
+    distressAt: 60000         # ab so viel Schulden ist er am Ende (Merkzeichen k3_bullard_verschuldet) …
+    distressTrust: 10         # … und kommt mit Angeboten: Vertrauen + so viel

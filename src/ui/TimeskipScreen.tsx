@@ -166,6 +166,8 @@ export function ChronicleScreen({ game, record, onContinue }: { game: GameState;
     </>
   );
   const wort = (x: number) => fillTimeskipText(familyContent.words[bondWord(x, balance)], {});
+  // Nach Zeitsprung I beginnt Kapitel 2, nach Zeitsprung II Kapitel 3 (4.19).
+  const kapitel = record.number >= 2 ? T.chapter3 : T.chapter2;
   return (
     <section ref={ref} className="gameover bogen sprung chronik" aria-labelledby="chronik-titel">
       <div className="bogen-inhalt">
@@ -203,8 +205,8 @@ export function ChronicleScreen({ game, record, onContinue }: { game: GameState;
           {zeile('Ruth', wort(v.ruth), wort(n.ruth))}
           {zeile('Kinder', String(v.children), String(n.children))}
         </dl>
-        {/* 4.12: Ausgangslage und Ziel von Kapitel 2 – der Spieler weiß vor der ersten Runde, worum es geht. */}
-        {game.ending !== 'pleite' && <p className="bogen-text sprung-ziel">{fillTimeskipText(T.chapter2.text, {})}</p>}
+        {/* 4.12/4.19: Ausgangslage und Ziel des nächsten Kapitels – der Spieler weiß vor der ersten Runde, worum es geht. */}
+        {game.ending !== 'pleite' && <p className="bogen-text sprung-ziel">{fillTimeskipText(kapitel.text, {})}</p>}
       </div>
       <div className="bogen-fuss">
         {game.ending === 'pleite' ? (
@@ -213,7 +215,7 @@ export function ChronicleScreen({ game, record, onContinue }: { game: GameState;
           </button>
         ) : (
           <>
-            <span className="stempel-klein">{fillTimeskipText(T.chapter2.badge, {})}</span>
+            <span className="stempel-klein">{fillTimeskipText(kapitel.badge, {})}</span>
             <button type="button" className="primary" onClick={onContinue}>
               {fillTimeskipText(c.continue, { jahr: formatDate(game).split(' ').pop() ?? '' })}
             </button>

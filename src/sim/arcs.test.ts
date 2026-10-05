@@ -3,6 +3,7 @@
 // Entscheidung mindestens zwei verschiedene Ausgänge, über ganze Partien gespielt.
 
 import { readFileSync } from 'node:fs';
+import { KONSORTIUM_MARKS } from './kapitel3Runde';
 import { describe, expect, it } from 'vitest';
 import { ARC_IDS, ARC_SIM_MARKS, arcOutcome, arcsOfChapter, arcSummaries, checkArcMarks, parseArcContent, type ArcContent, type ArcId } from './arcs';
 import { DIPLO_MARKS } from './diplomacyCore';
@@ -57,6 +58,10 @@ describe('content/arcs.yaml', () => {
       'Bogen „silas_k2“ fehlt.',
       'Bogen „ruth_k2“ fehlt.',
       'Bogen „crane_k2“ fehlt.',
+      'Bogen „daniel_k3“ fehlt.',
+      'Bogen „thomas_k3“ fehlt.',
+      'Bogen „ruth_k3“ fehlt.',
+      'Bogen „vale_k3“ fehlt.',
     ]);
     const anyKaputt = parseArcContent(ARCS_FILE, arcsText.replace('any: [silas_fair]', 'any: silas_fair'));
     expect(anyKaputt.errors.map((e) => e.message)).toEqual(['silas.outcomes[2]: „any“ muss eine Liste von Merkzeichen sein, z. B. any: [silas_fair].']);
@@ -96,7 +101,9 @@ describe('Ausgang eines Bogens', () => {
   });
 
   it('die Ausgänge der Crane-Nachfolge sind Merkzeichen der Diplomatie (dieselben Namen)', () => {
-    expect([...ARC_SIM_MARKS]).toEqual([DIPLO_MARKS.heirMargaret, DIPLO_MARKS.heirPruett, DIPLO_MARKS.breakup]);
+    expect(ARC_SIM_MARKS.slice(0, 3)).toEqual([DIPLO_MARKS.heirMargaret, DIPLO_MARKS.heirPruett, DIPLO_MARKS.breakup]);
+    // 4.19: Jacobs Weg mit dem Konsortium setzt die Rundenabrechnung von Kapitel 3 (dieselben Namen).
+    expect(ARC_SIM_MARKS.slice(3)).toEqual(Object.values(KONSORTIUM_MARKS));
   });
 
   it('Texte kommen in der gewünschten Sprache', () => {

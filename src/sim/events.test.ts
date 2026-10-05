@@ -106,7 +106,8 @@ describe('Bedingungen', () => {
       // Integration: Die Ereignisse der Kapitel-2-Systeme (4.9 Personal, 4.10 Diplomatie, 4.11 Delaney)
       // hängen an Merkzeichen, die nur die Simulation ab ihrem Kapitel setzt (oder der Debug-Knopf
       // zur Probe) – sie tragen minChapter: 1 (jedes Kapitel). Alle anderen grenzen das Kapitel selbst ein.
-      if (e.conditions.minChapter === 1 && e.conditions.maxChapter === undefined) {
+      // (4.19: die Besuche zum Nachfolgekampf tragen zusätzlich maxChapter: 2.)
+      if (e.conditions.minChapter === 1 && (e.conditions.maxChapter === undefined || e.conditions.maxChapter >= 2)) {
         expect(e.marked.length, e.id).toBeGreaterThan(0);
         expect(marksMet({ ...state, round: 8 }, e), e.id).toBe(false);
         continue;

@@ -5,8 +5,8 @@
 # §9.2 (Thorne bläht Aktien auf).
 #
 # Nur Kapitel 3 (minChapter/maxChapter 3). Beträge vorläufig im Maßstab von Kapitel 1.
-# Aktien, Kurs und Kontrolle gibt es als Wirkung noch nicht – Ersatz: cash, Kommentar
-# „# TODO-Effekt“ nennt die gewünschte Wirkung (System 4.15 Börse, 4.8 Aktien).
+# Seit 4.19 wirken die Antworten auf Börse und Aktienbuch: stock (Aktien kaufen/verkaufen, mit
+# leverage auf Kredit), fever (Börsenfieber), sharePrice, control, rivalStake, rating.
 #
 # Merkzeichen dieses Pakets:
 #   k3_aktien_kredit → k3_margin_call, k3_ruth_raet_ab
@@ -42,7 +42,7 @@
         de: Der Makler in Hallstead telegrafiert noch am selben Tag. Jacob besitzt jetzt zehnmal so viele Aktien, wie er bezahlt hat.
         en: The broker in Hallstead wires the same day. Jacob now owns ten times as many shares as he has paid for.
       requires: { minCash: 1000 }
-      effects: { cash: -1000 }  # TODO-Effekt: margin: +10000, investment: { autoaktien: +10000 }
+      effects: { cash: -1000, stock: { motorwagen: 1000 }, leverage: 10, fever: 2 }
       marks: [k3_aktien_kredit]
       appointments: 0
     - id: bar
@@ -51,7 +51,7 @@
         de: Jacob kauft ein kleines Paket und legt die Urkunden in den Safe, neben Ruths Heiratsurkunde.
         en: Jacob buys a small block and puts the certificates in the safe, next to Ruth's marriage certificate.
       requires: { minCash: 3000 }
-      effects: { cash: -3000 }  # TODO-Effekt: investment: { autoaktien: +3000 }
+      effects: { cash: -3000, stock: { motorwagen: 3000 } }
       marks: [k3_aktien_bar]
       appointments: 0
     - id: trinkgeld
@@ -90,20 +90,20 @@
         de: Jacob telegrafiert das Geld. Die Aktien fallen weiter, langsamer. Er hält jetzt Papier, das ihn hält.
         en: Jacob wires the money. The shares keep falling, more slowly. He now holds paper that holds him.
       requires: { minCash: 4000 }
-      effects: { cash: -4000 }  # TODO-Effekt: margin bleibt, Kurs entscheidet später
+      effects: { cash: -4000, fever: 2 }
     - id: oel
       label: { de: "Öl verkaufen, um zu decken (3.000 Barrel)", en: "Sell oil to cover (3,000 barrels)" }
       result:
         de: Das Öl geht zu einem Preis weg, über den Jacob vor einem Jahr gelacht hätte. Die Aktien bleiben in seinem Namen.
         en: The oil goes at a price Jacob would have laughed at a year ago. The shares stay in his name.
       requires: { minOilStock: 3000 }
-      effects: { oilStock: -3000, cash: -400 }  # TODO-Effekt: Notverkauf zum halben Preis
+      effects: { oilStock: -3000, cash: -400, rating: -1 }
     - id: verkaufen_lassen
       label: { de: "Verkaufen lassen", en: "Let him sell" }
       result:
         de: Der Makler verkauft. Die Anzahlung ist weg, und auf dem Konto steht eine Restschuld. In Hallstead weiß man jetzt, dass Harlan auf Kredit spielt.
         en: The broker sells. The down payment is gone, and the account shows a remaining debt. Hallstead now knows that Harlan gambles on credit.
-      effects: { cash: -2000, strength: -10 }  # TODO-Effekt: rating: -1, standing: -2
+      effects: { cash: -2000, strength: -10, rating: -1, ansehen: -2 }
       appointments: 0
       default: true
 
@@ -132,14 +132,14 @@
       result:
         de: Jacob verkauft an einem Dienstag. Am Freitag stehen die Aktien noch höher. Er liest den Kurszettel nicht mehr.
         en: Jacob sells on a Tuesday. On Friday the shares stand higher still. He stops reading the price list.
-      effects: { cash: 5500 }  # TODO-Effekt: investment: { autoaktien: -3000 }
+      effects: { cash: 5500, stock: { motorwagen: -3000 } }
       appointments: 0
     - id: halten
       label: { de: "Halten – Automobile bleiben", en: "Hold – automobiles are here to stay" }
       result:
         de: Die Urkunden bleiben im Safe. Jacob weiß nicht, ob er klug ist oder nur stur. Ruth fragt nicht.
         en: The certificates stay in the safe. Jacob doesn't know whether he is wise or only stubborn. Ruth doesn't ask.
-      effects: { strength: -5 }  # TODO-Effekt: investment bleibt, Crash-Risiko (crash)
+      effects: { strength: -5, fever: 3 }
       appointments: 0
       default: true
 
@@ -171,26 +171,26 @@
       result:
         de: Jacob verkauft am nächsten Morgen. Der Verlust ist kleiner als der Abend, an dem Ruth es ihm vorrechnet. Sie bleibt danach sitzen.
         en: Jacob sells the next morning. The loss is smaller than the evening Ruth spends adding it up for him. Afterwards she stays sitting.
-      effects: { cash: -1500, ruth: 12 }  # TODO-Effekt: margin: 0
+      effects: { cash: -1500, ruth: 12, stock: { motorwagen: -3000 }, fever: -2 }
     - id: ihr_geben
       label: { de: "„Dann führ du das Depot.“", en: "\"Then you run the account.\"" }
       result:
         de: Ruth nimmt den Bleistift und fängt sofort an. Am Monatsende ist die Hälfte verkauft und der Rest bar bezahlt. Sie schreibt ihre Initialen an jede Zeile.
         en: Ruth picks up the pencil and starts at once. By month's end half is sold and the rest paid in cash. She writes her initials on every line.
-      effects: { cash: -800, ruth: 15 }  # TODO-Effekt: staff: { finanzen: ruth }, margin: -0.5
+      effects: { cash: -800, ruth: 15, rating: 1, stock: { motorwagen: -1500 } }
       appointments: 2
     - id: weiter
       label: { de: "„Der Markt steigt. Du warst immer zu vorsichtig.“", en: "\"The market is rising. You were always too careful.\"" }
       result:
         de: 'Ruth nimmt die Abrechnung wieder mit. In der Tür sagt sie: „Ich habe das Datum aufgeschrieben.“ Sie sagt nicht, welches.'
         en: Ruth takes the statement back with her. At the door she says, "I have written down the date." She doesn't say which.
-      effects: { ruth: -12, cash: 1500 }  # TODO-Effekt: margin bleibt, Kurs steigt vorerst
+      effects: { ruth: -12, cash: 1500, fever: 3 }
     - id: schweigen
       label: { de: "Darüber schweigen", en: "Say nothing about it" }
       result:
         de: Jacob sagt nichts. Ruth wartet eine Weile, dann legt sie die Abrechnung zu den anderen Papieren. Beim Abendessen spricht sie über Clara und nicht über Geld.
         en: Jacob says nothing. Ruth waits a while, then puts the statement with the other papers. At supper she talks about Clara, not about money.
-      effects: { ruth: -6 }  # TODO-Effekt: margin bleibt
+      effects: { ruth: -6, fever: 2 }
       appointments: 0
       default: true
 
@@ -222,14 +222,14 @@
         de: Die Harlan-Aktie steigt sechs Wochen lang an jedem Freitag um einen halben Punkt. Die Aktionäre schreiben dankbare Briefe. Pettibone schreibt Rechnungen.
         en: The Harlan share rises half a point every Friday for six weeks. Shareholders write grateful letters. Pettibone writes invoices.
       requires: { minCash: 2000 }
-      effects: { cash: -2000, price: 0.2 }  # TODO-Effekt: sharePrice: +10 (befristet), heat: +2, rivalStake: { thorne: +2 }
+      effects: { cash: -2000, price: 0.2, sharePrice: 0.1, heat: 2, rivalStake: { thorne: 2 } }
       marks: [k3_aktienpflege]
     - id: ablehnen
       label: { de: "„Mein Kurs wächst, wo die Quellen sind.“", en: "\"My price grows where the wells are.\"" }
       result:
         de: Pettibone lächelt. Im nächsten Quartal ist der Frachttarif für Harlan-Öl einen Cent höher. Ein Zufall, sagt der Brief der Bahn.
         en: Pettibone smiles. Next quarter the freight rate for Harlan oil is a cent higher. A coincidence, says the railway's letter.
-      effects: { railTariff: 0.03 }  # TODO-Effekt: rival: { thorne: { relation: -10 } }
+      effects: { railTariff: 0.03, rival: { thorne: { trust: -10 } } }
       default: true
 
 - id: k3_aktienpflege_frage
@@ -260,13 +260,13 @@
       result:
         de: Am nächsten Freitag fällt die Aktie um zwei Punkte. Die Aufsicht legt die Liste des Lehrers zu den Akten. Pettibone schickt trotzdem die letzte Rechnung.
         en: The next Friday the share falls two points. The supervisors file the teacher's list. Pettibone sends the last invoice anyway.
-      effects: { cash: -1000, price: -0.15 }  # TODO-Effekt: sharePrice: -8, heat: -1
+      effects: { cash: -1000, price: -0.15, sharePrice: -0.08, heat: -1 }
     - id: abkaufen
       label: { de: "Dem Lehrer die elf Aktien abkaufen – zum Dreifachen", en: "Buy the teacher's eleven shares – at triple the price" }
       result:
         de: Der Lehrer verkauft und schreibt keinen Brief mehr. Die Aufsicht hat seine Liste aber schon. Akten vergessen nicht, nur langsam.
         en: The teacher sells and writes no more letters. But the supervisors already have his list. Files don't forget, only slowly.
-      effects: { cash: -600 }  # TODO-Effekt: heat: +1, trace: { severity: 2, label: "Freitagskurse" }
+      effects: { cash: -600, heat: 1, trace: { severity: 2, label: Freitagskurse } }
       appointments: 0
       default: true
 
@@ -299,21 +299,21 @@
       result:
         de: Der Prospekt liegt in jeder Bankfiliale der Provinz. Witwen und Schaffner kaufen Anteile, weil Harlan auf der ersten Seite steht.
         en: The prospectus lies in every bank branch in the province. Widows and conductors buy units because Harlan is on the first page.
-      effects: { cash: 4000 }  # TODO-Effekt: sharePrice: +8, rivalStake: { thorne: +3 }, heat: +1
+      effects: { cash: 4000, sharePrice: 0.08, rivalStake: { thorne: 3 }, heat: 1 }
       marks: [k3_thorne_prospekt]
     - id: ablehnen
       label: { de: "Ablehnen", en: "Decline" }
       result:
         de: Der Prospekt erscheint ohne Jacobs Namen, aber mit seinen Aktien. Thorne kann sie kaufen, wo er will. Das Aktienbuch wird dicker.
         en: The prospectus appears without Jacob's name but with his shares. Thorne can buy them wherever he likes. The share register grows thicker.
-      effects: { railTariff: 0.02 }  # TODO-Effekt: rivalStake: { thorne: +2 }, control: -1
+      effects: { railTariff: 0.02, rivalStake: { thorne: 2 }, control: -1 }
       default: true
     - id: warnen
       label: { de: "Den Ledger vor dem Ausgabepreis warnen", en: "Warn the Ledger about the issue price" }
       result:
         de: Der Ledger druckt eine kleine, genaue Meldung. Der Fonds verkauft schlechter. Thorne schreibt nicht zurück; seine Bahn schreibt dafür einen neuen Tarif.
         en: The Ledger prints a small, precise item. The fund sells worse. Thorne doesn't write back; his railway writes a new tariff instead.
-      effects: { railTariff: 0.05, strength: 5 }  # TODO-Effekt: reputation: { public: +2 }, rival: { thorne: { aggression: +15 } }
+      effects: { railTariff: 0.05, strength: 5, reputation: { public: 2 }, rival: { thorne: { grudge: 15 } } }
 
 - id: k3_prospekt_wackelt
   marked: [k3_thorne_prospekt]
@@ -342,13 +342,13 @@
         de: Jacob kauft zurück, was die Sparer zurückgeben. Thorne verdient an jedem Anteil zweimal. Der Schaffner schreibt einen zweiten Brief, kürzer.
         en: Jacob buys back whatever the savers return. Thorne earns twice on every unit. The conductor writes a second letter, shorter.
       requires: { minCash: 5000 }
-      effects: { cash: -5000 }  # TODO-Effekt: reputation: { public: +3, workers: +2 }, control: +1
+      effects: { cash: -5000, reputation: { public: 3, workers: 2 }, control: 1 }
     - id: ablegen
       label: { de: "„Aktien steigen und fallen.“", en: "\"Shares rise and fall.\"" }
       result:
         de: Die Briefe kommen in eine Kiste. Die Kiste kommt in den Keller. Nora Whitlock hat den Schaffner schon besucht.
         en: The letters go into a box. The box goes into the cellar. Nora Whitlock has already visited the conductor.
-      effects: { strength: -5 }  # TODO-Effekt: reputation: { public: -4 }, trace: { severity: 1, label: "Cordova Petroleum Trust" }
+      effects: { strength: -5, reputation: { public: -4 }, trace: { severity: 1, label: "Cordova Petroleum Trust" } }
       appointments: 0
       default: true
 
@@ -381,13 +381,13 @@
         de: Martha Hale zählt das Geld nicht nach. Die Aktien bleiben im Haus Harlan, nicht bei Thornes Strohmännern.
         en: Martha Hale doesn't count the money. The shares stay in the Harlan house, not with Thorne's straw men.
       requires: { minCash: 4000 }
-      effects: { cash: -4000 }  # TODO-Effekt: control: +1, shares: { jacob: +1 }
+      effects: { cash: -4000, control: 1 }
     - id: verkaufen
       label: { de: "Raten zu verkaufen – an der Börse", en: "Advise her to sell – on the exchange" }
       result:
         de: Martha Hale verkauft in Hallstead. Wer gekauft hat, steht im Aktienbuch unter einem Namen, den niemand in Cordova kennt.
         en: Martha Hale sells in Hallstead. Whoever bought is entered in the share register under a name nobody in Cordova knows.
-      effects: { strength: 5, railTariff: 0.02 }  # TODO-Effekt: rivalStake: { thorne: +1 }, control: -1
+      effects: { strength: 5, railTariff: 0.02, rivalStake: { thorne: 1 }, control: -1 }
     - id: halten
       label: { de: "Raten zu halten", en: "Advise her to hold" }
       result:

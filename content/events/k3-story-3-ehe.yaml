@@ -68,7 +68,7 @@
         en: >-
           Ruth puts down her knife. She looks at him for a while. Then she writes Pettibone
           a refusal, three lines, and does not let Jacob read the letter.
-      effects: { ruth: 20 } # TODO-Effekt: control: Risiko, rival: { thorne: { trust: -5 } }
+      effects: { ruth: 20, rival: { thorne: { trust: -5 } } }
       marks: [ruth_gefragt]
       sharp: true
     - id: verbieten
@@ -95,7 +95,7 @@
           does not know. "Now I'm only your wife," she says. It does not sound sad. It
           sounds like a statement of fact.
       requires: { minCash: 6000 }
-      effects: { cash: -6000, ruth: -10 } # TODO-Effekt: shares: { ruth: -10, jacob: +10 }, control: +3
+      effects: { cash: -6000, ruth: -10, control: 3 }
       marks: [ruth_riss]
 
 # Entwurf – Philipp überarbeitet.
@@ -131,7 +131,7 @@
           It goes quiet around them. Cornelia Vandermeer keeps smiling, without warmth.
           Vandermeer & Co. asks half a point more on the next bond. Ruth dances every dance
           with Jacob that evening, even the ones he cannot.
-      effects: { ruth: 20, cash: -1500 } # TODO-Effekt: standing: -2, boardLoyalty: { vandermeer: -10 }
+      effects: { ruth: 20, cash: -1500, ansehen: -2, boardLoyalty: { vandermeer: -10 } }
       sharp: true
     - id: wechseln
       label: { de: "Das Thema wechseln", en: "Change the subject" }
@@ -157,7 +157,7 @@
           Jacob laughs, briefly, the way one laughs in Hallstead. Cornelia Vandermeer nods
           to him as if he had passed an examination. Ruth goes alone to the cloakroom. For
           the rest of the evening she talks to the waiters.
-      effects: { ruth: -30 } # TODO-Effekt: standing: +2
+      effects: { ruth: -30, ansehen: 2 }
       marks: [ruth_riss]
 
 # Probe 2: Mr. Vales Einladung. Ruth hat die Karte gefunden – frühestens eine Runde, nachdem sie kam.
@@ -251,7 +251,7 @@
         en: >-
           Jacob is there for Clara's birthday. The contract goes to Crane Eastern, with a
           letter from Margaret: "Family is a luxury, Harlan. I don't begrudge you it."
-      effects: { ruth: 20, price: -0.2 } # TODO-Effekt: clara: +10, rival: { margaret: { aggression: +5 } }
+      effects: { ruth: 20, price: -0.2, clara: 10, rival: { margaret: { grudge: 5 } } }
       marks: [ruth_probe3]
     - id: bleiben
       label: { de: "Bleiben, bis der Vertrag steht", en: "Stay until the contract is signed" }
@@ -264,7 +264,7 @@
           The contract is signed after three weeks instead of two. When Jacob comes home
           the roof is repaired. Ruth arranged it herself, with her own money. She does not
           show him the bill.
-      effects: { ruth: -20, price: 0.2 } # TODO-Effekt: clara: -10
+      effects: { ruth: -20, price: 0.2, clara: -10 }
       marks: [ruth_sechs_wochen, ruth_probe3]
       default: true
     - id: nachkommen
@@ -316,7 +316,7 @@
           Jacob is standing in the kitchen at seven in the morning, the dust of the journey on
           his coat. Ruth looks at him and sets out a second cup. The contract goes to Crane
           Eastern. Clara gets a present he bought on the train, and loves it.
-      effects: { ruth: 25, price: -0.2 } # TODO-Effekt: clara: +10, rival: { margaret: { aggression: +5 } }
+      effects: { ruth: 25, price: -0.2, clara: 10, rival: { margaret: { grudge: 5 } } }
       marks: [ruth_probe3]
       sharp: true
     - id: bleiben
@@ -330,7 +330,7 @@
           The contract is signed after three weeks. When Jacob comes home the roof is mended,
           with Ruth's own money. The telegram lies in the drawer of her writing desk, beside a
           second one, twenty years older. He sees it by chance. He says nothing.
-      effects: { ruth: -25, price: 0.2 } # TODO-Effekt: clara: -10
+      effects: { ruth: -25, price: 0.2, clara: -10 }
       marks: [ruth_sechs_wochen, ruth_probe3]
       default: true
     - id: telegramm
@@ -381,7 +381,7 @@
         en: >-
           Jacob signs. Ruth signs below, with the same pen. The board grumbles for a week.
           Then Pettibone realises that Jacob's shares can no longer be bought piecemeal.
-      effects: { ruth: 20 } # TODO-Effekt: control: +5 (Kontrolle sicher), boardLoyalty: { pettibone: -10 }
+      effects: { ruth: 20, control: 5, boardLoyalty: { bankier: -10 } }
       marks: [ehe_partner]
     - id: spaeter
       label: { de: "„Lass uns das nach dem Winter besprechen.“", en: "\"Let's discuss it after the winter.\"" }
@@ -432,7 +432,7 @@
           At the next meeting Ruth sits on his right. She asks the first question. It is
           the right one.
       requires: { minCash: 4000 }
-      effects: { cash: -4000, ruth: 25 } # TODO-Effekt: boardMember: ruth, boardLoyalty: { vandermeer: -15 }, control: +3
+      effects: { cash: -4000, ruth: 25, boardMember: ruth, boardLoyalty: { vandermeer: -15 }, control: 3 }
       marks: [ehe_partner]
     - id: frieden
       label: { de: "„Ich weiß es. Ich zeige es nur schlecht.“", en: "\"I know. I just show it badly.\"" }
@@ -457,7 +457,7 @@
           Ruth looks at him as if she had waited twenty years for that sentence. She packs
           that same evening. She takes her shares with her. To whom she sells, she does not
           tell him.
-      effects: { ruth: -40 } # TODO-Effekt: shares: { ruth: -%, thorne/margaret: +% }, control: -5
+      effects: { ruth: -40, control: -5 }
       marks: [ehe_trennung]
 
 # Entwurf – Philipp überarbeitet.
@@ -557,7 +557,7 @@
           Ruth signs without negotiating. That hurt Jacob most, he says later, to no one.
           Control stays with him. The trunk does not stay in the hall.
       requires: { minCash: 8000 }
-      effects: { cash: -8000, ruth: -20 } # TODO-Effekt: shares: { ruth: -%, jacob: +% }, control: +5
+      effects: { cash: -8000, ruth: -20, control: 5 }
       marks: [ehe_trennung]
     - id: gehen_lassen
       label: { de: "Sie gehen lassen – mit ihren Anteilen", en: "Let her go – with her shares" }
@@ -568,6 +568,6 @@
         en: >-
           Jacob carries her trunk to the carriage. It is the last thing he does for her,
           and he does it well. To whom she sells her shares, he learns from the newspaper.
-      effects: { ruth: -30 } # TODO-Effekt: shares: { ruth: -%, thorne/margaret/niemand: +% }, control: -5
+      effects: { ruth: -30, control: -5 }
       marks: [ehe_trennung]
       default: true

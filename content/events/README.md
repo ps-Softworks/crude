@@ -76,7 +76,15 @@ Kurzreferenz der Felder:
   - Bank: `rating: ±n` (Stufen, + = besser, gilt ab der nächsten Abrechnung), `loan: n` (die Bank leiht n $ zum üblichen Zins).
   - `appointmentsNext: ±n` – Termine in der nächsten Runde; `heirValues: { thomas | clara: { business, moral, loyalty, ambition } }`
     – Werte der Erben (±, höchstens `heirMax`; lesen spätere Kapitel).
-  `npm run check:content` prüft Räte, Gesetze und Techniken; `npm run check:events` bewertet die Systemwirkungen in $
+  - Kapitel 3 (4.19): `brand: { cordova | okara | mittelland | ostkueste | sierra_alta: ±n }` – Bekanntheit der eigenen
+    Marke (Punkte 0–100; `brand: n` = alle Regionen mit eigenen Tankstellen), `stations: { region: ±n }` – Tankstellen sofort
+    fertig bzw. geschlossen (das Geld steht unter `cash`); beides nur mit gegründeter Marke. `ansehen: ±n` – Ansehen in
+    Hallstead (Stand, × `ansehenStep`), `favors: ±n` – Gefallen der Lobby in Hallstead, `consortium: { trust, power }` –
+    Mr. Vales Vertrauen und die Macht des Konsortiums, `seismik: ±n` (+1 Lizenz bzw. ein Trupp mehr, −1 ein Trupp weniger).
+    Börse: `stock: { motorwagen | thorne_bahn | …: ±$ }` – Aktien kaufen (Geld unter `cash`) bzw. für so viel Kurswert
+    verkaufen, mit `leverage: 2 | 5 | 10` auf Kredit beim Makler; `fever: ±n` – Börsenfieber. Parteien: `party: { handel |
+    volksbund | provinz: ±n }` (× `partyStep`). Gäste im Rat: zusätzlich `hale` (Martha Hale) und `ruth`.
+  `npm run check:content` prüft Räte, Gesetze und Techniken (seit 4.19 auch Regionen, Aktien und Hebel); `npm run check:events` bewertet die Systemwirkungen in $
   (`eventSystems.relevance`).
 - Termine (2.3): `appointments` = Termine, die eine Antwort kostet (Standard 1; an einer Wahl
   überschreibt es den Wert des Ereignisses, z. B. `appointments: 0` für „abwinken“).

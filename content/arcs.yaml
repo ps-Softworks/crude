@@ -266,3 +266,202 @@ crane_k2:
     text:
       de: Margaret Crane und Harold Pruett ringen noch um den Trust.
       en: Margaret Crane and Harold Pruett are still fighting over the Trust.
+
+# --- Kapitel 3 (4.19): content/events/k3-story-*.yaml und das Konsortium (4.17) ---
+
+daniel_k3:
+  draft: true
+  name: { de: "Daniel Moss", en: "Daniel Moss" }
+  outcomes:
+    - id: anklage
+      any: [daniel_anklage]
+      title: { de: "Die Anklage", en: "The Indictment" }
+      text:
+        de: Daniel Moss hat Anklage gegen Jacob Harlan erhoben. Der Prozess wird Kapitel 4 überschatten.
+        en: Daniel Moss has indicted Jacob Harlan. The trial will overshadow chapter 4.
+    - id: bestechung
+      any: [daniel_bestechung_versuch]
+      title: { de: "Ein Umschlag zu viel", en: "One Envelope Too Many" }
+      text:
+        de: Jacob hat versucht, den Staatsanwalt zu kaufen. Daniel hat den Umschlag aufbewahrt – mit Datum.
+        en: Jacob tried to buy the prosecutor. Daniel kept the envelope – with the date on it.
+    - id: beugehaft
+      any: [daniel_beugehaft]
+      title: { de: "Beugehaft", en: "Held in Contempt" }
+      text:
+        de: Jacob hat die Vorladung missachtet und ein paar Nächte im Bezirksgefängnis verbracht. Angeklagt ist er nicht – vergessen hat es niemand.
+        en: Jacob ignored the subpoena and spent a few nights in the county jail. He has not been charged – nobody has forgotten.
+    - id: verbuendet
+      any: [daniel_verbuendet]
+      title: { de: "Gegen Thorne", en: "Against Thorne" }
+      text:
+        de: Daniel Moss und Jacob Harlan stehen auf derselben Seite – gegen Thorne. Keiner von beiden hätte das vor zwanzig Jahren geglaubt.
+        en: Daniel Moss and Jacob Harlan stand on the same side – against Thorne. Neither would have believed it twenty years ago.
+    - id: entlastet
+      any: [daniel_entlastet]
+      title: { de: "Entlastet", en: "Cleared" }
+      text:
+        de: Die Bücher haben Jacob entlastet. Daniel hat die Akte geschlossen und ihm die Hand gegeben – kurz.
+        en: The books cleared Jacob. Daniel closed the file and shook his hand – briefly.
+    - id: vergleich
+      any: [daniel_vergleich, daniel_unfallkasse, moss_land_zurueck]
+      title: { de: "Ein Vergleich", en: "A Settlement" }
+      text:
+        de: Jacob hat gezahlt oder zurückgegeben, was er nahm. Daniel hat es angenommen. Freunde sind sie nicht.
+        en: Jacob paid or gave back what he took. Daniel accepted it. They are not friends.
+    - id: weggelobt
+      any: [daniel_weggelobt]
+      title: { de: "Ins Richteramt gelobt", en: "Kicked Upstairs" }
+      text:
+        de: Daniel Moss ist jetzt Richter in Hallstead. Ein gutes Amt, weit weg von Cordova – und er weiß, wem er es verdankt.
+        en: Daniel Moss is now a judge in Hallstead. A fine post, far from Cordova – and he knows whom he owes it to.
+    - id: zeuge
+      any: [daniel_zeuge_thorne, daniel_thorne_gedeckt]
+      title: { de: "Der Zeuge", en: "The Witness" }
+      text:
+        de: Daniel brauchte Jacob als Zeugen gegen Thorne. Was Jacob gesagt – oder verschwiegen – hat, steht im Protokoll.
+        en: Daniel needed Jacob as a witness against Thorne. What Jacob said – or kept quiet about – is in the record.
+    - id: vertagt
+      any: [daniel_vertagt]
+      title: { de: "Vertagt", en: "Adjourned" }
+      text:
+        de: Ein ärztliches Attest hat die Sache vertagt. Daniel Moss wartet. Er ist jünger als Jacob.
+        en: A doctor's note has adjourned the matter. Daniel Moss waits. He is younger than Jacob.
+  open:
+    title: { de: "Die Akte ist offen", en: "The File Is Open" }
+    text:
+      de: Daniel Moss sitzt im Amt des Bezirksstaatsanwalts. Was er über Jacob weiß, hat er noch nicht gesagt.
+      en: Daniel Moss holds the district attorney's office. What he knows about Jacob, he has not said yet.
+
+thomas_k3:
+  draft: true
+  name: { de: "Thomas Harlan", en: "Thomas Harlan" }
+  outcomes:
+    - id: bruch
+      any: [thomas_bruch]
+      title: { de: "Der Bruch", en: "The Break" }
+      text:
+        de: Thomas ist gegangen – mit eigenen Plänen und ohne den Namen seines Vaters über der Tür. Ein Rivale mehr.
+        en: Thomas has left – with plans of his own and without his father's name over the door. One more rival.
+    - id: versoehnt
+      any: [thomas_versoehnt_k3]
+      title: { de: "Versöhnt", en: "Reconciled" }
+      text:
+        de: Vater und Sohn haben sich ausgesprochen, spät in der Nacht, im Büro. Thomas bleibt.
+        en: Father and son have talked it out, late at night, in the office. Thomas stays.
+    - id: teilhaber
+      any: [thomas_teilhaber]
+      title: { de: "Teilhaber", en: "Partner" }
+      text:
+        de: Thomas hält Anteile und redet im Rat mit. Die alten Herren hören ihm zu, weil sie müssen.
+        en: Thomas holds shares and speaks on the board. The old gentlemen listen because they have to.
+    - id: abteilung
+      any: [thomas_abteilung]
+      title: { de: "Eine eigene Abteilung", en: "A Department of His Own" }
+      text:
+        de: Thomas leitet die Marke – Plakate, Straßenkarten, Tankstellen. Jacob nennt es Spielerei und liest jeden Bericht.
+        en: Thomas runs the brand – posters, road maps, filling stations. Jacob calls it child's play and reads every report.
+    - id: gezwungen
+      any: [thomas_gezwungen]
+      title: { de: "Gezwungen", en: "Forced" }
+      text:
+        de: Thomas arbeitet in der Firma, weil sein Vater es befohlen hat. Er tut, was man ihm sagt. Noch.
+        en: Thomas works for the company because his father ordered it. He does what he is told. For now.
+    - id: eigener_weg
+      any: [thomas_eigener_weg]
+      title: { de: "Sein eigener Weg", en: "His Own Way" }
+      text:
+        de: Thomas arbeitet für Crane Eastern. Margaret Crane schätzt ihn – und weiß, wessen Sohn er ist.
+        en: Thomas works for Crane Eastern. Margaret Crane values him – and knows whose son he is.
+    - id: feld
+      any: [thomas_feld]
+      title: { de: "Auf dem Bohrturm", en: "On the Derrick" }
+      text:
+        de: Thomas hat auf den Feldern angefangen, mit Schwielen statt Titel. Die Bohrleute nennen ihn beim Vornamen.
+        en: Thomas started out in the fields, with calluses instead of a title. The drillers call him by his first name.
+    - id: firma
+      any: [thomas_firma]
+      title: { de: "In der Firma", en: "In the Company" }
+      text:
+        de: Thomas sitzt im Büro neben seinem Vater, mit Titel. Der Rat misstraut ihm, die Kunden mögen ihn.
+        en: Thomas sits in the office next to his father, with a title. The board distrusts him, the customers like him.
+  open:
+    title: { de: "Noch unentschieden", en: "Still Undecided" }
+    text:
+      de: Thomas ist zurück und wartet darauf, dass sein Vater sagt, was er von ihm will.
+      en: Thomas is back and waiting for his father to say what he wants of him.
+
+ruth_k3:
+  draft: true
+  name: { de: "Ruth Harlan", en: "Ruth Harlan" }
+  outcomes:
+    - id: partner
+      any: [ehe_partner]
+      title: { de: "Partner", en: "Partners" }
+      text:
+        de: Ruth und Jacob entscheiden wieder gemeinsam. Hallstead hat es bemerkt; Vandermeer fragt jetzt beide.
+        en: Ruth and Jacob decide together again. Hallstead has noticed; Vandermeer now asks them both.
+    - id: waffenstillstand
+      any: [ehe_waffenstillstand]
+      title: { de: "Waffenstillstand", en: "Truce" }
+      text:
+        de: Ruth bleibt. Sie haben Regeln, die keiner aufgeschrieben hat, und halten sich beide daran.
+        en: Ruth stays. They have rules nobody wrote down, and both of them keep to them.
+    - id: trennung
+      any: [ehe_trennung]
+      title: { de: "Getrennt", en: "Separated" }
+      text:
+        de: Ruth ist ausgezogen, in das Haus ihrer Schwester. Sie hat nichts mitgenommen außer ihren Büchern.
+        en: Ruth has moved out, to her sister's house. She took nothing with her except her ledgers.
+  open:
+    title: { de: "Noch nicht gesagt", en: "Not Yet Said" }
+    text:
+      de: Ruth hat noch nicht entschieden, ob sie bleibt. Jacob hat noch nicht gefragt.
+      en: Ruth hasn't decided yet whether she will stay. Jacob hasn't asked yet.
+
+vale_k3:
+  draft: true
+  name: { de: "Mr. Vale", en: "Mr. Vale" }
+  outcomes:
+    - id: verstossen
+      any: [k3_konsortium_verstossen]
+      title: { de: "Hinausgeworfen", en: "Thrown Out" }
+      text:
+        de: Das Konsortium hat Jacob hinausgeworfen. Mr. Vale lässt ausrichten, er bedaure es. Die Preise für Harlans Öl fallen seitdem auffällig oft.
+        en: The consortium has thrown Jacob out. Mr. Vale sends word that he regrets it. Harlan's oil prices have fallen remarkably often since.
+    - id: doppelspiel
+      any: [k3_konsortium_doppelspiel]
+      title: { de: "Doppelspiel", en: "Double Game" }
+      text:
+        de: Jacob sitzt im Konsortium und arbeitet zugleich dagegen. Bisher hat Mr. Vale es nicht bemerkt – oder er wartet.
+        en: Jacob sits in the consortium and works against it at the same time. So far Mr. Vale hasn't noticed – or he is waiting.
+    - id: mitglied
+      any: [k3_konsortium_mitglied]
+      title: { de: "Am Tisch", en: "At the Table" }
+      text:
+        de: Jacob Harlan sitzt jetzt am Tisch auf dem Schloss in Aldmark. Mr. Vale nennt es „wie es ist“.
+        en: Jacob Harlan now sits at the table in the castle in Aldmark. Mr. Vale calls it “the way things are”.
+    - id: abgelehnt
+      any: [k3_konsortium_abgelehnt]
+      title: { de: "Abgelehnt", en: "Declined" }
+      text:
+        de: Jacob hat Mr. Vales Einladung abgelehnt. Vale war höflich. Er ist immer höflich.
+        en: Jacob declined Mr. Vale's invitation. Vale was polite. He is always polite.
+    - id: zugesagt
+      any: [vale_k3_zugesagt]
+      title: { de: "Die Reise ist gebucht", en: "The Journey Is Booked" }
+      text:
+        de: Jacob hat auf Vales Karte geantwortet. Die Einladung aufs Schloss steht noch aus.
+        en: Jacob answered Vale's card. The invitation to the castle is still to come.
+    - id: abgesagt
+      any: [vale_k3_abgesagt]
+      title: { de: "Eine Absage", en: "A Refusal" }
+      text:
+        de: Jacob hat Vales Karte mit einer Absage beantwortet. Vale hat sie aufbewahrt.
+        en: Jacob answered Vale's card with a refusal. Vale kept it.
+  open:
+    title: { de: "Keine Karte", en: "No Card" }
+    text:
+      de: Mr. Vale hat sich noch nicht gemeldet – oder Jacob hat noch nicht geantwortet.
+      en: Mr. Vale hasn't been in touch yet – or Jacob hasn't answered.
+

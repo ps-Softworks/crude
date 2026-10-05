@@ -40,6 +40,11 @@ geschluckt, hinter Gittern), Bögen `nora_k2`/`silas_k2`/`ruth_k2`/`crane_k2`, R
 Kapitel-2-Ereignisse (offene Fragen 1 und 2 unten und die TODO-Effekte von Kapitel 2 sind damit erledigt; die
 TODO-Effekte von Kapitel 3 stehen weiter als Kommentar).
 
+**Seit 0.4.19 (4.19, docs/phase4/4.19.md):** Zeitsprung II (Jahr 15–20, Weichen Krieg/Marine/Grady/College) und
+Kapitel 3 „Der Konzernherr“ sind spielbar – Kapitelprüfung (Marke in 3 Regionen oder 10 % Marktanteil, Rating C),
+Rivalen K3 (src/sim/rivalsK3.ts, Andockpunkt in `endRound` nach `advanceKapitel3`), Bögen `daniel_k3`/`thomas_k3`/
+`ruth_k3`/`vale_k3`, alle TODO-Effekte der Kapitel-3-Ereignisse als Systemwirkungen. Danach endet der Early-Access-Umfang.
+
 ## Kurz
 
 Alle 15 Branches sind zusammengeführt: 4.6 Raffinerie, 4.7 Fernleitungen, 4.8 Aktien, 4.9 Personal,
