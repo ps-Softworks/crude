@@ -1,7 +1,7 @@
 // Rundgang der Einstiegshilfe (0.2.15+10): beim ersten Start jeden Gegenstand
 // einmal kurz zeigen. Die Texte stehen in content/rundgang.yaml; hier wird nur
-// gelesen und geprüft – keine Spielregel. 0.4.20+2: eigener Rundgang für Kapitel 2
-// (content/rundgang-k2.yaml) mit eigenem Merker – er zeigt die neuen Gegenstände.
+// gelesen und geprüft – keine Spielregel. 0.4.20+2/+3: eigene Rundgänge für Kapitel 2 und 3
+// (content/rundgang-k2.yaml, rundgang-k3.yaml) mit eigenem Merker – sie zeigen die neuen Gegenstände.
 import { parse } from 'yaml';
 import { SHEET_IDS } from './sceneState';
 
@@ -33,13 +33,15 @@ export function parseTour(file: string, text: string): TourStep[] {
 /** Merker im Browser: Rundgang gesehen (Kapitel 1 behält seinen alten Schlüssel). */
 export const TOUR_PREF = 'crude.rundgang';
 export const TOUR_PREF_K2 = 'crude.rundgang.k2';
+export const TOUR_PREF_K3 = 'crude.rundgang.k3';
 
-/** Welcher Rundgang gehört zum Kapitel: Kapitel 1 → der erste, ab Kapitel 2 → der zweite (Kapitel 3 hat noch keinen eigenen). */
-export function tourFor<T>(chapter: number, tours: { k1: T; k2: T }): { steps: T; pref: string; chapter: 1 | 2 } {
-  return chapter >= 2 ? { steps: tours.k2, pref: TOUR_PREF_K2, chapter: 2 } : { steps: tours.k1, pref: TOUR_PREF, chapter: 1 };
+/** Welcher Rundgang gehört zum Kapitel: Kapitel 1, 2 und ab 3 je ein eigener. */
+export function tourFor<T>(chapter: number, tours: { k1: T; k2: T; k3: T }): { steps: T; pref: string; chapter: 1 | 2 | 3 } {
+  if (chapter >= 3) return { steps: tours.k3, pref: TOUR_PREF_K3, chapter: 3 };
+  return chapter === 2 ? { steps: tours.k2, pref: TOUR_PREF_K2, chapter: 2 } : { steps: tours.k1, pref: TOUR_PREF, chapter: 1 };
 }
 
-/** Kommt der Rundgang von selbst? Kapitel 1 nur mit eingeschalteter Einstiegshilfe; der Kapitel-2-Rundgang immer einmal. */
+/** Kommt der Rundgang von selbst? Kapitel 1 nur mit eingeschalteter Einstiegshilfe; die Rundgänge ab Kapitel 2 immer einmal. */
 export function tourAutoStart(chapter: number, tutorialOn: boolean, seen: boolean): boolean {
   if (seen) return false;
   return chapter >= 2 || tutorialOn;

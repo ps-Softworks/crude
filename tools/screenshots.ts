@@ -188,7 +188,7 @@ interface Bild {
   warte?: number;
 }
 
-const RUHE: Record<string, string> = { 'crude.zeitung': 'aus', 'crude.rundgang': 'gesehen', 'crude.rundgang.k2': 'gesehen' };
+const RUHE: Record<string, string> = { 'crude.zeitung': 'aus', 'crude.rundgang': 'gesehen', 'crude.rundgang.k2': 'gesehen', 'crude.rundgang.k3': 'gesehen' };
 const JACOBS_RANCH = `(() => { const r = [...document.querySelectorAll('.karte-ranch')].find((g) => /Jacobs (Pacht|Option)/.test(g.getAttribute('aria-label'))) ?? document.querySelector('.karte-ranch'); r.dispatchEvent(new MouseEvent('click', { bubbles: true })); })()`;
 const DOKUMENT_VORN = `(() => { const b = [...document.querySelectorAll('.stapel-liste button')].find((x) => x.textContent.includes('mit Dokument')); b?.click(); })()`;
 
@@ -251,6 +251,8 @@ const bilder: Bild[] = [
   { name: '39-pinnwand-bremse', state: mitBremse, dann: KLICK('.objekt-konkurrenz'), warte: 600 },
   // 0.4.20+2: Rundgang Kapitel 2 (zweiter Schritt: Kassenbuch) – kommt von selbst und blättert nur mit „Weiter“.
   { name: '40-kapitel2-rundgang', state: kapitel2, prefs: { 'crude.rundgang.k2': 'nein' }, tasten: ['Enter'], warte: 3400 },
+  // 0.4.20+3: Rundgang Kapitel 3 (dritter Schritt: Vertrieb).
+  { name: '41-kapitel3-rundgang', state: { ...kap3, chapter: 3 }, prefs: { 'crude.rundgang.k3': 'nein' }, tasten: ['Enter', 'Enter'], warte: 3400 },
 ];
 
 // --- Chrome über das DevTools-Protokoll steuern ---

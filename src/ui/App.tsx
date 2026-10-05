@@ -61,7 +61,7 @@ import { freshSeed, withoutSeedParam } from './restart';
 import { readPref, writePref } from './storage';
 import { debugToolsVisible } from './testerConfig';
 import { tourAutoStart, tourFor } from './tour';
-import { tourSteps, tourStepsK2 } from './tourContent';
+import { tourSteps, tourStepsK2, tourStepsK3 } from './tourContent';
 import { chapterOf } from '../sim/chapterOf';
 import { loadTutorialOn, mapTutorialContent, saveTutorialOn, tutorialContent } from './tutorial';
 import { VisitorScene } from './visitor/VisitorScene';
@@ -248,9 +248,9 @@ export function App() {
   // Rundgang beim allerersten Start, sobald der Tisch frei ist.
   // Erst wenn die Runde angekommen ist und die Zeitung (falls sie von selbst kommt) gelesen wurde.
   const zeitungOffen = autoNewspaper && !game.finished && !seen(ui, 'zeitung');
-  const tour = tourFor(chapterOf(game), { k1: tourSteps, k2: tourStepsK2 });
+  const tour = tourFor(chapterOf(game), { k1: tourSteps, k2: tourStepsK2, k3: tourStepsK3 });
   useEffect(() => {
-    // 0.4.20+2: Ab Kapitel 2 ein eigener Rundgang für die neuen Gegenstände – einmal, auch ohne Einstiegshilfe.
+    // 0.4.20+2/+3: Ab Kapitel 2 je ein eigener Rundgang für die neuen Gegenstände – einmal, auch ohne Einstiegshilfe.
     if (rundgang || besetzt || game.finished || ui.view !== 'desk' || ui.sheet || ui.visitor) return;
     if (ui.round !== game.round || zeitungOffen) return;
     if (!tourAutoStart(tour.chapter, tutorialOn, readPref(tour.pref) === 'gesehen')) return;

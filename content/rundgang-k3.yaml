@@ -1,0 +1,34 @@
+# Rundgang Kapitel 3 (0.4.20+3): Nach Zeitsprung II liegen wieder neue Gegenstände auf dem Tisch.
+# Kommt einmal von selbst, sobald die Chronik gelesen ist (auch ohne Einstiegshilfe), und zeigt nur,
+# was gerade auf dem Tisch liegt. Format wie content/rundgang.yaml.
+# ENTWURF: Ton und Wortwahl sind Vorschläge.
+
+schritte:
+  - objekt: ruth
+    text:
+      de: Wieder sechs Jahre später – Harlan Oil spielt jetzt in einer anderen Liga. Auf dem Tisch liegen ein paar neue Dinge, hier ein kurzer Rundgang.
+      en: Another six years on – Harlan Oil plays in a different league now. A few new things are on the desk; here is a short tour.
+  - objekt: kassenbuch
+    text:
+      de: Im Kassenbuch (G) steht oben das neue Kapitelziel – eine eigene Marke mit Tankstellen in drei Regionen (oder zehn Prozent Marktanteil) und am Ende mindestens Rating C bei der Bank.
+      en: The ledger (G) shows the new chapter goal at the top – your own brand with filling stations in three regions (or ten per cent market share) and at least a C rating with the bank at the end.
+  - objekt: marke
+    text:
+      de: Der Vertrieb. Hier gründest du eine eigene Marke und baust Tankstellen in den Regionen – der Weg zum Kapitelziel. Margaret Crane wird dir die Kunden nicht schenken.
+      en: Sales. This is where you found your own brand and build filling stations across the regions – the road to the chapter goal. Margaret Crane won't hand you her customers.
+  - objekt: boerse
+    text:
+      de: Der Börsenticker. Du kannst Aktien kaufen – auch auf Kredit, mit Hebel. Wenn die Zeitung vor einer Blase warnt, ist das ernst gemeint.
+      en: The stock ticker. You can buy shares – on credit too, with leverage. When the newspaper warns of a bubble, it means it.
+  - objekt: hallstead
+    text:
+      de: Die Hallstead-Mappe. Beteiligungen außerhalb des Öls – Land, Bahn- und Autoaktien, eine eigene Zeitung oder Bank – und ein Lobbyist für die Gesetze in der Hauptstadt.
+      en: The Hallstead folder. Investments outside oil – land, railway and motor shares, your own newspaper or bank – and a lobbyist for the laws in the capital.
+  - objekt: konzern
+    text:
+      de: Die Siegelmappe. Seismik-Trupps, die Fallen im Boden genauer finden als der Geologe, Mr. Vales Konsortium und große Projekte. Die Zahl am Siegel zeigt offene Entscheidungen.
+      en: The seal folder. Seismic crews that find traps underground better than the geologist, Mr. Vale's consortium and big projects. The number on the seal shows open decisions.
+  - objekt: glocke
+    text:
+      de: Alles andere kennst du schon. Den Rundgang findest du jederzeit wieder im Menü (☰).
+      en: You already know everything else. You can find this tour again in the menu (☰) at any time.

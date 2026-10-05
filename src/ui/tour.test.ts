@@ -1,7 +1,7 @@
 // 0.2.15+10: Der Rundgang zeigt nur auf Gegenstände, die es gibt.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { parseTour, presentSteps, TOUR_PREF, TOUR_PREF_K2, tourAutoStart, tourFor } from './tour';
+import { parseTour, presentSteps, TOUR_PREF, TOUR_PREF_K2, TOUR_PREF_K3, tourAutoStart, tourFor } from './tour';
 
 const text = readFileSync(new URL('../../content/rundgang.yaml', import.meta.url), 'utf8');
 
@@ -29,12 +29,13 @@ describe('Rundgang Kapitel 2 (0.4.20+2)', () => {
     expect(new Set(ziele).size).toBe(ziele.length);
   });
 
-  it('Kapitel 1 bekommt den ersten Rundgang, ab Kapitel 2 den zweiten – mit eigenem Merker', () => {
-    const tours = { k1: 'eins', k2: 'zwei' };
+  it('jedes Kapitel bekommt seinen Rundgang – mit eigenem Merker', () => {
+    const tours = { k1: 'eins', k2: 'zwei', k3: 'drei' };
     expect(tourFor(1, tours)).toEqual({ steps: 'eins', pref: TOUR_PREF, chapter: 1 });
     expect(tourFor(2, tours)).toEqual({ steps: 'zwei', pref: TOUR_PREF_K2, chapter: 2 });
-    expect(tourFor(3, tours).pref).toBe(TOUR_PREF_K2);
-    expect(TOUR_PREF).not.toBe(TOUR_PREF_K2);
+    expect(tourFor(3, tours)).toEqual({ steps: 'drei', pref: TOUR_PREF_K3, chapter: 3 });
+    expect(tourFor(4, tours).pref).toBe(TOUR_PREF_K3);
+    expect(new Set([TOUR_PREF, TOUR_PREF_K2, TOUR_PREF_K3]).size).toBe(3);
   });
 
   it('von selbst: Kapitel 1 nur mit Einstiegshilfe, Kapitel 2 immer – aber jeweils nur einmal', () => {
@@ -50,5 +51,20 @@ describe('Rundgang Kapitel 2 (0.4.20+2)', () => {
     const ohneWerkstatt = presentSteps(schritte, (o) => o !== 'werkstatt');
     expect(ohneWerkstatt.map((s) => s.object)).not.toContain('werkstatt');
     expect(ohneWerkstatt.length).toBe(schritte.length - 1);
+  });
+});
+
+const textK3 = readFileSync(new URL('../../content/rundgang-k3.yaml', import.meta.url), 'utf8');
+
+describe('Rundgang Kapitel 3 (0.4.20+3)', () => {
+  it('zeigt die neuen Gegenstände von Kapitel 3 genau einmal', () => {
+    const ziele = parseTour('content/rundgang-k3.yaml', textK3).map((s) => s.object);
+    for (const id of ['marke', 'boerse', 'hallstead', 'konzern', 'kassenbuch']) expect(ziele, id).toContain(id);
+    expect(new Set(ziele).size).toBe(ziele.length);
+  });
+
+  it('kommt in Kapitel 3 einmal von selbst, auch ohne Einstiegshilfe', () => {
+    expect(tourAutoStart(3, false, false)).toBe(true);
+    expect(tourAutoStart(3, false, true)).toBe(false);
   });
 });
