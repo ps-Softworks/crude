@@ -49,16 +49,16 @@ function well(state: GameState): Well {
 }
 
 describe('Tiefe Funde sind größer (findFactor)', () => {
-  it('balance.yaml: 1 / 2 / 3 – flach unverändert, 600 m doppelt, 900 m dreifach', () => {
-    expect(balance.drilling.stages.map((s) => s.findFactor)).toEqual([1, 2, 3]);
-    expect(findFactor(balance, 2)).toBe(2);
+  it('balance.yaml: 1 / 2,5 / 4 – flach unverändert, in der Tiefe größer', () => {
+    expect(balance.drilling.stages.map((s) => s.findFactor)).toEqual([1, 2.5, 4]);
+    expect(findFactor(balance, 2)).toBe(2.5);
   });
 
   it('erster Fund in der Tiefe: Vorrat von Ranch und Feld wächst um (Faktor − 1) × Vorrat', () => {
     const s = game();
     const tief = deepFindReserves(s, balance, PARCEL, 3);
-    expect(tief.parcels.find((p) => p.id === PARCEL)!.reserves).toBe(90000);
-    expect(tief.fields[0].reserves).toBe(90000);
+    expect(tief.parcels.find((p) => p.id === PARCEL)!.reserves).toBe(30000 * findFactor(balance, 3));
+    expect(tief.fields[0].reserves).toBe(30000 * findFactor(balance, 3));
     // Flach: nichts ändert sich.
     expect(deepFindReserves(s, balance, PARCEL, 1)).toEqual({ parcels: s.parcels, fields: s.fields });
   });
@@ -69,13 +69,14 @@ describe('Tiefe Funde sind größer (findFactor)', () => {
     expect(deepFindReserves(mitQuelle, balance, PARCEL, 2).parcels).toBe(s.parcels);
   });
 
-  it('Fund in 600 m: doppelte Anfangsrate und doppelter Vorrat, Meldung im Protokoll', () => {
+  it('Fund in 600 m: Anfangsrate und Vorrat × findFactor, Meldung im Protokoll', () => {
+    const f = findFactor(balance, 2);
     const flach = advanceDrilling(setWell(ok(startDrilling(game(), balance, PARCEL)), { oilStage: 1 }), SAFE);
     let tief = ok(drillDeeper(decision(2), balance, PARCEL));
-    tief = advanceDrilling(tief, SAFE);
+    for (let i = 0; i < balance.drilling.stages[1].rounds; i++) tief = advanceDrilling(tief, SAFE);
     expect(well(tief)).toMatchObject({ status: 'found', stage: 2, result: 'small' });
-    expect(Math.abs(well(tief).production!.initialRate - 2 * well(flach).production!.initialRate)).toBeLessThanOrEqual(1);
-    expect(tief.fields[0].reserves).toBe(60000);
+    expect(Math.abs(well(tief).production!.initialRate - f * well(flach).production!.initialRate)).toBeLessThanOrEqual(1);
+    expect(tief.fields[0].reserves).toBe(30000 * f);
     expect(flach.fields[0].reserves).toBe(30000);
     expect(tief.log.at(-1)).toMatch(/In der Tiefe ist die Lagerstätte größer/);
   });
@@ -84,7 +85,7 @@ describe('Tiefe Funde sind größer (findFactor)', () => {
     const s = game();
     const tief = deepFindReserves(s, balance, PARCEL, 2);
     // Bis auf Rundung (initialRate rundet auf ganze Barrel).
-    expect(Math.abs(initialRate(balance, tief, { parcelId: PARCEL, result: 'small' }) - 2 * initialRate(balance, s, { parcelId: PARCEL, result: 'small' }))).toBeLessThanOrEqual(1);
+    expect(Math.abs(initialRate(balance, tief, { parcelId: PARCEL, result: 'small' }) - findFactor(balance, 2) * initialRate(balance, s, { parcelId: PARCEL, result: 'small' }))).toBeLessThanOrEqual(1);
   });
 });
 
@@ -197,11 +198,11 @@ describe('Die Wette fürs Tieferbohren (deeperOutlook)', () => {
 
   it('auf der letzten Stufe gibt es keine Wette mehr', () => {
     let s = ok(drillDeeper(decision(3), balance, PARCEL));
-    s = advanceDrilling(s, SAFE);
+    for (let i = 0; i < balance.drilling.stages[1].rounds; i++) s = advanceDrilling(s, SAFE);
     expect(well(s)).toMatchObject({ status: 'decision', stage: 2 });
     expect(deeperOutlook(s, balance, PARCEL)!.depth).toBe(900);
-    s = advanceDrilling(ok(drillDeeper(setWell(s, { oilStage: null }), balance, PARCEL)), SAFE);
-    s = advanceDrilling(s, SAFE);
+    s = ok(drillDeeper(setWell(s, { oilStage: null }), balance, PARCEL));
+    for (let i = 0; i < balance.drilling.stages[2].rounds; i++) s = advanceDrilling(s, SAFE);
     expect(well(s).status).toBe('dry');
     expect(deeperOutlook(s, balance, PARCEL)).toBeNull();
   });

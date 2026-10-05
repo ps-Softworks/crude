@@ -290,16 +290,18 @@ describe('Rundenende beim Bohren', () => {
 
 describe('Tiefer bohren', () => {
   it('Stufe +1, Kosten und Dauer der neuen Stufe', () => {
+    const [s1, s2, s3] = balance.drilling.stages;
     let state = advanceDrilling(setWell(ok(startDrilling(game(), balance, PARCEL)), { oilStage: null }), SAFE);
     const cash = state.cash;
     state = ok(drillDeeper(state, balance, PARCEL));
-    expect(well(state)).toMatchObject({ stage: 2, status: 'drilling', roundsLeft: 1, spent: 1000 + 1100 });
-    expect(state.cash).toBe(cash - 1100);
+    expect(well(state)).toMatchObject({ stage: 2, status: 'drilling', roundsLeft: s2.rounds, spent: s1.cost + s2.cost });
+    expect(state.cash).toBe(cash - s2.cost);
 
-    state = advanceDrilling(state, SAFE);
+    for (let i = 0; i < s2.rounds; i++) state = advanceDrilling(state, SAFE);
+    expect(well(state).status).toBe('decision');
     state = ok(drillDeeper(state, balance, PARCEL));
-    expect(well(state)).toMatchObject({ stage: 3, roundsLeft: 2, spent: 1000 + 1100 + 1400 });
-    state = advanceDrilling(state, SAFE);
+    expect(well(state)).toMatchObject({ stage: 3, roundsLeft: s3.rounds, spent: s1.cost + s2.cost + s3.cost });
+    for (let i = 1; i < s3.rounds; i++) state = advanceDrilling(state, SAFE);
     expect(well(state)).toMatchObject({ status: 'drilling', roundsLeft: 1 });
     state = advanceDrilling(state, SAFE);
     expect(well(state).status).toBe('dry');

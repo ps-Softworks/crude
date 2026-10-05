@@ -318,8 +318,8 @@ drilling:
     # Frühes Öl (0.4.4+): vorher oilShare 0,7/0,2/0,1 und Stufe 1 Unfall 0,04 / Klemmen 0,05 – die erste
     # Bohrung auf einem Feld mit ≥ 60 % Prognose traf nur rund 40 %, mit der Startkasse reichte das oft nicht.
     - { depth: 300, cost: 1000, rounds: 1, oilShare: 0.85, accident: 0.02, stuck: 0.03, findFactor: 1 }
-    - { depth: 600, cost: 1100, rounds: 1, oilShare: 0.10, accident: 0.08, stuck: 0.10, findFactor: 2 }
-    - { depth: 900, cost: 1400, rounds: 2, oilShare: 0.05, accident: 0.15, stuck: 0.15, findFactor: 3 }
+    - { depth: 600, cost: 1800, rounds: 2, oilShare: 0.10, accident: 0.08, stuck: 0.10, findFactor: 2.5 }
+    - { depth: 900, cost: 3200, rounds: 3, oilShare: 0.05, accident: 0.15, stuck: 0.15, findFactor: 4 }
 
 # Markt (GDD §7.3): Der Crane Trust kauft das Öl zum Posted Price. Der Preis
 # entsteht jede Runde aus Angebot und Nachfrage am Salt Hill:
