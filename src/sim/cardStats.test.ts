@@ -90,8 +90,9 @@ describe('Bots und die Spielspaß-Karten (Spielspaß K1)', () => {
 
   it('bots.plans: jeder planende Bot spielt Karten nach Charakter', () => {
     const p = balance.botPlans;
-    expect(p.cautious).toMatchObject({ contract: true, pool: true, rumour: false, bluff: false });
+    expect(p.cautious).toMatchObject({ contract: true, pool: true, thorne: true, rumour: false, bluff: false });
     expect(p.greedy).toMatchObject({ rumour: true, crane: true, contract: false });
-    expect(p.balanced).toMatchObject({ thorne: true, pool: true, rumour: false, bluff: false });
+    // Gesamt-Balance: ausgewogen ohne Gemeinschaft (sonst gewann er über 40 % der Seeds).
+    expect(p.balanced).toMatchObject({ thorne: true, pool: false, rumour: false, bluff: false });
   });
 });

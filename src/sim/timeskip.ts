@@ -977,7 +977,8 @@ function bohren(l: Lauf): void {
   const geliehen = kreditAnteil > 0 && bohrziele(l).length > 0 ? leihen(l, Math.floor((headroom(l.s, balance) * kreditAnteil) / 100) * 100) : 0;
   const budget = eigen + geliehen;
   const hoechstens = Math.max(1, Math.floor(t.maxNewWells[stance] * t.family.wells[family]));
-  const letzte = balance.drilling.stages.length;
+  // Spielspaß K1: höchstens bis timeskip.deepestStage – liegt das Öl tiefer, gibt der Verwalter die Bohrung auf.
+  const letzte = Math.min(t.deepestStage, balance.drilling.stages.length);
   const vollBohrung = bohrkosten(balance, letzte);
   let rest = budget;
   let ziele = bohrziele(l);
@@ -1003,7 +1004,8 @@ function bohren(l: Lauf): void {
     if (rest < pacht + vollBohrung) continue;
     const auf = wellsOn(l.s, ziel.parcelId);
     const quelle = auf.find((w) => w.status === 'found');
-    const oilStage = quelle ? quelle.stage : rollOilStage(balance, parcel, l.rngBohren.float());
+    const gewuerfelt = quelle ? quelle.stage : rollOilStage(balance, parcel, l.rngBohren.float());
+    const oilStage = gewuerfelt !== null && gewuerfelt > letzte && !quelle ? null : gewuerfelt;
     const kosten = pacht + bohrkosten(balance, oilStage ?? letzte);
     rest -= kosten;
     const leases: Lease[] = terms

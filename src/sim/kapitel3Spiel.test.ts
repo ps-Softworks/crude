@@ -26,6 +26,7 @@ import { answerSwitch, runTimeskip, startTimeskip, SWITCH_CHOICES, timeskipBlock
 
 const balance = loadBalance();
 const catalog = loadEvents();
+const jedesKapitel = new Set(catalog.filter((e) => e.conditions.minChapter === 1 && e.conditions.maxChapter === undefined).map((e) => e.id));
 const board = parseStocksContent('content/stocks.yaml', readFileSync(new URL('../../content/stocks.yaml', import.meta.url), 'utf8'), balance.stocks.board.seatsMax).content!.board;
 const TEXTE = { stocksBoard: board };
 const arcs = parseArcContent('content/arcs.yaml', readFileSync(new URL('../../content/arcs.yaml', import.meta.url), 'utf8')).content!;
@@ -323,9 +324,10 @@ describe('Ein ganzer Durchlauf Kapitel 1 → 3 mit Bots', () => {
       s = springen(s, (i % 2) as 0 | 1);
       if (s.finished) continue;
       expect(s.chapter).toBe(3);
-      // Keine Kapitel-2-Geschichte in Kapitel 3. Angebote der Rivalen-Diplomatie (k2_angebot_*) gelten in jedem
-      // Kapitel ab 2 (minChapter 1, die Merkzeichen der Diplomatie entscheiden) und dürfen schon am Kapitelstart liegen.
-      expect(s.events.pending.every((id) => !id.startsWith('k2_') || id.startsWith('k2_angebot_'))).toBe(true);
+      // Keine Kapitel-2-Geschichte in Kapitel 3. Ereignisse der Rivalen-Diplomatie (Angebote, Rache, Verband …) gelten
+      // in jedem Kapitel ab 2 (minChapter 1 ohne maxChapter, die Merkzeichen der Diplomatie entscheiden) und dürfen schon
+      // am Kapitelstart liegen.
+      expect(s.events.pending.every((id) => !id.startsWith('k2_') || jedesKapitel.has(id))).toBe(true);
       s = kapitelSpielen(s, true);
       expect(s.finished).toBe(true);
       expect(['kapitel', 'pleite', 'verkauft', 'abgesetzt', 'geschluckt', 'haft']).toContain(s.ending);

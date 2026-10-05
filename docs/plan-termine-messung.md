@@ -387,11 +387,11 @@ Stand: 2026-10-05 · Version 0.4.20+4 · 400 Seeds (`bot-0` bis `bot-399`), Stan
 
 | Kapiteldrittel | normale Briefe: Median \|Geld\| ÷ Imperium (oberes Viertel) | Median Geld | große Briefe: Median (oberes Viertel) | Median Geld | Median Faktor | Median Erlös je Runde | Median Imperium |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Runde 1–5 | 1,1 % (2,8 %), n = 3318 | 300 $ | 6,8 % (9,9 %), n = 455 | 2.500 $ | 1,00 | 0 $ | 32.769 $ |
-| Runde 6–11 | 1,1 % (1,9 %), n = 3461 | 630 $ | 8,4 % (11,3 %), n = 1264 | 5.200 $ | 5,62 | 8.424 $ | 62.293 $ |
-| Runde 12–16 | 1,0 % (1,8 %), n = 2234 | 960 $ | 7,2 % (10,9 %), n = 31 | 5.850 $ | 7,84 | 11.760 $ | 83.186 $ |
+| Runde 1–5 | 1,0 % (3,5 %), n = 3163 | 300 $ | 4,9 % (9,1 %), n = 469 | 2.500 $ | 1,00 | 0 $ | 34.501 $ |
+| Runde 6–11 | 0,9 % (1,6 %), n = 3618 | 800 $ | 7,3 % (10,5 %), n = 1268 | 6.400 $ | 8,00 | 13.490 $ | 86.898 $ |
+| Runde 12–16 | 0,8 % (1,5 %), n = 2497 | 960 $ | 7,1 % (10,2 %), n = 27 | 6.400 $ | 8,00 | 15.485 $ | 106.405 $ |
 
-Ganzes Kapitel: normale Briefe Median 1,1 %, große Briefe Median 8,1 %.
+Ganzes Kapitel: normale Briefe Median 0,9 %, große Briefe Median 6,8 %.
 
 <!-- Ende der Messung Briefe mit Gewicht -->
 
@@ -490,34 +490,34 @@ Stand: 2026-10-05 · Version 0.4.20+4 · 500 Seeds (`bot-0` bis `bot-499`), Stan
 
 | Kriterium | Ziel (Plan) | Ist | erfüllt |
 | --- | --- | ---: | :---: |
-| Förderbremse: Preis der Folgerunde bei Kartellanteil ≥ 40 % (Median gegen „ohne Bremse“) | +10–18 % | +15,2 % (418 Gründungen; alle Bremsrunden +12,3 %) | ja |
-| cartelCollapse: Anteil geplatzter Förderbremsen | 0,3–0,6 | 0,56 (356 von 631) | ja |
-| pactValue: Ø Mehrerlös je Förderbremse | 300–2.500 $ | 2.096 $ (631 Pakte) | ja |
-| priceGain: Ø Imperium mit Preis-Aktionen ÷ ohne | 1,05–1,25 | 1,064 (121.368 $ gegen 114.105 $) | ja |
-| contractLoss: Anteil verlustreicher Lieferverträge | 0,2–0,5 | 0,32 (1129 Verträge) | ja |
-| Ø Tarifsenkung beim ausgewogenen Bot (je Partie) | 0,05–0,15 $ | 0,13 $ (1,4 Besuche je Partie; nur Thorne: 0,11 $) | ja |
-| freightGain: Ø Imperium mit Fracht-Aktionen ÷ ohne | 1,03–1,15 | 1,041 (118.077 $ gegen 113.473 $) | ja |
-| Bluff erwischt (Anteil der riskierten Fälle, Bluff-Bot) | 20–60 % | 28,2 % (153 von 542; Standard-Bot, der den Bluff meidet: 9,5 %, 46 von 486) | ja |
+| Förderbremse: Preis der Folgerunde bei Kartellanteil ≥ 40 % (Median gegen „ohne Bremse“) | +10–18 % | +15,7 % (427 Gründungen; alle Bremsrunden +12,1 %) | ja |
+| cartelCollapse: Anteil geplatzter Förderbremsen | 0,3–0,6 | 0,57 (365 von 645) | ja |
+| pactValue: Ø Mehrerlös je Förderbremse | 300–2.500 $ | 1.455 $ (645 Pakte) | ja |
+| priceGain: Ø Imperium mit Preis-Aktionen ÷ ohne | 1,05–1,25 | 1,074 (136.540 $ gegen 127.102 $) | ja |
+| contractLoss: Anteil verlustreicher Lieferverträge | 0,2–0,5 | 0,30 (1119 Verträge) | ja |
+| Ø Tarifsenkung beim ausgewogenen Bot (je Partie) | 0,05–0,15 $ | 0,17 $ (1,7 Besuche je Partie; nur Thorne: 0,14 $) | nein |
+| freightGain: Ø Imperium mit Fracht-Aktionen ÷ ohne | 1,03–1,15 | 1,037 (133.819 $ gegen 129.002 $) | ja |
+| Bluff erwischt (Anteil der riskierten Fälle, Bluff-Bot) | 20–60 % | 21,9 % (136 von 621; Standard-Bot, der den Bluff meidet: 9,8 %, 58 von 589) | ja |
 | Höchster Posted Price in allen Varianten | ≤ 1,60 $ (priceMax) | 1,58 $ | ja |
 
 | Variante (Standard-Bot) | Ø Imperium | Kapitelziel | Pleite |
 | --- | ---: | ---: | ---: |
-| grund | 114.105 $ | 66,4 % | 0,0 % |
-| preis | 121.368 $ | 71,8 % | 0,2 % |
-| ohneFracht | 113.473 $ | 67,2 % | 0,0 % |
-| fracht | 118.077 $ | 68,8 % | 0,2 % |
-| bluff | 116.730 $ | 68,0 % | 0,2 % |
+| grund | 127.102 $ | 61,4 % | 0,2 % |
+| preis | 136.540 $ | 65,0 % | 0,4 % |
+| ohneFracht | 129.002 $ | 63,2 % | 0,2 % |
+| fracht | 133.819 $ | 65,2 % | 0,2 % |
+| bluff | 133.177 $ | 64,0 % | 0,2 % |
 
 | Karte | Anwendungen | schlecht | Ø Geldeffekt | Ø \|Effekt\| | Ø gut | Ø schlecht | im Ziel (20–45 %, ≥ 1.000 $) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | :---: |
-| Bei Thorne vorsprechen | 701 | 21,4 % | 4.360 $ | 5.138 $ | 5.944 $ | -1.457 $ | ja |
-| Bei Thorne vorsprechen (Bluff-Bot) | 801 | 36,1 % | 4.325 $ | 5.470 $ | 7.238 $ | -838 $ | ja |
-| Brennan unter Vertrag | 295 | 40,3 % | 5.364 $ | 5.404 $ | 6.471 $ | 3.727 $ | ja |
-| Transportgemeinschaft | 580 | 43,6 % | 2.029 $ | 2.219 $ | 3.614 $ | -21 $ | ja |
-| Liefervertrag | 1129 | 31,6 % | 1.262 $ | 2.081 $ | 2.445 $ | -1.295 $ | ja |
-| Gerücht streuen | 930 | 32,2 % | 1.178 $ | 4.620 $ | 3.939 $ | -4.650 $ | ja |
-| Mit Crane feilschen | 2618 | 21,5 % | 1.219 $ | 3.476 $ | 2.841 $ | -4.714 $ | ja |
-| Förderbremse (Pakte, geplatzt = schlecht) | 631 | 56,4 % | 2.096 $ | 4.425 $ | – | – | – |
+| Bei Thorne vorsprechen | 839 | 22,5 % | 5.484 $ | 6.364 $ | 7.488 $ | -1.410 $ | ja |
+| Bei Thorne vorsprechen (Bluff-Bot) | 905 | 31,8 % | 5.555 $ | 6.644 $ | 8.576 $ | -918 $ | ja |
+| Brennan unter Vertrag | 397 | 39,5 % | 5.827 $ | 5.882 $ | 6.787 $ | 4.359 $ | ja |
+| Transportgemeinschaft | 664 | 39,5 % | 2.516 $ | 2.639 $ | 4.120 $ | 57 $ | ja |
+| Liefervertrag | 1119 | 30,2 % | 1.402 $ | 2.220 $ | 2.595 $ | -1.354 $ | ja |
+| Gerücht streuen | 987 | 32,5 % | 1.528 $ | 4.949 $ | 4.410 $ | -4.452 $ | ja |
+| Mit Crane feilschen | 2695 | 18,6 % | 1.531 $ | 4.023 $ | 3.199 $ | -5.773 $ | nein |
+| Förderbremse (Pakte, geplatzt = schlecht) | 645 | 56,6 % | 1.455 $ | 5.344 $ | – | – | – |
 
 <!-- Ende der Messung Spielspaß K1 -->
 

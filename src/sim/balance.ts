@@ -396,6 +396,8 @@ export interface TimeskipBalance {
   expand: Record<Stance, number>;
   /** $ je erschlossenem Bezirk. */
   expandCost: number;
+  /** So tief bohrt der Verwalter höchstens (Stufe, ab 1); liegt das Öl tiefer, gibt er die Bohrung auf. */
+  deepestStage: number;
   upkeepPerWell: number;
   /**
    * 0.4.19+3: Deckel für die Bohrungen des Verwalters – höchstens so viele neue Quellen je Sprung wie vorher
@@ -1777,6 +1779,7 @@ function parseTimeskip(raw: unknown): TimeskipBalance {
     maxNewWells: jeHaltung('maxNewWells', positiveInt),
     expand: jeHaltung('expand', nonNegativeInt),
     expandCost: nonNegative(raw, p('expandCost')),
+    deepestStage: positiveInt(raw, p('deepestStage')),
     weakStart: { wells: nonNegativeInt(raw, p('weakStart.wells')), value2: nonNegative(raw, p('weakStart.value2')), value3: nonNegative(raw, p('weakStart.value3')) },
     upkeepPerWell: nonNegative(raw, p('upkeepPerWell')),
     manager: { minNewWells: nonNegativeInt(raw, p('manager.minNewWells')), minRate: nonNegative(raw, p('manager.minRate')) },

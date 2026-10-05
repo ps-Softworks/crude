@@ -330,7 +330,9 @@ describe('Ein Bot, der nur den Hinweisen folgt (Fertig-Kriterium 2.13)', () => {
     expect(spiele.filter((s) => s.found && !s.sold).length).toBe(0);
     // In den ersten drei Runden schafft es ein guter Teil schon.
     expect(spiele.filter((s) => s.foundRound !== null && s.foundRound <= 3).length / n).toBeGreaterThan(0.4);
-    expect(spiele.some((s) => s.state.ending === 'pleite')).toBe(false);
+    // Spielspaß K1: Tiefer rät der Einstieg nur noch über der Gewinnschwelle (600 m kostet 1.800 $). Wer zweimal trocken
+    // bohrt und dann in eine Bankpanik gerät, kann pleitegehen – gemessen 1 von 600 Seeds (vorher 0); hier höchstens 1 %.
+    expect(spiele.filter((s) => s.state.ending === 'pleite').length).toBeLessThanOrEqual(Math.floor(n * 0.01));
   });
 
   it('Frühes Öl: wer nur dem Einstieg folgt, hat in mindestens 90 % der Seeds bis Runde 6 eine Quelle', () => {
