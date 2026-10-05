@@ -37,6 +37,22 @@ describe('Kapitelstart der Phase-4-Systeme (Integration)', () => {
     expect(s.hallstead).toBeUndefined();
   });
 
+  it('ab Kapitel 2 ist die ganze Provinz offen, die neuen Ranches ohne Prognosen (0.4.20+2)', () => {
+    const vorher = imKapitel(2);
+    const s = openChapterSystems(vorher, balance, { stocksBoard: board });
+    const bohrbar = balance.world.regions.filter((r) => r.kind === 'drillable').map((r) => r.id);
+    expect(bohrbar.length).toBeGreaterThan(1);
+    for (const id of bohrbar) {
+      expect(s.regions).toContain(id);
+      expect(s.parcels.some((p) => p.region === id)).toBe(true);
+    }
+    const neu = s.parcels.filter((p) => !vorher.parcels.some((q) => q.id === p.id));
+    expect(neu.length).toBeGreaterThan(0);
+    for (const p of neu) expect(s.forecasts[p.id]).toBeUndefined();
+    // Zweimal aufrufen ändert nichts mehr am Land.
+    expect(openChapterSystems(s, balance, { stocksBoard: board }).parcels.length).toBe(s.parcels.length);
+  });
+
   it('Kapitel 3 legt zusätzlich Marke, Börse und Siegelmappe an', () => {
     const s = openChapterSystems(imKapitel(3), balance, { stocksBoard: board });
     expect(s.refinery).toBeDefined();

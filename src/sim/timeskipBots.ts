@@ -12,7 +12,7 @@ import { debt } from './credit';
 import { empireValue } from './empire';
 import type { EventDef } from './events';
 import type { GameState } from './game';
-import { answerSwitch, runTimeskip, startTimeskip, SWITCH_CHOICES, type Directives, type SwitchId, type TimeskipRecord } from './timeskip';
+import { answerSwitch, roundFlow, runTimeskip, startTimeskip, SWITCH_CHOICES, type Directives, type SwitchId, type TimeskipRecord } from './timeskip';
 
 export interface JumpOutcome {
   value: number;
@@ -61,6 +61,9 @@ export interface StanceRow {
   fireSale: number;
   /** Anteil der Sprünge mit erschlossenem Nachbarbezirk. */
   expanded: number;
+  /** 0.4.20+2: Ø Kasse nach dem Sprung und Median der Förderung je Runde nachher ÷ vorher (pleite zählt 0). */
+  cash: number;
+  flow: number;
 }
 
 export interface FamilyRow {
@@ -116,14 +119,19 @@ export function chapterEnds(balance: Balance, ends: number, catalog: readonly Ev
 
 export function runTimeskipBots(balance: Balance, ends: number, catalog: readonly EventDef[] = []): TimeskipBotReport {
   const kapitelenden = chapterEnds(balance, ends, catalog);
-  const alle: { d: Directives; o: JumpOutcome }[] = [];
+  const alle: { d: Directives; o: JumpOutcome; flow: number }[] = [];
   for (const end of kapitelenden) {
+    const vorher = Math.max(1, roundFlow(end));
     for (const stance of STANCES)
       for (const family of FAMILY_TIMES)
-        for (const i of [0, 1]) alle.push({ d: { stance, family }, o: jumpWith(end, balance, { stance, family }, (id) => SWITCH_CHOICES[id][i], catalog) });
+        for (const i of [0, 1]) {
+          const o = jumpWith(end, balance, { stance, family }, (id) => SWITCH_CHOICES[id][i], catalog);
+          alle.push({ d: { stance, family }, o, flow: o.bankrupt ? 0 : roundFlow(o.state) / vorher });
+        }
   }
   const stances = STANCES.map((stance): StanceRow => {
-    const xs = alle.filter((x) => x.d.stance === stance).map((x) => x.o);
+    const zeilen = alle.filter((x) => x.d.stance === stance);
+    const xs = zeilen.map((x) => x.o);
     const v = xs.map((o) => o.value);
     return {
       stance,
@@ -137,6 +145,8 @@ export function runTimeskipBots(balance: Balance, ends: number, catalog: readonl
       crisisCall: schnitt(xs.map((o) => (hat(o.record, 'crisis_call') ? 1 : 0))),
       fireSale: schnitt(xs.map((o) => (hat(o.record, 'fire_sale') ? 1 : 0))),
       expanded: schnitt(xs.map((o) => (hat(o.record, 'region_opened') ? 1 : 0))),
+      cash: schnitt(xs.map((o) => (o.bankrupt ? 0 : o.state.cash))),
+      flow: quantil(zeilen.map((x) => x.flow), 0.5),
     };
   });
   const family = FAMILY_TIMES.map((f): FamilyRow => {
@@ -189,11 +199,11 @@ const FAMILIE: Record<FamilyTime, string> = { little: 'die Firma zuerst', some: 
 /** Die drei Tabellen für die Konsole und docs/botlaeufe.md. */
 export function timeskipTables(r: TimeskipBotReport): string {
   const haltung = [
-    '| Haltung | Sprünge | Ø Imperium | p10 | Median | p90 | Ø Schulden | pleite | Kreditkündigung | Notverkauf | Nachbarbezirk |',
-    '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
+    '| Haltung | Sprünge | Ø Imperium | p10 | Median | p90 | Ø Kasse | Förderung nachher ÷ vorher (Median) | Ø Schulden | pleite | Kreditkündigung | Notverkauf | Nachbarbezirk |',
+    '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
     ...r.stances.map(
       (s) =>
-        `| ${HALTUNG[s.stance]} | ${s.jumps} | ${geld(s.mean)} | ${geld(s.p10)} | ${geld(s.p50)} | ${geld(s.p90)} | ${geld(s.debt)} | ${prozent(s.bankrupt)} | ${prozent(s.crisisCall)} | ${prozent(s.fireSale)} | ${prozent(s.expanded)} |`,
+        `| ${HALTUNG[s.stance]} | ${s.jumps} | ${geld(s.mean)} | ${geld(s.p10)} | ${geld(s.p50)} | ${geld(s.p90)} | ${geld(s.cash)} | ${s.flow.toLocaleString('de-DE', { maximumFractionDigits: 2, minimumFractionDigits: 2 })} | ${geld(s.debt)} | ${prozent(s.bankrupt)} | ${prozent(s.crisisCall)} | ${prozent(s.fireSale)} | ${prozent(s.expanded)} |`,
     ),
   ];
   const familie = [

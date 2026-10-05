@@ -1,0 +1,47 @@
+# Rundgang Kapitel 2 (0.4.20+2): Nach Zeitsprung I liegen neue Gegenstände auf dem Tisch. Dieser
+# Rundgang kommt einmal von selbst, sobald die Chronik gelesen ist (auch ohne Einstiegshilfe), und
+# zeigt nur, was gerade auf dem Tisch liegt. Format wie content/rundgang.yaml. Reiter (Fernleitung,
+# Aktienbuch, Diplomatie) kann der Rundgang nicht ansteuern – der Text nennt sie.
+# ENTWURF: Ton und Wortwahl sind Vorschläge.
+
+schritte:
+  - objekt: ruth
+    text:
+      de: Sechs Jahre später. Auf dem Tisch liegen ein paar Dinge, die es vorher nicht gab – hier ein kurzer Rundgang. Ruths Zettel sagt dir weiter, was als Nächstes dran ist.
+      en: Six years later. A few things on the desk weren't here before – here is a short tour. Ruth's note still tells you what to do next.
+  - objekt: kassenbuch
+    text:
+      de: Im Kassenbuch (G) steht oben das Kapitelziel und wie weit du bist. Dazu neu, je nach Firmenform – Aktienbuch, Aufsichtsrat (er will Dividende) und Anleihen.
+      en: The ledger (G) shows the chapter goal at the top and how far along you are. New, depending on how the company is set up – share register, board (it wants dividends) and bonds.
+  - objekt: raffinerie
+    text:
+      de: Die Raffinerie. Eine eigene Anlage (rund 150.000 $, 3 Runden Bau) macht aus Rohöl Kerosin, Heizöl und Benzin – mehr Geld je Barrel und ein Teil des Kapitelziels.
+      en: The refinery. A plant of your own (about $150,000, 3 rounds to build) turns crude into kerosene, fuel oil and gasoline – more money per barrel and part of the chapter goal.
+  - objekt: fracht
+    text:
+      de: In der Frachtmappe gibt es jetzt den Reiter „Fernleitung“. Eine Leitung zum Hafen fährt an Thornes Bahn vorbei – der andere Weg zum Kapitelziel. Erst vermessen, dann Wegerechte kaufen, dann bauen.
+      en: The freight folder now has a “Trunk line” tab. A line to the harbour bypasses Thorne's railway – the other road to the chapter goal. Survey first, then buy rights of way, then build.
+  - objekt: karte
+    text:
+      de: Die ganze Provinz ist jetzt vermessen. In den neuen Bezirken ist viel Land frei – aber noch niemand war dort. Erst hinreiten (Kalender), dann pachten.
+      en: The whole province is surveyed now. Plenty of land is free in the new districts – but nobody has been there yet. Ride out first (calendar), then lease.
+  - objekt: personal
+    text:
+      de: Die Personalakten. Hier stellst du Leute ein – ein Vorzimmer etwa bringt mehr Termine je Runde und erledigt Post nach deinen Regeln.
+      en: The staff files. Hire people here – a front office, for instance, gives you more appointments per round and handles mail by your rules.
+  - objekt: konkurrenz
+    text:
+      de: An der Pinnwand ist die Diplomatie dazugekommen – Vertrauen und Groll von Crane, Pruett, Bullard, Thorne und Delgado, dazu Absprachen und Übernahmen.
+      en: The pinboard now has diplomacy – trust and grudges for Crane, Pruett, Bullard, Thorne and Delgado, plus deals and takeovers.
+  - objekt: werkstatt
+    text:
+      de: In der Werkstatt lässt du forschen – bessere Technik, die Geld und Zeit kostet und später Vorsprung bringt.
+      en: In the workshop you fund research – better technology that costs money and time and pays off later.
+  - objekt: schattenbuch
+    text:
+      de: Die Schublade. Ein Bundesanwalt sammelt, was du früher getan hast. Die Hitze sagt dir, wie nah er dir ist.
+      en: The drawer. A federal prosecutor collects what you did in the past. The heat tells you how close he is.
+  - objekt: glocke
+    text:
+      de: Sonst bleibt alles, wie du es kennst. Den Rundgang findest du jederzeit wieder im Menü (☰).
+      en: Everything else works as you know it. You can find this tour again in the menu (☰) at any time.

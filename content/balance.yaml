@@ -589,18 +589,19 @@ timeskip:
   minChance: { aggressive: 0.25, balanced: 0.4, cautious: 0.55 }    # gebohrt wird nur, wo der Geologe so viel Fundchance schätzt
   borrow: { aggressive: 0.6, balanced: 0.2, cautious: 0 }          # Anteil des freien Bankrahmens, den der Verwalter je Jahr leiht, wenn es etwas zu bohren gibt (Rest bleibt in der Kasse)
   repay: { aggressive: 0, balanced: 0.3, cautious: 0.8 }           # Anteil des Überschusses, der jedes Jahr Schulden tilgt
-  maxNewWells: { aggressive: 5, balanced: 4, cautious: 2 }         # höchstens so viele neue Bohrungen je Jahr
+  maxNewWells: { aggressive: 5, balanced: 4, cautious: 3 }         # höchstens so viele neue Bohrungen je Jahr (0.4.20+2: vorsichtig 2 → 3)
   # 4.20: Nachbarbezirke für alle Haltungen. Vorher erschloss nur „wagemutig“ einen Bezirk – und weil nach Kapitel 1
   # am Salt Hill kaum Land frei ist, war das der einzige Weg zu neuem Öl: wagemutig endete mit dem 3,7-fachen
   # Imperium und gewann in 70 % der Seeds (Kampagnen-Bots, docs/botlaeufe.md). Jetzt erschließen alle einen,
   # wagemutig bis zu zwei, und ein Bezirk kostet mehr.
-  expand: { aggressive: 2, balanced: 1, cautious: 1 }              # Nachbarbezirke, die der Verwalter höchstens erschließt, wenn am offenen Land nichts mehr lohnt
+  expand: { aggressive: 2, balanced: 2, cautious: 2 }              # Nachbarbezirke, die der Verwalter höchstens erschließt, wenn am offenen Land nichts mehr lohnt (0.4.20+2: ausgewogen und vorsichtig 1 → 2; Förderung nachher ÷ vorher im Median vorher 0,35/0,23, siehe docs/botlaeufe.md)
   expandCost: 15000           # $ je erschlossenem Bezirk (Landvermesser, Wege, Agenten); 4.20: 8.000 → 15.000
   upkeepPerWell: 60           # $ je fördernde Quelle und Quartal (Vorarbeiter, Reparaturen)
   # 0.4.19+3: Deckel für den Verwalter. Vorher machten zwei Gusher mit 10.000–14.500 bbl je Runde aus 28.585 $
-  # über 500.000 $ – der Sprung belohnte Glück statt das Spiel davor. Jetzt: höchstens so viele neue Quellen je
-  # Sprung, wie vorher förderten (mindestens minNewWells), und keine neue Quelle startet stärker als der Schnitt
-  # von Jacobs Quellen vor dem Sprung (mindestens minRate bbl je Runde).
+  # über 500.000 $ – der Sprung belohnte Glück statt das Spiel davor. Jetzt: keine neue Quelle startet stärker als
+  # der Schnitt von Jacobs Quellen vor dem Sprung (mindestens minRate bbl je Runde), und je Jahr höchstens so viele
+  # neue Quellen, wie vorher förderten (mindestens minNewWells). 0.4.20+2: Der Quellen-Deckel galt vorher für den
+  # ganzen Sprung – die Förderung fiel im Schnitt von 22.000 auf 8.800 bbl je Runde, die Kasse wuchs auf 250.000 $.
   manager: { minNewWells: 2, minRate: 3000 }
   family:
     bond: { little: -6, some: -1, much: 4 }         # Beziehung zu Ruth und den Kindern je Jahr

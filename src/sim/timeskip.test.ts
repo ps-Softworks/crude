@@ -27,6 +27,7 @@ import {
   chapterRound,
   chapterRounds,
   gameYear,
+  roundFlow,
   jacobAge,
   markChronicleRead,
   parseTimeskipContent,
@@ -46,7 +47,6 @@ import {
 import { wildcatterWells } from './wildcatters';
 import { explorableNeighbours, knowledgeOf } from './exploration';
 import { bookCard, cardReason, planCards } from './plans';
-import { openRegions, unlockRegion } from './regions';
 
 const balance = loadBalance();
 const catalog = loadEvents();
@@ -772,15 +772,13 @@ describe('Erkundung und Planungsbrett nach dem Zeitsprung', () => {
     const karte = (id: string) => karten.find((c) => c.id === id)!;
     expect(cardReason(k2, balance, catalog, karte('foerderbremse'))).toMatch(/nicht auf der Hand/);
     expect(cardReason(k2, balance, catalog, karte('thorne_vorsprechen'))).toMatch(/nicht auf der Hand/);
-    // Neues Land in Kapitel 2 (Ereignis oder Verwalter) ergänzt die Karte: Altes Wissen bleibt, das neue Gebiet ist Gerücht.
-    const zu = balance.world.regions.find((r) => r.kind === 'drillable' && !k2.regions.includes(r.id))!;
-    expect(zu).toBeDefined();
-    const offen = openRegions(unlockRegion(k2, zu.id), balance);
-    const neu = offen.parcels.filter((p) => p.region === zu.id);
+    // 0.4.20+2: Ab Kapitel 2 ist die ganze Provinz offen; Land, das vorher niemand erkundet hat, ist Gerücht.
+    for (const r of balance.world.regions.filter((x) => x.kind === 'drillable')) expect(k2.regions).toContain(r.id);
+    const offen = k2;
+    const neu = offen.parcels.filter((p) => knowledgeOf(offen, p.id).level === 0 && !offen.leases.some((x) => x.parcelId === p.id));
     expect(neu.length).toBeGreaterThan(0);
-    for (const p of neu) expect(knowledgeOf(offen, p.id).level).toBe(0);
-    for (const p of k2.parcels) expect(offen.knowledge[p.id]).toEqual(k2.knowledge[p.id]);
     const ziel = neu.find((p) => !p.discovery)!;
+    expect(offen.forecasts[ziel.id]).toBeUndefined();
     expect(cardReason(offen, balance, catalog, karte('ritt'), ziel.id)).toBeNull();
     const r = bookCard(offen, balance, catalog, 'ritt', ziel.id);
     if (!r.ok) throw new Error(r.reason);
@@ -829,12 +827,12 @@ describe('Deckel des Verwalters (0.4.19+3)', () => {
   it('höchstens so viele neue Quellen wie vorher (mindestens minNewWells), Rate höchstens im Schnitt von Jacobs Quellen', () => {
     const m = balance.timeskip.manager;
     const quelle = (rate: number) => ({ status: 'found', production: { initialRate: rate } }) as unknown as GameState['wells'][number];
-    expect(verwalterDeckel({ wells: [] }, balance)).toEqual({ fundeRest: m.minNewWells, rateCap: m.minRate });
+    expect(verwalterDeckel({ wells: [] }, balance)).toEqual({ fundeJahr: m.minNewWells, rateCap: m.minRate });
     const viele = Array.from({ length: m.minNewWells + 3 }, () => quelle(m.minRate * 2));
-    expect(verwalterDeckel({ wells: viele }, balance)).toEqual({ fundeRest: viele.length, rateCap: m.minRate * 2 });
+    expect(verwalterDeckel({ wells: viele }, balance)).toEqual({ fundeJahr: viele.length, rateCap: m.minRate * 2 });
   });
 
-  it('im Sprung startet keine neue Quelle des Verwalters stärker als der Deckel, und es kommen nicht mehr neue als erlaubt', () => {
+  it('im Sprung startet keine neue Quelle des Verwalters stärker als der Deckel, und je Jahr kommen nicht mehr neue als erlaubt', () => {
     const mutig: Directives = { stance: 'aggressive', family: 'little' };
     for (const seed of ['deckel-1', 'deckel-2', 'deckel-3']) {
       const ende = kapitelEnde(seed);
@@ -842,9 +840,22 @@ describe('Deckel des Verwalters (0.4.19+3)', () => {
       const { state } = springen(ende, mutig);
       const alt = new Set(ende.wells.map((w) => w.id));
       const neu = state.wells.filter((w) => !alt.has(w.id) && w.status === 'found' && (w.production?.initialRate ?? 0) > 0 && w.startRound > ende.round);
-      expect(neu.length).toBeLessThanOrEqual(deckel.fundeRest);
+      const jeJahr = new Map<number, number>();
+      for (const w of neu) jeJahr.set(gameYear(w.startRound), (jeJahr.get(gameYear(w.startRound)) ?? 0) + 1);
+      for (const n of jeJahr.values()) expect(n).toBeLessThanOrEqual(deckel.fundeJahr);
       for (const w of neu) expect(w.production!.initialRate).toBeLessThanOrEqual(deckel.rateCap);
     }
+  });
+});
+
+describe('Der Verwalter steckt das Geld in neues Öl (0.4.20+2)', () => {
+  it('nach dem Sprung fördert die Firma im Median mindestens 60 % von vorher (vorher ~35 %)', () => {
+    const verhaeltnis = chapterEnds(balance, 10, catalog).map((ende) => {
+      const { state, record } = springen(ende, STANDARD, ZWEITE);
+      return record.bankrupt ? 0 : roundFlow(state) / Math.max(1, roundFlow(ende));
+    });
+    verhaeltnis.sort((a, b) => a - b);
+    expect(verhaeltnis[Math.floor(verhaeltnis.length / 2)]).toBeGreaterThanOrEqual(0.6);
   });
 });
 

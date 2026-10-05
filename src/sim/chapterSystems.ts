@@ -19,6 +19,7 @@ import type { GameState } from './game';
 import { investigationUnlocked, newInvestigation } from './investigation';
 import { ensureKapitel3 } from './kapitel3';
 import { refineryUnlockedFor, unlockRefinery } from './refinery';
+import { openRegions, unlockRegion } from './regions';
 import { seatStartGuests } from './eventSystems';
 import { newResearch, researchUnlocked } from './research';
 import { openStaff, staffUnlocked } from './staff';
@@ -37,6 +38,10 @@ export function openChapterSystems(state: GameState, balance: Balance, texts: Ch
   const kapitel = chapterOf(state);
   if (kapitel <= 1) return state;
   let s = state;
+  // 0.4.20+2: Ab Kapitel 2 ist die ganze Provinz offen – sechs Jahre später ist Cordova vermessen. Vorher gab es
+  // nach dem Sprung kein neues Land (nur ein Kapitel-1-Ereignis öffnet einen Bezirk), und das Geld lag ungenutzt.
+  // Neue Bezirke kommen ohne Prognosen: Wer wissen will, was sie taugen, reitet hin.
+  s = openRegions(balance.world.regions.filter((r) => r.kind === 'drillable').reduce((acc, r) => unlockRegion(acc, r.id), s), balance);
   // Kapitel 2 (4.6–4.11)
   if (refineryUnlockedFor(kapitel, balance)) s = unlockRefinery(s, balance);
   s = unlockBigPipelines(s, balance);

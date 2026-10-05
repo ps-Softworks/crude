@@ -765,6 +765,10 @@ input:focus-visible { outline: 2px solid var(--ocker); outline-offset: 1px; }
 .chronik-jahr li { margin-bottom: 3px; }
 .chronik-jahr li.chronik-world, .chronik-jahr li.chronik-law { font-weight: 600; }
 .chronik-jahr li.chronik-price { color: var(--tinte-weich); font-style: italic; }
+.sprung-bericht { border-top: 1px solid var(--linie); margin-top: 10px; padding-top: 6px; }
+.sprung-bericht .bogen-text { margin: 4px 0; }
+.sprung-ideen { margin: 2px 0 6px; padding-left: 1.2em; }
+.sprung-ideen li { margin-bottom: 3px; }
 @media (max-width: 760px) { .chronik-jahre { grid-template-columns: minmax(0, 1fr); } .chronik-jahr { border-right: none; } }
 
 .stempel-klein, .kapitel-im-bau {

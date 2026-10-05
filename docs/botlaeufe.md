@@ -1,6 +1,6 @@
 # Bot-Läufe
 
-Stand: 2026-10-05 · Version 0.4.20+1
+Stand: 2026-10-05 · Version 0.4.20+2
 
 - Partien je Strategie: 1.000
 - Seeds: `bot-0` bis `bot-999` (für jede Strategie dieselben)
@@ -72,22 +72,22 @@ Bankrottquote je Strategie, getrennt nach Seeds, in deren Welt während des Kapi
 
 150 Kapitelenden des Standard-Bots (ausgewogen) springen mit allen neun Direktiven (Haltung × Familie), je einmal mit den ersten und einmal mit den zweiten Weichen-Antworten (zu teure Antworten ersetzt der Bot durch die andere). Imperiumswert nach dem Sprung; wer im Sprung pleitegeht, zählt 0. Die Bankpanik-Tabelle wechselt nur diese eine Antwort (Familie „wie bisher“, übrige Weichen mit der zweiten Antwort). GDD §2: Die Haltung bestimmt Ertrag und Streuung, Familienzeit kostet Wachstum; §15: wer im Boom zu viele Schulden macht, stirbt. Kein Zielwert, nur Kennzahl (Regeln in src/sim/timeskip.ts, Messung in src/sim/timeskipBots.ts).
 
-| Haltung | Sprünge | Ø Imperium | p10 | Median | p90 | Ø Schulden | pleite | Kreditkündigung | Notverkauf | Nachbarbezirk |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| wagemutig | 900 | 241.428 $ | 25.454 $ | 225.525 $ | 456.408 $ | 16.419 $ | 4,9 % | 28,7 % | 1,9 % | 75,2 % |
-| ausgewogen | 900 | 253.754 $ | 21.846 $ | 240.743 $ | 477.756 $ | 3.268 $ | 3,2 % | 21,2 % | 1,4 % | 74,1 % |
-| vorsichtig | 900 | 224.534 $ | 10.324 $ | 197.632 $ | 460.820 $ | 592 $ | 2,7 % | 9,6 % | 1,8 % | 56,8 % |
+| Haltung | Sprünge | Ø Imperium | p10 | Median | p90 | Ø Kasse | Förderung nachher ÷ vorher (Median) | Ø Schulden | pleite | Kreditkündigung | Notverkauf | Nachbarbezirk |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| wagemutig | 900 | 364.932 $ | 46.648 $ | 360.077 $ | 637.729 $ | 276.682 $ | 0,85 | 21.612 $ | 4,9 % | 28,7 % | 1,9 % | 87,4 % |
+| ausgewogen | 900 | 351.282 $ | 21.846 $ | 341.107 $ | 654.819 $ | 258.866 $ | 0,69 | 4.106 $ | 3,2 % | 20,8 % | 1,4 % | 82,6 % |
+| vorsichtig | 900 | 289.779 $ | 10.324 $ | 260.342 $ | 620.317 $ | 218.060 $ | 0,33 | 610 $ | 2,7 % | 9,8 % | 1,8 % | 61,9 % |
 
 | Familie | Ø Imperium | Ø Ruth | mit Clara |
 | --- | ---: | ---: | ---: |
-| die Firma zuerst | 263.576 $ | 63 | 99,6 % |
-| wie bisher | 253.820 $ | 90 | 99,6 % |
-| viel Zeit zu Hause | 202.320 $ | 100 | 99,7 % |
+| die Firma zuerst | 407.926 $ | 63 | 99,6 % |
+| wie bisher | 367.856 $ | 90 | 99,6 % |
+| viel Zeit zu Hause | 230.210 $ | 100 | 99,7 % |
 
 | Haltung | Seeds mit Bankpanik-Weiche | Ø Pump − Tilgen | Pump schlechter | pleite Pump / Tilgen | Notverkauf Pump / Tilgen |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| wagemutig | 40 | -9.401 $ | 92,5 % | 2,5 % / 2,5 % | 2,5 % / 0,0 % |
-| ausgewogen | 40 | -5.043 $ | 85,0 % | 2,5 % / 2,5 % | 0,0 % / 0,0 % |
+| wagemutig | 40 | -44.412 $ | 87,5 % | 2,5 % / 2,5 % | 2,5 % / 0,0 % |
+| ausgewogen | 40 | -34.446 $ | 82,5 % | 2,5 % / 2,5 % | 0,0 % / 0,0 % |
 
 ## Zielwerte Kapitel 1
 

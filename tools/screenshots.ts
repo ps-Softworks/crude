@@ -188,7 +188,7 @@ interface Bild {
   warte?: number;
 }
 
-const RUHE: Record<string, string> = { 'crude.zeitung': 'aus', 'crude.rundgang': 'gesehen' };
+const RUHE: Record<string, string> = { 'crude.zeitung': 'aus', 'crude.rundgang': 'gesehen', 'crude.rundgang.k2': 'gesehen' };
 const JACOBS_RANCH = `(() => { const r = [...document.querySelectorAll('.karte-ranch')].find((g) => /Jacobs (Pacht|Option)/.test(g.getAttribute('aria-label'))) ?? document.querySelector('.karte-ranch'); r.dispatchEvent(new MouseEvent('click', { bubbles: true })); })()`;
 const DOKUMENT_VORN = `(() => { const b = [...document.querySelectorAll('.stapel-liste button')].find((x) => x.textContent.includes('mit Dokument')); b?.click(); })()`;
 
@@ -240,6 +240,7 @@ const bilder: Bild[] = [
   { name: '31-zeitsprung-brief', state: kapitelFrei, dann: `[...document.querySelectorAll('.bogen-fuss button')].find((b) => b.textContent.includes('Jahre'))?.click()` },
   { name: '32-zeitsprung-telegramm', state: imSprung },
   { name: '33-zeitsprung-chronik', state: nachSprung },
+  { name: '33b-zeitsprung-bericht', state: nachSprung, dann: `document.querySelector('.bogen-fuss .primary')?.click()` },
   { name: '34-kapitel2-schreibtisch', state: kapitel2 },
   // Termine als Hauptwerkzeug (Etappe 1): Planungsbrett mit Kartenhand.
   { name: '35-planungsbrett', state: start, prefs: { 'crude.reiter.termine': 'land' }, tasten: ['t'] },
@@ -248,6 +249,8 @@ const bilder: Bild[] = [
   { name: '37-brett-fracht', state: mitBremse, prefs: { 'crude.reiter.termine': 'fracht' }, tasten: ['t'] },
   { name: '38-fracht-thorne', state: mitBremse, prefs: { 'crude.reiter.fracht': 'pipeline' }, tasten: ['f'] },
   { name: '39-pinnwand-bremse', state: mitBremse, dann: KLICK('.objekt-konkurrenz'), warte: 600 },
+  // 0.4.20+2: Rundgang Kapitel 2 (zweiter Schritt: Kassenbuch) – kommt von selbst und blättert nur mit „Weiter“.
+  { name: '40-kapitel2-rundgang', state: kapitel2, prefs: { 'crude.rundgang.k2': 'nein' }, tasten: ['Enter'], warte: 3400 },
 ];
 
 // --- Chrome über das DevTools-Protokoll steuern ---
@@ -506,12 +509,18 @@ try {
     [1920, 1080],
   ] as const) {
     await groesse(w, h);
-    for (const [name, state, knopfText] of [
-      ['Kapitelende', kapitel, 'Neues Spiel'],
-      ['Pleite', pleite, 'Neues Spiel'],
-      ['Chronik nach dem Zeitsprung', nachSprung, 'Schreibtisch'],
+    for (const [name, state, knopfText, vorher] of [
+      ['Kapitelende', kapitel, 'Neues Spiel', ''],
+      ['Pleite', pleite, 'Neues Spiel', ''],
+      // 0.4.20+2: Die Chronik hat zwei Seiten – die Jahre, dann Bilanz, Bericht und Kapitelziel.
+      ['Chronik nach dem Zeitsprung, Jahre', nachSprung, 'Weiter', ''],
+      ['Chronik nach dem Zeitsprung, Bericht', nachSprung, 'Schreibtisch', `document.querySelector('.bogen-fuss .primary')?.click()`],
     ] as const) {
       await lade(state, {}, undefined);
+      if (vorher) {
+        await cdp.js(vorher);
+        await pause(300);
+      }
       const m = await cdp.js<{ innen: number; sicht: number; knopf: boolean }>(
         `(() => { const i = document.querySelector('.bogen-inhalt'); const k = [...document.querySelectorAll('.bogen-fuss button')].find((b) => b.textContent.includes(${JSON.stringify(knopfText)})); const r = k?.getBoundingClientRect(); return { innen: i ? i.scrollHeight : 0, sicht: i ? i.clientHeight : 0, knopf: !!r && r.bottom <= innerHeight && r.top >= 0 }; })()`,
       );

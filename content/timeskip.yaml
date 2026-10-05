@@ -202,6 +202,35 @@ chapter2:
     de: Harlan Oil hat die sechs Jahre überstanden, mehr nicht – kaum Quellen, wenig Geld, und der Crane Trust beherrscht Raffinerien und Pipelines. Ziel bis {bis} – eigene Raffinerie oder Pipeline zum Hafen, Kontrolle über die Firma, ein Imperium von {ziel}. Ein weiter Weg.
     en: Harlan Oil has survived the six years, nothing more – few wells, little money, and the Crane Trust controls the refineries and pipelines. Goal by {bis} – your own refinery or pipeline to the harbour, control of the company, an empire worth {ziel}. A long way to go.
 
+# Bericht des Verwalters (0.4.20+2) unter der Chronik von Zeitsprung I: Förderung vorher/nachher und was das
+# Geld jetzt kauft (src/sim/managerReport.ts). {vorher}/{nachher} = bbl je Runde, {kosten} = grobe Kosten,
+# {n} = freie Ranches in der Provinz. Die Namen in „…“ sind die Schilder am Schreibtisch.
+report:
+  title: { de: "Bericht des Verwalters", en: "The manager's report" }
+  flowFell:
+    de: "Die alten Quellen geben nach: Harlan Oil fördert {nachher} bbl je Runde, vor sechs Jahren waren es {vorher}. Gutes Land war knapp – erst jetzt ist die ganze Provinz vermessen und zu haben."
+    en: "The old wells are giving out: Harlan Oil produces {nachher} bbl a round, six years ago it was {vorher}. Good land was scarce – only now is the whole province surveyed and up for grabs."
+  flowHeld:
+    de: "Die Förderung hält: {nachher} bbl je Runde, vor sechs Jahren waren es {vorher}. Jetzt ist die ganze Provinz vermessen und zu haben."
+    en: "Production is holding: {nachher} bbl a round, six years ago it was {vorher}. Now the whole province is surveyed and up for grabs."
+  ideas: { de: "Wofür das Geld jetzt reicht:", en: "What the money can buy now:" }
+  refinery:
+    de: "Eine eigene Raffinerie – rund {kosten}. Das erfüllt einen Teil des Kapitelziels. Am Tisch: „Raffinerie“."
+    en: "A refinery of your own – about {kosten}. That meets part of the chapter goal. On the desk: “Refinery”."
+  harbor:
+    de: "Eine Fernleitung zum Hafen – rund {kosten} mit Vermessung und Wegerechten, an Thornes Bahn vorbei. Erfüllt denselben Teil des Kapitelziels. Am Tisch: „Fracht“, Reiter „Fernleitung“."
+    en: "A trunk line to the harbour – about {kosten} with survey and rights of way, bypassing Thorne's railway. Meets the same part of the chapter goal. On the desk: “Freight”, tab “Trunk line”."
+  land:
+    de: "Neues Öl – {n} Ranches in der Provinz sind frei, Pacht und Bohrung kosten rund {kosten}. Erst hinreiten und umhören (Kalender), dann auf der Karte pachten."
+    en: "New oil – {n} ranches in the province are free, lease and well cost about {kosten}. Ride out and ask around first (calendar), then lease on the map."
+  tooExpensive: { de: "noch zu teuer", en: "still too expensive" }
+  flowLabel: { de: "Förderung je Runde", en: "Production per round" }
+  # Die Chronik hat zwei Seiten: erst die Jahre, dann Bilanz, Bericht und Kapitelziel.
+  page: { de: "Seite {seite} von 2", en: "Page {seite} of 2" }
+  next: { de: "Weiter – Bilanz und Bericht des Verwalters", en: "Next – balance and the manager's report" }
+  nextBalance: { de: "Weiter – Bilanz", en: "Next – balance" }
+  back: { de: "‹ Die Jahre", en: "‹ The years" }
+
 # Kapitel 3 „Der Konzernherr“ (4.19): Stempel unter der Chronik von Zeitsprung II, Ziel zum Kapitelstart.
 chapter3:
   badge: { de: "Kapitel 3 · Der Konzernherr", en: "Chapter 3 · The Magnate" }

@@ -60,7 +60,9 @@ import type { SheetContext } from './sheets/types';
 import { freshSeed, withoutSeedParam } from './restart';
 import { readPref, writePref } from './storage';
 import { debugToolsVisible } from './testerConfig';
-import { tourSteps } from './tourContent';
+import { tourAutoStart, tourFor } from './tour';
+import { tourSteps, tourStepsK2 } from './tourContent';
+import { chapterOf } from '../sim/chapterOf';
 import { loadTutorialOn, mapTutorialContent, saveTutorialOn, tutorialContent } from './tutorial';
 import { VisitorScene } from './visitor/VisitorScene';
 import { appearances } from './visitorContent';
@@ -77,7 +79,6 @@ const ZEITUNG_PREF = 'crude.zeitung';
 /** Was in dieser Runde schon angesehen wurde (für „neu“), über ein Neuladen hinweg. */
 const SZENE_PREF = 'crude.szene';
 /** Der Rundgang der Einstiegshilfe lief schon einmal. */
-const RUNDGANG_PREF = 'crude.rundgang';
 /** So lange geht ein Fenster zu (Übergang). */
 const ZU_MS = 120;
 /** So lange klopft es, bevor der Besuch von selbst hereinkommt. */
@@ -247,17 +248,19 @@ export function App() {
   // Rundgang beim allerersten Start, sobald der Tisch frei ist.
   // Erst wenn die Runde angekommen ist und die Zeitung (falls sie von selbst kommt) gelesen wurde.
   const zeitungOffen = autoNewspaper && !game.finished && !seen(ui, 'zeitung');
+  const tour = tourFor(chapterOf(game), { k1: tourSteps, k2: tourStepsK2 });
   useEffect(() => {
-    if (rundgang || !tutorialOn || besetzt || game.finished || ui.view !== 'desk' || ui.sheet || ui.visitor) return;
+    // 0.4.20+2: Ab Kapitel 2 ein eigener Rundgang für die neuen Gegenstände – einmal, auch ohne Einstiegshilfe.
+    if (rundgang || besetzt || game.finished || ui.view !== 'desk' || ui.sheet || ui.visitor) return;
     if (ui.round !== game.round || zeitungOffen) return;
-    if (readPref(RUNDGANG_PREF) === 'gesehen') return;
+    if (!tourAutoStart(tour.chapter, tutorialOn, readPref(tour.pref) === 'gesehen')) return;
     setRundgang(true);
-  }, [tutorialOn, besetzt, game.finished, game.round, ui.round, zeitungOffen, ui.view, ui.sheet, ui.visitor, rundgang]);
+  }, [tutorialOn, besetzt, game.finished, game.round, ui.round, zeitungOffen, ui.view, ui.sheet, ui.visitor, rundgang, tour.chapter, tour.pref]);
 
   function endeRundgang() {
     setRundgang(false);
     setSpot(null);
-    writePref(RUNDGANG_PREF, 'gesehen');
+    writePref(tour.pref, 'gesehen');
     // Weiter geht es bei Ruths Zettel.
     window.setTimeout(() => document.querySelector<HTMLElement>('.zettel')?.focus({ preventScroll: true }), 0);
   }
@@ -685,7 +688,7 @@ export function App() {
       {zoom && <MapZoom dir={zoom} onDone={() => setZoom(null)} />}
       {besuch}
       {sheets}
-      {rundgang && ui.view === 'desk' && <IntroTour steps={tourSteps} onStep={setSpot} onEnd={endeRundgang} />}
+      {rundgang && ui.view === 'desk' && <IntroTour steps={tour.steps} onStep={setSpot} onEnd={endeRundgang} />}
       {uebergang && <RoundTransition {...uebergang} onDone={() => setUebergang(null)} />}
     </div>
   );

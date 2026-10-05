@@ -185,6 +185,8 @@ export interface TimeskipSnapshot {
   cash: number;
   debt: number;
   wells: number;
+  /** 0.4.20+2: Förderung je Runde (bbl); fehlt in älteren Spielständen. */
+  flow?: number;
   value: number;
   ruth: number;
   children: number;
@@ -386,8 +388,8 @@ interface Lauf {
   navySince: number;
   /** Zeitsprung II: Gradys Reserveland zahlt ab dieser Runde (0 = keins). */
   gradySince: number;
-  /** 0.4.19+3: So viele neue Quellen darf der Verwalter in diesem Sprung noch finden (timeskip.manager). */
-  fundeRest: number;
+  /** 0.4.20+2: So viele neue Quellen darf der Verwalter je Jahr finden (timeskip.manager; 0.4.19+3 galt das für den ganzen Sprung). */
+  fundeJahr: number;
   /** 0.4.19+3: Höchste Anfangsrate einer neuen Quelle des Verwalters (bbl je Runde). */
   rateCap: number;
 }
@@ -396,11 +398,17 @@ function eintrag(l: Lauf, kind: ChronicleKind, extra: Omit<ChronicleEntry, 'year
   l.entries.push({ year: gameYear(l.s.round), kind, ...extra });
 }
 
+/** Förderung je Runde: letzte Rate aller fördernden Quellen (bbl). */
+export function roundFlow(state: Pick<GameState, 'wells'>): number {
+  return state.wells.reduce((sum, w) => sum + (w.status === 'found' ? (w.production?.lastRate ?? 0) : 0), 0);
+}
+
 function snapshot(state: GameState, balance: Balance): TimeskipSnapshot {
   return {
     cash: Math.round(state.cash),
     debt: Math.round(debt(state)),
     wells: producingWells(state).length,
+    flow: Math.round(roundFlow(state)),
     value: Math.round(empireValue(state, balance)),
     ruth: Math.round(state.family.ruth),
     children: (state.family.thomasBorn > 0 ? 1 : 0) + ((state.family.claraBorn ?? 0) > 0 ? 1 : 0),
@@ -903,16 +911,18 @@ interface Ziel {
 }
 
 /**
- * 0.4.19+3: Deckel des Verwalters für einen Sprung – höchstens so viele neue Quellen, wie vor dem Sprung
- * förderten (mindestens manager.minNewWells), und Anfangsraten höchstens im Schnitt von Jacobs Quellen
- * (mindestens manager.minRate). So hängt der Sprung an dem, was vorher gespielt wurde, nicht an einem Gusher.
+ * Deckel des Verwalters: je Jahr höchstens so viele neue Quellen, wie vor dem Sprung förderten (mindestens
+ * manager.minNewWells), und Anfangsraten höchstens im Schnitt von Jacobs Quellen (mindestens manager.minRate).
+ * So hängt der Sprung an dem, was vorher gespielt wurde, nicht an einem Gusher. 0.4.20+2: Der Quellen-Deckel
+ * gilt je Jahr statt für den ganzen Sprung – sonst förderte die Firma nach sechs Jahren nur noch die Hälfte
+ * und das Geld lag ungenutzt in der Kasse.
  */
-export function verwalterDeckel(start: Pick<GameState, 'wells'>, balance: Balance): { fundeRest: number; rateCap: number } {
+export function verwalterDeckel(start: Pick<GameState, 'wells'>, balance: Balance): { fundeJahr: number; rateCap: number } {
   const m = balance.timeskip.manager;
   const quellen = producingWells(start);
   const raten = quellen.map((w) => w.production?.initialRate ?? 0).filter((r) => r > 0);
   const schnitt = raten.length > 0 ? raten.reduce((a, b) => a + b, 0) / raten.length : 0;
-  return { fundeRest: Math.max(m.minNewWells, quellen.length), rateCap: Math.max(m.minRate, Math.round(schnitt)) };
+  return { fundeJahr: Math.max(m.minNewWells, quellen.length), rateCap: Math.max(m.minRate, Math.round(schnitt)) };
 }
 
 /** Bohrziele des Verwalters: eigene ungebohrte Pachten, Nachbohrungen auf eigenen Funden, freie Ranches – ab der Mindestchance seiner Haltung. */
@@ -981,7 +991,7 @@ function bohren(l: Lauf): void {
   let funde = 0;
   let trocken = 0;
   for (const ziel of ziele) {
-    if (funde + trocken >= hoechstens || funde >= l.fundeRest) break;
+    if (funde + trocken >= hoechstens || funde >= l.fundeJahr) break;
     const parcel = l.s.parcels.find((p) => p.id === ziel.parcelId)!;
     const terms = ziel.pacht ? leaseTerms(l.s, balance, ziel.parcelId) : null;
     const pacht = terms?.bonus ?? 0;
@@ -1016,7 +1026,6 @@ function bohren(l: Lauf): void {
     else funde += 1;
     l.s = { ...l.s, cash: l.s.cash - kosten, leases, wells: [...l.s.wells, well] };
   }
-  l.fundeRest -= funde;
   if (funde > 0) eintrag(l, 'wells_found', { n: funde });
   if (trocken > 0) eintrag(l, 'wells_dry', { n: trocken });
 }
@@ -1338,6 +1347,8 @@ export interface TimeskipContent {
   chapter3: Texte<'badge' | 'title' | 'text' | 'textWeak'>;
   /** Ein Kapitel nach dem Early-Access-Umfang (Kopfleiste, „im Bau“). */
   preview: Texte<'badge' | 'text'>;
+  /** 0.4.20+2: Bericht des Verwalters unter der Chronik von Zeitsprung I (src/sim/managerReport.ts). */
+  report: Texte<'title' | 'flowFell' | 'flowHeld' | 'ideas' | 'refinery' | 'harbor' | 'land' | 'tooExpensive' | 'flowLabel' | 'page' | 'next' | 'nextBalance' | 'back'>;
 }
 
 /** Setzt Platzhalter wie {betrag} in einen Text ein. */
@@ -1360,7 +1371,7 @@ export function parseTimeskipContent(file: string, text: string): { content: Tim
   }
   const raw: unknown = doc.toJS();
   if (!istObjekt(raw)) {
-    fehler('Die Datei braucht start, start2, directives, switches, chronicle, chapter2, chapter3 und preview.');
+    fehler('Die Datei braucht start, start2, directives, switches, chronicle, chapter2, chapter3, preview und report.');
     return { content: null, errors };
   }
   const leer: LocalizedText = { de: '', en: '' };
@@ -1438,6 +1449,7 @@ export function parseTimeskipContent(file: string, text: string): { content: Tim
   const chapter2 = texte(block(raw, 'chapter2', 'chapter2'), ['badge', 'title', 'text', 'textWeak'] as const, 'chapter2');
   const chapter3 = texte(block(raw, 'chapter3', 'chapter3'), ['badge', 'title', 'text', 'textWeak'] as const, 'chapter3');
   const preview = texte(block(raw, 'preview', 'preview'), ['badge', 'text'] as const, 'preview');
+  const report = texte(block(raw, 'report', 'report'), ['title', 'flowFell', 'flowHeld', 'ideas', 'refinery', 'harbor', 'land', 'tooExpensive', 'flowLabel', 'page', 'next', 'nextBalance', 'back'] as const, 'report');
   if (errors.length > 0) return { content: null, errors };
-  return { content: { draft: raw.draft === true, start, start2, directives, switches, chronicle, chapter2, chapter3, preview }, errors };
+  return { content: { draft: raw.draft === true, start, start2, directives, switches, chronicle, chapter2, chapter3, preview, report }, errors };
 }

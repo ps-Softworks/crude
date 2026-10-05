@@ -1,21 +1,23 @@
 // Rundgang (0.2.15+10): Beim ersten Start zeigt die Einstiegshilfe jeden
 // Gegenstand einmal kurz – er leuchtet, daneben steht ein Satz, wozu er da ist.
-// Läuft von selbst weiter; Enter/→ weiter, ← zurück, Esc beendet. Texte aus
-// content/rundgang.yaml. Solange er läuft, fängt eine Glasscheibe alle Klicks auf
+// 0.4.20+2: Läuft nicht mehr von selbst weiter – erst „Weiter“ (Enter/→) blättert,
+// ← zurück, Esc beendet. Schritte, deren Gegenstand nicht auf dem Tisch liegt,
+// fallen weg. Texte aus content/rundgang.yaml bzw. rundgang-k2.yaml. Solange er läuft, fängt eine Glasscheibe alle Klicks auf
 // den Tisch ab (0.2.15+11) – sonst ginge ein Fenster unter der Blase auf.
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { stageScale } from '../stage';
-import type { TourStep } from '../tour';
+import { presentSteps, type TourStep } from '../tour';
 
-const SCHRITT_MS = 2600;
 const BREITE = 380;
 
 function ziel(object: string): Element | null {
   return document.querySelector(object === 'ruth' ? '.unterlage-platz' : `.objekt-${object}`);
 }
 
-export function IntroTour({ steps, onStep, onEnd }: { steps: readonly TourStep[]; onStep: (object: string | null) => void; onEnd: () => void }) {
+export function IntroTour({ steps: alle, onStep, onEnd }: { steps: readonly TourStep[]; onStep: (object: string | null) => void; onEnd: () => void }) {
+  // Einmal beim Start: nur, was gerade auf dem Tisch liegt.
+  const [steps] = useState(() => presentSteps(alle, (o) => ziel(o) !== null));
   const [i, setI] = useState(0);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
   // Fenstergröße geändert: Blase neu setzen.
@@ -66,13 +68,6 @@ export function IntroTour({ steps, onStep, onEnd }: { steps: readonly TourStep[]
   }, [schritt, groesse]);
 
   useEffect(() => () => zeige.current(null), []);
-
-  // Von selbst weiter.
-  useEffect(() => {
-    const t = window.setTimeout(weiter, SCHRITT_MS);
-    return () => window.clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [i, steps.length]);
 
   useEffect(() => {
     const taste = (e: KeyboardEvent) => {
