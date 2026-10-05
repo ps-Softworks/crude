@@ -13,6 +13,9 @@ import { LOGISTICS_MARKS, pipelineWorks, teamsIdle, withMark } from './logistics
 import { Rng } from './rng';
 // 4.7 Andockpunkt: Fernleitungen geben den Wegen „Pipeline“ (Hafen) und „Bahn“ (Bahnhof) Kapazität dazu.
 import { bigPipelineCapacity, harborTrunkRunning } from './bigPipeline';
+// Termine als Hauptwerkzeug, Etappe 2: Liefervertrag (Händler), Brennans Fuhrleute, Fremdöl der Transportgemeinschaft.
+import { activeContract } from './pricing';
+import { brennanActive, poolPipelineShare } from './freight';
 import {
   exclusiveActive,
   hikeChance as thorneHikeChance,
@@ -32,7 +35,7 @@ function dollars(value: number): string {
 }
 
 /** Was eine Verkaufsrechnung vom Zustand braucht. */
-type Verkaufslage = Pick<GameState, 'railTariff' | 'postedPrice' | 'round'> & Partial<Pick<GameState, 'events' | 'logistics'>>;
+type Verkaufslage = Pick<GameState, 'railTariff' | 'postedPrice' | 'round'> & Partial<Pick<GameState, 'events' | 'logistics' | 'pricing' | 'freight' | 'ventures'>>;
 
 /** Strafe je Barrel, die Thorne während eines Exklusivvertrags für andere Wege verlangt. */
 export function exclusiveSurcharge(state: Verkaufslage, balance: Balance, mode: TransportMode): number {
@@ -49,17 +52,20 @@ export function tariff(state: Verkaufslage, balance: Balance, mode: TransportMod
   const basis =
     mode === 'rail'
       ? Math.max(0, state.railTariff - (volumeDealActive(state, balance) ? t.thorne.volumeDiscount : 0))
-      : t[mode].costPerBarrel;
+      : mode === 'wagon' && brennanActive(state)
+        ? balance.freight.brennan.costPerBarrel
+        : t[mode].costPerBarrel;
   return cents(basis + exclusiveSurcharge(state, balance, mode));
 }
 
 /** Höchstmenge je Runde: eigene Fuhrwerke je Gespann (0, wenn sie stillstehen), Pipeline nur, wenn sie läuft. */
-export function modeCapacity(state: Partial<Pick<GameState, 'logistics' | 'round' | 'bigPipelines'>>, balance: Balance, mode: TransportMode): number {
+export function modeCapacity(state: Partial<Pick<GameState, 'logistics' | 'round' | 'bigPipelines' | 'freight'>>, balance: Balance, mode: TransportMode): number {
   const t = balance.transport;
   const lg = state.logistics;
   switch (mode) {
     case 'wagon':
-      return t.wagon.capacity;
+      // Etappe 2: Brennans Fuhrleute ersetzen die Mietfuhrwerke, solange sein Vertrag läuft.
+      return state.round !== undefined && brennanActive({ round: state.round, freight: state.freight }) ? balance.freight.brennan.capacity : t.wagon.capacity;
     case 'rail':
       // 4.7 Andockpunkt: plus Fernleitungen zum Bahnhof – ihr Öl fährt mit Thornes Bahn, zu seinem Tarif.
       return t.rail.capacity + bigPipelineCapacity(state, balance, 'rail');
@@ -67,12 +73,13 @@ export function modeCapacity(state: Partial<Pick<GameState, 'logistics' | 'round
       return !lg || teamsIdle({ round: state.round ?? 0, logistics: lg }) ? 0 : lg.teams * t.teams.capacity;
     case 'pipeline':
       // 4.7 Andockpunkt: plus laufende Fernleitungen zum Hafen (Kapitel 2+; in Kapitel 1 immer 0).
-      return (lg && pipelineWorks({ logistics: lg }) ? t.pipeline.capacity : 0) + bigPipelineCapacity(state, balance, 'pipeline');
+      // Etappe 2: Mit gemeinsamer Pipeline der Transportgemeinschaft belegt deren Öl einen Teil.
+      return (lg && pipelineWorks({ logistics: lg }) ? Math.round(t.pipeline.capacity * (1 - poolPipelineShare(state, balance))) : 0) + bigPipelineCapacity(state, balance, 'pipeline');
   }
 }
 
 /** Wie viele Barrel dieses Transportmittel in dieser Runde noch schafft. */
-export function capacityLeft(state: Pick<GameState, 'shipped'> & Partial<Pick<GameState, 'logistics' | 'round' | 'bigPipelines'>>, balance: Balance, mode: TransportMode): number {
+export function capacityLeft(state: Pick<GameState, 'shipped'> & Partial<Pick<GameState, 'logistics' | 'round' | 'bigPipelines' | 'freight'>>, balance: Balance, mode: TransportMode): number {
   return Math.max(0, modeCapacity(state, balance, mode) - (state.shipped[mode] ?? 0));
 }
 
@@ -91,15 +98,21 @@ export function modeUnavailable(state: Pick<GameState, 'round' | 'logistics'> & 
   return null;
 }
 
-/** Preis je Barrel beim Käufer: Crane zahlt Posted Price minus Abschlag/Groll, der Händler Posted Price plus Aufschlag. */
+/**
+ * Preis je Barrel beim Käufer: Crane zahlt Posted Price minus Abschlag/Groll, der Händler Posted
+ * Price plus Aufschlag – mit Liefervertrag (Etappe 2) den festen Vertragspreis.
+ */
 export function buyerPrice(state: Verkaufslage, balance: Balance, buyer: Buyer = 'crane'): number {
-  return buyer === 'trader' ? cents(state.postedPrice + balance.transport.trader.premium) : jacobPrice(state, balance);
+  if (buyer === 'crane') return jacobPrice(state, balance);
+  const vertrag = activeContract(state, 'haendler');
+  return vertrag ? vertrag.price : cents(state.postedPrice + balance.transport.trader.premium);
 }
 
-/** Wie viel der Käufer in dieser Runde noch nimmt (Crane: alles). */
-export function buyerCapacityLeft(state: Partial<Pick<GameState, 'logistics'>>, balance: Balance, buyer: Buyer): number {
+/** Wie viel der Käufer in dieser Runde noch nimmt (Crane: alles; Händler mit Liefervertrag: die Vertragsmenge). */
+export function buyerCapacityLeft(state: Partial<Pick<GameState, 'logistics' | 'round' | 'pricing'>>, balance: Balance, buyer: Buyer): number {
   if (buyer === 'crane') return Infinity;
-  return Math.max(0, balance.transport.trader.capacity - (state.logistics?.traderSold ?? 0));
+  const vertrag = state.round !== undefined ? activeContract({ round: state.round, pricing: state.pricing }, 'haendler') : null;
+  return Math.max(0, (vertrag ? vertrag.qty : balance.transport.trader.capacity) - (state.logistics?.traderSold ?? 0));
 }
 
 /** Was je Barrel nach Fracht übrig bleibt (vor Förderzins). */

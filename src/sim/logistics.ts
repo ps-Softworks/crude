@@ -7,7 +7,8 @@
 //   Fuhrwerke  eigene Gespanne: Lohn je Runde (auch wenn sie stehen), dafür billig je Barrel.
 //   Pipeline   Route vermessen → Wegerechte über Briefe → bauen (mehrere Runden) →
 //              sehr billiger Transport; Sabotage-Risiko, Wachleute senken es.
-//   Drohung    Mit der Pipeline Thorne drohen: senkt den Bahntarif nur, wenn sie glaubwürdig ist.
+//   Thorne     Ob er an die Pipeline glaubt (pipelineCredible), ist seit Etappe 2 ein Druckmittel
+//              beim Vorsprechen (src/sim/freight.ts); die alte Drohung gibt es nicht mehr.
 // Zufall (Brand, Sabotage) kommt aus einem eigenen Strom – die Welt bleibt gleich.
 // Reine Funktionen: Zustand rein, neuer Zustand raus.
 
@@ -265,20 +266,31 @@ export function surveyPipeline(state: GameState, balance: Balance): LogisticsRes
   return { ok: true, state: withMark(out, LOGISTICS_MARKS.surveyed) };
 }
 
+/**
+ * Baukosten der Pipeline: mit gemeinsamer Pipeline der Transportgemeinschaft (Etappe 2,
+ * src/sim/freight.ts) um transport.negotiation.pool.pipelineDiscount billiger.
+ */
+export function pipelineBuildCost(state: Partial<Pick<GameState, 'freight'>>, balance: Balance): number {
+  const f = state.freight;
+  const rabatt = f && f.poolPipeline && f.pool.length > 0 ? balance.freight.pool.pipelineDiscount : 0;
+  return Math.round(balance.transport.pipeline.buildCost * (1 - rabatt));
+}
+
 export function buildPipeline(state: GameState, balance: Balance): LogisticsResult {
   const p = balance.transport.pipeline;
   if (state.logistics.pipeline === 'none') return { ok: false, reason: 'Erst die Route vermessen.' };
   if (state.logistics.pipeline !== 'surveyed') return { ok: false, reason: 'Die Pipeline ist schon gebaut oder im Bau.' };
   if (missingRights(state, balance).length > 0) return { ok: false, reason: 'Es fehlen noch Wegerechte.' };
-  const nein = guard(state, p.buildCost);
+  const kosten = pipelineBuildCost(state, balance);
+  const nein = guard(state, kosten);
   if (nein) return { ok: false, reason: nein };
   return {
     ok: true,
     state: {
       ...state,
-      cash: cents(state.cash - p.buildCost),
+      cash: cents(state.cash - kosten),
       logistics: { ...state.logistics, pipeline: 'building', pipelineRounds: p.buildRounds },
-      log: logged(state, `Der Pipeline-Bau beginnt (${dollars(p.buildCost)} $, ${p.buildRounds} Runden).`),
+      log: logged(state, `Der Pipeline-Bau beginnt (${dollars(kosten)} $, ${p.buildRounds} Runden${kosten < p.buildCost ? ', gemeinsam mit der Transportgemeinschaft' : ''}).`),
     },
   };
 }
@@ -366,7 +378,7 @@ export function advanceLogistics(input: GameState, balance: Balance): GameState 
   return state;
 }
 
-// --- Drohung gegenüber Thorne ---------------------------------------------------
+// --- Glaubwürdigkeit der Pipeline (Druckmittel gegen Thorne, Etappe 2) -------------
 
 /**
  * Glaubt Thorne an die Pipeline? Ja, wenn sie schon gebaut wird (oder läuft),
@@ -377,44 +389,6 @@ export function pipelineCredible(state: Pick<GameState, 'events' | 'logistics' |
   if (lg.pipeline === 'building' || lg.pipeline === 'ready' || lg.pipeline === 'damaged') return true;
   if (lg.pipeline === 'surveyed' && missingRights(state, balance).length === 0) return true;
   return state.cash >= balance.transport.pipeline.buildCost;
-}
-
-/** Runden, bis Jacob wieder drohen kann (0 = jetzt). */
-export function threatWait(state: Pick<GameState, 'round' | 'logistics'>, balance: Balance): number {
-  if (state.logistics.threatRound === 0) return 0;
-  return Math.max(0, state.logistics.threatRound + balance.transport.thorne.threatCooldown - state.round);
-}
-
-/**
- * Jacob droht Thorne mit der eigenen Pipeline. Glaubwürdig: Der Bahntarif sinkt
- * um threatCut (nicht unter minTariff). Bluff: Thorne lacht – und erhöht danach
- * öfter (Merkzeichen thorne_abgelehnt). So oder so erst nach threatCooldown wieder.
- */
-export function threatenThorne(state: GameState, balance: Balance): LogisticsResult {
-  const th = balance.transport.thorne;
-  if (state.finished) return { ok: false, reason: 'Das Kapitel ist beendet.' };
-  const warten = threatWait(state, balance);
-  if (warten > 0) return { ok: false, reason: `Thorne empfängt Jacob frühestens in ${warten} ${warten === 1 ? 'Runde' : 'Runden'} wieder.` };
-  const lg = { ...state.logistics, threatRound: state.round };
-  if (!pipelineCredible(state, balance)) {
-    const out: GameState = {
-      ...state,
-      logistics: lg,
-      log: logged(state, 'Thorne lacht Jacob aus: „Eine Pipeline? Mit welchem Geld, welchem Land?“ Er wird sich das merken.'),
-    };
-    return { ok: true, state: withMark(out, RIVAL_MARKS.thorneRefused) };
-  }
-  // 4.7 Andockpunkt: Liegt der Tarif schon unter minTariff (Fernleitung zum Hafen, Kapitel 2), hebt die Drohung ihn nicht an.
-  const neu = Math.min(state.railTariff, Math.max(th.minTariff, cents(state.railTariff - th.threatCut)));
-  return {
-    ok: true,
-    state: {
-      ...state,
-      railTariff: neu,
-      logistics: lg,
-      log: logged(state, `Thorne rechnet nach und senkt den Bahntarif auf ${neu.toFixed(2).replace('.', ',')} $ je Barrel.`),
-    },
-  };
 }
 
 // --- Buchwert und Wegevergleich ---------------------------------------------------

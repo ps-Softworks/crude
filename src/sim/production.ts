@@ -12,6 +12,8 @@ import type { GameState } from './game';
 import { areaFactor } from './geology';
 import { timedEffect } from './events';
 import { leaseOf, parcelLabel } from './lease';
+// Termine als Hauptwerkzeug, Etappe 2: In der Förderbremse drosselt Jacob seine eigene Förderung (das Öl bleibt im Boden).
+import { throttleFactor } from './pricing';
 
 /**
  * Druckfaktor eines Feldes mit so vielen fördernden Quellen: Die ersten
@@ -166,7 +168,7 @@ export function advanceProduction(input: GameState, balance: Balance): GameState
     gruppen.set(key, [...(gruppen.get(key) ?? []), well]);
   }
 
-  const faktor = Math.max(0, 1 + timedEffect(input, 'production'));
+  const faktor = Math.max(0, 1 + timedEffect(input, 'production')) * throttleFactor(input);
   const neuenStand = new Map<string, { lastRate: number; total: number }>();
   const hoechststand = new Map<string, number>();
   let gefoerdert = 0;

@@ -11,7 +11,7 @@ import {
   dismissTeam,
   fixedCosts,
   hireTeam,
-  pipelineCredible,
+  pipelineBuildCost,
   rightsStatus,
   routePlan,
   sabotageChance,
@@ -20,10 +20,11 @@ import {
   storageOutlook,
   surveyPipeline,
   teamsIdle,
-  threatenThorne,
-  threatWait,
   type LogisticsResult,
 } from '../sim/logistics';
+// Termine als Hauptwerkzeug, Etappe 2: Zurückhalten, Verträge, Verhandlung mit Thorne (alles aus src/sim).
+import { holdOutlook, pricingView } from '../sim/pricing';
+import { freightView } from '../sim/freight';
 import { jacobSupply } from '../sim/market';
 import { buyerCapacityLeft, buyerPrice, capacityLeft, exclusiveSurcharge, modeUnavailable, netPrice, sellOil, tariff } from '../sim/transport';
 import { timedEffect, timedRoundsLeft } from '../sim/events';
@@ -88,6 +89,7 @@ export function SalePanel({ game, onSold }: { game: GameState; onSold: (state: G
         </p>
       )}
       {groll > 0 && <p className="hint">Crane ist verärgert, weil du an den Händler verkauft hast: {price(groll)} je Barrel weniger.</p>}
+      <Vertraege game={game} />
       <fieldset className="kaeufer">
         <legend>Käufer</legend>
         {BUYERS.map((b) => (
@@ -137,6 +139,50 @@ export function SalePanel({ game, onSold }: { game: GameState; onSold: (state: G
           {quittung}
         </p>
       )}
+      <Zurueckhalten game={game} />
+    </div>
+  );
+}
+
+/** Laufende Verträge und Abmachungen mit Crane und dem Händler (Etappe 2). */
+function Vertraege({ game }: { game: GameState }) {
+  const v = pricingView(game);
+  return (
+    <>
+      {v.contract && v.contract.buyer === 'haendler' && (
+        <p className="hint">
+          Liefervertrag: {barrels(v.contract.qty)} bbl je Runde an den Händler zu {price(v.contract.price)}
+          {v.contract.started ? ` (noch ${v.contract.roundsLeft} ${v.contract.roundsLeft === 1 ? 'Runde' : 'Runden'})` : ' – ab der nächsten Runde'}. Fehlmenge kostet Strafe.
+        </p>
+      )}
+      {v.contract && v.contract.buyer === 'crane' && (
+        <p className="hint">
+          Abnahmevertrag mit Crane: fester Preis {price(v.contract.price)} je Barrel (noch {v.contract.roundsLeft} {v.contract.roundsLeft === 1 ? 'Runde' : 'Runden'}).
+        </p>
+      )}
+      {v.craneDeal > 0 && <p className="hint">Handel mit Crane: {price(v.craneDeal)} je Barrel mehr.</p>}
+      {v.cranePunish > 0 && <p className="hint">Crane zahlt dir zur Strafe {price(v.cranePunish)} je Barrel weniger.</p>}
+    </>
+  );
+}
+
+/** Zurückhalten (Etappe 2): Öl im Tank lassen hebt den Preis am Rundenende – und kostet Lager. */
+function Zurueckhalten({ game }: { game: GameState }) {
+  const tank = Math.floor(game.oilStock);
+  const [keep, setKeep] = useState(0);
+  if (tank < 1 || game.finished) return null;
+  const behalten = Math.min(keep, tank);
+  const h = holdOutlook(game, balance, behalten);
+  return (
+    <div className="zurueckhalten">
+      <label>
+        Zurückhalten: {barrels(behalten)} bbl im Tank lassen{' '}
+        <input type="range" min={0} max={tank} step={Math.max(1, Math.round(tank / 40))} value={behalten} onChange={(e) => setKeep(Number(e.target.value))} />
+      </label>
+      <p className="klein">
+        Kosten je Runde ≈ {money(h.cost)} (Lager, Schwund, Brandrisiko). Verkaufst du den Rest, setzt der Trust am Rundenende etwa {price(h.price)}
+        {h.price !== h.priceAll ? ` statt ${price(h.priceAll)}, wenn alles verkauft wird` : ''}. Das zurückgehaltene Öl drückt den Preis, sobald es auf den Markt kommt.
+      </p>
     </div>
   );
 }
@@ -251,9 +297,8 @@ export function PipelinePanel({ game, onChange }: { game: GameState; onChange: (
   const P = T.pipeline;
   const rechte = rightsStatus(game, balance);
   const laeuft = lg.pipeline === 'ready' || lg.pipeline === 'damaged';
-  const warten = threatWait(game, balance);
-  const glaubwuerdig = pipelineCredible(game, balance);
   const pflicht = volumeObligation(game, balance);
+  const bau = pipelineBuildCost(game, balance);
   return (
     <div className="pipeline">
       <h3>Pipeline zum Bahnhof</h3>
@@ -263,7 +308,8 @@ export function PipelinePanel({ game, onChange }: { game: GameState; onChange: (
         {lg.pipeline === 'damaged' && <> Noch {lg.pipelineRounds} {lg.pipelineRounds === 1 ? 'Runde' : 'Runden'}.</>}
       </p>
       <p className="klein">
-        {price(P.costPerBarrel)} je bbl, bis {barrels(P.capacity)} bbl je Runde · Bau {money(P.buildCost)}, {P.buildRounds} Runden ·
+        {price(P.costPerBarrel)} je bbl, bis {barrels(P.capacity)} bbl je Runde · Bau {money(bau)}
+        {bau < P.buildCost && ' (gemeinsam mit der Transportgemeinschaft)'}, {P.buildRounds} Runden ·
         Unterhalt {money(P.upkeepPerRound)} je Runde
       </p>
       {lg.pipeline !== 'none' && (
@@ -283,7 +329,7 @@ export function PipelinePanel({ game, onChange }: { game: GameState; onChange: (
         )}
         {lg.pipeline === 'surveyed' && (
           <Aktion result={buildPipeline(game, balance)} onDone={onChange}>
-            {`Pipeline bauen (${money(P.buildCost)})`}
+            {`Pipeline bauen (${money(bau)})`}
           </Aktion>
         )}
         {laeuft && (
@@ -312,14 +358,45 @@ export function PipelinePanel({ game, onChange }: { game: GameState; onChange: (
           )}
         </p>
       )}
-      <Aktion result={threatenThorne(game, balance)} onDone={onChange}>
-        {warten > 0 ? `Mit Pipeline drohen (in ${warten} ${warten === 1 ? 'Runde' : 'Runden'})` : 'Thorne mit der Pipeline drohen'}
-      </Aktion>
-      <p className="klein">
-        {glaubwuerdig
-          ? `Thorne nimmt die Drohung ernst – er senkt den Tarif um ${price(T.thorne.threatCut)}.`
-          : 'Ohne Wegerechte oder das Geld für den Bau wäre es ein Bluff: Thorne lacht und erhöht danach öfter.'}
+      <ThorneVerhandlung game={game} />
+    </div>
+  );
+}
+
+const STUFE = ['eher eine Abfuhr', 'eine kleine Senkung', 'eine Senkung mit Ruhe', 'ein großes Zugeständnis'];
+
+/** Verhandlung mit Thorne (Etappe 2): Druckmittel als Liste mit Haken, Widerstand in Worten, Ergebnisstufen. */
+function ThorneVerhandlung({ game }: { game: GameState }) {
+  const v = freightView(game, balance);
+  return (
+    <div className="thorne-verhandlung">
+      <h4>Druck auf Thorne</h4>
+      <ul className="rechte">
+        {v.levers.map((l) => (
+          <li key={l.key}>
+            {l.ok ? '☑' : '☐'} {l.label}
+            {l.ok && l.bluff && <span className="klein"> – Thorne prüft nach, ob Jacob es ernst meint</span>}
+          </li>
+        ))}
+      </ul>
+      <p>
+        Druckmittel: {v.pressure} · {v.resistanceWord}. Bei normaler Laune bringt ein Besuch {STUFE[v.expected]}.
       </p>
+      <ul className="klein">
+        {v.outcomes.map((o) => (
+          <li key={o}>{o}</li>
+        ))}
+      </ul>
+      {v.special && <p className="hint">Sondertarif {price(v.special.tariff)} – noch {v.special.roundsLeft} {v.special.roundsLeft === 1 ? 'Runde' : 'Runden'}.</p>}
+      {v.freezeRounds > 0 && !v.special && <p className="hint">Thorne hat Ruhe zugesagt: Der Tarif bleibt noch {v.freezeRounds} {v.freezeRounds === 1 ? 'Runde' : 'Runden'}.</p>}
+      {v.bluffWatch && <p className="hint">Thorne zählt nach: Geht fast alles per Bahn, merkt er den Bluff.</p>}
+      {v.brennan && <p className="hint">Brennans Fuhrleute fahren für dich (noch {v.brennan.roundsLeft} {v.brennan.roundsLeft === 1 ? 'Runde' : 'Runden'}) – siehe Mietfuhrwerk im Verkauf.</p>}
+      {v.pool && (
+        <p className="hint">
+          Transportgemeinschaft: {v.pool.members.join(', ')} – {barrels(v.pool.volume)} bbl je Runde mehr auf der Bahn{v.pool.pipeline ? ', Pipeline gemeinsam' : ''}.
+        </p>
+      )}
+      <p className="klein">Vorsprechen, Brennan und Gemeinschaft liegen als Karten im Kalender (T), Reiter Fracht.</p>
     </div>
   );
 }

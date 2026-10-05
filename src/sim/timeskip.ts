@@ -44,6 +44,8 @@ import { advanceProduction, fieldStatus, fieldWells, initialRate, producingWells
 import { rivalCandidates, rivalChance, rivalWellIncome, type RivalWell } from './rival';
 import { Rng, seedFromString } from './rng';
 import { newAgenda } from './agenda';
+import { newPricing } from './pricing'; // Etappe 2
+import { newFreight } from './freight'; // Etappe 2
 import { openRegions, unlockRegion } from './regions';
 import { fuelPremium, okaraIncome } from './ventures';
 import { TIMESKIP_MARKS, TIMESKIP_SIM_MARKS } from './timeskipMarks';
@@ -1015,6 +1017,9 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
     agenda: newAgenda(s.strengthMax, balance),
     family: { ...s.family, time: 0 },
     missedPayments: 0,
+    // Etappe 2: Pakte, Verträge und Verhandlungen aus Kapitel 1 sind nach sechs Jahren erledigt; der Ruf bleibt.
+    pricing: newPricing(),
+    freight: newFreight(),
     log: [
       ...start.log,
       `${formatDate(start)}: Jacob übergibt das Tagesgeschäft für sechs Jahre an einen Verwalter.`,

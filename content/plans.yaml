@@ -1,6 +1,7 @@
-# Planungsbrett und Erkundung (Termine als Hauptwerkzeug, Etappe 1). Entwurf von Claude,
+# Planungsbrett und Erkundung (Termine als Hauptwerkzeug, Etappe 1 und 2). Entwurf von Claude,
 # bitte in eigener Stimme umschreiben. Zahlen der Karten stehen in balance.yaml unter
-# plans.cards, die Regeln in src/sim/plans.ts und src/sim/exploration.ts.
+# plans.cards, die Regeln in src/sim/plans.ts und src/sim/exploration.ts, für die Reiter Markt
+# und Fracht (Etappe 2) in src/sim/pricing.ts und src/sim/freight.ts.
 # Feste Termine ohne eigene Karte (Abend mit Ruth, Sonntag am Fluss …) nehmen Titel und
 # Text aus ihrem Ereignis in content/events/.
 
@@ -73,6 +74,86 @@ cards:
       de: "Mit Silas die Leitungen abgehen und die Lecks finden, bevor das Öl im Boden versickert."
       en: "Walk the lines with Silas and find the leaks before the oil soaks into the ground."
     risk: { de: "Kostet etwas Kraft.", en: "Costs a little strength." }
+
+  # --- Reiter Markt (Etappe 2): den Ölpreis selbst bewegen ---
+  foerderbremse:
+    title: { de: "Förderbremse gründen", en: "Found a Production Pact" }
+    text:
+      de: "Ein Abend im Saloon mit den kleinen Wildcattern: Alle drosseln ihre Pumpen für vier Runden, damit der Trust nicht im Öl ertrinkt – und der Preis steigt. Wer mitmacht, entscheidet jeder selbst."
+      en: "An evening in the saloon with the small wildcatters: everyone throttles their pumps for four rounds so the Trust doesn't drown in oil – and the price rises. Each decides for himself whether to join."
+    risk: { de: "Jede Runde kann einer heimlich voll fördern; bricht mehr als ein Drittel, platzt der Pakt – und keiner traut Jacob mehr. Steigt der Preis zu hoch, schlägt Crane zurück.", en: "Each round someone may secretly pump full; if more than a third break, the pact collapses – and nobody trusts Jacob any more. If the price climbs too high, Crane strikes back." }
+  pakt_halten:
+    title: { de: "Pakt zusammenhalten", en: "Hold the Pact Together" }
+    text:
+      de: "Bei den Bohrstellen der Mitglieder vorbeireiten, Hände schütteln, nachzählen. Wer gesehen wird, betrügt seltener."
+      en: "Ride past the members' rigs, shake hands, count barrels. Whoever is watched cheats less."
+    risk: { de: "Ohne diesen Termin wächst die Versuchung bei allen.", en: "Without this appointment temptation grows for everyone." }
+  pakt_verlaengern:
+    title: { de: "Förderbremse verlängern", en: "Extend the Pact" }
+    text:
+      de: "Die vier Runden sind bald um. Noch einmal alle an einen Tisch – vier Runden mehr."
+      en: "The four rounds are nearly up. Everyone around the table once more – four more rounds."
+    risk: { de: "Je länger der Pakt läuft, desto größer die Versuchung zu betrügen.", en: "The longer the pact runs, the greater the temptation to cheat." }
+  bullard_einladen:
+    title: { de: "Bullard einladen", en: "Invite Bullard" }
+    text:
+      de: "Ohne Bullard ist jede Förderbremse löchrig. Mit Handschlag kommt er vielleicht, in Fehde nie."
+      en: "Without Bullard any pact leaks. With a handshake he might come, in a feud never."
+    risk: { de: "Drinnen kann er brechen und alles auf einmal fördern; draußen fährt er manchmal voll auf.", en: "Inside he may break and pump everything at once; outside he sometimes goes full throttle." }
+  zur_rede:
+    title: { de: "Zur Rede stellen", en: "Confront Him" }
+    text:
+      de: "Jacob reitet zum Verdächtigen, nachts, wenn die Pumpe laufen sollte. Wer erwischt wird, hält sich ab jetzt an den Pakt."
+      en: "Jacob rides to the suspect at night, when the pump shouldn't be running. Whoever is caught keeps to the pact from now on."
+  liefervertrag:
+    title: { de: "Liefervertrag mit dem Händler", en: "Supply Contract with the Trader" }
+    text:
+      de: "Der unabhängige Händler in Port Ellis zahlt einen festen Preis für eine feste Menge je Runde – etwas unter dem heutigen Preis, je länger, desto weniger. Dafür ist er sicher, wenn am Salt Hill neue Quellen den Preis drücken."
+      en: "The independent trader in Port Ellis pays a fixed price for a fixed quantity each round – a little below today's price, the longer the deal, the less. In return it is safe when new wells at Salt Hill push the price down."
+    risk: { de: "Fehlmenge kostet Strafe, steigt der Preis, verschenkt Jacob Geld, und Crane grollt die ganze Zeit. Im Kreditcrash kann der Händler pleitegehen.", en: "Shortfalls cost penalties, if the price rises Jacob gives money away, and Crane bears a grudge the whole time. In a credit crash the trader may go bust." }
+  geruecht:
+    title: { de: "Gerücht streuen", en: "Spread a Rumour" }
+    text:
+      de: "Ein paar Dollar für Nora Brand und ein paar Runden im Saloon: Was die Händler glauben, bewegt den Preis der nächsten Runde."
+      en: "A few dollars for Nora Brand and a few rounds in the saloon: what the traders believe moves next round's price."
+    risk: { de: "Jedes Gerücht wirkt schwächer als das letzte – und fliegt leichter auf. Dann schreibt Nora nie wieder für Jacob, und Crane zahlt weniger.", en: "Each rumour works less than the last – and is easier to expose. Then Nora never writes for Jacob again, and Crane pays less." }
+  crane_feilschen:
+    title: { de: "Mit Crane feilschen", en: "Haggle with Crane" }
+    text:
+      de: "Ins Kontor des Trusts, mit allem, was Jacob in der Hand hat: Verträge, eigene Wege, einen Pakt, volle Tanks. Je mehr, desto weiter gibt Crane nach."
+      en: "Into the Trust's office with everything Jacob holds: contracts, his own routes, a pact, full tanks. The more, the further Crane gives way."
+    risk: { de: "Mit zu wenig in der Hand gilt Jacob als Bittsteller. Cranes bestes Angebot hat einen Preis: Verrat an den Unabhängigen.", en: "With too little in hand Jacob counts as a supplicant. Crane's best offer has a price: betraying the independents." }
+
+  # --- Reiter Fracht (Etappe 2): die Frachtkosten drücken ---
+  thorne_vorsprechen:
+    title: { de: "Bei Thorne vorsprechen", en: "Call on Thorne" }
+    text:
+      de: "In Thornes Büro am Bahnhof: Druck gegen Widerstand. Gebündelte Mengen, Ausweichwege, eine Pipeline oder ein Gesetz in Hallstead – je mehr Jacob in der Hand hat, desto weiter geht der Tarif herunter."
+      en: "In Thorne's office at the station: pressure against resistance. Bundled volumes, other routes, a pipeline or a bill in Hallstead – the more Jacob holds, the further the rate comes down."
+    risk: { de: "Thornes Laune ist nicht vorherzusagen. Ohne genug Druck gibt es eine Abfuhr, und er erhöht danach öfter. Wer mit Ausweichwegen droht und dann doch alles per Bahn schickt, wird erwischt.", en: "Thorne's mood cannot be predicted. Without enough pressure he sends Jacob away and raises the rate more often. Whoever threatens other routes and then ships everything by rail gets caught." }
+  brennan:
+    title: { de: "Brennan unter Vertrag nehmen", en: "Put Brennan Under Contract" }
+    text:
+      de: "Brennan und seine Fuhrleute fahren vier Runden lang nur für Jacob – billiger als die Mietfuhrwerke und mit mehr Platz."
+      en: "Brennan and his teamsters haul only for Jacob for four rounds – cheaper than hired wagons and with more room."
+    risk: { de: "Unter der Mindestmenge zahlt Jacob die wartenden Fuhrleute trotzdem. Thorne wird versuchen, Brennan abzuwerben.", en: "Below the minimum Jacob still pays the waiting teamsters. Thorne will try to lure Brennan away." }
+  transportgemeinschaft:
+    title: { de: "Transportgemeinschaft gründen", en: "Found a Freight Pool" }
+    text:
+      de: "Die kleinen Wildcatter verladen ihr Öl gemeinsam mit Jacobs – große Mengen sind ein Druckmittel gegen Thorne. Auf Wunsch bauen sie eine Pipeline zusammen."
+      en: "The small wildcatters load their oil together with Jacob's – big volumes are leverage against Thorne. If wanted, they build a pipeline together."
+    risk: { de: "Wer sich vernachlässigt fühlt, springt ab. Eine gemeinsame Pipeline ist billiger, trägt aber auch fremdes Öl.", en: "Whoever feels neglected jumps ship. A shared pipeline is cheaper but also carries others' oil." }
+  gemeinschaft_halten:
+    title: { de: "Gemeinschaft zusammenhalten", en: "Hold the Pool Together" }
+    text:
+      de: "Beim Verladen helfen, Streit um die Waggons schlichten. In dieser Runde springt niemand ab."
+      en: "Help with loading, settle quarrels over the wagons. Nobody jumps ship this round."
+  exklusiv_kuendigen:
+    title: { de: "Exklusivvertrag kündigen", en: "Cancel the Exclusive Contract" }
+    text:
+      de: "Raus aus Thornes Exklusivvertrag – mit einer Abfindung und genug Druck, dass er es hinnimmt."
+      en: "Out of Thorne's exclusive contract – with a settlement and enough pressure that he accepts it."
+    risk: { de: "Teuer. Ohne Druckmittel lacht Thorne nur.", en: "Expensive. Without leverage Thorne just laughs." }
 
 # Hinweise im Ranch-Fenster: was Jacob gesehen hat (seen) bzw. vergeblich gesucht (unseen).
 clues:

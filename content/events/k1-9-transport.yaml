@@ -9,6 +9,9 @@
 # Merkzeichen, die die Simulation liest (transport.pipeline.rights in balance.yaml):
 #   wegerecht_moss, wegerecht_bahndamm  – erst mit beiden kann die Pipeline gebaut werden
 # Effekte für eigene Fuhrwerke: teams (Gespanne +/−), teamsIdle n (stehen bis Runde jetzt+n still).
+# Termine als Hauptwerkzeug, Etappe 2 (src/sim/freight.ts, FREIGHT_MARKS):
+#   brennan_vertrag       Brennans Fuhrleute fahren für Jacob (setzt die Simulation)
+#   brennan_abgeworben    Antwort: Thorne hat Brennan abgeworben – die Simulation beendet den Vertrag
 
 # --- Eigene Fuhrleute ----------------------------------------------------------
 
@@ -316,5 +319,45 @@
       result:
         de: Mrs. Pruitt wartet. Lange wird sie es nicht tun.
         en: Mrs. Pruitt waits. She won't for long.
+      appointments: 0
+      default: true
+
+# --- Brennans Fuhrleute (Etappe 2) ------------------------------------------------
+
+- id: brennan_abwerben
+  rival: thorne
+  mail: demand
+  certain: true
+  once: true
+  marked: [brennan_vertrag]
+  delay: 1
+  conditions: { maxChapter: 1 }
+  title:
+    de: Thorne bietet Brennan mehr
+    en: Thorne Offers Brennan More
+  text:
+    de: >-
+      Brennan steht mit dem Hut in der Hand im Kontor. Thorne hat ihm Geld
+      geboten, wenn seine Fuhrleute nicht mehr für Jacob fahren. „Ich bleib bei
+      dir, Harlan – wenn du drauflegst. Zweihundert, und Thorne kann pfeifen.“
+    en: >-
+      Brennan stands in the office, hat in hand. Thorne has offered him money if
+      his teamsters stop hauling for Jacob. "I'll stay with you, Harlan – if you
+      top it. Two hundred, and Thorne can whistle."
+  choices:
+    - id: drauflegen
+      label: { de: "Zweihundert drauflegen (200 $)", en: "Top it up (200 $)" }
+      result:
+        de: Brennan zählt die Scheine und setzt den Hut wieder auf. Seine Wagen rollen weiter für Jacob.
+        en: Brennan counts the notes and puts his hat back on. His wagons keep rolling for Jacob.
+      requires: { minCash: 200 }
+      effects: { cash: -200 }
+      appointments: 0
+    - id: ziehen_lassen
+      label: { de: "Ihn ziehen lassen", en: "Let him go" }
+      result:
+        de: Brennan nickt und geht. Ab morgen fahren seine Fuhrleute für Thorne – Jacobs Vertrag ist dahin.
+        en: Brennan nods and leaves. From tomorrow his teamsters haul for Thorne – Jacob's contract is gone.
+      marks: [brennan_abgeworben]
       appointments: 0
       default: true

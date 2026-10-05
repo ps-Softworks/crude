@@ -1,0 +1,53 @@
+# Kapitel 1 – Preis-Aktionen (Termine als Hauptwerkzeug, Etappe 2). Entwurf von Claude,
+# bitte in eigener Stimme umschreiben. Vorlage und Erklärung: docs/ereignis-vorlage.md
+#
+# Die Aktionen selbst sind Karten auf dem Planungsbrett (Reiter Markt, Texte in content/plans.yaml,
+# Regeln in src/sim/pricing.ts). Hier stehen die Briefe, die darauf antworten.
+# Merkzeichen, die die Simulation setzt (PRICING_MARKS):
+#   foerderbremse         Jacob hat eine Förderbremse gegründet
+#   kartell_verdacht      ein Mitglied fördert heimlich voll (die Simulation löscht es nach zwei Runden
+#                         wieder; ein neuer Verdacht kommt erst, wenn der alte zur Rede gestellt ist)
+#   kartell_geplatzt      die Förderbremse ist geplatzt
+#   kartell_verraten      Jacob ist für Cranes Geld ausgestiegen
+#   bullard_kartellbruch  Bullard hat die Förderbremse gebrochen
+#   liefervertrag         Liefervertrag mit dem Händler
+#   haendler_pleite       der Händler ist im Kreditcrash pleitegegangen
+#   geruecht_aufgeflogen  ein Gerücht ist aufgeflogen
+#   crane_bittsteller     Crane hat Jacob abblitzen lassen
+#   crane_handel          Jacob hat mit Crane einen Handel geschlossen
+# Merkzeichen, die die Simulation liest:
+#   kartell_ermahnt       Antwort auf „kartell_verdacht“: Der Verdächtige ist zur Rede gestellt
+
+- id: kartell_verdacht
+  mail: info
+  certain: true
+  once: false
+  marked: [kartell_verdacht]
+  conditions: { maxChapter: 1 }
+  title:
+    de: Bei einem von uns läuft die Pumpe nachts
+    en: Someone's Pump Runs at Night
+  text:
+    de: >-
+      Ein Zettel unter der Tür, auf Packpapier, ohne Namen: „Einer aus der
+      Förderbremse fördert nachts heimlich voll. Wenn du deinen Pakt behalten
+      willst, reit hin, bevor die anderen es merken.“
+    en: >-
+      A note under the door, on wrapping paper, unsigned: "One of the pact pumps
+      full at night. If you want to keep your pact, ride out before the others
+      notice."
+  choices:
+    - id: hinreiten
+      label: { de: "Noch heute Nacht hinreiten und ihn zur Rede stellen", en: "Ride out tonight and confront him" }
+      result:
+        de: Jacob steht im Dunkeln neben der laufenden Pumpe, bis der Mann ihn sieht. Ab jetzt bleibt sie nachts still.
+        en: Jacob stands in the dark beside the running pump until the man sees him. From now on it stays quiet at night.
+      effects: { strength: -3 }
+      marks: [kartell_ermahnt]
+    - id: abwarten
+      label: { de: "Abwarten – Gerede gibt es immer", en: "Wait – there's always talk" }
+      result:
+        de: Jacob legt den Zettel weg. Vielleicht ist es nur Gerede. Vielleicht auch nicht.
+        en: Jacob puts the note away. Maybe it's only talk. Maybe not.
+      appointments: 0
+      default: true

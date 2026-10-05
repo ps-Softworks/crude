@@ -98,6 +98,123 @@ Format 20. Ältere Stände (Format 12–19) laden weiter: Jede Ranch, die eine P
 
 ## Offen für Etappe 2–4
 
-- Reiter Markt und Fracht sind noch leer (Preis- und Transport-Aktionen).
+- ~~Reiter Markt und Fracht sind noch leer~~ – seit Etappe 2 gefüllt (unten).
 - `exploreGain` und die übrigen neuen Kennzahlen sind noch keine `bots.targets` (Plan: Etappe 4).
 - Briefe, die zur Erkundung passen (`geruecht_fund`, `post_geologe`, `dok_hale_gutachten`, `rutengaenger`, `dok_pike_urkunde`), sind noch nicht umgebaut (Etappe 3).
+
+---
+
+# Etappe 2: Preis- und Transport-Aktionen
+
+Etappe 2 aus dem Bauplan: Jacob bewegt mit seinen Terminen den Ölpreis (Reiter Markt) und die Frachtkosten (Reiter Fracht). Gemessen über 500 Seeds mit dem Standard-Bot und allen Ereignissen, je Seed in vier Varianten der Karten (siehe unten). Philipp war krank, darum ohne Rückfrage entschieden.
+
+Erzeugt mit `npx tsx tools/termineMessung2.ts 500 --schreiben` (Block zwischen den Marken), der Rest ist von Hand geschrieben. Zum Ausprobieren einzelner Zahlen: `--set pfad=wert`, z. B. `--set priceActions.cartel.cut=0.2`.
+
+## Was jetzt anders ist (kurz)
+
+- **Der Preis rechnet mit Jacobs Verkauf, nicht mit seiner Förderung** (nur Kapitel 1). Öl im Tank zurückhalten hebt den Preis am Rundenende, späteres Ausschütten drückt ihn wieder. Im Verkaufsfenster zeigt ein Regler „Zurückhalten“, was das je Runde kostet (Lager, Schwund, Brandrisiko) und welchen Preis der Trust dann etwa setzt. Die Zeitung nimmt für ihre Vorwarnung an, dass Jacob verkauft, was er fördert.
+- **Reiter Markt:**
+  - *Förderbremse gründen* (2 Termine, 100 $): Jede Wildcatter-Firma würfelt ihren Beitritt (der Ruf bei den Wildcattern zählt). Die Mitglieder drosseln 16 % für 4 Runden, Jacob ehrlich mit oder mit Organisatoren-Klausel nur 10 % (dann betrügen alle leichter). Jacobs gedrosseltes Öl bleibt im Boden. Jede Runde kann ein Mitglied heimlich voll fördern; bricht mehr als ein Drittel der Kartellquellen, platzt der Pakt (Nachbarn fördern eine Runde mehr, 4 Runden Bann, Ruf sinkt). Dazu die Karten *Pakt zusammenhalten*, *verlängern*, *Bullard einladen* und *Zur Rede stellen* (nach dem Brief „Bei einem von uns läuft die Pumpe nachts“, der selbst schon die Antwort „hinreiten“ hat). Steigt der Preis über 1,15 × Trendpreis, zahlt Crane Jacob einen Abschlag. Mit geltendem Kartellgesetz drohen Verfahren und Strafe.
+  - *Liefervertrag mit dem Händler*: fester Preis für feste Menge, 4 oder 8 Runden; Fehlmenge kostet, Crane grollt, im Kreditcrash kann der Händler pleitegehen.
+  - *Gerücht streuen*: „Quellen versiegen“ (nur mit vollem Tank) hebt, „Riesenfund bei Bullard“ senkt den Preis der Folgerunde (Pachten billiger, Bullard wartet ab). Jedes weitere wirkt schwächer und fliegt leichter auf – dann schreibt Nora nichts mehr für Jacob (keine Vorwarnungen im Courier), Crane zahlt weniger, beim Bullard-Gerücht gibt es Fehde.
+  - *Mit Crane feilschen*: Druckpunkte (Liefervertrag, eigene Wege, Förderbremse, Verband, Marktanteil, Kartellgesetz in der Debatte, voller Tank). 1 Punkt: Abfuhr; 2: Abschlag und Groll gestrichen; ab 3 auf Wunsch ein Aufschlag – gegen Austritt aus Pakt oder Händlervertrag (Verrat); ab 4 dazu ein fester Abnahmevertrag.
+- **Reiter Fracht:**
+  - *Bei Thorne vorsprechen*: Druck gegen Widerstand. Die Druckmittel stehen als Liste mit Haken im Frachtfenster (Reiter „Pipeline & Thorne“) und auf der Karte, der Widerstand in Worten („Thorne ist gereizt“), dazu die Ergebnisstufen. Thornes Laune würfelt −1/0/+1. Ergebnis von der Abfuhr (Thorne erhöht 4 Runden öfter) bis zu −0,15 $ und 4 Runden Ruhe oder einem Sondertarif von 0,20 $ für 6 Runden. Hing das Zugeständnis an Ausweichwegen oder der Pipeline und geht danach doch fast alles per Bahn, merkt Thorne den Bluff (+0,10 $, Groll). Die alte Drohung mit der Pipeline gibt es nicht mehr.
+  - *Brennan unter Vertrag*: Brennans Fuhrleute ersetzen 4 Runden lang die Mietfuhrwerke (0,35 $ statt 0,60 $, 5.000 statt 3.000 bbl), Mindestmenge 2.000 bbl. Thorne versucht einmal, ihn abzuwerben (Brief: 200 $ drauflegen oder ihn ziehen lassen). Bei laufendem Exklusivvertrag warnt die Karte.
+  - *Transportgemeinschaft*: Wildcatter verladen mit Jacob (die gebündelte Menge zählt als Druck), auf Wunsch mit gemeinsamer Pipeline (−40 % Bau, bis 30 % Fremdöl gegen Durchleitungsgebühr). Wer sich vernachlässigt fühlt, springt ab – außer in einer Runde mit *Gemeinschaft zusammenhalten*.
+  - *Exklusivvertrag kündigen*: 800 $, nur mit mindestens 2 Druckmitteln.
+- **Ruf bei den Wildcattern** (−0,3 bis +0,3, als Wort auf der Pinnwand): gilt für Förderbremse und Gemeinschaft; sinkt bei geplatztem Pakt, Verrat für Crane und aufgeflogenem Gerücht, steigt, wenn ein Pakt 4 Runden hält.
+- **Pinnwand:** Förderbremse mit Mitgliedern, Restrunden, Bullard, Gerede über Betrug und Wirkung auf den Preis. **Zeitung:** Schlagzeilen zu Gerüchten, Entlarvung, geplatzter Absprache und Kartellverfahren. **Wochenbericht:** alles, was die Karten am Rundenende ergeben haben, auch die Preiswirkung der Förderbremse.
+
+<!-- Messung Etappe 2: npx tsx tools/termineMessung2.ts 500 --schreiben ersetzt bis zur nächsten Marke. -->
+
+Stand: 2026-10-05 · Version 0.4.5+1 · 500 Seeds (`bot-0` bis `bot-499`), Standard-Bot mit allen 385 Ereignissen, je Seed vier Varianten der Karten
+
+| Kriterium | Ziel (Plan) | Ist | erfüllt |
+| --- | --- | ---: | :---: |
+| Förderbremse: Preis der Folgerunde bei Kartellanteil ≥ 40 % (Median gegen „ohne Bremse“) | +10–18 % | +15,3 % (268 Gründungen; alle Bremsrunden +11,5 %) | ja |
+| cartelCollapse: Anteil geplatzter Förderbremsen | 0,3–0,6 | 0,54 (204 von 378) | ja |
+| pactValue: Ø Mehrerlös je Förderbremse | 300–2.500 $ | 1.141 $ (378 Pakte) | ja |
+| priceGain: Ø Imperium mit Preis-Aktionen ÷ ohne | 1,05–1,25 | 1,078 (70.060 $ gegen 65.000 $) | ja |
+| contractLoss: Anteil verlustreicher Lieferverträge | 0,2–0,5 | 0,29 (666 Verträge) | ja |
+| Ø Tarifsenkung beim ausgewogenen Bot (je Partie) | 0,05–0,15 $ | 0,07 $ (1,0 Besuche je Partie; nur Thorne: 0,05 $) | ja |
+| freightGain: Ø Imperium mit Fracht-Aktionen ÷ ohne | 1,03–1,15 | 1,003 (65.722 $ gegen 65.545 $) | nein |
+| Bluff erwischt (Anteil der riskierten Fälle) | 20–60 % | 0,6 % (2 von 351) | nein |
+| Höchster Posted Price in allen Varianten | ≤ 1,60 $ (priceMax) | 1,57 $ | ja |
+
+| Variante (Standard-Bot) | Ø Imperium | Kapitelziel | Pleite |
+| --- | ---: | ---: | ---: |
+| grund | 65.000 $ | 47,4 % | 0,0 % |
+| preis | 70.060 $ | 49,4 % | 0,4 % |
+| ohneFracht | 65.545 $ | 47,6 % | 0,0 % |
+| fracht | 65.722 $ | 47,4 % | 0,0 % |
+
+<!-- Ende der Messung Etappe 2 -->
+
+## Wie gemessen wird
+
+- **Varianten** (je Seed dieselbe Welt): *grund* = wie in balance.yaml (der Standard-Bot spricht bei Thorne vor, sonst keine Preis- oder Fracht-Karte), *preis* = dazu Förderbremse, Liefervertrag, Gerücht, Crane feilschen, *ohneFracht* = gar keine Karte, *fracht* = Thorne, Brennan, Transportgemeinschaft. Wie die Bots die Karten spielen, steht in `src/sim/bots.ts` (`planTurn`); die Feinarbeit je Charakter ist Etappe 4.
+- **Förderbremse:** Preis am Ende der Gründungsrunde (er gilt für die Folgerunde) gegen den Preis, den derselbe Markt ohne Bremse gesetzt hätte – nur Pakte mit mindestens 40 % der Nachbarquellen, Median. Dazu der Median aller Bremsrunden.
+- **cartelCollapse:** geplatzte ÷ gegründete Förderbremsen (Auslaufen und Austritt für Crane zählen nicht als Platzen).
+- **pactValue:** je Pakt Preisplus × verkaufte Barrel der Folgerunde, minus Bewirtung, minus das Öl, das Jacob selbst gedrosselt hat (zum Preis der Runde × 0,6 – im Boden zählt es am Kapitelende noch × 0,4).
+- **priceGain / freightGain:** Ø Imperium *preis* ÷ *grund* bzw. *fracht* ÷ *ohneFracht*.
+- **contractLoss:** Anteil beendeter Lieferverträge mit Mehrerlös unter null (Lieferungen × (Vertragspreis − Posted Price) − Strafen − Cranes Groll auf die übrigen Verkäufe).
+- **Tarifsenkung:** Summe der Senkungen durch Thorne je Partie (Sondertarif: Tarif davor − 0,20 $).
+- **Bluff:** erwischte ÷ riskierte Zugeständnisse (riskiert = ohne Ausweichwege und Pipeline wäre das Ergebnis schlechter gewesen; am Kapitelende noch offene Prüfungen zählen nicht).
+
+## Abweichungen vom Plan (mit Grund)
+
+| Plan | jetzt | Grund |
+| --- | --- | --- |
+| `state.market.soldLastRound` | `state.pricing.sold` | Es gibt keinen Markt-Zustand; der Verkauf gehört zu den Preis-Aktionen. Während der Runde liest der Markt die Verkäufe direkt aus `shipped`. |
+| Verkauf statt Förderung im Angebot | nur Kapitel 1 | Ab Kapitel 2 nimmt die Raffinerie Öl ab, ohne dass es verkauft wird – dort bleibt es bei der Förderung. |
+| Drossel 20 % | 16 % (Organisatoren-Klausel bleibt 10 %) | Mit 20 % stieg der Preis der Folgerunde im Median um 20 % (Ziel 10–18 %). Stellschraube aus dem Plan (20 → 15 %). |
+| Betrug 0,05 + 0,03 je Runde, Klausel +0,05, Bullard +0,15 | 0,02 + 0,01 je Runde, Klausel +0,03, Bullard +0,10 | Mit den Planzahlen platzten 73 % der Pakte (Ziel 30–60 %): Die meisten Pakte haben 3–4 Mitglieder, und ein großes Mitglied bringt allein schon mehr als ein Drittel der Kartellquellen. |
+| Festpreis P + 0,10 − 0,02 × N | P + 0,04 − 0,02 × N | Am Salt Hill fällt der Preis mit jeder neuen Nachbarquelle; mit + 0,10 war fast jeder Vertrag ein Gewinn (9 % Verlustverträge, Ziel 20–50 %). Der Kartentext sagt jetzt „etwas unter dem heutigen Preis, dafür sicher“. |
+| Widerstand-Grundwert 2 | 1 | Mit 2 gab Thorne dem Standard-Bot kaum je nach (Ø Tarifsenkung 0,02 $ je Partie, Ziel 0,05–0,15 $). |
+| „Groll“ nach erwischtem Bluff | Erhöhungschance × 2 für 4 Runden (wie nach einer Abfuhr) | Der Plan nennt keine Zahl; so ist „Groll nur 4 Runden“ prüfbar. |
+| Crane-Abschlag „der vorhandene priceCut“ | eigener Abschlag `pricing.cranePunish` (gleiche Zahlen: rivals.crane.priceCut, cutRounds, mit Verband die Hälfte) | Das Merkzeichen `crane_abschlag` gehört dem Brief; so kommt der Brief weiter, und der Abschlag kann sich wiederholen. |
+| Bittsteller: „der nächste priceCut kommt sicher und dauert +2 Runden“ | der Abschlag kommt sofort und dauert 2 Runden länger | Eindeutig, ohne verstecktes Merkzeichen. |
+| Crane ab 3 Punkten: Verrat (−0,3) | Verrat nur, wenn Jacob wirklich aus Pakt oder Händlervertrag aussteigt | Ohne beides gibt es nichts zu verraten. |
+| Abnahmevertrag mit Crane „P + 0,05“ | fester Preis für alles, was Crane abnimmt, 6 Runden, ohne Mindestmenge | Der Plan nennt keine Menge; „ohne Pleiterisiko“ heißt hier auch: ohne Strafe. |
+| Händlerpleite „bei Bankpanik oder Crash“ | Wurf in jeder Runde, in der die Weltnachricht Bankpanik oder Crash meldet | Je Krise ein bis zwei Würfe statt in jeder Krisenrunde. |
+| Gerücht entlarvt | der Preisschock fällt dann aus | Sonst wäre die Entlarvung für den Preis folgenlos. |
+| Gerücht „Bullards Bohrlust sinkt“ | Bullard pachtet 2 Runden nichts | Kleine, sichtbare Wirkung (eine Zeile in rival.ts). |
+| `fuhrleute_bestochen` × 2 mit Brennan | entfällt vorerst | Der Brief braucht eigene Gespanne (er nimmt eins weg), und Ereignis-Chancen hängen nicht am Zustand. Kommt mit Etappe 3 (gekoppelte Briefe). |
+| Wie der Standard-Bot gründet (im Plan offen) | mit Organisatoren-Klausel; nur der vorsichtige Bot drosselt ehrlich | Ehrlich zu drosseln kostet Jacob etwa so viel, wie der höhere Preis bringt (das Öl zählt im Boden nur × 0,4): Mehrerlös je Pakt −3.700 $. Für Spieler bleibt „ehrlich“ eine Wahl (besser für Ruf und Pakt). |
+| Bots spielen die neuen Karten (Etappe 4) | in balance.yaml `bots.plans` schaltbar; voreingestellt spricht nur der Standard-Bot bei Thorne vor | Ersatz für die weggefallene Drohung; die übrigen Karten schaltet die Messung an. So bleiben die Kapitel-1-Zielwerte vergleichbar. |
+| Etappe-2-Karten | nur Kapitel 1 (`requires: { maxChapter: 1 }`) | Ab Kapitel 2 gibt es Diplomatie und Absprachen mit den Rivalen; im Zeitsprung enden Pakte und Verträge (der Ruf bleibt). |
+| Version je Teilschritt hochzählen | unverändert 0.4.5+1 | Ausdrücklicher Auftrag für diesen Zweig. |
+
+## Noch nicht erreicht (für Etappe 4)
+
+- **freightGain** liegt bei etwa 1,00 statt 1,03–1,15. Die Fracht-Karten senken den Bahntarif wie geplant (Ø 0,07 $ je Partie), aber der Standard-Bot schiebt dann mehr Öl auf die Bahn statt auf eigene Gespanne und Pipeline, und Vorsprechen, Brennan und Gemeinschaft kosten Termine, die sonst in Briefe und feste Termine gehen. Im Paarvergleich über 1.000 Seeds: Thorne allein +0,1 %, alle Fracht-Karten +0,4 % (die Streuung durch andere Antworten auf Briefe liegt bei etwa ± 1 %). Ansatzpunkte für Etappe 4: Der Bot baut Druck gezielt auf (Gemeinschaft vor dem Besuch, Sondertarif bei hohem Tarif), stärkere Ergebnisse beim Vorsprechen oder eine mildere Abfuhr.
+- **Bluff erwischt** liegt nahe 0 % statt 20–60 %. Der Standard-Bot fährt nur gut 40 % seines Öls per Bahn und nutzt seine Gespanne – seine Druckmittel sind meist echt, über 80 % Bahnanteil kommt er nach einem Besuch so gut wie nie. Auch mit Grenze 60 % wären es erst 10 %. Mit allen Fracht-Karten erwischt Thorne den gierigen Bot in 5 %, den vorsichtigen in 16 % der Fälle. Eine Messung mit einem Bot, der bewusst blufft, gehört zu Etappe 4.
+
+## Kapitel-1-Zielwerte (npm run bots, 1.000 Partien je Strategie)
+
+Alle 15 Zielwerte im Rahmen, keiner nachgezogen. Voreingestellt spielt nur der Standard-Bot eine der neuen Karten (Thorne); die Unterschiede kommen vor allem vom Markt-Kern (der gierige Bot hält bei steigendem Preis die Hälfte zurück – jetzt hebt das den Preis) und vom Vorsprechen statt der alten Drohung.
+
+| Kennzahl | Etappe 1 | jetzt | Ziel |
+| --- | ---: | ---: | --- |
+| Höchste Siegquote (ausgewogen) | 36,6 % | 34,7 % | ≤ 40 % |
+| Pleitequote Standard-Bot | 0,5 % | 0,1 % | ≤ 15 % |
+| Pleitequote gierig | 12,7 % | 7,8 % | 5–45 % |
+| Kapitelziel Standard-Bot | 48,7 % | 50,0 % | 20–70 % |
+| Ø Imperium vorsichtig / gierig / ausgewogen | 37.460 / 44.820 / 61.940 $ | 42.750 / 59.968 / 69.140 $ | – |
+| Blinde Wildcat-Bohrung (Rand, 300 m) | 14,5 % | 14,5 % | 5–25 % |
+| Gemessener Rückgang je Quartal | 11,8 % | 12,0 % | 8–15 % |
+| Ø Termine je Runde (Standard-Bot) | 5,00 | 5,00 | 4,5–5 |
+| Höchster Anteil eines Transportwegs | 43,6 % | 42,7 % | ≤ 75 % |
+| Pipeline in Partien mit Kapitelziel | 62,6 % | 64,3 % | ≤ 65 % |
+
+Zwischenstand: Mit Widerstand-Grundwert 2 (Planwert) lag „Pipeline in Partien mit Kapitelziel“ bei 68,3 % – Thorne gab kaum nach, die Bahn blieb teuer, mehr erfolgreiche Partien bauten die Pipeline. Mit Grundwert 1 liegt sie wieder im Rahmen; der Zielwert musste nicht nachgezogen werden.
+
+## Spielstand
+
+Format 21. Ältere Stände (Format 12–20) laden weiter: keine Förderbremse, kein Vertrag, keine Verhandlung, Ruf bei den Wildcattern unbeschrieben.
+
+## Offen für Etappe 3–4
+
+- Briefe koppeln (Etappe 3): Reaktionen auf Förderbremse, Händler, Gerücht, Thorne, Brennan und Gemeinschaft als Briefe in der Folgerunde; bisher gibt es nur „Bei einem von uns läuft die Pumpe nachts“ und „Thorne bietet Brennan mehr“.
+- `pactValue`, `priceGain`, `cartelCollapse`, `contractLoss`, `freightGain` werden `bots.targets`; Bot-Charaktere für die Karten (Etappe 4).

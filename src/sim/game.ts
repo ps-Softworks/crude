@@ -15,7 +15,10 @@ import { makeForecasts, type Forecast } from './forecast';
 import { generateParcels, type Parcel } from './geology';
 // Termine als Hauptwerkzeug (Etappe 1): Erkundung und Planungsbrett.
 import { initialKnowledge, learnFromWells, newExploration, type ExplorationState, type ParcelKnowledge } from './exploration';
-import { newPlans, settlePlans, type PlansState } from './plans';
+import { appendReport, newPlans, settlePlans, type PlansState } from './plans';
+// Termine als Hauptwerkzeug (Etappe 2): Preis- und Transport-Aktionen.
+import { marketMods, newPricing, settlePricingAfterMarket, type PricingState } from './pricing';
+import { newFreight, type FreightState } from './freight';
 import { initialRegions } from './ranches';
 import { openRegions } from './regions';
 import { checkBirth, newFamily, settleFamily, type FamilyState } from './family';
@@ -94,6 +97,12 @@ export interface GameState {
   exploration: ExplorationState;
   /** Planungsbrett (Etappe 1): gebuchte Karten der Runde und Wochenbericht. */
   plans: PlansState;
+  /** Preis-Aktionen (Etappe 2): Verkauf der Runde, Förderbremse, Liefervertrag, Gerüchte, Crane. */
+  pricing: PricingState;
+  /** Transport-Aktionen (Etappe 2): Thorne, Brennan, Transportgemeinschaft. */
+  freight: FreightState;
+  /** Ruf bei den kleinen Wildcattern (Etappe 2, −0,3 bis +0,3): gilt für Förderbremse und Transportgemeinschaft. */
+  wildcatterStanding: number;
   /** Bohrungen, auch abgeschlossene. */
   wells: Well[];
   /** Bohrtürme (0.2.15+7): Silas' geliehener, gekaufte und gemietete. */
@@ -211,6 +220,9 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
     knowledge: {},
     exploration: newExploration(),
     plans: newPlans(1),
+    pricing: newPricing(),
+    freight: newFreight(),
+    wildcatterStanding: 0,
     wells: [],
     rigs: startRigs(balance),
     postedPrice: startPrice,
@@ -306,6 +318,7 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Familie (2.7): Familienzeit gibt Kraft, Vernachlässigung kostet Beziehung.
   const familie = settleFamily(beantwortet, balance);
   // Planungsbrett (Etappe 1): Karten mit Wirkung am Rundenende, Lohn des Geologen, Wochenbericht.
+  // Etappe 2: dazu Förderbremse, Liefervertrag und Fracht-Verträge (die Verkäufe der Runde stehen fest).
   const geplant = settlePlans(familie, balance);
   // Termine (2.3): Krankheit (2.7), ruhige Runde gibt Kraft zurück, die nächste beginnt mit frischen Terminen.
   const terminiert = settleAgenda(geplant, balance);
@@ -319,11 +332,11 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Weltmodell (4.1): Der Preis dieser Runde folgt dem Welttrend von heute, danach rückt die Welt ein Quartal weiter.
   // Salt Hill fließt mit seinem Über- oder Unterangebot (winzig) in die Welt ein.
   const rivalRate = balance.rivals.bullard.ratePerWell;
-  const markt = advanceWorldInGame(
-    advanceMarket(gefoerdert, balance.market, rivalRate, worldPriceFactor(gefoerdert.worldModel, balance.worldModel)),
-    gefoerdert,
-    balance,
-  );
+  // Etappe 2: Kapitel 1 rechnet mit Jacobs Verkauf statt seiner Förderung, dazu Förderbremse und Gerüchte (pricing.ts).
+  const trend = worldPriceFactor(gefoerdert.worldModel, balance.worldModel);
+  const mods = marketMods(gefoerdert, balance);
+  const bepreist = advanceMarket(gefoerdert, balance.market, rivalRate, trend, mods);
+  const markt = advanceWorldInGame(appendReport(settlePricingAfterMarket(bepreist, balance, mods, trend), bepreist.log.length), gefoerdert, balance);
   // Erkundung (Etappe 1): Was die eigene Bohrung zeigt, wird zum Bohrbericht der Ranch.
   const gebohrt = learnFromWells(advanceDrilling(markt, balance), balance);
   const gepachtet = settleLeases(gebohrt, balance);

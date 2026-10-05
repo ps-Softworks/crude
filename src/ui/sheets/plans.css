@@ -50,8 +50,15 @@
 .karte-text { font-size: 15px; }
 .karte-risiko { font-size: 14px; font-style: italic; color: var(--rost, var(--rot)); }
 .karte-grund { font-size: 14px; font-style: italic; }
+/* Etappe 2: Lage (Druckmittel, Beitrittschance) und Warnungen, die nicht sperren. */
+.karte-lage { font-size: 14px; color: var(--tinte-weich); }
+.karte-warnung { font-size: 14px; font-weight: 600; color: var(--rost, var(--rot)); }
 .karte-buchen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
 .karte-buchen select { max-width: 100%; }
+/* Etappe 2: lange Möglichkeiten (Laufzeit, Menge, Preis) bleiben in der Karte. */
+.karte-buchen label { max-width: 100%; min-width: 0; }
+.karte-buchen label:has(> select:only-child) { flex: 1 1 100%; }
+.karte-buchen label > select:only-child { width: 100%; }
 
 .wochenbericht {
   margin-top: 14px;

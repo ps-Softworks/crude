@@ -45,6 +45,8 @@ import { loadBalance } from '../src/sim/testBalance';
 import { loadEvents } from '../src/sim/testEvents';
 import { decideIpo } from '../src/sim/chapter';
 import { answerSwitch, markChronicleRead, runTimeskip, startTimeskip, SWITCH_CHOICES } from '../src/sim/timeskip';
+// Termine als Hauptwerkzeug, Etappe 2: ein Stand mit laufender Förderbremse für Brett, Pinnwand und Frachtfenster.
+import { foundCartel } from '../src/sim/pricing';
 
 const root = new URL('../', import.meta.url);
 const balance = loadBalance();
@@ -190,6 +192,13 @@ const RUHE: Record<string, string> = { 'crude.zeitung': 'aus', 'crude.rundgang':
 const JACOBS_RANCH = `(() => { const r = [...document.querySelectorAll('.karte-ranch')].find((g) => /Jacobs (Pacht|Option)/.test(g.getAttribute('aria-label'))) ?? document.querySelector('.karte-ranch'); r.dispatchEvent(new MouseEvent('click', { bubbles: true })); })()`;
 const DOKUMENT_VORN = `(() => { const b = [...document.querySelectorAll('.stapel-liste button')].find((x) => x.textContent.includes('mit Dokument')); b?.click(); })()`;
 
+// Etappe 2: mittlere Partie mit fördernder Quelle, vollem Tank und laufender Förderbremse (seit der Vorrunde).
+const mitBremse = (() => {
+  const basis = suche((s) => s.round === 8 && s.wells.some((w) => w.status === 'found') && !s.finished, [8]);
+  const b = foundCartel({ ...basis, round: basis.round - 1, oilStock: Math.max(basis.oilStock, 12000) }, balance, false);
+  return { ...b, round: basis.round, freight: { ...b.freight, railLast: 9000 } };
+})();
+
 const bilder: Bild[] = [
   { name: '01-schreibtisch-start', state: start },
   { name: '02-schreibtisch-mitte', state: mitte },
@@ -234,6 +243,11 @@ const bilder: Bild[] = [
   { name: '34-kapitel2-schreibtisch', state: kapitel2 },
   // Termine als Hauptwerkzeug (Etappe 1): Planungsbrett mit Kartenhand.
   { name: '35-planungsbrett', state: start, prefs: { 'crude.reiter.termine': 'land' }, tasten: ['t'] },
+  // Etappe 2: Reiter Markt und Fracht, Verhandlung mit Thorne, Förderbremse auf der Pinnwand.
+  { name: '36-brett-markt', state: mitBremse, prefs: { 'crude.reiter.termine': 'markt' }, tasten: ['t'] },
+  { name: '37-brett-fracht', state: mitBremse, prefs: { 'crude.reiter.termine': 'fracht' }, tasten: ['t'] },
+  { name: '38-fracht-thorne', state: mitBremse, prefs: { 'crude.reiter.fracht': 'pipeline' }, tasten: ['f'] },
+  { name: '39-pinnwand-bremse', state: mitBremse, dann: KLICK('.objekt-konkurrenz'), warte: 600 },
 ];
 
 // --- Chrome über das DevTools-Protokoll steuern ---

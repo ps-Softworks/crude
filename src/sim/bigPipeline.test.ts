@@ -41,7 +41,8 @@ import { letterText, parsePipelineContent } from './bigPipelineContent';
 import { empireValue } from './empire';
 import { endRound, newGame, type GameState } from './game';
 import { resolveEvent } from './events';
-import { threatenThorne, withMark } from './logistics';
+import { withMark } from './logistics';
+import { visitThorne } from './freight';
 import { deserializeGame, SAVE_FORMAT, serializeGame } from './save';
 import { loadBalance, rawBalance, rawMap } from './testBalance';
 import { loadEvents } from './testEvents';
@@ -587,11 +588,11 @@ describe('Fernleitungen: Thorne unter Druck (Fertig-Kriterium 4.7)', () => {
     expect(advanceBigPipelines(bau, OHNE_SABOTAGE, { world: KAPITEL2 }).railTariff).toBe(0.8);
   });
 
-  it('Jacobs Drohung aus Kapitel 1 hebt einen Tarif unter dem Kapitel-1-Boden nicht wieder an', () => {
+  it('Vorsprechen bei Thorne (Etappe 2) hebt einen Tarif unter dem Kapitel-1-Boden nicht wieder an', () => {
     const s: GameState = { ...fertigeLeitung('hafen', OHNE_SABOTAGE), railTariff: OHNE_SABOTAGE.bigPipelines.thorne.minTariff };
-    const r = threatenThorne(s, OHNE_SABOTAGE);
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.state.railTariff).toBe(OHNE_SABOTAGE.bigPipelines.thorne.minTariff);
+    // Viel Druck (gebündelte Bahnmenge), damit Thorne sicher nachgibt.
+    const r = visitThorne({ ...s, freight: { ...s.freight, railLast: 30000 } }, OHNE_SABOTAGE, false);
+    expect(r.railTariff).toBe(OHNE_SABOTAGE.bigPipelines.thorne.minTariff);
   });
 
   it('halber Druck, halbe Senkung', () => {

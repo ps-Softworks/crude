@@ -43,8 +43,18 @@ function Kosten({ card }: { card: PlanCardView }) {
 function Karte({ card, ctx, onFehler }: { card: PlanCardView; ctx: SheetContext; onFehler: (text: string | null) => void }) {
   const text = cardText(card);
   const moeglich = card.targets.filter((t) => t.ok);
+  const optionen = card.options.filter((o) => o.ok);
   const [ziel, setZiel] = useState<string>('');
-  const gewaehlt = card.target === 'ranch' ? (moeglich.some((t) => t.parcelId === ziel) ? ziel : (moeglich[0]?.parcelId ?? '')) : undefined;
+  const gewaehlt =
+    card.target === 'ranch'
+      ? moeglich.some((t) => t.parcelId === ziel)
+        ? ziel
+        : (moeglich[0]?.parcelId ?? '')
+      : card.target === 'option'
+        ? optionen.some((o) => o.id === ziel)
+          ? ziel
+          : (optionen[0]?.id ?? '')
+        : undefined;
   const gesperrt = card.reason !== null;
   function buchen() {
     const r = bookCard(ctx.game, balance, events, card.id, gewaehlt || undefined);
@@ -59,6 +69,8 @@ function Karte({ card, ctx, onFehler }: { card: PlanCardView; ctx: SheetContext;
       <Kosten card={card} />
       {text.text && <p className="karte-text">{text.text}</p>}
       {text.risk && <p className="karte-risiko">Risiko: {text.risk}</p>}
+      {card.detail && <p className="karte-lage">{card.detail}</p>}
+      {card.warning && <p className="karte-warnung">{card.warning}</p>}
       {gesperrt ? (
         <p className="karte-grund">{card.reason}</p>
       ) : (
@@ -75,7 +87,18 @@ function Karte({ card, ctx, onFehler }: { card: PlanCardView; ctx: SheetContext;
               </select>
             </label>
           )}
-          <button type="button" onClick={buchen} disabled={card.target === 'ranch' && !gewaehlt}>
+          {card.target === 'option' && (
+            <label>
+              <select value={gewaehlt} onChange={(e) => setZiel(e.target.value)} aria-label="Möglichkeit">
+                {card.options.map((o) => (
+                  <option key={o.id} value={o.id} disabled={!o.ok} title={o.reason}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <button type="button" onClick={buchen} disabled={(card.target === 'ranch' || card.target === 'option') && !gewaehlt}>
             Buchen
           </button>
           {card.target === 'ranch' && gewaehlt && (

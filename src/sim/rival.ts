@@ -11,6 +11,8 @@ import type { Parcel } from './geology';
 import { adjacent, leaseTerms, parcelLabel, type Lease } from './lease';
 import { Rng, seedFromString, type RngState } from './rng';
 import { markRound, RIVAL_MARKS } from './trust';
+// Etappe 2: Nach dem Gerücht „Riesenfund bei Bullard“ wartet Bullard mit neuen Pachten ab.
+import { bullardShy } from './pricing';
 
 /** Eine Bohrung von Bullard. Vereinfacht: ein Bohrgang, Ergebnis = Geologie. */
 export interface RivalWell {
@@ -253,7 +255,7 @@ export function advanceRival(
   const leases: Lease[] = [...state.leases];
   let bought = 0;
   for (const { parcel, utility } of bids) {
-    if (bought >= b.actionsPerRound || utility <= b.minUtility) break;
+    if (bought >= b.actionsPerRound || utility <= b.minUtility || bullardShy(state)) break;
     const terms = leaseTerms(state, balance, parcel.id);
     if (terms.bonus > cash) continue;
     cash -= terms.bonus;

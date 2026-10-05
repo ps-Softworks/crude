@@ -19,6 +19,9 @@
 // Feste Termine (routine) haben nur eine Antwort: Ihre Abwägung ist der Termin selbst –
 // sie werden aufgelistet, aber nicht bewertet.
 
+// Termine als Hauptwerkzeug, Etappe 2.
+import { PRICING_READ_MARKS } from './pricing';
+import { FREIGHT_READ_MARKS } from './freight';
 import { DIPLOMACY_READ_MARKS } from './diplomacyCore'; // 4.10 Andockpunkt
 import { parseDocument } from 'yaml';
 import type { Balance } from './balance';
@@ -72,6 +75,9 @@ export function simReadMarks(balance: Balance): string[] {
     ...DELANEY_READ_MARKS,
     ...balance.investigation.traces.map((t) => t.mark),
     ...balance.investigation.goodMarks,
+    // Etappe 2: Antworten, die die Preis- und Transport-Aktionen lesen.
+    ...PRICING_READ_MARKS,
+    ...FREIGHT_READ_MARKS,
   ];
 }
 

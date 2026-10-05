@@ -382,7 +382,7 @@ describe('Spielstand übersteht den Kapitelwechsel', () => {
   });
 
   it('ein Spielstand aus Format 18 (0.4.5, Kapitel 2 ohne die neuen Systeme) lädt weiter', () => {
-    expect(SAVE_FORMAT).toBe(20);
+    expect(SAVE_FORMAT).toBe(21);
     const { state } = springen(kapitelEnde('sprung-format18'));
     const alt: Record<string, unknown> = { ...state };
     for (const k of ['refinery', 'bigPipelines', 'stocks', 'staff', 'diplomacy', 'investigation', 'research']) delete alt[k];

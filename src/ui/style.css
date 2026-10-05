@@ -363,6 +363,11 @@ input[type='checkbox'] { accent-color: var(--tinte-weich); }
 .lager h3:first-child, .pipeline h3:first-child { margin-top: 0; }
 .actions.zeile { flex-direction: row; flex-wrap: wrap; }
 .rechte { list-style: none; padding: 0; margin: 4px 0; }
+/* Etappe 2: Zurückhalten im Verkauf, Verhandlung mit Thorne. */
+.zurueckhalten { margin-top: 10px; border-top: 1px dashed var(--linie); padding-top: 6px; }
+.zurueckhalten input[type='range'] { width: 100%; max-width: 320px; vertical-align: middle; }
+.thorne-verhandlung h4 { margin: 10px 0 4px; }
+.thorne-verhandlung ul.klein { margin: 2px 0 6px; padding-left: 18px; }
 
 /* Ausbau einer Ranch und Bohrtürme (0.2.15+7) */
 .ausbau { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--linie); }

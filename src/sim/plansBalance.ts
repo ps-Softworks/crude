@@ -65,8 +65,8 @@ export type PlanTab = (typeof PLAN_TABS)[number];
 
 /** Wann eine Karte wirkt: sofort beim Buchen oder am Rundenende (mit Wurf der Gegenseite). */
 export type PlanTiming = 'sofort' | 'rundenende';
-/** Worauf eine Karte zielt. */
-export type PlanTarget = 'ranch' | 'none';
+/** Worauf eine Karte zielt: eine Ranch, nichts oder eine von mehreren Möglichkeiten (Etappe 2, z. B. Laufzeit und Menge eines Vertrags). */
+export type PlanTarget = 'ranch' | 'none' | 'option';
 
 /** Bedingungen, ob eine Karte überhaupt auf der Hand ist (sonst unsichtbar). */
 export interface PlanRequires {
@@ -175,7 +175,7 @@ export function parsePlansBalance(raw: unknown): PlansBalance {
     const tab = wert(raw, `${q}.tab`);
     if (typeof tab !== 'string' || !TABS.includes(tab)) throw new BalanceError(`balance.yaml: "${q}.tab" muss ${PLAN_TABS.join(', ')} sein`);
     const target = wert(raw, `${q}.target`) ?? 'none';
-    if (target !== 'ranch' && target !== 'none') throw new BalanceError(`balance.yaml: "${q}.target" muss ranch oder none sein`);
+    if (target !== 'ranch' && target !== 'none' && target !== 'option') throw new BalanceError(`balance.yaml: "${q}.target" muss ranch, none oder option sein`);
     const timing = wert(raw, `${q}.timing`) ?? 'sofort';
     if (timing !== 'sofort' && timing !== 'rundenende') throw new BalanceError(`balance.yaml: "${q}.timing" muss sofort oder rundenende sein`);
     const handler = wert(raw, `${q}.handler`);

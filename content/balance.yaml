@@ -218,6 +218,63 @@ plans:
     tagebuch: { tab: land, appointments: 2, strength: -5, handler: tagebuch }                  # 1 Termin + 1 Nacht (Überstunden-Kraft)
     rute: { tab: land, appointments: 1, cash: 20, strength: 1, target: ranch, handler: rute }  # Faktor 1, hebt die Laune
     feldinspektion: { tab: land, event: termin_rundgang }
+    # Etappe 2: Preis-Aktionen (Reiter Markt, Zahlen der Regeln: priceActions) – nur Kapitel 1 (ab Kapitel 2 gibt es die Diplomatie) …
+    foerderbremse: { tab: markt, appointments: 2, cash: 100, target: option, timing: rundenende, handler: foerderbremse, requires: { maxChapter: 1 } }   # Bewirtung im Saloon
+    pakt_halten: { tab: markt, appointments: 1, timing: rundenende, handler: pakt_halten, requires: { maxChapter: 1 } }
+    pakt_verlaengern: { tab: markt, appointments: 1, timing: rundenende, handler: pakt_verlaengern, requires: { maxChapter: 1 } }
+    bullard_einladen: { tab: markt, appointments: 1, timing: rundenende, handler: bullard_einladen, requires: { maxChapter: 1 } }
+    zur_rede: { tab: markt, appointments: 1, timing: rundenende, handler: zur_rede, requires: { maxChapter: 1 } }
+    liefervertrag: { tab: markt, appointments: 1, target: option, timing: rundenende, handler: liefervertrag, requires: { maxChapter: 1 } }
+    geruecht: { tab: markt, appointments: 1, cash: 150, target: option, timing: rundenende, handler: geruecht, requires: { maxChapter: 1 } }
+    crane_feilschen: { tab: markt, appointments: 2, target: option, timing: rundenende, handler: crane_feilschen, requires: { maxChapter: 1 } }
+    # … und Transport-Aktionen (Reiter Fracht, Zahlen der Regeln: transport.negotiation)
+    thorne_vorsprechen: { tab: fracht, appointments: 2, cash: 30, strength: -3, target: option, timing: rundenende, handler: thorne_vorsprechen, requires: { maxChapter: 1 } }
+    brennan: { tab: fracht, appointments: 1, cash: 150, handler: brennan, requires: { maxChapter: 1 } }
+    transportgemeinschaft: { tab: fracht, appointments: 2, cash: 100, target: option, timing: rundenende, handler: transportgemeinschaft, requires: { maxChapter: 1 } }
+    gemeinschaft_halten: { tab: fracht, appointments: 1, timing: rundenende, handler: gemeinschaft_halten, requires: { maxChapter: 1 } }
+    exklusiv_kuendigen: { tab: fracht, appointments: 1, cash: 800, handler: exklusiv_kuendigen, requires: { maxChapter: 1 } }
+
+# Preis-Aktionen (Termine als Hauptwerkzeug, Etappe 2, src/sim/pricing.ts). Alles PLATZHALTER.
+priceActions:
+  # Ein gemeinsamer Ruf bei den Wildcattern (−0,3 bis +0,3) für Förderbremse und Transportgemeinschaft.
+  standing: { min: -0.3, max: 0.3, collapse: -0.2, betrayal: -0.3, exposed: -0.1, held: 0.1, heldRounds: 4 }
+  cartel:                    # Förderbremse
+    join: { base: 0.55, alliance: 0.15, min: 0.10, max: 0.85 }   # Beitritt je Wildcatter-Firma: 0,55 + Ruf (+0,15 mit Delgados Verband)
+    cut: 0.16                # Drossel 16 % … (Plan: 20 % – damit stieg der Preis der Folgerunde im Median um 20 %, Ziel 10–18 %)
+    rounds: 4                # … für 4 Runden, danach verlängern (1 Termin)
+    organizerCut: 0.10       # Organisatoren-Klausel: Jacob drosselt nur 10 % …
+    organizerCheat: 0.03     # … dafür Betrugschance aller +0,03 (Plan: 0,05)
+    cheat: { base: 0.02, perRound: 0.01, unheld: 0.10, bullardFull: 0.10 }   # je Mitglied und Runde: 0,02 + 0,01 je Runde seit Gründung; ohne „Pakt halten“ +0,10; fuhr Bullard voll auf +0,10 (Plan: 0,05 + 0,03, Bullard +0,15 – damit platzten 73 % der Pakte, Ziel 30–60 %; kleine Pakte platzen schon, wenn ein großes Mitglied betrügt)
+    breakShare: 0.334        # bricht mehr als 1/3 der Kartellquellen, platzt der Pakt
+    collapseBoost: 0.10      # danach fördern die Nachbarn eine Runde 10 % mehr (Tanks werden geleert)
+    banRounds: 4             # und 4 Runden will niemand mehr einen Pakt
+    bullard: { handshake: 0.60, neutral: 0.25, feud: 0, full: 0.20, break: 0.15, breakFactor: 1.5 }   # Beitritt je Haltung; draußen fährt er mit 20 % voll auf, drinnen bricht er mit 15 % (dann ×1,5 Förderung)
+    craneTrigger: 1.15       # Preis über 1,15 × Trendpreis: Crane zahlt Jacob den Abschlag (rivals.crane.priceCut)
+    antitrust: { chance: 0.10, fine: 1000 }   # Kartellgesetz in Kraft: je Runde 10 % Verfahren, 1.000 $ Strafe
+  contract:                  # Liefervertrag mit dem Händler in Port Ellis
+    minQty: 2000             # Menge je Runde: 2.000 bis min(6.000, Förderung der Vorrunde)
+    maxQty: 6000
+    qtyStep: 1000
+    rounds: [4, 8]
+    premium: 0.04            # Festpreis = Posted Price + 0,04 − 0,02 × Laufzeit (Plan: + 0,10 – weil der Preis am Salt Hill mit jeder neuen Nachbarquelle fällt, war damit fast jeder Vertrag ein Gewinn, Ziel 20–50 % Verlustverträge)
+    perRound: 0.02
+    shortfall: 0.15          # Fehlmenge kostet 0,15 $ je bbl
+    grudgeAfter: 2           # Cranes Groll (transport.trader.grudgeCut) für Laufzeit + 2 Runden
+    failChance: 0.30         # Bankpanik oder Crash: Händler zu 30 % pleite, die laufende Runde bleibt unbezahlt
+  rumour:                    # Gerücht streuen
+    cooldown: 3
+    dry: { shock: 0.15, minTank: 5000 }                    # „Quellen versiegen“: Preis +15 % in der Folgerunde, nur mit vollem Tank
+    bullard: { shock: -0.12, leaseCost: -0.15, rounds: 2 }  # „Riesenfund bei Bullard“: Preis −12 %, Pachten 15 % billiger, Bullard pachtet 2 Runden nichts
+    wear: 0.6                # jedes weitere Gerücht wirkt × 0,6
+    exposed: { base: 0.20, perRumour: 0.15 }   # Entlarvung 20 % + 15 % je früheres Gerücht
+  crane:                     # Mit Crane feilschen
+    points: { contract: 1, freight: 1, cartel: 2, alliance: 1, share: 1, antitrust: 1, tank: 1 }
+    freightTeams: 2          # „eigene Wege“: mindestens 2 Gespanne oder Pipeline
+    shareMin: 0.08           # Marktanteil am Salt Hill ab 8 %
+    tankMin: 10000           # Tank ab 10.000 bbl
+    rebuffExtra: 2           # 1 Punkt: Abfuhr, der Abschlag kommt sofort und dauert 2 Runden länger
+    deal: { bonus: 0.08, rounds: 6 }        # ab 3: +0,08 $ je bbl für 6 Runden (nur gegen Austritt aus Pakt oder Händlervertrag)
+    contract: { premium: 0.05, rounds: 6 }  # ab 4: fester Abnahmevertrag zu Posted Price + 0,05
 
 # Bohren (GDD §5): Stufe 1 ist die Zieltiefe, jede weitere Stufe heißt
 # "tiefer bohren". Tiefer = teurer und gefährlicher (Push your luck).
@@ -321,9 +378,34 @@ transport:
     minVolume: 5000         # … gegen Mindestabnahme je Runde (ab der Runde nach der Unterschrift) …
     shortfallPenalty: 0.10  # … sonst Strafe je fehlendem Barrel
     exclusivePenalty: 0.30  # Exklusivvertrag: Tarif eingefroren, jeder Barrel über einen anderen Weg kostet diese Strafe
-    threatCut: 0.10         # Drohung mit Pipeline: senkt den Tarif – nur wenn sie glaubwürdig ist
-    minTariff: 0.15         # tiefer geht Thorne nie
-    threatCooldown: 4       # Runden bis zur nächsten Drohung
+    minTariff: 0.15         # tiefer geht Thorne nie (auch nicht beim Vorsprechen, Etappe 2)
+  # Termine als Hauptwerkzeug, Etappe 2: Verhandeln über das Planungsbrett (src/sim/freight.ts).
+  # Ersetzt die alte Drohung mit der Pipeline. Alles PLATZHALTER.
+  negotiation:
+    bundle: [8000, 20000]   # Druckmittel 1 und 2: gebündelt so viel bbl per Bahn (eigene + Gemeinschaft + Mindestmenge)
+    fallbackShare: 0.5      # Druckmittel 3: Ausweichkapazität (Gespanne, Brennan, Pipeline) ≥ 50 % der Bahnmenge der Vorrunde
+    resistance: { base: 1, perConcession: 1, concessionRounds: 4, feud: 1 }   # Widerstand: 1 + 1 je Zugeständnis der letzten 4 Runden + 1, wenn Bullard in Fehde Jacobs Mengen verrät (Plan: 2 – damit gab Thorne kaum je nach, Ø Tarifsenkung 0,02 $ statt 0,05–0,15 $)
+    mood: { down: 0.25, up: 0.25 }   # Thornes Laune: −1 / 0 / +1 mit 25 / 50 / 25 %
+    cuts: [0.05, 0.10, 0.15]         # Tarifsenkung bei Druck − Widerstand = 1, 2, ≥ 3
+    freeze: [0, 2, 4]                # … und so viele Runden keine Erhöhung
+    special: { tariff: 0.20, rounds: 6 }   # ab 3 wahlweise: Sondertarif fest für 6 Runden
+    rebuff: { factor: 2, rounds: 4 }       # Abfuhr (≤ 0) oder erwischter Bluff: Erhöhungschance × 2 für 4 Runden
+    bluff: { rounds: 2, railShare: 0.8, penalty: 0.10 }   # hing das Zugeständnis an Ausweichwegen oder Pipeline und gehen in 2 Folgerunden > 80 % per Bahn: +0,10 $
+    brennan: { costPerBarrel: 0.35, capacity: 5000, rounds: 4, minimum: 2000, shortfall: 0.15, raise: 200 }   # Brennans Fuhrleute ersetzen die Mietfuhrwerke
+    pool:                   # Transportgemeinschaft
+      base: 0.25            # Zusage je Firma: 0,25 + (Tarif − 0,25) + Ruf (+0,20 Verband, −0,10 Fehde Bullard) …
+      tariffRef: 0.25
+      alliance: 0.20
+      feud: -0.10
+      min: 0.10             # … begrenzt auf 0,1–0,8
+      max: 0.80
+      perWell: 4000         # gebündelte Menge = eigene + Mitgliedsquellen × 4.000 × 0,25
+      wellShare: 0.25
+      leave: 0.15           # Abspringen je Mitglied und Runde (nicht in einer Runde mit „Gemeinschaft halten“)
+      pipelineDiscount: 0.4 # Pipeline gemeinsam: −40 % Baukosten …
+      foreignShare: 0.3     # … dafür 30 % der Kapazität für Fremdöl …
+      transitFee: 0.05      # … gegen 0,05 $ Durchleitung je Barrel
+    cancelPressure: 2       # Exklusivvertrag kündigen geht erst ab so viel Druck
   # 0.2.15+2: zweiter Käufer – unabhängiger Händler in Port Ellis.
   trader:
     label: Händler in Port Ellis
@@ -475,9 +557,9 @@ bots:
   # guards never|always|enemies · holdShare: so viel bleibt im Tank, wenn der Preis gerade steigt ·
   # margin: nur verkaufen, wenn nach Fracht und Förderzins etwas übrig bleibt (gierig: Menge vor Marge).
   transport:
-    cautious: { trader: never, teams: overflow, tanks: true, pipelinePayback: 2, thorne: exclusive, threaten: false, guards: always, holdShare: 0, margin: true }
-    greedy: { trader: always, teams: overflow, tanks: true, pipelinePayback: 1, thorne: refuse, threaten: false, guards: never, holdShare: 0.5, margin: false }
-    balanced: { trader: calc, teams: cheaper, tanks: true, pipelinePayback: 1.5, thorne: calc, threaten: true, guards: enemies, holdShare: 0, margin: true }
+    cautious: { trader: never, teams: overflow, tanks: true, pipelinePayback: 2, thorne: exclusive, guards: always, holdShare: 0, margin: true }
+    greedy: { trader: always, teams: overflow, tanks: true, pipelinePayback: 1, thorne: refuse, guards: never, holdShare: 0.5, margin: false }
+    balanced: { trader: calc, teams: cheaper, tanks: true, pipelinePayback: 1.5, thorne: calc, guards: enemies, holdShare: 0, margin: true }
   # Investitionen (0.2.15+7): Amortisation laut src/sim/invest.ts (mit Felddruck und Preisdruck).
   # pumpPayback/wellPayback = höchstens so viele Runden, bis sich Pumpe/weiteres Bohrloch bezahlt machen
   # (0 = nie) · rigs = höchstens so viele Türme (ein weiterer nur, wenn lohnende Bohrlöcher auf einen Turm
@@ -494,6 +576,13 @@ bots:
     cautious: { rides: 1, until: 0.55, known: 1 }
     greedy: { rides: 1, until: 0.40, known: 1 }
     balanced: { rides: 1, until: 0.6, known: 3 }
+  # Preis- und Fracht-Karten (Etappe 2): Welcher Bot welche Karte spielt. Die Feinarbeit (wer wann was) ist
+  # Etappe 4; bis dahin verhandelt nur der Standard-Bot mit Thorne – das ersetzt die alte Drohung mit der Pipeline.
+  # Die Messung der Etappe 2 (tools/termineMessung2.ts) schaltet die übrigen Karten für den Standard-Bot an.
+  plans:
+    cautious: { cartel: false, contract: false, rumour: false, crane: false, thorne: false, brennan: false, pool: false }
+    greedy: { cartel: false, contract: false, rumour: false, crane: false, thorne: false, brennan: false, pool: false }
+    balanced: { cartel: false, contract: false, rumour: false, crane: false, thorne: true, brennan: false, pool: false }
   rightsEstimate: 600      # grobe Schätzung der Bots: so viel kosten die Wegerechte für die Pipeline zusammen
   # Zielwerte Kapitel 1 (2.15, GDD §15 und §17): Toleranzbereich min–max je Kennzahl.
   # Was gemessen wird, steht in src/sim/bots.ts (TARGETS); die Tabelle Ist/Ziel in docs/botlaeufe.md.

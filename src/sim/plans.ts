@@ -1,4 +1,4 @@
-// Planungsbrett (Termine als Hauptwerkzeug, Etappe 1): Jacob verplant seine
+// Planungsbrett (Termine als Hauptwerkzeug, Etappe 1 und 2): Jacob verplant seine
 // Termine mit Karten. Jede Karte kostet Termine (Überstunden kosten Kraft), oft Geld,
 // manchmal Kraft, und tut etwas Wichtiges: übers Land reiten, einen Geologen
 // kartieren lassen, einen Bohrbericht kaufen … Erkundungs-Karten wirken sofort –
@@ -12,7 +12,10 @@
 // liegen automatisch im Reiter „leute“.
 //
 // Zahlen der Karten: balance.yaml plans.cards, Texte: content/plans.yaml, Regeln je
-// Karte: HANDLERS hier. Die Oberfläche liest nur planView.
+// Karte: HANDLERS hier (Erkundung), dazu die Preis-Aktionen aus src/sim/pricing.ts (Reiter
+// Markt) und die Transport-Aktionen aus src/sim/freight.ts (Reiter Fracht, Etappe 2).
+// Karten mit target „option“ bieten mehrere Möglichkeiten (z. B. Laufzeit und Menge eines
+// Vertrags). Die Oberfläche liest nur planView.
 
 import { overtimeFor, refundAppointments, spendAppointments, timeReason } from './agenda';
 import type { Balance } from './balance';
@@ -37,6 +40,9 @@ import {
 } from './exploration';
 import type { GameState } from './game';
 import { parcelLabel } from './lease';
+import type { PlanHandler } from './planHandler';
+import { PRICE_HANDLERS, settlePricing } from './pricing';
+import { FREIGHT_HANDLERS, settleFreight } from './freight';
 import type { GeologistId, PlanCardBalance, PlanRequires, PlanTab, PlanTarget, PlanTiming } from './plansBalance';
 import { Rng, seedFromString } from './rng';
 import { RIVAL_MARKS } from './trust';
@@ -99,12 +105,8 @@ function gesehenText(state: GameState, eintraege: { parcelId: string; clues: Clu
   return gesehen.length > 0 ? gesehen.join(', ') : 'nichts, was auf Öl deutet';
 }
 
-/** Regel einer Karte: Sperrgrund, Kosten (wenn sie von der Lage abhängen) und Wirkung. */
-interface Handler {
-  lock?(state: GameState, balance: Balance, target?: string): string | null;
-  cost?(state: GameState, balance: Balance, target?: string): number;
-  apply(state: GameState, balance: Balance, target?: string): GameState;
-}
+/** Regel einer Karte (src/sim/planHandler.ts). */
+type Handler = PlanHandler;
 
 function log(state: GameState, text: string): GameState {
   return { ...state, log: [...state.log, `${formatDate(state)}: ${text}`] };
@@ -123,7 +125,7 @@ function geologeHandler(id: GeologistId): Handler {
   };
 }
 
-export const HANDLERS: Record<string, Handler> = {
+const LAND_HANDLERS: Record<string, Handler> = {
   ritt: {
     lock: (s, _b, t) => (rideNews(s, t!) ? null : 'Hier ist Jacob schon überall geritten – es gibt nichts Neues zu sehen.'),
     apply: (s, b, t) => {
@@ -200,6 +202,9 @@ export const HANDLERS: Record<string, Handler> = {
   },
 };
 
+/** Alle Regeln: Erkundung (Etappe 1), Preis- und Transport-Aktionen (Etappe 2). */
+export const HANDLERS: Record<string, Handler> = { ...LAND_HANDLERS, ...PRICE_HANDLERS, ...FREIGHT_HANDLERS };
+
 /** Eine Karte, wie das Brett sie kennt: aus balance.yaml oder ein fester Termin. */
 export interface PlanCardDef extends PlanCardBalance {
   id: string;
@@ -231,9 +236,12 @@ function eventOf(catalog: readonly EventDef[], id: string | undefined): EventDef
 }
 
 /** Ist die Karte auf der Hand? Feste Termine: wenn sie im Kalender stehen könnten (oder schon wahrgenommen sind). */
-function onHand(state: GameState, card: PlanCardDef, catalog: readonly EventDef[]): boolean {
+function onHand(state: GameState, card: PlanCardDef, catalog: readonly EventDef[], balance?: Balance): boolean {
   if (state.finished || !requiresMet(state, card.requires)) return false;
-  if (card.event === undefined) return true;
+  if (card.event === undefined) {
+    const h = card.handler ? HANDLERS[card.handler] : undefined;
+    return !(h?.visible && balance && !h.visible(state, balance));
+  }
   const e = eventOf(catalog, card.event);
   if (!e) return false;
   return routineOffered(state, e) || state.agenda.done.includes(e.id);
@@ -251,8 +259,20 @@ export function cardCash(state: GameState, balance: Balance, card: PlanCardDef, 
   return h?.cost ? h.cost(state, balance, target) : card.cash;
 }
 
+/** Möglichkeiten einer Karte mit target „option“ (sonst leer). */
+export function cardOptions(state: GameState, balance: Balance, card: PlanCardDef) {
+  const h = card.handler ? HANDLERS[card.handler] : undefined;
+  return card.target === 'option' && h?.options ? h.options(state, balance) : [];
+}
+
 /** Warum das Ziel nicht taugt, oder null. */
-function targetReason(state: GameState, card: PlanCardDef, target?: string): string | null {
+function targetReason(state: GameState, card: PlanCardDef, target?: string, balance?: Balance): string | null {
+  if (card.target === 'option') {
+    if (target === undefined) return 'Erst eine Möglichkeit wählen.';
+    const o = balance ? cardOptions(state, balance, card).find((x) => x.id === target) : undefined;
+    if (!o) return 'Diese Möglichkeit gibt es nicht.';
+    return o.reason;
+  }
   if (card.target !== 'ranch') return null;
   const p = parcelOf(state, target);
   if (!p) return 'Erst eine Ranch wählen.';
@@ -266,10 +286,10 @@ function targetReason(state: GameState, card: PlanCardDef, target?: string): str
  */
 export function cardReason(state: GameState, balance: Balance, catalog: readonly EventDef[], card: PlanCardDef, target?: string): string | null {
   if (state.finished) return 'Das Kapitel ist beendet.';
-  if (!onHand(state, card, catalog)) return 'Diese Karte liegt gerade nicht auf der Hand.';
+  if (!onHand(state, card, catalog, balance)) return 'Diese Karte liegt gerade nicht auf der Hand.';
   if (card.event !== undefined && state.agenda.done.includes(card.event)) return 'Diese Runde schon wahrgenommen.';
-  if (card.target === 'ranch' && target !== undefined) {
-    const t = targetReason(state, card, target);
+  if ((card.target === 'ranch' || card.target === 'option') && target !== undefined) {
+    const t = targetReason(state, card, target, balance);
     if (t) return t;
   }
   const h = card.handler ? HANDLERS[card.handler] : undefined;
@@ -277,7 +297,9 @@ export function cardReason(state: GameState, balance: Balance, catalog: readonly
     const r = h.lock(state, balance, target);
     if (r) return r;
   }
-  if (state.plans.booked.some((b) => b.cardId === card.id && b.target === target && !b.done)) return 'Diese Karte ist für diese Runde schon gebucht.';
+  // Ranch-Karten je Ranch einmal; alle anderen Karten (auch mit Möglichkeiten) einmal je Runde.
+  const gebucht = (b: BookedPlan) => b.cardId === card.id && !b.done && (card.target !== 'ranch' || b.target === target);
+  if ((state.plans?.round === state.round ? state.plans.booked : []).some(gebucht)) return 'Diese Karte ist für diese Runde schon gebucht.';
   const zeit = timeReason(state, balance, cardAppointments(card, catalog));
   if (zeit) return zeit;
   const preis = cardCash(state, balance, card, target);
@@ -293,7 +315,7 @@ export function cardReason(state: GameState, balance: Balance, catalog: readonly
 export function bookCard(state: GameState, balance: Balance, catalog: readonly EventDef[], cardId: string, target?: string): PlanResult {
   const card = planCards(balance, catalog).find((c) => c.id === cardId);
   if (!card) return { ok: false, reason: 'Diese Karte gibt es nicht.' };
-  const reason = cardReason(state, balance, catalog, card, target) ?? (card.target === 'ranch' ? targetReason(state, card, target) : null);
+  const reason = cardReason(state, balance, catalog, card, target) ?? (card.target === 'ranch' || card.target === 'option' ? targetReason(state, card, target, balance) : null);
   if (reason) return { ok: false, reason };
   const plans = state.plans.round === state.round ? state.plans : newPlans(state.round);
   const n = cardAppointments(card, catalog);
@@ -360,9 +382,18 @@ export function settlePlans(state: GameState, balance: Balance): GameState {
       if (h) next = h.apply(next, balance, b.target);
     }
   }
+  // Etappe 2: Förderbremse, Liefervertrag und Fracht-Verträge rechnen ab – auch das steht im Wochenbericht.
+  next = settleFreight(settlePricing(next, balance), balance);
   const report = next.log.slice(vorher);
   next = payGeologist(next);
   return { ...next, plans: { round: state.round + 1, booked: [], report } };
+}
+
+/** Hängt die Protokollzeilen ab Index from an den Wochenbericht (was nach dem Markt geschah, Etappe 2). */
+export function appendReport(state: GameState, from: number): GameState {
+  const neu = state.log.slice(from);
+  if (neu.length === 0 || !state.plans) return state;
+  return { ...state, plans: { ...state.plans, report: [...state.plans.report, ...neu] } };
 }
 
 /** Ein Ziel einer Ranch-Karte, wie die Auswahl es zeigt. */
@@ -392,6 +423,12 @@ export interface PlanCardView {
   reason: string | null;
   /** Ranch-Karten: mögliche Ziele. */
   targets: PlanTargetView[];
+  /** Karten mit Möglichkeiten (Etappe 2): z. B. Laufzeit und Menge eines Vertrags. */
+  options: { id: string; label: string; ok: boolean; reason?: string }[];
+  /** Lage in einem Satz (Druckmittel, Beitrittschance …), oder null. */
+  detail: string | null;
+  /** Warnung, die nicht sperrt, oder null. */
+  warning: string | null;
 }
 
 /** Ein Feld im Kalender: was den Termin belegt. */
@@ -415,7 +452,7 @@ export interface PlanView {
 /** Was das Brett zeigt – alles aus der Simulation, die Oberfläche rechnet nichts. */
 export function planView(state: GameState, balance: Balance, catalog: readonly EventDef[]): PlanView {
   const plans = state.plans?.round === state.round ? state.plans : newPlans(state.round);
-  const karten = planCards(balance, catalog).filter((c) => onHand(state, c, catalog));
+  const karten = planCards(balance, catalog).filter((c) => onHand(state, c, catalog, balance));
   const ranches = state.parcels.filter((p) => !p.discovery);
   const cards: PlanCardView[] = karten.map((c) => {
     const targets: PlanTargetView[] =
@@ -427,8 +464,19 @@ export function planView(state: GameState, balance: Balance, catalog: readonly E
             })
             .sort((a, b) => Number(b.ok) - Number(a.ok) || a.label.localeCompare(b.label, 'de'))
         : [];
+    const options =
+      c.target === 'option'
+        ? cardOptions(state, balance, c).map((o) => {
+            const r = cardReason(state, balance, catalog, c, o.id);
+            return { id: o.id, label: o.label, ok: r === null, ...(r ? { reason: r } : {}) };
+          })
+        : [];
     const allgemein = cardReason(state, balance, catalog, c);
-    const reason = allgemein ?? (c.target === 'ranch' && !targets.some((t) => t.ok) ? (targets[0]?.reason ?? 'Kein passendes Ziel.') : null);
+    const reason =
+      allgemein ??
+      (c.target === 'ranch' && !targets.some((t) => t.ok) ? (targets[0]?.reason ?? 'Kein passendes Ziel.') : null) ??
+      (c.target === 'option' && !options.some((o) => o.ok) ? (options[0]?.reason ?? 'Keine Möglichkeit passt.') : null);
+    const h = c.handler ? HANDLERS[c.handler] : undefined;
     const view: PlanCardView = {
       id: c.id,
       tab: c.tab,
@@ -440,6 +488,9 @@ export function planView(state: GameState, balance: Balance, catalog: readonly E
       auto: c.auto === true,
       reason,
       targets,
+      options,
+      detail: h?.detail ? h.detail(state, balance) : null,
+      warning: h?.warning ? h.warning(state, balance) : null,
     };
     if (c.event !== undefined) view.event = c.event;
     return view;

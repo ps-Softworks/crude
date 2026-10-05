@@ -24,6 +24,8 @@ import { parseBrandBalance, type BrandBalance } from './brand';
 import { parseHallstead, type HallsteadBalance } from './hallsteadBalance';
 // Termine als Hauptwerkzeug (Etappe 1): Erkundung und Planungsbrett.
 import { parseExplorationBalance, parsePlansBalance, type ExplorationBalance, type PlansBalance } from './plansBalance';
+// Termine als Hauptwerkzeug, Etappe 2: Preis- und Transport-Aktionen.
+import { parseBotPlans, parseFreightBalance, parsePriceActions, type BotPlans, type FreightBalance, type PriceActionsBalance } from './pricingBalance';
 // 4.17 Andockpunkt: Kapitel 3 (Seismik, Konsortium, Projekte, Stand) prüft seinen Block selbst.
 import { parseKapitel3Balance, type Kapitel3Balance } from './kapitel3Balance';
 
@@ -278,9 +280,7 @@ export interface TransportBalance {
     minVolume: number;
     shortfallPenalty: number;
     exclusivePenalty: number;
-    threatCut: number;
     minTariff: number;
-    threatCooldown: number;
   };
   trader: { label: string; premium: number; capacity: number; grudgeCut: number; grudgeRounds: number };
   storage: {
@@ -494,8 +494,6 @@ export interface BotTransport {
   pipelinePayback: number;
   /** Thornes Frachtvertrag: Exklusiv, Mengenrabatt (nur wenn die Menge reicht), nach Rechnung oder ablehnen. */
   thorne: 'exclusive' | 'volume' | 'calc' | 'refuse';
-  /** Mit der Pipeline drohen, sobald sie glaubwürdig ist. */
-  threaten: boolean;
   /** Wachleute an der Pipeline: nie, immer oder nur, wenn Jacob Feinde hat. */
   guards: 'never' | 'always' | 'enemies';
   /** Steigt der Preis, bleibt dieser Anteil des Tanks liegen (Timing); 0 = immer alles verkaufen. */
@@ -813,6 +811,12 @@ export interface Balance {
   exploration: ExplorationBalance;
   /** Planungsbrett (Etappe 1): Zahlen der Karten. */
   plans: PlansBalance;
+  /** Preis-Aktionen (Etappe 2): Förderbremse, Liefervertrag, Gerüchte, Crane, Ruf bei den Wildcattern. */
+  priceActions: PriceActionsBalance;
+  /** Transport-Aktionen (Etappe 2, balance.yaml transport.negotiation): Thorne, Brennan, Transportgemeinschaft. */
+  freight: FreightBalance;
+  /** Welche Preis- und Fracht-Karten die Bots spielen (balance.yaml bots.plans). */
+  botPlans: Record<'cautious' | 'greedy' | 'balanced', BotPlans>;
   drilling: DrillingBalance;
   production: ProductionBalance;
   market: MarketBalance;
@@ -1346,9 +1350,7 @@ function parseTransport(raw: unknown): TransportBalance {
     minVolume: nonNegative(raw, `${h}.minVolume`),
     shortfallPenalty: nonNegative(raw, `${h}.shortfallPenalty`),
     exclusivePenalty: nonNegative(raw, `${h}.exclusivePenalty`),
-    threatCut: nonNegative(raw, `${h}.threatCut`),
     minTariff: nonNegative(raw, `${h}.minTariff`),
-    threatCooldown: positiveInt(raw, `${h}.threatCooldown`),
   };
   if (thorne.minTariff > rail.costPerBarrel) {
     throw new BalanceError('balance.yaml: "transport.thorne.minTariff" liegt über dem Starttarif der Bahn');
@@ -1680,18 +1682,15 @@ function choice<T extends string>(obj: unknown, path: string, allowed: readonly 
 function parseBotTransport(raw: unknown, name: string): BotTransport {
   const p = `bots.transport.${name}`;
   const tanks = path(raw, `${p}.tanks`);
-  const threaten = path(raw, `${p}.threaten`);
   const margin = path(raw, `${p}.margin`);
   if (typeof margin !== 'boolean') throw new BalanceError(`balance.yaml: "${p}.margin" muss true oder false sein`);
   if (typeof tanks !== 'boolean') throw new BalanceError(`balance.yaml: "${p}.tanks" muss true oder false sein`);
-  if (typeof threaten !== 'boolean') throw new BalanceError(`balance.yaml: "${p}.threaten" muss true oder false sein`);
   return {
     trader: choice(raw, `${p}.trader`, ['never', 'always', 'calc'] as const),
     teams: choice(raw, `${p}.teams`, ['never', 'overflow', 'cheaper'] as const),
     tanks,
     pipelinePayback: nonNegative(raw, `${p}.pipelinePayback`),
     thorne: choice(raw, `${p}.thorne`, ['exclusive', 'volume', 'calc', 'refuse'] as const),
-    threaten,
     guards: choice(raw, `${p}.guards`, ['never', 'always', 'enemies'] as const),
     holdShare: share(raw, `${p}.holdShare`),
     margin,
@@ -2248,6 +2247,9 @@ export function parseBalance(raw: unknown): Balance {
     forecast: parseForecast(raw),
     exploration: parseExplorationBalance(raw),
     plans: parsePlansBalance(raw),
+    priceActions: parsePriceActions(raw),
+    freight: parseFreightBalance(raw),
+    botPlans: parseBotPlans(raw),
     drilling: parseDrilling(raw),
     production: parseProduction(raw),
     market: parseMarket(raw),
