@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { openChapterSystems } from './chapterSystems';
+import { openChapterSystems, openProvince } from './chapterSystems';
 import { endRound, newGame, type GameState } from './game';
 import { deserializeGame, serializeGame } from './save';
 import { parseStocksContent } from './stocksContent';
@@ -51,6 +51,24 @@ describe('Kapitelstart der Phase-4-Systeme (Integration)', () => {
     for (const p of neu) expect(s.forecasts[p.id]).toBeUndefined();
     // Zweimal aufrufen ändert nichts mehr am Land.
     expect(openChapterSystems(s, balance, { stocksBoard: board }).parcels.length).toBe(s.parcels.length);
+  });
+
+  it('openProvince öffnet ältere Spielstände ab Kapitel 2 beim Laden, Kapitel 1 und offene Stände bleiben gleich', () => {
+    const k1 = newGame('provinz-k1', balance, events);
+    expect(openProvince(k1, balance)).toBe(k1);
+    const alt = imKapitel(2, 'provinz-alt');
+    const offen = openProvince(alt, balance);
+    for (const r of balance.world.regions.filter((x) => x.kind === 'drillable')) expect(offen.regions).toContain(r.id);
+    expect(offen.parcels.length).toBeGreaterThan(alt.parcels.length);
+    // Altes Land, Pachten und Kasse bleiben unberührt.
+    for (const p of alt.parcels) expect(offen.parcels.find((q) => q.id === p.id)).toEqual(p);
+    expect(offen.cash).toBe(alt.cash);
+    expect(offen.leases).toEqual(alt.leases);
+    expect(openProvince(offen, balance)).toBe(offen);
+    // Über Speichern und Laden bleibt es offen.
+    const geladen = deserializeGame(serializeGame(offen, 'test'));
+    if (!geladen.ok) throw new Error(geladen.reason);
+    expect(openProvince(geladen.state, balance).parcels.length).toBe(offen.parcels.length);
   });
 
   it('Kapitel 3 legt zusätzlich Marke, Börse und Siegelmappe an', () => {

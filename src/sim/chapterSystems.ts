@@ -31,6 +31,19 @@ export interface ChapterSystemTexts {
 }
 
 /**
+ * 0.4.20+2: Ab Kapitel 2 ist die ganze Provinz offen – sechs Jahre später ist Cordova vermessen. Vorher gab es
+ * nach dem Sprung kein neues Land (nur ein Kapitel-1-Ereignis öffnet einen Bezirk), und das Geld lag ungenutzt.
+ * Neue Bezirke kommen ohne Prognosen: Wer wissen will, was sie taugen, reitet hin. In Kapitel 1 und wenn schon
+ * alles offen ist, kommt derselbe Zustand zurück – die Oberfläche ruft das auch für ältere Spielstände beim Laden auf.
+ */
+export function openProvince(state: GameState, balance: Balance): GameState {
+  if (chapterOf(state) <= 1) return state;
+  const zu = balance.world.regions.filter((r) => r.kind === 'drillable' && !state.parcels.some((p) => p.region === r.id));
+  if (zu.length === 0 && balance.world.regions.every((r) => r.kind !== 'drillable' || state.regions.includes(r.id))) return state;
+  return openRegions(balance.world.regions.filter((r) => r.kind === 'drillable').reduce((acc, r) => unlockRegion(acc, r.id), state), balance);
+}
+
+/**
  * Legt alle Phase-4-Systeme an, die im Kapitel `state.chapter` freigeschaltet sind.
  * 4.5 ruft das nach dem Zeitsprung auf, nachdem `chapter`, `round` und `startYear` gesetzt sind.
  */
@@ -38,10 +51,7 @@ export function openChapterSystems(state: GameState, balance: Balance, texts: Ch
   const kapitel = chapterOf(state);
   if (kapitel <= 1) return state;
   let s = state;
-  // 0.4.20+2: Ab Kapitel 2 ist die ganze Provinz offen – sechs Jahre später ist Cordova vermessen. Vorher gab es
-  // nach dem Sprung kein neues Land (nur ein Kapitel-1-Ereignis öffnet einen Bezirk), und das Geld lag ungenutzt.
-  // Neue Bezirke kommen ohne Prognosen: Wer wissen will, was sie taugen, reitet hin.
-  s = openRegions(balance.world.regions.filter((r) => r.kind === 'drillable').reduce((acc, r) => unlockRegion(acc, r.id), s), balance);
+  s = openProvince(s, balance);
   // Kapitel 2 (4.6–4.11)
   if (refineryUnlockedFor(kapitel, balance)) s = unlockRefinery(s, balance);
   s = unlockBigPipelines(s, balance);

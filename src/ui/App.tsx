@@ -63,6 +63,7 @@ import { debugToolsVisible } from './testerConfig';
 import { tourAutoStart, tourFor } from './tour';
 import { tourSteps, tourStepsK2, tourStepsK3 } from './tourContent';
 import { chapterOf } from '../sim/chapterOf';
+import { openProvince } from '../sim/chapterSystems';
 import { loadTutorialOn, mapTutorialContent, saveTutorialOn, tutorialContent } from './tutorial';
 import { VisitorScene } from './visitor/VisitorScene';
 import { appearances } from './visitorContent';
@@ -110,7 +111,8 @@ function start(): { seed: string; game: GameState } {
   const ausUrl = params.get('seed');
   if (ausUrl !== null) return { seed: ausUrl, game: newGame(ausUrl, balance, events) };
   const gespeichert = loadAutosave();
-  if (gespeichert) return { seed: gespeichert.seed, game: gespeichert };
+  // 0.4.20+4: Ältere Stände aus Kapitel 2/3 bekommen die offene Provinz nachgereicht.
+  if (gespeichert) return { seed: gespeichert.seed, game: openProvince(gespeichert, balance) };
   const seed = freshSeed('');
   return { seed, game: newGame(seed, balance, events) };
 }
