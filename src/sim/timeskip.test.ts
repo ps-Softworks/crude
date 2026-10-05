@@ -515,13 +515,19 @@ describe('Direktiven wirken (GDD §2: Haltung bestimmt Ertrag und Streuung, Fami
   const mittel = lauf('balanced', 'some');
   const vorsichtig = lauf('cautious', 'some');
 
-  it('wagemutig bohrt mehr, erschließt Nachbarbezirke und bringt im Schnitt klar mehr – mit größerer Streuung', () => {
+  it('wagemutig bohrt mehr, erschließt Nachbarbezirke und bringt im Schnitt mehr als vorsichtig – mit größerer Streuung', () => {
     const bohr = (rs: typeof mutig) => schnitt(rs.map((r, i) => r.state.wells.length - enden[i].wells.length));
     expect(bohr(mutig)).toBeGreaterThan(bohr(mittel));
     expect(bohr(mittel)).toBeGreaterThan(bohr(vorsichtig));
+    // 4.20: Alle Haltungen dürfen einen Nachbarbezirk erschließen, wagemutig bis zu balance.timeskip.expand.aggressive.
+    const bezirke = (rs: typeof mutig) => rs.reduce((n, r) => n + r.record.entries.filter((e) => e.kind === 'region_opened').length, 0);
     expect(mutig.some((r) => r.record.entries.some((e) => e.kind === 'region_opened'))).toBe(true);
-    expect(mittel.some((r) => r.record.entries.some((e) => e.kind === 'region_opened'))).toBe(false);
-    expect(schnitt(mutig.map(wert))).toBeGreaterThan(1.2 * schnitt(mittel.map(wert)));
+    expect(bezirke(mutig)).toBeGreaterThanOrEqual(bezirke(mittel));
+    for (const r of mittel) expect(r.record.entries.filter((e) => e.kind === 'region_opened').length).toBeLessThanOrEqual(balance.timeskip.expand.balanced);
+    // 4.20: Seit alle Haltungen einen Nachbarbezirk erschließen, liegt wagemutig direkt nach dem Sprung nur noch vor
+    // vorsichtig (vorher 1,2 × ausgewogen – allein durch den Bezirk). Den Vorsprung über die ganze Kampagne misst
+    // campaignBots.test.ts / npm run kampagne (Haltungs-Gegenprobe).
+    expect(schnitt(mutig.map(wert))).toBeGreaterThan(schnitt(vorsichtig.map(wert)));
     // Streuung als Standardabweichung (Etappe 3: Die Spanne max − min hing an einem einzigen Ausreißer
     // der vorsichtigen Haltung – 790.663 gegen 780.625 –, die Standardabweichung ist bei wagemutig klar größer).
     const streuung = (rs: typeof mutig) => {

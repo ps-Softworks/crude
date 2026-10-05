@@ -13,6 +13,13 @@ const ranches = (seed: string) => generateRanches(world, balance.ranches, 'salth
 const SEEDS = ['harlan', 'brandt', 'moss', 'a', 'b', 'c', 'd', 'e', 'f', 'g'];
 
 describe('Ranches erzeugen (0.2.15+5)', () => {
+  it('4.20: jedes bohrbare Gebiet lässt sich erzeugen – genug Familiennamen auch für die größten (Bitterwasser)', () => {
+    const seeds = Array.from({ length: 200 }, (_, i) => `bot-${i}`);
+    for (const region of world.regions.filter((r) => r.kind === 'drillable')) {
+      for (const seed of seeds) expect(() => generateRanches(world, balance.ranches, region.id, seed), `${region.id} ${seed}`).not.toThrow();
+    }
+  });
+
   it('Determinismus: gleicher Seed = dieselbe Karte bis auf die letzte Stelle', () => {
     expect(ranches('harlan')).toEqual(ranches('harlan'));
     expect(ranches('harlan')).not.toEqual(ranches('brandt'));

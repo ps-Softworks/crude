@@ -347,6 +347,12 @@ export interface CreditBalance {
   emergency: { limit: number; rate: number };
   /** Runden ohne versäumte Zahlung, nach denen eine schlechte Note aus Ereignissen (ratingShift < 0) um eine Stufe verblasst (0.4.19+2; 0 = nie). */
   shiftRecoveryRounds: number;
+  /**
+   * Kreditkrise im Kapitel (4.20, GDD §8: „In Kreditkrisen kündigen Banken Kredite“): Bricht eine Bankpanik oder ein
+   * Crash aus, kündigt die Bank share + leverage × Auslastung (Bankschulden ÷ Grundrahmen, höchstens 1) der Bankkredite –
+   * sofort fällig, auch ins Minus der Kasse.
+   */
+  crisisCall: { share: number; leverage: number };
 }
 
 /** Bankrott: Frist, bevor es Konkurs gibt. */
@@ -505,6 +511,42 @@ export interface BotsBalance {
   explore: Record<'cautious' | 'greedy' | 'balanced', { rides: number; until: number; known: number }>;
   /** Zielwerte Kapitel 1 (2.15): Toleranzbereich je Kennzahl. */
   targets: Record<BotTargetId, { min: number; max: number }>;
+  /** Kampagnen-Bots (4.20): wie jede Strategie Zeitsprünge, Kapitel 2 und Kapitel 3 spielt. */
+  campaign: {
+    /** Kampagnen je Strategie (npm run kampagne). */
+    games: number;
+    cautious: CampaignBotPolicy;
+    greedy: CampaignBotPolicy;
+    balanced: CampaignBotPolicy;
+    /** Zufalls-Bot: Chance je Runde, dass er Raffinerie, Marke und Tankstellen anfasst. */
+    randomSystemsChance: number;
+  };
+  /** Zielwerte Kapitel 1–3 (4.20, GDD §15/§17): Toleranzbereich je Kennzahl (src/sim/campaignBots.ts). */
+  campaignTargets: Record<CampaignTargetId, { min: number; max: number }>;
+}
+
+/** Wie ein Bot die späteren Kapitel spielt (4.20, src/sim/campaignBots.ts). */
+export interface CampaignBotPolicy {
+  /** Direktiven in beiden Zeitsprüngen. */
+  stance: Stance;
+  family: FamilyTime;
+  /** Anteil, den er am Ende von Kapitel 1 an der Börse verkauft (0 = Familienfirma; sonst der nächste erlaubte Anteil). */
+  ipo: number;
+  /** Antwort je Weiche der Zeitsprünge (Weichen-id → Antwort, geprüft in campaignBots.test.ts; zu teure Antworten ersetzt er durch die andere). */
+  answers: Readonly<Record<string, string>>;
+  /** So viel $ bleiben in der Kasse, bevor er Raffinerie, Marke, Tankstellen oder Aktien kauft. */
+  reserve: number;
+  /** Höchstens so viele Tankstellen je Runde. */
+  perRound: number;
+  /** Chance je Runde, dass er Raffinerie, Marke und Tankstellen anfasst (planende Bots: 1). */
+  systemsChance: number;
+  /** Börse (Kapitel 3): Anteil des freien Geldes je Kauf, Hebel, verkauft bei Warnung der Zeitung – oder null (nie). */
+  exchange: { share: number; leverage: number; sellOnWarning: boolean } | null;
+  /**
+   * Aktienbuch (Kapitel 2/3): Räte umstimmen und Aktien zurückkaufen, sobald Thorne thorneFrom der Aktien hält
+   * oder die Kontrolle unter controlBelow fällt – höchstens buyback der Aktien je Runde; null = wehrt sich nicht.
+   */
+  defend: { thorneFrom: number; controlBelow: number; buyback: number } | null;
 }
 
 /** Bewertung einer Ereignis-Antwort durch einen Bot (2.15). */
@@ -574,6 +616,27 @@ export const BOT_TARGET_IDS = [
   'allOutWins',
 ] as const;
 export type BotTargetId = (typeof BOT_TARGET_IDS)[number];
+
+/** Kennzahlen mit Zielwert über Kapitel 1–3 (4.20, GDD §15/§17); gemessen in src/sim/campaignBots.ts. */
+export const CAMPAIGN_TARGET_IDS = [
+  'creditCrises',
+  'gluts',
+  'wars',
+  'standardSurvives',
+  'standardBankruptK2',
+  'standardBankruptK3',
+  'greedyBankrupt',
+  'greedyCrisisRisk',
+  'standardGoalK2',
+  'standardGoalK3',
+  'growthK2',
+  'growthK3',
+  'cautiousBehind',
+  'winRate',
+  'fairWinRate',
+  'stanceWin',
+] as const;
+export type CampaignTargetId = (typeof CAMPAIGN_TARGET_IDS)[number];
 
 export interface BankruptcyBalance {
   graceRounds: number;
@@ -1495,6 +1558,7 @@ function parseCredit(raw: unknown): CreditBalance {
     missedC,
     missedD,
     shiftRecoveryRounds: nonNegativeInt(raw, 'credit.shiftRecoveryRounds'),
+    crisisCall: { share: nonNegativeShare(raw, 'credit.crisisCall.share'), leverage: nonNegativeShare(raw, 'credit.crisisCall.leverage') },
     emergency: {
       limit: num(raw, 'credit.emergency.limit'),
       rate: nonNegativeShare(raw, 'credit.emergency.rate'),
@@ -1767,6 +1831,53 @@ function parseBots(raw: unknown): BotsBalance {
         return [id, { min, max }];
       }),
     ) as Record<BotTargetId, { min: number; max: number }>,
+    campaign: {
+      games: positiveInt(raw, 'bots.campaign.games'),
+      cautious: parseCampaignPolicy(raw, 'cautious'),
+      greedy: parseCampaignPolicy(raw, 'greedy'),
+      balanced: parseCampaignPolicy(raw, 'balanced'),
+      randomSystemsChance: share(raw, 'bots.campaign.randomSystemsChance'),
+    },
+    campaignTargets: Object.fromEntries(
+      CAMPAIGN_TARGET_IDS.map((id) => {
+        const min = num(raw, `bots.campaignTargets.${id}.min`);
+        const max = num(raw, `bots.campaignTargets.${id}.max`);
+        if (min > max) throw new BalanceError(`balance.yaml: "bots.campaignTargets.${id}": min darf nicht über max liegen`);
+        return [id, { min, max }];
+      }),
+    ) as Record<CampaignTargetId, { min: number; max: number }>,
+  };
+}
+
+function parseCampaignPolicy(raw: unknown, name: string): CampaignBotPolicy {
+  const p = `bots.campaign.${name}`;
+  const answers = path(raw, `${p}.answers`);
+  if (!answers || typeof answers !== 'object' || Array.isArray(answers)) throw new BalanceError(`balance.yaml: "${p}.answers" fehlt (Weiche → Antwort)`);
+  for (const [k, v] of Object.entries(answers)) {
+    if (typeof v !== 'string' || v === '') throw new BalanceError(`balance.yaml: "${p}.answers.${k}" muss eine Antwort sein`);
+  }
+  const ex = path(raw, `${p}.exchange`);
+  let exchange: CampaignBotPolicy['exchange'] = null;
+  if (ex !== null && ex !== undefined) {
+    const sell = path(raw, `${p}.exchange.sellOnWarning`);
+    if (typeof sell !== 'boolean') throw new BalanceError(`balance.yaml: "${p}.exchange.sellOnWarning" muss true oder false sein`);
+    exchange = { share: share(raw, `${p}.exchange.share`), leverage: positiveInt(raw, `${p}.exchange.leverage`), sellOnWarning: sell };
+  }
+  const def = path(raw, `${p}.defend`);
+  const defend: CampaignBotPolicy['defend'] =
+    def === null || def === undefined
+      ? null
+      : { thorneFrom: share(raw, `${p}.defend.thorneFrom`), controlBelow: share(raw, `${p}.defend.controlBelow`), buyback: share(raw, `${p}.defend.buyback`) };
+  return {
+    stance: choice(raw, `${p}.stance`, STANCES),
+    family: choice(raw, `${p}.family`, FAMILY_TIMES),
+    ipo: share(raw, `${p}.ipo`),
+    answers: { ...(answers as Record<string, string>) },
+    reserve: nonNegative(raw, `${p}.reserve`),
+    perRound: positiveInt(raw, `${p}.perRound`),
+    systemsChance: 1,
+    exchange,
+    defend,
   };
 }
 

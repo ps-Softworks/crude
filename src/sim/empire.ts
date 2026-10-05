@@ -27,6 +27,8 @@ import { brandAssets } from './brand';
 import { hallsteadAssets } from './hallstead';
 // 4.17 Andockpunkt: Anteile an Konsortialprojekten zählen mit ihrem Buchwert (vor Kapitel 3: 0).
 import { projectsValue } from './projekte';
+// 4.20: Aktien im Depot (4.15) zählen mit Kurswert minus Maklerkredit (vor Kapitel 3: 0).
+import { exchangeEquity } from './exchange';
 
 function cents(value: number): number {
   return Math.round(value * 100) / 100;
@@ -59,6 +61,7 @@ export function empireValue(state: GameState, balance: Balance): number {
   // 4.14 Andockpunkt: Tankstellen und Markenwert (vor Kapitel 3: 0).
   // 4.16 Andockpunkt: Beteiligungen in Hallstead zählen mit ihrem Marktwert (Kapitel 1: 0).
   // 4.17 Andockpunkt: Konsortialprojekte mit dem gezahlten Anteil (gescheiterte zählen nicht; Kapitel 1: 0).
+  // 4.20: Das Depot an der Börse mit Kurswert minus Maklerkredit – vorher verschwand gekauftes Geld aus dem Wert.
   const anleihen = (state.stocks?.bonds ?? []).reduce((sum, b) => sum + b.principal, 0);
-  return cents(state.cash + tank + reserven + logisticsAssets(state, balance) + rigAssets(state, balance) + venturesValue(state, balance) + refineryAssets(state, balance) + bigPipelineAssets(state, balance) + brandAssets(state, balance) + hallsteadAssets(state) + projectsValue(state) - debt(state) - anleihen);
+  return cents(state.cash + tank + reserven + logisticsAssets(state, balance) + rigAssets(state, balance) + venturesValue(state, balance) + refineryAssets(state, balance) + bigPipelineAssets(state, balance) + brandAssets(state, balance) + hallsteadAssets(state) + projectsValue(state) + exchangeEquity(state) - debt(state) - anleihen);
 }

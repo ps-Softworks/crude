@@ -458,7 +458,8 @@ describe('Roadmap 4.15: Crash ruiniert Kauf auf Kredit, die Zeitung warnt vorher
   });
 
   it('derselbe Crash ohne Kredit kostet nur einen Teil des Einsatzes', () => {
-    const boom = setzeEx(mitBoerse(10000, 'schwarzer-tag'), { fever: 76, warned: 0, events: [] });
+    // 4.20: Ohne Jacobs Kredit heizt sich die Börse langsamer auf (speculation 0,09) – deshalb etwas heißer starten.
+    const boom = setzeEx(mitBoerse(10000, 'schwarzer-tag'), { fever: 86, warned: 0, events: [] });
     const gekauft = buyStock(boom, balance, 'motorwagen', 8000, 1);
     if (!gekauft.ok) throw new Error(gekauft.reason);
     const { state } = bisZumCrash(gekauft.state);

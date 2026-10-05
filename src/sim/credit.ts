@@ -426,6 +426,39 @@ export function settleLoans(input: GameState, balance: Balance): GameState {
  * negativ, ist Jacob pleite. In der letzten Runde des Kapitels gibt es keine
  * Frist mehr: Wer das Kapitel im Minus beendet, ist bankrott (Kapitelprüfung).
  */
+/**
+ * Kreditkrise im Kapitel (4.20, GDD §8: „In Kreditkrisen kündigen Banken Kredite. Hoch verschuldete Spieler können dann
+ * binnen zwei Runden zusammenbrechen.“): In der Runde, in der eine Bankpanik oder ein Crash ausbricht (Nachricht des
+ * Weltmodells, auch der Börsencrash), kündigt die Bank credit.crisisCall.share + leverage × Auslastung ihrer Kredite.
+ * Auslastung = Bankschulden ÷ Grundrahmen (ohne den Abschlag der Krise), höchstens 1. Der Betrag ist sofort fällig:
+ * Er tilgt die Bankkredite (anteilig) und geht aus der Kasse – reicht sie nicht, steht sie im Minus, und die Frist der
+ * Pleiteprüfung läuft. Notkredite des Geldverleihers kündigt niemand. Ohne Weltmodell oder ohne Bankkredit: nichts.
+ */
+export function callLoansInCrisis(input: GameState, balance: Balance): GameState {
+  const news = input.worldModel?.news;
+  if (input.finished || !news || !(news.includes('panic') || news.includes('crash'))) return input;
+  const bank = input.loans.filter((l) => l.source === 'bank').reduce((sum, l) => sum + l.principal, 0);
+  if (bank <= 0) return input;
+  const { share, leverage } = balance.credit.crisisCall;
+  const auslastung = Math.min(1, bank / Math.max(1, baseCreditLimit(input, balance)));
+  const anteil = Math.min(1, share + leverage * auslastung);
+  const betrag = cents(bank * anteil);
+  if (betrag <= 0) return input;
+  const loans = input.loans.flatMap((l) => {
+    if (l.source !== 'bank') return [l];
+    const rest = cents(l.principal * (1 - anteil));
+    return rest > 0 ? [{ ...l, principal: rest }] : [];
+  });
+  const cash = cents(input.cash - betrag);
+  const minus = cash < 0 ? ` In der Kasse fehlen jetzt ${money(Math.round(-cash))}.` : '';
+  return {
+    ...input,
+    cash,
+    loans,
+    log: [...input.log, `${formatDate(input)}: Kreditkrise – die Bank kündigt ${percent(Math.round(anteil * 100) / 100)} ihrer Kredite: ${money(Math.round(betrag))} sind sofort fällig.${minus}`],
+  };
+}
+
 export function checkBankruptcy(input: GameState, balance: Balance): GameState {
   if (input.finished || input.ending !== null) return input;
   const date = formatDate(input);

@@ -45,6 +45,10 @@ Kapitel 3 „Der Konzernherr“ sind spielbar – Kapitelprüfung (Marke in 3 Re
 Rivalen K3 (src/sim/rivalsK3.ts, Andockpunkt in `endRound` nach `advanceKapitel3`), Bögen `daniel_k3`/`thomas_k3`/
 `ruth_k3`/`vale_k3`, alle TODO-Effekte der Kapitel-3-Ereignisse als Systemwirkungen. Danach endet der Early-Access-Umfang.
 
+**Seit 0.4.20 (4.20, docs/phase4/4.20.md):** Kampagnen-Bots spielen 1.000 Welten über Kapitel 1–3 (`npm run kampagne`,
+Tabelle Ist/Ziel in docs/botlaeufe.md, Abschnitt „Kapitel 2 und 3“). Justiert: Nachbarbezirke für alle Haltungen,
+Börsenfieber, Kreditkündigung in Krisen auch im Kapitel (GDD §8), Depot im Imperiumswert, Familiennamen für Bitterwasser.
+
 ## Kurz
 
 Alle 15 Branches sind zusammengeführt: 4.6 Raffinerie, 4.7 Fernleitungen, 4.8 Aktien, 4.9 Personal,

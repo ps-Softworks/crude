@@ -28,7 +28,7 @@
 
 import type { Balance } from './balance';
 import { formatDate } from './calendar';
-import { chapterOf } from './stocks';
+import { chapterOf } from './chapterOf';
 import type { ExchangeBalance } from './exchangeBalance';
 import type { GameState } from './game';
 import { Rng, seedFromString, type RngState } from './rng';

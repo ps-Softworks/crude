@@ -6,7 +6,7 @@ import type { Balance, Rating, TransportMode } from './balance';
 import { formatDate } from './calendar';
 // 4.14 Andockpunkt: Marke und Tankstellen (Kapitel 3).
 import { settleBrand, type BrandState } from './brand';
-import { checkBankruptcy, settleLoans, type Loan } from './credit';
+import { callLoansInCrisis, checkBankruptcy, settleLoans, type Loan } from './credit';
 import { applyEarlyEnding, chapterPassed } from './chapter';
 import { chapterOf } from './chapterOf';
 import { advanceDrilling, type Well } from './drilling';
@@ -372,7 +372,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const verzinst = settleLoans(settleStocks(settleRigs(advanceLogistics(vertrieb, balance), balance), balance), balance);
   // 4.15 Andockpunkt: Börse (ab Kapitel 3) – Kurse, Maklerzinsen, Zwangsverkäufe vor der Pleiteprüfung.
   // Warnungen und Maklerzins zählen mit dem Kreditklima vom Rundenbeginn (das stand in der Zeitung).
-  const gehandelt = settleExchange(verzinst, balance, readClimate(input));
+  // 4.20: Bricht in dieser Runde eine Kreditkrise aus (auch durch den Börsencrash), kündigt die Bank Kredite (GDD §8).
+  const gehandelt = callLoansInCrisis(settleExchange(verzinst, balance, readClimate(input)), balance);
   // 4.17 Andockpunkt: Kapitel 3 – Seismik-Berichte, Konsortium, Projekte, Stand (vor Kapitel 3 unverändert).
   // 4.19 Andockpunkt: Rivalen in Kapitel 3 – Margarets Tankstellen, Thornes Aktien, Bullards Schulden (vor Kapitel 3 unverändert).
   const konzern = settleRivalsK3(advanceKapitel3(gehandelt, balance, texts.kapitel3), balance);

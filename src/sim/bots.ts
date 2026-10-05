@@ -1587,7 +1587,7 @@ export interface TargetRow {
 const TARGET_TEXT: Record<BotTargetId, { label: string; goal: string; unit: TargetRow['unit'] }> = {
   winRate: { label: 'Höchste Siegquote einer Strategie', goal: 'GDD §17: keine Einzelstrategie gewinnt in mehr als 40 %', unit: 'prozent' },
   standardBankrupt: { label: 'Pleitequote Standard-Bot (ausgewogen)', goal: 'Kapitel 1 ist der Einstieg (GDD §17: Kapitel 4 übersteht er in 55–70 %)', unit: 'prozent' },
-  greedyBankrupt: { label: 'Pleitequote gierig', goal: 'GDD §15: wer im Boom zu viele Schulden macht, stirbt (Krisen erst ab Kapitel 2)', unit: 'prozent' },
+  greedyBankrupt: { label: 'Pleitequote gierig', goal: 'GDD §15: wer im Boom zu viele Schulden macht, stirbt (4.20: in der Kreditkrise kündigt die Bank)', unit: 'prozent' },
   cautiousBehind: { label: 'Ø Imperium vorsichtig ÷ bester Ø der Mutigeren', goal: 'GDD §15: wer nie Schulden macht, wird überholt (unter 1)', unit: 'faktor' },
   standardGoal: { label: 'Kapitelziel Standard-Bot (ausgewogen)', goal: 'Kapitelprüfung erreichbar, aber nicht geschenkt', unit: 'prozent' },
   smallRateInRange: { label: 'Kleine Funde mit 50–500 bbl/Tag', goal: 'GDD §15: Anfangsrate 50–500 bbl/Tag', unit: 'prozent' },

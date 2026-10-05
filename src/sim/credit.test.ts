@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Balance } from './balance';
 import {
+  callLoansInCrisis,
   checkBankruptcy,
   creditLimit,
   debt,
@@ -679,5 +680,53 @@ describe('Schlechte Noten aus Ereignissen verblassen (0.4.19+2)', () => {
     expect(nach.consequences?.ratingShift).toBe(-1);
     // In einer anderen Runde ändert sich nichts.
     expect(settleLoans({ ...s, round: s.round + 1 }, balance).consequences?.ratingShift).toBe(-2);
+  });
+});
+
+describe('4.20: Kreditkrise im Kapitel – die Bank kündigt Kredite (GDD §8)', () => {
+  const C2 = balance.credit.crisisCall;
+  /** Spiel mit Bankkredit und einer Nachricht des Weltmodells in dieser Runde. */
+  function inKrise(news: ('panic' | 'crash' | 'war')[], bankDebt: number, cash: number): GameState {
+    const g = newGame('krise-bank', balance);
+    const loans: Loan[] = [
+      { id: 1, source: 'bank', principal: bankDebt, rate: 0.07, takenRound: 1, collateral: null },
+      { id: 2, source: 'lender', principal: 500, rate: 0.4, takenRound: 1, collateral: null },
+    ];
+    return { ...g, cash, loans, worldModel: { ...g.worldModel, news } };
+  }
+
+  it('bricht eine Bankpanik aus, kündigt die Bank share + leverage × Auslastung – sofort aus der Kasse', () => {
+    const s = inKrise(['panic'], 1500, 10000);
+    const auslastung = 1500 / balance.credit.limitBase;
+    const anteil = C2.share + C2.leverage * auslastung;
+    const t = callLoansInCrisis(s, balance);
+    expect(t.cash).toBeCloseTo(10000 - 1500 * anteil, 2);
+    expect(debt(t)).toBeCloseTo(500 + 1500 * (1 - anteil), 2);
+    // Der Notkredit des Geldverleihers bleibt, wie er ist.
+    expect(t.loans.find((l) => l.source === 'lender')!.principal).toBe(500);
+    expect(t.log[t.log.length - 1]).toMatch(/Kreditkrise – die Bank kündigt/);
+  });
+
+  it('wer voll verschuldet ist, muss mehr zurückzahlen als wer wenig schuldet', () => {
+    const wenig = callLoansInCrisis(inKrise(['crash'], 300, 10000), balance);
+    const viel = callLoansInCrisis(inKrise(['crash'], 3000, 10000), balance);
+    expect((10000 - viel.cash) / 3000).toBeGreaterThan((10000 - wenig.cash) / 300);
+    expect((10000 - viel.cash) / 3000).toBeCloseTo(Math.min(1, C2.share + C2.leverage), 5);
+  });
+
+  it('reicht die Kasse nicht, steht sie im Minus – und die Frist der Pleiteprüfung läuft', () => {
+    const t = checkBankruptcy(callLoansInCrisis(inKrise(['panic'], 3000, 200), balance), balance);
+    expect(t.cash).toBeLessThan(0);
+    expect(t.bankruptcyDeadline).toBeGreaterThan(0);
+    expect(t.log.some((l) => /In der Kasse fehlen jetzt/.test(l))).toBe(true);
+  });
+
+  it('ohne neue Krise, ohne Bankkredit oder nach Spielende passiert nichts', () => {
+    const ruhig = inKrise(['war'], 3000, 200);
+    expect(callLoansInCrisis(ruhig, balance)).toBe(ruhig);
+    const ohne = { ...inKrise(['panic'], 3000, 200), loans: [] };
+    expect(callLoansInCrisis(ohne, balance)).toBe(ohne);
+    const vorbei = { ...inKrise(['panic'], 3000, 200), finished: true };
+    expect(callLoansInCrisis(vorbei, balance)).toBe(vorbei);
   });
 });
