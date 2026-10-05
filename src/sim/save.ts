@@ -25,17 +25,18 @@ import { validExchange } from './exchange';
 import { validHallstead } from './hallsteadState';
 import { isKapitel3State } from './kapitel3'; // 4.17 Andockpunkt
 
-/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2), 11 = mit befristeten Nachwirkungen der Ereignisse (0.2.15+3), 12 = Karte mit Gebieten und Ranches statt Raster, mehrere Bohrlöcher je Ranch (0.2.15+5), 13 = Bohrtürme und Pumpen (0.2.15+7), 14 = mit Weltmodell (4.1), 15 = mit öffentlichem Handeln und Wahlergebnis im Weltmodell (4.2), 16 = mit Gesetzgebung im Weltmodell (4.3), 17 = mit Kreditzyklus (Verschuldung, Bankpanik) und Ausland (Costa Negra, Qasir) im Weltmodell (4.4), 18 = mit Kapitel, Zeitsprung und Chronik (4.5; Beteiligungen `ventures` sind freiwillig – fehlen sie, gibt es keine), 19 = mit den Systemen der Kapitel 2 und 3 (4.6–4.17: refinery, bigPipelines, stocks, staff, diplomacy, investigation, research, brand, exchange, hallstead, kapitel3 – alle freiwillig, fehlen sie, ist das System noch nicht offen). */
-export const SAVE_FORMAT = 19;
+/** Bau des Spielstandformats. Nur hochzählen, wenn sich der Zustand ändert. 2 = mit Ereignissen (2.1), 3 = mit Terminen und Kraft (2.3), 4 = mit Posteingang (Fristen, Briefarten, 2.4), 5 = mit Dokumentenprüfung (2.5), 6 = mit Familie und Krankheit (2.7), 7 = mit Wildcattern und Übernahme-Ende (2.8), 8 = mit Wiederholungsschutz der Ereignisse (2.10a), 9 = mit Börsengang am Kapitelende (2.11), 10 = mit Lager, eigenen Fuhrwerken, Pipeline und Händler (0.2.15+2), 11 = mit befristeten Nachwirkungen der Ereignisse (0.2.15+3), 12 = Karte mit Gebieten und Ranches statt Raster, mehrere Bohrlöcher je Ranch (0.2.15+5), 13 = Bohrtürme und Pumpen (0.2.15+7), 14 = mit Weltmodell (4.1), 15 = mit öffentlichem Handeln und Wahlergebnis im Weltmodell (4.2), 16 = mit Gesetzgebung im Weltmodell (4.3), 17 = mit Kreditzyklus (Verschuldung, Bankpanik) und Ausland (Costa Negra, Qasir) im Weltmodell (4.4), 18 = mit Kapitel, Zeitsprung und Chronik (4.5; Beteiligungen `ventures` sind freiwillig – fehlen sie, gibt es keine), 19 = mit den Systemen der Kapitel 2 und 3 (4.6–4.17: refinery, bigPipelines, stocks, staff, diplomacy, investigation, research, brand, exchange, hallstead, kapitel3 – alle freiwillig, fehlen sie, ist das System noch nicht offen), 20 = Termine als Hauptwerkzeug, Etappe 1: Wissensstand je Ranch (knowledge), Erkundung (exploration), Planungsbrett (plans), verdeckte Fundchance je Ranch (Parcel.chance, freiwillig). */
+export const SAVE_FORMAT = 20;
 
 /**
  * Ältere Formate, die mit Ersatzwerten noch geladen werden. Vor Format 12 keins
  * mehr: Die Rasterparzellen der alten Stände passen nicht auf die neue Karte.
  * Format 12 bekommt Silas' Turm (0.2.15+7), Format 12 und 13 eine ruhige Durchschnittswelt (4.1), Format 14 leere Listen für öffentliches Handeln und keine gemerkte Wahl (4.2),
- * bis Format 17 Kapitel 1 ohne Zeitsprung (4.5).
+ * bis Format 17 Kapitel 1 ohne Zeitsprung (4.5), bis Format 19 Wissensstufe 2 auf jeder Ranch mit Prognose,
+ * kein Geologe und ein leeres Planungsbrett (Etappe 1).
  * Die Umrisse der Ranches stehen nie im Spielstand – sie kommen aus dem Seed.
  */
-const ALTE_FORMATE: number[] = [12, 13, 14, 15, 16, 17, 18];
+const ALTE_FORMATE: number[] = [12, 13, 14, 15, 16, 17, 18, 19];
 
 export interface SaveFile {
   format: number;
@@ -78,7 +79,7 @@ const ZAHLEN = [
 const LISTEN = ['regions', 'parcels', 'fields', 'leases', 'options', 'wells', 'rigs', 'priceHistory', 'loans', 'log', 'timeskips'] as const;
 
 /** Nachschlagewerke im Zustand. */
-const OBJEKTE = ['forecasts', 'shipped'] as const;
+const OBJEKTE = ['forecasts', 'shipped', 'knowledge'] as const;
 
 function istZahl(wert: unknown): wert is number {
   return typeof wert === 'number' && Number.isFinite(wert);
@@ -135,6 +136,17 @@ export function validateState(value: unknown): LoadResult {
   ) {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
+  // Erkundung und Planungsbrett (Etappe 1).
+  if (!Object.values(value.knowledge as Record<string, unknown>).every((k) => istObjekt(k) && istZahl(k.level) && istListe(k.clues))) {
+    return { ok: false, reason: UNVOLLSTAENDIG };
+  }
+  const ex = value.exploration;
+  if (!istObjekt(ex) || !istObjekt(ex.record) || !istZahl(ex.record.hits) || !istZahl(ex.record.misses)) return { ok: false, reason: UNVOLLSTAENDIG };
+  if (ex.geologist !== undefined && !(istObjekt(ex.geologist) && istText(ex.geologist.id) && istZahl(ex.geologist.accuracy) && istZahl(ex.geologist.bias) && istZahl(ex.geologist.wage))) {
+    return { ok: false, reason: UNVOLLSTAENDIG };
+  }
+  const plans = value.plans;
+  if (!istObjekt(plans) || !istZahl(plans.round) || !istListe(plans.booked) || !istListe(plans.report)) return { ok: false, reason: UNVOLLSTAENDIG };
   const agenda = value.agenda;
   if (!istObjekt(agenda) || !istZahl(agenda.budget) || !istZahl(agenda.used) || !istListe(agenda.done)) {
     return { ok: false, reason: UNVOLLSTAENDIG };
@@ -315,5 +327,14 @@ export function deserializeGame(text: string): LoadResult {
   if (state.neighbourOffset === undefined) state = { ...state, neighbourOffset: 0 };
   if (state.jump === undefined) state = { ...state, jump: null };
   if (state.timeskips === undefined) state = { ...state, timeskips: [] };
+  // Ersatzwerte (Etappe 1): Spielstände bis Format 19 hatten Prognosen für jede Ranch – sie gelten
+  // als kartiert (Stufe 2, ohne einzelne Hinweise); fehlt q, gilt das Wissen der Zone (trueChance).
+  if (state.knowledge === undefined && istObjekt(state.forecasts)) {
+    const knowledge: Record<string, unknown> = {};
+    for (const id of Object.keys(state.forecasts)) knowledge[id] = { level: 2, clues: [] };
+    state = { ...state, knowledge };
+  }
+  if (state.exploration === undefined) state = { ...state, exploration: { record: { hits: 0, misses: 0 } } };
+  if (state.plans === undefined && istZahl(state.round)) state = { ...state, plans: { round: state.round, booked: [], report: [] } };
   return validateState(state);
 }

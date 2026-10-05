@@ -337,7 +337,7 @@ describe('Bot-Läufe mit Ereignissen (2.15)', () => {
   it('blinde Wildcat-Chance liegt zwischen 0 und dem Ölanteil der ersten Stufe und ist ärmer als der Kern', () => {
     const c = blindWildcatChance(balance, 30);
     expect(c).toBeGreaterThan(0);
-    expect(c).toBeLessThan(balance.drilling.stages[0].oilShare * (1 - balance.geology.zones[0].dry));
+    expect(c).toBeLessThan(balance.drilling.stages[0].oilShare * balance.geology.zones[0].prior);
   });
 
   it('checkTargets misst jede Kennzahl und markiert, was außerhalb liegt', () => {

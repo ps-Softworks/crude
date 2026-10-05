@@ -232,6 +232,8 @@ const bilder: Bild[] = [
   { name: '32-zeitsprung-telegramm', state: imSprung },
   { name: '33-zeitsprung-chronik', state: nachSprung },
   { name: '34-kapitel2-schreibtisch', state: kapitel2 },
+  // Termine als Hauptwerkzeug (Etappe 1): Planungsbrett mit Kartenhand.
+  { name: '35-planungsbrett', state: start, prefs: { 'crude.reiter.termine': 'land' }, tasten: ['t'] },
 ];
 
 // --- Chrome über das DevTools-Protokoll steuern ---

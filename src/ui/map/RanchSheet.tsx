@@ -17,6 +17,12 @@ import { balance } from '../balance';
 import { barrels, money, percent, rounds, units } from '../format';
 import { STATUS_LABEL, ranchStatus } from '../mapShapes';
 import { SeismikZeile } from '../Kapitel3Ranch'; // 4.17 Andockpunkt
+// Termine als Hauptwerkzeug (Etappe 1): Wissensstand, Hinweise und Erkundungs-Karten.
+import { knowledgeView } from '../../sim/exploration';
+import { bookCard, planView } from '../../sim/plans';
+import { events } from '../events';
+import { cardText, clueLine, levelLabel, zoneWord } from '../plans';
+import '../sheets/plans.css';
 
 const GEOLOGY_LABEL = { dry: 'trocken', small: 'klein', gusher: 'Gusher' } as const;
 
@@ -161,6 +167,8 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
           </div>
         )}
 
+        {!parcel.discovery && <Wissen game={game} parcel={parcel} debug={debug} onGame={onGame} />}
+
         {/* Gehört die Ranch schon Jacob, ist das Kleingedruckte erledigt: zugeklappt, damit
             Bohrungen und Förderung oben stehen (0.2.15+12). */}
         {terms && (
@@ -256,6 +264,52 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
         </p>
       )}
     </aside>
+  );
+}
+
+/**
+ * Wissensstand (Etappe 1): Stufe, Bandbreite oder was man über die Zone hört, die
+ * Hinweise mit Runde und Quelle und die Erkundungs-Karten, die auf diese Ranch gehen –
+ * alles aus knowledgeView und planView (src/sim).
+ */
+function Wissen({ game, parcel, debug, onGame }: { game: GameState; parcel: Parcel; debug: boolean; onGame?: (state: GameState) => void }) {
+  const k = knowledgeView(game, balance, parcel.id);
+  const karten = planView(game, balance, events).cards.filter((c) => c.target === 'ranch' && c.reason === null && c.targets.some((t) => t.parcelId === parcel.id && t.ok));
+  return (
+    <section className="wissen">
+      <h4>
+        Wissen: <span className="stufe">{levelLabel(k.level)}</span>
+        {k.forecast ? <> · {formatForecast(k.forecast)}</> : <> · {zoneWord(parcel.zone)}</>}
+      </h4>
+      {k.level === 0 && <p className="muted klein">Noch keine Zahl – erst wer hinsieht, kann die Chance schätzen.</p>}
+      {k.leaseDiscount > 0 && <p className="klein">Der Farmer lässt {percent(k.leaseDiscount)} vom Pachtbonus nach.</p>}
+      {k.clues.length > 0 && (
+        <ul>
+          {k.clues.map((c, i) => (
+            <li key={i}>{clueLine(c)}</li>
+          ))}
+        </ul>
+      )}
+      {onGame && karten.length > 0 && !game.finished && (
+        <div className="erkunden">
+          {karten.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              title={cardText(c).text}
+              onClick={() => {
+                const r = bookCard(game, balance, events, c.id, parcel.id);
+                if (r.ok) onGame(r.state);
+              }}
+            >
+              {cardText(c).title} ({c.appointments === 1 ? '1 Termin' : `${c.appointments} Termine`}
+              {c.cash > 0 && `, ${money(c.cash)}`})
+            </button>
+          ))}
+        </div>
+      )}
+      {debug && <p className="muted klein">Debug: q {percent(trueChance(balance, parcel))} · Geologie {GEOLOGY_LABEL[parcel.geology]}</p>}
+    </section>
   );
 }
 

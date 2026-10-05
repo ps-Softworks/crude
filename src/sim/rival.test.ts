@@ -55,11 +55,11 @@ describe('Rivale Bullard (1.12)', () => {
   });
 
   describe('Bullards Fundchance', () => {
-    it('Randparzelle: 1 − rand.dry (Zonenwissen, nicht die Wahrheit)', () => {
+    it('Randparzelle: Zonenwissen plus ein Teil der Wahrheit (insight), nicht die Wahrheit selbst', () => {
       const state = newGame('chance', balance);
       const p = freieRandparzelle(state);
       const rand = balance.geology.zones.find((z) => z.name === 'rand')!;
-      expect(rivalChance(state, balance, p)).toBeCloseTo(1 - rand.dry, 10);
+      expect(rivalChance(state, balance, p)).toBeCloseTo(rand.prior + bullard.insight * (p.chance! - rand.prior), 10);
     });
 
     it('neben einer fündigen Quelle von Jacob kommt nearFindChance dazu', () => {

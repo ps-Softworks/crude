@@ -6,6 +6,7 @@ import { abandonWell, drillDeeper, fishWell, stageCost, startDrilling, type Well
 import { endRound, newGame, type GameState } from './game';
 import { buyLease, buyOption, exerciseOption, leaseTerms, type Lease } from './lease';
 import { loadBalance } from './testBalance';
+import { bookCard } from './plans';
 
 const balance = loadBalance();
 
@@ -337,9 +338,16 @@ describe('Der nächste Schritt (nextStep)', () => {
     });
   });
 
-  it('ohne Pacht und ohne Option: erst pachten', () => {
+  it('ohne Pacht und ohne Option: erst übers Land reiten (Etappe 1), danach pachten', () => {
     const state = newGame('nichts', balance);
     expect(nextStep({ ...state, leases: [], options: [] }, balance)).toEqual({
+      text: 'Reite übers Land, bevor du pachtest: Im Kalender (T) „Übers Land reiten“ buchen – dann weißt du, wo es sich lohnt.',
+      parcelIds: [],
+    });
+    const ziel = state.parcels.find((p) => !p.discovery && !state.knowledge[p.id])!.id;
+    const geritten = bookCard({ ...state, leases: [], options: [] }, balance, [], 'ritt', ziel);
+    if (!geritten.ok) throw new Error(geritten.reason);
+    expect(nextStep(geritten.state, balance)).toEqual({
       text: 'Pachte eine Ranch auf der Karte, dann kannst du bohren.',
       parcelIds: [],
     });
@@ -352,10 +360,7 @@ describe('Der nächste Schritt (nextStep)', () => {
       leases: state.leases.map((l) => ({ ...l, holder: 'rival' as never })),
       options: state.options.map((o) => ({ ...o, holder: 'rival' as never })),
     };
-    expect(nextStep(fremd, balance)).toEqual({
-      text: 'Pachte eine Ranch auf der Karte, dann kannst du bohren.',
-      parcelIds: [],
-    });
+    expect(nextStep(fremd, balance)?.text).toMatch(/^(Pachte eine Ranch|Reite übers Land)/);
   });
 
   it('liegt Öl im Tank, geht der Verkauf vor', () => {

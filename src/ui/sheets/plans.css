@@ -1,0 +1,74 @@
+/* Planungsbrett und Erkundung (Etappe 1): Tagesfelder, Kartenhand, Wochenbericht,
+   Hinweise im Ranch-Fenster. Nur Farben aus style.css. */
+.brett-tage {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 4px;
+}
+.brett-feld {
+  border: 1px solid var(--linie);
+  background: var(--papier-hell);
+  padding: 4px 6px;
+  min-height: 58px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+}
+.brett-feld.frei { border-style: dashed; color: var(--tinte-weich); }
+.brett-feld.plan { border-left: 4px solid var(--gruen); background: var(--gruen-hell); }
+.brett-feld.termin { border-left: 4px solid var(--blau); background: var(--blau-hell); }
+.brett-feld.post { border-left: 4px solid var(--ocker); background: var(--ocker-hell); }
+.brett-feld.nacht { border-color: var(--rot); background: var(--rot-hell); }
+.brett-feld.nacht.frei { background: none; }
+.brett-tag { font-variant: small-caps; letter-spacing: 0.06em; font-weight: 600; }
+.brett-feld.nacht .brett-tag { color: var(--rot); }
+.brett-inhalt { line-height: 1.2; }
+.brett-feld button.link { align-self: flex-start; font-size: 13px; }
+
+.brett-hand {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 8px;
+}
+.planskarte {
+  border: 1px solid var(--linie);
+  border-top: 4px solid var(--gruen);
+  background: var(--papier-hell);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.planskarte h4 { margin: 0; font-size: 1.05rem; }
+.planskarte p { margin: 0; }
+.planskarte.gesperrt { border-top-color: var(--grau); color: var(--tinte-weich); background: var(--papier); }
+.karte-kosten { font-variant: small-caps; letter-spacing: 0.03em; color: var(--tinte-weich); font-size: 14px; }
+.karte-text { font-size: 15px; }
+.karte-risiko { font-size: 14px; font-style: italic; color: var(--rost, var(--rot)); }
+.karte-grund { font-size: 14px; font-style: italic; }
+.karte-buchen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
+.karte-buchen select { max-width: 100%; }
+
+.wochenbericht {
+  margin-top: 14px;
+  border: 1px solid var(--linie);
+  background: var(--papier-hell);
+  padding: 8px 12px;
+  box-shadow: 2px 2px 0 var(--papier-dunkel);
+}
+.wochenbericht h4 { margin: 0 0 4px; font-variant: small-caps; letter-spacing: 0.06em; }
+.wochenbericht ul { margin: 0; padding-left: 18px; }
+.wochenbericht li { margin-bottom: 2px; }
+
+.wissen { margin-top: 10px; }
+.wissen h4 { margin: 0 0 4px; }
+.wissen ul { margin: 4px 0 0; padding-left: 18px; font-size: 15px; }
+.wissen .stufe { font-variant: small-caps; letter-spacing: 0.05em; }
+.erkunden { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+
+/* Legende der Karte: Ranch, über die Jacob nur Gerüchte kennt (schraffiert). */
+.karte-legende .feld.geruecht { background: repeating-linear-gradient(-35deg, var(--land) 0 3px, var(--grau) 3px 3.6px); }

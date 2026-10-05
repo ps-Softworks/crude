@@ -5,7 +5,7 @@
 import type { Balance } from './balance';
 import { formatDate } from './calendar';
 import { stageCost } from './drilling';
-import { trueChance } from './forecast';
+import { trueChance, zoneChance } from './forecast';
 import type { GameState } from './game';
 import type { Parcel } from './geology';
 import { adjacent, leaseTerms, parcelLabel, type Lease } from './lease';
@@ -102,11 +102,14 @@ export function betrayalParcel(state: GameState): Parcel | null {
 }
 
 /**
- * Bullards Bild der Fundchance – nicht die Wahrheit: Zonenwissen (wie die
- * wahre Grundchance der Zone) plus Aufschlag neben einer fündigen Quelle Jacobs.
+ * Bullards Bild der Fundchance – nicht die Wahrheit: Zonenwissen (das öffentliche
+ * Wissen der Zone, Etappe 1) plus ein Teil (insight) dessen, was die Ranch wirklich
+ * besser oder schlechter ist – ein alter Wildcatter kennt das Land –, plus Aufschlag
+ * neben einer fündigen Quelle Jacobs.
  */
 export function rivalChance(state: GameState, balance: Balance, parcel: Parcel): number {
-  const c = trueChance(balance, parcel) + (nextTo(parcel, jacobFinds(state)) ? balance.rivals.bullard.nearFindChance : 0);
+  const zone = zoneChance(balance, parcel);
+  const c = zone + balance.rivals.bullard.insight * (trueChance(balance, parcel) - zone) + (nextTo(parcel, jacobFinds(state)) ? balance.rivals.bullard.nearFindChance : 0);
   return Math.min(1, Math.max(0, c));
 }
 

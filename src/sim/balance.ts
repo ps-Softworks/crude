@@ -22,6 +22,8 @@ import { parseResearchBalance, type ResearchBalance } from './research';
 import { parseBrandBalance, type BrandBalance } from './brand';
 // 4.16 Andockpunkt
 import { parseHallstead, type HallsteadBalance } from './hallsteadBalance';
+// Termine als Hauptwerkzeug (Etappe 1): Erkundung und Planungsbrett.
+import { parseExplorationBalance, parsePlansBalance, type ExplorationBalance, type PlansBalance } from './plansBalance';
 // 4.17 Andockpunkt: Kapitel 3 (Seismik, Konsortium, Projekte, Stand) prüft seinen Block selbst.
 import { parseKapitel3Balance, type Kapitel3Balance } from './kapitel3Balance';
 
@@ -30,9 +32,30 @@ export type GeologyType = 'dry' | 'small' | 'gusher';
 export interface Zone {
   name: string;
   maxDistance: number;
-  dry: number;
+  /** Grundwert der Fundchance in dieser Zone (Etappe 1, öffentliches Wissen); vorher 1 − dry. */
+  base: number;
+  /** Öffentliches Wissen: Ø Fundchance der Zone – Startwert der Erkundung, Bullards Bild. */
+  prior: number;
+  /** Verhältnis kleiner Fund : Gusher, wenn Öl da ist (Summe beliebig > 0). */
   small: number;
   gusher: number;
+}
+
+/** Salzrücken (Etappe 1): Linien je Gebiet, an denen das Öl sitzt. */
+export interface TrendBalance {
+  perRegion: number;
+  /** Bis zu diesem Abstand (Karteneinheiten) gilt eine Ranch als „auf dem Rücken“. */
+  radius: number;
+  bonus: number;
+  offTrend: number;
+  noise: number;
+  qMin: number;
+  qMax: number;
+  /** Die Linie läuft durch einen Punkt in diesem Abstand vom Salzdom … */
+  offsetMin: number;
+  offsetMax: number;
+  /** … und reicht so weit zu beiden Seiten. */
+  halfLength: number;
 }
 
 export interface Range {
@@ -422,6 +445,11 @@ export interface BotsBalance {
   rightsEstimate: number;
   /** Wie die planenden Bots in Türme, Bohrlöcher und Pumpen investieren (0.2.15+7). */
   invest: Record<'cautious' | 'greedy' | 'balanced', BotInvest>;
+  /**
+   * Erkundung (Etappe 1): Solange der Bot weniger als known bezahlbare freie Ranches kennt, die
+   * mindestens until versprechen, reitet er bis zu rides Mal je Runde übers Land (Karte „Übers Land reiten“).
+   */
+  explore: Record<'cautious' | 'greedy' | 'balanced', { rides: number; until: number; known: number }>;
   /** Zielwerte Kapitel 1 (2.15): Toleranzbereich je Kennzahl. */
   targets: Record<BotTargetId, { min: number; max: number }>;
 }
@@ -525,6 +553,8 @@ export interface RivalBalance {
   riskWeight: number;
   nearJacobBonus: number;
   nearFindChance: number;
+  /** Etappe 1: So viel von der Wahrheit (q − Zonenwissen) ahnt Bullard – ein alter Wildcatter kennt das Land (0 = nichts, 1 = alles). */
+  insight: number;
   noise: number;
   minUtility: number;
   drillRounds: number;
@@ -774,10 +804,15 @@ export interface Balance {
   ranches: RanchBalance;
   geology: {
     zones: Zone[];
+    trends: TrendBalance;
     reserves: { small: Range; gusher: Range };
   };
   lease: LeaseBalance;
   forecast: ForecastBalance;
+  /** Erkundung (Etappe 1): Hinweise, Wissensstufen, Geologen. */
+  exploration: ExplorationBalance;
+  /** Planungsbrett (Etappe 1): Zahlen der Karten. */
+  plans: PlansBalance;
   drilling: DrillingBalance;
   production: ProductionBalance;
   market: MarketBalance;
@@ -829,6 +864,8 @@ export interface TutorialBalance {
   dollarsPerPoint: number;
   /** Kredite, die der Hinweis vorschlägt, werden auf so viele $ aufgerundet. */
   loanRounding: number;
+  /** Etappe 1: Liegt die beste bezahlbare Empfehlung unter so viel %, rät der Hinweis erst zum Ritt übers Land. */
+  exploreBelow: number;
 }
 
 /** Zeitung (2.6, GDD §7.2): ab welcher erwarteten Preisänderung welche Schlagzeile kommt. */
@@ -1438,6 +1475,7 @@ function parseRivals(raw: unknown): RivalsBalance {
     riskWeight: share(raw, `${p}.riskWeight`),
     nearJacobBonus: nonNegative(raw, `${p}.nearJacobBonus`),
     nearFindChance: share(raw, `${p}.nearFindChance`),
+    insight: share(raw, `${p}.insight`),
     noise: nonNegative(raw, `${p}.noise`),
     minUtility: nonNegative(raw, `${p}.minUtility`),
     drillRounds: positiveInt(raw, `${p}.drillRounds`),
@@ -1607,6 +1645,11 @@ function parseBots(raw: unknown): BotsBalance {
       balanced: parseBotTransport(raw, 'balanced'),
     },
     rightsEstimate: nonNegative(raw, 'bots.rightsEstimate'),
+    explore: {
+      cautious: { rides: nonNegativeInt(raw, 'bots.explore.cautious.rides'), until: share(raw, 'bots.explore.cautious.until'), known: positiveInt(raw, 'bots.explore.cautious.known') },
+      greedy: { rides: nonNegativeInt(raw, 'bots.explore.greedy.rides'), until: share(raw, 'bots.explore.greedy.until'), known: positiveInt(raw, 'bots.explore.greedy.known') },
+      balanced: { rides: nonNegativeInt(raw, 'bots.explore.balanced.rides'), until: share(raw, 'bots.explore.balanced.until'), known: positiveInt(raw, 'bots.explore.balanced.known') },
+    },
     invest: {
       cautious: parseBotInvest(raw, 'cautious'),
       greedy: parseBotInvest(raw, 'greedy'),
@@ -1695,6 +1738,7 @@ function parseTutorial(raw: unknown): TutorialBalance {
     deeperMinChance: integerInRange(raw, 'tutorial.deeperMinChance', 0, 100),
     dollarsPerPoint: positiveInt(raw, 'tutorial.dollarsPerPoint'),
     loanRounding: positiveInt(raw, 'tutorial.loanRounding'),
+    exploreBelow: nonNegative(raw, 'tutorial.exploreBelow'),
   };
 }
 
@@ -2136,6 +2180,26 @@ export function parseGameData(balanceRaw: unknown, mapRaw: unknown, laws: readon
   return { ...parseBalance({ ...(balanceRaw as object), world: mapRaw }), laws };
 }
 
+/** Salzrücken (Etappe 1). */
+function parseTrends(raw: unknown): TrendBalance {
+  const p = 'geology.trends';
+  const t: TrendBalance = {
+    perRegion: nonNegativeInt(raw, `${p}.perRegion`),
+    radius: nonNegative(raw, `${p}.radius`),
+    bonus: num(raw, `${p}.bonus`),
+    offTrend: num(raw, `${p}.offTrend`),
+    noise: nonNegative(raw, `${p}.noise`),
+    qMin: share(raw, `${p}.qMin`),
+    qMax: share(raw, `${p}.qMax`),
+    offsetMin: nonNegative(raw, `${p}.offsetMin`),
+    offsetMax: nonNegative(raw, `${p}.offsetMax`),
+    halfLength: nonNegative(raw, `${p}.halfLength`),
+  };
+  if (t.qMin > t.qMax) throw new BalanceError(`balance.yaml: "${p}.qMin" ist größer als "${p}.qMax"`);
+  if (t.offsetMin > t.offsetMax) throw new BalanceError(`balance.yaml: "${p}.offsetMin" ist größer als "${p}.offsetMax"`);
+  return t;
+}
+
 export function parseBalance(raw: unknown): Balance {
   const zonesRaw = (raw as { geology?: { zones?: unknown } })?.geology?.zones;
   if (!Array.isArray(zonesRaw) || zonesRaw.length === 0) {
@@ -2145,15 +2209,16 @@ export function parseBalance(raw: unknown): Balance {
     const zone: Zone = {
       name: String((z as { name?: unknown }).name ?? `Zone ${i + 1}`),
       maxDistance: num(z, 'maxDistance'),
-      dry: num(z, 'dry'),
+      base: num(z, 'base'),
+      prior: num(z, 'prior'),
       small: num(z, 'small'),
       gusher: num(z, 'gusher'),
     };
-    const sum = zone.dry + zone.small + zone.gusher;
-    if (Math.abs(sum - 1) > 1e-6) {
-      throw new BalanceError(
-        `balance.yaml: Zone "${zone.name}" – dry + small + gusher ergibt ${sum.toFixed(3)} statt 1`,
-      );
+    if (zone.base < 0 || zone.base > 1 || zone.prior <= 0 || zone.prior >= 1) {
+      throw new BalanceError(`balance.yaml: Zone "${zone.name}" – "base" muss zwischen 0 und 1 liegen, "prior" echt dazwischen`);
+    }
+    if (zone.small < 0 || zone.gusher < 0 || zone.small + zone.gusher <= 0) {
+      throw new BalanceError(`balance.yaml: Zone "${zone.name}" – small und gusher dürfen nicht negativ sein und nicht beide 0`);
     }
     return zone;
   });
@@ -2173,6 +2238,7 @@ export function parseBalance(raw: unknown): Balance {
     ranches: parseRanches(raw),
     geology: {
       zones,
+      trends: parseTrends(raw),
       reserves: {
         small: range(raw, 'geology.reserves.small'),
         gusher: range(raw, 'geology.reserves.gusher'),
@@ -2180,6 +2246,8 @@ export function parseBalance(raw: unknown): Balance {
     },
     lease: parseLease(raw),
     forecast: parseForecast(raw),
+    exploration: parseExplorationBalance(raw),
+    plans: parsePlansBalance(raw),
     drilling: parseDrilling(raw),
     production: parseProduction(raw),
     market: parseMarket(raw),

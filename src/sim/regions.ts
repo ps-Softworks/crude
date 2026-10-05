@@ -8,10 +8,8 @@ import type { Balance } from './balance';
 import type { EventDef } from './events';
 import { formatDate } from './calendar';
 import { assignFields, buildFields } from './field';
-import { makeForecasts } from './forecast';
 import type { GameState } from './game';
 import { generateParcels } from './geology';
-import { Rng, seedFromString } from './rng';
 import { regionById, type WorldMap } from './worldMap';
 
 /** Ist das Gebiet offen? */
@@ -26,8 +24,8 @@ export function unlockRegion(state: GameState, regionId: string): GameState {
 }
 
 /**
- * Offene bohrbare Gebiete ohne Ranches bekommen jetzt ihre Ranches, Felder und
- * Prognosen – mit eigenem Zufall je Gebiet, damit Jacobs Zufall und die schon
+ * Offene bohrbare Gebiete ohne Ranches bekommen jetzt ihre Ranches und Felder
+ * (Prognosen erst nach Erkundung, Etappe 1) – mit eigenem Zufall je Gebiet, damit Jacobs Zufall und die schon
  * bekannten Ranches unberührt bleiben. Unbekannte Gebiete werden ignoriert.
  */
 export function openRegions(state: GameState, balance: Balance): GameState {
@@ -41,14 +39,12 @@ export function openRegions(state: GameState, balance: Balance): GameState {
     const geologie = generateParcels(balance, state.seed, [regionId]);
     const felder = buildFields(geologie).map((f, i) => ({ ...f, id: `f-${next.fields.length + i}` }));
     const parcels = assignFields(geologie, felder);
-    const rng = new Rng(seedFromString(`${state.seed}:prognose:${regionId}`));
-    const forecasts = makeForecasts(balance, parcels, balance.forecast.geologist, rng);
+    // Etappe 1: Neues Land kommt ohne Prognosen – wer wissen will, was es taugt, reitet hin.
     const name = regionById(balance.world, regionId)!.name.de;
     next = {
       ...next,
       parcels: [...next.parcels, ...parcels],
       fields: [...next.fields, ...felder],
-      forecasts: { ...next.forecasts, ...forecasts },
       log: [...next.log, `${formatDate(next)}: Neues Land: ${name} ist offen – ${parcels.length} Ranches und Farmen warten auf Pächter.`],
     };
   }

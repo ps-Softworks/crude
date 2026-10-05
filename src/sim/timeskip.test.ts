@@ -382,7 +382,7 @@ describe('Spielstand übersteht den Kapitelwechsel', () => {
   });
 
   it('ein Spielstand aus Format 18 (0.4.5, Kapitel 2 ohne die neuen Systeme) lädt weiter', () => {
-    expect(SAVE_FORMAT).toBe(19);
+    expect(SAVE_FORMAT).toBe(20);
     const { state } = springen(kapitelEnde('sprung-format18'));
     const alt: Record<string, unknown> = { ...state };
     for (const k of ['refinery', 'bigPipelines', 'stocks', 'staff', 'diplomacy', 'investigation', 'research']) delete alt[k];
@@ -539,7 +539,11 @@ describe('Kreditkrise und Bankenpanik (GDD §15)', () => {
     const credit = wm.credit as Record<string, unknown>;
     // Das Klima kippt sicher im ersten Quartal.
     const krise = parseBalance({ ...raw, worldModel: { ...wm, credit: { ...credit, crashChance: 1 } } });
-    const ende = chapterEnds(krise, 8, catalog).find((e) => e.wells.filter((w) => w.status === 'found').length >= 2)!;
+    // Die schwächste Firma mit mindestens zwei Quellen: Ihre Einnahmen im ersten Quartal decken die Kündigung nicht.
+    const foerderung = (e: GameState) => e.wells.reduce((s, w) => s + (w.status === 'found' ? (w.production?.lastRate ?? 0) : 0), 0);
+    const ende = chapterEnds(krise, 20, catalog)
+      .filter((e) => e.wells.filter((w) => w.status === 'found').length >= 2)
+      .sort((a, b) => foerderung(a) - foerderung(b))[0];
     expect(ende).toBeDefined();
     const geliehen = takeLoan({ ...ende, finished: false }, krise, Math.floor(headroomOf(ende, krise) / 100) * 100);
     if (!geliehen.ok) throw new Error(geliehen.reason);

@@ -144,25 +144,5 @@
         en: Three leaks patched – 40 barrels that would otherwise have soaked away.
       effects: { oilStock: 40, strength: -3 }
 
-- id: termin_port_ellis
-  routine: true
-  appointments: 3
-  title:
-    de: Reise nach Port Ellis
-    en: A Trip to Port Ellis
-  text:
-    de: >-
-      Im Bahnhofsbüro von Port Ellis sitzt Thornes Frachtagent hinter einem
-      Messinggitter. Wer persönlich kommt und lange genug wartet, bekommt
-      manchmal einen Cent Nachlass – Thorne mag es, wenn man ihn bittet.
-    en: >-
-      In the Port Ellis station office, Thorne's freight agent sits behind a brass
-      grille. A man who comes in person and waits long enough sometimes gets a cent
-      off – Thorne likes being asked.
-  choices:
-    - id: feilschen
-      label: { de: "Hinfahren und um den Bahntarif feilschen (−0,01 $ je Barrel)", en: "Go and haggle over the rail tariff (−0.01 $ per barrel)" }
-      result:
-        de: Nach zwei Tagen auf der Wartebank gibt der Agent einen Cent nach. Die Reise steckt Jacob in den Knochen.
-        en: After two days on the waiting bench the agent gives a cent. The trip stays in Jacob's bones.
-      effects: { railTariff: -0.01, strength: -3 }
+# termin_port_ellis (Reise nach Port Ellis, um den Bahntarif feilschen) entfällt mit dem Planungsbrett
+# (Termine als Hauptwerkzeug, Etappe 1); mit Thorne verhandelt Jacob in Etappe 2 über die Karte „Bei Thorne vorsprechen“.

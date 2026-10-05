@@ -1,0 +1,133 @@
+# Planungsbrett und Erkundung (Termine als Hauptwerkzeug, Etappe 1). Entwurf von Claude,
+# bitte in eigener Stimme umschreiben. Zahlen der Karten stehen in balance.yaml unter
+# plans.cards, die Regeln in src/sim/plans.ts und src/sim/exploration.ts.
+# Feste Termine ohne eigene Karte (Abend mit Ruth, Sonntag am Fluss …) nehmen Titel und
+# Text aus ihrem Ereignis in content/events/.
+
+title: { de: "Planungsbrett", en: "Planning Board" }
+
+tabs:
+  land: { de: "Land", en: "Land" }
+  markt: { de: "Markt", en: "Market" }
+  fracht: { de: "Fracht", en: "Freight" }
+  leute: { de: "Leute", en: "People" }
+
+cards:
+  ritt:
+    title: { de: "Übers Land reiten", en: "Ride the Country" }
+    text:
+      de: "Einen Tag im Sattel: die Ranch und zwei Nachbarn ablaufen, nach Sickerstellen, Salzwasser und Hügelzügen sehen."
+      en: "A day in the saddle: walk the ranch and two neighbours, looking for seeps, salt water and ridges."
+    risk: { de: "Ein langer Tag im Sattel kostet Kraft.", en: "A long day in the saddle costs strength." }
+  farmer:
+    title: { de: "Alten Farmer fragen", en: "Ask the Old Farmer" }
+    text:
+      de: "Wer seit vierzig Jahren Wasser aus demselben Brunnen zieht, weiß, ob es einmal nach Öl roch."
+      en: "A man who has drawn water from the same well for forty years knows whether it ever smelled of oil."
+    risk: { de: "Ein gieriger Farmer erzählt gern, was den Pachtpreis hebt.", en: "A greedy farmer likes to tell what raises the lease price." }
+  geologe_einstellen:
+    title: { de: "Geologen einstellen", en: "Hire a Geologist" }
+    text:
+      de: "Ein Geologe aus Port Ellis mit Hammer, Lupe und Notizbuch. Ordentliche Arbeit, eigene Meinung."
+      en: "A geologist from Port Ellis with hammer, lens and notebook. Decent work, opinions of his own."
+    risk: { de: "Ob er schönfärbt oder schwarzmalt, zeigt erst seine Trefferbilanz. Kostet Lohn jede Runde.", en: "Whether he flatters or doubts only shows in his record. Costs wages every round." }
+  geologe_hale:
+    title: { de: "Hale anheuern", en: "Hire Hale" }
+    text:
+      de: "Hale sitzt jeden Abend im Saloon und kennt angeblich jede Formation in Cordova. Er ist billig."
+      en: "Hale sits in the saloon every evening and claims to know every formation in Cordova. He is cheap."
+    risk: { de: "Ungenau – und er sieht überall Öl.", en: "Imprecise – and he sees oil everywhere." }
+  geologe_hallstead:
+    title: { de: "Geologen aus Hallstead holen", en: "Bring a Geologist from Hallstead" }
+    text:
+      de: "Dr. Merriweather lehrt an der Universität und kommt nur, wenn man ihn persönlich abholt. Seine Karten sind die besten im Land."
+      en: "Dr. Merriweather teaches at the university and only comes if fetched in person. His maps are the best in the land."
+    risk: { de: "Drei Tage Reise und teurer Lohn.", en: "Three days of travel and a steep wage." }
+  geologe_besprechung:
+    title: { de: "Mit dem Geologen kartieren", en: "Map with the Geologist" }
+    text:
+      de: "Einen Tag mit dem Geologen über der Karte und draußen auf dem Land: Er kartiert die Ranch und einen Nachbarn."
+      en: "A day with the geologist over the map and out on the land: he maps the ranch and one neighbour."
+    risk: { de: "So gut wie der Geologe – nicht besser.", en: "As good as the geologist – no better." }
+  bohrbericht:
+    title: { de: "Bohrbericht kaufen", en: "Buy a Drilling Log" }
+    text:
+      de: "Bullards Bohrmeister trinkt gern und braucht Geld. Für ein paar Dollar erzählt er, was in einem Loch zum Vorschein kam."
+      en: "Bullard's driller likes his drink and needs money. For a few dollars he tells what came up in a hole."
+    risk: { de: "Nur, wo gebohrt wurde. Was er über das Loch sagt, gilt fast sicher – und ein wenig für die Nachbarn.", en: "Only where someone drilled. What he says about the hole is nearly certain – and a little for the neighbours." }
+  tagebuch:
+    title: { de: "Bullards Bohrtagebuch lesen", en: "Read Bullard's Drilling Diary" }
+    text:
+      de: "Nachts in Bullards Bohrhütte, mit einer Laterne und einem Notizblock: Sein Tagebuch verrät, wo er Ölsand fand."
+      en: "At night in Bullard's drilling shack, with a lantern and a notepad: his diary tells where he found oil sand."
+    risk: { de: "Eine Nacht ohne Schlaf. Wird Jacob erwischt, gibt es Fehde mit Bullard.", en: "A night without sleep. If Jacob is caught, it means a feud with Bullard." }
+  rute:
+    title: { de: "Rutengänger bestellen", en: "Hire a Dowser" }
+    text:
+      de: "Der alte Pike läuft mit seiner Haselrute über das Land. Die Bohrleute schwören darauf."
+      en: "Old Pike walks the land with his hazel rod. The drillers swear by it."
+    risk: { de: "Reiner Zufall – aber die Männer sind danach besserer Laune.", en: "Pure chance – but the men are in better spirits afterwards." }
+  feldinspektion:
+    title: { de: "Feldinspektion", en: "Field Inspection" }
+    text:
+      de: "Mit Silas die Leitungen abgehen und die Lecks finden, bevor das Öl im Boden versickert."
+      en: "Walk the lines with Silas and find the leaks before the oil soaks into the ground."
+    risk: { de: "Kostet etwas Kraft.", en: "Costs a little strength." }
+
+# Hinweise im Ranch-Fenster: was Jacob gesehen hat (seen) bzw. vergeblich gesucht (unseen).
+clues:
+  sickerstelle:
+    seen: { de: "Sickerstelle am Bach – ein öliger Film auf dem Wasser", en: "Seep by the creek – an oily film on the water" }
+    unseen: { de: "keine Sickerstelle", en: "no seep" }
+  salzwasser:
+    seen: { de: "Salzwasser im Brunnen", en: "Salt water in the well" }
+    unseen: { de: "süßes Wasser im Brunnen", en: "sweet water in the well" }
+  formation:
+    seen: { de: "Hügelzug über dem Salzrücken", en: "A ridge above the salt" }
+    unseen: { de: "flaches Land ohne Formation", en: "flat land without a formation" }
+  brunnen:
+    seen: { de: "Der alte Brunnen roch nach Öl", en: "The old well smelled of oil" }
+    unseen: { de: "Der Brunnen gab immer nur Wasser", en: "The well only ever gave water" }
+  kartierung:
+    seen: { de: "Karte des Geologen: günstige Schichten", en: "Geologist's map: favourable strata" }
+    unseen: { de: "Karte des Geologen: ungünstige Schichten", en: "Geologist's map: unfavourable strata" }
+  bohrbericht:
+    seen: { de: "Ölsand in der Tiefe", en: "Oil sand at depth" }
+    unseen: { de: "nur Salzwasser und Fels", en: "only salt water and rock" }
+  rute:
+    seen: { de: "Die Wünschelrute schlug aus", en: "The dowsing rod twitched" }
+    unseen: { de: "Die Wünschelrute blieb still", en: "The dowsing rod stayed still" }
+
+# Woher ein Hinweis kommt (in Klammern dahinter).
+sources:
+  start: { de: "Gerede in Port Ellis", en: "Port Ellis talk" }
+  ritt: { de: "Ritt", en: "ride" }
+  farmer: { de: "Farmer", en: "farmer" }
+  geologe: { de: "Geologe", en: "geologist" }
+  bericht: { de: "gekaufter Bohrbericht", en: "bought log" }
+  tagebuch: { de: "Bullards Tagebuch", en: "Bullard's diary" }
+  bohrung: { de: "eigene Bohrung", en: "own well" }
+  rute: { de: "Rutengänger", en: "dowser" }
+
+# Geologen, die Jacob einstellen kann (Akte im Reiter Land).
+geologists:
+  standard: { de: "Geologe aus Port Ellis", en: "Geologist from Port Ellis" }
+  hallstead: { de: "Dr. Merriweather aus Hallstead", en: "Dr. Merriweather of Hallstead" }
+  hale: { de: "Hale", en: "Hale" }
+
+# Wissensstufen.
+levels:
+  geruecht: { de: "Gerücht", en: "Rumour" }
+  beritten: { de: "beritten", en: "ridden" }
+  kartiert: { de: "kartiert", en: "mapped" }
+  bericht: { de: "Bohrbericht", en: "Drilling log" }
+
+# Stufe 0: Was man über die Zone hört (statt einer Zahl).
+zones:
+  kern: { de: "vermutlich gut – nah am Salzdom", en: "probably good – close to the salt dome" }
+  ring: { de: "vermutlich mäßig", en: "probably fair" }
+  rand: { de: "vermutlich schlecht – weit vom Salzdom", en: "probably poor – far from the salt dome" }
+
+report:
+  title: { de: "Wochenbericht", en: "Weekly Report" }
+  empty: { de: "Diese Woche noch nichts unternommen.", en: "Nothing undertaken this week yet." }

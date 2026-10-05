@@ -27,22 +27,43 @@ ranches:
 # ranches.slotArea Fläche – größere Ranches haben entsprechend mehr Öl.
 # Wahrscheinlichkeiten pro Zone müssen zusammen 1 ergeben.
 geology:
+  # Termine als Hauptwerkzeug (Etappe 1): Jede Ranch hat eine verdeckte Fundchance q =
+  # Grundwert der Zone (base, öffentliches Wissen) + Salzrücken-Aufschlag bzw. -Abschlag + Rauschen.
+  # base ersetzt das frühere dry (Kern 0,30 / Ring 0,40 / Rand 0,85 trocken). prior ist, was jeder
+  # über die Zone weiß (Ø q der Zone): Startwert der Erkundung und Bullards Bild. small : gusher ist
+  # nur noch das Verhältnis der Fundarten, wenn Öl da ist.
   zones:
     - name: kern
       maxDistance: 2.5     # 0.2.15+5: Ranch-Mitten statt Rasterfelder (vorher 1,5)
-      dry: 0.30           # Frühes Öl (0.4.4+): bewusst unverändert – Kern 0,20 / Ring 0,32 machte das Kapitelziel fast geschenkt (73 %)
+      base: 0.50           # PLATZHALTER (Etappe 1): auf dem Rücken ≈ 80 %, daneben ≈ 30 %
+      prior: 0.58          # öffentliches Wissen = Ø q der Zone (gemessen über 500 Seeds); Startwert der Erkundung
       small: 0.55
       gusher: 0.15
     - name: ring
       maxDistance: 5.0     # 0.2.15+5: vorher 3,5 – Anteil Kern/Ring/Rand an den Ranches etwa wie früher an den Feldern
-      dry: 0.40
+      base: 0.40           # PLATZHALTER (Etappe 1): auf dem Rücken ≈ 70 %, daneben ≈ 20 % (Plan: 0,35 – damit lag das Kapitelziel aller Bots zu tief)
+      prior: 0.41
       small: 0.52
       gusher: 0.08
     - name: rand
       maxDistance: 99
-      dry: 0.85          # Frühes Öl (0.4.4+): vorher 0,75 – echter Rand trifft auf 300 m nur noch gut 1 von 10 (GDD §15), gleicht den höheren Stufe-1-Anteil aus; 2.15: vorher 0,55 – blinde Wildcat-Bohrung traf 1 von 3, GDD §15 sagt 1 von 5 bis 1 von 10
+      base: 0.15           # PLATZHALTER (Etappe 1): auf dem Rücken ≈ 45 %, daneben ≈ 3 %; blinde Wildcat-Bohrung bleibt bei 1 von 5 bis 1 von 10 (GDD §15)
+      prior: 0.12
       small: 0.14
       gusher: 0.01
+  # Salzrücken je Gebiet (fest aus dem Seed, nicht im Spielstand). Eine Linie läuft durch einen Punkt
+  # offsetMin–offsetMax vom Salzdom in zufälliger Richtung, halfLength zu beiden Seiten.
+  trends:
+    perRegion: 2           # PLATZHALTER
+    radius: 1.2            # PLATZHALTER: bis zu diesem Abstand liegt eine Ranch „auf dem Rücken“
+    bonus: 0.30            # PLATZHALTER
+    offTrend: -0.20        # PLATZHALTER (Plan: −0,10; damit hätte kaum eine Kernranch q ≤ 30 %)
+    noise: 0.10            # PLATZHALTER (Plan: 0,08)
+    qMin: 0.03
+    qMax: 0.85
+    offsetMin: 1.5         # PLATZHALTER: Rücken an der Flanke des Doms, nicht mitten hindurch
+    offsetMax: 4.0
+    halfLength: 6
   # Förderbare Gesamtmenge in Barrel (gleichverteilt zwischen min und max).
   # 1.15: deutlich angehoben (vorher 2.000–12.000 und 30.000–120.000), damit die Anfangsrate im GDD-Rahmen liegt
   # (kleiner Fund 50–125 bbl/Tag, Gusher 200–650 bbl/Tag).
@@ -150,6 +171,53 @@ forecast:
   geologist:
     accuracy: 3           # PLATZHALTER: Genauigkeit 1–5
     bias: 0               # PLATZHALTER: Verzerrung −15 bis +15 Punkte
+
+# Erkundung (Termine als Hauptwerkzeug, Etappe 1): Wer übers Land reitet, Farmer fragt oder einen
+# Geologen kartieren lässt, sammelt Hinweise. Jeder Hinweis verschiebt die Chance wie eine Wette:
+# Quote × P(gesehen|Öl) ÷ P(gesehen|trocken), nicht gesehen entsprechend. Startwert ist zones.prior.
+# Regeln in src/sim/exploration.ts, Texte in content/plans.yaml. Alles PLATZHALTER.
+exploration:
+  neighbourPower: 0.2          # Hinweise auf Nachbarranches (gleiches Gebiet) wirken mit Faktor^0,5
+  width:                       # Bandbreite der Prognose je Wissensstufe in Prozentpunkten
+    rode: 40                   # Stufe 1: beritten
+    mappedBase: 40             # Stufe 2: kartiert, 40 − 5 × Genauigkeit (Genauigkeit 3 → 25, 5 → 15)
+    mappedPerAccuracy: 5
+    report: 10                 # Stufe 3: Bohrbericht
+  noiseShare: 0.15             # Mitte der Prognose schwankt um ± 15 % der Bandbreite (ehrlich, aber unscharf)
+  greedyLie: 0.30              # gieriger Farmer: erzählt in 30 % der Fälle von Öl, das er nie sah
+  friendlyOwners: [fromm]      # freundliche Farmer geben beim Gespräch Nachlass auf den Pachtbonus …
+  friendlyDiscount: 0.10       # … 10 %
+  reportCost: { dry: 150, found: 300 }   # Bohrbericht kaufen: trockenes bzw. fündiges Loch
+  diary: { ranches: 3, caught: 0.25 }    # Bullards Bohrtagebuch: bis zu 3 Ranches, zu 25 % erwischt (Fehde)
+  clues:                       # P(gesehen | Öl) und P(gesehen | trocken)
+    sickerstelle: { oil: 0.45, dry: 0.10 }
+    salzwasser: { oil: 0.40, dry: 0.18 }
+    formation: { oil: 0.35, dry: 0.20 }
+    brunnen: { oil: 0.50, dry: 0.12 }
+    kartierung: { oil: 0.55, oilPerAccuracy: 0.07, dry: 0.35, dryPerAccuracy: -0.05 }
+    bohrbericht: { oil: 0.95, dry: 0.03 }
+    rute: { oil: 0.5, dry: 0.5 }  # Wünschelrute: reiner Zufall, Faktor 1
+  geologists:
+    standard: { accuracy: 3, biasMax: 10, wage: 100 }   # Verzerrung verdeckt, zufällig ±10 Punkte
+    hallstead: { accuracy: 5, bias: 0, wage: 200 }
+    hale: { accuracy: 1, bias: 15, wage: 40 }           # billig, ungenau, sieht überall Öl
+
+# Planungsbrett (Etappe 1): Karten, mit denen Jacob seine Termine verplant. Texte stehen in
+# content/plans.yaml, Regeln in src/sim/plans.ts (handler). event = ein fester Termin aus
+# content/events/, den die Karte ersetzt (Termine und Wirkung wie dort). Feste Termine ohne eigene
+# Karte kommen automatisch in den Reiter „leute“. Alles PLATZHALTER.
+plans:
+  cards:
+    ritt: { tab: land, appointments: 2, strength: -3, target: ranch, handler: ritt }           # Ranch + 2 Nachbarn: Sickerstelle, Salzwasser, Formation
+    farmer: { tab: land, appointments: 1, target: ranch, handler: farmer }                     # Hinweis „alter Brunnen“
+    geologe_einstellen: { tab: land, appointments: 1, cash: 300, handler: geologe_einstellen } # Genauigkeit 3
+    geologe_hale: { tab: land, appointments: 1, cash: 100, handler: geologe_hale }             # Genauigkeit 1, Verzerrung +15
+    geologe_hallstead: { tab: land, appointments: 3, cash: 600, handler: geologe_hallstead }   # Genauigkeit 5
+    geologe_besprechung: { tab: land, appointments: 1, target: ranch, handler: geologe_besprechung }  # 2 Ranches kartiert
+    bohrbericht: { tab: land, appointments: 1, target: ranch, handler: bohrbericht }           # Preis: exploration.reportCost
+    tagebuch: { tab: land, appointments: 2, strength: -5, handler: tagebuch }                  # 1 Termin + 1 Nacht (Überstunden-Kraft)
+    rute: { tab: land, appointments: 1, cash: 20, strength: 1, target: ranch, handler: rute }  # Faktor 1, hebt die Laune
+    feldinspektion: { tab: land, event: termin_rundgang }
 
 # Bohren (GDD §5): Stufe 1 ist die Zieltiefe, jede weitere Stufe heißt
 # "tiefer bohren". Tiefer = teurer und gefährlicher (Push your luck).
@@ -420,6 +488,12 @@ bots:
     cautious: { pumpPayback: 2, wellPayback: 3, rigs: 1, rent: false, steam: false, rods: true }
     greedy: { pumpPayback: 2, wellPayback: 4, rigs: 2, rent: true, steam: true, rods: false }
     balanced: { pumpPayback: 3, wellPayback: 4, rigs: 1, rent: false, steam: true, rods: true }
+  # Erkundung (Etappe 1): Kennt der Bot weniger als known bezahlbare freie Ranches mit mindestens until
+  # Fundchance (Prognose-Mitte), reitet er bis zu rides Mal je Runde übers Land – vor den Briefen.
+  explore:
+    cautious: { rides: 1, until: 0.55, known: 1 }
+    greedy: { rides: 1, until: 0.40, known: 1 }
+    balanced: { rides: 1, until: 0.6, known: 3 }
   rightsEstimate: 600      # grobe Schätzung der Bots: so viel kosten die Wegerechte für die Pipeline zusammen
   # Zielwerte Kapitel 1 (2.15, GDD §15 und §17): Toleranzbereich min–max je Kennzahl.
   # Was gemessen wird, steht in src/sim/bots.ts (TARGETS); die Tabelle Ist/Ziel in docs/botlaeufe.md.
@@ -435,7 +509,7 @@ bots:
     wildcatHit: { min: 0.05, max: 0.25 }      # blinde Wildcat-Bohrung in Randlage auf 300 m (GDD §15: 1 von 5 bis 1 von 10)
     appointments: { min: 4.5, max: 5 }        # Ø Termine je Runde des Standard-Bots (GDD §15: 5 je Quartal)
     routeShare: { min: 0, max: 0.75 }         # 0.2.15+4: höchster Anteil eines Transportwegs an allen verkauften Barrel – kein Weg dominiert
-    pipelineSuccess: { min: 0, max: 0.6 }     # 0.2.15+4: Anteil der Partien mit Kapitelziel (planende Bots), in denen eine Pipeline läuft
+    pipelineSuccess: { min: 0, max: 0.65 }    # 0.2.15+4: Anteil der Partien mit Kapitelziel (planende Bots), in denen eine Pipeline läuft; Etappe 1: 0,60 → 0,65 – mit verdeckter Geologie schaffen weniger Partien das Ziel, und die erfolgreichen sind die großen Förderer, bei denen sich die Pipeline lohnt (über alle Partien läuft sie seltener als vorher)
     # 0.2.15+8 Ausbau: Gute Quellen lohnen den Ausbau, aber „alles ausbauen“ ist keine Siegformel.
     expandedShare: { min: 0.05, max: 0.7 }    # Anteil der Ranches mit Fund (planende Bots) mit Pumpe oder weiterem Bohrloch
     investGain: { min: 1.02, max: 10 }        # Ø Imperium ausgewogen ÷ derselbe Bot ohne Ausbau (Investieren zahlt sich aus)
@@ -452,6 +526,7 @@ rivals:
     riskWeight: 0.10
     nearJacobBonus: 300
     nearFindChance: 0.15
+    insight: 0.5             # Etappe 1, PLATZHALTER: Bullard ahnt die Hälfte dessen, was eine Ranch besser oder schlechter ist als ihre Zone
     noise: 1000              # 1.16: vorher 200, mit valuePerFind mitgezogen
     minUtility: 0
     drillRounds: 1
@@ -686,6 +761,7 @@ tutorial:
   deeperMinChance: 25        # PLATZHALTER: tiefer bohren nur raten, wenn der Geologe der nächsten Stufe mind. 25 % gibt
   dollarsPerPoint: 100       # Frühes Öl (0.4.4+): 100 $ Pacht wiegen einen Prozentpunkt Schätzung auf – der Hinweis rät nicht zur teuren Pacht, die kaum besser aussieht
   loanRounding: 100          # vorgeschlagene Kredite auf 100 $ aufgerundet (mindestens credit.minLoan)
+  exploreBelow: 55           # Etappe 1, PLATZHALTER: sieht die beste bezahlbare Ranch schlechter aus als 55 %, rät der Hinweis erst zum Ritt übers Land
 
 # 4.16 Andockpunkt – Nebeninvestments und Lobbyist in Hallstead (GDD §8, §10, §11).
 # Erst ab Kapitel 3; in Kapitel 1 unsichtbar. Texte stehen in content/hallstead.yaml.

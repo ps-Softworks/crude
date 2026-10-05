@@ -1,5 +1,5 @@
 // Bohr-Trefferquote im echten Spielablauf: spielt je Variante viele Seeds wie ein
-// Spieler (beste Prognose pachten, bohren, Runden mit Ereignissen, bergen, tiefer
+// Spieler (übers Land reiten, beste Prognose pachten, bohren, Runden mit Ereignissen, bergen, tiefer
 // bohren, auf Wunsch speichern und laden) und vergleicht mit der Theorie.
 // Aufruf: npx tsx tools/bohrquote.ts [Seeds, Standard 500]
 import { loadBalance } from '../src/sim/testBalance';
@@ -15,11 +15,13 @@ const pct = (x: number) => `${(x * 100).toFixed(1)} %`;
 function zeile(name: string, recs: DrillRecord[]): string {
   const gut = recs.filter((r) => r.shown >= 60);
   const m = (f: (r: DrillRecord) => number) => gut.reduce((s, r) => s + f(r), 0) / gut.length;
-  const chance = m((r) => r.chance);
+  // Etappe 1: Die Prognose rechnet mit den Hinweisen, die am echten Ausgang hängen – ihre Mitte ist die
+  // Theorie (nicht mehr das verdeckte q, das vor dem Würfeln der Geologie galt).
+  const chance = m((r) => r.shown / 100);
   return [
     name.padEnd(50),
     `Ranches ${String(gut.length).padStart(4)}`,
-    `Öl darunter ${pct(m((r) => (r.dry ? 0 : 1)))} (Theorie ${pct(chance)})`,
+    `Öl darunter ${pct(m((r) => (r.dry ? 0 : 1)))} (Prognose ${pct(chance)}, q ${pct(m((r) => r.chance))})`,
     `Stufe 1 ${pct(m((r) => (r.foundStage === 1 ? 1 : 0)))} (Theorie ${pct(chance * stufe1)})`,
     `überhaupt gefunden ${pct(m((r) => (r.foundStage > 0 ? 1 : 0)))}`,
   ].join(' | ');

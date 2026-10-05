@@ -46,7 +46,8 @@ describe('Gebiete (0.2.15+5)', () => {
     expect(neu.length).toBeGreaterThan(10);
     expect(mitLand.parcels.slice(0, state.parcels.length)).toEqual(state.parcels);
     expect(mitLand.fields.slice(0, state.fields.length)).toEqual(state.fields);
-    expect(neu.every((p) => mitLand.forecasts[p.id] !== undefined)).toBe(true);
+    // Etappe 1: Neues Land kommt ohne Prognosen – erst die Erkundung zeigt, was es taugt.
+    expect(neu.every((p) => mitLand.forecasts[p.id] === undefined)).toBe(true);
     expect(new Set(mitLand.fields.map((f) => f.id)).size).toBe(mitLand.fields.length);
     expect(mitLand.rng).toBe(state.rng);
     expect(mitLand.log.at(-1)).toMatch(/Neues Land: Hollins-Prärie ist offen/);

@@ -10,6 +10,8 @@ import type { GameState } from '../../sim/game';
 import { parcelLabel } from '../../sim/lease';
 import { balance } from '../balance';
 import { barrels, money, moneyDelta, rounds } from '../format';
+// Etappe 1: Was die Karten am Rundenende bewirkt haben.
+import { Wochenbericht } from './CalendarSheet';
 
 export interface RoundReport {
   /** Runde, die jetzt beginnt. */
@@ -104,6 +106,7 @@ export function ReportSheet({ report, onDone, next, onJournal }: { report: Round
           </ul>
         </>
       )}
+      {(after.plans?.report.length ?? 0) > 0 && <Wochenbericht report={after.plans.report} />}
       <h3>Aus der Kladde</h3>
       {zeilen.length === 0 ? (
         <p className="muted">Eine ruhige Nacht.</p>

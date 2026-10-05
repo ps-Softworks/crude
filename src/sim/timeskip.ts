@@ -34,13 +34,14 @@ import { openChapterSystems, type ChapterSystemTexts } from './chapterSystems';
 import { chapterOf } from './chapterOf';
 import { bondWord, type BondWord } from './family';
 import { fieldOf, fieldLabel } from './field';
-import { trueChance } from './forecast';
+// Etappe 1: Ohne Prognose schätzt der Verwalter nach dem öffentlichen Zonenwissen, nie nach der verdeckten Wahrheit.
+import { zoneChance } from './forecast';
 import type { GameState } from './game';
 import { LANGUAGES, localize, type Lang, type LocalizedText } from './i18n';
 import { leaseTerms, type Lease } from './lease';
 import { computePrice, jacobSupply, neighbourWells, rivalSupply } from './market';
 import { advanceProduction, fieldStatus, fieldWells, initialRate, producingWells } from './production';
-import { rivalCandidates, rivalWellIncome, type RivalWell } from './rival';
+import { rivalCandidates, rivalChance, rivalWellIncome, type RivalWell } from './rival';
 import { Rng, seedFromString } from './rng';
 import { newAgenda } from './agenda';
 import { openRegions, unlockRegion } from './regions';
@@ -689,7 +690,7 @@ function geschaetzt(l: Lauf, parcelId: string): number {
   const p = l.s.parcels.find((x) => x.id === parcelId);
   const f = l.s.forecasts[parcelId];
   if (f && !(p && l.expanded.includes(p.region))) return Math.min(1, Math.max(0, f.center / 100));
-  return p ? trueChance(l.balance, p) : 0;
+  return p ? zoneChance(l.balance, p) : 0;
 }
 
 interface Ziel {
@@ -811,7 +812,7 @@ function bullard(l: Lauf): void {
   const rng = new Rng(l.s.rival.rng);
   const kandidaten = rivalCandidates(l.s, balance)
     .filter((p) => l.s.regions.includes(p.region))
-    .sort((a, b) => trueChance(balance, b) - trueChance(balance, a) || (a.id < b.id ? -1 : 1));
+    .sort((a, b) => rivalChance(l.s, balance, b) - rivalChance(l.s, balance, a) || (a.id < b.id ? -1 : 1));
   const wurf = rng.float();
   const wahl = rng.int(0, Math.max(0, Math.min(2, kandidaten.length - 1)));
   const parcel = kandidaten[wahl];

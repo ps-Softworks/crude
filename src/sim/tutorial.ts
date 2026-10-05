@@ -22,6 +22,8 @@ import type { GameState } from './game';
 import { LANGUAGES, localize, type Lang, type LocalizedText } from './i18n';
 import { buyLease, exerciseOption, leaseTerms, optionOf, parcelLabel } from './lease';
 import { capacityLeft, netPrice, sellOil } from './transport';
+import { suggestRide } from './exploration';
+import { bookCard } from './plans';
 
 /** Die drei Schritte des Einstiegs. */
 export const TUTORIAL_STEPS = ['lease', 'drill', 'sell'] as const;
@@ -29,6 +31,7 @@ export type TutorialStep = (typeof TUTORIAL_STEPS)[number];
 
 /** Alle Hinweise, die content/tutorial.yaml liefern muss. */
 export const TUTORIAL_HINT_IDS = [
+  'explore',
   'lease_option',
   'lease_buy',
   'lease_none',
@@ -52,6 +55,7 @@ export type TutorialAction =
   | { kind: DeskActionKind; parcelId: string }
   | { kind: 'sell'; mode: TransportMode; barrels: number }
   | { kind: 'loan'; amount: number }
+  | { kind: 'plan'; cardId: string; parcelId: string }
   | { kind: 'endRound' };
 
 /** Platzhalter, die in den Texten vorkommen dürfen. */
@@ -156,6 +160,19 @@ export function recommendedParcel(
 }
 
 /**
+ * Etappe 1: Ranch für einen Ritt übers Land, wenn die beste bezahlbare Empfehlung
+ * unter tutorial.exploreBelow liegt (oder es keine gibt) und der Ritt ohne Überstunden
+ * in die Runde passt – sonst null.
+ */
+function exploreSuggestion(state: GameState, balance: Balance, ziel: { parcelId: string } | null): string | null {
+  if (ziel && shownChance(state, ziel.parcelId) >= balance.tutorial.exploreBelow) return null;
+  const termine = balance.plans.cards.ritt?.appointments ?? 0;
+  if (state.sick > 0 || state.agenda.used + termine > state.agenda.budget) return null;
+  const ziel2 = suggestRide(state, balance, state.cash + headroom(state, balance) - stageCost(balance, 1));
+  return ziel2 && bookCard(state, balance, [], 'ritt', ziel2).ok ? ziel2 : null;
+}
+
+/**
  * Kredit, der fehlendes Geld deckt: mindestens der kleinste Bankkredit, auf
  * tutorial.loanRounding aufgerundet. null, wenn die Bank ihn nicht gibt.
  */
@@ -222,7 +239,8 @@ function wellHint(state: GameState, balance: Balance, well: Well): TutorialHint 
  * 3. Der Turm bohrt – Runde beenden.
  * 4. Eine eigene Quelle gibt es schon: verkauft (diese Runde) oder warten.
  * 5. Eine eigene, ungebohrte Pacht: bohren – fehlt Geld, erst ein Kredit.
- * 6. Sonst: die empfohlene Parzelle pachten oder die Option einlösen – fehlt
+ * 6. Sieht nichts Bezahlbares gut aus: erst übers Land reiten (Etappe 1).
+ * 7. Sonst: die empfohlene Parzelle pachten oder die Option einlösen – fehlt
  *    Geld für Pacht und erste Bohrstufe, erst ein Kredit bei der Bank.
  */
 export function tutorialHint(state: GameState, balance: Balance): TutorialHint | null {
@@ -266,6 +284,9 @@ export function tutorialHint(state: GameState, balance: Balance): TutorialHint |
   }
 
   const ziel = recommendedParcel(state, balance);
+  // Etappe 1: Sieht nichts Bezahlbares gut aus, erst übers Land reiten – solange es ohne Überstunden geht.
+  const ritt = exploreSuggestion(state, balance, ziel);
+  if (ritt) return hint('explore', 'lease', { kind: 'plan', cardId: 'ritt', parcelId: ritt }, [ritt], { ort: labelOf(state, ritt) });
   if (!ziel) {
     // Mit Kredit ginge es: erst Geld bei der Bank holen, dann pachten.
     const mitKredit = recommendedParcel(state, balance, state.cash + headroom(state, balance));

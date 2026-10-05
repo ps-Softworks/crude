@@ -56,16 +56,20 @@ describe('Spielzustand und Rundenschleife', () => {
 });
 
 describe('Geologen-Prognosen im Spielzustand', () => {
-  it('gibt für jede pachtbare Parzelle eine Prognose, für Salt Hill keine', () => {
+  it('Etappe 1: kein Gratis-Wissen – Prognosen nur für die Startoptionen und die Nachbarn von Salt Hill', () => {
     const state = newGame('prognosen', balance);
-    const pachtbar = state.parcels.filter((p) => !p.discovery);
     const quelle = state.parcels.find((p) => p.discovery)!;
-    expect(Object.keys(state.forecasts)).toHaveLength(pachtbar.length);
-    for (const parcel of pachtbar) {
-      expect(state.forecasts[parcel.id]).toBeDefined();
-      expect(state.forecasts[parcel.id].parcelId).toBe(parcel.id);
+    const nachbarn = quelle.neighbors.filter((id) => state.parcels.some((p) => p.id === id && !p.discovery));
+    const erwartet = new Set([...state.options.map((o) => o.parcelId), ...nachbarn]);
+    expect(new Set(Object.keys(state.forecasts))).toEqual(erwartet);
+    for (const id of erwartet) {
+      expect(state.forecasts[id].parcelId).toBe(id);
+      expect(state.knowledge[id].level).toBe(1);
     }
     expect(state.forecasts[quelle.id]).toBeUndefined();
+    const rest = state.parcels.filter((p) => !p.discovery && !erwartet.has(p.id));
+    expect(rest.length).toBeGreaterThan(10);
+    for (const p of rest) expect(state.knowledge[p.id]).toBeUndefined();
   });
 
   it('gleicher Seed = gleiche Prognosen', () => {

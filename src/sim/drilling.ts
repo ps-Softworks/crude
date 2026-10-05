@@ -6,6 +6,7 @@
 import type { Balance, DrillStage } from './balance';
 import { formatDate } from './calendar';
 import { forecastMid, makeForecast, trueChance } from './forecast';
+import { posteriorChance } from './exploration';
 import { initialRate } from './production';
 import type { GameState } from './game';
 import type { Parcel } from './geology';
@@ -132,13 +133,13 @@ export function rollOilStage(balance: Balance, parcel: Parcel, roll: number): nu
 }
 
 /**
- * Chance, dass in Stufe stage+1 Öl liegt, wenn bis Stufe stage nichts kam.
- * Nur für Simulation und Debug-Ansicht.
+ * Chance, dass in Stufe stage+1 Öl liegt, wenn bis Stufe stage nichts kam – mit der
+ * wahren Fundchance (Debug) oder mit chance, z. B. der Chance nach Jacobs Hinweisen.
  */
-export function deeperChance(balance: Balance, parcel: Parcel, stage: number): number {
+export function deeperChance(balance: Balance, parcel: Parcel, stage: number, chance?: number): number {
   const stages = balance.drilling.stages;
   if (stage >= stages.length) return 0;
-  const q = trueChance(balance, parcel);
+  const q = chance ?? trueChance(balance, parcel);
   const passed = stages.slice(0, stage).reduce((s, st) => s + st.oilShare, 0);
   const rest = 1 - q * passed;
   return rest <= 0 ? 0 : (q * stages[stage].oilShare) / rest;
@@ -349,7 +350,8 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
         parcel,
         balance.forecast.geologist,
         rng,
-        deeperChance(balance, parcel, well.stage),
+        // Etappe 1: Der Geologe rechnet mit dem, was Jacob weiß (Chance nach den Hinweisen), nicht mit dem verdeckten q.
+        deeperChance(balance, parcel, well.stage, posteriorChance(input, balance, parcel.id)),
       );
       log.push(`${date}: ${label} ist in ${depth} m trocken. Tiefer bohren oder aufgeben?`);
       return { ...well, status: 'decision' };

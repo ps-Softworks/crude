@@ -27,6 +27,9 @@ steps:
 
 hints:
   # Schritt 1: Land sichern.
+  explore:
+    de: Was du über das Land weißt, ist bisher Gerede. Reite hin und sieh selbst nach – Sickerstellen, Salzwasser, Hügelzüge. Öffne den Kalender (T) und buche „Übers Land reiten“ für {ort}, oder klick die Ranch auf der Wandkarte (K) an. Das kostet zwei Termine, keinen Cent.
+    en: What you know about the land so far is talk. Ride out and see for yourself – seeps, salt water, ridges. Open the calendar (T) and book “Ride the country” for {ort}, or click the ranch on the wall map (K). It costs two appointments, not a cent.
   lease_option:
     de: Ohne Land kein Öl. Du hast eine Option auf {ort} – der Geologe schätzt {chance}. Öffne die Wandkarte (K), klick die golden umrandete Ranch mit dem Fähnchen „hier“ an und wähle „Option einlösen“ ({kosten}) – das ist der Preis, den du dir mit der Option gesichert hast. Danach gehört dir die Pacht.
     en: No land, no oil. You hold an option on {ort} – the geologist estimates {chance}. Open the wall map (K), click the ranch and choose “Exercise option” ({kosten}) – the price you locked in with the option. Then the lease is yours.
@@ -81,6 +84,9 @@ hints:
 # schon auf der Karte – dort fällt der Weg („Öffne die Wandkarte …“) weg. Fehlt
 # ein Hinweis hier, gilt der Text oben. Gleiche Platzhalter wie oben.
 onMap:
+  explore:
+    de: Was du über das Land weißt, ist bisher Gerede. Klick {ort} an und wähle „Übers Land reiten“ – zwei Termine, dann weißt du mehr über die Ranch und zwei Nachbarn.
+    en: What you know about the land so far is talk. Click {ort} and choose “Ride the country” – two appointments, and you will know more about the ranch and two neighbours.
   lease_option:
     de: Ohne Land kein Öl. Du hast eine Option auf {ort} – der Geologe schätzt {chance}. Klick die Ranch an und wähle „Option einlösen“ ({kosten}) – dein gesicherter Preis.
     en: No land, no oil. You hold an option on {ort} – the geologist estimates {chance}. Click the ranch and choose “Exercise option” ({kosten}) – your locked-in price.

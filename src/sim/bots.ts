@@ -46,6 +46,9 @@ import { grudgeCut, RIVAL_MARKS, volumeObligation } from './trust';
 import { tutorialHint } from './tutorial';
 import { advanceWorld, newWorld } from './world';
 import { choiceCost, choiceReason, resolveEvent, routineOffered, type EventChoice, type EventDef } from './events';
+// Termine als Hauptwerkzeug (Etappe 1): Erkundung über das Planungsbrett.
+import { knowledgeOf, suggestRide } from './exploration';
+import { bookCard, exploreAppointments } from './plans';
 
 export type Strategy = 'vorsichtig' | 'gierig' | 'ausgewogen' | 'zufaellig';
 export const STRATEGIES: readonly Strategy[] = ['vorsichtig', 'gierig', 'ausgewogen', 'zufaellig'];
@@ -694,6 +697,44 @@ function balancedTurn(state: GameState, balance: Balance, catalog: readonly Even
   return state;
 }
 
+// --- Erkundung (Etappe 1) ---------------------------------------------------------
+
+/**
+ * So viel Geld hätte der Bot für einen Pachtbonus übrig – fürs Erkunden zählt nicht,
+ * ob er gerade noch ungebohrtes Land hält: Er schaut sich schon nach dem nächsten um.
+ */
+function landBudget(state: GameState, balance: Balance, strategy: Exclude<Strategy, 'zufaellig'>): number {
+  const stufe1 = stageCost(balance, 1);
+  switch (strategy) {
+    case 'ausgewogen':
+      return state.cash + balancedBorrowable(state, balance) - balance.bots.balanced.cashReserve - stufe1;
+    case 'vorsichtig':
+      return state.cash - balance.bots.cautious.cashReserve - stufe1;
+    case 'gierig':
+      return state.cash + headroom(state, balance) - (undrilled(state).length + 1) * stufe1;
+  }
+}
+
+/**
+ * Erkunden vor dem Pachten (Etappe 1): Kennt der Bot weniger als known bezahlbare
+ * freie Ranches mit mindestens bots.explore.until Fundchance, reitet er übers
+ * Land – höchstens rides Mal je Runde, vor den Briefen (die Zeit ist sonst weg).
+ */
+function exploreTurn(state: GameState, balance: Balance, strategy: Exclude<Strategy, 'zufaellig'>, catalog: readonly EventDef[]): GameState {
+  const { rides, until, known } = balance.bots.explore[strategyKey(strategy)];
+  for (let i = 0; i < rides; i++) {
+    // Auch wer gerade knapp bei Kasse ist, sieht sich um: Reiten kostet nur Zeit, und das Geld kommt wieder.
+    const budget = Math.max(landBudget(state, balance, strategy), balance.start.cash);
+    if (freeParcels(state, until).filter((id) => leaseTerms(state, balance, id).bonus <= budget).length >= known) break;
+    const ziel = suggestRide(state, balance, budget);
+    if (ziel === null) break;
+    const r = bookCard(state, balance, catalog, 'ritt', ziel);
+    if (!r.ok) break;
+    state = r.state;
+  }
+  return state;
+}
+
 // --- Ereignisse (2.15) -----------------------------------------------------------
 
 /** Wie der Bot eine Antwort bewertet; reserve = Bargeld, das danach bleiben muss. */
@@ -851,6 +892,8 @@ export function botTurn(
   ledger: TransportLedger = newLedger(),
 ): GameState {
   if (state.finished) return state;
+  // Erkundung (Etappe 1): Die planenden Bots reiten übers Land, bevor die Briefe die Zeit fressen.
+  if (strategy !== 'zufaellig') state = exploreTurn(state, balance, strategy, catalog);
   if (catalog.length > 0) {
     state = strategy === 'zufaellig' ? randomAnswers(state, balance, catalog, rng) : answerEvents(state, balance, catalog, eventPolicy(balance, strategy));
   }
@@ -882,7 +925,56 @@ export interface GameResult {
   pipeline: boolean;
   /** Ausbau (0.2.15+8): höchste Zahl Türme zugleich, Pumpen, Ranches mit Quelle und davon ausgebaute. */
   build: BuildStats;
+  /** Erkundung (Etappe 1): Termine dafür, gewählte Pachten, Prognosen zum Nachprüfen. */
+  explore: ExploreStats;
   state: GameState;
+}
+
+/** Eine selbst gewählte Pacht (nicht aus einer Option) – fürs Nachprüfen der Erkundung. */
+export interface LeaseChoice {
+  /** Wusste Jacob etwas über die Ranch (Wissensstufe ab 1)? */
+  known: boolean;
+  /** Liegt dort wirklich Öl? */
+  oil: boolean;
+  /** Ölanteil aller freien Ranches in diesem Moment – so oft hätte eine blinde Wahl getroffen. */
+  blind: number;
+  /** Mitte der Prognose, die Jacob sah (null ohne Prognose). */
+  shown: number | null;
+}
+
+/** Erkundung einer Partie (Etappe 1). */
+export interface ExploreStats {
+  /** Termine in Erkundungs-Karten in den Runden 1–6 (Summe). */
+  appointmentsEarly: number;
+  /** Davon gezählte Runden (gesund und gespielt). */
+  roundsEarly: number;
+  leases: LeaseChoice[];
+  /** Prognosen aller bekannten, noch nicht selbst gebohrten Ranches zu Beginn von Runde 7: Mitte und Wahrheit. */
+  forecasts: { shown: number; oil: boolean }[];
+}
+
+/** Erkundungs-Kennzahlen einer Runde: Termine, neue selbst gewählte Pachten. */
+function recordExplore(stats: ExploreStats, vorher: GameState, nachher: GameState, balance: Balance): void {
+  if (vorher.round <= 6) {
+    stats.appointmentsEarly += exploreAppointments(nachher, balance);
+    stats.roundsEarly++;
+  }
+  const frei = vorher.parcels.filter((p) => !p.discovery && !leaseOf(vorher, p.id) && !optionOf(vorher, p.id));
+  const blind = frei.length > 0 ? frei.filter((p) => p.geology !== 'dry').length / frei.length : 0;
+  for (const l of nachher.leases) {
+    if (l.holder !== 'jacob' || leaseOf(vorher, l.parcelId) || optionOf(vorher, l.parcelId)?.holder === 'jacob') continue;
+    const p = nachher.parcels.find((x) => x.id === l.parcelId)!;
+    const f = nachher.forecasts[p.id];
+    stats.leases.push({ known: knowledgeOf(nachher, p.id).level >= 1, oil: p.geology !== 'dry', blind, shown: f ? (f.low + f.high) / 2 : null });
+  }
+}
+
+/** Prognosen zum Nachprüfen: jede bekannte Ranch mit Prognose, auf der Jacob noch nicht gebohrt hat. */
+function forecastSnapshot(state: GameState): { shown: number; oil: boolean }[] {
+  const gebohrt = new Set(state.wells.map((w) => w.parcelId));
+  return state.parcels
+    .filter((p) => !p.discovery && !gebohrt.has(p.id) && knowledgeOf(state, p.id).level >= 1 && state.forecasts[p.id])
+    .map((p) => ({ shown: (state.forecasts[p.id].low + state.forecasts[p.id].high) / 2, oil: p.geology !== 'dry' }));
 }
 
 /** Ausbau einer Partie (0.2.15+8). */
@@ -926,13 +1018,16 @@ export function playGame(seed: string, balance: Balance, strategy: Strategy, cat
   let sickRounds = 0;
   const ledger = newLedger();
   let maxRigs = state.rigs.length;
+  const explore: ExploreStats = { appointmentsEarly: 0, roundsEarly: 0, leases: [], forecasts: [] };
   while (!state.finished) {
     if (rounds >= state.totalRounds + 5) {
       throw new Error(`Partie ${seed} (${strategy}) endet nicht nach ${rounds} Runden.`);
     }
     if (state.sick > 0) sickRounds++;
     else appointments += state.agenda.budget;
+    if (state.round === 7) explore.forecasts = forecastSnapshot(state);
     const gezogen = botTurn(state, balance, strategy, rng, catalog, ledger);
+    recordExplore(explore, state, gezogen, balance);
     maxRigs = Math.max(maxRigs, gezogen.rigs.length);
     state = endRound(gezogen, balance, catalog);
     bookRound(gezogen, state, balance, ledger);
@@ -949,6 +1044,7 @@ export function playGame(seed: string, balance: Balance, strategy: Strategy, cat
     transport: ledger,
     pipeline: state.events.marks[LOGISTICS_MARKS.built] !== undefined,
     build: buildStats(state, maxRigs),
+    explore,
     state,
   };
 }
@@ -983,7 +1079,9 @@ export function hintTurn(state: GameState, balance: Balance, maxSteps = 20): Gam
         ? sellOil(state, balance, action.mode, action.barrels)
         : action.kind === 'loan'
           ? takeLoan(state, balance, action.amount)
-          : applyAction(state, balance, action.parcelId, action.kind);
+          : action.kind === 'plan'
+            ? bookCard(state, balance, [], action.cardId, action.parcelId)
+            : applyAction(state, balance, action.parcelId, action.kind);
     if (!r.ok) return state;
     state = r.state;
   }

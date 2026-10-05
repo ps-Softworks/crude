@@ -19,6 +19,10 @@ import { boundsOf, fitBounds, overview, panBy, sameView, tween, zoomAt, type Lim
 import { units } from './format';
 import { stageScale } from './stage';
 import { labelFits, ranchStatus, slotPositions, STATUS_LABEL, type RanchStatus } from './mapShapes';
+// Termine als Hauptwerkzeug (Etappe 1): Ebene „Wissensstand“ und in der Debug-Ansicht die Salzrücken.
+import { knowledgeOf } from '../sim/exploration';
+import { regionTrends } from '../sim/geology';
+import { levelLabel, zoneWord } from './plans';
 
 /** Zeichen auf einer Ranch (0.2.15+10): Pflock = hier geht etwas, Brief = ein offenes Ereignis betrifft sie. */
 export interface MapMarker {
@@ -435,6 +439,13 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
           <pattern id="karte-wellen" width="1.6" height="0.7" patternUnits="userSpaceOnUse">
             <path d="M0,0.35 q0.2,-0.16 0.4,0 t0.4,0" fill="none" style={{ stroke: 'var(--blau)' }} strokeWidth="0.04" strokeOpacity="0.5" />
           </pattern>
+          {/* Wissensstand (Etappe 1): Gerücht schraffiert, kartiert mit Höhenlinien. */}
+          <pattern id="karte-unbekannt" width="0.42" height="0.42" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">
+            <line x1="0" y1="0" x2="0" y2="0.42" className="karte-schraffur-grau" strokeWidth="0.035" />
+          </pattern>
+          <pattern id="karte-kartiert" width="1.2" height="0.45" patternUnits="userSpaceOnUse">
+            <path d="M0,0.22 q0.3,-0.16 0.6,0 t0.6,0" fill="none" style={{ stroke: 'var(--tinte-weich)' }} strokeWidth="0.03" strokeOpacity="0.5" />
+          </pattern>
           <radialGradient id="karte-vignette" cx="50%" cy="50%" r="75%">
             <stop offset="60%" stopColor="#000" stopOpacity="0" />
             <stop offset="100%" stopColor="#3a2410" stopOpacity="0.16" />
@@ -546,6 +557,40 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
             );
           })}
         </g>
+
+        {/* Wissensstand (Etappe 1): Gerücht schraffiert, beritten hell, kartiert mit Höhenlinien, Bohrbericht mit Tintenstempel. */}
+        {!debug && (
+          <g pointerEvents="none" className="karte-wissen">
+            {ranches.map(({ p, shape }) => {
+              if (p.discovery) return null;
+              const stufe = knowledgeOf(game, p.id).level;
+              if (stufe === 0) return <polygon key={p.id} points={pts(shape.polygon)} fill="url(#karte-unbekannt)" />;
+              if (stufe === 2) return <polygon key={p.id} points={pts(shape.polygon)} fill="url(#karte-kartiert)" />;
+              if (stufe === 3 && detail) {
+                const [x, y] = shape.center;
+                return (
+                  <g key={p.id} className="karte-stempel">
+                    <circle cx={x + u(16)} cy={y - u(16)} r={u(6)} fill="none" style={{ stroke: 'var(--blau)' }} strokeWidth={u(1.4)} opacity={0.8} />
+                    <text x={x + u(16)} y={y - u(13.5)} textAnchor="middle" style={{ fontSize: u(8), fill: 'var(--blau)' }}>
+                      B
+                    </text>
+                  </g>
+                );
+              }
+              return null;
+            })}
+          </g>
+        )}
+        {/* Debug: die Salzrücken (verdeckt), an denen das Öl sitzt. */}
+        {debug &&
+          game.regions.map((id) =>
+            regionTrends(balance, game.seed, id).map((l, i) => (
+              <g key={`${id}-${i}`} pointerEvents="none">
+                <path d={linie([l.a, l.b])} style={{ stroke: 'var(--rot)' }} strokeWidth={2 * balance.geology.trends.radius} strokeOpacity={0.12} strokeLinecap="round" fill="none" />
+                <path d={linie([l.a, l.b])} style={{ stroke: 'var(--rot)' }} strokeWidth={u(1.5)} strokeDasharray={`${u(6)} ${u(4)}`} fill="none" />
+              </g>
+            )),
+          )}
 
         {/* Fluss, Wagenweg, Bahnlinie. */}
         {linien.map((l) => {
@@ -870,14 +915,16 @@ function RanchTipp({ game, id, debug }: { game: GameState; id: string; debug: bo
         {!p.discovery && (
           <>
             <dt>Prognose</dt>
-            <dd>{forecast ? formatForecast(forecast) : '–'}</dd>
+            <dd>{forecast ? formatForecast(forecast) : zoneWord(p.zone)}</dd>
+            <dt>Wissen</dt>
+            <dd>{levelLabel(knowledgeOf(game, id).level)}</dd>
           </>
         )}
         {debug && (
           <>
             <dt>Geologie</dt>
             <dd>
-              {p.geology} · {zahl(p.reserves)} Barrel
+              {p.geology} · {zahl(p.reserves)} Barrel{p.chance !== undefined && ` · q ${zahl(p.chance * 100)} %`}
             </dd>
           </>
         )}
@@ -926,6 +973,7 @@ function Legende() {
     { klasse: 'bullard', text: 'Bullard' },
     { klasse: 'other', text: 'anderer Wildcatter' },
     { klasse: 'gesperrt', text: 'unerforscht' },
+    { klasse: 'geruecht', text: 'nur Gerücht – reite hin' },
   ];
   return (
     <ul className="karte-legende" aria-label="Legende">

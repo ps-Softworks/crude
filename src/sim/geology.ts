@@ -4,11 +4,18 @@
 // Seit 0.2.15+5 kein Raster mehr: x/y ist die Mitte der Ranch in Karteneinheiten.
 // Die Umrisse stehen nicht im Spielzustand (und nicht im Spielstand) – sie
 // werden aus dem Seed neu erzeugt (generateWorld), wenn die Karte sie braucht.
+//
+// Termine als Hauptwerkzeug (Etappe 1): Jede Ranch hat eine verdeckte Fundchance q
+// (Parcel.chance). Sie kommt aus dem Grundwert der Zone, dazu Salzrücken (Trends):
+// je Gebiet ein paar Linien, an denen das Öl sitzt. Wer nah an einer Linie liegt,
+// bekommt einen Aufschlag, alle anderen einen Abschlag; dazu etwas Rauschen.
+// Danach wird die Geologie mit q gewürfelt (rollGeology). Die Linien stehen wie die
+// Umrisse nicht im Spielstand, sie kommen aus dem Seed (regionTrends).
 
 import type { Balance, GeologyType, LandownerType, Zone } from './balance';
 import { generateWorld, initialRegions } from './ranches';
 import { Rng, seedFromString } from './rng';
-import { regionById } from './worldMap';
+import { distanceToSegment, regionById, type Vec } from './worldMap';
 
 export interface Parcel {
   id: string;
@@ -32,6 +39,11 @@ export interface Parcel {
   /** Ranches mit gemeinsamer Grenze. */
   neighbors: string[];
   zone: string;
+  /**
+   * Verdeckt: wahre Fundchance q (0–1), aus Zone, Salzrücken und Rauschen (Etappe 1).
+   * Fehlt sie (alter Spielstand, Test-Ranch), gilt der Grundwert der Zone.
+   */
+  chance?: number;
   /** Verdeckt: der Spieler sieht das erst nach einer Bohrung. */
   geology: GeologyType;
   /** Verdeckt: förderbare Gesamtmenge in Barrel (0 bei trocken). */
@@ -69,10 +81,66 @@ function rollLandowner(balance: Balance, roll: number): LandownerType {
   return owners[owners.length - 1].name;
 }
 
-function rollGeology(zone: Zone, roll: number): GeologyType {
-  if (roll < zone.dry) return 'dry';
-  if (roll < zone.dry + zone.small) return 'small';
-  return 'gusher';
+/**
+ * Würfelt die Geologie zur wahren Fundchance q: trocken mit Wahrscheinlichkeit 1 − q,
+ * der Rest teilt sich im Verhältnis small : gusher der Zone auf. roll in [0, 1).
+ */
+export function rollGeology(zone: Pick<Zone, 'small' | 'gusher'>, q: number, roll: number): GeologyType {
+  const trocken = 1 - q;
+  if (roll < trocken) return 'dry';
+  const anteilKlein = zone.small / (zone.small + zone.gusher);
+  return roll < trocken + q * anteilKlein ? 'small' : 'gusher';
+}
+
+/** Ein Salzrücken: eine Strecke in Karteneinheiten, an der entlang das Öl sitzt. */
+export interface TrendLine {
+  a: Vec;
+  b: Vec;
+}
+
+/**
+ * Die Salzrücken eines Gebiets, fest aus dem Seed (seed + ':trends:' + Gebiet).
+ * Jede Linie läuft durch einen Punkt in offsetMin–offsetMax Abstand vom Salzdom,
+ * in zufälliger Richtung, halfLength zu beiden Seiten. Gebiete ohne Geologie: keine.
+ */
+export function regionTrends(balance: Balance, seed: string, regionId: string): TrendLine[] {
+  const center = regionById(balance.world, regionId)?.geology?.center;
+  if (!center) return [];
+  const t = balance.geology.trends;
+  const rng = new Rng(seedFromString(`${seed}:trends:${regionId}`));
+  const lines: TrendLine[] = [];
+  for (let i = 0; i < t.perRegion; i++) {
+    const phi = rng.float() * 2 * Math.PI;
+    const d = t.offsetMin + rng.float() * (t.offsetMax - t.offsetMin);
+    const theta = rng.float() * Math.PI;
+    const px = center[0] + d * Math.cos(phi);
+    const py = center[1] + d * Math.sin(phi);
+    const dx = t.halfLength * Math.cos(theta);
+    const dy = t.halfLength * Math.sin(theta);
+    lines.push({ a: [px - dx, py - dy], b: [px + dx, py + dy] });
+  }
+  return lines;
+}
+
+/** Abstand eines Punkts zur nächsten Trendlinie (Infinity ohne Linien). */
+export function trendDistance(lines: readonly TrendLine[], x: number, y: number): number {
+  return lines.reduce((min, l) => Math.min(min, distanceToSegment([x, y], l.a, l.b)), Infinity);
+}
+
+/** Liegt der Punkt auf einem Salzrücken (Abstand ≤ trends.radius)? */
+export function onTrend(balance: Balance, lines: readonly TrendLine[], x: number, y: number): boolean {
+  return trendDistance(lines, x, y) <= balance.geology.trends.radius;
+}
+
+/**
+ * Wahre Fundchance q: Grundwert der Zone + (auf einem Salzrücken ? bonus : offTrend)
+ * + Rauschen ±noise (noiseRoll in [0, 1)), begrenzt auf qMin–qMax.
+ */
+export function parcelChance(balance: Balance, zone: Pick<Zone, 'base'>, lines: readonly TrendLine[], x: number, y: number, noiseRoll: number): number {
+  const t = balance.geology.trends;
+  const trend = onTrend(balance, lines, x, y) ? t.bonus : t.offTrend;
+  const q = zone.base + trend + (noiseRoll * 2 - 1) * t.noise;
+  return Math.min(t.qMax, Math.max(t.qMin, q));
 }
 
 /** Flächenfaktor: so viele „Standardflächen“ (ranches.slotArea) hat die Ranch. */
@@ -91,10 +159,14 @@ export function generateParcels(balance: Balance, seed: string, regions: readonl
     const shapes = generateWorld(balance.world, balance.ranches, seed, [regionId]);
     if (shapes.length === 0) continue;
     const rng = new Rng(seedFromString(`${seed}:geologie:${regionId}`));
+    // Eigener Strang für das Rauschen von q, damit Geologie- und Besitzer-Würfe gleich viele bleiben.
+    const rauschen = new Rng(seedFromString(`${seed}:fundchance:${regionId}`));
+    const trends = regionTrends(balance, seed, regionId);
     const neue: Parcel[] = shapes.map((r) => {
       const [x, y] = r.center;
       const zone = zoneFor(balance, regionId, x, y);
-      const geology = rollGeology(zone, rng.float());
+      const chance = parcelChance(balance, zone, trends, x, y, rauschen.float());
+      const geology = rollGeology(zone, chance, rng.float());
       const range = geology === 'dry' ? undefined : balance.geology.reserves[geology];
       const roh = range ? rng.int(range.min, range.max) : 0;
       const parcel: Parcel = {
@@ -109,6 +181,7 @@ export function generateParcels(balance: Balance, seed: string, regions: readonl
         slots: r.slots,
         neighbors: r.neighbors,
         zone: zone.name,
+        chance,
         geology,
         reserves: Math.round(roh * areaFactor(balance, r)),
         landowner: 'neutral',

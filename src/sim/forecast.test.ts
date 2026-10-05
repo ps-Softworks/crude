@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Balance } from './balance';
-import { forecastWidth, formatForecast, makeForecast, makeForecasts, trueChance, type Geologist } from './forecast';
+import { forecastWidth, formatForecast, makeForecast, makeForecasts, trueChance, zoneChance, type Geologist } from './forecast';
 import { generateParcels, type Parcel } from './geology';
 import { Rng, seedFromString } from './rng';
 import { loadBalance } from './testBalance';
@@ -49,23 +49,26 @@ describe('Geologe: Bandbreite der Prognose', () => {
   });
 
   describe('wahre Fundchance', () => {
-    it('ist alles in der Zone, was nicht trocken ist', () => {
-      for (const zone of balance.geology.zones) {
-        const parcel = world('zonen').find((p) => p.zone === zone.name);
-        expect(parcel, `Zone ${zone.name} fehlt auf der Karte`).toBeDefined();
-        expect(trueChance(balance, parcel!)).toBeCloseTo(1 - zone.dry, 10);
+    it('ist das verdeckte q der Ranch (Etappe 1)', () => {
+      for (const parcel of world('zonen').filter((p) => !p.discovery)) {
+        expect(trueChance(balance, parcel)).toBe(parcel.chance);
       }
     });
 
-    it('ist im Kern höher als am Rand', () => {
-      const byZone = (name: string) => {
-        const zone = balance.geology.zones.find((z) => z.name === name)!;
-        return 1 - zone.dry;
-      };
-      expect(byZone('kern')).toBeCloseTo(0.7, 10);
-      expect(byZone('ring')).toBeCloseTo(0.6, 10);
-      expect(byZone('rand')).toBeCloseTo(0.15, 10);
-      expect(byZone('kern')).toBeGreaterThan(byZone('rand'));
+    it('ohne q (alter Spielstand) gilt das öffentliche Wissen der Zone', () => {
+      for (const zone of balance.geology.zones) {
+        const parcel = world('zonen').find((p) => p.zone === zone.name);
+        expect(parcel, `Zone ${zone.name} fehlt auf der Karte`).toBeDefined();
+        const ohne = { ...parcel!, chance: undefined };
+        expect(trueChance(balance, ohne)).toBeCloseTo(zone.prior, 10);
+        expect(zoneChance(balance, parcel!)).toBeCloseTo(zone.prior, 10);
+      }
+    });
+
+    it('ist im Kern im Schnitt höher als am Rand', () => {
+      const byZone = (name: string) => balance.geology.zones.find((z) => z.name === name)!.prior;
+      expect(byZone('kern')).toBeGreaterThan(byZone('ring'));
+      expect(byZone('ring')).toBeGreaterThan(byZone('rand'));
     });
   });
 
@@ -126,7 +129,8 @@ describe('Geologe: Bandbreite der Prognose', () => {
         geprueft++;
         expect(Math.abs(f.high - f.low - width)).toBeLessThanOrEqual(rounding);
       }
-      expect(geprueft).toBeGreaterThan(700);
+      // Etappe 1: q streut breiter (3–85 %), darum stoßen mehr Prognosen an die Grenzen 0 und 100.
+      expect(geprueft).toBeGreaterThan(parcels.length / 2);
       expect(geprueft).toBeLessThan(parcels.length);
     });
 

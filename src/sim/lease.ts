@@ -117,7 +117,9 @@ export function leaseTerms(state: GameState, balance: Balance, parcelId: string)
   // Nachwirkung aus Ereignissen (0.2.15+3): leaseCost macht Pachten befristet teurer oder billiger.
   // Größere Ranches kosten mehr (0.2.15+5): Der Lagebonus gilt je ranches.slotArea Fläche.
   const flaeche = areaFactor(balance, parcel);
-  const bonus = roundBonus(balance, location.bonus * flaeche * landowner.bonusFactor * Math.max(0, 1 + timedEffect(state, 'leaseCost')));
+  // Erkundung (Etappe 1): Ein freundlicher Farmer lässt nach dem Gespräch etwas nach.
+  const nachlass = 1 - (state.knowledge?.[parcelId]?.leaseDiscount ?? 0);
+  const bonus = roundBonus(balance, location.bonus * flaeche * landowner.bonusFactor * Math.max(0, 1 + timedEffect(state, 'leaseCost')) * nachlass);
   const royalty = Math.min(royaltyMax, Math.max(royaltyMin, location.royalty + landowner.royaltyAdd));
   const optionFee = roundBonus(balance, bonus * option.feeShare);
   return { location, landowner, bonus, royalty, optionFee };
