@@ -20,6 +20,8 @@ import { ranchOfFigure } from '../sim/geology';
 import { tutorialActive, tutorialHint, viewTutorial } from '../sim/tutorial';
 import { answerSwitch, continueTimeskip, markChronicleRead, runTimeskip, startTimeskip, unreadChronicle, type Directives } from '../sim/timeskip';
 import { parcelLabel } from '../sim/lease';
+import { deeperOutlook } from '../sim/deeper';
+import { deeperShort } from './deeperText';
 import { clearAutosave, loadAutosave, writeAutosave } from './autosave';
 import { balance } from './balance';
 import { k3 } from './kapitel3'; // 4.17 Andockpunkt: Texte aus content/kapitel3.yaml
@@ -96,6 +98,11 @@ const STEMPEL: Record<DeskActionKind, string> = {
   abandon: 'Aufgegeben',
   pump: 'Pumpe bestellt',
 };
+
+/** „600 m lohnt ab etwa 6 %, Geologe 9 % – “ oder nichts. */
+function wetteText(kurz: string | null): string {
+  return kurz ? `${kurz} – ` : '';
+}
 
 function wenigBewegung(): boolean {
   return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -612,7 +619,11 @@ export function App() {
       const tiefe = balance.drilling.stages[w.stage - 1]?.depth;
       return {
         parcelId: w.parcelId,
-        text: w.status === 'decision' ? `${ort}: in ${tiefe} m trocken – tiefer bohren oder aufgeben?` : `${ort}: Werkzeug klemmt in ${tiefe} m – fischen oder aufgeben?`,
+        // Spielspaß K1: zur Entscheidung gleich die Gewinnschwelle und die Chance des Geologen.
+        text:
+          w.status === 'decision'
+            ? `${ort}: in ${tiefe} m trocken – ${wetteText(deeperShort(deeperOutlook(game, balance, w.parcelId)))}tiefer bohren oder aufgeben?`
+            : `${ort}: Werkzeug klemmt in ${tiefe} m – fischen oder aufgeben?`,
       };
     });
   // Thomas steht erst im Familienfoto, wenn die Szene seiner Geburt gespielt ist.

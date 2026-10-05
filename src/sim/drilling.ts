@@ -5,7 +5,7 @@
 
 import type { Balance, DrillStage } from './balance';
 import { formatDate } from './calendar';
-import { forecastMid, makeForecast, trueChance } from './forecast';
+import { forecastMid, makeDeeperForecast, trueChance } from './forecast';
 import { posteriorChance } from './exploration';
 import { initialRate } from './production';
 import type { GameState } from './game';
@@ -80,6 +80,36 @@ export function accidentChance(balance: Balance, stage: number): number {
 
 export function stuckChance(balance: Balance, stage: number): number {
   return stageOf(balance, stage).stuck;
+}
+
+/** Spielspaß K1: So viel größer ist ein Fund in dieser Stufe (Vorrat und Anfangsrate, Stufe 1 = 1). */
+export function findFactor(balance: Balance, stage: number): number {
+  return stageOf(balance, stage).findFactor;
+}
+
+/**
+ * Spielspaß K1 (Tieferbohren): In der Tiefe ist Öl seltener, ein Fund aber größer. Beim
+ * ersten Fund auf einer Ranch in Stufe stage wächst ihr Vorrat (und der ihres Feldes) um
+ * (findFactor − 1) × Vorrat – die Anfangsrate hängt am Vorrat je Fläche (initialRate) und
+ * wächst mit. Weitere Bohrlöcher derselben Ranch gehen auf dieselbe Tiefe und erben das,
+ * ohne den Vorrat noch einmal zu vergrößern. Flache Funde ändern nichts.
+ */
+export function deepFindReserves(
+  state: Pick<GameState, 'parcels' | 'fields' | 'wells'>,
+  balance: Balance,
+  parcelId: string,
+  stage: number,
+): Pick<GameState, 'parcels' | 'fields'> {
+  const parcel = state.parcels.find((p) => p.id === parcelId);
+  const faktor = findFactor(balance, stage);
+  if (!parcel || faktor <= 1 || wellsOn(state, parcelId).some((w) => w.status === 'found')) {
+    return { parcels: state.parcels, fields: state.fields };
+  }
+  const plus = Math.round(parcel.reserves * (faktor - 1));
+  return {
+    parcels: state.parcels.map((p) => (p.id === parcelId ? { ...p, reserves: p.reserves + plus } : p)),
+    fields: state.fields.map((f) => (f.id === parcel.fieldId ? { ...f, reserves: f.reserves + plus } : f)),
+  };
 }
 
 /** Alle Bohrlöcher auf einer Ranch, in der Reihenfolge, in der sie gebohrt wurden. */
@@ -301,6 +331,8 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
   const log = [...input.log];
   const forecasts = { ...input.forecasts };
   let cash = input.cash;
+  // Spielspaß K1: Tiefe Funde vergrößern Vorrat von Ranch und Feld (deepFindReserves).
+  let lager: Pick<GameState, 'parcels' | 'fields'> = { parcels: input.parcels, fields: input.fields };
   const lastStage = balance.drilling.stages.length;
 
   const wells = input.wells.map((old): Well => {
@@ -326,17 +358,19 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
     if (well.oilStage === well.stage) {
       const parcel = input.parcels.find((p) => p.id === well.parcelId)!;
       const result = parcel.geology === 'gusher' ? 'gusher' : 'small';
+      lager = deepFindReserves({ ...lager, wells: input.wells }, balance, well.parcelId, well.stage);
+      const tief = well.stage > 1 && findFactor(balance, well.stage) > 1 ? ' Das Ausharren hat sich gelohnt: In der Tiefe ist die Lagerstätte größer.' : '';
       log.push(
         result === 'gusher'
-          ? `${date}: GUSHER! Auf ${label} schießt in ${depth} m das Öl über den Bohrturm!`
-          : `${date}: Öl! ${label} fördert in ${depth} m eine kleine Quelle.`,
+          ? `${date}: GUSHER! Auf ${label} schießt in ${depth} m das Öl über den Bohrturm!${tief}`
+          : `${date}: Öl! ${label} fördert in ${depth} m eine kleine Quelle.${tief}`,
       );
       return {
         ...well,
         status: 'found',
         result,
         production: {
-          initialRate: initialRate(balance, input, { parcelId: well.parcelId, result }),
+          initialRate: initialRate(balance, lager, { parcelId: well.parcelId, result }),
           roundsProduced: 0,
           lastRate: 0,
           total: 0,
@@ -345,12 +379,13 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
     }
     if (well.stage < lastStage) {
       const parcel = input.parcels.find((p) => p.id === well.parcelId)!;
-      forecasts[well.parcelId] = makeForecast(
+      // Etappe 1: Der Geologe rechnet mit dem, was Jacob weiß (Chance nach den Hinweisen), nicht mit dem verdeckten q.
+      // Spielspaß K1: aus dem Bohrklein enger und ohne Abschneiden an 0 % (makeDeeperForecast).
+      forecasts[well.parcelId] = makeDeeperForecast(
         balance,
-        parcel,
+        parcel.id,
         balance.forecast.geologist,
         rng,
-        // Etappe 1: Der Geologe rechnet mit dem, was Jacob weiß (Chance nach den Hinweisen), nicht mit dem verdeckten q.
         deeperChance(balance, parcel, well.stage, posteriorChance(input, balance, parcel.id)),
       );
       log.push(`${date}: ${label} ist in ${depth} m trocken. Tiefer bohren oder aufgeben?`);
@@ -360,7 +395,7 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
     return { ...well, status: 'dry' };
   });
 
-  return { ...input, rng: rng.state, cash, wells, forecasts, log };
+  return { ...input, ...lager, rng: rng.state, cash, wells, forecasts, log };
 }
 
 function needWell(state: GameState, parcelId: string, allowed: readonly WellStatus[]): Well | string {

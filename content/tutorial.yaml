@@ -7,6 +7,7 @@
 #   {chance}  Prognose, z. B. 35–60 % Fundchance
 #   {quelle}  wer sie stellt – je Wissensstufe der Ranch (sources unten), z. B. „nach deinem Ritt rechnest du mit“
 #   {weg}     Fuhrwerk oder Bahn
+#   {schwelle} ab welcher Chance sich das Tieferbohren lohnt, z. B. 6 % (Spielspaß K1)
 # Ab 0.2.15+10 nennen die Texte die Gegenstände am Schreibtisch mit Kürzel
 # (Wandkarte K, Kassenbuch G, Frachtmappe V, Glocke E).
 # ENTWURF: Ton und Wortwahl sind Vorschläge.
@@ -58,11 +59,11 @@ hints:
     de: Der Turm bohrt. Läute die Glocke (E) – erst danach zeigt sich, ob in der Tiefe Öl liegt.
     en: The rig is drilling. Ring the bell (E) – only then will you know whether there is oil down there.
   deeper:
-    de: Auf {ort} war in dieser Tiefe nichts. Für die nächste Stufe stehen noch {chance}. Das ist es wert – wähle „Tiefer bohren“ ({kosten}).
-    en: Nothing at this depth on {ort}. The next stage still has {chance}. It is worth it – choose “Drill deeper” ({kosten}).
+    de: Auf {ort} war in dieser Tiefe nichts. Für die nächste Stufe stehen noch {chance} – lohnen würde es schon ab {schwelle}, denn tief unten sind die Funde größer. Wähle „Tiefer bohren“ ({kosten}).
+    en: Nothing at this depth on {ort}. The next stage still has {chance} – it would pay from {schwelle}, because finds are bigger deep down. Choose “Drill deeper” ({kosten}).
   abandon:
-    de: Auf {ort} war in dieser Tiefe nichts, und tiefer lohnt es kaum. Wähle „Aufgeben“ – dann ist der Turm frei für eine neue Pacht.
-    en: Nothing at this depth on {ort}, and going deeper hardly pays. Choose “Abandon” – then the rig is free for a new lease.
+    de: Auf {ort} war in dieser Tiefe nichts, und der Geologe gibt der nächsten Stufe weniger, als sich lohnen würde (steht im Ranch-Fenster). Wähle „Aufgeben“ – dann ist der Turm frei für eine neue Pacht.
+    en: Nothing at this depth on {ort}, and the geologist gives the next stage less than it would take to pay off (see the ranch window). Choose “Abandon” – then the rig is free for a new lease.
   fish:
     de: Auf {ort} klemmt das Werkzeug. Wähle „Fischen“ ({kosten}), um es zu bergen – dann bohrt der Turm weiter.
     en: The tool is stuck on {ort}. Choose “Fish” ({kosten}) to recover it – then the rig carries on.

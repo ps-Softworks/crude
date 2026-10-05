@@ -175,6 +175,11 @@ forecast:
   geologist:
     accuracy: 3           # PLATZHALTER: Genauigkeit 1–5
     bias: 0               # PLATZHALTER: Verzerrung −15 bis +15 Punkte
+  # Spielspaß K1 (Tieferbohren): Nach einer trockenen Stufe schätzt der Geologe die nächste
+  # aus dem Bohrklein – Fehler relativ zur Chance (± 40 %), Bandbreite 50 % der Mitte, auf 1 Punkt
+  # gerundet. Vorher galt die breite 30-Punkte-Spanne: Bei 5–10 % echter Chance wurde sie an 0 %
+  # abgeschnitten, die Mitte zeigte im Schnitt 17,6 % bei 8,9 % echten Treffern.
+  deeper: { error: 0.4, width: 0.5, rounding: 1 }
 
 # Erkundung (Termine als Hauptwerkzeug, Etappe 1): Wer übers Land reitet, Farmer fragt oder einen
 # Geologen kartieren lässt, sammelt Hinweise. Jeder Hinweis verschiebt die Chance wie eine Wette:
@@ -312,9 +317,9 @@ drilling:
   stages:                 # PLATZHALTER; 1.15: Stufe 1 unter GDD (1.500–3.000 $), damit Tieferbohren mit der Startkasse geht
     # Frühes Öl (0.4.4+): vorher oilShare 0,7/0,2/0,1 und Stufe 1 Unfall 0,04 / Klemmen 0,05 – die erste
     # Bohrung auf einem Feld mit ≥ 60 % Prognose traf nur rund 40 %, mit der Startkasse reichte das oft nicht.
-    - { depth: 300, cost: 1000, rounds: 1, oilShare: 0.85, accident: 0.02, stuck: 0.03 }
-    - { depth: 600, cost: 1100, rounds: 1, oilShare: 0.10, accident: 0.08, stuck: 0.10 }
-    - { depth: 900, cost: 1400, rounds: 2, oilShare: 0.05, accident: 0.15, stuck: 0.15 }
+    - { depth: 300, cost: 1000, rounds: 1, oilShare: 0.85, accident: 0.02, stuck: 0.03, findFactor: 1 }
+    - { depth: 600, cost: 1100, rounds: 1, oilShare: 0.10, accident: 0.08, stuck: 0.10, findFactor: 2 }
+    - { depth: 900, cost: 1400, rounds: 2, oilShare: 0.05, accident: 0.15, stuck: 0.15, findFactor: 3 }
 
 # Markt (GDD §7.3): Der Crane Trust kauft das Öl zum Posted Price. Der Preis
 # entsteht jede Runde aus Angebot und Nachfrage am Salt Hill:
@@ -677,6 +682,10 @@ bots:
   # Notfallregel (0.4.19+2): Nach trockenen Löchern, ohne Quelle und ohne Land leiht er bis emergencyDebtShare,
   # damit er nicht 14 Runden lang nichts tut (vorher blieb er in 35 % der Seeds ohne jeden Fund stehen).
   balanced: { minChance: 0.4, cashReserve: 300, maxStage: 3, maxDebtShare: 0.5, emergencyDebtShare: 0.6, maxUndrilled: 1 }
+  # Spielspaß K1 (Tieferbohren): tiefer, wenn die Chance des Geologen ≥ Schwelle × Faktor
+  # („lohnt ab“ im Ranch-Fenster = Kosten mit Risiko ÷ Wert eines Funds bis Kapitelende).
+  # Vorher: vorsichtig bis Stufe 2 mit Rücklage, gierig immer, ausgewogen bis Stufe 3 – ohne Blick auf die Chance.
+  deeper: { cautious: 1.5, greedy: 0.7, balanced: 1.0 }
   daysPerRound: 91         # ein Quartal; für die Anfangsrate in bbl/Tag (GDD §15)
   # Ereignisse (2.15): So bewerten die Bots eine Antwort – Geld zählt in $, dazu
   # strength = $ je Kraftpunkt, family = $ je Beziehungspunkt (Ruth, Thomas),
@@ -726,7 +735,10 @@ bots:
     standardBankrupt: { min: 0, max: 0.15 }   # Pleitequote ausgewogen (Standard-Bot): Kapitel 1 ist der Einstieg
     greedyBankrupt: { min: 0.03, max: 0.45 }  # Pleitequote gierig (GDD §15: wer im Boom zu viele Schulden macht, stirbt; Crashs kommen erst später); 0.4.20+1: 0,05 → 0,03 – mit der guten ersten Startoption kommt auch der gierige Bot fast immer früh zu Öl und stirbt seltener am Anfang (gemessen 4–4,5 %, vorher 8,7 %); die Kreditkrise kündigt ihm weiter
     cautiousBehind: { min: 0, max: 0.95 }     # Ø Imperium vorsichtig ÷ bester Ø der Mutigeren (GDD §15: wird überholt)
-    standardGoal: { min: 0.20, max: 0.70 }    # Kapitelziel ausgewogen: erreichbar, aber nicht geschenkt
+    # Spielspaß K1 (Tieferbohren): VORLÄUFIG 0,70 → 0,82. Mit Gewinnschwelle gibt der Standard-Bot hoffnungslose
+    # Tiefen auf, und tiefe Funde sind 2–3-mal so groß: Kapitelziel 66,9 → 80,2 %. Ein höheres goalValue hilft kaum
+    # (90.000 $ / 7 Quellen: ~71 %) und schiebt den Pipeline-Anteil über 80 % – die Gesamt-Balance folgt.
+    standardGoal: { min: 0.20, max: 0.82 }    # Kapitelziel ausgewogen: erreichbar, aber nicht geschenkt
     smallRateInRange: { min: 0.90, max: 1 }   # Anteil kleiner Funde mit 50–500 bbl/Tag (GDD §15)
     gusherFactor: { min: 2, max: 20 }         # Ø Anfangsrate Gusher ÷ kleiner Fund (GDD §15: deutlich mehr)
     decline: { min: 0.08, max: 0.15 }         # gemessener Rückgang je Quartal (GDD §15: 8–15 %)
@@ -1064,7 +1076,6 @@ newspaper:
 tutorial:
   lastRound: 8               # spätestens nach Runde 8 schweigen die Hinweise (halbes Kapitel)
   endAfterProducedRounds: 2  # fertig, wenn die erste Quelle 2 Runden gefördert hat (die Verkaufsrunde ist vorbei)
-  deeperMinChance: 25        # PLATZHALTER: tiefer bohren nur raten, wenn der Geologe der nächsten Stufe mind. 25 % gibt
   dollarsPerPoint: 100       # Frühes Öl (0.4.4+): 100 $ Pacht wiegen einen Prozentpunkt Schätzung auf – der Hinweis rät nicht zur teuren Pacht, die kaum besser aussieht
   loanRounding: 100          # vorgeschlagene Kredite auf 100 $ aufgerundet (mindestens credit.minLoan)
   exploreBelow: 55           # Etappe 1, PLATZHALTER: sieht die beste bezahlbare Ranch schlechter aus als 55 %, rät der Hinweis erst zum Ritt übers Land

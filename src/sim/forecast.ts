@@ -76,11 +76,22 @@ export function makeForecast(
 }
 
 /**
+ * Spielspaß K1 (Tieferbohren): Prognose für die nächste Bohrstufe nach einer trockenen
+ * (forecast.deeper). Der Fehler ist relativ zur Chance, die Mitte im Schnitt also genau
+ * die Chance – ehrlich auch bei kleinen Werten. Die Verzerrung des Geologen bleibt.
+ * Verbraucht genau einen Zufallswert, wie makeForecast.
+ */
+export function makeDeeperForecast(balance: Balance, parcelId: string, geologist: Geologist, rng: Rng, chance: number): Forecast {
+  const d = balance.forecast.deeper;
+  const mitte = Math.max(0, 100 * chance * (1 + (rng.float() * 2 - 1) * d.error) + geologist.bias);
+  return forecastAround(balance, parcelId, mitte, mitte * d.width, d.rounding);
+}
+
+/**
  * Bandbreite um eine Mitte (in Prozent) mit der Breite width, auf das Raster aus
  * balance.yaml gerundet und auf 0–100 begrenzt. Kein Zufall.
  */
-export function forecastAround(balance: Balance, parcelId: string, center: number, width: number): Forecast {
-  const { rounding } = balance.forecast;
+export function forecastAround(balance: Balance, parcelId: string, center: number, width: number, rounding = balance.forecast.rounding): Forecast {
   let low = clamp(roundTo(clamp(center - width / 2, 0, 100), rounding), 0, 100);
   let high = clamp(roundTo(clamp(center + width / 2, 0, 100), rounding), 0, 100);
   // An den Grenzen kann das Raster die Bandbreite zusammendrücken.

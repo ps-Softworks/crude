@@ -16,6 +16,7 @@ import type { GameState } from './game';
 import { leaseOf } from './lease';
 import { fieldWells, initialRate, recoverable, wellRate } from './production';
 import { pumpTarget } from './rigs';
+import { areaFactor } from './geology';
 import { computePrice, neighbourSupply, rivalSupply } from './market';
 import { worldPriceFactor } from './world';
 import { buyerPrice, modeUnavailable, netPrice, tariff } from './transport';
@@ -236,4 +237,29 @@ export function pumpOutlook(state: GameState, balance: Balance, parcelId: string
 /** Lohnt es sich bis Kapitelende? (Kosten und Unterhalt wieder drin.) */
 export function paysOff(outlook: Outlook | null): boolean {
   return outlook !== null && outlook.payback !== null;
+}
+
+/**
+ * Spielspaß K1 (Tieferbohren): Was ein Fund dieser Art in Stufe stage auf dieser Ranch
+ * bis Kapitelende etwa in die Kasse brächte – gerechnet wie wellOutlook, aber ohne das
+ * verdeckte Wissen über die Ranch: Vorrat = Mitte der Spanne aus balance.yaml × Fläche ×
+ * findFactor der Stufe, als eigene Lagerstätte neben Jacobs übrigen Feldern (deren Preis
+ * die Mehrförderung mit drückt). delay = Runden, bis die Quelle fördern könnte.
+ * Ohne eigene Pacht 0. Reine Rechnung.
+ */
+export function findValue(state: GameState, balance: Balance, parcelId: string, stage: number, result: 'small' | 'gusher', delay: number): number {
+  const parcel = state.parcels.find((p) => p.id === parcelId);
+  const lease = leaseOf(state, parcelId);
+  const stufe = balance.drilling.stages[stage - 1];
+  if (!parcel || !lease || lease.holder !== 'jacob' || !stufe) return 0;
+  const horizon = horizonOf(state);
+  const start = Math.min(delay, horizon);
+  const spanne = balance.geology.reserves[result];
+  const jeFlaeche = ((spanne.min + spanne.max) / 2) * stufe.findFactor;
+  const reserves = jeFlaeche * areaFactor(balance, parcel);
+  const neu: Plan = { initialRate: Math.round(jeFlaeche * balance.production.initialRateShare[result]), roundsProduced: 0, pump: false, start };
+  const ohne = otherFields(state, balance, '', horizon);
+  const feld = projectField(balance, [neu], reserves, 0, 0, horizon);
+  const mit = ohne.map((b, i) => b + feld[i]);
+  return outlookOf(state, balance, lease.royalty, ohne, mit, mit.map(() => false), 0, 0, start).profit;
 }

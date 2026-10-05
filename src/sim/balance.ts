@@ -130,6 +130,13 @@ export interface ForecastBalance {
   /** Bandbreiten und Grenzen werden auf dieses Raster gerundet (z. B. 5 %). */
   rounding: number;
   geologist: Geologist;
+  /**
+   * Spielspaß K1 (Tieferbohren): Prognose für die nächste Stufe nach einer trockenen. Das
+   * Bohrklein verrät mehr – der Fehler ist relativ (± error × Chance), die Bandbreite
+   * width × Mitte, gerundet auf rounding Prozentpunkte. So bleibt die Schätzung auch bei
+   * kleinen Chancen ehrlich (keine an 0 % abgeschnittene breite Spanne).
+   */
+  deeper: { error: number; width: number; rounding: number };
 }
 
 export interface LeaseBalance {
@@ -162,6 +169,11 @@ export interface DrillStage {
   accident: number;
   /** Chance, dass das Werkzeug klemmt. */
   stuck: number;
+  /**
+   * Spielspaß K1 (Tieferbohren): So viel größer ist ein Fund in dieser Tiefe – Vorrat und
+   * damit Anfangsrate der Ranch mal diesem Faktor (Stufe 1 = 1).
+   */
+  findFactor: number;
 }
 
 /**
@@ -498,6 +510,12 @@ export interface BotsBalance {
    * im Notfall (nur trockene Löcher, kein Land) bis emergencyDebtShare.
    */
   balanced: { minChance: number; cashReserve: number; maxStage: number; maxDebtShare: number; emergencyDebtShare: number; maxUndrilled: number };
+  /**
+   * Spielspaß K1 (Tieferbohren): Die planenden Bots bohren tiefer, wenn die Chance des
+   * Geologen mindestens Schwelle × Faktor ist (Schwelle = deeperOutlook.breakEven):
+   * vorsichtig nur klar darüber, gierig auch knapp darunter, ausgewogen ab der Schwelle.
+   */
+  deeper: Record<'cautious' | 'greedy' | 'balanced', number>;
   /** Tage je Runde (Quartal) – für die Anfangsrate in bbl/Tag. */
   daysPerRound: number;
   /** Wie die Bots Ereignisse bewerten (2.15). */
@@ -988,8 +1006,6 @@ export interface TutorialBalance {
   lastRound: number;
   /** Die Hinweise enden, sobald eine eigene Quelle so viele Runden gefördert hat (2 = nach der ersten Verkaufsrunde). */
   endAfterProducedRounds: number;
-  /** Tiefer bohren rät der Hinweis nur, wenn der Geologe der nächsten Stufe mindestens so viel % gibt. */
-  deeperMinChance: number;
   /** So viele $ Pacht ist dem Hinweis ein Prozentpunkt Schätzung wert (teure Pacht nur, wenn sie deutlich besser aussieht). */
   dollarsPerPoint: number;
   /** Kredite, die der Hinweis vorschlägt, werden auf so viele $ aufgerundet. */
@@ -1225,6 +1241,11 @@ function parseForecast(raw: unknown): ForecastBalance {
       accuracy: integerInRange(raw, 'forecast.geologist.accuracy', 1, 5),
       bias,
     },
+    deeper: {
+      error: share(raw, 'forecast.deeper.error'),
+      width: share(raw, 'forecast.deeper.width'),
+      rounding: positiveInt(raw, 'forecast.deeper.rounding'),
+    },
   };
 }
 
@@ -1320,7 +1341,11 @@ function parseDrilling(raw: unknown): DrillingBalance {
       oilShare: share(raw, `${path}.oilShare`),
       accident: share(raw, `${path}.accident`),
       stuck: share(raw, `${path}.stuck`),
+      findFactor: num(raw, `${path}.findFactor`),
     };
+    if (stage.findFactor < 1) {
+      throw new BalanceError(`balance.yaml: Bohrstufe ${i + 1} – findFactor muss mindestens 1 sein`);
+    }
     if (stage.accident + stage.stuck > 1) {
       throw new BalanceError(`balance.yaml: Bohrstufe ${i + 1} – accident + stuck ist größer als 1`);
     }
@@ -1336,6 +1361,9 @@ function parseDrilling(raw: unknown): DrillingBalance {
     }
     if (stages[i].accident <= stages[i - 1].accident) {
       throw new BalanceError('balance.yaml: Unfall-Chance muss mit jeder Stufe steigen');
+    }
+    if (stages[i].findFactor < stages[i - 1].findFactor) {
+      throw new BalanceError('balance.yaml: findFactor darf mit der Tiefe nicht sinken');
     }
   }
   const accidentCost = num(raw, 'drilling.accidentCost');
@@ -1835,6 +1863,11 @@ function parseBots(raw: unknown): BotsBalance {
       emergencyDebtShare: share(raw, 'bots.balanced.emergencyDebtShare'),
       maxUndrilled: positiveInt(raw, 'bots.balanced.maxUndrilled'),
     },
+    deeper: {
+      cautious: nonNegative(raw, 'bots.deeper.cautious'),
+      greedy: nonNegative(raw, 'bots.deeper.greedy'),
+      balanced: nonNegative(raw, 'bots.deeper.balanced'),
+    },
     daysPerRound: positiveInt(raw, 'bots.daysPerRound'),
     events: {
       cautious: parseBotWeights(raw, 'cautious'),
@@ -1981,7 +2014,6 @@ function parseTutorial(raw: unknown): TutorialBalance {
   return {
     lastRound: positiveInt(raw, 'tutorial.lastRound'),
     endAfterProducedRounds: positiveInt(raw, 'tutorial.endAfterProducedRounds'),
-    deeperMinChance: integerInRange(raw, 'tutorial.deeperMinChance', 0, 100),
     dollarsPerPoint: positiveInt(raw, 'tutorial.dollarsPerPoint'),
     loanRounding: positiveInt(raw, 'tutorial.loanRounding'),
     exploreBelow: nonNegative(raw, 'tutorial.exploreBelow'),
