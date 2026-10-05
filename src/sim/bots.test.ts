@@ -218,7 +218,10 @@ describe('Bot-Läufe', () => {
     for (const s of STRATEGIES) expect(md).toContain(s);
     expect(md).toContain('## Zielwerte Kapitel 1');
     expect(md).toContain('| Kennzahl | Ziel (Quelle) | Toleranz | Ist | im Rahmen |');
-    expect(md).not.toContain('**nein**');
+    // Kapitel 1 muss alle Zielwerte treffen; der Kampagnen-Abschnitt (npm run kampagne) darf offene Ziele zeigen –
+    // sie stehen dort sichtbar und in CLAUDE.md unter „Offen“ (0.4.20+5).
+    expect(md.split('<!-- Kampagne: Anfang')[0]).not.toContain('**nein**');
+    expect(md).toContain('<!-- Kampagne: Anfang');
   });
 });
 
