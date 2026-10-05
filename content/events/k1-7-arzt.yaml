@@ -23,7 +23,7 @@
   once: true
   choices:
     - id: kur
-      label: { de: "Tun, was der Doktor sagt – Tropfen und eine Woche Ruhe (40 $)", en: "Do as the doctor says – drops and a week of rest (40 $)" }
+      label: { de: "Tun, was der Doktor sagt – Tropfen und eine Woche Ruhe ({cash})", en: "Do as the doctor says – drops and a week of rest ({cash})" }
       result:
         de: Eine Woche lang führt Ruth das Geschäft vom Küchentisch aus. Jacob schläft, isst und schläft.
         en: For a week Ruth runs the business from the kitchen table. Jacob sleeps, eats and sleeps.
@@ -31,10 +31,10 @@
       appointments: 2
       effects: { cash: -40, strength: 15, ruth: 3 }
     - id: wegschicken
-      label: { de: "Den Doktor bezahlen und wegschicken (10 $)", en: "Pay the doctor and send him away (10 $)" }
+      label: { de: "Den Doktor bezahlen und wegschicken ({cash})", en: "Pay the doctor and send him away ({cash})" }
       result:
-        de: Haskell nimmt die 10 $ und lässt eine Flasche Tropfen da. „Für die Witwe“, sagt er an der Tür.
-        en: Haskell takes the 10 $ and leaves a bottle of drops. "For the widow," he says at the door.
+        de: Haskell nimmt die {cash} und lässt eine Flasche Tropfen da. „Für die Witwe“, sagt er an der Tür.
+        en: Haskell takes the {cash} and leaves a bottle of drops. "For the widow," he says at the door.
       appointments: 0
       effects: { cash: -10, ruth: -3 }
       default: true

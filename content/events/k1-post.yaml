@@ -31,27 +31,27 @@
   text:
     de: >-
       Anwalt Pruitt schreibt im Namen von Mrs. Hale, deren Mann im Frühjahr am
-      Salt Hill vom Bohrturm fiel. Sie verlangt 200 $ Entschädigung. Sonst, so
+      Salt Hill vom Bohrturm fiel. Sie verlangt {cash:zahlen} Entschädigung. Sonst, so
       Pruitt, „wird der Bezirksrichter sich der Sache annehmen“.
     en: >-
       Lawyer Pruitt writes on behalf of Mrs. Hale, whose husband fell from a
-      derrick at Salt Hill in the spring. She asks 200 $ in compensation. Otherwise,
+      derrick at Salt Hill in the spring. She asks {cash:zahlen} in compensation. Otherwise,
       says Pruitt, "the district judge will take up the matter".
   conditions: { minRound: 5 }
   chance: 0.06
   choices:
     - id: zahlen
-      label: { de: "Der Witwe 200 $ zahlen", en: "Pay the widow 200 $" }
+      label: { de: "Der Witwe {cash} zahlen", en: "Pay the widow {cash}" }
       result:
         de: 'Mrs. Hale schickt eine Karte. Darauf steht nur: „Danke. Er mochte Sie.“'
         en: 'Mrs. Hale sends a card. It says only: "Thank you. He liked you."'
       requires: { minCash: 200 }
       effects: { cash: -200 }
     - id: verhandeln
-      label: { de: "Zu Pruitt gehen und verhandeln (100 $)", en: "Go to Pruitt and bargain (100 $)" }
+      label: { de: "Zu Pruitt gehen und verhandeln ({cash})", en: "Go to Pruitt and bargain ({cash})" }
       result:
-        de: Pruitt nimmt 100 $ und lächelt dabei so, dass Jacob weiß, wie viel davon bei der Witwe ankommt.
-        en: Pruitt takes 100 $ and smiles in a way that tells Jacob how much of it will reach the widow.
+        de: Pruitt nimmt {cash} und lächelt dabei so, dass Jacob weiß, wie viel davon bei der Witwe ankommt.
+        en: Pruitt takes {cash} and smiles in a way that tells Jacob how much of it will reach the widow.
       requires: { minCash: 100 }
       effects: { cash: -100 }
       appointments: 2
@@ -59,8 +59,8 @@
     - id: abweisen
       label: { de: "Nicht antworten", en: "Don't reply" }
       result:
-        de: Der Bezirksrichter spricht Mrs. Hale 350 $ zu. Nora Whitlock sitzt in der letzten Reihe und schreibt mit.
-        en: The district judge awards Mrs. Hale 350 $. Nora Whitlock sits in the back row, taking notes.
+        de: Der Bezirksrichter spricht Mrs. Hale {cash} zu. Nora Whitlock sitzt in der letzten Reihe und schreibt mit.
+        en: The district judge awards Mrs. Hale {cash}. Nora Whitlock sits in the back row, taking notes.
       effects: { cash: -350 }
       appointments: 0
       default: true

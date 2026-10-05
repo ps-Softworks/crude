@@ -29,7 +29,7 @@
   chance: 0.08
   choices:
     - id: neu
-      label: { de: "Einen neuen Meißel kaufen (220 $)", en: "Buy a new bit (220 $)" }
+      label: { de: "Einen neuen Meißel kaufen ({cash})", en: "Buy a new bit ({cash})" }
       result:
         de: Der neue Meißel ist blank und schwer. Am Abend schlägt der Turm wieder.
         en: The new bit is bright and heavy. By evening the derrick is pounding again.
@@ -37,7 +37,7 @@
       effects: { cash: -220 }
       appointments: 0
     - id: schmieden
-      label: { de: "Selbst hinfahren und den alten schweißen lassen (40 $)", en: "Ride out and have the old one welded (40 $)" }
+      label: { de: "Selbst hinfahren und den alten schweißen lassen ({cash})", en: "Ride out and have the old one welded ({cash})" }
       result:
         de: Jacob steht den halben Tag neben der Esse. Der Meißel hält, die Schultern tun weh.
         en: Jacob stands half the day beside the forge. The bit holds; his shoulders ache.
@@ -76,7 +76,7 @@
   chance: 0.08
   choices:
     - id: zahlen
-      label: { de: "Den Lohn erhöhen (150 $)", en: "Raise the wages (150 $)" }
+      label: { de: "Den Lohn erhöhen ({cash})", en: "Raise the wages ({cash})" }
       result:
         de: "Hollister nickt und nimmt endlich den Hut ab. Die Männer arbeiten, als ginge es um ihr eigenes Öl."
         en: "Hollister nods and finally takes off his hat. The men work as if it were their own oil."
@@ -124,7 +124,7 @@
   chance: 0.08
   choices:
     - id: arzt
-      label: { de: "Den Arzt bezahlen und Eli Lohn weiterzahlen (200 $)", en: "Pay the doctor and keep Eli on wages (200 $)" }
+      label: { de: "Den Arzt bezahlen und Eli Lohn weiterzahlen ({cash})", en: "Pay the doctor and keep Eli on wages ({cash})" }
       result:
         de: Eli humpelt nach sechs Wochen wieder ins Lager und kocht jetzt für den Trupp. Er kocht schlecht, aber niemand sagt es.
         en: After six weeks Eli limps back into camp and now cooks for the crew. He cooks badly, but nobody says so.
@@ -132,7 +132,7 @@
       effects: { cash: -200 }
       marks: [eli_versorgt]
     - id: arzt_nur
-      label: { de: "Nur den Arzt bezahlen (100 $)", en: "Pay only the doctor (100 $)" }
+      label: { de: "Nur den Arzt bezahlen ({cash})", en: "Pay only the doctor ({cash})" }
       result:
         de: Das Bein wird gerichtet. Eli fährt mit dem nächsten Wagen nach Hause.
         en: The leg is set. Eli rides home on the next wagon.
@@ -168,7 +168,7 @@
   chance: 0.1
   choices:
     - id: absetzen
-      label: { de: "Absetztanks bauen lassen (150 $)", en: "Have settling tanks built (150 $)" }
+      label: { de: "Absetztanks bauen lassen ({cash})", en: "Have settling tanks built ({cash})" }
       result:
         de: "In zwei Holztanks setzt sich das Wasser ab. Der Händler riecht am Öl und sagt nichts mehr. Für sauberes Öl zahlt der Trust ein paar Cent mehr."
         en: "The water settles out in two wooden tanks. The dealer sniffs the oil and says no more. For clean oil the Trust pays a few cents more."
@@ -177,8 +177,8 @@
     - id: mischen
       label: { de: "Das Wasser unters Öl mischen und verkaufen", en: "Mix the water in and sell it" }
       result:
-        de: "Es geht durch – diesmal, und bringt 150 $ extra. Der Händler schreibt sich Jacobs Namen in ein kleines schwarzes Buch; die nächsten Monate prüft der Trust jedes Fass und zieht ab."
-        en: "It goes through – this time, and brings in 150 $ extra. The dealer writes Jacob's name in a little black book; for months the Trust tests every barrel and docks him."
+        de: "Es geht durch – diesmal, und bringt {cash} extra. Der Händler schreibt sich Jacobs Namen in ein kleines schwarzes Buch; die nächsten Monate prüft der Trust jedes Fass und zieht ab."
+        en: "It goes through – this time, and brings in {cash} extra. The dealer writes Jacob's name in a little black book; for months the Trust tests every barrel and docks him."
       effects: { cash: 150, price: -0.05 }
       appointments: 0
     - id: hinnehmen
@@ -207,7 +207,7 @@
   chance: 0.08
   choices:
     - id: ableiten
-      label: { de: "Ein Rohr legen und das Gas unter den Kessel leiten (120 $)", en: "Lay a pipe and lead the gas under the boiler (120 $)" }
+      label: { de: "Ein Rohr legen und das Gas unter den Kessel leiten ({cash})", en: "Lay a pipe and lead the gas under the boiler ({cash})" }
       result:
         de: "Silas leitet das Gas unter den Kessel. Die Pumpe läuft Tag und Nacht, ohne ein Scheit Holz, und nachts brennt eine gelbe Flamme über dem Feld."
         en: "Silas leads the gas under the boiler. The pump runs day and night without a stick of wood, and at night a yellow flame burns over the field."

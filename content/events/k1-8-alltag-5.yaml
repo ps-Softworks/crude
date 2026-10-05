@@ -36,7 +36,7 @@
       they'll go to Tilly.
   choices:
     - id: nachgeben
-      label: { de: "Nachgeben (150 $)", en: "Give in (150 $)" }
+      label: { de: "Nachgeben ({cash})", en: "Give in ({cash})" }
       result:
         de: "Bis Mittag läuft der Kessel wieder. Crabb gibt Jacob die Hand, ohne zu lächeln. Die Männer arbeiten danach, als hätten sie etwas zu beweisen."
         en: "By noon the boiler is running again. Crabb shakes Jacob's hand without smiling. Afterwards the men work as if they had something to prove."
@@ -44,7 +44,7 @@
       effects: { cash: -150, production: 0.05 }
     - id: ersetzen
       public: [strike_break]
-      label: { de: "Neue Männer vom Hafen holen (120 $)", en: "Bring new men from the docks (120 $)" }
+      label: { de: "Neue Männer vom Hafen holen ({cash})", en: "Bring new men from the docks ({cash})" }
       result:
         de: Die neuen Männer sind billig und ungeschickt. Die alten stehen am Zaun und schauen zu, wie einer sich die Hand quetscht.
         en: The new men are cheap and clumsy. The old ones stand at the fence and watch one of them crush his hand.
@@ -79,7 +79,7 @@
       handkerchief. He hides it badly. "Don't, Jacob. I need the work."
   choices:
     - id: arzt
-      label: { de: "Ihn zu Doktor Haskell schicken und weiterbezahlen (110 $)", en: "Send him to Doctor Haskell and keep paying him (110 $)" }
+      label: { de: "Ihn zu Doktor Haskell schicken und weiterbezahlen ({cash})", en: "Send him to Doctor Haskell and keep paying him ({cash})" }
       result:
         de: Haskell verschreibt trockene Luft und keine Arbeit. Kerrigan lacht darüber. Er kommt trotzdem jeden Tag zum Zaun und schaut zu.
         en: Haskell prescribes dry air and no work. Kerrigan laughs at that. He still comes to the fence every day to watch.
@@ -125,7 +125,7 @@
       says nothing. That says enough.
   choices:
     - id: sanatorium
-      label: { de: "Ihn ins Sanatorium in den Bergen schicken (300 $)", en: "Send him to the sanatorium in the hills (300 $)" }
+      label: { de: "Ihn ins Sanatorium in den Bergen schicken ({cash})", en: "Send him to the sanatorium in the hills ({cash})" }
       result:
         de: Kerrigan fährt mit dem Abendzug, eine Decke über den Knien. Im Trupp wird wieder gesungen, leise.
         en: Kerrigan leaves on the evening train, a blanket over his knees. The crew sings again, quietly.
@@ -158,7 +158,7 @@
       needs a night watchman. He sleeps badly anyway.
   choices:
     - id: waechter
-      label: { de: "Ihn als Wächter einstellen (50 $)", en: "Hire him as watchman (50 $)" }
+      label: { de: "Ihn als Wächter einstellen ({cash})", en: "Hire him as watchman ({cash})" }
       result:
         de: Eli sitzt nachts mit der Laterne am Tank und zählt die Sterne, sagt er. Seitdem fehlt kein Fass mehr.
         en: Eli sits by the tank at night with the lantern and counts the stars, he says. Since then no barrel goes missing.
@@ -193,7 +193,7 @@
       only wants Mr. Harlan to know.
   choices:
     - id: geld
-      label: { de: "Geld schicken (120 $)", en: "Send money (120 $)" }
+      label: { de: "Geld schicken ({cash})", en: "Send money ({cash})" }
       result:
         de: Jacob schreibt drei Sätze und legt das Geld dazu. Den dritten Satz streicht er wieder.
         en: Jacob writes three sentences and encloses the money. He crosses out the third sentence.
@@ -239,7 +239,7 @@
       appointments: 2
       sharp: true
     - id: entlassen
-      label: { de: "Crabb entlassen und Dan Kerrigan nehmen (60 $ Vorschuss)", en: "Fire Crabb and take on Dan Kerrigan (60 $ advance)" }
+      label: { de: "Crabb entlassen und Dan Kerrigan nehmen ({cash} Vorschuss)", en: "Fire Crabb and take on Dan Kerrigan ({cash} advance)" }
       result:
         de: Crabb geht ohne ein Wort. Dan schuftet für zwei und hustet für drei. Abends erzählen sie sich von der Grube und lachen, obwohl nichts daran lustig war.
         en: Crabb leaves without a word. Dan works for two and coughs for three. In the evenings they tell each other about the pit and laugh, though none of it was funny.
@@ -283,7 +283,7 @@
       appointments: 3
       sharp: true
     - id: kanone
-      label: { de: "Den Tank mit der Kanone der Feuerwehr anschießen lassen (60 $)", en: "Have the fire brigade's cannon shoot the tank open (60 $)" }
+      label: { de: "Den Tank mit der Kanone der Feuerwehr anschießen lassen ({cash})", en: "Have the fire brigade's cannon shoot the tank open ({cash})" }
       result:
         de: Der zweite Schuss trifft unten. Das Öl läuft aus und brennt am Boden ab, weg von den Türmen. Vom Tank bleiben Reifen und Asche.
         en: The second shot hits low. The oil runs out and burns off on the ground, away from the derricks. Of the tank, hoops and ash remain.
@@ -317,14 +317,14 @@
   chance: 0.06
   choices:
     - id: turm
-      label: { de: "Zuerst den Turm aufrichten (180 $)", en: "Raise the derrick first (180 $)" }
+      label: { de: "Zuerst den Turm aufrichten ({cash})", en: "Raise the derrick first ({cash})" }
       result:
         de: Zimmerleute sind nach einem Sturm teuer. In einer Woche schlägt der Turm wieder. Ruth hat das Loch mit einer Plane geflickt, allein.
         en: Carpenters are dear after a storm. Within a week the derrick is pounding again. Ruth patched the hole with a tarpaulin, alone.
       requires: { minCash: 180 }
       effects: { cash: -180, ruth: -5 }
     - id: familie
-      label: { de: "Erst die Familie, dann der Turm (200 $)", en: "Family first, then the derrick (200 $)" }
+      label: { de: "Erst die Familie, dann der Turm ({cash})", en: "Family first, then the derrick ({cash})" }
       result:
         de: Jacob flickt das Dach selbst, mit Ruth, die die Leiter hält. Der Turm wartet eine Woche länger und kostet dann mehr.
         en: Jacob patches the roof himself, with Ruth holding the ladder. The derrick waits a week longer and then costs more.
@@ -359,7 +359,7 @@
   chance: 0.08
   choices:
     - id: schiessen
-      label: { de: "Die Quelle schießen lassen (150 $)", en: "Have the well shot (150 $)" }
+      label: { de: "Die Quelle schießen lassen ({cash})", en: "Have the well shot ({cash})" }
       result:
         de: "Ein dumpfer Schlag unter den Füßen, dann eine Fontäne aus Öl und Steinen. Die Quelle fließt wie am ersten Tag – eine Weile jedenfalls. Silas hat sich die ganze Zeit hinter dem Kesselhaus versteckt."
         en: "A dull thud underfoot, then a fountain of oil and stones. The well flows like on the first day – for a while, anyway. Silas hid behind the boiler house the whole time."
@@ -400,12 +400,12 @@
       effects: { strength: -8, ruth: 4, leaseCost: -0.2 }
       appointments: 2
     - id: trupp
-      label: { de: "Den Trupp eine Rampe aus Brettern bauen lassen", en: "Have the crew build a plank ramp" }
+      label: { de: "Den Trupp eine Rampe aus Brettern bauen lassen ({cash})", en: "Have the crew build a plank ramp ({cash})" }
       result:
         de: "Es dauert eine Stunde, eine lange. Dann reicht Crabb das Kind nach oben. Es hustet Schlamm und lebt. Der Farmer vergisst es nicht – und die Nachbarn am Nordhang auch nicht."
         en: "It takes an hour, a long one. Then Crabb hands the child up. She coughs mud and lives. The farmer does not forget – nor do the neighbours on the north slope."
-      effects: { cash: -30, strength: -2, leaseCost: -0.2 }
-      requires: { minCash: 30 }
+      effects: { cash: -90, strength: -2, leaseCost: -0.2 }
+      requires: { minCash: 90 }
     - id: weg
       label: { de: "Nach dem Sheriff schicken und weiterarbeiten", en: "Send for the sheriff and get back to work" }
       result:
@@ -429,13 +429,13 @@
       steckt ein Zapfhahn, den niemand eingebaut hat. Wagenspuren führen zur Straße
       nach Port Ellis. Es fehlen etwa zweihundert Barrel. Mittags setzt sich Sheriff
       Boyd Tatum, ohne zu fragen, und legt die Stiefel auf Jacobs Kiste: In Salt
-      Hill werde viel gestohlen. Für 50 $ im Monat schaue er öfter vorbei.
+      Hill werde viel gestohlen. Für {cash:sheriff} im Monat schaue er öfter vorbei.
     en: >-
       In the morning the ground around the tank is wet and smells of oil. A tap that
       nobody fitted is stuck in the bottom stave. Wagon tracks lead to the Port
       Ellis road. About two hundred barrels are gone. At noon Sheriff Boyd Tatum
       sits down without asking and puts his boots on Jacob's crate: a lot gets
-      stolen on Salt Hill. For 50 $ a month he'll look in more often.
+      stolen on Salt Hill. For {cash:sheriff} a month he'll look in more often.
   conditions: { minOilStock: 300, minRound: 3 }
   chance: 0.08
   choices:
@@ -448,7 +448,7 @@
       appointments: 2
       sharp: true
     - id: sheriff
-      label: { de: "Tatum zahlen (50 $)", en: "Pay Tatum (50 $)" }
+      label: { de: "Tatum zahlen ({cash})", en: "Pay Tatum ({cash})" }
       result:
         de: Tatum steckt das Geld ein, ohne es zu zählen. Drei Fässer tauchen wieder auf. Er kommt wirklich öfter vorbei – meistens zum Essen.
         en: Tatum pockets the money without counting it. Three barrels turn up again. He really does look in more often – mostly at mealtimes.
@@ -456,7 +456,7 @@
       effects: { cash: -50, oilStock: -140 }
       marks: [sheriff_bezahlt]
     - id: eigene_wache
-      label: { de: "Lieber einen eigenen Nachtwächter anstellen (70 $)", en: "Hire your own night watchman instead (70 $)" }
+      label: { de: "Lieber einen eigenen Nachtwächter anstellen ({cash})", en: "Hire your own night watchman instead ({cash})" }
       result:
         de: "Der Nachtwächter ist ein Veteran mit einer Schrotflinte und einem Hund. Tatum sieht das gar nicht gern. Seitdem schleicht nachts niemand mehr um den Tank."
         en: "The watchman is a veteran with a shotgun and a dog. Tatum doesn't like it one bit. Since then nobody creeps round the tank at night."
@@ -466,8 +466,8 @@
     - id: abschreiben
       label: { de: "Den Hahn ausbauen und abschreiben", en: "Pull the tap and write it off" }
       result:
-        de: Zweihundert Barrel. In der Woche danach kauft ein Händler im Hafen sehr billig Öl ein.
-        en: Two hundred barrels. The week after, a trader at the harbour is buying oil very cheaply.
-      effects: { oilStock: -200 }
+        de: Sechshundert Barrel – die Diebe haben wochenlang gezapft. In der Woche danach kauft ein Händler im Hafen sehr billig Öl ein.
+        en: Six hundred barrels – the thieves have been tapping for weeks. The week after, a trader at the harbour is buying oil very cheaply.
+      effects: { oilStock: -600 }
       appointments: 0
       default: true

@@ -33,7 +33,7 @@
   certain: true
   choices:
     - id: decken
-      label: { de: "Den Schaden selbst zahlen und schweigen (120 $)", en: "Pay for the damage and say nothing (120 $)" }
+      label: { de: "Den Schaden selbst zahlen und schweigen ({cash})", en: "Pay for the damage and say nothing ({cash})" }
       result:
         de: "Jacob bezahlt das neue Seil. Silas sagt kein Wort dazu, aber er ist von da an jeden Morgen als Erster am Turm. Der Turm läuft wie nie."
         en: "Jacob pays for the new cable. Silas never says a word about it, but from then on he is the first at the derrick every morning. The derrick runs as never before."
@@ -72,7 +72,7 @@
   certain: true
   choices:
     - id: fair
-      label: { de: "Ihm 400 $ auf seinen Anteil zahlen und den Rest schriftlich machen", en: "Pay him 400 $ against his share and put the rest in writing" }
+      label: { de: "Ihm {cash} auf seinen Anteil zahlen und den Rest schriftlich machen", en: "Pay him {cash} against his share and put the rest in writing" }
       result:
         de: >-
           Ruth setzt den Vertrag auf, Silas malt seinen Namen darunter, langsam wie
@@ -80,11 +80,11 @@
         en: >-
           Ruth draws up the contract and Silas paints his name beneath it, slow as a
           schoolboy. Then he laughs so loudly the horses shy.
-      requires: { minCash: 400 }
-      effects: { cash: -400 }
+      requires: { minCash: 500 }
+      effects: { cash: -500 }
       marks: [silas_fair]
     - id: auskaufen
-      label: { de: "Seinen Anteil für 1.000 $ ablösen – der Turm gehört dann Jacob", en: "Buy out his share for 1,000 $ – the rig is Jacob's from now on" }
+      label: { de: "Seinen Anteil für {cash} ablösen – der Turm gehört dann Jacob", en: "Buy out his share for {cash} – the rig is Jacob's from now on" }
       result:
         de: >-
           Silas zählt die Scheine auf dem Fass. „Ist ehrliches Geld“, sagt er.
@@ -203,7 +203,7 @@
   conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   choices:
     - id: nachzahlen
-      label: { de: "Hingehen und ihm doch noch seinen Anteil zahlen (600 $)", en: "Go and pay him his share after all (600 $)" }
+      label: { de: "Hingehen und ihm doch noch seinen Anteil zahlen ({cash})", en: "Go and pay him his share after all ({cash})" }
       result:
         de: >-
           Silas steigt vom Stuhl und starrt auf das Geld. „Spät“, sagt er. Dann
@@ -211,8 +211,8 @@
         en: >-
           Silas climbs down from the chair and stares at the money. "Late," he says.
           Then he takes it anyway, and the story ends in mid-sentence.
-      requires: { minCash: 600 }
-      effects: { cash: -600 }
+      requires: { minCash: 800 }
+      effects: { cash: -800 }
       marks: [silas_versoehnt]
     - id: reden_lassen
       label: { de: "Ihn reden lassen – wer glaubt schon einem Säufer", en: "Let him talk – who believes a drunk" }

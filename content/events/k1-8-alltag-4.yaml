@@ -42,6 +42,7 @@
         de: Pettibone zählt die Scheine zweimal, dann schiebt er sie hinüber. Seine Feder kratzt Jacobs Namen in ein dickes Buch.
         en: Pettibone counts the notes twice, then slides them across. His pen scratches Jacob's name into a thick ledger.
       effects: { cash: 600 }
+      fixedCash: true
       marks: [bank_kredit]
     - id: ablehnen
       label: { de: "Danken und gehen", en: "Thank him and leave" }
@@ -79,6 +80,7 @@
         en: Pettibone signs the receipt with a smile that costs nothing. The page in the thick ledger is crossed out.
       requires: { minCash: 700 }
       effects: { cash: -700 }
+      fixedCash: true
     - id: haelfte
       label: { de: "Halb in bar, halb in Öl (350 $ und 350 Barrel)", en: "Half in cash, half in oil (350 $ and 350 barrels)" }
       result:
@@ -86,6 +88,7 @@
         en: Pettibone credits the oil at the posted price, not a cent more. The bank sells it a week later for more.
       requires: { minCash: 350, minOilStock: 350 }
       effects: { cash: -350, oilStock: -350 }
+      fixedCash: true
       appointments: 2
     - id: pfaendung
       label: { de: "Nicht zahlen", en: "Don't pay" }
@@ -93,6 +96,7 @@
         de: Zwei Männer der Bank kommen mit einem Wagen und einer Liste. Sie nehmen das Öl aus dem Tank und, was fehlt, in bar.
         en: Two bank men arrive with a wagon and a list. They take the oil from the tank and the rest in cash.
       effects: { oilStock: -400, cash: -400 }
+      fixedCash: true
       appointments: 0
       default: true
 
@@ -103,21 +107,22 @@
   text:
     de: >-
       Hinter dem Mietstall hat Ike Rourke einen Tisch, eine Kasse und einen Neffen
-      mit Knüppel. Er leiht ohne Papiere und ohne Fragen. 300 $ jetzt, 420 $ in
+      mit Knüppel. Er leiht ohne Papiere und ohne Fragen. 800 $ jetzt, 1.120 $ in
       zwei Quartalen. „Ich frag nicht, wofür. Ich frag nur einmal nach.“
     en: >-
       Behind the livery stable Ike Rourke keeps a table, a cash box and a nephew
-      with a club. He lends without papers and without questions. 300 $ now,
-      420 $ in two quarters. "I don't ask what for. I only ask once."
+      with a club. He lends without papers and without questions. 800 $ now,
+      1,120 $ in two quarters. "I don't ask what for. I only ask once."
   conditions: { minRound: 2, maxCash: 400, maxRound: 13 }
   chance: 0.15
   choices:
     - id: leihen
-      label: { de: "Leihen (+300 $, in zwei Quartalen 420 $)", en: "Borrow (+300 $, 420 $ in two quarters)" }
+      label: { de: "Leihen (+800 $, in zwei Quartalen 1.120 $)", en: "Borrow (+800 $, 1,120 $ in two quarters)" }
       result:
         de: Rourke zählt das Geld auf den Tisch und schreibt nichts auf. Der Neffe merkt sich Jacobs Gesicht.
         en: Rourke counts the money onto the table and writes nothing down. The nephew memorises Jacob's face.
-      effects: { cash: 300 }
+      effects: { cash: 800 }
+      fixedCash: true
       marks: [wucher_kredit]
       appointments: 0
     - id: nein
@@ -139,33 +144,35 @@
   text:
     de: >-
       Der Neffe mit dem Knüppel sitzt auf einem Fass neben Jacobs Bohrturm und
-      schnitzt an einem Stock. Es seien 420 $, sagt er, und er habe den ganzen Tag
+      schnitzt an einem Stock. Es seien 1.120 $, sagt er, und er habe den ganzen Tag
       Zeit. Der Bohrtrupp arbeitet sehr leise.
     en: >-
       The nephew with the club sits on a barrel beside Jacob's derrick, whittling
-      a stick. It's 420 $, he says, and he has all day. The drilling crew works
+      a stick. It's 1,120 $, he says, and he has all day. The drilling crew works
       very quietly.
   choices:
     - id: zahlen
-      label: { de: "Zahlen (420 $)", en: "Pay (420 $)" }
+      label: { de: "Zahlen (1.120 $)", en: "Pay (1,120 $)" }
       result:
         de: Der Neffe zählt nach, steckt das Geld ein und tippt an die Mütze. Am Abend ist das Fass, auf dem er saß, leer.
         en: The nephew counts, pockets the money and touches his cap. By evening the barrel he sat on is empty.
-      requires: { minCash: 420 }
-      effects: { cash: -420 }
+      requires: { minCash: 1120 }
+      effects: { cash: -1120 }
+      fixedCash: true
     - id: oel
-      label: { de: "Mit Öl bezahlen (500 Barrel)", en: "Pay in oil (500 barrels)" }
+      label: { de: "Mit Öl bezahlen (1.200 Barrel)", en: "Pay in oil (1,200 barrels)" }
       result:
         de: Rourke nimmt Öl, aber nur zu seinem Preis. Zwei Wagen fahren voll nach Port Ellis.
         en: Rourke takes oil, but only at his price. Two wagons roll full to Port Ellis.
-      requires: { minOilStock: 500 }
-      effects: { oilStock: -500 }
+      requires: { minOilStock: 1200 }
+      effects: { oilStock: -1200 }
     - id: sitzen
       label: { de: "Ihn sitzen lassen", en: "Leave him sitting there" }
       result:
         de: Am Abend geht der Neffe. In der Nacht brennt der Schuppen mit dem Seil und dem Werkzeug. Rourke bekommt sein Geld trotzdem, aus Jacobs Kasse, vor Zeugen.
         en: In the evening the nephew leaves. That night the shed with the rope and tools burns. Rourke gets his money anyway, out of Jacob's till, in front of witnesses.
-      effects: { cash: -420, strength: -6 }
+      effects: { cash: -1120, strength: -6 }
+      fixedCash: true
       appointments: 0
       default: true
 
@@ -197,6 +204,7 @@
         de: Der junge Mann bläst auf die Tinte. „Mr. Crane schätzt verlässliche Partner.“ Im Hafen weiß man es am Abend.
         en: The young man blows on the ink. "Mr. Crane values reliable partners." By evening the harbour knows.
       effects: { oilStock: -400, cash: 440 }
+      fixedCash: true
     - id: ablehnen
       label: { de: "Ablehnen", en: "Decline" }
       result:
@@ -227,7 +235,7 @@
   chance: 0.15
   choices:
     - id: wache
-      label: { de: "Eine Nachtwache für die ganze Saison bezahlen (200 $)", en: "Pay for a night watch all season (200 $)" }
+      label: { de: "Eine Nachtwache für die ganze Saison bezahlen ({cash})", en: "Pay for a night watch all season ({cash})" }
       result:
         de: Zwei Männer mit Laternen und einer Flinte. In den nächsten Nächten passiert nichts, und das kostet jede Nacht.
         en: Two men with lanterns and a shotgun. Nothing happens the next few nights, and that costs every night.
@@ -242,7 +250,7 @@
       marks: [bullard_rache]
       appointments: 0
     - id: ersetzen
-      label: { de: "Ein neues Seil kaufen und schweigen (60 $)", en: "Buy a new cable and keep quiet (60 $)" }
+      label: { de: "Ein neues Seil kaufen und schweigen ({cash})", en: "Buy a new cable and keep quiet ({cash})" }
       result:
         de: "Das alte Seil hängt jetzt im Schuppen, als Andenken. Silas schaut es jeden Morgen an. Bis das neue Seil eingelaufen ist, schlägt der Turm nur halb so oft."
         en: "The old cable now hangs in the shed as a keepsake. Silas looks at it every morning. Until the new rope is broken in, the derrick strikes only half as often."
@@ -269,19 +277,19 @@
   chance: 0.35
   choices:
     - id: trinkgeld
-      label: { de: "Gaffney ein „Trinkgeld“ geben (40 $)", en: "Give Gaffney a \"tip\" (40 $)" }
+      label: { de: "Gaffney ein „Trinkgeld“ geben ({cash})", en: "Give Gaffney a \"tip\" ({cash})" }
       result:
         de: "Am nächsten Morgen stehen zwei Kesselwagen am Gleis. Gaffney grüßt jetzt mit Namen und bucht Jacobs Fässer in die billigere Klasse – einen Cent je Barrel."
         en: "The next morning two tank cars stand on the siding. Gaffney now greets him by name and books Jacob's barrels in the cheaper class – one cent a barrel."
       requires: { minCash: 40 }
       effects: { cash: -40, railTariff: -0.01 }
     - id: fuhrwerk
-      label: { de: "Mit Fuhrwerken zum Hafen fahren (110 $)", en: "Haul it to the harbour by wagon (110 $)" }
+      label: { de: "Mit Fuhrwerken zum Hafen fahren ({cash})", en: "Haul it to the harbour by wagon ({cash})" }
       result:
         de: Sechs Wagen, zwei Tage, ein gebrochenes Rad. Das Öl kommt an, Thorne bekommt nichts.
         en: Six wagons, two days, one broken wheel. The oil arrives; Thorne gets nothing.
-      requires: { minCash: 110 }
-      effects: { cash: -110 }
+      requires: { minCash: 120 }
+      effects: { cash: -120 }
       appointments: 2
     - id: warten
       label: { de: "Warten", en: "Wait" }
@@ -313,7 +321,7 @@
   chance: 0.35
   choices:
     - id: graben
-      label: { de: "Mitmachen (150 $ und eine Woche Arbeit)", en: "Join in (150 $ and a week's work)" }
+      label: { de: "Mitmachen ({cash} und eine Woche Arbeit)", en: "Join in ({cash} and a week's work)" }
       result:
         de: "Der Tank ist ein Loch mit Lehmwänden und einem Bretterdach. Tilly füllt ihre Hälfte als Erste, und Jacob lagert hundert Barrel mit ein. Wer nicht sofort verkaufen muss, verkauft besser: Eine Weile bekommt Jacob ein paar Cent mehr."
         en: "The tank is a pit with clay walls and a plank roof. Tilly fills her half first, and Jacob stores a hundred barrels alongside. Whoever need not sell at once sells better: for a while Jacob gets a few cents more."
@@ -357,6 +365,7 @@
         en: Pickett takes the money without haggling. He doesn't cry; he just looks at the derricks a long time.
       requires: { minCash: 150 }
       effects: { cash: -150, oilStock: 300 }
+      fixedCash: true
       marks: [wildcatter_verprellt]
     - id: fair
       label: { de: "Den vollen Preis zahlen (300 Barrel für 300 $)", en: "Pay full price (300 barrels for 300 $)" }
@@ -365,6 +374,7 @@
         en: "Pickett counts twice. \"Nobody would have done that.\" He tells everyone at the harbour before his boat sails. The farmers on the hill like to hear it – for a while they lease to Jacob cheaper."
       requires: { minCash: 300 }
       effects: { cash: -300, oilStock: 300, leaseCost: -0.15 }
+      fixedCash: true
       marks: [wildcatter_geholfen]
     - id: vorbei
       label: { de: "Vorbeigehen", en: "Walk past" }

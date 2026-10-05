@@ -9,6 +9,7 @@ import { CONDITION_KEYS, EFFECT_KEYS, MAIL_KINDS, RIVAL_IDS, type Conditions, ty
 import type { DocumentDef, DocumentField } from './documents';
 import { SIM_MARKS } from './family';
 import { LANGUAGES, type LocalizedText } from './i18n';
+import { brokenCashPlaceholders } from './letterScale';
 import { RIVAL_SIM_MARKS } from './trust';
 import { LOGISTICS_SIM_MARKS } from './logistics';
 import { TIMESKIP_SIM_MARKS } from './timeskipMarks';
@@ -42,7 +43,7 @@ export interface ParsedEvents {
 }
 
 const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'routine', 'appointments', 'choices', 'mail', 'deadline', 'document', 'certain', 'rival', 'cooldown', 'group', 'draft', 'ranch', 'visitor', 'tableau'];
-const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default', 'appointments', 'requiresFound', 'marksIfForged', 'sharp', 'unlocks', 'public'];
+const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default', 'appointments', 'requiresFound', 'marksIfForged', 'sharp', 'unlocks', 'public', 'fixedCash'];
 const DOCUMENT_KEYS = ['title', 'reference', 'forgeryChance', 'fields'];
 const FIELD_KEYS = ['id', 'label', 'value', 'reference', 'forged'];
 const ID_MUSTER = /^[a-z0-9_]+$/;
@@ -229,6 +230,11 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
       fehler([...pfad, 'sharp'], `${wer}: „sharp“ muss true oder false sein.`);
       ok = false;
     }
+    // Briefe mit Gewicht (Spielspaß-Durchgang): fixedCash hält den Geldbetrag fest, statt ihn mit Jacobs Geschäft wachsen zu lassen.
+    if (raw.fixedCash !== undefined && typeof raw.fixedCash !== 'boolean') {
+      fehler([...pfad, 'fixedCash'], `${wer}: „fixedCash“ muss true oder false sein.`);
+      ok = false;
+    }
     const marksIfForged = namen(raw, 'marksIfForged', pfad, wer);
     // Gebiete (0.2.15+5): Diese Wahl schaltet Gebiete aus content/map.yaml frei.
     const unlocks = namen(raw, 'unlocks', pfad, wer);
@@ -247,6 +253,7 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
     if (raw.requiresFound === true) choice.requiresFound = true;
     if (marksIfForged.length > 0) choice.marksIfForged = marksIfForged;
     if (raw.sharp === true) choice.sharp = true;
+    if (raw.fixedCash === true) choice.fixedCash = true;
     if (unlocks.length > 0) choice.unlocks = unlocks;
     if (oeffentlich.length > 0) choice.public = oeffentlich as PublicAct[];
     if (hasSystemEffects(system)) choice.system = system;
@@ -463,6 +470,21 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
         fehler([...pfad, 'choices'], `${wer}: Höchstens eine Wahl darf „default: true“ haben.`);
         ok = false;
       }
+      // Briefe mit Gewicht: {cash} braucht eine Antwort mit Geld, {cash:wahl} eine Wahl dieses Ereignisses mit Geld.
+      const kaputt = (text: LocalizedText | null | undefined, choice: EventChoice | undefined) =>
+        text ? LANGUAGES.flatMap((l) => brokenCashPlaceholders(text[l] ?? '', { choices }, choice)) : [];
+      const imText = kaputt(body, undefined);
+      if (imText.length > 0) {
+        fehler([...pfad, 'text'], `${wer}: Platzhalter ${[...new Set(imText)].join(', ')} zeigt auf keine Wahl mit „cash“.`);
+        ok = false;
+      }
+      choices.forEach((c, i) => {
+        const inWahl = [...kaputt(c.label, c), ...kaputt(c.result, c)];
+        if (inWahl.length > 0) {
+          fehler([...pfad, 'choices', i], `${wer}, Wahl „${c.id}“: Platzhalter ${[...new Set(inWahl)].join(', ')} braucht „cash“ in den Effekten.`);
+          ok = false;
+        }
+      });
     }
     if (!ok || !title || !body || !conditions || !marked || !notMarked) return null;
     const def: EventDef = {

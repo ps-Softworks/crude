@@ -47,9 +47,10 @@ function urteil(events: EventDef[], read = readMarks(events, []), later = new Se
 }
 
 describe('Wirkung der Antworten (0.2.15+3)', () => {
-  it('Schwelle = minShare × chapterMoney aus balance.yaml (2 % von 10.000 $ = 200 $)', () => {
+  it('Schwelle = minShare × chapterMoney aus balance.yaml (Kapitel 1: 1 % von 60.000 $ = 600 $, spätere Kapitel 200 $)', () => {
     expect(T).toBe(Math.round(balance.events.relevance.chapterMoney * balance.events.relevance.minShare));
-    expect(T).toBe(200);
+    expect(T).toBe(600);
+    expect(relevanceThreshold(balance, false)).toBe(200);
   });
 
   it('sofortige Wirkung: Geld, Öl zum Trendpreis, Kraft und Familie mit den Gewichten des Standard-Bots; Beträge zählen', () => {
