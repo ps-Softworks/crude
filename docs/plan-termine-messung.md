@@ -335,3 +335,70 @@ Format 22. Neu ist nur `freight.poolLeft` (wer zuletzt aus der Transportgemeinsc
 - **Zeitsprung:** Das Wissen aus Kapitel 1 bleibt. Was der Verwalter gebohrt hat, steht sofort als Bohrbericht auf der Karte (`learnFromWells`), und um bekannte Funde – auch Bullards und im neuen Land – redet man: Unbekannte Nachbarranches sind beritten (`hearsayAroundFinds`, Quelle „Gerede“). Neues Land ohne Funde bleibt Gerücht, bis Jacob hinreitet.
 - **Seismik (Kapitel 3) schärft die Erkundung, statt sie zu ersetzen:** Der Bericht rechnet auf dem auf, was Jacob über die Ranch schon weiß (`posteriorChance` aus Ritten, Karten, Berichten und Nachbarn), statt auf der Zone – und nie auf der verdeckten Fundchance q. Das Ergebnis geht als Hinweis „Seismik“ (Stufe 3, Chancen 1 − missTrap bzw. falseTrap) zurück ins Wissen: Das Band des Berichts wird die Prognose der Ranch, die Nachbarn rechnen den Hinweis mit. Ein Bohrbericht (gekauft, Tagebuch, eigene Bohrung) geht wieder vor. Tests in `src/sim/seismik.test.ts`.
 - **Spielstand:** Format 22 = main-Format 21 (Kapitel 3) plus alles aus den Etappen 1–3; Stände bis Format 21 laden mit Ersatzwerten.
+
+# Spielspaß-Durchgang: Tieferbohren
+
+Ziel: „Tiefer oder aufgeben?“ ist eine echte Wahl um die Gewinnschwelle. Die Prognose des Geologen entscheidet, und das Ranch-Fenster rechnet vor, ab wann sich das Weiterbohren lohnt (GDD §5: Push your luck – viele Riesenfelder fanden die, die weiterbohrten).
+
+## Was jetzt anders ist (kurz)
+
+- **Tief unten seltener, aber größer:** Neu je Bohrstufe `findFactor` (balance.yaml `drilling.stages`): 300 m ×1, 600 m ×2, 900 m ×3. Beim ersten Fund auf einer Ranch in der Tiefe wächst ihr Vorrat (und der ihres Feldes) um diesen Faktor; die Anfangsrate hängt am Vorrat je Fläche und wächst mit. Weitere Bohrlöcher derselben Ranch gehen auf dieselbe Tiefe und erben das (`deepFindReserves` in `src/sim/drilling.ts`). Wo das Öl liegt, bleibt 85 / 10 / 5 % (unverändert), ebenso Kosten und Risiken.
+- **Ehrliche Prognose für die nächste Stufe:** Nach einer trockenen Stufe schätzt der Geologe aus dem Bohrklein (`makeDeeperForecast`, balance.yaml `forecast.deeper`): Fehler ± 40 % der Chance, Spanne halb so breit wie die Mitte, auf 1 Punkt gerundet. Vorher galt die breite 30-Punkte-Spanne – bei 5–10 % echter Chance wurde sie an 0 % abgeschnitten, die Mitte zeigte im Schnitt **17,6 %** bei **8,9 %** echten Treffern. Jetzt **13,2 %** bei **9,0 %** (der Rest kommt aus Jacobs Wissen, siehe unten).
+- **Rechenhilfe „lohnt ab“** (`src/sim/deeper.ts`, `findValue` in `src/sim/invest.ts`): was ein Fund in der nächsten Tiefe bis Kapitelende etwa in die Kasse brächte – wie beim Ausbau mit Rückgang, Feld und Preisdruck, aber ohne verdecktes Wissen (Vorrat = Mitte der Spanne × Fläche × findFactor), kleine Quelle und Gusher nach dem Verhältnis der Zone gemischt. Einsatz = Stufenkosten + im Schnitt Unfall-Entschädigung und Bergung. **Lohnt ab = Einsatz ÷ Wert eines Funds.** Spät im Kapitel bringt ein Fund nichts mehr – dann steht da „käme zu spät“.
+- **Ranch-Fenster** zeigt bei der Entscheidung: „Ein Fund in 600 m wäre etwa 2-mal so groß wie flach und brächte bis Kapitelende rund 27.885 $ als kleine Quelle, als Gusher rund 64.631 $. Einsatz 1.100 $, dazu im Schnitt 46 $ für Unfall oder klemmendes Werkzeug. **Lohnt ab etwa 3 %** (Geologe: 23 %) – eher weiterbohren.“ (Seed bot-1, Runde 3.) Ist der Gusher weniger wert als die kleine Quelle, weil so viel Öl den Preis aller Barrel drückt, sagt das Fenster es dazu. Urteil: ab 1,25 × Schwelle „eher weiterbohren“, ab 0,8 × „ein knappes Spiel“, sonst „eher aufgeben“. Ruths Zettel und die Bohrturm-Akte nennen kurz „600 m lohnt ab etwa 3 %, Geologe 23 %“. Rundenbericht und Protokoll melden einen tiefen Fund („Das Weiterbohren hat sich gelohnt: etwa 2-mal so viel Öl wie flach“) und ein trockenes Ende in der Tiefe.
+- **Einstieg:** `tutorial.deeperMinChance` (25 %) entfällt. Der Hinweis rät zum Tieferbohren, wenn die Chance des Geologen die Gewinnschwelle erreicht, und nennt sie (`{schwelle}` in content/tutorial.yaml).
+- **Bots** (balance.yaml `bots.deeper`): tiefer, wenn Geologe ≥ Schwelle × Faktor – vorsichtig 1,5 (dazu Rücklage, höchstens 600 m), gierig 0,7 (auch knapp darunter, auf Kredit), ausgewogen 1,0. Vorher: vorsichtig bis 600 m, gierig und ausgewogen immer – ohne Blick auf die Chance.
+- **Zeitsprung:** Der Verwalter bohrt mit derselben Regel für tiefe Funde (`deepFindReserves` beim Bohren und beim Abschluss laufender Bohrungen).
+- **Spielstand:** unverändert (Vorrat von Ranch und Feld stand schon im Spielstand), kein neues Format.
+
+## Wie gemessen wird
+
+`npx tsx tools/tiefbohrung.ts 500`: die drei planenden Bots mit allen Ereignissen, 500 Seeds (wie `npm run bots`). Bei jeder Tiefer-Entscheidung: **wahre Chance** = Chance der nächsten Stufe aus der verdeckten Fundchance q *und* Jacobs eigenen Hinweisen auf der Ranch (exakter Bayes – die Hinweise hängen an der echten Geologie; q allein unterschätzt die Treffer bei Ranches, die nach guten Hinweisen gewählt wurden: 5,6 % statt 9,0 %). „Richtig“ heißt: Weiterbohren hat nach wahrer Chance einen positiven Erwartungswert (wahre Chance ≥ Schwelle).
+
+| Entscheidungen | Anzahl | Weiterbohren richtig | weitergebohrt | Bot lag richtig | Treffer, wo weitergebohrt | Ø wahre Chance | Ø Geologe | echte Trefferquote | Median „lohnt ab“ | Ø Wert eines Funds |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| alle | 9.306 | **34,7 %** | 58,9 % | 64,9 % | 10,7 % | 9,6 % | 13,2 % | 9,0 % | 5,2 % | 26.982 $ |
+| vorsichtig | 2.389 | 34,2 % | 31,5 % | 71,0 % | 11,7 % | 10,8 % | 14,6 % | 10,3 % | 6,1 % | 24.435 $ |
+| gierig | 3.788 | 29,9 % | 68,5 % | 59,2 % | 9,1 % | 8,3 % | 11,7 % | 7,5 % | 5,5 % | 23.989 $ |
+| ausgewogen | 3.129 | 40,7 % | 68,3 % | 67,1 % | 12,4 % | 10,1 % | 13,8 % | 10,0 % | 4,1 % | 32.550 $ |
+| auf 600 m | 6.134 | 36,4 % | 59,7 % | 67,3 % | 12,0 % | 10,6 % | 14,5 % | 10,0 % | 5,3 % | 24.414 $ |
+| auf 900 m | 3.172 | 31,2 % | 57,5 % | 60,2 % | 8,1 % | 7,5 % | 10,6 % | 7,2 % | 5,0 % | 31.948 $ |
+
+| Tiefe | Anteil der Funde | Ø Anfangsrate bbl/Tag | Ø Barrel bis Kapitelende | Ø Wert laut Rechenhilfe |
+| --- | ---: | ---: | ---: | ---: |
+| 300 m | 90,8 % | 141 | 70.868 | – |
+| 600 m | 6,9 % | 290 | 145.698 | 36.235 $ |
+| 900 m | 2,3 % | 437 | 203.329 | 38.654 $ |
+
+- **Echte Wahl:** In gut einem Drittel der Fälle (34,7 %, Ziel 30–50 %) lohnt das Weiterbohren wirklich. Die wahre Chance streut stark (600 m: Median 4 %, oberes Viertel 14 %, oberes Zehntel 35 %), die Schwelle liegt meist bei 3–14 %. Mit dem alten Regelwerk („immer tiefer“) lagen die Bots in 38 % der Fälle richtig, jetzt in 65 %.
+- **Weiterbohren lohnt sich, wo der Geologe es sagt:** Wo die Bots weitergebohrt haben, trafen sie 10,7 %, im Schnitt aller Entscheidungen hätten 9,0 % getroffen.
+- **Geologe gegen echte Quote:** Er sortiert richtig (Stichprobe 300 Partien: wo seine Grundlage 1 / 6 / 11 / 21 / 31 % sagte, trafen 3 / 5 / 10 / 12 / 23 %), ist oben aber zu optimistisch, im Schnitt 13,2 % statt 9,0 %. Grund ist nicht mehr die Spanne, sondern Jacobs Wissen (`posteriorChance`): Es geht von der Ø Fundchance der Zone aus und rechnet Nachbarhinweise mit, als wären sie Hinweise auf diese Ranch. Das ist das Erkundungsmodell aus Etappe 1 – hier bewusst nicht angefasst.
+- **Ø Wert eines tiefen Funds:** 36.000–39.000 $ bis Kapitelende, gut doppelt so viel Öl wie ein flacher Fund. Tiefe Funde sind 9 % aller Funde (vorher mit „immer tiefer“ 13 %, weil die Bots jetzt aufgeben, wo es nicht lohnt).
+
+## Kapitel-1-Zielwerte (npm run bots, 1.000 Partien je Strategie)
+
+Alle Kennzahlen zu Funden bleiben im Rahmen: kleine Funde mit 50–500 bbl/Tag 99,7 % (vorher 99,7 %; ein kleiner Fund in 900 m hat höchstens 3 × 125 = 375 bbl/Tag), Gusher ÷ klein 4,99 (5,04 – tiefe Funde heben beide gleich), Rückgang 13,2 % (12,3 %), blinde Wildcat 14,5 % (unverändert, Stufe 1 gleich). Die Definitionen mussten nicht geschärft werden.
+
+| Kennzahl | vorher (0.4.20+4) | jetzt | Rahmen |
+| --- | ---: | ---: | --- |
+| Kapitelziel ausgewogen | 66,9 % | **80,2 %** | 20–70 %, **vorläufig bis 82 %** |
+| Kapitelziel vorsichtig / gierig | 58,4 / 72,7 % | 64,0 / 79,8 % | – |
+| Höchste Siegquote | 35,6 % (ausgewogen) | 38,5 % (gierig) | ≤ 40 % |
+| Pleitequote ausgewogen / gierig | 0,2 / 4,5 % | 0,2 / 3,8 % | ≤ 15 % / 3–45 % |
+| Ø Imperium vorsichtig ÷ Mutigere | 0,81 | 0,74 | ≤ 0,95 |
+| Pipeline in Partien mit Kapitelziel | 77,4 % | 79,2 % | ≤ 80 % |
+| Ø Imperium ausgewogen | 112.063 $ | 134.079 $ | – |
+| Zeitsprung I, Förderung nachher ÷ vorher (ausgewogen) | 0,69 | 0,62 | – |
+
+## Abweichungen (mit Grund)
+
+- **Kapitelziel 80,2 % statt höchstens 70 %:** Das kommt vor allem daher, dass der Standard-Bot jetzt klug entscheidet. Gegenproben mit 300–400 Partien: alte Regel („immer tiefer“) ohne größere Funde 67 %, alte Regel mit größeren Funden 75 %, neue Regel ohne größere Funde 76 %. Weder Bohrkosten (600 m 1.800 $ / 900 m 2.600 $: 77 %) noch andere Anteile in der Tiefe (80/13/7 oder 75/17/8: 78–79 %) noch strengere Bot-Faktoren ändern viel. Ein höheres Kapitelziel hilft kaum (90.000 $ / 7 Quellen: 71 %) und schiebt den Pipeline-Anteil über 80 %. Deshalb ist die Obergrenze in balance.yaml **vorläufig** auf 82 % gesetzt – die Gesamt-Balance (Kapitelziel, Startbedingungen) folgt als eigener Schritt.
+- **Zeitsprung-Test** (`timeskip.test.ts`): Die Firma fördert am Kapitelende mehr (tiefe Funde), der Verwalter hält im Median 0,55 statt 0,6 davon. Schwelle 0,6 → 0,5.
+- **Kampagnen-Test „verfehlte Kapitelprüfung“** (`campaignBots.test.ts`): Die Seeds bot-0/3/5 bestehen jetzt alle; der Test erzwingt das Verfehlen mit einem unerreichbaren Kapitelziel.
+- **Bohrquote-Test:** Die verdeckte Geologie bleibt gleich – nur Jacobs eigener tiefer Fund vergrößert den Vorrat um genau den findFactor.
+
+## Offen
+
+- Gesamt-Balance Kapitel 1 (Kapitelziel 80 %, vorläufige Grenze 82 %).
+- Jacobs Wissen ist bei hohen Chancen zu optimistisch (Nachbarhinweise zählen voll mit) – betrifft auch die erste Bohrung, gehört zur Erkundung.
+- Die Rechenhilfe sieht nur eine Stufe voraus: Dass nach trockenen 600 m noch 900 m kämen, zählt sie nicht mit (vorsichtige Schwelle).

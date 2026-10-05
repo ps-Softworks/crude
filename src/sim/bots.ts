@@ -16,6 +16,7 @@ import { creditLimit, debt, headroom, takeLoan } from './credit';
 import { applyAction, parcelActions, type DeskActionKind } from './desk';
 import { drillQuote, stageCost, wellOf, wellsOn, type Well } from './drilling';
 import { pumpOutlook, wellOutlook, type Outlook } from './invest';
+import { deeperOutlook } from './deeper';
 import { buyRig, freeRig, rentRig, returnRig, rigWell, upgradeRig, type RigResult } from './rigs';
 import { chapterCheck } from './chapter';
 import { empireValue } from './empire';
@@ -631,6 +632,16 @@ function openWells(state: GameState) {
   return state.wells.filter((w) => w.status === 'decision' || w.status === 'stuck');
 }
 
+/**
+ * Spielspaß K1 (Tieferbohren): Lohnt die nächste Stufe nach der Chance des Geologen?
+ * Ja, wenn sie mindestens die Schwelle „lohnt ab“ × margin erreicht (bots.deeper) und ein
+ * Fund überhaupt noch etwas brächte. Die verdeckte Fundchance sieht der Bot nie.
+ */
+export function deeperWorth(state: GameState, balance: Balance, parcelId: string, margin: number): boolean {
+  const o = deeperOutlook(state, balance, parcelId);
+  return o !== null && o.chance !== null && o.value > 0 && o.breakEven < 1 && o.chance >= o.breakEven * margin;
+}
+
 // --- vorsichtig ---------------------------------------------------------------
 
 function cautiousTurn(state: GameState, balance: Balance, catalog: readonly EventDef[], ledger: TransportLedger): GameState {
@@ -639,7 +650,8 @@ function cautiousTurn(state: GameState, balance: Balance, catalog: readonly Even
   for (const well of openWells(state)) {
     const next = well.stage + 1;
     const leistbar = next <= maxStage && next <= balance.drilling.stages.length && state.cash - stageCost(balance, next) >= cashReserve;
-    const kind: DeskActionKind = well.status === 'decision' && leistbar ? 'deeper' : 'abandon';
+    const lohnt = well.status === 'decision' && leistbar && deeperWorth(state, balance, well.parcelId, balance.bots.deeper.cautious);
+    const kind: DeskActionKind = lohnt ? 'deeper' : 'abandon';
     state = act(state, balance, well.parcelId, kind);
   }
   for (const option of jacobsOptions(state)) {
@@ -701,7 +713,7 @@ function rentDue(state: GameState, balance: Balance): number {
 function greedyTurn(state: GameState, balance: Balance, catalog: readonly EventDef[], ledger: TransportLedger): GameState {
   state = transportTurn(state, balance, 'gierig', catalog, ledger);
   for (const well of openWells(state)) {
-    if (well.status === 'stuck' || well.stage < balance.drilling.stages.length) {
+    if (well.status === 'stuck' || (well.stage < balance.drilling.stages.length && deeperWorth(state, balance, well.parcelId, balance.bots.deeper.greedy))) {
       const vorher = state;
       state =
         well.status === 'stuck'
@@ -711,7 +723,7 @@ function greedyTurn(state: GameState, balance: Balance, catalog: readonly EventD
       // für den Rest des Kapitels an dieser Bohrung hängen.
       if (state === vorher) state = act(state, balance, well.parcelId, 'abandon');
     } else {
-      // Tiefer geht es mit dem Turm nicht – dann bleibt nur aufgeben.
+      // Tiefer geht es mit dem Turm nicht oder es lohnt nicht einmal knapp – dann bleibt nur aufgeben.
       state = act(state, balance, well.parcelId, 'abandon');
     }
   }
@@ -788,7 +800,7 @@ function balancedTurn(state: GameState, balance: Balance, catalog: readonly Even
     const vorher = state;
     const next = well.stage + 1;
     if (well.status === 'stuck') state = balancedPay(state, balance, well.parcelId, 'fish', balance.drilling.fishingCost);
-    else if (next <= maxStage && next <= balance.drilling.stages.length) {
+    else if (next <= maxStage && next <= balance.drilling.stages.length && deeperWorth(state, balance, well.parcelId, balance.bots.deeper.balanced)) {
       state = balancedPay(state, balance, well.parcelId, 'deeper', stageCost(balance, next));
     }
     if (state === vorher) state = act(state, balance, well.parcelId, 'abandon');

@@ -79,7 +79,10 @@ describe('Bohr-Trefferquote im echten Spielablauf', () => {
       const vorher = new Map(frisch.map((p) => [p.id, p]));
       for (const p of state.parcels) {
         const f = vorher.get(p.id)!;
-        expect([p.geology, p.reserves, p.zone, p.x, p.y]).toEqual([f.geology, f.reserves, f.zone, f.x, f.y]);
+        // Spielspaß K1: Nur Jacobs eigener tiefer Fund vergrößert den Vorrat – um genau den findFactor seiner Tiefe.
+        const ersterFund = state.wells.find((w) => w.parcelId === p.id && w.status === 'found');
+        const faktor = ersterFund ? balance.drilling.stages[ersterFund.stage - 1].findFactor : 1;
+        expect([p.geology, p.reserves, p.zone, p.x, p.y]).toEqual([f.geology, f.reserves + Math.round(f.reserves * (faktor - 1)), f.zone, f.x, f.y]);
       }
     }
   }, 120_000);

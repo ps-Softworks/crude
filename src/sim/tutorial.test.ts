@@ -6,6 +6,7 @@ import { applyAction } from './desk';
 import { stageCost, type Well, type WellStatus } from './drilling';
 import { endRound, newGame, type GameState } from './game';
 import { leaseTerms, parcelLabel, type Lease } from './lease';
+import { deeperOutlook } from './deeper';
 import { loadBalance } from './testBalance';
 import { loadEvents } from './testEvents';
 import { capacityLeft, netPrice } from './transport';
@@ -251,12 +252,15 @@ describe('Schritt 2: Bohrung', () => {
     expect(hint(mitBohrung('drilling'))).toMatchObject({ id: 'drill_wait', action: { kind: 'endRound' } });
   });
 
-  it('trocken in dieser Stufe: tiefer nur bei guter Schätzung, sonst aufgeben', () => {
+  it('trocken in dieser Stufe: tiefer nur, wenn der Geologe die Gewinnschwelle erreicht, sonst aufgeben (Spielspaß K1)', () => {
     const state = mitBohrung('decision');
     const id = state.wells[0].parcelId;
-    const min = balance.tutorial.deeperMinChance;
-    expect(hint(prognose(state, id, min, min))).toMatchObject({ id: 'deeper', action: { kind: 'deeper', parcelId: id } });
-    expect(hint(prognose(state, id, min - 10, min - 2))).toMatchObject({ id: 'abandon', action: { kind: 'abandon', parcelId: id } });
+    const schwelle = Math.round(deeperOutlook(state, balance, id)!.breakEven * 100);
+    expect(schwelle).toBeGreaterThan(1);
+    const tief = hint(prognose(state, id, schwelle + 1, schwelle + 3));
+    expect(tief).toMatchObject({ id: 'deeper', action: { kind: 'deeper', parcelId: id } });
+    expect(tief.vars.schwelle).toBe(`${schwelle} %`);
+    expect(hint(prognose(state, id, schwelle - 2, schwelle - 1))).toMatchObject({ id: 'abandon', action: { kind: 'abandon', parcelId: id } });
     // Ohne Geld für die nächste Stufe: aufgeben.
     expect(hint({ ...prognose(state, id, 90, 100), cash: 0 }).id).toBe('abandon');
   });

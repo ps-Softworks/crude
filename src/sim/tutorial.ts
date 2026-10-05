@@ -16,6 +16,7 @@ import { TRANSPORT_MODES, type Balance, type TransportMode } from './balance';
 import { headroom, takeLoan } from './credit';
 import type { DeskActionKind } from './desk';
 import { drillDeeper, fishWell, stageCost, startDrilling, wellOf, type Well } from './drilling';
+import { deeperOutlook, deeperPays } from './deeper';
 import type { ContentError } from './eventContent';
 import { forecastMid, formatForecast } from './forecast';
 import type { GameState } from './game';
@@ -59,7 +60,7 @@ export type TutorialAction =
   | { kind: 'endRound' };
 
 /** Platzhalter, die in den Texten vorkommen dürfen. */
-export type TutorialVars = Partial<Record<'ort' | 'kosten' | 'chance' | 'weg' | 'quelle', string>>;
+export type TutorialVars = Partial<Record<'ort' | 'kosten' | 'chance' | 'weg' | 'quelle' | 'schwelle', string>>;
 
 /** Woher eine Prognose stammt (0.4.19+2): Wissensstufe 0–3 der Ranch – der Text dazu steht in content/tutorial.yaml unter sources. */
 export const TUTORIAL_SOURCES = ['geruecht', 'ritt', 'karte', 'bericht'] as const;
@@ -230,16 +231,16 @@ function wellHint(state: GameState, balance: Balance, well: Well): TutorialHint 
       ? hint('fish', 'drill', { kind: 'fish', parcelId: well.parcelId }, ids, { ort, kosten })
       : hint('fish_abandon', 'drill', { kind: 'abandon', parcelId: well.parcelId }, ids, { ort });
   }
-  const tiefer =
-    well.stage < balance.drilling.stages.length &&
-    shownChance(state, well.parcelId) >= balance.tutorial.deeperMinChance &&
-    drillDeeper(state, balance, well.parcelId).ok;
-  if (tiefer) {
+  // Spielspaß K1: Tiefer rät der Hinweis, wenn die Chance des Geologen die Gewinnschwelle erreicht (deeperOutlook).
+  const wette = deeperOutlook(state, balance, well.parcelId);
+  const tiefer = well.stage < balance.drilling.stages.length && deeperPays(wette) && drillDeeper(state, balance, well.parcelId).ok;
+  if (tiefer && wette) {
     const kosten = money(stageCost(balance, well.stage + 1));
     return hint('deeper', 'drill', { kind: 'deeper', parcelId: well.parcelId }, ids, {
       ort,
       kosten,
       chance: chanceText(state, well.parcelId),
+      schwelle: `${Math.max(1, Math.round(wette.breakEven * 100))} %`,
     });
   }
   return hint('abandon', 'drill', { kind: 'abandon', parcelId: well.parcelId }, ids, { ort });
@@ -351,7 +352,7 @@ function istObjekt(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-const ERLAUBTE_PLATZHALTER = ['ort', 'kosten', 'chance', 'weg', 'quelle'];
+const ERLAUBTE_PLATZHALTER = ['ort', 'kosten', 'chance', 'weg', 'quelle', 'schwelle'];
 
 /** Liest content/tutorial.yaml. Fehlt etwas, kommt es als Fehler zurück (content ist dann null). */
 export function parseTutorialContent(file: string, text: string): { content: TutorialContent | null; errors: ContentError[] } {
