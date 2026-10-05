@@ -383,15 +383,15 @@ Ganzes Kapitel vorher: normale Briefe 0,3 %, große 1,0 %. Nachher:
 
 <!-- Messung Briefe mit Gewicht: npx tsx tools/briefGewicht.ts 400 --schreiben ersetzt bis zur nächsten Marke. -->
 
-Stand: 2026-10-05 · Version 0.4.20+4 · 400 Seeds (`bot-0` bis `bot-399`), Standard-Bot mit allen Ereignissen
+Stand: 2026-10-05 · Version 0.4.20+5 · 400 Seeds (`bot-0` bis `bot-399`), Standard-Bot mit allen Ereignissen
 
 | Kapiteldrittel | normale Briefe: Median \|Geld\| ÷ Imperium (oberes Viertel) | Median Geld | große Briefe: Median (oberes Viertel) | Median Geld | Median Faktor | Median Erlös je Runde | Median Imperium |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Runde 1–5 | 1,0 % (3,5 %), n = 3163 | 300 $ | 4,9 % (9,1 %), n = 469 | 2.500 $ | 1,00 | 0 $ | 34.501 $ |
-| Runde 6–11 | 0,9 % (1,6 %), n = 3618 | 800 $ | 7,3 % (10,5 %), n = 1268 | 6.400 $ | 8,00 | 13.490 $ | 86.898 $ |
-| Runde 12–16 | 0,8 % (1,5 %), n = 2497 | 960 $ | 7,1 % (10,2 %), n = 27 | 6.400 $ | 8,00 | 15.485 $ | 106.405 $ |
+| Runde 1–5 | 1,1 % (4,1 %), n = 3161 | 300 $ | 5,0 % (10,2 %), n = 471 | 2.500 $ | 1,00 | 0 $ | 34.501 $ |
+| Runde 6–11 | 1,0 % (1,7 %), n = 3620 | 800 $ | 7,5 % (11,8 %), n = 1271 | 6.400 $ | 8,00 | 13.560 $ | 87.337 $ |
+| Runde 12–16 | 0,9 % (1,6 %), n = 2488 | 960 $ | 8,4 % (12,6 %), n = 25 | 6.400 $ | 8,00 | 15.500 $ | 108.200 $ |
 
-Ganzes Kapitel: normale Briefe Median 0,9 %, große Briefe Median 6,8 %.
+Ganzes Kapitel: normale Briefe Median 1,0 %, große Briefe Median 6,9 %.
 
 <!-- Ende der Messung Briefe mit Gewicht -->
 
@@ -486,38 +486,38 @@ Erzeugt mit `npx tsx tools/termineMessung2.ts 500 --schreiben` (Block zwischen d
 
 <!-- Messung Spielspaß K1: npx tsx tools/termineMessung2.ts 500 --schreiben ersetzt bis zur nächsten Marke. -->
 
-Stand: 2026-10-05 · Version 0.4.20+4 · 500 Seeds (`bot-0` bis `bot-499`), Standard-Bot mit allen 387 Ereignissen, je Seed 5 Varianten der Karten
+Stand: 2026-10-05 · Version 0.4.20+5 · 500 Seeds (`bot-0` bis `bot-499`), Standard-Bot mit allen 387 Ereignissen, je Seed 5 Varianten der Karten
 
 | Kriterium | Ziel (Plan) | Ist | erfüllt |
 | --- | --- | ---: | :---: |
-| Förderbremse: Preis der Folgerunde bei Kartellanteil ≥ 40 % (Median gegen „ohne Bremse“) | +10–18 % | +15,7 % (427 Gründungen; alle Bremsrunden +12,1 %) | ja |
-| cartelCollapse: Anteil geplatzter Förderbremsen | 0,3–0,6 | 0,57 (365 von 645) | ja |
-| pactValue: Ø Mehrerlös je Förderbremse | 300–2.500 $ | 1.455 $ (645 Pakte) | ja |
-| priceGain: Ø Imperium mit Preis-Aktionen ÷ ohne | 1,05–1,25 | 1,074 (136.540 $ gegen 127.102 $) | ja |
+| Förderbremse: Preis der Folgerunde bei Kartellanteil ≥ 40 % (Median gegen „ohne Bremse“) | +10–18 % | +15,4 % (430 Gründungen; alle Bremsrunden +12,1 %) | ja |
+| cartelCollapse: Anteil geplatzter Förderbremsen | 0,3–0,6 | 0,56 (364 von 647) | ja |
+| pactValue: Ø Mehrerlös je Förderbremse | 300–2.500 $ | 1.509 $ (647 Pakte) | ja |
+| priceGain: Ø Imperium mit Preis-Aktionen ÷ ohne | 1,05–1,25 | 1,069 (136.124 $ gegen 127.329 $) | ja |
 | contractLoss: Anteil verlustreicher Lieferverträge | 0,2–0,5 | 0,30 (1119 Verträge) | ja |
-| Ø Tarifsenkung beim ausgewogenen Bot (je Partie) | 0,05–0,15 $ | 0,17 $ (1,7 Besuche je Partie; nur Thorne: 0,14 $) | nein |
-| freightGain: Ø Imperium mit Fracht-Aktionen ÷ ohne | 1,03–1,15 | 1,037 (133.819 $ gegen 129.002 $) | ja |
-| Bluff erwischt (Anteil der riskierten Fälle, Bluff-Bot) | 20–60 % | 21,9 % (136 von 621; Standard-Bot, der den Bluff meidet: 9,8 %, 58 von 589) | ja |
+| Ø Tarifsenkung beim ausgewogenen Bot (je Partie) | 0,05–0,15 $ | 0,17 $ (1,6 Besuche je Partie; nur Thorne: 0,14 $) | nein |
+| freightGain: Ø Imperium mit Fracht-Aktionen ÷ ohne | 1,03–1,15 | 1,039 (134.411 $ gegen 129.402 $) | ja |
+| Bluff erwischt (Anteil der riskierten Fälle, Bluff-Bot) | 20–60 % | 22,7 % (140 von 616; Standard-Bot, der den Bluff meidet: 9,5 %, 55 von 576) | ja |
 | Höchster Posted Price in allen Varianten | ≤ 1,60 $ (priceMax) | 1,58 $ | ja |
 
 | Variante (Standard-Bot) | Ø Imperium | Kapitelziel | Pleite |
 | --- | ---: | ---: | ---: |
-| grund | 127.102 $ | 61,4 % | 0,2 % |
-| preis | 136.540 $ | 65,0 % | 0,4 % |
-| ohneFracht | 129.002 $ | 63,2 % | 0,2 % |
-| fracht | 133.819 $ | 65,2 % | 0,2 % |
-| bluff | 133.177 $ | 64,0 % | 0,2 % |
+| grund | 127.329 $ | 62,2 % | 0,4 % |
+| preis | 136.124 $ | 65,6 % | 0,4 % |
+| ohneFracht | 129.402 $ | 63,4 % | 0,4 % |
+| fracht | 134.411 $ | 65,4 % | 0,4 % |
+| bluff | 133.895 $ | 64,0 % | 0,2 % |
 
 | Karte | Anwendungen | schlecht | Ø Geldeffekt | Ø \|Effekt\| | Ø gut | Ø schlecht | im Ziel (20–45 %, ≥ 1.000 $) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | :---: |
-| Bei Thorne vorsprechen | 839 | 22,5 % | 5.484 $ | 6.364 $ | 7.488 $ | -1.410 $ | ja |
-| Bei Thorne vorsprechen (Bluff-Bot) | 905 | 31,8 % | 5.555 $ | 6.644 $ | 8.576 $ | -918 $ | ja |
-| Brennan unter Vertrag | 397 | 39,5 % | 5.827 $ | 5.882 $ | 6.787 $ | 4.359 $ | ja |
-| Transportgemeinschaft | 664 | 39,5 % | 2.516 $ | 2.639 $ | 4.120 $ | 57 $ | ja |
-| Liefervertrag | 1119 | 30,2 % | 1.402 $ | 2.220 $ | 2.595 $ | -1.354 $ | ja |
-| Gerücht streuen | 987 | 32,5 % | 1.528 $ | 4.949 $ | 4.410 $ | -4.452 $ | ja |
-| Mit Crane feilschen | 2695 | 18,6 % | 1.531 $ | 4.023 $ | 3.199 $ | -5.773 $ | nein |
-| Förderbremse (Pakte, geplatzt = schlecht) | 645 | 56,6 % | 1.455 $ | 5.344 $ | – | – | – |
+| Bei Thorne vorsprechen | 813 | 20,9 % | 5.470 $ | 6.326 $ | 7.316 $ | -1.512 $ | ja |
+| Bei Thorne vorsprechen (Bluff-Bot) | 887 | 31,2 % | 5.524 $ | 6.608 $ | 8.425 $ | -866 $ | ja |
+| Brennan unter Vertrag | 396 | 40,2 % | 5.874 $ | 5.922 $ | 6.836 $ | 4.439 $ | ja |
+| Transportgemeinschaft | 661 | 41,5 % | 2.468 $ | 2.608 $ | 4.180 $ | 50 $ | ja |
+| Liefervertrag | 1119 | 30,1 % | 1.408 $ | 2.234 $ | 2.606 $ | -1.372 $ | ja |
+| Gerücht streuen | 995 | 33,6 % | 1.585 $ | 4.823 $ | 4.429 $ | -4.043 $ | ja |
+| Mit Crane feilschen | 2759 | 22,5 % | 1.378 $ | 4.108 $ | 3.328 $ | -5.336 $ | ja |
+| Förderbremse (Pakte, geplatzt = schlecht) | 647 | 56,3 % | 1.509 $ | 5.303 $ | – | – | – |
 
 <!-- Ende der Messung Spielspaß K1 -->
 
