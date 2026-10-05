@@ -81,7 +81,7 @@ function Karte({ card, ctx, onFehler }: { card: PlanCardView; ctx: SheetContext;
               <select value={gewaehlt} onChange={(e) => setZiel(e.target.value)}>
                 {card.targets.map((t) => (
                   <option key={t.parcelId} value={t.parcelId} disabled={!t.ok} title={t.reason}>
-                    {t.label} ({levelLabel(t.level as 0 | 1 | 2 | 3)})
+                    {t.label} ({levelLabel(t.level as 0 | 1 | 2 | 3)} · {t.detail})
                   </option>
                 ))}
               </select>
@@ -117,7 +117,9 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
   const t = agendaView(game, balance);
   const v = planView(game, balance, events);
   const [fehler, setFehler] = useState<string | null>(null);
-  const tabs = PLAN_TABS.map((id) => {
+  // Reiter ohne jede Karte (z. B. Markt und Fracht ab Kapitel 2) blendet das Brett aus (0.4.19+2);
+  // Land und Leute bleiben immer stehen.
+  const tabs = PLAN_TABS.filter((id) => id === 'land' || id === 'leute' || v.cards.some((c) => c.tab === id)).map((id) => {
     const n = v.cards.filter((c) => c.tab === id && c.reason === null).length;
     return { id, label: localize(planContent.tabs[id]), badge: n > 0 ? String(n) : undefined };
   });

@@ -179,10 +179,18 @@ describe('Kapitel 3 – Story-Bögen', () => {
       }
     });
 
-    it('Ruth legt Vales Karte erst vor, wenn sie gekommen ist', () => {
-      expect(ereignis('k3_ruth_vale').marked).toEqual(['vale_karte']);
+    it('Ruth legt Vales Karte erst vor, wenn sie gekommen ist – und nur, wenn sie noch im Mantel steckt', () => {
+      expect(ereignis('k3_ruth_vale').marked).toEqual(['vale_karte_offen']);
+      // 0.4.19+2: Die Karte ist keine zweite Einladung – zu- oder absagen geht nur im Brief des Konsortiums.
       for (const id of ['k3_vale_karte', 'k3_vale_karte_schuld', 'k3_vale_karte_respekt']) {
-        for (const c of ereignis(id).choices) expect(c.marks, `${id}/${c.id}`).toContain('vale_karte');
+        expect(ereignis(id).text.de, id).toMatch(/grauen Siegel/);
+        expect(ereignis(id).text.de, id).not.toMatch(/Hohenbrück/);
+        for (const c of ereignis(id).choices) expect(c.marks, `${id}/${c.id}`).not.toContain('vale_k3_zugesagt');
+      }
+      for (const id of ['k3_vale_karte', 'k3_vale_karte_schuld', 'k3_vale_karte_respekt']) {
+        // Nur „in den Mantel“ lässt die Karte für Ruth liegen; die Voreinstellung ist genau das.
+        expect(ereignis(id).choices.filter((c) => c.marks.includes('vale_karte_offen')).map((c) => c.id), id).toEqual(['liegen']);
+        expect(ereignis(id).choices.find((c) => c.default)?.id, id).toBe('liegen');
       }
       for (const k1 of [[], ['vale_geld'], ['vale_abgelehnt']]) {
         const { seen } = spiele(k1);

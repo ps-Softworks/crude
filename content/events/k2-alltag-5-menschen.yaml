@@ -205,7 +205,7 @@
 
 - id: k2_thomas_zeugnis
   visitor: thomas
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12 }
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12, minThomasAge: 11, maxThomasAge: 11 }
   chance: 0.12
   title:
     de: Thomas bringt das Zeugnis
@@ -324,7 +324,7 @@
 
 - id: k2_clara_fieber
   visitor: arzt
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, minClaraAge: 6, maxClaraAge: 6 }
   chance: 0.08
   title:
     de: Clara hat Fieber
@@ -367,7 +367,7 @@
 - id: k2_clara_freundin
   marked: [eli_versorgt]
   delay: 0
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, minClaraAge: 6, maxClaraAge: 6 }
   chance: 0.12
   title:
     de: Claras Freundin

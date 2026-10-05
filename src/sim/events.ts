@@ -49,9 +49,17 @@ export const CONDITION_KEYS = [
   'minRefineryLevel',
   'minPipelines',
   'minPublicShare',
+  // maxPublicShare: 0 = Familienfirma ohne fremde Aktionäre (0.4.19+2) – für Fassungen ohne Aufsichtsrat.
+  'maxPublicShare',
   // Thomas' Alter in ganzen Jahren (4.5); vor der Geburt −1 – Baby-Ereignisse tragen maxThomasAge.
   'minThomasAge',
   'maxThomasAge',
+  // Claras Alter in ganzen Jahren (0.4.19+2); vor der Geburt −1. Sie kommt im Zeitsprung I zwischen Jahr 6 und 10.
+  'minClaraAge',
+  'maxClaraAge',
+  // Beziehung zu Thomas 0–100 (0.4.19+2) – z. B. die kalte Fassung einer Szene nur, wenn sie wirklich schlecht ist.
+  'minThomasBond',
+  'maxThomasBond',
 ] as const;
 export type ConditionKey = (typeof CONDITION_KEYS)[number];
 export type Conditions = Partial<Record<ConditionKey, number>>;
@@ -346,7 +354,16 @@ function wertFuer(state: Lage, key: ConditionKey): number {
     case 'minPipelines':
       return (state.logistics?.pipeline === 'ready' ? 1 : 0) + (state.bigPipelines?.projects ?? []).filter((p) => p.status === 'ready').length;
     case 'minPublicShare':
+    case 'maxPublicShare':
       return state.stocks?.public ? Math.round((state.ipo?.share ?? 0) * 100) : 0;
+    case 'minThomasBond':
+    case 'maxThomasBond':
+      return state.family?.thomas ?? 0;
+    case 'minClaraAge':
+    case 'maxClaraAge': {
+      const geboren = state.family?.claraBorn ?? 0;
+      return geboren > 0 && state.round >= geboren ? Math.floor((state.round - geboren) / 4) : -1;
+    }
   }
 }
 
@@ -387,6 +404,8 @@ function grund(key: ConditionKey, grenze: number): string {
       return 'Dafür braucht es eine eigene Pacht.';
     case 'minStrength':
       return 'Dafür fehlt Jacob die Kraft.';
+    case 'minPublicShare':
+      return 'Dafür braucht Harlan Oil Aktionäre und einen Aufsichtsrat.';
     default:
       return 'Das geht gerade nicht.';
   }

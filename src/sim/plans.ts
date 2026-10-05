@@ -39,7 +39,7 @@ import {
   type ClueKind,
 } from './exploration';
 import type { GameState } from './game';
-import { parcelLabel } from './lease';
+import { leaseOf, leaseTerms, optionOf, parcelLabel } from './lease';
 import type { PlanHandler } from './planHandler';
 import { PRICE_HANDLERS, settlePricing } from './pricing';
 import { FREIGHT_HANDLERS, settleFreight } from './freight';
@@ -338,7 +338,9 @@ export function bookCard(state: GameState, balance: Balance, catalog: readonly E
     cash: belegt.state.cash - cash,
     strength: Math.min(state.strengthMax, Math.max(0, belegt.state.strength + card.strength)),
   };
-  const eintrag: BookedPlan = { cardId, appointments: n, overtime, cash, strength: card.strength, done: card.timing === 'sofort' };
+  // Die tatsächliche Änderung merken (Kraft ist auf 0..strengthMax begrenzt), damit
+  // Zurücknehmen genau das rückgängig macht – sonst ließe sich Kraft „erbuchen“.
+  const eintrag: BookedPlan = { cardId, appointments: n, overtime, cash, strength: next.strength - belegt.state.strength, done: card.timing === 'sofort' };
   if (target !== undefined) eintrag.target = target;
   let report = plans.report;
   if (card.timing === 'sofort') {
@@ -404,6 +406,8 @@ export interface PlanTargetView {
   level: number;
   ok: boolean;
   reason?: string;
+  /** Lage nach öffentlichem Wissen (Am Fund, Nachbar, …) und Pachtbonus, wenn die Ranch frei ist (0.4.19+2). */
+  detail: string;
 }
 
 /** Eine Karte auf dem Brett. */
@@ -461,9 +465,15 @@ export function planView(state: GameState, balance: Balance, catalog: readonly E
         ? ranches
             .map((p) => {
               const r = cardReason(state, balance, catalog, c, p.id);
-              return { parcelId: p.id, label: parcelLabel(p), level: knowledgeOf(state, p.id).level, ok: r === null, ...(r ? { reason: r } : {}) };
+              const terms = leaseTerms(state, balance, p.id);
+              const frei = !leaseOf(state, p.id) && !optionOf(state, p.id);
+              const detail = frei ? `${terms.location.label} · Pacht ${terms.bonus.toLocaleString('de-DE')} $` : `${terms.location.label} · vergeben`;
+              const nähe = balance.lease.locations.findIndex((l) => l.name === terms.location.name);
+              return { parcelId: p.id, label: parcelLabel(p), level: knowledgeOf(state, p.id).level, ok: r === null, ...(r ? { reason: r } : {}), detail, nähe };
             })
-            .sort((a, b) => Number(b.ok) - Number(a.ok) || a.label.localeCompare(b.label, 'de'))
+            // Was nach öffentlichem Wissen am meisten verspricht, steht oben: nah am Fund zuerst, dann nach Namen (0.4.19+2).
+            .sort((a, b) => Number(b.ok) - Number(a.ok) || a.nähe - b.nähe || a.label.localeCompare(b.label, 'de'))
+            .map(({ nähe: _n, ...t }) => t)
         : [];
     const options =
       c.target === 'option'

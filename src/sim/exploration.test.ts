@@ -268,3 +268,24 @@ describe('Wissensstufe und Bandbreite (Plan 1.2)', () => {
     expect(deeperChance(balance, p, 1)).toBeCloseTo((p.chance! * st[1].oilShare) / (1 - p.chance! * st[0].oilShare), 10);
   });
 });
+
+describe('Prognose bleibt im Rahmen der Geologie (0.4.19+2)', () => {
+  it('kein Band reicht über qMax hinaus – auch nicht bei lauter guten Hinweisen', () => {
+    const oben = Math.ceil((t.qMax * 100) / balance.forecast.rounding) * balance.forecast.rounding;
+    const unten = Math.floor((t.qMin * 100) / balance.forecast.rounding) * balance.forecast.rounding;
+    for (const seed of ['band-a', 'band-b', 'band-c']) {
+      let s = newGame(seed, balance);
+      for (const p of s.parcels.filter((q) => !q.discovery)) {
+        const gut: Clue[] = (['sickerstelle', 'formation'] as const).map((kind) => ({ kind, source: 'ritt', round: 1, seen: true }) as Clue);
+        const schlecht: Clue[] = (['sickerstelle', 'formation'] as const).map((kind) => ({ kind, source: 'ritt', round: 1, seen: false }) as Clue);
+        s = addClues(s, balance, p.id, p.id.endsWith('1') ? schlecht : gut);
+      }
+      for (const p of s.parcels.filter((q) => !q.discovery)) {
+        const f = knowledgeForecast(s, balance, p.id)!;
+        expect(f.high).toBeLessThanOrEqual(oben);
+        expect(f.low).toBeGreaterThanOrEqual(unten);
+        expect(f.low).toBeLessThan(f.high);
+      }
+    }
+  });
+});

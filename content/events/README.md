@@ -19,7 +19,10 @@ Kurzreferenz der Felder:
   `minProducingWells`, `maxProducingWells`, `minLeases`, `minStrength`, `maxStrength` (Kraft 0–100),
   `minRefineryLevel` (fertige Raffinerie-Stufen), `minPipelines` (laufende eigene Leitungen: kleine Pipeline +
   fertige Fernleitungen), `minPublicShare` (Prozent der Aktien in fremder Hand, nur als Aktiengesellschaft),
+  `maxPublicShare` (0 = Familienfirma ohne Aufsichtsrat; 0.4.19+2 – Rats- und Aktienszenen tragen `minPublicShare: 1`),
   `minThomasAge`, `maxThomasAge` (Thomas' Alter in Jahren, vor der Geburt −1; 4.5),
+  `minClaraAge`, `maxClaraAge` (Claras Alter in Jahren, vor der Geburt −1; 0.4.19+2),
+  `minThomasBond`, `maxThomasBond` (Beziehung zu Thomas 0–100; 0.4.19+2),
   `minChapter`, `maxChapter` (Kapitel; ohne Angabe im Spielstand gilt Kapitel 1 – Phase 4). Für das
   ganze Ereignis gilt: Fehlt `minChapter`, ist es ein Kapitel-1-Ereignis – es kommt nur in Kapitel 1
   (bzw. bis `maxChapter`, falls angegeben). Mit `minChapter` und ohne `maxChapter` kommt es ab diesem

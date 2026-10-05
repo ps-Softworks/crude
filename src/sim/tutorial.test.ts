@@ -9,6 +9,7 @@ import { leaseTerms, parcelLabel, type Lease } from './lease';
 import { loadBalance } from './testBalance';
 import { loadEvents } from './testEvents';
 import { capacityLeft, netPrice } from './transport';
+import { knowledgeOf } from './exploration';
 import {
   fillVars,
   parseTutorialContent,
@@ -159,6 +160,12 @@ describe('Schritt 1: Pacht', () => {
     expect(h).toMatchObject({ id: 'lease_option', action: { kind: 'exercise', parcelId: option } });
     expect(h.vars.chance).toBe('99–100 % Fundchance');
     expect(h.vars.ort).toBe(parcelLabel(state.parcels.find((p) => p.id === option)!));
+    // 0.4.19+2: Der Text sagt, woher die Zahl stammt – ohne Ritt kein „der Geologe schätzt“.
+    const text = parseTutorialContent('content/tutorial.yaml', readFileSync(new URL('../../content/tutorial.yaml', import.meta.url), 'utf8')).content!;
+    const wissen = knowledgeOf(state, option).level;
+    const erwartet = ['nach dem, was man sich erzählt', 'nach deinem eigenen Ritt', 'nach der Karte des Geologen', 'nach dem Bohrbericht'][wissen];
+    expect(viewTutorial(h, text).text).toContain(erwartet);
+    expect(viewTutorial(h, text).text).not.toContain('Geologe schätzt');
   });
 
   it('Frühes Öl: eine teure Pacht, die kaum besser aussieht, verliert gegen eine billige', () => {

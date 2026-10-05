@@ -291,12 +291,17 @@ describe('Ereignisse würfeln', () => {
     const k2 = loadEvents().filter((e) => e.id.startsWith('k2_'));
     const start = { ...newGame('k2', balance), chapter: 2 };
     expect(drawEvents(start, balance, k2).events.pending).toContain('k2_ruth_abend');
-    const fassungen = ['k2_ruth_wunsch', 'k2_ruth_datum', 'k2_ruth_sitz'];
-    for (const [mark, erwartet] of [[null, 'k2_ruth_wunsch'], ['ruth_vertroestet', 'k2_ruth_datum'], ['ruth_teilhaberin', 'k2_ruth_sitz']] as const) {
-      const marks = mark ? { [mark]: 0 } : {};
-      const runde4 = { ...start, round: 4, events: { ...start.events, marks } };
-      const offen = drawEvents(runde4, balance, k2).events.pending.filter((id) => fassungen.includes(id));
-      expect(offen, String(mark)).toEqual([erwartet]);
+    const basis = ['k2_ruth_wunsch', 'k2_ruth_datum', 'k2_ruth_sitz'];
+    const fassungen = [...basis, ...basis.map((id) => `${id}_familie`)];
+    // 0.4.19+2: Als Aktiengesellschaft (mit Aufsichtsrat) die Rats-Fassung, als Familienfirma die ohne Rat.
+    const ag = { ...start, stocks: { ...(start.stocks ?? {}), public: true } as GameState['stocks'], ipo: { share: 0.33, proceeds: 0 } };
+    for (const [firma, endung] of [[ag, ''], [start, '_familie']] as const) {
+      for (const [mark, erwartet] of [[null, 'k2_ruth_wunsch'], ['ruth_vertroestet', 'k2_ruth_datum'], ['ruth_teilhaberin', 'k2_ruth_sitz']] as const) {
+        const marks = mark ? { [mark]: 0 } : {};
+        const runde4 = { ...firma, round: 4, events: { ...firma.events, marks } };
+        const offen = drawEvents(runde4, balance, k2).events.pending.filter((id) => fassungen.includes(id));
+        expect(offen, `${String(mark)}${endung}`).toEqual([`${erwartet}${endung}`]);
+      }
     }
   });
 
@@ -312,9 +317,11 @@ describe('Ereignisse würfeln', () => {
     expect(Object.values(uebertragen.marks)).toEqual([0, 0, 0]);
     expect(Object.keys(uebertragen.marks)).toEqual(Object.keys(spaet.marks));
     const mit = drawEvents({ ...start, round: 4, events: uebertragen }, balance, k2).events.pending;
-    expect(mit).toContain('k2_silas_rat');
-    expect(mit).toContain('k2_ruth_datum');
-    expect(mit).not.toContain('k2_ruth_wunsch');
+    // Familienfirma (newGame ohne Börsengang): die Fassungen ohne Aufsichtsrat (0.4.19+2).
+    expect(mit).toContain('k2_silas_bank');
+    expect(mit).toContain('k2_ruth_datum_familie');
+    expect(mit).not.toContain('k2_ruth_wunsch_familie');
+    expect(mit).not.toContain('k2_silas_rat');
     expect(drawEvents({ ...start, round: 2, events: uebertragen }, balance, k2).events.pending).toContain('k2_nora_absatz');
   });
 
@@ -552,5 +559,26 @@ describe('die Probe-Ereignisse für Kapitel 1 aus content/events/', () => {
     const nach = autoResolve({ ...state, cash: 100, events: { ...state.events, pending: ['vale_umschlag'] } }, katalog);
     expect(nach.cash).toBe(600);
     expect(nach.events.marks).toEqual({ vale_geld: 3 });
+  });
+});
+
+describe('Bedingungen Familienfirma, Claras Alter, Beziehung zu Thomas (0.4.19+2)', () => {
+  it('maxPublicShare 0 gilt nur für die Familienfirma, minPublicShare 1 nur für die Aktiengesellschaft', () => {
+    const familie = newGame('bed-familie', balance);
+    const ag = { ...familie, stocks: { ...(familie.stocks ?? {}), public: true } as GameState['stocks'], ipo: { share: 0.2, proceeds: 0 } };
+    expect(conditionsMet(familie, { maxPublicShare: 0 })).toBe(true);
+    expect(conditionsMet(familie, { minPublicShare: 1 })).toBe(false);
+    expect(conditionsMet(ag, { maxPublicShare: 0 })).toBe(false);
+    expect(conditionsMet(ag, { minPublicShare: 1 })).toBe(true);
+  });
+
+  it('Claras Alter zählt ab ihrer Geburt in ganzen Jahren, vorher −1; Thomas-Beziehung 0–100', () => {
+    const s = newGame('bed-clara', balance);
+    expect(conditionsMet(s, { maxClaraAge: -1 })).toBe(true);
+    const geboren = { ...s, round: 30, family: { ...s.family, claraBorn: 22, thomas: 30 } };
+    expect(conditionsMet(geboren, { minClaraAge: 2, maxClaraAge: 2 })).toBe(true);
+    expect(conditionsMet(geboren, { minClaraAge: 3 })).toBe(false);
+    expect(conditionsMet(geboren, { maxThomasBond: 34 })).toBe(true);
+    expect(conditionsMet(geboren, { minThomasBond: 35 })).toBe(false);
   });
 });

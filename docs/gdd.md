@@ -2073,7 +2073,7 @@ Zeitsprung I (Jahr 5–10). Mögliche Weichen: eine Bankenpanik, falls das Kredi
 Ausgangslage: Harlan Oil ist eine ernstzunehmende Firma, aber der Crane Trust beherrscht Raffinerien und Pipelines. Der Volksbund macht Stimmung gegen den Trust.
 
 - 
-Kapitelprüfung: eigene Raffinerie oder eigene Pipeline zum Hafen, Kontrolle ≥ 50 %, Imperiumswert ≥ 1 Mio. $.
+Kapitelprüfung: eigene Raffinerie oder eigene Pipeline zum Hafen, Kontrolle ≥ 50 %, Imperiumswert ≥ 1 Mio. $ (Balance-Stand 0.4.19+2: 200.000 $ – 1 Mio. erreichte keine Bot-Partie; Zahl in balance.yaml chapter.chapter2.goalValue).
 
 - 
 Neue Mechaniken: Raffinerie und Produktmix, Pipelines, Aktien und Aufsichtsrat, Anleihen, Fixer und Sekretärin, Rivalen-Diplomatie (Kartelle, Übernahmen), Ermittler, erste Forschung (Technikstufe II).

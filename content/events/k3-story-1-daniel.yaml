@@ -378,14 +378,12 @@
   text:
     de: >-
       Ein schmaler Mann Mitte dreißig, die Schläfen früh ergraut, stellt sich als neuer
-      Bezirksstaatsanwalt vor. „Daniel Moss.“ Jacob gibt ihm die Hand und sucht nach dem
-      Namen. Er findet ihn nicht, und dann doch: eine Farm am Salt Hill, ein Farmer mit
+      Bezirksstaatsanwalt vor. „Daniel Moss.“ Jacob kennt den Namen von den Plakaten an jedem Telegrafenmast. Erst jetzt, mit dem Mann vor sich, versteht er ihn: eine Farm am Salt Hill, ein Farmer mit
       einer Bibel, eine Versteigerung, zu der Jacob nicht gegangen ist. Daniel sieht ihm
       dabei zu, wie er sich erinnert. Er hat Zeit. Er hat zwanzig Jahre gehabt.
     en: >-
       A narrow man in his mid-thirties, temples grey too early, introduces himself as
-      the new district attorney. "Daniel Moss." Jacob shakes his hand and searches for
-      the name. He cannot find it, and then he does: a farm on Salt Hill, a farmer with a
+      the new district attorney. "Daniel Moss." Jacob knows the name from the posters on every telegraph pole. Only now, with the man in front of him, does he understand it: a farm on Salt Hill, a farmer with a
       Bible, an auction Jacob did not attend. Daniel watches him remember. He has time.
       He has had twenty years.
   conditions: { minChapter: 3, maxChapter: 3, minRound: 2 }
@@ -513,13 +511,12 @@
       Ezekiel Moss wird auf seiner eigenen Weide begraben, neben dem Zaun, den er vor
       vierzig Jahren gesetzt hat. Unter der Erde laufen zwei Rohre von Jacobs Pipeline,
       und keiner der Trauergäste erwähnt es. Daniel steht am Kopfende, barhäuptig im
-      Nieselregen. Am selben Vormittag tagt in Port Ellis die Hauptversammlung. Der
+      Nieselregen. Am selben Vormittag erwartet die Bank in Port Ellis Jacob zur Unterschrift unter die neue Anleihe. Der
       Sarg ist schwerer, als ein alter Mann sein dürfte. Es fehlt ein Träger.
     en: >-
       Ezekiel Moss is buried on his own pasture, beside the fence he set forty years
       ago. Beneath the ground run two pipes of Jacob's line, and none of the mourners
-      mentions it. Daniel stands at the head, bareheaded in the drizzle. The same
-      morning the shareholders' meeting sits in Port Ellis. The coffin is heavier than
+      mentions it. Daniel stands at the head, bareheaded in the drizzle. The same morning the bank in Port Ellis expects Jacob to sign the new bond. The coffin is heavier than
       an old man should be. One bearer is missing.
   conditions: { minChapter: 3, maxChapter: 3, minRound: 6, maxRound: 10 }
   marked: [moss_fair]
@@ -550,7 +547,7 @@
           the way home she says, "That was right." Nothing more.
       effects: { ruth: 15, strength: -5 }
     - id: kranz
-      label: { de: "Einen Kranz schicken – die Hauptversammlung geht vor", en: "Send a wreath – the shareholders' meeting comes first" }
+      label: { de: "Einen Kranz schicken – die Bank geht vor", en: "Send a wreath – the bank comes first" }
       result:
         de: >-
           Der Kranz ist der größte am Grab. Daniel liest die Schleife, „In Dankbarkeit,
@@ -581,7 +578,62 @@
       of mourners and stands in the middle of the path. He says nothing. He simply
       stands there, hands in his coat pockets, until everyone else has turned round.
   conditions: { minChapter: 3, maxChapter: 3, minRound: 6, maxRound: 10 }
-  marked: [moss_feind]
+  marked: [moss_vertrieben]
+  certain: true
+  choices:
+    - id: umkehren
+      label: { de: "Umkehren", en: "Turn back" }
+      result:
+        de: >-
+          Jacob geht zurück zur Kutsche. Hinter ihm beginnt der Pfarrer zu sprechen. Den
+          Rest des Tages redet Jacob mit niemandem.
+        en: >-
+          Jacob walks back to the carriage. Behind him the pastor begins to speak. For
+          the rest of the day Jacob talks to no one.
+      effects: { strength: -15 }
+      default: true
+    - id: vorbei
+      label: { de: "An ihm vorbei zum Grab gehen", en: "Walk past him to the grave" }
+      result:
+        de: >-
+          Daniel tritt einen halben Schritt zur Seite, gerade genug. Als Jacob die Erde
+          wirft, hört er hinter sich, wie ein Bleistift über Papier geht.
+        en: >-
+          Daniel steps half a pace aside, just enough. As Jacob throws the earth, he hears
+          a pencil moving over paper behind him.
+      marks: [daniel_kalt]
+    - id: warten
+      label: { de: "Am Tor warten, bis alle gegangen sind – dann allein hin", en: "Wait at the gate until everyone has gone – then go alone" }
+      result:
+        de: >-
+          Es regnet zwei Stunden. Als Jacob endlich am Grab steht, sieht er Daniel auf
+          der Straße stehen geblieben. Er hat zugesehen. Er geht, ohne sich umzudrehen.
+        en: >-
+          It rains for two hours. When Jacob finally stands at the grave, he sees Daniel
+          has stopped in the street. He has been watching. He leaves without turning.
+      effects: { strength: -20 }
+      marks: [daniel_trost]
+
+# Entwurf – Philipp überarbeitet (0.4.19+2).
+# moss_betrogen: Die Farm gehört Moss noch (K2: k2_moss_zaun) – begraben wird er auf der eigenen Weide.
+- id: k3_moss_beerdigung_betrogen
+  tableau: true
+  draft: true
+  title:
+    de: Zwischen Jacob und dem Grab
+    en: Between Jacob and the Grave
+  text:
+    de: >-
+      Ezekiel Moss wird auf seiner eigenen Weide begraben, hinter dem Zaun, an dem er Jacob vor Jahren mit der Flinte erwartet hat. Als Jacob ans Gatter kommt, löst sich Daniel aus
+      der Reihe der Trauernden und stellt sich mitten auf den Weg. Er sagt nichts. Er
+      steht nur da, die Hände in den Manteltaschen, bis alle anderen sich umgedreht haben.
+    en: >-
+      Ezekiel Moss is buried on his own pasture, behind the fence where years ago he waited for Jacob with a shotgun. As Jacob reaches the gate, Daniel steps out of the line
+      of mourners and stands in the middle of the path. He says nothing. He simply
+      stands there, hands in his coat pockets, until everyone else has turned round.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 6, maxRound: 10 }
+  notMarked: [moss_vertrieben]
+  marked: [moss_betrogen]
   certain: true
   choices:
     - id: umkehren
@@ -624,13 +676,11 @@
     en: A Headstone from Port Ellis
   text:
     de: >-
-      Der Bezirksstaatsanwalt lässt seinen Vater umbetten. Ezekiel Moss starb vor sechs
-      Jahren in einer Kammer über einer Futterhandlung in Port Ellis. Niemand hat es
+      Der Bezirksstaatsanwalt lässt seinen Vater umbetten. Ezekiel Moss starb vor sechs Jahren bei Verwandten in den Kohleprovinzen, in einer Kammer über einer Futterhandlung. Niemand hat es
       Jacob geschrieben. Jetzt soll er auf den Friedhof von Salt Hill, mit Blick auf
       die Felder, auf denen einmal Baumwolle stand. Der Steinmetz fragt, wer den Stein bezahlt.
     en: >-
-      The district attorney is having his father reburied. Ezekiel Moss died six years
-      ago in a room above a feed store in Port Ellis. No one wrote to Jacob. Now he is
+      The district attorney is having his father reburied. Ezekiel Moss died six years ago with relatives in the coal provinces, in a room above a feed store. No one wrote to Jacob. Now he is
       to lie in the Salt Hill cemetery, overlooking the fields where cotton once grew.
       The stonemason asks who is paying for the stone.
   conditions: { minChapter: 3, maxChapter: 3, minRound: 6, maxRound: 10 }
@@ -734,10 +784,10 @@
       label: { de: "Ihn über Senator Grady ins Richteramt loben (5.000 $)", en: "Have Senator Grady promote him to the bench (5,000 $)" }
       result:
         de: >-
-          Drei Monate später ist Daniel Moss Richter in Port Ellis, jünger als jeder vor
+          Drei Monate später ist Daniel Moss Richter in Hallstead, jünger als jeder vor
           ihm. Sein Nachfolger ist ein freundlicher Mann, der gern Zigarren nimmt.
         en: >-
-          Three months later Daniel Moss is a judge in Port Ellis, younger than anyone
+          Three months later Daniel Moss is a judge in Hallstead, younger than anyone
           before him. His successor is a friendly man who likes to accept cigars.
       requires: { minCash: 5000 }
       effects: { cash: -5000, favors: -3 }
@@ -874,8 +924,8 @@
     - id: wegloben
       label: { de: "Ihn über Senator Grady ins Richteramt loben (5.000 $)", en: "Have Senator Grady promote him to the bench (5,000 $)" }
       result:
-        de: Daniel Moss wird Richter in Port Ellis. Die Liste bleibt in einer Schublade seines Nachfolgers, zwei Seiten, nicht abgeheftet.
-        en: Daniel Moss becomes a judge in Port Ellis. The list stays in his successor's drawer, two pages, unfiled.
+        de: Daniel Moss wird Richter in Hallstead. Die Liste bleibt in einer Schublade seines Nachfolgers, zwei Seiten, nicht abgeheftet.
+        en: Daniel Moss becomes a judge in Hallstead. The list stays in his successor's drawer, two pages, unfiled.
       requires: { minCash: 5000 }
       effects: { cash: -5000, favors: -2 }
       marks: [daniel_weggelobt]
@@ -1023,10 +1073,10 @@
       label: { de: "Ihn über Senator Grady ins Richteramt loben (5.000 $)", en: "Have Senator Grady promote him to the bench (5,000 $)" }
       result:
         de: >-
-          Daniel wird Richter in Port Ellis. Die Ermittlung gegen Thorne schläft ein.
+          Daniel wird Richter in Hallstead. Die Ermittlung gegen Thorne schläft ein.
           Thorne schickt Jacob eine Kiste Zigarren ohne Karte.
         en: >-
-          Daniel becomes a judge in Port Ellis. The investigation into Thorne goes to
+          Daniel becomes a judge in Hallstead. The investigation into Thorne goes to
           sleep. Thorne sends Jacob a box of cigars with no card.
       requires: { minCash: 5000 }
       effects: { cash: -5000, favors: -2, rival: { thorne: { trust: 10 } } }

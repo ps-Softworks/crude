@@ -3,9 +3,10 @@
 
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { nonFiniteNumbers } from './testFinite';
 import { parseBalance, type Balance } from './balance';
-import { canGoPublic, decideIpo } from './chapter';
-import { creditLimit, debt, takeLoan } from './credit';
+import { canGoPublic, chapterPassed, decideIpo } from './chapter';
+import { creditLimit, debt, ratingOf, takeLoan } from './credit';
 import { applyAction } from './desk';
 import { conditionsMet, marksMet, resolveEvent } from './events';
 import { endRound, formatDate, newGame, type GameState } from './game';
@@ -35,6 +36,7 @@ import {
   timeskipBlocked,
   TIMESKIP_MARKS,
   unreadChronicle,
+  weakStart,
   type Directives,
   type SwitchId,
   type TimeskipRecord,
@@ -241,7 +243,8 @@ describe('Fertig-Kriterium: dieselbe Welt nur bei denselben Entscheidungen', () 
 
 describe('Kapitel 2 beginnt (Platzhalter)', () => {
   it('Jahr 11, Jacob 35, 16 Runden, frische Termine, Chronik ungelesen', () => {
-    const { state, record } = springen(kapitelEnde('sprung-k2', balance, mitEntscheidungen));
+    const ende = kapitelEnde('sprung-k2', balance, mitEntscheidungen);
+    const { state, record } = springen(ende);
     expect(state.chapter).toBe(2);
     expect(gameYear(state.round)).toBe(11);
     expect(jacobAge(state)).toBe(35);
@@ -252,7 +255,8 @@ describe('Kapitel 2 beginnt (Platzhalter)', () => {
     expect(state.ending).toBeNull();
     expect(state.jump).toBeNull();
     expect(state.agenda.used).toBe(0);
-    expect(state.strength).toBe(state.strengthMax);
+    // Volle Kraft – nur nach verfehlter Prüfung weniger (0.4.19+2).
+    expect(state.strength).toBe(chapterPassed(ende, balance) ? state.strengthMax : state.strengthMax - balance.chapter.missed.strength);
     expect(state.priceHistory.length).toBe(16 + balance.timeskip.rounds + 1);
     expect(record.fromYear).toBe(5);
     expect(record.toYear).toBe(10);
@@ -267,7 +271,8 @@ describe('Kapitel 2 beginnt (Platzhalter)', () => {
     const ende = kapitelEnde('sprung-welt');
     const { state } = springen(ende);
     expect(state.worldModel.round).toBe(ende.worldModel.round + balance.timeskip.rounds);
-    expect(JSON.stringify(state)).not.toMatch(/NaN|Infinity|null,null/);
+    expect(nonFiniteNumbers(state)).toEqual([]);
+    expect(JSON.stringify(state)).not.toMatch(/null,null/);
     expect(serializeGame(state, APP)).not.toMatch(/NaN|Infinity/);
   });
 
@@ -399,7 +404,7 @@ describe('Spielstand übersteht den Kapitelwechsel', () => {
     if (!geladen.ok) return;
     let s = geladen.state;
     for (let i = 0; i < 3; i++) s = endRound(s, balance, catalog);
-    expect(JSON.stringify(s)).not.toMatch(/NaN|Infinity/);
+    expect(nonFiniteNumbers(s)).toEqual([]);
   });
 
   it('ein kaputter Sprung im Spielstand wird abgelehnt', () => {
@@ -532,7 +537,9 @@ describe('Direktiven wirken (GDD §2: Haltung bestimmt Ertrag und Streuung, Fami
     const viel = lauf('balanced', 'much');
     const wenig = lauf('balanced', 'little');
     expect(schnitt(viel.map(wert))).toBeLessThan(0.92 * schnitt(mittel.map(wert)));
-    expect(schnitt(viel.map((r) => r.state.wells.length))).toBeLessThan(schnitt(mittel.map((r) => r.state.wells.length)));
+    // Bohrungen: höchstens so viele wie mit mittlerer Familienzeit. Seit der Notfallregel des Standard-Bots
+    // (0.4.19+2) kommen mehr arme Firmen ans Kapitelende, deren Verwalter ohnehin kaum bohrt – dann ist es gleich.
+    expect(schnitt(viel.map((r) => r.state.wells.length))).toBeLessThanOrEqual(schnitt(mittel.map((r) => r.state.wells.length)));
     expect(schnitt(viel.map((r) => r.state.family.ruth))).toBeGreaterThan(schnitt(wenig.map((r) => r.state.family.ruth)) + 15);
   });
 });
@@ -772,5 +779,41 @@ describe('Erkundung und Planungsbrett nach dem Zeitsprung', () => {
     if (!r.ok) throw new Error(r.reason);
     expect(knowledgeOf(r.state, ziel.id).level).toBe(1);
     expect(r.state.forecasts[ziel.id]).toBeDefined();
+  });
+});
+
+describe('Verfehlte Kapitelprüfung und Rating nach dem Sprung (0.4.19+2)', () => {
+  it('wer das Kapitelziel verfehlt, beginnt das nächste Kapitel mit weniger Kasse und weniger Kraft', () => {
+    const leicht: Balance = { ...balance, chapter: { ...balance.chapter, goalValue: 0 } };
+    const ende = kapitelEnde('verfehlt-schwach');
+    // Gleiche Partie, einmal verfehlt (Ziel 50.000 $), einmal erreicht (Ziel 0 $).
+    const verfehlt = springen(ende).state;
+    const erreicht = springen(ende, STANDARD, ERSTE, leicht).state;
+    expect(verfehlt.strength).toBe(Math.max(0, verfehlt.strengthMax - balance.chapter.missed.strength));
+    expect(erreicht.strength).toBe(erreicht.strengthMax);
+    expect(verfehlt.log.some((z) => z.includes('verfehlte Kapitelziel'))).toBe(true);
+    expect(erreicht.log.some((z) => z.includes('verfehlte Kapitelziel'))).toBe(false);
+    if (erreicht.cash > 0) expect(verfehlt.cash).toBeLessThan(erreicht.cash);
+  });
+
+  it('das Rating wird am Ende des Sprungs neu berechnet – ohne Schulden kein D aus dem alten Kapitel', () => {
+    const ende = kapitelEnde('sprung-rating');
+    // Vorsichtige Haltung: Der Verwalter leiht nichts; das alte D darf nicht hängen bleiben.
+    const { state } = springen({ ...ende, rating: 'D', loans: [], missedPayments: 0 }, { stance: 'cautious', family: 'some' });
+    expect(state.rating).toBe(ratingOf(state, balance));
+    if (debt(state) === 0) expect(state.rating).not.toBe('D');
+  });
+});
+
+describe('Ausgangslage im Kapitelstart-Text (0.4.19+2)', () => {
+  it('schwach bei wenigen Quellen oder kleinem Imperium, sonst stark', () => {
+    const w = balance.timeskip.weakStart;
+    const nach = (wells: number, value: number) => ({ cash: 0, debt: 0, wells, value, ruth: 50, children: 1 });
+    expect(weakStart({ number: 1, after: nach(0, 5000) }, balance)).toBe(true);
+    expect(weakStart({ number: 1, after: nach(w.wells, w.value2) }, balance)).toBe(false);
+    expect(weakStart({ number: 2, after: nach(w.wells, w.value2) }, balance)).toBe(w.value2 < w.value3);
+    const c = parseTimeskipContent('content/timeskip.yaml', readFileSync(new URL('../../content/timeskip.yaml', import.meta.url), 'utf8')).content!;
+    expect(c.chapter2.textWeak.de).not.toMatch(/ernstzunehmende/);
+    expect(c.chapter3.textWeak.de).not.toMatch(/ist ein Konzern/);
   });
 });

@@ -4,7 +4,8 @@
 # Platzhalter in geschweiften Klammern füllt das Spiel ein:
 #   {ort}     Ranch auf der Karte, z. B. Moss-Farm
 #   {kosten}  Betrag in $
-#   {chance}  Schätzung des Geologen, z. B. 35–60 % Fundchance
+#   {chance}  Prognose, z. B. 35–60 % Fundchance
+#   {quelle}  wer sie stellt – je Wissensstufe der Ranch (sources unten), z. B. „nach deinem Ritt rechnest du mit“
 #   {weg}     Fuhrwerk oder Bahn
 # Ab 0.2.15+10 nennen die Texte die Gegenstände am Schreibtisch mit Kürzel
 # (Wandkarte K, Kassenbuch G, Frachtmappe V, Glocke E).
@@ -31,11 +32,11 @@ hints:
     de: Was du über das Land weißt, ist bisher Gerede. Reite hin und sieh selbst nach – Sickerstellen, Salzwasser, Hügelzüge. Öffne den Kalender (T) und buche „Übers Land reiten“ für {ort}, oder klick die Ranch auf der Wandkarte (K) an. Das kostet zwei Termine, keinen Cent.
     en: What you know about the land so far is talk. Ride out and see for yourself – seeps, salt water, ridges. Open the calendar (T) and book “Ride the country” for {ort}, or click the ranch on the wall map (K). It costs two appointments, not a cent.
   lease_option:
-    de: Ohne Land kein Öl. Du hast eine Option auf {ort} – der Geologe schätzt {chance}. Öffne die Wandkarte (K), klick die golden umrandete Ranch mit dem Fähnchen „hier“ an und wähle „Option einlösen“ ({kosten}) – das ist der Preis, den du dir mit der Option gesichert hast. Danach gehört dir die Pacht.
-    en: No land, no oil. You hold an option on {ort} – the geologist estimates {chance}. Open the wall map (K), click the ranch and choose “Exercise option” ({kosten}) – the price you locked in with the option. Then the lease is yours.
+    de: Ohne Land kein Öl. Du hast eine Option auf {ort} – {quelle} {chance}. Öffne die Wandkarte (K), klick die golden umrandete Ranch mit dem Fähnchen „hier“ an und wähle „Option einlösen“ ({kosten}) – das ist der Preis, den du dir mit der Option gesichert hast. Danach gehört dir die Pacht.
+    en: No land, no oil. You hold an option on {ort} – {quelle} {chance}. Open the wall map (K), click the ranch and choose “Exercise option” ({kosten}) – the price you locked in with the option. Then the lease is yours.
   lease_buy:
-    de: Ohne Land kein Öl. {ort} sieht gut aus – der Geologe schätzt {chance}. Öffne die Wandkarte (K) – die Ranch ist dort golden umrandet und trägt ein Fähnchen „hier“. Klick sie an und wähle „Pacht kaufen“ ({kosten}). Behalte Geld für die Bohrung übrig.
-    en: No land, no oil. {ort} looks promising – the geologist estimates {chance}. Open the wall map (K) – the ranch has a gold frame and a “here” flag. Click it and choose “Buy lease” ({kosten}). Keep money aside for the drilling.
+    de: Ohne Land kein Öl. {ort} sieht gut aus – {quelle} {chance}. Öffne die Wandkarte (K) – die Ranch ist dort golden umrandet und trägt ein Fähnchen „hier“. Klick sie an und wähle „Pacht kaufen“ ({kosten}). Behalte Geld für die Bohrung übrig.
+    en: No land, no oil. {ort} looks promising – {quelle} {chance}. Open the wall map (K) – the ranch has a gold frame and a “here” flag. Click it and choose “Buy lease” ({kosten}). Keep money aside for the drilling.
   lease_none:
     de: Für Pacht und Bohrung reicht das Geld gerade nicht. Die Bank leiht dir etwas (Kassenbuch, G) – oder du läutest die Glocke (E) und wartest auf Einnahmen.
     en: There is not enough money for a lease and a well right now. The bank will lend you some (ledger, G) – or ring the bell (E) and wait for income.
@@ -57,8 +58,8 @@ hints:
     de: Der Turm bohrt. Läute die Glocke (E) – erst danach zeigt sich, ob in der Tiefe Öl liegt.
     en: The rig is drilling. Ring the bell (E) – only then will you know whether there is oil down there.
   deeper:
-    de: Auf {ort} war in dieser Tiefe nichts. Der Geologe gibt der nächsten Stufe noch {chance}. Das ist es wert – wähle „Tiefer bohren“ ({kosten}).
-    en: Nothing at this depth on {ort}. The geologist still gives the next stage {chance}. It is worth it – choose “Drill deeper” ({kosten}).
+    de: Auf {ort} war in dieser Tiefe nichts. Für die nächste Stufe stehen noch {chance}. Das ist es wert – wähle „Tiefer bohren“ ({kosten}).
+    en: Nothing at this depth on {ort}. The next stage still has {chance}. It is worth it – choose “Drill deeper” ({kosten}).
   abandon:
     de: Auf {ort} war in dieser Tiefe nichts, und tiefer lohnt es kaum. Wähle „Aufgeben“ – dann ist der Turm frei für eine neue Pacht.
     en: Nothing at this depth on {ort}, and going deeper hardly pays. Choose “Abandon” – then the rig is free for a new lease.
@@ -88,11 +89,27 @@ onMap:
     de: Was du über das Land weißt, ist bisher Gerede. Klick {ort} an und wähle „Übers Land reiten“ – zwei Termine, dann weißt du mehr über die Ranch und zwei Nachbarn.
     en: What you know about the land so far is talk. Click {ort} and choose “Ride the country” – two appointments, and you will know more about the ranch and two neighbours.
   lease_option:
-    de: Ohne Land kein Öl. Du hast eine Option auf {ort} – der Geologe schätzt {chance}. Klick die Ranch an und wähle „Option einlösen“ ({kosten}) – dein gesicherter Preis.
-    en: No land, no oil. You hold an option on {ort} – the geologist estimates {chance}. Click the ranch and choose “Exercise option” ({kosten}) – your locked-in price.
+    de: Ohne Land kein Öl. Du hast eine Option auf {ort} – {quelle} {chance}. Klick die Ranch an und wähle „Option einlösen“ ({kosten}) – dein gesicherter Preis.
+    en: No land, no oil. You hold an option on {ort} – {quelle} {chance}. Click the ranch and choose “Exercise option” ({kosten}) – your locked-in price.
   lease_buy:
-    de: Ohne Land kein Öl. {ort} sieht gut aus – der Geologe schätzt {chance}. Klick die Ranch (goldener Rahmen, Fähnchen „hier“) an und wähle „Pacht kaufen“ ({kosten}).
-    en: No land, no oil. {ort} looks promising – the geologist estimates {chance}. Click the ranch (gold frame, “here” flag) and choose “Buy lease” ({kosten}).
+    de: Ohne Land kein Öl. {ort} sieht gut aus – {quelle} {chance}. Klick die Ranch (goldener Rahmen, Fähnchen „hier“) an und wähle „Pacht kaufen“ ({kosten}).
+    en: No land, no oil. {ort} looks promising – {quelle} {chance}. Click the ranch (gold frame, “here” flag) and choose “Buy lease” ({kosten}).
   drill:
     de: Deine Pacht auf {ort} ist bereit. Wähle „Bohren“ ({kosten}). Der Turm braucht eine Runde für die erste Stufe.
     en: Your lease on {ort} is ready. Choose “Drill” ({kosten}). The rig needs one round for the first stage.
+
+# Wer die Prognose stellt (Platzhalter {quelle}, 0.4.19+2) – je Wissensstufe der Ranch.
+# Ritt, Farmer und Geologe sind verschiedene Stufen; der Text soll das nicht verwischen.
+sources:
+  geruecht:
+    de: nach dem, was man sich erzählt, rechnest du mit
+    en: going by what people say, you reckon on
+  ritt:
+    de: nach deinem eigenen Ritt rechnest du mit
+    en: going by your own ride, you reckon on
+  karte:
+    de: nach der Karte des Geologen rechnest du mit
+    en: going by the geologist's map, you reckon on
+  bericht:
+    de: nach dem Bohrbericht rechnest du mit
+    en: going by the drilling log, you reckon on

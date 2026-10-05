@@ -213,7 +213,7 @@
   # WUNSCH: conditions: hasShares – Harlan Oil ist nur nach dem Börsengang am Ende von Kapitel 1
   # eine Aktiengesellschaft (state.ipo.share > 0, Story-Bibel §2). Ohne Börsengang gibt es keine
   # Harlan-Aktie, kein Aktienbuch und keinen Aufsichtsrat – bis dahin läuft die Szene sonst ins Leere.
-  conditions: { minChapter: 3, maxChapter: 3 }
+  conditions: { minChapter: 3, maxChapter: 3, minPublicShare: 1 }
   chance: 0.25
   choices:
     - id: annehmen
@@ -239,7 +239,7 @@
   # WUNSCH: conditions: hasShares – Harlan Oil ist nur nach dem Börsengang am Ende von Kapitel 1
   # eine Aktiengesellschaft (state.ipo.share > 0, Story-Bibel §2). Ohne Börsengang gibt es keine
   # Harlan-Aktie, kein Aktienbuch und keinen Aufsichtsrat – bis dahin läuft die Szene sonst ins Leere.
-  conditions: { minChapter: 3, maxChapter: 3 }
+  conditions: { minChapter: 3, maxChapter: 3, minPublicShare: 1 }
   title:
     de: Ein Kurs, der jeden Freitag steigt
     en: A Price That Rises Every Friday
@@ -291,7 +291,7 @@
   # WUNSCH: conditions: hasShares – Harlan Oil ist nur nach dem Börsengang am Ende von Kapitel 1
   # eine Aktiengesellschaft (state.ipo.share > 0, Story-Bibel §2). Ohne Börsengang gibt es keine
   # Harlan-Aktie, kein Aktienbuch und keinen Aufsichtsrat – bis dahin läuft die Szene sonst ins Leere.
-  conditions: { minChapter: 3, maxChapter: 3 }
+  conditions: { minChapter: 3, maxChapter: 3, minPublicShare: 1 }
   chance: 0.25
   choices:
     - id: namen
@@ -320,7 +320,7 @@
   delay: 3
   chance: 0.5
   # WUNSCH: hasShares wie bei k3_thorne_prospekt – folgt nur auf dessen Merkzeichen, braucht es also nicht eigens.
-  conditions: { minChapter: 3, maxChapter: 3 }
+  conditions: { minChapter: 3, maxChapter: 3, minPublicShare: 1 }
   rival: thorne
   title:
     de: Briefe von Sparern
@@ -372,7 +372,7 @@
   # WUNSCH: conditions: hasShares – Harlan Oil ist nur nach dem Börsengang am Ende von Kapitel 1
   # eine Aktiengesellschaft (state.ipo.share > 0, Story-Bibel §2). Ohne Börsengang gibt es keine
   # Harlan-Aktie, kein Aktienbuch und keinen Aufsichtsrat – bis dahin läuft die Szene sonst ins Leere.
-  conditions: { minChapter: 3, maxChapter: 3 }
+  conditions: { minChapter: 3, maxChapter: 3, minPublicShare: 1 }
   chance: 0.25
   choices:
     - id: abkaufen

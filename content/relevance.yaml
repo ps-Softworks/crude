@@ -42,8 +42,6 @@ later:
   - { mark: ehe_partner, reason: "Ausgang Ehe-Bogen: Ruth unterschreibt mit, Kontrolle sicher (Kapitel 4)" }
   - { mark: ehe_waffenstillstand, reason: "Ausgang Ehe-Bogen: Waffenstillstand (Kapitel 4)" }
   - { mark: ehe_trennung, reason: "Ausgang Ehe-Bogen: Trennung, Ruths Anteile verkauft (Kapitel 4)" }
-  - { mark: vale_k3_zugesagt, reason: "Zusage an Mr. Vale – k3_vale_schloss (Bogen D, System Konsortium)" }
-  - { mark: vale_k3_abgesagt, reason: "Absage an Mr. Vale – k3_vale_schloss, Preisdruck in der nächsten Krise (Bogen D)" }
   - { mark: geburt_dabei, reason: "Thomas' Bogen (GDD Kapitel 3: Thomas kommt ins Unternehmen – oder nicht)" }
   - { mark: geburt_verpasst, reason: "Thomas' Bogen (GDD Kapitel 3)" }
   - { mark: thomas_wort_dabei, reason: "Thomas' Bogen (GDD Kapitel 3)" }

@@ -521,10 +521,10 @@ function randomLogistics(state: GameState, balance: Balance, rng: Rng, ledger: T
   return r.state;
 }
 
-/** Fundchance laut Geologe als Anteil 0–1 (die Prognose rechnet in Prozent). */
+/** Fundchance laut Geologe als Anteil 0–1 (die Prognose rechnet in Prozent; die Mitte ist ungekappt und kann negativ sein). */
 function chance(state: GameState, parcelId: string): number {
   const f = state.forecasts[parcelId];
-  return f ? f.center / 100 : 0;
+  return f ? Math.min(100, Math.max(0, f.center)) / 100 : 0;
 }
 
 /** Freie Parzellen (weder gepachtet noch mit Option), beste Prognose zuerst. */
@@ -751,13 +751,27 @@ function greedyTurn(state: GameState, balance: Balance, catalog: readonly EventD
  * Bankrahmens insgesamt, und nie mehr, als die Bank gerade gibt.
  */
 export function balancedBorrowable(state: GameState, balance: Balance): number {
-  const grenze = balance.bots.balanced.maxDebtShare * creditLimit(state, balance) - debt(state);
+  const anteil = balancedEmergency(state) ? balance.bots.balanced.emergencyDebtShare : balance.bots.balanced.maxDebtShare;
+  const grenze = anteil * creditLimit(state, balance) - debt(state);
   return Math.max(0, Math.min(headroom(state, balance), Math.floor(grenze)));
 }
 
+/**
+ * Notfallregel: Ohne fördernde Quelle und ohne Land, auf dem noch etwas passiert,
+ * kommt kein Geld mehr herein – dann leiht der Standard-Bot bis emergencyDebtShare des
+ * Bankrahmens für den nächsten Versuch, statt nach zwei trockenen Löchern bis zum Kapitelende zu warten.
+ */
+export function balancedEmergency(state: GameState): boolean {
+  if (roundsLeft(state) <= 2) return false;
+  // Erst nach mindestens einem trockenen Loch – am Anfang reicht die Startkasse.
+  if (!state.wells.some((w) => w.status === 'dry')) return false;
+  if (state.wells.some((w) => w.status !== 'dry')) return false;
+  return undrilled(state).length === 0 && jacobsOptions(state).length === 0;
+}
+
 /** Zahlt eine Aktion; fehlt Geld bis zur Rücklage, leiht er den Rest – aber nur im eigenen Rahmen. */
-function balancedPay(state: GameState, balance: Balance, parcelId: string, kind: DeskActionKind, cost: number): GameState {
-  const { cashReserve } = balance.bots.balanced;
+function balancedPay(state: GameState, balance: Balance, parcelId: string, kind: DeskActionKind, cost: number, keep = 0): GameState {
+  const cashReserve = balance.bots.balanced.cashReserve + keep;
   if (state.cash - cost >= cashReserve) return act(state, balance, parcelId, kind);
   const amount = Math.max(balance.credit.minLoan, Math.ceil(cost + cashReserve - state.cash));
   if (amount > balancedBorrowable(state, balance)) return state;
@@ -781,14 +795,24 @@ function balancedTurn(state: GameState, balance: Balance, catalog: readonly Even
   }
   for (const option of jacobsOptions(state)) state = balancedPay(state, balance, option.parcelId, 'exercise', option.bonus);
   state = investRigs(state, balance, 'ausgewogen', purseFor(balance, 'ausgewogen'));
-  for (const parcelId of undrilled(state)) state = balancedPay(state, balance, parcelId, 'drill', stageCost(balance, 1));
+  // Nach einem trockenen Loch und ohne fördernde Quelle zählt nur der nächste Fund: Dann bohrt er auch ohne Rücklage.
+  // In den letzten beiden Runden nicht mehr: Wer dann ins Minus rutscht, ist am Kapitelende pleite.
+  const ohneQuelle = roundsLeft(state) > 2 && state.wells.some((w) => w.status === 'dry') && !state.wells.some((w) => w.status === 'found');
+  for (const parcelId of undrilled(state)) {
+    state = balancedPay(state, balance, parcelId, 'drill', stageCost(balance, 1), ohneQuelle ? -balance.bots.balanced.cashReserve : 0);
+  }
   // Ausbau (0.2.15+7): was sich laut Rechnung bezahlt macht, im eigenen Kreditrahmen.
   state = investWells(state, balance, 'ausgewogen', purseFor(balance, 'ausgewogen'));
   // Neues Land nur, wenn danach auch die erste Bohrstufe und die Rücklage bezahlbar bleiben.
   if (undrilled(state).length + jacobsOptions(state).length < maxUndrilled) {
     const geld = state.cash + balancedBorrowable(state, balance) - cashReserve - stageCost(balance, 1);
     const best = freeParcels(state, minChance).find((id) => leaseTerms(state, balance, id).bonus <= geld);
-    if (best !== undefined) state = balancedPay(state, balance, best, 'lease', leaseTerms(state, balance, best).bonus);
+    if (best !== undefined) {
+      const bonus = leaseTerms(state, balance, best).bonus;
+      // Im Notfall das Geld für die erste Bohrstufe gleich mitleihen: Nach dem Kredit kann das
+      // Rating auf D fallen, dann gäbe die Bank nächste Runde nichts mehr, und die Pacht verfiele.
+      state = balancedEmergency(state) ? balancedPay(state, balance, best, 'lease', bonus, stageCost(balance, 1)) : balancedPay(state, balance, best, 'lease', bonus);
+    }
   }
   return state;
 }

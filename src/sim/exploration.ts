@@ -173,7 +173,25 @@ export function knowledgeForecast(state: Pick<GameState, 'seed' | 'parcels' | 'k
   const karte = k.level === 2 ? k.clues.filter((c) => c.kind === 'kartierung').sort((a, b) => (b.accuracy ?? 0) - (a.accuracy ?? 0))[0] : undefined;
   const bias = karte?.bias ?? 0;
   const error = (fest(state.seed, `prognose:${parcelId}:${k.level}`).float() * 2 - 1) * width * balance.exploration.noiseShare;
-  return forecastAround(balance, parcelId, 100 * posteriorChance(state, balance, parcelId) + bias + error, width);
+  return clampToGeology(balance, forecastAround(balance, parcelId, 100 * posteriorChance(state, balance, parcelId) + bias + error, width));
+}
+
+/**
+ * Das Band bleibt im Rahmen dessen, was die Geologie hergibt (qMin–qMax, 0.4.19+2): Kein Feld hat
+ * mehr als qMax Fundchance – „60–100 %“ versprach mehr, als es gibt. Auf das Raster gerundet.
+ */
+function clampToGeology(balance: Balance, f: Forecast): Forecast {
+  const { rounding } = balance.forecast;
+  const { qMin, qMax } = balance.geology.trends;
+  const unten = Math.floor((qMin * 100) / rounding) * rounding;
+  const oben = Math.ceil((qMax * 100) / rounding) * rounding;
+  let low = Math.min(Math.max(f.low, unten), oben);
+  let high = Math.min(Math.max(f.high, unten), oben);
+  if (low >= high) {
+    if (high + rounding <= oben) high = low + rounding;
+    else low = high - rounding;
+  }
+  return { ...f, low, high };
 }
 
 /**

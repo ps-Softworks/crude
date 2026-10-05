@@ -65,8 +65,8 @@ cards:
   rute:
     title: { de: "Rutengänger bestellen", en: "Hire a Dowser" }
     text:
-      de: "Der alte Pike läuft mit seiner Haselrute über das Land. Die Bohrleute schwören darauf."
-      en: "Old Pike walks the land with his hazel rod. The drillers swear by it."
+      de: "Der alte Lemuel Haskett läuft mit seiner Haselrute über das Land. Die Bohrleute schwören darauf."
+      en: "Old Lemuel Haskett walks the land with his hazel rod. The drillers swear by it."
     risk: { de: "Reiner Zufall – aber die Männer sind danach besserer Laune.", en: "Pure chance – but the men are in better spirits afterwards." }
   feldinspektion:
     title: { de: "Feldinspektion", en: "Field Inspection" }
@@ -114,9 +114,9 @@ cards:
   geruecht:
     title: { de: "Gerücht streuen", en: "Spread a Rumour" }
     text:
-      de: "Ein paar Dollar für Nora Brand und ein paar Runden im Saloon: Was die Händler glauben, bewegt den Preis der nächsten Runde."
-      en: "A few dollars for Nora Brand and a few rounds in the saloon: what the traders believe moves next round's price."
-    risk: { de: "Jedes Gerücht wirkt schwächer als das letzte – und fliegt leichter auf. Dann schreibt Nora nie wieder für Jacob, und Crane zahlt weniger.", en: "Each rumour works less than the last – and is easier to expose. Then Nora never writes for Jacob again, and Crane pays less." }
+      de: "Ein paar Dollar für einen Zeilenschinder des Courier und ein paar Runden im Saloon: Was die Händler glauben, bewegt den Preis der nächsten Runde."
+      en: "A few dollars for a Courier hack and a few rounds in the saloon: what the traders believe moves next round's price."
+    risk: { de: "Jedes Gerücht wirkt schwächer als das letzte – und fliegt leichter auf. Dann deckt Nora Whitlock auf, woher es kam: Sie redet nie wieder mit Jacob, und Crane zahlt weniger.", en: "Each rumour works less than the last – and is easier to expose. Then Nora Whitlock finds out where it came from: she never speaks to Jacob again, and Crane pays less." }
   crane_feilschen:
     title: { de: "Mit Crane feilschen", en: "Haggle with Crane" }
     text:

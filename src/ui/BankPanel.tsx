@@ -12,6 +12,8 @@ import {
   loanSlider,
   quarterInterest,
   quarterInterestTotal,
+  ratingShiftOf,
+  ratingUsage,
   repay,
   repaySlider,
   sliderAmount,
@@ -23,6 +25,7 @@ import {
 import type { GameState } from '../sim/game';
 import { parcelLabel } from '../sim/lease';
 import { worldLimitFactor } from '../sim/world';
+import { chapterOf } from '../sim/chapterOf';
 import { balance } from './balance';
 import { money, NBSP } from './format';
 
@@ -102,6 +105,13 @@ export function BankPanel({ game, onResult }: { game: GameState; onResult: (resu
             · {game.missedPayments} {game.missedPayments === 1 ? 'Zahlung nicht pünktlich' : 'Zahlungen nicht pünktlich'}
           </>
         )}
+      </p>
+      {/* Woher das Rating kommt (0.4.19+2): Verschuldung, ab Kapitel 2 mit der Kasse verrechnet, und Ereignisse. */}
+      <p className="muted klein">
+        Verschuldung für das Rating: {Math.round(ratingUsage(game, balance) * 100)}{NBSP}% des Grundrahmens
+        {chapterOf(game) >= 2 ? ' (Schulden abzüglich Kasse)' : ''}
+        {ratingShiftOf(game) !== 0 &&
+          ` · frühere Entscheidungen: ${Math.abs(ratingShiftOf(game))} ${Math.abs(ratingShiftOf(game)) === 1 ? 'Stufe' : 'Stufen'} ${ratingShiftOf(game) < 0 ? 'schlechter' : 'besser'}`}
       </p>
 
       {game.bankruptcyDeadline > 0 && (

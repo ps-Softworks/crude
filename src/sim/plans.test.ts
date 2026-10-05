@@ -1,6 +1,7 @@
 // Termine als Hauptwerkzeug, Etappe 1: Planungsbrett (Plan 1.3, Tests 1.5).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { nonFiniteNumbers } from './testFinite';
 import type { Balance } from './balance';
 import { resolveEvent } from './events';
 import { hireGeologist, knowledgeForecast, knowledgeOf, learnFromWells, rideParcels } from './exploration';
@@ -65,6 +66,23 @@ describe('Buchen und Zurücknehmen (Plan 1.3)', () => {
     expect(zurueck.strength).toBe(state.strength);
     expect(zurueck.cash).toBe(state.cash);
     expect(zurueck.plans.booked).toEqual([]);
+  });
+
+  it('Zurücknehmen gibt genau die Kraft zurück, die das Buchen gekostet hat – auch am Rand bei 0 und bei strengthMax', () => {
+    for (const kraft of [-3, 2]) {
+      const base = mitRundenendKarte();
+      const b: Balance = { ...base, plans: { cards: { ...base.plans.cards, probe: { ...base.plans.cards.probe, strength: kraft } } } };
+      const start = newGame('kraftrand', b, katalog);
+      for (const s0 of [0, 1, start.strengthMax - 1, start.strengthMax]) {
+        const state = { ...start, strength: s0 };
+        const ziel = unbekannt(state);
+        const nach = ok(bookCard(state, b, katalog, 'probe', ziel));
+        expect(nach.strength).toBe(Math.min(state.strengthMax, Math.max(0, s0 + kraft)));
+        expect(nach.plans.booked[0].strength).toBe(nach.strength - s0);
+        const zurueck = ok(unbookCard(nach, b, 0));
+        expect(zurueck.strength).toBe(s0);
+      }
+    }
   });
 
   it('Rundenend-Karten wirken erst am Rundenende – das Ergebnis steht im Wochenbericht', () => {
@@ -269,7 +287,7 @@ describe('Inhalte und Spielstand (Plan 1.3, 1.5)', () => {
     // Weiterspielen geht, auch mit Erkundung.
     const ziel = unbekannt(st);
     const weiter = endRound(ok(bookCard(st, balance, katalog, 'ritt', ziel)), balance, katalog);
-    expect(JSON.stringify(weiter)).not.toMatch(/NaN|Infinity/);
+    expect(nonFiniteNumbers(weiter)).toEqual([]);
   });
 
   it('Wissensstand, Geologe und Brett überstehen Sichern und Laden', () => {

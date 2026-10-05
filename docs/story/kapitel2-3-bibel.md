@@ -659,8 +659,9 @@ sich der Ausgang aus den K2-Merkzeichen, dem Beziehungswert `ruth` und den drei 
 
 ### Bogen D – Mr. Vales Einladung (Konsortium)
 
-- `k3_vale_karte` (`mail: personal`, Runde 6–9): Eine Karte mit Wappen, Schloss Hohenbrück *(V)* in
-  Aldmark. „Man trifft sich, wie es ist.“
+- `k3_vale_karte` (`mail: personal`, Runde 3–4): Eine Karte im Umschlag des Konsortium-Briefs (graues
+  Siegel ohne Wappen, Schloss Kerrow in Aldmark). „Man trifft sich, wie es ist.“ Seit 0.4.19+2 gibt es nur
+  diese eine Einladung; zu- oder abgesagt wird im Brief des Systems Konsortium.
 - `k3_vale_schloss` (**Schlüsselszene**, Reise: 3 Termine, Kraft −): Ein Saal, sieben Männer,
   Ashcombe von Royal Aldmark *(V: Vorschau auf Kapitel 5)*, eine Landkarte mit Linien. Pruett oder
   Margaret sitzt am Tisch.

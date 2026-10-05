@@ -50,7 +50,7 @@
       about the Crane Trust: railway rebates, the posted price, judges with new
       carriages. "You sell to the Trust, Mr. Harlan. You know how it does its sums."
   conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
-  notMarked: [nora_bestechung, courier_gekauft]
+  notMarked: [nora_bestechung, courier_gekauft, nora_beschwert]
   certain: true
   choices:
     - id: material
@@ -73,11 +73,11 @@
         de: >-
           Nora fragt zwei Stunden. Jacob antwortet auf alles, außer auf die Frage nach
           den Rabatten der eigenen Firma. Sie notiert die Pause. Am Abend ist Jacob
-          müder als nach einer Ratssitzung.
+          müder als nach einem Tag mit den Bankiers.
         en: >-
           Nora asks questions for two hours. Jacob answers everything except the
           question about his own company's rebates. She notes the pause. By evening
-          Jacob is more tired than after a board meeting.
+          Jacob is more tired than after a day with the bankers.
       effects: { strength: -4, reputation: { public: 4 } }
       marks: [nora_interview_k2, nora_k2_besucht]
       appointments: 2
@@ -314,13 +314,13 @@
       Belege, dass Bullard vom Trust einen geheimen Frachtrabatt bekommt – zehn Cent
       je Barrel, die andere Förderer mitbezahlen. Ihr fehlt eine zweite Quelle. „Ich
       frage nicht, ob es stimmt, Mr. Harlan. Ich frage, ob Sie es sagen.“ Bullard ist
-      auf dem Höhepunkt; seine Söhne Wade und Cole fahren schon die Wagen.
+      auf dem Höhepunkt; sein Ältester, Wade, fährt schon die Wagen.
     en: >-
       Nora comes in the evening, when the anteroom light is already out. She has
       evidence that Bullard gets a secret freight rebate from the Trust – ten cents
       a barrel, which other producers pay for. She needs a second source. "I'm not
       asking whether it's true, Mr. Harlan. I'm asking whether you'll say so."
-      Bullard is at his peak; his sons Wade and Cole already drive the wagons.
+      Bullard is at his peak; his eldest, Wade, already drives the wagons.
   conditions: { minChapter: 2, maxChapter: 2, minRound: 9 }
   marked: [nora_verbuendet]
   delay: 2

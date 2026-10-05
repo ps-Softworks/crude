@@ -86,7 +86,8 @@ export function DeskObject({
         </span>
       )}
       {badge && (
-        <span className={badge.urgent ? 'abzeichen dringend' : 'abzeichen'}>
+        // 0.4.19+2: Längere Abzeichen („4 Bewerbungen“) stehen über dem Gegenstand statt auf seinem Bild.
+        <span className={`abzeichen${badge.urgent ? ' dringend' : ''}${badge.text.length > 4 ? ' lang' : ''}`}>
           {badge.urgent && <span className="siegel" aria-hidden="true" />}
           {badge.text}
           {badge.urgent && ' · Frist!'}

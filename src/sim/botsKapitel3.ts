@@ -2,13 +2,14 @@
 // nicht. Damit Durchläufe über alle drei Kapitel die Kapitel-3-Systeme wirklich benutzen, legt
 // dieser Schritt vor dem Rundenende nach einfachen Regeln Hand an: Marke gründen, Tankstellen in den
 // billigsten offenen Regionen bauen (bis die Marke dort vertreten ist), solange über einer Rücklage
-// Geld da ist. Rein, deterministisch, ohne Zufall. In Kapitel 1 und 2 kommt derselbe Zustand zurück –
-// die Kapitel-1-Bot-Läufe ändern sich dadurch nicht.
+// Geld da ist. Rein, deterministisch, ohne Zufall. In Kapitel 2 baut er die Raffinerie (0.4.19+2), in
+// Kapitel 1 kommt derselbe Zustand zurück – die Kapitel-1-Bot-Läufe ändern sich dadurch nicht.
 
 import type { Balance } from './balance';
 import { brandOf, brandRegionOpen, brandUnlocked, brandWorldFrom, buildingCount, buildStations, foundBrand, stationCost } from './brand';
 import { chapterOf } from './chapterOf';
 import type { GameState } from './game';
+import { buildRefinery } from './refinery';
 
 export interface BrandBotPolicy {
   /** So viel $ bleibt immer in der Kasse. */
@@ -19,8 +20,22 @@ export interface BrandBotPolicy {
 
 export const DEFAULT_BRAND_BOT: BrandBotPolicy = { reserve: 15000, perRound: 3 };
 
-/** Ein Zug des Bots an den Kapitel-3-Systemen (Marke und Tankstellen). */
+/**
+ * Kapitel 2 (0.4.19+2): Die Prüfung verlangt eine eigene Raffinerie oder Fernleitung zum Hafen.
+ * Der Bot baut die Raffinerie, sobald Bau und Rücklage bezahlbar sind – vorher spielte kein
+ * Messwerkzeug die Systeme von Kapitel 2, und die Prüfung wurde in keiner Bot-Partie bestanden.
+ */
+export function botChapter2Systems(state: GameState, balance: Balance, policy: BrandBotPolicy = DEFAULT_BRAND_BOT): GameState {
+  if (state.finished || chapterOf(state) !== 2 || !state.refinery) return state;
+  if (state.refinery.level > 0 || state.refinery.project) return state;
+  if (state.cash < balance.refinery.buildCost + policy.reserve) return state;
+  const r = buildRefinery(state, balance);
+  return r.ok ? r.state : state;
+}
+
+/** Ein Zug des Bots an den Systemen späterer Kapitel: Raffinerie (Kapitel 2), Marke und Tankstellen (Kapitel 3). */
 export function botChapterSystems(state: GameState, balance: Balance, policy: BrandBotPolicy = DEFAULT_BRAND_BOT): GameState {
+  if (chapterOf(state) === 2) return botChapter2Systems(state, balance, policy);
   if (state.finished || chapterOf(state) < 3) return state;
   const world = brandWorldFrom(state);
   if (!brandUnlocked(world, balance)) return state;

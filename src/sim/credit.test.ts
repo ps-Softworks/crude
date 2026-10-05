@@ -10,6 +10,9 @@ import {
   loanSlider,
   quarterInterest,
   quarterInterestTotal,
+  ratingOf,
+  ratingUsage,
+  refreshRating,
   repay,
   repayMax,
   repaySlider,
@@ -636,5 +639,45 @@ describe('Schieberegler für Kredit und Tilgung', () => {
   it('Zinsen je Quartal für alle Kredite zusammen', () => {
     const state = { ...mitKredit(1000, 0.1), loans: [...mitKredit(1000, 0.1).loans, { ...mitNotkredit(100).loans[0], id: 2 }] };
     expect(quarterInterestTotal(state)).toBe(25 + 10);
+  });
+});
+
+describe('Rating ab Kapitel 2: Rücklagen zählen (0.4.19+2)', () => {
+  const balance = loadBalance();
+  const kredit = (principal: number): Loan => ({ id: 1, source: 'bank', principal, rate: 0.07, takenRound: 1, collateral: null });
+  it('in Kapitel 1 misst die Bank nur die Schulden am Rahmen, ab Kapitel 2 Schulden minus Kasse', () => {
+    const s = newGame('rating-k2', balance);
+    const viel = { ...s, loans: [kredit(11000)], cash: 231741, missedPayments: 0 };
+    expect(ratingUsage(viel, balance)).toBeGreaterThan(balance.credit.usageD);
+    expect(ratingOf(viel, balance)).toBe('D');
+    const k2 = { ...viel, chapter: 2 };
+    expect(ratingUsage(k2, balance)).toBe(0);
+    expect(ratingOf(k2, balance)).toBe(balance.credit.startRating);
+    // Weniger Kasse als Schulden: Nur der Rest zählt.
+    const knapp = { ...k2, cash: 6000 };
+    expect(ratingUsage(knapp, balance)).toBeCloseTo(5000 / creditLimitBase(knapp), 5);
+  });
+
+  it('Ereignisse verschieben das Rating weiter (ratingShift) – refreshRating rechnet sofort neu', () => {
+    const s = { ...newGame('rating-shift', balance), chapter: 2, missedPayments: 0 };
+    const mitShift = { ...s, consequences: { ...s.consequences!, ratingShift: -1 } };
+    expect(ratingOf(mitShift, balance)).toBe('C');
+    expect(refreshRating({ ...s, rating: 'D' }, balance).rating).toBe(balance.credit.startRating);
+  });
+
+  function creditLimitBase(state: GameState): number {
+    return balance.credit.limitBase + balance.credit.limitPerWell * state.wells.filter((w) => w.status === 'found').length;
+  }
+});
+
+describe('Schlechte Noten aus Ereignissen verblassen (0.4.19+2)', () => {
+  const balance = loadBalance();
+  it('nach shiftRecoveryRounds Runden ohne versäumte Zahlung wird ratingShift eine Stufe besser', () => {
+    const s0 = newGame('shift-heilt', balance);
+    const s = { ...s0, chapter: 2, chapterStart: 1, round: balance.credit.shiftRecoveryRounds, missedPayments: 0, consequences: { transportFee: 0, ratingShift: -2, appointmentsNext: 0, heirValues: {} } };
+    const nach = settleLoans(s, balance);
+    expect(nach.consequences?.ratingShift).toBe(-1);
+    // In einer anderen Runde ändert sich nichts.
+    expect(settleLoans({ ...s, round: s.round + 1 }, balance).consequences?.ratingShift).toBe(-2);
   });
 });

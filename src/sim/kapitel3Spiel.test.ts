@@ -4,6 +4,7 @@
 
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { nonFiniteNumbers } from './testFinite';
 import { arcSummaries, parseArcContent } from './arcs';
 import { brandOf, buildStations, foundBrand, brandWorldFrom } from './brand';
 import { botTurn } from './bots';
@@ -334,11 +335,19 @@ describe('Ein ganzer Durchlauf Kapitel 1 → 3 mit Bots', () => {
       if (brandOf(s, balance).founded) mitMarkeGegruendet += 1;
       const r = deserializeGame(serializeGame(s, '0.4.19'));
       expect(r.ok).toBe(true);
-      expect(JSON.stringify(s)).not.toMatch(/NaN|Infinity/);
+      expect(nonFiniteNumbers(s)).toEqual([]);
       bisKapitel3 += 1;
     }
     expect(bisKapitel3).toBeGreaterThanOrEqual(2);
     expect(mitMarkeGegruendet).toBeGreaterThanOrEqual(1);
+  });
+
+  it('in Kapitel 2 baut der Bot die Raffinerie, sobald Bau und Rücklage bezahlbar sind (0.4.19+2)', () => {
+    const k2 = (cash: number) => openChapterSystems({ ...newGame('bot-raffinerie', balance, catalog), chapter: 2, chapterStart: 1, cash }, balance, TEXTE);
+    const reich = botChapterSystems(k2(balance.refinery.buildCost + 20000), balance);
+    expect(reich.refinery?.project).toBe('build');
+    const arm = k2(balance.refinery.buildCost);
+    expect(botChapterSystems(arm, balance)).toBe(arm);
   });
 
   it('der Bot-Zug an der Marke ändert vor Kapitel 3 nichts und baut in Kapitel 3 Tankstellen', () => {

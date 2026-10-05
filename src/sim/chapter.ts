@@ -195,7 +195,7 @@ export function chapterBonuses(state: Pick<GameState, 'events'>, content: Chapte
 
 /** Darf Jacob jetzt über den Börsengang entscheiden? Nur am Kapitelende, nur einmal, nur mit bestandener Prüfung. */
 export function canGoPublic(state: GameState, balance: Balance): boolean {
-  // Kapitel 2 ist noch Platzhalter (4.5): Aktien gibt es nur am Ende von Kapitel 1.
+  // Der Börsengang ist eine Entscheidung am Ende von Kapitel 1; danach gibt Jacob Aktien über das Aktienbuch aus.
   return chapterOf(state) === 1 && state.ending === 'kapitel' && state.ipo === null && chapterCheck(state, balance).passed;
 }
 

@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { hallsteadUnlocked } from './hallsteadState';
 import { decideIpo } from './chapter';
 import type { GameState } from './game';
+import { producingWells } from './production';
 import { deserializeGame, serializeGame } from './save';
 import { parseStocksContent } from './stocksContent';
 import { loadBalance } from './testBalance';
@@ -63,7 +64,9 @@ const KAPITEL2: GameState[] = chapterEnds(balance, 6, catalog)
     const ipo = decideIpo(e, balance, 0);
     return springen(ipo.ok ? ipo.state : e, ZWEITE).state;
   })
-  .filter((s) => !s.finished);
+  .filter((s) => !s.finished)
+  // Die Firma mit den meisten fördernden Quellen zuerst: Ohne eigenes Öl trägt seit 0.4.19+2 kein Marinevertrag mehr durch den Sprung.
+  .sort((a, b) => producingWells(b).length - producingWells(a).length);
 
 /** Ein Kapitel 2, das gerade zu Ende ist (ohne eigene Züge: letzte Runde, Prüfung im Protokoll). */
 function kapitel2Ende(nr = 0, patch: Partial<GameState> = {}): GameState {
@@ -122,14 +125,30 @@ describe('Zeitsprung II: Ablauf und Kapitel 3', () => {
     expect(k3.log.some((z) => /Kapitel 3 „Der Konzernherr“ beginnt – Jacob ist 45/.test(z))).toBe(true);
   });
 
-  it('nur Weichen von Zeitsprung II; die Marine kommt immer, das College, wenn Thomas lebt', () => {
+  it('nur Weichen von Zeitsprung II; die Marine kommt, wenn Harlan Oil fördert, das College, wenn Thomas lebt', () => {
     for (const id of record.switches) expect(JUMP_SWITCHES[2]).toContain(id);
-    expect(record.switches).toContain('navy');
+    if (producingWells(ende).length > 0) expect(record.switches).toContain('navy');
     if (ende.family.thomasBorn > 0) expect(record.switches).toContain('college');
   });
 
+  it('ohne eigene Quelle weder Marinevertrag noch Kriegsexport – und keine Einnahme daraus (0.4.19+2)', () => {
+    // Ein Verwalter, der nicht bohrt (kein Geld dafür), und eine Firma ohne Quelle.
+    const null0 = (r: Record<string, number>) => Object.fromEntries(Object.keys(r).map((k) => [k, 0]));
+    const t = balance.timeskip;
+    const b: Balance = { ...balance, timeskip: { ...t, invest: null0(t.invest) as typeof t.invest, borrow: null0(t.borrow) as typeof t.borrow } };
+    const leer = kapitel2Ende(0, { wells: [] });
+    const { state, record: r } = springen(leer, ERSTE, b);
+    expect(producingWells(state)).toHaveLength(0);
+    expect(r.switches).not.toContain('navy');
+    expect(r.switches).not.toContain('war_export');
+    expect(state.events.marks[TIMESKIP_MARKS.navy]).toBeUndefined();
+    // Die Marine zahlt je Barrel, nicht pauschal: Mit Prämie 0 ändert sich bei einer Firma ohne Öl nichts.
+    const ohnePraemie: Balance = { ...b, timeskip: { ...b.timeskip, second: { ...b.timeskip.second, navyPremium: 0 } } };
+    expect(springen(leer, ERSTE, ohnePraemie).state.cash).toBe(state.cash);
+  });
+
   it('Merkzeichen der Antworten: Marinevertrag, College; das Spiel liest sie in Kapitel 3', () => {
-    expect(k3.events.marks[TIMESKIP_MARKS.navy]).toBeDefined();
+    if (record.switches.includes('navy')) expect(k3.events.marks[TIMESKIP_MARKS.navy]).toBeDefined();
     if (record.switches.includes('college')) expect(k3.events.marks[TIMESKIP_MARKS.college]).toBeDefined();
     const ohne = springen(ende, ZWEITE).state;
     expect(ohne.events.marks[TIMESKIP_MARKS.navy]).toBeUndefined();

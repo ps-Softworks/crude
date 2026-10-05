@@ -27,7 +27,7 @@ const TEXTE = {
 const arcs = parseArcContent('content/arcs.yaml', readFileSync(new URL('../../content/arcs.yaml', import.meta.url), 'utf8')).content!;
 
 /** Ein Kapitel-1-Ende des Standard-Bots, Börsengang nach Wahl, Zeitsprung mit den ersten Antworten. */
-const ENDEN = chapterEnds(balance, 8, catalog);
+const ENDEN = chapterEnds(balance, 12, catalog);
 /** Kapitel-1-Enden mit bestandener Prüfung (nur dort darf Jacob an die Börse). */
 const BESTANDEN = ENDEN.filter((e) => canGoPublic(e, balance));
 

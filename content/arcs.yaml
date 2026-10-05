@@ -447,20 +447,8 @@ vale_k3:
       text:
         de: Jacob hat Mr. Vales Einladung abgelehnt. Vale war höflich. Er ist immer höflich.
         en: Jacob declined Mr. Vale's invitation. Vale was polite. He is always polite.
-    - id: zugesagt
-      any: [vale_k3_zugesagt]
-      title: { de: "Die Reise ist gebucht", en: "The Journey Is Booked" }
-      text:
-        de: Jacob hat auf Vales Karte geantwortet. Die Einladung aufs Schloss steht noch aus.
-        en: Jacob answered Vale's card. The invitation to the castle is still to come.
-    - id: abgesagt
-      any: [vale_k3_abgesagt]
-      title: { de: "Eine Absage", en: "A Refusal" }
-      text:
-        de: Jacob hat Vales Karte mit einer Absage beantwortet. Vale hat sie aufbewahrt.
-        en: Jacob answered Vale's card with a refusal. Vale kept it.
   open:
-    title: { de: "Keine Karte", en: "No Card" }
+    title: { de: "Keine Antwort", en: "No Answer" }
     text:
       de: Mr. Vale hat sich noch nicht gemeldet – oder Jacob hat noch nicht geantwortet.
       en: Mr. Vale hasn't been in touch yet – or Jacob hasn't answered.

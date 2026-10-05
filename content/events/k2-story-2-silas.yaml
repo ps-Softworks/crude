@@ -72,7 +72,7 @@
       drilling boss belongs at the rig, not at the table. "The gentlemen want to
       know what a barrel costs," Silas says. "Ask them what a finger costs. I've got
       eight left."
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, minPublicShare: 1 }
   marked: [silas_fair]
   delay: 0
   certain: true
@@ -107,6 +107,63 @@
       marks: [silas_trupps]
       default: true
 
+# Entwurf – Philipp überarbeitet (0.4.19+2).
+# Familienfirma (kein Börsengang, kein Aufsichtsrat): Statt des Rats will die Bank einen Aufpasser.
+- id: k2_silas_bank
+  visitor: silas
+  title:
+    de: Silas und der Mann von der Bank
+    en: Silas and the Man from the Bank
+  text:
+    de: >-
+      Silas kommt in einem Anzug, der an den Schultern spannt; Ruth hat ihn in Port
+      Ellis machen lassen. Der Bart ist weiß geworden, an der linken Hand fehlen
+      zwei Finger. Vandermeer & Co. hat geschrieben: Wer der Harlan Oil weiter Geld
+      leihen solle, wolle einen Betriebsleiter sehen, der Bücher lesen könne – keinen
+      alten Bohrmeister. „Die Herren wollen wissen, wie viel ein Barrel kostet“, sagt
+      Silas. „Fragt mal, was ein Finger kostet. Ich hab noch acht.“
+    en: >-
+      Silas comes in a suit that pulls at the shoulders; Ruth had it made in Port
+      Ellis. His beard has gone white, and two fingers are missing from his left
+      hand. Vandermeer & Co. has written: if Harlan Oil wants more credit, it would
+      like to see a works manager who can read books – not an old drilling boss.
+      "The gentlemen want to know what a barrel costs," Silas says. "Ask them what a
+      finger costs. I've got eight left."
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, maxPublicShare: 0 }
+  marked: [silas_fair]
+  delay: 0
+  certain: true
+  choices:
+    - id: halten
+      label: { de: "Silas bleibt Betriebsleiter – die Bank muss damit leben", en: "Silas stays works manager – the bank will have to live with it" }
+      result:
+        de: >-
+          Jacob schreibt Vandermeer eine Zeile: Der Betriebsleiter der Harlan Oil heiße
+          Silas Brandt. Die nächste Kreditlinie kommt einen halben Punkt teurer. Silas
+          liest nichts, er hört zu – und die Bohrtrupps arbeiten, als ginge es um ihren
+          eigenen Namen.
+        en: >-
+          Jacob writes Vandermeer one line: Harlan Oil's works manager is called Silas
+          Brandt. The next line of credit comes half a point dearer. Silas reads
+          nothing; he listens – and the drilling crews work as if it were their own
+          name on the gate.
+      effects: { strength: -6, reputation: { workers: 3 }, rating: -1 }
+      marks: [silas_geschuetzt]
+    - id: trupps
+      label: { de: "Ihm die Trupps lassen und den Mann der Bank einsetzen", en: "Leave him the crews and install the bank's man" }
+      result:
+        de: >-
+          Silas nickt langsam. „Turm statt Tisch. Na gut, Junge.“ Ein junger Mann von
+          Vandermeer & Co. bekommt das Büro neben Jacobs und bringt eine günstige
+          Kreditlinie mit. Silas trinkt an diesem Abend nicht nur sonntags.
+        en: >-
+          Silas nods slowly. "Rig, not table. All right, boy." A young man from
+          Vandermeer & Co. gets the office next to Jacob's and brings a cheap line of
+          credit with him. That evening Silas doesn't drink only on Sundays.
+      effects: { cash: 3000, strength: -3 }
+      marks: [silas_trupps]
+      default: true
+
 # Entwurf – Philipp überarbeitet.
 # Ohne silas_gedeckt aus Kapitel 1. Mit: k2_silas_unfall_akte.
 - id: k2_silas_unfall
@@ -126,7 +183,7 @@
       weeks. Silas had the shift. He was sober, the men say, and Silas says so too,
       with red eyes. The board doesn't believe it. Pettibone demands that Silas go –
       "out of responsibility to the shareholders".
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 5 }
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 5, minPublicShare: 1 }
   marked: [silas_fair]
   notMarked: [silas_gedeckt]
   delay: 0
@@ -196,7 +253,7 @@
       the receipt for a drilling cable, eleven years old, paid in cash by Jacob
       Harlan the morning after a night nobody on Salt Hill talks about. "The man has
       been drinking before, gentlemen. And Mr. Harlan paid for it."
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 5 }
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 5, minPublicShare: 1 }
   marked: [silas_fair, silas_gedeckt]
   delay: 0
   certain: true
@@ -268,7 +325,7 @@
       where he is supposed to. All paid with cheques from the same bank – the one
       Thorne's railway owns. "The gentlemen are buying you, boy," Silas says. "Piece
       by piece."
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 8 }
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 8, minPublicShare: 1 }
   marked: [silas_geschuetzt]
   delay: 2
   certain: true
@@ -338,7 +395,7 @@
       votes to him. They are the names from Silas's brown paper. With them
       Pettibone nominates a gentleman from Thorne's railway company to the board.
       Silas sits in the back row, hat on his knees, and doesn't look at Jacob.
-  conditions: { minChapter: 2, maxChapter: 2 }
+  conditions: { minChapter: 2, maxChapter: 2, minPublicShare: 1 }
   marked: [silas_ausgelacht]
   delay: 3
   certain: true
@@ -413,7 +470,7 @@
       This time Silas sits beside Jacob, the brown paper in his breast pocket. "Your
       lawyer found two," he says quietly. "Those two are sitting at the back on the
       left."
-  conditions: { minChapter: 2, maxChapter: 2 }
+  conditions: { minChapter: 2, maxChapter: 2, minPublicShare: 1 }
   marked: [silas_k2_geprueft]
   delay: 3
   certain: true
@@ -475,16 +532,14 @@
       Silas bohrt seit zehn Jahren auf eigene Rechnung am Salt Hill: drei kleine
       Quellen, ein Turm, der Sohn seiner Schwester als Gehilfe. Der Trust zahlt
       ihm, was er will, und die Bahn nimmt, was sie will. Jetzt fragt Silas, ob
-      sein Öl zu Jacobs Frachtpreis mitfahren darf. Er ist grau geworden und hat
-      sich die Rede aufgeschrieben, obwohl er sie nicht lesen kann. „Silas gegen
+      sein Öl zu Jacobs Frachtpreis mitfahren darf. Er ist grau geworden und hat sich die Rede von seiner Nichte aufschreiben lassen, obwohl er sie nicht lesen kann. „Silas gegen
       den Tarif, so nennen sie das im Saloon. Ich hab gesagt, ich red mit dem
       Jungen.“
     en: >-
       Silas has been drilling on his own account at Salt Hill for ten years: three
       small wells, one rig, his sister's son as helper. The Trust pays him what it
       likes and the railway takes what it likes. Now Silas asks whether his oil may
-      travel at Jacob's freight rate. He has gone grey and has written his speech
-      down, though he can't read it. "Silas against the tariff, that's what they
+      travel at Jacob's freight rate. He has gone grey and has had his niece write his speech down, though he can't read it. "Silas against the tariff, that's what they
       call it in the saloon. I said I'd talk to the boy."
   # Silas' Öl fährt über Jacobs Frachtvertrag oder durch Jacobs Leitung: Die Durchleitungsgebühr (transportFee, 4.12)
   # zahlt er nur, solange eine eigene Leitung läuft – deshalb ohne Bedingung minPipelines.
@@ -611,14 +666,12 @@
     en: Bullard's Offer
   text:
     de: >-
-      Silas kommt nicht zum Reden, er kommt zum Sagen. Wade Bullard war bei ihm,
-      mit einem Gebot für die drei Quellen und den Turm: zehntausend, bar, und Silas
+      Silas kommt nicht zum Reden, er kommt zum Sagen. Bullard war selbst bei ihm, den jungen Wade im Schlepptau, mit einem Gebot für die drei Quellen und den Turm: zehntausend, bar, und Silas
       dürfe bis zum Tod in der Hütte wohnen. „Ich frag dich zuerst, Junge. Das bin
       ich dir schuldig. Oder du mir, weiß nicht mehr.“ Bullards Land grenzt dann an
       Jacobs Pachten am Salt Hill, Zaun an Zaun.
     en: >-
-      Silas doesn't come to talk; he comes to tell. Wade Bullard has been to see
-      him, with an offer for the three wells and the rig: ten thousand, cash, and
+      Silas doesn't come to talk; he comes to tell. Bullard himself has been to see him, young Wade in tow, with an offer for the three wells and the rig: ten thousand, cash, and
       Silas may live in the hut until he dies. "I'm asking you first, boy. I owe you
       that. Or you owe me, I don't know any more." Bullard's land would then border
       Jacob's leases on Salt Hill, fence to fence.
@@ -631,12 +684,10 @@
       label: { de: "Bullards Gebot überbieten (11.000 $)", en: "Outbid Bullard (11,000 $)" }
       result:
         de: >-
-          Silas nimmt Jacobs Geld und behält die Hütte, nicht den Turm. Wade Bullard
-          reitet ohne Gruß am Büro vorbei. Die drei Quellen fördern ab jetzt für
+          Silas nimmt Jacobs Geld und behält die Hütte, nicht den Turm. Bullard reitet ohne Gruß am Büro vorbei, Wade hinter ihm. Die drei Quellen fördern ab jetzt für
           Harlan Oil.
         en: >-
-          Silas takes Jacob's money and keeps the hut, not the rig. Wade Bullard rides
-          past the office without a greeting. From now on the three wells pump for
+          Silas takes Jacob's money and keeps the hut, not the rig. Bullard rides past the office without a greeting, Wade behind him. From now on the three wells pump for
           Harlan Oil.
       requires: { minCash: 11000 }
       effects: { cash: -11000, rival: { bullard: { trust: -10 } } }
@@ -760,7 +811,7 @@
       more – enough to be allowed to speak. He tells of a derrick he lent a young
       man, and of books in which there was no profit. The gentlemen from Hallstead
       listen the way one listens to a play. Pettibone takes notes.
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 6 }
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 6, minPublicShare: 1 }
   marked: [silas_betrogen]
   delay: 0
   certain: true
@@ -808,6 +859,75 @@
       effects: { cash: -3000, trace: { severity: 3, label: "Schweigegeld an Silas Brandt" } }
       marks: [silas_schweigegeld]
 
+# Entwurf – Philipp überarbeitet (0.4.19+2).
+# Familienfirma: Es gibt keine Hauptversammlung – Silas steht beim Jahresessen der Harlan Oil auf.
+# Dieselben Wahlen und Merkzeichen wie k2_silas_hauptversammlung, damit die Folgeszenen tragen.
+- id: k2_silas_jahresfeier
+  draft: true
+  title:
+    de: Eine Geschichte beim Jahresessen
+    en: A Story at the Annual Dinner
+  text:
+    de: >-
+      Jahresessen der Harlan Oil im Saal über der Bank in Port Ellis: Händler,
+      Bankiers, die Vorarbeiter mit ihren Frauen. Beim Kaffee steht ganz hinten ein
+      alter Mann auf, den niemand eingeladen hat. Silas Brandt erzählt von einem
+      Bohrturm, den er einem jungen Mann geliehen hat, und von Büchern, in denen kein
+      Gewinn stand. Die Herren aus Hallstead hören zu, wie man einem Theaterstück
+      zuhört. Der Mann vom Courier schreibt mit.
+    en: >-
+      Harlan Oil's annual dinner in the hall above the bank in Port Ellis: traders,
+      bankers, the foremen with their wives. Over coffee an old man nobody invited
+      stands up at the very back. Silas Brandt tells of a derrick he lent a young
+      man, and of books in which there was no profit. The gentlemen from Hallstead
+      listen the way one listens to a play. The man from the Courier takes notes.
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 6, maxPublicShare: 0 }
+  marked: [silas_betrogen]
+  delay: 0
+  certain: true
+  appointments: 2
+  choices:
+    - id: nachzahlen
+      label: { de: "Vor allen nachzahlen, was ihm zusteht (6.000 $)", en: "Pay him before everyone what he's owed (6,000 $)" }
+      result:
+        de: >-
+          Jacob steht auf und sagt vor allen, Silas habe recht. Am nächsten Tag geht ein
+          Scheck hinaus. Silas löst ihn ein und schickt eine Karte: „Spät. Aber in
+          Tinte.“ Vandermeer findet, so etwas sage man nicht vor Gästen.
+        en: >-
+          Jacob stands and says before everyone that Silas is right. Next day a cheque
+          goes out. Silas cashes it and sends a card: "Late. But in ink." Vandermeer
+          thinks one doesn't say such things before guests.
+      requires: { minCash: 6000 }
+      effects: { cash: -6000, reputation: { workers: 5, public: 3 } }
+      marks: [silas_k2_nachgezahlt]
+    - id: hinausbegleiten
+      label: { de: "Ihn hinausbegleiten lassen", en: "Have him shown out" }
+      result:
+        de: >-
+          Zwei Kellner nehmen Silas an den Armen, freundlich, wie man einen Betrunkenen
+          nimmt. Er war nüchtern. Am nächsten Morgen weiß es jeder Bohrtrupp in Cordova.
+        en: >-
+          Two waiters take Silas by the arms, kindly, the way one takes a drunk. He was
+          sober. By next morning every drilling crew in Cordova knows.
+      effects: { reputation: { workers: -8 }, heat: 3 }
+      marks: [silas_k2_hinausgeworfen]
+      default: true
+    - id: schweigegeld
+      label: { de: "Ihm nach dem Essen Geld für sein Schweigen anbieten (3.000 $)", en: "Offer him money for his silence after the dinner (3,000 $)" }
+      result:
+        de: >-
+          Ein Anwalt bringt Silas einen Umschlag und ein Papier. Silas unterschreibt mit
+          einem Kreuz und lacht dabei. Das Papier liegt jetzt in Jacobs Schrank. Wer
+          sonst davon weiß, weiß niemand.
+        en: >-
+          A lawyer brings Silas an envelope and a paper. Silas signs with a cross and
+          laughs as he does. The paper now lies in Jacob's cabinet. Who else knows about
+          it, nobody knows.
+      requires: { minCash: 3000 }
+      effects: { cash: -3000, trace: { severity: 3, label: Schweigegeld an Silas Brandt } }
+      marks: [silas_schweigegeld]
+
 # Entwurf – Philipp überarbeitet.
 # B3, Folge (silas_k2_nachgezahlt): Ein öffentliches „Silas hat recht“ ist auch ein Geständnis.
 - id: k2_silas_delaney
@@ -817,14 +937,12 @@
   text:
     de: >-
       Ein Brief aus Hallstead, Justizministerium, unterschrieben von Frank Delaney,
-      Bundesanwalt. Er habe in der Zeitung gelesen, Mr. Harlan habe vor seinen
-      Aktionären eingeräumt, einem Partner zu wenig ausgezahlt zu haben. Er bitte
+      Bundesanwalt. Er habe in der Zeitung gelesen, Mr. Harlan habe öffentlich eingeräumt, einem Partner zu wenig ausgezahlt zu haben. Er bitte
       um die Bücher der damaligen Teilhaberschaft am Salt Hill, „zur Durchsicht“.
       Auf Jacobs Schreibtisch steht noch Silas' Karte: „Spät. Aber in Tinte.“
     en: >-
       A letter from Hallstead, Department of Justice, signed by Frank Delaney,
-      federal prosecutor. He has read in the paper that Mr. Harlan admitted before
-      his shareholders to underpaying a partner. He requests the books of the
+      federal prosecutor. He has read in the paper that Mr. Harlan publicly admitted to underpaying a partner. He requests the books of the
       former partnership on Salt Hill, "for review". Silas's card still stands on
       Jacob's desk: "Late. But in ink."
   conditions: { minChapter: 2, maxChapter: 2 }
@@ -885,13 +1003,13 @@
   text:
     de: >-
       Im Saloon am Salt Hill erzählt Silas jeden Abend, wie ihn zwei Saaldiener
-      aus der Hauptversammlung getragen haben, „wie einen Betrunkenen, und ich war
+      aus dem Saal getragen haben, „wie einen Betrunkenen, und ich war
       nüchtern“. Die Bohrtrupps hören zu und bestellen ihm das nächste Glas. Der
       Vorarbeiter von Turm zwei lässt ausrichten, die Männer würden gern hören, was
       Mr. Harlan dazu sagt. Am besten im Saloon.
     en: >-
       Every evening in the saloon on Salt Hill, Silas tells how two ushers carried
-      him out of the shareholders' meeting, "like a drunk, and I was sober". The
+      him out of the hall, "like a drunk, and I was sober". The
       drilling crews listen and buy him the next glass. The foreman of rig two
       sends word that the men would like to hear what Mr. Harlan has to say about
       it. Preferably in the saloon.

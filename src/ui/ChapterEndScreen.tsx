@@ -33,6 +33,11 @@ function prozent(share: number) {
   return `${Math.round(share * 100)}${NBSP}%`;
 }
 
+/** Marktanteil mit einer Nachkommastelle wie im Vertriebsfenster: 9,6 % ist nicht 10 %. */
+function anteil(share: number) {
+  return `${(share * 100).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}${NBSP}%`;
+}
+
 function Haken({ ok }: { ok: boolean }) {
   return <span className={ok ? 'ok' : 'nein'}>{ok ? '✓' : '✗'}</span>;
 }
@@ -104,7 +109,7 @@ export function ChapterEndScreen({
                   <li>
                     <Haken ok={pruefung3.brand} />{' '}
                     {fillText(chapterContent.chapter3.goals.brand, { regionen: String(balance.brand.goal.regions), anteil: prozent(balance.brand.goal.share) })} ({pruefung3.regions} Regionen ·{' '}
-                    {prozent(pruefung3.share)})
+                    {anteil(pruefung3.share)})
                   </li>
                   <li>
                     <Haken ok={pruefung3.ratingReached} /> {fillText(chapterContent.chapter3.goals.rating, { rating: balance.chapter.chapter3.minRating })} ({pruefung3.rating})
@@ -178,7 +183,7 @@ export function ChapterEndScreen({
                   <dt>Tankstellen</dt>
                   <dd>{Object.values(game.brand?.regions ?? {}).reduce((n, r) => n + r.stations, 0)}</dd>
                   <dt>Marktanteil</dt>
-                  <dd>{prozent(pruefung3.share)}</dd>
+                  <dd>{anteil(pruefung3.share)}</dd>
                 </>
               )}
             </dl>

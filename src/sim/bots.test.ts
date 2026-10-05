@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   answerEvents,
   balancedBorrowable,
+  balancedEmergency,
   blindWildcatChance,
   botTable,
   botTurn,
@@ -309,8 +310,26 @@ describe('Bot-Läufe mit Ereignissen (2.15)', () => {
     expect(answerEvents(start, balance, [teuer], eventPolicy(balance, 'vorsichtig'))).toBe(start);
   });
 
-  it('ausgewogen leiht selbst nie über maxDebtShare des Bankrahmens', () => {
-    const { maxDebtShare } = balance.bots.balanced;
+  it('Notfallregel: nach trockenen Löchern, ohne Quelle und ohne Land leiht ausgewogen bis emergencyDebtShare', () => {
+    const start = newGame('notfall', balance, events);
+    const leer: GameState = { ...start, leases: start.leases.filter((l) => l.holder !== 'jacob'), options: start.options.filter((o) => o.holder !== 'jacob') };
+    expect(balancedEmergency(leer)).toBe(false); // ohne trockenes Loch reicht die Startkasse
+    const trocken: GameState = {
+      ...leer,
+      wells: [{ id: 'x#1', parcelId: start.parcels[0].id, stage: 1, status: 'dry', roundsLeft: 0, spent: 1000, oilStage: null, startRound: 1 }],
+    };
+    expect(balancedEmergency(trocken)).toBe(true);
+    const { maxDebtShare, emergencyDebtShare } = balance.bots.balanced;
+    expect(emergencyDebtShare).toBeGreaterThan(maxDebtShare);
+    expect(balancedBorrowable(trocken, balance)).toBe(Math.floor(emergencyDebtShare * creditLimit(trocken, balance)));
+    // Mit einer fördernden Quelle oder in den letzten zwei Runden gilt die Regel nicht.
+    const quelle: GameState = { ...trocken, wells: [...trocken.wells, { ...trocken.wells[0], id: 'x#2', status: 'found' }] };
+    expect(balancedEmergency(quelle)).toBe(false);
+    expect(balancedEmergency({ ...trocken, round: trocken.totalRounds })).toBe(false);
+  });
+
+  it('ausgewogen leiht selbst nie über maxDebtShare des Bankrahmens – nur im Notfall bis emergencyDebtShare', () => {
+    const { maxDebtShare, emergencyDebtShare } = balance.bots.balanced;
     let geliehen = false;
     for (const seed of seeds(15)) {
       let state = newGame(seed, balance, events);
@@ -319,7 +338,10 @@ describe('Bot-Läufe mit Ereignissen (2.15)', () => {
         const nach = botTurn(state, balance, 'ausgewogen', rng, events);
         if (debt(nach) > debt(state)) {
           geliehen = true;
-          expect(debt(nach)).toBeLessThanOrEqual(Math.max(debt(state), maxDebtShare * creditLimit(nach, balance)) + 1e-6);
+          // Notfall: nach trockenen Löchern ohne jede Quelle.
+          const notfall = nach.wells.some((w) => w.status === 'dry') && !nach.wells.some((w) => w.status === 'found');
+          const anteil = notfall ? emergencyDebtShare : maxDebtShare;
+          expect(debt(nach)).toBeLessThanOrEqual(Math.max(debt(state), anteil * creditLimit(nach, balance)) + 1e-6);
         }
         expect(balancedBorrowable(nach, balance)).toBeGreaterThanOrEqual(0);
         state = endRound(nach, balance, events);

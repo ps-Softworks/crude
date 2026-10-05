@@ -31,8 +31,8 @@
 import { parseDocument } from 'yaml';
 import { FAMILY_TIMES, STANCES, type Balance, type FamilyTime, type Stance } from './balance';
 import { formatDate } from './calendar';
-import { canGoPublic } from './chapter';
-import { creditLimit, debt, headroom, loanRate, quarterInterestTotal, repay, takeLoan } from './credit';
+import { canGoPublic, chapterPassed } from './chapter';
+import { creditLimit, debt, headroom, loanRate, quarterInterestTotal, refreshRating, repay, takeLoan } from './credit';
 import { nextWellId, rollOilStage, stageCost, wellsOn, type Well } from './drilling';
 import { empireValue } from './empire';
 import type { ContentError } from './eventContent';
@@ -390,6 +390,17 @@ function snapshot(state: GameState, balance: Balance): TimeskipSnapshot {
   };
 }
 
+/**
+ * Ausgangslage des neuen Kapitels (0.4.19+2): „schwach“, wenn die Firma nach dem Sprung zu wenige
+ * fördernde Quellen hat oder ihr Imperiumswert unter der Schwelle des Kapitels liegt
+ * (balance.yaml timeskip.weakStart) – dann passt „eine ernstzunehmende Firma“ nicht.
+ */
+export function weakStart(record: Pick<TimeskipRecord, 'number' | 'after'>, balance: Balance): boolean {
+  const w = balance.timeskip.weakStart;
+  const schwelle = record.number >= 2 ? w.value3 : w.value2;
+  return record.after.wells < w.wells || record.after.value < schwelle;
+}
+
 function klemmen(value: number): number {
   return Math.min(100, Math.max(0, value));
 }
@@ -638,9 +649,11 @@ function weichenII(l: Lauf): SwitchId | null {
   const neu = (id: SwitchId) => !l.switches.includes(id);
   // Kriegsgefahr in Übersee: nur, wenn die Welt sie hergibt (Außenspannung oder Krieg).
   const w = l.s.worldModel;
-  if (neu('war_export') && year >= t2.warFromYear && (w.tension >= t2.warTension || w.war > 0)) kandidaten.push('war_export');
-  // Die Marine stellt auf Öl um – sicher im Jahr navyYear.
-  if (neu('navy') && quartal === 0 && year === t2.navyYear) kandidaten.push('navy');
+  // Export und Marine nur mit eigenem Öl (0.4.19+2): Ohne fördernde Quelle hat Harlan Oil nichts zu verkaufen.
+  const oel = producingWells(l.s).length > 0;
+  if (oel && neu('war_export') && year >= t2.warFromYear && (w.tension >= t2.warTension || w.war > 0)) kandidaten.push('war_export');
+  // Die Marine stellt auf Öl um – im Jahr navyYear (wer dann fördert, bekommt das Angebot).
+  if (oel && neu('navy') && quartal === 0 && year === t2.navyYear) kandidaten.push('navy');
   // Senator Grady: mit einer Chance, sicher, wenn er Jacob einen Gefallen schuldet.
   if (neu('grady') && quartal === 0 && year === t2.gradyYear) {
     const wurf = l.rngGrady.float();
@@ -723,7 +736,7 @@ function weicheAnwenden(l: Lauf, id: SwitchId, antwort: string): void {
       if (antwort === 'accept') {
         l.navySince = l.s.round + 1;
         merken(TIMESKIP_MARKS.navy);
-        eintrag(l, 'navy_accept', { amount: l.balance.timeskip.second.navyIncome });
+        eintrag(l, 'navy_accept', { price: l.balance.timeskip.second.navyPremium });
       } else eintrag(l, 'navy_decline');
       break;
     case 'grady':
@@ -811,8 +824,8 @@ function jahresende(l: Lauf): void {
   // Bullard bohrt weiter (eigener Zufall).
   bullard(l);
 
-  // Zeitsprung II: Wer trotz Kriegsgefahr exportiert, verliert manchmal einen Tanker.
-  if (l.warExport) {
+  // Zeitsprung II: Wer trotz Kriegsgefahr exportiert, verliert manchmal einen Tanker – nur, solange er Öl verschifft.
+  if (l.warExport && producingWells(l.s).length > 0) {
     const t2 = balance.timeskip.second;
     if (l.rngKrieg.float() < t2.warLossChance) {
       l.s = { ...l.s, cash: l.s.cash - t2.warLossCost };
@@ -1036,9 +1049,11 @@ function quartal(l: Lauf): void {
   const eigen = Math.max(0, l.s.oilStock - l.s.royaltyOil);
   // Familienzeit (GDD §2): Ohne Jacobs Aufsicht bringt das Öl weniger ein (family.revenue).
   const krieg = l.warExport ? 1 + t.second.warPremium : 1;
-  const erloes = Math.round(eigen * Math.max(0, preis + aufschlag - frachtJeBarrel(l.s, balance)) * t.family.revenue[l.directives.family] * krieg);
-  // Zeitsprung II: Marinevertrag und Gradys Reserveland zahlen je Quartal.
-  const vertraege = (l.navySince > 0 && l.s.round >= l.navySince ? t.second.navyIncome : 0) + (l.gradySince > 0 && l.s.round >= l.gradySince ? t.second.gradyIncome : 0);
+  // Zeitsprung II: Die Marine zahlt einen Festpreis über dem Markt – je verkauftem Barrel, nicht pauschal (0.4.19+2).
+  const marine = l.navySince > 0 && l.s.round >= l.navySince ? t.second.navyPremium : 0;
+  const erloes = Math.round(eigen * Math.max(0, preis + aufschlag + marine - frachtJeBarrel(l.s, balance)) * t.family.revenue[l.directives.family] * krieg);
+  // Gradys Reserveland zahlt je Quartal (eine Beteiligung, kein eigenes Öl).
+  const vertraege = l.gradySince > 0 && l.s.round >= l.gradySince ? t.second.gradyIncome : 0;
   const okara = okaraIncome(l.s, balance, 'jacob') + vertraege;
   const unterhalt = producingWells(l.s).length * t.upkeepPerWell + l.s.logistics.teams * balance.transport.teams.wagePerRound;
   const zinsen = quarterInterestTotal(l.s);
@@ -1185,6 +1200,8 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
   const s = l.s;
   const pipeline = s.logistics.pipeline === 'building' || s.logistics.pipeline === 'damaged' ? 'ready' : s.logistics.pipeline;
   const date = formatDate({ round, startYear: s.startYear });
+  // Verfehlte Prüfung (GDD §2): Das nächste Kapitel beginnt geschwächt – weniger Kasse, weniger Kraft.
+  const schwach = missedPenalty(start, s, balance);
   const naechstes: GameState = {
     ...s,
     chapter: kapitel,
@@ -1199,10 +1216,13 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
     leases: s.leases.filter((x) => x.drilled),
     logistics: { ...s.logistics, pipeline, pipelineRounds: pipeline === 'ready' ? 0 : s.logistics.pipelineRounds, traderSold: 0 },
     shipped: { wagon: 0, rail: 0, teams: 0, pipeline: 0 },
-    strength: s.strengthMax,
-    agenda: newAgenda(s.strengthMax, balance),
+    cash: schwach.cash,
+    strength: schwach.strength,
+    agenda: newAgenda(schwach.strength, balance),
     family: { ...s.family, time: 0 },
     missedPayments: 0,
+    // 0.4.19+2: Nach sechs Jahren sind alte schlechte Noten der Bank vergessen (ratingShift < 0 → 0); gute bleiben.
+    ...(s.consequences && s.consequences.ratingShift < 0 ? { consequences: { ...s.consequences, ratingShift: 0 } } : {}),
     // Etappe 2: Pakte, Verträge und Verhandlungen aus Kapitel 1 sind nach sechs Jahren erledigt; der Ruf bleibt.
     pricing: newPricing(),
     freight: newFreight(),
@@ -1210,6 +1230,7 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
       ...start.log,
       `${formatDate(start)}: Jacob übergibt das Tagesgeschäft für sechs Jahre an einen Verwalter.`,
       `${date}: Kapitel ${kapitel} „${CHAPTER_TITLES[kapitel] ?? ''}“ beginnt – Jacob ist ${jacobAge({ round })}.`,
+      ...(schwach.line ? [`${date}: ${schwach.line}`] : []),
     ],
     roundLogStart: start.log.length,
     // Die Dividendenfrist im Rat zählt ab Kapitelbeginn.
@@ -1222,7 +1243,26 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
   // steht gleich als Bohrbericht auf der Karte, und um bekannte Funde – auch im neuen Land – redet man.
   const mitMarken = hearsayAroundFinds(learnFromWells(mitMarken0, balance), balance);
   const offen = startRivalsK3(openChapterSystems(mitMarken, balance, texts), balance);
-  return { status: 'done', state: drawEvents(offen, balance, catalog), record: r };
+  // Das Rating gilt ab der ersten Runde des neuen Kapitels – nicht erst nach dem ersten Rundenende (0.4.19+2).
+  return { status: 'done', state: drawEvents(refreshRating(offen, balance), balance, catalog), record: r };
+}
+
+/**
+ * Schwächung nach einer verfehlten Kapitelprüfung (GDD §2, balance.yaml chapter.missed): Ein Teil der
+ * Kasse ist weg, und Jacob beginnt mit weniger Kraft. Wer die Prüfung bestanden hat, startet wie immer.
+ */
+export function missedPenalty(ende: GameState, s: GameState, balance: Balance): { cash: number; strength: number; line: string | null } {
+  const voll = { cash: s.cash, strength: s.strengthMax, line: null };
+  if (ende.ending !== 'kapitel' || chapterPassed(ende, balance)) return voll;
+  const { cashShare, strength } = balance.chapter.missed;
+  const weg = s.cash > 0 ? Math.round(s.cash * cashShare * 100) / 100 : 0;
+  const kraft = Math.max(0, s.strengthMax - strength);
+  const betrag = `${Math.round(weg).toLocaleString('de-DE')} $`;
+  return {
+    cash: Math.round((s.cash - weg) * 100) / 100,
+    strength: kraft,
+    line: `Das verfehlte Kapitelziel hängt nach: Die Bank verlangt Sicherheiten (${betrag} aus der Kasse), und Jacob beginnt müde (Kraft ${kraft} statt ${s.strengthMax}).`,
+  };
 }
 
 /** Bequem für die Oberfläche: Weiche beantworten und gleich weiterrechnen. Fertig → Kapitel 2 (oder Pleite). */
@@ -1257,9 +1297,9 @@ export interface TimeskipContent {
     one: Partial<Record<ChronicleKind, LocalizedText>>;
   };
   /** Kapitel 2 (4.12): Stempel unter der Chronik, Überschrift und Ziel zum Kapitelstart. */
-  chapter2: Texte<'badge' | 'title' | 'text'>;
+  chapter2: Texte<'badge' | 'title' | 'text' | 'textWeak'>;
   /** Kapitel 3 (4.19): Stempel unter der Chronik von Zeitsprung II, Überschrift und Ziel. */
-  chapter3: Texte<'badge' | 'title' | 'text'>;
+  chapter3: Texte<'badge' | 'title' | 'text' | 'textWeak'>;
   /** Ein Kapitel nach dem Early-Access-Umfang (Kopfleiste, „im Bau“). */
   preview: Texte<'badge' | 'text'>;
 }
@@ -1359,8 +1399,8 @@ export function parseTimeskipContent(file: string, text: string): { content: Tim
     entries: texte(e, CHRONICLE_KINDS, 'chronicle.entries'),
     one: Object.fromEntries(Object.keys(o).filter((k) => !fremd.includes(k)).map((k) => [k, sprachtext(o[k], `chronicle.one.${k}`)])) as Partial<Record<ChronicleKind, LocalizedText>>,
   };
-  const chapter2 = texte(block(raw, 'chapter2', 'chapter2'), ['badge', 'title', 'text'] as const, 'chapter2');
-  const chapter3 = texte(block(raw, 'chapter3', 'chapter3'), ['badge', 'title', 'text'] as const, 'chapter3');
+  const chapter2 = texte(block(raw, 'chapter2', 'chapter2'), ['badge', 'title', 'text', 'textWeak'] as const, 'chapter2');
+  const chapter3 = texte(block(raw, 'chapter3', 'chapter3'), ['badge', 'title', 'text', 'textWeak'] as const, 'chapter3');
   const preview = texte(block(raw, 'preview', 'preview'), ['badge', 'text'] as const, 'preview');
   if (errors.length > 0) return { content: null, errors };
   return { content: { draft: raw.draft === true, start, start2, directives, switches, chronicle, chapter2, chapter3, preview }, errors };

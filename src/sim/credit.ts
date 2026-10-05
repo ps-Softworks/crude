@@ -17,6 +17,7 @@ import { worldLimitFactor, worldRateAdd } from './world';
 // 4.16 Andockpunkt: eigene Bank in Hallstead.
 import { bankRateDiscount } from './holdings';
 import { withStandDiscount } from './stand'; // 4.17 Andockpunkt
+import { chapterOf } from './chapterOf';
 
 /** Woher das Geld kommt: von der Bank oder als Notkredit vom Geldverleiher. */
 export type LoanSource = 'bank' | 'lender';
@@ -139,21 +140,55 @@ function lastId(loans: readonly Loan[]): number {
  * Zahlungshistorie (Runden, für die der Geldverleiher einspringen musste). In
  * Kapitel 1 gibt es kein A: ohne Cashflow-Historie und ohne Ruf bleibt es beim
  * Startrating – das Rating kann nur schlechter werden.
+ * Ab Kapitel 2 (0.4.19+2) rechnet die Bank die Kasse gegen: Wer mehr Geld liegen hat,
+ * als er schuldet, gilt als unverschuldet – sonst bekäme ein Konzern mit 230.000 $
+ * Rücklage und 11.000 $ Schulden Rating D, weil der Rahmen noch der aus Kapitel 1 ist.
  */
-function ratingOf(state: Pick<GameState, 'loans' | 'wells' | 'missedPayments'> & Partial<Pick<GameState, 'consequences'>>, balance: Balance): Rating {
-  const { startRating, usageC, usageD, missedC, missedD } = balance.credit;
-  // Das Rating misst die Schulden an den Sicherheiten, nicht an der Laune der Banken (4.4).
-  const rahmen = baseCreditLimit(state, balance);
-  const anteil = rahmen > 0 ? debt(state) / rahmen : 0;
-  let rating: Rating = anteil <= usageC ? 'B' : anteil <= usageD ? 'C' : 'D';
+export function ratingOf(
+  state: Pick<GameState, 'loans' | 'wells' | 'missedPayments'> & Partial<Pick<GameState, 'consequences' | 'cash' | 'chapter'>>,
+  balance: Balance,
+): Rating {
+  const { startRating, missedC, missedD } = balance.credit;
+  const schlechter = RATINGS[Math.max(RATINGS.indexOf(startRating), RATINGS.indexOf(usageRating(state, balance)))];
+  let rating: Rating = schlechter;
   if (state.missedPayments >= missedD) rating = 'D';
   else if (state.missedPayments >= missedC && rating === 'B') rating = 'C';
   // Schlechter als das Startrating geht es nie, besser erst mit Cashflow und Ruf.
-  const schlechter = RATINGS.indexOf(rating) > RATINGS.indexOf(startRating) ? rating : startRating;
+  rating = RATINGS.indexOf(rating) > RATINGS.indexOf(startRating) ? rating : startRating;
   // 4.12: Ereignisse können das Rating dauerhaft verschieben (Systemwirkung rating, + = besser).
-  const shift = state.consequences?.ratingShift ?? 0;
-  if (shift === 0) return schlechter;
-  return RATINGS[Math.min(RATINGS.length - 1, Math.max(0, RATINGS.indexOf(schlechter) - shift))];
+  const shift = ratingShiftOf(state);
+  if (shift === 0) return rating;
+  return RATINGS[Math.min(RATINGS.length - 1, Math.max(0, RATINGS.indexOf(rating) - shift))];
+}
+
+/** Verschuldung, an der die Bank misst: Schulden – ab Kapitel 2 abzüglich der Kasse – durch den Grundrahmen. */
+export function ratingUsage(
+  state: Pick<GameState, 'loans' | 'wells'> & Partial<Pick<GameState, 'cash' | 'chapter'>>,
+  balance: Balance,
+): number {
+  // Das Rating misst die Schulden an den Sicherheiten, nicht an der Laune der Banken (4.4).
+  const rahmen = baseCreditLimit(state, balance);
+  const rücklage = chapterOf(state) >= 2 ? Math.max(0, state.cash ?? 0) : 0;
+  const netto = Math.max(0, debt(state) - rücklage);
+  return rahmen > 0 ? netto / rahmen : 0;
+}
+
+/** Rating allein aus der Verschuldung (ohne Zahlungshistorie und Ereignisse). */
+function usageRating(state: Pick<GameState, 'loans' | 'wells'> & Partial<Pick<GameState, 'cash' | 'chapter'>>, balance: Balance): Rating {
+  const { usageC, usageD } = balance.credit;
+  const anteil = ratingUsage(state, balance);
+  return anteil <= usageC ? 'B' : anteil <= usageD ? 'C' : 'D';
+}
+
+/** Dauerhafte Verschiebung des Ratings durch Ereignisse (4.12; + = besser, − = schlechter). */
+export function ratingShiftOf(state: Partial<Pick<GameState, 'consequences'>>): number {
+  return state.consequences?.ratingShift ?? 0;
+}
+
+/** Rating jetzt neu ausrechnen, z. B. nach dem Zeitsprung (sonst erst am Rundenende). */
+export function refreshRating(state: GameState, balance: Balance): GameState {
+  const rating = ratingOf(state, balance);
+  return rating === state.rating ? state : { ...state, rating };
 }
 
 /** Warum ein Kredit gerade nicht geht. */
@@ -371,6 +406,15 @@ export function settleLoans(input: GameState, balance: Balance): GameState {
 
   const sauber = !versaeumt && input.loans.length > 0;
   const missedPayments = Math.max(0, input.missedPayments + (versaeumt ? 1 : 0) - (sauber ? 1 : 0));
+  // 0.4.19+2: Schlechte Noten aus Ereignissen (ratingShift < 0) verblassen – nach shiftRecoveryRounds Runden
+  // im Kapitel ohne versäumte Zahlung eine Stufe. Vorher hingen sie für immer am Rating.
+  const shift = ratingShiftOf(state);
+  const kapitelRunde = input.round - (input.chapterStart ?? 1) + 1;
+  const { shiftRecoveryRounds } = balance.credit;
+  if (shift < 0 && !versaeumt && missedPayments === 0 && shiftRecoveryRounds > 0 && kapitelRunde % shiftRecoveryRounds === 0 && state.consequences) {
+    state = { ...state, consequences: { ...state.consequences, ratingShift: shift + 1 } };
+    state.log.push(`${date}: Ein Jahr ohne versäumte Zahlung – die Bank sieht über eine alte Sache hinweg (Rating eine Stufe besser).`);
+  }
   return { ...state, missedPayments, rating: ratingOf({ ...state, missedPayments }, balance) };
 }
 

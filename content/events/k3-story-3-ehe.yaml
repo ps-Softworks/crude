@@ -7,8 +7,8 @@
 #
 #   R4–10  k3_ruth_anteile     (ruth_teilhaberin, Kapitel 1) Pettibone will Ruths Anteile
 #   R3–6   k3_ruth_ball        Probe 1 (Schlüsselszene): „früher in einem Laden gearbeitet?“
-#   R7–12  k3_ruth_vale        Probe 2: Mr. Vales Einladung – hätte Jacob sie gefragt? Wartet auf die
-#                              Karte (vale_karte aus k3-story-4-vale.yaml, Runde 6–8), eine Runde danach
+#   R5–12  k3_ruth_vale        Probe 2: Mr. Vales Einladung – hätte Jacob sie gefragt? Wartet auf die
+#                              Karte (vale_karte_offen aus k3-story-4-vale.yaml, Runde 3–4), eine Runde danach
 #   R9–13  k3_ruth_abwesend    Probe 3: sechs Wochen nicht zu Hause – Story-Bibel: nur bei niedrigem
 #                              Beziehungswert. Bis es maxRuth gibt, steht dafür ein Merkzeichen:
 #                              _abwesend (ruth_riss: schon eine Probe verfehlt) · _abwesend_geburt
@@ -46,13 +46,12 @@
   text:
     de: >-
       Mr. Pettibone hat Ruth zum Tee gebeten, allein. Er hat ihr für ihre Anteile an
-      Harlan Oil das Doppelte des Kurses geboten, im Namen eines Freundes, dessen Namen
+      Harlan Oil das Doppelte dessen geboten, was sie wert sind, im Namen eines Freundes, dessen Namen
       er nicht nennen durfte. Ruth erzählt es Jacob beim Frühstück, zwischen Toast und
       Zeitung. „Ich habe gesagt, ich denke darüber nach“, sagt sie. „Ich wollte sehen,
       was du sagst.“
     en: >-
-      Mr. Pettibone invited Ruth to tea, alone. He offered her twice the market price for
-      her shares in Harlan Oil, on behalf of a friend whose name he was not permitted to
+      Mr. Pettibone invited Ruth to tea, alone. He offered her twice what her shares in Harlan Oil are worth, on behalf of a friend whose name he was not permitted to
       give. Ruth tells Jacob at breakfast, between toast and newspaper. "I said I would
       think about it," she says. "I wanted to see what you'd say."
   conditions: { minChapter: 3, maxChapter: 3, minRound: 4, maxRound: 10 }
@@ -168,18 +167,14 @@
     en: '"Whether You Would Have Asked Me"'
   text:
     de: >-
-      Ruth hat die Karte in Jacobs Mantel gefunden: schweres Papier, ein Wappen aus
-      Aldmark, eine Einladung „wie es ist“, nur für ihn. Sie legt sie vor ihn hin, mit
-      der Schrift nach oben. „Ich frage nicht, ob du es tust, Jacob. Ich frage, ob du
-      mich gefragt hättest.“ Ihre Lesebrille hängt an einer Kette um ihren Hals; früher
+      Ruth hat die Karte in Jacobs Mantel gefunden: schweres Papier ohne Wappen, ein paar Zeilen von Mr. Vale, „wie es ist“, nur für ihn. Sie legt sie vor ihn hin, mit
+      der Schrift nach oben. „Ich frage nicht, was du ihm geantwortet hast, Jacob. Ich frage, ob du mich gefragt hättest.“ Ihre Lesebrille hängt an einer Kette um ihren Hals; früher
       hat sie keine gebraucht.
     en: >-
-      Ruth found the card in Jacob's coat: heavy paper, a crest from Aldmark, an
-      invitation "as it is", for him alone. She lays it before him, writing up. "I'm not
-      asking whether you'll do it, Jacob. I'm asking whether you would have asked me."
+      Ruth found the card in Jacob's coat: heavy paper with no crest, a few lines from Mr. Vale, "as it is", for him alone. She lays it before him, writing up. "I'm not asking what you answered him, Jacob. I'm asking whether you would have asked me."
       Her reading glasses hang on a chain round her neck; she never used to need them.
-  conditions: { minChapter: 3, maxChapter: 3, minRound: 7, maxRound: 12 }
-  marked: [vale_karte]
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 5, maxRound: 12 }
+  marked: [vale_karte_offen]
   delay: 1
   certain: true
   choices:
@@ -213,10 +208,10 @@
       label: { de: "„Die ist von einem Kunden. Nichts Wichtiges.“", en: "\"It's from a client. Nothing important.\"" }
       result:
         de: >-
-          Ruth nickt langsam. „Ein Kunde mit Wappen“, sagt sie. Sie glaubt ihm nicht, und
+          Ruth nickt langsam. „Ein Kunde, der mit einem einzigen Buchstaben unterschreibt“, sagt sie. Sie glaubt ihm nicht, und
           sie lässt ihn merken, dass sie beschlossen hat, nicht weiter zu fragen.
         en: >-
-          Ruth nods slowly. "A client with a crest," she says. She does not believe him, and
+          Ruth nods slowly. "A client who signs with a single letter," she says. She does not believe him, and
           she lets him see that she has decided not to ask any further.
       effects: { ruth: -10 }
       marks: [ruth_riss]
@@ -375,12 +370,9 @@
       label: { de: "Unterschreiben", en: "Sign" }
       result:
         de: >-
-          Jacob unterschreibt. Ruth unterschreibt darunter, mit demselben Füller. Der Rat
-          murrt eine Woche lang. Dann merkt Pettibone, dass sich Jacobs Anteile jetzt nicht
-          mehr einzeln kaufen lassen.
+          Jacob unterschreibt. Ruth unterschreibt darunter, mit demselben Füller. Die Bankiers murren eine Woche lang. Dann merken sie, dass sich an Harlan Oil jetzt nichts mehr hinter Ruths Rücken kaufen lässt.
         en: >-
-          Jacob signs. Ruth signs below, with the same pen. The board grumbles for a week.
-          Then Pettibone realises that Jacob's shares can no longer be bought piecemeal.
+          Jacob signs. Ruth signs below, with the same pen. The bankers grumble for a week. Then they realise that nothing in Harlan Oil can be bought behind Ruth's back any more.
       effects: { ruth: 20, control: 5, boardLoyalty: { bankier: -10 } }
       marks: [ehe_partner]
     - id: spaeter
@@ -421,15 +413,13 @@
   certain: true
   choices:
     - id: umkehr
-      label: { de: "Ihr einen Sitz im Rat geben – gegen Vandermeers Stimme (4.000 $)", en: "Give her a board seat – against Vandermeer's vote (4,000 $)" }
+      label: { de: "Ihr gleiche Rechte in der Firma geben – gegen Vandermeers Rat (4.000 $)", en: "Give her equal rights in the company – against Vandermeer's advice (4,000 $)" }
       result:
         de: >-
-          Vandermeer verkauft aus Protest ein Aktienpaket, und Jacob muss es selbst
-          auffangen. Ruth sitzt bei der nächsten Sitzung rechts neben ihm. Sie stellt die
+          Vandermeer zieht aus Protest Geld ab, und Jacob muss die Lücke selbst stopfen. Ruth sitzt bei der nächsten Besprechung rechts neben ihm. Sie stellt die
           erste Frage. Es ist die richtige.
         en: >-
-          Vandermeer sells a block of shares in protest, and Jacob has to buy it himself.
-          At the next meeting Ruth sits on his right. She asks the first question. It is
+          Vandermeer withdraws money in protest, and Jacob has to fill the gap himself. At the next meeting Ruth sits on his right. She asks the first question. It is
           the right one.
       requires: { minCash: 4000 }
       effects: { cash: -4000, ruth: 25, boardMember: ruth, boardLoyalty: { vandermeer: -15 }, control: 3 }

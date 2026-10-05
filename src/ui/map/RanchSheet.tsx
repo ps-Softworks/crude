@@ -18,7 +18,7 @@ import { barrels, money, percent, rounds, units } from '../format';
 import { STATUS_LABEL, ranchStatus } from '../mapShapes';
 import { SeismikZeile } from '../Kapitel3Ranch'; // 4.17 Andockpunkt
 // Termine als Hauptwerkzeug (Etappe 1): Wissensstand, Hinweise und Erkundungs-Karten.
-import { knowledgeView } from '../../sim/exploration';
+import { knowledgeOf, knowledgeView } from '../../sim/exploration';
 import { bookCard, planView } from '../../sim/plans';
 import { events } from '../events';
 import { cardText, clueLine, levelLabel, zoneWord } from '../plans';
@@ -175,9 +175,10 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
           <details key={id} className="ausbau-klappe konditionen" open={lease?.holder !== 'jacob'}>
             <summary>Prognose und Konditionen</summary>
             <dl className="terms">
-              <dt>Geologe</dt>
+              {/* 0.4.19+2: Woher die Zahl stammt (Ritt, Karte des Geologen, Bohrbericht) – nicht immer „Geologe“. */}
+              <dt>Prognose</dt>
               <dd>
-                {forecast ? formatForecast(forecast) : '–'}
+                {forecast ? `${formatForecast(forecast)} (${levelLabel(knowledgeOf(game, id).level)})` : '–'}
                 {debug && ` · wirklich ${percent(trueChance(balance, parcel))}`}
               </dd>
               {stufe && (

@@ -177,7 +177,7 @@ forecast:
 # Quote × P(gesehen|Öl) ÷ P(gesehen|trocken), nicht gesehen entsprechend. Startwert ist zones.prior.
 # Regeln in src/sim/exploration.ts, Texte in content/plans.yaml. Alles PLATZHALTER.
 exploration:
-  neighbourPower: 0.2          # Hinweise auf Nachbarranches (gleiches Gebiet) wirken mit Faktor^0,5
+  neighbourPower: 0.2          # Hinweise auf Nachbarranches (gleiches Gebiet) wirken mit Faktor^0,2 (Plan: 0,5 – damit war die Prognose 10–12 Punkte zu selbstsicher, docs/plan-termine-messung.md)
   width:                       # Bandbreite der Prognose je Wissensstufe in Prozentpunkten
     rode: 40                   # Stufe 1: beritten
     mappedBase: 40             # Stufe 2: kartiert, 40 − 5 × Genauigkeit (Genauigkeit 3 → 25, 5 → 15)
@@ -212,11 +212,13 @@ plans:
     ritt: { tab: land, appointments: 2, strength: -3, target: ranch, handler: ritt }           # Ranch + 2 Nachbarn: Sickerstelle, Salzwasser, Formation
     farmer: { tab: land, appointments: 1, target: ranch, handler: farmer }                     # Hinweis „alter Brunnen“
     geologe_einstellen: { tab: land, appointments: 1, cash: 300, handler: geologe_einstellen } # Genauigkeit 3
-    geologe_hale: { tab: land, appointments: 1, cash: 100, handler: geologe_hale }             # Genauigkeit 1, Verzerrung +15
+    # 0.4.19+2: Hale und das nächtliche Tagebuch nur in Kapitel 1 – ab Kapitel 3 ist Dr. Hale der Seismik-Gelehrte,
+    # und der Konzernherr bricht nicht selbst in Bohrhütten ein.
+    geologe_hale: { tab: land, appointments: 1, cash: 100, handler: geologe_hale, requires: { maxChapter: 1 } }   # Genauigkeit 1, Verzerrung +15
     geologe_hallstead: { tab: land, appointments: 3, cash: 600, handler: geologe_hallstead }   # Genauigkeit 5
     geologe_besprechung: { tab: land, appointments: 1, target: ranch, handler: geologe_besprechung }  # 2 Ranches kartiert
     bohrbericht: { tab: land, appointments: 1, target: ranch, handler: bohrbericht }           # Preis: exploration.reportCost
-    tagebuch: { tab: land, appointments: 2, strength: -5, handler: tagebuch }                  # 1 Termin + 1 Nacht (Überstunden-Kraft)
+    tagebuch: { tab: land, appointments: 2, strength: -5, handler: tagebuch, requires: { maxChapter: 1 } }   # 1 Termin + 1 Nacht (Überstunden-Kraft)
     rute: { tab: land, appointments: 1, cash: 20, strength: 1, target: ranch, handler: rute }  # Faktor 1, hebt die Laune
     feldinspektion: { tab: land, event: termin_rundgang }
     # Etappe 2: Preis-Aktionen (Reiter Markt, Zahlen der Regeln: priceActions) – nur Kapitel 1 (ab Kapitel 2 gibt es die Diplomatie) …
@@ -451,6 +453,7 @@ credit:
   usageD: 0.60             # darüber ist es D, PLATZHALTER
   missedC: 1               # eine Runde mit Notkredit/offenen Zinsen bringt C, PLATZHALTER
   missedD: 2               # zwei solche Runden bringen D, PLATZHALTER
+  shiftRecoveryRounds: 4   # 0.4.19+2: eine schlechte Note aus Ereignissen verblasst nach 4 Runden ohne versäumte Zahlung um eine Stufe
   emergency:               # Notkredit vom Geldverleiher
     limit: 1000            # so viel leiht er insgesamt (GDD §12: 2.000; 1.15: Schuldenfalle muss zur Pleite führen können)
     rate: 0.40             # Jahreszins ohne Sicherheit
@@ -477,13 +480,18 @@ chapter:
     priceFactor: 0.8           # PLATZHALTER: Anleger zahlen Imperiumswert × Anteil × 0,8 (Abschlag für Risiko und Bankprovision)
   # Kapitel 2 „Der Herausforderer“ (4.12, GDD §13/§14). Texte: content/chapter.yaml → chapter2.
   chapter2:
-    goalValue: 1000000         # GDD §13: Imperiumswert ≥ 1 Mio. $ …
+    # 0.4.19+2: GDD §13 nennt 1 Mio. $ – das erreichte keine einzige Bot-Partie (bester Wert ~320.000 $,
+    # 30 Seeds mit Raffinerie-Zug des Bots). Mit 200.000 $ besteht der Standard-Bot in etwa 30 % (PLATZHALTER).
+    goalValue: 200000          # Imperiumswert ≥ so viel $ …
     goalControl: 0.5           # … Kontrolle ≥ 50 % (Familienfirma: immer) und eigene Raffinerie oder Fernleitung zum Hafen
     swallowedControl: 0.5      # Ende „Geschluckt“: Thorne hält mehr Aktien als Jacob und Jacobs Kontrolle liegt darunter
   # Kapitel 3 „Der Konzernherr“ (4.19, GDD §13): Marke in ≥ brand.goal.regions Regionen oder ≥ brand.goal.share
   # Marktanteil (Zahlen unter brand.goal) und am Kapitelende mindestens dieses Rating. Texte: content/chapter.yaml → chapter3.
   chapter3:
     minRating: C
+  # Verfehlte Kapitelprüfung (0.4.19+2, GDD §2: „startet das nächste Kapitel geschwächt“). PLATZHALTER.
+  # Beim Start des nächsten Kapitels fehlt dieser Anteil der Kasse, und Jacob beginnt mit so viel Kraft weniger.
+  missed: { cashShare: 0.15, strength: 20 }
 
 # Systemwirkungen der Ereignisse (4.12): Antworten ab Kapitel 2 greifen in Ruf, Rivalen,
 # Schattenbuch, Aufsichtsrat, Personal, Raffinerie, Leitungen, Gesetze und Familie ein
@@ -610,6 +618,9 @@ timeskip:
     drillCost: 2500           # $ je Bohrung (dazu der Pachtbonus)
   # Zeitsprung II (Jahr 15–20, 4.19, GDD §13): dieselben Regeln je Quartal wie Zeitsprung I, dazu
   # die Kapitel-2-Firma (Raffinerie, Fernleitung, Anleihen) und die Weichen nach GDD §13. Alle Werte PLATZHALTER.
+  # Ausgangslage im Text zum Kapitelstart (0.4.19+2): „schwach“ unter so vielen fördernden Quellen
+  # oder unter diesem Imperiumswert (Kapitel 2 / Kapitel 3). Texte: content/timeskip.yaml → textWeak.
+  weakStart: { wells: 3, value2: 50000, value3: 250000 }
   second:
     refineryMargin: 0.12      # $ je verkauftem Barrel mehr je Raffinerie-Stufe (Produkte statt Rohöl)
     harborFreight: 0.03       # $ je Barrel Fracht, wenn eine eigene Fernleitung zum Hafen läuft
@@ -618,8 +629,9 @@ timeskip:
     warPremium: 0.25          # Export trotz Risiko: Erlös je Barrel × (1 + so viel), solange der Sprung läuft
     warLossChance: 0.25       # Chance je Jahr, dass ein Tanker nicht zurückkommt …
     warLossCost: 15000        # … und so viel $ kostet
-    navyYear: 17              # die Marine sucht Heizöl zum Festpreis (sicher in diesem Spieljahr)
-    navyIncome: 6000          # $ je Quartal aus dem Marinevertrag (ab dem Quartal danach, bis zum Ende des Sprungs)
+    navyYear: 17              # die Marine sucht Heizöl zum Festpreis (in diesem Spieljahr, nur wer dann fördert)
+    # 0.4.19+2: vorher pauschal 6.000 $ je Quartal – auch ohne eine einzige Quelle. Jetzt je verkauftem Barrel.
+    navyPremium: 0.08         # $ je verkauftem Barrel über dem Marktpreis (ab dem Quartal danach, bis zum Ende des Sprungs)
     gradyYear: 18             # Senator Grady bietet Reserveland an …
     gradyChance: 0.7          # … mit dieser Chance (sicher, wenn Grady Jacob einen Gefallen schuldet: k2_grady_spende)
     gradyCost: 12000          # Einlage für die Beteiligung an den Pachten
@@ -639,7 +651,9 @@ bots:
   greedy: { minChance: 0.25, maxUndrilled: 1 }                 # gierig: pachtet ab 25 % Fundchance, hält höchstens 1 ungebohrte Pacht
   random: { actionsPerRound: 3, logisticsChance: 0.15 }         # zufällig: so viele Aktionen je Runde; mit 15 % je Runde eine zufällige Anschaffung (Tank, Gespann, Pipeline, Drohung …)
   # 2.15: ausgewogen ist der Standard-Bot – leiht, aber nur bis maxDebtShare des Bankrahmens.
-  balanced: { minChance: 0.4, cashReserve: 300, maxStage: 3, maxDebtShare: 0.5, maxUndrilled: 1 }
+  # Notfallregel (0.4.19+2): Nach trockenen Löchern, ohne Quelle und ohne Land leiht er bis emergencyDebtShare,
+  # damit er nicht 14 Runden lang nichts tut (vorher blieb er in 35 % der Seeds ohne jeden Fund stehen).
+  balanced: { minChance: 0.4, cashReserve: 300, maxStage: 3, maxDebtShare: 0.5, emergencyDebtShare: 0.6, maxUndrilled: 1 }
   daysPerRound: 91         # ein Quartal; für die Anfangsrate in bbl/Tag (GDD §15)
   # Ereignisse (2.15): So bewerten die Bots eine Antwort – Geld zählt in $, dazu
   # strength = $ je Kraftpunkt, family = $ je Beziehungspunkt (Ruth, Thomas),

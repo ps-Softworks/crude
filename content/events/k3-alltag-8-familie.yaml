@@ -95,16 +95,16 @@
   conditions: { minChapter: 3, maxChapter: 3 }
   chance: 0.3
   title:
-    de: Fünfundzwanzig Jahre
-    en: Twenty-Five Years
+    de: Zwanzig Jahre
+    en: Twenty Years
   text:
     de: >-
-      In zwei Wochen sind Jacob und Ruth fünfundzwanzig Jahre verheiratet. Die Sekretärin
+      In zwei Wochen sind Jacob und Ruth zwanzig Jahre verheiratet – Porzellanhochzeit. Die Sekretärin
       hat es im Kalender rot angestrichen, Ruth hat es nicht erwähnt. In Hallstead würde
       man ein Fest erwarten, mit Kapelle und Gästen, deren Namen in der Zeitung stehen.
       In Port Ellis steht noch die Pension, in der sie im ersten Frühjahr wohnten.
     en: >-
-      In two weeks Jacob and Ruth will have been married twenty-five years. The secretary
+      In two weeks Jacob and Ruth will have been married twenty years – their china anniversary. The secretary
       has marked it red in the calendar; Ruth hasn't mentioned it. Hallstead would expect
       a party, with a band and guests whose names appear in the paper. In Port Ellis the
       boarding house where they lived that first spring still stands.
@@ -134,7 +134,7 @@
       default: true
 
 - id: k3_thomas_schulden
-  conditions: { minChapter: 3, maxChapter: 3 }
+  conditions: { minChapter: 3, maxChapter: 3, minThomasAge: 21 }
   chance: 0.25
   title:
     de: Thomas schuldet dem Club
@@ -180,7 +180,7 @@
   marked: [geburt_verpasst]
   delay: 0
   chance: 0.35
-  conditions: { minChapter: 3, maxChapter: 3 }
+  conditions: { minChapter: 3, maxChapter: 3, minThomasAge: 20, maxThomasAge: 20 }
   title:
     de: Thomas wird einundzwanzig
     en: Thomas Turns Twenty-One
@@ -223,7 +223,7 @@
   marked: [eli_waechter]
   delay: 0
   chance: 0.3
-  conditions: { minChapter: 3, maxChapter: 3 }
+  conditions: { minChapter: 3, maxChapter: 3, minClaraAge: 16, maxClaraAge: 16 }
   title:
     de: Clara und die Tochter des Wächters
     en: Clara and the Watchman's Daughter
@@ -268,6 +268,7 @@
   delay: 0
   chance: 0.35
   conditions: { minChapter: 3, maxChapter: 3 }
+  notMarked: [silas_k2_geopfert, silas_k2_hinausgeworfen]
   title:
     de: Der alte Turm wird abgerissen
     en: The Old Rig Is Coming Down

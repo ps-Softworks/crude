@@ -12,6 +12,7 @@ import {
   STANCES,
   SWITCH_CHOICES,
   switchChoice,
+  weakStart,
   type ChronicleEntry,
   type Directives,
   type FamilyTime,
@@ -206,7 +207,7 @@ export function ChronicleScreen({ game, record, onContinue }: { game: GameState;
           {zeile('Kinder', String(v.children), String(n.children))}
         </dl>
         {/* 4.12/4.19: Ausgangslage und Ziel des nächsten Kapitels – der Spieler weiß vor der ersten Runde, worum es geht. */}
-        {game.ending !== 'pleite' && <p className="bogen-text sprung-ziel">{fillTimeskipText(kapitel.text, {})}</p>}
+        {game.ending !== 'pleite' && <p className="bogen-text sprung-ziel">{fillTimeskipText(weakStart(record, balance) ? kapitel.textWeak : kapitel.text, { ziel: money(balance.chapter.chapter2.goalValue) })}</p>}
       </div>
       <div className="bogen-fuss">
         {game.ending === 'pleite' ? (

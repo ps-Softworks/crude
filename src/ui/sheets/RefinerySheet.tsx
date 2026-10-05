@@ -53,9 +53,13 @@ function name(p: (typeof PRODUCTS)[number]): string {
 /** Knopf für eine Aktion aus src/sim/refinery: gesperrt mit Grund, wenn sie nicht geht. */
 function Aktion({ result, onDone, children }: { result: RefineryResult; onDone: (r: RefineryResult) => void; children: string }) {
   return (
-    <button type="button" disabled={!result.ok} title={result.ok ? undefined : result.reason} onClick={() => result.ok && onDone(result)}>
-      {children}
-    </button>
+    <>
+      <button type="button" disabled={!result.ok} title={result.ok ? undefined : result.reason} onClick={() => result.ok && onDone(result)}>
+        {children}
+      </button>
+      {/* 0.4.19+2: Der Grund steht sichtbar daneben, nicht nur im Tooltip. */}
+      {!result.ok && <span className="muted klein"> {result.reason}</span>}
+    </>
   );
 }
 

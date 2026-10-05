@@ -41,6 +41,7 @@ const UI_KEYS = [
   'profit',
   'value',
   'goal',
+  'goalRating',
   'antitrust',
   'campaignRun',
   'campaignStart',

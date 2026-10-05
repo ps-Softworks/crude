@@ -120,7 +120,7 @@ switches:
 # Die Chronik „Die Jahre dazwischen“: eine Zeitungsseite je Spieljahr.
 chronicle:
   title: { de: "Die Jahre dazwischen", en: "The Years Between" }
-  paper: { de: "Cordova Courier – Jahresrückblick", en: "Cordova Courier – Year in Review" }
+  paper: { de: "Port Ellis Courier – Jahresrückblick", en: "Port Ellis Courier – Year in Review" }
   year: { de: "Jahr {jahr} der Föderation", en: "Year {jahr} of the Federation" }
   quiet: { de: "Ein ruhiges Jahr am Salt Hill.", en: "A quiet year at Salt Hill." }
   balance: { de: "Was die Jahre gebracht haben", en: "What the Years Brought" }
@@ -170,7 +170,7 @@ chronicle:
     war_export: { de: "Harlan-Öl fährt über den Ozean – zu Kriegspreisen.", en: "Harlan oil crosses the ocean – at wartime prices." }
     war_hold: { de: "Jacob verkauft sein Öl nur im eigenen Land.", en: "Jacob sells his oil at home only." }
     war_tanker: { de: "Ein Tanker mit Harlan-Öl kommt nicht zurück. Verlust: {betrag}. In Port Ellis trägt eine Witwe Schwarz.", en: "A tanker carrying Harlan oil does not come back. Loss: {betrag}. In Port Ellis a widow wears black." }
-    navy_accept: { de: "Die Marine tankt Harlan-Heizöl – {betrag} je Quartal zum Festpreis.", en: "The navy fuels up on Harlan fuel oil – {betrag} a quarter at a fixed price." }
+    navy_accept: { de: "Die Marine tankt Harlan-Heizöl – zum Festpreis, {preis} je Barrel über dem Markt.", en: "The navy fuels up on Harlan fuel oil – at a fixed price, {preis} a barrel above the market." }
     navy_decline: { de: "Jacob lehnt den Marinevertrag ab.", en: "Jacob turns down the navy contract." }
     grady_take: { de: "Harlan Oil beteiligt sich an Pachten auf Reserveland ({betrag}). Niemand schreibt darüber – noch nicht.", en: "Harlan Oil takes a stake in leases on reserve land ({betrag}). Nobody writes about it – not yet." }
     grady_refuse: { de: "Jacob lässt Senator Gradys Angebot unbeantwortet.", en: "Jacob leaves Senator Grady's offer unanswered." }
@@ -189,8 +189,12 @@ chapter2:
   badge: { de: "Kapitel 2 · Der Herausforderer", en: "Chapter 2 · The Challenger" }
   title: { de: "Kapitel 2 – Der Herausforderer", en: "Chapter 2 – The Challenger" }
   text:
-    de: Harlan Oil ist eine ernstzunehmende Firma, aber der Crane Trust beherrscht Raffinerien und Pipelines. Ziel bis Jahr 14 – eigene Raffinerie oder Pipeline zum Hafen, Kontrolle über die Firma, ein Imperium von einer Million Dollar.
-    en: Harlan Oil is a company to be reckoned with, but the Crane Trust controls the refineries and pipelines. Goal by year 14 – your own refinery or pipeline to the harbour, control of the company, an empire worth a million dollars.
+    de: Harlan Oil ist eine ernstzunehmende Firma, aber der Crane Trust beherrscht Raffinerien und Pipelines. Ziel bis Jahr 14 – eigene Raffinerie oder Pipeline zum Hafen, Kontrolle über die Firma, ein Imperium von {ziel}.
+    en: Harlan Oil is a company to be reckoned with, but the Crane Trust controls the refineries and pipelines. Goal by year 14 – your own refinery or pipeline to the harbour, control of the company, an empire worth {ziel}.
+  # 0.4.19+2: wenn die Firma schwach aus dem Sprung kommt (balance.yaml timeskip.weakStart).
+  textWeak:
+    de: Harlan Oil hat die sechs Jahre überstanden, mehr nicht – kaum Quellen, wenig Geld, und der Crane Trust beherrscht Raffinerien und Pipelines. Ziel bis Jahr 14 – eigene Raffinerie oder Pipeline zum Hafen, Kontrolle über die Firma, ein Imperium von {ziel}. Ein weiter Weg.
+    en: Harlan Oil has survived the six years, nothing more – few wells, little money, and the Crane Trust controls the refineries and pipelines. Goal by year 14 – your own refinery or pipeline to the harbour, control of the company, an empire worth {ziel}. A long way to go.
 
 # Kapitel 3 „Der Konzernherr“ (4.19): Stempel unter der Chronik von Zeitsprung II, Ziel zum Kapitelstart.
 chapter3:
@@ -199,6 +203,9 @@ chapter3:
   text:
     de: Harlan Oil ist ein Konzern. Die Börse lockt, und Hallsteads alte Familien öffnen die ersten Türen – oder schlagen sie zu. Ziel bis Jahr 24 – eine eigene Marke in drei Regionen oder zehn Prozent Marktanteil, und am Ende mindestens Rating C bei der Bank.
     en: Harlan Oil is a corporation. The stock exchange beckons, and Hallstead's old families open the first doors – or slam them shut. Goal by year 24 – your own brand in three regions or ten per cent market share, and at least a C rating with the bank at the end.
+  textWeak:
+    de: Harlan Oil ist kein Konzern – noch nicht. Die Börse lockt trotzdem, und Hallsteads alte Familien sehen in Jacob einen Ölmann, der es nicht ganz geschafft hat. Ziel bis Jahr 24 – eine eigene Marke in drei Regionen oder zehn Prozent Marktanteil, und am Ende mindestens Rating C bei der Bank.
+    en: Harlan Oil is not a corporation – not yet. The stock exchange beckons all the same, and Hallstead's old families see in Jacob an oilman who didn't quite make it. Goal by year 24 – your own brand in three regions or ten per cent market share, and at least a C rating with the bank at the end.
 
 # Ein Kapitel nach dem Early-Access-Umfang (Kopfleiste; im Spiel nicht erreichbar).
 preview:

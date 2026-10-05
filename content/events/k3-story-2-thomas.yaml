@@ -37,16 +37,17 @@
     en: The Noon Train from the East
   text:
     de: >-
-      Thomas kommt mit dem Mittagszug. Er ist zwanzig, trägt einen Anzug aus Hallstead
+      Thomas kommt mit dem Mittagszug. Er ist neunzehn, trägt einen Anzug aus Hallstead
       und einen Koffer voller Bücher, und er ist inzwischen einen Fingerbreit größer
-      als sein Vater. Die Ratssitzung ist auf zwölf Uhr angesetzt. Ruth fragt beim
+      als sein Vater. Die Bankiers aus Hallstead sind auf zwölf Uhr bestellt. Ruth fragt beim
       Frühstück, wer zum Bahnhof fährt, und sieht dabei nicht von der Zeitung auf.
     en: >-
-      Thomas arrives on the noon train. He is twenty, wears a Hallstead suit and carries
+      Thomas arrives on the noon train. He is nineteen, wears a Hallstead suit and carries
       a trunk full of books, and he is now a finger's breadth taller than his father.
-      The board meeting is set for twelve o'clock. At breakfast Ruth asks who is going
+      The bankers from Hallstead are expected at twelve o'clock. At breakfast Ruth asks who is going
       to the station, without looking up from the newspaper.
   conditions: { minChapter: 3, maxChapter: 3, minRound: 1, maxRound: 2 }
+  marked: [zs2_thomas_college]
   certain: true
   choices:
     - id: selbst
@@ -84,6 +85,66 @@
       effects: { thomas: -20 }
       default: true
 
+# Entwurf – Philipp überarbeitet (0.4.19+2).
+# Fassung ohne College (zs2_thomas_kein_college): Thomas ist schon seit Jahren in der Firma.
+- id: k3_thomas_aufstieg
+  visitor: thomas
+  title:
+    de: Vier Jahre am Turm
+    en: Four Years at the Rig
+  text:
+    de: >-
+      Thomas arbeitet seit vier Jahren bei Harlan Oil, seit er siebzehn war: erst im
+      Frachtbüro, dann draußen an den Türmen. Die Trupps nennen ihn nicht „den Sohn“,
+      sondern bei seinem Spitznamen. Heute steht er in Arbeitshosen in Jacobs Büro und
+      ist inzwischen einen Fingerbreit größer als sein Vater. „Ich will nicht ewig
+      Vorarbeiter sein. Entweder ich lerne bei dir, wie man die Firma führt – oder ich
+      lerne es woanders.“
+    en: >-
+      Thomas has worked at Harlan Oil for four years, since he was seventeen: first in
+      the freight office, then out at the rigs. The crews don't call him "the son" but
+      by his nickname. Today he stands in Jacob's office in work trousers, now a
+      finger's breadth taller than his father. "I don't want to be a foreman forever.
+      Either I learn from you how to run the company – or I learn it somewhere else."
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 1, maxRound: 2 }
+  marked: [zs2_thomas_kein_college]
+  certain: true
+  choices:
+    - id: lehren
+      label: { de: "Ihn mit in die Besprechungen nehmen", en: "Take him along to the meetings" }
+      result:
+        de: >-
+          Thomas sitzt ab Montag hinten in jeder Besprechung und schreibt mit, in
+          Bleistift, wie seine Mutter. Nach der dritten stellt er eine Frage, die
+          Vandermeer nicht beantworten kann.
+        en: >-
+          From Monday Thomas sits at the back of every meeting and takes notes, in
+          pencil, like his mother. After the third he asks a question Vandermeer cannot
+          answer.
+      effects: { thomas: 12, strength: -5, heirValues: { thomas: { business: 1 } } }
+    - id: warten
+      label: { de: "„Noch ein Jahr am Turm. Dann sehen wir.“", en: "\"One more year at the rig. Then we'll see.\"" }
+      result:
+        de: >-
+          Thomas nickt und geht zurück zu den Trupps. Er sagt nichts mehr dazu. Am Abend
+          schreibt er einen Brief nach Osten, an eine Adresse, die Jacob nicht kennt.
+        en: >-
+          Thomas nods and goes back to the crews. He says nothing more about it. In the
+          evening he writes a letter east, to an address Jacob doesn't know.
+      effects: { thomas: -10 }
+      default: true
+    - id: frei
+      label: { de: "„Lern es woanders. Du kommst zurück, wenn du willst.“", en: "\"Learn it elsewhere. Come back when you want to.\"" }
+      result:
+        de: >-
+          Thomas sieht ihn lange an. „Das hätte ich nicht von dir erwartet.“ Er bleibt
+          trotzdem bis zum Ende des Quartals, damit sein Turm nicht ohne Vorarbeiter ist.
+        en: >-
+          Thomas looks at him for a long time. "I didn't expect that from you." He stays
+          until the end of the quarter anyway, so that his rig isn't left without a
+          foreman.
+      effects: { thomas: 15, heirValues: { thomas: { ambition: 1 } } }
+
 # Entwurf – Philipp überarbeitet.
 # Schlüsselszene: Was wird Thomas? (Jacob war bei der Geburt.)
 - id: k3_thomas_weg
@@ -106,7 +167,7 @@
       So don't give me a department." Margaret Crane has written to him, he says. He
       says it so that Jacob has to hear it.
   conditions: { minChapter: 3, maxChapter: 3, minRound: 3, maxRound: 6 }
-  notMarked: [geburt_verpasst]
+  notMarked: [geburt_verpasst, thomas_firma, thomas_feld, thomas_eigener_weg, thomas_gezwungen]
   certain: true
   choices:
     - id: firma
@@ -148,8 +209,80 @@
       label: { de: "„Montag fängst du als mein Stellvertreter an. Ende.“", en: "\"Monday you start as my deputy. That's that.\"" }
       result:
         de: >-
-          Thomas faltet seine Pläne zusammen, sehr ordentlich. „Ja, Vater.“ Er hat ihn
-          nie zuvor Vater genannt. Er hat immer Dad gesagt.
+          Thomas faltet seine Pläne zusammen, sehr ordentlich. „Ja, Vater.“ Er hat ihn nie zuvor Vater genannt. Er hat immer Papa gesagt.
+        en: >-
+          Thomas folds his plans away, very neatly. "Yes, Father." He has never called him
+          Father before. He always said Dad.
+      effects: { thomas: -20, heirValues: { thomas: { loyalty: 1, ambition: -2 } } }
+      marks: [thomas_gezwungen]
+      default: true
+
+# Entwurf – Philipp überarbeitet (0.4.19+2).
+# Jacob hat die Geburt verpasst, aber die Beziehung ist trotzdem gut geworden: dieselbe Szene wie k3_thomas_weg.
+- id: k3_thomas_weg_spaet
+  visitor: thomas
+  draft: true
+  title:
+    de: „Schenk mir keine Abteilung“
+    en: '"Don''t Give Me a Department"'
+  text:
+    de: >-
+      Thomas sitzt auf dem Stuhl, auf dem sonst die Bankiers sitzen, und hält sich zu
+      gerade. Er hat Pläne mitgebracht: Tankstellen mit einem Zeichen, das man von der
+      Straße aus erkennt, Karten für Automobilisten. „Du hast mir beigebracht, dass man
+      nichts geschenkt bekommt. Also schenk mir keine Abteilung.“ Margaret Crane hat ihm
+      geschrieben, sagt er. Er sagt es so, dass Jacob es hören muss.
+    en: >-
+      Thomas sits in the chair where the bankers usually sit and holds himself too
+      straight. He has brought plans: filling stations with a sign you can recognise
+      from the road, maps for motorists. "You taught me nobody gets anything for free.
+      So don't give me a department." Margaret Crane has written to him, he says. He
+      says it so that Jacob has to hear it.
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 3, maxRound: 6, minThomasBond: 35 }
+  notMarked: [thomas_firma, thomas_feld, thomas_eigener_weg, thomas_gezwungen]
+  marked: [geburt_verpasst]
+  certain: true
+  choices:
+    - id: firma
+      label: { de: "Ganz unten im Vertrieb anfangen lassen", en: "Have him start at the bottom in sales" }
+      result:
+        de: >-
+          Thomas bekommt einen Schreibtisch im Keller neben den Frachtbriefen. Er ist am
+          ersten Tag um sechs da. Jacob erfährt es vom Pförtner, nicht von ihm.
+        en: >-
+          Thomas gets a desk in the basement next to the bills of lading. On the first day
+          he is in at six. Jacob learns it from the porter, not from him.
+      effects: { thomas: 10, heirValues: { thomas: { business: 1, ambition: 1 } } }
+      marks: [thomas_firma]
+    - id: feld
+      label: { de: "Ihn auf die Felder schicken, zu den Bohrtrupps", en: "Send him to the fields, to the drilling crews" }
+      result:
+        de: >-
+          „Wie du damals“, sagt Thomas und weiß nicht, ob er sich freuen soll. Am Ende der
+          ersten Woche hat er Blasen an den Händen und einen Spitznamen, den er niemandem verrät.
+        en: >-
+          "Like you back then," says Thomas, unsure whether to be glad. By the end of the
+          first week he has blistered hands and a nickname he tells no one.
+      effects: { thomas: 10, heirValues: { thomas: { loyalty: 1, moral: 1 } } }
+      marks: [thomas_feld]
+    - id: eigener_weg
+      label: { de: "„Geh, wohin du willst. Auch zu Margaret.“", en: "\"Go wherever you like. Even to Margaret.\"" }
+      result:
+        de: >-
+          Thomas starrt ihn an, als hätte er mit allem gerechnet außer damit. Er nimmt die
+          Stelle bei Crane Eastern. Zum Abschied umarmt er seinen Vater, ungeschickt, wie
+          man jemanden umarmt, den man lange nicht umarmt hat.
+        en: >-
+          Thomas stares at him as if he had expected anything but this. He takes the post
+          at Crane Eastern. On leaving he hugs his father, awkwardly, the way you hug
+          someone you have not hugged in a long time.
+      effects: { thomas: 15, heirValues: { thomas: { ambition: 2, loyalty: -1 } }, rival: { margaret: { trust: 5 } } }
+      marks: [thomas_eigener_weg]
+    - id: zwingen
+      label: { de: "„Montag fängst du als mein Stellvertreter an. Ende.“", en: "\"Monday you start as my deputy. That's that.\"" }
+      result:
+        de: >-
+          Thomas faltet seine Pläne zusammen, sehr ordentlich. „Ja, Vater.“ Er hat ihn nie zuvor Vater genannt. Er hat immer Papa gesagt.
         en: >-
           Thomas folds his plans away, very neatly. "Yes, Father." He has never called him
           Father before. He always said Dad.
@@ -158,35 +291,34 @@
       default: true
 
 # Entwurf – Philipp überarbeitet.
-# Schlüsselszene – Fassung fremd: Jacob hat die Geburt verpasst (Kapitel 1). Thomas sagt „Sir“.
+# Schlüsselszene – Fassung fremd: Jacob hat die Geburt verpasst (Kapitel 1). Thomas sagt förmlich „Vater“ – nur bei schlechter Beziehung (maxThomasBond), sonst k3_thomas_weg_spaet.
 - id: k3_thomas_weg_fremd
   visitor: thomas
   draft: true
   title:
-    de: „Sir“
-    en: '"Sir"'
+    de: „Vater“
+    en: '"Father"'
   text:
     de: >-
       Thomas meldet sich bei der Sekretärin an wie ein Geschäftspartner und wartet, bis
-      er hereingerufen wird. „Sir“, sagt er. Seine Mutter hat ihm einmal erzählt, wo
-      Jacob war, als er geboren wurde. Er erwähnt es nicht. Er legt einen Brief von
+      er hereingerufen wird. „Vater“, sagt er, und es klingt wie eine Anrede in einem Brief. Er legt einen Brief von
       Margaret Crane auf den Tisch, ein Angebot, und daneben seine eigenen Pläne für
-      Tankstellen. „Ich wollte, dass Sie beides sehen, bevor ich mich entscheide.“
+      Tankstellen. „Ich wollte, dass du beides siehst, bevor ich mich entscheide.“
     en: >-
       Thomas has the secretary announce him like a business partner and waits to be
-      called in. "Sir," he says. His mother once told him where Jacob was when he was
-      born. He does not mention it. He lays a letter from Margaret Crane on the desk, an
+      called in. "Father," he says, and it sounds like the salutation of a letter. He lays a letter from Margaret Crane on the desk, an
       offer, and beside it his own plans for filling stations. "I wanted you to see both
       before I decide."
-  conditions: { minChapter: 3, maxChapter: 3, minRound: 3, maxRound: 6 }
+  conditions: { minChapter: 3, maxChapter: 3, minRound: 3, maxRound: 6, maxThomasBond: 34 }
+  notMarked: [thomas_firma, thomas_feld, thomas_eigener_weg, thomas_gezwungen]
   marked: [geburt_verpasst]
   certain: true
   choices:
     - id: firma
       label: { de: "„Bleib. Fang im Vertrieb an.“", en: "\"Stay. Start in sales.\"" }
       result:
-        de: Thomas nickt knapp. „Wie Sie wünschen, Sir.“ Er bleibt. Ob wegen Jacob oder wegen der Pläne, sagt er nicht.
-        en: Thomas nods briefly. "As you wish, sir." He stays. Whether for Jacob or for the plans, he does not say.
+        de: Thomas nickt knapp. „Wie du willst, Vater.“ Er bleibt. Ob wegen Jacob oder wegen der Pläne, sagt er nicht.
+        en: Thomas nods briefly. "As you wish, Father." He stays. Whether for Jacob or for the plans, he does not say.
       effects: { thomas: 5, strength: -10 }
       marks: [thomas_firma]
     - id: feld
@@ -204,11 +336,10 @@
       label: { de: "„Nimm Margarets Angebot. Es ist gut.“", en: "\"Take Margaret's offer. It's a good one.\"" }
       result:
         de: >-
-          Thomas sieht ihn lange an. „Das ist das Erste, was Sie mir je geraten haben.“ Er
-          nimmt das Angebot an. Er sagt immer noch Sir, aber leiser.
+          Thomas sieht ihn lange an. „Das ist das Erste, was du mir je geraten hast.“ Er
+          nimmt das Angebot an. Er sagt immer noch Vater, aber leiser.
         en: >-
-          Thomas looks at him a long time. "That is the first advice you have ever given
-          me." He takes the offer. He still says sir, but more quietly.
+          Thomas looks at him a long time. "That is the first advice you have ever given me." He takes the offer. He still says Father, but more quietly.
       effects: { thomas: 15 }
       marks: [thomas_eigener_weg]
     - id: zwingen
@@ -393,12 +524,11 @@
     de: >-
       Thomas hat einen Frachtvertrag mit der Thorne-Linie unterschrieben, ohne die
       Klausel auf Seite vier zu lesen. Oder er hat sie gelesen. Harlan Oil zahlt ein
-      Jahr lang zu viel. Im Aufsichtsrat sagt Ambrose Vandermeer nur: „Ein Sohn ist
+      Jahr lang zu viel. In der Besprechung mit der Bank sagt Ambrose Vandermeer nur: „Ein Sohn ist
       keine Qualifikation, Mr. Harlan.“ Thomas sitzt dabei und sieht aus dem Fenster.
     en: >-
       Thomas has signed a freight contract with the Thorne line without reading the
-      clause on page four. Or he read it. Harlan Oil will overpay for a year. On the
-      board Ambrose Vandermeer says only: "A son is no qualification, Mr. Harlan."
+      clause on page four. Or he read it. Harlan Oil will overpay for a year. In the meeting with the bank Ambrose Vandermeer says only: "A son is no qualification, Mr. Harlan."
       Thomas sits there looking out of the window.
   conditions: { minChapter: 3, maxChapter: 3 }
   marked: [thomas_gezwungen]
@@ -407,7 +537,7 @@
   rival: thorne
   choices:
     - id: decken
-      label: { de: "Ihn vor dem Rat decken und den Vertrag zurückkaufen (2.500 $)", en: "Cover for him before the board and buy back the contract (2,500 $)" }
+      label: { de: "Ihn vor den Bankiers decken und den Vertrag zurückkaufen (2.500 $)", en: "Cover for him before the bankers and buy back the contract (2,500 $)" }
       result:
         de: >-
           Jacob nimmt die Schuld auf sich, vor allen. Thomas sagt hinterher nichts. Aber
@@ -418,7 +548,7 @@
       requires: { minCash: 2500 }
       effects: { cash: -2500, thomas: 10, boardLoyalty: { vandermeer: -10 }, control: -2 }
     - id: zurechtweisen
-      label: { de: "Ihn vor dem Rat zurechtweisen", en: "Reprimand him before the board" }
+      label: { de: "Ihn vor den Bankiers zurechtweisen", en: "Reprimand him before the bankers" }
       result:
         de: >-
           Jacob spricht fünf Minuten. Vandermeer nickt zufrieden. Thomas steht auf, als

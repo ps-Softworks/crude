@@ -345,6 +345,8 @@ export interface CreditBalance {
   missedD: number;
   /** Der Geldverleiher: leiht sofort, ohne Sicherheit, aber zu einem Wucherzins. */
   emergency: { limit: number; rate: number };
+  /** Runden ohne versäumte Zahlung, nach denen eine schlechte Note aus Ereignissen (ratingShift < 0) um eine Stufe verblasst (0.4.19+2; 0 = nie). */
+  shiftRecoveryRounds: number;
 }
 
 /** Bankrott: Frist, bevor es Konkurs gibt. */
@@ -355,6 +357,8 @@ export const FAMILY_TIMES = ['little', 'some', 'much'] as const;
 export type FamilyTime = (typeof FAMILY_TIMES)[number];
 
 export interface TimeskipBalance {
+  /** Ausgangslage „schwach“ (0.4.19+2): weniger fördernde Quellen oder weniger Imperiumswert (K2/K3) nach dem Sprung. */
+  weakStart: { wells: number; value2: number; value3: number };
   /** Quartale im Zeitsprung I. */
   rounds: number;
   /** Runden des nächsten Kapitels (Platzhalter). */
@@ -410,7 +414,8 @@ export interface TimeskipBalance {
     warLossChance: number;
     warLossCost: number;
     navyYear: number;
-    navyIncome: number;
+    /** $ je verkauftem Barrel über dem Marktpreis (Festpreis der Marine). */
+    navyPremium: number;
     gradyYear: number;
     gradyChance: number;
     gradyCost: number;
@@ -445,6 +450,12 @@ export interface ChapterBalance {
   chapter3: {
     minRating: Rating;
   };
+  /**
+   * Verfehlte Kapitelprüfung (0.4.19+2, GDD §2: „startet das nächste Kapitel geschwächt“):
+   * Am Start des nächsten Kapitels fehlt dieser Anteil der Kasse (Verwalter, misstrauische Bank)
+   * und Jacob hat so viel Kraft weniger.
+   */
+  missed: { cashShare: number; strength: number };
 }
 
 export interface EmpireBalance {
@@ -467,8 +478,11 @@ export interface BotsBalance {
   greedy: { minChance: number; maxUndrilled: number };
   /** zufällig: so viele Aktionen je Runde; mit logisticsChance je Runde eine zufällige Anschaffung (0.2.15+4). */
   random: { actionsPerRound: number; logisticsChance: number };
-  /** ausgewogen (2.15, Standard-Bot): wie vorsichtig, leiht aber bis maxDebtShare des Bankrahmens. */
-  balanced: { minChance: number; cashReserve: number; maxStage: number; maxDebtShare: number; maxUndrilled: number };
+  /**
+   * ausgewogen (2.15, Standard-Bot): wie vorsichtig, leiht aber bis maxDebtShare des Bankrahmens;
+   * im Notfall (nur trockene Löcher, kein Land) bis emergencyDebtShare.
+   */
+  balanced: { minChance: number; cashReserve: number; maxStage: number; maxDebtShare: number; emergencyDebtShare: number; maxUndrilled: number };
   /** Tage je Runde (Quartal) – für die Anfangsrate in bbl/Tag. */
   daysPerRound: number;
   /** Wie die Bots Ereignisse bewerten (2.15). */
@@ -1475,6 +1489,7 @@ function parseCredit(raw: unknown): CreditBalance {
     usageD,
     missedC,
     missedD,
+    shiftRecoveryRounds: nonNegativeInt(raw, 'credit.shiftRecoveryRounds'),
     emergency: {
       limit: num(raw, 'credit.emergency.limit'),
       rate: nonNegativeShare(raw, 'credit.emergency.rate'),
@@ -1598,6 +1613,7 @@ function parseChapter(raw: unknown): ChapterBalance {
       swallowedControl: share(raw, 'chapter.chapter2.swallowedControl'),
     },
     chapter3: { minRating: ratingAt(raw, 'chapter.chapter3.minRating') },
+    missed: { cashShare: share(raw, 'chapter.missed.cashShare'), strength: nonNegative(raw, 'chapter.missed.strength') },
   };
 }
 
@@ -1630,6 +1646,7 @@ function parseTimeskip(raw: unknown): TimeskipBalance {
     maxNewWells: jeHaltung('maxNewWells', positiveInt),
     expand: jeHaltung('expand', nonNegativeInt),
     expandCost: nonNegative(raw, p('expandCost')),
+    weakStart: { wells: nonNegativeInt(raw, p('weakStart.wells')), value2: nonNegative(raw, p('weakStart.value2')), value3: nonNegative(raw, p('weakStart.value3')) },
     upkeepPerWell: nonNegative(raw, p('upkeepPerWell')),
     family: {
       bond: jeFamilie('bond', num),
@@ -1676,7 +1693,7 @@ function parseTimeskip(raw: unknown): TimeskipBalance {
       warLossChance: share(raw, p('second.warLossChance')),
       warLossCost: nonNegative(raw, p('second.warLossCost')),
       navyYear: jahr2('second.navyYear'),
-      navyIncome: nonNegative(raw, p('second.navyIncome')),
+      navyPremium: nonNegative(raw, p('second.navyPremium')),
       gradyYear: jahr2('second.gradyYear'),
       gradyChance: share(raw, p('second.gradyChance')),
       gradyCost: nonNegative(raw, p('second.gradyCost')),
@@ -1711,6 +1728,7 @@ function parseBots(raw: unknown): BotsBalance {
       cashReserve: nonNegative(raw, 'bots.balanced.cashReserve'),
       maxStage: positiveInt(raw, 'bots.balanced.maxStage'),
       maxDebtShare: share(raw, 'bots.balanced.maxDebtShare'),
+      emergencyDebtShare: share(raw, 'bots.balanced.emergencyDebtShare'),
       maxUndrilled: positiveInt(raw, 'bots.balanced.maxUndrilled'),
     },
     daysPerRound: positiveInt(raw, 'bots.daysPerRound'),

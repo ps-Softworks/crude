@@ -22,7 +22,7 @@ import type { GameState } from './game';
 import { LANGUAGES, localize, type Lang, type LocalizedText } from './i18n';
 import { buyLease, exerciseOption, leaseTerms, optionOf, parcelLabel } from './lease';
 import { capacityLeft, netPrice, sellOil } from './transport';
-import { suggestRide } from './exploration';
+import { knowledgeOf, suggestRide } from './exploration';
 import { bookCard } from './plans';
 
 /** Die drei Schritte des Einstiegs. */
@@ -59,7 +59,11 @@ export type TutorialAction =
   | { kind: 'endRound' };
 
 /** Platzhalter, die in den Texten vorkommen dürfen. */
-export type TutorialVars = Partial<Record<'ort' | 'kosten' | 'chance' | 'weg', string>>;
+export type TutorialVars = Partial<Record<'ort' | 'kosten' | 'chance' | 'weg' | 'quelle', string>>;
+
+/** Woher eine Prognose stammt (0.4.19+2): Wissensstufe 0–3 der Ranch – der Text dazu steht in content/tutorial.yaml unter sources. */
+export const TUTORIAL_SOURCES = ['geruecht', 'ritt', 'karte', 'bericht'] as const;
+export type TutorialSource = (typeof TUTORIAL_SOURCES)[number];
 
 export interface TutorialHint {
   id: TutorialHintId;
@@ -74,6 +78,8 @@ export interface TutorialContent {
   title: LocalizedText;
   steps: Record<TutorialStep, LocalizedText>;
   hints: Record<TutorialHintId, LocalizedText>;
+  /** Wer die Prognose stellt – je Wissensstufe (Platzhalter {quelle}). */
+  sources: Record<TutorialSource, LocalizedText>;
 }
 
 function money(value: number): string {
@@ -94,6 +100,11 @@ export function shownChance(state: Pick<GameState, 'forecasts'>, parcelId: strin
 function chanceText(state: GameState, parcelId: string): string {
   const f = state.forecasts[parcelId];
   return f ? formatForecast(f) : '–';
+}
+
+/** Wissensstufe der Ranch als Quelle der Prognose (Ritt, Karte des Geologen, Bohrbericht). */
+function sourceOf(state: GameState, parcelId: string): TutorialSource {
+  return TUTORIAL_SOURCES[Math.max(0, Math.min(3, knowledgeOf(state, parcelId).level))];
 }
 
 /**
@@ -299,7 +310,7 @@ export function tutorialHint(state: GameState, balance: Balance): TutorialHint |
     }
     return hint('lease_none', 'lease', end);
   }
-  const vars = { ort: labelOf(state, ziel.parcelId), kosten: money(ziel.cost), chance: chanceText(state, ziel.parcelId) };
+  const vars = { ort: labelOf(state, ziel.parcelId), kosten: money(ziel.cost), chance: chanceText(state, ziel.parcelId), quelle: sourceOf(state, ziel.parcelId) };
   return ziel.kind === 'exercise'
     ? hint('lease_option', 'lease', { kind: 'exercise', parcelId: ziel.parcelId }, [ziel.parcelId], vars)
     : hint('lease_buy', 'lease', { kind: 'lease', parcelId: ziel.parcelId }, [ziel.parcelId], vars);
@@ -326,7 +337,10 @@ export function viewTutorial(hintValue: TutorialHint, content: TutorialContent, 
     stepNumber: TUTORIAL_STEPS.indexOf(hintValue.step) + 1,
     stepCount: TUTORIAL_STEPS.length,
     stepLabel: localize(content.steps[hintValue.step], lang),
-    text: fillVars(localize(content.hints[hintValue.id], lang), hintValue.vars),
+    text: fillVars(localize(content.hints[hintValue.id], lang), {
+      ...hintValue.vars,
+      ...(hintValue.vars.quelle ? { quelle: localize(content.sources[hintValue.vars.quelle as TutorialSource] ?? content.sources.ritt, lang) } : {}),
+    }),
   };
 }
 
@@ -334,7 +348,7 @@ function istObjekt(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-const ERLAUBTE_PLATZHALTER = ['ort', 'kosten', 'chance', 'weg'];
+const ERLAUBTE_PLATZHALTER = ['ort', 'kosten', 'chance', 'weg', 'quelle'];
 
 /** Liest content/tutorial.yaml. Fehlt etwas, kommt es als Fehler zurück (content ist dann null). */
 export function parseTutorialContent(file: string, text: string): { content: TutorialContent | null; errors: ContentError[] } {
@@ -394,6 +408,7 @@ export function parseTutorialContent(file: string, text: string): { content: Tut
   const title = sprachtext(raw.title, 'title');
   const steps = gruppe('steps', TUTORIAL_STEPS);
   const hints = gruppe('hints', TUTORIAL_HINT_IDS);
-  if (errors.length > 0 || !title || !steps || !hints) return { content: null, errors };
-  return { content: { title, steps, hints }, errors };
+  const sources = gruppe('sources', TUTORIAL_SOURCES);
+  if (errors.length > 0 || !title || !steps || !hints || !sources) return { content: null, errors };
+  return { content: { title, steps, hints, sources }, errors };
 }

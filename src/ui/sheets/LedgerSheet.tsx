@@ -7,6 +7,7 @@ import { creditLimit, debt, headroom } from '../../sim/credit';
 import { startStocks, stocksAttention } from '../../sim/stocks';
 import { balance } from '../balance';
 import { BankPanel } from '../BankPanel';
+import { ChapterGoalProgress } from '../ChapterGoalProgress';
 import { ReputationLine } from '../Reputation';
 import { money } from '../format';
 import { Tabs, activeTab } from '../sheet/Tabs';
@@ -24,6 +25,8 @@ export function LedgerSheet({ ctx }: { ctx: SheetContext }) {
       </p>
       {/* 4.12: Ruf als Wörter, sobald Ereignisse ihn bewegt haben. */}
       <ReputationLine game={game} className="klein kassenbuch-ruf" />
+      {/* 0.4.19+2: Die Kapitelprüfung ab Kapitel 2 dauerhaft sichtbar (Rating und Rücklagen stehen hier). */}
+      <ChapterGoalProgress game={game} />
     </>
   );
   // 4.8 Andockpunkt: ohne Aktienbuch (Kapitel 1) nur die Bank. Der Debug-Knopf zum Anlegen steht im Menü → Debug → „Vorab freischalten“.

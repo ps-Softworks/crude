@@ -29,6 +29,7 @@ import { brandNewsText, brandText, campaignName, regionName } from '../../sim/br
 import type { GameState } from '../../sim/game';
 import { localize } from '../../sim/i18n';
 import { balance } from '../balance';
+import { RATINGS } from '../../sim/balance';
 import { brandContent as C } from '../brand';
 import { money, percent } from '../format';
 import { Tabs, activeTab } from '../sheet/Tabs';
@@ -138,6 +139,10 @@ function Netz({ ctx }: { ctx: SheetContext }) {
           anteilIst: percent(ziel.share),
         })}
         {ziel.reached && ' ✓'}
+        <br />
+        {/* Die Kapitelprüfung verlangt dazu ein Rating (0.4.19+2) – sonst sähe „✓“ wie „bestanden“ aus. */}
+        {t('goalRating', { ist: game.rating, soll: balance.chapter.chapter3.minRating })}
+        {RATINGS.indexOf(game.rating) <= RATINGS.indexOf(balance.chapter.chapter3.minRating) ? ' ✓' : ' ✗'}
       </p>
       {(kartell.regions.length > 0 || kartell.national) && <p className="hint">{t('antitrust')}</p>}
       <table className="marke-tabelle">

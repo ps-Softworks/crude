@@ -627,7 +627,7 @@ export function spreadRumour(state: GameState, balance: Balance, kind: RumourKin
   if (kind === 'riesenfund') n = setMark(n, M.feud);
   return log(
     n,
-    `Das Gerücht fliegt auf: Der Courier druckt, von wem es kam. Nora Brand schreibt nichts mehr für Jacob, Crane zahlt ihm weniger${kind === 'riesenfund' ? ', und Bullard schwört Rache' : ''}.`,
+    `Das Gerücht fliegt auf: Nora Whitlock deckt im Courier auf, von wem es kam. Sie redet nie wieder mit Jacob, Crane zahlt ihm weniger${kind === 'riesenfund' ? ', und Bullard schwört Rache' : ''}.`,
   );
 }
 

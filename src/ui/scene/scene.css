@@ -133,6 +133,8 @@
   border: 2px solid var(--tinte); border-radius: 14px;
   box-shadow: 0 2px 4px rgba(20, 10, 0, 0.35);
 }
+/* Lange Abzeichen über dem Gegenstand, nicht auf dem Symbol (0.4.19+2). */
+.abzeichen.lang { top: auto; right: 50%; bottom: 100%; transform: translate(50%, 2px); white-space: nowrap; }
 .abzeichen.dringend { color: var(--rot); border-color: var(--rot); }
 
 /* Neu (0.2.15+10): Stempel „neu“ und einmal sanft pulsieren, bis man hineingeschaut hat. */
@@ -146,6 +148,8 @@
 @keyframes puls { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
 .objekt.frisch .neu-stempel { animation-name: puls-gedreht; }
 @keyframes puls-gedreht { 0%, 100% { transform: rotate(-8deg) scale(1); } 50% { transform: rotate(-8deg) scale(1.18); } }
+.objekt.frisch .abzeichen.lang { animation-name: puls-lang; }
+@keyframes puls-lang { 0%, 100% { transform: translate(50%, 2px) scale(1); } 50% { transform: translate(50%, 2px) scale(1.18); } }
 
 /* Der Einstieg zeigt hierher: ein ruhiges Ocker-Leuchten und ein Fähnchen „hier“. */
 .objekt.tutorial-ziel { border-color: var(--ocker); }
