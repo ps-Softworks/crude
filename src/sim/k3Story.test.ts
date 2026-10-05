@@ -56,14 +56,14 @@ describe('Kapitel 3 – Story-Bögen', () => {
   });
 
   describe('Daniel Moss', () => {
-    it('genau eine Akte je Vorgeschichte (Moss, Sheriff, Kerrigan, Pike, sonst Zeuge)', () => {
+    // Spielspaß K1 (Weichen statt Alltagspost): Sheriff, Kerrigan und Pike sind aus Kapitel 1 gestrichen – Daniels Akte
+    // kennt nur noch Moss (Vertrag oder Versteigerung), sonst ruft er Jacob als Zeugen.
+    it('genau eine Akte je Vorgeschichte (Moss-Vertrag, Moss-Versteigerung, sonst Zeuge)', () => {
       const akten = (k1: string[]) => spiele(k1).seen.filter((id) => id.startsWith('k3_daniel_akte_'));
       // 0.4.19+3: Vertrag (moss_betrogen, die Farm blieb Moss') und Versteigerung (moss_vertrieben) haben eigene Fassungen.
-      expect(akten(['moss_feind', 'moss_betrogen', 'sheriff_bezahlt', 'kerrigan_verheizt'])).toEqual(['k3_daniel_akte_moss_vertrag']);
-      expect(akten(['moss_feind', 'moss_vertrieben', 'sheriff_bezahlt', 'kerrigan_verheizt'])).toEqual(['k3_daniel_akte_moss']);
-      expect(akten(['moss_fair', 'sheriff_bezahlt', 'pike_urkunde_falsch'])).toEqual(['k3_daniel_akte_sheriff']);
-      expect(akten(['moss_fair', 'kerrigan_verheizt', 'pike_urkunde_falsch'])).toEqual(['k3_daniel_akte_kerrigan']);
-      expect(akten(['moss_abgewiesen', 'pike_urkunde_falsch'])).toEqual(['k3_daniel_akte_pike']);
+      expect(akten(['moss_feind', 'moss_betrogen'])).toEqual(['k3_daniel_akte_moss_vertrag']);
+      expect(akten(['moss_feind', 'moss_vertrieben'])).toEqual(['k3_daniel_akte_moss']);
+      expect(akten(['moss_abgewiesen'])).toEqual(['k3_daniel_akte_zeuge']);
       expect(akten(['moss_fair'])).toEqual(['k3_daniel_akte_zeuge']);
     });
 
@@ -77,17 +77,18 @@ describe('Kapitel 3 – Story-Bögen', () => {
     });
 
     it('Bestechung führt zur Anklage und ist teurer als jeder Weg über die Anwälte', () => {
-      const { seen, marks } = spiele(['moss_fair', 'sheriff_bezahlt'], { k3_daniel_akte_sheriff: 'bestechen' });
+      // Spielspaß K1: an der Moss-Akte statt der gestrichenen Sheriff-Akte.
+      const { seen, marks } = spiele(['moss_feind', 'moss_vertrieben'], { k3_daniel_akte_moss: 'bestechen' });
       expect(seen).toContain('k3_daniel_bestechung_folge');
       expect(seen).toContain('k3_daniel_anklage_bestechung');
       expect(marks.has('daniel_anklage')).toBe(true);
       // Kosten in $ – billigster Weg je Pfad (ohne Kraft, die beim Bestechen noch dazukommt).
       const geld = (eid: string, cid: string) => -(ereignis(eid).choices.find((c) => c.id === cid)!.effects.cash ?? 0);
       const billigste = (eid: string) => Math.min(...ereignis(eid).choices.map((c) => -(c.effects.cash ?? 0)));
-      const anwaltTeuerster = geld('k3_daniel_akte_sheriff', 'anwaelte') + Math.max(
+      const anwaltTeuerster = geld('k3_daniel_akte_moss', 'anwaelte') + Math.max(
         ...['k3_daniel_angebot', 'k3_daniel_anklage', 'k3_daniel_anklage_feind'].flatMap((eid) => ereignis(eid).choices.map((c) => -(c.effects.cash ?? 0))),
       );
-      const bestechungBilligster = geld('k3_daniel_akte_sheriff', 'bestechen') + billigste('k3_daniel_bestechung_folge') + billigste('k3_daniel_anklage_bestechung');
+      const bestechungBilligster = geld('k3_daniel_akte_moss', 'bestechen') + billigste('k3_daniel_bestechung_folge') + billigste('k3_daniel_anklage_bestechung');
       expect(bestechungBilligster).toBeGreaterThan(anwaltTeuerster);
     });
 
@@ -104,17 +105,7 @@ describe('Kapitel 3 – Story-Bögen', () => {
       expect(vertrag.marks.has('moss_land_zurueck')).toBe(false);
     });
 
-    it('Kooperation im Sheriff- und Kerrigan-Fall endet in Vergleich oder Anklage, im Pike-Fall entlastet', () => {
-      const sheriff = spiele(['moss_fair', 'sheriff_bezahlt'], { k3_daniel_akte_sheriff: 'kooperieren', k3_daniel_kronzeuge: 'aussagen' });
-      expect(sheriff.seen).toContain('k3_daniel_kronzeuge');
-      expect(sheriff.marks.has('daniel_vergleich')).toBe(true);
-      const kerrigan = spiele(['moss_fair', 'kerrigan_verheizt'], { k3_daniel_akte_kerrigan: 'kooperieren' });
-      expect(kerrigan.seen).toContain('k3_daniel_ergebnis_kerrigan');
-      expect(kerrigan.marks.has('daniel_anklage')).toBe(true);
-      const pike = spiele(['moss_abgewiesen', 'pike_urkunde_falsch'], { k3_daniel_akte_pike: 'kooperieren' });
-      expect(pike.marks.has('daniel_entlastet')).toBe(true);
-      for (const id of pike.seen) expect(id).not.toMatch(/^k3_daniel_(angebot|anklage)/);
-    });
+    // Spielspaß K1: Die Sheriff-, Kerrigan- und Pike-Fälle (Kronzeuge, Unfallkasse, „entlastet“) sind gestrichen.
 
     it('Thornes Rache (Pettibone, „Nötigung eines Zeugen“) nur nach einer Aussage gegen Thorne', () => {
       expect(ereignis('k3_daniel_zeuge_folge').marked).toEqual(['daniel_zeuge_thorne']);
@@ -129,25 +120,13 @@ describe('Kapitel 3 – Story-Bögen', () => {
       expect(ereignis('k3_daniel_anklage').notMarked).toContain('moss_feind');
       expect(ereignis('k3_daniel_anklage_feind').marked).toContain('moss_feind');
       for (const e of k3) expect(`${e.text.de}`, e.id).not.toMatch(/Veranda/);
-      const fair = spiele(['moss_fair', 'sheriff_bezahlt'], { k3_moss_beerdigung: 'kranz' });
-      expect(fair.seen).toContain('k3_daniel_anklage');
-      expect(fair.seen).not.toContain('k3_daniel_anklage_feind');
+      // Spielspaß K1: Ohne Sheriff-Akte führt für Moss' Freund kein Weg mehr über die Anwälte zur Anklage.
       const feind = spiele(['moss_feind', 'moss_vertrieben']);
       expect(feind.seen).toContain('k3_daniel_anklage_feind');
       expect(feind.seen).not.toContain('k3_daniel_anklage');
     });
 
-    it('daniel_gefoerdert: Vorwarnung vor der Akte; wer eine Gefälligkeit verlangt, bekommt kein Angebot', () => {
-      // Beerdigung besucht – sonst sperrt der Kranz (moss_beerdigung_verpasst) das Angebot ohnehin.
-      const offen = spiele(['moss_fair', 'daniel_gefoerdert', 'sheriff_bezahlt'], { k3_moss_beerdigung: 'mit_ruth' });
-      const i = offen.seen.indexOf('k3_daniel_vorwarnung');
-      expect(i).toBeGreaterThanOrEqual(0);
-      expect(i).toBeLessThan(offen.seen.indexOf('k3_daniel_akte_sheriff'));
-      expect(offen.seen).toContain('k3_daniel_angebot');
-      const gefaellig = spiele(['moss_fair', 'daniel_gefoerdert', 'sheriff_bezahlt'], { k3_moss_beerdigung: 'mit_ruth', k3_daniel_vorwarnung: 'gefaelligkeit' });
-      expect(gefaellig.seen).not.toContain('k3_daniel_angebot');
-      expect(gefaellig.seen).toContain('k3_daniel_anklage');
-    });
+    // Spielspaß K1: Daniels Vorwarnung (daniel_gefoerdert aus „Daniel geht nach Hallstead“) ist gestrichen.
 
     it('wegerecht_moss: Daniel findet keine Enteignung; moss_verloren hat einen eigenen Antritt', () => {
       expect(spiele(['moss_fair', 'wegerecht_moss']).seen).toContain('k3_daniel_wegerecht');

@@ -65,7 +65,7 @@ describe('Messhilfe Karten (Spielspaß K1)', () => {
 describe('Bots und die Spielspaß-Karten (Spielspaß K1)', () => {
   /** Ein Bot mit vollem Tank, zwei Gespannen und laufender Bluff-Prüfung; die Bahn ist teurer als die Gespanne. */
   function pruefung(bluff: boolean): GameState {
-    const b: Balance = { ...balance, botPlans: { ...balance.botPlans, balanced: { ...balance.botPlans.balanced, bluff } } };
+    const b: Balance = { ...balance, botPlans: { ...balance.botPlans, balanced: { ...balance.botPlans.balanced, thorne: true, bluff } } };
     const s0 = newGame('bluff-bot', b, []);
     const p = s0.parcels.find((x) => !x.discovery && x.geology !== 'dry')!;
     const quelle: Well = { id: `${p.id}#1`, parcelId: p.id, stage: 1, status: 'found', roundsLeft: 0, spent: 0, oilStage: 1, result: 'small', production: { initialRate: 8000, lastRate: 8000, total: 0, roundsProduced: 1 }, startRound: 1 };
@@ -92,7 +92,7 @@ describe('Bots und die Spielspaß-Karten (Spielspaß K1)', () => {
     const p = balance.botPlans;
     expect(p.cautious).toMatchObject({ contract: true, pool: true, thorne: true, rumour: false, bluff: false });
     expect(p.greedy).toMatchObject({ rumour: true, crane: true, contract: false });
-    // Gesamt-Balance: ausgewogen ohne Gemeinschaft (sonst gewann er über 40 % der Seeds).
-    expect(p.balanced).toMatchObject({ thorne: true, pool: false, rumour: false, bluff: false });
+    // Gesamt-Balance: ausgewogen mit Gemeinschaft statt Thorne (mit Thorne gewann er 39–44 % der Seeds).
+    expect(p.balanced).toMatchObject({ thorne: false, pool: true, rumour: false, bluff: false });
   });
 });

@@ -387,11 +387,11 @@ Stand: 2026-10-05 · Version 0.4.20+5 · 400 Seeds (`bot-0` bis `bot-399`), Stan
 
 | Kapiteldrittel | normale Briefe: Median \|Geld\| ÷ Imperium (oberes Viertel) | Median Geld | große Briefe: Median (oberes Viertel) | Median Geld | Median Faktor | Median Erlös je Runde | Median Imperium |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Runde 1–5 | 1,1 % (4,1 %), n = 3161 | 300 $ | 5,0 % (10,2 %), n = 471 | 2.500 $ | 1,00 | 0 $ | 34.501 $ |
-| Runde 6–11 | 1,0 % (1,7 %), n = 3620 | 800 $ | 7,5 % (11,8 %), n = 1271 | 6.400 $ | 8,00 | 13.560 $ | 87.337 $ |
-| Runde 12–16 | 0,9 % (1,6 %), n = 2488 | 960 $ | 8,4 % (12,6 %), n = 25 | 6.400 $ | 8,00 | 15.500 $ | 108.200 $ |
+| Runde 1–5 | 0,9 % (2,3 %), n = 1052 | 300 $ | 4,0 % (10,6 %), n = 736 | 2.500 $ | 1,00 | 0 $ | 34.811 $ |
+| Runde 6–11 | 0,9 % (2,3 %), n = 1160 | 590 $ | 5,7 % (9,8 %), n = 1237 | 3.950 $ | 8,00 | 13.445 $ | 91.809 $ |
+| Runde 12–16 | 0,3 % (0,4 %), n = 87 | 300 $ | 1,0 % (4,5 %), n = 4 | 1.500 $ | 8,00 | 14.476 $ | 108.156 $ |
 
-Ganzes Kapitel: normale Briefe Median 1,0 %, große Briefe Median 6,9 %.
+Ganzes Kapitel: normale Briefe Median 0,8 %, große Briefe Median 5,0 %.
 
 <!-- Ende der Messung Briefe mit Gewicht -->
 
@@ -486,38 +486,38 @@ Erzeugt mit `npx tsx tools/termineMessung2.ts 500 --schreiben` (Block zwischen d
 
 <!-- Messung Spielspaß K1: npx tsx tools/termineMessung2.ts 500 --schreiben ersetzt bis zur nächsten Marke. -->
 
-Stand: 2026-10-05 · Version 0.4.20+5 · 500 Seeds (`bot-0` bis `bot-499`), Standard-Bot mit allen 387 Ereignissen, je Seed 5 Varianten der Karten
+Stand: 2026-10-05 · Version 0.4.20+5 · 500 Seeds (`bot-0` bis `bot-499`), Standard-Bot mit allen 296 Ereignissen, je Seed 5 Varianten der Karten
 
 | Kriterium | Ziel (Plan) | Ist | erfüllt |
 | --- | --- | ---: | :---: |
-| Förderbremse: Preis der Folgerunde bei Kartellanteil ≥ 40 % (Median gegen „ohne Bremse“) | +10–18 % | +15,4 % (430 Gründungen; alle Bremsrunden +12,1 %) | ja |
-| cartelCollapse: Anteil geplatzter Förderbremsen | 0,3–0,6 | 0,56 (364 von 647) | ja |
-| pactValue: Ø Mehrerlös je Förderbremse | 300–2.500 $ | 1.509 $ (647 Pakte) | ja |
-| priceGain: Ø Imperium mit Preis-Aktionen ÷ ohne | 1,05–1,25 | 1,069 (136.124 $ gegen 127.329 $) | ja |
-| contractLoss: Anteil verlustreicher Lieferverträge | 0,2–0,5 | 0,30 (1119 Verträge) | ja |
-| Ø Tarifsenkung beim ausgewogenen Bot (je Partie) | 0,05–0,15 $ | 0,17 $ (1,6 Besuche je Partie; nur Thorne: 0,14 $) | nein |
-| freightGain: Ø Imperium mit Fracht-Aktionen ÷ ohne | 1,03–1,15 | 1,039 (134.411 $ gegen 129.402 $) | ja |
-| Bluff erwischt (Anteil der riskierten Fälle, Bluff-Bot) | 20–60 % | 22,7 % (140 von 616; Standard-Bot, der den Bluff meidet: 9,5 %, 55 von 576) | ja |
-| Höchster Posted Price in allen Varianten | ≤ 1,60 $ (priceMax) | 1,58 $ | ja |
+| Förderbremse: Preis der Folgerunde bei Kartellanteil ≥ 40 % (Median gegen „ohne Bremse“) | +10–18 % | +17,3 % (416 Gründungen; alle Bremsrunden +12,1 %) | ja |
+| cartelCollapse: Anteil geplatzter Förderbremsen | 0,3–0,6 | 0,54 (342 von 630) | ja |
+| pactValue: Ø Mehrerlös je Förderbremse | 300–2.500 $ | 1.480 $ (630 Pakte) | ja |
+| priceGain: Ø Imperium mit Preis-Aktionen ÷ ohne | 1,05–1,25 | 1,077 (140.547 $ gegen 130.504 $) | ja |
+| contractLoss: Anteil verlustreicher Lieferverträge | 0,2–0,5 | 0,29 (1074 Verträge) | ja |
+| Ø Tarifsenkung beim ausgewogenen Bot (je Partie) | 0,05–0,15 $ | 0,17 $ (1,8 Besuche je Partie; nur Thorne: 0,00 $) | nein |
+| freightGain: Ø Imperium mit Fracht-Aktionen ÷ ohne | 1,03–1,15 | 0,998 (130.240 $ gegen 130.504 $) | nein |
+| Bluff erwischt (Anteil der riskierten Fälle, Bluff-Bot) | 20–60 % | 25,2 % (168 von 666; Standard-Bot, der den Bluff meidet: 8,0 %, 48 von 603) | ja |
+| Höchster Posted Price in allen Varianten | ≤ 1,60 $ (priceMax) | 1,59 $ | ja |
 
 | Variante (Standard-Bot) | Ø Imperium | Kapitelziel | Pleite |
 | --- | ---: | ---: | ---: |
-| grund | 127.329 $ | 62,2 % | 0,4 % |
-| preis | 136.124 $ | 65,6 % | 0,4 % |
-| ohneFracht | 129.402 $ | 63,4 % | 0,4 % |
-| fracht | 134.411 $ | 65,4 % | 0,4 % |
-| bluff | 133.895 $ | 64,0 % | 0,2 % |
+| grund | 130.504 $ | 62,6 % | 0,2 % |
+| preis | 140.547 $ | 66,8 % | 0,4 % |
+| ohneFracht | 130.504 $ | 62,6 % | 0,2 % |
+| fracht | 130.240 $ | 63,2 % | 0,0 % |
+| bluff | 128.504 $ | 62,4 % | 0,0 % |
 
 | Karte | Anwendungen | schlecht | Ø Geldeffekt | Ø \|Effekt\| | Ø gut | Ø schlecht | im Ziel (20–45 %, ≥ 1.000 $) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | :---: |
-| Bei Thorne vorsprechen | 813 | 20,9 % | 5.470 $ | 6.326 $ | 7.316 $ | -1.512 $ | ja |
-| Bei Thorne vorsprechen (Bluff-Bot) | 887 | 31,2 % | 5.524 $ | 6.608 $ | 8.425 $ | -866 $ | ja |
-| Brennan unter Vertrag | 396 | 40,2 % | 5.874 $ | 5.922 $ | 6.836 $ | 4.439 $ | ja |
-| Transportgemeinschaft | 661 | 41,5 % | 2.468 $ | 2.608 $ | 4.180 $ | 50 $ | ja |
-| Liefervertrag | 1119 | 30,1 % | 1.408 $ | 2.234 $ | 2.606 $ | -1.372 $ | ja |
-| Gerücht streuen | 995 | 33,6 % | 1.585 $ | 4.823 $ | 4.429 $ | -4.043 $ | ja |
-| Mit Crane feilschen | 2759 | 22,5 % | 1.378 $ | 4.108 $ | 3.328 $ | -5.336 $ | ja |
-| Förderbremse (Pakte, geplatzt = schlecht) | 647 | 56,3 % | 1.509 $ | 5.303 $ | – | – | – |
+| Bei Thorne vorsprechen | 877 | 22,8 % | 4.756 $ | 5.455 $ | 6.489 $ | -1.110 $ | ja |
+| Bei Thorne vorsprechen (Bluff-Bot) | 996 | 35,2 % | 4.843 $ | 5.782 $ | 7.745 $ | -490 $ | ja |
+| Brennan unter Vertrag | 381 | 14,2 % | 6.052 $ | 6.081 $ | 6.622 $ | 2.603 $ | nein |
+| Transportgemeinschaft | 730 | 46,7 % | 2.095 $ | 2.245 $ | 3.865 $ | 75 $ | nein |
+| Liefervertrag | 1074 | 29,2 % | 1.529 $ | 2.404 $ | 2.779 $ | -1.496 $ | ja |
+| Gerücht streuen | 896 | 27,3 % | 1.875 $ | 5.169 $ | 4.491 $ | -5.077 $ | ja |
+| Mit Crane feilschen | 2783 | 20,3 % | 1.342 $ | 3.732 $ | 2.929 $ | -4.888 $ | ja |
+| Förderbremse (Pakte, geplatzt = schlecht) | 630 | 54,3 % | 1.480 $ | 5.595 $ | – | – | – |
 
 <!-- Ende der Messung Spielspaß K1 -->
 
@@ -584,3 +584,52 @@ Zwischenstände (je 1.000 Partien): gierig mit Thorne und Bluff, ausgewogen mit 
 ## Spielstand
 
 Unverändert Format 22 (siehe Tabelle oben: kein neuer Zustand).
+
+---
+
+# Spielspaß-Durchgang: Weichen statt Alltagspost und Gesamt-Balance (0.4.20+6)
+
+Anlass: Ein Tester hat Kapitel 1 gespielt und fand die Briefe „komplett langweilig“. Philipps Vorgabe: **entweder wirklich relevante Briefe oder keine.** Die Beträge mit dem Geschäft wachsen zu lassen (Abschnitt „Briefe mit Gewicht“ oben) reicht dafür nicht – ein Brief, bei dem man zwischen 200 $ und 1.000 $ abwägt, bleibt Füllstoff. Der Abschnitt oben gilt weiter für die Regel `letterScale`, seine Messung beschreibt aber den Katalog vor dem Streichen.
+
+## Was jetzt anders ist (kurz)
+
+- **Kapitel 1 hat nur noch 16 Ereignisse plus die 5 festen Termine** (vorher 92). Eine Partie sieht davon etwa 10. Gestrichen sind alle Alltagsbriefe und Vorfälle (Meißel, Salz, Gas, Fieber, Steuer, Diebe, Kredite von Bank und Rourke …), die Dokumente (Pike, Hale), die Post (Witwe, Courier) und die Folgebriefe der Karten (Förderbremse, Händler, Gerücht, Bluff, Brennan, Gemeinschaft) – deren Folgen kommen seit dem Karten-Abschnitt direkt aus den Karten.
+- **Was bleibt, ist eine Weiche mit Folgen bis Kapitelende:**
+
+  | Weiche | Wann | Folgen |
+  | --- | --- | --- |
+  | Bullard im Saloon | Runde 2 | Handschlag (Bullard pachtet nicht neben Jacob) · Runde ausgeben (Wildcatter ziehen leichter mit) · stehen lassen (Fehde) |
+  | Thornes Frachtvertrag | nach dem ersten Besuch, spätestens Runde 4 | Exklusiv · Mengenrabatt · Ablehnung (wie bisher) |
+  | Thomas' Geburt | Geburtsrunde | Familie gegen Förderung; wirkt bis Kapitel 3 |
+  | Vales Umschlag | ab Runde 3, wenn die Kasse ≤ 500 $ ist | 1.500 $ Rettung – der Preis kommt in Kapitel 3 |
+  | Moss' Schulden / Versteigerung | Runde 5 (+2) | leihen: **Moss-Farm zur Pacht ohne Bonus, halber Förderzins** · Spottpreis: Farm ohne Förderzins, aber Pachten bis Kapitelende +10 % · ersteigern (3.000 $): Farm ohne Förderzins · wegbleiben: Pachten +10 % |
+  | Cranes Abschlag | Runde 6 | wie bisher (Abschlag, Verband, Treue) |
+  | Nora will ein Gespräch | Runde 7 | erzählen: Pachten −10 % · Bericht kaufen: −20 % · keine Zeit: +10 % (alles bis Kapitelende) |
+  | Silas' Abrechnung | Runde 8 | fair: **Silas bleibt Bohrmeister, Stahlgestänge geschenkt** · auskaufen: **Dampfmaschine geschenkt** · betrügen → „Silas redet“: nachzahlen oder Pachten +20 % bis Kapitelende |
+  | Ruth will ihren Namen auf dem Papier | Runde 10 | ja: **Bankrahmen +25 % bis Kapitelende** · später / nein: Ruth (wirkt bis Kapitel 3) |
+  | Cranes Übernahmeangebot | Runde 15 | verkaufen beendet das Kapitel |
+  | Wegerechte (Moss, Witwe am Bahndamm) | nur mit vermessener Pipeline | wie bisher |
+
+- **Neue Felder an einer Antwort** (`src/sim/weichen.ts`, Tests in `weichen.test.ts`): `lasting: true` (befristete Wirkungen gelten bis Kapitelende), `land: { figure, royalty }` (Pacht auf der Ranch einer Figur ohne Bonus), `rig: steam | rods` (Silas' Turm wird nachgerüstet). Die Simulation liest dazu `ruth_teilhaberin` (Bankrahmen × `weichen.ruthCredit`, nur Kapitel 1, nicht im Zeitsprung).
+- **Kapitel 2 und 3:** Folgeszenen, die nur auf gestrichene Kapitel-1-Merkzeichen warteten, sind entfernt (Eli, Kerrigan, Sheriff Tatum, Pike, Hales Seismik, Noras Bestechung, Daniels Akten zu Sheriff/Kerrigan/Pike und der Ausgang „entlastet“). Umgehängt: `ruth_buchhalterin` → `ruth_teilhaberin`, `silas_freund`/`silas_gedeckt` → `silas_fair`, `thomas_wort_*` → `geburt_*`, `nora_respekt` → `nora_interview`, `nora_beschwert` → `nora_kein_gespraech`. Ermittler-Spuren und Leumund (balance.yaml `investigation`) entsprechend gekürzt. Offen: Für einen Jacob, der Moss nie zum Feind gemacht hat, gibt es in Kapitel 3 keinen Weg mehr über Daniels Anwälte (`k3_daniel_angebot`, `k3_daniel_anklage` praktisch unerreichbar).
+
+## Gesamt-Balance Kapitel 1
+
+| Stellschraube | vorher | jetzt | Grund |
+| --- | --- | --- | --- |
+| Kapitelziel | 70.000 $ oder 6 Quellen | 95.000 $ oder 8 Quellen | Tiefe Funde und Karten machen Kapitel 1 reicher; mit dem alten Ziel bestand der Standard-Bot 78 % (Grenze 70 %). |
+| Pipeline bauen | 6.000 $ | 9.000 $ | Mit 6.000 $ lief in 79,8 % der erfolgreichen Partien eine Pipeline (Grenze 80 %); jetzt um 69 % – eine Wahl, kein Pflichtweg. |
+| Tiefe Stufen | 600 m 1.100 $ / 1 Runde, 900 m 1.400 $ / 2 Runden, Funde × 2 / × 3 | 1.800 $ / 2 Runden, 3.200 $ / 3 Runden, Funde × 2,5 / × 4 | Mit den billigen Stufen lohnte das Weiterbohren fast immer (Schwelle Ø 5 %, Geologe Ø 13 %); jetzt liegt die Schwelle um 9–10 % – eine echte Abwägung. |
+| Verwalter im Zeitsprung | plante jede Bohrung bis 900 m | höchstens bis 600 m (`timeskip.deepestStage`) | Mit 6.000 $ je geplanter Bohrung bohrte er kaum noch. |
+| Briefe `events.scale.ref` | 1.500 $ | 1.250 $ | Normale Briefe lagen bei 0,9 % des Imperiums. |
+| Crane feilschen, Laune −/0/+ | 35/45/20 % | 45/40/15 % | Feilschen ging nur in 18,6 % schief (Ziel 20–45 %). |
+| Bots: Karten | vorsichtig Liefervertrag + Gemeinschaft · gierig Gerücht + Crane · ausgewogen Thorne + Gemeinschaft | vorsichtig + Thorne · gierig + Brennan · ausgewogen Gemeinschaft (ohne Thorne) | Der ausgewogene Bot gewann 39–44 % der Seeds (Grenze 40 %). |
+| Bots: Tieferbohren gierig | 0,7 × Schwelle | 0,6 × Schwelle | Ohne die Alltagsbriefe ging der gierige Bot kaum noch pleite (Grenze ≥ 3 %). |
+
+**Kapitel-1-Zielwerte** (`npm run bots`, 1.000 Partien je Strategie): alle 15 im Rahmen. Höchste Siegquote 38,1 % (ausgewogen), Pleite Standard-Bot 0,3 %, Pleite gierig 3,3 % (knapp über 3 %), Kapitelziel Standard-Bot 63,9 %, Pipeline in Partien mit Kapitelziel 69,2 %, Ø Imperium vorsichtig / gierig / ausgewogen 97.705 / 117.677 / 128.821 $. Vor dem ganzen Durchgang (0.4.20+5): 35,6 % · 0,2 % · 4,5 % · 66,9 % · 77,4 % · 90.992 / 106.313 / 112.063 $. Die Zielwerte `standardGoal` (≤ 70 %) und `pipelineSuccess` (≤ 80 %) stehen wieder auf ihren alten Grenzen.
+
+**Messungen nach dem Streichen** (Blöcke oben neu geschrieben): Tieferbohren richtig in 26,9 % der Entscheidungen (Ziel 30–50 %, knapp darunter: Der Geologe ist bei hohen Chancen zu optimistisch, siehe Abschnitt Tieferbohren); Preis-Karten priceGain 1,077, Bluff erwischt 25,2 %. **Nicht erreicht:** `freightGain` liegt jetzt bei 1,00 (vorher 1,04) – ohne Alltagsbriefe nutzt der Standard-Bot seine Termine anders, und die zwei Termine für Thorne/Gemeinschaft kosten so viel, wie die Karten bringen; je Anwendung wirken die Fracht-Karten weiter spürbar (Thorne Ø +4.756 $, Gemeinschaft Ø +2.095 $). Brennan geht nur in 14 % schief, die Gemeinschaft in 47 % (Ziel je 20–45 %). Die Tarifsenkung je Partie liegt mit 0,17 $ über dem alten Etappe-2-Rahmen (0,05–0,15 $) – gewollt, die Senkungen sind seit dem Karten-Abschnitt größer.
+
+## Spielstand
+
+Unverändert Format 22: Die neuen Folgen stehen in vorhandenen Feldern (befristete Wirkungen, Pachten, Türme, Merkzeichen).

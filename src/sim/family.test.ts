@@ -155,17 +155,18 @@ describe('Kraft-Schwellen (2.7, GDD §4)', () => {
   const a = balance.agenda;
 
   it('unter errorsBelow fehlen die besten Antworten (sharp)', () => {
-    // Etappe 3: Die Witwe ist gestrichen – jetzt am Trupp, der mehr will („reden“ ist die beste Antwort).
-    const basis = aufDenTisch({ ...newGame('fehler', balance, katalog), cash: 5000 }, 'trupp_lohn');
-    const frisch = deskEvents(basis, balance, katalog).find((e) => e.id === 'trupp_lohn')!;
-    expect(frisch.choices.find((c) => c.id === 'reden')!.ok).toBe(true);
+    // Etappe 3: Die Witwe ist gestrichen – danach am Trupp. Spielspaß K1 (Weichen statt Alltagspost): der Trupp ist auch
+    // gestrichen – jetzt an der Witwe am Bahndamm („besuchen“ ist die beste Antwort).
+    const basis = aufDenTisch({ ...newGame('fehler', balance, katalog), cash: 5000 }, 'wegerecht_bahndamm');
+    const frisch = deskEvents(basis, balance, katalog).find((e) => e.id === 'wegerecht_bahndamm')!;
+    expect(frisch.choices.find((c) => c.id === 'besuchen')!.ok).toBe(true);
     const muede = { ...basis, strength: a.errorsBelow - 1 };
-    const gesperrt = deskEvents(muede, balance, katalog).find((e) => e.id === 'trupp_lohn')!.choices.find((c) => c.id === 'reden')!;
+    const gesperrt = deskEvents(muede, balance, katalog).find((e) => e.id === 'wegerecht_bahndamm')!.choices.find((c) => c.id === 'besuchen')!;
     expect(gesperrt).toMatchObject({ ok: false, reason: 'Jacob ist zu erschöpft – diese Antwort fällt ihm gerade nicht ein.' });
-    const r = resolveEvent(muede, balance, katalog, 'trupp_lohn', 'reden');
+    const r = resolveEvent(muede, balance, katalog, 'wegerecht_bahndamm', 'besuchen');
     expect(r.ok).toBe(false);
     // Die anderen Antworten gehen weiter.
-    expect(resolveEvent(muede, balance, katalog, 'trupp_lohn', 'zahlen').ok).toBe(true);
+    expect(resolveEvent(muede, balance, katalog, 'wegerecht_bahndamm', 'zahlen').ok).toBe(true);
   });
 
   it('unter errorsBelow prüft die Lupe weniger Felder', () => {

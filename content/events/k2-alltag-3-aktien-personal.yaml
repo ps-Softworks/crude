@@ -406,7 +406,7 @@
 
 - id: k2_unterschlagung
   group: k2_unterschlagung
-  notMarked: [ruth_buchhalterin]
+  notMarked: [ruth_teilhaberin]
   conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
   chance: 0.08
   title:
@@ -448,7 +448,7 @@
 
 - id: k2_unterschlagung_ruth
   group: k2_unterschlagung
-  marked: [ruth_buchhalterin]
+  marked: [ruth_teilhaberin]
   delay: 0
   conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
   chance: 0.08
@@ -659,52 +659,6 @@
       appointments: 0
       default: true
 
-- id: k2_fixer_tatum
-  visitor: sheriff
-  marked: [sheriff_bezahlt]
-  delay: 0
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12 }
-  chance: 0.12
-  title:
-    de: Boyd Tatum braucht Arbeit
-    en: Boyd Tatum Needs Work
-  text:
-    de: >-
-      Boyd Tatum ist seit der letzten Wahl nicht mehr Sheriff. Er trägt den Hut noch so, als
-      wäre er es, und hat zugenommen. Ein Farmer in der Hollins-Prärie will seine Pacht nicht
-      verlängern, hat er gehört. „Ich frage nicht, was in dem Paket ist, Mr. Harlan. Ich
-      frage, wohin.“
-    en: >-
-      Boyd Tatum has not been sheriff since the last election. He still wears his hat as if he
-      were, and he has put on weight. A farmer on the Hollins prairie won't renew his lease,
-      he's heard. “I don't ask what's in the package, Mr. Harlan. I ask where it's going.”
-  choices:
-    - id: einstellen
-      label: { de: "Ihn fest anstellen, „für Sicherheitsfragen“ (3.000 $ im Jahr)", en: "Take him on for good, “for security matters” (3,000 $ a year)" }
-      result:
-        de: "Tatum bekommt ein Büro im Lagerhaus, ohne Schild an der Tür. Der Farmer in Hollins verlängert seine Pacht nach einem Besuch. Wie der Besuch verlief, steht nirgends."
-        en: "Tatum gets an office in the warehouse with no sign on the door. The Hollins farmer renews his lease after a visit. How the visit went is written down nowhere."
-      requires: { minCash: 3000 }
-      effects: { cash: -3000, hire: fixer, heat: 1 }
-      marks: [k2_tatum_fixer]
-    - id: einmal
-      label: { de: "Nur diesen einen Auftrag (800 $)", en: "Just this one job (800 $)" }
-      result:
-        de: "Tatum erledigt es in einer Nacht. Der Farmer unterschreibt am Morgen, die Hand verbunden. Tatum zählt das Geld vor Jacob, Schein für Schein."
-        en: "Tatum handles it in one night. The farmer signs in the morning, his hand bandaged. Tatum counts the money in front of Jacob, note by note."
-      requires: { minCash: 800 }
-      effects: { cash: -800, strength: -2, trace: { severity: 2, label: "Hollins-Farmer" } }
-    - id: nein
-      label: { de: "„Die Zeiten sind vorbei, Tatum“", en: "“Those days are over, Tatum”" }
-      result:
-        de: "Tatum setzt den Hut auf. „Sie wissen, wo ich trinke, Mr. Harlan.“ Zwei Wochen später sieht man ihn mit Bullard im Saloon, an Bullards Tisch."
-        en: "Tatum puts on his hat. “You know where I drink, Mr. Harlan.” Two weeks later he is seen in the saloon with Bullard, at Bullard's table."
-      effects: { leaseCost: 0.1 }
-      appointments: 0
-      default: true
-
-# 0.4.19+3: Weiche schulden_vor_panik_getilgt aus Zeitsprung I (Story-Bibel §2: „Leute erinnern sich, wer sein
-# Geld abhob“) – die Bank erinnert sich, wer in der Panik zurückgezahlt hat.
 - id: k2_panik_erinnerung
   mail: offer
   deadline: 3

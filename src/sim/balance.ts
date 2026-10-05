@@ -959,6 +959,8 @@ export interface Balance {
   botPlans: Record<'cautious' | 'greedy' | 'balanced', BotPlans>;
   /** Gekoppelte Briefe (Etappe 3, src/sim/letters.ts). */
   letters: LettersBalance;
+  /** Weichen statt Alltagspost (Spielspaß K1, src/sim/weichen.ts). */
+  weichen: { ruthCredit: number };
   drilling: DrillingBalance;
   production: ProductionBalance;
   market: MarketBalance;
@@ -2541,6 +2543,7 @@ export function parseBalance(raw: unknown): Balance {
     freight: parseFreightBalance(raw),
     botPlans: parseBotPlans(raw),
     letters: parseLettersBalance(raw),
+    weichen: { ruthCredit: positiveNumber(raw, 'weichen.ruthCredit') },
     drilling: parseDrilling(raw),
     production: parseProduction(raw),
     market: parseMarket(raw),

@@ -2,6 +2,8 @@
 # Vorlage und Erklärung: docs/ereignis-vorlage.md
 # Das erste zinslose Geld „eines Freundes“ (Weltbibel, Mr. Vale). Kommt nur, wenn Jacob
 # knapp bei Kasse ist. Wer nicht antwortet, behält das Geld – die bequeme Falle.
+# Spielspaß K1 (Weichen statt Alltagspost): kommt sicher, sobald Jacob ab Runde 3 knapp ist, und rettet
+# ihn wirklich (1.500 $ fest) – der Preis kommt in Kapitel 3 (vale_geld, Ermittler).
 
 - id: vale_umschlag
   title:
@@ -20,15 +22,16 @@
       the boarding house and nods to Jacob as if they had known each other for years.
   mail: offer       # Posteingang (2.4): ein Angebot, das als Brief kommt
   deadline: 1       # rotes Siegel: der Herr im grauen Mantel wartet nicht
-  conditions: { minRound: 3, maxCash: 400 }
-  chance: 0.5
+  conditions: { minRound: 3, maxCash: 500, maxChapter: 1 }
+  chance: 1
   choices:
     - id: behalten
-      label: { de: "Das Geld behalten", en: "Keep the money" }
+      label: { de: "Das Geld behalten – irgendwann will der Freund etwas dafür", en: "Keep the money – some day the friend will want something for it" }
       result:
-        de: Jacob bezahlt seine Rechnungen. Der Herr im grauen Mantel ist am nächsten Morgen fort.
-        en: Jacob pays his bills. The gentleman in the grey coat is gone the next morning.
-      effects: { cash: 800 }
+        de: Jacob bezahlt seine Rechnungen. Der Herr im grauen Mantel ist am nächsten Morgen fort. Im Hotelbuch steht ein Name, Mr. Vale, und Jacob vergisst ihn nicht.
+        en: Jacob pays his bills. The gentleman in the grey coat is gone the next morning. The hotel register has a name, Mr. Vale, and Jacob does not forget it.
+      effects: { cash: 1500 }
+      fixedCash: true
       marks: [vale_geld]
       default: true
     - id: zurueckgeben

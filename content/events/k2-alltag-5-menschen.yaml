@@ -246,7 +246,7 @@
 
 - id: k2_thomas_turm
   group: k2_thomas_turm
-  notMarked: [silas_fair, silas_freund]
+  notMarked: [silas_fair]
   conditions: { minChapter: 2, maxChapter: 2, minRound: 3 }
   chance: 0.1
   title:
@@ -364,48 +364,6 @@
       appointments: 0
       default: true
 
-- id: k2_clara_freundin
-  marked: [eli_versorgt]
-  delay: 0
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, minClaraAge: 6, maxClaraAge: 6 }
-  chance: 0.12
-  title:
-    de: Claras Freundin
-    en: Clara's Friend
-  text:
-    de: >-
-      Clara wird sieben und will zum Geburtstag nur einen Gast: Eli Wards Tochter, mit der sie
-      jeden Tag hinter dem Lagerhaus spielt. Ruth hat schon Einladungen an drei Damen aus
-      Hallstead verschickt, die Töchter im selben Alter haben. Eine davon ist eine Nichte von
-      Cornelia Vandermeer.
-    en: >-
-      Clara is turning seven and wants only one guest for her birthday: Eli Ward's daughter,
-      who plays with her every day behind the warehouse. Ruth has already sent invitations to
-      three ladies from Hallstead who have daughters the same age. One of them is a niece of
-      Cornelia Vandermeer.
-  choices:
-    - id: einladen
-      label: { de: "Elis Tochter einladen und ihr ein Kleid kaufen (300 $)", en: "Invite Eli's daughter and buy her a dress (300 $)" }
-      result:
-        de: "Elis Tochter sitzt in einem gelben Kleid neben Clara und isst nichts vor Aufregung. Die Damen aus Hallstead sehen sie an, dann einander. Die Vandermeer-Nichte geht als Erste."
-        en: "Eli's daughter sits beside Clara in a yellow dress and eats nothing from excitement. The ladies from Hallstead look at her, then at each other. The Vandermeer niece leaves first."
-      effects: { cash: -300, clara: 10, reputation: { standing: -1 }, staffLoyalty: { fixer: 10 } }
-    - id: zwei_feste
-      label: { de: "Zwei Feste: eines im Haus, eines hinter dem Lagerhaus (900 $)", en: "Two parties: one at the house, one behind the warehouse (900 $)" }
-      result:
-        de: "Am Samstag Tee mit den Damen, am Sonntag Kuchen mit den Arbeiterkindern. Clara mag den Sonntag lieber und sagt es den Damen. Ruth lacht, zum ersten Mal an diesem Wochenende."
-        en: "Saturday tea with the ladies, Sunday cake with the workers' children. Clara prefers Sunday and tells the ladies so. Ruth laughs, for the first time that weekend."
-      requires: { minCash: 900 }
-      effects: { cash: -900, ruth: 8, strength: -2, clara: 5 }
-    - id: nicht
-      label: { de: "„Nicht dieses Jahr, Clara“", en: "“Not this year, Clara”" }
-      result:
-        de: "Clara sitzt zwischen drei Mädchen in Spitzen und sagt den ganzen Nachmittag nichts. Am Abend bringt sie Elis Tochter ein Stück Kuchen, in eine Serviette gewickelt."
-        en: "Clara sits among three girls in lace and says nothing all afternoon. In the evening she takes Eli's daughter a slice of cake wrapped in a napkin."
-      effects: { clara: -10, reputation: { standing: 1 } }
-      appointments: 0
-      default: true
-
 - id: k2_hochzeitstag
   group: k2_familie
   conditions: { minChapter: 2, maxChapter: 2, minRound: 3, maxRound: 14 }
@@ -489,91 +447,6 @@
         de: "Jacob schreibt drei Entwürfe und schickt den kürzesten. In der Nacht träumt er von der Grube, zum ersten Mal seit Jahren."
         en: "Jacob writes three drafts and sends the shortest. That night he dreams of the pit, for the first time in years."
       effects: { strength: -6 }
-      appointments: 0
-      default: true
-
-- id: k2_kerrigan_alt
-  marked: [kerrigan_lager]
-  delay: 0
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
-  chance: 0.1
-  title:
-    de: Kerrigan zählt noch
-    en: Kerrigan Is Still Counting
-  text:
-    de: >-
-      Dan Kerrigan zählt seit zehn Jahren die Fässer im Lager. Seine Lunge ist schlechter
-      geworden; er braucht für die Leiter zum Tankdeckel jetzt fünf Minuten und zwei Pausen.
-      Der Lagerverwalter will ihn loswerden. Kerrigan hat davon gehört und kommt zuerst.
-      „Ich zähle richtig, Mr. Harlan. Ich zähle nur langsamer.“
-    en: >-
-      Dan Kerrigan has counted the barrels in the depot for ten years. His lungs have got
-      worse; the ladder to the tank lid now takes him five minutes and two rests. The depot
-      manager wants rid of him. Kerrigan has heard and comes first. “I count right, Mr.
-      Harlan. I just count slower.”
-  choices:
-    - id: rente
-      label: { de: "Eine Rente zahlen (3.000 $)", en: "Pay him a pension (3,000 $)" }
-      result:
-        de: "Kerrigan sitzt jetzt jeden Morgen auf der Bank vor dem Lager und zählt die Fässer trotzdem, von unten, ohne Leiter. Der Verwalter lässt ihn."
-        en: "Every morning Kerrigan now sits on the bench outside the depot and counts the barrels anyway, from below, without the ladder. The manager lets him."
-      requires: { minCash: 3000 }
-      effects: { cash: -3000, strength: 3 }
-    - id: bleiben
-      label: { de: "Er bleibt – ein Junge steigt für ihn die Leiter", en: "He stays – a boy climbs the ladder for him" }
-      result:
-        de: "Kerrigan bekommt einen Gehilfen, sechzehn, der für ihn klettert und ruft. Kerrigan schreibt. Es fehlt nie ein Fass."
-        en: "Kerrigan gets an assistant, sixteen, who climbs for him and calls out. Kerrigan writes it down. Not a barrel goes missing."
-      effects: { cash: -600, oilStock: 400 }
-    - id: gehen
-      label: { de: "Den Verwalter entscheiden lassen", en: "Let the manager decide" }
-      result:
-        de: "Der Verwalter entscheidet. Kerrigan bekommt einen Monatslohn und ein Händeschütteln. Im Lager fehlen danach jeden Monat ein paar Fässer, und niemand weiß, wo."
-        en: "The manager decides. Kerrigan gets a month's wages and a handshake. After that a few barrels go missing from the depot every month, and nobody knows where."
-      effects: { oilStock: -800, strength: -2 }
-      appointments: 0
-      default: true
-
-- id: k2_kerrigan_witwe
-  marked: [kerrigan_verheizt]
-  delay: 0
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 2 }
-  chance: 0.1
-  title:
-    de: Kerrigans Witwe
-    en: Kerrigan's Widow
-  text:
-    de: >-
-      Eine Frau in Schwarz wartet am Tor des Lagerhauses, nicht im Vorzimmer; sie traut sich nicht weiter.
-      Kerrigans Witwe. Ihr Mann hat für Jacob gebohrt, bis seine Lunge nicht mehr wollte. Ihr
-      Sohn ist sechzehn und sucht Arbeit. Sie sagt nicht, dass Jacob ihr etwas schuldet. Sie
-      muss es nicht sagen.
-    en: >-
-      A woman in black waits at the warehouse gate, not in the anteroom; she doesn't dare go
-      further. Kerrigan's widow. Her husband drilled for Jacob until his lungs gave out. Her son
-      is sixteen and looking for work. She doesn't say Jacob owes her anything. She doesn't
-      have to.
-  choices:
-    - id: lehre
-      label: { de: "Den Sohn in die Lehre nehmen, in der Werkstatt (800 $)", en: "Take the son as an apprentice in the workshop (800 $)" }
-      result:
-        de: "Der junge Kerrigan ist still und hat gute Hände. Der Werkstattmeister sagt nach einem Monat, er sei der Einzige, der nicht im Weg stehe. Das ist sein höchstes Lob."
-        en: "Young Kerrigan is quiet and has good hands. After a month the workshop foreman says he's the only one who doesn't get in the way. That is his highest praise."
-      requires: { minCash: 800 }
-      effects: { cash: -800, strength: 3 }
-    - id: geld
-      label: { de: "Ihr Geld geben (2.500 $)", en: "Give her money (2,500 $)" }
-      result:
-        de: "Sie nimmt es, weil sie muss, und bedankt sich nicht. Der Sohn heuert zwei Monate später bei Bullard an."
-        en: "She takes it because she must, and doesn't thank him. Two months later the son signs on with Bullard."
-      requires: { minCash: 2500 }
-      effects: { cash: -2500 }
-    - id: abweisen
-      label: { de: "Sie vom Pförtner abweisen lassen", en: "Have the gatekeeper turn her away" }
-      result:
-        de: "Der Pförtner schickt sie weg. Sie geht, ohne sich umzudrehen. Bruder Abel erwähnt sie am Sonntag in der Predigt, ohne einen Namen zu nennen."
-        en: "The gatekeeper sends her away. She leaves without looking back. On Sunday Brother Abel mentions her in his sermon without naming any names."
-      effects: { strength: -5, reputation: { workers: -3 } }
       appointments: 0
       default: true
 
@@ -748,7 +621,7 @@
 # 0.4.19+3: Thomas' erstes Wort aus Kapitel 1 (thomas_wort_dabei / thomas_wort_verpasst) – Story-Bibel: Startwert
 # für Thomas' Loyalität. Thomas ist hier 10–13 und hört die Geschichte zum ersten Mal selbst.
 - id: k2_thomas_wort_dabei
-  marked: [thomas_wort_dabei]
+  marked: [geburt_dabei]
   conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 10 }
   chance: 0.25
   title:
@@ -783,7 +656,7 @@
       default: true
 
 - id: k2_thomas_wort_verpasst
-  marked: [thomas_wort_verpasst]
+  marked: [geburt_verpasst]
   conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 10 }
   chance: 0.25
   title:

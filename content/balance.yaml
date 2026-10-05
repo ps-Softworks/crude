@@ -700,7 +700,7 @@ bots:
   # Spielspaß K1 (Tieferbohren): tiefer, wenn die Chance des Geologen ≥ Schwelle × Faktor
   # („lohnt ab“ im Ranch-Fenster = Kosten mit Risiko ÷ Wert eines Funds bis Kapitelende).
   # Vorher: vorsichtig bis Stufe 2 mit Rücklage, gierig immer, ausgewogen bis Stufe 3 – ohne Blick auf die Chance.
-  deeper: { cautious: 1.5, greedy: 0.9, balanced: 1.0 }   # Spielspaß K1 Gesamt-Balance: gierig 0,7 → 0,9 (mit 0,7 bohrte er zu oft unter der Schwelle und verlor Siege an den ausgewogenen)
+  deeper: { cautious: 1.5, greedy: 0.6, balanced: 1.0 }   # Spielspaß K1: gierig bohrt auch deutlich unter der Schwelle weiter (Push your luck, auf Kredit) – mit 0,9 ging er nach dem Streichen der Alltagsbriefe kaum noch pleite (greedyBankrupt ≥ 3 %)
   daysPerRound: 91         # ein Quartal; für die Anfangsrate in bbl/Tag (GDD §15)
   # Ereignisse (2.15): So bewerten die Bots eine Antwort – Geld zählt in $, dazu
   # strength = $ je Kraftpunkt, family = $ je Beziehungspunkt (Ruth, Thomas),
@@ -742,10 +742,11 @@ bots:
     # Spielspaß K1: Jeder planende Bot spielt die Karten nach Charakter – vorsichtig sichert ab (Liefervertrag, Gemeinschaft),
     # gierig zockt (Gerücht, Crane), ausgewogen drückt die Fracht (Thorne, Gemeinschaft). Thorne mit Bluff kostete den gierigen
     # Bot etwa 9.000 $ (mit billiger Bahn baut er die Pipeline nicht), Brennan dazu hob das Kapitelziel des Standard-Bots über 70 %.
-    # Gesamt-Balance: vorsichtig spricht auch bei Thorne vor (sonst gewann der ausgewogene über 40 % der Seeds), ausgewogen ohne Gemeinschaft.
+    # Gesamt-Balance: vorsichtig spricht bei Thorne vor, ausgewogen setzt auf die Transportgemeinschaft statt auf Thorne
+    # (mit Thorne gewann der ausgewogene 39–44 % der Seeds, Grenze 40 %).
     cautious: { cartel: false, contract: true, rumour: false, crane: false, thorne: true, brennan: false, pool: true, bluff: false }
-    greedy: { cartel: false, contract: false, rumour: true, crane: true, thorne: false, brennan: false, pool: false, bluff: false }
-    balanced: { cartel: false, contract: false, rumour: false, crane: false, thorne: true, brennan: false, pool: false, bluff: false }
+    greedy: { cartel: false, contract: false, rumour: true, crane: true, thorne: false, brennan: true, pool: false, bluff: false }   # Weichen-Balance: gierig nimmt Brennan (sonst gewann der ausgewogene 39–41 % der Seeds)
+    balanced: { cartel: false, contract: false, rumour: false, crane: false, thorne: false, brennan: false, pool: true, bluff: false }
   rightsEstimate: 600      # grobe Schätzung der Bots: so viel kosten die Wegerechte für die Pipeline zusammen
   # Zielwerte Kapitel 1 (2.15, GDD §15 und §17): Toleranzbereich min–max je Kennzahl.
   # Was gemessen wird, steht in src/sim/bots.ts (TARGETS); die Tabelle Ist/Ziel in docs/botlaeufe.md.
@@ -1039,6 +1040,11 @@ events:
     ref: 1250              # PLATZHALTER: bis 1.250 $ Erlös je Runde bleiben die Beträge wie geschrieben (Gesamt-Balance: mit 1.500 $ lag ein normaler Brief bei 0,9 % des Imperiums, Ziel 1–3 %)
     max: 8                 # PLATZHALTER: höchster Faktor (mit 4 bliebe ein normaler Brief am Kapitelende bei ~0,5 % des Imperiums)
     rounds: 3              # Posted Price über 3 Runden gemittelt
+
+# Weichen statt Alltagspost (Spielspaß K1, src/sim/weichen.ts): Kapitel 1 hat nur noch wenige Ereignisse, jedes mit
+# Folgen bis Kapitelende (lasting, land, rig an den Antworten in content/events/k1-*.yaml).
+weichen:
+  ruthCredit: 1.25         # PLATZHALTER: Steht Ruth mit auf den Urkunden, gibt die Bank 25 % mehr Rahmen (bis Kapitelende)
 
 # Gekoppelte Briefe (Termine als Hauptwerkzeug, Etappe 3, src/sim/letters.ts): Viele Briefe in Kapitel 1
 # kommen nur noch als Antwort auf Jacobs Pläne (Ritt, Besuch bei Thorne, Gerücht, Förderbremse …).
@@ -1746,13 +1752,10 @@ investigation:
     - { mark: moss_betrogen, severity: 3 }                 # Moss' Pachtpapier für 100 $
     - { mark: silas_betrogen, severity: 2 }                # frisierte Bücher für Silas
     - { mark: silas_kronzeuge, severity: 2, witness: true } # Silas redet in jedem Saloon
-    - { mark: sheriff_bezahlt, severity: 2 }               # Schutzgeld an Sheriff Tatum
-    - { mark: nora_bestechung, severity: 2 }               # Bestechung der Presse
     - { mark: courier_gekauft, severity: 1 }               # gekaufter Zeitungsbericht
-    - { mark: bullard_rache, severity: 3 }                 # Bullards Seil anschneiden lassen (Sabotage)
     - { mark: vale_geld, severity: 1 }                     # Geld unbekannter Herkunft (Mr. Vale)
     - { mark: thorne_exklusiv, severity: 1 }               # geheimer Exklusivvertrag mit der Bahn
-  goodMarks: [moss_fair, silas_fair, nora_ehrlich, sheriff_umgangen, eli_versorgt]  # Leumund vor Gericht
+  goodMarks: [moss_fair, silas_fair, nora_interview, ruth_teilhaberin]  # Leumund vor Gericht
   worldFallback: { mood: 50, government: null }  # Ersatz bis zum Weltmodell (4.1)
   fadeEvery: 8           # GDD §4: −1 Schwere je Spur alle 8 Runden, solange niemand ermittelt
   jumpFade: 1            # Zeitsprung vor Kapitel 2: so viele Stufen verblassen auf einmal (Zeugen nicht)

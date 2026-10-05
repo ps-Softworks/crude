@@ -4,15 +4,15 @@
 # Moss braucht Geld, sonst nimmt ihm die Bank die Farm. Der Bogen kommt in jeder
 # Partie (certain: true):
 #
-#   Runde 5+  moss_schulden     fair leihen, für einen Spottpreis kaufen (Betrug)
-#                               oder ablehnen
-#   danach    moss_wagenweg     (betrogen)  Moss sperrt den Weg
-#             moss_dank         (fair)      Moss zahlt zurück
-#             moss_versteigerung (abgelehnt) Die Bank versteigert die Farm –
+#   Runde 5+  moss_schulden     fair leihen (Moss verpachtet Jacob seine Farm ohne Bonus,
+#                               halber Förderzins), für einen Spottpreis kaufen (alle
+#                               Förderzinsen gehören Jacob, aber Daniel erzählt es überall:
+#                               Pachten bis Kapitelende teurer) oder ablehnen
+#   danach    moss_versteigerung (abgelehnt) Die Bank versteigert die Farm –
 #                               doch noch helfen, selbst ersteigern (Druck) oder wegbleiben
-#             moss_spekulant    (ersteigert) Jemand will das Land kaufen
-#   Runde 13+ moss_daniel_dank / moss_daniel_zorn  Daniel geht nach Hallstead,
-#                               um Recht zu studieren (Kapitel 3: Bezirksstaatsanwalt)
+#
+# Spielspaß K1 (Weichen statt Alltagspost): Wagenweg, Dank, Spekulant und Daniels Abschied
+# sind gestrichen; die Folgen stehen direkt an den Antworten (land, lasting – src/sim/weichen.ts).
 #
 # Wie der Bogen ausgeht, liest content/arcs.yaml aus den Merkzeichen ab.
 # moss_feind setzen beide harten Wege (Betrug und Druck) – Daniel merkt es sich.
@@ -39,26 +39,39 @@
   certain: true
   choices:
     - id: leihen
-      label: { de: "Ihm 2.500 $ leihen, ohne Papier", en: "Lend him 2,500 $, no paper" }
+      label: { de: "Ihm 2.500 $ leihen, ohne Papier – dafür bekommt Jacob die Farm zur Pacht", en: "Lend him 2,500 $, no paper – Jacob gets to lease the farm in return" }
       result:
-        de: Moss zählt das Geld zweimal. „Gott sieht das“, sagt er – es klingt wie Dank und Drohung zugleich.
-        en: Moss counts the money twice. "God sees this," he says – it sounds like thanks and threat at once.
+        de: >-
+          Moss zählt das Geld zweimal. „Gott sieht das“, sagt er – es klingt wie Dank
+          und Drohung zugleich. Am Sonntag bringt er die Pachturkunde: die Moss-Farm,
+          ohne Bonus und zum halben Förderzins, bis Kapitelende.
+        en: >-
+          Moss counts the money twice. "God sees this," he says – it sounds like thanks
+          and threat at once. On Sunday he brings the lease: the Moss farm, no bonus
+          and half the royalty, until the end of the chapter.
       requires: { minCash: 2500 }
       effects: { cash: -2500 }
       fixedCash: true
+      land: { figure: moss, royalty: 0.0625 }
       marks: [moss_fair]
     - id: papier
-      label: { de: "Ihm 800 $ für das ganze Papier geben", en: "Give him 800 $ for the whole paper" }
+      label: { de: "Ihm 800 $ für das ganze Papier geben – alle Förderzinsen gehören dann Jacob", en: "Give him 800 $ for the whole paper – all royalties are Jacob's then" }
       result:
         de: >-
           Moss setzt sein Kreuz unter einen Vertrag, der dreimal so viel wert ist.
-          Sein Junge Daniel steht in der Tür und sieht zu.
+          Sein Junge Daniel steht in der Tür und sieht zu. Jacob bohrt auf der Moss-Farm
+          ohne Förderzins – aber Daniel erzählt es jedem Farmer am Salt Hill: Pachten
+          kosten bis Kapitelende ein Zehntel mehr.
         en: >-
           Moss puts his cross under a contract worth three times as much. His boy
-          Daniel stands in the doorway, watching.
+          Daniel stands in the doorway, watching. Jacob drills the Moss farm royalty-free
+          – but Daniel tells every farmer on Salt Hill: leases cost a tenth more until
+          the end of the chapter.
       requires: { minCash: 800 }
-      effects: { cash: -800 }
+      effects: { cash: -800, leaseCost: 0.1 }
       fixedCash: true
+      lasting: true
+      land: { figure: moss, royalty: 0 }
       marks: [moss_betrogen, moss_feind]
     - id: ablehnen
       label: { de: "Ablehnen – Jacob ist keine Bank", en: "Refuse – Jacob is no bank" }
@@ -69,81 +82,7 @@
       default: true
 
 # Entwurf – Philipp überarbeitet.
-# Nachwirkung: nur wenn Jacob Moss betrogen hat, 2 Runden danach.
-- id: moss_wagenweg
-  ranch: moss
-  title:
-    de: Ein Zaun über dem Wagenweg
-    en: A Fence Across the Wagon Road
-  text:
-    de: >-
-      Über Nacht hat Ezekiel Moss einen Zaun quer über den Wagenweg zu Jacobs
-      Quelle gezogen. Er sitzt mit der Flinte auf der Veranda und liest laut aus
-      der Bibel. Die Fuhrleute weigern sich, durchzufahren.
-    en: >-
-      Overnight Ezekiel Moss has run a fence across the wagon road to Jacob's well.
-      He sits on his porch with a shotgun, reading the Bible aloud. The teamsters
-      refuse to drive through.
-  marked: [moss_betrogen]
-  delay: 2
-  certain: true
-  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
-  choices:
-    - id: wegegeld
-      label: { de: "Wegegeld zahlen ({cash})", en: "Pay a toll ({cash})" }
-      result:
-        de: Moss nimmt das Geld, ohne Jacob anzusehen. Der Zaun bleibt stehen, aber das Tor ist offen.
-        en: Moss takes the money without looking at Jacob. The fence stays, but the gate is open.
-      requires: { minCash: 150 }
-      effects: { cash: -150 }
-    - id: sumpfstrasse
-      label: { de: "Die Fässer über die Sumpfstraße schicken", en: "Send the barrels by the marsh road" }
-      result:
-        de: Auf der Sumpfstraße brechen zwei Wagen ein. 200 Barrel versickern im Salzmoor.
-        en: Two wagons break through on the marsh road. 200 barrels seep into the salt bog.
-      effects: { oilStock: -200 }
-      default: true
-
-# Entwurf – Philipp überarbeitet.
-# Nachwirkung: nur wenn Jacob Moss fair geholfen hat, 3 Runden danach.
-- id: moss_dank
-  visitor: moss
-  ranch: moss
-  title:
-    de: Ein Glas Honig
-    en: A Jar of Honey
-  text:
-    de: >-
-      Ezekiel Moss stellt ein Glas Honig auf Jacobs Tisch und zählt die 2.500 $
-      in zerknitterten Scheinen daneben – die Baumwolle war gut dieses Jahr. Im Gehen
-      sagt er leise, dass auf der Weide seines Nachbarn das Wasser nach Schwefel riecht.
-    en: >-
-      Ezekiel Moss sets a jar of honey on Jacob's table and counts the 2,500 $ out
-      beside it in crumpled bills – the cotton was good this year. On his way out he says
-      quietly that the water on his neighbour's pasture smells of sulphur.
-  marked: [moss_fair]
-  delay: 3
-  certain: true
-  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
-  choices:
-    - id: annehmen
-      label: { de: "Das Geld annehmen", en: "Take the money" }
-      result:
-        de: Jacob nimmt das Geld. Moss nickt ihm zu wie einem Nachbarn.
-        en: Jacob takes the money. Moss nods to him as to a neighbour.
-      effects: { cash: 2500 }
-      fixedCash: true
-      default: true
-    - id: behalten_lassen
-      label: { de: "„Behalt es für Daniels Schule.“", en: "\"Keep it for Daniel's schooling.\"" }
-      result:
-        de: "Moss schweigt lange. Dann steckt er das Geld ein und gibt Jacob die Hand. „Wenn du je ein Rohr über meine Weide legen willst, Harlan – es darf durch.“"
-        en: "Moss is silent a long while. Then he pockets the money and shakes Jacob's hand. \"If you ever want to lay a pipe across my pasture, Harlan – it may pass.\""
-      marks: [wegerecht_moss]
-
-# Entwurf – Philipp überarbeitet.
-# Nachwirkung: Jacob hat abgelehnt, die Bank versteigert die Farm. Hier fällt die
-# zweite Hälfte der Schlüsselentscheidung (GDD: fairer Preis, Betrug oder Druck).
+# Nachwirkung: nur wenn Jacob Moss abgewiesen hat, 2 Runden danach.
 - id: moss_versteigerung
   ranch: moss
   title:
@@ -164,145 +103,50 @@
   conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   choices:
     - id: doch_helfen
-      label: { de: "Moss die 2.500 $ doch noch geben", en: "Give Moss the 2,500 $ after all" }
+      label: { de: "Moss die 2.500 $ doch noch geben – gegen die Farm zur Pacht", en: "Give Moss the 2,500 $ after all – for the farm on lease" }
       result:
         de: >-
           Moss nimmt das Geld vor der Bank, vor allen Leuten. „Spät, aber nicht zu
-          spät“, sagt er. Der Zettel kommt ab.
+          spät“, sagt er. Der Zettel kommt ab, und Jacob pachtet die Moss-Farm ohne
+          Bonus zum halben Förderzins.
         en: >-
           Moss takes the money outside the bank, in front of everyone. "Late, but not
-          too late," he says. The notice comes down.
+          too late," he says. The notice comes down, and Jacob leases the Moss farm with
+          no bonus at half the royalty.
       requires: { minCash: 2500 }
       effects: { cash: -2500 }
       fixedCash: true
+      land: { figure: moss, royalty: 0.0625 }
       marks: [moss_fair]
     - id: ersteigern
-      label: { de: "Die Farm selbst ersteigern ({cash})", en: "Buy the farm at auction yourself ({cash})" }
+      label: { de: "Die Farm selbst ersteigern ({cash}) – sie gehört dann Jacob, ohne Förderzins", en: "Buy the farm at auction yourself ({cash}) – it is Jacob's then, royalty-free" }
       result:
         de: >-
           Jacob bietet als Einziger. Am Abend lädt Ezekiel seine Habe auf einen
           Wagen. Daniel dreht sich am Gatter noch einmal um und sieht Jacob lange an.
+          Die Moss-Farm gehört Jacob – kein Bonus, kein Förderzins.
         en: >-
           Jacob is the only bidder. In the evening Ezekiel loads his belongings onto a
           wagon. At the gate Daniel turns once more and looks at Jacob for a long time.
-      requires: { minCash: 1000 }
-      effects: { cash: -1000 }
+          The Moss farm is Jacob's – no bonus, no royalty.
+      requires: { minCash: 3000 }
+      effects: { cash: -3000 }
+      fixedCash: true
+      land: { figure: moss, royalty: 0 }
       marks: [moss_vertrieben, moss_feind]
     - id: wegbleiben
       label: { de: "Nicht hingehen – es ist nicht Jacobs Sache", en: "Stay away – it is not Jacob's business" }
       result:
-        de: Ein Mann aus Hallstead kauft die Farm. Die Familie Moss zieht zu Verwandten in die Kohleprovinzen.
-        en: A man from Hallstead buys the farm. The Moss family moves to relatives in the coal provinces.
+        de: >-
+          Ein Mann aus Hallstead kauft die Farm. Die Familie Moss zieht zu Verwandten in
+          die Kohleprovinzen. Am Salt Hill merkt man sich, wer zugesehen hat: Pachten
+          kosten bis Kapitelende ein Zehntel mehr.
+        en: >-
+          A man from Hallstead buys the farm. The Moss family moves to relatives in the
+          coal provinces. Salt Hill remembers who stood by: leases cost a tenth more until
+          the end of the chapter.
       appointments: 0
-      marks: [moss_verloren]
-      default: true
-
-# Entwurf – Philipp überarbeitet.
-# Nachwirkung (Druck): Das ersteigerte Land lässt sich weiterverkaufen.
-- id: moss_spekulant
-  visitor: spekulant
-  ranch: moss
-  title:
-    de: Ein Herr mit Spazierstock
-    en: A Gentleman with a Cane
-  text:
-    de: >-
-      Ein Herr aus Hallstead mit Spazierstock und Gamaschen will das Moss-Land
-      kaufen. Er bietet {cash:verkaufen}, bar, sofort. Er fragt nicht, wo die Familie hin ist.
-    en: >-
-      A gentleman from Hallstead with a cane and spats wants to buy the Moss land.
-      He offers {cash:verkaufen}, cash, at once. He does not ask where the family went.
-  marked: [moss_vertrieben]
-  delay: 2
-  certain: true
-  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
-  choices:
-    - id: verkaufen
-      label: { de: "Verkaufen ({cash})", en: "Sell ({cash})" }
-      result:
-        de: Der Herr zählt das Geld auf den Tisch und tippt sich an den Hut. Das Land ist weg, die Geschichte nicht.
-        en: The gentleman counts the money onto the table and touches his hat. The land is gone, the story is not.
-      effects: { cash: 1400 }
-      default: true
-    - id: behalten
-      label: { de: "Behalten – vielleicht liegt Öl darunter", en: "Keep it – there may be oil beneath" }
-      result:
-        de: "Jacob lässt das Farmhaus leer stehen. Nachts brennt manchmal Licht darin, aber niemand gibt es zu. Wer selbst Land besitzt, pachtet billiger: Die Farmer verhandeln mit Jacob jetzt wie mit einem der Ihren."
-        en: "Jacob leaves the farmhouse empty. At night a light sometimes burns inside, but nobody admits to it. A man who owns land leases cheaper: the farmers now bargain with Jacob as with one of their own."
-      effects: { leaseCost: -0.2 }
-      appointments: 0
-
-# Entwurf – Philipp überarbeitet.
-# Abschluss des Bogens in Kapitel 1: Daniel geht zum Studium nach Hallstead
-# (Kapitel 3: Bezirksstaatsanwalt). Zwei Fassungen je nach Ausgang.
-- id: moss_daniel_dank
-  visitor: daniel
-  ranch: moss
-  title:
-    de: Daniel geht nach Hallstead
-    en: Daniel Leaves for Hallstead
-  text:
-    de: >-
-      Daniel Moss, frisch gewaschen und im zu großen Anzug seines Vaters, klopft an
-      Jacobs Tür. Er hat ein Stipendium für die Rechtsschule in Hallstead. „Vater
-      sagt, ohne Sie hätten wir die Farm nicht mehr. Ich wollte danke sagen.“
-    en: >-
-      Daniel Moss, freshly scrubbed and in his father's oversized suit, knocks at
-      Jacob's door. He has a scholarship to the law school in Hallstead. "Father says
-      without you we wouldn't have the farm any more. I wanted to say thank you."
-  conditions: { minRound: 13, maxChapter: 1 }
-  marked: [moss_fair]
-  certain: true
-  choices:
-    - id: fahrkarte
-      label: { de: "Ihm Fahrkarte und erstes Semester bezahlen ({cash})", en: "Pay for his ticket and first term ({cash})" }
-      result:
-        de: "Daniel steckt die Karte und den Umschlag in die Innentasche, als wären sie aus Glas. „Ich vergesse das nicht, Mr. Harlan.“"
-        en: "Daniel slips the ticket and the envelope into his breast pocket as if they were glass. \"I won't forget this, Mr. Harlan.\""
-      public: [charity]
-      requires: { minCash: 200 }
-      effects: { cash: -200 }
-      marks: [daniel_gefoerdert]
-    - id: glueck
-      label: { de: "Ihm Glück wünschen", en: "Wish him luck" }
-      result:
-        de: Jacob schüttelt ihm die Hand. Der Junge hat den festen Griff seines Vaters. Ruth fragt am Abend, warum er ihm nicht geholfen hat.
-        en: Jacob shakes his hand. The boy has his father's firm grip. That evening Ruth asks why he didn't help him.
-      effects: { ruth: -2 }
-      appointments: 0
-      default: true
-
-# Entwurf – Philipp überarbeitet.
-- id: moss_daniel_zorn
-  ranch: moss
-  title:
-    de: Daniel geht nach Hallstead
-    en: Daniel Leaves for Hallstead
-  text:
-    de: >-
-      Am Bahnhof steht Daniel Moss mit einem Pappkoffer. Er geht nach Hallstead,
-      Recht studieren. Als Jacob vorbeikommt, sagt er nichts. Er sieht ihn nur an,
-      wie man sich ein Gesicht merkt.
-    en: >-
-      Daniel Moss stands at the station with a cardboard suitcase. He is going to
-      Hallstead to study law. When Jacob passes, he says nothing. He only looks at
-      him the way one memorises a face.
-  conditions: { minRound: 13, maxChapter: 1 }
-  marked: [moss_feind]
-  certain: true
-  choices:
-    - id: entschuldigen
-      label: { de: "Zu ihm gehen und sich entschuldigen", en: "Go over and apologise" }
-      result:
-        de: "Daniel hört zu, bis Jacob fertig ist. „Das schreibe ich mir auf“, sagt er. Ob als Trost oder als Beweis, lässt er offen. Ezekiel Moss hört davon. Über die Pipeline, lässt er ausrichten, könne man jetzt reden."
-        en: "Daniel listens until Jacob has finished. \"I'll write that down,\" he says. Whether as comfort or as evidence, he does not say. Ezekiel Moss hears of it. About the pipeline, he lets it be known, they can talk now."
-      marks: [daniel_entschuldigung]
-      effects: { strength: -3 }
-    - id: weitergehen
-      label: { de: "Weitergehen", en: "Walk on" }
-      result:
-        de: Jacob geht weiter. Hinter ihm pfeift der Zug nach Hallstead. Die Farmer am Bahnsteig haben es gesehen und verlangen seitdem mehr für ihr Land.
-        en: Jacob walks on. Behind him the train to Hallstead whistles. The farmers on the platform saw it and have asked more for their land ever since.
       effects: { leaseCost: 0.1 }
-      appointments: 0
+      lasting: true
+      marks: [moss_verloren]
       default: true

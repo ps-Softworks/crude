@@ -297,14 +297,8 @@ daniel_k3:
       text:
         de: Daniel Moss und Jacob Harlan stehen auf derselben Seite – gegen Thorne. Keiner von beiden hätte das vor zwanzig Jahren geglaubt.
         en: Daniel Moss and Jacob Harlan stand on the same side – against Thorne. Neither would have believed it twenty years ago.
-    - id: entlastet
-      any: [daniel_entlastet]
-      title: { de: "Entlastet", en: "Cleared" }
-      text:
-        de: Die Bücher haben Jacob entlastet. Daniel hat die Akte geschlossen und ihm die Hand gegeben – kurz.
-        en: The books cleared Jacob. Daniel closed the file and shook his hand – briefly.
     - id: vergleich
-      any: [daniel_vergleich, daniel_unfallkasse, moss_land_zurueck]
+      any: [daniel_vergleich, moss_land_zurueck]
       title: { de: "Ein Vergleich", en: "A Settlement" }
       text:
         de: Jacob hat gezahlt oder zurückgegeben, was er nahm. Daniel hat es angenommen. Freunde sind sie nicht.

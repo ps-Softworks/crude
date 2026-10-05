@@ -222,49 +222,6 @@
       appointments: 0
       default: true
 
-- id: k3_clara_freundin
-  marked: [eli_waechter]
-  delay: 0
-  chance: 0.3
-  conditions: { minChapter: 3, maxChapter: 3, minClaraAge: 16, maxClaraAge: 16 }
-  title:
-    de: Clara und die Tochter des Wächters
-    en: Clara and the Watchman's Daughter
-  text:
-    de: >-
-      Clara ist sechzehn und will ihre Freundin mit auf das Mädchenpensionat in Hallstead
-      nehmen: Eli Wards Tochter, klüger als alle in ihrer Klasse und so arm, dass sie im
-      Winter dieselben Schuhe trägt wie im Sommer. Die Vandermeer-Mädchen haben schon
-      gefragt, ob die Harlans jetzt auch Dienstboten zur Schule schicken.
-    en: >-
-      Clara is sixteen and wants to take her friend with her to the girls' boarding school
-      in Hallstead: Eli Ward's daughter, cleverer than anyone in her class and so poor she
-      wears the same shoes in winter as in summer. The Vandermeer girls have already asked
-      whether the Harlans now send servants to school too.
-  choices:
-    - id: beide
-      label: { de: "Das Schulgeld für beide zahlen (2.000 $)", en: "Pay the fees for both (2,000 $)" }
-      result:
-        de: Die beiden Mädchen fahren zusammen mit dem Zug nach Hallstead. Eli steht am Bahnsteig und hält den Hut in beiden Händen. Clara schreibt, die Vandermeer-Mädchen seien jetzt sehr höflich zu ihr. Zu ihrer Freundin nicht.
-        en: The two girls take the train to Hallstead together. Eli stands on the platform holding his hat in both hands. Clara writes that the Vandermeer girls are very polite to her now. Not to her friend.
-      requires: { minCash: 2000 }
-      effects: { cash: -2000, ruth: 5, clara: 12, reputation: { workers: 1 }, ansehen: -1 }
-    - id: stipendium
-      label: { de: "Ein Stipendium für Arbeiterkinder stiften, mit Prüfung (3.500 $)", en: "Endow a scholarship for workers' children, with an exam (3,500 $)" }
-      result:
-        de: Eli Wards Tochter besteht die Prüfung als Beste. Mit ihr fahren drei andere Kinder aus Salt Hill. Clara sagt, das sei gerecht, aber nicht das, worum sie gebeten habe.
-        en: Eli Ward's daughter passes the exam top of the list. Three other children from Salt Hill go with her. Clara says that is fair, but not what she asked for.
-      requires: { minCash: 3500 }
-      effects: { cash: -3500, clara: 5, reputation: { workers: 3, public: 1 } }
-    - id: nein
-      label: { de: "„Jeder geht auf die Schule, die zu ihm passt.“", en: "\"Everyone goes to the school that suits them.\"" }
-      result:
-        de: Clara fährt allein nach Hallstead. Am Bahnsteig sagt sie kein Wort zu Jacob. Sie schreibt den ganzen Winter nur ihrer Mutter.
-        en: Clara travels to Hallstead alone. On the platform she says not a word to Jacob. All winter she writes only to her mother.
-      effects: { ruth: -10, strength: -5, clara: -15 }
-      appointments: 0
-      default: true
-
 - id: k3_silas_turm
   visitor: silas
   marked: [silas_fair]

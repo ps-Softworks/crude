@@ -140,36 +140,35 @@ function ausgang(state: GameState, arc: ArcId): string | null {
 describe('Fertig-Kriterium 2.9: beide Bögen gehen je nach Entscheidung verschieden aus', () => {
   const SEEDS = ['bogen-1', 'bogen-2', 'bogen-3'];
 
+  // Spielspaß K1 (Weichen statt Alltagspost): Seil, Nachtschicht, Abschied, Moss' Dank, Wagenweg, Spekulant und
+  // Daniels Abschied sind gestrichen – die Folgen stehen jetzt direkt an den Antworten (Turm, Land, Pachten).
   it('Silas: fair, ausgekauft, versöhnt, Kronzeuge – und jede Szene des Wegs kommt', () => {
     for (const seed of SEEDS) {
-      const fair = partie(seed, { silas_schnaps: 'decken', silas_abrechnung: 'fair', silas_nachtschicht: 'einladen' });
-      const aus = partie(seed, { silas_abrechnung: 'auskaufen', silas_abschied: 'hingehen' });
+      const fair = partie(seed, { silas_abrechnung: 'fair' });
+      const aus = partie(seed, { silas_abrechnung: 'auskaufen' });
       const spaet = partie(seed, { silas_abrechnung: 'betruegen', silas_saloon: 'nachzahlen' });
       const ohne = partie(seed, {});
       expect([fair, aus, spaet, ohne].map((s) => ausgang(s, 'silas'))).toEqual(['freund', 'ausgekauft', 'versoehnt', 'kronzeuge']);
-      expect(fair.events.marks.silas_freund).toBeDefined();
-      expect(aus.events.marks.silas_abschied_gut).toBeDefined();
+      // Fair: Silas zieht Stahlgestänge ein; ausgekauft: der Turm hat eine Dampfmaschine.
+      expect(fair.rigs.find((r) => r.id === 'silas')?.rods).toBe(true);
+      expect(aus.rigs.find((r) => r.id === 'silas')?.steam).toBe(true);
       for (const s of [fair, aus, spaet, ohne]) expect(s.events.seen).toContain('silas_abrechnung');
       expect(ohne.events.seen).toContain('silas_saloon');
       expect(fair.events.seen).not.toContain('silas_saloon');
     }
   });
 
-  it('Moss: Freund, Feind (Betrug oder Druck) und Farm verloren – Daniel kommt je nach Weg', () => {
+  it('Moss: Freund, Feind (Betrug oder Druck) und Farm verloren – die Moss-Farm geht je nach Weg an Jacob', () => {
     for (const seed of SEEDS) {
-      const fair = partie(seed, { moss_schulden: 'leihen', moss_daniel_dank: 'fahrkarte' });
+      const fair = partie(seed, { moss_schulden: 'leihen' });
       const spaetFair = partie(seed, { moss_versteigerung: 'doch_helfen' });
-      const betrug = partie(seed, { moss_schulden: 'papier', moss_wagenweg: 'wegegeld' });
-      const druck = partie(seed, { moss_versteigerung: 'ersteigern', moss_spekulant: 'verkaufen' });
+      const betrug = partie(seed, { moss_schulden: 'papier' });
+      const druck = partie(seed, { moss_versteigerung: 'ersteigern' });
       const ohne = partie(seed, {});
       expect([fair, spaetFair, betrug, druck, ohne].map((s) => ausgang(s, 'moss'))).toEqual(['freund', 'freund', 'feind', 'feind', 'verloren']);
-      expect(fair.events.seen).toEqual(expect.arrayContaining(['moss_dank', 'moss_daniel_dank']));
-      expect(fair.events.marks.daniel_gefoerdert).toBeDefined();
-      expect(spaetFair.events.seen).toEqual(expect.arrayContaining(['moss_versteigerung', 'moss_dank', 'moss_daniel_dank']));
-      expect(betrug.events.seen).toEqual(expect.arrayContaining(['moss_wagenweg', 'moss_daniel_zorn']));
-      expect(druck.events.seen).toEqual(expect.arrayContaining(['moss_spekulant', 'moss_daniel_zorn']));
-      expect(ohne.events.seen).not.toContain('moss_daniel_zorn');
-      expect(ohne.events.seen).not.toContain('moss_daniel_dank');
+      expect(spaetFair.events.seen).toContain('moss_versteigerung');
+      expect(ohne.events.seen).toContain('moss_versteigerung');
+      expect(fair.events.seen).not.toContain('moss_versteigerung');
     }
   });
 

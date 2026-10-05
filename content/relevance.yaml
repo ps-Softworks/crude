@@ -17,7 +17,6 @@ later:
   - { mark: daniel_sarg_getragen, reason: "Jacob hat Ezekiels Sarg getragen – Daniels Dankbarkeit (Kapitel 4)" }
   - { mark: daniel_vergleich, reason: "Ausgang Daniel-Bogen: Vergleich (Kapitel 4)" }
   - { mark: daniel_anklage, reason: "Ausgang Daniel-Bogen: Der Prozess läuft in Kapitel 4 weiter" }
-  - { mark: daniel_entlastet, reason: "Ausgang Daniel-Bogen: Pikes Lüge widerlegt, Jacob entlastet (Kapitel 4)" }
   - { mark: daniel_verbuendet, reason: "Ausgang Daniel-Bogen: Verbündeter gegen Thorne (Kapitel 4)" }
   - { mark: daniel_zeuge_thorne, reason: "Jacob hat gegen Thorne ausgesagt – Thorne vergisst es nicht (Kapitel 4)" }
   - { mark: daniel_weggelobt, reason: "Ausgang Daniel-Bogen: Richter Moss sitzt länger als Staatsanwälte (Kapitel 4)" }
@@ -27,7 +26,6 @@ later:
   - { mark: daniel_beugehaft, reason: "Jacob saß für Thorne in Beugehaft – Thornes Schuld, Daniels Gedächtnis (Kapitel 4)" }
   - { mark: daniel_thorne_gedeckt, reason: "Thornes Anwälte haben Jacob herausgeholt – Gefallen und Spur (Kapitel 4)" }
   - { mark: daniel_vertagt, reason: "Vorladung nur vertagt – Daniel lädt in Kapitel 4 wieder vor" }
-  - { mark: daniel_unfallkasse, reason: "Kerrigan-Kasse für Arbeiter – Arbeiter-Ruf und Gewerkschaft (Kapitel 4)" }
   - { mark: moss_vertrag_neu, reason: "Daniels Vergleich nach dem Vertrag: Förderzins nachgezahlt, die Farm war immer Moss' (Kapitel 4, Enden)" }
   - { mark: moss_land_zurueck, reason: "Die Moss-Farm gehört wieder Daniels Familie (Kapitel 4, Enden)" }
   - { mark: thomas_firma, reason: "Thomas im Unternehmen – Erbe und Nachfolge (Zeitsprung III, Kapitel 4)" }
@@ -47,19 +45,10 @@ later:
   - { mark: ehe_trennung, reason: "Ausgang Ehe-Bogen: Trennung, Ruths Anteile verkauft (Kapitel 4)" }
   - { mark: geburt_dabei, reason: "Thomas' Bogen (GDD Kapitel 3: Thomas kommt ins Unternehmen – oder nicht) – bisher fragt das kein Ereignis ab; Anschluss frühestens in Kapitel 4" }
   - { mark: geburt_verpasst, reason: "Thomas' Bogen (GDD Kapitel 3)" }
-  - { mark: ruth_beiseite, reason: "Ruths Bogen (GDD Kapitel 2: Ruths Wunsch mitzuarbeiten) – bisher fragt das kein Ereignis ab; Anschluss frühestens in Kapitel 4" }
   - { mark: ruth_teilhaberin, reason: "Ruths Bogen (GDD Kapitel 2)" }
   - { mark: ruth_vertroestet, reason: "Ruths Bogen (GDD Kapitel 2)" }
   - { mark: ruth_zurueckgewiesen, reason: "Ruths Bogen (GDD Kapitel 2)" }
-  - { mark: silas_gedeckt, reason: "Silas' Bogen (GDD Kapitel 2: Silas gegen den Aufsichtsrat; Freund oder Kronzeuge)" }
-  - { mark: silas_gedemuetigt, reason: "Silas' Bogen (GDD Kapitel 2) – bisher fragt das kein Ereignis ab; Anschluss frühestens in Kapitel 4" }
-  - { mark: silas_freund, reason: "Silas' Bogen (GDD Kapitel 2)" }
-  - { mark: silas_abschied_gut, reason: "Silas' Bogen (GDD Kapitel 2) – bisher fragt das kein Ereignis ab; Anschluss frühestens in Kapitel 4" }
-  - { mark: daniel_gefoerdert, reason: "Daniel Moss kehrt in Kapitel 3 als Bezirksstaatsanwalt zurück (GDD)" }
-  - { mark: nora_ehrlich, reason: "Nora Whitlock recherchiert ab Kapitel 2 über Jahrzehnte (GDD)" }
-  - { mark: nora_abgewiesen, reason: "Nora Whitlock (GDD ab Kapitel 2) – bisher fragt das kein Ereignis ab; Anschluss frühestens in Kapitel 4" }
   - { mark: nora_kein_gespraech, reason: "Nora Whitlock (GDD ab Kapitel 2) – bisher fragt das kein Ereignis ab; Anschluss frühestens in Kapitel 4" }
-  - { mark: nora_beschwert, reason: "Nora Whitlock (GDD ab Kapitel 2)" }
   - { mark: courier_gekauft, reason: "Nora Whitlock hat den gekauften Bericht ausgeschnitten (GDD ab Kapitel 2)" }
   - { mark: vale_geld, reason: "Mr. Vales Einladung (GDD Kapitel 3)" }
   - { mark: vale_abgelehnt, reason: "Mr. Vales Einladung (GDD Kapitel 3)" }
@@ -134,7 +123,6 @@ later:
   - { mark: k2_sekretaer_hallstead, reason: "Mr. Purvis statt Ada Pell: wer die Briefe liest (Story-Bibel §4, Personal 4.9)" }
   - { mark: k2_lindqvist, reason: "Der gewissenhafte Ingenieur (Story-Bibel §9: Personal 4.9 – Gewissenhafter verweigert)" }
   - { mark: k2_greaves_beteiligt, reason: "Greaves' Cracken-Forschung (Story-Bibel §4, Forschung 4.11: Spionage gegen Greaves)" }
-  - { mark: k2_tatum_fixer, reason: "Boyd Tatum als Fixer (Story-Bibel §4) – Daniels Akte in Kapitel 3 (§7 A) – bisher fragt das kein Ereignis ab; Anschluss frühestens in Kapitel 4" }
   - { mark: k2_margaret_zahlen, reason: "Crane-Nachfolge: Jacob stand mit Lusks Bericht auf Margarets Seite (Story-Bibel §6 D, margaret_partner)" }
   - { mark: k2_pruett_zahlen, reason: "Crane-Nachfolge: Jacob stand auf Pruetts Seite (Story-Bibel §6 D, pruett_partner)" }
   - { mark: k2_margaret_marke, reason: "Harlans Name auf Margarets Kanistern – Kampf um die Marke in Kapitel 3 (Story-Bibel §3, §9 K3 Marke) – bisher fragt das kein Ereignis ab; Anschluss frühestens in Kapitel 4" }
@@ -147,7 +135,6 @@ later:
   # Kapitel 3 – Alltag (Phase 4, k3-alltag-*.yaml). Entwurf – Philipp überarbeitet.
   - { mark: k3_dunmore_gedeckt, reason: "Dunmore schuldet Jacob sein Ansehen – Skandalrisiko des Lobbyisten (Story-Bibel §4, System 4.16, Kapitel 4)" }
   - { mark: k3_reserveland, reason: "Reserveland ohne Ausschreibung – Saat für Daniels Akte und den Skandal um Grady (Story-Bibel §2/§7, Kapitel 4)" }
-  - { mark: k3_seismik_verkauft, reason: "Hales Messstreifen ans Konsortium verkauft – Schuld bei Mr. Vale (Story-Bibel §7 D, System 4.17)" }
   - { mark: k3_quote_eingehalten, reason: "Jacob hält sich an die Quote des Konsortiums – Vales Einladung (Story-Bibel §7 D, Kapitel 4)" }
   - { mark: k3_quote_ignoriert, reason: "Jacob bricht die Quote – das Konsortium merkt es sich (Story-Bibel §7 D, Kapitel 4)" }
   - { mark: k3_ashcombe_kontakt, reason: "Erster Liefervertrag mit Royal Aldmark Petroleum – Ashcombe als Rivale oder Partner ab Kapitel 5 (GDD §9.2)" }

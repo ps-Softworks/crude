@@ -1,0 +1,48 @@
+# Kapitel 1 – Weiche: Ruth will ihren Namen auf dem Papier (Spielspaß K1, Weichen statt Alltagspost).
+# Entwurf von Claude, bitte in eigener Stimme umschreiben. Kommt in jeder Partie ab Runde 10.
+# Unterschreibt Ruth mit, gibt die Bank bis Kapitelende mehr Rahmen (weichen.ruthCredit,
+# src/sim/weichen.ts); spätere Kapitel lesen ruth_teilhaberin / ruth_vertroestet / ruth_zurueckgewiesen.
+# Vorher wartete die Szene auf „Ruth und die Quittungen“ (gestrichen).
+
+- id: ruth_anteil
+  visitor: ruth
+  certain: true
+  conditions: { minRound: 10, maxChapter: 1 }
+  draft: true                # Schlüsselszene: Ruth will einen eigenen Anteil (Weltbibel: Ziel und Bruchstelle)
+  title:
+    de: Ruth will ihren Namen auf dem Papier
+    en: Ruth Wants Her Name on the Paper
+  text:
+    de: >-
+      Ruth führt seit Monaten die Bücher. Heute legt sie eine Pachturkunde auf den
+      Tisch, die Feder daneben. Sie will ihren Namen neben Jacobs, nicht darunter.
+      „Wenn dir etwas passiert, Jacob, dann bin ich vor dem Richter nur deine Witwe.“
+    en: >-
+      Ruth has kept the books for months. Today she lays a lease deed on the table,
+      the pen beside it. She wants her name next to Jacob's, not beneath it. "If
+      something happens to you, Jacob, before the judge I'm only your widow."
+  choices:
+    - id: ja
+      label: { de: "Unterschreiben lassen – mit zwei Namen leiht die Bank mehr", en: "Let her sign – with two names the bank lends more" }
+      result:
+        de: "Ruth schreibt langsam und sehr gerade. Danach liest sie die Urkunde noch einmal, als hätte sie sie selbst aufgesetzt. Am Montag geht sie mit Jacob zur Bank: Mit ihrer Unterschrift gibt der Direktor bis Kapitelende ein Viertel mehr Kreditrahmen."
+        en: "Ruth writes slowly and very straight. Afterwards she reads the deed again, as if she had drawn it up herself. On Monday she goes to the bank with Jacob: with her signature the manager grants a quarter more credit until the end of the chapter."
+      effects: { ruth: 15 }
+      marks: [ruth_teilhaberin]
+    - id: spaeter
+      label: { de: "„Wenn die zweite Quelle fließt“", en: "\"When the second well flows\"" }
+      result:
+        de: Ruth nickt und legt die Urkunde in die Kiste unter dem Bett. Sie wird sich das Datum merken.
+        en: Ruth nods and puts the deed in the box under the bed. She will remember the date.
+      effects: { ruth: -5 }
+      marks: [ruth_vertroestet]
+    - id: nein
+      label: { de: "„Das ist Männersache“", en: "\"That's men's business\"" }
+      result:
+        de: Ruth nimmt die Feder und legt sie in die Schublade. Am Abend führt sie die Bücher weiter, aber sie spricht nicht mehr darüber.
+        en: Ruth takes the pen and puts it in the drawer. That evening she keeps the books as before, but she no longer talks about them.
+      effects: { ruth: -20 }
+      marks: [ruth_zurueckgewiesen]
+      appointments: 0
+      default: true
+

@@ -5,9 +5,9 @@ import { describe, expect, it } from 'vitest';
 import type { Balance } from './balance';
 import { parseEventFile, parseEventFiles } from './eventContent';
 import { immediateImpact, lastingValue } from './eventRelevance';
-import { cooldownOf, drawEvents, drawMail, resolveEvent, type EventChoice, type EventDef } from './events';
+import { cooldownOf, drawEvents, drawMail, type EventChoice, type EventDef } from './events';
 import { knowledgeOf } from './exploration';
-import { endRound, newGame, type GameState } from './game';
+import { newGame, type GameState } from './game';
 import { cheapExclusive, coupledEvents, LETTER_ACTIONS, LETTER_MARKS, letterTarget, planMarks, settleLetters } from './letters';
 import { deserializeGame, SAVE_FORMAT, serializeGame } from './save';
 import { loadBalance } from './testBalance';
@@ -33,93 +33,51 @@ function mitMarken(s: GameState, marks: Record<string, number>): GameState {
   return { ...s, events: { ...s.events, marks: { ...s.events.marks, ...marks } } };
 }
 
-describe('Katalog Kapitel 1 (Plan Etappe 3)', () => {
-  it('ist um mindestens 25 % kleiner: höchstens 92 Ereignisse (vorher 122)', () => {
-    expect(k1.length).toBeLessThanOrEqual(92);
+// Spielspaß K1 (Weichen statt Alltagspost): Ein Tester fand die Briefe langweilig – Philipp: „entweder wirklich relevante
+// oder keine“. Kapitel 1 hat nur noch Weichen mit Folgen bis Kapitelende; Alltagspost, gekoppelte Briefe und Gruppen
+// sind gestrichen (die Folgen der Karten kommen direkt aus den Karten).
+const WEICHEN = ['thomas_geburt', 'silas_abrechnung', 'silas_saloon', 'moss_schulden', 'moss_versteigerung', 'nora_interview', 'vale_umschlag', 'ruth_anteil', 'bullard_saloon', 'thorne_frachtvertrag', 'crane_abschlag', 'crane_uebernahme'];
+
+describe('Katalog Kapitel 1 (Weichen statt Alltagspost)', () => {
+  it('höchstens 17 Ereignisse und die 5 festen Termine (Etappe 3: 92, davor 122)', () => {
+    expect(k1.filter((e) => !e.routine).length).toBeLessThanOrEqual(17);
+    expect(k1.filter((e) => e.routine)).toHaveLength(5);
   });
 
-  it('die gestrichenen Ereignisse fehlen', () => {
-    const gestrichen = ['pension_miete', 'post_mietstall', 'post_seil', 'poker', 'kumpel', 'prediger', 'faesser_angebot', 'saloon_serviette', 'sheriff_schutz', 'post_oelkauf', 'wechsel_angebot', 'wechsel_geplatzt', 'rutengaenger', 'post_geologe', 'dok_hale_echt_folge', 'dok_hale_falsch_folge'];
-    const ids = new Set(katalog.map((e) => e.id));
-    for (const id of gestrichen) expect(ids.has(id), id).toBe(false);
-  });
-
-  it('die neuen Antworten auf Jacobs Pläne sind da', () => {
+  it('die Weichen sind da, Alltagspost und Folgebriefe der Karten fehlen', () => {
     const ids = new Set(k1.map((e) => e.id));
-    for (const id of ['haendler_mahnung', 'nora_entlarvt', 'thorne_nachgezaehlt', 'thorne_exklusiv_billiger', 'gemeinschaft_abgesprungen', 'kartell_verdacht', 'brennan_abwerben']) expect(ids.has(id), id).toBe(true);
-  });
-});
-
-describe('Gekoppelte Briefe (Plan Etappe 3: „kommen nur noch als Reaktion auf ein Merkzeichen aus Jacobs Plänen“)', () => {
-  const plan = new Set(planMarks());
-  const gekoppelt = coupledEvents(katalog);
-  // Die Tabelle aus dem Plan (ohne die beiden festen Rivalenzüge, siehe docs/plan-termine-messung.md).
-  const KOPPLUNG: Record<string, string[]> = {
-    foerderbremse: ['bullard_treue', 'bullard_verrat', 'kartell_verdacht'],
-    haendler: ['crane_vorkauf', 'geruecht_tanks', 'haendler_mahnung'],
-    geruecht: ['nora_interview', 'nora_artikel', 'nora_entlarvt'],
-    thorne: ['geruecht_tarif', 'thorne_waggons', 'thorne_nachgezaehlt', 'thorne_exklusiv_billiger'],
-    brennan: ['fuhre_aufschlag', 'fuhrleute_bestochen', 'brennan_abwerben'],
-    gemeinschaft: ['pickett_pleite', 'tilly_tank', 'gemeinschaft_abgesprungen'],
-    erkundung: ['geruecht_fund', 'dok_hale_gutachten', 'dok_pike_urkunde'],
-  };
-
-  it('jeder Brief aus der Tabelle hängt an einem Merkzeichen aus Jacobs Plänen', () => {
-    for (const [plan_, ids] of Object.entries(KOPPLUNG)) for (const id of ids) expect(gekoppelt.has(id), `${plan_}: ${id}`).toBe(true);
+    for (const id of WEICHEN) expect(ids.has(id), id).toBe(true);
+    const gestrichen = ['panne_meissel', 'trupp_lohn', 'fieber', 'bezirk_steuer', 'diebe_tank', 'geruecht_fund', 'haendler_mahnung', 'nora_entlarvt', 'thorne_nachgezaehlt', 'thorne_exklusiv_billiger', 'gemeinschaft_abgesprungen', 'kartell_verdacht', 'brennan_abwerben', 'dok_pike_urkunde', 'dok_hale_gutachten', 'post_kurier'];
+    const alle = new Set(katalog.map((e) => e.id));
+    for (const id of gestrichen) expect(alle.has(id), id).toBe(false);
   });
 
-  it('direkt gekoppelte Briefe nennen ein Plan-Merkzeichen in marked', () => {
-    for (const e of k1.filter((x) => gekoppelt.has(x.id) && x.id !== 'nora_artikel')) expect(e.marked.some((m) => plan.has(m)), e.id).toBe(true);
-    // Noras Artikel hängt über die Kette: nora_interview setzt nur der gekoppelte Brief „Nora will ein Gespräch“.
-    expect(k1.find((e) => e.id === 'nora_artikel')!.marked).toEqual(['nora_interview']);
+  it('an Jacobs Plänen hängen nur noch Thornes Frachtvertrag und die Wegerechte der Pipeline', () => {
+    const gekoppelt = [...coupledEvents(katalog)].filter((id) => k1.some((e) => e.id === id));
+    for (const id of gekoppelt) expect(id === 'thorne_frachtvertrag' || id.startsWith('wegerecht_'), id).toBe(true);
+    expect(planMarks()).toContain(LETTER_MARKS.explored);
   });
 
-  it('ohne Pläne kommt keiner davon: Jacob tut 20 Partien lang nichts', () => {
-    const direkt = new Set(Object.values(KOPPLUNG).flat());
-    for (let i = 0; i < 20; i++) {
-      let s = newGame(`ohne-plaene-${i}`, balance, katalog);
-      while (!s.finished) s = endRound(s, balance, katalog);
-      expect(s.events.seen.filter((id) => direkt.has(id)), `Seed ${i}`).toEqual([]);
-    }
-  });
-
-  it('ein Plan-Merkzeichen allein reicht: mit „erkundet“ kann der Bohrmeister schreiben', () => {
-    const brief = katalog.find((e) => e.id === 'geruecht_fund')!;
-    let s = mitMarken(spiel('erkundet', { round: 3 }), { [LETTER_MARKS.explored]: 2 });
-    let kam = false;
-    for (let r = 3; r < 12 && !kam; r++) {
-      s = drawMail({ ...s, round: r }, balance, [brief]);
-      kam = s.events.pending.includes('geruecht_fund');
-    }
-    expect(kam).toBe(true);
-  });
-});
-
-describe('Gruppen: höchstens einmal in 4 Runden (Plan Etappe 3)', () => {
-  it('die Gruppen in Kapitel 1 halten 4 Runden Abstand – Trupp, Tank, Thomas', () => {
-    const gruppen = new Map<string, EventDef[]>();
-    for (const e of k1) if (e.group) gruppen.set(e.group, [...(gruppen.get(e.group) ?? []), e]);
-    expect([...gruppen.keys()].sort()).toEqual(['tank', 'thomas', 'trupp']);
-    for (const [name, liste] of gruppen) {
-      expect(liste.length, name).toBeGreaterThanOrEqual(2);
-      for (const e of liste) expect(cooldownOf(e, balance), e.id).toBe(4);
-    }
-  });
-
-  it('nach einer Variante kommt 4 Runden lang keine andere derselben Gruppe', () => {
+  it('Kapitel 1 hat keine Gruppen mehr; die Sperre wirkt weiter, wenn spätere Inhalte sie nutzen', () => {
+    expect(k1.filter((e) => e.group)).toEqual([]);
+    const t = (de: string) => ({ de, en: '' });
+    const variante = (id: string): EventDef => ({
+      id, title: t(id), text: t('Text'), conditions: {}, marked: [], notMarked: [], delay: 0, chance: 1, once: false, routine: false, appointments: 1, group: 'probe', cooldown: 4,
+      choices: [{ id: 'ja', label: t('ja'), result: t('ok'), requires: {}, effects: {}, default: true, marks: [] }],
+    });
     const viele: Balance = { ...balance, events: { ...balance.events, maxPerRound: 5 } };
-    const a: EventDef = { ...katalog.find((e) => e.id === 'blitz_tank')!, chance: 1, conditions: {} };
-    const b: EventDef = { ...katalog.find((e) => e.id === 'diebe_tank')!, chance: 1, conditions: {}, notMarked: [] };
-    let s = spiel('gruppe', { oilStock: 1000 });
+    const [a, b] = [variante('a'), variante('b')];
+    expect(cooldownOf(a, balance)).toBe(4);
+    let s = spiel('gruppe');
     const runden: number[] = [];
     for (let r = 1; r <= 10; r++) {
       s = drawEvents({ ...s, round: r, events: { ...s.events, pending: [] } }, viele, [a, b]);
-      if (s.events.lastSeen['@tank'] === r) runden.push(r);
+      if (s.events.lastSeen['@probe'] === r) runden.push(r);
     }
-    expect(runden).toEqual([1, 5]);
+    expect(runden).toEqual([1, 5, 9]);
   });
 
-  it('Inhaltsprüfung: Varianten einer Gruppe in Kapitel 1 brauchen denselben Abstand', () => {
+  it('Inhaltsprüfung: Varianten einer Gruppe brauchen denselben Abstand', () => {
     const datei = (id: string, cd: number) => `- id: ${id}\n  group: probe\n  cooldown: ${cd}\n  chance: 0.1\n  title: { de: "T", en: "" }\n  text: { de: "T", en: "" }\n  choices:\n    - id: ja\n      label: { de: "Ja", en: "" }\n      result: { de: "Ja", en: "" }\n`;
     const r = parseEventFiles([{ file: 'a.yaml', text: datei('eins', 4) + datei('zwei', 3) }]);
     expect(r.errors.map((e) => e.message).join(' ')).toMatch(/Gruppe „probe“: Alle Varianten brauchen denselben Abstand/);
@@ -127,19 +85,20 @@ describe('Gruppen: höchstens einmal in 4 Runden (Plan Etappe 3)', () => {
   });
 });
 
-describe('Kein Brief ohne Wirkung (Plan Etappe 3)', () => {
-  it('jede Antwort in Kapitel 1 kostet oder bringt ≥ 100 $, setzt ein Merkzeichen mit Folge oder bewegt eine Beziehung', () => {
+describe('Jede Weiche wirkt über die Runde hinaus (Weichen statt Alltagspost)', () => {
+  it('jede Antwort eines Kapitel-1-Ereignisses: Folge bis Kapitelende, Land, Turm, Merkzeichen mit Folge, Familie oder ≥ 500 $', () => {
     const read = loadReadMarks(katalog, balance);
     const later = loadLaterMarks();
     const ohne: string[] = [];
     for (const e of k1) {
       if (e.routine) continue;
-      // Briefe, die wiederkommen, bis Jacob antwortet (Wegerechte): „später“ verschiebt die Entscheidung nur.
+      // Wegerechte kommen wieder, bis Jacob antwortet: „später“ verschiebt die Entscheidung nur.
       const kommtWieder = !e.once && (e.certain === true || e.chance === 1);
       for (const c of e.choices) {
         const marken = [...c.marks, ...(c.marksIfForged ?? [])].filter((m) => read.has(m) || later.has(m));
         const familie = [c.effects.ruth, c.effects.thomas, c.effects.clara].some((x) => (x ?? 0) !== 0);
-        const wirkt = immediateImpact(c, balance) >= 100 || lastingValue(c, balance) >= 100 || marken.length > 0 || familie;
+        const bleibt = c.lasting === true || c.land !== undefined || c.rig !== undefined;
+        const wirkt = bleibt || immediateImpact(c, balance) >= 500 || lastingValue(c, balance) >= 500 || marken.length > 0 || familie;
         if (!wirkt && !(kommtWieder && c.default)) ohne.push(`${e.id}/${c.id}`);
       }
     }
@@ -291,14 +250,6 @@ describe('Plan-Merkzeichen am Rundenende (src/sim/letters.ts)', () => {
     expect(exclusiveSurcharge(nach, balance, 'rail')).toBe(0);
     const normal = mitMarken(s, { [RIVAL_MARKS.thorneContract]: 9, [RIVAL_MARKS.thorneExclusive]: 9 });
     expect(exclusiveSurcharge(normal, balance, 'wagon')).toBe(balance.transport.thorne.exclusivePenalty);
-  });
-
-  it('der Brief „Thorne hat nachgezählt“ lässt sich beantworten: Aufschlag abkaufen senkt den Tarif um 0,10 $', () => {
-    const s = mitMarken(spiel('nachgezaehlt', { round: 8, railTariff: 0.5 }), { thorne_bluff: 7 });
-    const mitBrief = { ...s, events: { ...s.events, pending: ['thorne_nachgezaehlt'], due: { thorne_nachgezaehlt: 9 } } };
-    const r = resolveEvent(mitBrief, balance, katalog, 'thorne_nachgezaehlt', 'abkaufen');
-    if (!r.ok) throw new Error(r.reason);
-    expect(r.state.railTariff).toBeCloseTo(0.4, 9);
   });
 
   it('ab Kapitel 2 setzt die Simulation keine Plan-Merkzeichen', () => {

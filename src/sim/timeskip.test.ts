@@ -570,7 +570,9 @@ describe('Kreditkrise und Bankenpanik (GDD §15)', () => {
     // 0.4.20+1: aus 40 statt 20 Kapitelenden – mit der guten ersten Startoption fördern die schwachen Firmen mehr.
     const foerderung = (e: GameState) => e.wells.reduce((s, w) => s + (w.status === 'found' ? (w.production?.lastRate ?? 0) : 0), 0);
     const ende = chapterEnds(krise, 40, catalog)
-      .filter((e) => e.wells.filter((w) => w.status === 'found').length >= 2)
+      // Weichen statt Alltagspost: nur Quellen, die wirklich fördern (eine Quelle der letzten Runde hat noch keine Rate,
+      // und ohne fördernde Quelle gibt es nichts zu verkaufen).
+      .filter((e) => e.wells.filter((w) => w.status === 'found' && (w.production?.lastRate ?? 0) > 0).length >= 2)
       .sort((a, b) => foerderung(a) - foerderung(b))[0];
     expect(ende).toBeDefined();
     const geliehen = takeLoan({ ...ende, finished: false }, krise, Math.floor(headroomOf(ende, krise) / 100) * 100);

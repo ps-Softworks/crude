@@ -80,11 +80,21 @@ describe('Gebiete (0.2.15+5)', () => {
     expect(fehler[1]).toMatch(/unlocks „atlantis“/);
   });
 
-  it('alle echten Ereignisse verweisen nur auf Figuren und Gebiete, die es gibt; Moss, Pruitt und Hale haben Ereignisse', () => {
+  it('alle echten Ereignisse verweisen nur auf Figuren und Gebiete, die es gibt; Moss und Pruitt haben Ereignisse', () => {
     const echte = loadEvents();
     expect(mapRefErrors(echte, balance.world)).toEqual([]);
+    // Spielspaß K1 (Weichen statt Alltagspost): Hales Gutachten ist gestrichen – die Hale-Ranch hat kein Ereignis mehr.
     const figuren = new Set(echte.map((e) => e.ranch).filter((r) => r !== undefined));
-    expect(figuren).toEqual(new Set(['moss', 'pruitt', 'hale']));
+    expect(figuren).toEqual(new Set(['moss', 'pruitt']));
+    // Moss' Farm geht über „land“ an Jacob.
+    expect(echte.flatMap((e) => e.choices).some((c) => c.land?.figure === 'moss')).toBe(true);
+  });
+
+  it('land mit unbekannter Figur ist ein Fehler', () => {
+    const t = (de: string) => ({ de, en: '' });
+    const e = { id: 'x', title: t('x'), text: t('x'), conditions: {}, marked: [], notMarked: [], delay: 0, chance: 1, once: true, routine: false, appointments: 1,
+      choices: [{ id: 'ja', label: t('ja'), result: t('ok'), requires: {}, effects: {}, default: true, marks: [], land: { figure: 'niemand' } }] };
+    expect(mapRefErrors([e], balance.world).join(' ')).toMatch(/land „niemand“ ist keine Figur/);
   });
 });
 

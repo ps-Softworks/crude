@@ -21,6 +21,7 @@ import { Rng, seedFromString, type RngState } from './rng';
 import { chapterOf } from './chapterOf'; // gemeinsamer Kapitel-Helfer aller Phase-4-Systeme (state.chapter, sonst 1)
 import { applySystemEffects, type SystemEffects } from './eventSystems';
 import { fillCash, scaleChoice } from './letterScale';
+import { giftRig, grantLand, roundsToChapterEnd, type LandGrant, type RigGift } from './weichen';
 
 /**
  * Bedingungen: jede ist eine Untergrenze (min…) oder Obergrenze (max…).
@@ -135,6 +136,12 @@ export interface EventChoice {
   system?: SystemEffects;
   /** Briefe mit Gewicht (Spielspaß-Durchgang): cash und minCash wachsen in Kapitel 1 nicht mit Jacobs Geschäft (letterScale.ts). */
   fixedCash?: boolean;
+  /** Weichen (Spielspaß-Durchgang, weichen.ts): befristete Wirkungen gelten bis Kapitelende. */
+  lasting?: boolean;
+  /** Weichen: Jacob bekommt die Pacht auf der Ranch einer Figur ohne Bonus. */
+  land?: LandGrant;
+  /** Weichen: Silas' Turm bekommt Dampfmaschine oder Stahlgestänge geschenkt. */
+  rig?: RigGift;
 }
 
 export interface EventDef {
@@ -695,7 +702,10 @@ function erledigen(state: GameState, event: EventDef, original: EventChoice, lan
   const bekannt = (choice.public ?? []).reduce(recordAct, offen);
   // Systemwirkungen (4.12) brauchen die Spielzahlen; ohne balance (alte Aufrufe, nur Kapitel 1) entfallen sie.
   const systemisch = balance ? applySystemEffects(bekannt, choice.system, balance, event.id, localize(event.title, lang)) : bekannt;
-  const nach = applyEffects(systemisch, choice.effects, event.id, timedRounds);
+  // Weichen: befristete Wirkungen bis Kapitelende, geschenktes Land, ein besserer Turm.
+  const wirkt = applyEffects(systemisch, choice.effects, event.id, choice.lasting ? roundsToChapterEnd(systemisch) : timedRounds);
+  const gepachtet = choice.land && balance ? grantLand(wirkt, balance, choice.land) : wirkt;
+  const nach = choice.rig ? giftRig(gepachtet, choice.rig) : gepachtet;
   const agenda = event.routine ? { ...nach.agenda, done: [...nach.agenda.done, event.id] } : nach.agenda;
   // Merkzeichen behalten die Runde, in der sie zuerst gesetzt wurden.
   const marks = { ...nach.events.marks };

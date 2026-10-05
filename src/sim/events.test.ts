@@ -316,7 +316,7 @@ describe('Ereignisse würfeln', () => {
   it('Zeitsprung: späte Kapitel-1-Merkzeichen (Runde 12) gelten in Kapitel 2 ab Runde 1 als gesetzt', () => {
     const k2 = loadEvents().filter((e) => e.id.startsWith('k2_'));
     const start = { ...newGame('k2-spaet', balance), chapter: 2 };
-    const spaet = { ...start.events, marks: { silas_fair: 12, ruth_vertroestet: 12, nora_bestechung: 14 } };
+    const spaet = { ...start.events, marks: { silas_fair: 12, ruth_vertroestet: 12, courier_gekauft: 14 } };
     // Ohne Übertrag zählte delay ab Kapitel-1-Runde 12 – die Szenen kämen erst spät oder nie.
     const ohne = drawEvents({ ...start, round: 4, events: spaet }, balance, k2).events.pending;
     expect(ohne).not.toContain('k2_silas_rat');
@@ -330,7 +330,7 @@ describe('Ereignisse würfeln', () => {
     expect(mit).toContain('k2_ruth_datum_familie');
     expect(mit).not.toContain('k2_ruth_wunsch_familie');
     expect(mit).not.toContain('k2_silas_rat');
-    expect(drawEvents({ ...start, round: 2, events: uebertragen }, balance, k2).events.pending).toContain('k2_nora_absatz');
+    expect(drawEvents({ ...start, round: 2, events: uebertragen }, balance, k2).events.pending).toContain('k2_nora_ausschnitt');
   });
 
   it('Chance 0 kommt nie, gleicher Seed würfelt gleich', () => {
@@ -524,7 +524,8 @@ describe('Nachwirkung: Merkzeichen (2.2)', () => {
 
 describe('die Probe-Ereignisse für Kapitel 1 aus content/events/', () => {
   const katalog = loadEvents();
-  const ANLAESSE = ['moss_schulden', 'nora_brand', 'ruth_buecher', 'silas_schnaps', 'vale_umschlag'];
+  // Spielspaß K1 (Weichen statt Alltagspost): Nora am Brand, Ruths Quittungen und das gerissene Seil sind gestrichen.
+  const ANLAESSE = ['moss_schulden', 'nora_interview', 'silas_abrechnung', 'bullard_saloon', 'vale_umschlag'];
 
   /** Runde um Runde würfeln, ohne zu antworten (Standard-Wahl), in einer Lage, in der fast alles geht. */
   function lauf(seed: string, cash: number): GameState {
@@ -540,34 +541,37 @@ describe('die Probe-Ereignisse für Kapitel 1 aus content/events/', () => {
     for (const id of ANLAESSE) expect(gesehen).toContain(id);
   });
 
-  it('Moss: fair geholfen bringt später den Dank, betrogen den Zaun – nie beides', () => {
-    let state: GameState = { ...newGame('moss', balance, katalog), round: 4, cash: 3000, events: { ...newGame('moss', balance).events, pending: ['moss_schulden'] } };
+  it('Moss: fair geholfen gibt die Farm zur Pacht, betrogen ohne Förderzins, abgewiesen kommt die Versteigerung', () => {
+    // Spielspaß K1 (Weichen statt Alltagspost): Dank und Zaun sind gestrichen – die Folge steht an der Antwort (land).
+    const state: GameState = { ...newGame('moss', balance, katalog), round: 4, cash: 3000, events: { ...newGame('moss', balance).events, pending: ['moss_schulden'] } };
     const fair = resolveEvent(state, balance, katalog, 'moss_schulden', 'leihen');
     const betrug = resolveEvent(state, balance, katalog, 'moss_schulden', 'papier');
-    if (!fair.ok || !betrug.ok) throw new Error('Wahl ging nicht');
+    const ab = resolveEvent(state, balance, katalog, 'moss_schulden', 'ablehnen');
+    if (!fair.ok || !betrug.ok || !ab.ok) throw new Error('Wahl ging nicht');
     // Briefe mit Gewicht: Moss' Hypothek ist ein fester Betrag (fixedCash, 2.500 $).
     expect(fair.state.cash).toBe(500);
     expect(fair.state.events.marks).toEqual({ moss_fair: 4 });
     expect(betrug.state.events.marks).toEqual({ moss_betrogen: 4, moss_feind: 4 });
+    const farm = state.parcels.find((p) => p.figure === 'moss')!;
+    expect(fair.state.leases.find((l) => l.parcelId === farm.id)).toMatchObject({ holder: 'jacob', bonus: 0, royalty: 0.0625 });
+    expect(betrug.state.leases.find((l) => l.parcelId === farm.id)).toMatchObject({ holder: 'jacob', bonus: 0, royalty: 0 });
     const moss = katalog.filter((e) => e.id.startsWith('moss_'));
     const kommt = (s: GameState, round: number) =>
       moss.filter((e) => e.id !== 'moss_schulden' && conditionsMet({ ...s, round }, e.conditions) && marksMet({ ...s, round }, e)).map((e) => e.id);
-    expect(kommt(betrug.state, 5)).toEqual([]);
-    expect(kommt(betrug.state, 6)).toEqual(['moss_wagenweg']);
-    expect(kommt(fair.state, 6)).toEqual([]);
-    expect(kommt(fair.state, 7)).toEqual(['moss_dank']);
-    state = { ...betrug.state, round: 6, oilStock: 500, cash: 0, events: { ...betrug.state.events, pending: ['moss_wagenweg'] } };
-    expect(autoResolve(state, katalog).oilStock).toBe(300);
+    expect(kommt(betrug.state, 8)).toEqual([]);
+    expect(kommt(fair.state, 8)).toEqual([]);
+    expect(kommt(ab.state, 5)).toEqual([]);
+    expect(kommt(ab.state, 6)).toEqual(['moss_versteigerung']);
   });
 
   it('Vale kommt nur bei knapper Kasse, und ohne Antwort behält Jacob das Geld', () => {
     const vale = katalog.find((e) => e.id === 'vale_umschlag')!;
     const state = { ...newGame('vale', balance), round: 3 };
-    expect(conditionsMet({ ...state, cash: 400 }, vale.conditions)).toBe(true);
-    expect(conditionsMet({ ...state, cash: 401 }, vale.conditions)).toBe(false);
+    expect(conditionsMet({ ...state, cash: 500 }, vale.conditions)).toBe(true);
+    expect(conditionsMet({ ...state, cash: 501 }, vale.conditions)).toBe(false);
     const nach = autoResolve({ ...state, cash: 100, events: { ...state.events, pending: ['vale_umschlag'] } }, katalog);
-    // Briefe mit Gewicht: ohne Erlös (Faktor 1) liegen 800 $ im Umschlag.
-    expect(nach.cash).toBe(900);
+    // Spielspaß K1: Vales Umschlag rettet wirklich – 1.500 $ fest (fixedCash).
+    expect(nach.cash).toBe(1600);
     expect(nach.events.marks).toEqual({ vale_geld: 3 });
   });
 });

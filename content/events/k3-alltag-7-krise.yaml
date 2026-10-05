@@ -263,50 +263,6 @@
       effects: { production: -0.15, reputation: { workers: -5 } }
       marks: [k3_raedelsfuehrer_entlassen]
 
-- id: k3_eli_werkstor
-  marked: [eli_waechter]
-  delay: 0
-  chance: 0.3
-  conditions: { minChapter: 3, maxChapter: 3 }
-  title:
-    de: Eli Ward will nicht schießen lassen
-    en: Eli Ward Won't Have Them Shoot
-  text:
-    de: >-
-      Eli Ward, der vor zwanzig Jahren nachts mit der Laterne am Tank saß, ist jetzt
-      Sicherheitschef und hinkt noch immer. Vor dem Werkstor stehen dreihundert Männer
-      und verlangen den Achtstundentag. Der Werkleiter will die Wachleute mit Gewehren
-      aufstellen. Eli steht in Jacobs Tür. „Ich pass auf Ihre Tanks auf, Mr. Harlan.
-      Auf Männer schieß ich nicht.“
-    en: >-
-      Eli Ward, who sat by the tank at night with a lantern twenty years ago, is now head
-      of security and still limps. Three hundred men stand before the works gate
-      demanding the eight-hour day. The works manager wants the guards lined up with
-      rifles. Eli stands in Jacob's doorway. "I mind your tanks, Mr. Harlan. I don't
-      shoot at men."
-  choices:
-    - id: reden
-      label: { de: "Selbst ans Tor gehen und reden (2 Termine)", en: "Go to the gate himself and talk (2 appointments)" }
-      result:
-        de: Jacob steht eine Stunde im Regen vor den Männern. Er verspricht nichts außer einer Antwort in einem Monat. Sie gehen nach Hause. Eli steht die ganze Zeit neben ihm, ohne Gewehr.
-        en: Jacob stands an hour in the rain before the men. He promises nothing but an answer within a month. They go home. Eli stands beside him the whole time, unarmed.
-      effects: { strength: -15, production: -0.05, reputation: { workers: 3 }, staffLoyalty: { fixer: 10 } }
-      appointments: 2
-    - id: gewehre
-      label: { de: "Die Wachleute aufstellen lassen – ohne Eli", en: "Have the guards lined up – without Eli" }
-      result:
-        de: Es fällt kein Schuss. Aber die Männer haben die Gewehre gesehen. Eli gibt am selben Abend seine Marke ab und geht. Er humpelt zum Hafen, wie vor zwanzig Jahren.
-        en: No shot is fired. But the men saw the rifles. Eli hands in his badge that evening and leaves. He limps to the harbour, as he did twenty years ago.
-      effects: { production: 0.05, strength: -10, reputation: { workers: -6 }, fire: fixer, heat: 1 }
-      default: true
-    - id: nachgeben
-      label: { de: "Den Achtstundentag für die Werke zugestehen (3.000 $)", en: "Grant the eight-hour day at the works (3,000 $)" }
-      result:
-        de: Die Männer jubeln, die Buchhalter nicht. Margaret Crane schreibt, Jacob habe einen Präzedenzfall geschaffen. Es klingt nicht wie ein Vorwurf. Eher wie Neid.
-        en: The men cheer, the bookkeepers don't. Margaret Crane writes that Jacob has set a precedent. It doesn't sound like a reproach. More like envy.
-      requires: { minCash: 3000 }
-      effects: { cash: -3000, production: -0.1, reputation: { workers: 6 }, sharePrice: -0.03 }
-
 - id: k3_witwe_okara
   title:
     de: Eine Witwe vom Nordhang

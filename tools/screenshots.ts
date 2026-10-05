@@ -91,8 +91,16 @@ const start = newGame('stil-0', balance, events);
 const mitte = suche((s) => s.round === 6 && s.wells.length > 0, [6]);
 const spaet = suche((s) => s.round === 12 && s.wells.some((w) => w.status === 'found'), [12]);
 const besuch = suche(mitBesuch, [3, 4, 5, 6, 7, 8]);
-const szene = suche(mitSzene, [2, 3, 4, 5, 6, 7, 8, 9]);
-const dokument = suche(mitDokument, [3, 4, 5, 6, 7, 8, 9, 10]);
+// Weichen statt Alltagspost (0.4.20+6): Kapitel 1 hat keine Dokumente und kaum noch Szenen – fehlt so ein Stand, entfällt das Bild.
+const vielleicht = (f: () => GameState): GameState | null => {
+  try {
+    return f();
+  } catch {
+    return null;
+  }
+};
+const szene = vielleicht(() => suche(mitSzene, [2, 3, 4, 5, 6, 7, 8, 9]));
+const dokument = vielleicht(() => suche(mitDokument, [3, 4, 5, 6, 7, 8, 9, 10]));
 const kapitel = suche((s) => s.ending === 'kapitel');
 let bankrott: GameState | null = null;
 try {
@@ -203,12 +211,12 @@ const bilder: Bild[] = [
   { name: '01-schreibtisch-start', state: start },
   { name: '02-schreibtisch-mitte', state: mitte },
   { name: '03-schreibtisch-spaet', state: spaet },
-  { name: '04-post-dokument', state: dokument, tasten: ['b'], dann: DOKUMENT_VORN },
+  ...(dokument ? [{ name: '04-post-dokument', state: dokument, tasten: ['b'], dann: DOKUMENT_VORN }] : []),
   { name: '05-fracht-wege', state: mitte, prefs: { 'crude.reiter.fracht': 'wege' }, tasten: ['f'] },
   { name: '06-kassenbuch', state: mitte, tasten: ['g'] },
   { name: '07-karte-ranch', state: mitte, tasten: ['k'], dann: JACOBS_RANCH, warte: 900 },
   { name: '08-besuch', state: besuch, tasten: ['w'], warte: 700 },
-  { name: '09-szene', state: szene, gesehen: ['zeitung'], warte: 1400 },
+  ...(szene ? [{ name: '09-szene', state: szene, gesehen: ['zeitung'], warte: 1400 }] : []),
   { name: '10-zeitung', state: mitte, prefs: { 'crude.zeitung': 'an' }, gesehen: [], warte: 500 },
   { name: '11-glocke', state: mitte, tasten: ['e'] },
   { name: '12-rundgang', state: start, prefs: { 'crude.rundgang': 'nein' }, warte: 1200 },
