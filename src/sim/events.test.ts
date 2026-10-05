@@ -541,11 +541,12 @@ describe('die Probe-Ereignisse für Kapitel 1 aus content/events/', () => {
   });
 
   it('Moss: fair geholfen bringt später den Dank, betrogen den Zaun – nie beides', () => {
-    let state: GameState = { ...newGame('moss', balance, katalog), round: 4, cash: 1000, events: { ...newGame('moss', balance).events, pending: ['moss_schulden'] } };
+    let state: GameState = { ...newGame('moss', balance, katalog), round: 4, cash: 3000, events: { ...newGame('moss', balance).events, pending: ['moss_schulden'] } };
     const fair = resolveEvent(state, balance, katalog, 'moss_schulden', 'leihen');
     const betrug = resolveEvent(state, balance, katalog, 'moss_schulden', 'papier');
     if (!fair.ok || !betrug.ok) throw new Error('Wahl ging nicht');
-    expect(fair.state.cash).toBe(700);
+    // Briefe mit Gewicht: Moss' Hypothek ist ein fester Betrag (fixedCash, 2.500 $).
+    expect(fair.state.cash).toBe(500);
     expect(fair.state.events.marks).toEqual({ moss_fair: 4 });
     expect(betrug.state.events.marks).toEqual({ moss_betrogen: 4, moss_feind: 4 });
     const moss = katalog.filter((e) => e.id.startsWith('moss_'));
@@ -565,7 +566,8 @@ describe('die Probe-Ereignisse für Kapitel 1 aus content/events/', () => {
     expect(conditionsMet({ ...state, cash: 400 }, vale.conditions)).toBe(true);
     expect(conditionsMet({ ...state, cash: 401 }, vale.conditions)).toBe(false);
     const nach = autoResolve({ ...state, cash: 100, events: { ...state.events, pending: ['vale_umschlag'] } }, katalog);
-    expect(nach.cash).toBe(600);
+    // Briefe mit Gewicht: ohne Erlös (Faktor 1) liegen 800 $ im Umschlag.
+    expect(nach.cash).toBe(900);
     expect(nach.events.marks).toEqual({ vale_geld: 3 });
   });
 });

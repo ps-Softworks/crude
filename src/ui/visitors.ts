@@ -3,8 +3,11 @@
 // Vollbild-Szene kommen („tableau: true“). Reine Zuordnung für die Darstellung –
 // was eine Antwort bewirkt, entscheidet weiter resolveEvent in src/sim.
 
+import type { Balance } from '../sim/balance';
 import type { EventDef } from '../sim/events';
+import type { GameState } from '../sim/game';
 import { localize } from '../sim/i18n';
+import { fillCash } from '../sim/letterScale';
 import type { FigureCatalog } from './figures';
 import type { Appearance } from './inbox';
 
@@ -34,10 +37,16 @@ export function visitorErrors(catalog: readonly EventDef[], figures: FigureCatal
   return fehler;
 }
 
-/** Der Nachsatz nach einer Antwort: der „result“-Text der gewählten Wahl. */
-export function resultText(catalog: readonly EventDef[], eventId: string, choiceId: string): string | null {
-  const choice = catalog.find((e) => e.id === eventId)?.choices.find((c) => c.id === choiceId);
-  return choice ? localize(choice.result) : null;
+/**
+ * Der Nachsatz nach einer Antwort: der „result“-Text der gewählten Wahl. Mit dem Stand vor der Antwort
+ * stehen statt {cash} die Beträge, die die Simulation gerechnet hat (src/sim/letterScale.ts).
+ */
+export function resultText(catalog: readonly EventDef[], eventId: string, choiceId: string, before?: GameState, balance?: Balance): string | null {
+  const event = catalog.find((e) => e.id === eventId);
+  const choice = event?.choices.find((c) => c.id === choiceId);
+  if (!event || !choice) return null;
+  const text = localize(choice.result);
+  return before ? fillCash(text, before, balance, event, choice, 'de') : text;
 }
 
 /** „Silas wartet“, „Silas und 2 weitere warten“ – für die Plakette an der Tür. */

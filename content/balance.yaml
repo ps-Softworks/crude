@@ -733,7 +733,7 @@ bots:
     wildcatHit: { min: 0.05, max: 0.25 }      # blinde Wildcat-Bohrung in Randlage auf 300 m (GDD §15: 1 von 5 bis 1 von 10)
     appointments: { min: 4.5, max: 5 }        # Ø Termine je Runde des Standard-Bots (GDD §15: 5 je Quartal)
     routeShare: { min: 0, max: 0.75 }         # 0.2.15+4: höchster Anteil eines Transportwegs an allen verkauften Barrel – kein Weg dominiert
-    pipelineSuccess: { min: 0, max: 0.80 }    # 0.4.20+1: 0,70 → 0,80 – mit der guten ersten Startoption und dem höheren Kapitelziel sind die erfolgreichen Partien noch mehr die großen Förderer (gemessen 77,4 %); ohne Pipeline schaffen es weiter etwa 15 % aller Partien (vorher 17 %). 0.2.15+4: Anteil der Partien mit Kapitelziel (planende Bots), in denen eine Pipeline läuft; Etappe 1: 0,60 → 0,65 – mit verdeckter Geologie schaffen weniger Partien das Ziel, und die erfolgreichen sind die großen Förderer, bei denen sich die Pipeline lohnt (über alle Partien läuft sie seltener als vorher); Etappe 3: 0,65 → 0,70 – weniger Briefe kosten weniger Geld und Termine, der Standard-Bot baut in erfolgreichen Partien öfter die Pipeline (39 → 53 %), kein Weg dominiert (routeShare um 0,40)
+    pipelineSuccess: { min: 0, max: 0.85 }    # Briefe mit Gewicht: 0,80 → 0,85 – späte Briefe kosten jetzt Geld im Verhältnis zum Geschäft; wer ohne Pipeline knapp am Ziel war, verfehlt es öfter (gemessen 81,2 %, vorher 77,4 %; endgültige Balance steht noch aus). 0.4.20+1: 0,70 → 0,80 – mit der guten ersten Startoption und dem höheren Kapitelziel sind die erfolgreichen Partien noch mehr die großen Förderer (gemessen 77,4 %); ohne Pipeline schaffen es weiter etwa 15 % aller Partien (vorher 17 %). 0.2.15+4: Anteil der Partien mit Kapitelziel (planende Bots), in denen eine Pipeline läuft; Etappe 1: 0,60 → 0,65 – mit verdeckter Geologie schaffen weniger Partien das Ziel, und die erfolgreichen sind die großen Förderer, bei denen sich die Pipeline lohnt (über alle Partien läuft sie seltener als vorher); Etappe 3: 0,65 → 0,70 – weniger Briefe kosten weniger Geld und Termine, der Standard-Bot baut in erfolgreichen Partien öfter die Pipeline (39 → 53 %), kein Weg dominiert (routeShare um 0,40)
     # 0.2.15+8 Ausbau: Gute Quellen lohnen den Ausbau, aber „alles ausbauen“ ist keine Siegformel.
     expandedShare: { min: 0.05, max: 0.7 }    # Anteil der Ranches mit Fund (planende Bots) mit Pumpe oder weiterem Bohrloch
     investGain: { min: 1.02, max: 10 }        # Ø Imperium ausgewogen ÷ derselbe Bot ohne Ausbau (Investieren zahlt sich aus)
@@ -988,14 +988,26 @@ events:
   # Runden, die Antwortrunde mitgezählt. Dieselbe Wirkung aus demselben Ereignis zählt nur einmal.
   timedRounds: 4           # PLATZHALTER
   # Prüfung schwacher Antworten (0.2.15+3, npm run check:events): Eine Antwort ist spürbar, wenn sie
-  # mindestens minShare × chapterMoney wert ist (hier 200 $), eine dauerhafte Wirkung hat (Tarif,
+  # mindestens minShare × chapterMoney wert ist (Kapitel 1: 600 $; Ereignisse späterer Kapitel × laterChapterMoney: 200 $),
+  # eine dauerhafte Wirkung hat (Tarif,
   # Fuhrwerke, Preis, Förderung, Pacht) oder ein Merkzeichen setzt, das später etwas abfragt.
   # Kraft und Familie zählen mit den Gewichten des Standard-Bots (bots.events.balanced), Öl zum Trendpreis.
   relevance:
-    chapterMoney: 10000    # typisches Geld eines Kapitels: Startkasse 2.500 $, Kapitelziel 50.000 $ – grob die Kasse zur Mitte
-    minShare: 0.02         # 2 % davon = 200 $
-    refBarrels: 5000       # typischer Verkauf je Runde (eine kleine Quelle zur Kapitelmitte)
+    chapterMoney: 60000    # Briefe mit Gewicht: typisches Imperium zur Mitte von Kapitel 1 (Median Runde 6–11 ≈ 63.000 $, tools/briefGewicht.ts) – 1 % = 600 $
+    laterChapterMoney: 20000  # Kapitel 2/3 wie bisher (1 % = 200 $), bis sie eigene Balance haben
+    minShare: 0.01         # 1 % davon (Kapitel 1: 600 $, spätere Kapitel 200 $) – Ziel „Briefe mit Gewicht“: ein normaler Brief bewegt 1–3 % des Imperiums
+    refBarrels: 9000       # typische Förderung je Runde zur Kapitelmitte (Briefe mit Gewicht: Median Runde 6–11 des Standard-Bots ≈ 9.000 bbl; vorher 5.000)
     refLeaseSpend: 1500    # typischer Pachtbonus in timedRounds Runden
+    letterScale: 5         # Briefe mit Gewicht: In Kapitel 1 zählen Geld (ohne fixedCash), Kraft und Familie × 5 – typischer Faktor events.scale zur Kapitelmitte (tools/briefGewicht.ts)
+  # Briefe mit Gewicht (Spielspaß-Durchgang, src/sim/letterScale.ts): Nur in Kapitel 1 wachsen die
+  # Geldbeträge der Ereignis-Antworten (cash, auch die Geldbedingung minCash der Antwort) mit Jacobs
+  # Geschäft. Faktor = Erlös je Runde ÷ ref, mindestens 1, höchstens max. Erlös je Runde = was Jacobs
+  # Quellen in der letzten Runde gefördert haben (ohne Förderzins-Öl) × Ø Posted Price der letzten
+  # rounds Runden. Ausnahme: fixedCash: true an der Antwort (echte feste Preise, Kredite mit Rückzahlung).
+  scale:
+    ref: 1500              # PLATZHALTER: bis 1.500 $ Erlös je Runde bleiben die Beträge wie geschrieben
+    max: 8                 # PLATZHALTER: höchster Faktor (mit 4 bliebe ein normaler Brief am Kapitelende bei ~0,5 % des Imperiums)
+    rounds: 3              # Posted Price über 3 Runden gemittelt
 
 # Gekoppelte Briefe (Termine als Hauptwerkzeug, Etappe 3, src/sim/letters.ts): Viele Briefe in Kapitel 1
 # kommen nur noch als Antwort auf Jacobs Pläne (Ritt, Besuch bei Thorne, Gerücht, Förderbremse …).

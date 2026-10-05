@@ -175,6 +175,7 @@
         de: Jacob bringt 120 $ und Blasen an beiden Händen nach Hause.
         en: Jacob brings home 120 $ and blisters on both hands.
       effects: { cash: 120, strength: -3 }
+      fixedCash: true
 
 - id: termin_rundgang
   routine: true

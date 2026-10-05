@@ -11,7 +11,14 @@ Kurzreferenz der Felder:
   `routine`, `appointments`, `mail`, `deadline`, `document`, `certain`, `rival`, `cooldown`, `group`,
   `draft`, `ranch`, `visitor`, `tableau`, `choices`
 - Wahl: `id`, `label`, `result`, `requires`, `effects`, `marks`, `default`, `appointments`,
-  `requiresFound`, `marksIfForged`, `sharp`, `unlocks`
+  `requiresFound`, `marksIfForged`, `sharp`, `unlocks`, `public`, `fixedCash`
+- Briefe mit Gewicht (Spielspaß-Durchgang, nur Kapitel 1): `cash` und die Geldbedingung `minCash` einer Antwort
+  wachsen mit Jacobs Geschäft – Faktor = Erlös je Runde ÷ `events.scale.ref` (1 bis `events.scale.max`, Regel in
+  `src/sim/letterScale.ts`). Darum steht der Betrag nicht fest im Text, sondern als Platzhalter: `{cash}` in `label`
+  und `result` einer Antwort, `{cash:wahl}` im `text` des Ereignisses (Betrag der Antwort `wahl`). Das Spiel setzt
+  den echten Betrag ein („1.250 $“). `fixedCash: true` an der Antwort hält den Betrag fest – nur für echte feste
+  Preise: Kredite mit Rückzahlung (Bank, Rourke, Bullard, Moss' Hypothek), Tausch Öl gegen Geld, Wegerechte der
+  Pipeline (gehören zur Pipeline-Rechnung), Lohnbohren. `npm run check:content` meldet Platzhalter ohne `cash`.
 - Karte (0.2.15+5): `ranch: moss` sagt, um wessen Ranch es geht (Figuren unter `figures` in
   `content/map.yaml` – jede Figur bekommt dort eine echte Ranch). `unlocks: [hollins]` an einer Wahl
   schaltet ein gesperrtes Gebiet aus `content/map.yaml` frei; seine Ranches entstehen dann aus dem Seed.
@@ -139,7 +146,8 @@ Kurzreferenz der Felder:
 - Transport (0.2.15+2): `k1-9-transport.yaml` – Streik eigener Fuhrleute, Bestechung von Brennans Fuhrleuten (Etappe 3), Wegerechte für die
   Pipeline. Merkzeichen der Simulation: `fuhrleute_eigen`, `pipeline_geplant`, `pipeline_gebaut`, `haendler_kunde`.
 - Wirkung (0.2.15+3): `npm run check:events` (`-- --alle` für alle) bewertet jede Antwort und meldet
-  schwache: Wirkung unter 2 % des Kapitel-Gelds (balance.yaml `events.relevance`, 200 $), keine dauerhafte
+  schwache: Wirkung unter 1 % des Kapitel-Gelds (balance.yaml `events.relevance`: Kapitel 1 600 $ mit Geld, Kraft und
+  Familie × `letterScale`; spätere Kapitel 200 $), keine dauerhafte
   Folge, kein Merkzeichen, das später etwas abfragt. Eine einzelne schwache Antwort neben einer starken
   ist das „Gegenstück“ und erlaubt. Merkzeichen für spätere Kapitel: `content/relevance.yaml` (mit Grund).
   Neue Folgen früher folgenloser Merkzeichen: `kerrigan_zusammenbruch`, `wegerecht_moss_versoehnt`

@@ -28,7 +28,7 @@
   chance: 0.3
   choices:
     - id: zahlen
-      label: { de: "Den Aufschlag für die Saison zahlen (200 $)", en: "Pay the surcharge for the season (200 $)" }
+      label: { de: "Den Aufschlag für die Saison zahlen ({cash})", en: "Pay the surcharge for the season ({cash})" }
       result:
         de: Die Ochsen ziehen an. Der Sprecher tippt sich an den Hut.
         en: The oxen pull. The spokesman touches his hat.
@@ -36,7 +36,7 @@
       effects: { cash: -200 }
       appointments: 0
     - id: bohlen
-      label: { de: "Mit dem Trupp einen Bohlenweg legen (40 $ Holz)", en: "Lay a plank road with the crew (40 $ timber)" }
+      label: { de: "Mit dem Trupp einen Bohlenweg legen ({cash} Holz)", en: "Lay a plank road with the crew ({cash} timber)" }
       result:
         de: Zwei Tage im Schlamm, dann liegt ein Bohlenweg bis zur Straße. Die Fuhrleute haben keinen Grund mehr zu murren und fahren zum alten Preis.
         en: Two days in the mud, then a plank road runs to the highway. The teamsters have nothing left to grumble about and drive at the old price.
@@ -73,7 +73,7 @@
   chance: 0.04
   choices:
     - id: hochhandeln
-      label: { de: "Ihm für 300 $ ein Vorkaufsrecht geben", en: "Sell him a right of first refusal for 300 $" }
+      label: { de: "Ihm für {cash} ein Vorkaufsrecht geben", en: "Sell him a right of first refusal for {cash}" }
       result:
         de: "Ashcombe zahlt prompt. Drei Wochen später kauft er auch Bullards Nachbarpacht – seitdem verlangen die Farmer am Hügel mehr."
         en: "Ashcombe pays promptly. Three weeks later he buys Bullard's neighbouring lease too – since then the farmers on the hill have asked for more."
@@ -105,7 +105,7 @@
   chance: 0.05
   choices:
     - id: zahlen
-      label: { de: "Zahlen (200 $)", en: "Pay (200 $)" }
+      label: { de: "Zahlen ({cash})", en: "Pay ({cash})" }
       result:
         de: Der Kämmerer schickt eine Quittung mit Stempel. Es ist der schönste Stempel in Cordova.
         en: The treasurer sends a stamped receipt. It is the finest stamp in Cordova.
@@ -123,8 +123,8 @@
     - id: liegen
       label: { de: "Liegen lassen", en: "Let it lie" }
       result:
-        de: "Der Sheriff pfändet eine Dampfpumpe und versteigert sie an Bullard. Mit Gebühren kostet das 320 $."
-        en: "The sheriff seizes a steam pump and auctions it to Bullard. With fees that costs 320 $."
+        de: "Der Sheriff pfändet eine Dampfpumpe und versteigert sie an Bullard. Mit Gebühren kostet das {cash}."
+        en: "The sheriff seizes a steam pump and auctions it to Bullard. With fees that costs {cash}."
       effects: { cash: -320 }
       appointments: 0
       default: true
@@ -147,17 +147,17 @@
       Er habe gehört, dass Jacob übers Land reitet. Letzten Herbst habe er auf einer
       Ranch ganz in der Nähe eine Probebohrung gemacht, bevor seinem Geldgeber das
       Geld ausging. Die Bohrliste – Fuß für Fuß, Schicht für Schicht – gebe er für
-      150 $ ab. Sonst eben an Bullard.
+      {cash:kaufen} ab. Sonst eben an Bullard.
     en: >-
       A postcard from a driller who used to work for Silas: he hears Jacob has been
       riding the country. Last autumn he sank a test hole on a ranch close by,
       before his backer ran out of money. The log – foot by foot, layer by layer –
-      is his for 150 $. Otherwise Bullard gets it.
+      is his for {cash:kaufen}. Otherwise Bullard gets it.
   conditions: { minRound: 2 }
   chance: 0.3
   choices:
     - id: kaufen
-      label: { de: "Die Bohrliste kaufen (150 $)", en: "Buy the log (150 $)" }
+      label: { de: "Die Bohrliste kaufen ({cash})", en: "Buy the log ({cash})" }
       result:
         de: Die Bohrliste kommt mit der nächsten Post, in Wachstuch eingeschlagen. Ruth trägt die Ranch auf der Karte ein.
         en: The log arrives with the next post, wrapped in oilcloth. Ruth marks the ranch on the map.
@@ -200,6 +200,7 @@
         en: The dealer pays without haggling. That may have been the mistake.
       requires: { minOilStock: 400 }
       effects: { oilStock: -400, cash: 160 }
+      fixedCash: true
       appointments: 0
     - id: pruefen
       label: { de: "Selbst zum Hafen und die Tanks ansehen", en: "Go to the harbour and look at the tanks" }

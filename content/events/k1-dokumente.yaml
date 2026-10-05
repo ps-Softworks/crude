@@ -31,12 +31,12 @@
       Ein Landmakler namens Amos Pike schreibt aus dem Grand Hotel: Er habe gehört,
       dass Jacob übers Land reitet. Bevor ihm das Geld ausging, habe er auf einer
       Ranch ganz in der Nähe probebohren lassen. Die beglaubigte Bohrliste gebe er für
-      300 $ ab – „Sie verstehen, die Eile“. Ruth hat im Bezirksamt den Eintrag im
+      {cash:kaufen} ab – „Sie verstehen, die Eile“. Ruth hat im Bezirksamt den Eintrag im
       Bohrregister abgeschrieben.
     en: >-
       A land agent named Amos Pike writes from the Grand Hotel: he hears Jacob has been
       riding the country. Before his money ran out he had a test hole sunk on a ranch
-      close by. The certified log is Jacob's for 300 $ – "you understand, the hurry".
+      close by. The certified log is Jacob's for {cash:kaufen} – "you understand, the hurry".
       Ruth copied the entry in the county drilling register.
   chance: 0.35
   document:
@@ -64,7 +64,7 @@
         forged: { de: "gez. O. Marshall, Schreiber", en: "signed O. Marshall, clerk" }
   choices:
     - id: kaufen
-      label: { de: "Die Bohrliste kaufen (300 $)", en: "Buy the log (300 $)" }
+      label: { de: "Die Bohrliste kaufen ({cash})", en: "Buy the log ({cash})" }
       result:
         de: Pike zählt die Scheine zweimal, lüftet den Hut und ist mit dem Abendzug fort. Ruth sucht die Ranch auf der Karte.
         en: Pike counts the notes twice, tips his hat and is gone on the evening train. Ruth looks for the ranch on the map.
@@ -73,7 +73,7 @@
       marks: [pike_pacht_gekauft]
       marksIfForged: [pike_urkunde_falsch]
     - id: erpressen
-      label: { de: "Pike die Fälschung vorhalten – 250 $ fürs Schweigen", en: "Show Pike the forgery – 250 $ for silence" }
+      label: { de: "Pike die Fälschung vorhalten – {cash} fürs Schweigen", en: "Show Pike the forgery – {cash} for silence" }
       result:
         de: Pike wird weiß, dann zahlt er. Jacob hat jetzt Geld und einen Feind, der weiß, wo er wohnt.
         en: Pike goes white, then pays. Jacob now has money and an enemy who knows where he lives.
@@ -109,12 +109,12 @@
     de: >-
       Dr. Lucius Hale, „Geologe, ausgebildet in Hallstead“, hat gehört, dass Jacob
       übers Land reitet. Er habe eine Ranch in der Nähe begutachtet, „ohne jeden
-      Zweifel ein zweiter Salzdom“. Das Gutachten gebe er für 100 $ ab. Silas hat die
+      Zweifel ein zweiter Salzdom“. Das Gutachten gebe er für {cash:beteiligen} ab. Silas hat die
       Bohrliste der Nachbarbohrung besorgt.
     en: >-
       Dr. Lucius Hale, "geologist, trained in Hallstead", has heard Jacob is riding
       the country. He has surveyed a ranch nearby, "beyond any doubt a second salt
-      dome". The survey is Jacob's for 100 $. Silas got hold of the log of the
+      dome". The survey is Jacob's for {cash:beteiligen}. Silas got hold of the log of the
       neighbouring well.
   chance: 0.35
   document:
@@ -140,7 +140,7 @@
         value: { de: "Dr. L. Hale", en: "Dr. L. Hale" }
   choices:
     - id: beteiligen
-      label: { de: "Das Gutachten kaufen (100 $)", en: "Buy the survey (100 $)" }
+      label: { de: "Das Gutachten kaufen ({cash})", en: "Buy the survey ({cash})" }
       result:
         de: Hale schüttelt Jacob die Hand, lange und herzlich. Das Gutachten kommt in einem Umschlag mit Siegel.
         en: Hale shakes Jacob's hand, long and warmly. The survey comes in a sealed envelope.
@@ -154,7 +154,7 @@
         de: "Jacob schreibt die echten Zahlen an den Rand. Nora Whitlock hört davon und bringt eine kleine Meldung. Hale sucht seine Kunden jetzt woanders. Die Farmer am Hügel merken sich, wer Schwindler entlarvt."
         en: "Jacob writes the real figures in the margin. Nora Whitlock hears of it and runs a short item. Hale now looks for customers elsewhere. The farmers on the hill remember who unmasks swindlers."
       requiresFound: true
-      effects: { strength: 5, leaseCost: -0.15 }
+      effects: { strength: 8, leaseCost: -0.15 }
     - id: ablehnen
       label: { de: "Ablegen", en: "File it away" }
       result:

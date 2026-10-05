@@ -1073,18 +1073,34 @@ export interface EventsBalance {
   timedRounds: number;
   /** Prüfung schwacher Antworten (0.2.15+3, tools/ereignisWirkung.ts). */
   relevance: RelevanceBalance;
+  /** Spielspaß-Durchgang: Geld in Ereignis-Antworten wächst in Kapitel 1 mit Jacobs Geschäft (src/sim/letterScale.ts). */
+  scale: LetterScaleBalance;
+}
+
+/** Briefe mit Gewicht (Spielspaß-Durchgang, Kapitel 1): Faktor = Erlös je Runde ÷ ref, zwischen 1 und max. */
+export interface LetterScaleBalance {
+  /** Erlös je Runde in $, bis zu dem die Beträge so bleiben, wie sie in content/events stehen. */
+  ref: number;
+  /** Höchster Faktor. */
+  max: number;
+  /** Über so viele Runden wird der Posted Price gemittelt (glättet Preissprünge). */
+  rounds: number;
 }
 
 /** Ab wann eine Ereignis-Antwort als spürbar gilt (0.2.15+3). */
 export interface RelevanceBalance {
-  /** Typisches Geld eines Kapitels in $ – Bezugsgröße für die Schwelle. */
+  /** Typisches Geld in Kapitel 1 in $ – Bezugsgröße für die Schwelle. */
   chapterMoney: number;
+  /** Bezugsgröße für Ereignisse späterer Kapitel, bis Kapitel 2/3 eigene Balance haben. */
+  laterChapterMoney: number;
   /** Anteil davon, ab dem eine Wirkung spürbar ist (0,02 = 2 %). */
   minShare: number;
   /** Typische Barrel, die Jacob je Runde verkauft – um Preis, Förderung und Tarif in $ umzurechnen. */
   refBarrels: number;
   /** Typischer Pachtbonus in $, den Jacob in timedRounds Runden zahlt – für leaseCost. */
   refLeaseSpend: number;
+  /** Briefe mit Gewicht: typischer Faktor der Kapitel-1-Geldbeträge zur Kapitelmitte (events.scale, gemessen mit tools/briefGewicht.ts). */
+  letterScale: number;
 }
 
 /** Einfache Dokumentenprüfung (2.5, GDD §3). */
@@ -1150,6 +1166,18 @@ function positiveInt(obj: unknown, path: string): number {
   if (!Number.isInteger(value) || value < 1) {
     throw new BalanceError(`balance.yaml: "${path}" muss eine ganze Zahl ab 1 sein`);
   }
+  return value;
+}
+
+function positiveNumber(obj: unknown, path: string): number {
+  const value = num(obj, path);
+  if (!(value > 0)) throw new BalanceError(`balance.yaml: "${path}" muss größer als 0 sein`);
+  return value;
+}
+
+function atLeastOne(obj: unknown, path: string): number {
+  const value = num(obj, path);
+  if (!(value >= 1)) throw new BalanceError(`balance.yaml: "${path}" muss mindestens 1 sein`);
   return value;
 }
 
@@ -2001,9 +2029,16 @@ function parseEvents(raw: unknown): EventsBalance {
     timedRounds: positiveInt(raw, 'events.timedRounds'),
     relevance: {
       chapterMoney: nonNegative(raw, 'events.relevance.chapterMoney'),
+      laterChapterMoney: nonNegative(raw, 'events.relevance.laterChapterMoney'),
       minShare: share(raw, 'events.relevance.minShare'),
       refBarrels: nonNegative(raw, 'events.relevance.refBarrels'),
       refLeaseSpend: nonNegative(raw, 'events.relevance.refLeaseSpend'),
+      letterScale: atLeastOne(raw, 'events.relevance.letterScale'),
+    },
+    scale: {
+      ref: positiveNumber(raw, 'events.scale.ref'),
+      max: atLeastOne(raw, 'events.scale.max'),
+      rounds: positiveInt(raw, 'events.scale.rounds'),
     },
   };
 }

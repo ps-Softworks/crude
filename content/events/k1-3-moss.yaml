@@ -27,27 +27,28 @@
   text:
     de: >-
       Ezekiel Moss steht in Jacobs Bretterbude, den Hut in der Hand, und man sieht,
-      was ihn das kostet. Die Bank in Port Ellis will bis zum Winter 300 $, sonst
-      nimmt sie ihm die Farm. Er bietet an, alle künftigen Förderzinsen seines
+      was ihn das kostet. Die Bank in Port Ellis will bis zum Winter 2.500 $ für die
+      Hypothek, sonst nimmt sie ihm die Farm. Er bietet an, alle künftigen Förderzinsen seines
       Landes gegen Bargeld abzutreten. Lesen kann er das Papier nicht.
     en: >-
       Ezekiel Moss stands in Jacob's plank shack, hat in hand, and it plainly costs
-      him. The bank in Port Ellis wants 300 $ by winter or it takes his farm. He
+      him. The bank in Port Ellis wants 2,500 $ on the mortgage by winter or it takes his farm. He
       offers to sign over all future royalties from his land for cash. He cannot
       read the paper.
   conditions: { minRound: 5, maxChapter: 1 }
   certain: true
   choices:
     - id: leihen
-      label: { de: "Ihm 300 $ leihen, ohne Papier", en: "Lend him 300 $, no paper" }
+      label: { de: "Ihm 2.500 $ leihen, ohne Papier", en: "Lend him 2,500 $, no paper" }
       result:
         de: Moss zählt das Geld zweimal. „Gott sieht das“, sagt er – es klingt wie Dank und Drohung zugleich.
         en: Moss counts the money twice. "God sees this," he says – it sounds like thanks and threat at once.
-      requires: { minCash: 300 }
-      effects: { cash: -300 }
+      requires: { minCash: 2500 }
+      effects: { cash: -2500 }
+      fixedCash: true
       marks: [moss_fair]
     - id: papier
-      label: { de: "Ihm 100 $ für das ganze Papier geben", en: "Give him 100 $ for the whole paper" }
+      label: { de: "Ihm 800 $ für das ganze Papier geben", en: "Give him 800 $ for the whole paper" }
       result:
         de: >-
           Moss setzt sein Kreuz unter einen Vertrag, der dreimal so viel wert ist.
@@ -55,8 +56,9 @@
         en: >-
           Moss puts his cross under a contract worth three times as much. His boy
           Daniel stands in the doorway, watching.
-      requires: { minCash: 100 }
-      effects: { cash: -100 }
+      requires: { minCash: 800 }
+      effects: { cash: -800 }
+      fixedCash: true
       marks: [moss_betrogen, moss_feind]
     - id: ablehnen
       label: { de: "Ablehnen – Jacob ist keine Bank", en: "Refuse – Jacob is no bank" }
@@ -88,7 +90,7 @@
   conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   choices:
     - id: wegegeld
-      label: { de: "Wegegeld zahlen (150 $)", en: "Pay a toll (150 $)" }
+      label: { de: "Wegegeld zahlen ({cash})", en: "Pay a toll ({cash})" }
       result:
         de: Moss nimmt das Geld, ohne Jacob anzusehen. Der Zaun bleibt stehen, aber das Tor ist offen.
         en: Moss takes the money without looking at Jacob. The fence stays, but the gate is open.
@@ -112,12 +114,12 @@
     en: A Jar of Honey
   text:
     de: >-
-      Ezekiel Moss stellt ein Glas Honig auf Jacobs Tisch und legt 300 $ in
-      zerknitterten Scheinen daneben – die Baumwolle war gut dieses Jahr. Im Gehen
+      Ezekiel Moss stellt ein Glas Honig auf Jacobs Tisch und zählt die 2.500 $
+      in zerknitterten Scheinen daneben – die Baumwolle war gut dieses Jahr. Im Gehen
       sagt er leise, dass auf der Weide seines Nachbarn das Wasser nach Schwefel riecht.
     en: >-
-      Ezekiel Moss sets a jar of honey on Jacob's table and lays 300 $ in crumpled
-      bills beside it – the cotton was good this year. On his way out he says
+      Ezekiel Moss sets a jar of honey on Jacob's table and counts the 2,500 $ out
+      beside it in crumpled bills – the cotton was good this year. On his way out he says
       quietly that the water on his neighbour's pasture smells of sulphur.
   marked: [moss_fair]
   delay: 3
@@ -129,7 +131,8 @@
       result:
         de: Jacob nimmt das Geld. Moss nickt ihm zu wie einem Nachbarn.
         en: Jacob takes the money. Moss nods to him as to a neighbour.
-      effects: { cash: 300 }
+      effects: { cash: 2500 }
+      fixedCash: true
       default: true
     - id: behalten_lassen
       label: { de: "„Behalt es für Daniels Schule.“", en: "\"Keep it for Daniel's schooling.\"" }
@@ -161,7 +164,7 @@
   conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   choices:
     - id: doch_helfen
-      label: { de: "Moss die 300 $ doch noch geben", en: "Give Moss the 300 $ after all" }
+      label: { de: "Moss die 2.500 $ doch noch geben", en: "Give Moss the 2,500 $ after all" }
       result:
         de: >-
           Moss nimmt das Geld vor der Bank, vor allen Leuten. „Spät, aber nicht zu
@@ -169,11 +172,12 @@
         en: >-
           Moss takes the money outside the bank, in front of everyone. "Late, but not
           too late," he says. The notice comes down.
-      requires: { minCash: 300 }
-      effects: { cash: -300 }
+      requires: { minCash: 2500 }
+      effects: { cash: -2500 }
+      fixedCash: true
       marks: [moss_fair]
     - id: ersteigern
-      label: { de: "Die Farm selbst ersteigern (500 $)", en: "Buy the farm at auction yourself (500 $)" }
+      label: { de: "Die Farm selbst ersteigern ({cash})", en: "Buy the farm at auction yourself ({cash})" }
       result:
         de: >-
           Jacob bietet als Einziger. Am Abend lädt Ezekiel seine Habe auf einen
@@ -181,8 +185,8 @@
         en: >-
           Jacob is the only bidder. In the evening Ezekiel loads his belongings onto a
           wagon. At the gate Daniel turns once more and looks at Jacob for a long time.
-      requires: { minCash: 500 }
-      effects: { cash: -500 }
+      requires: { minCash: 1000 }
+      effects: { cash: -1000 }
       marks: [moss_vertrieben, moss_feind]
     - id: wegbleiben
       label: { de: "Nicht hingehen – es ist nicht Jacobs Sache", en: "Stay away – it is not Jacob's business" }
@@ -204,21 +208,21 @@
   text:
     de: >-
       Ein Herr aus Hallstead mit Spazierstock und Gamaschen will das Moss-Land
-      kaufen. Er bietet 900 $, bar, sofort. Er fragt nicht, wo die Familie hin ist.
+      kaufen. Er bietet {cash:verkaufen}, bar, sofort. Er fragt nicht, wo die Familie hin ist.
     en: >-
       A gentleman from Hallstead with a cane and spats wants to buy the Moss land.
-      He offers 900 $, cash, at once. He does not ask where the family went.
+      He offers {cash:verkaufen}, cash, at once. He does not ask where the family went.
   marked: [moss_vertrieben]
   delay: 2
   certain: true
   conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   choices:
     - id: verkaufen
-      label: { de: "Verkaufen (900 $)", en: "Sell (900 $)" }
+      label: { de: "Verkaufen ({cash})", en: "Sell ({cash})" }
       result:
         de: Der Herr zählt das Geld auf den Tisch und tippt sich an den Hut. Das Land ist weg, die Geschichte nicht.
         en: The gentleman counts the money onto the table and touches his hat. The land is gone, the story is not.
-      effects: { cash: 900 }
+      effects: { cash: 1400 }
       default: true
     - id: behalten
       label: { de: "Behalten – vielleicht liegt Öl darunter", en: "Keep it – there may be oil beneath" }
@@ -251,7 +255,7 @@
   certain: true
   choices:
     - id: fahrkarte
-      label: { de: "Ihm Fahrkarte und erstes Semester bezahlen (200 $)", en: "Pay for his ticket and first term (200 $)" }
+      label: { de: "Ihm Fahrkarte und erstes Semester bezahlen ({cash})", en: "Pay for his ticket and first term ({cash})" }
       result:
         de: "Daniel steckt die Karte und den Umschlag in die Innentasche, als wären sie aus Glas. „Ich vergesse das nicht, Mr. Harlan.“"
         en: "Daniel slips the ticket and the envelope into his breast pocket as if they were glass. \"I won't forget this, Mr. Harlan.\""

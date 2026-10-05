@@ -42,7 +42,7 @@
       earn more, he says – and they don't drive through Bullard's land every day.
   choices:
     - id: zahlen
-      label: { de: "Den Lohn aufbessern (200 $)", en: "Raise their pay (200 $)" }
+      label: { de: "Den Lohn aufbessern ({cash})", en: "Raise their pay ({cash})" }
       result:
         de: Die Peitschen knallen wieder. Der Vormann nickt Jacob zu, als wäre nichts gewesen.
         en: The whips crack again. The foreman nods to Jacob as if nothing had happened.
@@ -96,7 +96,7 @@
         en: Brennan runs the man off the yard. Until a new teamster is found, Jacob drives day and night himself, and a hired team costs extra.
       effects: { cash: -100, strength: -7 }
     - id: lohn
-      label: { de: "Brennans Leuten mehr zahlen, als Thorne bietet (200 $)", en: "Pay Brennan's men more than Thorne offers (200 $)" }
+      label: { de: "Brennans Leuten mehr zahlen, als Thorne bietet ({cash})", en: "Pay Brennan's men more than Thorne offers ({cash})" }
       result:
         de: Loyalität hat einen Preis, und Jacob hat ihn gezahlt. Die Fässer kommen wieder vollzählig an.
         en: Loyalty has a price, and Jacob has paid it. The barrels arrive in full again.
@@ -143,6 +143,7 @@
         en: Moss puts his cross on the paper. The pipe may pass.
       requires: { minCash: 300 }
       effects: { cash: -300 }
+      fixedCash: true
       marks: [wegerecht_moss]
     - id: spaeter
       label: { de: "Später wiederkommen", en: "Come back later" }
@@ -180,6 +181,7 @@
         en: Moss doesn't read the paper; he trusts Jacob. That weighs more than the money.
       requires: { minCash: 80 }
       effects: { cash: -80 }
+      fixedCash: true
       marks: [wegerecht_moss]
     - id: spaeter
       label: { de: "Noch warten", en: "Wait a while" }
@@ -220,6 +222,7 @@
         en: The contract comes back by post, signed by Ezekiel and witnessed by Daniel. The detour through the marsh is off the table.
       requires: { minCash: 300 }
       effects: { cash: -300 }
+      fixedCash: true
       marks: [wegerecht_moss]
     - id: spaeter
       label: { de: "Noch warten", en: "Wait a while" }
@@ -259,6 +262,7 @@
         en: Three marsh farmers are glad to sell. The route gets longer, but it stands.
       requires: { minCash: 900 }
       effects: { cash: -900 }
+      fixedCash: true
       marks: [wegerecht_moss]
     - id: abbitte
       label: { de: "Hingehen und Abbitte leisten (500 $)", en: "Go and make amends (500 $)" }
@@ -267,6 +271,7 @@
         en: It is the hardest walk of the year. In the end Daniel takes the money without shaking Jacob's hand.
       requires: { minCash: 500 }
       effects: { cash: -500, strength: -5 }
+      fixedCash: true
       marks: [wegerecht_moss, daniel_entschuldigung]
       appointments: 2
       sharp: true
@@ -310,6 +315,7 @@
         en: Mrs. Pruitt counts the money on the kitchen table. Thorne's agent arrives a day too late.
       requires: { minCash: 450 }
       effects: { cash: -450 }
+      fixedCash: true
       marks: [wegerecht_bahndamm]
     - id: besuchen
       label: { de: "Sie besuchen, Kuchen essen, zuhören (150 $)", en: "Visit her, eat cake, listen (150 $)" }
@@ -318,6 +324,7 @@
         en: Two hours about her late husband and the chickens. In the end she signs for little money.
       requires: { minCash: 150 }
       effects: { cash: -150 }
+      fixedCash: true
       marks: [wegerecht_bahndamm]
       appointments: 2
       sharp: true
@@ -353,7 +360,7 @@
       top it. Two hundred, and Thorne can whistle."
   choices:
     - id: drauflegen
-      label: { de: "Zweihundert drauflegen (200 $)", en: "Top it up (200 $)" }
+      label: { de: "Beim Lohn drauflegen ({cash})", en: "Top up the pay ({cash})" }
       result:
         de: Brennan zählt die Scheine und setzt den Hut wieder auf. Seine Wagen rollen weiter für Jacob.
         en: Brennan counts the notes and puts his hat back on. His wagons keep rolling for Jacob.
@@ -401,7 +408,7 @@
       marks: [gemeinschaft_zurueck]
       appointments: 2
     - id: zuschuss
-      label: { de: "Ihnen einen Frachtzuschuss bieten (150 $)", en: "Offer them a freight subsidy (150 $)" }
+      label: { de: "Ihnen einen Frachtzuschuss bieten ({cash})", en: "Offer them a freight subsidy ({cash})" }
       result:
         de: Geld redet leiser als Jacob, aber schneller. Sie verladen wieder mit ihm – vorerst.
         en: Money talks quieter than Jacob, but faster. They ship with him again – for now.

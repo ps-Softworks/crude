@@ -24,7 +24,7 @@
   chance: 0.5
   choices:
     - id: danken
-      label: { de: "Dem Beamten 20 $ als Dank schicken", en: "Send the clerk 20 $ as thanks" }
+      label: { de: "Dem Beamten {cash} als Dank schicken", en: "Send the clerk {cash} as thanks" }
       result:
         de: "Der Beamte schreibt zurück und lädt Jacobs Fässer noch zum alten Tarif – einen Cent billiger je Barrel."
         en: "The clerk writes back and loads Jacob's barrels at the old rate – one cent cheaper per barrel."
@@ -55,13 +55,13 @@
       Hafen redet man über das, was Jacob in Umlauf gebracht hat, und sie will
       wissen, was daran stimmt. Sie schreibt eine Reihe über „die neuen Männer vom
       Salt Hill“. Ob Jacob ihr erzählen wolle, woher er kommt. Redakteur Bixby lässt
-      ausrichten, ein freundlicher „Bericht“ auf Seite zwei koste 120 $.
+      ausrichten, ein freundlicher „Bericht“ auf Seite zwei koste {cash:bericht}.
     en: >-
       Nora Whitlock of the Port Ellis Courier has a notebook and no hurry. At the
       harbour they are talking about what Jacob put about, and she wants to know
       what's true in it. She's writing a series on "the new men of Salt Hill". Would
       Jacob tell her where he comes from? Editor Bixby sends word that a friendly
-      "report" on page two costs 120 $.
+      "report" on page two costs {cash:bericht}.
   notMarked: [nora_bestechung]
   chance: 0.5
   choices:
@@ -81,7 +81,7 @@
       marks: [nora_interview]
     - id: bericht
       public: [press_praise]
-      label: { de: "Lieber Bixby den Bericht abkaufen (120 $)", en: "Buy Bixby's report instead (120 $)" }
+      label: { de: "Lieber Bixby den Bericht abkaufen ({cash})", en: "Buy Bixby's report instead ({cash})" }
       result:
         de: "Auf Seite zwei steht, Jacob sei „ein Mann der Zukunft“. Nora Whitlock hat den Artikel ausgeschnitten und in ihr Notizbuch geklebt. Die Farmer am Hügel lesen ihn auch und verpachten an Jacob eine Weile billiger."
         en: "Page two says Jacob is \"a man of the future\". Nora Whitlock has clipped the article and pasted it into her notebook. The farmers on the hill read it too and for a while lease to Jacob cheaper."
@@ -115,7 +115,7 @@
   chance: 0.06
   choices:
     - id: wegschicken
-      label: { de: "Ruth und das Kind aufs Land schicken (200 $)", en: "Send Ruth and the child to the country (200 $)" }
+      label: { de: "Ruth und das Kind aufs Land schicken ({cash})", en: "Send Ruth and the child to the country ({cash})" }
       result:
         de: Ruth fährt mit einem Koffer und vielen Anweisungen. Die Pension ist still ohne sie. Jacob isst kalt.
         en: Ruth leaves with one trunk and many instructions. The boarding house is quiet without her. Jacob eats cold food.
@@ -230,7 +230,7 @@
   chance: 0.2
   choices:
     - id: stoff
-      label: { de: "Seide für ein Kleid aus Port Ellis kaufen (120 $)", en: "Buy silk for a dress from Port Ellis (120 $)" }
+      label: { de: "Seide für ein Kleid aus Port Ellis kaufen ({cash})", en: "Buy silk for a dress from Port Ellis ({cash})" }
       result:
         de: "Ruth hält die blaue Seide gegen das Licht. Sie sagt, sie sei zu teuer gewesen. Sie näht trotzdem noch am selben Abend."
         en: "Ruth holds the blue silk up to the light. She says it cost too much. She sews that same evening all the same."

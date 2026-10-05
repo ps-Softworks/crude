@@ -12,7 +12,10 @@ const balance = loadBalance();
 const events = loadEvents();
 const report = analyzeRelevance(events, loadReadMarks(events, balance), balance, loadLaterMarks());
 
-console.log(`Schwelle: ${report.threshold} $ (${balance.events.relevance.minShare * 100} % von ${balance.events.relevance.chapterMoney} $).`);
+const r = balance.events.relevance;
+console.log(
+  `Schwelle: Kapitel 1 ${report.threshold} $ (${r.minShare * 100} % von ${r.chapterMoney} $; Geld, Kraft und Familie × ${r.letterScale}), spätere Kapitel ${report.laterThreshold} $ (von ${r.laterChapterMoney} $).`,
+);
 if (alle) {
   let letztes = '';
   for (const c of report.choices) {

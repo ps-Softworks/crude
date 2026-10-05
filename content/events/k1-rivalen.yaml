@@ -61,7 +61,7 @@
       marks: [bullard_handschlag]
       appointments: 2
     - id: whisky
-      label: { de: "Höflich ablehnen und eine Runde für den ganzen Saloon ausgeben (100 $)", en: "Decline politely and buy the whole saloon a round (100 $)" }
+      label: { de: "Höflich ablehnen und eine Runde für den ganzen Saloon ausgeben ({cash})", en: "Decline politely and buy the whole saloon a round ({cash})" }
       result:
         de: Bullard trinkt, zuckt die Schultern. „Dann eben jeder für sich. Nichts für ungut.“ Der ganze Saloon trinkt auf Harlan.
         en: Bullard drinks and shrugs. "Every man for himself, then. No hard feelings." The whole saloon drinks to Harlan.
@@ -104,7 +104,7 @@
       something else." He won't forget it. The only question is what it costs Jacob now.
   choices:
     - id: entschaedigen
-      label: { de: "Ihn entschädigen (200 $)", en: "Compensate him (200 $)" }
+      label: { de: "Ihn entschädigen ({cash})", en: "Compensate him ({cash})" }
       result:
         de: Bullard steckt das Geld ein, ohne Jacob anzusehen. „Das ändert nichts. Aber es hält meine Jungs ruhig.“
         en: Bullard pockets the money without looking at Jacob. "Changes nothing. But it keeps my boys quiet."
@@ -115,11 +115,11 @@
       result:
         de: >-
           In der Nacht verschwinden Seile und ein Meißel von Jacobs Bohrstelle. Der
-          Sheriff zuckt die Schultern. Neues Werkzeug kostet 400 $ und eine schlaflose
+          Sheriff zuckt die Schultern. Neues Werkzeug kostet {cash} und eine schlaflose
           Woche. Bullard redet nicht mehr mit Jacob.
         en: >-
           That night rope and a bit vanish from Jacob's rig. The sheriff shrugs. New
-          tools cost 400 $ and a sleepless week. Bullard no longer speaks to Jacob.
+          tools cost {cash} and a sleepless week. Bullard no longer speaks to Jacob.
       effects: { cash: -400, strength: -5 }
       marks: [bullard_fehde]
       appointments: 0
@@ -137,20 +137,21 @@
   text:
     de: >-
       Ein Zettel in großer, ungelenker Schrift: „Harlan – meine Bank zickt, der
-      Bohrmeister will Lohn. Leih mir 500 $ bis zur nächsten Quelle. Du kriegst 650
-      zurück. Mein Wort drauf. J. B.“
+      Bohrmeister will Lohn und die Rohre sind nicht bezahlt. Leih mir 2.000 $ bis zur
+      nächsten Quelle. Du kriegst 2.600 zurück. Mein Wort drauf. J. B.“
     en: >-
-      A note in large, clumsy handwriting: "Harlan – my bank is being difficult and
-      the driller wants his wages. Lend me 500 $ till the next well. You'll get 650
-      back. My word on it. J. B."
+      A note in large, clumsy handwriting: "Harlan – my bank is being difficult, the
+      driller wants his wages and the pipe isn't paid for. Lend me 2,000 $ till the
+      next well. You'll get 2,600 back. My word on it. J. B."
   choices:
     - id: leihen
-      label: { de: "500 $ leihen", en: "Lend 500 $" }
+      label: { de: "2.000 $ leihen", en: "Lend 2,000 $" }
       result:
         de: Bullards Bote nimmt das Geld und tippt an den Hut.
         en: Bullard's messenger takes the money and touches his hat.
-      requires: { minCash: 500 }
-      effects: { cash: -500 }
+      requires: { minCash: 2000 }
+      effects: { cash: -2000 }
+      fixedCash: true
       marks: [bullard_schuld]
     - id: ablehnen
       label: { de: "Nicht antworten", en: "Don't reply" }
@@ -173,10 +174,10 @@
     en: Bullard Pays Back
   text:
     de: >-
-      Ein Umschlag mit 650 $ und einem Zettel: „Wie versprochen. Wenn du mal
+      Ein Umschlag mit 2.600 $ und einem Zettel: „Wie versprochen. Wenn du mal
       Hilfe brauchst, Harlan – du weißt, wo ich trinke.“
     en: >-
-      An envelope with 650 $ and a note: "As promised. If you ever need a hand,
+      An envelope with 2,600 $ and a note: "As promised. If you ever need a hand,
       Harlan – you know where I drink."
   choices:
     - id: nehmen
@@ -184,7 +185,8 @@
       result:
         de: Bullard hat Wort gehalten. In Port Ellis gibt es nicht viele, die das tun.
         en: Bullard kept his word. There aren't many in Port Ellis who do.
-      effects: { cash: 650 }
+      effects: { cash: 2600 }
+      fixedCash: true
       appointments: 0
       default: true
 
@@ -247,21 +249,21 @@
     de: >-
       Briefkopf der Thorne Rail & Trust Bank, Unterschrift von Augustus Thorne
       persönlich. Zwei Angebote für anderthalb Jahre: Gegen eine Bürgschaft von
-      150 $ friert die Bahn Mr. Harlans Tarif ein – sofern er sein Öl
+      {cash:unterschreiben} friert die Bahn Mr. Harlans Tarif ein – sofern er sein Öl
       ausschließlich der Bahn anvertraut. Oder Thorne gewährt einen Mengenrabatt,
       wenn Mr. Harlan jede Runde mindestens 5.000 Barrel verlädt; für jedes
       fehlende Barrel berechnet die Bahn 0,10 $. „Andernfalls“, so Thorne, „müssen wir uns die übliche Freiheit
       vorbehalten.“
     en: >-
       Letterhead of Thorne Rail & Trust Bank, signed by Augustus Thorne himself.
-      Two offers for a year and a half: against a bond of 150 $ the railway
+      Two offers for a year and a half: against a bond of {cash:unterschreiben} the railway
       freezes Mr. Harlan's tariff – provided he entrusts his oil to the railway
       alone. Or Thorne grants a volume discount if Mr. Harlan loads at least 5,000
       barrels every round; the railway charges 0.10 $ for every missing barrel. "Otherwise," writes Thorne, "we
       must reserve our usual freedom."
   choices:
     - id: unterschreiben
-      label: { de: "Exklusivvertrag unterschreiben (150 $): Tarif fest, andere Wege kosten Strafe", en: "Sign the exclusive contract (150 $): fixed tariff, other routes cost a penalty" }
+      label: { de: "Exklusivvertrag unterschreiben ({cash}): Tarif fest, andere Wege kosten Strafe", en: "Sign the exclusive contract ({cash}): fixed tariff, other routes cost a penalty" }
       result:
         de: >-
           Thorne schickt eine Abschrift mit Prägesiegel. Der Bahntarif bleibt eine
@@ -332,7 +334,7 @@
       marks: [thorne_mengenrabatt]
       appointments: 2
     - id: abkaufen
-      label: { de: "Den Aufschlag mit 250 $ abkaufen", en: "Buy off the surcharge for 250 $" }
+      label: { de: "Den Aufschlag mit {cash} abkaufen", en: "Buy off the surcharge for {cash}" }
       result:
         de: Thornes Kontor quittiert das Geld und streicht die Erhöhung. Bluffen, steht unter der Quittung, sei ein teures Spiel.
         en: Thorne's office receipts the money and strikes the increase. Bluffing, it says under the receipt, is an expensive game.
@@ -371,7 +373,7 @@
       "We are not monsters, after all."
   choices:
     - id: unterschreiben
-      label: { de: "Unterschreiben (100 $): −0,05 $ Tarif, Strafe 0,20 $ für andere Wege", en: "Sign (100 $): tariff −0.05 $, penalty 0.20 $ for other routes" }
+      label: { de: "Unterschreiben ({cash}): −0,05 $ Tarif, Strafe 0,20 $ für andere Wege", en: "Sign ({cash}): tariff −0.05 $, penalty 0.20 $ for other routes" }
       result:
         de: Thorne schickt die Abschrift noch am selben Tag. Der Tarif sinkt und bleibt eine Weile, wie er ist – solange Jacobs Öl mit der Bahn fährt.
         en: Thorne sends the copy the same day. The tariff drops and stays put for a while – as long as Jacob's oil goes by rail.
@@ -424,7 +426,7 @@
       default: true
     - id: verband
       public: [independents_stand]
-      label: { de: "Delgados Verband beitreten (100 $)", en: "Join Delgado's association (100 $)" }
+      label: { de: "Delgados Verband beitreten ({cash})", en: "Join Delgado's association ({cash})" }
       result:
         de: >-
           Rosa Delgado verhandelt für zwanzig Unabhängige. Der Trust gibt nach – zur

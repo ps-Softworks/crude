@@ -9,12 +9,12 @@
     en: An Envelope Without a Sender
   text:
     de: >-
-      Auf Jacobs Tisch liegt ein Umschlag ohne Absender. Darin 500 $ in neuen
+      Auf Jacobs Tisch liegt ein Umschlag ohne Absender. Darin {cash:behalten} in neuen
       Scheinen und eine Karte: „Von einem Freund, der an Sie glaubt. Zinsen sind
       unter Freunden nicht nötig.“ Am Abend steht ein höflicher Herr im grauen
       Mantel vor der Pension und nickt Jacob zu, als kenne er ihn seit Jahren.
     en: >-
-      An envelope with no sender lies on Jacob's desk. Inside: 500 $ in new bills
+      An envelope with no sender lies on Jacob's desk. Inside: {cash:behalten} in new bills
       and a card – "From a friend who believes in you. Between friends, interest is
       unnecessary." That evening a polite gentleman in a grey coat stands outside
       the boarding house and nods to Jacob as if they had known each other for years.
@@ -28,7 +28,7 @@
       result:
         de: Jacob bezahlt seine Rechnungen. Der Herr im grauen Mantel ist am nächsten Morgen fort.
         en: Jacob pays his bills. The gentleman in the grey coat is gone the next morning.
-      effects: { cash: 500 }
+      effects: { cash: 800 }
       marks: [vale_geld]
       default: true
     - id: zurueckgeben

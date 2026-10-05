@@ -22,6 +22,7 @@ import { empireValue } from './empire';
 import { endRound, newGame, type GameState } from './game';
 import { generateParcels } from './geology';
 import { leaseOf, leaseTerms, locationFor, optionOf } from './lease';
+import { letterScale, scaleChoice, scaledCash } from './letterScale';
 import { Rng, seedFromString } from './rng';
 import {
   buildPipeline,
@@ -253,9 +254,9 @@ function buyRights(state: GameState, balance: Balance, catalog: readonly EventDe
     const fehlt = missingRights(state, balance);
     const passend = event.choices
       .filter((c) => c.marks.some((m) => fehlt.includes(m)))
-      .sort((a, b) => (a.effects.cash ?? 0) < (b.effects.cash ?? 0) ? 1 : -1);
+      .sort((a, b) => (scaledCash(state, balance, a) ?? 0) < (scaledCash(state, balance, b) ?? 0) ? 1 : -1);
     for (const choice of passend) {
-      const kosten = -(choice.effects.cash ?? 0);
+      const kosten = -(scaledCash(state, balance, choice) ?? 0);
       const bezahlt = afford(state, balance, purse, kosten);
       if (!bezahlt || choiceReason(bezahlt, balance, event, choice) !== null) continue;
       const r = resolveEvent(bezahlt, balance, catalog, event.id, choice.id);
@@ -274,7 +275,7 @@ function buyRights(state: GameState, balance: Balance, catalog: readonly EventDe
  * oft wie abgelehnt, dazu Rabatt minus Strafe für fehlende Menge; exklusiv gar
  * nicht, dafür kostet alles, was nicht auf die Bahn passt, Strafe.
  */
-export function thorneOfferValue(state: GameState, balance: Balance, kind: 'exclusive' | 'volume'): number {
+export function thorneOfferValue(state: GameState, balance: Balance, kind: 'exclusive' | 'volume', fee = 150): number {
   const th = balance.transport.thorne;
   const runden = Math.min(balance.rivals.thorne.contractRounds, roundsLeft(state));
   const menge = production(state);
@@ -285,7 +286,7 @@ export function thorneOfferValue(state: GameState, balance: Balance, kind: 'excl
   if (kind === 'volume') {
     return runden * (bahn * th.volumeDiscount - Math.max(0, th.minVolume - bahn) * th.shortfallPenalty) + (abgelehnt - h) * th.hikeStep * bahn * stufen;
   }
-  return -150 - runden * Math.max(0, menge - bahn) * th.exclusivePenalty + abgelehnt * th.hikeStep * bahn * stufen;
+  return -fee - runden * Math.max(0, menge - bahn) * th.exclusivePenalty + abgelehnt * th.hikeStep * bahn * stufen;
 }
 
 function answerThorne(state: GameState, balance: Balance, catalog: readonly EventDef[], cfg: BotTransport, purse: Purse, ledger: TransportLedger): GameState {
@@ -301,13 +302,14 @@ function answerThorne(state: GameState, balance: Balance, catalog: readonly Even
     else if (cfg.thorne === 'volume') wahl = production(state) >= balance.transport.thorne.minVolume ? rabatt : undefined;
     else {
       const werte = [
-        { c: exklusiv, v: exklusiv ? thorneOfferValue(state, balance, 'exclusive') : -Infinity },
+        // Briefe mit Gewicht: die Gebühr so, wie sie jetzt gilt (letterScale.ts).
+        { c: exklusiv, v: exklusiv ? thorneOfferValue(state, balance, 'exclusive', -(scaledCash(state, balance, exklusiv) ?? 0)) : -Infinity },
         { c: rabatt, v: rabatt ? thorneOfferValue(state, balance, 'volume') : -Infinity },
       ].sort((a, b) => b.v - a.v);
       wahl = werte[0].v > 0 ? werte[0].c : undefined;
     }
     if (!wahl) continue;
-    const kosten = -(wahl.effects.cash ?? 0);
+    const kosten = -(scaledCash(state, balance, wahl) ?? 0);
     if (state.cash - kosten < purse.reserve || choiceReason(state, balance, event, wahl) !== null) continue;
     const r = resolveEvent(state, balance, catalog, event.id, wahl.id);
     if (!r.ok) continue;
@@ -900,14 +902,17 @@ function timedValue(state: GameState, balance: Balance, e: EventChoice['effects'
 }
 
 function effectValue(state: GameState, balance: Balance, choice: EventChoice, policy: EventPolicy, extraStrength = 0): number {
-  const e = choice.effects;
+  // Briefe mit Gewicht: Geld mit dem Faktor der laufenden Runde (letterScale.ts), wie resolveEvent es abbucht.
+  // Kraft und Familie wiegt der Bot im selben Maß – sonst wären sie ihm mit wachsendem Geschäft nichts mehr wert.
+  const e = scaleChoice(state, balance, choice).effects;
+  const f = letterScale(state, balance);
   const kraft = (e.strength ?? 0) + extraStrength;
   const wirksam = kraft > 0 ? Math.min(kraft, state.strengthMax - state.strength) : kraft;
   return (
     (e.cash ?? 0) +
     (e.oilStock ?? 0) * state.postedPrice +
-    wirksam * policy.strength +
-    ((e.ruth ?? 0) + (e.thomas ?? 0) + (e.clara ?? 0)) * policy.family -
+    wirksam * policy.strength * f +
+    ((e.ruth ?? 0) + (e.thomas ?? 0) + (e.clara ?? 0)) * policy.family * f -
     (e.railTariff ?? 0) * barrelsAhead(state) +
     timedValue(state, balance, e)
   );
@@ -922,9 +927,9 @@ export function choiceValue(state: GameState, balance: Balance, event: EventDef,
   const cost = choiceCost(event, choice);
   const over = overtimeFor(state, cost);
   if (over > 0 && state.strength < policy.overtimeFrom) return null;
-  const cash = choice.effects.cash ?? 0;
+  const cash = scaledCash(state, balance, choice) ?? 0;
   if (cash < 0 && state.cash + cash < policy.reserve) return null;
-  return effectValue(state, balance, choice, policy, -over * balance.agenda.overtimeCost) - cost * policy.appointment;
+  return effectValue(state, balance, choice, policy, -over * balance.agenda.overtimeCost) - cost * policy.appointment * letterScale(state, balance);
 }
 
 /** Was ohne Antwort passiert: die Standard-Wahl wie in autoResolve, ohne Termine. Feste Termine: nichts. */

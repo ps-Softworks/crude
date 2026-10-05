@@ -88,9 +88,10 @@
         en: Two wagons go to the dealer. Merriwether pays the contract price less his trouble and writes "settled" under the reminder.
       requires: { minOilStock: 500 }
       effects: { oilStock: -500, cash: 400 }
+      fixedCash: true
       appointments: 0
     - id: aufloesen
-      label: { de: "Den Vertrag auflösen (300 $ Abfindung)", en: "Dissolve the contract (300 $ settlement)" }
+      label: { de: "Den Vertrag auflösen ({cash} Abfindung)", en: "Dissolve the contract ({cash} settlement)" }
       result:
         de: Merriwether nimmt das Geld und zerreißt den Vertrag vor Jacobs Augen. „Vielleicht ein andermal, Mr. Harlan.“
         en: Merriwether takes the money and tears up the contract in front of Jacob. "Another time perhaps, Mr. Harlan."
@@ -136,7 +137,7 @@
       marks: [nora_versoehnt]
       appointments: 2
     - id: geld
-      label: { de: "Ihr Schweigegeld anbieten (150 $)", en: "Offer her money to keep quiet (150 $)" }
+      label: { de: "Ihr Schweigegeld anbieten ({cash})", en: "Offer her money to keep quiet ({cash})" }
       result:
         de: Nora schickt das Geld nicht zurück. Sie schreibt den Betrag in ihr Notizbuch, mit Datum.
         en: Nora doesn't send the money back. She writes the sum in her notebook, with the date.

@@ -335,3 +335,62 @@ Format 22. Neu ist nur `freight.poolLeft` (wer zuletzt aus der Transportgemeinsc
 - **Zeitsprung:** Das Wissen aus Kapitel 1 bleibt. Was der Verwalter gebohrt hat, steht sofort als Bohrbericht auf der Karte (`learnFromWells`), und um bekannte Funde – auch Bullards und im neuen Land – redet man: Unbekannte Nachbarranches sind beritten (`hearsayAroundFinds`, Quelle „Gerede“). Neues Land ohne Funde bleibt Gerücht, bis Jacob hinreitet.
 - **Seismik (Kapitel 3) schärft die Erkundung, statt sie zu ersetzen:** Der Bericht rechnet auf dem auf, was Jacob über die Ranch schon weiß (`posteriorChance` aus Ritten, Karten, Berichten und Nachbarn), statt auf der Zone – und nie auf der verdeckten Fundchance q. Das Ergebnis geht als Hinweis „Seismik“ (Stufe 3, Chancen 1 − missTrap bzw. falseTrap) zurück ins Wissen: Das Band des Berichts wird die Prognose der Ranch, die Nachbarn rechnen den Hinweis mit. Ein Bohrbericht (gekauft, Tagebuch, eigene Bohrung) geht wieder vor. Tests in `src/sim/seismik.test.ts`.
 - **Spielstand:** Format 22 = main-Format 21 (Kapitel 3) plus alles aus den Etappen 1–3; Stände bis Format 21 laden mit Ersatzwerten.
+
+## Spielspaß-Durchgang: Briefe mit Gewicht
+
+**Problem:** Die Geldbeträge in den Kapitel-1-Briefen standen fest im Text und waren klein (Median 120 $). Zu Beginn sind 120 $ viel, ab der Kapitelmitte hat Jacob aber ein Imperium von 60.000 $ und mehr – dann war ein Brief egal (gemessen: Median 0,3 % des Imperiums, am Kapitelende 0,2 %).
+
+**Was jetzt anders ist:**
+
+- **Die Beträge wachsen mit Jacobs Geschäft** (nur Kapitel 1, Regel in `src/sim/letterScale.ts`). Faktor = Erlös je Runde ÷ 1.500 $, mindestens 1, höchstens 8 (`events.scale` in balance.yaml). Erlös je Runde = was Jacobs Quellen in der letzten Runde gefördert haben (ohne das Öl der Landbesitzer) × Durchschnittspreis der letzten 3 Runden. Ohne fördernde Quelle bleibt alles wie geschrieben; mit einer guten Quelle zur Kapitelmitte liegt der Faktor um 5–6, am Ende um 8. Der Faktor hängt nur an abgeschlossenen Runden – was der Schreibtisch zeigt, kostet die Antwort auch.
+- Es wachsen `cash` und die Geldbedingung `minCash` der Antwort (positive wie negative Beträge), auch wenn ein Brief ohne Antwort abläuft. Beträge werden glatt gerundet (unter 1.000 $ auf 10 $, unter 10.000 $ auf 50 $, darüber auf 100 $).
+- **Feste Preise bleiben fest** (`fixedCash: true`, sparsam): Kredite mit Rückzahlung (Bank, Rourke, Bullard, Moss' Hypothek – sonst passt die Rückzahlung nicht zum Kredit), Tausch Öl gegen Geld (Crane-Vorkauf, Händler, Pickett, Tanks), Wegerechte der Pipeline (gehören zur Pipeline-Rechnung mit festem Baupreis) und das Lohnbohren (fester Termin jede Runde).
+- **Der Spieler sieht den echten Betrag:** Statt „(120 $)“ steht in den Texten ein Platzhalter – `{cash}` in Antwort und Ergebnis, `{cash:wahl}` im Brieftext. Die Simulation setzt den gerechneten Betrag ein (Schreibtisch, Besuch, Protokoll, Ergebnis nach „Weiter“). `npm run check:content` meldet Platzhalter ohne Geld, ein Test meldet Beträge, die noch fest im Text stehen.
+- **Sieben große Entscheidungen** (gerechnet mit dem typischen Faktor, wenn sie kommen):
+
+| Brief | vorher | jetzt (Grundbetrag → typisch im Spiel) |
+| --- | --- | --- |
+| Silas: Die Abrechnung (Runde 8+) | fair 400 $, auskaufen 1.000 $ | 500 $ / 1.000 $ → ~3.200 $ / ~6.400 $ |
+| Silas redet (Saloon, nachzahlen) | 600 $ | 800 $ → ~6.100 $ |
+| Moss' Schulden (Hypothek) | leihen 300 $, Papier 100 $ | fest 2.500 $ / 800 $ |
+| Ein Glas Honig (Moss zahlt zurück) | 300 $ | fest 2.500 $ |
+| Die Versteigerung | helfen 300 $, ersteigern 500 $ | helfen fest 2.500 $, ersteigern 1.000 $ → ~4.400 $ |
+| Der Herr mit Spazierstock (Moss-Land verkaufen) | +900 $ | +1.400 $ → ~8.000 $ |
+| Mr. Vales Umschlag | +500 $ | +800 $ → ~3.800 $ |
+| Bullard braucht Geld / zahlt zurück | 500 $ / 650 $ | fest 2.000 $ / 2.600 $ |
+
+- Rourkes Wucherkredit wurde mitgezogen (300 → 800 $, Rückzahlung 420 → 1.120 $ oder 1.200 Barrel), sonst wäre er nach der Prüfung zu schwach. Kleine Anpassungen für die Prüfung: Fuhrwerk bei Thornes Waggons 120 $ statt 110 $, Rampe für das Kind in der Grube 90 $ statt 30 $, abgeschriebener Tank 600 statt 200 Barrel, Hales Gutachten zurückschicken gibt mehr Kraft (8 statt 5).
+- **Bots** rechnen mit dem echten Betrag (Antwortwert, Rücklage, Wegerechte, Thornes Vertragsgebühr). Kraft, Familie und Termine wiegen sie im selben Maß hoch – sonst wären ihnen Familie und Gesundheit mit wachsendem Geschäft nichts mehr wert.
+- **Prüfung `npm run check:events`:** Kapitelgeld jetzt realistisch 60.000 $ (Imperium zur Kapitelmitte), Schwelle 1 % = 600 $ – das passt zum Ziel „ein normaler Brief bewegt 1–3 %“. Kapitel-1-Antworten zählen Geld (ohne `fixedCash`), Kraft und Familie × 5 (typischer Faktor zur Kapitelmitte, `relevance.letterScale`). `refBarrels` 5.000 → 9.000 (gemessene Förderung zur Kapitelmitte). Kapitel 2/3 werden wie bisher mit 200 $ geprüft (`laterChapterMoney`), bis sie eigene Balance haben. Ergebnis: 0 schwache Antworten.
+
+**Abweichungen vom Auftrag, mit Grund:**
+
+- Höchstfaktor 8 statt ≈ 4: Mit 4 bliebe ein normaler Brief am Kapitelende bei rund 0,5 % des Imperiums – das Ziel 1–3 % wäre nicht erreichbar.
+- Kapitel 1 hat 16 Runden (nicht 40); die Messung teilt darum in Runde 1–5, 6–11, 12–16.
+- Die großen Briefe haben meist keinen Grundbetrag von 2.000–8.000 $: Sie kommen erst, wenn der Faktor schon bei 4–8 liegt – ein Grundbetrag von 2.000 $ würde dort 10.000–16.000 $ (15–25 % des Imperiums) kosten und wäre für die meisten nicht bezahlbar. Sie wachsen deshalb mit und landen im Spiel bei 2.000–8.000 $. Wo Hin- und Rückzahlung zusammengehören (Moss, Bullard), sind die Beträge fest und liegen direkt bei 2.000–2.600 $.
+- In den ersten Runden (Faktor 1) wirkt ein Brief gemessen am Imperium klein, weil das Imperium die Reserven im Boden mitzählt; gemessen an der Kasse (1.600–5.000 $) ist er spürbar.
+- Bot-Zielwert `pipelineSuccess` 0,80 → 0,85 (gemessen 81,2 %, vorher 77,4 %): Späte Briefe kosten jetzt Geld; wer ohne Pipeline knapp am Ziel war, verfehlt es öfter. Endgültige Balance steht noch aus.
+
+**Messung:** `npx tsx tools/briefGewicht.ts 400 --schreiben` (Block unten). Gezählt wird je Ereignis, das neu auf den Tisch kommt (ohne feste Termine), der größte Geldbetrag seiner Antworten – so, wie der Spieler ihn in dieser Runde sieht – geteilt durch das Imperium in dieser Runde. Vorher (main 0.4.20+4, gleiche 400 Seeds):
+
+| Kapiteldrittel | normale Briefe: Median (oberes Viertel) | Median Geld | große Briefe: Median (oberes Viertel) | Median Geld |
+| --- | ---: | ---: | ---: | ---: |
+| Runde 1–5 | 0,4 % (1,0 %) | 150 $ | 0,8 % (1,3 %) | 300 $ |
+| Runde 6–11 | 0,3 % (0,5 %) | 150 $ | 1,1 % (2,2 %) | 600 $ |
+| Runde 12–16 | 0,2 % (0,4 %) | 160 $ | 0,7 % (0,9 %) | 500 $ |
+
+Ganzes Kapitel vorher: normale Briefe 0,3 %, große 1,0 %. Nachher:
+
+<!-- Messung Briefe mit Gewicht: npx tsx tools/briefGewicht.ts 400 --schreiben ersetzt bis zur nächsten Marke. -->
+
+Stand: 2026-10-05 · Version 0.4.20+4 · 400 Seeds (`bot-0` bis `bot-399`), Standard-Bot mit allen Ereignissen
+
+| Kapiteldrittel | normale Briefe: Median \|Geld\| ÷ Imperium (oberes Viertel) | Median Geld | große Briefe: Median (oberes Viertel) | Median Geld | Median Faktor | Median Erlös je Runde | Median Imperium |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Runde 1–5 | 1,1 % (2,8 %), n = 3318 | 300 $ | 6,8 % (9,9 %), n = 455 | 2.500 $ | 1,00 | 0 $ | 32.769 $ |
+| Runde 6–11 | 1,1 % (1,9 %), n = 3461 | 630 $ | 8,4 % (11,3 %), n = 1264 | 5.200 $ | 5,62 | 8.424 $ | 62.293 $ |
+| Runde 12–16 | 1,0 % (1,8 %), n = 2234 | 960 $ | 7,2 % (10,9 %), n = 31 | 5.850 $ | 7,84 | 11.760 $ | 83.186 $ |
+
+Ganzes Kapitel: normale Briefe Median 1,1 %, große Briefe Median 8,1 %.
+
+<!-- Ende der Messung Briefe mit Gewicht -->
