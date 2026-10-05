@@ -57,6 +57,7 @@ import { useFocusReturn } from './sheet/useFocusReturn';
 import type { RoundReport } from './sheets/ReportSheet';
 import { SheetHost } from './sheets/SheetHost';
 import type { SheetContext } from './sheets/types';
+import { freshSeed, withoutSeedParam } from './restart';
 import { readPref, writePref } from './storage';
 import { debugToolsVisible } from './testerConfig';
 import { tourSteps } from './tourContent';
@@ -66,10 +67,6 @@ import { appearances } from './visitorContent';
 
 /** Kapitelstart nach dem Zeitsprung (Integration Phase 4): Räte für das Aktienbuch aus content/stocks.yaml. */
 const kapitelTexte = { stocksBoard: stocksContent.board };
-
-function randomSeed(): string {
-  return Math.random().toString(36).slice(2, 8);
-}
 
 // Für Tests und Fehlersuche: ?seed=abc&debug=1 in der Adresse.
 const params = new URLSearchParams(window.location.search);
@@ -113,7 +110,7 @@ function start(): { seed: string; game: GameState } {
   if (ausUrl !== null) return { seed: ausUrl, game: newGame(ausUrl, balance, events) };
   const gespeichert = loadAutosave();
   if (gespeichert) return { seed: gespeichert.seed, game: gespeichert };
-  const seed = randomSeed();
+  const seed = freshSeed('');
   return { seed, game: newGame(seed, balance, events) };
 }
 
@@ -388,10 +385,17 @@ export function App() {
     setSpielNr((n) => n + 1);
   }
 
-  // Spielstand weg und neu anfangen: so lässt sich ein alter Stand gezielt prüfen.
-  function forget() {
+  // „Neues Spiel“ (Menü, Kapitelende, Pleite): Spielstand weg, neue Welt mit neuem Seed. Der Autosave
+  // schreibt danach die neue Partie; ohne Speicher (gesperrter localStorage) läuft sie trotzdem.
+  function neuesSpiel() {
     clearAutosave();
-    startNewWorld(randomSeed());
+    try {
+      const ohneSeed = withoutSeedParam(window.location.href);
+      if (ohneSeed) window.history.replaceState(window.history.state, '', ohneSeed);
+    } catch {
+      /* Adresse lässt sich im iframe nicht ändern – dann eben nicht. */
+    }
+    startNewWorld(freshSeed(seed));
   }
 
   // Tastatur: Kürzel am Schreibtisch, Esc in fester Reihenfolge (sceneState.escape).
@@ -524,12 +528,12 @@ export function App() {
           dispatch({ type: 'view', view: 'desk' });
           setRundgang(true);
         },
-        onRestart: forget,
+        onRestart: neuesSpiel,
         onDebug: setDebug,
         onSeed: setSeed,
         onNewWorld: () => startNewWorld(seed),
-        onRandomWorld: () => startNewWorld(randomSeed()),
-        onForget: forget,
+        onRandomWorld: () => startNewWorld(freshSeed(seed)),
+        onForget: neuesSpiel,
       }}
     />
   );
@@ -553,11 +557,11 @@ export function App() {
             ) : brief && game.ending === 'kapitel' ? (
               <DirectivesLetter game={game} onSend={sprungStarten} onBack={() => setBrief(false)} />
             ) : game.ending === 'pleite' ? (
-              <GameOverScreen game={game} onRestart={() => startNewWorld(randomSeed())} />
+              <GameOverScreen game={game} onRestart={neuesSpiel} />
             ) : (
               <ChapterEndScreen
                 game={game}
-                onRestart={() => startNewWorld(randomSeed())}
+                onRestart={neuesSpiel}
                 onIpo={ipo}
                 notice={notice}
                 onPeek={() => setPeek(true)}

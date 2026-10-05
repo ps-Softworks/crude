@@ -138,6 +138,10 @@ lease:
   startOptions:
     count: 2              # PLATZHALTER
     termRounds: 4         # PLATZHALTER
+    # 0.4.20+1: Die erste Startoption liegt auf einer guten Ranch – wahre Fundchance mindestens
+    # minChance und angezeigte Prognose (Mitte des Bands) mindestens minForecast %. Die zweite bleibt Zufall.
+    minChance: 0.5
+    minForecast: 45
 
 # Förderung (GDD §5). Das Öl liegt in Lagerstätten, die mehrere Ranches
 # umfassen. Jede Quelle startet mit einem Anteil der Reserve je Standardfläche (ranches.slotArea) ihrer Ranch und fällt je
@@ -482,8 +486,8 @@ empire:
 # und der Imperiumswert mindestens goalValue beträgt ODER mindestens goalWells Quellen fördern.
 # Texte und Boni: content/chapter.yaml. Wer das Ziel verfehlt, darf keine Aktien ausgeben.
 chapter:
-  goalValue: 50000         # GDD §13: Imperiumswert ab so viel $ …
-  goalWells: 5             # … oder so viele fördernde Quellen
+  goalValue: 70000         # GDD §13: 50.000 $; 0.4.20+1: 70.000 $ – mit der guten ersten Startoption trifft die erste Bohrung fast immer, mit 50.000 $ / 5 Quellen bestand der Standard-Bot in 78 % (Ziel höchstens 70 %), jetzt 66,9 % (npm run bots, 1.000 Partien) …
+  goalWells: 6             # … oder so viele fördernde Quellen (GDD §13: 5; 0.4.20+1 mit goalValue angehoben)
   ipo:
     shares: [0.2, 0.33, 0.49]  # GDD §8: zur Wahl stehende Anteile, die Jacob verkaufen kann (typisch 20–49 %)
     priceFactor: 0.8           # PLATZHALTER: Anleger zahlen Imperiumswert × Anteil × 0,8 (Abschlag für Risiko und Bankprovision)
@@ -719,7 +723,7 @@ bots:
   targets:
     winRate: { min: 0, max: 0.40 }            # höchste Siegquote einer Strategie (GDD §17: keine über 40 %)
     standardBankrupt: { min: 0, max: 0.15 }   # Pleitequote ausgewogen (Standard-Bot): Kapitel 1 ist der Einstieg
-    greedyBankrupt: { min: 0.05, max: 0.45 }  # Pleitequote gierig (GDD §15: wer im Boom zu viele Schulden macht, stirbt; Crashs kommen erst später)
+    greedyBankrupt: { min: 0.03, max: 0.45 }  # Pleitequote gierig (GDD §15: wer im Boom zu viele Schulden macht, stirbt; Crashs kommen erst später); 0.4.20+1: 0,05 → 0,03 – mit der guten ersten Startoption kommt auch der gierige Bot fast immer früh zu Öl und stirbt seltener am Anfang (gemessen 4–4,5 %, vorher 8,7 %); die Kreditkrise kündigt ihm weiter
     cautiousBehind: { min: 0, max: 0.95 }     # Ø Imperium vorsichtig ÷ bester Ø der Mutigeren (GDD §15: wird überholt)
     standardGoal: { min: 0.20, max: 0.70 }    # Kapitelziel ausgewogen: erreichbar, aber nicht geschenkt
     smallRateInRange: { min: 0.90, max: 1 }   # Anteil kleiner Funde mit 50–500 bbl/Tag (GDD §15)
@@ -728,7 +732,7 @@ bots:
     wildcatHit: { min: 0.05, max: 0.25 }      # blinde Wildcat-Bohrung in Randlage auf 300 m (GDD §15: 1 von 5 bis 1 von 10)
     appointments: { min: 4.5, max: 5 }        # Ø Termine je Runde des Standard-Bots (GDD §15: 5 je Quartal)
     routeShare: { min: 0, max: 0.75 }         # 0.2.15+4: höchster Anteil eines Transportwegs an allen verkauften Barrel – kein Weg dominiert
-    pipelineSuccess: { min: 0, max: 0.70 }    # 0.2.15+4: Anteil der Partien mit Kapitelziel (planende Bots), in denen eine Pipeline läuft; Etappe 1: 0,60 → 0,65 – mit verdeckter Geologie schaffen weniger Partien das Ziel, und die erfolgreichen sind die großen Förderer, bei denen sich die Pipeline lohnt (über alle Partien läuft sie seltener als vorher); Etappe 3: 0,65 → 0,70 – weniger Briefe kosten weniger Geld und Termine, der Standard-Bot baut in erfolgreichen Partien öfter die Pipeline (39 → 53 %), kein Weg dominiert (routeShare um 0,40)
+    pipelineSuccess: { min: 0, max: 0.80 }    # 0.4.20+1: 0,70 → 0,80 – mit der guten ersten Startoption und dem höheren Kapitelziel sind die erfolgreichen Partien noch mehr die großen Förderer (gemessen 77,4 %); ohne Pipeline schaffen es weiter etwa 15 % aller Partien (vorher 17 %). 0.2.15+4: Anteil der Partien mit Kapitelziel (planende Bots), in denen eine Pipeline läuft; Etappe 1: 0,60 → 0,65 – mit verdeckter Geologie schaffen weniger Partien das Ziel, und die erfolgreichen sind die großen Förderer, bei denen sich die Pipeline lohnt (über alle Partien läuft sie seltener als vorher); Etappe 3: 0,65 → 0,70 – weniger Briefe kosten weniger Geld und Termine, der Standard-Bot baut in erfolgreichen Partien öfter die Pipeline (39 → 53 %), kein Weg dominiert (routeShare um 0,40)
     # 0.2.15+8 Ausbau: Gute Quellen lohnen den Ausbau, aber „alles ausbauen“ ist keine Siegformel.
     expandedShare: { min: 0.05, max: 0.7 }    # Anteil der Ranches mit Fund (planende Bots) mit Pumpe oder weiterem Bohrloch
     investGain: { min: 1.02, max: 10 }        # Ø Imperium ausgewogen ÷ derselbe Bot ohne Ausbau (Investieren zahlt sich aus)

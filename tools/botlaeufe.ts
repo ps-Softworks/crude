@@ -71,7 +71,7 @@ ${table}
 - **zufällig:** wählt jede Runde einige erlaubte Aktionen per Zufall und beantwortet Ereignisse zufällig.
 - **Erkundung (Etappe 1):** Die drei planenden Bots reiten vor den Briefen übers Land (Karte „Übers Land reiten“), solange sie zu wenige bezahlbare freie Ranches mit guter Prognose kennen (balance.yaml bots.explore). Prognosen gibt es nur, wo Jacob etwas weiß.
 - **Ereignisse:** Die drei planenden Bots bewerten jede Antwort in $ (Geld, Öl, Kraft, Familie, Bahntarif, Termine; Gewichte in balance.yaml unter bots.events) und antworten, wenn das mehr bringt als liegen lassen. Den Verkauf an Crane wählt kein Bot.
-- **Kapitelziel:** Anteil der Partien, in denen die Kapitelprüfung bestanden ist (nicht bankrott und Imperiumswert ≥ 50.000 $ oder 5 fördernde Quellen, Zahlen in balance.yaml unter chapter).
+- **Kapitelziel:** Anteil der Partien, in denen die Kapitelprüfung bestanden ist (nicht bankrott und Imperiumswert ≥ ${balance.chapter.goalValue.toLocaleString('de-DE')} $ oder ${balance.chapter.goalWells} fördernde Quellen, Zahlen in balance.yaml unter chapter).
 - **Siegquote:** Anteil der Seeds, in denen die Strategie den höchsten Imperiumswert hat. Eine Pleite zählt immer als letzter Platz, Gleichstand wird geteilt. Seit 2.15 gewinnt nur, wer mindestens die Startkasse (${balance.start.cash.toLocaleString('de-DE')} $) erreicht – sonst hat niemand gewonnen (diesmal ${prozent(ohneSieger)} der Seeds).
 - **Ø Termine:** Termine je Runde zu Rundenbeginn (krank = 0).
 

@@ -85,7 +85,7 @@ describe('Geologen-Prognosen im Spielzustand', () => {
     const geologie = generateParcels(balance, 'reihenfolge');
     // Die Lagerstätten kommen nach der Geologie und verändern sie nicht.
     const parcels = assignFields(geologie, buildFields(geologie));
-    const options = startOptions({ ...newGame('leer', balance), parcels }, balance, rng);
+    const options = startOptions({ ...newGame('leer', balance), seed: 'reihenfolge', knowledge: {}, parcels }, balance, rng);
     const state = newGame('reihenfolge', balance);
     expect(state.parcels).toEqual(parcels);
     expect(state.options).toEqual(options);

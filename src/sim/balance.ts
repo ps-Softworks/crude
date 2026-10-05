@@ -141,7 +141,11 @@ export interface LeaseBalance {
   locations: LeaseLocation[];
   landowners: Landowner[];
   option: { feeShare: number; termRounds: number };
-  startOptions: { count: number; termRounds: number };
+  /**
+   * Freie Startoptionen. Die erste liegt auf einer guten Ranch (0.4.20+1): wahre Fundchance
+   * mindestens minChance (0–1) und angezeigte Prognose-Mitte mindestens minForecast (in %).
+   */
+  startOptions: { count: number; termRounds: number; minChance: number; minForecast: number };
 }
 
 /** Eine Bohrstufe: Stufe 1 = Zieltiefe, jede weitere = "tiefer bohren". */
@@ -1272,6 +1276,8 @@ function parseLease(raw: unknown): LeaseBalance {
     startOptions: {
       count: num(raw, 'lease.startOptions.count'),
       termRounds: positiveInt(raw, 'lease.startOptions.termRounds'),
+      minChance: share(raw, 'lease.startOptions.minChance'),
+      minForecast: num(raw, 'lease.startOptions.minForecast'),
     },
   };
 }
@@ -2518,6 +2524,10 @@ export function parseBalance(raw: unknown): Balance {
   const { count } = balance.lease.startOptions;
   if (!Number.isInteger(count) || count < 0) {
     throw new BalanceError('balance.yaml: "lease.startOptions.count" muss eine ganze Zahl ab 0 sein und auf die Karte passen');
+  }
+  const { minForecast } = balance.lease.startOptions;
+  if (minForecast < 0 || minForecast > 100) {
+    throw new BalanceError('balance.yaml: "lease.startOptions.minForecast" muss zwischen 0 und 100 (Prozent) liegen');
   }
   return balance;
 }

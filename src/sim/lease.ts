@@ -7,6 +7,8 @@ import type { Balance, Landowner, LeaseLocation } from './balance';
 import { formatDate } from './calendar';
 import { timedEffect } from './events';
 import type { GameState } from './game';
+import { forecastMid, withStartClues } from './exploration';
+import { trueChance } from './forecast';
 import { areaFactor, type Parcel } from './geology';
 import type { Rng } from './rng';
 
@@ -263,35 +265,62 @@ export function exerciseOption(state: GameState, balance: Balance, parcelId: str
 
 /**
  * Startoptionen: freie Optionen auf verschiedenen Ranches in Randlage, per Seed gewählt.
- * Frühes Öl (0.4.4+): Die erste Option liegt, wenn es geht, auf einer vernünftigen
- * Ranch (geologisch Ring oder Kern, nicht der trockene Rand) – damit der Einstieg
- * nicht schon an der Wahl der Startparzellen scheitert. Die übrigen bleiben Zufall.
+ * Gute erste Option (0.4.20+1, vorher „Frühes Öl“ 0.4.4+ nur nach Zone): Die erste Option liegt
+ * auf einer Ranch mit wahrer Fundchance ab lease.startOptions.minChance, deren Prognose zu
+ * Spielbeginn (Ritt-Hinweise „start“) in der Mitte mindestens minForecast % zeigt – erst in
+ * Randlage, sonst weiter innen (nie direkt am Fund). Gibt es keine, die beste Ranch außerhalb
+ * der Fundlage. Die übrigen bleiben Zufall, ziehen die erste aber nicht unter die Schwelle.
  * Jede Option verbraucht genau einen Zufallswert, wie zuvor.
  */
 export function startOptions(state: GameState, balance: Balance, rng: Rng): LeaseOption[] {
-  const { count, termRounds } = balance.lease.startOptions;
+  const { count, termRounds, minChance, minForecast } = balance.lease.startOptions;
   const outermost = balance.lease.locations[balance.lease.locations.length - 1];
+  const amFund = balance.lease.locations[0].name;
   const discoveries = knownDiscoveries(state);
-  const candidates = state.parcels.filter(
-    (p) => !p.discovery && locationFor(balance, state.parcels, discoveries, p).name === outermost.name,
-  );
+  const lage = (p: Parcel) => locationFor(balance, state.parcels, discoveries, p).name;
+  const candidates = state.parcels.filter((p) => !p.discovery && lage(p) === outermost.name);
   if (candidates.length < count) {
     throw new Error(`Zu wenige Ranches in Randlage für ${count} Startoptionen.`);
   }
+  // Was eine Ranch als Startoption zeigen würde: Prognose mit den Hinweisen zu Spielbeginn.
+  const mitte = (ids: readonly string[], target: string) => forecastMid(withStartClues(state, balance, ids), balance, target);
+  const gut = (p: Parcel, mid: number) => trueChance(balance, p) >= minChance && mid >= minForecast;
   const options: LeaseOption[] = [];
-  const outerZone = balance.geology.zones[balance.geology.zones.length - 1].name;
+  const chosen: string[] = [];
   for (let i = 0; i < count; i++) {
-    let good = i === 0 ? candidates.filter((p) => p.zone !== outerZone) : [];
-    // Keine solche Ranch in Randlage? Dann eine aus der nächsten Lage (nicht direkt am Fund).
-    if (i === 0 && good.length === 0) {
-      const amFund = balance.lease.locations[0].name;
-      good = state.parcels.filter(
-        (p) => !p.discovery && p.zone !== outerZone && locationFor(balance, state.parcels, discoveries, p).name !== amFund,
-      );
+    let pool: Parcel[] = candidates;
+    if (i === 0) {
+      const bewertet = (liste: readonly Parcel[]) => liste.map((p) => ({ p, mid: mitte([p.id], p.id) }));
+      let good = bewertet(candidates).filter((x) => gut(x.p, x.mid)).map((x) => x.p);
+      if (good.length === 0) {
+        // Keine solche Ranch in Randlage? Dann eine weiter innen (nicht direkt am Fund).
+        const innen = bewertet(state.parcels.filter((p) => !p.discovery && lage(p) !== amFund));
+        good = innen.filter((x) => gut(x.p, x.mid)).map((x) => x.p);
+        if (good.length === 0 && innen.length > 0) {
+          // Auch das nicht: die beste verfügbare Ranch – mit genug wahrer Chance die mit der besten
+          // Prognose, sonst die mit der höchsten wahren Chance; bei Gleichstand nach Kennung.
+          const reicht = (x: { p: Parcel }) => (trueChance(balance, x.p) >= minChance ? 1 : 0);
+          innen.sort(
+            (a, b) =>
+              reicht(b) - reicht(a) ||
+              (reicht(a) ? b.mid - a.mid : trueChance(balance, b.p) - trueChance(balance, a.p)) ||
+              a.p.id.localeCompare(b.p.id),
+          );
+          good = [innen[0].p];
+        }
+      }
+      if (good.length > 0) pool = good;
+    } else {
+      // Spätere Optionen dürfen die erste nicht unter die Schwelle ziehen (Nachbarhinweise).
+      const erste = parcelById(state, chosen[0])!;
+      const vorher = gut(erste, mitte(chosen, erste.id));
+      const ok = vorher ? candidates.filter((p) => gut(erste, mitte([...chosen, p.id], erste.id))) : [];
+      if (ok.length > 0) pool = ok;
     }
-    const parcel = rng.pick(good.length > 0 ? good : candidates);
+    const parcel = rng.pick(pool);
     const index = candidates.indexOf(parcel);
     if (index >= 0) candidates.splice(index, 1);
+    chosen.push(parcel.id);
     options.push({
       parcelId: parcel.id,
       holder: 'jacob',

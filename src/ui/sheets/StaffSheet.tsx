@@ -28,6 +28,7 @@ import { money } from '../format';
 import { Tabs, activeTab } from '../sheet/Tabs';
 import { staffContent } from '../staff';
 import type { SheetContext } from './types';
+import { ConfirmButton } from '../ConfirmButton';
 import './staff.css';
 
 /** Knopf für eine Aktion aus src/sim/staff: gesperrt mit Grund, wenn sie nicht geht. */
@@ -36,6 +37,24 @@ function Aktion({ result, onDone, children }: { result: StaffResult; onDone: (r:
     <button type="button" disabled={!result.ok} title={result.ok ? undefined : result.reason} onClick={() => result.ok && onDone(result)}>
       {children}
     </button>
+  );
+}
+
+/** Entlassen mit Rückfrage im Spiel (window.confirm ist im iframe gesperrt). */
+function Entlassen({ m, game, onGame }: { m: StaffMemberView; game: GameState; onGame: (s: GameState) => void }) {
+  const result = dismissStaff(game, balance, m.role);
+  return (
+    <ConfirmButton
+      question={`${m.name} entlassen? Das kostet eine Abfindung, und die anderen nehmen es übel.`}
+      confirmLabel="Ja, entlassen"
+      disabled={!result.ok}
+      title={result.ok ? undefined : result.reason}
+      onConfirm={() => {
+        if (result.ok) onGame(result.state);
+      }}
+    >
+      Entlassen
+    </ConfirmButton>
   );
 }
 
@@ -84,14 +103,7 @@ function Akte({ m, game, onGame }: { m: StaffMemberView; game: GameState; onGame
         <Aktion result={m.recognized ? { ok: false, reason: 'Schon in dieser Runde.' } : recognizeStaff(game, balance, m.role)} onDone={(r) => onGame(r.state)}>
           Anerkennung (1 Termin)
         </Aktion>{' '}
-        <Aktion
-          result={dismissStaff(game, balance, m.role)}
-          onDone={(r) => {
-            if (window.confirm(`${m.name} entlassen? Das kostet eine Abfindung, und die anderen nehmen es übel.`)) onGame(r.state);
-          }}
-        >
-          Entlassen
-        </Aktion>
+        <Entlassen m={m} game={game} onGame={onGame} />
       </p>
     </li>
   );

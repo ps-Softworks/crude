@@ -26,6 +26,7 @@ import { diplomacyContent as C } from '../diplomacyContent';
 import { money, NBSP, percent, rounds } from '../format';
 import type { TabDef } from '../sheet/Tabs';
 import type { SheetContext } from './types';
+import { ConfirmButton } from '../ConfirmButton';
 
 const T = C.texts;
 
@@ -44,17 +45,20 @@ function name(rival: keyof typeof C.rivals): string {
 
 /** Ein Knopf für eine Aktion der Diplomatie: gesperrt mit Grund, sonst neuer Spielstand. */
 function Knopf({ reason, run, onGame, children, confirm }: { reason: DiploReason | null; run: () => DiploResult; onGame: (s: GameState) => void; children: string; confirm?: string }) {
+  const los = () => {
+    const r = run();
+    if (r.ok) onGame(r.state);
+  };
+  // Rückfrage im Spiel statt window.confirm (im iframe gesperrt, 0.4.20+1).
+  if (confirm) {
+    return (
+      <ConfirmButton question={confirm} confirmLabel={`Ja: ${children}`} disabled={reason !== null} title={grund(reason)} onConfirm={los}>
+        {children}
+      </ConfirmButton>
+    );
+  }
   return (
-    <button
-      type="button"
-      disabled={reason !== null}
-      title={grund(reason)}
-      onClick={() => {
-        if (confirm && !window.confirm(confirm)) return;
-        const r = run();
-        if (r.ok) onGame(r.state);
-      }}
-    >
+    <button type="button" disabled={reason !== null} title={grund(reason)} onClick={los}>
       {children}
     </button>
   );

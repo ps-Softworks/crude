@@ -13,6 +13,8 @@ import {
   stepsBetween,
   type LeaseResult,
 } from './lease';
+import { forecastMid, withStartClues } from './exploration';
+import { trueChance } from './forecast';
 import { loadBalance } from './testBalance';
 import { fakeParcel } from './testParcels';
 
@@ -342,35 +344,64 @@ describe('Pachtoptionen', () => {
 });
 
 describe('Startoptionen', () => {
-  it('Jacob beginnt mit 2 freien Optionen auf verschiedenen Randlage-Parzellen', () => {
+  it('Jacob beginnt mit 2 freien Optionen auf verschiedenen Ranches, die übrigen in Randlage', () => {
     for (const seed of ['harlan', 'brandt', 'abc', 'start']) {
       const state = newGame(seed, balance);
       expect(state.options).toHaveLength(balance.lease.startOptions.count);
       expect(new Set(state.options.map((o) => o.parcelId)).size).toBe(state.options.length);
-      for (const option of state.options) {
+      state.options.forEach((option, i) => {
         const terms = leaseTerms(state, balance, option.parcelId);
-        expect(terms.location.label).toBe('Randlage');
+        // Die erste liegt auf einer guten Ranch – in Randlage, wenn es dort eine gibt, sonst weiter innen.
+        if (i > 0) expect(terms.location.label).toBe('Randlage');
+        expect(terms.location.name).not.toBe(balance.lease.locations[0].name);
         expect(option).toMatchObject({ holder: 'jacob', free: true, bonus: 0, fee: 0 });
         expect(option.royalty).toBe(terms.royalty);
         expect(option.expiresAfterRound).toBe(balance.lease.startOptions.termRounds);
-      }
+      });
       expect(state.cash).toBe(balance.start.cash);
       expect(state.log.some((l) => /freie Pachtoptionen/.test(l))).toBe(true);
     }
   });
 
-  it('Frühes Öl: die erste Startoption liegt auf einer vernünftigen Ranch (Ring oder Kern, nicht der trockene Rand)', () => {
-    const rand = balance.geology.zones[balance.geology.zones.length - 1].name;
-    for (let i = 0; i < 200; i++) {
-      const state = newGame(`startoption-${i}`, balance);
-      const erste = state.parcels.find((p) => p.id === state.options[0].parcelId)!;
-      expect(erste.zone, `Seed startoption-${i}`).not.toBe(rand);
-      expect(erste.discovery).toBeFalsy();
-      // Nie direkt am Fund – das wäre geschenkt.
-      expect(leaseTerms(state, balance, erste.id).location.name).not.toBe(balance.lease.locations[0].name);
-      expect(state.options).toHaveLength(balance.lease.startOptions.count);
-      expect(new Set(state.options.map((o) => o.parcelId)).size).toBe(state.options.length);
+  it('gute erste Option (0.4.20+1): über 1000 Seeds mindestens eine Startoption mit wahrer Chance ≥ minChance und Prognose-Mitte ≥ minForecast', () => {
+    const { minChance, minForecast } = balance.lease.startOptions;
+    const amFund = balance.lease.locations[0].name;
+    let ohneKandidat = 0;
+    for (let i = 0; i < 1000; i++) {
+      const seed = `startoption-${i}`;
+      const state = newGame(seed, balance);
+      expect(state.options, seed).toHaveLength(balance.lease.startOptions.count);
+      expect(new Set(state.options.map((o) => o.parcelId)).size, seed).toBe(state.options.length);
+      const werte = state.options.map((o) => {
+        const p = state.parcels.find((x) => x.id === o.parcelId)!;
+        const f = state.forecasts[o.parcelId];
+        return { p, q: trueChance(balance, p), mitte: (f.low + f.high) / 2 };
+      });
+      for (const w of werte) {
+        expect(w.p.discovery, seed).toBeFalsy();
+        // Nie direkt am Fund – das wäre geschenkt.
+        expect(leaseTerms(state, balance, w.p.id).location.name, seed).not.toBe(amFund);
+      }
+      const gut = (q: number, mitte: number) => q >= minChance && mitte >= minForecast;
+      if (werte.some((w) => gut(w.q, w.mitte))) {
+        // Die Regel gilt für die erste Option selbst – die zweite darf schwächer sein.
+        expect(gut(werte[0].q, werte[0].mitte), seed).toBe(true);
+        continue;
+      }
+      // Ohne passende Ranch auf der ganzen Karte (außerhalb der Fundlage) die beste verfügbare.
+      ohneKandidat++;
+      const passende = state.parcels.filter(
+        (p) =>
+          !p.discovery &&
+          leaseTerms(state, balance, p.id).location.name !== amFund &&
+          trueChance(balance, p) >= minChance &&
+          forecastMid(withStartClues({ ...state, knowledge: {} }, balance, [p.id]), balance, p.id) >= minForecast,
+      );
+      expect(passende, seed).toEqual([]);
+      expect(werte[0].q, seed).toBeGreaterThanOrEqual(minChance);
     }
+    // Ganz selten gibt es keine: Ölranches, deren Ritt-Hinweise zu Spielbeginn zufällig schlecht aussehen.
+    expect(ohneKandidat).toBeLessThanOrEqual(30);
   });
 
   it('sind je Seed gleich und je Seed verschieden', () => {

@@ -345,7 +345,16 @@ export function rideNews(state: Pick<GameState, 'parcels' | 'knowledge'>, parcel
  * darüber reden alle in Port Ellis.
  */
 export function initialKnowledge(state: GameState, balance: Balance): GameState {
-  const ids = new Set<string>(state.options.filter((o) => o.holder === 'jacob').map((o) => o.parcelId));
+  return refreshForecasts(withStartClues(state, balance, state.options.filter((o) => o.holder === 'jacob').map((o) => o.parcelId)), balance);
+}
+
+/**
+ * Wissen zu Spielbeginn ohne Prognosen: Ritt-Hinweise (Quelle „start“) auf den übergebenen
+ * Ranches und auf den Nachbarn des Salt-Hill-Funds. Kein Zufall – jeder Hinweis kommt fest
+ * aus dem Seed, darum lässt sich vorab rechnen, was eine Startoption zeigen wird (0.4.20+1).
+ */
+export function withStartClues(state: GameState, balance: Balance, parcelIds: Iterable<string>): GameState {
+  const ids = new Set<string>(parcelIds);
   for (const fund of state.parcels.filter((p) => p.discovery)) {
     for (const n of explorableNeighbours(state, fund)) ids.add(n.id);
   }
@@ -353,7 +362,13 @@ export function initialKnowledge(state: GameState, balance: Balance): GameState 
   for (const p of state.parcels) {
     if (ids.has(p.id)) next = addCluesRaw(next, p.id, rideClues(state, balance, p, 'start'));
   }
-  return refreshForecasts(next, balance);
+  return next;
+}
+
+/** Mitte des angezeigten Prognosebands einer Ranch (in %), 0 ohne Prognose. */
+export function forecastMid(state: Pick<GameState, 'seed' | 'parcels' | 'knowledge'>, balance: Balance, parcelId: string): number {
+  const f = knowledgeForecast(state, balance, parcelId);
+  return f ? (f.low + f.high) / 2 : 0;
 }
 
 /**

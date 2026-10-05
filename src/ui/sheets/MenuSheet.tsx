@@ -9,6 +9,7 @@ import { keyLabel, SHORTCUTS } from '../keys';
 import { Tabs, activeTab } from '../sheet/Tabs';
 import { tester } from '../tester';
 import type { SheetContext } from './types';
+import { ConfirmButton } from '../ConfirmButton';
 // 4.6 Andockpunkt: Raffinerie im Debug-Reiter freischalten.
 import { unlockRefinery } from '../../sim/refinery';
 import { rt } from '../refinery';
@@ -159,14 +160,9 @@ export function MenuSheet(p: MenuProps) {
       {tab === 'spiel' && (
         <div className="menue">
           <p>
-            <button
-              type="button"
-              onClick={() => {
-                if (window.confirm('Neues Spiel beginnen? Der aktuelle Stand geht verloren.')) p.onRestart();
-              }}
-            >
+            <ConfirmButton question="Neues Spiel beginnen? Der aktuelle Stand geht verloren." confirmLabel="Ja, neues Spiel" onConfirm={p.onRestart}>
               Neues Spiel
-            </button>
+            </ConfirmButton>
           </p>
           <label>
             <input type="checkbox" checked={p.tutorialOn} onChange={(e) => p.onTutorial(e.target.checked)} /> Einstiegshilfe (Ruths Zettel

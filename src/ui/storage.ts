@@ -52,17 +52,24 @@ export function saveStore(): SaveStore {
 /**
  * Kleine Vorlieben der Oberfläche (0.2.15+9), z. B. der zuletzt benutzte Reiter
  * eines Fensters. Kein Teil des Spielstands; ohne Speicher gilt die Wahl nur bis
- * zum Neuladen – darum schluckt dieser Zugriff jeden Fehler.
+ * zum Neuladen – darum schluckt dieser Zugriff jeden Fehler. 0.4.20+1: Bis zum Neuladen
+ * merkt sich das Fenster die Wahl selbst. Im abgeschotteten iframe (Claude-Artefakt) ist
+ * der localStorage gesperrt – vorher fing der Rundgang dort nach jedem Ende von vorn an.
  */
+const merker = new Map<string, string>();
+
 export function readPref(name: string): string | null {
   try {
-    return saveStore().read(name);
+    const value = saveStore().read(name);
+    if (value !== null) return value;
   } catch {
-    return null;
+    /* Kein Speicher – dann gilt, was sich das Fenster gemerkt hat. */
   }
+  return merker.get(name) ?? null;
 }
 
 export function writePref(name: string, value: string): void {
+  merker.set(name, value);
   try {
     saveStore().write(name, value);
   } catch {

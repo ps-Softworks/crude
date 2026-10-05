@@ -59,9 +59,10 @@ function amEnde(cash: number, wells = 0): GameState {
 }
 
 describe('balance.yaml: chapter', () => {
-  it('hat Ziel 50.000 $ oder 5 Quellen und Anteile unter 50 %', () => {
-    expect(balance.chapter.goalValue).toBe(50000);
-    expect(balance.chapter.goalWells).toBe(5);
+  it('hat Ziel 70.000 $ oder 6 Quellen und Anteile unter 50 %', () => {
+    // 0.4.20+1: vorher 50.000 $ / 5 Quellen (GDD §13) – angehoben mit der guten ersten Startoption.
+    expect(balance.chapter.goalValue).toBe(70000);
+    expect(balance.chapter.goalWells).toBe(6);
     expect(balance.chapter.ipo.shares.length).toBeGreaterThan(0);
     for (const s of balance.chapter.ipo.shares) expect(s).toBeLessThan(0.5);
   });
@@ -81,7 +82,7 @@ describe('Kapitelprüfung', () => {
   });
 
   it('oder goalWells fördernde Quellen', () => {
-    expect(chapterCheck(letzteRunde(100, balance.chapter.goalWells), balance)).toMatchObject({ wells: 5, wellsReached: true, passed: true });
+    expect(chapterCheck(letzteRunde(100, balance.chapter.goalWells), balance)).toMatchObject({ wells: balance.chapter.goalWells, wellsReached: true, passed: true });
     expect(chapterCheck(letzteRunde(100, balance.chapter.goalWells - 1), balance).passed).toBe(false);
   });
 
@@ -93,7 +94,7 @@ describe('Kapitelprüfung', () => {
   });
 
   it('Kasse im Minus heißt bankrott – auch mit genug Quellen', () => {
-    const c = chapterCheck(letzteRunde(-1, 6), balance);
+    const c = chapterCheck(letzteRunde(-1, balance.chapter.goalWells + 1), balance);
     expect(c.solvent).toBe(false);
     expect(c.passed).toBe(false);
   });

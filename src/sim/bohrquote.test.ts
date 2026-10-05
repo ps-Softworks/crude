@@ -27,10 +27,16 @@ function mittel(xs: number[]): number {
 describe('Bohr-Trefferquote im echten Spielablauf', () => {
   it('erste Bohrung auf einer Ranch mit Prognose ≥ 60 % trifft so oft, wie die Theorie sagt', () => {
     const erste: DrillRecord[] = [];
+    let aufStartoption = 0;
     for (const seed of seeds(500, 'quote')) {
       const { records } = playDrillRun(seed, balance, { catalog });
-      if (records[0]) erste.push(records[0]);
+      // 0.4.20+1: Die erste Startoption ist mit Absicht nach ihrer wahren Fundchance ausgesucht (lease.startOptions.minChance) –
+      // sie trifft öfter, als ihre Prognose sagt. Die Eichung der Prognose gilt für das übrige Land.
+      const start = new Set(newGame(seed, balance, catalog).options.map((o) => o.parcelId));
+      if (records[0] && start.has(records[0].parcelId)) aufStartoption++;
+      else if (records[0]) erste.push(records[0]);
     }
+    expect(aufStartoption).toBeGreaterThan(0);
     const gut = erste.filter((r) => r.shown >= 60);
     expect(gut.length).toBeGreaterThan(250);
     // Etappe 1: Die Prognose rechnet mit Hinweisen, die am echten Ausgang hängen – ihre Mitte ist die Theorie.

@@ -119,9 +119,15 @@ describe('Wann der Einstieg läuft (tutorialActive)', () => {
 
 describe('Schritt 1: Pacht', () => {
   it('Etappe 1: sieht nichts Bezahlbares gut aus, rät er erst zum Ritt übers Land – ohne Überstunden', () => {
-    const state = newGame('einstieg', balance);
-    const ziel = recommendedParcel(state, balance);
-    expect(ziel === null || shownChance(state, ziel.parcelId) < balance.tutorial.exploreBelow).toBe(true);
+    // 0.4.20+1: Die erste Startoption zeigt jetzt mindestens lease.startOptions.minForecast % – ein Seed, auf dem
+    // trotzdem nichts Bezahlbares über exploreBelow liegt.
+    const nichtsGut = (s: ReturnType<typeof newGame>) => {
+      const z = recommendedParcel(s, balance);
+      return z === null || shownChance(s, z.parcelId) < balance.tutorial.exploreBelow;
+    };
+    const seed = ['einstieg', ...Array.from({ length: 50 }, (_, i) => `einstieg-${i}`)].find((x) => nichtsGut(newGame(x, balance)))!;
+    const state = newGame(seed, balance);
+    expect(nichtsGut(state)).toBe(true);
     const h = hint(state);
     expect(h).toMatchObject({ id: 'explore', step: 'lease', action: { kind: 'plan', cardId: 'ritt' } });
     if (h.action.kind !== 'plan') throw new Error('kein Ritt');
@@ -131,6 +137,19 @@ describe('Schritt 1: Pacht', () => {
     expect(geritten.agenda.used).toBe(balance.plans.cards.ritt.appointments);
     // Ist die Runde schon voll, rät er nicht zu Überstunden, sondern zur Pacht.
     expect(hint(ohneZeit(state)).id).not.toBe('explore');
+  });
+
+  it('0.4.20+1: empfiehlt zu Beginn eine Ranch, die mindestens so gut aussieht wie die gute erste Startoption', () => {
+    for (let i = 0; i < 60; i++) {
+      const state = ohneZeit(newGame(`gute-option-${i}`, balance));
+      const erste = state.options[0].parcelId;
+      const ziel = recommendedParcel(state, balance)!;
+      expect(ziel, `Seed gute-option-${i}`).not.toBeNull();
+      expect(recommendScore(state, balance, ziel.parcelId, ziel.cost)).toBeGreaterThanOrEqual(recommendScore(state, balance, erste, 0));
+      if (shownChance(state, erste) >= balance.lease.startOptions.minForecast) {
+        expect(shownChance(state, ziel.parcelId), `Seed gute-option-${i}`).toBeGreaterThanOrEqual(balance.lease.startOptions.minForecast);
+      }
+    }
   });
 
   it('empfiehlt die beste bezahlbare Wertung (Schätzung minus Pachtkosten) und zeigt auf sie', () => {
