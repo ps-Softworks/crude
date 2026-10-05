@@ -215,7 +215,8 @@ describe('Kreditklima (4.4-Schnittstelle)', () => {
     const k3 = { ...newGame('kredit-heizt', ruhig), chapter: 3, cash: 500000 } as GameState;
     const offen = endRound(k3, ruhig);
     expect(offen.exchange).toBeDefined();
-    const gekauft = buyStock(offen, ruhig, 'handelsbank', 50000, 5);
+    // Einsatz × 4 geliehen = genau heatScale: volle Hitze.
+    const gekauft = buyStock(offen, ruhig, 'handelsbank', EB.margin.heatScale / 4, 5);
     if (!gekauft.ok) throw new Error(gekauft.reason);
     expect(marginHeat(gekauft.state, EB)).toBe(1);
     let mit = gekauft.state;
@@ -232,10 +233,10 @@ describe('Kreditklima (4.4-Schnittstelle)', () => {
   it('Kauf auf Kredit heizt Kreditklima und Börsenfieber an (GDD §8)', () => {
     const s = setzeEx(mitBoerse(200000), { fever: 50 });
     const ohne = runde(s);
-    const gekauft = buyStock(s, balance, 'crane_trust', 20000, 10);
+    const gekauft = buyStock(s, balance, 'crane_trust', EB.margin.heatScale / 9, 10);
     expect(gekauft.ok).toBe(true);
     if (!gekauft.ok) return;
-    expect(marginDebt(gekauft.state)).toBeCloseTo(180000);
+    expect(marginDebt(gekauft.state)).toBeCloseTo(EB.margin.heatScale);
     expect(marginHeat(gekauft.state, EB)).toBe(1);
     const mitKredit = runde(gekauft.state);
     expect(mitKredit.exchange!.creditShift).toBeCloseTo(EB.margin.creditShift);

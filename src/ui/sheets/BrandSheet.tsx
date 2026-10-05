@@ -24,6 +24,7 @@ import {
   startCampaign,
   stationCost,
   type BrandResult,
+  regionPresent,
 } from '../../sim/brand';
 import { brandNewsText, brandText, campaignName, regionName } from '../../sim/brandContent';
 import type { GameState } from '../../sim/game';
@@ -133,6 +134,7 @@ function Netz({ ctx }: { ctx: SheetContext }) {
       </p>
       <p className="klein">
         {t('goal', {
+          regionAnteil: percent(balance.brand.goal.presenceShare),
           soll: balance.brand.goal.regions,
           ist: ziel.regions,
           anteilSoll: percent(balance.brand.goal.share),
@@ -180,7 +182,11 @@ function Netz({ ctx }: { ctx: SheetContext }) {
                   {r.stations}
                   {imBau > 0 && <span className="klein"> ({t('building', { anzahl: imBau })})</span>}
                 </td>
-                <td>{r.last ? percent(r.last.share) : '–'}</td>
+                <td>
+                  {r.last ? percent(r.last.share) : '–'}
+                  {/* 0.4.20+6: Region zählt fürs Kapitelziel (Marktanteil ≥ brand.goal.presenceShare). */}
+                  {regionPresent(r, balance) && <span title="zählt fürs Kapitelziel"> ✓</span>}
+                </td>
                 <td>{localize(C.words[awarenessWord(r.awareness)])}</td>
                 <td>
                   <span className="marke-preise" role="group" aria-label={`${t('price')} ${name}`}>

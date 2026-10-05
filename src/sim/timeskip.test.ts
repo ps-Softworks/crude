@@ -896,9 +896,11 @@ describe('Schwächung in der Chronik (0.4.19+3)', () => {
 });
 
 describe('Kapitel-3-Ziel im Text (0.4.19+3)', () => {
-  it('der Kapitelstart nennt Regionen und Tankstellen wie brand.goal', () => {
-    const text = readFileSync(new URL('../../content/timeskip.yaml', import.meta.url), 'utf8');
-    expect(text.match(new RegExp(`mit je ${balance.brand.goal.presenceStations} Tankstellen`, 'g'))?.length).toBe(2);
-    expect(balance.brand.goal.regions).toBe(3);
+  it('der Kapitelstart nennt das Ziel über Platzhalter aus brand.goal, keine festen Zahlen (0.4.20+6)', () => {
+    const c = parseTimeskipContent('content/timeskip.yaml', readFileSync(new URL('../../content/timeskip.yaml', import.meta.url), 'utf8')).content!;
+    for (const t of [c.chapter3.text, c.chapter3.textWeak]) {
+      for (const k of ['{regionAnteil}', '{regionen}', '{anteil}', '{rating}']) expect(t.de).toContain(k);
+      expect(t.de).not.toMatch(/Tankstellen|zehn Prozent/);
+    }
   });
 });

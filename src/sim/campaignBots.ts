@@ -20,7 +20,7 @@ import { buyStock, exchangeWarning, readClimate, sellPosition } from './exchange
 import { endRound, type GameState } from './game';
 import type { Kapitel3Content } from './kapitel3Content';
 import { Rng, seedFromString } from './rng';
-import { buyBack, control, courtMember, thorneBlocks, thorneStake, totalShares } from './stocks';
+import { bondDebt, bondLimit, buyBack, control, courtMember, issueBond, thorneBlocks, thorneStake, totalShares } from './stocks';
 import { answerSwitch, runTimeskip, startTimeskip, SWITCH_CHOICES, type Directives, type SwitchId } from './timeskip';
 import { skipWorld, type WorldState } from './world';
 import { creditCrises } from './worldRun';
@@ -159,6 +159,24 @@ export function exchangeTurn(state: GameState, balance: Balance, policy: Campaig
 }
 
 /**
+ * Anleihen (Kapitel 2/3, 0.4.20+6): Wer auf Pump wächst, gibt jede Runde eine Anleihe aus – die größte, die in
+ * load × Anleihen-Rahmen passt, mit der kürzesten Laufzeit (billig, aber bald fällig). Das Geld landet in der Kasse;
+ * Bohren, Tankstellen und Börse geben es aus. Wird eine Anleihe fällig, wenn das Geld fehlt und in der Krise niemand
+ * mehr zeichnet, läuft das Pleite-Verfahren (GDD §15: wer im Boom zu viele Schulden macht, stirbt im Crash).
+ */
+export function bondsTurn(state: GameState, balance: Balance, policy: CampaignBotPolicy): GameState {
+  const p = policy.bonds;
+  if (!p || !state.stocks || state.finished || chapterOf(state) < 2) return state;
+  const B = balance.stocks.bonds;
+  const ziel = p.load * bondLimit(state, balance);
+  const offen = bondDebt(state.stocks);
+  const groesse = [...B.sizes].sort((a, b) => b - a).find((x) => offen + x <= ziel);
+  if (groesse === undefined) return state;
+  const r = issueBond(state, balance, groesse, Math.min(...B.terms));
+  return r.ok ? r.state : state;
+}
+
+/**
  * Aktienbuch (Kapitel 2/3, GDD §8): Wer sich wehrt, führt jede Runde den unzufriedensten Rat zum Essen aus,
  * solange er noch nicht sicher auf Jacobs Seite steht, und kauft Aktien von den Kleinaktionären zurück, sobald
  * Thorne mitkauft oder die Kontrolle wackelt – aus dem Geld über der Rücklage, höchstens buyback der Aktien je
@@ -197,6 +215,7 @@ function playChapter(state: GameState, balance: Balance, strategy: Strategy, pol
     let t = botTurn(s, balance, strategy, rng, catalog);
     if (policy.systemsChance >= 1 || rng.float() < policy.systemsChance) t = botChapterSystems(t, balance, { reserve: policy.reserve, perRound: policy.perRound });
     t = stocksTurn(t, balance, policy);
+    t = bondsTurn(t, balance, policy);
     const vorher = t.exchange?.positions.length ?? 0;
     t = exchangeTurn(t, balance, policy);
     if ((t.exchange?.positions.length ?? 0) > vorher) stats.marginBuys += t.exchange!.positions.some((x) => x.loan > 0) ? 1 : 0;
@@ -398,27 +417,46 @@ export interface CampaignReport {
   crises: Record<Strategy, { credit: number[]; gluts: number[]; wars: number[] }>;
 }
 
-/** Alle Kampagnen: jede Strategie auf denselben Seeds wie npm run bots, dazu die Haltungs-Gegenprobe. */
-export function runCampaignBots(balance: Balance, games: number, catalog: readonly EventDef[], texts: CampaignTexts, onProgress?: (done: number) => void): CampaignReport {
-  const seeds = Array.from({ length: games }, (_, i) => `${balance.bots.seedPrefix}-${i}`);
-  const je: CampaignResult[][] = STRATEGIES.map(() => []);
-  const haltung: Record<Stance, CampaignResult[]> = { aggressive: [], balanced: [], cautious: [] };
-  const gleich: CampaignResult[][] = STRATEGIES.map(() => []);
+/** Alle Kampagnen einer Saat: jede Strategie, die Haltungs-Gegenprobe des Standard-Bots und der gleiche Start. */
+export interface CampaignSeedResult {
+  /** Je Strategie (Reihenfolge STRATEGIES) die eigene Kampagne. */
+  je: CampaignResult[];
+  /** Standard-Bot mit jeder Haltung im Zeitsprung. */
+  haltung: Record<Stance, CampaignResult>;
+  /** Je Strategie: Kapitel 2/3 ab dem Kapitelende des Standard-Bots. */
+  gleich: CampaignResult[];
+}
+
+/** Eine Saat durchspielen (0.4.20+6: einzeln, damit tools/kampagnenlaeufe.ts die Seeds auf mehrere Kerne verteilen kann). */
+export function playCampaignSeed(seed: string, balance: Balance, catalog: readonly EventDef[], texts: CampaignTexts): CampaignSeedResult {
   const standardIndex = STRATEGIES.indexOf('ausgewogen');
-  seeds.forEach((seed, i) => {
-    const k1Standard = playGame(seed, balance, 'ausgewogen', catalog).state;
-    STRATEGIES.forEach((strategy, j) => {
-      const k1 = j === standardIndex ? k1Standard : playGame(seed, balance, strategy, catalog).state;
-      const r = playCampaign(seed, balance, strategy, catalog, texts, undefined, k1);
-      je[j].push(r);
-      if (j === standardIndex) {
-        for (const st of STANCES) haltung[st].push(st === r.stance ? r : playCampaign(seed, balance, strategy, catalog, texts, st, k1));
-      }
-    });
-    // Gleicher Start: alle vom Kapitelende des Standard-Bots (für ihn selbst ist das seine Kampagne).
-    STRATEGIES.forEach((strategy, j) => gleich[j].push(j === standardIndex ? je[j][i] : playCampaign(seed, balance, strategy, catalog, texts, undefined, k1Standard)));
-    onProgress?.(i + 1);
+  const k1Standard = playGame(seed, balance, 'ausgewogen', catalog).state;
+  const je: CampaignResult[] = [];
+  let haltung = {} as Record<Stance, CampaignResult>;
+  STRATEGIES.forEach((strategy, j) => {
+    const k1 = j === standardIndex ? k1Standard : playGame(seed, balance, strategy, catalog).state;
+    const r = playCampaign(seed, balance, strategy, catalog, texts, undefined, k1);
+    je.push(r);
+    if (j === standardIndex) {
+      haltung = Object.fromEntries(STANCES.map((st) => [st, st === r.stance ? r : playCampaign(seed, balance, strategy, catalog, texts, st, k1)])) as Record<Stance, CampaignResult>;
+    }
   });
+  // Gleicher Start: alle vom Kapitelende des Standard-Bots (für ihn selbst ist das seine Kampagne).
+  const gleich = STRATEGIES.map((strategy, j) => (j === standardIndex ? je[j] : playCampaign(seed, balance, strategy, catalog, texts, undefined, k1Standard)));
+  return { je, haltung, gleich };
+}
+
+/** Saaten für runCampaignBots: dieselben wie npm run bots. */
+export function campaignSeeds(balance: Balance, games: number): string[] {
+  return Array.from({ length: games }, (_, i) => `${balance.bots.seedPrefix}-${i}`);
+}
+
+/** Der Bericht aus den Ergebnissen aller Saaten (in Saat-Reihenfolge). */
+export function campaignReportFrom(results: readonly CampaignSeedResult[]): CampaignReport {
+  const games = results.length;
+  const je = STRATEGIES.map((_, j) => results.map((r) => r.je[j]));
+  const gleich = STRATEGIES.map((_, j) => results.map((r) => r.gleich[j]));
+  const haltung = Object.fromEntries(STANCES.map((st) => [st, results.map((r) => r.haltung[st])])) as Record<Stance, CampaignResult[]>;
   const fairWins = campaignWinners(gleich);
   const fair = STRATEGIES.map((strategy, j): FairStartRow => ({
     strategy,
@@ -439,6 +477,16 @@ export function runCampaignBots(balance: Balance, games: number, catalog: readon
     STRATEGIES.map((s, j) => [s, { credit: je[j].map((r) => r.crises.credit), gluts: je[j].map((r) => r.crises.gluts), wars: je[j].map((r) => r.crises.wars) }]),
   ) as CampaignReport['crises'];
   return { games, rows, stances, fair, crises };
+}
+
+/** Alle Kampagnen: jede Strategie auf denselben Seeds wie npm run bots, dazu die Haltungs-Gegenprobe. */
+export function runCampaignBots(balance: Balance, games: number, catalog: readonly EventDef[], texts: CampaignTexts, onProgress?: (done: number) => void): CampaignReport {
+  const results = campaignSeeds(balance, games).map((seed, i) => {
+    const r = playCampaignSeed(seed, balance, catalog, texts);
+    onProgress?.(i + 1);
+    return r;
+  });
+  return campaignReportFrom(results);
 }
 
 // --- Zielwerte -----------------------------------------------------------------

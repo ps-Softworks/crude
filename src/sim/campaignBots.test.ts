@@ -9,6 +9,7 @@ import {
   campaignWinners,
   chapterRows,
   checkCampaignTargets,
+  bondsTurn,
   exchangeTurn,
   playCampaign,
   stocksTurn,
@@ -19,7 +20,7 @@ import { empireValue } from './empire';
 import { exchangeEquity, openExchange } from './exchange';
 import { newGame, type GameState } from './game';
 import { Rng } from './rng';
-import { startStocks, thorneStake } from './stocks';
+import { bondDebt, bondLimit, startStocks, thorneStake } from './stocks';
 import { parseStocksContent } from './stocksContent';
 import { loadBalance, rawBalance } from './testBalance';
 import { loadEvents } from './testEvents';
@@ -162,6 +163,37 @@ describe('Börse (Kapitel 3): exchangeTurn', () => {
     expect(exchangeEquity(s)).toBeGreaterThan(0);
     // Nur die Maklergebühr geht verloren.
     expect(empireValue(s, balance)).toBeCloseTo(empireValue(vorher, balance) - 25000 * 2 * balance.exchange.margin.fee, 0);
+  });
+});
+
+describe('Anleihen (Kapitel 2/3): bondsTurn (0.4.20+6)', () => {
+  const firma = (cash = 50000): GameState => {
+    const g = newGame('anleihen-bot', balance);
+    return startStocks({ ...g, cash, ipo: { share: 0, proceeds: 0 }, chapter: 2, rating: 'B', worldModel: { ...g.worldModel, credit: 50, mood: 50 } } as GameState, balance, board);
+  };
+
+  it('ohne Anleihen-Politik oder in Kapitel 1 gibt er keine aus', () => {
+    const s = firma();
+    expect(bondsTurn(s, balance, policy({ bonds: null }))).toBe(s);
+    const k1 = { ...s, chapter: 1 };
+    expect(bondsTurn(k1, balance, policy({ bonds: { load: 1 } }))).toBe(k1);
+  });
+
+  it('gibt je Runde eine Anleihe aus, bis load × Rahmen erreicht ist – kürzeste Laufzeit, Geld in die Kasse', () => {
+    const p = policy({ bonds: { load: 0.8 } });
+    let s = firma();
+    const ziel = 0.8 * bondLimit(s, balance);
+    const erste = bondsTurn(s, balance, p);
+    expect(bondDebt(erste.stocks)).toBeGreaterThan(0);
+    expect(erste.cash).toBeGreaterThan(s.cash);
+    expect(erste.stocks!.bonds[0].maturity - erste.stocks!.bonds[0].issued + 1).toBe(Math.min(...balance.stocks.bonds.terms));
+    // Dieselbe Runde: keine zweite.
+    expect(bondsTurn(erste, balance, p).stocks!.bonds).toHaveLength(1);
+    for (let i = 0; i < 20; i++) {
+      s = bondsTurn({ ...s, round: s.round + 1 }, balance, p);
+      expect(bondDebt(s.stocks)).toBeLessThanOrEqual(Math.max(ziel, 0.8 * bondLimit(s, balance)) + 1e-6);
+    }
+    expect(bondDebt(s.stocks)).toBeGreaterThan(0);
   });
 });
 

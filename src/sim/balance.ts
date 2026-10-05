@@ -547,6 +547,11 @@ export interface CampaignBotPolicy {
   /** Börse (Kapitel 3): Anteil des freien Geldes je Kauf, Hebel, verkauft bei Warnung der Zeitung – oder null (nie). */
   exchange: { share: number; leverage: number; sellOnWarning: boolean } | null;
   /**
+   * Anleihen (Kapitel 2/3, 0.4.20+6): gibt je Runde eine Anleihe aus (größte, die passt; kürzeste Laufzeit), solange
+   * alle Anleihen zusammen unter load × Anleihen-Rahmen bleiben – Wachstum auf Pump (GDD §15). Fehlt/null: nie.
+   */
+  bonds?: { load: number } | null;
+  /**
    * Aktienbuch (Kapitel 2/3): Räte umstimmen und Aktien zurückkaufen, sobald Thorne thorneFrom der Aktien hält
    * oder die Kontrolle unter controlBelow fällt – höchstens buyback der Aktien je Runde; null = wehrt sich nicht.
    */
@@ -1883,6 +1888,7 @@ function parseCampaignPolicy(raw: unknown, name: string): CampaignBotPolicy {
     perRound: positiveInt(raw, `${p}.perRound`),
     systemsChance: 1,
     exchange,
+    bonds: path(raw, `${p}.bonds`) === undefined || path(raw, `${p}.bonds`) === null ? null : { load: share(raw, `${p}.bonds.load`) },
     defend,
   };
 }

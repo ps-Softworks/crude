@@ -108,7 +108,7 @@ export function ChapterEndScreen({
                 <ul className="pruefung">
                   <li>
                     <Haken ok={pruefung3.brand} />{' '}
-                    {fillText(chapterContent.chapter3.goals.brand, { regionen: String(balance.brand.goal.regions), anteil: prozent(balance.brand.goal.share) })} ({pruefung3.regions} Regionen ·{' '}
+                    {fillText(chapterContent.chapter3.goals.brand, { regionAnteil: prozent(balance.brand.goal.presenceShare), regionen: String(balance.brand.goal.regions), anteil: prozent(balance.brand.goal.share) })} ({pruefung3.regions} Regionen ·{' '}
                     {anteil(pruefung3.share)})
                   </li>
                   <li>

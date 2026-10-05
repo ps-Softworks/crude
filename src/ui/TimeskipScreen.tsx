@@ -175,6 +175,7 @@ export function ChronicleScreen({ game, record, onContinue }: { game: GameState;
   const kapitel = record.number >= 2 ? T.chapter3 : T.chapter2;
   const bericht = managerReport(game, record, balance);
   const bbl = (x: number) => Math.round(x).toLocaleString('de-DE');
+  const prozent = (x: number) => `${Math.round(x * 100)}${NBSP}%`;
   const titel = (
     <>
       <p className="zeitung-kopf">{fillTimeskipText(c.paper, {})}</p>
@@ -263,7 +264,15 @@ export function ChronicleScreen({ game, record, onContinue }: { game: GameState;
           </div>
         )}
         {/* 4.12/4.19: Ausgangslage und Ziel des nächsten Kapitels – der Spieler weiß vor der ersten Runde, worum es geht. */}
-        {game.ending !== 'pleite' && <p className="bogen-text sprung-ziel">{fillTimeskipText(weakStart(record, balance) ? kapitel.textWeak : kapitel.text, { ziel: money(balance.chapter.chapter2.goalValue), bis: chapterGoalDate(record, game, balance) })}</p>}
+        {game.ending !== 'pleite' && <p className="bogen-text sprung-ziel">{fillTimeskipText(weakStart(record, balance) ? kapitel.textWeak : kapitel.text, {
+              ziel: money(balance.chapter.chapter2.goalValue),
+              bis: chapterGoalDate(record, game, balance),
+              // 0.4.20+6: Ziel Kapitel 3 aus brand.goal statt fester Zahlen im Text.
+              regionAnteil: prozent(balance.brand.goal.presenceShare),
+              regionen: String(balance.brand.goal.regions),
+              anteil: prozent(balance.brand.goal.share),
+              rating: balance.chapter.chapter3.minRating,
+            })}</p>}
       </div>
       <div className="bogen-fuss">
         <button type="button" onClick={() => setSeite(1)}>

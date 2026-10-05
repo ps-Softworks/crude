@@ -3,8 +3,10 @@
 // (Ist/Ziel) und schreibt sie in docs/botlaeufe.md in den Abschnitt „Kapitel 2 und 3“.
 // Aufruf: npm run kampagne            (alle Kampagnen aus balance.yaml)
 //         npm run kampagne -- 100     (nur 100 Seeds, schreibt nichts – zum Justieren)
+// 0.4.20+6: läuft auf mehreren Kernen (tools/kampagnenParallel.ts), höchstens KAMPAGNE_JOBS Prozesse (Standard 7).
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { campaignTables, campaignTargetTable, checkCampaignTargets, policyLine, runCampaignBots } from '../src/sim/campaignBots';
+import { campaignTables, campaignTargetTable, checkCampaignTargets, policyLine } from '../src/sim/campaignBots';
+import { runCampaignParallel } from './kampagnenParallel';
 import { parseStocksContent } from '../src/sim/stocksContent';
 import { loadBalance } from '../src/sim/testBalance';
 import { loadEvents } from '../src/sim/testEvents';
@@ -23,7 +25,8 @@ const probe = Number.isInteger(arg) && arg > 0;
 const games = probe ? arg : balance.bots.campaign.games;
 
 const start = Date.now();
-const report = runCampaignBots(balance, games, catalog, texts, (n) => {
+const jobs = Number(process.env.KAMPAGNE_JOBS) || 7;
+const report = await runCampaignParallel(games, jobs, '{}', (n) => {
   if (n % 50 === 0) process.stderr.write(`  ${n}/${games} Seeds …\n`);
 });
 const sekunden = ((Date.now() - start) / 1000).toFixed(1);

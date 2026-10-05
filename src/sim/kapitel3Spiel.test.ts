@@ -6,9 +6,9 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { nonFiniteNumbers } from './testFinite';
 import { arcSummaries, parseArcContent } from './arcs';
-import { brandOf, buildStations, foundBrand, brandWorldFrom } from './brand';
+import { brandOf, buildingCount, buildStations, foundBrand, brandWorldFrom } from './brand';
 import { botTurn } from './bots';
-import { botChapterSystems } from './botsKapitel3';
+import { botChapterSystems, DEFAULT_BRAND_BOT } from './botsKapitel3';
 import { applyEarlyEnding, canGoPublic, chapter3Check, chapterPassed, chapterResult, decideIpo, parseChapterContent } from './chapter';
 import { openChapterSystems } from './chapterSystems';
 import { applySystemEffects, checkSystemEffects, parseSystemEffects, systemImpact, type SystemEffects } from './eventSystems';
@@ -36,15 +36,18 @@ function k3(seed = 'kapitel3', extra: Partial<GameState> = {}): GameState {
   return startRivalsK3(openChapterSystems(s, balance, TEXTE), balance);
 }
 
-/** Marke gegründet, in n Regionen mit je presenceStations Tankstellen (fertig). */
+/** Marke gegründet, in n Regionen mit Tankstellen und genau presenceShare Marktanteil in der letzten Abrechnung (0.4.20+6). */
 function mitMarke(s0: GameState, regionen: string[]): GameState {
   const welt = brandWorldFrom(s0);
   const r = foundBrand(s0, balance, welt, 'harlan');
   if (!r.ok) throw new Error(r.reason);
   const brand = brandOf(r.state, balance);
-  const n = balance.brand.goal.presenceStations;
-  const regions = { ...brand.regions };
-  for (const id of regionen) regions[id] = { ...regions[id], stations: n };
+  const p = balance.brand.goal.presenceShare;
+  // Alle anderen Regionen mit Nachfrage, aber ohne Absatz – sonst zählte der landesweite Anteil nur die genannten.
+  const regions = Object.fromEntries(
+    Object.entries(brand.regions).map(([id, r]) => [id, { ...r, last: { demand: 1000, sales: 0, craneSales: 0, share: 0, craneShare: 0, profit: 0, priceWar: false } }]),
+  );
+  for (const id of regionen) regions[id] = { ...regions[id], stations: 6, last: { demand: 1000, sales: 1000 * p, craneSales: 0, share: p, craneShare: 0, profit: 0, priceWar: false } };
   return { ...r.state, brand: { ...brand, regions } };
 }
 
@@ -64,12 +67,15 @@ describe('Kapitelprüfung Kapitel 3 (GDD §13)', () => {
     expect(chapter3Check({ ...s, rating: 'D' }, balance)).toMatchObject({ ratingReached: false, passed: false });
   });
 
-  it('zwei Regionen ohne genug Marktanteil reichen nicht; zehn Prozent Marktanteil reichen auch mit einer Region', () => {
+  it('zwei Regionen ohne genug Marktanteil reichen nicht; genug landesweiter Marktanteil reicht auch mit einer Region', () => {
     const zwei = mitMarke(k3(), ['cordova', 'okara']);
     expect(chapter3Check({ ...zwei, rating: 'B' }, balance).brand).toBe(false);
     const eine = mitMarke(k3(), ['cordova']);
     const brand = eine.brand!;
-    const viel = { demand: 1000, sales: 200, craneSales: 300, share: 0.2, craneShare: 0.3, profit: 1, priceWar: false };
+    // Landesweit = Absatz aller Regionen ÷ Nachfrage aller Regionen: Cordova mit großer Nachfrage, alles verkauft.
+    const andere = 1000 * (Object.keys(brand.regions).length - 1);
+    const viel = { demand: andere, sales: andere, craneSales: 0, share: 1, craneShare: 0, profit: 1, priceWar: false };
+    expect(0.5).toBeGreaterThanOrEqual(balance.brand.goal.share);
     const mitAnteil: GameState = { ...eine, rating: 'B', brand: { ...brand, regions: { ...brand.regions, cordova: { ...brand.regions.cordova, last: viel } } } };
     expect(chapter3Check(mitAnteil, balance)).toMatchObject({ shareReached: true, passed: true });
   });
@@ -360,5 +366,28 @@ describe('Ein ganzer Durchlauf Kapitel 1 → 3 mit Bots', () => {
     const arm = k3('bot-arm', { cash: 1000 });
     expect(botChapterSystems(arm, balance)).toBe(arm);
     expect(buildStations).toBeTypeOf('function');
+  });
+
+  it('der Bot baut je Region nach, bis der Marktanteil mit Abstand reicht (0.4.20+6)', () => {
+    const p = balance.brand.goal.presenceShare;
+    let s = botChapterSystems(k3('bot-anteil', { cash: 500000 }), balance);
+    const brand = brandOf(s, balance);
+    const gebaut = Object.entries(brand.regions).filter(([, r]) => r.building.length > 0).map(([id]) => id);
+    expect(gebaut.length).toBeGreaterThan(0);
+    expect(gebaut.length).toBeLessThanOrEqual(balance.brand.goal.regions + 1);
+    // perRound gilt je Region: in jeder begonnenen Region genau so viele.
+    for (const id of gebaut) expect(buildingCount(brand, id)).toBe(DEFAULT_BRAND_BOT.perRound);
+    // Fertig, Anteil reicht mit Abstand: nichts mehr. Anteil knapp darunter: er baut weiter.
+    const mit = (share: number): GameState => {
+      const b = brandOf(s, balance);
+      const regions = Object.fromEntries(
+        Object.entries(b.regions).map(([id, r]) => [id, { ...r, stations: Math.max(1, r.stations + r.building.reduce((a, x) => a + x.count, 0)), building: [], last: { demand: 1000, sales: 1000 * share, craneSales: 0, share, craneShare: 0, profit: 0, priceWar: false } }]),
+      );
+      return { ...s, brand: { ...b, regions } };
+    };
+    s = mit(p + 0.1);
+    expect(botChapterSystems(s, balance)).toBe(s);
+    const knapp = mit(p - 0.01);
+    expect(Object.values(botChapterSystems(knapp, balance).brand!.regions).some((r) => r.building.length > 0)).toBe(true);
   });
 });

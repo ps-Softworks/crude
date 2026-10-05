@@ -244,7 +244,7 @@ chapter3:
           The files were enough. Jacob Harlan goes to federal prison, and in Cordova people tell each
           other who opened the file.
   goals:
-    brand: { de: "Eigene Marke in mindestens {regionen} Regionen oder {anteil} Marktanteil", en: "Own brand in at least {regionen} regions or {anteil} market share" }
+    brand: { de: "Eigene Marke mit mindestens {regionAnteil} Marktanteil in {regionen} Regionen oder {anteil} landesweit", en: "Own brand with at least {regionAnteil} market share in {regionen} regions or {anteil} nationwide" }
     rating: { de: "Am Kapitelende mindestens Rating {rating}", en: "At least rating {rating} at the chapter's end" }
   next:
     title: { de: "Ende des Early-Access-Umfangs – Kapitel 4 folgt", en: "End of the Early Access Scope – Chapter 4 Follows" }

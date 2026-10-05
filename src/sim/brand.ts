@@ -87,7 +87,8 @@ export interface BrandBalance {
     adGain: number;
   };
   value: { profitMultiple: number; assetShare: number };
-  goal: { regions: number; share: number; presenceStations: number };
+  /** 0.4.20+6: Eine Region zählt, wenn Jacobs Marktanteil dort mindestens presenceShare ist (vorher: feste Zahl Tankstellen). */
+  goal: { regions: number; share: number; presenceShare: number };
   antitrust: { regional: number; national: number };
   regions: BrandRegionBalance[];
 }
@@ -201,7 +202,7 @@ export function parseBrandBalance(raw: unknown): BrandBalance {
       adGain: zahl(raw, `${p}.crane.adGain`, 0, 100),
     },
     value: { profitMultiple: zahl(raw, `${p}.value.profitMultiple`, 0), assetShare: zahl(raw, `${p}.value.assetShare`, 0, 1) },
-    goal: { regions: ganz(raw, `${p}.goal.regions`, 1), share: zahl(raw, `${p}.goal.share`, 0, 1), presenceStations: ganz(raw, `${p}.goal.presenceStations`, 1) },
+    goal: { regions: ganz(raw, `${p}.goal.regions`, 1), share: zahl(raw, `${p}.goal.share`, 0, 1), presenceShare: zahl(raw, `${p}.goal.presenceShare`, 0, 1) },
     antitrust: { regional: zahl(raw, `${p}.antitrust.regional`, 0, 1), national: zahl(raw, `${p}.antitrust.national`, 0, 1) },
     regions,
   };
@@ -803,7 +804,7 @@ export function brandAssets(state: Pick<BrandGame, 'brand'> & object, balance: W
 }
 
 export interface BrandGoal {
-  /** Regionen, in denen die Marke mit mindestens presenceStations Tankstellen vertreten ist. */
+  /** Regionen, in denen die Marke mindestens presenceShare Marktanteil hält (letzte Abrechnung). */
   regions: number;
   share: number;
   regionsReached: boolean;
@@ -811,10 +812,19 @@ export interface BrandGoal {
   reached: boolean;
 }
 
-/** Kapitelprüfung Kapitel 3 (GDD §13): Marke in ≥ goal.regions Regionen oder ≥ goal.share Marktanteil. */
+/**
+ * Kapitelprüfung Kapitel 3 (GDD §13): Marke in ≥ goal.regions Regionen oder ≥ goal.share nationaler Marktanteil.
+ * 0.4.20+6: Vertreten ist die Marke in einer Region erst mit goal.presenceShare Marktanteil (letzte Abrechnung) –
+ * Crane baut dagegen aus und führt Preiskämpfe, der „Kampf um die Marke“ entscheidet. Vorher zählte eine feste
+ * Zahl Tankstellen, und wer genug Geld hatte, bestand immer.
+ */
+export function regionPresent(r: Pick<BrandRegionState, 'stations' | 'last'>, balance: WithBrand): boolean {
+  return r.stations > 0 && (r.last?.share ?? 0) >= balance.brand.goal.presenceShare;
+}
+
 export function brandGoal(brand: BrandState | undefined, balance: WithBrand): BrandGoal {
   const g = balance.brand.goal;
-  const regions = brand?.founded ? Object.values(brand.regions).filter((r) => r.stations >= g.presenceStations).length : 0;
+  const regions = brand?.founded ? Object.values(brand.regions).filter((r) => regionPresent(r, balance)).length : 0;
   const share = brand?.founded ? nationalShare(brand).jacob : 0;
   const regionsReached = regions >= g.regions;
   const shareReached = share >= g.share;

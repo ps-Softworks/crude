@@ -744,7 +744,8 @@ bots:
   # Raffinerie, Marke, Tankstellen und Aktien, Tankstellen je Runde, Börse in Kapitel 3 (share = Anteil des freien
   # Geldes je Kauf, leverage = Hebel, sellOnWarning = verkauft, wenn die Zeitung vor der Blase warnt; null = nie),
   # Abwehr im Aktienbuch (defend: Räte umstimmen; Rückkauf von höchstens buyback der Aktien je Runde, sobald Thorne
-  # thorneFrom hält oder die Kontrolle unter controlBelow fällt; null = wehrt sich nicht).
+  # thorneFrom hält oder die Kontrolle unter controlBelow fällt; null = wehrt sich nicht), Anleihen in Kapitel 2/3
+  # (bonds.load = Anteil des Anleihen-Rahmens; fehlt = keine Anleihen).
   # Der Zufalls-Bot würfelt Direktiven, Börsengang, Weichen und Börse; die Kapitelsysteme fasst er mit
   # randomSystemsChance je Runde an.
   campaign:
@@ -767,6 +768,7 @@ bots:
       reserve: 5000
       perRound: 4
       exchange: { share: 0.15, leverage: 5, sellOnWarning: false }
+      bonds: { load: 0.1 }    # gibt Anleihen bis 10 % des Anleihen-Rahmens aus (0,2: Pleite 74,5 %, 0,5: 90,5 % – Anleihen bringen ihm nie mehr ein, die Krise in Kapitel 3 holt ihn)
       defend: { thorneFrom: 0.15, controlBelow: 0.55, buyback: 0.03 }
     balanced:
       stance: balanced
@@ -1831,7 +1833,7 @@ brand:
   unlockChapter: 3          # GDD §13: Marke und Tankstellen sind neu in Kapitel 3
   foundCost: 20000          # $ für Name, Schilder, Lackierung der ersten Zapfsäulen
   station:
-    cost: 6000              # $ je Tankstelle (× costFactor der Region)
+    cost: 17500             # $ je Tankstelle (× costFactor der Region); 0.4.20+6: 6.000 → 17.500 – bei 6.000 erreichte der Standard-Bot das Kapitelziel 3 in 96 %, jetzt ~62 %
     buildRounds: 1          # so viele Runden dauert der Bau
     buildMax: 5             # höchstens so viele auf einmal in Auftrag geben
     upkeep: 300             # $ je Tankstelle und Runde (Pächter, Pumpe, Lieferwagen)
@@ -1876,10 +1878,11 @@ brand:
     assetShare: 0.5         # Tankstellen zählen im Imperiumswert mit diesem Anteil ihrer Baukosten
   goal:                     # Kapitelprüfung Kapitel 3 (GDD §13): Marke in ≥ 3 Regionen oder ≥ 10 % Marktanteil
     regions: 3
-    share: 0.10
-    # 0.4.19+3: vorher 3 – 4 Regionen mit je 3 Tankstellen reichten bei etwa 9 % Marktanteil, 22 von 25 Bot-Läufen
-    # bestanden. Mit 6 deckt sich der Weg über die Regionen mit dem über den Marktanteil (gemessen 39 von 66).
-    presenceStations: 6     # ab so vielen Tankstellen gilt die Marke in einer Region als vertreten
+    share: 0.25             # nationaler Marktanteil als zweiter Weg (0.4.20+6: 0,10 → 0,25 – 0,10 erreichte jede Marke nebenbei)
+    # 0.4.20+6: Vertreten ist die Marke in einer Region erst mit so viel Marktanteil dort (letzte Abrechnung). Vorher
+    # zählte eine feste Zahl Tankstellen (presenceStations 6) – wer genug Geld hatte, bestand immer (Standard-Bot 96 %,
+    # auch mit 10 oder 12 Tankstellen nur eine Frage der Bauzeit). Jetzt entscheidet der Kampf gegen Crane.
+    presenceShare: 0.3
   antitrust:                # GDD §15: Kartellbehörde ab 25 % regionalem oder 15 % nationalem Marktanteil (für 4.3 Gesetze)
     regional: 0.25
     national: 0.15
@@ -1938,7 +1941,7 @@ exchange:
     rate: 0.08             # Maklerzins pro Jahr bei normalem Kreditklima
     rateClimate: 0.08      # Kreditklima 100 → so viel Zins zusätzlich (0 → so viel weniger)
     minBuy: 500            # kleinster Einsatz in $
-    heatScale: 100000      # so viel geliehenes Geld heizt Börse und Kreditklima voll an
+    heatScale: 400000      # so viel geliehenes Geld heizt Börse und Kreditklima voll an (0.4.20+6: 100.000 → 400.000 $ – in Kapitel 3 haben Firmen 500.000 $ und mehr; schon 10 % mit doppeltem Hebel lösten in 95 % der Welten eine Kreditkrise aus, GDD §8: „kann“ den Crash auslösen)
     creditShift: 4         # volle Hitze → so viele Punkte aufs Weltkreditklima der Folgerunde (worldModel.credit)
     fee: 0.01              # Maklergebühr bei Kauf und Verkauf
   sectors:

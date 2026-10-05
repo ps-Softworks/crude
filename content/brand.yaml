@@ -90,7 +90,7 @@ ui:
   national: { de: "Marktanteil im ganzen Land: {anteil}", en: "National market share: {anteil}" }
   profit: { de: "Gewinn der Tankstellen in der letzten Runde: {betrag}", en: "Station profit last round: {betrag}" }
   value: { de: "Markenwert: {betrag}", en: "Brand value: {betrag}" }
-  goal: { de: "Kapitelziel, Teil 1: Marke in {soll} Regionen ({ist}) oder {anteilSoll} Marktanteil ({anteilIst})", en: "Chapter goal, part 1: brand in {soll} regions ({ist}) or {anteilSoll} market share ({anteilIst})" }
+  goal: { de: "Kapitelziel, Teil 1: mindestens {regionAnteil} Marktanteil in {soll} Regionen ({ist}) oder {anteilSoll} landesweit ({anteilIst})", en: "Chapter goal, part 1: at least {regionAnteil} market share in {soll} regions ({ist}) or {anteilSoll} nationwide ({anteilIst})" }
   goalRating: { de: "Kapitelziel, Teil 2: Rating {soll} oder besser am Kapitelende (jetzt {ist}, siehe Kassenbuch)", en: "Chapter goal, part 2: rating {soll} or better at chapter end (now {ist}, see the ledger)" }
   antitrust: { de: "Vorsicht: So viel Marktanteil weckt die Kartellbehörde.", en: "Careful: this much market share wakes the antitrust office." }
   campaignRun: { de: "{kampagne} läuft noch bis Runde {runde}.", en: "{kampagne} runs until round {runde}." }

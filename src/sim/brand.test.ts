@@ -7,6 +7,7 @@ import {
   brandAntitrust,
   brandAssets,
   brandGoal,
+  regionPresent,
   brandOf,
   brandRegionOpen,
   brandUnlocked,
@@ -463,19 +464,36 @@ describe('Kennzahlen', () => {
     expect(nationalShare(undefined)).toEqual({ jacob: 0, crane: 0 });
   });
 
-  it('Kapitelziel: Marke in 3 Regionen erfüllt es', () => {
+  it('Kapitelziel: Marke in 3 Regionen mit genug Marktanteil erfüllt es (0.4.20+6)', () => {
     let s = ok(foundBrand(kapitel3(), balance, K3, 'harlan'));
-    // 0.4.19+3: presenceStations kann über buildMax liegen – dann in mehreren Aufträgen bauen.
-    for (const id of ['cordova', 'okara', 'mittelland']) {
-      for (let rest = B.goal.presenceStations; rest > 0; rest -= B.station.buildMax) s = ok(buildStations(s, balance, K3, id, Math.min(rest, B.station.buildMax)));
-    }
+    for (const id of ['cordova', 'okara', 'mittelland']) s = ok(buildStations(s, balance, K3, id, B.station.buildMax));
     expect(brandGoal(s.brand, balance).regions).toBe(0);
-    s = settleBrand({ ...s, round: s.round + 1 }, balance, K3);
-    const g = brandGoal(s.brand, balance);
+    const anteil = (brand: BrandState, id: string, share: number): BrandState => ({
+      ...brand,
+      regions: { ...brand.regions, [id]: { ...brand.regions[id], stations: Math.max(1, brand.regions[id].stations), last: { demand: 1000, sales: share * 1000, craneSales: 0, share, craneShare: 0, profit: 0, priceWar: false } } },
+    });
+    const p = B.goal.presenceShare;
+    let brand = anteil(anteil(anteil(s.brand!, 'cordova', p), 'okara', p), 'mittelland', p - 0.01);
+    expect(brandGoal(brand, balance).regions).toBe(2);
+    expect(brandGoal(brand, balance).regionsReached).toBe(false);
+    brand = anteil(brand, 'mittelland', p);
+    const g = brandGoal(brand, balance);
     expect(g.regions).toBe(3);
     expect(g.regionsReached).toBe(true);
     expect(g.reached).toBe(true);
+    // Ohne Tankstellen zählt eine Region nie, auch wenn eine alte Abrechnung Anteil zeigt.
+    expect(regionPresent({ stations: 0, last: brand.regions.cordova.last }, balance)).toBe(false);
+    expect(regionPresent(brand.regions.cordova, balance)).toBe(true);
     expect(brandGoal(undefined, balance).reached).toBe(false);
+  });
+
+  it('Kapitelziel: Tankstellen allein reichen nicht – Crane hält den Marktanteil (0.4.20+6)', () => {
+    let s = ok(foundBrand(kapitel3(), balance, K3, 'harlan'));
+    s = ok(buildStations(s, balance, K3, 'ostkueste', 1));
+    s = settleBrand({ ...s, round: s.round + 1 }, balance, K3);
+    expect(s.brand!.regions.ostkueste.stations).toBe(1);
+    expect(s.brand!.regions.ostkueste.last!.share).toBeLessThan(B.goal.presenceShare);
+    expect(regionPresent(s.brand!.regions.ostkueste, balance)).toBe(false);
   });
 
   it('Kartellrisiko ab regional 25 %', () => {

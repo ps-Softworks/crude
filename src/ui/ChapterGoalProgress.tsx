@@ -31,7 +31,7 @@ export function ChapterGoalProgress({ game }: { game: GameState }) {
         <strong>Kapitelziel (geprüft am Kapitelende)</strong>
         <ul className="pruefung">
           <Punkt ok={p.brand}>
-            {fillText(chapterContent.chapter3.goals.brand, { regionen: String(balance.brand.goal.regions), anteil: prozent(balance.brand.goal.share) })} (jetzt {p.regions}{' '}
+            {fillText(chapterContent.chapter3.goals.brand, { regionAnteil: prozent(balance.brand.goal.presenceShare), regionen: String(balance.brand.goal.regions), anteil: prozent(balance.brand.goal.share) })} (jetzt {p.regions}{' '}
             Regionen · {anteil(p.share)})
           </Punkt>
           <Punkt ok={p.ratingReached}>
