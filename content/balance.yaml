@@ -495,7 +495,7 @@ chapter:
   chapter2:
     # 0.4.19+2: GDD §13 nennt 1 Mio. $ – das erreichte keine einzige Bot-Partie (bester Wert ~320.000 $,
     # 30 Seeds mit Raffinerie-Zug des Bots). Mit 200.000 $ besteht der Standard-Bot in etwa 30 % (PLATZHALTER).
-    goalValue: 200000          # Imperiumswert ≥ so viel $ …
+    goalValue: 400000          # Imperiumswert ≥ so viel $ … (0.4.20+5: 200.000 → 400.000 $ – seit der Verwalter die Förderung hält und die Provinz offen ist, bestand der Standard-Bot in 82,5 %, Ziel höchstens 70 %)
     goalControl: 0.5           # … Kontrolle ≥ 50 % (Familienfirma: immer) und eigene Raffinerie oder Fernleitung zum Hafen
     swallowedControl: 0.5      # Ende „Geschluckt“: Thorne hält mehr Aktien als Jacob und Jacobs Kontrolle liegt darunter
   # Kapitel 3 „Der Konzernherr“ (4.19, GDD §13): Marke in ≥ brand.goal.regions Regionen oder ≥ brand.goal.share
