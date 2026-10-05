@@ -389,11 +389,11 @@ function ThorneVerhandlung({ game }: { game: GameState }) {
       </ul>
       {v.special && <p className="hint">Sondertarif {price(v.special.tariff)} – noch {v.special.roundsLeft} {v.special.roundsLeft === 1 ? 'Runde' : 'Runden'}.</p>}
       {v.freezeRounds > 0 && !v.special && <p className="hint">Thorne hat Ruhe zugesagt: Der Tarif bleibt noch {v.freezeRounds} {v.freezeRounds === 1 ? 'Runde' : 'Runden'}.</p>}
-      {v.bluffWatch && <p className="hint">Thorne zählt nach: Geht fast alles per Bahn, merkt er den Bluff.</p>}
+      {v.bluffWatch && <p className="hint">Thorne lässt am Bahnhof nachzählen – nicht jede Runde. Geht in so einer Runde das meiste per Bahn, fliegt der Bluff auf und der Tarif steigt sofort.</p>}
       {v.brennan && <p className="hint">Brennans Fuhrleute fahren für dich (noch {v.brennan.roundsLeft} {v.brennan.roundsLeft === 1 ? 'Runde' : 'Runden'}) – siehe Mietfuhrwerk im Verkauf.</p>}
       {v.pool && (
         <p className="hint">
-          Transportgemeinschaft: {v.pool.members.join(', ')} – {barrels(v.pool.volume)} bbl je Runde mehr auf der Bahn{v.pool.pipeline ? ', Pipeline gemeinsam' : ''}.
+          Transportgemeinschaft: {v.pool.members.join(', ')} – {barrels(v.pool.volume)} bbl je Runde mehr auf der Bahn{v.pool.pipeline ? ', Pipeline gemeinsam' : ''}. Rabatt {price(v.pool.discount)} je Barrel; Zusage an Thorne: zusammen mindestens {barrels(v.pool.minimum)} bbl je Runde, sonst Strafe.
         </p>
       )}
       <p className="klein">Vorsprechen, Brennan und Gemeinschaft liegen als Karten im Kalender (T), Reiter Fracht.</p>

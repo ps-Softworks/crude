@@ -112,7 +112,14 @@ describe('Kampagne spielen (Kapitel 1 → Sprung I → Kapitel 2 → Sprung II �
   });
 
   it('eine verfehlte Kapitelprüfung beendet die Kampagne nicht', () => {
-    const verfehlt = [r1, ...['bot-0', 'bot-3'].map((s) => playCampaign(s, balance, 'ausgewogen', catalog, texts))].find((r) => r.chapters.some((c) => c.result === 'verfehlt'));
+    // Spielspaß K1: Mit den Preis- und Fracht-Karten verfehlt der Standard-Bot seltener – darum mehr Seeds zur Auswahl.
+    const hatVerfehlt = (r: typeof r1) => r.chapters.some((c) => c.result === 'verfehlt');
+    let verfehlt = hatVerfehlt(r1) ? r1 : undefined;
+    for (const seed of ['bot-0', 'bot-3', 'bot-1', 'bot-2', 'bot-4', 'bot-6', 'bot-7', 'bot-8']) {
+      if (verfehlt) break;
+      const r = playCampaign(seed, balance, 'ausgewogen', catalog, texts);
+      if (hatVerfehlt(r)) verfehlt = r;
+    }
     expect(verfehlt).toBeDefined();
     const i = verfehlt!.chapters.findIndex((c) => c.result === 'verfehlt');
     expect(i < verfehlt!.chapters.length - 1 || verfehlt!.survived).toBe(true);
