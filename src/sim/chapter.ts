@@ -45,7 +45,7 @@ import { RATINGS } from './balance';
 import { REPUTATION_AXES, REPUTATION_WORDS, type ReputationAxis, type ReputationWord } from './reputation';
 
 /** Wie das Kapitel ausgegangen ist, oder null, solange es läuft. */
-export type ChapterResult = 'erreicht' | 'verfehlt' | 'verkauft' | 'pleite' | 'abgesetzt' | 'geschluckt' | 'haft' | null;
+export type ChapterResult = 'erreicht' | 'verfehlt' | 'verkauft' | 'pleite' | 'abgesetzt' | 'geschluckt' | 'haft' | 'feuer' | null;
 
 export interface ChapterCheck {
   /** Kasse nicht im Minus und nicht pleite. */

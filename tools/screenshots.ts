@@ -18,6 +18,7 @@
 // Die Spielstände entstehen wie in den Bot-Läufen: ein Bot spielt mit allen
 // Ereignissen, der Stand landet im Autosave des Browsers, dann wird die Seite
 // geladen. Klicks und Tasten gehen wie beim Spieler über das DevTools-Protokoll.
+import { settleFeuer } from '../src/sim/feuer';
 import { spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -114,6 +115,13 @@ try {
   bankrott = null;
 }
 const pleite = suche((s) => s.ending === 'pleite');
+// B3: Ende „Ein Feuer in der Nacht“ – Kapitelende-Stand mit Verrat, Gegendrohung und Stufe 4, Anschlag sicher.
+const feuer = (() => {
+  const b = { ...balance, feuer: { ...balance.feuer, attack: { ...balance.feuer.attack, chance: 1 } } };
+  const r = kapitel.round - 5;
+  const marks = { ...kapitel.events.marks, bullard_verraten: r, feuer_gegendrohung: r, feuer_drohung: r, feuer_stufe4: r };
+  return settleFeuer({ ...kapitel, finished: false, ending: null, log: kapitel.log.slice(0, -1), events: { ...kapitel.events, marks } }, b);
+})();
 // Zeitsprung (4.5): Kapitelende mit entschiedenem Börsengang, laufender Sprung an einer Weiche, Chronik, Kapitel 2.
 const kapitelFrei = (() => {
   const r = decideIpo(kapitel, balance, 0);
@@ -270,6 +278,7 @@ const bilder: Bild[] = [
   // 0.4.20+30: Börsengang-Wahl unter dem Fokus – ihre Folgen ersetzen den Einleitungstext.
   { name: '13b-kapitelende-boersengang', state: kapitel, dann: "document.querySelector('.ipo .knoepfe button')?.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))", warte: 600 },
   { name: '14-pleite', state: pleite },
+  { name: '14b-feuer', state: feuer },
   { name: '15-rundenbericht', state: mitte, prefs: { 'crude.zeitung': 'an' }, tasten: ['e', 'Enter'], warte: 1600 },
   // Phase 4 (Integration)
   { name: '16-tisch-kapitel2', state: kap2 },
@@ -619,6 +628,7 @@ try {
     for (const [name, state, knopfText, vorher] of [
       ['Kapitelende', kapitel, 'Neues Spiel', ''],
       ['Pleite', pleite, 'Neues Spiel', ''],
+      ['Feuer in der Nacht', feuer, 'Neues Spiel', ''],
       // 0.4.20+2: Die Chronik hat zwei Seiten – die Jahre, dann Bilanz, Bericht und Kapitelziel.
       ['Chronik nach dem Zeitsprung, Jahre', nachSprung, 'Weiter', ''],
       ['Chronik nach dem Zeitsprung, Bericht', nachSprung, 'Schreibtisch', `document.querySelector('.bogen-fuss .primary')?.click()`],

@@ -32,7 +32,7 @@ describe('echte Inhalte in content/events/', () => {
     const ids = loadEvents()
       .filter((e) => (e.conditions.minChapter ?? 1) <= 1)
       .map((e) => e.id)
-      .filter((id) => !id.startsWith('fernleitung_') && !id.startsWith('k2_'));
+      .filter((id) => !id.startsWith('fernleitung_') && !id.startsWith('k2_') && !id.startsWith('feuer_')); // B3: Bullards Eskalation gilt in allen Kapiteln
     // Etappe 3 (Briefe ausdünnen): 36 Ereignisse gestrichen oder zusammengelegt, 5 neue Antworten auf Jacobs Pläne (92 statt 123).
     // Spielspaß K1 (Weichen statt Alltagspost): Ein Tester fand die Briefe langweilig – es bleiben nur Weichen mit Folgen
     // bis Kapitelende (16 Ereignisse) und die 5 festen Termine.

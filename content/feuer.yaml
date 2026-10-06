@@ -1,0 +1,91 @@
+# Frühes Ende „Ein Feuer in der Nacht“ (B3, GDD §14): Bullard geht bis Stufe 4 (§9.5).
+# Regeln in src/sim/feuer.ts, Bildschirm src/ui/FeuerScreen.tsx.
+# text: je Kapitel (k1 Holzhaus am Salt Hill, k2/k3 das Haus der Firma).
+# fate: „Was aus ihnen wurde“ – ruthAway/thomasAway, wenn Jacob die Familie fortgeschickt hat
+# (Merkzeichen feuer_familie_fort); die Thomas-Zeile nur, wenn Thomas geboren ist.
+# ENTWURF – Philipp überarbeitet die Texte.
+draft: true
+title:
+  de: Ein Feuer in der Nacht
+  en: A Fire in the Night
+text:
+  k1:
+    de: >-
+      Gegen drei Uhr morgens steht der Himmel über dem Salt Hill in Flammen. Erst der Bohrturm,
+      dann die Tanks, dann das Holzhaus. Die Nachbarn kommen mit Eimern, aber Öl löscht man nicht
+      mit Wasser. Jacob Harlan kommt nicht mehr heraus. Am Morgen findet der Sheriff Hufspuren am
+      Hügel und zwei Petroleumkanister. Bullard war die ganze Nacht im Saloon – sagen sechs Männer,
+      die für ihn bohren.
+    en: >-
+      Around three in the morning the sky over Salt Hill is on fire. First the derrick, then the
+      tanks, then the wooden house. The neighbours come with buckets, but you don't put out oil
+      with water. Jacob Harlan doesn't come out. In the morning the sheriff finds hoofprints on the
+      hill and two kerosene cans. Bullard was at the saloon all night – say six men who drill for him.
+  k2:
+    de: >-
+      Das Feuer bricht nachts im Kontor aus und frisst sich in einer Stunde durch das ganze Haus.
+      Die Feuerwehr von Port Ellis kommt zu spät, die Wachleute schwören, niemanden gesehen zu
+      haben. Jacob Harlan stirbt in den Flammen, über den Büchern seiner Firma. Die Zeitung schreibt
+      von einer umgestürzten Lampe. Im Saloon am Salt Hill trinkt Jim Bullard an diesem Abend allein.
+    en: >-
+      The fire breaks out at night in the counting room and eats through the whole house in an
+      hour. The Port Ellis fire brigade arrives too late; the watchmen swear they saw no one. Jacob
+      Harlan dies in the flames, over his company's books. The paper writes of an overturned lamp.
+      At the saloon on Salt Hill, Jim Bullard drinks alone that evening.
+  k3:
+    de: >-
+      Die Villa am Hügel brennt in der Nacht nach dem Herbstball. Das Feuer beginnt an drei Stellen
+      zugleich – das schreibt später nur Nora Whitlock, und nur in einem Nebensatz. Jacob Harlan,
+      Herr über Raffinerien, Leitungen und Tankstellen in halb Westmark, stirbt wie ein Wildcatter:
+      nachts, im Rauch, allein. Jim Bullard ist ein alter Mann. Er hat lange gewartet.
+    en: >-
+      The mansion on the hill burns the night after the autumn ball. The fire starts in three places
+      at once – only Nora Whitlock writes that later, and only in a subordinate clause. Jacob Harlan,
+      master of refineries, pipelines and filling stations across half of Westmark, dies like a
+      wildcatter: at night, in the smoke, alone. Jim Bullard is an old man. He waited a long time.
+fate:
+  heading:
+    de: Was aus ihnen wurde
+    en: What Became of Them
+  ruth:
+    de: >-
+      Ruth Harlan hat das Feuer überlebt, mit verbrannten Händen, weil sie die Tür aufziehen wollte.
+      Sie verkauft, was übrig ist, und spricht nie wieder Bullards Namen aus.
+    en: >-
+      Ruth Harlan survived the fire, with burned hands from trying to pull the door open. She sells
+      what is left and never says Bullard's name again.
+  ruthAway:
+    de: >-
+      Ruth Harlan war bei ihrer Schwester in Port Ellis, als der Telegrammbote kam. Sie hat Jacob
+      fortgeschickt, damit er nachkommt. Er ist nicht nachgekommen.
+    en: >-
+      Ruth Harlan was at her sister's in Port Ellis when the telegraph boy came. She left so that
+      Jacob would follow. He never did.
+  thomas:
+    de: >-
+      Thomas trägt eine Narbe am Arm und den Namen seines Vaters. Ob er ihn je wieder auf ein Firmenschild
+      schreibt, weiß niemand.
+    en: >-
+      Thomas carries a scar on his arm and his father's name. Whether he will ever paint it on a
+      company sign again, no one knows.
+  thomasAway:
+    de: >-
+      Thomas hat das Feuer nicht gesehen, nur die schwarzen Balken danach. Er fragt jeden Wildcatter
+      in Port Ellis nach Jim Bullard.
+    en: >-
+      Thomas never saw the fire, only the black beams afterwards. He asks every wildcatter in
+      Port Ellis about Jim Bullard.
+  company:
+    de: >-
+      Die Firma Harlan geht an die Gläubiger. Der Crane Trust kauft die Quellen für einen Bruchteil
+      ihres Werts – und Bullard pachtet das Land daneben.
+    en: >-
+      The Harlan company goes to its creditors. The Crane Trust buys the wells for a fraction of
+      their worth – and Bullard leases the land next door.
+restart:
+  de: >-
+    Wer einen Mann wie Bullard bis zum Äußersten treibt, sollte nachts nicht allein schlafen. In
+    einer anderen Welt vielleicht ein anderes Ende.
+  en: >-
+    Whoever drives a man like Bullard to the edge should not sleep alone at night. In another world,
+    perhaps another ending.

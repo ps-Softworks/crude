@@ -11,6 +11,7 @@ import { settleBrand, type BrandState } from './brand';
 import { settleDeals, type DealsState } from './deals';
 import { callLoansInCrisis, checkBankruptcy, settleLoans, type Loan } from './credit';
 import { applyEarlyEnding, chapterPassed } from './chapter';
+import { settleFeuer } from './feuer';
 import { chapterOf } from './chapterOf';
 import { appendHistory, type HistoryEntry } from './history';
 import { advanceDrilling, type Well } from './drilling';
@@ -79,10 +80,10 @@ export { SEASONS, dateOf, formatDate, type Season } from './calendar';
  * bzw. an Pruett (4.10). Ab Kapitel 2 die frühen Enden aus GDD §14 (4.12): abgesetzt (Stellvertreterkampf verloren),
  * geschluckt (feindliche Übernahme durch Thorne), haft (Verurteilung zu langer Haft).
  */
-export type Ending = 'kapitel' | 'pleite' | 'verkauft' | 'abgesetzt' | 'geschluckt' | 'haft' | null;
+export type Ending = 'kapitel' | 'pleite' | 'verkauft' | 'abgesetzt' | 'geschluckt' | 'haft' | 'feuer' | null;
 
 /** Alle Enden außer null – für Spielstand und Oberfläche. */
-export const ENDINGS = ['kapitel', 'pleite', 'verkauft', 'abgesetzt', 'geschluckt', 'haft'] as const;
+export const ENDINGS = ['kapitel', 'pleite', 'verkauft', 'abgesetzt', 'geschluckt', 'haft', 'feuer'] as const;
 
 export interface GameState {
   seed: string;
@@ -444,8 +445,11 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // 0.4.20+17: Geltende Gesetze – Einkommensteuer auf den Gewinn der Runde (vor der Pleiteprüfung).
   const besteuert = settleBreakup(settleIncomeTax(input, hallstead, balance), balance);
   // 0.4.20+42: Verlaufseintrag der Runde (Kasse, Schulden, Wert, Förderung, Preis) für die Diagramme.
-  const state = appendHistory({ ...checkBankruptcy(besteuert, balance), roundLogStart }, balance, produziert.oilStock - gelagert.oilStock);
-  if (state.ending === 'pleite') return state;
+  const geprueft = appendHistory({ ...checkBankruptcy(besteuert, balance), roundLogStart }, balance, produziert.oilStock - gelagert.oilStock);
+  if (geprueft.ending === 'pleite') return geprueft;
+  // B3: „Ein Feuer in der Nacht“ (GDD §14) – Bullards Eskalation, Warnungen, Nachtwache, Anschlag (feuer.ts).
+  const state = settleFeuer(geprueft, balance);
+  if (state.finished) return state;
   // 4.12 Andockpunkt: frühe Enden ab Kapitel 2 (abgesetzt, geschluckt, hinter Gittern – GDD §14).
   const frueh = applyEarlyEnding(state, balance);
   if (frueh.finished) return frueh;

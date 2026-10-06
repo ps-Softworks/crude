@@ -30,6 +30,7 @@ import { ChapterEndScreen } from './ChapterEndScreen';
 import { events } from './events';
 import { stocksContent } from './stocks';
 import { GameOverScreen } from './GameOverScreen';
+import { FeuerScreen } from './FeuerScreen';
 import { ChronicleScreen, DirectivesLetter, SwitchTelegram } from './TimeskipScreen';
 import { figures } from './figureContent';
 import { figureOf } from './figures';
@@ -592,6 +593,8 @@ export function App() {
               <DirectivesLetter game={game} onSend={sprungStarten} onBack={() => setBrief(false)} />
             ) : game.ending === 'pleite' ? (
               <GameOverScreen game={game} onRestart={neuesSpiel} />
+            ) : game.ending === 'feuer' ? (
+              <FeuerScreen game={game} onRestart={neuesSpiel} />
             ) : (
               <ChapterEndScreen
                 game={game}

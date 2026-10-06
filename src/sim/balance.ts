@@ -36,6 +36,7 @@ import { parseLettersBalance, type LettersBalance } from './lettersBalance';
 import { parseKapitel3Balance, type Kapitel3Balance } from './kapitel3Balance';
 import { parseRivalsK3Balance, type RivalsK3Balance } from './rivalsK3';
 import { parseFeldzugBalance, type FeldzugBalance } from './feldzug';
+import { parseFeuerBalance, type FeuerBalance } from './feuer';
 import { parseEventSystemsBalance, type EventSystemsBalance } from './eventSystems'; // 4.12
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
@@ -1083,6 +1084,8 @@ export interface Balance {
   buyout: BuyoutBalance;
   /** 0.4.20+8: Cranes Feldzug in Kapitel 3 (src/sim/feldzug.ts). */
   feldzug: FeldzugBalance;
+  /** B3: „Ein Feuer in der Nacht“ – Bullards Eskalation bis Stufe 4 (src/sim/feuer.ts). */
+  feuer: FeuerBalance;
   /** 4.12: Systemwirkungen der Ereignisse (src/sim/eventSystems.ts). */
   eventSystems: EventSystemsBalance;
 }
@@ -2744,6 +2747,7 @@ export function parseBalance(raw: unknown): Balance {
       cooldown: positiveInt(raw, 'buyout.cooldown'),
     },
     feldzug: parseFeldzugBalance(raw), // 0.4.20+8
+    feuer: parseFeuerBalance(raw), // B3
     eventSystems: parseEventSystemsBalance(raw), // 4.12
   };
 
