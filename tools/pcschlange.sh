@@ -37,6 +37,8 @@ starte() {
   local zeile=$(awk -F'\t' -v n="$1" '$3==n' $Q | head -1)
   local stufe eingang name ref absender befehl
   IFS=$'\t' read -r stufe eingang name ref absender befehl <<< "$zeile"
+  # erst als aktiv vermerken, dann aus der Schlange nehmen – sonst sieht ein Beobachter kurz „nichts zu tun“
+  printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$stufe" "$eingang" "$name" "$ref" "$absender" "$befehl" > $AKTIV
   awk -F'\t' -v n="$name" '$3!=n' $Q > $Q.neu && mv $Q.neu $Q
   local aus
   for versuch in 1 2 3; do
@@ -45,9 +47,8 @@ starte() {
     sleep 10
   done
   if ! echo "$aus" | grep -q "gestartet:"; then echo "$(ts) FEHLER $name Start ging nicht: $(echo $aus | tail -1) (für $absender)" >> $LOG; rm -f $AKTIV; return; fi
-  printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$stufe" "$eingang" "$name" "$ref" "$absender" "$befehl" > $AKTIV
   # Lebt der Lauf wirklich? (Fallstrick: Startfehler blieb einmal 14 Minuten unbemerkt.)
-  sleep 90
+  sleep 45
   if ! ssh pc "Test-Path \$env:USERPROFILE\\CRUDE-laeufe\\$name.log" 2>/dev/null | grep -q True; then
     echo "$(ts) FEHLER $name: kein Lauf auf dem PC (für $absender)" >> $LOG; rm -f $AKTIV; return
   fi
