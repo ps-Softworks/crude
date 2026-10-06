@@ -530,7 +530,7 @@ export interface BotsBalance {
   rightsEstimate: number;
   /** Wie die planenden Bots in Türme, Bohrlöcher und Pumpen investieren (0.2.15+7). */
   invest: Record<'cautious' | 'greedy' | 'balanced', BotInvest>;
-  /** Feldkauf (0.4.20+30): Angebot = offer × Bullards Preis, nur bis maxPrice × Ölfluss und mit reserve $ Rest. */
+  /** Feldkauf (0.4.20+31): Angebot = offer × Bullards Preis, nur bis maxPrice × Ölfluss und mit reserve $ Rest. */
   buyout: Record<'cautious' | 'greedy' | 'balanced', { offer: number; maxPrice: number; reserve: number }>;
   /**
    * Erkundung (Etappe 1): Solange der Bot weniger als known bezahlbare freie Ranches kennt, die

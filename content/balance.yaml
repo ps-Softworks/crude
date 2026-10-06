@@ -739,7 +739,7 @@ bots:
   # warten) · rent = mieten statt kaufen · steam/rods = Turm nachrüsten (nur aus der Kasse, ab der ersten Quelle).
   # Justiert mit npm run bots: Ein zweiter Turm lässt den gierigen Bot schneller wildcatten – auf Kredit;
   # schon mit 3 Türmen ging er in 20 % der Partien pleite. Ausgewogen mit 2 Türmen gewann 43 % der Seeds (über 40 %).
-  # Feldkauf (0.4.20+30): Die Bots bieten Bullard offer × seinen Preis (höchstens einmal je Runde, für die Ranch mit dem
+  # Feldkauf (0.4.20+31): Die Bots bieten Bullard offer × seinen Preis (höchstens einmal je Runde, für die Ranch mit dem
   # besten Ölfluss je Dollar) – nur wenn das Angebot höchstens maxPrice × Ölfluss ist und danach reserve $ übrig bleiben.
   buyout:
     # Bullards Preis liegt meist beim 1,5- bis 2,3-Fachen des Ölflusses über 8 Runden (Knappheit, Haltung) – für Jacob

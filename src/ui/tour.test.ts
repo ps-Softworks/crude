@@ -70,7 +70,7 @@ describe('Rundgang Kapitel 3 (0.4.20+3)', () => {
   });
 });
 
-describe('Rundgang Kapitel 2: Zahlen passen zu balance.yaml (0.4.20+29)', () => {
+describe('Rundgang Kapitel 2: Zahlen passen zu balance.yaml (0.4.20+30)', () => {
   it('nennt die Baukosten der Raffinerie aus balance.yaml', () => {
     const kosten = loadBalance().refinery.buildCost.toLocaleString('de-DE');
     expect(textK2).toContain(`rund ${kosten} $`);

@@ -30,7 +30,7 @@ export interface ManagerReport {
   /** Fiel die Förderung um mehr als ein Fünftel? */
   fell: boolean;
   /**
-   * 0.4.20+29: Woher die Förderung nachher kommt – Quellen aus Kapitel 1 (sie verlieren je Runde einen Teil und
+   * 0.4.20+30: Woher die Förderung nachher kommt – Quellen aus Kapitel 1 (sie verlieren je Runde einen Teil und
    * sind nach dem Sprung fast leer) und Quellen, die der Verwalter gebohrt hat. Sonst wirkt „mehr Quellen,
    * weniger Öl“ wie ein Fehler.
    */
