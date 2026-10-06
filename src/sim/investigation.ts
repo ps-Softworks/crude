@@ -40,7 +40,7 @@ import { Rng, seedFromString, type RngState } from './rng';
 import { chapterOf, PORT_PARTIES, worldPort, type PortParty, type WorldPort } from './worldPort';
 import { reputationOf } from './reputation';
 import { staffHeat } from './staff';
-import { availableFavors, spendFavors } from './lobby';
+import { availableFavors, lobbyHeat, spendFavors } from './lobby';
 import { hallsteadUnlocked } from './hallsteadState';
 import { producingWells } from './production';
 import { wellsOn } from './drilling';
@@ -96,6 +96,8 @@ export interface InvestigationBalance {
   crown: { evidenceCut: number };
   /** 0.4.20+9: Hitze des Personals (4.9, 0–100) × staffHeatFactor zählt zur Hitze (abgerundet). */
   staffHeatFactor: number;
+  /** 0.4.20+16: Hitze der Umschläge (Lobby, 4.16) × lobbyHeatFactor zählt zur Hitze (abgerundet). */
+  lobbyHeatFactor: number;
   /** 0.4.20+9: Zwangsverkauf bei schwerer Strafe – share der fördernden Quellen (größte zuerst), Erlös = Rate × rounds × Preis × discount. */
   forcedSale: { share: number; rounds: number; discount: number };
 }
@@ -216,6 +218,7 @@ export function parseInvestigationBalance(raw: unknown): InvestigationBalance {
     },
     crown: { evidenceCut: zahl(raw, `${p}.crown.evidenceCut`, 0) },
     staffHeatFactor: zahl(raw, `${p}.staffHeatFactor`, 0),
+    lobbyHeatFactor: zahl(raw, `${p}.lobbyHeatFactor`, 0),
     forcedSale: {
       share: zahl(raw, `${p}.forcedSale.share`, 0, 1),
       rounds: zahl(raw, `${p}.forcedSale.rounds`, 0),
@@ -416,10 +419,18 @@ export function traces(state: GameState, balance: Balance): TraceView[] {
   }));
 }
 
-/** Hitze: Summe der Spuren, die noch zählen – 0.4.20+9: plus die Hitze des Personals (Fixer-Aufträge, 4.9). */
+/**
+ * Hitze: Summe der Spuren, die noch zählen – 0.4.20+9: plus die Hitze des Personals (Fixer-Aufträge, 4.9),
+ * 0.4.20+16: plus die Hitze der Umschläge (Lobby, 4.16).
+ */
 export function heat(state: GameState, balance: Balance): number {
   const spuren = traces(state, balance).reduce((s, t) => s + t.current, 0);
-  return spuren + staffHeatPoints(state, balance);
+  return spuren + staffHeatPoints(state, balance) + lobbyHeatPoints(state, balance);
+}
+
+/** 0.4.20+16: Hitzepunkte aus Umschlägen – gekaufte Gefallen hinterlassen Spuren, die Delaney riecht (abgerundet). */
+export function lobbyHeatPoints(state: GameState, balance: Balance): number {
+  return Math.floor(lobbyHeat(state) * balance.investigation.lobbyHeatFactor + 1e-9);
 }
 
 /** 0.4.20+9: Hitzepunkte aus dem Personal – was Jacobs Fixer anrichtet, hört auch Delaney (abgerundet). */

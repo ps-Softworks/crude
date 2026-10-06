@@ -31,7 +31,7 @@ import { Rng, seedFromString } from '../src/sim/rng';
 import { serializeGame } from '../src/sim/save';
 // Phase 4: dieselben Freischaltungen wie die Debug-Knöpfe im Menü.
 import { unlockBigPipelines } from '../src/sim/bigPipeline';
-import { brandOf, previewBrand } from '../src/sim/brand';
+import { brandOf, previewBrand, settleBrand } from '../src/sim/brand';
 import { newFeldzug } from '../src/sim/feldzug';
 import { startDiplomacy } from '../src/sim/diplomacy';
 import { openExchange } from '../src/sim/exchange';
@@ -173,6 +173,12 @@ const kap3VollerZettel: GameState = {
   ...kap3Tisch,
   leases: kap3Tisch.leases.map((l) => (l.holder === 'jacob' ? { ...l, drilled: false, expiresAfterRound: kap3Tisch.round } : l)),
 };
+// 0.4.20+16: Gegründete Marke mit 8 Tankstellen nach einer Abrechnung – Vertrieb zeigt, woher das Benzin kam.
+const mitNetz: GameState = (() => {
+  const b = brandOf(kap3Tisch, balance);
+  const brand = { ...b, founded: true, nameId: 'harlan', regions: { ...b.regions, cordova: { ...b.regions.cordova, stations: 8 } } };
+  return settleBrand({ ...kap3Tisch, brand }, balance);
+})();
 // 0.4.20+8: Cranes Feldzug – Preiskrieg in zwei Regionen, Cranes Kasse halb leer, Pettibone hat Thornes Geld angeboten.
 const imFeldzug: GameState = (() => {
   const b = brandOf(kap3Tisch, balance);
@@ -252,6 +258,7 @@ const bilder: Bild[] = [
   { name: '23-schattenbuch', state: kap3, dann: KLICK('.objekt-schattenbuch') },
   { name: '24-werkstatt', state: kap3, dann: KLICK('.objekt-werkstatt') },
   { name: '25-marke', state: kap3, dann: KLICK('.objekt-marke') },
+  { name: '25b-vertrieb-netz', state: mitNetz, dann: KLICK('.objekt-marke') },
   { name: '26-boerse', state: kap3, dann: KLICK('.objekt-boerse') },
   { name: '27-hallstead', state: kap3, dann: KLICK('.objekt-hallstead') },
   { name: '28-konzern', state: kap3, dann: KLICK('.objekt-konzern') },

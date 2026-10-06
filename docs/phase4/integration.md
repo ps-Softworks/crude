@@ -237,8 +237,13 @@ Main ist inzwischen bei 0.4.4. Beim nächsten Merge von main in diesen Branch be
    Gespann +50 % Kapazität (`teamCapacity`, auch im Wegevergleich), Bohrtiefe macht jede Stufe so sicher wie
    eine um 150 m (je Technik) flachere (`techStage`: Unfall/Klemmen, Kosten und Ölanteil bleiben). Zahlen sind
    Platzhalter in `research.techs`.
-4. Raffinerie ↔ Marke: `ownGasoline` in 4.14 ist `null` (Benzin reicht immer). Soll die eigene Raffinerie die
-   Tankstellen beliefern statt den Großhandel?
+4. ~~Raffinerie ↔ Marke: `ownGasoline` in 4.14 ist `null` (Benzin reicht immer). Soll die eigene Raffinerie die
+   Tankstellen beliefern statt den Großhandel?~~ *Erledigt 0.4.20+16 (Philipp: „Zukauf kostet“):* `brandWorldFrom`
+   liest `ownGasoline` aus dem letzten Lauf der fertigen Raffinerie (`refinery.last.output.gasoline`, advanceRefinery
+   läuft vor settleBrand). Was fehlt, kauft Jacob beim Großhandel zu (`brand.supply.boughtCost` je Barrel) – ohne
+   Raffinerie also alles. Die Raffinerie verbucht ihr Benzin weiter zum Marktpreis; die Tankstellen sparen nur den
+   Aufschlag. Anzeige im Vertrieb (`gasolineSupply`). Offen für die Bot-Sitzung: Kampagne neu messen; der
+   Regionsgewinn (`last.profit`, nach dem die Bots bauen/verkaufen) enthält den Zukauf nicht, nur `lastProfit`.
 5. Börse ↔ Aktien: ~~Der eigene Kurs (4.8) fällt im Börsencrash (4.15) nur indirekt mit; Harlan Oil steht nicht
    auf der Kurstafel.~~ *Erledigt 0.4.20+9:* Solange Börsencrash oder Kreditcrash der Welt nachwirken, sinkt die
    Stimmung der eigenen Aktie je Runde um `stocks.price.crashWeight` (`stocksWorldOf` → `crash`); Harlan Oil steht

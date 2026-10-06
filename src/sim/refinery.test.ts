@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BalanceError, parseBalance, type Balance } from './balance';
+import { brandWorldFrom } from './brand';
 import { empireValue } from './empire';
 import { endRound, newGame, type GameState } from './game';
 import {
@@ -495,5 +496,16 @@ describe('Raffinerie: Spielstand', () => {
     expect(geladen.ok && geladen.state.refinery).toBeUndefined();
     expect(isRefineryState(newRefinery('x', balance))).toBe(true);
     expect(isRefineryState({})).toBe(false);
+  });
+});
+
+describe('Raffinerie beliefert die eigenen Tankstellen (0.4.20+16)', () => {
+  it('das Benzin des letzten Laufs steht den Tankstellen zur Verfügung, ohne Lauf nichts', () => {
+    const s = advanceRefinery(fertig(1, { oilStock: 30_000 }), balance);
+    const benzin = s.refinery!.last!.output.gasoline;
+    expect(benzin).toBeGreaterThan(0);
+    expect(brandWorldFrom(s).ownGasoline).toBe(benzin);
+    expect(brandWorldFrom(advanceRefinery(fertig(1, { oilStock: 0 }), balance)).ownGasoline).toBe(0);
+    expect(brandWorldFrom(kapitel2()).ownGasoline).toBe(0);
   });
 });

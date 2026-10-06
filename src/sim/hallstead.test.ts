@@ -446,6 +446,15 @@ describe('Lobbyist in Hallstead (GDD §10, §11)', () => {
     expect(lobbyHeat(g)).toBe(b.heat);
   });
 
+  it('0.4.20+16: die Hitze der Umschläge verblasst je Runde um heatDecay, Reste unter 0,5 fallen weg', () => {
+    const b = balance.hallstead.lobby.bribe;
+    const g = ok(bribe(ok(hireLobbyist(kapitel3(), balance, 'tibbs')), balance));
+    const nach = settleHallstead(g, balance);
+    expect(lobbyHeat(nach)).toBeCloseTo(b.heat * (1 - b.heatDecay), 2);
+    const fast = { ...g, hallstead: { ...g.hallstead!, lobby: { ...g.hallstead!.lobby, heat: 0.5 } } };
+    expect(lobbyHeat(settleHallstead(fast, balance))).toBe(0);
+  });
+
   it('Wahlkampfspende: gewinnt die Partei, schuldet sie Gefallen, sonst ist das Geld weg', () => {
     const d = balance.hallstead.lobby.donation;
     const g = kapitel3();

@@ -78,7 +78,8 @@ export interface HallsteadBalance {
     maxWater: number;
     decay: number;
     maxShift: number;
-    bribe: { cost: number; favors: number; heat: number };
+    /** heatDecay (0.4.20+16): Anteil der Umschlag-Hitze, der je Runde verblasst. */
+    bribe: { cost: number; favors: number; heat: number; heatDecay: number };
     donation: { min: number; perFavor: number; winMultiplier: number };
     drunkChance: number;
     genieSpread: number;
@@ -185,6 +186,7 @@ export function parseHallstead(raw: unknown): HallsteadBalance {
         cost: nonNeg(raw, 'hallstead.lobby.bribe.cost'),
         favors: nonNeg(raw, 'hallstead.lobby.bribe.favors'),
         heat: nonNeg(raw, 'hallstead.lobby.bribe.heat'),
+        heatDecay: share(raw, 'hallstead.lobby.bribe.heatDecay'),
       },
       donation: {
         min: nonNeg(raw, 'hallstead.lobby.donation.min'),

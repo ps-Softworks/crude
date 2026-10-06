@@ -43,6 +43,9 @@ const UI_KEYS = [
   'value',
   'goal',
   'goalRating',
+  // 0.4.20+16: Benzin aus eigener Raffinerie oder zugekauft.
+  'supplyOwn',
+  'supplyBought',
   'antitrust',
   'campaignRun',
   'campaignStart',

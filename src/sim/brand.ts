@@ -237,7 +237,10 @@ export interface BrandWorld {
   crash: boolean;
   /** Zusatzfaktor auf die Benzinnachfrage aus dem Weltmodell (Automobilisierung). Ersatz: 1. */
   motorization: number;
-  /** Benzin aus eigener Raffinerie in bbl je Runde (4.13). null = kein Raffinerie-Modul: Benzin reicht immer. */
+  /**
+   * Benzin aus eigener Raffinerie in bbl je Runde (4.13). Was fehlt, wird zugekauft (supply.boughtCost).
+   * brandWorldFrom liest es aus state.refinery (0.4.20+16, ohne Raffinerie 0); null = ohne Zukauf (Tests, Debug).
+   */
   ownGasoline: number | null;
   /** 0.4.20+8: Cranes Feldzug – Faktor auf Jacobs Marge in Regionen mit seinen Tankstellen (state.feldzug.dumping). Ersatz: 1. */
   dumping: number;
@@ -253,6 +256,8 @@ interface FremdeFelder {
   reputation?: { public?: unknown } | null;
   /** 0.4.20+8: Cranes Feldzug (src/sim/feldzug.ts). */
   feldzug?: { phase?: unknown; dumping?: unknown; pact?: unknown } | null;
+  /** 0.4.20+16: eigene Raffinerie (4.6, src/sim/refinery.ts) – fertige Stufen und der letzte Lauf. */
+  refinery?: { level?: unknown; last?: { output?: { gasoline?: unknown } } | null } | null;
 }
 
 function endlich(v: unknown): v is number {
@@ -271,7 +276,21 @@ export function brandWorldFrom(state: object, overrides: Partial<BrandWorld> = {
   const crash = s.worldModel && endlich(s.worldModel.crash) ? s.worldModel.crash > 0 : DEFAULT_BRAND_WORLD.crash;
   const reputation = s.reputation && endlich(s.reputation.public) ? Math.max(-100, Math.min(100, s.reputation.public)) : DEFAULT_BRAND_WORLD.reputation;
   const dumping = s.feldzug && s.feldzug.phase === 'krieg' && endlich(s.feldzug.dumping) ? s.feldzug.dumping : 1;
-  return { ...DEFAULT_BRAND_WORLD, chapter, crash, reputation, dumping, ...overrides };
+  const ownGasoline = ownGasolineOf(s);
+  return { ...DEFAULT_BRAND_WORLD, chapter, crash, reputation, dumping, ownGasoline, ...overrides };
+}
+
+/**
+ * 0.4.20+16: Benzin der eigenen Raffinerie für die eigenen Tankstellen – was sie im letzten Lauf erzeugt hat
+ * (advanceRefinery läuft vor settleBrand). Ohne fertige Raffinerie 0: Alles Benzin wird beim Großhandel
+ * zugekauft (supply.boughtCost je Barrel). Die Raffinerie verbucht ihr Benzin weiter zum Marktpreis –
+ * die Tankstellen sparen nur den Aufschlag des Großhandels.
+ */
+function ownGasolineOf(s: FremdeFelder): number {
+  const r = s.refinery;
+  if (!r || !endlich(r.level) || r.level <= 0) return 0;
+  const g = r.last?.output?.gasoline;
+  return endlich(g) ? Math.max(0, g) : 0;
 }
 
 /** Ist das System in diesem Kapitel freigeschaltet? */
@@ -729,6 +748,12 @@ export function settleBrand<S extends BrandGame>(state: S, balance: WithBrand, w
   if (world.ownGasoline !== null && absatz > world.ownGasoline) {
     zukauf = absatz - world.ownGasoline;
     gewinn -= zukauf * b.supply.boughtCost;
+    // 0.4.20+16: Die Kosten des Zukaufs gehen nach Absatz in den Gewinn jeder Region – sonst zeigen Vertrieb
+    // und Bots (Ausbau nur, wo kein Verlust) einen Gewinn, den es nicht gibt.
+    const jeBarrel = (zukauf * b.supply.boughtCost) / absatz;
+    for (const [id, r] of Object.entries(brand.regions)) {
+      if (r.last && r.last.sales > 0) brand.regions[id] = { ...r, last: { ...r.last, profit: cents(r.last.profit - r.last.sales * jeBarrel) } };
+    }
   }
   gewinn = cents(gewinn);
   brand = { ...brand, rng: rng.state, motor: brand.motor * (1 + b.demand.growth), news, lastProfit: gewinn };
@@ -774,6 +799,29 @@ export function nationalShare(brand: BrandState | undefined): { jacob: number; c
   const nachfrage = res.reduce((s, x) => s + x.demand, 0);
   if (nachfrage <= 0) return { jacob: 0, crane: 0 };
   return { jacob: res.reduce((s, x) => s + x.sales, 0) / nachfrage, crane: res.reduce((s, x) => s + x.craneSales, 0) / nachfrage };
+}
+
+/** 0.4.20+16: Woher das Benzin der letzten Runde kam (Anzeige im Vertrieb). */
+export interface GasolineSupply {
+  /** Verkauft an allen eigenen Tankstellen (bbl). */
+  sold: number;
+  /** Davon aus der eigenen Raffinerie. */
+  own: number;
+  /** Davon beim Großhandel zugekauft. */
+  bought: number;
+  /** Was der Zukauf gekostet hat ($). */
+  cost: number;
+}
+
+/**
+ * 0.4.20+16: Die Rechnung aus settleBrand für die letzte Runde – eigenes Benzin zuerst, der Rest
+ * zugekauft. ownGasoline null (ohne Zukauf): alles gilt als eigenes Benzin.
+ */
+export function gasolineSupply(brand: BrandState | undefined, balance: WithBrand, world: Pick<BrandWorld, 'ownGasoline'>): GasolineSupply {
+  const sold = Math.floor(Object.values(brand?.regions ?? {}).reduce((s, r) => s + (r.last?.sales ?? 0), 0));
+  const own = world.ownGasoline === null ? sold : Math.min(sold, Math.floor(world.ownGasoline));
+  const bought = sold - own;
+  return { sold, own, bought, cost: cents(bought * balance.brand.supply.boughtCost) };
 }
 
 /**

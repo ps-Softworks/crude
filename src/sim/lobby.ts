@@ -166,6 +166,11 @@ export function lobbyHeat(state: Pick<GameState, 'hallstead'>): number {
   return state.hallstead?.lobby.heat ?? 0;
 }
 
+function verblasseHitze(hitze: number, decay: number): number {
+  const neu = Math.round(hitze * (1 - decay) * 100) / 100;
+  return neu < 0.5 ? 0 : neu;
+}
+
 function verblassen(werte: Record<string, number>, decay: number, schwelle: number): Record<string, number> {
   const out: Record<string, number> = {};
   for (const [k, v] of Object.entries(werte)) {
@@ -227,6 +232,8 @@ export function settleLobby(state: GameState, balance: Balance, h: HallsteadStat
     donations: offen,
     pressure: verblassen(h.lobby.pressure, lb.decay, 1),
     water: verblassen(h.lobby.water, lb.decay, 0.01),
+    // 0.4.20+16: Die Hitze der Umschläge verblasst langsam (zählt bei Delaney, investigation.lobbyHeatPoints).
+    heat: verblasseHitze(h.lobby.heat, lb.bribe.heatDecay),
   };
   const datum = formatDate(state);
   return {

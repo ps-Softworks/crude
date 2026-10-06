@@ -13,6 +13,7 @@ import {
   brandRegionOpen,
   brandUnlocked,
   brandValue,
+  gasolineSupply,
   brandWorldFrom,
   buildingCount,
   buildStations,
@@ -33,7 +34,7 @@ import { localize } from '../../sim/i18n';
 import { balance } from '../balance';
 import { RATINGS } from '../../sim/balance';
 import { brandContent as C } from '../brand';
-import { money, percent } from '../format';
+import { NBSP, barrels, money, percent } from '../format';
 import { Tabs, activeTab } from '../sheet/Tabs';
 import type { SheetContext } from './types';
 import './brand.css';
@@ -113,6 +114,7 @@ function Netz({ ctx }: { ctx: SheetContext }) {
   const brand = brandOf(game, balance);
   const ziel = brandGoal(brand, balance);
   const kartell = brandAntitrust(brand, balance);
+  const benzin = gasolineSupply(brand, balance, world);
   const st = balance.brand.station;
   return (
     <>
@@ -133,6 +135,13 @@ function Netz({ ctx }: { ctx: SheetContext }) {
         <span>{t('profit', { betrag: money(brand.lastProfit) })}</span>
         <span>{t('value', { betrag: money(brandValue(brand, balance, world)) })}</span>
       </p>
+      {benzin.sold > 0 && (
+        <p className="klein">
+          {benzin.own > 0
+            ? t('supplyOwn', { eigen: barrels(benzin.own), zukauf: barrels(benzin.bought), kosten: money(benzin.cost) })
+            : t('supplyBought', { zukauf: barrels(benzin.bought), kosten: money(benzin.cost), satz: `${balance.brand.supply.boughtCost.toLocaleString('de-DE', { minimumFractionDigits: 2 })}${NBSP}$` })}
+        </p>
+      )}
       <p className="klein">
         {t('goal', {
           regionAnteil: percent(balance.brand.goal.presenceShare),

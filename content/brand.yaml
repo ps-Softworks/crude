@@ -89,6 +89,8 @@ ui:
   closed: { de: "erst später erschlossen", en: "not open yet" }
   national: { de: "Marktanteil im ganzen Land: {anteil}", en: "National market share: {anteil}" }
   profit: { de: "Gewinn der Tankstellen in der letzten Runde: {betrag}", en: "Station profit last round: {betrag}" }
+  supplyOwn: { de: "Benzin letzte Runde: {eigen} bbl aus der eigenen Raffinerie, {zukauf} bbl beim Großhandel zugekauft ({kosten}).", en: "Gasoline last round: {eigen} bbl from your own refinery, {zukauf} bbl bought wholesale ({kosten})." }
+  supplyBought: { de: "Benzin letzte Runde: {zukauf} bbl beim Großhandel zugekauft ({kosten}, {satz} je Barrel). Eine eigene Raffinerie mit Benzin im Mix spart den Aufschlag.", en: "Gasoline last round: {zukauf} bbl bought wholesale ({kosten}, {satz} per barrel). Your own refinery with gasoline in the mix saves the markup." }
   value: { de: "Markenwert: {betrag}", en: "Brand value: {betrag}" }
   goal: { de: "Kapitelziel, Teil 1: mindestens {regionAnteil} Marktanteil in {soll} Regionen ({ist}) oder {anteilSoll} landesweit ({anteilIst})", en: "Chapter goal, part 1: at least {regionAnteil} market share in {soll} regions ({ist}) or {anteilSoll} nationwide ({anteilIst})" }
   goalRating: { de: "Kapitelziel, Teil 2: Rating {soll} oder besser am Kapitelende (jetzt {ist}, siehe Kassenbuch)", en: "Chapter goal, part 2: rating {soll} or better at chapter end (now {ist}, see the ledger)" }

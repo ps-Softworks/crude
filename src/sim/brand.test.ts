@@ -13,6 +13,7 @@ import {
   brandUnlocked,
   brandValue,
   brandWorldFrom,
+  gasolineSupply,
   buildStations,
   buildingCount,
   campaignActive,
@@ -118,7 +119,19 @@ describe('Freischaltung (4.14)', () => {
 
 describe('Schnittstelle zur Welt', () => {
   it('nimmt Ersatzwerte, solange es Kapitel, Weltmodell und Ruf nicht gibt', () => {
-    expect(brandWorldFrom(newGame('w', balance))).toEqual(DEFAULT_BRAND_WORLD);
+    // 0.4.20+16: ohne eigene Raffinerie wird alles Benzin zugekauft (ownGasoline 0 statt null).
+    expect(brandWorldFrom(newGame('w', balance))).toEqual({ ...DEFAULT_BRAND_WORLD, ownGasoline: 0 });
+  });
+
+  it('0.4.20+16: eigenes Benzin = was die fertige Raffinerie im letzten Lauf erzeugt hat', () => {
+    const lauf = { output: { kerosene: 4000, heatingOil: 2000, gasoline: 1500, lubricants: 500 } };
+    expect(brandWorldFrom({ chapter: 3, refinery: { level: 1, last: lauf } }).ownGasoline).toBe(1500);
+    // Noch im Bau (Stufe 0) oder noch kein Lauf: nichts Eigenes.
+    expect(brandWorldFrom({ chapter: 3, refinery: { level: 0, last: lauf } }).ownGasoline).toBe(0);
+    expect(brandWorldFrom({ chapter: 3, refinery: { level: 1, last: null } }).ownGasoline).toBe(0);
+    expect(brandWorldFrom({ chapter: 3, refinery: null }).ownGasoline).toBe(0);
+    // overrides gewinnt (Tests, Debug).
+    expect(brandWorldFrom({ chapter: 3 }, { ownGasoline: null }).ownGasoline).toBeNull();
   });
 
   it('liest Kapitel, Kreditcrash und Ruf, wenn andere Systeme sie liefern', () => {
@@ -436,6 +449,38 @@ describe('Abrechnung', () => {
     const knapp = settleBrand({ ...s, round: s.round + 1 }, balance, { ...K3, ownGasoline: 0 });
     const absatz = frei.brand!.regions.cordova.last!.sales;
     expect(knapp.brand!.lastProfit).toBeCloseTo(frei.brand!.lastProfit - absatz * B.supply.boughtCost, 1);
+  });
+
+  it('0.4.20+16: eigenes Benzin der Raffinerie spart den Zukauf – nur für den Rest zahlt Jacob boughtCost', () => {
+    const s = mitTankstellen(3);
+    const frei = settleBrand({ ...s, round: s.round + 1 }, balance, K3);
+    const absatz = frei.brand!.regions.cordova.last!.sales;
+    const eigen = Math.floor(absatz / 2);
+    const halb = settleBrand({ ...s, round: s.round + 1 }, balance, { ...K3, ownGasoline: eigen });
+    expect(halb.brand!.lastProfit).toBeCloseTo(frei.brand!.lastProfit - (absatz - eigen) * B.supply.boughtCost, 1);
+    const genug = settleBrand({ ...s, round: s.round + 1 }, balance, { ...K3, ownGasoline: absatz + 1 });
+    expect(genug.brand!.lastProfit).toBeCloseTo(frei.brand!.lastProfit, 1);
+  });
+
+  it('0.4.20+16: der Zukauf steckt auch im Gewinn je Region (danach richten sich Vertrieb und Bots)', () => {
+    const s = mitTankstellen(3);
+    const frei = settleBrand({ ...s, round: s.round + 1 }, balance, K3);
+    const knapp = settleBrand({ ...s, round: s.round + 1 }, balance, { ...K3, ownGasoline: 0 });
+    const r0 = frei.brand!.regions.cordova.last!;
+    expect(knapp.brand!.regions.cordova.last!.profit).toBeCloseTo(r0.profit - r0.sales * B.supply.boughtCost, 1);
+    const summe = Object.values(knapp.brand!.regions).reduce((x, r) => x + (r.last?.profit ?? 0), 0);
+    expect(summe).toBeCloseTo(knapp.brand!.lastProfit, 0);
+  });
+
+  it('0.4.20+16: gasolineSupply zeigt, woher das Benzin der letzten Runde kam', () => {
+    const s = settleBrand(mitTankstellen(3), balance, K3);
+    const sold = Math.floor(s.brand!.regions.cordova.last!.sales);
+    expect(sold).toBeGreaterThan(0);
+    expect(gasolineSupply(s.brand, balance, { ownGasoline: null })).toEqual({ sold, own: sold, bought: 0, cost: 0 });
+    const teil = gasolineSupply(s.brand, balance, { ownGasoline: 100 });
+    expect(teil).toEqual({ sold, own: 100, bought: sold - 100, cost: expect.closeTo((sold - 100) * B.supply.boughtCost, 2) });
+    expect(gasolineSupply(s.brand, balance, { ownGasoline: 0 }).own).toBe(0);
+    expect(gasolineSupply(undefined, balance, { ownGasoline: 0 }).sold).toBe(0);
   });
 
   it('ist deterministisch: gleicher Seed, gleiche Folge', () => {

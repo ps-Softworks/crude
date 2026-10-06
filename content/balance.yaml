@@ -1220,7 +1220,7 @@ hallstead:
     maxWater: 0.6            # höchstens 60 % weniger Wirkung
     decay: 0.1               # Druck und Verwässerung verlieren je Runde 10 %
     maxShift: 0.3            # voller Druck ändert die Chance eines Gesetzes um höchstens 30 Punkte (Andockpunkt 4.3)
-    bribe: { cost: 10000, favors: 4, heat: 10 }          # Umschlag: Geld gegen Gefallen, macht Hitze
+    bribe: { cost: 10000, favors: 4, heat: 10, heatDecay: 0.05 }  # Umschlag: Geld gegen Gefallen, macht Hitze (verblasst je Runde um 5 %; zählt × investigation.lobbyHeatFactor bei Delaney)
     donation: { min: 10000, perFavor: 10000, winMultiplier: 2 }  # Wahlkampfspende: gewinnt die Partei, 2 Gefallen je 10.000 $
     drunkChance: 0.2         # Trinker: Runde ohne Gefallen
     genieSpread: 0.5         # Genie: Gefallen ±50 % je nach Laune
@@ -1854,6 +1854,7 @@ investigation:
   crown:
     evidenceCut: 40      # Kronzeuge gegen den Crane Trust
   staffHeatFactor: 0.04  # 0.4.20+9: Hitze des Personals (Fixer, 0–100) × 0,04 zählt zur Hitze (100 → +4)
+  lobbyHeatFactor: 0.2   # 0.4.20+16: Hitze der Umschläge (hallstead.lobby.bribe.heat, 10 je Umschlag) × 0,2 zählt zur Hitze (ein frischer Umschlag → +2)
   forcedSale:            # 0.4.20+9: Zwangsverkauf bei schwerer Strafe (PLATZHALTER)
     share: 0.25          # Anteil der fördernden Quellen (größte zuerst, aufgerundet)
     rounds: 8            # Erlös = letzte Rate × 8 Runden × Posted Price …
@@ -1947,7 +1948,7 @@ brand:
     growth: 0.03            # Automobilisierung: Benzinnachfrage wächst je Runde um 3 % (bis 4.1 sie liefert)
     crashDrop: 0.25         # im Kreditcrash (state.worldModel.crash > 0) tanken die Leute ein Viertel weniger – bewusst getrennt von worldModel.demand.crashDrop (Welt-Ölnachfrage): Benzin an der Zapfsäule reagiert stärker
   supply:
-    boughtCost: 0.15        # $ je bbl, wenn die eigene Raffinerie (4.13) nicht genug Benzin liefert und zugekauft wird
+    boughtCost: 0.08        # $ je bbl, wenn die eigene Raffinerie (4.13) nicht genug Benzin liefert und zugekauft wird (0.4.20+16, 100 Kampagnen: 0,15 → Kapitelziel 3 Standard-Bot 20 %, 0,08 → 45 %, 0 → 57 %)
   crane:                    # Margaret Crane (Crane Eastern) führt den Kampf um die Marke (GDD §13)
     reactShare: 0.15        # ab so viel Marktanteil Jacobs in einer Region denkt sie über einen Preiskampf nach …
     warChance: 0.5          # … und beginnt ihn mit dieser Chance je Runde (auch, wenn Jacob billig verkauft)

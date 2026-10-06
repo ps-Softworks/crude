@@ -2,7 +2,7 @@
   "name": "crude",
   "productName": "CRUDE",
   "private": true,
-  "version": "0.4.20+15",
+  "version": "0.4.20+16",
   "description": "CRUDE – ein Ölbaron-Spiel",
   "author": "Philipp Singer",
   "type": "module",

@@ -33,6 +33,7 @@ import {
   forcedSale,
   pressurePaysWithFavors,
   staffHeatPoints,
+  lobbyHeatPoints,
 } from './investigation';
 import type { Well } from './drilling';
 import { hallsteadOf } from './hallsteadState';
@@ -544,6 +545,18 @@ describe('0.4.20+9: Kopplungen mit Personal, Hallstead und Diplomatie', () => {
     expect(staffHeatPoints(staff, b)).toBe(Math.floor(75 * b.investigation.staffHeatFactor));
     expect(heat(staff, b)).toBe(ohne + staffHeatPoints(staff, b));
     expect(staffHeatPoints(s, b)).toBe(0);
+  });
+
+  it('0.4.20+16: die Hitze der Umschläge zählt mit lobbyHeatFactor zur Hitze', () => {
+    const b = mitInv({ jumpFade: 0 });
+    const s = runden(kapitel2(['moss_betrogen']), 1, b);
+    const ohne = heat(s, b);
+    expect(lobbyHeatPoints(s, b)).toBe(0);
+    // Nur die Lobby-Hitze zählt hier – der übrige Hallstead-Zustand spielt für die Hitze keine Rolle.
+    const mit = { ...s, hallstead: { lobby: { heat: 20 } } } as unknown as K2;
+    expect(lobbyHeatPoints(mit, b)).toBe(Math.floor(20 * b.investigation.lobbyHeatFactor));
+    expect(lobbyHeatPoints(mit, b)).toBeGreaterThan(0);
+    expect(heat(mit, b)).toBe(ohne + lobbyHeatPoints(mit, b));
   });
 
   it('politischer Druck kostet zuerst Hallstead-Gefallen, ohne genug Gefallen Geld', () => {
