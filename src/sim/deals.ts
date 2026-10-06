@@ -10,7 +10,7 @@
 // settleDeals im Rundenende (game.ts: Fristen, Miete, Öldiebe).
 
 import type { Balance } from './balance';
-import { quarterInterest } from './credit';
+import { bankRate, headroom, quarterInterest, takeLoan } from './credit';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
 import { leaseOf } from './lease';
@@ -40,10 +40,26 @@ export interface DealsState {
   lent: { rigId: string; until: number } | null;
   /** Wache des Sheriffs in dieser Runde (0 = nie). */
   guardRound: number;
+  /** 0.4.20+34 Telefon: Wer hat in welcher Runde angerufen (die Karte liegt nur dann auf der Hand). */
+  call?: { card: string; round: number } | null;
+  /** 0.4.20+34 Sonderkredit der Bank (Anruf): bis Runde due getilgt, sonst steigt der Zins. */
+  offerLoan?: { loanId: number; due: number } | null;
 }
 
 export function newDeals(): DealsState {
   return { cooldown: {}, deferRound: 0, pledgedRig: null, railFixed: null, railQuota: null, advance: null, bulkRound: 0, lent: null, guardRound: 0 };
+}
+
+/** Klingelt das Telefon in dieser Runde für diese Karte? */
+export function ringing(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'deals'>>, cardId: string): boolean {
+  const c = state.deals?.call;
+  return !!c && c.card === cardId && c.round === state.round;
+}
+
+/** Wer ruft gerade an (Karten-ID) – oder null. */
+export function callerCard(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'deals'>>): string | null {
+  const c = state.deals?.call;
+  return c && c.round === state.round ? c.card : null;
 }
 
 export function dealsOf(state: Partial<Pick<GameState, 'deals'>>): DealsState {
@@ -427,7 +443,37 @@ const wache: PlanHandler = {
   },
 };
 
+// --- Telefon: Anrufe (ab Kapitel 2) -------------------------------------------------------
+
+const bankAngebot: PlanHandler = {
+  lock(state, balance) {
+    if (dealsOf(state).offerLoan) return 'Der letzte Sonderkredit läuft noch.';
+    if (headroom(state, balance) < balance.deals.bank.offer.sizes[0]) return 'Der Kreditrahmen reicht dafür nicht.';
+    return null;
+  },
+  options(state, balance) {
+    const o = balance.deals.bank.offer;
+    const zins = Math.max(o.floor, bankRate(state, balance, false) - o.discount);
+    const frei = headroom(state, balance);
+    return o.sizes.map((n) => ({ id: String(n), label: `${money(n)} zu ${percent(zins)}, zurück in ${o.rounds} Runden`, reason: n > frei ? `Rahmen frei: ${money(frei)}.` : null }));
+  },
+  detail(_state, balance) {
+    const o = balance.deals.bank.offer;
+    return `Vorzugszins nur heute. Ist der Kredit nach ${o.rounds} Runden nicht getilgt, kostet er ${percent(o.penalty)} mehr Zins.`;
+  },
+  apply(state, balance, target) {
+    const o = balance.deals.bank.offer;
+    const n = Number(target ?? o.sizes[0]);
+    const zins = Math.max(o.floor, bankRate(state, balance, false) - o.discount);
+    const r = takeLoan(state, balance, n);
+    if (!r.ok) return log(state, `Die Bank kann den Sonderkredit doch nicht geben: ${r.reason}`);
+    const loans = r.state.loans.map((l) => (l.id === r.loan.id ? { ...l, rate: zins } : l));
+    return log(withDeals({ ...r.state, loans }, { offerLoan: { loanId: r.loan.id, due: state.round + o.rounds } }), `Sonderkredit der Bank: ${money(n)} zu ${percent(zins)}.`);
+  },
+};
+
 export const DEAL_HANDLERS: Record<string, PlanHandler> = {
+  bank_angebot: bankAngebot,
   bank_zins: bankZins,
   bank_stundung: bankStundung,
   bank_pfand: bankPfand,
@@ -481,6 +527,17 @@ export function settleDeals(input: GameState, balance: Balance): GameState {
   else if (d.advance && d.advance.until <= s.round) {
     const strafe = cents(d.advance.owed * d.advance.price * (1 + b.crane.advance.penalty));
     s = log(withDeals({ ...s, cash: cents(s.cash - strafe) }, { advance: null }), `Vorschuss nicht abgeliefert: Crane fordert für ${bbl(d.advance.owed)} ${money(strafe)} zurück.`);
+  }
+
+  // Sonderkredit (Anruf der Bank): nach der Frist ohne Tilgung teurer.
+  d = dealsOf(s);
+  if (d.offerLoan && d.offerLoan.due <= s.round) {
+    const id = d.offerLoan.loanId;
+    const offen = s.loans.find((l) => l.id === id && l.principal > 0);
+    s = withDeals(s, { offerLoan: null });
+    if (offen) {
+      s = log({ ...s, loans: s.loans.map((l) => (l.id === id ? { ...l, rate: Math.round((l.rate + b.bank.offer.penalty) * 10000) / 10000 } : l)) }, `Der Sonderkredit ist nicht getilgt – die Bank verlangt ${percent(b.bank.offer.penalty)} mehr Zins.`);
+    }
   }
 
   // Verliehener Turm: Miete, Rückgabe, vielleicht beschädigt.

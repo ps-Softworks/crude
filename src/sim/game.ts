@@ -16,7 +16,7 @@ import { makeForecasts, type Forecast } from './forecast';
 import { generateParcels, type Parcel } from './geology';
 // Termine als Hauptwerkzeug (Etappe 1): Erkundung und Planungsbrett.
 import { initialKnowledge, learnFromWells, newExploration, type ExplorationState, type ParcelKnowledge } from './exploration';
-import { appendReport, newPlans, settlePlans, type PlansState } from './plans';
+import { appendReport, newPlans, ringPhone, settlePlans, type PlansState } from './plans';
 // Termine als Hauptwerkzeug, Etappe 3: gekoppelte Briefe.
 import { settleLetters } from './letters';
 // Termine als Hauptwerkzeug (Etappe 2): Preis- und Transport-Aktionen.
@@ -452,5 +452,6 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
     checkBirth({ ...next, log: [...state.log, `${formatDate(next)}: Eine neue Runde beginnt.`] }, balance),
     balance,
   );
-  return drawEvents(begonnen, balance, catalog);
+  // 0.4.20+34: Ab Kapitel 2 klingelt manchmal das Telefon – ein Anruf mit einem Angebot nur für diese Runde.
+  return ringPhone(drawEvents(begonnen, balance, catalog), balance, catalog);
 }

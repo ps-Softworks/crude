@@ -11,7 +11,11 @@ export interface DealsBalance {
     defer: { surcharge: number; cooldown: number };
     /** Turm verpfänden: so viel mehr Bankrahmen, solange die Bank den Turm als Pfand hält. */
     pledge: { limitBonus: number };
+    /** Sonderkredit am Telefon: Beträge, Zinsnachlass, Untergrenze, Frist (Runden), Strafzins danach. */
+    offer: { sizes: number[]; discount: number; floor: number; rounds: number; penalty: number };
   };
+  /** 0.4.20+34 Telefon: Chance je Runde (ab Kapitel 2), dass jemand anruft. */
+  phone: { chance: number };
   rail: {
     /** Festtarif: Laufzeiten (Runden), Mindestmenge je Runde per Bahn, Strafe je fehlendem Barrel. */
     fixed: { rounds: number[]; minimum: number; shortfall: number };
@@ -98,7 +102,15 @@ export function parseDealsBalance(raw: unknown): DealsBalance {
       },
       defer: { surcharge: zahl(raw, `${p}.bank.defer.surcharge`), cooldown: ganz(raw, `${p}.bank.defer.cooldown`) },
       pledge: { limitBonus: zahl(raw, `${p}.bank.pledge.limitBonus`) },
+      offer: {
+        sizes: liste(raw, `${p}.bank.offer.sizes`),
+        discount: anteil(raw, `${p}.bank.offer.discount`),
+        floor: anteil(raw, `${p}.bank.offer.floor`),
+        rounds: ganz(raw, `${p}.bank.offer.rounds`),
+        penalty: anteil(raw, `${p}.bank.offer.penalty`),
+      },
     },
+    phone: { chance: anteil(raw, `${p}.phone.chance`) },
     rail: {
       fixed: { rounds: liste(raw, `${p}.rail.fixed.rounds`), minimum: zahl(raw, `${p}.rail.fixed.minimum`), shortfall: zahl(raw, `${p}.rail.fixed.shortfall`) },
       quota: { sizes: liste(raw, `${p}.rail.quota.sizes`), discount: anteil(raw, `${p}.rail.quota.discount`), rounds: ganz(raw, `${p}.rail.quota.rounds`) },

@@ -75,6 +75,8 @@ export interface PlanRequires {
   marked?: string[];
   notMarked?: string[];
   minRound?: number;
+  /** 0.4.20+34: erst ab diesem Kapitel (Telefon). */
+  minChapter?: number;
   maxChapter?: number;
 }
 
@@ -91,6 +93,8 @@ export interface PlanCardBalance {
   /** Fester Termin aus content/events/ (routine), den diese Karte ersetzt. */
   event?: string;
   requires: PlanRequires;
+  /** 0.4.20+34: Anruf – die Karte liegt nur auf der Hand, wenn das Telefon für sie klingelt (Gewicht beim Auslosen). */
+  call?: number;
 }
 
 export interface PlansBalance {
@@ -192,7 +196,10 @@ export function parsePlansBalance(raw: unknown): PlansBalance {
     if (req.marked !== undefined) requires.marked = texte(raw, `${q}.requires.marked`);
     if (req.notMarked !== undefined) requires.notMarked = texte(raw, `${q}.requires.notMarked`);
     if (req.minRound !== undefined) requires.minRound = zahl(raw, `${q}.requires.minRound`);
+    if (req.minChapter !== undefined) requires.minChapter = zahl(raw, `${q}.requires.minChapter`);
     if (req.maxChapter !== undefined) requires.maxChapter = zahl(raw, `${q}.requires.maxChapter`);
+    const call = wert(raw, `${q}.call`);
+    if (call !== undefined && (typeof call !== 'number' || !(call > 0))) throw new BalanceError(`balance.yaml: "${q}.call" muss eine Zahl über 0 sein`);
     cards[id] = {
       tab: tab as PlanTab,
       appointments,
@@ -201,6 +208,7 @@ export function parsePlansBalance(raw: unknown): PlansBalance {
       target,
       timing,
       requires,
+      ...(typeof call === 'number' ? { call } : {}),
       ...(typeof handler === 'string' ? { handler } : {}),
       ...(typeof event === 'string' ? { event } : {}),
     };

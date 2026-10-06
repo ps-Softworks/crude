@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { creditLimit, quarterInterest, settleLoans, takeLoan } from './credit';
-import { DEAL_HANDLERS, dealsOf, dealsRunning, newDeals, royaltyPrice, settleDeals } from './deals';
+import { callerCard, DEAL_HANDLERS, dealsOf, dealsRunning, newDeals, royaltyPrice, settleDeals } from './deals';
 import type { Well } from './drilling';
 import { newGame, type GameState } from './game';
-import { bookCard, settlePlans } from './plans';
+import { bookCard, planView, ringPhone, settlePlans } from './plans';
 import { buyRig, rigReady } from './rigs';
 import { deserializeGame, serializeGame } from './save';
 import { loadBalance } from './testBalance';
@@ -219,5 +219,44 @@ describe('Ölleute, Grundbesitzer, Zeitung, Sheriff (0.4.20+31)', () => {
     const zeilen = dealsRunning(s, balance);
     expect(zeilen.some((z) => z.includes('Pfand'))).toBe(true);
     expect(zeilen).toContain('Wache an den Tanks');
+  });
+});
+
+describe('Telefon (0.4.20+34)', () => {
+  const k2 = (seed: string, patch: Partial<GameState> = {}) => start(seed, { chapter: 2, ...patch });
+
+  it('klingelt erst ab Kapitel 2, etwa mit der Chance je Runde, und nur mit einer Karte, die gerade geht', () => {
+    let n = 0;
+    for (let i = 0; i < 300; i++) {
+      expect(callerCard(ringPhone(start(`tel${i}`), balance, katalog))).toBeNull();
+      const s = ringPhone(k2(`tel${i}`), balance, katalog);
+      const c = callerCard(s);
+      if (c) {
+        n++;
+        expect(balance.plans.cards[c].call).toBeGreaterThan(0);
+      }
+    }
+    expect(Math.abs(n / 300 - b.phone.chance)).toBeLessThan(0.08);
+  });
+
+  it('ein Anruf liegt nur in seiner Runde auf der Hand', () => {
+    const s = k2('anruf', { deals: { ...newDeals(), call: { card: 'bank_angebot', round: 1 } } });
+    expect(planView(s, balance, katalog).cards.some((c) => c.id === 'bank_angebot')).toBe(true);
+    expect(planView({ ...s, round: 2 }, balance, katalog).cards.some((c) => c.id === 'bank_angebot')).toBe(false);
+    expect(planView(k2('anruf'), balance, katalog).cards.some((c) => c.id === 'bank_angebot')).toBe(false);
+  });
+
+  it('Sonderkredit: Zins unter dem Bankzins; nach der Frist ohne Tilgung teurer', () => {
+    const s0 = k2('sonder', { deals: { ...newDeals(), call: { card: 'bank_angebot', round: 1 } } });
+    const n = b.bank.offer.sizes[0];
+    const s = buche(s0, 'bank_angebot', String(n));
+    const kredit = s.loans[s.loans.length - 1];
+    expect(kredit.principal).toBe(n);
+    expect(s.cash).toBeCloseTo(s0.cash + n, 2);
+    const frist = { ...s, round: dealsOf(s).offerLoan!.due };
+    const nach = settleDeals(frist, balance);
+    expect(nach.loans.find((l) => l.id === kredit.id)!.rate).toBeCloseTo(kredit.rate + b.bank.offer.penalty, 6);
+    const getilgt = settleDeals({ ...frist, loans: frist.loans.filter((l) => l.id !== kredit.id) }, balance);
+    expect(dealsOf(getilgt).offerLoan).toBeNull();
   });
 });

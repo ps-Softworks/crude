@@ -257,17 +257,19 @@ plans:
     gemeinschaft_halten: { tab: fracht, appointments: 1, timing: rundenende, handler: gemeinschaft_halten, requires: { maxChapter: 1 } }
     exklusiv_kuendigen: { tab: fracht, appointments: 1, cash: 800, handler: exklusiv_kuendigen, requires: { maxChapter: 1 } }
     # 0.4.20+31 Deals im Adressbuch (Regeln src/sim/deals.ts, Zahlen unten im Block deals). Alles PLATZHALTER.
-    bank_zins: { tab: markt, appointments: 1, timing: rundenende, handler: bank_zins, requires: { maxChapter: 1 } }
-    bank_stundung: { tab: markt, appointments: 1, handler: bank_stundung, requires: { maxChapter: 1 } }
-    bank_pfand: { tab: markt, appointments: 1, handler: bank_pfand, requires: { maxChapter: 1 } }
-    bahn_festtarif: { tab: fracht, appointments: 2, strength: -2, target: option, timing: rundenende, handler: bahn_festtarif, requires: { maxChapter: 1 } }
-    bahn_kontingent: { tab: fracht, appointments: 1, target: option, handler: bahn_kontingent, requires: { maxChapter: 1 } }
+    bank_zins: { tab: markt, appointments: 1, timing: rundenende, handler: bank_zins }
+    bank_stundung: { tab: markt, appointments: 1, handler: bank_stundung }
+    bank_pfand: { tab: markt, appointments: 1, handler: bank_pfand }
+    bahn_festtarif: { tab: fracht, appointments: 2, strength: -2, target: option, timing: rundenende, handler: bahn_festtarif }
+    bahn_kontingent: { tab: fracht, appointments: 1, target: option, handler: bahn_kontingent }
     crane_vorschuss: { tab: markt, appointments: 1, target: option, handler: crane_vorschuss, requires: { maxChapter: 1 } }
     haendler_grossabnahme: { tab: markt, appointments: 1, handler: haendler_grossabnahme, requires: { maxChapter: 1 } }
     turm_verleihen: { tab: leute, appointments: 1, target: option, handler: turm_verleihen, requires: { maxChapter: 1 } }
     foerderzins: { tab: land, appointments: 1, target: ranch, timing: rundenende, handler: foerderzins, requires: { maxChapter: 1 } }
     interview: { tab: leute, appointments: 1, timing: rundenende, handler: interview, requires: { maxChapter: 1 } }
     wache: { tab: leute, appointments: 1, cash: 60, handler: wache, requires: { maxChapter: 1 } }
+    # 0.4.20+34 Telefon: Anrufe (call = Gewicht beim Auslosen), nur ab Kapitel 2.
+    bank_angebot: { tab: markt, appointments: 1, target: option, handler: bank_angebot, call: 1, requires: { minChapter: 2 } }
 
 # Deals im Adressbuch (0.4.20+31, src/sim/deals.ts). Alles PLATZHALTER bis zu Bot-Läufen.
 deals:
@@ -275,6 +277,7 @@ deals:
     rate: { chance: { A: 0.75, B: 0.5, C: 0.25, D: 0 }, cut: 0.01, floor: 0.04, cooldown: 4 }   # Zins nachverhandeln: Bankkredite −1 Punkt
     defer: { surcharge: 0.5, cooldown: 6 }      # Stundung: Zinsen der Runde × 1,5 auf die Schuld
     pledge: { limitBonus: 2500 }                # Turm verpfänden: Bankrahmen +2.500 $; bei versäumter Zahlung gehört der Turm der Bank (Jacob mietet ihn)
+    offer: { sizes: [5000, 10000, 25000], discount: 0.02, floor: 0.03, rounds: 8, penalty: 0.04 }   # 0.4.20+34 Anruf: Sonderkredit 2 Punkte billiger, in 8 Runden tilgen, sonst +4 Punkte
   rail:
     fixed: { rounds: [4, 8], minimum: 4000, shortfall: 0.10 }   # Festtarif: kein Aufschlag, dafür mind. 4.000 bbl je Runde per Bahn
     quota: { sizes: [5000, 10000], discount: 0.2, rounds: 6 }  # Frachtkontingent: heute zahlen, 20 % billiger, 6 Runden gültig
@@ -286,7 +289,8 @@ deals:
     lend: { rounds: [2, 4], rent: 350, damage: 0.2, repair: 700 }   # Turm verleihen
   royalty: { chance: 0.55, cut: 0.03, floor: 0.08, horizon: 8, priceShare: 0.8, cooldown: 4 }   # Förderzins nachverhandeln
   interview: { chance: 0.65, rumourPenalty: 0.3, shift: 0.06, cooldown: 4 }   # Ruf bei den Wildcattern ±0,06
-  theft: { chance: 0.06, minStock: 3000, loss: 0.2 }   # Öldiebe in Kapitel 1; die Wache des Sheriffs verhindert sie für eine Runde
+  theft: { chance: 0.06, minStock: 3000, loss: 0.2 }
+  phone: { chance: 0.35 }   # 0.4.20+34: ab Kapitel 2 klingelt das Telefon in so vielen Runden   # Öldiebe in Kapitel 1; die Wache des Sheriffs verhindert sie für eine Runde
 
 # Preis-Aktionen (Termine als Hauptwerkzeug, Etappe 2, src/sim/pricing.ts). Alles PLATZHALTER.
 priceActions:

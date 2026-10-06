@@ -222,6 +222,13 @@ cards:
       de: "Sheriff Tatum stellt für ein paar Dollar einen Mann mit Flinte an die Tanks. Volle Tanks locken Diebe."
       en: "For a few dollars Sheriff Tatum posts a man with a shotgun at the tanks. Full tanks attract thieves."
     risk: { de: "Hält nur diese Runde.", en: "Only lasts this round." }
+  # 0.4.20+34 Telefon: Anrufe (kommen von selbst, gelten nur diese Runde).
+  bank_angebot:
+    title: { de: "Sonderkredit (Anruf der Bank)", en: "Special Loan (the Bank Calls)" }
+    text:
+      de: "Die Bank hat Geld übrig und ruft an: ein Kredit unter dem üblichen Zins – aber nur, wenn Jacob heute zusagt."
+      en: "The bank has money to spare and calls: a loan below the usual rate – but only if Jacob says yes today."
+    risk: { de: "Wer ihn nicht in der Frist tilgt, zahlt danach deutlich mehr Zins.", en: "Whoever fails to repay it in time pays considerably more interest afterwards." }
 
 # Adressbuch (0.4.20+29): Stellen, die Jacob aufsuchen kann – Reihenfolge = Anzeige.
 # Jede Karte aus balance.yaml plans.cards steht bei genau einer Stelle (cards), feste
@@ -231,7 +238,7 @@ contacts:
   bank:
     name: { de: "Bank", en: "Bank" }
     who: { de: "Salt Hill Savings · Mr. Pettibone", en: "Salt Hill Savings · Mr. Pettibone" }
-    cards: [bank_zins, bank_stundung, bank_pfand]
+    cards: [bank_angebot, bank_zins, bank_stundung, bank_pfand]
   geologen:
     name: { de: "Geologen", en: "Geologists" }
     who: { de: "Gutachter, Saloon-Kenner, Rutengänger", en: "Surveyors, saloon experts, dowsers" }

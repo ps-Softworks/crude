@@ -9,7 +9,8 @@ import { useState } from 'react';
 import { agendaView } from '../../sim/agenda';
 import { formatDate } from '../../sim/game';
 import { localize } from '../../sim/i18n';
-import { dealsRunning } from '../../sim/deals';
+import { callerCard, dealsRunning } from '../../sim/deals';
+import { chapterOf } from '../../sim/chapterOf';
 import { contactOf } from '../../sim/planContent';
 import { bookCard, planView, unbookCard, type PlanCardView, type PlanSlot } from '../../sim/plans';
 import { chapterRound, chapterRounds } from '../../sim/timeskip';
@@ -157,7 +158,18 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
   // Verlangt (ctx.tab), sonst zuletzt gewählt, sonst die erste Stelle, bei der etwas geht.
   const gibt = (id: string | null | undefined): id is string => !!id && stellen.some((k) => k.id === id);
   const gemerkt = readPref('crude.reiter.termine');
-  const aktiv = gibt(ctx.tab) ? ctx.tab : gibt(gemerkt) ? gemerkt : (stellen.find((k) => k.frei > 0) ?? stellen[0])?.id ?? null;
+  // 0.4.20+34: Klingelt das Telefon, ist die Stelle des Anrufers zuerst offen.
+  const anruf = callerCard(game);
+  const anrufStelle = anruf ? (stelleVon.get(anruf) ?? null) : null;
+  const [abgenommen, setAbgenommen] = useState(false);
+  const aktiv = gibt(ctx.tab)
+    ? ctx.tab
+    : anrufStelle && !abgenommen && gibt(anrufStelle)
+      ? anrufStelle
+      : gibt(gemerkt)
+        ? gemerkt
+        : ((stellen.find((k) => k.frei > 0) ?? stellen[0])?.id ?? null);
+  const telefon = chapterOf(game) >= 2;
   const stelle = stellen.find((k) => k.id === aktiv);
   const hand = v.cards
     .filter((c) => stelleVon.get(c.id) === aktiv)
@@ -165,6 +177,7 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
   const laufend = dealsRunning(game, balance);
   const gebucht = v.slots.map((s, i) => ({ s, i })).filter(({ s }) => s.kind !== 'frei');
   function waehle(id: string) {
+    setAbgenommen(true);
     writePref('crude.reiter.termine', id);
     ctx.onTab(id);
     setOffen(null);
@@ -205,6 +218,11 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
           })}
         </ul>
       )}
+      {anrufStelle && (
+        <p className="anruf" role="status">
+          ☎ Es klingelt: {localize(planContent.contacts.find((k) => k.id === anrufStelle)!.name)} – das Angebot gilt nur diese Runde.
+        </p>
+      )}
       {laufend.length > 0 && (
         <p className="laufend">
           <strong>Läuft:</strong> {laufend.join(' · ')}
@@ -224,7 +242,8 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
       {/* Ergebnisse der Sofort-Karten gleich sehen (0.4.19+3); der volle Wochenbericht steht im Rundenbericht. */}
       {v.report.length > 0 && <Wochenbericht report={v.report} />}
       <div className="adressbuch">
-        <nav className="stellen" aria-label="Wen aufsuchen?">
+        <nav className="stellen" aria-label={telefon ? 'Fräulein, verbinden Sie mich mit …' : 'Wen aufsuchen?'}>
+          {telefon && <p className="stellen-kopf">Fräulein, verbinden Sie mich mit …</p>}
           {stellen.map((k) => (
             <button
               key={k.id}
@@ -233,7 +252,10 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
               aria-current={k.id === aktiv ? 'true' : undefined}
               onClick={() => waehle(k.id)}
             >
-              <span className="stelle-name">{localize(k.name)}</span>
+              <span className="stelle-name">
+                {k.id === anrufStelle && <span aria-label="ruft an">☎ </span>}
+                {localize(k.name)}
+              </span>
               {k.frei > 0 && <span className="stelle-zahl">{k.frei}</span>}
             </button>
           ))}

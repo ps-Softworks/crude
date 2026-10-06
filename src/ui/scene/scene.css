@@ -952,3 +952,18 @@ input:focus-visible { outline: 2px solid var(--ocker); outline-offset: 1px; }
 /* 0.4.20+13: In der Schublade erst der Name, dann die Hitze. */
 .objekt.in-schublade .namensschild { order: 1; }
 .objekt.in-schublade .objekt-status { order: 2; }
+
+/* 0.4.20+34 Wandtelefon (ab Kapitel 2) statt Abreißkalender. */
+.telefon { width: 70%; height: 100%; display: block; margin: 0 auto; }
+.telefon-brett { fill: #5a3b22; stroke: #2e1d10; stroke-width: 1; }
+.telefon-kasten { fill: #7a5230; stroke: #2e1d10; stroke-width: 1; }
+.telefon-glocken circle, .telefon-glocken rect { fill: #c9a24a; stroke: #6b5220; stroke-width: 1; }
+.telefon-trichter { fill: #1f1a16; }
+.telefon-kurbel { fill: none; stroke: #1f1a16; stroke-width: 2; }
+circle.telefon-kurbel { fill: #1f1a16; }
+.telefon-schnur { fill: none; stroke: #1f1a16; stroke-width: 1.2; }
+.telefon-hoerer { fill: #1f1a16; }
+.telefon-pult { fill: #6b4628; }
+.telefon.klingelt .telefon-glocken { transform-origin: 30px 18px; animation: telefon-klingeln 0.12s linear infinite alternate; }
+@keyframes telefon-klingeln { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+@media (prefers-reduced-motion: reduce) { .telefon.klingelt .telefon-glocken { animation: none; } }

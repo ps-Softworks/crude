@@ -33,6 +33,7 @@ import { serializeGame } from '../src/sim/save';
 import { unlockBigPipelines } from '../src/sim/bigPipeline';
 import { brandOf, previewBrand, settleBrand } from '../src/sim/brand';
 import { newFeldzug } from '../src/sim/feldzug';
+import { newDeals } from '../src/sim/deals';
 import { startDiplomacy } from '../src/sim/diplomacy';
 import { openExchange } from '../src/sim/exchange';
 import { debugUnlockHallstead } from '../src/sim/hallsteadState';
@@ -135,6 +136,8 @@ const nachSprung = (() => {
   throw new Error('Zeitsprung endet nicht.');
 })();
 const kapitel2 = markChronicleRead(nachSprung);
+// 0.4.20+34: Kapitel 2 mit klingelndem Telefon (Anruf der Bank).
+const klingelt: GameState = { ...kapitel2, deals: { ...newDeals(), call: { card: 'bank_angebot', round: kapitel2.round } } };
 
 // --- Phase 4: Kapitel-2- und Kapitel-3-Systeme wie per Debug freigeschaltet ---
 const stocksBoard = parseStocksContent('content/stocks.yaml', readFileSync(new URL('content/stocks.yaml', root), 'utf8'), balance.stocks.board.seatsMax).content!.board;
@@ -291,6 +294,8 @@ const bilder: Bild[] = [
   { name: '33-zeitsprung-chronik', state: nachSprung },
   { name: '33b-zeitsprung-bericht', state: nachSprung, dann: `document.querySelector('.bogen-fuss .primary')?.click()` },
   { name: '34-kapitel2-schreibtisch', state: kapitel2 },
+  { name: '34b-telefon-klingelt', state: klingelt },
+  { name: '34c-telefon-fenster', state: klingelt, tasten: ['t'] },
   // Termine als Adressbuch (0.4.20+28): Stellen links, Angebote der gewählten Stelle rechts.
   { name: '35-planungsbrett', state: start, prefs: { 'crude.reiter.termine': 'geologen' }, tasten: ['t'] },
   // Etappe 2: Reiter Markt und Fracht, Verhandlung mit Thorne, Förderbremse auf der Pinnwand.

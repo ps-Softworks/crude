@@ -28,6 +28,7 @@ import { RivalsSheet } from './RivalsSheet';
 import { StaffSheet } from './StaffSheet'; // 4.9 Andockpunkt
 import type { SheetContext } from './types';
 import { WaitingSheet } from './WaitingSheet';
+import { chapterOf } from '../../sim/chapterOf';
 // 4.11 Andockpunkt: Schattenbuch (Ermittler) und Werkstatt (Forschung).
 import { ShadowBookSheet } from './ShadowBookSheet';
 import { WorkshopSheet } from './WorkshopSheet';
@@ -86,7 +87,8 @@ export interface SheetHostProps {
 }
 
 export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound, onGo, onChapterEnd, closing = false, report, onVisitor }: SheetHostProps) {
-  const info = SHEET_INFO[open.id];
+  // 0.4.20+34: Ab Kapitel 2 sind die Termine das Telefon.
+  const info = open.id === 'termine' && chapterOf(ctx.game) >= 2 ? { ...SHEET_INFO.termine, title: 'Telefon' } : SHEET_INFO[open.id];
   const inhalt: Record<SheetId, () => ReactNode> = {
     zeitung: () => <NewspaperSheet ctx={ctx} />,
     post: () => <PostSheet ctx={ctx} />,

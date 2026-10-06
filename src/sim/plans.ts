@@ -45,7 +45,7 @@ import { leaseOf, leaseTerms, optionOf, parcelLabel } from './lease';
 import type { PlanHandler } from './planHandler';
 import { PRICE_HANDLERS, settlePricing } from './pricing';
 import { FREIGHT_HANDLERS, settleFreight } from './freight';
-import { DEAL_HANDLERS } from './deals';
+import { DEAL_HANDLERS, dealsOf, ringing } from './deals';
 import type { GeologistId, PlanCardBalance, PlanRequires, PlanTab, PlanTarget, PlanTiming } from './plansBalance';
 import { Rng, seedFromString } from './rng';
 import { RIVAL_MARKS } from './trust';
@@ -253,6 +253,7 @@ function requiresMet(state: GameState, r: PlanRequires): boolean {
   if (r.marked && !r.marked.every((m) => marks[m] !== undefined)) return false;
   if (r.notMarked && r.notMarked.some((m) => marks[m] !== undefined)) return false;
   if (r.minRound !== undefined && state.round < r.minRound) return false;
+  if (r.minChapter !== undefined && chapterOf(state) < r.minChapter) return false;
   if (r.maxChapter !== undefined && chapterOf(state) > r.maxChapter) return false;
   return true;
 }
@@ -264,6 +265,8 @@ function eventOf(catalog: readonly EventDef[], id: string | undefined): EventDef
 /** Ist die Karte auf der Hand? Feste Termine: wenn sie im Kalender stehen könnten (oder schon wahrgenommen sind). */
 function onHand(state: GameState, card: PlanCardDef, catalog: readonly EventDef[], balance?: Balance): boolean {
   if (state.finished || !requiresMet(state, card.requires)) return false;
+  // 0.4.20+34: Anrufe liegen nur in der Runde auf der Hand, in der das Telefon für sie geklingelt hat.
+  if (card.call !== undefined && !ringing(state, card.id)) return false;
   if (card.event === undefined) {
     const h = card.handler ? handlers()[card.handler] : undefined;
     return !(h?.visible && balance && !h.visible(state, balance));
@@ -591,4 +594,25 @@ export function planRefErrors(balance: Balance, catalog: readonly EventDef[]): s
 export function exploreAppointments(state: GameState, balance: Balance): number {
   if (!state.plans || state.plans.round !== state.round) return 0;
   return state.plans.booked.filter((b) => balance.plans.cards[b.cardId]?.tab === 'land' && !balance.plans.cards[b.cardId]?.event).reduce((s, b) => s + b.appointments, 0);
+}
+
+/**
+ * 0.4.20+34 Telefon (ab Kapitel 2): Zu Beginn einer Runde klingelt es mit deals.phone.chance – eine der
+ * Anruf-Karten (call), die gerade ginge, gewichtet nach call. Die Karte liegt dann nur diese Runde auf der Hand.
+ */
+export function ringPhone(state: GameState, balance: Balance, catalog: readonly EventDef[]): GameState {
+  if (chapterOf(state) < 2 || state.finished) return state;
+  const rng = new Rng(seedFromString(`${state.seed}:telefon:${state.round}`));
+  if (rng.float() >= balance.deals.phone.chance) return state;
+  const moeglich = planCards(balance, catalog).filter((c) => {
+    if (c.call === undefined || !requiresMet(state, c.requires)) return false;
+    const h = c.handler ? handlers()[c.handler] : undefined;
+    if (h?.visible && !h.visible(state, balance)) return false;
+    return !h?.lock || h.lock(state, balance) === null;
+  });
+  if (moeglich.length === 0) return state;
+  const summe = moeglich.reduce((s, c) => s + (c.call ?? 0), 0);
+  let w = rng.float() * summe;
+  const karte = moeglich.find((c) => (w -= c.call ?? 0) < 0) ?? moeglich[moeglich.length - 1];
+  return { ...state, deals: { ...dealsOf(state), call: { card: karte.id, round: state.round } } };
 }

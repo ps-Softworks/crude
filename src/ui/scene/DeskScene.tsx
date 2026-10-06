@@ -31,6 +31,9 @@ import { DeskObject, type Placement } from './DeskObject';
 import { aufTisch, deskLayout, MAHAGONI_AB, SCHUBLADEN, sharedColumn, TISCH, type DeskPresent, type DeskSpot } from './deskLayout'; // 0.4.20+10
 import { RadioShape } from './objects/RadioShape';
 import { chapterOf } from '../../sim/chapterOf';
+import { callerCard } from '../../sim/deals';
+import { planContent } from '../plans';
+import { Telefon } from './Telefon';
 import { Door } from './Door';
 import {
   BellShape,
@@ -126,6 +129,10 @@ export function DeskScene(p: DeskSceneProps) {
   // 0.4.20+10: Platzplan je Kapitel (src/ui/scene/deskLayout.ts) – ab Kapitel 3 der Mahagoni-Tisch.
   const kapitel = chapterOf(game);
   const mahagoni = kapitel >= MAHAGONI_AB;
+  // 0.4.20+34: Telefon statt Kalender ab Kapitel 2; wer gerade anruft (Name der Stelle).
+  const telefon = kapitel >= 2;
+  const anruf = callerCard(game);
+  const anrufer = anruf ? localize(planContent.contacts.find((k) => k.cards.includes(anruf))?.name ?? planContent.title) : null;
   const da: DeskPresent = {
     raffinerie: !!game.refinery,
     personal: !!game.staff,
@@ -249,7 +256,15 @@ export function DeskScene(p: DeskSceneProps) {
             <LampShape />
           </div>
         )}
-        {obj(
+        {telefon
+          ? obj(
+              'termine',
+              'Telefon',
+              // 0.4.20+34: Ab Kapitel 2 hängt ein Telefon an der Wand – klingelt es, steht der Anrufer daneben.
+              anrufer ? { status: `Es klingelt: ${anrufer}`, badge: { text: '☎ Anruf' } } : { status: badges.termine.count > 0 ? `${badges.termine.count} feste${badges.termine.count === 1 ? 'r' : ''} Termin${badges.termine.count === 1 ? '' : 'e'}` : undefined },
+              <Telefon klingelt={anrufer !== null} />,
+            )
+          : obj(
           'termine',
           'Kalender',
           // Feste Termine kommen jede Runde wieder – kein „neu“, und ein eigenes Wort, damit
