@@ -35,13 +35,13 @@ export type LawWorldEffect = (typeof LAW_WORLD_EFFECTS)[number];
  * breakupFrom = ab diesem landesweiten Tankstellen-Marktanteil wird zerschlagen.
  * 0.4.20+18: incomeTaxAdd = Aufschlag auf die Einkommensteuer, depletionAllowance = steuerfreier Anteil des Gewinns,
  * commonCarrier = 1 heißt Transportpflicht für Fernleitungen, quotaShare = erlaubter Anteil der Förderung,
- * quotaFine = Bußgeld $ je Barrel heißes Öl, wageRise = Lohnaufschlag (Personal, Gespanne),
+ * quotaFine = Bußgeld $ je Barrel heißes Öl, quotaCatch = Chance je Runde, dass der Inspektor es findet, wageRise = Lohnaufschlag (Personal, Gespanne),
  * creditLimit = Faktor auf den Bankrahmen, drillCostRise = Aufschlag auf Bohrkosten,
  * storageCostRise = Aufschlag auf Lagerkosten, spillFine = Bußgeld $ je ausgelaufenem Barrel.
  */
 export const LAW_RULES = [
   'incomeTax', 'cartelBan', 'breakupFrom',
-  'incomeTaxAdd', 'depletionAllowance', 'commonCarrier', 'quotaShare', 'quotaFine', 'wageRise', 'creditLimit', 'drillCostRise', 'storageCostRise', 'spillFine',
+  'incomeTaxAdd', 'depletionAllowance', 'commonCarrier', 'quotaShare', 'quotaFine', 'quotaCatch', 'wageRise', 'creditLimit', 'drillCostRise', 'storageCostRise', 'spillFine',
 ] as const;
 export type LawRule = (typeof LAW_RULES)[number];
 
@@ -322,6 +322,16 @@ export function advanceLaws(input: LawsState, view: LawView, catalog: readonly L
     }
   }
   return { rng: rng.state, trustShare, seats, bills, news };
+}
+
+/**
+ * 0.4.20+18: Wert einer Gesetzesregel in einem Spielstand (state.worldModel.laws), oder fallback ohne geltendes
+ * Gesetz. Für die Systeme, die eine Regel lesen (Bankrahmen, Löhne, Bohrkosten, Lager …).
+ */
+export function lawRule(state: object, catalog: readonly LawDef[] | undefined, rule: LawRule, fallback = 0): number {
+  const laws = (state as { worldModel?: { laws?: Pick<LawsState, 'bills'> } | null }).worldModel?.laws;
+  if (!laws || !catalog) return fallback;
+  return lawRules(laws, catalog)[rule] ?? fallback;
 }
 
 /** Gilt dieses Gesetz? */

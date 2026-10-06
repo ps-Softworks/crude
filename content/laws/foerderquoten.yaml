@@ -31,6 +31,7 @@ effects:
   rules:
     quotaShare: 0.8        # erlaubt sind 80 % der möglichen Förderung
     quotaFine: 0.5         # Bußgeld $ je Barrel heißes Öl, wenn der Inspektor es findet
+    quotaCatch: 0.3        # Chance je Runde, dass der Inspektor das heiße Öl findet
 
 lobby:
   demand: { label: { de: "Quoten fordern", en: "Call for quotas" } }

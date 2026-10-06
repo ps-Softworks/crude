@@ -29,6 +29,7 @@
 // Zufall nur aus dem eigenen Strom (Seed + ':fernleitung'). Reine Funktionen.
 
 import type { Balance, LandownerType, TransportMode } from './balance';
+import { lawRule } from './laws';
 import type { Offer } from './bigPipelineBalance';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
@@ -75,7 +76,7 @@ function zahlOder(v: unknown, ersatz: number): number {
  * Transportpflicht-Gesetz – darum immer false. Kommt eines, LAW_RULES (laws.ts) um eine
  * Regel erweitern und hier über lawRules aus state.worldModel.laws lesen.
  */
-export function pipelineWorldOf(state: object, balance?: Pick<Balance, 'bigPipelines'>): PipelineWorld {
+export function pipelineWorldOf(state: object, balance?: Pick<Balance, 'bigPipelines'> & Partial<Pick<Balance, 'laws'>>): PipelineWorld {
   const s = state as {
     chapter?: unknown;
     worldModel?: { mood?: unknown };
@@ -86,7 +87,8 @@ export function pipelineWorldOf(state: object, balance?: Pick<Balance, 'bigPipel
     chapter: zahlOder(s.chapter, DEFAULT_PIPELINE_WORLD.chapter),
     mood: zahlOder(s.worldModel?.mood, DEFAULT_PIPELINE_WORLD.mood),
     influence: balance ? Math.min(100, Math.max(0, gefallen * balance.bigPipelines.rights.influencePerFavor)) : DEFAULT_PIPELINE_WORLD.influence,
-    commonCarrier: DEFAULT_PIPELINE_WORLD.commonCarrier,
+    // 0.4.20+18: Transportpflicht (Gesetz transport_duty) aus dem Gesetzeskatalog.
+    commonCarrier: balance ? lawRule(state, balance.laws, 'commonCarrier') > 0 : DEFAULT_PIPELINE_WORLD.commonCarrier,
   };
 }
 

@@ -19,6 +19,7 @@
 
 import { spendAppointments } from './agenda';
 import { BalanceError, type Balance, type Range } from './balance';
+import { lawRule } from './laws';
 import { formatDate } from './calendar';
 import type { MailKind } from './events';
 import type { GameState } from './game';
@@ -478,7 +479,9 @@ export function wageLevel(balance: Balance, id: string): WageLevel {
 
 /** Lohnniveau der Welt: 1 = normal; folgt dem Kreditklima (4.1), Ersatzwert 1. */
 export function wageIndex(state: object, balance: Balance): number {
-  return Math.max(0.5, 1 + (staffWorld(state).credit - 50) * balance.staff.wage.creditSensitivity);
+  // 0.4.20+18: Das Gewerkschaftsgesetz (labour_act) hebt die Löhne.
+  const gewerkschaft = 1 + lawRule(state, balance.laws, 'wageRise');
+  return Math.max(0.5, 1 + (staffWorld(state).credit - 50) * balance.staff.wage.creditSensitivity) * gewerkschaft;
 }
 
 /** Lohn je Runde in $ (ganze Dollar): Stelle, Ruf (nicht die echte Kompetenz), Lohnstufe, Lohnniveau. */

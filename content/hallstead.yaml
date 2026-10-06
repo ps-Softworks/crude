@@ -130,6 +130,8 @@ ui:
   pressureFor: { de: "Jacobs Leute drängen darauf.", en: "Jacob's people are pushing for it." }
   pressureAgainst: { de: "Jacobs Leute bremsen.", en: "Jacob's people are stalling it." }
   watered: { de: "Schon verwässert.", en: "Already watered down." }
+  hotOil: { de: "Heißes Öl fördern (an der Quote vorbei)", en: "Produce hot oil (past the quota)" }
+  hotOilHint: { de: "Die Quellen fördern voll. Findet der Inspektor das Öl über der Quote, kostet jedes Barrel ein Bußgeld.", en: "The wells produce at full rate. If the inspector finds the oil above the quota, every barrel costs a fine." }
   favorsHintProvince: { de: "Die Abgeordneten der Provinz schulden Jacob {favors} Gefallen.", en: "The province's members of parliament owe Jacob {favors} favours." }
   lobbyistLater: { de: "Einen Lobbyisten in der Hauptstadt kann sich erst ein Konzernherr leisten (ab Kapitel 3). Bis dahin zählen Jacobs eigene Kontakte – je größer die Firma, desto mehr.", en: "Only a captain of industry can keep a lobbyist in the capital (from chapter 3). Until then Jacob's own contacts count – the bigger the firm, the more." }
   weight: { de: "Jacobs Wort wiegt in der Politik {word}.", en: "Jacob's word carries {word} weight in politics." }

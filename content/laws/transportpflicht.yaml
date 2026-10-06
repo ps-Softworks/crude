@@ -37,9 +37,6 @@ effects:
 lobby:
   demand: { label: { de: "Offene Leitungen fordern", en: "Call for open pipelines" } }
   block: { label: { de: "Die Eigentümer schützen", en: "Protect the owners" } }
-  weaken:
-    label: { de: "Hohe Durchleitungsgebühren erlauben", en: "Allow high carriage fees" }
-    rules: { commonCarrier: 0.5 }
   delay: { label: { de: "Die Debatte verschleppen", en: "Stall the debate" } }
 
 news:

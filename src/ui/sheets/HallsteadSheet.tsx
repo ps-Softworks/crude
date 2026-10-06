@@ -10,6 +10,7 @@ import { PARTY_IDS } from '../../sim/hallsteadBalance';
 import { fillText, hallsteadView } from '../../sim/hallsteadContent';
 import { debugUnlockHallstead, hallsteadUnlocked, type HallsteadResult } from '../../sim/hallsteadState';
 import { buyHolding, runCampaign, sellHolding } from '../../sim/holdings';
+import { setHotOil } from '../../sim/lawEffects';
 import { bribe, donate, fireLobbyist, hireLobbyist, politicsUnlocked, pushLaw, waterDownLaw } from '../../sim/lobby';
 import { localize } from '../../sim/i18n';
 import { balance } from '../balance';
@@ -233,6 +234,12 @@ export function HallsteadSheet({ ctx }: { ctx: SheetContext }) {
                       {law.pressure}
                       {law.watered && ` ${L(C.ui.watered)}`}
                     </p>
+                  )}
+                  {/* 0.4.20+18: Unter Förderquoten entscheidet Jacob, ob er heißes Öl fördert. */}
+                  {law.id === 'production_quota' && law.passed && (
+                    <label className="hallstead-notiz" title={L(C.ui.hotOilHint)}>
+                      <input type="checkbox" checked={!!game.hotOil} disabled={game.finished} onChange={(e) => ctx.onGame(setHotOil(game, balance, e.target.checked))} /> {L(C.ui.hotOil)}
+                    </label>
                   )}
                   <div className="hallstead-knoepfe">
                     <button type="button" disabled={game.finished || law.passed || v.favors < lb.pushCost} onClick={() => tu(pushLaw(game, balance, law.id, 1))}>

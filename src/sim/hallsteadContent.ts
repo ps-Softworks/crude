@@ -22,7 +22,7 @@ export const UI_KEYS = [
   'donate', 'donateHint', 'donationPending', 'government', 'push', 'block', 'water', 'oilFor', 'oilAgainst',
   'pressureFor', 'pressureAgainst', 'watered', 'needLobbyist', 'lawsPending', 'telegram', 'nothing', 'debugUnlock',
   // 0.4.20+17 Provinzpolitik: Gefallen der Provinz, Lobbyist erst in Hallstead, Gewicht, Stand im Parlament.
-  'favorsHintProvince', 'lobbyistLater', 'weight', 'weightLow', 'weightMid', 'weightHigh', 'lawPassed', 'lawPassedWeak', 'lawDebate', 'waterLater',
+  'hotOil', 'hotOilHint', 'favorsHintProvince', 'lobbyistLater', 'weight', 'weightLow', 'weightMid', 'weightHigh', 'lawPassed', 'lawPassedWeak', 'lawDebate', 'waterLater',
 ] as const;
 export const NEWS_KEYS = ['crash', 'yieldPlus', 'yieldMinus', 'donationWon', 'donationLost', 'lobbyFavors', 'lobbyDrunk', 'salary'] as const;
 export const REASON_KEYS: readonly HallsteadReason[] = [

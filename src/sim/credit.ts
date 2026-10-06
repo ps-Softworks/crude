@@ -8,6 +8,7 @@
 // eine Frist von bankruptcy.graceRounds Runden. Läuft sie ab, ist Jacob pleite.
 
 import { RATINGS, type Balance, type Rating } from './balance';
+import { lawRule } from './laws';
 import { formatDate } from './calendar';
 import type { Well } from './drilling';
 import type { GameState } from './game';
@@ -87,7 +88,9 @@ export function creditLimit(state: Pick<GameState, 'wells'> & Partial<Pick<GameS
   // Weichen (Spielspaß K1): Steht Ruth mit auf den Urkunden, gibt die Bank mehr (weichen.ts).
   // 0.4.20+11: In Cranes Preiskrieg sitzt Thorne im Kreditausschuss – die Bank gibt nur einen Teil des Rahmens.
   const krieg = state.feldzug?.phase === 'krieg' ? balance.feldzug.bank.limitFactor : 1;
-  const faktor = worldLimitFactor(state.worldModel, balance.worldModel) * weichenCreditFactor(state, balance) * krieg;
+  // 0.4.20+18: Die Bankaufsicht (Gesetz bank_supervision) verlangt Reserven – der Rahmen schrumpft.
+  const aufsicht = lawRule(state, balance.laws, 'creditLimit', 1);
+  const faktor = worldLimitFactor(state.worldModel, balance.worldModel) * weichenCreditFactor(state, balance) * krieg * aufsicht;
   return Math.round((baseCreditLimit(state, balance) * faktor) / 100) * 100;
 }
 

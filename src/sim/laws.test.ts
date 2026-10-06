@@ -11,6 +11,8 @@ import { endRound, newGame } from './game';
 import {
   advanceLaws,
   conditionMet,
+  type LawCondition,
+  freshBill,
   expectedYes,
   isLawsState,
   lawInForce,
@@ -417,6 +419,14 @@ describe('Lobby (vorbereitet für Kapitel 2)', () => {
     expect(nass.bills.antitrust.weakened).toBe(true);
     const trocken = tagen(imParlament, ruhig, [sicherDurch], 2, sicher, { ...keineRunde, water: { antitrust: lb.lobby.weakenFrom / 2 } }).at(-1)!;
     expect(trocken.bills.antitrust.weakened).toBe(false);
+  });
+
+  it('0.4.20+18: Bedingung inForce – der Grund zählt nur, wenn die genannten Gesetze schon gelten', () => {
+    const c: LawCondition = { inForce: ['income_tax'] };
+    const lage = { trustShare: 0.38, seats: start().seats };
+    expect(conditionMet(c, ruhig, lage)).toBe(false);
+    const gilt = { ...lage, bills: { income_tax: { ...freshBill(), stage: 'passed' as const } } };
+    expect(conditionMet(c, ruhig, gilt)).toBe(true);
   });
 
   it('Züge, die ein Gesetz nicht anbietet, und unbekannte Gesetze bewirken nichts', () => {

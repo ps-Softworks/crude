@@ -13,6 +13,7 @@
 // Reine Funktionen: Zustand rein, neuer Zustand raus.
 
 import type { Balance, TransportMode } from './balance';
+import { lawRule } from './laws';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
 import { recordAct } from './politics';
@@ -167,7 +168,8 @@ export function settleStorage(input: GameState, balance: Balance): GameState {
     };
   }
   if (state.oilStock <= 0) return state;
-  const kosten = cents(state.oilStock * s.costPerBarrel);
+  // 0.4.20+18: Umweltgesetze (environment) verlangen gesicherte Tanks – Lagern wird teurer.
+  const kosten = cents(state.oilStock * s.costPerBarrel * (1 + lawRule(state, balance.laws, 'storageCostRise')));
   const schwund = state.oilStock * s.shrink;
   state = { ...lose(state, schwund), cash: cents(state.cash - kosten) };
   state = { ...state, log: logged(state, `Lager: ${dollars(kosten)} $ Lagerkosten, ${bbl(schwund)} Barrel Schwund.`) };
@@ -187,7 +189,11 @@ export function spillOver(state: GameState, balance: Balance): GameState {
   const ueber = state.oilStock - platz;
   if (ueber <= 0) return state;
   const out = lose(state, ueber);
-  return { ...out, log: logged(out, `Die Tanks sind voll: ${bbl(ueber)} Barrel laufen in den Boden. Mehr Tanks oder schneller verkaufen!`) };
+  const gemeldet = { ...out, log: logged(out, `Die Tanks sind voll: ${bbl(ueber)} Barrel laufen in den Boden. Mehr Tanks oder schneller verkaufen!`) };
+  // 0.4.20+18: Umweltgesetze (environment) – wer Öl auslaufen lässt, zahlt je Barrel.
+  const busse = cents(ueber * lawRule(state, balance.laws, 'spillFine'));
+  if (busse <= 0) return gemeldet;
+  return { ...gemeldet, cash: cents(gemeldet.cash - busse), log: logged(gemeldet, `Umweltgesetz: ${dollars(busse)} $ Bußgeld für das ausgelaufene Öl.`) };
 }
 
 // --- Eigene Fuhrwerke ----------------------------------------------------------
@@ -328,10 +334,11 @@ export function sabotageChance(state: Pick<GameState, 'events' | 'logistics'> & 
 }
 
 /** Fixkosten je Runde: Lohn der Fuhrleute, Streckenwärter, Wachleute. */
-export function fixedCosts(state: Pick<GameState, 'logistics'>, balance: Balance) {
+export function fixedCosts(state: Pick<GameState, 'logistics'> & Partial<Pick<GameState, 'worldModel'>>, balance: Balance) {
   const { teams, pipeline } = balance.transport;
   const lg = state.logistics;
-  const wages = lg.teams * teams.wagePerRound;
+  // 0.4.20+18: Das Gewerkschaftsgesetz (labour_act) hebt auch den Lohn der Fuhrleute.
+  const wages = lg.teams * teams.wagePerRound * (1 + lawRule(state, balance.laws, 'wageRise'));
   const laeuft = lg.pipeline === 'ready' || lg.pipeline === 'damaged';
   const upkeep = laeuft ? pipeline.upkeepPerRound : 0;
   const guards = laeuft && lg.guards ? pipeline.guardsPerRound : 0;
