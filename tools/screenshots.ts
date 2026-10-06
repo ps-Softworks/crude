@@ -295,13 +295,13 @@ const bilder: Bild[] = [
   { name: '29-zeitung-kapitel3', state: kap3, tasten: ['z'], warte: 600 },
   // Einstellungen (Menü ☰ → Einstellungen): Textgröße „groß“ als Probe, farbenblind-freundliche Karte an.
   {
-    name: '44-einstellungen',
+    name: '47-einstellungen',
     state: mitte,
     prefs: { 'crude.einstellungen': JSON.stringify({ textSize: 'gross', soundOn: true, volume: 0.5, reduceMotion: false, colorblindMap: true }) },
     dann: `${KLICK('.menue-knopf')}; setTimeout(() => { [...document.querySelectorAll('.menue button')].find((b) => b.textContent.includes('Einstellungen'))?.click(); }, 400)`,
     warte: 1000,
   },
-  { name: '44b-karte-farbenblind', state: mitte, prefs: { 'crude.einstellungen': JSON.stringify({ colorblindMap: true }) }, tasten: ['k'], dann: JACOBS_RANCH, warte: 900 },
+  { name: '47b-karte-farbenblind', state: mitte, prefs: { 'crude.einstellungen': JSON.stringify({ colorblindMap: true }) }, tasten: ['k'], dann: JACOBS_RANCH, warte: 900 },
   {
     name: '30-debug-freischalten',
     state: mitte,
