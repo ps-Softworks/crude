@@ -74,7 +74,8 @@ export function runRefinery(state: GameState, balance: Balance, policy: BrandBot
   const b = balance.refinery;
   if (!r || faktor == null || r.project || r.level === 0 || s.cash < b.expandCost + policy.reserve) return s;
   const aus = refineryExpansion(s, balance, { maxCrude: crudeSupply(s, balance) + Math.floor(s.oilStock) });
-  const rest = s.totalRounds - s.round - b.expandRounds;
+  // Horizont: Rest des Kapitels, in Kapitel 2 dazu Kapitel 3 (die Anlage läuft weiter; Zeitsprung II nicht mitgezählt).
+  const rest = s.totalRounds - s.round - b.expandRounds + (chapterOf(s) === 2 ? balance.timeskip.nextChapterRounds : 0);
   if (!aus || aus.payback === null || aus.gain * rest < aus.cost * faktor) return s;
   const e = expandRefinery(s, balance);
   return e.ok ? e.state : s;

@@ -62,7 +62,9 @@ describe('Ausbau (runRefinery)', () => {
     // … bei einer kleinen Anlage schon.
     const frei = { ...balance, refinery: { ...balance.refinery, unitCapacity: 4000 } };
     expect(runRefinery(anlage(1, spaet), frei, p).refinery!.project).toBe('expand');
-    expect(runRefinery(anlage(1, { ...spaet, round: 55 }), frei, p).refinery!.project).toBeNull();
+    // Kapitel 2 rechnet Kapitel 3 mit (16 Runden mehr) – kurz vor Kapitelende von Kapitel 3 lohnt nichts mehr.
+    expect(runRefinery(anlage(1, { ...spaet, round: 55 }), frei, p).refinery!.project).toBe('expand');
+    expect(runRefinery(anlage(1, { ...spaet, chapter: 3, round: 95, totalRounds: 96 }), frei, p).refinery!.project).toBeNull();
     expect(runRefinery(anlage(1, { ...spaet, cash: 1000 }), frei, p).refinery!.project).toBeNull();
   });
 });
