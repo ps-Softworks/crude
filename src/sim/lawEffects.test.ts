@@ -27,8 +27,8 @@ function mitGesetz(ids: string[], cash = 10_000): GameState {
 }
 
 describe('Einkommensteuer (0.4.20+17)', () => {
-  it('steht mit 5 % im Gesetz', () => {
-    expect(steuer.effects.rules.incomeTax).toBe(0.05);
+  it('steht mit 7 % im Gesetz (0.4.20+24)', () => {
+    expect(steuer.effects.rules.incomeTax).toBe(0.07);
   });
 
   it('nimmt den Steuersatz vom Gewinn der Runde – nicht bei Verlust, ohne Gesetz gar nicht', () => {
@@ -36,7 +36,10 @@ describe('Einkommensteuer (0.4.20+17)', () => {
     const nachher = { ...vorher, cash: 14_000 };
     expect(taxableProfit(vorher, nachher)).toBe(4_000);
     const r = settleIncomeTax(vorher, nachher, balance);
-    expect(r.cash).toBe(14_000 - 4_000 * 0.05);
+    expect(r.cash).toBeCloseTo(14_000 - 4_000 * steuer.effects.rules.incomeTax!, 2);
+    // 0.4.20+24: Mit taxBase zählt der Gewinn seit Rundenbeginn – auch die Verkäufe im Zug.
+    const mitBasis = { ...nachher, taxBase: { cash: 8_000, debt: 0 } };
+    expect(taxableProfit(vorher, mitBasis)).toBe(6_000);
     expect(r.log.at(-1)).toContain('Einkommensteuer');
     expect(settleIncomeTax(vorher, { ...vorher, cash: 9_000 }, balance).cash).toBe(9_000);
     const frei = mitGesetz([], 10_000);

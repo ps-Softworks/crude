@@ -99,7 +99,7 @@ describe('Salzrücken und verdeckte Fundchance q (Plan 1.1)', () => {
 
 /** Eine Ranch der Karte mit Nachbarn im selben Gebiet. */
 function ranchMitNachbarn(state: GameState): Parcel {
-  // Ohne die Startquelle (0.4.20+24): deren Prognose steht fest auf „Öl sicher“.
+  // Ohne die Startquelle (0.4.20+25): deren Prognose steht fest auf „Öl sicher“.
   return state.parcels.find((p) => !p.discovery && !p.sure && p.neighbors.filter((id) => state.parcels.some((q) => q.id === id && !q.discovery && !q.sure)).length >= 2 && !state.knowledge[p.id] && !p.neighbors.some((id) => state.parcels.find((q) => q.id === id)?.sure))!;
 }
 
@@ -281,7 +281,7 @@ describe('Prognose bleibt im Rahmen der Geologie (0.4.19+2)', () => {
         const schlecht: Clue[] = (['sickerstelle', 'formation'] as const).map((kind) => ({ kind, source: 'ritt', round: 1, seen: false }) as Clue);
         s = addClues(s, balance, p.id, p.id.endsWith('1') ? schlecht : gut);
       }
-      // Die Startquelle (0.4.20+24) zeigt bewusst „Öl sicher“ (100 %).
+      // Die Startquelle (0.4.20+25) zeigt bewusst „Öl sicher“ (100 %).
       for (const p of s.parcels.filter((q) => !q.discovery && !q.sure)) {
         const f = knowledgeForecast(s, balance, p.id)!;
         expect(f.high).toBeLessThanOrEqual(oben);

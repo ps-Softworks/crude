@@ -37,7 +37,7 @@ import { advanceTransport, noShipments } from './transport';
 // 4.7 Andockpunkt: Fernleitungen (Kapitel 2+).
 import { advanceBigPipelines, type BigPipelineState } from './bigPipeline';
 import { settleTakeover } from './trust';
-import { settleStocks, type StocksState } from './stocks'; // 4.8 Andockpunkt
+import { settleStocks, totalDebt, type StocksState } from './stocks'; // 4.8 Andockpunkt
 import { advanceWildcatters, newWildcatters, type WildcattersState } from './wildcatters';
 import type { JumpState, TimeskipRecord } from './timeskip';
 import { settleVentures, type Ventures } from './ventures';
@@ -189,6 +189,8 @@ export interface GameState {
   feldzug?: FeldzugState;
   /** 0.4.20+18: Förderquoten (Gesetz production_quota) – true = Jacob fördert voll, „heißes Öl“ (lawEffects.ts). */
   hotOil?: boolean;
+  /** 0.4.20+24: Kasse und Schulden zu Beginn der Runde – Grundlage der Einkommensteuer (lawEffects.ts). Fehlt: Rundenende zählt. */
+  taxBase?: { cash: number; debt: number };
   /** Ruf (4.12, GDD §4, src/sim/reputation.ts): fehlt, bis ein Ereignis ihn ändert (dann −100…100 je Achse). */
   reputation?: Partial<Reputation>;
   /** 4.12: Was Systemwirkungen der Ereignisse dauerhaft hinterlassen (Durchleitungsgebühr, Rating, Termine, Erben). */
@@ -214,7 +216,7 @@ export interface GameState {
 }
 
 /**
- * Startquelle (0.4.20+24): Die Ranch der ersten Startoption bekommt sicheres Öl in Stufe 1 –
+ * Startquelle (0.4.20+25): Die Ranch der ersten Startoption bekommt sicheres Öl in Stufe 1 –
  * kleine Quelle, eigene Lagerstätte mit lease.startOptions.sureReserves Barrel (verbindet sich
  * mit keinem Nachbarfeld, damit die Menge genau stimmt). Die Felder werden danach neu gebaut.
  */
@@ -435,7 +437,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
     const pruefung = chapterPassed(ende, balance) ? 'Das Ziel ist erreicht.' : 'Das Ziel ist verfehlt.';
     return { ...ende, log: [...state.log, `${formatDate(state)}: Kapitel ${kapitel} ist zu Ende. ${pruefung}`] };
   }
-  const next = { ...state, round: state.round + 1 };
+  // 0.4.20+24: Kasse und Schulden zu Rundenbeginn merken – die Einkommensteuer zählt den Gewinn der ganzen Runde (mit den Verkäufen im Zug).
+  const next = { ...state, round: state.round + 1, taxBase: { cash: state.cash, debt: totalDebt(state) } };
   // Zur neuen Runde kommen neue Ereignisse auf den Schreibtisch – nach einer Geburt (2.7).
   // Wildcatter (2.8): Die neuen Nachbarquellen der Runde bekommen ihre Besitzer.
   const begonnen = advanceWildcatters(

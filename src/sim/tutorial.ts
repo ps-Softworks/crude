@@ -279,7 +279,7 @@ export function tutorialHint(state: GameState, balance: Balance): TutorialHint |
 
   const bohrt = state.wells.find((w) => w.status === 'drilling');
   if (bohrt) {
-    // Startquelle (0.4.20+24): Der erste Ritt kommt, während der Turm bohrt – die nächste Quelle suchen.
+    // Startquelle (0.4.20+25): Der erste Ritt kommt, während der Turm bohrt – die nächste Quelle suchen.
     const ritt = hasRidden(state) ? null : exploreSuggestion(state, balance, null);
     if (ritt) return hint('explore_wait', 'drill', { kind: 'plan', cardId: 'ritt', parcelId: ritt }, [ritt], { ort: labelOf(state, ritt) });
     return hint('drill_wait', 'drill', end, [bohrt.parcelId]);
@@ -311,7 +311,7 @@ export function tutorialHint(state: GameState, balance: Balance): TutorialHint |
   }
 
   const ziel = recommendedParcel(state, balance);
-  // Startquelle (0.4.20+24): Die sichere Option geht allem vor – erst bohren, dann reiten.
+  // Startquelle (0.4.20+25): Die sichere Option geht allem vor – erst bohren, dann reiten.
   if (ziel?.kind === 'exercise' && state.forecasts[ziel.parcelId]?.sure) {
     return hint('lease_sure', 'lease', { kind: 'exercise', parcelId: ziel.parcelId }, [ziel.parcelId], { ort: labelOf(state, ziel.parcelId) });
   }

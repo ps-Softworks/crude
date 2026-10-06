@@ -37,6 +37,7 @@ import { CAMPAIGN_ROUNDS, percentile, ROUNDS_PER_YEAR, runWorlds } from './world
 
 const balance = loadBalance();
 const wb = balance.worldModel;
+const wbGlobal = wb;
 const lb = wb.laws;
 const laws = balance.laws;
 const kartell = laws.find((l) => l.id === 'antitrust')!;
@@ -48,7 +49,8 @@ const zeitung = parseNewspaperContent('content/newspaper.yaml', readFileSync(new
 const ruhig: LawView = { round: 1, scarcity: 1, credit: 50, mood: 55, tension: 20, nationalism: 15, tech: 10, government: 'handel', war: false, crash: false };
 const keineRunde: LawRoundInput = { crashing: false, glut: false, election: null, lobby: [] };
 /** Ablauf ohne Zufall: Antrag kommt sicher, Debatte genau 2 Runden, Abstimmung ohne Abweichler, Trust-Anteil ohne Rauschen. */
-const sicher: LawsBalance = { ...lb, proposeChance: 1, debateRounds: { min: 2, max: 2 }, voteNoise: 0, trust: { ...lb.trust, noise: 0 } };
+// 0.4.20+24: Die Ablauf-Tests tagen ohne festen Auftakt (openingRound 0) – das Eröffnungsgesetz hat einen eigenen Test.
+const sicher: LawsBalance = { ...lb, openingRound: 0, proposeChance: 1, debateRounds: { min: 2, max: 2 }, voteNoise: 0, trust: { ...lb.trust, noise: 0 } };
 
 function start(trustShare = 0.38): LawsState {
   return { ...newLaws('test', lb, { handel: 0.38, volksbund: 0.31, provinz: 0.31 }), trustShare };
@@ -68,7 +70,15 @@ function tagen(laws0: LawsState, view: LawView, catalog: readonly LawDef[], n: n
 describe('Fertig-Kriterium 4.3: Gesetze entstehen aus dem Weltzustand, nicht zu einem festen Datum', () => {
   const runs = runWorlds('gesetz', 300, wb, CAMPAIGN_ROUNDS, laws);
 
-  for (const id of ['antitrust', 'income_tax']) {
+  it('0.4.20+24: Die Einkommensteuer ist das Eröffnungsgesetz – in jeder Welt in openingRound beschlossen, davor ruht das Parlament', () => {
+    expect(lb.opening).toBe('income_tax');
+    for (const r of runs) {
+      expect(r.lawPassed.income_tax).toBe(lb.openingRound);
+      for (const [id, runde] of Object.entries(r.lawPassed)) if (runde !== null) expect(runde, id).toBeGreaterThanOrEqual(lb.openingRound);
+    }
+  });
+
+  for (const id of ['antitrust']) {
     it(`${id}: über 300 Welten zu sehr unterschiedlichen Zeitpunkten beschlossen – und in manchen nie`, () => {
       const runden = runs.map((r) => r.lawPassed[id]);
       const beschlossen = runden.filter((x): x is number => x !== null);
@@ -85,28 +95,6 @@ describe('Fertig-Kriterium 4.3: Gesetze entstehen aus dem Weltzustand, nicht zu 
     });
   }
 
-  it('Einkommensteuer kommt, wenn der Staat Geld braucht: Beschlüsse fallen fast immer in Krieg oder Crash', () => {
-    let imNotfall = 0;
-    let alle = 0;
-    for (const r of runs.slice(0, 120)) {
-      const runde = r.lawPassed.income_tax;
-      if (runde === null) continue;
-      let w = newWorld(r.seed, wb);
-      for (let i = 0; i < runde; i++) w = advanceWorld(w, wb, {}, laws);
-      alle += 1;
-      // Krieg oder Crash in der Abstimmungsrunde oder in den 4 Runden davor (Debatte).
-      let ww = newWorld(r.seed, wb);
-      let notfall = false;
-      for (let i = 1; i <= runde; i++) {
-        ww = advanceWorld(ww, wb, {}, laws);
-        if (i >= runde - 4 && (ww.war > 0 || ww.crash > 0)) notfall = true;
-      }
-      if (notfall) imNotfall += 1;
-      expect(lawInForce(w.laws, 'income_tax')).toBe(true);
-    }
-    expect(alle).toBeGreaterThan(30);
-    expect(imNotfall / alle).toBeGreaterThan(0.85);
-  });
 
   it('ohne erfüllte Gründe kommt kein Gesetz: Kartellgesetz, das nur bei 99 % Marktanteil drückt, kommt in keiner Welt', () => {
     const nie: LawDef = { ...kartell, pressure: [{ when: { trustShare: { min: 0.99 } }, add: 5 }] };
@@ -318,7 +306,7 @@ describe('Wirkung beschlossener Gesetze', () => {
   it('Regeln für spätere Kapitel: Steuersatz, Kartellverbot, Zerschlagung; ohne Gesetz keine', () => {
     const w = newWorld('regeln', wb);
     expect(lawRules(w.laws, laws)).toEqual({});
-    expect(lawRules(beschlossen(w, ['income_tax', 'antitrust']).laws, laws)).toEqual({ incomeTax: 0.05, cartelBan: 1, breakupFrom: kartell.effects.rules.breakupFrom });
+    expect(lawRules(beschlossen(w, ['income_tax', 'antitrust']).laws, laws)).toEqual({ incomeTax: 0.07, cartelBan: 1, breakupFrom: kartell.effects.rules.breakupFrom });
   });
 
   it('Marktanteil des Trusts: Crash-Runden und Ölschwemmen treiben ihn hoch (Pleitefirmen werden aufgekauft)', () => {
@@ -440,6 +428,8 @@ describe('Lobby (vorbereitet für Kapitel 2)', () => {
   });
 
   it('im Weltmodell: Lobby kommt über WorldInput, im Zeitsprung nur in der ersten Runde', () => {
+    // 0.4.20+24: ohne festen Auftakt (sonst ruht das Parlament bis openingRound).
+    const wb = { ...wbGlobal, laws: { ...wbGlobal.laws, openingRound: 0 } };
     const w = newWorld('lobby', wb);
     const mit = advanceWorld(w, wb, { lobby: [{ law: 'antitrust', action: 'demand' }] }, [test]);
     const ohne = advanceWorld(w, wb, {}, [test]);

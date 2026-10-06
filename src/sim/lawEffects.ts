@@ -22,11 +22,13 @@ export function rulesInForce(state: Pick<GameState, 'worldModel'> & Partial<Pick
 }
 
 /**
- * Gewinn der Runde für die Steuer: was die Kasse im Rundenende gewonnen hat, ohne frisch geliehenes Geld
- * (Kredite und Anleihen zählen nicht als Gewinn, Tilgungen nicht als Verlust).
+ * Gewinn der Runde für die Steuer: was die Kasse seit Rundenbeginn gewonnen hat (0.4.20+24: after.taxBase, also mit
+ * den Verkäufen im Zug; ohne taxBase seit before), ohne frisch geliehenes Geld (Kredite und Anleihen zählen nicht
+ * als Gewinn, Tilgungen nicht als Verlust). Ausgaben im Zug (Pacht, Bohren, Türme) mindern den Gewinn.
  */
 export function taxableProfit(before: GameState, after: GameState): number {
-  return cents(after.cash - before.cash - (totalDebt(after) - totalDebt(before)));
+  const basis = after.taxBase ?? { cash: before.cash, debt: totalDebt(before) };
+  return cents(after.cash - basis.cash - (totalDebt(after) - basis.debt));
 }
 
 /**

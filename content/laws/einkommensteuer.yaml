@@ -1,5 +1,6 @@
-# Einkommensteuer (4.3, GDD §10): wird wahrscheinlich, wenn der Staat Geld braucht
-# (Krieg, Krise). Wirkung im Spiel: Gewinne werden versteuert (ab Kapitel 2).
+# Einkommensteuer (4.3, GDD §10). 0.4.20+24: Eröffnungsgesetz – in jeder Welt zu Beginn von Kapitel 2 fest
+# beschlossen (worldModel.laws.opening/openingRound), sie führt das Politiksystem ein. Die Druckgründe unten
+# wirken darum nur noch in Welten ohne festen Auftakt (openingRound 0). Wirkung: 7 % vom Rundengewinn.
 # ENTWURF: Zahlen und Texte sind Vorschläge von Claude.
 id: income_tax
 draft: true
@@ -37,7 +38,7 @@ effects:
     creditShift: -0.15     # je Runde: weniger freies Geld für Spekulation
     moodShift: 0.5         # die Reichen zahlen endlich mit
   rules:
-    incomeTax: 0.05        # Steuersatz auf den Gewinn der Runde (0.4.20+17, src/sim/lawEffects.ts)
+    incomeTax: 0.07        # Steuersatz auf den Gewinn der Runde (0.4.20+24: Philipp – feste 7 %; src/sim/lawEffects.ts)
 
 lobby:
   demand: { label: { de: "Die Steuer fordern", en: "Call for the tax" } }
