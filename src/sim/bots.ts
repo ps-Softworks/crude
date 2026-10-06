@@ -45,6 +45,7 @@ import {
   traderGain,
 } from './logistics';
 import { jacobSupply } from './market';
+import { lawRule } from './laws';
 import { refineryCapacity } from './refinery';
 import { buyerCapacityLeft, capacityLeft, modeCapacity, modeUnavailable, netPrice, quoteSale, sellOil, tariff } from './transport';
 import { craneCut, exclusiveActive, grudgeCut, RIVAL_MARKS, volumeObligation } from './trust';
@@ -455,10 +456,21 @@ function transportTurn(
       state = r.state;
     }
   }
+  // 0.4.20+24: Mit Umweltgesetz kostet auslaufendes Öl Bußgeld. Was die Tanks nach der nächsten Förderung nicht
+  // fassen, verkauft er vorher – auch unter Marge (vorher liefen bei niedrigem Preis Tanks voll, Bußgelder machten pleite).
+  const ueberlauf = spillSellShare(state, balance);
+  if (ueberlauf > 0) state = sell(state, balance, ueberlauf, ledger, useTrader(state, balance, cfg, 1), false);
   return state;
 }
 
 /** Barrel, die für ein gebuchtes Gerücht „Quellen versiegen“ im Tank bleiben müssen (sonst 0). */
+/** Anteil des Tanks, den der Bot wegen Bußgeld auf auslaufendes Öl (Umweltgesetz) vorab verkauft: was nach der nächsten Förderung nicht in die Tanks passt. */
+export function spillSellShare(state: GameState, balance: Balance): number {
+  if (lawRule(state, balance.laws, 'spillFine') <= 0 || state.oilStock <= 0) return 0;
+  const ueber = state.oilStock + jacobSupply(state) - storageCapacity(state, balance);
+  return ueber > 0 ? Math.min(1, ueber / state.oilStock) : 0;
+}
+
 /** So viel Rohöl braucht die eigene Raffinerie am Rundenende (Kapazität × Zufuhr; 0 ohne laufende Anlage). */
 export function refineryHold(state: GameState, balance: Balance): number {
   const r = state.refinery;
