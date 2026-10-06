@@ -269,7 +269,7 @@ export function exerciseOption(state: GameState, balance: Balance, parcelId: str
  * auf einer Ranch mit wahrer Fundchance ab lease.startOptions.minChance, deren Prognose zu
  * Spielbeginn (Ritt-Hinweise „start“) in der Mitte mindestens minForecast % zeigt – erst in
  * Randlage, sonst weiter innen (nie direkt am Fund). Gibt es keine, die beste Ranch außerhalb
- * der Fundlage. Die übrigen bleiben Zufall, ziehen die erste aber nicht unter die Schwelle.
+ * der Fundlage, gemessen am Schwächeren aus wahrer Chance und Prognose. Die übrigen bleiben Zufall, ziehen die erste aber nicht unter die Schwelle.
  * Jede Option verbraucht genau einen Zufallswert, wie zuvor.
  */
 export function startOptions(state: GameState, balance: Balance, rng: Rng): LeaseOption[] {
@@ -297,15 +297,11 @@ export function startOptions(state: GameState, balance: Balance, rng: Rng): Leas
         const innen = bewertet(state.parcels.filter((p) => !p.discovery && lage(p) !== amFund));
         good = innen.filter((x) => gut(x.p, x.mid)).map((x) => x.p);
         if (good.length === 0 && innen.length > 0) {
-          // Auch das nicht: die beste verfügbare Ranch – mit genug wahrer Chance die mit der besten
-          // Prognose, sonst die mit der höchsten wahren Chance; bei Gleichstand nach Kennung.
-          const reicht = (x: { p: Parcel }) => (trueChance(balance, x.p) >= minChance ? 1 : 0);
-          innen.sort(
-            (a, b) =>
-              reicht(b) - reicht(a) ||
-              (reicht(a) ? b.mid - a.mid : trueChance(balance, b.p) - trueChance(balance, a.p)) ||
-              a.p.id.localeCompare(b.p.id),
-          );
+          // Auch das nicht: die beste verfügbare Ranch – die, bei der wahre Chance und angezeigte
+          // Prognose zusammen am besten sind (das Schwächere von beiden zählt). Vorher zählte zuerst die
+          // wahre Chance; dann zeigte die Option dem Spieler z. B. 18 % (Seed 2xdgpf). Gleichstand nach Kennung.
+          const wert = (x: { p: Parcel; mid: number }) => Math.min(trueChance(balance, x.p), x.mid / 100);
+          innen.sort((a, b) => wert(b) - wert(a) || a.p.id.localeCompare(b.p.id));
           good = [innen[0].p];
         }
       }
@@ -314,7 +310,11 @@ export function startOptions(state: GameState, balance: Balance, rng: Rng): Leas
       // Spätere Optionen dürfen die erste nicht unter die Schwelle ziehen (Nachbarhinweise).
       const erste = parcelById(state, chosen[0])!;
       const vorher = gut(erste, mitte(chosen, erste.id));
-      const ok = vorher ? candidates.filter((p) => gut(erste, mitte([...chosen, p.id], erste.id))) : [];
+      // Bei der Ersatz-Ranch (unter der Schwelle) soll die Prognose wenigstens nicht weiter sinken.
+      const jetzt = mitte(chosen, erste.id);
+      const ok = vorher
+        ? candidates.filter((p) => gut(erste, mitte([...chosen, p.id], erste.id)))
+        : candidates.filter((p) => mitte([...chosen, p.id], erste.id) >= jetzt);
       if (ok.length > 0) pool = ok;
     }
     const parcel = rng.pick(pool);

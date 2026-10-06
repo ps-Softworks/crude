@@ -398,10 +398,23 @@ describe('Startoptionen', () => {
           forecastMid(withStartClues({ ...state, knowledge: {} }, balance, [p.id]), balance, p.id) >= minForecast,
       );
       expect(passende, seed).toEqual([]);
-      expect(werte[0].q, seed).toBeGreaterThanOrEqual(minChance);
+      // Ersatz: die Ranch mit dem besten Schwächeren aus wahrer Chance und Prognose (0.4.20+16).
+      const wert = (p: (typeof state.parcels)[number]) =>
+        Math.min(trueChance(balance, p), forecastMid(withStartClues({ ...state, knowledge: {} }, balance, [p.id]), balance, p.id) / 100);
+      const bester = Math.max(
+        ...state.parcels.filter((p) => !p.discovery && leaseTerms(state, balance, p.id).location.name !== amFund).map(wert),
+      );
+      expect(wert(werte[0].p), seed).toBe(bester);
     }
     // Ganz selten gibt es keine: Ölranches, deren Ritt-Hinweise zu Spielbeginn zufällig schlecht aussehen.
     expect(ohneKandidat).toBeLessThanOrEqual(30);
+  });
+
+  it('Ersatz-Option ohne gute Ranch zeigt keine Niete (Seed 2xdgpf, vorher 18 % und 13 %)', () => {
+    const state = newGame('2xdgpf', balance);
+    const erste = state.forecasts[state.options[0].parcelId];
+    expect((erste.low + erste.high) / 2).toBeGreaterThanOrEqual(30);
+    expect(trueChance(balance, state.parcels.find((p) => p.id === state.options[0].parcelId)!)).toBeGreaterThanOrEqual(0.3);
   });
 
   it('sind je Seed gleich und je Seed verschieden', () => {
