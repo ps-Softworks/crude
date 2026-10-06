@@ -131,7 +131,7 @@ function anzahl(n: number, eins: string, viele: string): string {
 }
 
 /** Was vor dem Rundenende noch offen liegt. Gesperrt wird nichts. */
-export function openItems(inbox: Inbox, agenda: Pick<AgendaView, 'left'>, land: LandDeadlines | null = null): OpenItem[] {
+export function openItems(inbox: Inbox, agenda: Pick<AgendaView, 'left'>, land: LandDeadlines | null = null, referrals = 0): OpenItem[] {
   const items: OpenItem[] = [];
   if (inbox.visitors.length > 0) {
     items.push({
@@ -176,6 +176,10 @@ export function openItems(inbox: Inbox, agenda: Pick<AgendaView, 'left'>, land: 
       text: `${anzahl(n, 'fester Termin', 'feste Termine')} im Kalender ${n === 1 ? 'wartet' : 'warten'} noch (freiwillig, ${anzahl(agenda.left, 'Termin', 'Termine')} frei)`,
       urgent: false,
     });
+  }
+  // 0.4.20+44: Empfehlungen im Adressbuch – neue Kontakte warten aufs Vorstellen.
+  if (referrals > 0) {
+    items.push({ target: 'termine', text: `${anzahl(referrals, 'Empfehlung', 'Empfehlungen')} im Adressbuch – jemand will dich vorstellen`, urgent: false });
   }
   return items;
 }

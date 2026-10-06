@@ -54,6 +54,8 @@ describe('Was auf dem Schreibtisch liegt', () => {
     // Ohne freie Termine ist der Kalender kein offener Punkt.
     expect(openItems(inbox, { left: 0 }).map((i) => i.target)).not.toContain('termine');
     expect(openItems(sortInbox([], [], []), { left: 5 })).toEqual([]);
+    // 0.4.20+44: offene Empfehlungen im Adressbuch.
+    expect(openItems(sortInbox([], [], []), { left: 5 }, null, 2)).toEqual([{ target: 'termine', text: '2 Empfehlungen im Adressbuch – jemand will dich vorstellen', urgent: false }]);
   });
 
   it('warnt an der Glocke vor Land, das nach dieser Runde verfällt (0.2.15+12)', () => {

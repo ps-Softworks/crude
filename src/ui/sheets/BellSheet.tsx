@@ -21,7 +21,7 @@ export function BellSheet({ ctx, onEndRound, onGo, onChapterEnd }: { ctx: SheetC
       </div>
     );
   }
-  const offen = openItems(ctx.inbox, agendaView(game, balance), landDeadlines(game));
+  const offen = openItems(ctx.inbox, agendaView(game, balance), landDeadlines(game), game.network?.referrals.length ?? 0);
   return (
     <div className="glocke-blatt">
       {offen.length > 0 ? (

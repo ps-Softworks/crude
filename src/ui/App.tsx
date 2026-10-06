@@ -211,7 +211,7 @@ export function App() {
   // Was auf dem Tisch liegt – nur gefiltert und gezählt aus src/sim.
   const inbox = sortInbox(deskEvents(game, balance, events), deskMail(game, balance, events), deskRoutines(game, balance, events), appearances);
   const badges = inboxBadges(inbox, ui.seen);
-  const offen = openItems(inbox, agendaView(game, balance), landDeadlines(game));
+  const offen = openItems(inbox, agendaView(game, balance), landDeadlines(game), game.network?.referrals.length ?? 0);
   // Wer im Raum steht, wartet nicht mehr vor der Tür.
   const draussen = { ...inbox, visitors: inbox.visitors.filter((e) => e.id !== ui.visitor) };
   const wartende = visitorNames(draussen);
