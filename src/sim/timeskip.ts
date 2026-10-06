@@ -28,7 +28,7 @@
 // Spielstand nur, was Jacob entschieden hat (state.jump), nie ein halber Sprung.
 // Texte: content/timeskip.yaml; Zahlen: balance.yaml → timeskip.
 
-import { jumpNetwork } from './network';
+import { advanceNetwork, jumpNetwork } from './network';
 import { parseDocument } from 'yaml';
 import { FAMILY_TIMES, STANCES, type Balance, type FamilyTime, type Stance } from './balance';
 import { formatDate } from './calendar';
@@ -1308,7 +1308,9 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
   const mitMarken = hearsayAroundFinds(learnFromWells(mitMarken0, balance), balance);
   const offen = startRivalsK3(openChapterSystems(mitMarken, balance, texts), balance);
   // Das Rating gilt ab der ersten Runde des neuen Kapitels – nicht erst nach dem ersten Rundenende (0.4.19+2).
-  return { status: 'done', state: drawEvents(refreshRating(offen, balance), balance, catalog), record: r };
+  // 0.4.20+47: Stellen des neuen Kapitels melden sich gleich zur ersten Runde (nicht erst nach dem ersten Rundenende);
+  // die Kladde nennt sie nicht – der Rundgang und das „neu“ im Telefon zeigen sie.
+  return { status: 'done', state: drawEvents(advanceNetwork(refreshRating(offen, balance), balance), balance, catalog), record: r };
 }
 
 /**

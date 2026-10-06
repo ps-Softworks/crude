@@ -104,3 +104,6 @@
 .beziehung-zeile { margin: -4px 0 8px; }
 .stelle-knopf { flex-wrap: wrap; row-gap: 0; }
 .stelle-knopf .beziehung { flex-basis: 100%; order: 3; }
+.stelle-knopf .stelle-name { flex: 1 1 0; min-width: 0; }
+.stelle-knopf .stelle-zahl { flex: 0 0 auto; }
+.stellen { overflow-y: auto; }

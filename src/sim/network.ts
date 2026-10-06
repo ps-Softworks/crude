@@ -332,13 +332,13 @@ export function advanceNetwork(state: GameState, balance: Balance, names: Record
       if (!meetConditionsHold(state, balance, m)) continue;
       if (m.referral === undefined) {
         known[id] = { since: state.round, relation: r.start, last: state.round };
-        log.push(`${datum}: Neuer Kontakt – ${name(id)} meldet sich bei Jacob.`);
+        if (names[id]) log.push(`${datum}: Neuer Kontakt – ${name(id)} meldet sich bei Jacob.`);
         break;
       }
       const von = known[m.referral];
       if (von && von.relation >= r.referralAt && !referrals.some((x) => x.to === id)) {
         referrals.push({ to: id, from: m.referral, round: state.round });
-        log.push(`${datum}: Empfehlung – ${name(m.referral)} will Jacob mit ${name(id)} bekannt machen.`);
+        if (names[id]) log.push(`${datum}: Empfehlung – ${name(m.referral)} will Jacob mit ${name(id)} bekannt machen.`);
         break;
       }
     }

@@ -163,9 +163,18 @@ describe('Netzwerk: Kennenlernen', () => {
     const g = spiel();
     const parcelId = g.parcels.find((p) => !p.discovery)!.id;
     const quelle = { id: `${parcelId}#1`, parcelId, stage: 1, status: 'found' as const, roundsLeft: 0, spent: 0, oilStage: 1, result: 'small' as const, production: { initialRate: 1000, roundsProduced: 1, lastRate: 1000, total: 1000 }, startRound: 1 };
-    const a = advanceNetwork({ ...g, wells: [quelle] }, balance);
+    const a = advanceNetwork({ ...g, wells: [quelle] }, balance, { oelleute: 'Andere Ölleute' });
     expect(isKnown(a, 'oelleute')).toBe(true);
-    expect(a.log.at(-1)).toContain('meldet sich');
+    expect(a.log.at(-1)).toContain('Andere Ölleute meldet sich');
+    // Ohne Namen (Bots, Zeitsprung) schreibt die Kladde nichts – bekannt ist die Stelle trotzdem.
+    const still = advanceNetwork({ ...g, wells: [quelle] }, balance);
+    expect(isKnown(still, 'oelleute')).toBe(true);
+    expect(still.log).toEqual(g.log);
+  });
+
+  it('nach dem Zeitsprung sind die Stellen des neuen Kapitels gleich da', () => {
+    const g = { ...spiel(), chapter: 2, chapterStart: 41, round: 41 };
+    expect(isKnown(advanceNetwork(g, balance), 'arbeiter')).toBe(true);
   });
 
   it('Kapitel-2-Stellen melden sich erst ab Kapitel 2', () => {
