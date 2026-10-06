@@ -586,6 +586,7 @@ chapter:
   goalWells: 8             # … oder so viele fördernde Quellen (GDD §13: 5; 0.4.20+1: 6; Spielspaß K1: 8)
   ipo:
     shares: [0.2, 0.33, 0.49]  # GDD §8: zur Wahl stehende Anteile, die Jacob verkaufen kann (typisch 20–49 %)
+    lateFactor: 1.0            # Später Börsengang (Kapitel 2/3, Familienfirma → AG): Erlös = Imperiumswert × Anteil × lateFactor – späte Anleger zahlen weniger Aufschlag als am Kapitelende (priceFactor)
     priceFactor: 1.5           # Anleger zahlen Imperiumswert × Anteil × 1,5 – sie kaufen die Zukunft (0.4.20+33: vorher 0,8; Bot-Messung: der Börsengang lohnte nie, das Geld half nicht)
   # Kapitel 2 „Der Herausforderer“ (4.12, GDD §13/§14). Texte: content/chapter.yaml → chapter2.
   chapter2:

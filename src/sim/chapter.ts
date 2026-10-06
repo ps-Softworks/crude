@@ -38,7 +38,7 @@ import { producingWells } from './production';
 import { LOGISTICS_SIM_MARKS } from './logistics';
 import { ownsRefinery } from './refinery';
 import { ownsHarborPipeline } from './bigPipeline';
-import { bondLimit, control, ownStake, thorneStake } from './stocks';
+import { bondLimit, lateIpoProceeds, control, ownStake, thorneStake } from './stocks';
 import { DELANEY_MARKS } from './investigation';
 import { brandGoal } from './brand';
 import { RATINGS } from './balance';
@@ -240,7 +240,7 @@ export function decideIpo(state: GameState, balance: Balance, share: number): Ip
  * Folgen eines Börsengangs in Worten (Lesehilfe für den Brief, keine Regel): Zahlen kommen aus
  * balance.yaml (stocks.board/demands/dividend/thorne/vote, chapter.ipo). share 0 = Familienfirma.
  */
-export function ipoConsequenceText(state: GameState, balance: Balance, content: ChapterContent['ipo'], share: number, lang?: Lang): string {
+export function ipoConsequenceText(state: GameState, balance: Balance, content: ChapterContent['ipo'], share: number, lang?: Lang, late = false): string {
   if (share <= 0) return fillText(content.keepConsequence, {}, lang);
   const B = balance.stocks;
   const prozent = (x: number) => `${Math.round(x * 100)} %`;
@@ -250,7 +250,7 @@ export function ipoConsequenceText(state: GameState, balance: Balance, content: 
   return fillText(
     content.consequence,
     {
-      preis: `${ipoProceeds(state, balance, share).toLocaleString('de-DE')} $`,
+      preis: `${(late ? lateIpoProceeds(state, balance, share) : ipoProceeds(state, balance, share)).toLocaleString('de-DE')} $`,
       anteil: prozent(share),
       eigen: prozent(1 - share),
       sitze: String(sitze),
@@ -292,6 +292,9 @@ export interface ChapterContent {
     thorneOpen: LocalizedText;
     thorneClosed: LocalizedText;
     keepConsequence: LocalizedText;
+    /** Später Börsengang (Familienfirma ab Kapitel 2): Überschrift und Einleitung im Aktienbuch. */
+    lateTitle: LocalizedText;
+    lateText: LocalizedText;
     sold: LocalizedText;
     kept: LocalizedText;
     blocked: LocalizedText;
@@ -400,6 +403,8 @@ export function parseChapterContent(file: string, text: string): { content: Chap
     thorneOpen: sprachtext(i.thorneOpen, 'ipo.thorneOpen'),
     thorneClosed: sprachtext(i.thorneClosed, 'ipo.thorneClosed'),
     keepConsequence: sprachtext(i.keepConsequence, 'ipo.keepConsequence'),
+    lateTitle: sprachtext(i.lateTitle, 'ipo.lateTitle'),
+    lateText: sprachtext(i.lateText, 'ipo.lateText'),
     sold: sprachtext(i.sold, 'ipo.sold'),
     kept: sprachtext(i.kept, 'ipo.kept'),
     blocked: sprachtext(i.blocked, 'ipo.blocked'),

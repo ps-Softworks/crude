@@ -110,6 +110,16 @@ ipo:
     en: >-
       That means: no fresh money, but also no investors, no supervisory board and no Thorne on it – Jacob
       decides alone and keeps all the votes. Only the bank loan, no bonds.
+  lateTitle: { de: "An die Börse gehen", en: "Go public" }
+  lateText:
+    de: >-
+      Noch ist Harlan Oil eine Familienfirma. Ein Bankier würde die Firma auch jetzt an die Börse bringen –
+      zu einem schlechteren Preis als am Kapitelende, denn späte Anleger zahlen weniger Aufschlag.
+      Es geht nur einmal. Zeig auf eine Wahl, um zu sehen, was sie bedeutet.
+    en: >-
+      Harlan Oil is still a family firm. A banker would still take the company public – at a worse price
+      than at the end of the chapter, because late investors pay less of a premium. It can only be done once.
+      Point at a choice to see what it means.
   sold:
     de: Jacob verkauft {anteil} seiner Firma an Anleger und bekommt {preis}. Er behält die Mehrheit – noch.
     en: Jacob sells {anteil} of his company to investors and receives {preis}. He keeps the majority – for now.

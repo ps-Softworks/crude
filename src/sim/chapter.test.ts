@@ -264,4 +264,16 @@ describe('Börsengang-Brief: Folgen je Wahl', () => {
     expect(ipoConsequenceText(g, balance, c, 0, 'de')).toContain('keine Anleger');
     expect(ipoConsequenceText(g, balance, c, 0, 'de')).toContain('keine Anleihen');
   });
+
+  it('später Börsengang: Text nennt den späten Preis (lateFactor), nicht den vom Kapitelende', () => {
+    const c = content().ipo;
+    const g = letzteRunde(100000, 8);
+    const share = balance.chapter.ipo.shares[0];
+    const spaet = ipoConsequenceText(g, balance, c, share, 'de', true);
+    expect(spaet).toContain(`${Math.round(empireValue(g, balance) * share * balance.chapter.ipo.lateFactor).toLocaleString('de-DE')} $`);
+    expect(spaet).not.toMatch(/\{\w+\}/);
+    expect(spaet).not.toBe(ipoConsequenceText(g, balance, c, share, 'de'));
+    expect(c.lateTitle.de).toBeTruthy();
+    expect(c.lateText.en).toBeTruthy();
+  });
 });

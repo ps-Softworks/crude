@@ -332,6 +332,13 @@ function hostile(state: GameState, balance: Balance): boolean {
 // ---------------------------------------------------------------------------
 // Start (Kapitel 2)
 
+/** Aufsichtsrat für verkaufte Anteile `sold` (0–1): Sitze nach stocks.board, besetzt aus dem Kader (startStocks und lateIpo). */
+function seatBoard(balance: Balance, roster: readonly BoardSeatDef[], sold: number, round: number): BoardMember[] {
+  const B = balance.stocks;
+  const sitze = Math.min(roster.length, clamp(B.board.seatsBase + Math.round(sold * B.board.seatsPerShare), B.board.seatsMin, B.board.seatsMax));
+  return roster.slice(0, sitze).map((r) => ({ id: r.id, agenda: r.agenda, loyalty: clamp(r.loyalty, 0, 100), since: round }));
+}
+
 /**
  * Legt Aktienbuch, Aufsichtsrat und Anleihen-Konto an – zu Beginn von Kapitel 2
  * (4.5 ruft das beim Kapitelstart). Wer an die Börse ging (state.ipo.share > 0),
@@ -345,8 +352,8 @@ export function startStocks(state: GameState, balance: Balance, roster: readonly
   const sold = state.ipo?.share ?? 0;
   const isPublic = sold > 0;
   const jacob = Math.round(B.totalShares * (1 - sold));
-  const sitze = isPublic ? Math.min(roster.length, clamp(B.board.seatsBase + Math.round(sold * B.board.seatsPerShare), B.board.seatsMin, B.board.seatsMax)) : 0;
-  const board: BoardMember[] = roster.slice(0, sitze).map((r) => ({ id: r.id, agenda: r.agenda, loyalty: clamp(r.loyalty, 0, 100), since: state.round }));
+  const board = isPublic ? seatBoard(balance, roster, sold, state.round) : [];
+  const sitze = board.length;
   const value = empireValue(state, balance);
   const s: StocksState = {
     rng: seedFromString(`${state.seed}:aktien`),
@@ -378,6 +385,48 @@ export function startStocks(state: GameState, balance: Balance, roster: readonly
     ? `Harlan Oil ist eine Aktiengesellschaft: Jacob hält ${pct(jacob / B.totalShares)} der Aktien, der Aufsichtsrat hat ${sitze} Sitze.`
     : 'Harlan Oil bleibt in der Familie – Anleihen kann die Firma trotzdem ausgeben.';
   return { ...state, stocks: s, log: [...state.log, `${formatDate(state)}: ${text}`] };
+}
+
+// ---------------------------------------------------------------------------
+// Später Börsengang (Kapitel 2/3): die Familienfirma wird nachträglich zur AG
+
+/** Erlös eines späten Börsengangs in ganzen $: Imperiumswert × Anteil × chapter.ipo.lateFactor. */
+export function lateIpoProceeds(state: GameState, balance: Balance, share: number): number {
+  return Math.max(0, Math.round(empireValue(state, balance) * share * balance.chapter.ipo.lateFactor));
+}
+
+/** Warum der späte Börsengang jetzt nicht geht (null = er geht). */
+export function lateIpoBlocker(state: GameState, balance: Balance, share: number): string | null {
+  const s = state.stocks;
+  if (!s) return 'Aktien gibt es erst in Kapitel 2.';
+  if (state.finished || state.ending !== null) return 'Das Spiel ist vorbei.';
+  if (s.ousted > 0) return 'Jacob führt die Firma nicht mehr.';
+  if (s.public) return 'Harlan Oil ist schon eine Aktiengesellschaft.';
+  if (chapterOf(state) < 2) return 'Ein später Börsengang ist erst ab Kapitel 2 möglich.';
+  if (!balance.chapter.ipo.shares.includes(share)) return 'Diesen Anteil bietet der Bankier nicht an.';
+  return null;
+}
+
+/**
+ * Die Familienfirma geht später an die Börse: Jacob verkauft `share` (aus chapter.ipo.shares), der Erlös geht
+ * in die Kasse, danach ist Harlan Oil eine AG (Streubesitz, Aufsichtsrat nach stocks.board, Dividendenfrist ab jetzt).
+ * Nur einmal – danach ist die Firma schon AG.
+ */
+export function lateIpo(state: GameState, balance: Balance, roster: readonly BoardSeatDef[], share: number): StocksResult {
+  const grund = lateIpoBlocker(state, balance, share);
+  if (grund !== null || !state.stocks) return { ok: false, reason: grund ?? 'Aktien gibt es erst in Kapitel 2.' };
+  const B = balance.stocks;
+  const preis = lateIpoProceeds(state, balance, share);
+  const jacob = Math.round(B.totalShares * (1 - share));
+  const board = seatBoard(balance, roster, share, state.round);
+  const s: StocksState = { ...state.stocks, public: true, jacob, float: B.totalShares - jacob, blocks: [], board, dividendRound: state.round, dividendsTotal: 0 };
+  s.price = sharePrice({ ...state, stocks: s }, balance, s);
+  s.priceHistory = [...state.stocks.priceHistory, s.price];
+  const text = `Jacob geht mit Harlan Oil an die Börse: ${pct(share)} der Aktien gehen an Anleger (${preis.toLocaleString('de-DE')} $), der Aufsichtsrat hat ${board.length} Sitze.`;
+  return {
+    ok: true,
+    state: { ...state, stocks: s, ipo: { share, proceeds: preis }, cash: state.cash + preis, log: [...state.log, `${formatDate(state)}: ${text}`] },
+  };
 }
 
 // ---------------------------------------------------------------------------

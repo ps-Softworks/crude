@@ -27,6 +27,9 @@ import {
   issueBond,
   canIssueBonds,
   issueShares,
+  lateIpo,
+  lateIpoBlocker,
+  lateIpoProceeds,
   issueMajority,
   loyalSeats,
   memberMood,
@@ -753,5 +756,63 @@ describe('Folgen in Worten (Lesehilfe)', () => {
     expect(h.court).toContain(String(balance.stocks.board.courtGain));
     expect(demandHints(inhalt, balance, true, 'de').reject).toContain(String(D.spyPenalty));
     expect(JSON.stringify(h)).not.toMatch(/\{\w+\}/);
+  });
+});
+
+describe('Später Börsengang (Familienfirma ab Kapitel 2)', () => {
+  const familie = () => ag(0, 'spaet');
+
+  it('Erlös = Imperiumswert × Anteil × lateFactor, kommt in die Kasse', () => {
+    const g = familie();
+    const share = balance.chapter.ipo.shares[1];
+    const erwartet = Math.round(empireValue(g, balance) * share * balance.chapter.ipo.lateFactor);
+    expect(lateIpoProceeds(g, balance, share)).toBe(erwartet);
+    expect(balance.chapter.ipo.lateFactor).toBeLessThan(balance.chapter.ipo.priceFactor);
+    const n = ok(lateIpo(g, balance, inhalt.board, share));
+    expect(n.cash).toBe(g.cash + erwartet);
+    expect(n.ipo).toEqual({ share, proceeds: erwartet });
+    expect(n.log.at(-1)).toContain('Börse');
+  });
+
+  it('danach ist die Firma eine AG: Aktien, Rat, Dividendenfrist, Anleihen', () => {
+    const g = { ...familie(), round: 30 };
+    const share = balance.chapter.ipo.shares[0];
+    const n = ok(lateIpo(g, balance, inhalt.board, share));
+    const s = st(n);
+    expect(s.public).toBe(true);
+    expect(s.jacob).toBe(Math.round(balance.stocks.totalShares * (1 - share)));
+    expect(s.jacob + s.float).toBe(balance.stocks.totalShares);
+    const erwartet = st(startStocks({ ...kapitel2(share, 'spaet'), round: 30 }, balance, inhalt.board)).board.map((m) => m.id);
+    expect(s.board.map((m) => m.id)).toEqual(erwartet);
+    expect(s.board.length).toBeGreaterThan(0);
+    expect(s.dividendRound).toBe(30);
+    expect(s.price).toBeGreaterThan(0);
+    expect(canIssueBonds(g)).toBe(false);
+    expect(canIssueBonds(n)).toBe(true);
+    expect(ok(issueBond(n, balance, balance.stocks.bonds.sizes[0], balance.stocks.bonds.terms[0])).stocks!.bonds).toHaveLength(1);
+  });
+
+  it('höchstens einmal, nicht in Kapitel 1, nicht abgesetzt, nur angebotene Anteile', () => {
+    const g = familie();
+    const share = balance.chapter.ipo.shares[0];
+    const n = ok(lateIpo(g, balance, inhalt.board, share));
+    const zweit = lateIpo(n, balance, inhalt.board, share);
+    expect(zweit.ok).toBe(false);
+    expect(lateIpoBlocker(ag(0.2), balance, share)).toContain('schon eine Aktiengesellschaft');
+    expect(lateIpo({ ...g, chapter: 1 } as GameState, balance, inhalt.board, share).ok).toBe(false);
+    expect(lateIpoBlocker({ ...g, stocks: { ...st(g), ousted: 5 } }, balance, share)).toContain('nicht mehr');
+    expect(lateIpoBlocker({ ...g, finished: true }, balance, share)).toContain('vorbei');
+    expect(lateIpo(g, balance, inhalt.board, 0.01).ok).toBe(false);
+    expect(lateIpo(newGame('x', balance), balance, inhalt.board, share).ok).toBe(false);
+  });
+
+  it('Spielstand-Rundreise nach dem späten Börsengang', () => {
+    const n = ok(lateIpo(familie(), balance, inhalt.board, balance.chapter.ipo.shares[2]));
+    const r = deserializeGame(serializeGame(n, 'test'));
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.state.stocks).toEqual(n.stocks);
+      expect(r.state.ipo).toEqual(n.ipo);
+    }
   });
 });

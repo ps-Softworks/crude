@@ -3,6 +3,8 @@
 // Jeder Knopf zeigt vorher, was passiert (Probelauf der Simulation).
 
 import { useState } from 'react';
+import { chapterContent } from './chapter';
+import { fillText, ipoConsequenceText } from '../sim/chapter';
 import type { GameState } from '../sim/game';
 import {
   acceptDemand,
@@ -22,6 +24,9 @@ import {
   FAMILY_BOND_REASON,
   issueProceeds,
   issueShares,
+  lateIpo,
+  lateIpoBlocker,
+  lateIpoProceeds,
   loyalSeats,
   marketCap,
   maxIssue,
@@ -60,11 +65,46 @@ function Abgesetzt({ s }: { s: StocksState }) {
   return s.ousted > 0 ? <p className="state pleite">Seit Runde {s.ousted} führt der Aufsichtsrat Harlan Oil ohne Jacob.</p> : null;
 }
 
+/** Familienfirma im Aktienbuch: später Börsengang (Regel: lateIpo in sim/stocks.ts). Die Folgen der Wahl stehen unter Maus/Fokus. */
+function LateIpo({ game, onChange }: { game: GameState; onChange: (s: GameState) => void }) {
+  const [blick, setBlick] = useState<number | null>(null);
+  const ipo = chapterContent.ipo;
+  const prozent = (x: number) => `${Math.round(x * 100)} %`;
+  return (
+    <div className="ipo">
+      <p className="muted">Harlan Oil ist eine Familienfirma: Es gibt keine Aktien. Geld bringen Bank und – nach einem Börsengang – Anleihen.</p>
+      <h3>{fillText(ipo.lateTitle, {})}</h3>
+      <p className={blick === null ? 'ipo-text' : 'ipo-text klein'} aria-live="polite">
+        {blick === null ? fillText(ipo.lateText, {}) : ipoConsequenceText(game, balance, ipo, blick, undefined, true)}
+      </p>
+      <div className="knoepfe">
+        {balance.chapter.ipo.shares.map((share) => {
+          const probe = lateIpo(game, balance, stocksContent.board, share);
+          return (
+            <button
+              key={share}
+              type="button"
+              disabled={!probe.ok}
+              title={probe.ok ? undefined : probe.reason}
+              onClick={() => probe.ok && onChange(probe.state)}
+              onMouseEnter={() => setBlick(share)}
+              onFocus={() => setBlick(share)}
+            >
+              {fillText(ipo.sell, { anteil: prozent(share), preis: money(lateIpoProceeds(game, balance, share)) })}
+            </button>
+          );
+        })}
+      </div>
+      {lateIpoBlocker(game, balance, balance.chapter.ipo.shares[0]) !== null && <p className="hint">{lateIpoBlocker(game, balance, balance.chapter.ipo.shares[0])}</p>}
+    </div>
+  );
+}
+
 /** Reiter „Aktienbuch“: Kurs, wer welche Aktien hält, Ausgabe, Rückkauf, Dividende, Detektei. */
 export function SharesPanel({ game, onChange, debug = false }: Props) {
   const s = game.stocks;
   if (!s) return null;
-  if (!s.public) return <p className="muted">Harlan Oil ist eine Familienfirma: Es gibt keine Aktien. Geld bringen Bank und Anleihen.</p>;
+  if (!s.public) return <LateIpo game={game} onChange={onChange} />;
   const total = totalShares(s);
   const vorher = s.priceHistory.at(-2);
   const pfeil = vorher === undefined || vorher === s.price ? '' : s.price > vorher ? ' ↑' : ' ↓';
@@ -289,7 +329,7 @@ export function BondsPanel({ game, onChange }: Props) {
         </ul>
       )}
       {!canIssueBonds(game) ? (
-        <p className="hint">{FAMILY_BOND_REASON}</p>
+        <p className="hint">{FAMILY_BOND_REASON} Oder die Firma geht an die Börse (Reiter Aktienbuch).</p>
       ) : (
       <div className="regler-zeile">
         <strong>Neue Anleihe</strong>
