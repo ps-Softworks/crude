@@ -4,7 +4,7 @@
 - [x] C1 Verlauf/Diagramme, C2 Speicherplätze, C3 Glossar (Agent) – zusammengeführt
 - [x] A1 Verkaufen, A4 Pleite-Frist, A7 Versicherung, B4 Zweiter Anlauf (Agent) – 0.4.20+45, dazu Tank-Notverkauf am Kapitelende
 - [x] B3 Feuer in der Nacht (Agent) – 0.4.20+44
-- [ ] A2 Investoren, A3 Farm-out, A5 Konsortium, A6 Staat (Agent läuft)
+- [x] A2 Investoren, A3 Farm-out, A5 Konsortium, A6 Staat (Agent) – 0.4.20+46
 - [ ] C6 Abschluss: auf main zusammenführen, Roadmap, Tester-Build, Bericht
 
 # Plan: Kontakte aufbauen, neue Großhändler, Geldquellen und Rest (Nachtarbeit)
