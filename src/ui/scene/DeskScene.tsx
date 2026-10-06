@@ -28,7 +28,7 @@ import type { SheetId } from '../sceneState';
 import { Silhouette } from '../Silhouette';
 import { rivalsLines } from '../sheets/RivalsSheet';
 import { DeskObject, type Placement } from './DeskObject';
-import { deskLayout, MAHAGONI_AB, sharedColumn, type DeskPresent, type DeskSpot } from './deskLayout'; // 0.4.20+10
+import { aufTisch, deskLayout, MAHAGONI_AB, sharedColumn, type DeskPresent, type DeskSpot } from './deskLayout'; // 0.4.20+10
 import { RadioShape } from './objects/RadioShape';
 import { chapterOf } from '../../sim/chapterOf';
 import { Door } from './Door';
@@ -140,7 +140,8 @@ export function DeskScene(p: DeskSceneProps) {
   const AT = deskLayout(kapitel, da);
   // Personal und Vertrieb geteilt (Kapitel 1/2 vorab) oder Personal direkt unter der Tür (Kapitel 3): Abzeichen in die Ecke.
   const geteilt = sharedColumn(kapitel, da);
-  const platz = (id: DeskSpot | SheetId): Placement => (AT as Partial<Record<string, Placement>>)[id]!;
+  // 0.4.20+12: Was auf dem Tisch liegt, rückt in die Tischplatte (Perspektive, aufTisch).
+  const platz = (id: DeskSpot | SheetId): Placement => aufTisch((AT as Partial<Record<string, Placement>>)[id]!);
 
   // Akte: was die Türme gerade tun, gezählt in src/sim (rigSummary).
   const tuerme = rigSummary(game);
@@ -191,7 +192,15 @@ export function DeskScene(p: DeskSceneProps) {
       {p.topBar}
       <div className="szene">
         <div className="wand" aria-hidden="true" />
-        <div className="tisch" aria-hidden="true" />
+        {/* 0.4.20+12: Boden an den Seiten, Tischplatte als Trapez, vorn die Kante mit drei Schubladen. */}
+        <div className="tisch" aria-hidden="true">
+          <div className="tischplatte" />
+          <div className="tischkante">
+            <span className="schubladenfront" />
+            <span className="schubladenfront" />
+            <span className="schubladenfront" />
+          </div>
+        </div>
         {/* 0.4.20+10: Ablage für Hallstead- und Siegelmappe unter Ruths Zettel (nur Kapitel 3). */}
         {mahagoni && (da.hallstead || da.konzern) && <div className="ablage" aria-hidden="true" style={prozent(platz('ablage'))} />}
 

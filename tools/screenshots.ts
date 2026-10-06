@@ -21,6 +21,7 @@
 import { spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { createServer } from 'vite';
 import { botTurn } from '../src/sim/bots';
@@ -331,7 +332,7 @@ class Cdp {
 
 // node_modules darf ein Verweis sein (z. B. in einem Git-Worktree) – dann die Schriften auch von dort ausliefern.
 const erlaubt = [new URL('.', root).pathname, realpathSync(new URL('node_modules', root))];
-const server = await createServer({ root: new URL('.', root).pathname, server: { port: PORT, strictPort: true, fs: { allow: erlaubt } }, logLevel: 'error' });
+const server = await createServer({ root: fileURLToPath(new URL('.', root)), server: { port: PORT, strictPort: true, fs: { allow: erlaubt } }, logLevel: 'error' });
 await server.listen();
 const profil = mkdtempSync(join(tmpdir(), 'crude-chrome-'));
 const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${DEBUG_PORT}`, `--user-data-dir=${profil}`, '--hide-scrollbars', 'about:blank'], {

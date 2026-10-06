@@ -1,5 +1,6 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ContentLoadError, formatContentError, loadEventCatalog, parseEventFile, parseEventFiles, ZEITSPRUNG_MARKS } from './eventContent';
@@ -79,7 +80,7 @@ describe('echte Inhalte in content/events/', () => {
 
 describe('Prüfung mit Datei und Zeilennummer', () => {
   it('das kaputte Test-Fixture liefert verständliche Fehler mit Zeile', () => {
-    const files = readEventFiles(FIXTURE.pathname);
+    const files = readEventFiles(fileURLToPath(FIXTURE));
     const { events, errors } = parseEventFiles(files);
     expect(events).toEqual([]);
     const zeilen = errors.map(formatContentError);

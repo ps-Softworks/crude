@@ -3,6 +3,7 @@
 // Position und Größe in Prozent der Bühne.
 
 import type { ReactNode } from 'react';
+import { TISCH } from './deskLayout';
 
 export interface Placement {
   left: number;
@@ -67,7 +68,7 @@ export function DeskObject({
   return (
     <button
       type="button"
-      className={`objekt objekt-${id}${glow ? ' tutorial-ziel' : ''}${fresh ? ' frisch' : ''}${className ? ` ${className}` : ''}`}
+      className={`objekt objekt-${id}${at.top >= TISCH.hinten ? ' auf-tisch' : ''}${glow ? ' tutorial-ziel' : ''}${fresh ? ' frisch' : ''}${className ? ` ${className}` : ''}`}
       style={{ left: `${at.left}%`, top: `${at.top}%`, width: `${at.width}%`, height: `${at.height}%` }}
       onClick={onOpen}
       data-sheet={sheet}

@@ -2,10 +2,11 @@
 // (Claude-Artefakt, itch.io) gesperrt – confirm liefert dort still „nein“, und „Neues Spiel“
 // tat nichts. Rückfragen laufen über ConfirmButton. Dieser Test sucht den Code danach ab.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const ROOT = new URL('../', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('../', import.meta.url));
 
 function dateien(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {

@@ -1,6 +1,6 @@
 // Nur für Tests und Werkzeuge: liest Ereignis-Dateien von der Platte.
 import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ARC_IDS, parseArcContent } from './arcs';
 import type { Balance } from './balance';
@@ -11,14 +11,14 @@ import type { EventDef } from './events';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 
-/** Alle .yaml-Dateien eines Ordners, alphabetisch, mit Pfad relativ zum Projekt. */
+/** Alle .yaml-Dateien eines Ordners, alphabetisch, mit Pfad relativ zum Projekt (immer mit „/“, auch unter Windows). */
 export function readEventFiles(dir: string): { file: string; text: string }[] {
   return readdirSync(dir)
     .filter((name) => name.endsWith('.yaml') || name.endsWith('.yml'))
     .sort()
     .map((name) => {
       const path = join(dir, name);
-      return { file: relative(ROOT, path) || path, text: readFileSync(path, 'utf8') };
+      return { file: (relative(ROOT, path) || path).split(sep).join('/'), text: readFileSync(path, 'utf8') };
     });
 }
 

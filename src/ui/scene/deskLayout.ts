@@ -169,3 +169,33 @@ export function deskLayout(chapter: number, da: DeskPresent): Partial<Record<Des
 export function sharedColumn(chapter: number, da: DeskPresent): boolean {
   return chapter < MAHAGONI_AB && da.personal && da.marke;
 }
+
+// ---------------------------------------------------------------------------
+// Tisch in Perspektive (0.4.20+12): Die Tischplatte ist ein Trapez – hinten an der Wand schmaler, vorn
+// breiter, darunter die Vorderkante mit Schubladen. Die Platzpläne oben bleiben, wie sie sind (Prozent der
+// ganzen Szene); aufTisch rückt alles, was auf dem Tisch liegt, in die Platte. Reine Darstellung.
+
+/** Wo die Tischplatte liegt, in Prozent der Szene: hinten (Wand) und vorn (Kante), dazu die Einrückung je Seite. */
+export const TISCH = { hinten: 43, vorn: 89, einzugHinten: 6, einzugVorn: 1 } as const;
+
+/** Einrückung der Platte je Seite in Höhe y (Prozent der Szene). */
+export function tischEinzug(y: number): number {
+  const t = Math.min(1, Math.max(0, (y - TISCH.hinten) / (TISCH.vorn - TISCH.hinten)));
+  return TISCH.einzugHinten + (TISCH.einzugVorn - TISCH.einzugHinten) * t;
+}
+
+/**
+ * Ein Platz aus dem Plan auf die Tischplatte: Was an der Wand hängt (oberhalb von TISCH.hinten), bleibt.
+ * Alles andere wird senkrecht von hinten…100 % auf hinten…vorn gestaucht und waagrecht in die Breite der
+ * Platte auf Höhe seiner Mitte gerückt.
+ */
+export function aufTisch(p: Placement): Placement {
+  if (p.top < TISCH.hinten || p.width === 0) return p;
+  const k = (TISCH.vorn - TISCH.hinten) / (100 - TISCH.hinten);
+  const top = TISCH.hinten + (p.top - TISCH.hinten) * k;
+  const height = p.height * k;
+  const ein = tischEinzug(top + height / 2);
+  const breite = (100 - 2 * ein) / 100;
+  const r = (v: number) => Math.round(v * 100) / 100;
+  return { left: r(ein + p.left * breite), top: r(top), width: r(p.width * breite), height: r(height) };
+}
