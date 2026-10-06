@@ -107,6 +107,15 @@ function mitEntscheidungen(s: GameState): GameState {
   return state;
 }
 
+describe('Verlauf über den Zeitsprung', () => {
+  it('bleibt erhalten', () => {
+    const vor = kapitelEnde('verlauf-sprung');
+    expect(vor.history!.length).toBeGreaterThan(10);
+    const { state } = springen(vor);
+    expect(state.history).toEqual(vor.history);
+  });
+});
+
 describe('Inhalte: content/timeskip.yaml', () => {
   it('ist vollständig: alle Weichen mit beiden Antworten, alle Chronik-Einträge, Kapitel-2-Texte', () => {
     const { content, errors } = parseTimeskipContent('content/timeskip.yaml', readFileSync(new URL('../../content/timeskip.yaml', import.meta.url), 'utf8'));

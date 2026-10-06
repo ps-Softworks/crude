@@ -10,6 +10,7 @@ import { settleDeals, type DealsState } from './deals';
 import { callLoansInCrisis, checkBankruptcy, settleLoans, type Loan } from './credit';
 import { applyEarlyEnding, chapterPassed } from './chapter';
 import { chapterOf } from './chapterOf';
+import { appendHistory, type HistoryEntry } from './history';
 import { advanceDrilling, type Well } from './drilling';
 import { assignFields, buildFields, type Field } from './field';
 import { makeForecasts, type Forecast } from './forecast';
@@ -196,6 +197,8 @@ export interface GameState {
   hotOil?: boolean;
   /** 0.4.20+24: Kasse und Schulden zu Beginn der Runde – Grundlage der Einkommensteuer (lawEffects.ts). Fehlt: Rundenende zählt. */
   taxBase?: { cash: number; debt: number };
+  /** 0.4.20+42: Verlauf je Runde für die Diagramme (src/sim/history.ts) – fehlt in älteren Ständen. */
+  history?: HistoryEntry[];
   /** Ruf (4.12, GDD §4, src/sim/reputation.ts): fehlt, bis ein Ereignis ihn ändert (dann −100…100 je Achse). */
   reputation?: Partial<Reputation>;
   /** 4.12: Was Systemwirkungen der Ereignisse dauerhaft hinterlassen (Durchleitungsgebühr, Rating, Termine, Erben). */
@@ -432,7 +435,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const hallstead = settleHallstead(ermittelt, balance);
   // 0.4.20+17: Geltende Gesetze – Einkommensteuer auf den Gewinn der Runde (vor der Pleiteprüfung).
   const besteuert = settleBreakup(settleIncomeTax(input, hallstead, balance), balance);
-  const state = { ...checkBankruptcy(besteuert, balance), roundLogStart };
+  // 0.4.20+42: Verlaufseintrag der Runde (Kasse, Schulden, Wert, Förderung, Preis) für die Diagramme.
+  const state = appendHistory({ ...checkBankruptcy(besteuert, balance), roundLogStart }, balance, produziert.oilStock - gelagert.oilStock);
   if (state.ending === 'pleite') return state;
   // 4.12 Andockpunkt: frühe Enden ab Kapitel 2 (abgesetzt, geschluckt, hinter Gittern – GDD §14).
   const frueh = applyEarlyEnding(state, balance);
