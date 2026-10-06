@@ -87,30 +87,38 @@
   background:
     /* hinten Schatten der Wand, vorn Licht auf der Kante */
     linear-gradient(180deg, rgba(0, 0, 0, 0.38) 0, rgba(0, 0, 0, 0) 9%, rgba(0, 0, 0, 0) 92%, rgba(255, 230, 180, 0.16) 100%),
-    /* Maserung in Brettern */
-    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 14.3%),
     repeating-linear-gradient(178.5deg, rgba(0, 0, 0, 0.06) 0 2px, transparent 2px 13px),
     linear-gradient(180deg, var(--platte) 0%, var(--platte-hell) 70%, var(--platte) 100%);
 }
 .tischkante {
   position: absolute; left: 1%; right: 1%; top: var(--platte-h); bottom: 0;
-  display: flex; gap: 3%; align-items: center; justify-content: center; padding: 0 6%;
   background: linear-gradient(180deg, rgba(255, 230, 180, 0.22) 0 3px, var(--platte-dunkel) 3px, var(--kante) 100%);
   box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.5), 0 6px 14px rgba(0, 0, 0, 0.5);
 }
-.schubladenfront {
-  flex: 0 1 24%; height: 58%;
-  border: 2px solid rgba(0, 0, 0, 0.35); border-radius: 2px;
-  background: linear-gradient(180deg, rgba(255, 230, 180, 0.1), rgba(0, 0, 0, 0.15));
+/* 0.4.20+13: Schubladen in der Vorderkante (Plätze aus SCHUBLADEN in deskLayout.ts). */
+.schubladenfront, .objekt.in-schublade {
+  position: absolute; box-sizing: border-box;
+  border: 2px solid rgba(0, 0, 0, 0.4); border-radius: 2px;
+  background: linear-gradient(180deg, rgba(255, 230, 180, 0.1), rgba(0, 0, 0, 0.18)), var(--tisch);
   box-shadow: inset 0 1px 0 rgba(255, 230, 180, 0.18);
-  position: relative;
 }
-/* Messinggriff */
-.schubladenfront::after {
-  content: ''; position: absolute; left: 50%; top: 50%; width: 22%; height: 22%; min-height: 5px;
-  transform: translate(-50%, -50%);
+.schreibtisch.mahagoni .schubladenfront, .schreibtisch.mahagoni .objekt.in-schublade {
+  background: linear-gradient(180deg, rgba(255, 210, 180, 0.08), rgba(0, 0, 0, 0.2)), var(--mahagoni-dunkel);
+}
+.schubladenfront::after, .schubladengriff {
+  content: ''; display: block; width: 22%; height: 22%; min-height: 6px; min-width: 34px;
   border-radius: 3px; background: linear-gradient(180deg, #e6c879, var(--messing) 50%, #8a6a2a);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.schubladenfront::after { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+/* Die Schublade mit dem Schattenbuch: ein Knopf in der Kante – Griff, Name und Hitze in einer Zeile. */
+.objekt.in-schublade { flex-direction: row; justify-content: center; align-items: center; gap: 10px; padding: 0 8px; }
+.objekt.in-schublade .objekt-bild { flex: none; width: auto; }
+.objekt.in-schublade .schubladengriff { width: 46px; height: 9px; }
+.objekt.in-schublade:not([aria-disabled='true']):hover:not(:disabled), .objekt.in-schublade:focus-visible {
+  /* Statt anzuheben: Die Schublade geht ein Stück auf. */
+  transform: translateY(3px);
+  border-color: var(--messing);
 }
 /* Was auf dem Tisch liegt, wirft einen Schatten auf die Platte. */
 .objekt.auf-tisch .objekt-bild > * { filter: drop-shadow(2px 5px 4px rgba(15, 6, 0, 0.5)); }
@@ -862,3 +870,6 @@ input:focus-visible { outline: 2px solid var(--ocker); outline-offset: 1px; }
 }
 .kapitel-im-bau { margin-left: 10px; background: var(--papier-hell); font-weight: 600; }
 .bogen-fuss .stempel-klein { margin-right: auto; }
+/* 0.4.20+13: In der Schublade erst der Name, dann die Hitze. */
+.objekt.in-schublade .namensschild { order: 1; }
+.objekt.in-schublade .objekt-status { order: 2; }
