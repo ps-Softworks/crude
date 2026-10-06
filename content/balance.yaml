@@ -1473,7 +1473,7 @@ refinery:
   buildRounds: 3           # Bauzeit in Runden
   unitCapacity: 10000      # bbl Rohöl je Runde und Ausbaustufe
   maxLevel: 4              # höchstens so viele Ausbaustufen (Stufe 4 lohnt nur mit vielen Tankstellen und großem Markt)
-  expandCost: 50000        # $ je weitere Ausbaustufe (Stufe 2 lohnt Ende Kapitel 2 in ~40 % der Welten, Stufe 3 erst mit Tankstellen)
+  expandCost: 40000        # $ je weitere Ausbaustufe (0.4.20+21: 50.000 → 40.000 – Bots bauten kaum aus, Amortisation in K2 22–32 Runden; Stufe 3 lohnt erst mit Tankstellen)
   expandRounds: 2          # Bauzeit je Ausbau (die alte Anlage läuft weiter)
   upkeepPerLevel: 800      # Fixkosten je fertiger Ausbaustufe und Runde (Löhne, Kessel, Wache)
   operatingCost: 0.50      # $ je verarbeitetem Barrel Rohöl (Kohle, Chemikalien, Fässer)
