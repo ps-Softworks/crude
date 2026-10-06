@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { agendaView } from '../../sim/agenda';
 import { formatDate } from '../../sim/game';
 import { localize } from '../../sim/i18n';
+import { dealsRunning } from '../../sim/deals';
 import { contactOf } from '../../sim/planContent';
 import { bookCard, planView, unbookCard, type PlanCardView, type PlanSlot } from '../../sim/plans';
 import { chapterRound, chapterRounds } from '../../sim/timeskip';
@@ -161,6 +162,7 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
   const hand = v.cards
     .filter((c) => stelleVon.get(c.id) === aktiv)
     .sort((a, b) => Number(a.reason !== null) - Number(b.reason !== null));
+  const laufend = dealsRunning(game, balance);
   const gebucht = v.slots.map((s, i) => ({ s, i })).filter(({ s }) => s.kind !== 'frei');
   function waehle(id: string) {
     writePref('crude.reiter.termine', id);
@@ -202,6 +204,11 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
             );
           })}
         </ul>
+      )}
+      {laufend.length > 0 && (
+        <p className="laufend">
+          <strong>Läuft:</strong> {laufend.join(' · ')}
+        </p>
       )}
       {!game.finished && t.sickRounds > 0 && (
         <p className="krankmeldung">

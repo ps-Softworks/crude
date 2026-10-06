@@ -10,6 +10,7 @@
 // Reine Funktionen, kein Zufall.
 
 import type { Balance, DrillStage } from './balance';
+import { rigLent } from './deals';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
 import type { Well } from './drilling';
@@ -300,7 +301,8 @@ export function settleRigs(input: GameState, balance: Balance): GameState {
     const teile = [k.rent > 0 ? `Turmmiete ${money(k.rent)}` : '', k.pumps > 0 ? `Pumpen ${money(k.pumps)}` : ''].filter(Boolean);
     log = logged(input, `${teile.join(', ')}.`);
   }
-  const kommen = input.rigs.filter((r) => r.readyRound === input.round + 1);
+  // 0.4.20+31: Ein verliehener Turm kommt zurück – keine Lieferung (settleDeals meldet ihn).
+  const kommen = input.rigs.filter((r) => r.readyRound === input.round + 1 && !rigLent(input, r.id));
   if (kommen.length > 0) log = [...log, `${formatDate(input)}: ${kommen.length === 1 ? 'Der neue Bohrturm ist' : `${kommen.length} neue Bohrtürme sind`} zur nächsten Runde da.`];
   if (kosten === 0 && kommen.length === 0) return input;
   return { ...input, cash: cents(input.cash - kosten), log };

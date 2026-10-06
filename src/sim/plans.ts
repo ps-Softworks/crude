@@ -45,6 +45,7 @@ import { leaseOf, leaseTerms, optionOf, parcelLabel } from './lease';
 import type { PlanHandler } from './planHandler';
 import { PRICE_HANDLERS, settlePricing } from './pricing';
 import { FREIGHT_HANDLERS, settleFreight } from './freight';
+import { DEAL_HANDLERS } from './deals';
 import type { GeologistId, PlanCardBalance, PlanRequires, PlanTab, PlanTarget, PlanTiming } from './plansBalance';
 import { Rng, seedFromString } from './rng';
 import { RIVAL_MARKS } from './trust';
@@ -222,7 +223,13 @@ const LAND_HANDLERS: Record<string, Handler> = {
 };
 
 /** Alle Regeln: Erkundung (Etappe 1), Preis- und Transport-Aktionen (Etappe 2). */
-export const HANDLERS: Record<string, Handler> = { ...LAND_HANDLERS, ...PRICE_HANDLERS, ...FREIGHT_HANDLERS };
+// 0.4.20+31: erst beim ersten Gebrauch zusammensetzen – die Regel-Dateien importieren sich im Kreis
+// (game ↔ plans ↔ deals/freight/transport), beim Laden des Moduls können sie noch fehlen.
+let alle: Record<string, Handler> | null = null;
+function handlers(): Record<string, Handler> {
+  alle ??= { ...LAND_HANDLERS, ...PRICE_HANDLERS, ...FREIGHT_HANDLERS, ...DEAL_HANDLERS };
+  return alle;
+}
 
 /** Eine Karte, wie das Brett sie kennt: aus balance.yaml oder ein fester Termin. */
 export interface PlanCardDef extends PlanCardBalance {
@@ -258,7 +265,7 @@ function eventOf(catalog: readonly EventDef[], id: string | undefined): EventDef
 function onHand(state: GameState, card: PlanCardDef, catalog: readonly EventDef[], balance?: Balance): boolean {
   if (state.finished || !requiresMet(state, card.requires)) return false;
   if (card.event === undefined) {
-    const h = card.handler ? HANDLERS[card.handler] : undefined;
+    const h = card.handler ? handlers()[card.handler] : undefined;
     return !(h?.visible && balance && !h.visible(state, balance));
   }
   const e = eventOf(catalog, card.event);
@@ -274,13 +281,13 @@ function cardAppointments(card: PlanCardDef, catalog: readonly EventDef[]): numb
 
 /** Was die Karte gerade kostet ($) – manche Preise hängen von der Lage ab (Bohrbericht). */
 export function cardCash(state: GameState, balance: Balance, card: PlanCardDef, target?: string): number {
-  const h = card.handler ? HANDLERS[card.handler] : undefined;
+  const h = card.handler ? handlers()[card.handler] : undefined;
   return h?.cost ? h.cost(state, balance, target) : card.cash;
 }
 
 /** Möglichkeiten einer Karte mit target „option“ (sonst leer). */
 export function cardOptions(state: GameState, balance: Balance, card: PlanCardDef) {
-  const h = card.handler ? HANDLERS[card.handler] : undefined;
+  const h = card.handler ? handlers()[card.handler] : undefined;
   return card.target === 'option' && h?.options ? h.options(state, balance) : [];
 }
 
@@ -311,7 +318,7 @@ export function cardReason(state: GameState, balance: Balance, catalog: readonly
     const t = targetReason(state, card, target, balance);
     if (t) return t;
   }
-  const h = card.handler ? HANDLERS[card.handler] : undefined;
+  const h = card.handler ? handlers()[card.handler] : undefined;
   if (h?.lock && (card.target !== 'ranch' || target !== undefined)) {
     const r = h.lock(state, balance, target);
     if (r) return r;
@@ -346,7 +353,7 @@ export function bookCard(state: GameState, balance: Balance, catalog: readonly E
     const eintrag: BookedPlan = { cardId, appointments: n, overtime, cash: 0, strength: 0, done: true };
     return { ok: true, state: { ...r.state, plans: { ...plans, booked: [...plans.booked, eintrag] } } };
   }
-  const h = HANDLERS[card.handler!];
+  const h = handlers()[card.handler!];
   if (!h) return { ok: false, reason: `Karte „${cardId}“ hat keine Regel.` };
   const belegt = spendAppointments(state, balance, n);
   if (!belegt.ok) return belegt;
@@ -399,7 +406,7 @@ export function settlePlans(state: GameState, balance: Balance): GameState {
     for (const b of plans.booked) {
       if (b.done) continue;
       const card = balance.plans.cards[b.cardId];
-      const h = card?.handler ? HANDLERS[card.handler] : undefined;
+      const h = card?.handler ? handlers()[card.handler] : undefined;
       if (h) next = h.apply(next, balance, b.target);
     }
   }
@@ -524,7 +531,7 @@ export function planView(state: GameState, balance: Balance, catalog: readonly E
       allgemein ??
       (c.target === 'ranch' && !targets.some((t) => t.ok) ? (targets[0]?.reason ?? 'Kein passendes Ziel.') : null) ??
       (c.target === 'option' && !options.some((o) => o.ok) ? (options[0]?.reason ?? 'Keine Möglichkeit passt.') : null);
-    const h = c.handler ? HANDLERS[c.handler] : undefined;
+    const h = c.handler ? handlers()[c.handler] : undefined;
     const view: PlanCardView = {
       id: c.id,
       tab: c.tab,
@@ -574,7 +581,7 @@ export function planView(state: GameState, balance: Balance, catalog: readonly E
 export function planRefErrors(balance: Balance, catalog: readonly EventDef[]): string[] {
   const fehler: string[] = [];
   for (const [id, c] of Object.entries(balance.plans.cards)) {
-    if (c.handler !== undefined && !HANDLERS[c.handler]) fehler.push(`plans.cards.${id}: Regel „${c.handler}“ gibt es nicht (${Object.keys(HANDLERS).join(', ')}).`);
+    if (c.handler !== undefined && !handlers()[c.handler]) fehler.push(`plans.cards.${id}: Regel „${c.handler}“ gibt es nicht (${Object.keys(handlers()).join(', ')}).`);
     if (c.event !== undefined && !catalog.some((e) => e.id === c.event && e.routine)) fehler.push(`plans.cards.${id}: „${c.event}“ ist kein fester Termin (routine) in content/events/.`);
   }
   return fehler;

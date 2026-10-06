@@ -39,7 +39,7 @@ const KATALOG_VORHER = 122; // main 0.4.5+1 (Plan: „Der Katalog umfasst 122 Er
 const prozent = (x: number) => `${(x * 100).toLocaleString('de-DE', { maximumFractionDigits: 1, minimumFractionDigits: 1 })} %`;
 const zahl = (x: number, d = 2) => x.toLocaleString('de-DE', { maximumFractionDigits: d, minimumFractionDigits: d });
 
-const ALLE: BotPlans = { cartel: true, contract: true, rumour: true, crane: true, thorne: true, brennan: true, pool: true, bluff: false, betray: false };
+const ALLE: BotPlans = { cartel: true, contract: true, rumour: true, crane: true, thorne: true, brennan: true, pool: true, bluff: false, betray: false, guard: false, bank: false, quota: false, advance: false, royalty: false, interview: false };
 const VARIANTEN: Record<'voreingestellt' | 'alleKarten', Balance> = {
   voreingestellt: balance,
   alleKarten: { ...balance, botPlans: { ...balance.botPlans, balanced: ALLE } },

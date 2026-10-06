@@ -6,6 +6,7 @@ import type { Balance, Rating, TransportMode } from './balance';
 import { formatDate } from './calendar';
 // 4.14 Andockpunkt: Marke und Tankstellen (Kapitel 3).
 import { settleBrand, type BrandState } from './brand';
+import { settleDeals, type DealsState } from './deals';
 import { callLoansInCrisis, checkBankruptcy, settleLoans, type Loan } from './credit';
 import { applyEarlyEnding, chapterPassed } from './chapter';
 import { chapterOf } from './chapterOf';
@@ -120,6 +121,8 @@ export interface GameState {
   freight: FreightState;
   /** Ruf bei den kleinen Wildcattern (Etappe 2, −0,3 bis +0,3): gilt für Förderbremse und Transportgemeinschaft. */
   wildcatterStanding: number;
+  /** 0.4.20+31: Deals im Adressbuch (deals.ts) – freiwillig, fehlt er, läuft keiner. */
+  deals?: DealsState;
   /** Bohrungen, auch abgeschlossene. */
   wells: Well[];
   /** Bohrtürme (0.2.15+7): Silas' geliehener, gekaufte und gemietete. */
@@ -371,7 +374,9 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Planungsbrett (Etappe 1): Karten mit Wirkung am Rundenende, Lohn des Geologen, Wochenbericht.
   // Etappe 2: dazu Förderbremse, Liefervertrag und Fracht-Verträge (die Verkäufe der Runde stehen fest).
   // Etappe 3: Merkzeichen aus Jacobs Plänen für die gekoppelten Briefe, Antworten aus Briefen wirken (letters.ts).
-  const nachBrett = settlePlans(familie, balance);
+  const vorDeals = settlePlans(familie, balance);
+  // 0.4.20+31: Deals im Adressbuch – Öldiebe, Mindestmenge, Fristen, Turm-Miete (vor Lager und Zinsen).
+  const nachBrett = appendReport(settleDeals(vorDeals, balance), vorDeals.log.length);
   const geplant = appendReport(settleLetters(familie, nachBrett, balance), nachBrett.log.length);
   // Termine (2.3): Krankheit (2.7), ruhige Runde gibt Kraft zurück, die nächste beginnt mit frischen Terminen.
   const terminiert = settleAgenda(geplant, balance);

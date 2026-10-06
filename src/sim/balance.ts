@@ -26,6 +26,7 @@ import { parseHallstead, type HallsteadBalance } from './hallsteadBalance';
 // Termine als Hauptwerkzeug (Etappe 1): Erkundung und Planungsbrett.
 import { parseExplorationBalance, parsePlansBalance, type ExplorationBalance, type PlansBalance } from './plansBalance';
 // Termine als Hauptwerkzeug, Etappe 2: Preis- und Transport-Aktionen.
+import { parseDealsBalance, type DealsBalance } from './dealsBalance';
 import { parseBotPlans, parseFreightBalance, parsePriceActions, type BotPlans, type FreightBalance, type PriceActionsBalance } from './pricingBalance';
 // Termine als Hauptwerkzeug, Etappe 3: gekoppelte Briefe.
 import { parseLettersBalance, type LettersBalance } from './lettersBalance';
@@ -1017,6 +1018,8 @@ export interface Balance {
   priceActions: PriceActionsBalance;
   /** Transport-Aktionen (Etappe 2, balance.yaml transport.negotiation): Thorne, Brennan, Transportgemeinschaft. */
   freight: FreightBalance;
+  /** 0.4.20+31: Deals im Adressbuch (src/sim/deals.ts). */
+  deals: DealsBalance;
   /** Welche Preis- und Fracht-Karten die Bots spielen (balance.yaml bots.plans). */
   botPlans: Record<BotCharacter, BotPlans>;
   /** Gekoppelte Briefe (Etappe 3, src/sim/letters.ts). */
@@ -2665,6 +2668,7 @@ export function parseBalance(raw: unknown): Balance {
     plans: parsePlansBalance(raw),
     priceActions: parsePriceActions(raw),
     freight: parseFreightBalance(raw),
+    deals: parseDealsBalance(raw),
     botPlans: parseBotPlans(raw),
     letters: parseLettersBalance(raw),
     weichen: { ruthCredit: positiveNumber(raw, 'weichen.ruthCredit') },

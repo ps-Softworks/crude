@@ -165,9 +165,16 @@ export interface BotPlans {
   bluff: boolean;
   /** Betrügerischer Bot (GDD §17): verkauft die laufende Förderbremse oder den Händlervertrag an Crane (feilschen mit Angebot = Verrat). */
   betray: boolean;
+  /** 0.4.20+31 Deals: Wache bei vollem Tank, Zins nachverhandeln, Frachtkontingent, Crane-Vorschuss bei knapper Kasse, Förderzins, Interview. */
+  guard: boolean;
+  bank: boolean;
+  quota: boolean;
+  advance: boolean;
+  royalty: boolean;
+  interview: boolean;
 }
 
-export const BOT_PLAN_KEYS = ['cartel', 'contract', 'rumour', 'crane', 'thorne', 'brennan', 'pool', 'bluff', 'betray'] as const;
+export const BOT_PLAN_KEYS = ['cartel', 'contract', 'rumour', 'crane', 'thorne', 'brennan', 'pool', 'bluff', 'betray', 'guard', 'bank', 'quota', 'advance', 'royalty', 'interview'] as const;
 
 function wert(obj: unknown, path: string): unknown {
   return path.split('.').reduce<unknown>((o, key) => (o && typeof o === 'object' ? (o as Record<string, unknown>)[key] : undefined), obj);

@@ -256,6 +256,37 @@ plans:
     transportgemeinschaft: { tab: fracht, appointments: 2, cash: 100, target: option, timing: rundenende, handler: transportgemeinschaft, requires: { maxChapter: 1 } }
     gemeinschaft_halten: { tab: fracht, appointments: 1, timing: rundenende, handler: gemeinschaft_halten, requires: { maxChapter: 1 } }
     exklusiv_kuendigen: { tab: fracht, appointments: 1, cash: 800, handler: exklusiv_kuendigen, requires: { maxChapter: 1 } }
+    # 0.4.20+31 Deals im Adressbuch (Regeln src/sim/deals.ts, Zahlen unten im Block deals). Alles PLATZHALTER.
+    bank_zins: { tab: markt, appointments: 1, timing: rundenende, handler: bank_zins, requires: { maxChapter: 1 } }
+    bank_stundung: { tab: markt, appointments: 1, handler: bank_stundung, requires: { maxChapter: 1 } }
+    bank_pfand: { tab: markt, appointments: 1, handler: bank_pfand, requires: { maxChapter: 1 } }
+    bahn_festtarif: { tab: fracht, appointments: 2, strength: -2, target: option, timing: rundenende, handler: bahn_festtarif, requires: { maxChapter: 1 } }
+    bahn_kontingent: { tab: fracht, appointments: 1, target: option, handler: bahn_kontingent, requires: { maxChapter: 1 } }
+    crane_vorschuss: { tab: markt, appointments: 1, target: option, handler: crane_vorschuss, requires: { maxChapter: 1 } }
+    haendler_grossabnahme: { tab: markt, appointments: 1, handler: haendler_grossabnahme, requires: { maxChapter: 1 } }
+    turm_verleihen: { tab: leute, appointments: 1, target: option, handler: turm_verleihen, requires: { maxChapter: 1 } }
+    foerderzins: { tab: land, appointments: 1, target: ranch, timing: rundenende, handler: foerderzins, requires: { maxChapter: 1 } }
+    interview: { tab: leute, appointments: 1, timing: rundenende, handler: interview, requires: { maxChapter: 1 } }
+    wache: { tab: leute, appointments: 1, cash: 60, handler: wache, requires: { maxChapter: 1 } }
+
+# Deals im Adressbuch (0.4.20+31, src/sim/deals.ts). Alles PLATZHALTER bis zu Bot-Läufen.
+deals:
+  bank:
+    rate: { chance: { A: 0.75, B: 0.5, C: 0.25, D: 0 }, cut: 0.01, floor: 0.04, cooldown: 4 }   # Zins nachverhandeln: Bankkredite −1 Punkt
+    defer: { surcharge: 0.5, cooldown: 6 }      # Stundung: Zinsen der Runde × 1,5 auf die Schuld
+    pledge: { limitBonus: 2500 }                # Turm verpfänden: Bankrahmen +2.500 $; bei versäumter Zahlung gehört der Turm der Bank (Jacob mietet ihn)
+  rail:
+    fixed: { rounds: [4, 8], minimum: 4000, shortfall: 0.10 }   # Festtarif: kein Aufschlag, dafür mind. 4.000 bbl je Runde per Bahn
+    quota: { sizes: [5000, 10000], discount: 0.2, rounds: 6 }  # Frachtkontingent: heute zahlen, 20 % billiger, 6 Runden gültig
+  crane:
+    advance: { sizes: [3000, 6000], discount: 0.15, rounds: 2, penalty: 0.3 }   # Vorschuss: 85 % sofort, Lieferung in 2 Runden, sonst Rest × Preis × 1,3 zurück
+  trader:
+    bulk: { extra: 5000, cooldown: 3 }          # Großabnahme: Händler nimmt diese Runde 5.000 bbl mehr
+  rig:
+    lend: { rounds: [2, 4], rent: 350, damage: 0.2, repair: 700 }   # Turm verleihen
+  royalty: { chance: 0.55, cut: 0.03, floor: 0.08, horizon: 8, priceShare: 0.8, cooldown: 4 }   # Förderzins nachverhandeln
+  interview: { chance: 0.65, rumourPenalty: 0.3, shift: 0.06, cooldown: 4 }   # Ruf bei den Wildcattern ±0,06
+  theft: { chance: 0.06, minStock: 3000, loss: 0.2 }   # Öldiebe in Kapitel 1; die Wache des Sheriffs verhindert sie für eine Runde
 
 # Preis-Aktionen (Termine als Hauptwerkzeug, Etappe 2, src/sim/pricing.ts). Alles PLATZHALTER.
 priceActions:
@@ -758,12 +789,12 @@ bots:
     # Bot etwa 9.000 $ (mit billiger Bahn baut er die Pipeline nicht), Brennan dazu hob das Kapitelziel des Standard-Bots über 70 %.
     # Gesamt-Balance: vorsichtig spricht bei Thorne vor, ausgewogen setzt auf die Transportgemeinschaft statt auf Thorne
     # (mit Thorne gewann der ausgewogene 39–44 % der Seeds, Grenze 40 %).
-    cautious: { cartel: false, contract: true, rumour: false, crane: false, thorne: true, brennan: false, pool: true, bluff: false, betray: false }
-    greedy: { cartel: false, contract: false, rumour: true, crane: true, thorne: false, brennan: true, pool: false, bluff: false, betray: false }   # Weichen-Balance: gierig nimmt Brennan (sonst gewann der ausgewogene 39–41 % der Seeds)
-    balanced: { cartel: false, contract: false, rumour: false, crane: false, thorne: false, brennan: false, pool: true, bluff: false, betray: false }
+    cautious: { cartel: false, contract: true, rumour: false, crane: false, thorne: true, brennan: false, pool: true, bluff: false, betray: false, guard: true, bank: true, quota: false, advance: false, royalty: true, interview: false }
+    greedy: { cartel: false, contract: false, rumour: true, crane: true, thorne: false, brennan: true, pool: false, bluff: false, betray: false, guard: false, bank: true, quota: true, advance: true, royalty: false, interview: false }   # Weichen-Balance: gierig nimmt Brennan (sonst gewann der ausgewogene 39–41 % der Seeds)
+    balanced: { cartel: false, contract: false, rumour: false, crane: false, thorne: false, brennan: false, pool: true, bluff: false, betray: false, guard: true, bank: true, quota: true, advance: false, royalty: true, interview: true }
     # Betrügerisch (GDD §17): Förderbremse mit Organisatoren-Klausel, Gerücht, Bluff bei Thorne – und den Pakt verkauft er
     # an Crane, sobald der genug zahlt (betray: feilschen mit Angebot).
-    cheat: { cartel: true, contract: false, rumour: true, crane: true, thorne: true, brennan: false, pool: true, bluff: true, betray: true }
+    cheat: { cartel: true, contract: false, rumour: true, crane: true, thorne: true, brennan: false, pool: true, bluff: true, betray: true, guard: true, bank: true, quota: true, advance: false, royalty: true, interview: false }
   rightsEstimate: 600      # grobe Schätzung der Bots: so viel kosten die Wegerechte für die Pipeline zusammen
   # Zielwerte Kapitel 1 (2.15, GDD §15 und §17): Toleranzbereich min–max je Kennzahl.
   # Was gemessen wird, steht in src/sim/bots.ts (TARGETS); die Tabelle Ist/Ziel in docs/botlaeufe.md.
