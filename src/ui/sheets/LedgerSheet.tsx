@@ -41,12 +41,9 @@ export function LedgerSheet({ ctx }: { ctx: SheetContext }) {
   const achtung = stocksAttention(game);
   const tabs = [
     { id: 'bank', label: 'Bank' },
-    ...(game.stocks.public
-      ? [
-          { id: 'aktien', label: 'Aktienbuch' },
-          { id: 'rat', label: 'Aufsichtsrat', badge: achtung ? '!' : undefined },
-        ]
-      : []),
+    // 0.4.20+40: Auch die Familienfirma hat ein Aktienbuch – dort steht der späte Börsengang.
+    { id: 'aktien', label: 'Aktienbuch' },
+    ...(game.stocks.public ? [{ id: 'rat', label: 'Aufsichtsrat', badge: achtung ? '!' : undefined }] : []),
     { id: 'anleihen', label: 'Anleihen' },
   ];
   const tab = activeTab('kassenbuch', tabs, ctx.tab);

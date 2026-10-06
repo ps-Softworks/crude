@@ -171,6 +171,7 @@ const kap3 = weiter(kapitel3Systeme(p4basis));
 if (kap2.finished || kap3.finished) throw new Error('Phase-4-Spielstand ist vorzeitig zu Ende.');
 // 0.4.20+10: Derselbe Stand wirklich in Kapitel 3 – dort steht der Mahagoni-Tisch mit eigenem Platzplan.
 const kap3Tisch: GameState = { ...kap3, chapter: 3 };
+const kap3Familie: GameState = { ...kap3Tisch, ipo: { share: 0, proceeds: 0 }, stocks: kap3Tisch.stocks ? { ...kap3Tisch.stocks, public: false, jacob: kap3Tisch.stocks.jacob + kap3Tisch.stocks.float, float: 0, board: [], bonds: [] } : kap3Tisch.stocks };
 // 0.4.20+18: Raffinerie fertig (Stufe 1) mit Öl im Tank – Ausbau-Hinweis und Abwägung im Fenster.
 const kap3Raff: GameState = { ...kap3, oilStock: Math.max(kap3.oilStock, 30_000), refinery: kap3.refinery ? { ...kap3.refinery, level: 1, project: null, projectLeft: 0 } : kap3.refinery };
 // Ruths Zettel voll: dazu alle eigenen Pachten ungebohrt und mit Frist in dieser Runde (lange Zeile „… verfallen nach dieser Runde“).
@@ -272,6 +273,8 @@ const bilder: Bild[] = [
   { name: '18c-raffinerie-abwaegung', state: kap3Raff, dann: `${KLICK('.objekt-raffinerie')}; setTimeout(() => ${REITER('Verkaufen oder raffinieren')}, 400)`, warte: 1000 },
   { name: '19-fernleitung', state: kap3, tasten: ['f'], dann: REITER('Fernleitung') },
   { name: '20-aktien', state: kap3, tasten: ['g'], dann: REITER('Aufsichtsrat') },
+  // 0.4.20+40: Familienfirma in Kapitel 3 – Aktienbuch mit „An die Börse gehen“ (später Börsengang).
+  { name: '20b-aktienbuch-familie', state: kap3Familie, tasten: ['g'], dann: REITER('Aktienbuch') },
   { name: '21-personal', state: kap3, dann: KLICK('.objekt-personal') },
   { name: '22-diplomatie', state: kap3, dann: `${KLICK('.objekt-konkurrenz')}; setTimeout(() => ${REITER('Absprachen')}, 400)`, warte: 1000 },
   { name: '23-schattenbuch', state: kap3, dann: KLICK('.objekt-schattenbuch') },
