@@ -334,7 +334,10 @@ export function dirtyTurn(state: GameState, balance: Balance, policy: CampaignBo
 }
 
 /** Spielt ein Kapitel (2 oder 3) bis zum Ende: botTurn, Kapitelsysteme, Börse, endRound. */
-function playChapter(state: GameState, balance: Balance, strategy: Strategy, policy: CampaignBotPolicy, rng: Rng, catalog: readonly EventDef[], texts: CampaignTexts, stats: { marginBuys: number; liquidations: number; thorneLoans: number }): GameState {
+/** Beobachter für Messungen (Sitzung „bot runner“): sieht den Stand vor jedem Rundenende (vorher, nach allen Bot-Zügen) und danach. */
+export type CampaignObserver = (vorher: GameState, nachher: GameState) => void;
+
+function playChapter(state: GameState, balance: Balance, strategy: Strategy, policy: CampaignBotPolicy, rng: Rng, catalog: readonly EventDef[], texts: CampaignTexts, stats: { marginBuys: number; liquidations: number; thorneLoans: number }, observe?: CampaignObserver): GameState {
   let s = state;
   const grenze = s.totalRounds + 5;
   while (!s.finished) {
@@ -350,6 +353,7 @@ function playChapter(state: GameState, balance: Balance, strategy: Strategy, pol
     t = exchangeTurn(t, balance, policy);
     if ((t.exchange?.positions.length ?? 0) > vorher) stats.marginBuys += t.exchange!.positions.some((x) => x.loan > 0) ? 1 : 0;
     s = endRound(t, balance, catalog, texts.kapitel3 ? { kapitel3: texts.kapitel3 } : {});
+    observe?.(t, s);
     stats.liquidations += s.exchange?.liquidated.length ?? 0;
   }
   return s;
@@ -360,7 +364,7 @@ function creditCount(s: GameState): number {
 }
 
 /** Eine Kampagne über Kapitel 1–3 mit einer Strategie. stance überschreibt die Haltung der Politik (Gegenprobe „Weg“). */
-export function playCampaign(seed: string, balance: Balance, strategy: Strategy, catalog: readonly EventDef[], texts: CampaignTexts, stance?: Stance, chapter1?: GameState): CampaignResult {
+export function playCampaign(seed: string, balance: Balance, strategy: Strategy, catalog: readonly EventDef[], texts: CampaignTexts, stance?: Stance, chapter1?: GameState, observe?: CampaignObserver): CampaignResult {
   const rng = new Rng(seedFromString(`${seed}:kampagne:${strategy}`));
   const basis = campaignPolicy(balance, strategy, rng);
   const policy: CampaignBotPolicy = stance ? { ...basis, stance } : basis;
@@ -390,7 +394,7 @@ export function playCampaign(seed: string, balance: Balance, strategy: Strategy,
       return ende(s, false);
     }
     const krisenVorher = creditCount(s);
-    s = playChapter(s, balance, strategy, policy, rng, catalog, texts, stats);
+    s = playChapter(s, balance, strategy, policy, rng, catalog, texts, stats, observe);
     const ergebnis = chapterResult(s, balance);
     const weiter = s.ending === 'kapitel';
     chapters.push({ chapter: kapitel, result: ergebnis, inJump: false, value: weiter ? empireValue(s, balance) : 0, creditCrisis: creditCount(s) > krisenVorher });

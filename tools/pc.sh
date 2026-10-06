@@ -24,11 +24,18 @@ case $cmd in
     bundle=nein
     if [ -n "$PC_REF" ]; then
       git fetch -q origin
-      git bundle create /tmp/crude-$name.bundle "origin/main..$PC_REF" 2>/dev/null
+      # Ein Bundle braucht einen Ref-Namen: Commit-Hash oder Zweig wird zum Hilfszweig pc-lauf/<name>.
+      git branch -f "pc-lauf/$name" "$PC_REF" >/dev/null || { echo "FEHLER: $PC_REF ist kein Commit/Zweig"; exit 1; }
+      PC_REF="pc-lauf/$name"
+      if [ "$(git rev-list --count "origin/main..$PC_REF")" = 0 ]; then
+        bundle=nein   # nichts über origin/main hinaus: der PC nimmt origin/main
+      else
+        git bundle create /tmp/crude-$name.bundle "origin/main..$PC_REF" || { echo "FEHLER: Bundle für $PC_REF ging nicht"; exit 1; }
       ssh pc "New-Item -ItemType Directory -Force \$env:USERPROFILE\\CRUDE-laeufe | Out-Null" >/dev/null
       scp -q /tmp/crude-$name.bundle "pc:CRUDE-laeufe/$name.bundle"
       rm -f /tmp/crude-$name.bundle
       bundle=ja
+      fi
     fi
     # Der Läufer: Stand holen, eigener Arbeitsordner, Befehl ausführen, Ausgabe ins Log, am Ende Exit-Code in .fertig.
     ssh pc "New-Item -ItemType Directory -Force \$env:USERPROFILE\\CRUDE-laeufe | Out-Null;

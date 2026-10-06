@@ -153,6 +153,17 @@ describe('Kampagne spielen (Kapitel 1 → Sprung I → Kapitel 2 → Sprung II �
     expect(r.stance).toBe('aggressive');
     expect(r1.stance).toBe(balance.bots.campaign.balanced.stance);
   });
+
+  it('der Beobachter sieht jede Runde von Kapitel 2 und 3, ohne das Ergebnis zu ändern', () => {
+    const runden: number[] = [];
+    const r = playCampaign('bot-5', balance, 'ausgewogen', catalog, texts, undefined, undefined, (vorher, nachher) => {
+      runden.push(vorher.round);
+      expect(nachher.round).toBeGreaterThanOrEqual(vorher.round);
+    });
+    expect(r).toEqual(r1);
+    expect(runden.length).toBe(2 * 16);
+    expect(new Set(runden).size).toBe(runden.length);
+  });
 });
 
 describe('Börse (Kapitel 3): exchangeTurn', () => {
