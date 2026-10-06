@@ -94,3 +94,95 @@ verdicts:
   schwere_strafe:
     de: "Schuldig – eine hohe Strafe und ein Zwangsverkauf."
     en: "Guilty – a heavy fine and a forced sale."
+
+texts:
+  tab_traces:
+    de: "Spuren"
+    en: "Traces"
+  tab_remedies:
+    de: "Gegenmittel"
+    en: "Countermeasures"
+  heat_label:
+    de: "Hitze:"
+    en: "Heat:"
+  severity_aria:
+    de: "Schwere {current} von {severity}"
+    en: "Severity {current} of {severity}"
+  evidence_none:
+    de: "Delaney hat nichts in der Hand."
+    en: "Delaney has nothing on you."
+  evidence_thin:
+    de: "Delaneys Akte ist noch dünn."
+    en: "Delaney's file is still thin."
+  evidence_thick:
+    de: "Delaneys Akte wird dick."
+    en: "Delaney's file is getting thick."
+  evidence_crushing:
+    de: "Delaneys Akte ist erdrückend."
+    en: "Delaney's file is overwhelming."
+  outlook_low:
+    de: "Ashby rechnet mit einem Freispruch."
+    en: "Ashby expects an acquittal."
+  outlook_mid:
+    de: "Ashby sagt: Das kann so oder so ausgehen."
+    en: "Ashby says: This could go either way."
+  outlook_high:
+    de: "Ashby sagt: Die Geschworenen werden uns nicht mögen."
+    en: "Ashby says: The jury isn't going to like us."
+  transferred:
+    de: "Delaney ist für eine Weile an einen anderen Fall gesetzt."
+    en: "Delaney has been put on another case for a while."
+  no_traces:
+    de: "Keine Spuren, die jemand finden könnte."
+    en: "No traces anyone could find."
+  witness_tag:
+    de: " – ein Zeuge"
+    en: " – a witness"
+  faded_tag:
+    de: " – verblasst"
+    en: " – faded"
+  closed_one:
+    de: "Erledigt: {n} Spur aus einem abgeschlossenen Fall."
+    en: "Settled: {n} trace from a closed case."
+  closed_many:
+    de: "Erledigt: {n} Spuren aus einem abgeschlossenen Fall."
+    en: "Settled: {n} traces from a closed case."
+  destroy_hint:
+    de: "Vernichten kann neue Spuren hinterlassen. Gekaufte Zeugen sind selbst eine Spur."
+    en: "Destroying can leave new traces. Bought witnesses are a trace themselves."
+  buy_witness:
+    de: "Zeugen kaufen ({kosten})"
+    en: "Buy the witness ({kosten})"
+  destroy:
+    de: "Vernichten ({kosten})"
+    en: "Destroy ({kosten})"
+  lawyer_title:
+    de: "Anwalt"
+    en: "Lawyer"
+  lawyer_line:
+    de: "Stufe {stufe} von {max} · {kosten} je Stufe und Runde"
+    en: "Level {stufe} of {max} · {kosten} per level and round"
+  lawyer_none:
+    de: "keiner"
+    en: "none"
+  delaney_title:
+    de: "Wenn Delaney ermittelt"
+    en: "When Delaney investigates"
+  scapegoat:
+    de: "Einen Sündenbock opfern (kostet Kraft)"
+    en: "Sacrifice a scapegoat (costs strength)"
+  pressure:
+    de: "Freunde in Hallstead anrufen ({preis})"
+    en: "Call friends in Hallstead ({preis})"
+  pressure_favors:
+    de: "{n} Gefallen"
+    en: "{n} favors"
+  friends_good:
+    de: "In Hallstead hat Jacob gerade Freunde."
+    en: "Jacob has friends in Hallstead right now."
+  friends_unsure:
+    de: "In Hallstead ist unsicher, wer zuhört."
+    en: "In Hallstead it's unclear who is listening."
+  friends_bad:
+    de: "Die Regierung in Hallstead mag keine Ölmänner."
+    en: "The government in Hallstead has no time for oilmen."

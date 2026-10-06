@@ -39,7 +39,61 @@ export interface StaffName {
   text: LocalizedText;
 }
 
+/** Feste Sätze der Personal-Fenster (Block „texts“ in content/staff.yaml). */
+export const STAFF_TEXT_KEYS = [
+  'tab_people',
+  'tab_policies',
+  'tab_orders',
+  'no_staff',
+  'dismiss',
+  'dismiss_question',
+  'dismiss_confirm',
+  'competence',
+  'competence_approx',
+  'wage_line',
+  'acts',
+  'since_now',
+  'since_one',
+  'since_n',
+  'service_line',
+  'record',
+  'drunk',
+  'recognized_done',
+  'recognize',
+  'nobody',
+  'payroll',
+  'applications',
+  'hire',
+  'refresh',
+  'journal_title',
+  'delegated_one',
+  'delegated_many',
+  'no_secretary',
+  'mail_title',
+  'mail_hint',
+  'spend_before',
+  'spend_after',
+  'apply',
+  'sales_title',
+  'sales_on',
+  'sales_min_before',
+  'sales_min_after',
+  'sales_each',
+  'sales_share',
+  'wages_title',
+  'wages_hint',
+  'heat_label',
+  'order_running',
+  'order_active',
+  'order',
+  'order_chance',
+  'report',
+  'report_round',
+] as const;
+export type StaffTextKey = (typeof STAFF_TEXT_KEYS)[number];
+
 export interface StaffContent {
+  texts: Record<StaffTextKey, LocalizedText>;
   roles: Record<StaffRole, { title: LocalizedText; text: LocalizedText }>;
   traits: Record<StaffTrait, Benannt>;
   loyalty: Record<LoyaltyWord, LocalizedText>;
@@ -65,7 +119,7 @@ export function parseStaffContent(file: string, text: string): { content: StaffC
   }
   const raw: unknown = doc.toJS();
   if (!istObjekt(raw)) {
-    fehler('Die Datei braucht „roles“, „traits“, „loyalty“, „heat“, „orders“, „intel“, „policies“ und „names“.');
+    fehler('Die Datei braucht „roles“, „traits“, „loyalty“, „heat“, „orders“, „intel“, „policies“, „names“ und „texts“.');
     return { content: null, errors };
   }
 
@@ -107,6 +161,7 @@ export function parseStaffContent(file: string, text: string): { content: StaffC
   const heat = block(raw.heat, 'heat', HEAT_WORDS, benannt);
   const orders = block(raw.orders, 'orders', FIXER_ORDERS, benannt);
   const intel = sprachtext(raw.intel, 'intel');
+  const texts = block(raw.texts, 'texts', STAFF_TEXT_KEYS, sprachtext);
   const pol = istObjekt(raw.policies) ? raw.policies : {};
   if (!istObjekt(raw.policies)) fehler('„policies“ fehlt.');
   const mail = block(pol.mail, 'policies.mail', MAIL_RULES, sprachtext);
@@ -125,7 +180,7 @@ export function parseStaffContent(file: string, text: string): { content: StaffC
     });
   });
   if (errors.length > 0) return { content: null, errors };
-  return { content: { roles, traits, loyalty, heat, orders, intel, policies: { mail, wage }, names }, errors };
+  return { content: { texts, roles, traits, loyalty, heat, orders, intel, policies: { mail, wage }, names }, errors };
 }
 
 /** Passen Inhalt und Spielzahlen zusammen? Je Stelle genau staff.namePool Namen, jede Lohnstufe mit Text. */

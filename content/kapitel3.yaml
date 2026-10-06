@@ -48,6 +48,7 @@ reasons:
 
 notes:
   freigeschaltet: { de: "Mahagoni statt Kiste: Harlan Oil ist ein Konzern.", en: "Mahogany instead of a crate: Harlan Oil is a company now." }
+  seismik_lizenz_gefallen: { de: "Lizenz für das Seismik-Patent über Gefallen erhalten ({gefallen} Gefallen eingelöst).", en: "Licence for the seismic patent obtained through favours ({gefallen} favours called in)." }
   seismik_lizenz: { de: "Lizenz für das Seismik-Patent erworben ({betrag}).", en: "Licence for the seismic patent acquired ({betrag})." }
   seismik_trupp: { de: "Ein weiterer Seismik-Trupp angeworben ({betrag}).", en: "Another seismic crew hired ({betrag})." }
   seismik_auftrag: { de: "Der Seismik-Trupp fährt auf {ranch} ({betrag}).", en: "The seismic crew heads for {ranch} ({betrag})." }
@@ -92,6 +93,7 @@ seismik:
       deceive too, and a dry hole is still possible. The Crane Trust holds the patent.
   stage: { de: "Technikstufe der Föderation", en: "Federation tech level" }
   license: { de: "Lizenz kaufen", en: "Buy licence" }
+  licenseFavors: { de: "Lizenz über Gefallen erhalten", en: "Obtain licence through favours" }
   licenseFree: { de: "Lizenz annehmen (für Mitglieder umsonst)", en: "Accept licence (free for members)" }
   crew: { de: "Weiteren Trupp anwerben", en: "Hire another crew" }
   order: { de: "Seismik-Trupp schicken", en: "Send seismic crew" }

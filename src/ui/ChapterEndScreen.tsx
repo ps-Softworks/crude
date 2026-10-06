@@ -13,7 +13,7 @@
 
 import { useEffect, useRef } from 'react';
 import { arcSummaries } from '../sim/arcs';
-import { canGoPublic, chapter2Check, chapter3Check, chapterBonuses, chapterCheck, chapterResult, fillText, ipoProceeds, type Chapter2EndingId } from '../sim/chapter';
+import { canGoPublic, chapter2Check, chapter3Check, chapterBonuses, chapterCheck, chapterResult, fillText, ipoConsequenceText, ipoProceeds, type Chapter2EndingId } from '../sim/chapter';
 import { chapterOf } from '../sim/chapterOf';
 import { debt } from '../sim/credit';
 import { empireValue } from '../sim/empire';
@@ -198,11 +198,17 @@ export function ChapterEndScreen({
                     <p>{fillText(ipo.text, {})}</p>
                     <div className="knoepfe">
                       {balance.chapter.ipo.shares.map((share) => (
-                        <button key={share} onClick={() => onIpo(share)}>
-                          {fillText(ipo.sell, { anteil: prozent(share), preis: money(ipoProceeds(game, balance, share)) })}
-                        </button>
+                        <div key={share}>
+                          <button onClick={() => onIpo(share)}>
+                            {fillText(ipo.sell, { anteil: prozent(share), preis: money(ipoProceeds(game, balance, share)) })}
+                          </button>
+                          <p className="klein">{ipoConsequenceText(game, balance, ipo, share)}</p>
+                        </div>
                       ))}
-                      <button onClick={() => onIpo(0)}>{fillText(ipo.keep, {})}</button>
+                      <div>
+                        <button onClick={() => onIpo(0)}>{fillText(ipo.keep, {})}</button>
+                        <p className="klein">{ipoConsequenceText(game, balance, ipo, 0)}</p>
+                      </div>
                     </div>
                   </>
                 ) : game.ipo !== null && game.ipo.share > 0 ? (

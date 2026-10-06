@@ -168,7 +168,7 @@ describe('Feldkauf: Angebot', () => {
   });
 });
 
-describe('Feldkauf der Bots (0.4.20+28)', () => {
+describe('Feldkauf der Bots (0.4.20+30)', () => {
   it('bietet offer × Preis für die Ranch mit dem besten Ölfluss je Dollar – nur mit Reserve und bis maxPrice × Ölfluss', () => {
     const { state, id } = mitBullard('bot-kauf');
     const q = buyoutQuote(state, balance, id)!;

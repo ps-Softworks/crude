@@ -42,6 +42,7 @@ import {
   waterDownLaw,
 } from './lobby';
 import { bankRateAdd, takeLoan } from './credit';
+import { newExchange } from './exchange';
 import { deserializeGame, serializeGame } from './save';
 import { loadBalance, rawBalance } from './testBalance';
 
@@ -607,5 +608,34 @@ describe('0.4.20+17: Provinzpolitik in Kapitel 2, Gewicht nach Firmengröße', (
     expect(r.lawInfluence.income_tax).toBeCloseTo(-0.25, 9);
     expect(r.lawWater).toEqual({ antitrust: 0.2 });
     expect(lawInfluence(newGame('k1', balance), balance, 1e9)).toEqual({ lawInfluence: {}, lawWater: {} });
+  });
+});
+
+describe('Hallstead: Bahn-/Autoaktien folgen der Börse (0.4.20+28)', () => {
+  function mitBoerse(g: GameState, verlauf: Record<string, number[]>): GameState {
+    const ex = newExchange('b', 1, balance.exchange);
+    return { ...g, exchange: { ...ex, history: { ...ex.history, ...verlauf } } };
+  }
+
+  it('Autoaktien: Wert folgt dem Sektorkurs (Motorwagen −20 % → −12 % bei Beta 0,6)', () => {
+    const b = bal(ruhig);
+    b.hallstead.holdings.kinds.auto.exchangeBeta = 0.6;
+    let g = ok(buyHolding(kapitel3('x1', 2_000_000, b), b, 'auto'));
+    g = settleHallstead(mitBoerse(mitWelt(g, { demand: 1 }), { motorwagen: [100, 80] }), b);
+    expect(g.hallstead!.holdings.positions.auto!.value).toBeCloseTo(b.hallstead.holdings.kinds.auto.price * 0.88, 2);
+  });
+
+  it('ohne offene Börse gilt nur das alte Modell', () => {
+    const b = bal(ruhig);
+    let g = ok(buyHolding(kapitel3('x2', 2_000_000, b), b, 'bahn'));
+    g = settleHallstead(mitWelt(g, { demand: 1 }), b);
+    expect(g.hallstead!.holdings.positions.bahn!.value).toBeCloseTo(b.hallstead.holdings.kinds.bahn.price, 2);
+  });
+
+  it('im Crash kein zweiter Einbruch, wenn der Kurs ihn schon trägt', () => {
+    const b = bal(ruhig);
+    let g = ok(buyHolding(kapitel3('x3', 2_000_000, b), b, 'bahn'));
+    g = settleHallstead(mitBoerse(mitWelt(g, { crash: 4 }), { thorne_bahn: [100, 100] }), b);
+    expect(g.hallstead!.holdings.positions.bahn!.value).toBeCloseTo(b.hallstead.holdings.kinds.bahn.price, 2);
   });
 });

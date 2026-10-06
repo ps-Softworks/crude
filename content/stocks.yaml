@@ -112,6 +112,25 @@ demands:
     de: "{name} verlangt, bis Runde {runde} mindestens {anzahl} neue Aktien auszugeben – „frisches Kapital für das Wachstum“."
     en: "{name} demands that at least {anzahl} new shares be issued by round {runde} – “fresh capital for growth”."
 
+# Folgen der Antwort auf eine Forderung, gerechnet aus balance.yaml (stocks.demands, stocks.board, stocks.thorne).
+# Platzhalter: {erfuellt} {still} {bruch} {abgelehnt} {malus} {kosten} {gewinn}.
+hints:
+  accept:
+    de: "Zusagen: Wird es bis zur Frist erfüllt, steigt seine Treue um {erfuellt}; wird die Zusage gebrochen, sinkt sie um {bruch}."
+    en: "Promise: if it is met by the deadline, his loyalty rises by {erfuellt}; if the promise is broken, it falls by {bruch}."
+  reject:
+    de: "Ablehnen (oder die Frist verstreichen lassen): seine Treue sinkt um {abgelehnt}. Ohne Zusage bringt eine trotzdem erfüllte Forderung nur +{still}."
+    en: "Refuse (or let the deadline pass): his loyalty falls by {abgelehnt}. Meeting the demand without a promise only earns +{still}."
+  rejectSpy:
+    de: "Ablehnen (oder die Frist verstreichen lassen): Thornes Zeitungen streuen Gerüchte, die Stimmung der Börse sinkt um {malus}."
+    en: "Refuse (or let the deadline pass): Thorne's papers spread rumors and the market sentiment falls by {malus}."
+  withdraw:
+    de: "Die Zusage zurückziehen kostet {bruch} Treue – wie ein Bruch."
+    en: "Withdrawing the promise costs {bruch} loyalty – the same as breaking it."
+  court:
+    de: "Ein Essen kostet {kosten} und bringt {gewinn} Treue – höchstens einmal je Runde, für einen einzigen Rat."
+    en: "A dinner costs {kosten} and earns {gewinn} loyalty – once per round at most, for a single member."
+
 # Wie ein Rat zu Jacob steht (nur Wörter, keine Zahl).
 moods:
   treu: { de: steht fest zu Jacob, en: firmly behind Jacob }

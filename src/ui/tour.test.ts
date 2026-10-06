@@ -1,6 +1,7 @@
 // 0.2.15+10: Der Rundgang zeigt nur auf Gegenstände, die es gibt.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { loadBalance } from '../sim/testBalance';
 import { parseTour, presentSteps, TOUR_PREF, TOUR_PREF_K2, TOUR_PREF_K3, tourAutoStart, tourFor } from './tour';
 
 const text = readFileSync(new URL('../../content/rundgang.yaml', import.meta.url), 'utf8');
@@ -66,5 +67,12 @@ describe('Rundgang Kapitel 3 (0.4.20+3)', () => {
   it('kommt in Kapitel 3 einmal von selbst, auch ohne Einstiegshilfe', () => {
     expect(tourAutoStart(3, false, false)).toBe(true);
     expect(tourAutoStart(3, false, true)).toBe(false);
+  });
+});
+
+describe('Rundgang Kapitel 2: Zahlen passen zu balance.yaml (0.4.20+29)', () => {
+  it('nennt die Baukosten der Raffinerie aus balance.yaml', () => {
+    const kosten = loadBalance().refinery.buildCost.toLocaleString('de-DE');
+    expect(textK2).toContain(`rund ${kosten} $`);
   });
 });

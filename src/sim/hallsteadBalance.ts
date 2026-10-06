@@ -31,6 +31,10 @@ export interface HoldingKindBalance {
   demandBeta: number;
   /** Zufällige Schwankung je Runde (± noise). */
   noise: number;
+  /** Börsenbezug (0.4.20+28): Börsensektor, dem die Beteiligung folgt (rail/auto), sonst null. */
+  exchangeSector: string | null;
+  /** Wertänderung je Anteil Kursänderung des Sektors in der letzten Runde (0 = folgt der Börse nicht). */
+  exchangeBeta: number;
   /** Einmaliger Wertverlust, wenn ein Crash beginnt. */
   crashDrop: number;
   /** Schlag aus heiterem Himmel: Feld versiegt (Land), Bankrun (Bank). */
@@ -138,6 +142,13 @@ function parseKind(raw: unknown, kind: HoldingKind): HoldingKindBalance {
     creditBeta: num(raw, `${p}.creditBeta`),
     demandBeta: num(raw, `${p}.demandBeta`),
     noise: share(raw, `${p}.noise`),
+    exchangeSector: ((): string | null => {
+      const v = get(raw, `${p}.exchangeSector`);
+      if (v === undefined || v === null) return null;
+      if (typeof v !== 'string' || !['rail', 'bank', 'oil', 'auto', 'steel'].includes(v)) throw new BalanceError(`balance.yaml: "${p}.exchangeSector" muss rail, bank, oil, auto oder steel sein`);
+      return v;
+    })(),
+    exchangeBeta: get(raw, `${p}.exchangeBeta`) === undefined ? 0 : num(raw, `${p}.exchangeBeta`),
     crashDrop: share(raw, `${p}.crashDrop`),
     shock: { chance: share(raw, `${p}.shock.chance`), drop: share(raw, `${p}.shock.drop`), crashOnly: bool(raw, `${p}.shock.crashOnly`) },
   };

@@ -155,6 +155,53 @@ cards:
       en: "Out of Thorne's exclusive contract – with a settlement and enough pressure that he accepts it."
     risk: { de: "Teuer. Ohne Druckmittel lacht Thorne nur.", en: "Expensive. Without leverage Thorne just laughs." }
 
+# Adressbuch (0.4.20+28): Stellen, die Jacob aufsuchen kann – Reihenfolge = Anzeige.
+# Jede Karte aus balance.yaml plans.cards steht bei genau einer Stelle (cards), feste
+# Termine ohne eigene Karte über ihr Ereignis (events). Was sonst nirgends steht, landet
+# bei der letzten Stelle.
+contacts:
+  geologen:
+    name: { de: "Geologen", en: "Geologists" }
+    who: { de: "Gutachter, Saloon-Kenner, Rutengänger", en: "Surveyors, saloon experts, dowsers" }
+    cards: [geologe_einstellen, geologe_hale, geologe_hallstead, geologe_besprechung, rute]
+  grundbesitzer:
+    name: { de: "Grundbesitzer", en: "Landowners" }
+    who: { de: "Farmer und Rancher am Salt Hill", en: "Farmers and ranchers at Salt Hill" }
+    cards: [farmer]
+  oelleute:
+    name: { de: "Andere Ölleute", en: "Other Oilmen" }
+    who: { de: "Bullard und die kleinen Förderer", en: "Bullard and the small producers" }
+    cards: [foerderbremse, pakt_halten, pakt_verlaengern, transportgemeinschaft, gemeinschaft_halten, bullard_einladen, zur_rede]
+    events: [termin_lohnbohren]
+  eisenbahn:
+    name: { de: "Eisenbahn", en: "Railway" }
+    who: { de: "Thorne Golfbahn · Augustus Thorne", en: "Thorne Gulf Railway · Augustus Thorne" }
+    cards: [thorne_vorsprechen, exklusiv_kuendigen]
+  crane:
+    name: { de: "Crane Trust", en: "Crane Trust" }
+    who: { de: "Kontor im Hafen · Cornelius Crane", en: "Harbour office · Cornelius Crane" }
+    cards: [crane_feilschen]
+  haendler:
+    name: { de: "Händler in Port Ellis", en: "Trader in Port Ellis" }
+    who: { de: "kauft unabhängig vom Trust", en: "buys independently of the Trust" }
+    cards: [liefervertrag]
+  fuhrleute:
+    name: { de: "Fuhrleute", en: "Teamsters" }
+    who: { de: "Brennan und seine Gespanne", en: "Brennan and his teams" }
+    cards: [brennan]
+  zeitung:
+    name: { de: "Zeitung", en: "Newspaper" }
+    who: { de: "der Courier und seine Zeilenschinder", en: "the Courier and its hacks" }
+    cards: [geruecht]
+  familie:
+    name: { de: "Familie", en: "Family" }
+    who: { de: "Ruth und die Kinder", en: "Ruth and the children" }
+    events: [termin_ruth, termin_familie, termin_familie_k2, termin_familie_k3, termin_kinder_k3, termin_sonntag]
+  selbst:
+    name: { de: "Selbst erledigen", en: "Do It Yourself" }
+    who: { de: "ohne Gesprächspartner", en: "no one to talk to" }
+    cards: [ritt, bohrbericht, tagebuch, feldinspektion]
+
 # Hinweise im Ranch-Fenster: was Jacob gesehen hat (seen) bzw. vergeblich gesucht (unseen).
 clues:
   sickerstelle:

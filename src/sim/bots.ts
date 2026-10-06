@@ -1127,7 +1127,7 @@ function randomTurn(state: GameState, balance: Balance, rng: Rng, ledger: Transp
  * beantwortet der Bot zuerst Ereignisse und nimmt feste Termine wahr.
  */
 /**
- * Feldkauf (0.4.20+28): Höchstens ein Angebot je Runde an Bullard – für die Ranch mit dem meisten Ölfluss je Dollar.
+ * Feldkauf (0.4.20+30): Höchstens ein Angebot je Runde an Bullard – für die Ranch mit dem meisten Ölfluss je Dollar.
  * Angebot = offer × Bullards Preis (auf den Schritt gerundet, im Reglerbereich); nur wenn es höchstens maxPrice ×
  * Ölfluss kostet und danach reserve $ in der Kasse bleiben. Annahme oder Ablehnung wie beim Spieler.
  */
@@ -1496,7 +1496,7 @@ export interface BotRow {
   traces: number;
   /** Anteil der Partien mit mindestens einer Spur. */
   dirtyGames: number;
-  /** Feldkauf (0.4.20+28): Ø Angebote an Bullard und Ø angenommene je Partie. */
+  /** Feldkauf (0.4.20+30): Ø Angebote an Bullard und Ø angenommene je Partie. */
   buyoutOffers?: number;
   buyouts?: number;
 }
@@ -1942,7 +1942,7 @@ export function transportTable(rows: readonly BotRow[]): string {
 }
 
 /** Wie oft lief eine Pipeline – je Strategie, in allen Partien und in denen mit Kapitelziel. */
-/** Feldkauf (0.4.20+28): Ø Angebote und Käufe je Partie und Strategie. */
+/** Feldkauf (0.4.20+30): Ø Angebote und Käufe je Partie und Strategie. */
 export function buyoutLine(rows: readonly BotRow[]): string {
   return rows.map((r) => `${r.strategy} ${zahl(r.buyoutOffers ?? 0, 2)} Angebote, ${zahl(r.buyouts ?? 0, 2)} Käufe`).join('; ');
 }

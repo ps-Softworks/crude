@@ -530,7 +530,7 @@ export interface BotsBalance {
   rightsEstimate: number;
   /** Wie die planenden Bots in Türme, Bohrlöcher und Pumpen investieren (0.2.15+7). */
   invest: Record<'cautious' | 'greedy' | 'balanced', BotInvest>;
-  /** Feldkauf (0.4.20+28): Angebot = offer × Bullards Preis, nur bis maxPrice × Ölfluss und mit reserve $ Rest. */
+  /** Feldkauf (0.4.20+30): Angebot = offer × Bullards Preis, nur bis maxPrice × Ölfluss und mit reserve $ Rest. */
   buyout: Record<'cautious' | 'greedy' | 'balanced', { offer: number; maxPrice: number; reserve: number }>;
   /**
    * Erkundung (Etappe 1): Solange der Bot weniger als known bezahlbare freie Ranches kennt, die
@@ -589,6 +589,8 @@ export interface CampaignBotPolicy {
    * Kasse darunter liegt. Fehlt/null: hält einfach durch.
    */
   feldzug?: { pact: boolean; loan: boolean; sellBelow: number; pactAfter?: number } | null;
+  /** Messvariante (0.4.20+28, nur per Balance-Änderung im Speicher, nicht in balance.yaml): stellt diese Rollen ein, sobald eine Bewerbung da ist. */
+  staff?: ('secretary' | 'fixer')[];
   /**
    * Schmutzige Hebel in Kapitel 2/3 (nur der betrügerische Bot, src/sim/campaignBots.ts dirtyTurn). Fehlt/null: keine.
    * fixer = stellt einen Sicherheitschef ein (keinen Gewissenhaften) und lässt bei Bullard sabotieren, solange die

@@ -8,7 +8,8 @@ import { answerInvitation } from './konsortium';
 import { newResearch } from './research';
 import { Rng } from './rng';
 import { addClues, explorableNeighbours, knowledgeForecast, knowledgeOf, posteriorChance } from './exploration';
-import { bestForecast, buyLicense, chapterTechStage, hireCrew, licenseCost, makeReport, orderSurvey, sizeClassOf, surveyBlocker, techStage, worldTechStage } from './seismik';
+import { bestForecast, buyLicense, buyLicenseWithFavors, chapterTechStage, hireCrew, licenseCost, makeReport, orderSurvey, sizeClassOf, surveyBlocker, techStage, worldTechStage } from './seismik';
+import { hallsteadOf } from './hallsteadState';
 import { loadBalance } from './testBalance';
 import { K3_TECH, k3Game, k3Round, ok, withK3, withTech } from './testKapitel3';
 
@@ -93,6 +94,18 @@ describe('Lizenz und Trupps', () => {
     expect(s.kapitel3!.seismik.license).toBe(true);
     expect(buyLicense(s, balance)).toEqual({ ok: false, reason: 'lizenz_da' });
     expect(buyLicense({ ...s0, cash: 10 }, balance)).toEqual({ ok: false, reason: 'geld' });
+  });
+
+  it('Lizenz über Gefallen: kostet licenseFavors statt Geld, nur mit genug Gefallen', () => {
+    const s0 = k3Game('lzg', balance);
+    expect(buyLicenseWithFavors(s0, balance)).toEqual({ ok: false, reason: 'kein_gefallen' });
+    const h = hallsteadOf(s0, balance);
+    const reich = { ...s0, hallstead: { ...h, lobby: { ...h.lobby, favors: S.licenseFavors + 1 } } };
+    const s = ok(buyLicenseWithFavors(reich, balance));
+    expect(s.cash).toBe(reich.cash);
+    expect(s.kapitel3!.seismik.license).toBe(true);
+    expect(s.hallstead!.lobby.favors).toBeCloseTo(1, 5);
+    expect(buyLicenseWithFavors(s, balance)).toEqual({ ok: false, reason: 'lizenz_da' });
   });
 
   it('Konsortium-Mitglieder bekommen die Lizenz umsonst', () => {

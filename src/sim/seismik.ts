@@ -21,6 +21,7 @@ import { addClues, knowledgeOf, posteriorChance, seismikForecast } from './explo
 import type { GameState } from './game';
 import type { Parcel } from './geology';
 import { begin, chapterOf, clamp, kapitel3Of, note, withRng, type Kapitel3Reason, type Kapitel3Result, type Kapitel3State, type SeismikReport, worldOf } from './kapitel3';
+import { availableFavors, spendFavors } from './lobby';
 import { techTier } from './research';
 import type { Rng } from './rng';
 
@@ -86,6 +87,24 @@ export function buyLicense(input: GameState, balance: Balance): Kapitel3Result {
   if (state.cash < cost) return { ok: false, reason: 'geld' };
   const next = note({ ...k3, seismik: { ...k3.seismik, license: true } }, { round: state.round, key: 'seismik_lizenz', vars: { betrag: cost } });
   return { ok: true, state: { ...state, cash: state.cash - cost, kapitel3: next } };
+}
+
+/**
+ * Lizenz über Gefallen statt Geld (0.4.20+28, Integration Punkt 7): Die Behörde erteilt die Genehmigung
+ * gegen `seismik.licenseFavors` Hallstead-Gefallen (spendFavors). Mitglieder bekommen sie ohnehin umsonst.
+ */
+export function buyLicenseWithFavors(input: GameState, balance: Balance): Kapitel3Result {
+  const b = begin(input, balance);
+  if (!b.ok) return b;
+  const { state, k3 } = b;
+  const n = balance.kapitel3.seismik.licenseFavors;
+  if (techStage(state, balance) < balance.kapitel3.seismik.stage) return { ok: false, reason: 'technik' };
+  if (k3.seismik.license) return { ok: false, reason: 'lizenz_da' };
+  if (n <= 0 || availableFavors(state) < n) return { ok: false, reason: 'kein_gefallen' };
+  const paid = spendFavors(state, balance, n);
+  if (!paid.ok) return { ok: false, reason: 'kein_gefallen' };
+  const next = note({ ...k3, seismik: { ...k3.seismik, license: true } }, { round: state.round, key: 'seismik_lizenz_gefallen', vars: { gefallen: n } });
+  return { ok: true, state: { ...paid.state, kapitel3: next } };
 }
 
 export function hireCrew(input: GameState, balance: Balance): Kapitel3Result {

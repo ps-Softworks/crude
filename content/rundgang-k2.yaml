@@ -15,8 +15,8 @@ schritte:
       en: The ledger (G) shows the chapter goal at the top and how far along you are. New, depending on how the company is set up – share register, board (it wants dividends) and bonds.
   - objekt: raffinerie
     text:
-      de: Die Raffinerie. Eine eigene Anlage (rund 150.000 $, 3 Runden Bau) macht aus Rohöl Kerosin, Heizöl und Benzin – mehr Geld je Barrel und ein Teil des Kapitelziels.
-      en: The refinery. A plant of your own (about $150,000, 3 rounds to build) turns crude into kerosene, fuel oil and gasoline – more money per barrel and part of the chapter goal.
+      de: Die Raffinerie. Eine eigene Anlage (rund 80.000 $, 3 Runden Bau, ausbaubar) macht aus Rohöl Kerosin, Heizöl und Benzin – mehr Geld je Barrel und ein Teil des Kapitelziels.
+      en: The refinery. A plant of your own (about $80,000, 3 rounds to build, expandable) turns crude into kerosene, fuel oil and gasoline – more money per barrel and part of the chapter goal.
   - objekt: fracht
     text:
       de: In der Frachtmappe gibt es jetzt den Reiter „Fernleitung“. Eine Leitung zum Hafen fährt an Thornes Bahn vorbei – der andere Weg zum Kapitelziel. Erst vermessen, dann Wegerechte kaufen, dann bauen.

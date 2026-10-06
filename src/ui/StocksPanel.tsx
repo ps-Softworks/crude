@@ -34,7 +34,7 @@ import {
   type StocksResult,
   type StocksState,
 } from '../sim/stocks';
-import { demandText, memberLabel, strawName } from '../sim/stocksContent';
+import { demandHints, demandText, memberLabel, strawName } from '../sim/stocksContent';
 import { localize } from '../sim/i18n';
 import { balance } from './balance';
 import { money, percent } from './format';
@@ -163,6 +163,7 @@ export function BoardPanel({ game, onChange, debug = false }: Props) {
   if (!s.public) return <p className="muted">Eine Familienfirma hat keinen Aufsichtsrat.</p>;
   const loyal = loyalSeats(s, balance);
   const forderer = s.demand ? s.board.find((m) => m.id === s.demand!.member) : undefined;
+  const hinweise = demandHints(stocksContent, balance, forderer?.agenda === 'spy');
   return (
     <div className="rat-panel">
       <Abgesetzt s={s} />
@@ -187,7 +188,7 @@ export function BoardPanel({ game, onChange, debug = false }: Props) {
           <p>{demandText(stocksContent, s.demand, memberLabel(stocksContent, forderer, revealed(s, forderer.since)).name)}</p>
           {s.demand.accepted ? (
             <div className="actions zeile">
-              <span className="klein">Jacob hat zugesagt – erfüllt bringt das mehr Treue, gebrochen kostet es mehr.</span>
+              <span className="klein">Jacob hat zugesagt. {hinweise.accept} {hinweise.withdraw}</span>
               <Aktion result={rejectDemand(game, balance)} onDone={onChange}>
                 Zusage zurückziehen (Wortbruch)
               </Aktion>
@@ -200,6 +201,9 @@ export function BoardPanel({ game, onChange, debug = false }: Props) {
               <Aktion result={rejectDemand(game, balance)} onDone={onChange}>
                 Ablehnen
               </Aktion>
+              <span className="klein">
+                {hinweise.accept} {hinweise.reject}
+              </span>
             </div>
           )}
         </div>
@@ -211,16 +215,39 @@ export function BoardPanel({ game, onChange, debug = false }: Props) {
           return (
             <li key={m.id}>
               <strong>{l.name}</strong>, {l.role} · {l.agenda} · {localize(stocksContent.moods[memberMood(m, balance)])}
-              {debug && <span className="muted"> · Treue {m.loyalty}</span>}{' '}
-              {m.agenda !== 'spy' && (
-                <Aktion result={courtMember(game, balance, m.id)} onDone={onChange}>
-                  {`zum Essen ausführen (${money(balance.stocks.board.courtCost)})`}
-                </Aktion>
-              )}
+              {debug && <span className="muted"> · Treue {m.loyalty}</span>}
             </li>
           );
         })}
       </ul>
+      <CourtForm game={game} onChange={onChange} hint={hinweise.court} />
+    </div>
+  );
+}
+
+/** Ein Knopf „zum Essen ausführen“ mit Auswahl des Rats (die Regel: höchstens einmal je Runde, nie Thornes Leute). */
+function CourtForm({ game, onChange, hint }: Props & { hint: string }) {
+  const s = game.stocks;
+  const kandidaten = s ? s.board.filter((m) => m.agenda !== 'spy') : [];
+  const [wahl, setWahl] = useState('');
+  if (!s || kandidaten.length === 0) return null;
+  const id = kandidaten.some((m) => m.id === wahl) ? wahl : kandidaten[0].id;
+  return (
+    <div className="regler-zeile">
+      <label>
+        <strong>Rat umstimmen</strong>{' '}
+        <select value={id} onChange={(e) => setWahl(e.target.value)}>
+          {kandidaten.map((m) => (
+            <option key={m.id} value={m.id}>
+              {memberLabel(stocksContent, m, revealed(s, m.since)).name}
+            </option>
+          ))}
+        </select>
+      </label>{' '}
+      <Aktion result={courtMember(game, balance, id)} onDone={onChange}>
+        {`zum Essen ausführen (${money(balance.stocks.board.courtCost)})`}
+      </Aktion>
+      <p className="klein">{hint}</p>
     </div>
   );
 }

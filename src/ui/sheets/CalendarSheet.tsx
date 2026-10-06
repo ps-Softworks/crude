@@ -1,27 +1,25 @@
-// Fenster „Termine“ (T) – seit Etappe 1 das Planungsbrett: oben die Termine der
-// Runde als Tagesfelder Mo–Fr und zwei rote Nachtfelder (Überstunden kosten Kraft),
-// darunter die Kartenhand mit den Reitern Land · Markt · Fracht · Leute. Jede Karte
-// zeigt Termine, Geld, ob sie Kraft kostet, und ihr Risiko in Worten; gesperrte
-// Karten nennen ihren Grund. Was eine Karte geht und tut, sagt nur planView/bookCard
-// aus src/sim/plans.ts – hier wird nichts gerechnet.
+// Fenster „Termine“ (T) – seit 0.4.20+28 ein Adressbuch: links die Stellen, die Jacob
+// aufsuchen kann (Bank, Eisenbahn, Geologen …, Zuordnung in content/plans.yaml
+// contacts), rechts nur die Angebote der gewählten Stelle. Ein Angebot zeigt zuerst
+// Name, Kosten und Knopf; Text, Risiko und Ziel erst aufgeklappt. Oben steht nur noch,
+// wie viele Termine frei sind und was gebucht ist (zurücknehmbar). Was eine Karte geht
+// und tut, sagt nur planView/bookCard aus src/sim/plans.ts – hier wird nichts gerechnet.
 
 import { useState } from 'react';
 import { agendaView } from '../../sim/agenda';
 import { formatDate } from '../../sim/game';
 import { localize } from '../../sim/i18n';
+import { contactOf } from '../../sim/planContent';
 import { bookCard, planView, unbookCard, type PlanCardView, type PlanSlot } from '../../sim/plans';
-import { PLAN_TABS } from '../../sim/plansBalance';
 import { chapterRound, chapterRounds } from '../../sim/timeskip';
 import { balance } from '../balance';
 import { events } from '../events';
 import { money } from '../format';
 import { cardText, levelLabel, planContent } from '../plans';
 import { Termine } from '../scene/TopBar';
-import { Tabs, activeTab } from '../sheet/Tabs';
+import { readPref, writePref } from '../storage';
 import type { SheetContext } from './types';
 import './plans.css';
-
-const TAGE = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 
 function slotLabel(slot: PlanSlot, game: SheetContext['game']): string {
   if (slot.kind === 'frei') return '';
@@ -31,16 +29,27 @@ function slotLabel(slot: PlanSlot, game: SheetContext['game']): string {
   return ranch ? `${titel} · ${ranch}` : titel;
 }
 
-function Kosten({ card }: { card: PlanCardView }) {
+function kosten(card: PlanCardView): string {
   const teile = [card.appointments === 1 ? '1 Termin' : `${card.appointments} Termine`];
   if (card.cash > 0) teile.push(card.id === 'bohrbericht' ? `ab ${money(card.cash)}` : money(card.cash));
   if (card.strength < 0) teile.push('kostet Kraft');
   if (card.strength > 0) teile.push('tut gut');
-  teile.push(card.timing === 'sofort' ? 'wirkt sofort' : 'wirkt am Rundenende');
-  return <p className="karte-kosten">{teile.join(' · ')}</p>;
+  return teile.join(' · ');
 }
 
-function Karte({ card, ctx, onFehler }: { card: PlanCardView; ctx: SheetContext; onFehler: (text: string | null) => void }) {
+function Angebot({
+  card,
+  ctx,
+  offen,
+  onToggle,
+  onFehler,
+}: {
+  card: PlanCardView;
+  ctx: SheetContext;
+  offen: boolean;
+  onToggle: () => void;
+  onFehler: (text: string | null) => void;
+}) {
   const text = cardText(card);
   const moeglich = card.targets.filter((t) => t.ok);
   const optionen = card.options.filter((o) => o.ok);
@@ -56,6 +65,7 @@ function Karte({ card, ctx, onFehler }: { card: PlanCardView; ctx: SheetContext;
           : (optionen[0]?.id ?? '')
         : undefined;
   const gesperrt = card.reason !== null;
+  const mitWahl = card.target === 'ranch' || card.target === 'option';
   function buchen() {
     const r = bookCard(ctx.game, balance, events, card.id, gewaehlt || undefined);
     if (r.ok) {
@@ -63,52 +73,72 @@ function Karte({ card, ctx, onFehler }: { card: PlanCardView; ctx: SheetContext;
       ctx.onGame(r.state);
     } else onFehler(r.reason);
   }
+  const knopf = (
+    <button type="button" onClick={buchen} disabled={mitWahl && !gewaehlt}>
+      {card.timing === 'sofort' ? 'Hingehen' : 'Vereinbaren'}
+    </button>
+  );
   return (
-    <article className={`planskarte${gesperrt ? ' gesperrt' : ''}`} aria-disabled={gesperrt}>
-      <h4>{text.title}</h4>
-      <Kosten card={card} />
-      {text.text && <p className="karte-text">{text.text}</p>}
-      {text.risk && <p className="karte-risiko">Risiko: {text.risk}</p>}
-      {card.detail && <p className="karte-lage">{card.detail}</p>}
-      {card.warning && <p className="karte-warnung">{card.warning}</p>}
-      {gesperrt ? (
-        <p className="karte-grund">{card.reason}</p>
-      ) : (
-        <div className="karte-buchen">
-          {card.target === 'ranch' && (
-            <label>
-              Ranch{' '}
-              <select value={gewaehlt} onChange={(e) => setZiel(e.target.value)}>
-                {card.targets.map((t) => (
-                  <option key={t.parcelId} value={t.parcelId} disabled={!t.ok} title={t.reason}>
-                    {t.label} ({levelLabel(t.level as 0 | 1 | 2 | 3)} · {t.detail})
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          {card.target === 'option' && (
-            <label>
-              <select value={gewaehlt} onChange={(e) => setZiel(e.target.value)} aria-label="Möglichkeit">
-                {card.options.map((o) => (
-                  <option key={o.id} value={o.id} disabled={!o.ok} title={o.reason}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          <button type="button" onClick={buchen} disabled={(card.target === 'ranch' || card.target === 'option') && !gewaehlt}>
-            Buchen
-          </button>
-          {card.target === 'ranch' && gewaehlt && (
-            <button type="button" className="link" onClick={() => ctx.showOnMap(gewaehlt)}>
-              auf der Karte zeigen
-            </button>
+    <li className={`angebot${gesperrt ? ' gesperrt' : ''}${offen ? ' offen' : ''}`}>
+      <div className="angebot-zeile">
+        <button type="button" className="angebot-name" aria-expanded={offen} onClick={onToggle}>
+          <span className="pfeil" aria-hidden>
+            {offen ? '▾' : '▸'}
+          </span>
+          {text.title}
+        </button>
+        <span className="angebot-kosten">{kosten(card)}</span>
+        {!gesperrt && !mitWahl && !offen && knopf}
+      </div>
+      {gesperrt && <p className="angebot-grund">{card.reason}</p>}
+      {!gesperrt && card.warning && <p className="karte-warnung">{card.warning}</p>}
+      {offen && (
+        <div className="angebot-mehr">
+          {text.text && <p>{text.text}</p>}
+          {text.risk && <p className="karte-risiko">Risiko: {text.risk}</p>}
+          {card.detail && <p className="karte-lage">{card.detail}</p>}
+          <p className="karte-lage">{card.timing === 'sofort' ? 'Wirkt sofort.' : 'Ergebnis am Rundenende.'}</p>
+          {!gesperrt && (
+            <div className="karte-buchen">
+              {card.target === 'ranch' && (
+                <label>
+                  Ranch{' '}
+                  <select value={gewaehlt} onChange={(e) => setZiel(e.target.value)}>
+                    {card.targets.map((t) => (
+                      <option key={t.parcelId} value={t.parcelId} disabled={!t.ok} title={t.reason}>
+                        {t.label} ({levelLabel(t.level as 0 | 1 | 2 | 3)} · {t.detail})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {card.target === 'option' && (
+                <label>
+                  <select value={gewaehlt} onChange={(e) => setZiel(e.target.value)} aria-label="Möglichkeit">
+                    {card.options.map((o) => (
+                      <option key={o.id} value={o.id} disabled={!o.ok} title={o.reason}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {knopf}
+              {card.target === 'ranch' && gewaehlt && (
+                <button type="button" className="link" onClick={() => ctx.showOnMap(gewaehlt)}>
+                  auf der Karte zeigen
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}
-    </article>
+      {!offen && !gesperrt && mitWahl && (
+        <button type="button" className="link angebot-waehlen" onClick={onToggle}>
+          {card.target === 'ranch' ? 'Ranch wählen …' : 'Bedingungen wählen …'}
+        </button>
+      )}
+    </li>
   );
 }
 
@@ -117,75 +147,114 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
   const t = agendaView(game, balance);
   const v = planView(game, balance, events);
   const [fehler, setFehler] = useState<string | null>(null);
-  // Reiter ohne jede Karte (z. B. Markt und Fracht ab Kapitel 2) blendet das Brett aus (0.4.19+2);
-  // Land und Leute bleiben immer stehen.
-  const tabs = PLAN_TABS.filter((id) => id === 'land' || id === 'leute' || v.cards.some((c) => c.tab === id)).map((id) => {
-    const n = v.cards.filter((c) => c.tab === id && c.reason === null).length;
-    return { id, label: localize(planContent.tabs[id]), badge: n > 0 ? String(n) : undefined };
-  });
-  const tab = activeTab('termine', tabs, ctx.tab);
-  const hand = v.cards.filter((c) => c.tab === tab).sort((a, b) => Number(a.reason !== null) - Number(b.reason !== null));
-  let tag = 0;
+  const [offen, setOffen] = useState<string | null>(null);
+  const stelleVon = new Map(v.cards.map((c) => [c.id, contactOf(planContent, c)]));
+  // Nur Stellen, bei denen gerade überhaupt etwas liegt (ab Kapitel 2 fallen Markt und Fracht weg).
+  const stellen = planContent.contacts
+    .filter((k) => v.cards.some((c) => stelleVon.get(c.id) === k.id))
+    .map((k) => ({ ...k, frei: v.cards.filter((c) => stelleVon.get(c.id) === k.id && c.reason === null).length }));
+  // Verlangt (ctx.tab), sonst zuletzt gewählt, sonst die erste Stelle, bei der etwas geht.
+  const gibt = (id: string | null | undefined): id is string => !!id && stellen.some((k) => k.id === id);
+  const gemerkt = readPref('crude.reiter.termine');
+  const aktiv = gibt(ctx.tab) ? ctx.tab : gibt(gemerkt) ? gemerkt : (stellen.find((k) => k.frei > 0) ?? stellen[0])?.id ?? null;
+  const stelle = stellen.find((k) => k.id === aktiv);
+  const hand = v.cards
+    .filter((c) => stelleVon.get(c.id) === aktiv)
+    .sort((a, b) => Number(a.reason !== null) - Number(b.reason !== null));
+  const gebucht = v.slots.map((s, i) => ({ s, i })).filter(({ s }) => s.kind !== 'frei');
+  function waehle(id: string) {
+    writePref('crude.reiter.termine', id);
+    ctx.onTab(id);
+    setOffen(null);
+  }
   return (
     <>
-      <p className="kalender-kopf">
+      <div className="adress-kopf">
         <strong>
           {formatDate(game)} · Runde {chapterRound(game)} von {chapterRounds(game)}
         </strong>
-        <br />
-        <Termine game={game} debug={ctx.debug} lang />
-      </p>
+        <Termine game={game} debug={ctx.debug} />
+      </div>
+      {gebucht.length > 0 && (
+        <ul className="gebucht" aria-label="Diese Woche gebucht">
+          {gebucht.map(({ s, i }) => {
+            const label = slotLabel(s, game);
+            return (
+              <li key={i} className={`gebucht-eintrag ${s.kind}${s.overtime ? ' nacht' : ''}`}>
+                {s.overtime && <span title="Überstunde – kostet Kraft">Nacht: </span>}
+                {label}
+                {s.undo !== undefined && (
+                  <button
+                    type="button"
+                    className="link"
+                    aria-label={`${label} zurücknehmen`}
+                    title="zurücknehmen"
+                    onClick={() => {
+                      const r = unbookCard(game, balance, s.undo!);
+                      if (r.ok) ctx.onGame(r.state);
+                      else setFehler(r.reason);
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
       {!game.finished && t.sickRounds > 0 && (
         <p className="krankmeldung">
           Jacob liegt krank im Bett{t.sickRounds > 1 ? ` – noch ${t.sickRounds} Runden` : ' – diese Runde noch'}. Keine Termine: Ereignisse
           und Briefe bekommen ihre Standardantwort.
         </p>
       )}
-      <ol className="brett-tage" aria-label="Termine dieser Runde">
-        {v.slots.map((s, i) => {
-          const name = s.overtime ? 'Nacht' : (TAGE[tag++] ?? '');
-          const label = slotLabel(s, game);
-          return (
-            <li key={i} className={`brett-feld ${s.kind}${s.overtime ? ' nacht' : ''}`} title={s.overtime ? 'Überstunde – kostet Kraft' : undefined}>
-              <span className="brett-tag">{name}</span>
-              <span className="brett-inhalt">{label || (s.overtime ? 'frei (kostet Kraft)' : 'frei')}</span>
-              {s.undo !== undefined && (
-                <button
-                  type="button"
-                  className="link"
-                  aria-label={`${label} zurücknehmen`}
-                  onClick={() => {
-                    const r = unbookCard(game, balance, s.undo!);
-                    if (r.ok) ctx.onGame(r.state);
-                    else setFehler(r.reason);
-                  }}
-                >
-                  zurücknehmen
-                </button>
-              )}
-            </li>
-          );
-        })}
-      </ol>
       {fehler && (
         <p className="fehler" role="alert">
           {fehler}
         </p>
       )}
-      {/* 0.4.19+3: Ergebnisse oben statt unter allen Karten – sonst sah man nach einem Ritt nicht, was er gebracht hat. */}
-      <Wochenbericht report={v.report} />
-      <Tabs sheet="termine" tabs={tabs} active={tab} onChange={ctx.onTab}>
-        {tab === 'land' && <GeologenAkte game={game} />}
-        {hand.length === 0 ? (
-          <p className="muted leer">In diesem Reiter liegt gerade keine Karte.</p>
-        ) : (
-          <div className="brett-hand">
-            {hand.map((c) => (
-              <Karte key={c.id} card={c} ctx={ctx} onFehler={setFehler} />
-            ))}
-          </div>
-        )}
-      </Tabs>
+      {/* Ergebnisse der Sofort-Karten gleich sehen (0.4.19+3); der volle Wochenbericht steht im Rundenbericht. */}
+      {v.report.length > 0 && <Wochenbericht report={v.report} />}
+      <div className="adressbuch">
+        <nav className="stellen" aria-label="Wen aufsuchen?">
+          {stellen.map((k) => (
+            <button
+              key={k.id}
+              type="button"
+              className={`stelle-knopf${k.id === aktiv ? ' aktiv' : ''}${k.frei === 0 ? ' leer' : ''}`}
+              aria-current={k.id === aktiv ? 'true' : undefined}
+              onClick={() => waehle(k.id)}
+            >
+              <span className="stelle-name">{localize(k.name)}</span>
+              {k.frei > 0 && <span className="stelle-zahl">{k.frei}</span>}
+            </button>
+          ))}
+        </nav>
+        <section className="stelle-seite" aria-label={stelle ? localize(stelle.name) : undefined}>
+          {stelle ? (
+            <>
+              <h3>{localize(stelle.name)}</h3>
+              <p className="stelle-wer">{localize(stelle.who)}</p>
+              {stelle.id === 'geologen' && <GeologenAkte game={game} />}
+              <ul className="angebote">
+                {hand.map((c) => (
+                  <Angebot
+                    key={c.id}
+                    card={c}
+                    ctx={ctx}
+                    offen={offen === c.id}
+                    onToggle={() => setOffen(offen === c.id ? null : c.id)}
+                    onFehler={setFehler}
+                  />
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p className="muted leer">Gerade gibt es niemanden aufzusuchen.</p>
+          )}
+        </section>
+      </div>
     </>
   );
 }

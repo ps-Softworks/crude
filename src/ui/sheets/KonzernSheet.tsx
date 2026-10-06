@@ -8,7 +8,7 @@ import { kapitel3Of, previewKapitel3, type Kapitel3Result, type Kapitel3State } 
 import { kapitel3Pending } from '../../sim/kapitel3View';
 import { answerFavor, answerInvitation, acceptRescue, favorChoices, invitationOpen, rescueAvailable, trustWord, type InvitationChoice } from '../../sim/konsortium';
 import { declineProject, joinProject, projectDef } from '../../sim/projekte';
-import { busyCrews, buyLicense, hireCrew, licenseCost, techStage } from '../../sim/seismik';
+import { busyCrews, buyLicense, buyLicenseWithFavors, hireCrew, licenseCost, techStage } from '../../sim/seismik';
 import { arrangeMarriage, breakOrder, donate, joinClub, standStatus } from '../../sim/stand';
 import { parcelLabel } from '../../sim/lease';
 import { balance } from '../balance';
@@ -43,6 +43,7 @@ function SeismikTab({ ctx, k }: { ctx: SheetContext; k: Kapitel3State }) {
   const stufe = techStage(game, balance);
   const kosten = licenseCost(k, balance);
   const lizenz = buyLicense(game, balance);
+  const lizenzGefallen = buyLicenseWithFavors(game, balance);
   const trupp = hireCrew(game, balance);
   const berichte = Object.values(k.seismik.reports).sort((a, b) => b.round - a.round);
   return (
@@ -58,6 +59,11 @@ function SeismikTab({ ctx, k }: { ctx: SheetContext; k: Kapitel3State }) {
               {kosten === 0 ? t(k3.seismik.licenseFree) : `${t(k3.seismik.license)} (${money(kosten)})`}
             </Aktion>
             <Grund result={lizenz} />
+            {kosten > 0 && B.seismik.licenseFavors > 0 && (
+              <Aktion result={lizenzGefallen} onGame={onGame}>
+                {`${t(k3.seismik.licenseFavors)} (${B.seismik.licenseFavors})`}
+              </Aktion>
+            )}
           </>
         )}
         {k.seismik.license && (

@@ -17,6 +17,7 @@ import {
   fillText,
   ipoProceeds,
   ownShare,
+  ipoConsequenceText,
   parseChapterContent,
   type ChapterContent,
 } from './chapter';
@@ -239,5 +240,25 @@ describe('Spielstand', () => {
   it('kaputte Entscheidung wird abgelehnt', () => {
     const s = { ...newGame('kaputt', balance), ipo: { share: 2, proceeds: 0 } };
     expect(deserializeGame(JSON.stringify({ format: 9, appVersion: 'x', savedRound: 1, state: s })).ok).toBe(false);
+  });
+});
+
+describe('Börsengang-Brief: Folgen je Wahl', () => {
+  it('nennt Sitze, Fristen, Thorne-Schwelle und Kontrollgrenze aus balance.yaml', () => {
+    const c = content().ipo;
+    const g = letzteRunde(100000, 8);
+    const B = balance.stocks;
+    for (const share of balance.chapter.ipo.shares) {
+      const text = ipoConsequenceText(g, balance, c, share, 'de');
+      const sitze = Math.min(B.board.seatsMax, Math.max(B.board.seatsMin, B.board.seatsBase + Math.round(share * B.board.seatsPerShare)));
+      expect(text).toContain(`${sitze} Sitze`);
+      expect(text).toContain(`${B.demands.dueRounds} Runden Frist`);
+      expect(text).toContain(`Nach ${B.dividend.graceRounds} Runden ohne Dividende`);
+      expect(text).toContain(`${Math.round(B.thorne.minOutside * 100)} %`);
+      expect(text).toContain(`${Math.round(share * 100)} %`);
+      expect(text).toContain(share >= B.thorne.minOutside ? 'kann über Strohmänner einsteigen' : 'erst einsteigen');
+      expect(text).not.toMatch(/\{\w+\}/);
+    }
+    expect(ipoConsequenceText(g, balance, c, 0, 'de')).toContain('keine Anleger');
   });
 });

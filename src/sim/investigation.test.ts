@@ -20,6 +20,7 @@ import {
   investigationView,
   parseInvestigationBalance,
   parseInvestigationContent,
+  SHADOW_TEXT_KEYS,
   pressureChance,
   sacrificeScapegoat,
   setLawyer,
@@ -502,7 +503,7 @@ describe('Ermittler – Inhalte und Spielzahlen', () => {
   it('meldet fehlende Texte und unbekannte Stufen', () => {
     const { errors } = parseInvestigationContent('x', 'traces: {}\nstages: { ruhe: { de: "a" }, galgen: { de: "b" } }\nheat: {}\nverdicts: {}');
     expect(errors.length).toBeGreaterThan(3);
-    const leer = parseInvestigationContent('x', 'traces: {}\nstages: { ruhe: { de: a }, geruecht: { de: a }, vorermittlung: { de: a }, anklage: { de: a }, abgeschlossen: { de: a } }\nheat: { kuehl: { de: a }, warm: { de: a }, heiss: { de: a }, gluehend: { de: a } }\nverdicts: { eingestellt: { de: a }, freispruch: { de: a }, vergleich: { de: a }, geldstrafe: { de: a }, schwere_strafe: { de: a } }');
+    const leer = parseInvestigationContent('x', 'traces: {}\nstages: { ruhe: { de: a }, geruecht: { de: a }, vorermittlung: { de: a }, anklage: { de: a }, abgeschlossen: { de: a } }\nheat: { kuehl: { de: a }, warm: { de: a }, heiss: { de: a }, gluehend: { de: a } }\nverdicts: { eingestellt: { de: a }, freispruch: { de: a }, vergleich: { de: a }, geldstrafe: { de: a }, schwere_strafe: { de: a } }\ntexts: { ' + SHADOW_TEXT_KEYS.map((k) => `${k}: { de: a }`).join(', ') + ' }');
     expect(leer.errors).toEqual([]);
     expect(checkInvestigationContent('x', leer.content!, balance, loadEvents()).length).toBeGreaterThan(0);
   });
