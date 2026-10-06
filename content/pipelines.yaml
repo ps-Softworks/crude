@@ -83,3 +83,191 @@ letters:
     default:
       de: "{owner} hat Besuch von Jacobs Männern bekommen. Am nächsten Morgen liegt das unterschriebene Wegerecht über {ranch} auf dem Schreibtisch."
       en: "{owner} had a visit from Jacob's men. The next morning the signed right of way across {ranch} lies on the desk."
+
+# Oberfläche des Reiters „Fernleitung“ (src/ui/sheets/TrunkPipelineTab.tsx).
+# Platzhalter in geschweiften Klammern; Beträge und Zahlen setzt der Code ein.
+# Jeder Schlüssel braucht de; en darf vorerst fehlen (dann steht Deutsch da).
+ui:
+  noProjects:
+    de: "Fernleitungen gibt es erst ab Kapitel 2."
+    en: "Trunk pipelines only exist from chapter 2."
+  sketchLabel:
+    de: "Skizze der Trasse"
+    en: "Sketch of the route"
+  statusOpen:
+    de: "offen"
+    en: "open"
+  statusAsked:
+    de: "Angebot beim Notar"
+    en: "offer with the notary"
+  statusGranted:
+    de: "unterschrieben"
+    en: "signed"
+  statusRefused:
+    de: "abgelehnt"
+    en: "refused"
+  statusHoldout:
+    de: "stellt sich quer"
+    en: "digs in"
+  statusDetour:
+    de: "Umweg"
+    en: "detour"
+  statusExpropriated:
+    de: "enteignet"
+    en: "expropriated"
+  statusCourt:
+    de: "vor Gericht"
+    en: "in court"
+  ownLand:
+    de: "eigenes Land"
+    en: "own land"
+  demands:
+    de: " – verlangt {amount}"
+    en: " – demands {amount}"
+  verdict:
+    de: " – Urteil Ende Runde {round}"
+    en: " – verdict at the end of round {round}"
+  offerLow:
+    de: "niedrig {amount}"
+    en: "low {amount}"
+  offerFair:
+    de: "fair {amount}"
+    en: "fair {amount}"
+  offerGenerous:
+    de: "großzügig {amount}"
+    en: "generous {amount}"
+  chanceGood:
+    de: "gute Aussicht"
+    en: "good prospects"
+  chanceUnsure:
+    de: "ungewiss"
+    en: "uncertain"
+  chancePoor:
+    de: "kaum Aussicht"
+    en: "hardly any prospect"
+  chanceAtFair:
+    de: "{chance} bei fairem Angebot"
+    en: "{chance} with a fair offer"
+  miles:
+    de: "{n} Meilen"
+    en: "{n} miles"
+  roundOne:
+    de: "Runde"
+    en: "round"
+  roundMany:
+    de: "Runden"
+    en: "rounds"
+  planTitle:
+    de: "Neue Trasse planen"
+    en: "Plan a new route"
+  from:
+    de: "Von"
+    en: "From"
+  to:
+    de: "nach"
+    en: "to"
+  fromSmall:
+    de: "an die kleine Pipeline anschließen"
+    en: "connect to the small pipeline"
+  fromSmallLocked:
+    de: "Erst mit der kleinen Pipeline aus Kapitel 1."
+    en: "Only with the small pipeline from chapter 1."
+  planSummary:
+    de: "{miles} · Vermessung {survey} · Bau {build} in {rounds} {roundWord} · {open} Wegerechte offen (fair etwa {rights})"
+    en: "{miles} · survey {survey} · construction {build} in {rounds} {roundWord} · {open} rights of way open (fair about {rights})"
+  hintBypass:
+    de: "Am Hafen vorbei an Thornes Bahn: billig durch die eigene Leitung. Thorne wird den Tarif senken müssen – und sich wehren."
+    en: "Past Thorne's railway to the harbor: cheap through your own line. Thorne will have to cut his rate – and fight back."
+  hintRail:
+    de: "Das Öl bleibt auf Thornes Gleisen: mehr Platz auf der Bahn, aber jedes Barrel zahlt seinen Tarif. Er hat keinen Grund, nachzugeben."
+    en: "The oil stays on Thorne's rails: more room on the railway, but every barrel pays his rate. He has no reason to give way."
+  survey:
+    de: "Trasse vermessen ({amount})"
+    en: "Survey the route ({amount})"
+  benefitGain:
+    de: "Spart bei heutiger Förderung etwa {gain} je Runde – bezahlt in etwa {n} {roundWord}."
+    en: "Saves about {gain} per round at today's output – paid off in about {n} {roundWord}."
+  benefitNone:
+    de: "Lohnt bei heutiger Förderung nicht."
+    en: "Not worth it at today's output."
+  pay:
+    de: "Zahlen ({amount})"
+    en: "Pay ({amount})"
+  detour:
+    de: "Umweg (+{miles})"
+    en: "Detour (+{miles})"
+  sue:
+    de: "Klagen ({amount})"
+    en: "Sue ({amount})"
+  expropriate:
+    de: "Enteignen lassen"
+    en: "Have it expropriated"
+  projectTitle:
+    de: "Fernleitung zum {destination}"
+    en: "Trunk pipeline to {destination}"
+  rightsOpenOne:
+    de: "Noch {n} Wegerecht offen."
+    en: "{n} right of way still open."
+  rightsOpenMany:
+    de: "Noch {n} Wegerechte offen."
+    en: "{n} rights of way still open."
+  rightsDone:
+    de: "Alle Wegerechte sind geklärt."
+    en: "All rights of way are settled."
+  buildCost:
+    de: "Bau {amount}."
+    en: "Construction {amount}."
+  building:
+    de: "Im Bau – noch {n} {roundWord}."
+    en: "Under construction – {n} {roundWord} to go."
+  readyHarbor:
+    de: "Läuft: bis {capacity} Barrel je Runde über den Weg „Pipeline“."
+    en: "Running: up to {capacity} barrels per round via the “pipeline” route."
+  readyRail:
+    de: "Läuft: bis {capacity} Barrel je Runde mehr auf dem Weg „Bahn“ – zu Thornes Tarif."
+    en: "Running: up to {capacity} barrels more per round on the “rail” route – at Thorne's rate."
+  damaged:
+    de: "Sabotiert – wird repariert, noch {n} {roundWord}."
+    en: "Sabotaged – being repaired, {n} {roundWord} to go."
+  startBuild:
+    de: "Bau beginnen ({amount})"
+    en: "Start construction ({amount})"
+  abandon:
+    de: "Trasse aufgeben"
+    en: "Abandon the route"
+  guardsOff:
+    de: "Wachleute abziehen"
+    en: "Withdraw the guards"
+  guardsOn:
+    de: "Wachleute anstellen ({amount} je Runde)"
+    en: "Hire guards ({amount} per round)"
+  sabotageRisk:
+    de: "Sabotage-Risiko je Runde: {percent}."
+    en: "Sabotage risk per round: {percent}."
+  tariffLine:
+    de: "Thornes Bahntarif {tariff} je bbl"
+    en: "Thorne's rail rate {tariff} per bbl"
+  pressureFull:
+    de: "voll"
+    en: "full"
+  pressurePartial:
+    de: "teilweise"
+    en: "partial"
+  pressureLine:
+    de: " · Thorne steht unter Druck ({level}) und hat schon {cut} nachgelassen"
+    en: " · Thorne is under pressure ({level}) and has already cut {cut}"
+  fixedCosts:
+    de: " · Fixkosten {amount} je Runde"
+    en: " · fixed costs {amount} per round"
+  postTitle:
+    de: "Post zur Fernleitung"
+    en: "Mail about the pipeline"
+  letterRound:
+    de: "Runde {round}"
+    en: "Round {round}"
+  debugOn:
+    de: "Fernleitungen sind freigeschaltet (Fracht → Fernleitung)."
+    en: "Trunk pipelines are unlocked (Freight → Trunk pipeline)."
+  debugUnlock:
+    de: "Fernleitungen freischalten (Kapitel 2 testen)"
+    en: "Unlock trunk pipelines (test chapter 2)"
