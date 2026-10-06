@@ -281,6 +281,11 @@ Main ist inzwischen bei 0.4.4. Beim nächsten Merge von main in diesen Branch be
    Raffinerie und Börsenticker teilen sich je einen Platz und werden klein. Der GDD sieht für Kapitel 3 einen
    neuen Tisch vor (Mahagoni, Radio) – dort die Plätze neu verteilen (z. B. Kurstafel an der Wand statt Ticker,
    eine Ablage für die Hallstead-/Siegelmappe).
+   **Erledigt 0.4.20+10:** Ab Kapitel 3 (`chapterOf ≥ 3`) steht der Mahagoni-Tisch mit eigenem Platzplan
+   (`src/ui/scene/deskLayout.ts`, Test `src/ui/deskLayout.test.ts`): Kurstafel an der Wand statt Lampe, Radio als
+   Zierde auf der Tischkante, Hallstead- und Siegelmappe in einer Ablage unter Ruths Zettel, Kassenbuch/Vertrieb/
+   Personal und Raffinerie/Schublade/Glocke rechts je mit eigenem Platz. Kapitel 1/2 (auch mit Debug-Vorschau)
+   unverändert. Screenshots: `17-tisch-kapitel3` = Kapitel 3, `17b-…-vorschau` = Kapitel-1-Tisch mit Vorschau.
 
 **Ereignisse**
 14. Die Kapitel-2-System-Ereignisse (`k2-fernleitung`, `k2-personal`, `k2-diplomatie`, `k2-delaney`) tragen

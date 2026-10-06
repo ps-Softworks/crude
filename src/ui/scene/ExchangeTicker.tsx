@@ -27,7 +27,31 @@ function TickerShape() {
   );
 }
 
-export function ExchangeTicker({ game, at = TICKER_AT, glow, onOpen }: { game: GameState; at?: Placement; glow: boolean; onOpen: () => void }) {
+/** 0.4.20+10: Kurstafel an der Wand (Kapitel 3, Mahagoni-Tisch) – schwarze Tafel mit Messingrahmen, die Kurse stehen darauf. */
+function BoardShape() {
+  return (
+    <svg viewBox="0 0 100 110" className="form" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet">
+      <rect x="4" y="4" width="92" height="102" rx="3" className="f-messing-dunkel" />
+      <rect x="10" y="10" width="80" height="90" rx="2" className="f-tafel" />
+      <rect x="18" y="16" width="64" height="9" rx="1" className="f-messing" />
+    </svg>
+  );
+}
+
+export function ExchangeTicker({
+  game,
+  at = TICKER_AT,
+  board = false,
+  glow,
+  onOpen,
+}: {
+  game: GameState;
+  at?: Placement;
+  /** Ab Kapitel 3 hängt statt des Tickers eine Kurstafel an der Wand (gleiches Fenster, gleiche Taste). */
+  board?: boolean;
+  glow: boolean;
+  onOpen: () => void;
+}) {
   const ex = game.exchange;
   if (!ex) return null;
   const telegramme = ex.positions.filter((p) => p.called).length + ex.liquidated.length;
@@ -44,7 +68,7 @@ export function ExchangeTicker({ game, at = TICKER_AT, glow, onOpen }: { game: G
   return (
     <DeskObject
       id="boerse"
-      name="Börsenticker"
+      name={board ? 'Kurstafel' : 'Börsenticker'}
       shortcut={keyForSheet('boerse')}
       at={at}
       sheet="boerse"
@@ -53,8 +77,8 @@ export function ExchangeTicker({ game, at = TICKER_AT, glow, onOpen }: { game: G
       status={ex.positions.length > 0 ? `${ex.positions.length} im Depot` : 'Kurse'}
       badge={telegramme > 0 ? { text: telegramme === 1 ? 'Telegramm' : `${telegramme} Telegramme`, urgent: ex.positions.some((p) => p.called) } : null}
     >
-      <TickerShape />
-      <span className="ticker-band" aria-hidden="true">
+      {board ? <BoardShape /> : <TickerShape />}
+      <span className={board ? 'kurstafel-zeilen' : 'ticker-band'} aria-hidden="true">
         {band}
       </span>
     </DeskObject>

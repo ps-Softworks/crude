@@ -164,6 +164,8 @@ const p4basis = suche((s) => s.round === 6 && s.wells.length > 0 && !s.finished,
 const kap2 = weiter(kapitel2Systeme(p4basis));
 const kap3 = weiter(kapitel3Systeme(p4basis));
 if (kap2.finished || kap3.finished) throw new Error('Phase-4-Spielstand ist vorzeitig zu Ende.');
+// 0.4.20+10: Derselbe Stand wirklich in Kapitel 3 – dort steht der Mahagoni-Tisch mit eigenem Platzplan.
+const kap3Tisch: GameState = { ...kap3, chapter: 3 };
 const KLICK = (sel: string) => `(() => { const el = document.querySelector(${JSON.stringify(sel)}); el?.dispatchEvent(new MouseEvent('click', { bubbles: true })); return !!el; })()`;
 /** Fenster der Phase-4-Systeme, je mit dem Klick, der es öffnet. */
 const P4_FENSTER: [string, string[], string][] = [
@@ -225,7 +227,8 @@ const bilder: Bild[] = [
   { name: '15-rundenbericht', state: mitte, prefs: { 'crude.zeitung': 'an' }, tasten: ['e', 'Enter'], warte: 1600 },
   // Phase 4 (Integration)
   { name: '16-tisch-kapitel2', state: kap2 },
-  { name: '17-tisch-kapitel3', state: kap3 },
+  { name: '17-tisch-kapitel3', state: kap3Tisch },
+  { name: '17b-tisch-kapitel3-vorschau', state: kap3 },
   { name: '18-raffinerie', state: kap3, dann: KLICK('.objekt-raffinerie') },
   { name: '19-fernleitung', state: kap3, tasten: ['f'], dann: REITER('Fernleitung') },
   { name: '20-aktien', state: kap3, tasten: ['g'], dann: REITER('Aufsichtsrat') },
@@ -464,7 +467,8 @@ try {
     // Phase 4: Tisch mit allen Kapitel-2- bzw. Kapitel-2/3-Systemen – Schilder und Gegenstände überdecken sich nicht.
     for (const [name, state] of [
       ['Kapitel 2', kap2],
-      ['Kapitel 3', kap3],
+      ['Kapitel 3 (Vorschau)', kap3],
+      ['Kapitel 3', kap3Tisch],
     ] as const) {
       await lade(state, {}, undefined);
       const m = await cdp.js<{ sh: number; sw: number; ih: number; iw: number }>(

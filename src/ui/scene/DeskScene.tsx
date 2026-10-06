@@ -28,6 +28,9 @@ import type { SheetId } from '../sceneState';
 import { Silhouette } from '../Silhouette';
 import { rivalsLines } from '../sheets/RivalsSheet';
 import { DeskObject, type Placement } from './DeskObject';
+import { deskLayout, MAHAGONI_AB, sharedColumn, type DeskPresent, type DeskSpot } from './deskLayout'; // 0.4.20+10
+import { RadioShape } from './objects/RadioShape';
+import { chapterOf } from '../../sim/chapterOf';
 import { Door } from './Door';
 import {
   BellShape,
@@ -68,82 +71,6 @@ import { HallsteadDeskItem, hallsteadOnDesk } from '../sheets/HallsteadSheet';
 import { kapitel3Unlocked } from '../../sim/kapitel3';
 import { kapitel3Pending } from '../../sim/kapitel3View';
 import { SealFolderShape } from '../sheets/KonzernSheet';
-
-/** Wo was liegt, in Prozent der Bühne (unter der Kopfleiste). */
-const AT: Partial<Record<SheetId | 'karte' | 'tuer', Placement>> & Record<'karte' | 'tuer', Placement> = {
-  karte: { left: 2, top: 4, width: 22, height: 34 },
-  konkurrenz: { left: 26, top: 6, width: 15, height: 28 },
-  termine: { left: 58, top: 4, width: 10, height: 30 },
-  familie: { left: 70.5, top: 6, width: 13, height: 28 },
-  tuer: { left: 86, top: 0, width: 12, height: 42 },
-  zeitung: { left: 2.5, top: 48, width: 15, height: 24 },
-  post: { left: 19, top: 47, width: 13, height: 25 },
-  vorfaelle: { left: 33.5, top: 46, width: 8.5, height: 26 },
-  kassenbuch: { left: 73, top: 47, width: 12, height: 25 },
-  akte: { left: 3, top: 75, width: 14, height: 22 },
-  fracht: { left: 19, top: 75, width: 15, height: 22 },
-  protokoll: { left: 36, top: 76, width: 9, height: 21 },
-  glocke: { left: 86, top: 70, width: 12, height: 27 },
-  // 4.6 Andockpunkt: Raffinerie-Plan zwischen Ruths Zettel und Glocke (ab Kapitel 2).
-  raffinerie: { left: 72, top: 75, width: 13, height: 22 },
-  // 4.9 Andockpunkt: Personalakten rechts neben dem Kassenbuch, zwischen Tür und Glocke (der Platz unter dem Kassenbuch gehört der Raffinerie).
-  personal: { left: 86.5, top: 46, width: 11.5, height: 22 },
-  // 4.11 Andockpunkt: Schublade unter Ruths Zettel (zwischen Kladde und Raffinerie-Plan), Blaupause an der Wand zwischen Lampe und Kalender.
-  schattenbuch: { left: 47, top: 85, width: 22, height: 12 },
-  werkstatt: { left: 51.5, top: 8, width: 6, height: 24 },
-  // 4.14 Andockpunkt: rechts neben dem Kassenbuch, über der Glocke (der Platz unter dem
-  // Kassenbuch gehört der Raffinerie – Platzplan in docs/phase4/4.14.md). Liegen
-  // Personalakten (ab Kapitel 2) und Vertrieb (ab Kapitel 3) beide da, teilen sie sich
-  // die Spalte zwischen Tür und Glocke (RECHTE_SPALTE_GETEILT).
-  marke: { left: 86, top: 47, width: 12, height: 21 },
-  // 4.16 Andockpunkt: Hallstead-Mappe in der unteren Reihe zwischen Kladde und Raffinerie-Plan,
-  // rechts neben der Schublade (unter dem Kassenbuch liegen schon Raffinerie und Börsenticker).
-  hallstead: { left: 59, top: 85, width: 11.5, height: 12 },
-  // 4.17 Andockpunkt: Siegelmappe ebenfalls in der unteren Reihe zwischen Kladde und Raffinerie-Plan
-  // (unter dem Kassenbuch liegen Raffinerie und Börsenticker). Allein nimmt sie den rechten Platz
-  // der Reihe; mit Schublade und/oder Hallstead-Mappe teilen sich alle die Reihe (UNTERE_REIHE).
-  konzern: { left: 59, top: 85, width: 11.5, height: 12 },
-};
-
-/**
- * 4.15 Andockpunkt: Raffinerie (ab Kapitel 2) und Börsenticker (ab Kapitel 3) teilen sich den
- * Platz unter dem Kassenbuch (zwischen Ruths Zettel ab 71 % und Glocke ab 86 %) übereinander;
- * allein behält jeder seinen vollen Platz (AT.raffinerie bzw. TICKER_AT).
- */
-const UNTER_KASSENBUCH_GETEILT: Record<'raffinerie' | 'boerse', Placement> = {
-  raffinerie: { left: 72, top: 74, width: 13, height: 11.5 },
-  boerse: { left: 72, top: 86, width: 13, height: 11 },
-};
-
-/** Personal und Vertrieb gleichzeitig auf dem Tisch: übereinander zwischen Tür (bis 42 %) und Glocke (ab 70 %). */
-const RECHTE_SPALTE_GETEILT: Record<'personal' | 'marke', Placement> = {
-  personal: { left: 86.5, top: 44, width: 11.5, height: 12.5 },
-  marke: { left: 86.5, top: 57, width: 11.5, height: 12.5 },
-};
-
-/** 4.16: Liegt die Hallstead-Mappe auf dem Tisch, rückt die Schublade (4.11) in die linke Hälfte ihrer Reihe. */
-const SCHUBLADE_GETEILT: Placement = { left: 47, top: 85, width: 11.5, height: 12 };
-
-type UntereReihe = 'schattenbuch' | 'hallstead' | 'konzern';
-
-/**
- * Integration 4.11/4.16/4.17: Die untere Reihe zwischen Kladde (bis 45 %) und Raffinerie-Plan
- * (ab 72 %) teilen sich Schublade, Hallstead-Mappe und Siegelmappe. Allein behält jeder seinen
- * Platz (AT), zu zweit links/rechts je eine Hälfte, zu dritt je ein Drittel (46–71 %).
- */
-function untereReihe(da: Record<UntereReihe, boolean>): Partial<Record<UntereReihe, Placement>> {
-  const liste = (['schattenbuch', 'hallstead', 'konzern'] as const).filter((id) => da[id]);
-  if (liste.length <= 1) return {};
-  if (liste.length === 2) {
-    const [links, rechts] = liste;
-    return { [links]: SCHUBLADE_GETEILT, [rechts]: AT.hallstead! };
-  }
-  return {
-    schattenbuch: { left: 46, top: 85, width: 8, height: 12 },
-    hallstead: { left: 54.5, top: 85, width: 8, height: 12 },
-    konzern: { left: 63, top: 85, width: 8, height: 12 },
-  };
-}
 
 export interface DeskSceneProps {
   game: GameState;
@@ -197,7 +124,23 @@ export function DeskScene(p: DeskSceneProps) {
   const mappe = hallsteadOnDesk(game);
   // 4.17 Andockpunkt: Siegelmappe ab Kapitel 3 (oder nach „Kapitel 3 zur Probe öffnen“ im Debug-Reiter).
   const siegelmappe = kapitel3Unlocked(game, balance);
-  const reihe = untereReihe({ schattenbuch: investigationUnlocked(game, balance), hallstead: mappe, konzern: siegelmappe });
+  // 0.4.20+10: Platzplan je Kapitel (src/ui/scene/deskLayout.ts) – ab Kapitel 3 der Mahagoni-Tisch.
+  const kapitel = chapterOf(game);
+  const mahagoni = kapitel >= MAHAGONI_AB;
+  const da: DeskPresent = {
+    raffinerie: !!game.refinery,
+    personal: !!game.staff,
+    schattenbuch: investigationUnlocked(game, balance),
+    werkstatt: researchUnlocked(game, balance),
+    marke: vertrieb !== null,
+    boerse: !!game.exchange,
+    hallstead: mappe,
+    konzern: siegelmappe,
+  };
+  const AT = deskLayout(kapitel, da);
+  // Personal und Vertrieb geteilt (Kapitel 1/2 vorab) oder Personal direkt unter der Tür (Kapitel 3): Abzeichen in die Ecke.
+  const geteilt = sharedColumn(kapitel, da);
+  const platz = (id: DeskSpot | SheetId): Placement => (AT as Partial<Record<string, Placement>>)[id]!;
 
   // Akte: was die Türme gerade tun, gezählt in src/sim (rigSummary).
   const tuerme = rigSummary(game);
@@ -233,7 +176,7 @@ export function DeskScene(p: DeskSceneProps) {
       id={id}
       name={name}
       shortcut={keyForSheet(id)}
-      at={AT[id]!}
+      at={platz(id)}
       sheet={id}
       glow={p.glow === id || p.spotlight === id}
       onOpen={() => p.onOpen(id)}
@@ -244,18 +187,20 @@ export function DeskScene(p: DeskSceneProps) {
   );
 
   return (
-    <div className={`schreibtisch${erschoepft ? ' erschoepft' : ''}${krank ? ' krank' : ''}`}>
+    <div className={`schreibtisch${mahagoni ? ' mahagoni' : ''}${erschoepft ? ' erschoepft' : ''}${krank ? ' krank' : ''}`}>
       {p.topBar}
       <div className="szene">
         <div className="wand" aria-hidden="true" />
         <div className="tisch" aria-hidden="true" />
+        {/* 0.4.20+10: Ablage für Hallstead- und Siegelmappe unter Ruths Zettel (nur Kapitel 3). */}
+        {mahagoni && (da.hallstead || da.konzern) && <div className="ablage" aria-hidden="true" style={prozent(platz('ablage'))} />}
 
         {/* Wand */}
         <DeskObject
           id="karte"
           name="Wandkarte"
           shortcut="K"
-          at={AT.karte}
+          at={platz('karte')}
           glow={p.glow === 'karte' || p.spotlight === 'karte'}
           onOpen={p.onMap}
           status={`Pachten ${leases} · Optionen ${options}`}
@@ -277,9 +222,16 @@ export function DeskScene(p: DeskSceneProps) {
           },
           <CorkShape />,
         )}
-        <div className="lampe" aria-hidden="true" style={{ left: '45%', top: '8%', width: '6%', height: '26%' }}>
-          <LampShape />
-        </div>
+        {mahagoni ? (
+          // 0.4.20+10: Radio hinten auf der Tischkante – nur Zierde, kein Knopf.
+          <div className="radio" aria-hidden="true" style={prozent(platz('radio'))}>
+            <RadioShape />
+          </div>
+        ) : (
+          <div className="lampe" aria-hidden="true" style={prozent(platz('lampe'))}>
+            <LampShape />
+          </div>
+        )}
         {obj(
           'termine',
           'Kalender',
@@ -339,7 +291,7 @@ export function DeskScene(p: DeskSceneProps) {
           </span>,
         )}
         <Door
-          at={AT.tuer}
+          at={platz('tuer')}
           names={p.waiting.names}
           figure={p.waiting.figure}
           urgent={badges.tuer.urgent}
@@ -380,7 +332,7 @@ export function DeskScene(p: DeskSceneProps) {
           },
           <SpikeShape count={badges.vorfaelle.count} urgent={badges.vorfaelle.urgent} />,
         )}
-        <div className={p.spotlight === 'ruth' ? 'unterlage-platz rundgang-ziel' : 'unterlage-platz'} style={{ left: '45%', top: '47%', width: '26%', height: '36%' }}>
+        <div className={p.spotlight === 'ruth' ? 'unterlage-platz rundgang-ziel' : 'unterlage-platz'} style={prozent(platz('ruth'))}>
           <RuthNote
             step={p.step}
             tutorial={p.tutorial}
@@ -447,15 +399,15 @@ export function DeskScene(p: DeskSceneProps) {
           obj(
             'raffinerie',
             rt('object'),
-            { status: refineryObjectStatus(game), ...(game.exchange ? { at: UNTER_KASSENBUCH_GETEILT.raffinerie } : {}) },
+            { status: refineryObjectStatus(game) },
             <RefineryShape running={refineryStatus(game) === 'running' || refineryStatus(game) === 'expanding'} />,
           )}
         {/* 4.16 Andockpunkt: Hallstead-Mappe – erst ab Kapitel 3 (oder per Debug-Freischaltung im Menü). */}
         {mappe && (
-          <HallsteadDeskItem game={game} at={reihe.hallstead ?? AT.hallstead!} glow={p.glow === 'hallstead' || p.spotlight === 'hallstead'} onOpen={() => p.onOpen('hallstead')} />
+          <HallsteadDeskItem game={game} at={platz('hallstead')} glow={p.glow === 'hallstead' || p.spotlight === 'hallstead'} onOpen={() => p.onOpen('hallstead')} />
         )}
         {/* 4.17 Andockpunkt: Siegelmappe – ab Kapitel 3 (Debug: „Kapitel 3 zur Probe öffnen“ im Menü). */}
-        {siegelmappe && <KonzernObjekt game={game} obj={obj} at={reihe.konzern} />}
+        {siegelmappe && <KonzernObjekt game={game} obj={obj} at={platz('konzern')} />}
         {obj('protokoll', 'Kladde', { status: p.saved ? '✓ gesichert' : undefined }, <NotebookShape />)}
         {/* 4.9 Andockpunkt: Personalakten – erst ab Kapitel 2 (state.staff), in Kapitel 1 unsichtbar. */}
         {game.staff &&
@@ -463,19 +415,18 @@ export function DeskScene(p: DeskSceneProps) {
             'personal',
             'Personal',
             {
-              ...(vertrieb !== null ? { at: RECHTE_SPALTE_GETEILT.personal } : {}),
               status: `${game.staff.hired.length} angestellt`,
               // 0.4.19+3: In der geteilten Spalte bleibt das Abzeichen in der Ecke – darüber liegt die Beschriftung der Tür.
               badge:
                 game.staff.candidates.length > 0
-                  ? { text: `${game.staff.candidates.length} Bewerbung${game.staff.candidates.length === 1 ? '' : 'en'}`, ...(vertrieb !== null ? { corner: true } : {}) }
+                  ? { text: `${game.staff.candidates.length} Bewerbung${game.staff.candidates.length === 1 ? '' : 'en'}`, ...(geteilt || mahagoni ? { corner: true } : {}) }
                   : null,
             },
             <StaffFileShape />,
           )}
         {/* 4.11 Andockpunkt: Schattenbuch und Werkstatt – in Kapitel 1 nicht auf dem Tisch. */}
         {investigationUnlocked(game, balance) &&
-          obj('schattenbuch', 'Schublade', { status: `Hitze: ${localize(investigationContent.heat[heatWord(heat(game, balance), balance)])}`, ...(reihe.schattenbuch ? { at: reihe.schattenbuch } : {}) }, <DrawerShape />)}
+          obj('schattenbuch', 'Schublade', { status: `Hitze: ${localize(investigationContent.heat[heatWord(heat(game, balance), balance)])}` }, <DrawerShape />)}
         {researchUnlocked(game, balance) &&
           obj(
             'werkstatt',
@@ -488,13 +439,14 @@ export function DeskScene(p: DeskSceneProps) {
           (() => {
             const b = brandDeskBadge(game);
             // 0.4.19+3: Unter den Personalakten bleibt das Abzeichen in der Ecke, sonst verdeckt es „Personal“.
-            const badge = b && game.staff ? { ...b, corner: true } : b;
-            return obj('marke', localize(brandContent.object.name), { status: vertrieb, badge, ...(game.staff ? { at: RECHTE_SPALTE_GETEILT.marke } : {}) }, <BrandShape />);
+            const badge = b && geteilt ? { ...b, corner: true } : b;
+            return obj('marke', localize(brandContent.object.name), { status: vertrieb, badge }, <BrandShape />);
           })()}
         {/* 4.15 Andockpunkt: Börsenticker – ohne Börse (Kapitel 1 und 2) nicht da. */}
         <ExchangeTicker
           game={game}
-          {...(game.refinery ? { at: UNTER_KASSENBUCH_GETEILT.boerse } : {})}
+          at={platz('boerse')}
+          board={mahagoni}
           glow={p.glow === 'boerse' || p.spotlight === 'boerse'}
           onOpen={() => p.onOpen('boerse')}
         />
@@ -507,6 +459,11 @@ export function DeskScene(p: DeskSceneProps) {
       </div>
     </div>
   );
+}
+
+/** Platz als CSS-Angabe in Prozent (Ruths Zettel, Lampe, Radio, Ablage – keine Knöpfe). */
+function prozent(at: Placement) {
+  return { left: `${at.left}%`, top: `${at.top}%`, width: `${at.width}%`, height: `${at.height}%` };
 }
 
 /** 4.17 Andockpunkt: die Siegelmappe mit Abzeichen für offene Entscheidungen. */
