@@ -4,6 +4,8 @@ import { empireValue } from './empire';
 import { applyEffects, drawEvents } from './events';
 import { endRound, newGame, type GameState } from './game';
 import {
+  finishSmallPipeline,
+  missingRights,
   advanceLogistics,
   buildPipeline,
   buildTank,
@@ -366,3 +368,26 @@ describe('Inhalte (0.2.15+2)', () => {
     expect(rabatt.requires.minProducingWells).toBe(1);
   });
 });
+
+describe('Zeitsprung: der Verwalter schließt die kleine Pipeline ab (0.4.20+39)', () => {
+  it('kauft fehlende Wegerechte und baut, wenn die Kasse über der Rücklage reicht', () => {
+    const s = ok(surveyPipeline(spiel({ cash: 1e5 }), balance));
+    expect(missingRights(s, balance).length).toBeGreaterThan(0);
+    const fehlt = missingRights(s, balance).length;
+    const r = finishSmallPipeline(s, balance, 1500, 3000, 40);
+    expect(r.cost).toBe(fehlt * 1500 + balance.transport.pipeline.buildCost);
+    expect(r.state.cash).toBeCloseTo(s.cash - r.cost, 2);
+    expect(r.state.logistics.pipeline).toBe('ready');
+    expect(missingRights(r.state, balance)).toEqual([]);
+  });
+
+  it('lässt alles, wie es ist, ohne Geld oder ohne vermessene Route', () => {
+    const arm = ok(surveyPipeline(spiel({ cash: 1000 }), balance));
+    const r = finishSmallPipeline(arm, balance, 1500, 3000, 40);
+    expect(r.cost).toBe(0);
+    expect(r.state).toBe(arm);
+    const ohne = spiel({ cash: 1e5 });
+    expect(finishSmallPipeline(ohne, balance, 1500, 3000, 40).state).toBe(ohne);
+  });
+});
+

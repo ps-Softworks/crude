@@ -388,6 +388,8 @@ export interface TimeskipBalance {
   rounds: number;
   /** Runden des nächsten Kapitels (Platzhalter). */
   nextChapterRounds: number;
+  /** 0.4.20+39: Preis je fehlendem Wegerecht der kleinen Pipeline, das der Verwalter im Sprung kauft. */
+  pipelineRight: number;
   reserve: Record<Stance, number>;
   invest: Record<Stance, number>;
   minChance: Record<Stance, number>;
@@ -1846,6 +1848,7 @@ function parseTimeskip(raw: unknown): TimeskipBalance {
   const t: TimeskipBalance = {
     rounds: positiveInt(raw, p('rounds')),
     nextChapterRounds: positiveInt(raw, p('nextChapterRounds')),
+    pipelineRight: positiveNumber(raw, p('pipelineRight')),
     reserve: jeHaltung('reserve', nonNegative),
     invest: jeHaltung('invest', share),
     minChance: jeHaltung('minChance', share),

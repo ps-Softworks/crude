@@ -58,6 +58,7 @@ import { openRegions, unlockRegion } from './regions';
 import { fuelPremium, okaraIncome } from './ventures';
 import { TIMESKIP_MARKS, TIMESKIP_SIM_MARKS } from './timeskipMarks';
 import { ownsHarborPipeline } from './bigPipeline';
+import { finishSmallPipeline } from './logistics';
 import { applySystemEffects } from './eventSystems';
 import { startRivalsK3 } from './rivalsK3';
 import { advanceWorld, creditPhase, saltHillInput, worldPriceFactor, worldRateAdd, type Party, type WorldNews } from './world';
@@ -1244,6 +1245,10 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
   const ziel = Math.max(0, Math.round(l.nb));
   // Wer aufgibt, steht noch im letzten Jahr des Sprungs in der Chronik.
   wildcatterNachSprung(l, ziel);
+  // 0.4.20+39: Eine vermessene kleine Pipeline ohne alle Wegerechte bliebe sonst für immer liegen (die Briefe
+  // der Landbesitzer gibt es nur in Kapitel 1) – der Verwalter kauft die Rechte und baut sie, wenn das Geld reicht.
+  const kleinePipeline = finishSmallPipeline(l.s, balance, t.pipelineRight, t.reserve[l.directives.stance], start.round + t.rounds);
+  l.s = kleinePipeline.state;
   const r0 = record(l.s);
   l.s = { ...l.s, round };
   const s = l.s;
@@ -1284,6 +1289,7 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
       `${formatDate(start)}: Jacob übergibt das Tagesgeschäft für sechs Jahre an einen Verwalter.`,
       `${date}: Kapitel ${kapitel} „${CHAPTER_TITLES[kapitel] ?? ''}“ beginnt – Jacob ist ${jacobAge({ round })}.`,
       ...(schwach.line ? [`${date}: ${schwach.line}`] : []),
+      ...(kleinePipeline.cost > 0 ? [`${date}: Der Verwalter hat die fehlenden Wegerechte gekauft und die Pipeline gebaut (${Math.round(kleinePipeline.cost).toLocaleString('de-DE')} $).`] : []),
     ],
     roundLogStart: start.log.length,
     // Die Dividendenfrist im Rat zählt ab Kapitelbeginn.

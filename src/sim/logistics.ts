@@ -510,3 +510,28 @@ export function routePlan(state: GameState, balance: Balance, volume: number): {
   };
   return { scenario, routes: compareRoutes(balance, scenario) };
 }
+
+/**
+ * 0.4.20+39: Zeitsprung – der Verwalter schließt die kleine Pipeline ab. Ist sie vermessen, kauft er die
+ * fehlenden Wegerechte (je `rightPrice` $) und baut sie, wenn die Kasse über der Rücklage dafür reicht; die
+ * Briefe der Landbesitzer gibt es nur in Kapitel 1, sonst bliebe eine vermessene Route für immer liegen.
+ * Gibt den Zustand und die Kosten zurück (0, wenn nichts zu tun war oder das Geld fehlt).
+ */
+export function finishSmallPipeline(state: GameState, balance: Balance, rightPrice: number, reserve: number, round: number): { state: GameState; cost: number } {
+  if (state.logistics.pipeline !== 'surveyed') return { state, cost: 0 };
+  const fehlt = missingRights(state, balance);
+  const cost = cents(fehlt.length * rightPrice + balance.transport.pipeline.buildCost);
+  if (state.cash - cost < reserve) return { state, cost: 0 };
+  const marks = { ...state.events.marks };
+  for (const m of fehlt) marks[m] = round;
+  return {
+    state: {
+      ...state,
+      cash: cents(state.cash - cost),
+      events: { ...state.events, marks },
+      logistics: { ...state.logistics, pipeline: 'ready', pipelineRounds: 0 },
+    },
+    cost,
+  };
+}
+

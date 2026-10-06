@@ -270,7 +270,7 @@ plans:
     wache: { tab: leute, appointments: 1, cash: 60, handler: wache, requires: { maxChapter: 1 } }
     # 0.4.20+34 Telefon: Anrufe (call = Gewicht beim Auslosen), nur ab Kapitel 2.
     bank_angebot: { tab: markt, appointments: 1, target: option, handler: bank_angebot, call: 1, requires: { minChapter: 2 } }
-    # 0.4.20+35 Lieferverträge der Raffinerie (Marine nur ohne den Rohöl-Vertrag aus k2_ag_marine).
+    # 0.4.20+39 Lieferverträge der Raffinerie (Marine nur ohne den Rohöl-Vertrag aus k2_ag_marine).
     marine_heizoel: { tab: markt, appointments: 2, target: option, handler: marine_heizoel, requires: { minChapter: 2, notMarked: [k2_marine_vertrag] } }
     fabrik_schmieroel: { tab: markt, appointments: 1, target: option, handler: fabrik_schmieroel, requires: { minChapter: 2 } }
     lampenoel_kerosin: { tab: markt, appointments: 1, target: option, handler: lampenoel_kerosin, requires: { minChapter: 2 } }
@@ -316,7 +316,7 @@ deals:
   press:
     ads: { cost: 3000, reputation: 6, backlash: 0.15, cooldown: 4 }
     interview: { chance: 0.6, reputation: 5, cooldown: 4 }
-  # 0.4.20+35 Lieferverträge der Raffinerie (Telefon, Kapitel 2): fester Preis (heutiger Großhandelspreis × (1 + premium)),
+  # 0.4.20+39 Lieferverträge der Raffinerie (Telefon, Kapitel 2): fester Preis (heutiger Großhandelspreis × (1 + premium)),
   # die Vertragsmenge drückt den Großhandel nicht; fehlt etwas (auch bei Stillstand), kostet jedes Barrel shortfall.
   supply:
     marine: { product: fuelOil, sizes: [1000, 2500], rounds: 8, premium: 0, shortfall: 0.3 }       # Marine: Heizöl, sichere Abnahme
@@ -678,6 +678,7 @@ eventSystems:
 timeskip:
   rounds: 24                  # Zeitsprung I: Jahr 5–10 = 24 Quartale
   nextChapterRounds: 16       # Kapitel 2 „Der Herausforderer“: Jahr 11–14
+  pipelineRight: 1500         # 0.4.20+39: Ist die kleine Pipeline am Kapitelende vermessen, aber ohne alle Wegerechte, kauft der Verwalter jedes fehlende Recht für so viel $ und baut sie – die Briefe der Landbesitzer gibt es nur in Kapitel 1, sonst bliebe sie für immer liegen
   # Haltung (GDD §2: bestimmt Ertrag und Streuung). Wagemutig bohrt mehr und riskanter, erschließt
   # Nachbarbezirke und leiht – trifft ihn eine Kreditkrise, kündigt die Bank mehr (crisis) und er
   # muss Quellen billig verkaufen. Vorsichtig tilgt, hält Rücklage und bohrt nur Sicheres.
