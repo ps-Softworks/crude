@@ -1,7 +1,7 @@
 // Platzplan des Schreibtischs (0.4.20+10): Kapitel 1/2 unverändert, ab Kapitel 3 jeder Gegenstand mit eigenem Platz.
 import { describe, expect, it } from 'vitest';
 import type { Placement } from './scene/DeskObject';
-import { DESK_BASE, deskLayout, sharedColumn, type DeskPresent } from './scene/deskLayout';
+import { aufTisch, DESK_BASE, deskLayout, sharedColumn, TISCH, tischEinzug, type DeskPresent } from './scene/deskLayout';
 
 const NICHTS: DeskPresent = { raffinerie: false, personal: false, schattenbuch: false, werkstatt: false, marke: false, boerse: false, hallstead: false, konzern: false };
 const ALLES: DeskPresent = { raffinerie: true, personal: true, schattenbuch: true, werkstatt: true, marke: true, boerse: true, hallstead: true, konzern: true };
@@ -39,9 +39,9 @@ describe('Schreibtisch-Platzplan', () => {
     expect(plan.boerse).toEqual({ left: 72, top: 86, width: 13, height: 11 });
     expect(plan.personal).toEqual({ left: 86.5, top: 44, width: 11.5, height: 12.5 });
     expect(plan.marke).toEqual({ left: 86.5, top: 57, width: 11.5, height: 12.5 });
-    expect(plan.schattenbuch).toEqual({ left: 46, top: 85, width: 8, height: 12 });
-    expect(plan.hallstead).toEqual({ left: 54.5, top: 85, width: 8, height: 12 });
-    expect(plan.konzern).toEqual({ left: 63, top: 85, width: 8, height: 12 });
+    expect(plan.schattenbuch).toEqual({ left: 45.5, top: 85, width: 7, height: 12 });
+    expect(plan.hallstead).toEqual({ left: 53, top: 85, width: 9.5, height: 12 });
+    expect(plan.konzern).toEqual({ left: 63, top: 85, width: 8.5, height: 12 });
     expect(sharedColumn(1, ALLES)).toBe(true);
     // Zu zweit: links die Hälfte, rechts der alte Platz der Mappe.
     const zwei = deskLayout(2, { ...NICHTS, schattenbuch: true, konzern: true });
@@ -90,5 +90,36 @@ describe('Schreibtisch-Platzplan', () => {
 
   it('Kapitel 3 ohne Zusatzsysteme: nur die festen Gegenstände plus Radio und Ablage', () => {
     expect(Object.keys(deskLayout(3, NICHTS)).sort()).toEqual([...DESK_BASE, 'radio', 'ablage'].sort());
+  });
+});
+
+describe('Tisch in Perspektive (0.4.20+12)', () => {
+  it('Wandgegenstände bleiben, wo sie sind', () => {
+    const karte = { left: 2, top: 4, width: 22, height: 34 };
+    expect(aufTisch(karte)).toEqual(karte);
+  });
+
+  it('Gegenstände auf dem Tisch landen in der Platte: zwischen hinterer Kante und Vorderkante, innerhalb des Trapezes', () => {
+    for (const kapitel of [1, 3]) {
+      const plan = deskLayout(kapitel, ALLES);
+      for (const p of Object.values(plan) as Placement[]) {
+        if (p.top < TISCH.hinten || p.width === 0) continue;
+        const q = aufTisch(p);
+        expect(q.top).toBeGreaterThanOrEqual(TISCH.hinten);
+        expect(q.top + q.height).toBeLessThanOrEqual(TISCH.vorn + 0.01);
+        const ein = tischEinzug(q.top + q.height / 2);
+        expect(q.left).toBeGreaterThanOrEqual(ein - 0.01);
+        expect(q.left + q.width).toBeLessThanOrEqual(100 - ein + 0.01);
+      }
+    }
+  });
+
+  it('die Platte ist hinten schmaler als vorn, und was sich vorher nicht überdeckt hat, überdeckt sich auch danach nicht', () => {
+    expect(tischEinzug(TISCH.hinten)).toBeGreaterThan(tischEinzug(TISCH.vorn));
+    const plan = Object.values(deskLayout(3, ALLES)) as Placement[];
+    for (let i = 0; i < plan.length; i++)
+      for (let j = i + 1; j < plan.length; j++) {
+        if (!ueberlappt(plan[i], plan[j])) expect(ueberlappt(aufTisch(plan[i]), aufTisch(plan[j]))).toBe(false);
+      }
   });
 });

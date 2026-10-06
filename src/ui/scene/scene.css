@@ -87,8 +87,6 @@
   background:
     /* hinten Schatten der Wand, vorn Licht auf der Kante */
     linear-gradient(180deg, rgba(0, 0, 0, 0.38) 0, rgba(0, 0, 0, 0) 9%, rgba(0, 0, 0, 0) 92%, rgba(255, 230, 180, 0.16) 100%),
-    /* Maserung in Brettern */
-    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 14.3%),
     repeating-linear-gradient(178.5deg, rgba(0, 0, 0, 0.06) 0 2px, transparent 2px 13px),
     linear-gradient(180deg, var(--platte) 0%, var(--platte-hell) 70%, var(--platte) 100%);
 }

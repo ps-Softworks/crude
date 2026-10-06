@@ -141,7 +141,11 @@ export function DeskScene(p: DeskSceneProps) {
   // Personal und Vertrieb geteilt (Kapitel 1/2 vorab) oder Personal direkt unter der Tür (Kapitel 3): Abzeichen in die Ecke.
   const geteilt = sharedColumn(kapitel, da);
   // 0.4.20+12: Was auf dem Tisch liegt, rückt in die Tischplatte (Perspektive, aufTisch).
-  const platz = (id: DeskSpot | SheetId): Placement => aufTisch((AT as Partial<Record<string, Placement>>)[id]!);
+  const platz = (id: DeskSpot | SheetId): Placement => {
+    const at = (AT as Partial<Record<string, Placement>>)[id];
+    // Fehlt der Gegenstand (System noch zu), bleibt es wie vorher: kein Platz.
+    return at ? aufTisch(at) : at!;
+  };
 
   // Akte: was die Türme gerade tun, gezählt in src/sim (rigSummary).
   const tuerme = rigSummary(game);

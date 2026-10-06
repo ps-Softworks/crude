@@ -93,9 +93,10 @@ function untereReihe(da: Record<UntereReihe, boolean>): Partial<Record<UntereRei
     return { [links]: SCHUBLADE_GETEILT, [rechts]: AT.hallstead };
   }
   return {
-    schattenbuch: { left: 46, top: 85, width: 8, height: 12 },
-    hallstead: { left: 54.5, top: 85, width: 8, height: 12 },
-    konzern: { left: 63, top: 85, width: 8, height: 12 },
+    // 0.4.20+12: Die Hallstead-Mappe hat das längste Schild – sie bekommt etwas mehr Breite (Perspektive staucht die Reihe).
+    schattenbuch: { left: 45.5, top: 85, width: 7, height: 12 },
+    hallstead: { left: 53, top: 85, width: 9.5, height: 12 },
+    konzern: { left: 63, top: 85, width: 8.5, height: 12 },
   };
 }
 
