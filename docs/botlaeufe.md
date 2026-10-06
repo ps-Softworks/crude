@@ -132,9 +132,9 @@ Toleranzbereiche stehen in balance.yaml unter bots.targets; gemessen wird in src
 
 ## Kapitel 2 und 3 (Kampagnen-Bots, 4.20)
 
-Stand: 2026-10-06 · Version 0.4.20+27 · erzeugt mit `npm run kampagne` (tools/kampagnenlaeufe.ts, Regeln in src/sim/campaignBots.ts)
+Stand: 2026-10-06 · Version 0.4.20+38 · erzeugt mit `npm run kampagne` (tools/kampagnenlaeufe.ts, Regeln in src/sim/campaignBots.ts)
 
-1.000 Kampagnen je Strategie auf denselben Seeds wie oben (`bot-0` …): Die Bots spielen Kapitel 1 wie oben, dann Zeitsprung I, Kapitel 2, Zeitsprung II und Kapitel 3 – mit Ritt und Karten (Termin-Aktionen), allen Ereignissen, Börsengang, Direktiven und Weichen, Raffinerie (Kapitel 2), Marke, Tankstellen und Börse (Kapitel 3). Eine verfehlte Kapitelprüfung beendet die Kampagne nicht (das nächste Kapitel beginnt geschwächt); aus scheidet, wer pleitegeht (auch im Zeitsprung), abgesetzt oder geschluckt wird oder ins Gefängnis kommt. Endwert = Imperiumswert am Ende von Kapitel 3, ausgeschieden = 0. Siegquote: höchster Endwert je Seed. In 11.000 Kampagnen (5 Strategien, 2 weitere Haltungen des Standard-Bots, 4 Strategien vom gleichen Start) in 1260.4 s.
+1.000 Kampagnen je Strategie auf denselben Seeds wie oben (`bot-0` …): Die Bots spielen Kapitel 1 wie oben, dann Zeitsprung I, Kapitel 2, Zeitsprung II und Kapitel 3 – mit Ritt und Karten (Termin-Aktionen), allen Ereignissen, Börsengang, Direktiven und Weichen, Raffinerie (Kapitel 2), Marke, Tankstellen und Börse (Kapitel 3). Eine verfehlte Kapitelprüfung beendet die Kampagne nicht (das nächste Kapitel beginnt geschwächt); aus scheidet, wer pleitegeht (auch im Zeitsprung), abgesetzt oder geschluckt wird oder ins Gefängnis kommt. Endwert = Imperiumswert am Ende von Kapitel 3, ausgeschieden = 0. Siegquote: höchster Endwert je Seed. In 11.000 Kampagnen (5 Strategien, 2 weitere Haltungen des Standard-Bots, 4 Strategien vom gleichen Start) in 1186.5 s.
 
 - **vorsichtig:** Haltung vorsichtig, Familie „wie bisher“, Börsengang nein, Rücklage 25.000 $, bis 2 Tankstellen je Runde, keine Börse, Cranes Feldzug: hält durch, verkauft Tankstellen unter 25.000 $ Kasse; Weichen: bank_panic → repay, automobile → ignore, okara → pass, clara → home, war_export → hold, navy → accept, grady → refuse, college → college
 - **gierig:** Haltung wagemutig, Familie „die Firma zuerst“, Börsengang 33,0 %, Rücklage 5.000 $, bis 4 Tankstellen je Runde, Börse 5,0 % des freien Geldes mit Hebel 5, hält trotz Warnung, Cranes Feldzug: hält durch, nimmt Thornes Kredit; Weichen: bank_panic → ride, automobile → invest, okara → lease, clara → business, war_export → export, navy → accept, grady → take, college → company
@@ -144,11 +144,11 @@ Stand: 2026-10-06 · Version 0.4.20+27 · erzeugt mit `npm run kampagne` (tools/
 
 | Strategie | Kampagnen | bis Ende Kapitel 3 | je pleite | Ø Endwert | Siegquote | Ø Käufe auf Kredit | Ø Zwangsverkäufe |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| vorsichtig | 1.000 | 99,5 % | 0,5 % | 515.038 $ | 17,1 % | 0,00 | 0,00 |
-| gierig | 1.000 | 60,0 % | 33,2 % | 417.295 $ | 14,5 % | 1,24 | 0,53 |
-| ausgewogen | 1.000 | 87,4 % | 8,4 % | 758.494 $ | 54,2 % | 1,13 | 0,01 |
-| betruegerisch | 1.000 | 55,9 % | 5,0 % | 370.010 $ | 14,1 % | 1,00 | 0,01 |
-| zufaellig | 1.000 | 5,3 % | 88,8 % | 3.793 $ | 0,1 % | 0,02 | 0,01 |
+| vorsichtig | 1.000 | 98,8 % | 1,2 % | 505.971 $ | 18,1 % | 0,00 | 0,00 |
+| gierig | 1.000 | 68,8 % | 29,5 % | 476.557 $ | 21,8 % | 1,33 | 0,60 |
+| ausgewogen | 1.000 | 90,9 % | 8,2 % | 665.316 $ | 42,8 % | 1,24 | 0,01 |
+| betruegerisch | 1.000 | 55,8 % | 6,5 % | 377.884 $ | 17,2 % | 1,00 | 0,01 |
+| zufaellig | 1.000 | 5,2 % | 89,9 % | 3.185 $ | 0,0 % | 0,02 | 0,00 |
 
 ### Je Kapitel
 
@@ -156,39 +156,39 @@ Anteile beziehen sich auf alle Kampagnen der Strategie; Imperiumswerte auf die, 
 
 | Strategie | Kapitel | begonnen | scheidet aus | davon pleite | pleite schon im Sprung | abgesetzt/geschluckt | Haft | pleite nach bestandenem Vorkapitel | Kapitelziel | Ø Imperium | Median | 90 % |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| vorsichtig | 1 | 1.000 | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | – | 53,4 % | 103.383 $ | 95.287 $ | 197.187 $ |
-| vorsichtig | 2 | 1.000 | 0,4 % | 0,4 % | 0,4 % | 0,0 % | 0,0 % | 0,0 % (von 534) | 23,7 % | 377.561 $ | 296.240 $ | 748.624 $ |
-| vorsichtig | 3 | 996 | 0,1 % | 0,1 % | 0,1 % | 0,0 % | 0,0 % | 0,0 % (von 237) | 9,5 % | 517.626 $ | 437.461 $ | 930.307 $ |
-| gierig | 1 | 1.000 | 10,4 % | 10,4 % | 0,0 % | 0,0 % | 0,0 % | – | 67,0 % | 109.597 $ | 100.841 $ | 204.420 $ |
-| gierig | 2 | 896 | 6,1 % | 6,1 % | 4,5 % | 0,0 % | 0,0 % | 0,7 % (von 670) | 54,7 % | 654.241 $ | 647.856 $ | 931.488 $ |
-| gierig | 3 | 835 | 23,5 % | 16,7 % | 0,0 % | 6,3 % | 0,5 % | 15,9 % (von 547) | 30,8 % | 695.491 $ | 650.623 $ | 1.024.486 $ |
-| ausgewogen | 1 | 1.000 | 2,9 % | 2,9 % | 0,0 % | 0,0 % | 0,0 % | – | 58,5 % | 119.679 $ | 108.710 $ | 228.770 $ |
-| ausgewogen | 2 | 971 | 4,9 % | 4,9 % | 4,2 % | 0,0 % | 0,0 % | 0,0 % (von 585) | 55,9 % | 639.134 $ | 646.002 $ | 977.752 $ |
-| ausgewogen | 3 | 922 | 4,8 % | 0,6 % | 0,0 % | 4,2 % | 0,0 % | 0,4 % (von 559) | 44,5 % | 867.842 $ | 838.765 $ | 1.276.621 $ |
-| betruegerisch | 1 | 1.000 | 0,2 % | 0,2 % | 0,0 % | 0,0 % | 0,0 % | – | 64,7 % | 129.457 $ | 119.841 $ | 246.939 $ |
-| betruegerisch | 2 | 998 | 14,3 % | 4,3 % | 4,0 % | 0,0 % | 10,0 % | 0,2 % (von 647) | 33,2 % | 536.837 $ | 515.693 $ | 849.156 $ |
-| betruegerisch | 3 | 855 | 29,6 % | 0,5 % | 0,1 % | 0,0 % | 29,1 % | 0,0 % (von 332) | 0,0 % | 661.914 $ | 569.935 $ | 1.160.480 $ |
+| vorsichtig | 1 | 1.000 | 0,1 % | 0,1 % | 0,0 % | 0,0 % | 0,0 % | – | 52,0 % | 103.100 $ | 92.488 $ | 194.153 $ |
+| vorsichtig | 2 | 999 | 0,2 % | 0,2 % | 0,2 % | 0,0 % | 0,0 % | 0,0 % (von 520) | 21,7 % | 367.658 $ | 288.524 $ | 751.689 $ |
+| vorsichtig | 3 | 997 | 0,9 % | 0,9 % | 0,6 % | 0,0 % | 0,0 % | 0,0 % (von 217) | 9,5 % | 512.117 $ | 437.298 $ | 924.186 $ |
+| gierig | 1 | 1.000 | 9,2 % | 9,2 % | 0,0 % | 0,0 % | 0,0 % | – | 65,3 % | 107.458 $ | 96.888 $ | 201.937 $ |
+| gierig | 2 | 908 | 7,2 % | 7,2 % | 5,7 % | 0,0 % | 0,0 % | 0,8 % (von 653) | 58,1 % | 693.549 $ | 695.433 $ | 1.008.174 $ |
+| gierig | 3 | 836 | 14,8 % | 13,1 % | 0,0 % | 1,2 % | 0,5 % | 11,2 % (von 581) | 34,5 % | 692.670 $ | 670.334 $ | 1.026.911 $ |
+| ausgewogen | 1 | 1.000 | 2,0 % | 2,0 % | 0,0 % | 0,0 % | 0,0 % | – | 55,1 % | 112.053 $ | 99.464 $ | 217.058 $ |
+| ausgewogen | 2 | 980 | 5,3 % | 5,3 % | 4,9 % | 0,0 % | 0,0 % | 0,4 % (von 551) | 46,0 % | 570.854 $ | 574.082 $ | 916.395 $ |
+| ausgewogen | 3 | 927 | 1,8 % | 0,9 % | 0,0 % | 0,9 % | 0,0 % | 0,4 % (von 460) | 37,5 % | 731.921 $ | 718.412 $ | 1.224.463 $ |
+| betruegerisch | 1 | 1.000 | 0,2 % | 0,2 % | 0,0 % | 0,0 % | 0,0 % | – | 63,6 % | 126.452 $ | 116.267 $ | 238.421 $ |
+| betruegerisch | 2 | 998 | 14,3 % | 5,1 % | 3,8 % | 0,0 % | 9,2 % | 0,0 % (von 636) | 35,3 % | 545.104 $ | 521.505 $ | 871.020 $ |
+| betruegerisch | 3 | 855 | 29,7 % | 1,2 % | 0,0 % | 0,0 % | 28,5 % | 0,0 % (von 353) | 0,0 % | 677.212 $ | 579.308 $ | 1.243.556 $ |
 | zufaellig | 1 | 1.000 | 11,9 % | 11,9 % | 0,0 % | 0,0 % | 0,0 % | – | 0,2 % | 1.111 $ | 5 $ | 210 $ |
-| zufaellig | 2 | 881 | 67,9 % | 63,0 % | 25,5 % | 0,0 % | 0,0 % | 0,0 % (von 2) | 0,1 % | 2.944 $ | -2.079 $ | 17.818 $ |
-| zufaellig | 3 | 202 | 14,9 % | 13,9 % | 8,7 % | 0,0 % | 0,0 % | 0,0 % (von 1) | 0,0 % | 71.562 $ | 28.418 $ | 181.054 $ |
+| zufaellig | 2 | 881 | 69,4 % | 65,7 % | 25,5 % | 0,0 % | 0,0 % | 0,0 % (von 2) | 0,1 % | 3.784 $ | -2.531 $ | 17.825 $ |
+| zufaellig | 3 | 187 | 13,5 % | 12,3 % | 7,9 % | 0,0 % | 0,0 % | 0,0 % (von 1) | 0,0 % | 61.255 $ | 19.891 $ | 192.586 $ |
 
 | Strategie | Kapitel | Welten mit Kreditkrise | Pleitequote dort | Welten ohne | Pleitequote dort |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| vorsichtig | 1 | 78 | 0,0 % | 922 | 0,0 % |
-| vorsichtig | 2 | 217 | 0,0 % | 779 | 0,0 % |
-| vorsichtig | 3 | 242 | 0,0 % | 753 | 0,0 % |
-| gierig | 1 | 76 | 19,7 % | 924 | 9,6 % |
-| gierig | 2 | 188 | 1,1 % | 663 | 2,1 % |
-| gierig | 3 | 613 | 15,8 % | 222 | 31,5 % |
-| ausgewogen | 1 | 76 | 5,3 % | 924 | 2,7 % |
-| ausgewogen | 2 | 196 | 0,5 % | 733 | 0,8 % |
-| ausgewogen | 3 | 443 | 0,5 % | 479 | 0,8 % |
+| vorsichtig | 1 | 78 | 1,3 % | 922 | 0,0 % |
+| vorsichtig | 2 | 216 | 0,0 % | 781 | 0,0 % |
+| vorsichtig | 3 | 220 | 0,0 % | 771 | 0,4 % |
+| gierig | 1 | 76 | 11,8 % | 924 | 9,0 % |
+| gierig | 2 | 189 | 1,1 % | 662 | 2,0 % |
+| gierig | 3 | 641 | 13,6 % | 195 | 22,6 % |
+| ausgewogen | 1 | 79 | 8,9 % | 921 | 1,4 % |
+| ausgewogen | 2 | 196 | 0,5 % | 735 | 0,4 % |
+| ausgewogen | 3 | 396 | 1,5 % | 531 | 0,6 % |
 | betruegerisch | 1 | 80 | 2,5 % | 920 | 0,0 % |
-| betruegerisch | 2 | 189 | 0,5 % | 769 | 0,3 % |
-| betruegerisch | 3 | 310 | 0,0 % | 544 | 0,7 % |
+| betruegerisch | 2 | 195 | 1,5 % | 765 | 1,3 % |
+| betruegerisch | 3 | 305 | 1,3 % | 550 | 1,5 % |
 | zufaellig | 1 | 79 | 8,9 % | 921 | 12,2 % |
-| zufaellig | 2 | 117 | 72,6 % | 509 | 57,0 % |
-| zufaellig | 3 | 28 | 39,3 % | 87 | 47,1 % |
+| zufaellig | 2 | 118 | 73,7 % | 508 | 62,0 % |
+| zufaellig | 3 | 24 | 41,7 % | 84 | 40,5 % |
 
 ### Krisen je Kampagne
 
@@ -196,11 +196,11 @@ GDD §15 nennt je Kampagne (7 Kapitel, 73 Jahre) 2–4 Kreditkrisen, 1–3 Ölsc
 
 | Welten von | Ø Kreditkrisen (Bankpanik + Crash) | 10 % · 50 % · 90 % | Ø Ölschwemmen | 10 % · 50 % · 90 % | Ø Kriege | 10 % · 50 % · 90 % |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| vorsichtig | 1,09 | 0 · 1 · 2 | 0,66 | 0 · 0 · 2 | 0,36 | 0 · 0 · 1 |
-| gierig | 1,59 | 0 · 1 · 3 | 0,66 | 0 · 0 · 2 | 0,37 | 0 · 0 · 1 |
-| ausgewogen | 1,31 | 0 · 1 · 3 | 0,66 | 0 · 0 · 2 | 0,36 | 0 · 0 · 1 |
-| betruegerisch | 1,20 | 0 · 1 · 2 | 0,66 | 0 · 0 · 2 | 0,36 | 0 · 0 · 1 |
-| zufaellig | 0,99 | 0 · 1 · 2 | 0,66 | 0 · 0 · 2 | 0,34 | 0 · 0 · 1 |
+| vorsichtig | 1,06 | 0 · 1 · 2 | 0,66 | 0 · 0 · 2 | 0,36 | 0 · 0 · 1 |
+| gierig | 1,62 | 0 · 2 · 3 | 0,66 | 0 · 0 · 2 | 0,38 | 0 · 0 · 1 |
+| ausgewogen | 1,25 | 0 · 1 · 3 | 0,66 | 0 · 0 · 2 | 0,36 | 0 · 0 · 1 |
+| betruegerisch | 1,16 | 0 · 1 · 2 | 0,66 | 0 · 0 · 2 | 0,36 | 0 · 0 · 1 |
+| zufaellig | 0,97 | 0 · 1 · 2 | 0,66 | 0 · 0 · 2 | 0,35 | 0 · 0 · 1 |
 
 ### Kein dominanter Weg: Haltung im Zeitsprung
 
@@ -208,9 +208,9 @@ Der Standard-Bot spielt dieselben Seeds mit jeder der drei Haltungen (sonst unve
 
 | Haltung (Standard-Bot) | bis Ende Kapitel 3 | Ø Endwert | Siegquote |
 | --- | ---: | ---: | ---: |
-| wagemutig | 81,1 % | 702.884 $ | 28,5 % |
-| ausgewogen | 87,4 % | 758.494 $ | 39,9 % |
-| vorsichtig | 85,1 % | 677.817 $ | 21,7 % |
+| wagemutig | 82,9 % | 610.758 $ | 28,0 % |
+| ausgewogen | 90,9 % | 665.316 $ | 39,4 % |
+| vorsichtig | 91,9 % | 602.629 $ | 26,2 % |
 
 ### Gleicher Start
 
@@ -218,11 +218,11 @@ Kapitel 1 entscheidet viel: Wer es ohne Quelle beendet, geht im Zeitsprung meist
 
 | Strategie (ab Kapitelende des Standard-Bots) | bis Ende Kapitel 3 | Ø Endwert | Siegquote |
 | --- | ---: | ---: | ---: |
-| vorsichtig | 92,2 % | 732.711 $ | 26,4 % |
-| gierig | 62,1 % | 462.189 $ | 5,3 % |
-| ausgewogen | 87,4 % | 758.494 $ | 22,3 % |
-| betruegerisch | 84,0 % | 756.436 $ | 37,4 % |
-| zufaellig | 60,3 % | 273.045 $ | 1,8 % |
+| vorsichtig | 92,1 % | 631.841 $ | 27,7 % |
+| gierig | 64,9 % | 416.542 $ | 6,3 % |
+| ausgewogen | 90,9 % | 665.316 $ | 21,3 % |
+| betruegerisch | 84,6 % | 669.002 $ | 35,8 % |
+| zufaellig | 63,1 % | 240.369 $ | 2,8 % |
 
 ### Cranes Feldzug (Kapitel 3)
 
@@ -230,11 +230,11 @@ Ab 10 Harlan-Tankstellen kündigt Margaret Crane einen Preiskrieg an (src/sim/fe
 
 | Strategie | Kapitel 3 begonnen | Feldzug erlebt | durchgehalten | Absprache | Netz verloren | bis Kapitelende | mitten im Krieg ausgeschieden | Thornes Kredit genommen | davon geschluckt |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| vorsichtig | 995 | 92,3 % | 87,0 % | 0,0 % | 0,0 % | 5,2 % | 0,0 % | 0,0 % | – |
-| gierig | 835 | 98,9 % | 86,0 % | 0,0 % | 0,0 % | 2,9 % | 10,1 % | 26,5 % | 28,5 % |
-| ausgewogen | 922 | 99,3 % | 93,9 % | 0,0 % | 0,0 % | 3,5 % | 2,0 % | 13,7 % | 33,3 % |
-| betruegerisch | 854 | 98,6 % | 0,0 % | 91,1 % | 0,0 % | 0,1 % | 7,4 % | 0,0 % | – |
-| zufaellig | 115 | 4,3 % | 3,5 % | 0,0 % | 0,0 % | 0,0 % | 0,9 % | 1,7 % | 0,0 % |
+| vorsichtig | 991 | 93,7 % | 88,1 % | 0,0 % | 0,0 % | 5,7 % | 0,0 % | 0,0 % | – |
+| gierig | 836 | 99,0 % | 90,3 % | 0,0 % | 0,0 % | 3,1 % | 5,6 % | 20,9 % | 6,9 % |
+| ausgewogen | 927 | 98,8 % | 94,2 % | 0,0 % | 0,2 % | 3,7 % | 0,8 % | 27,8 % | 3,5 % |
+| betruegerisch | 855 | 98,0 % | 0,0 % | 91,1 % | 0,0 % | 0,5 % | 6,4 % | 0,0 % | – |
+| zufaellig | 108 | 5,6 % | 4,6 % | 0,9 % | 0,0 % | 0,0 % | 0,0 % | 3,7 % | 0,0 % |
 
 ### Betrug und Delaney
 
@@ -242,11 +242,11 @@ Der betrügerische Bot (GDD §17) zieht jeden schmutzigen Hebel (siehe oben); se
 
 | Strategie | Vorermittlung | Anklage | verurteilt | Zwangsverkauf | Haft | Ø Hitze am Ende | Doppelspiel aufgeflogen | Preisabsprache im Feldzug |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| vorsichtig | 13,5 % | 7,9 % | 3,3 % | 0,0 % | 0,0 % | 0,59 | 0,0 % | 0,0 % |
-| gierig | 84,4 % | 83,9 % | 56,7 % | 5,1 % | 0,5 % | 1,47 | 0,0 % | 0,0 % |
-| ausgewogen | 56,3 % | 29,1 % | 13,3 % | 0,2 % | 0,0 % | 1,30 | 0,0 % | 0,0 % |
-| betruegerisch | 95,8 % | 95,8 % | 71,5 % | 68,9 % | 39,1 % | 3,13 | 80,6 % | 77,8 % |
-| zufaellig | 54,7 % | 38,9 % | 15,1 % | 2,5 % | 0,0 % | 1,84 | 0,0 % | 0,0 % |
+| vorsichtig | 23,8 % | 17,7 % | 7,8 % | 0,0 % | 0,0 % | 0,64 | 0,0 % | 0,0 % |
+| gierig | 84,5 % | 83,9 % | 56,5 % | 5,6 % | 0,5 % | 1,36 | 0,0 % | 0,0 % |
+| ausgewogen | 56,1 % | 31,7 % | 12,7 % | 0,2 % | 0,0 % | 1,33 | 0,0 % | 0,0 % |
+| betruegerisch | 96,0 % | 95,6 % | 73,5 % | 69,6 % | 37,7 % | 3,30 | 81,5 % | 77,9 % |
+| zufaellig | 53,1 % | 36,7 % | 14,1 % | 1,5 % | 0,0 % | 2,01 | 0,0 % | 0,1 % |
 
 ### Zielwerte Kapitel 1–3
 
@@ -254,24 +254,24 @@ Toleranzbereiche in balance.yaml unter bots.campaignTargets; gemessen in src/sim
 
 | Kennzahl | Ziel (Quelle) | Toleranz | Ist | im Rahmen |
 | --- | --- | ---: | ---: | :---: |
-| Ø Kreditkrisen je Kampagne (Kapitel 1–3, 24 Jahre; Welten ohne Kauf auf Kredit) | GDD §15: 2–4 je Kampagne (73 Jahre) → anteilig | 0,66 – 1,32 | 1,09 | ja |
+| Ø Kreditkrisen je Kampagne (Kapitel 1–3, 24 Jahre; Welten ohne Kauf auf Kredit) | GDD §15: 2–4 je Kampagne (73 Jahre) → anteilig | 0,66 – 1,32 | 1,06 | ja |
 | Ø Ölschwemmen je Kampagne (Kapitel 1–3) | GDD §15: 1–3 je Kampagne → anteilig | 0,33 – 1,00 | 0,66 | ja |
 | Ø Kriege je Kampagne (Kapitel 1–3) | GDD §15: 0–2 je Kampagne → anteilig | 0,00 – 0,66 | 0,36 | ja |
-| Standard-Bot spielt bis Ende Kapitel 3 | GDD §17: übersteht Kapitel 4 in 55–70 % → bis Kapitel 3 etwas mehr | 60,0 % – 90,0 % | 87,4 % | ja |
-| Pleitequote Standard-Bot in Kapitel 2 (mit Sprung I), wenn Kapitel 1 bestanden | Krisen fordern Opfer, aber wer das Kapitel davor geschafft hat, überlebt meist | 0,0 % – 15,0 % | 0,0 % | ja |
+| Standard-Bot spielt bis Ende Kapitel 3 | GDD §17: übersteht Kapitel 4 in 55–70 % → bis Kapitel 3 etwas mehr | 60,0 % – 90,0 % | 90,9 % | **nein** |
+| Pleitequote Standard-Bot in Kapitel 2 (mit Sprung I), wenn Kapitel 1 bestanden | Krisen fordern Opfer, aber wer das Kapitel davor geschafft hat, überlebt meist | 0,0 % – 15,0 % | 0,4 % | ja |
 | Pleitequote Standard-Bot in Kapitel 3 (mit Sprung II), wenn Kapitel 2 bestanden | wie Kapitel 2 | 0,0 % – 15,0 % | 0,4 % | ja |
-| Pleitequote gierig über die Kampagne | GDD §15: wer im Boom zu viele Schulden macht, stirbt im Crash | 20,0 % – 75,0 % | 33,2 % | ja |
-| Pleite gierig in Kapitel 1 mit Kreditkrise ÷ ohne | GDD §8/§15: in der Krise kündigt die Bank, der Crash trifft die Verschuldeten (über 1) | 1,50 – 20,00 | 2,05 | ja |
-| Kapitelziel 2 Standard-Bot | Kapitelprüfung erreichbar, aber nicht geschenkt | 20,0 % – 70,0 % | 55,9 % | ja |
-| Kapitelziel 3 Standard-Bot | Kapitelprüfung erreichbar, aber nicht geschenkt | 20,0 % – 70,0 % | 44,5 % | ja |
-| Ø Imperium Ende Kapitel 2 ÷ Ende Kapitel 1 (Standard-Bot) | GDD §13: aus der Firma wird ein Herausforderer | 1,50 – 50,00 | 5,34 | ja |
-| Ø Imperium Ende Kapitel 3 ÷ Ende Kapitel 2 (Standard-Bot) | GDD §13: aus dem Herausforderer wird ein Konzern | 1,20 – 50,00 | 1,36 | ja |
-| Ø Endwert vorsichtig ÷ bester Ø der Mutigeren | GDD §15: wer nie Schulden macht, wird überholt (unter 1) | 0,00 – 0,95 | 0,68 | ja |
-| Höchste Siegquote einer Strategie (Endwert Kapitel 3) | GDD §17: keine Einzelstrategie gewinnt in mehr als 40 % | 0,0 % – 40,0 % | 54,2 % | **nein** |
-| Höchste Siegquote einer Strategie bei gleichem Start (Kapitel 2/3 ab Kapitelende des Standard-Bots) | GDD §17 auf Kapitel 2 und 3 allein: kein Weg dominiert | 0,0 % – 40,0 % | 37,4 % | ja |
-| Höchste Siegquote einer Haltung im Zeitsprung (Standard-Bot) | kein dominanter Weg: keine Haltung gewinnt fast immer | 0,0 % – 60,0 % | 39,9 % | ja |
-| Kampagnen des betrügerischen Bots, die mit Haft enden | GDD §17/§10: Betrug lohnt sich manchmal, oft endet er vor Gericht | 10,0 % – 40,0 % | 39,1 % | ja |
-| Kampagnen des betrügerischen Bots mit Verurteilung (Geldstrafe, Zwangsverkauf oder Haft) | GDD §10: Delaney erwischt ihn oft, aber nicht immer | 25,0 % – 80,0 % | 71,5 % | ja |
+| Pleitequote gierig über die Kampagne | GDD §15: wer im Boom zu viele Schulden macht, stirbt im Crash | 20,0 % – 75,0 % | 29,5 % | ja |
+| Pleite gierig in Kapitel 1 mit Kreditkrise ÷ ohne | GDD §8/§15: in der Krise kündigt die Bank, der Crash trifft die Verschuldeten (über 1) | 1,50 – 20,00 | 1,32 | **nein** |
+| Kapitelziel 2 Standard-Bot | Kapitelprüfung erreichbar, aber nicht geschenkt | 20,0 % – 70,0 % | 46,0 % | ja |
+| Kapitelziel 3 Standard-Bot | Kapitelprüfung erreichbar, aber nicht geschenkt | 20,0 % – 70,0 % | 37,5 % | ja |
+| Ø Imperium Ende Kapitel 2 ÷ Ende Kapitel 1 (Standard-Bot) | GDD §13: aus der Firma wird ein Herausforderer | 1,50 – 50,00 | 5,09 | ja |
+| Ø Imperium Ende Kapitel 3 ÷ Ende Kapitel 2 (Standard-Bot) | GDD §13: aus dem Herausforderer wird ein Konzern | 1,20 – 50,00 | 1,28 | ja |
+| Ø Endwert vorsichtig ÷ bester Ø der Mutigeren | GDD §15: wer nie Schulden macht, wird überholt (unter 1) | 0,00 – 0,95 | 0,76 | ja |
+| Höchste Siegquote einer Strategie (Endwert Kapitel 3) | GDD §17: keine Einzelstrategie gewinnt in mehr als 40 % | 0,0 % – 40,0 % | 42,8 % | **nein** |
+| Höchste Siegquote einer Strategie bei gleichem Start (Kapitel 2/3 ab Kapitelende des Standard-Bots) | GDD §17 auf Kapitel 2 und 3 allein: kein Weg dominiert | 0,0 % – 40,0 % | 35,8 % | ja |
+| Höchste Siegquote einer Haltung im Zeitsprung (Standard-Bot) | kein dominanter Weg: keine Haltung gewinnt fast immer | 0,0 % – 60,0 % | 39,4 % | ja |
+| Kampagnen des betrügerischen Bots, die mit Haft enden | GDD §17/§10: Betrug lohnt sich manchmal, oft endet er vor Gericht | 10,0 % – 40,0 % | 37,7 % | ja |
+| Kampagnen des betrügerischen Bots mit Verurteilung (Geldstrafe, Zwangsverkauf oder Haft) | GDD §10: Delaney erwischt ihn oft, aber nicht immer | 25,0 % – 80,0 % | 73,5 % | ja |
 
 <!-- Kampagne: Ende -->
 
