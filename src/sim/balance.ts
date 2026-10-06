@@ -592,6 +592,8 @@ export interface CampaignBotPolicy {
   feldzug?: { pact: boolean; loan: boolean; sellBelow: number; pactAfter?: number } | null;
   /** Messvariante (0.4.20+28, nur per Balance-Änderung im Speicher, nicht in balance.yaml): stellt diese Rollen ein, sobald eine Bewerbung da ist. */
   staff?: ('secretary' | 'fixer')[];
+  /** Messvariante Forschung (0.4.20+30): Werkstatt bauen und diese Techniken der Reihe nach erforschen (Förderstufe funding), dazu Lizenzen kaufen. */
+  research?: { research: string[]; funding: number; licenses: string[] };
   /**
    * Schmutzige Hebel in Kapitel 2/3 (nur der betrügerische Bot, src/sim/campaignBots.ts dirtyTurn). Fehlt/null: keine.
    * fixer = stellt einen Sicherheitschef ein (keinen Gewissenhaften) und lässt bei Bullard sabotieren, solange die

@@ -12,6 +12,7 @@ import {
   delaneyTable,
   dirtyTurn,
   staffTurn,
+  researchTurn,
   checkCampaignTargets,
   bondsTurn,
   coverDues,
@@ -317,6 +318,23 @@ describe('Aktienbuch (Kapitel 2/3): stocksTurn', () => {
   it('Familienfirma: nichts zu tun', () => {
     const s = ag(0);
     expect(stocksTurn(s, balance, policy())).toBe(s);
+  });
+});
+
+describe('Forschungs-Variante (researchTurn)', () => {
+  const k2 = (cash = 100_000): GameState => ({ ...newGame('forschung', balance), chapter: 2, cash });
+  it('ohne policy.research oder in Kapitel 1 forscht er nicht', () => {
+    const s = k2();
+    expect(researchTurn(s, balance, policy())).toBe(s);
+    const k1 = newGame('k1', balance);
+    expect(researchTurn(k1, balance, policy({ research: { research: ['rotary'], funding: 1, licenses: [] } }))).toBe(k1);
+  });
+  it('baut die Werkstatt und erforscht die erste fehlende Technik – nicht unter der Rücklage', () => {
+    const t = researchTurn(k2(), balance, policy({ research: { research: ['rotary'], funding: 1, licenses: [] } }));
+    expect(t.research!.workshop).toBe(true);
+    expect(t.research!.project).toBe('rotary');
+    const arm = k2(1000);
+    expect(researchTurn(arm, balance, policy({ research: { research: ['rotary'], funding: 1, licenses: [] } })).research?.workshop ?? false).toBe(false);
   });
 });
 
