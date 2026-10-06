@@ -99,6 +99,11 @@ texts:
   accepted: { de: "Zugesagt.", en: "Agreed." }
   refused: { de: "Abgelehnt – zu wenig Vertrauen.", en: "Refused – not enough trust." }
   effects: { de: "Wirkung diese Runde: {preis} je Barrel beim Trust, Pachten {pacht}.", en: "Effect this round: {preis} per barrel from the Trust, leases {pacht}." }
+  estimate: { de: "Etwa {betrag} je Runde, {runden}.", en: "About {betrag} per round, {runden}." }
+  estimate_barrel: { de: "Etwa {betrag} je Runde ({preis} je Barrel auf deine Förderung), {runden}.", en: "About {betrag} per round ({preis} per barrel on your output), {runden}." }
+  estimate_none: { de: "Bringt keinen laufenden Gewinn, {runden}.", en: "Brings no running profit, {runden}." }
+  estimate_trace_law: { de: "Ein Kartellgesetz gilt: verboten – das hinterlässt eine Spur (Schwere {n}) im Schattenbuch.", en: "An antitrust law is in force: illegal – this leaves a trace (severity {n}) in the shadow ledger." }
+  estimate_trace_none: { de: "Noch gilt kein Kartellgesetz. Käme eines, wäre die Absprache verboten und würde zur Spur im Schattenbuch.", en: "No antitrust law applies yet. If one passes, the agreement becomes illegal and turns into a trace in the shadow ledger." }
   heat: { de: "Kartellabsprachen unter dem Gesetz: {n} Spur(en) im Schattenbuch.", en: "Cartel agreements under the law: {n} trace(s) in the shadow ledger." }
   takeovers_intro:
     de: Kleine Firmen im Revier. Kaufst du eine, fördern ihre Quellen weiter – der Gewinn geht an dich.

@@ -158,3 +158,149 @@ names:
       text:
         de: Preisboxer, dann Leibwächter eines Viehbarons. Redet wenig, vergisst nichts.
         en: A prizefighter, then bodyguard to a cattle baron. Says little, forgets nothing.
+
+texts:
+  tab_people:
+    de: "Leute"
+    en: "People"
+  tab_policies:
+    de: "Richtlinien"
+    en: "Policies"
+  tab_orders:
+    de: "Aufträge"
+    en: "Orders"
+  no_staff:
+    de: "Personal gibt es erst ab Kapitel 2."
+    en: "Staff only comes in chapter 2."
+  dismiss:
+    de: "Entlassen"
+    en: "Dismiss"
+  dismiss_question:
+    de: "{name} entlassen? Das kostet eine Abfindung, und die anderen nehmen es übel."
+    en: "Dismiss {name}? That costs severance, and the others will resent it."
+  dismiss_confirm:
+    de: "Ja, entlassen"
+    en: "Yes, dismiss"
+  competence:
+    de: "Kompetenz"
+    en: "Competence"
+  competence_approx:
+    de: " (ungefähr)"
+    en: " (approx.)"
+  wage_line:
+    de: "Lohn {lohn} je Runde"
+    en: "Wage {lohn} per round"
+  acts:
+    de: "Wirkt"
+    en: "Appears"
+  since_now:
+    de: "dieser Runde"
+    en: "this round"
+  since_one:
+    de: "einer Runde"
+    en: "one round"
+  since_n:
+    de: "{n} Runden"
+    en: "{n} rounds"
+  service_line:
+    de: "seit {seit} im Dienst"
+    en: "in service for {seit}"
+  record:
+    de: "Akte: {good} gut, {bad} schlecht"
+    en: "File: {good} good, {bad} bad"
+  drunk:
+    de: "fällt diese Runde aus"
+    en: "out this round"
+  recognized_done:
+    de: "Schon in dieser Runde."
+    en: "Already done this round."
+  recognize:
+    de: "Anerkennung (1 Termin)"
+    en: "Recognition (1 appointment)"
+  nobody:
+    de: "Noch arbeitet niemand für Jacob – alles liegt auf seinem Tisch."
+    en: "Nobody works for Jacob yet – everything lands on his desk."
+  payroll:
+    de: "Löhne zusammen: {summe} je Runde, am Rundenende."
+    en: "Wages together: {summe} per round, at round end."
+  applications:
+    de: "Bewerbungen"
+    en: "Applications"
+  hire:
+    de: "Einstellen (1 Termin)"
+    en: "Hire (1 appointment)"
+  refresh:
+    de: "Neue Bewerbungen kommen alle {n} Runden."
+    en: "New applications arrive every {n} rounds."
+  journal_title:
+    de: "Aus dem Büro"
+    en: "From the office"
+  delegated_one:
+    de: "Im Posteingang liegt ein Brief, den das Vorzimmer übernimmt, wenn Jacob ihn liegen lässt."
+    en: "There is one letter in the inbox that the front office takes over if Jacob leaves it."
+  delegated_many:
+    de: "Im Posteingang liegen {n} Briefe, die das Vorzimmer übernimmt, wenn Jacob sie liegen lässt."
+    en: "There are {n} letters in the inbox that the front office takes over if Jacob leaves them."
+  no_secretary:
+    de: "Ohne Kraft im Vorzimmer setzt niemand die Post- und Verkaufsregeln um."
+    en: "Without someone in the front office, nobody carries out the mail and sales rules."
+  mail_title:
+    de: "Post"
+    en: "Mail"
+  mail_hint:
+    de: "Läuft die Frist eines Briefs ab, entscheidet das Vorzimmer nach eigenem Urteil – Folgen, die man dem Brief nicht ansieht, kennt es nicht."
+    en: "When a letter's deadline runs out, the front office decides by its own judgement – it doesn't know consequences the letter doesn't show."
+  spend_before:
+    de: "Ausgaben bis"
+    en: "Spending up to"
+  spend_after:
+    de: "$ darf das Vorzimmer selbst entscheiden"
+    en: "$ may be decided by the front office itself"
+  apply:
+    de: "Übernehmen"
+    en: "Apply"
+  sales_title:
+    de: "Verkauf"
+    en: "Sales"
+  sales_on:
+    de: "Das Vorzimmer verkauft am Rundenende nach Regel"
+    en: "The front office sells at round end by rule"
+  sales_min_before:
+    de: "Nur ab"
+    en: "Only from"
+  sales_min_after:
+    de: "$ je Barrel beim Trust"
+    en: "$ per barrel from the Trust"
+  sales_each:
+    de: "Je Runde"
+    en: "Per round"
+  sales_share:
+    de: "{n} % des Tanks"
+    en: "{n} % of the tank"
+  wages_title:
+    de: "Löhne"
+    en: "Wages"
+  wages_hint:
+    de: "Gute Löhne halten die Leute, Kürzungen kosten sofort Vertrauen."
+    en: "Good wages keep people; cuts cost trust at once."
+  heat_label:
+    de: "Hitze:"
+    en: "Heat:"
+  order_running:
+    de: "Läuft schon in dieser Runde."
+    en: "Already running this round."
+  order_active:
+    de: "In Auftrag"
+    en: "Ordered"
+  order:
+    de: "Beauftragen ({kosten})"
+    en: "Order ({kosten})"
+  order_chance:
+    de: " · klappt etwa {n} von 100 Mal"
+    en: " · works about {n} times in 100"
+  report:
+    de: "Letzter Bericht"
+    en: "Latest report"
+  report_round:
+    de: " (Runde {n})"
+    en: " (round {n})"

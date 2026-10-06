@@ -952,7 +952,44 @@ export function validInvestigation(v: unknown): boolean {
 
 // --- Texte (content/investigation.yaml) ---------------------------------------------
 
+/** Feste Sätze des Schattenbuch-Fensters (Block „texts“ in content/investigation.yaml). */
+export const SHADOW_TEXT_KEYS = [
+  'tab_traces',
+  'tab_remedies',
+  'heat_label',
+  'severity_aria',
+  'evidence_none',
+  'evidence_thin',
+  'evidence_thick',
+  'evidence_crushing',
+  'outlook_low',
+  'outlook_mid',
+  'outlook_high',
+  'transferred',
+  'no_traces',
+  'witness_tag',
+  'faded_tag',
+  'closed_one',
+  'closed_many',
+  'destroy_hint',
+  'buy_witness',
+  'destroy',
+  'lawyer_title',
+  'lawyer_line',
+  'lawyer_none',
+  'delaney_title',
+  'scapegoat',
+  'pressure',
+  'pressure_favors',
+  'friends_good',
+  'friends_unsure',
+  'friends_bad',
+] as const;
+export type ShadowTextKey = (typeof SHADOW_TEXT_KEYS)[number];
+
 export interface InvestigationContent {
+  /** Feste Sätze der Oberfläche (Reiter, Knöpfe, Beweislage …). */
+  texts: Record<ShadowTextKey, LocalizedText>;
   /** Je Spur (Merkzeichen oder Art einer neuen Spur) ein Satz fürs Schattenbuch. */
   traces: Record<string, LocalizedText>;
   stages: Record<InvestigationStage, LocalizedText>;
@@ -1000,8 +1037,9 @@ export function parseInvestigationContent(file: string, text: string): { content
   const stages = block('stages', INVESTIGATION_STAGES);
   const heatT = block('heat', HEAT_WORDS);
   const verdicts = block('verdicts', VERDICTS);
-  if (errors.length > 0 || !tracesT || !stages || !heatT || !verdicts) return { content: null, errors };
-  return { content: { traces: tracesT, stages, heat: heatT, verdicts }, errors };
+  const texts = block('texts', SHADOW_TEXT_KEYS);
+  if (errors.length > 0 || !tracesT || !stages || !heatT || !verdicts || !texts) return { content: null, errors };
+  return { content: { traces: tracesT, stages, heat: heatT, verdicts, texts }, errors };
 }
 
 /**

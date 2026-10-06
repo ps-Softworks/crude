@@ -19,6 +19,7 @@ import {
   type DiploResult,
   type DiplomacyView,
 } from '../../sim/diplomacy';
+import { estimateOffer, type OfferEstimate } from '../../sim/diplomacyEstimate';
 import { diploText, respectWord, type DiploTab } from '../../sim/diplomacyContent';
 import type { GameState } from '../../sim/game';
 import { balance } from '../balance';
@@ -33,6 +34,32 @@ const T = C.texts;
 /** Preis je Barrel mit Cent, z. B. „0,06 $“ (wie im Verkaufsfenster). */
 function price(value: number): string {
   return `${value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${NBSP}$`;
+}
+
+/** Zwei Zeilen unter einem Angebot: geschätzter Ertrag je Runde samt Laufzeit, dazu Spur/Kartellgesetz. */
+function Schaetzung({ game, kind, law, lead = true }: { game: GameState; kind: keyof typeof C.kinds; law: boolean; lead?: boolean }) {
+  const e: OfferEstimate | null = estimateOffer(game, balance, kind);
+  if (!e) return null;
+  const runden = rounds(e.rounds);
+  const betrag = e.perRound === null ? '' : money(e.perRound);
+  const text =
+    e.perRound === null
+      ? diploText(T.estimate_none, { runden })
+      : e.perBarrel !== null
+        ? diploText(T.estimate_barrel, { betrag, preis: price(e.perBarrel), runden })
+        : diploText(T.estimate, { betrag, runden });
+  return (
+    <>
+      {lead && <br />}
+      <span className="klein">{text}</span>
+      {e.cartel && (
+        <>
+          <br />
+          <span className="klein hint">{diploText(law ? T.estimate_trace_law : T.estimate_trace_none, { n: e.traceSeverity })}</span>
+        </>
+      )}
+    </>
+  );
 }
 
 function grund(reason: DiploReason | null): string | undefined {
@@ -152,6 +179,7 @@ function Absprachen({ game, view, onGame }: { game: GameState; view: DiplomacyVi
               <span className="muted">{diploText(T.offer_left, { runden: rounds(o.roundsLeft) })}</span>
               <br />
               <span className="klein">{diploText(C.kinds[o.kind].text, { kosten, preis: money(o.price ?? 0) })}</span>
+              <Schaetzung game={game} kind={o.kind} law={view.law} />
               <div className="actions zeile">
                 <Knopf reason={null} run={() => answerOffer(game, balance, o.id, true)} onGame={onGame} confirm={o.kind === 'buyout' ? diploText(C.kinds.buyout.text, { preis: money(o.price ?? 0) }) : undefined}>
                   {diploText(o.kind === 'buyout' ? T.accept_buyout : T.accept)}
@@ -210,6 +238,14 @@ function Absprachen({ game, view, onGame }: { game: GameState; view: DiplomacyVi
                     </button>
                   ))}
               </div>
+              {vorschlaege
+                .filter((p) => p.rival === rival && p.reason === null)
+                .map((p) => (
+                  <div key={p.kind}>
+                    <span className="klein muted">{diploText(C.kinds[p.kind].label)}: </span>
+                    <Schaetzung game={game} kind={p.kind} law={view.law} lead={false} />
+                  </div>
+                ))}
             </li>
           ))}
         </ul>

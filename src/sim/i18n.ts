@@ -16,3 +16,8 @@ export function localize(text: LocalizedText, lang: Lang = DEFAULT_LANG): string
   const value = text[lang];
   return value && value.trim() !== '' ? value : text.de;
 }
+
+/** Der Text in der gewünschten Sprache, Platzhalter wie {name} durch `values` ersetzt (unbekannte bleiben stehen). */
+export function fillText(text: LocalizedText, values: Record<string, string | number> = {}, lang: Lang = DEFAULT_LANG): string {
+  return localize(text, lang).replace(/\{(\w+)\}/g, (ganz, key: string) => (values[key] !== undefined ? String(values[key]) : ganz));
+}
