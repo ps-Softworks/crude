@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { BalanceError, type Balance } from './balance';
-import { botFeldzug } from './botsKapitel3';
+import { botFeldzug, THORNE_PUFFER } from './botsKapitel3';
 import { brandOf, brandWorldFrom, buildStations, regionMarket, stationCost, type BrandState } from './brand';
 import { applyEarlyEnding } from './chapter';
 import { openChapterSystems } from './chapterSystems';
@@ -282,6 +282,21 @@ describe('Cranes Feldzug – Bots', () => {
     expect(t.feldzug!.loan).not.toBeNull();
     const reich = { ...t, cash: t.feldzug!.loan!.owed + 20000 };
     expect(botFeldzug(reich, sicher, { pact: false, loan: true, sellBelow: 0 }, 15000).feldzug!.loan).toBeNull();
+  });
+});
+
+describe('Thornes Frist (Bot, 0.4.20+33)', () => {
+  it('verkauft schon eine Runde vor der Frist Tankstellen bis zum fälligen Betrag plus Puffer – früher nicht', () => {
+    const knapp = settleFeldzug({ ...imKrieg(k3()), cash: 1000 }, sicher);
+    const geliehen = botFeldzug(knapp, sicher, { pact: false, loan: true, sellBelow: 0 }, 15000);
+    const loan = geliehen.feldzug!.loan!;
+    const frieden = { ...geliehen, cash: 0, feldzug: { ...geliehen.feldzug!, phase: 'vorbei' as const } };
+    const p = { pact: false, loan: true, sellBelow: 0 };
+    expect(botFeldzug({ ...frieden, round: loan.due - 2 }, sicher, p, 0).cash).toBe(0);
+    const t = botFeldzug({ ...frieden, round: loan.due - 1 }, sicher, p, 0);
+    const stationen = (x: GameState) => Object.values(x.brand!.regions).reduce((a, r) => a + r.stations, 0);
+    expect(stationen(t)).toBeLessThan(stationen(frieden));
+    if (stationen(t) > 0) expect(t.cash).toBeGreaterThanOrEqual(loan.owed * THORNE_PUFFER);
   });
 });
 

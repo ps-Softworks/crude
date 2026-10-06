@@ -30,6 +30,9 @@ export interface BrandBotPolicy {
 export const BRAND_BOT_MARGIN = 0.03;
 export const BRAND_BOT_MAX_STATIONS = 30;
 
+/** Puffer auf Thornes fälligen Betrag, bis zu dem der Bot Tankstellen verkauft. */
+export const THORNE_PUFFER = 1.2;
+
 export const DEFAULT_BRAND_BOT: BrandBotPolicy = { reserve: 15000, perRound: 3 };
 
 /**
@@ -146,8 +149,9 @@ export function botFeldzug(state: GameState, balance: Balance, policy: FeldzugBo
     const r = feldzugTilgen(s);
     if (r.ok) s = r.state;
   }
-  // Thornes Frist naht (diese Runde fällig): Tankstellen verkaufen, bis das Geld für ihn da ist.
-  const frist = s.feldzug?.loan && s.round >= s.feldzug.loan.due ? s.feldzug.loan.owed : 0;
+  // Thornes Frist naht (nächste oder diese Runde fällig): Tankstellen verkaufen, bis das Geld für ihn da ist – mit 20 %
+  // Puffer, weil am Rundenende vor der Fälligkeit noch Kosten abgehen (0.4.20+33: vorher reichte es oft knapp nicht).
+  const frist = s.feldzug?.loan && s.round >= s.feldzug.loan.due - 1 ? s.feldzug.loan.owed * THORNE_PUFFER : 0;
   if (s.feldzug?.phase !== 'krieg' && frist === 0) return s;
   if (policy.loan && s.feldzug?.phase === 'krieg' && s.cash < reserve) {
     const r = feldzugKredit(s, balance);
