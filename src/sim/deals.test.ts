@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { creditLimit, quarterInterest, settleLoans, takeLoan } from './credit';
-import { activeSupply, callerCard, insuranceClaim, insurancePremium, DEAL_HANDLERS, dealsOf, supplyPrice, supplyShortfall, dealsRunning, newDeals, royaltyPrice, settleDeals } from './deals';
+import { activeSupply, callerCard, crewReturnCost, insuranceClaim, insurancePremium, DEAL_HANDLERS, dealsOf, supplyPrice, supplyShortfall, dealsRunning, newDeals, royaltyPrice, settleDeals } from './deals';
 import type { Well } from './drilling';
 import { newGame, type GameState } from './game';
 import { bookCard, planView, ringPhone, settlePlans } from './plans';
 import { planRun, unlockRefinery } from './refinery';
-import { buyRig, rigReady } from './rigs';
+import { buyRig, returnRig, rigReady } from './rigs';
+import { availableFavors } from './lobby';
 import { deserializeGame, serializeGame } from './save';
 import { loadBalance } from './testBalance';
 import { loadEvents } from './testEvents';
@@ -347,5 +348,57 @@ describe('Versicherung, Arbeiter, Presse (0.4.20+36)', () => {
     expect(Math.abs(hoch / 200 - (1 - b.press.ads.backlash))).toBeLessThan(0.08);
     const iv = DEAL_HANDLERS.interview_presse.apply(k2('iv'), balance);
     expect(Math.abs(iv.reputation?.public ?? 0)).toBe(b.press.interview.reputation);
+  });
+});
+
+describe('Lohnbohrer, Ausrüster, Motorwagen, Abgeordneter (0.4.20+37)', () => {
+  const k2 = (seed: string, patch: Partial<GameState> = {}) => start(seed, { chapter: 2, ...patch });
+
+  it('Sammelbestellung: Türme billiger, aber später geliefert', () => {
+    const s0 = k2('sammel', { cash: 20000 });
+    const s = buche(s0, 'ausruester_sammel', '2');
+    const neu = s.rigs.filter((r) => r.kind === 'owned');
+    expect(neu).toHaveLength(2);
+    expect(new Set(s.rigs.map((r) => r.id)).size).toBe(s.rigs.length);
+    expect(neu.every((r) => r.readyRound === s.round + b.outfitter.delivery)).toBe(true);
+    expect(s.cash).toBeCloseTo(s0.cash - Math.round(2 * balance.drilling.rigs.buy.cost * (1 - b.outfitter.discount)), 2);
+  });
+
+  it('Lohnbohrer: Mietürme mit Rabatt; frühe Rückgabe kostet die Restmiete', () => {
+    const s = buche(k2('crew', { cash: 20000 }), 'lohnbohrer');
+    const ids = dealsOf(s).crew!.rigIds;
+    expect(ids).toHaveLength(b.crew.rigs);
+    const nach = settleDeals(s, balance);
+    expect(nach.cash).toBeCloseTo(s.cash + ids.length * balance.drilling.rigs.rent.costPerRound * b.crew.discount, 2);
+    const r = returnRig(s, balance, ids[0]);
+    if (!r.ok) throw new Error(r.reason);
+    expect(r.state.cash).toBeCloseTo(s.cash - crewReturnCost(s, balance, ids[0]), 2);
+    expect(crewReturnCost(s, balance, ids[0])).toBeGreaterThan(0);
+  });
+
+  it('Motorwagen-Beteiligung: zahlt erst ab Kapitel 3, scheitert etwa mit der Chance', () => {
+    let gescheitert = 0;
+    for (let i = 0; i < 200; i++) {
+      const s = buche(k2(`mw${i}`, { cash: 30000, deals: { ...newDeals(), call: { card: 'motorwagen_beteiligung', round: 1 } } }), 'motorwagen_beteiligung');
+      expect(settleDeals(s, balance).cash).toBe(s.cash);
+      const k3 = settleDeals({ ...s, chapter: 3 }, balance);
+      if (dealsOf(k3).autoStake!.failed) gescheitert++;
+      else expect(k3.cash).toBe(s.cash + b.motor.stake.income);
+    }
+    expect(Math.abs(gescheitert / 200 - b.motor.stake.fail)).toBeLessThan(0.08);
+  });
+
+  it('Abgeordneter: Gefallen sofort; nach der Frist ruft er sicher an; nicht reagieren kostet Ansehen', () => {
+    const s0 = k2('abg', { cash: 10000, deals: { ...newDeals(), call: { card: 'abgeordneter_stimme', round: 1 } } });
+    const s = buche(s0, 'abgeordneter_stimme');
+    expect(availableFavors(s)).toBe(availableFavors(s0) + b.deputy.favors);
+    const faellig = ringPhone({ ...s, round: dealsOf(s).favorDebt!.due }, balance, katalog);
+    expect(callerCard(faellig)).toBe('abgeordneter_gefallen');
+    const ignoriert = settleDeals(faellig, balance);
+    expect(ignoriert.reputation?.politics).toBe(-b.deputy.refuse);
+    expect(dealsOf(ignoriert).favorDebt).toBeNull();
+    const bezahlt = buche(faellig, 'abgeordneter_gefallen', 'zahlen');
+    expect(bezahlt.cash).toBeCloseTo(faellig.cash - b.deputy.demand, 2);
+    expect(dealsOf(bezahlt).favorDebt).toBeNull();
   });
 });

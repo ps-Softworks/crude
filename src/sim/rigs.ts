@@ -10,7 +10,7 @@
 // Reine Funktionen, kein Zufall.
 
 import type { Balance, DrillStage } from './balance';
-import { rigLent } from './deals';
+import { crewReturnCost, rigLent } from './deals';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
 import type { Well } from './drilling';
@@ -222,7 +222,10 @@ export function returnRig(state: GameState, _balance: Balance, rigId: string): R
   const rig = findRig(state, rigId);
   if (!rig || rig.kind !== 'rented') return { ok: false, reason: 'Nur gemietete Türme lassen sich zurückgeben.' };
   if (rigWell(state, rig.id)) return { ok: false, reason: 'Der Turm bohrt noch – erst danach kann er zurück.' };
-  return { ok: true, state: { ...state, rigs: state.rigs.filter((r) => r.id !== rig.id), log: logged(state, `${rigLabel(rig)} geht zurück an den Vermieter.`) } };
+  // 0.4.20+37: Ein Turm der Lohnbohrer vor Vertragsende kostet die Restmiete (deals.ts).
+  const rest = crewReturnCost(state, _balance, rig.id);
+  const text = rest > 0 ? `${rigLabel(rig)} geht vor Vertragsende zurück – die Lohnbohrer verlangen ${money(rest)} Restmiete.` : `${rigLabel(rig)} geht zurück an den Vermieter.`;
+  return { ok: true, state: { ...state, cash: state.cash - rest, rigs: state.rigs.filter((r) => r.id !== rig.id), log: logged(state, text) } };
 }
 
 /** Dampfmaschine oder Stahlgestänge an einem eigenen (oder Silas') Turm nachrüsten. */

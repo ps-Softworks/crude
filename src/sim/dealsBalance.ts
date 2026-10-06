@@ -16,7 +16,7 @@ export interface DealsBalance {
     offer: { sizes: number[]; discount: number; floor: number; rounds: number; penalty: number };
   };
   /** 0.4.20+35 Lieferverträge der Raffinerie: Produkt, Mengen je Runde, Laufzeit, Aufschlag auf den heutigen Preis, Strafe je fehlendem Barrel. */
-  supply: Record<'marine' | 'lubricant' | 'kerosene', { product: Product; sizes: number[]; rounds: number; premium: number; shortfall: number }>;
+  supply: Record<'marine' | 'lubricant' | 'kerosene' | 'gasoline', { product: Product; sizes: number[]; rounds: number; premium: number; shortfall: number }>;
   /** 0.4.20+36 Feuerversicherung: Laufzeiten, Prämie = base + share × Wert, zahlt cover des Schadens, Prämie nach Schaden × (1 + claimRaise). */
   insurance: { rounds: number[]; base: number; share: number; cover: number; claimRaise: number };
   /** 0.4.20+36 Arbeiter: Lohnerhöhung (je fördernder Quelle, Runden, Ruf) und Streik-Anruf (Einigung je Quelle, Streikbrecher, Förderausfall). */
@@ -26,6 +26,14 @@ export interface DealsBalance {
   };
   /** 0.4.20+36 Presse: Anzeigen (Kosten, Ruf, Rückschlag-Chance, Pause) und Interview (Chance, Ruf, Pause). */
   press: { ads: { cost: number; reputation: number; backlash: number; cooldown: number }; interview: { chance: number; reputation: number; cooldown: number } };
+  /** 0.4.20+37 Ausrüster: Sammelbestellung (Anzahl Türme, Rabatt, Lieferzeit). */
+  outfitter: { rigs: number[]; discount: number; delivery: number };
+  /** 0.4.20+37 Lohnbohrer: so viele Mietürme, Runden, Rabatt auf die Miete. */
+  crew: { rigs: number; rounds: number; discount: number };
+  /** 0.4.20+37 Motorwagen-Werke: Beteiligung (Kosten, Einnahmen je Runde ab Kapitel 3, Chance zu scheitern). */
+  motor: { stake: { cost: number; income: number; fail: number } };
+  /** 0.4.20+37 Abgeordneter: Spende, Gefallen, Runden bis zur Gegenforderung, Forderung, Ansehensverlust beim Ablehnen. */
+  deputy: { donation: number; favors: number; rounds: number; demand: number; refuse: number };
   /** 0.4.20+34 Telefon: Chance je Runde (ab Kapitel 2), dass jemand anruft. */
   phone: { chance: number };
   rail: {
@@ -154,6 +162,17 @@ export function parseDealsBalance(raw: unknown): DealsBalance {
       marine: vertrag(raw, `${p}.supply.marine`),
       lubricant: vertrag(raw, `${p}.supply.lubricant`),
       kerosene: vertrag(raw, `${p}.supply.kerosene`),
+      gasoline: vertrag(raw, `${p}.supply.gasoline`),
+    },
+    outfitter: { rigs: liste(raw, `${p}.outfitter.rigs`), discount: anteil(raw, `${p}.outfitter.discount`), delivery: ganz(raw, `${p}.outfitter.delivery`) },
+    crew: { rigs: ganz(raw, `${p}.crew.rigs`), rounds: ganz(raw, `${p}.crew.rounds`), discount: anteil(raw, `${p}.crew.discount`) },
+    motor: { stake: { cost: zahl(raw, `${p}.motor.stake.cost`), income: zahl(raw, `${p}.motor.stake.income`), fail: anteil(raw, `${p}.motor.stake.fail`) } },
+    deputy: {
+      donation: zahl(raw, `${p}.deputy.donation`),
+      favors: zahl(raw, `${p}.deputy.favors`),
+      rounds: ganz(raw, `${p}.deputy.rounds`),
+      demand: zahl(raw, `${p}.deputy.demand`),
+      refuse: zahl(raw, `${p}.deputy.refuse`),
     },
     rail: {
       fixed: { rounds: liste(raw, `${p}.rail.fixed.rounds`), minimum: zahl(raw, `${p}.rail.fixed.minimum`), shortfall: zahl(raw, `${p}.rail.fixed.shortfall`) },

@@ -271,6 +271,42 @@ cards:
       de: "Nora schreibt jetzt für eine Zeitung in Hallstead. Ein offenes Gespräch kann viel bewirken."
       en: "Nora now writes for a Hallstead paper. A candid conversation can do a lot."
     risk: { de: "Nora schreibt, was sie sieht.", en: "Nora writes what she sees." }
+  ausruester_sammel:
+    title: { de: "Sammelbestellung Bohrtürme", en: "Bulk Order of Rigs" }
+    text:
+      de: "Der Ausrüster aus Port Ellis gibt Rabatt, wenn Jacob gleich mehrere Türme nimmt – sie kommen dann mit dem nächsten Frachter."
+      en: "The outfitter from Port Ellis gives a discount if Jacob takes several rigs at once – they come with the next freighter."
+    risk: { de: "Das Geld ist sofort weg, die Türme kommen später.", en: "The money goes at once, the rigs come later." }
+  lohnbohrer:
+    title: { de: "Lohnbohrer unter Vertrag", en: "Contract Drillers" }
+    text:
+      de: "Eine Bohrmannschaft aus Okara bringt ihre Türme mit – billiger als jeder Mietturm, wenn Jacob sie für eine Weile bindet."
+      en: "A drilling crew from Okara brings its own rigs – cheaper than any rented rig, if Jacob keeps them on for a while."
+    risk: { de: "Wer die Türme früher zurückgibt, zahlt die Restmiete.", en: "Return the rigs early and you pay the remaining rent." }
+  motorwagen_benzin:
+    title: { de: "Benzin für die Motorwagen-Werke", en: "Gasoline for the Motor Works" }
+    text:
+      de: "Die Föderalen Motorwagen-Werke wollen Benzin für die Probefahrten und die ersten Händler – zum festen Preis, drei Jahre lang."
+      en: "The Federal Motor Works want gasoline for test drives and the first dealers – at a fixed price, for three years."
+    risk: { de: "Wer nicht liefert, zahlt Strafe. Was die eigenen Tankstellen nehmen, fehlt dem Vertrag.", en: "Fail to deliver and pay a penalty. Whatever your own stations take is missing from the contract." }
+  motorwagen_beteiligung:
+    title: { de: "Beteiligung an der Motorwagen-Fabrik (Anruf)", en: "Stake in the Motor Factory (a Call)" }
+    text:
+      de: "Der Direktor der Motorwagen-Werke ruft an: Eine neue Fabrik in Hallstead sucht Geldgeber. Wer jetzt einsteigt, verdient, wenn das Auto kommt."
+      en: "The director of the Motor Works calls: a new factory in Hallstead is looking for backers. Whoever gets in now earns when the automobile arrives."
+    risk: { de: "Das Geld liegt bis Kapitel 3 fest – und mancher Fabrik geht vorher das Geld aus.", en: "The money is tied up until chapter 3 – and some factories run out of money before then." }
+  abgeordneter_stimme:
+    title: { de: "Spende an den Abgeordneten (Anruf)", en: "Donation to the Deputy (a Call)" }
+    text:
+      de: "Ein Abgeordneter der Provinz ruft an. Für eine Spende an seinen Wahlkampf schuldet er Jacob etwas – jetzt gleich."
+      en: "A provincial deputy calls. For a donation to his campaign he owes Jacob something – right away."
+    risk: { de: "Er wird sich melden und selbst etwas wollen.", en: "He will call back and want something himself." }
+  abgeordneter_gefallen:
+    title: { de: "Der Abgeordnete will seinen Gefallen (Anruf)", en: "The Deputy Wants His Favour (a Call)" }
+    text:
+      de: "Der Abgeordnete ruft wieder an. Diesmal braucht er Geld – für einen Freund, sagt er."
+      en: "The deputy calls again. This time he needs money – for a friend, he says."
+    risk: { de: "Wer ablehnt oder nicht abnimmt, ist in Hallstead unten durch.", en: "Refuse or don't pick up, and you're finished in Hallstead." }
   bank_angebot:
     title: { de: "Sonderkredit (Anruf der Bank)", en: "Special Loan (the Bank Calls)" }
     text:
@@ -340,6 +376,18 @@ contacts:
     name: { de: "Arbeiter", en: "Workers" }
     who: { de: "der Vormann der Bohrtrupps", en: "the foreman of the drilling crews" }
     cards: [streik_droht, lohnerhoehung]
+  lohnbohrer:
+    name: { de: "Lohnbohrer und Ausrüster", en: "Contract Drillers and Outfitters" }
+    who: { de: "Bohrmannschaften aus Okara, der Ausrüster aus Port Ellis", en: "Drilling crews from Okara, the outfitter from Port Ellis" }
+    cards: [lohnbohrer, ausruester_sammel]
+  motorwagen:
+    name: { de: "Motorwagen-Werke", en: "Motor Works" }
+    who: { de: "Föderale Motorwagen-Werke, Hallstead", en: "Federal Motor Works, Hallstead" }
+    cards: [motorwagen_beteiligung, motorwagen_benzin]
+  abgeordneter:
+    name: { de: "Abgeordneter", en: "Deputy" }
+    who: { de: "ein Abgeordneter der Provinz", en: "a provincial deputy" }
+    cards: [abgeordneter_gefallen, abgeordneter_stimme]
   familie:
     name: { de: "Familie", en: "Family" }
     who: { de: "Ruth und die Kinder", en: "Ruth and the children" }

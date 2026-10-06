@@ -18,7 +18,9 @@ import type { PlanHandler } from './planHandler';
 import { recordAct } from './politics';
 import { shiftStanding } from './pricing';
 import { producingWells, wellRate } from './production';
-import { rigReady, rigWell } from './rigs';
+import { rentRig, rigReady, rigWell } from './rigs';
+import { hallsteadOf } from './hallsteadState';
+import { politicsUnlocked } from './lobby';
 import { ownsRefinery, productDemand, productPrice, refineryWorld } from './refinery';
 import type { Product } from './refineryBalance';
 import { Rng, seedFromString } from './rng';
@@ -53,6 +55,12 @@ export interface DealsState {
   insurance?: { until: number; premium: number } | null;
   /** 0.4.20+36 Lohnerhöhung: Mehrkosten je Runde bis until. */
   wages?: { until: number; perRound: number } | null;
+  /** 0.4.20+37 Lohnbohrer: gemietete Türme mit Rabatt bis until (frühe Rückgabe kostet die Restmiete). */
+  crew?: { rigIds: string[]; until: number } | null;
+  /** 0.4.20+37 Beteiligung an den Motorwagen-Werken: zahlt ab Kapitel 3 (oder scheitert). */
+  autoStake?: { round: number; failed: boolean | null } | null;
+  /** 0.4.20+37 Der Abgeordnete will seinen Gefallen zurück: In Runde due ruft er an und fordert amount. */
+  favorDebt?: { due: number; amount: number } | null;
 }
 
 export interface SupplyContract {
@@ -701,7 +709,151 @@ const interviewPresse: PlanHandler = {
   },
 };
 
+// --- Lohnbohrer, Ausrüster, Motorwagen, Abgeordneter (Kapitel 2) --------------------------------
+
+const ausruesterSammel: PlanHandler = {
+  options(state, balance) {
+    const a = balance.deals.outfitter;
+    return a.rigs.map((n) => {
+      const preis = Math.round(n * balance.drilling.rigs.buy.cost * (1 - a.discount));
+      return { id: String(n), label: `${n} Bohrtürme für ${money(preis)} · Lieferung in ${a.delivery} Runden`, reason: state.cash < preis ? `Nicht genug Geld (${money(preis)}).` : null };
+    });
+  },
+  cost(_state, balance, target) {
+    const a = balance.deals.outfitter;
+    return target ? Math.round(Number(target) * balance.drilling.rigs.buy.cost * (1 - a.discount)) : 0;
+  },
+  detail(_state, balance) {
+    const a = balance.deals.outfitter;
+    return `${percent(a.discount)} unter dem Einzelpreis, dafür ${a.delivery} statt ${balance.drilling.rigs.buy.deliveryRounds} Runde Lieferzeit.`;
+  },
+  apply(state, balance, target) {
+    const a = balance.deals.outfitter;
+    const n = Number(target ?? a.rigs[0]);
+    const rigs = [...state.rigs];
+    for (let i = 0; i < n; i++) {
+      const id = `t${Math.max(0, ...rigs.map((r) => Number(r.id.replace(/\D/g, '')) || 0)) + 1}`;
+      rigs.push({ id, kind: 'owned', readyRound: state.round + a.delivery, steam: false, rods: false });
+    }
+    return log({ ...state, rigs }, `Sammelbestellung beim Ausrüster: ${n} Bohrtürme, Lieferung in ${a.delivery} Runden.`);
+  },
+};
+
+function crewRent(balance: Balance): number {
+  return balance.drilling.rigs.rent.costPerRound * (1 - balance.deals.crew.discount);
+}
+
+/** Lohnbohrer-Turm vor Vertragsende zurückgeben: Restmiete (mit Rabatt) ist fällig. 0 ohne Vertrag. */
+export function crewReturnCost(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'deals'>>, balance: Balance, rigId: string): number {
+  const c = state.deals?.crew;
+  if (!c || !c.rigIds.includes(rigId) || c.until <= state.round) return 0;
+  return Math.round((c.until - state.round) * crewRent(balance));
+}
+
+const lohnbohrer: PlanHandler = {
+  lock(state) {
+    const c = state.deals?.crew;
+    if (c && c.until >= state.round) return 'Der Vertrag mit den Lohnbohrern läuft noch.';
+    return null;
+  },
+  detail(_state, balance) {
+    const c = balance.deals.crew;
+    return `${c.rigs} Mietürme für ${c.rounds} Runden, je ${money(crewRent(balance))} statt ${money(balance.drilling.rigs.rent.costPerRound)}. Wer früher zurückgibt, zahlt die Restmiete.`;
+  },
+  apply(state, balance) {
+    const c = balance.deals.crew;
+    let s = state;
+    const ids: string[] = [];
+    for (let i = 0; i < c.rigs; i++) {
+      const r = rentRig(s, balance);
+      if (!r.ok) break;
+      ids.push(r.state.rigs[r.state.rigs.length - 1].id);
+      s = r.state;
+    }
+    if (ids.length === 0) return log(state, 'Die Lohnbohrer haben gerade keinen Turm frei.');
+    return log(withDeals(s, { crew: { rigIds: ids, until: state.round + c.rounds - 1 } }), `Lohnbohrer unter Vertrag: ${ids.length} Türme für ${c.rounds} Runden.`);
+  },
+};
+
+const motorwagenBeteiligung: PlanHandler = {
+  lock(state, balance) {
+    if (state.deals?.autoStake) return 'Jacob ist schon beteiligt.';
+    if (state.cash < balance.deals.motor.stake.cost) return `Nicht genug Geld (${money(balance.deals.motor.stake.cost)}).`;
+    return null;
+  },
+  cost(_state, balance) {
+    return balance.deals.motor.stake.cost;
+  },
+  detail(_state, balance) {
+    const m = balance.deals.motor.stake;
+    return `Ab Kapitel 3 ${money(m.income)} je Runde – wenn die Fabrik nicht scheitert (${percent(m.fail)}).`;
+  },
+  apply(state, balance) {
+    return log(withDeals(state, { autoStake: { round: state.round, failed: null } }), `Jacob beteiligt sich mit ${money(balance.deals.motor.stake.cost)} an den Föderalen Motorwagen-Werken.`);
+  },
+};
+
+const abgeordneterStimme: PlanHandler = {
+  visible(state, balance) {
+    return politicsUnlocked(state, balance);
+  },
+  lock(state) {
+    if (state.deals?.favorDebt) return 'Der Abgeordnete wartet noch auf seinen Gefallen.';
+    return null;
+  },
+  cost(_state, balance) {
+    return balance.deals.deputy.donation;
+  },
+  detail(_state, balance) {
+    const d = balance.deals.deputy;
+    return `${d.favors} Gefallen sofort. In ${d.rounds} Runden ruft er wieder an und will ${money(d.demand)} – wer ablehnt, verliert Ansehen in der Politik.`;
+  },
+  apply(state, balance) {
+    const d = balance.deals.deputy;
+    const h = hallsteadOf(state, balance);
+    const s = { ...state, hallstead: { ...h, lobby: { ...h.lobby, favors: h.lobby.favors + d.favors } } };
+    return log(withDeals(s, { favorDebt: { due: state.round + d.rounds, amount: d.demand } }), `Der Abgeordnete nimmt die Spende. Man schuldet Jacob ${d.favors} Gefallen – und er Jacob bald einen.`);
+  },
+};
+
+function politikRuf(state: GameState, delta: number): GameState {
+  const r = state.reputation;
+  return { ...state, reputation: { ...(r ?? { public: 0, politics: 0, workers: 0, industryRespect: 0, industryFear: 0, standing: 0 }), politics: Math.max(-100, Math.min(100, (r?.politics ?? 0) + delta)) } };
+}
+
+const abgeordneterGefallen: PlanHandler = {
+  // Nur, wenn der Abgeordnete seinen Gefallen einfordert (ringPhone ruft ihn dann sicher an).
+  visible(state) {
+    const f = state.deals?.favorDebt;
+    return !!f && state.round >= f.due;
+  },
+  options(state) {
+    const n = state.deals?.favorDebt?.amount ?? 0;
+    return [
+      { id: 'zahlen', label: `Zahlen – ${money(n)}`, reason: state.cash < n ? `Nicht genug Geld (${money(n)}).` : null },
+      { id: 'ablehnen', label: 'Ablehnen – er wird es nicht vergessen', reason: null },
+    ];
+  },
+  cost(state, _balance, target) {
+    return target === 'zahlen' ? (state.deals?.favorDebt?.amount ?? 0) : 0;
+  },
+  detail(_state, balance) {
+    return `Wer nicht reagiert, hat abgelehnt: Ansehen in der Politik −${balance.deals.deputy.refuse}.`;
+  },
+  apply(state, balance, target) {
+    const s = withDeals(state, { favorDebt: null });
+    if (target === 'zahlen') return log(s, 'Jacob begleicht seine Schuld beim Abgeordneten.');
+    return log(politikRuf(s, -balance.deals.deputy.refuse), 'Jacob lässt den Abgeordneten abblitzen. In Hallstead spricht sich das herum.');
+  },
+};
+
 export const DEAL_HANDLERS: Record<string, PlanHandler> = {
+  ausruester_sammel: ausruesterSammel,
+  lohnbohrer,
+  motorwagen_benzin: supplyDeal('motorwagen_benzin', 'gasoline'),
+  motorwagen_beteiligung: motorwagenBeteiligung,
+  abgeordneter_stimme: abgeordneterStimme,
+  abgeordneter_gefallen: abgeordneterGefallen,
   versicherung,
   lohnerhoehung,
   streik_droht: streikDroht,
@@ -788,6 +940,28 @@ export function settleDeals(input: GameState, balance: Balance): GameState {
     s = log(s, `Die Bohrtrupps streiken – ${percent(loss)} weniger Förderung in dieser Runde.`);
   }
 
+  // Lohnbohrer: Rabatt auf die Miete der Vertragstürme (settleRigs berechnet den vollen Preis).
+  d = dealsOf(s);
+  if (d.crew && d.crew.until >= s.round) {
+    const da = d.crew.rigIds.filter((id) => s.rigs.some((r) => r.id === id && r.kind === 'rented')).length;
+    s = { ...s, cash: cents(s.cash + da * (balance.drilling.rigs.rent.costPerRound - crewRent(balance))) };
+  }
+  if (d.crew && d.crew.until <= s.round) s = withDeals(s, { crew: null });
+  // Motorwagen-Beteiligung: ab Kapitel 3 entscheidet sich, ob die Fabrik läuft; dann Einnahmen je Runde.
+  d = dealsOf(s);
+  if (d.autoStake && (s.chapter ?? 1) >= 3) {
+    if (d.autoStake.failed === null) {
+      const scheitert = rng(s, 'motorwagen').float() < b.motor.stake.fail;
+      s = log(withDeals(s, { autoStake: { ...d.autoStake, failed: scheitert } }), scheitert ? 'Die Motorwagen-Fabrik ist pleite – Jacobs Anteil ist nichts mehr wert.' : 'Die Motorwagen-Fabrik läuft – Jacobs Anteil bringt Geld.');
+    }
+    if (dealsOf(s).autoStake?.failed === false) s = { ...s, cash: cents(s.cash + b.motor.stake.income) };
+  }
+  // Abgeordneter: Wer beim Anruf nicht reagiert, hat abgelehnt.
+  d = dealsOf(s);
+  if (d.favorDebt && d.call?.card === 'abgeordneter_gefallen' && d.call.round === s.round && !(s.plans?.booked ?? []).some((x) => x.cardId === 'abgeordneter_gefallen')) {
+    s = log(politikRuf(withDeals(s, { favorDebt: null }), -b.deputy.refuse), 'Jacob hat den Abgeordneten nicht zurückgerufen. In Hallstead spricht sich das herum.');
+  }
+
   // Verliehener Turm: Miete, Rückgabe, vielleicht beschädigt.
   d = dealsOf(s);
   if (d.lent) {
@@ -816,6 +990,9 @@ export function dealsRunning(state: GameState, balance: Balance): string[] {
   if (d.guardRound === state.round) out.push('Wache an den Tanks');
   if (d.insurance && d.insurance.until >= state.round) out.push(`Feuerversicherung bis Runde ${d.insurance.until} (${money(d.insurance.premium)} je Runde)`);
   if (d.wages && d.wages.until >= state.round) out.push(`Lohnerhöhung bis Runde ${d.wages.until} (${money(d.wages.perRound)} je Runde)`);
+  if (d.crew && d.crew.until >= state.round) out.push(`Lohnbohrer-Vertrag bis Runde ${d.crew.until} (${d.crew.rigIds.length} Türme)`);
+  if (d.autoStake && d.autoStake.failed !== true) out.push('Beteiligung an den Motorwagen-Werken');
+  if (d.favorDebt) out.push(`Der Abgeordnete will um Runde ${d.favorDebt.due} seinen Gefallen`);
   for (const c of activeSupply(state)) out.push(`Liefervertrag: ${bbl(c.qty)} ${PRODUKT[c.product]} je Runde zu ${c.price.toLocaleString('de-DE')} $ bis Runde ${c.until}`);
   return out;
 }

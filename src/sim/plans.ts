@@ -602,6 +602,9 @@ export function exploreAppointments(state: GameState, balance: Balance): number 
  */
 export function ringPhone(state: GameState, balance: Balance, catalog: readonly EventDef[]): GameState {
   if (chapterOf(state) < 2 || state.finished) return state;
+  // 0.4.20+37: Ein fälliger Gefallen geht vor – der Abgeordnete ruft sicher an.
+  const schuld = state.deals?.favorDebt;
+  if (schuld && state.round >= schuld.due) return { ...state, deals: { ...dealsOf(state), call: { card: 'abgeordneter_gefallen', round: state.round } } };
   const rng = new Rng(seedFromString(`${state.seed}:telefon:${state.round}`));
   if (rng.float() >= balance.deals.phone.chance) return state;
   const moeglich = planCards(balance, catalog).filter((c) => {
