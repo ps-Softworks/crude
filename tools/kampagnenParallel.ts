@@ -20,6 +20,11 @@ export function mergeBalance<T>(a: T, b: unknown): T {
 }
 
 export async function runCampaignParallel(games: number, jobs: number, override = '{}', onProgress?: (done: number) => void): Promise<CampaignReport> {
+  return campaignReportFrom(await runCampaignSeedsParallel(games, jobs, override, onProgress));
+}
+
+/** Die Rohergebnisse je Saat (in Saat-Reihenfolge) – für Auswertungen über den Bericht hinaus (tools/siegAnalyse.ts). */
+export async function runCampaignSeedsParallel(games: number, jobs: number, override = '{}', onProgress?: (done: number) => void): Promise<CampaignSeedResult[]> {
   const dir = mkdtempSync(join(tmpdir(), 'crude-kampagne-'));
   const n = Math.max(1, Math.min(jobs, games));
   const teile = Array.from({ length: n }, (_, j) => ({ from: Math.floor((games * j) / n), to: Math.floor((games * (j + 1)) / n), out: join(dir, `teil-${j}.json`) }));
@@ -44,8 +49,7 @@ export async function runCampaignParallel(games: number, jobs: number, override 
           }),
       ),
     );
-    const alle: CampaignSeedResult[] = teile.flatMap((t) => JSON.parse(readFileSync(t.out, 'utf8')) as CampaignSeedResult[]);
-    return campaignReportFrom(alle);
+    return teile.flatMap((t) => JSON.parse(readFileSync(t.out, 'utf8')) as CampaignSeedResult[]);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
