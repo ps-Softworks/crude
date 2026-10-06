@@ -17,12 +17,25 @@ describe('Schreibtisch-Platzplan', () => {
     const plan = deskLayout(1, NICHTS);
     expect(plan.zeitung).toEqual({ left: 2.5, top: 48, width: 15, height: 24 });
     expect(plan.ruth).toEqual({ left: 45, top: 47, width: 26, height: 36 });
-    expect(plan.lampe).toEqual({ left: 45.5, top: 30, width: 6, height: 17 });
+    expect(plan.lampe).toEqual({ left: 42.5, top: 5, width: 8, height: 32 });
     expect(plan.glocke).toEqual({ left: 86, top: 70, width: 12, height: 27 });
     expect(plan.raffinerie).toBeUndefined();
     expect(plan.boerse).toBeUndefined();
     expect(plan.radio).toBeUndefined();
     expect(Object.keys(plan).sort()).toEqual([...DESK_BASE, 'lampe'].sort());
+  });
+
+  it('Kapitel 1/2: die Lampe hängt an der Wand (ganz über der Tischplatte) und überdeckt nichts', () => {
+    for (const da of [NICHTS, ALLES]) {
+      const plan = deskLayout(1, da);
+      const lampe = plan.lampe!;
+      expect(lampe.top).toBeGreaterThanOrEqual(0);
+      expect(lampe.top + lampe.height).toBeLessThanOrEqual(TISCH.hinten);
+      for (const [id, at] of Object.entries(plan) as [string, Placement][]) {
+        if (id === 'lampe') continue;
+        expect(ueberlappt(lampe, aufTisch(at)), `lampe ↔ ${id}`).toBe(false);
+      }
+    }
   });
 
   it('Kapitel 2: allein behält jeder seinen Platz', () => {

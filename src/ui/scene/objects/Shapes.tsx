@@ -29,12 +29,49 @@ export function CorkShape() {
 
 export function LampShape() {
   return (
-    <svg viewBox="0 0 60 100" className="form" {...svg}>
-      <ellipse cx="30" cy="40" rx="26" ry="30" className="lampe-schein" />
-      <path d="M22,60 Q16,40 26,22 L34,22 Q44,40 38,60 Z" className="lampe-glas" />
-      <path d="M30,30 Q26,38 30,46 Q34,38 30,30 Z" className="lampe-flamme" />
-      <rect x="18" y="60" width="24" height="8" className="f-messing" />
-      <path d="M14,92 Q14,70 30,68 Q46,70 46,92 Z" className="f-messing" />
+    // Wandlampe (Kapitel 1/2): gusseiserne Wandplatte mit Messingrand, geschwungener Arm, runder Messing-Reflektor
+    // hinter dem Zylinder, Glasbehälter mit Petroleum, Brenner mit Dochtrad, Glaszylinder mit Flamme.
+    <svg viewBox="0 0 60 140" className="form" {...svg}>
+      {/* Reflektor an der Wand, hinter dem Zylinder */}
+      <defs>
+        <radialGradient id="lampe-reflektor-verlauf" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" className="lampe-stop-mitte" />
+          <stop offset="0.45" className="lampe-stop-hell" />
+          <stop offset="1" className="lampe-stop-rand" />
+        </radialGradient>
+      </defs>
+      <circle cx="30" cy="46" r="25" className="lampe-reflektor" />
+      <circle cx="30" cy="46" r="22.5" className="lampe-reflektor-ring" />
+      <circle cx="30" cy="46" r="16" className="lampe-reflektor-ring" />
+      <path d="M14,32 A21,21 0 0 1 36,25.8" className="s-glanz lampe-glanz" />
+      {/* Stange vom Reflektor zur Wandplatte */}
+      <rect x="28.6" y="70" width="2.8" height="30" className="lampe-eisen" />
+      {/* Wandplatte: Gusseisen mit Messingrand und zwei Schrauben */}
+      <path d="M30,98 C38,98 41,104 41,114 C41,124 36,132 30,135 C24,132 19,124 19,114 C19,104 22,98 30,98 Z" className="lampe-platte-rand" />
+      <path d="M30,101 C36,101 38.5,106 38.5,114 C38.5,122 34.5,129 30,131.5 C25.5,129 21.5,122 21.5,114 C21.5,106 24,101 30,101 Z" className="lampe-eisen" />
+      <circle cx="30" cy="105.5" r="1.4" className="f-messing" />
+      <circle cx="30" cy="127" r="1.4" className="f-messing" />
+      {/* Geschwungener Arm mit Voluten zum Halter */}
+      <path d="M30,118 C30,108 30,100 30,92" className="lampe-arm" />
+      <path d="M30,112 C22,112 15,106 17,98 C18.5,93 24,93 24.5,97 C25,100 22,101 21,99" className="lampe-arm" />
+      <path d="M30,112 C38,112 45,106 43,98 C41.5,93 36,93 35.5,97 C35,100 38,101 39,99" className="lampe-arm" />
+      <circle cx="30" cy="115" r="2.6" className="f-messing" />
+      {/* Halter (Ring) und Behälter */}
+      <path d="M19,86 L41,86 L38,92 L22,92 Z" className="f-messing" />
+      <path d="M21,85 C17,80 18,72 24,69 L36,69 C42,72 43,80 39,85 Z" className="lampe-behaelter" />
+      <path d="M21.5,82 C20,79 20,78 20.5,77 L39.5,77 C40,78 40,79 38.5,82 C35,85 25,85 21.5,82 Z" className="lampe-oel" />
+      <path d="M24,73 C22.5,75 22.5,79 23.5,81" className="s-glanz lampe-glanz" />
+      {/* Brenner mit Dochtrad */}
+      <rect x="23" y="63" width="14" height="6.5" rx="1" className="f-messing" />
+      <path d="M22,63 L38,63 L36.5,60 L23.5,60 Z" className="f-messing-dunkel" />
+      <circle cx="40" cy="66.2" r="2" className="f-messing" />
+      {/* Glaszylinder mit Bauch, darin Schein und Flamme */}
+      <path d="M24.5,60 C19,55 19,44 25.5,38 L26.5,16 L33.5,16 L34.5,38 C41,44 41,55 35.5,60 Z" className="lampe-glas" />
+      <ellipse cx="30" cy="50" rx="7.5" ry="9" className="lampe-schein" />
+      <path d="M30,40 C26.5,46 27,53 30,56.5 C33,53 33.5,46 30,40 Z" className="lampe-flamme" />
+      <path d="M30,46 C28.8,49 29,53 30,55 C31,53 31.2,49 30,46 Z" className="lampe-flamme-kern" />
+      <path d="M23.5,46 C23,50 23.6,54 25,57" className="s-glanz lampe-glanz" />
+      <rect x="26" y="14.5" width="8" height="2" rx="0.8" className="lampe-glas-rand" />
     </svg>
   );
 }
