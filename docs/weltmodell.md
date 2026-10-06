@@ -1,9 +1,9 @@
 # Weltmodell
 
-Stand: 2026-10-06 · Version 0.4.20+12
+Stand: 2026-10-06 · Version 0.4.20+21
 
 Erzeugt mit `npm run welt` (tools/weltlaeufe.ts, Regeln in src/sim/world.ts und src/sim/laws.ts, Zahlen in content/balance.yaml unter worldModel, Gesetze in content/laws/).
-300 Welten (Seeds `welt-0` bis `welt-299`) über eine ganze Kampagne: 292 Runden = 73 Spieljahre, **ohne Spieler**. Rechenzeit 2.1 s.
+300 Welten (Seeds `welt-0` bis `welt-299`) über eine ganze Kampagne: 292 Runden = 73 Spieljahre, **ohne Spieler**. Rechenzeit 0.5 s.
 
 - Alle Werte endlich: **ja** · Krisenzahlen in der Mehrheit der Welten im GDD-Ziel: **ja**
 
@@ -13,43 +13,43 @@ Je Zelle: 10 % · **Median** · 90 % der Welten am Ende des Spieljahres; Min/Max
 
 | Größe | Jahr 0 | Jahr 1 | Jahr 2 | Jahr 4 | Jahr 5 | Jahr 10 | Jahr 15 | Jahr 20 | Jahr 25 | Jahr 30 | Jahr 40 | Jahr 50 | Jahr 60 | Jahr 73 | Min | Max |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Weltpreis (Index) | 1,00 · **1,00** · 1,00 | 0,99 · **1,00** · 1,00 | 0,98 · **1,00** · 1,01 | 0,90 · **1,00** · 1,08 | 0,87 · **1,00** · 1,10 | 0,85 · **1,00** · 1,17 | 0,85 · **0,97** · 1,17 | 0,83 · **0,94** · 1,12 | 0,79 · **0,94** · 1,14 | 0,80 · **0,95** · 1,13 | 0,77 · **0,89** · 1,03 | 0,72 · **0,86** · 0,96 | 0,69 · **0,82** · 0,95 | 0,66 · **0,81** · 0,96 | 0,35 | 2,37 |
+| Weltpreis (Index) | 1,00 · **1,00** · 1,00 | 0,99 · **1,00** · 1,00 | 0,98 · **1,00** · 1,01 | 0,90 · **1,00** · 1,08 | 0,88 · **1,00** · 1,10 | 0,86 · **1,00** · 1,18 | 0,86 · **0,97** · 1,18 | 0,83 · **0,95** · 1,11 | 0,79 · **0,95** · 1,12 | 0,82 · **0,95** · 1,13 | 0,78 · **0,90** · 1,02 | 0,73 · **0,86** · 0,99 | 0,70 · **0,84** · 1,02 | 0,63 · **0,82** · 0,97 | 0,35 | 2,35 |
 | Nachfrage (Index) | 1,00 · **1,00** · 1,00 | 1,05 · **1,05** · 1,05 | 1,09 · **1,09** · 1,09 | 1,19 · **1,19** · 1,20 | 1,24 · **1,25** · 1,25 | 1,54 · **1,55** · 1,56 | 1,90 · **1,92** · 1,93 | 2,33 · **2,36** · 2,39 | 2,83 · **2,88** · 2,92 | 3,41 · **3,48** · 3,54 | 4,74 · **4,85** · 4,95 | 6,13 · **6,26** · 6,36 | 7,30 · **7,41** · 7,49 | 8,26 · **8,32** · 8,36 | 1,00 | 8,37 |
-| Förderkapazität (Index) | 1,18 · **1,19** · 1,19 | 1,24 · **1,24** · 1,25 | 1,29 · **1,30** · 1,31 | 1,36 · **1,41** · 1,49 | 1,41 · **1,48** · 1,58 | 1,71 · **1,84** · 1,97 | 2,14 · **2,29** · 2,46 | 2,64 · **2,84** · 3,02 | 3,24 · **3,43** · 3,71 | 3,87 · **4,12** · 4,47 | 5,47 · **5,77** · 6,21 | 7,07 · **7,46** · 8,11 | 8,36 · **8,82** · 9,78 | 9,43 · **9,88** · 11,19 | 1,18 | 13,42 |
-| Lager (Quartalsbedarf) | 0,25 · **0,25** · 0,25 | 0,25 · **0,25** · 0,25 | 0,25 · **0,25** · 0,25 | 0,23 · **0,25** · 0,28 | 0,23 · **0,25** · 0,28 | 0,21 · **0,25** · 0,29 | 0,21 · **0,25** · 0,29 | 0,22 · **0,25** · 0,29 | 0,21 · **0,25** · 0,30 | 0,21 · **0,24** · 0,29 | 0,21 · **0,25** · 0,28 | 0,22 · **0,25** · 0,29 | 0,22 · **0,25** · 0,29 | 0,21 · **0,24** · 0,30 | 0,00 | 0,89 |
-| Kreditklima (0–100) | 35 · **48** · 59 | 37 · **48** · 63 | 38 · **50** · 65 | 40 · **50** · 65 | 40 · **50** · 65 | 39 · **50** · 64 | 36 · **50** · 66 | 35 · **48** · 67 | 33 · **47** · 64 | 37 · **47** · 64 | 36 · **47** · 62 | 34 · **46** · 62 | 34 · **47** · 63 | 36 · **46** · 62 | 13 | 93 |
-| Verschuldung (0–100) | 25 · **25** · 37 | 25 · **25** · 39 | 25 · **26** · 41 | 25 · **28** · 44 | 25 · **28** · 43 | 25 · **31** · 41 | 26 · **31** · 44 | 26 · **31** · 44 | 25 · **29** · 43 | 25 · **29** · 41 | 25 · **28** · 39 | 25 · **28** · 40 | 25 · **27** · 41 | 25 · **28** · 38 | 20 | 78 |
-| Stimmung (0–100) | 50 · **54** · 59 | 48 · **52** · 56 | 46 · **51** · 55 | 46 · **51** · 55 | 45 · **50** · 55 | 43 · **49** · 55 | 42 · **49** · 55 | 44 · **50** · 55 | 43 · **49** · 56 | 42 · **49** · 54 | 41 · **49** · 55 | 43 · **50** · 56 | 42 · **49** · 55 | 42 · **49** · 55 | 10 | 70 |
-| Außenspannung (0–100) | 12 · **18** · 26 | 12 · **19** · 25 | 11 · **18** · 25 | 12 · **19** · 25 | 12 · **19** · 27 | 13 · **20** · 48 | 14 · **22** · 67 | 13 · **22** · 49 | 14 · **21** · 60 | 14 · **23** · 64 | 15 · **25** · 60 | 16 · **26** · 56 | 19 · **29** · 72 | 21 · **31** · 80 | 0 | 100 |
+| Förderkapazität (Index) | 1,18 · **1,19** · 1,19 | 1,24 · **1,24** · 1,25 | 1,29 · **1,30** · 1,31 | 1,36 · **1,41** · 1,49 | 1,41 · **1,48** · 1,58 | 1,71 · **1,85** · 1,99 | 2,16 · **2,30** · 2,48 | 2,69 · **2,85** · 3,06 | 3,27 · **3,46** · 3,73 | 3,90 · **4,14** · 4,49 | 5,52 · **5,81** · 6,28 | 7,13 · **7,50** · 8,19 | 8,37 · **8,84** · 9,80 | 9,41 · **9,94** · 11,41 | 1,18 | 15,77 |
+| Lager (Quartalsbedarf) | 0,25 · **0,25** · 0,25 | 0,25 · **0,25** · 0,25 | 0,25 · **0,25** · 0,25 | 0,23 · **0,25** · 0,27 | 0,23 · **0,25** · 0,28 | 0,21 · **0,25** · 0,28 | 0,21 · **0,25** · 0,28 | 0,22 · **0,25** · 0,29 | 0,21 · **0,25** · 0,30 | 0,21 · **0,24** · 0,28 | 0,22 · **0,25** · 0,28 | 0,21 · **0,24** · 0,29 | 0,20 · **0,24** · 0,29 | 0,21 · **0,24** · 0,31 | 0,00 | 1,00 |
+| Kreditklima (0–100) | 35 · **48** · 59 | 37 · **48** · 63 | 38 · **50** · 65 | 40 · **50** · 65 | 40 · **50** · 65 | 39 · **51** · 65 | 36 · **50** · 65 | 35 · **48** · 67 | 33 · **46** · 64 | 35 · **47** · 63 | 35 · **46** · 60 | 33 · **45** · 62 | 33 · **46** · 60 | 34 · **44** · 62 | 9 | 95 |
+| Verschuldung (0–100) | 25 · **25** · 37 | 25 · **25** · 39 | 25 · **26** · 41 | 25 · **28** · 44 | 25 · **28** · 43 | 25 · **30** · 41 | 22 · **29** · 42 | 20 · **28** · 43 | 19 · **26** · 39 | 18 · **25** · 36 | 18 · **22** · 35 | 18 · **22** · 33 | 18 · **20** · 32 | 18 · **20** · 33 | 15 | 80 |
+| Stimmung (0–100) | 50 · **54** · 59 | 48 · **52** · 56 | 46 · **51** · 55 | 46 · **51** · 55 | 45 · **50** · 55 | 43 · **49** · 55 | 44 · **50** · 56 | 45 · **51** · 57 | 44 · **50** · 56 | 43 · **50** · 55 | 43 · **50** · 56 | 43 · **50** · 57 | 42 · **50** · 55 | 42 · **50** · 55 | 5 | 68 |
+| Außenspannung (0–100) | 12 · **18** · 26 | 12 · **19** · 25 | 11 · **18** · 25 | 12 · **19** · 25 | 12 · **19** · 27 | 13 · **20** · 52 | 14 · **22** · 60 | 13 · **22** · 58 | 14 · **22** · 56 | 13 · **24** · 69 | 16 · **26** · 58 | 18 · **28** · 75 | 21 · **31** · 97 | 22 · **33** · 79 | 0 | 100 |
 | Technikstand (0–100) | 6 · **8** · 10 | 7 · **9** · 10 | 7 · **9** · 11 | 8 · **10** · 12 | 9 · **11** · 13 | 12 · **15** · 17 | 16 · **20** · 23 | 21 · **25** · 29 | 27 · **32** · 37 | 34 · **40** · 45 | 51 · **57** · 62 | 67 · **72** · 76 | 80 · **84** · 86 | 91 · **93** · 94 | 6 | 94 |
-| Nationalismus (0–100) | 9 · **14** · 19 | 11 · **15** · 21 | 12 · **17** · 23 | 13 · **20** · 26 | 14 · **21** · 27 | 19 · **27** · 36 | 24 · **33** · 44 | 29 · **38** · 51 | 31 · **42** · 56 | 35 · **47** · 62 | 44 · **55** · 69 | 52 · **62** · 75 | 52 · **68** · 81 | 50 · **71** · 81 | 3 | 100 |
+| Nationalismus (0–100) | 9 · **14** · 19 | 11 · **15** · 21 | 12 · **17** · 23 | 13 · **20** · 26 | 14 · **21** · 27 | 19 · **27** · 36 | 24 · **34** · 46 | 29 · **39** · 53 | 32 · **43** · 60 | 35 · **48** · 66 | 45 · **60** · 74 | 52 · **68** · 81 | 50 · **71** · 85 | 48 · **71** · 86 | 3 | 100 |
 
 Median je Spieljahr als Kurve (Jahr 0 bis 73):
 
-- Weltpreis (▁ 0,7 … █ 1,4): `▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▃▃▃▃▃▃▃▄▄▄▄▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂`
-- Weltpreis 90 % (▁ 0,7 … █ 2,0): `▃▃▃▃▃▃▃▃▄▄▄▄▄▄▄▄▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▂▃▂▃▂▂▂▂▂▂▂▂▂▂▂▃▂▂▂▂▂▂▂▂▂▂`
-- Kreditklima (▁ 30 … █ 70): `▄▄▄▄▄▅▅▄▄▄▅▅▅▅▄▄▄▅▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄`
-- Verschuldung 90 % (▁ 20 … █ 60): `▄▄▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▆▆▅▅▅▅▅▅▅▅▅▅▄▄▄▄▄▅▄▄▄▄▄▄▅▄▅▅▅▅▄▄▄▄▄▄▅▅▅▅▅▅▄▅▅▅▅▄▄▄▄▄▄`
-- Außenspannung 90 % (▁ 0 … █ 100): `▃▃▃▃▃▃▃▃▄▄▄▅▅▅▅▆▅▅▅▅▄▅▅▅▅▅▅▆▆▆▅▅▅▅▅▅▅▆▆▆▅▅▆▆▆▅▅▅▅▅▅▅▅▅▅▅▆▆▆▆▆▆▆▆▅▅▅▅▅▅▆▆▆▇`
-- Stimmung (▁ 30 … █ 60): `▇▆▆▆▆▆▆▆▆▅▅▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▆▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▅▆▅▆▅▅▅▅▅▆▆▆▆▆▆▅▅▅`
+- Weltpreis (▁ 0,7 … █ 1,4): `▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▃▃▃▃▄▄▄▄▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂`
+- Weltpreis 90 % (▁ 0,7 … █ 2,0): `▃▃▃▃▃▃▃▃▄▄▄▄▄▃▄▄▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▂▃▃▂`
+- Kreditklima (▁ 30 … █ 70): `▄▄▄▄▄▅▅▄▄▅▅▅▅▅▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▃▃▄▄▃`
+- Verschuldung 90 % (▁ 20 … █ 60): `▄▄▅▅▅▅▅▅▅▅▅▅▄▅▅▅▅▅▅▅▅▅▅▅▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃`
+- Außenspannung 90 % (▁ 0 … █ 100): `▃▃▃▃▃▃▃▃▄▄▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▆▆▆▆▆▆▅▆▆▆▅▅▅▅▅▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▇▇████▇▇▇██▇███▇`
+- Stimmung (▁ 30 … █ 60): `▇▆▆▆▆▆▆▆▆▅▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆`
 
 ## Krisen je Kampagne
 
 | Krise | Ziel je Kampagne (GDD §15) | Ø | 10 % · 50 % · 90 % der Welten | Welten im Ziel | Ø in den ersten 20 Jahren |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Kreditkrisen (Bankpanik + Crash) | 2–4 | 3,04 | 1 · 3 · 5 | 66,3 % | 0,87 |
+| Kreditkrisen (Bankpanik + Crash) | 2–4 | 3,00 | 1 · 3 · 5 | 68,3 % | 0,82 |
 | Ölschwemmen (Riesenfund) | 1–3 | 2,06 | 0 · 2 · 4 | 68,7 % | 0,57 |
-| Kriege in Übersee | 0–2 | 1,31 | 0 · 1 · 3 | 86,0 % | 0,24 |
-| davon große Crashs | – | 0,43 | 0 · 0 · 1 | – | 0,10 |
-| davon Bankpaniken | – | 2,60 | 1 · 2 · 5 | – | 0,77 |
-| Aufstände in Costa Negra | – | 2,89 | 1 · 3 · 5 | – | 0,32 |
-| Ölembargos aus Qasir | – | 0,55 | 0 · 0 · 2 | – | 0,00 |
-| Verstaatlichungen | – | 0,70 | 0 · 1 · 1 | – | 0,00 |
-| Regierungswechsel (von 18 Wahlen) | – | 9,26 | 6 · 9 · 12 | – | 2,43 |
+| Kriege in Übersee | 0–2 | 1,56 | 0 · 1 · 3 | 77,7 % | 0,25 |
+| davon große Crashs | – | 0,27 | 0 · 0 · 1 | – | 0,08 |
+| davon Bankpaniken | – | 2,73 | 1 · 2 · 5 | – | 0,74 |
+| Aufstände in Costa Negra | – | 3,22 | 1 · 3 · 6 | – | 0,29 |
+| Ölembargos aus Qasir | – | 0,85 | 0 · 0 · 3 | – | 0,00 |
+| Verstaatlichungen | – | 1,35 | 1 · 1 · 2 | – | 0,00 |
+| Regierungswechsel (von 18 Wahlen) | – | 9,48 | 7 · 10 · 13 | – | 2,44 |
 
-Regierung: Handelspartei 25,6 %, Volksbund 32,5 %, Provinzliga 41,9 % der Regierungszeit.
+Regierung: Handelspartei 29,6 %, Volksbund 29,4 %, Provinzliga 41,0 % der Regierungszeit.
 
-Kreditzyklus (4.4): Welten mit großem Crash in den ersten 20 Jahren: **9,3 %** (Fertig-Kriterium 5–25 %). Vor 100,0 % der 130 Crashs warnte die Zeitung in den 8 Runden davor vor der Blase; die Warnung steht in 4,9 % aller Runden. Ausland: Vor 76,1 % der 866 Aufstände stand „Unruhen in Costa Negra“ (in 4,2 % aller Runden), vor 95,2 % der 165 Embargos „Verstimmung in Qasir“ (in 1,8 % aller Runden).
+Kreditzyklus (4.4): Welten mit großem Crash in den ersten 20 Jahren: **8,3 %** (Fertig-Kriterium 5–25 %). Vor 100,0 % der 82 Crashs warnte die Zeitung in den 8 Runden davor vor der Blase; die Warnung steht in 2,9 % aller Runden. Ausland: Vor 73,0 % der 966 Aufstände stand „Unruhen in Costa Negra“ (in 4,3 % aller Runden), vor 96,9 % der 255 Embargos „Verstimmung in Qasir“ (in 3,1 % aller Runden).
 
 ## Krisen über die Zeit
 
@@ -57,19 +57,19 @@ Jede Welt ist neu (GDD §7.2): Kreditkrisen und Kriege sollen nicht in allen Wel
 
 | je Welt | J. 0–4 | J. 5–9 | J. 10–14 | J. 15–19 | J. 20–24 | J. 25–29 | J. 30–34 | J. 35–39 | J. 40–44 | J. 45–49 | J. 50–54 | J. 55–59 | J. 60–64 | J. 65–69 | J. 70–72 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Kreditkrisen | 0,14 | 0,26 | 0,23 | 0,23 | 0,25 | 0,22 | 0,22 | 0,20 | 0,18 | 0,22 | 0,16 | 0,19 | 0,21 | 0,22 | 0,11 |
-| erste Kreditkrise (Anteil Welten) | 14,3 % | 20,7 % | 11,3 % | 7,7 % | 11,0 % | 6,3 % | 6,0 % | 3,3 % | 2,3 % | 2,3 % | 2,3 % | 1,3 % | 2,3 % | 2,3 % | 0,7 % |
-| davon große Crashs | 0,01 | 0,03 | 0,03 | 0,03 | 0,05 | 0,03 | 0,05 | 0,02 | 0,01 | 0,03 | 0,03 | 0,03 | 0,03 | 0,04 | 0,02 |
-| Kriege | 0,00 | 0,06 | 0,10 | 0,08 | 0,08 | 0,10 | 0,09 | 0,10 | 0,10 | 0,08 | 0,08 | 0,12 | 0,11 | 0,10 | 0,10 |
+| Kreditkrisen | 0,14 | 0,25 | 0,23 | 0,20 | 0,23 | 0,20 | 0,21 | 0,19 | 0,19 | 0,19 | 0,17 | 0,20 | 0,25 | 0,23 | 0,11 |
+| erste Kreditkrise (Anteil Welten) | 14,3 % | 20,7 % | 11,7 % | 7,7 % | 11,0 % | 6,3 % | 6,0 % | 4,3 % | 3,0 % | 2,3 % | 2,7 % | 0,7 % | 1,7 % | 1,7 % | 0,7 % |
+| davon große Crashs | 0,01 | 0,03 | 0,03 | 0,01 | 0,05 | 0,01 | 0,04 | 0,02 | 0,01 | 0,01 | 0,01 | 0,01 | 0,01 | 0,01 | 0,01 |
+| Kriege | 0,00 | 0,06 | 0,10 | 0,08 | 0,08 | 0,10 | 0,11 | 0,08 | 0,12 | 0,13 | 0,13 | 0,15 | 0,14 | 0,19 | 0,08 |
 
 ## Preisausschläge
 
-- Größter Preisrückgang binnen eines Jahres je Welt: Median 44,0 %, 90 % 59,3 %; Welten mit einem Einbruch von mindestens 40 %: 59,0 % (GDD §7.3: „fast −50 % in einem Jahr“ soll vorkommen).
-- Größter Preisanstieg binnen eines Jahres: Median 42,2 %, 90 % 83,4 %.
+- Größter Preisrückgang binnen eines Jahres je Welt: Median 45,4 %, 90 % 61,8 %; Welten mit einem Einbruch von mindestens 40 %: 63,3 % (GDD §7.3: „fast −50 % in einem Jahr“ soll vorkommen).
+- Größter Preisanstieg binnen eines Jahres: Median 48,5 %, 90 % 101,8 %.
 
 ## Kapitel 1 (Runde 1–16)
 
-- Faktor auf den Trendpreis am Salt Hill nach 16 Runden: 10 % 0,948 · Median 1,001 · 90 % 1,040 (Grenze ±15,0 %).
+- Faktor auf den Trendpreis am Salt Hill nach 16 Runden: 10 % 0,952 · Median 1,001 · 90 % 1,040 (Grenze ±15,0 %).
 - Zinsaufschlag der Bank je Runde: 10 % -0,25 · Median 0,00 · 90 % 0,25 Prozentpunkte (Grenze ±3,00).
 - Runden, in denen der Faktor höchstens ±2 % vom Neutralwert abweicht: 80,1 %; Zins billiger: 24,7 %, teurer: 30,4 % der Runden.
 - Wahlen in Kapitel 1: 300; es siegt Handelspartei 69,7 %, Volksbund 16,3 %, Provinzliga 14,0 %; Wiederwahl 74,0 %.
@@ -82,52 +82,92 @@ Kein Gesetz hat ein festes Jahr: Druck aus dem Weltzustand → Antrag → Debatt
 
 | Gesetz | Welten mit Beschluss | Jahr des Beschlusses 10 % · 50 % · 90 % | verschiedene Runden | Ø Anträge | Ø Niederlagen | beschlossen in Kapitel 1 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Einkommensteuer | 59,3 % | 14 · 31 · 61 | 131 | 0,81 | 0,21 | 0,0 % |
-| Kartellgesetz | 65,0 % | 13 · 28 · 55 | 133 | 1,00 | 0,35 | 0,0 % |
+| Bankaufsicht | 98,7 % | 5 · 15 · 40 | 144 | 0,99 | 0,00 | 7,7 % |
+| Einkommensteuer | 72,3 % | 11 · 32 · 63 | 147 | 2,14 | 1,41 | 0,0 % |
+| Förderquoten | 95,3 % | 5 · 18 · 42 | 154 | 0,95 | 0,00 | 6,0 % |
+| Gewerkschaftsgesetz | 92,0 % | 6 · 19 · 52 | 141 | 1,78 | 0,86 | 5,3 % |
+| Importquoten für Öl | 100,0 % | 15 · 32 · 48 | 149 | 1,26 | 0,26 | 0,0 % |
+| Kartellgesetz | 99,0 % | 7 · 14 · 35 | 125 | 2,78 | 1,79 | 3,0 % |
+| Steuerabzug für Ölvorkommen | 64,3 % | 18 · 40 · 67 | 130 | 1,08 | 0,43 | 0,0 % |
+| Höhere Einkommensteuer | 48,3 % | 16 · 41 · 67 | 113 | 0,87 | 0,39 | 0,0 % |
+| Transportpflicht für Fernleitungen | 99,7 % | 5 · 11 · 22 | 91 | 1,04 | 0,04 | 6,7 % |
+| Umweltgesetze | 100,0 % | 8 · 19 · 35 | 123 | 1,10 | 0,10 | 0,0 % |
 
-Marktanteil des größten Konzerns (Crane Trust), 10 % · Median · 90 %: Jahr 0: 31,6 % · **38,2 %** · 44,5 %; Jahr 10: 36,0 % · **42,4 %** · 48,8 %; Jahr 20: 33,3 % · **40,6 %** · 48,0 %; Jahr 40: 24,4 % · **35,0 %** · 45,5 %; Jahr 73: 18,9 % · **29,2 %** · 42,4 %.
+Marktanteil des größten Konzerns (Crane Trust), 10 % · Median · 90 %: Jahr 0: 31,6 % · **38,2 %** · 44,5 %; Jahr 10: 34,6 % · **42,0 %** · 48,4 %; Jahr 20: 27,4 % · **36,9 %** · 45,6 %; Jahr 40: 20,5 % · **27,7 %** · 39,2 %; Jahr 73: 17,3 % · **24,4 %** · 32,7 %.
 
 ## Beispielwelt `welt-0`
 
 - Jahr 11: Wahl: Provinzliga regiert (Weltpreis 0,83, Kreditklima 69, Verschuldung 53, Spannung 18)
-- Jahr 14: Crash (Weltpreis 0,82, Kreditklima 26, Verschuldung 25, Spannung 22)
-- Jahr 15: Banken erholt, Wahl: Handelspartei regiert (Weltpreis 0,76, Kreditklima 30, Verschuldung 25, Spannung 22)
-- Jahr 19: Wahl: Provinzliga regiert (Weltpreis 1,20, Kreditklima 53, Verschuldung 26, Spannung 74)
-- Jahr 22: Krieg (Weltpreis 0,94, Kreditklima 76, Verschuldung 46, Spannung 99)
-- Jahr 23: Bankpanik (Weltpreis 1,10, Kreditklima 44, Verschuldung 41, Spannung 100)
-- Jahr 23: Aufstand in Costa Negra (Weltpreis 1,13, Kreditklima 49, Verschuldung 39, Spannung 100)
-- Jahr 24: Einkommensteuer Antrag (Weltpreis 1,22, Kreditklima 51, Verschuldung 39, Spannung 100)
-- Jahr 24: Banken erholt (Weltpreis 1,26, Kreditklima 48, Verschuldung 38, Spannung 100)
-- Jahr 24: Einkommensteuer beschlossen (55 % Ja) (Weltpreis 1,30, Kreditklima 57, Verschuldung 38, Spannung 100)
-- Jahr 25: Costa Negra fördert wieder (Weltpreis 1,33, Kreditklima 57, Verschuldung 38, Spannung 100)
-- Jahr 25: Embargo aus Qasir (Weltpreis 1,29, Kreditklima 60, Verschuldung 39, Spannung 100)
-- Jahr 26: Frieden (Weltpreis 1,48, Kreditklima 64, Verschuldung 40, Spannung 22)
-- Jahr 26: Embargo aufgehoben (Weltpreis 0,96, Kreditklima 72, Verschuldung 44, Spannung 27)
-- Jahr 28: Aufstand in Costa Negra (Weltpreis 0,61, Kreditklima 65, Verschuldung 51, Spannung 25)
-- Jahr 29: Costa Negra fördert wieder (Weltpreis 0,70, Kreditklima 68, Verschuldung 54, Spannung 25)
-- Jahr 30: Aufstand in Costa Negra (Weltpreis 0,68, Kreditklima 64, Verschuldung 55, Spannung 22)
-- Jahr 31: Costa Negra fördert wieder (Weltpreis 0,79, Kreditklima 66, Verschuldung 56, Spannung 21)
-- Jahr 35: Crash (Weltpreis 0,74, Kreditklima 24, Verschuldung 26, Spannung 17)
-- Jahr 35: Aufstand in Costa Negra (Weltpreis 0,66, Kreditklima 25, Verschuldung 26, Spannung 19)
-- Jahr 36: Banken erholt (Weltpreis 0,76, Kreditklima 29, Verschuldung 26, Spannung 21)
-- Jahr 36: Costa Negra fördert wieder (Weltpreis 0,90, Kreditklima 30, Verschuldung 26, Spannung 19)
-- Jahr 41: Krieg (Weltpreis 1,06, Kreditklima 54, Verschuldung 28, Spannung 100)
-- Jahr 43: Wahl: Volksbund regiert (Weltpreis 1,20, Kreditklima 81, Verschuldung 38, Spannung 100)
-- Jahr 43: Bankpanik (Weltpreis 1,05, Kreditklima 43, Verschuldung 33, Spannung 100)
-- Jahr 44: Banken erholt, Kartellgesetz Antrag (Weltpreis 1,03, Kreditklima 45, Verschuldung 32, Spannung 100)
-- Jahr 44: Aufstand in Costa Negra (Weltpreis 1,03, Kreditklima 49, Verschuldung 31, Spannung 100)
-- Jahr 45: Kartellgesetz beschlossen (52 % Ja) (Weltpreis 1,12, Kreditklima 51, Verschuldung 31, Spannung 100)
-- Jahr 45: Frieden (Weltpreis 1,14, Kreditklima 51, Verschuldung 31, Spannung 22)
-- Jahr 45: Costa Negra fördert wieder (Weltpreis 0,93, Kreditklima 50, Verschuldung 31, Spannung 24)
-- Jahr 46: Embargo aus Qasir (Weltpreis 0,75, Kreditklima 47, Verschuldung 30, Spannung 23)
-- Jahr 47: Wahl: Provinzliga regiert (Weltpreis 1,01, Kreditklima 44, Verschuldung 30, Spannung 28)
-- Jahr 48: Embargo aufgehoben (Weltpreis 1,05, Kreditklima 50, Verschuldung 29, Spannung 40)
-- Jahr 49: Aufstand in Costa Negra (Weltpreis 0,66, Kreditklima 51, Verschuldung 29, Spannung 40)
-- Jahr 51: Costa Negra fördert wieder (Weltpreis 0,77, Kreditklima 50, Verschuldung 29, Spannung 37)
-- Jahr 53: Verstaatlichung (Weltpreis 0,81, Kreditklima 42, Verschuldung 28, Spannung 36)
-- Jahr 67: Wahl: Handelspartei regiert (Weltpreis 0,82, Kreditklima 55, Verschuldung 28, Spannung 27)
-- Jahr 72: Bankpanik (Weltpreis 0,75, Kreditklima 34, Verschuldung 34, Spannung 33)
-- Jahr 73: Banken erholt (Weltpreis 0,79, Kreditklima 36, Verschuldung 33, Spannung 32)
+- Jahr 12: Förderquoten Antrag, Kartellgesetz Antrag (Weltpreis 0,81, Kreditklima 67, Verschuldung 56, Spannung 14)
+- Jahr 12: Kartellgesetz abgelehnt (41 % Ja), Transportpflicht für Fernleitungen Antrag (Weltpreis 0,81, Kreditklima 72, Verschuldung 57, Spannung 14)
+- Jahr 13: Förderquoten beschlossen (55 % Ja) (Weltpreis 0,81, Kreditklima 72, Verschuldung 58, Spannung 15)
+- Jahr 13: Transportpflicht für Fernleitungen beschlossen (52 % Ja) (Weltpreis 0,83, Kreditklima 75, Verschuldung 59, Spannung 17)
+- Jahr 14: Crash (Weltpreis 0,85, Kreditklima 26, Verschuldung 25, Spannung 22)
+- Jahr 14: Bankaufsicht Antrag (Weltpreis 0,77, Kreditklima 27, Verschuldung 25, Spannung 23)
+- Jahr 14: Kartellgesetz Antrag (Weltpreis 0,76, Kreditklima 31, Verschuldung 25, Spannung 25)
+- Jahr 15: Einkommensteuer Antrag (Weltpreis 0,77, Kreditklima 31, Verschuldung 25, Spannung 24)
+- Jahr 15: Banken erholt, Wahl: Handelspartei regiert, Bankaufsicht beschlossen (57 % Ja) (Weltpreis 0,79, Kreditklima 31, Verschuldung 25, Spannung 22)
+- Jahr 15: Kartellgesetz abgelehnt (44 % Ja) (Weltpreis 0,91, Kreditklima 33, Verschuldung 25, Spannung 23)
+- Jahr 15: Einkommensteuer abgelehnt (37 % Ja) (Weltpreis 0,99, Kreditklima 32, Verschuldung 24, Spannung 24)
+- Jahr 18: Kartellgesetz Antrag (Weltpreis 1,24, Kreditklima 53, Verschuldung 22, Spannung 70)
+- Jahr 19: Wahl: Provinzliga regiert, Kartellgesetz abgelehnt (45 % Ja) (Weltpreis 1,21, Kreditklima 53, Verschuldung 22, Spannung 84)
+- Jahr 19: Krieg (Weltpreis 1,20, Kreditklima 55, Verschuldung 22, Spannung 90)
+- Jahr 19: Einkommensteuer Antrag (Weltpreis 1,39, Kreditklima 57, Verschuldung 23, Spannung 100)
+- Jahr 20: Einkommensteuer abgelehnt (49 % Ja) (Weltpreis 1,67, Kreditklima 74, Verschuldung 28, Spannung 100)
+- Jahr 21: Bankpanik (Weltpreis 1,73, Kreditklima 42, Verschuldung 24, Spannung 100)
+- Jahr 21: Gewerkschaftsgesetz Antrag, Kartellgesetz Antrag (Weltpreis 1,74, Kreditklima 39, Verschuldung 24, Spannung 100)
+- Jahr 22: Banken erholt, Frieden, Gewerkschaftsgesetz beschlossen (52 % Ja), Kartellgesetz abgelehnt (48 % Ja) (Weltpreis 1,71, Kreditklima 41, Verschuldung 23, Spannung 22)
+- Jahr 22: Importquoten für Öl Antrag, Umweltgesetze Antrag (Weltpreis 1,35, Kreditklima 41, Verschuldung 23, Spannung 32)
+- Jahr 22: Einkommensteuer Antrag (Weltpreis 1,07, Kreditklima 43, Verschuldung 23, Spannung 30)
+- Jahr 22: Umweltgesetze beschlossen (54 % Ja) (Weltpreis 1,00, Kreditklima 47, Verschuldung 23, Spannung 28)
+- Jahr 23: Importquoten für Öl beschlossen (57 % Ja) (Weltpreis 0,99, Kreditklima 49, Verschuldung 22, Spannung 26)
+- Jahr 23: Einkommensteuer abgelehnt (45 % Ja) (Weltpreis 0,99, Kreditklima 49, Verschuldung 22, Spannung 23)
+- Jahr 24: Kartellgesetz Antrag (Weltpreis 0,91, Kreditklima 57, Verschuldung 23, Spannung 23)
+- Jahr 25: Kartellgesetz abgelehnt (50 % Ja) (Weltpreis 0,91, Kreditklima 57, Verschuldung 25, Spannung 22)
+- Jahr 27: Kartellgesetz Antrag (Weltpreis 0,86, Kreditklima 60, Verschuldung 30, Spannung 16)
+- Jahr 28: Kartellgesetz abgelehnt (47 % Ja) (Weltpreis 0,86, Kreditklima 57, Verschuldung 31, Spannung 18)
+- Jahr 30: Kartellgesetz Antrag (Weltpreis 0,84, Kreditklima 60, Verschuldung 34, Spannung 19)
+- Jahr 30: Kartellgesetz abgelehnt (49 % Ja) (Weltpreis 0,83, Kreditklima 59, Verschuldung 34, Spannung 16)
+- Jahr 31: Wahl: Handelspartei regiert (Weltpreis 0,83, Kreditklima 59, Verschuldung 35, Spannung 16)
+- Jahr 34: Bankpanik (Weltpreis 0,79, Kreditklima 38, Verschuldung 39, Spannung 17)
+- Jahr 35: Wahl: Provinzliga regiert (Weltpreis 0,83, Kreditklima 36, Verschuldung 37, Spannung 12)
+- Jahr 35: Banken erholt (Weltpreis 0,85, Kreditklima 36, Verschuldung 36, Spannung 13)
+- Jahr 37: Kartellgesetz Antrag (Weltpreis 1,02, Kreditklima 42, Verschuldung 32, Spannung 22)
+- Jahr 37: Kartellgesetz abgelehnt (46 % Ja) (Weltpreis 1,04, Kreditklima 43, Verschuldung 30, Spannung 28)
+- Jahr 39: Wahl: Volksbund regiert (Weltpreis 1,01, Kreditklima 47, Verschuldung 27, Spannung 40)
+- Jahr 39: Kartellgesetz Antrag (Weltpreis 1,01, Kreditklima 49, Verschuldung 27, Spannung 42)
+- Jahr 40: Kartellgesetz abgelehnt (47 % Ja) (Weltpreis 0,99, Kreditklima 49, Verschuldung 26, Spannung 45)
+- Jahr 42: Kartellgesetz Antrag (Weltpreis 0,91, Kreditklima 47, Verschuldung 25, Spannung 41)
+- Jahr 42: Kartellgesetz beschlossen (51 % Ja) (Weltpreis 0,89, Kreditklima 51, Verschuldung 25, Spannung 36)
+- Jahr 43: Wahl: Provinzliga regiert (Weltpreis 0,86, Kreditklima 60, Verschuldung 26, Spannung 32)
+- Jahr 45: Bankpanik (Weltpreis 0,82, Kreditklima 36, Verschuldung 26, Spannung 33)
+- Jahr 45: Einkommensteuer Antrag (Weltpreis 0,83, Kreditklima 35, Verschuldung 25, Spannung 34)
+- Jahr 45: Einkommensteuer abgelehnt (48 % Ja) (Weltpreis 0,87, Kreditklima 34, Verschuldung 25, Spannung 36)
+- Jahr 46: Banken erholt (Weltpreis 0,91, Kreditklima 35, Verschuldung 24, Spannung 35)
+- Jahr 47: Wahl: Handelspartei regiert (Weltpreis 1,02, Kreditklima 36, Verschuldung 23, Spannung 38)
+- Jahr 49: Krieg (Weltpreis 1,05, Kreditklima 60, Verschuldung 24, Spannung 99)
+- Jahr 50: Einkommensteuer Antrag (Weltpreis 1,35, Kreditklima 74, Verschuldung 29, Spannung 100)
+- Jahr 50: Aufstand in Costa Negra (Weltpreis 1,39, Kreditklima 75, Verschuldung 31, Spannung 100)
+- Jahr 51: Bankpanik, Einkommensteuer beschlossen (59 % Ja) (Weltpreis 1,50, Kreditklima 40, Verschuldung 25, Spannung 100)
+- Jahr 51: Wahl: Volksbund regiert (Weltpreis 1,62, Kreditklima 40, Verschuldung 24, Spannung 100)
+- Jahr 51: Höhere Einkommensteuer Antrag (Weltpreis 1,61, Kreditklima 37, Verschuldung 24, Spannung 100)
+- Jahr 52: Banken erholt, Costa Negra fördert wieder (Weltpreis 1,57, Kreditklima 35, Verschuldung 23, Spannung 100)
+- Jahr 52: Embargo aus Qasir, Höhere Einkommensteuer abgelehnt (50 % Ja) (Weltpreis 1,48, Kreditklima 41, Verschuldung 23, Spannung 100)
+- Jahr 53: Verstaatlichung (Weltpreis 2,15, Kreditklima 50, Verschuldung 23, Spannung 100)
+- Jahr 53: Frieden, Embargo aufgehoben (Weltpreis 2,15, Kreditklima 54, Verschuldung 23, Spannung 22)
+- Jahr 54: Höhere Einkommensteuer Antrag (Weltpreis 0,76, Kreditklima 52, Verschuldung 24, Spannung 46)
+- Jahr 55: Wahl: Provinzliga regiert, Aufstand in Costa Negra, Höhere Einkommensteuer abgelehnt (43 % Ja) (Weltpreis 0,64, Kreditklima 45, Verschuldung 23, Spannung 42)
+- Jahr 56: Costa Negra fördert wieder (Weltpreis 0,70, Kreditklima 40, Verschuldung 22, Spannung 40)
+- Jahr 57: Steuerabzug für Ölvorkommen Antrag (Weltpreis 0,67, Kreditklima 39, Verschuldung 22, Spannung 38)
+- Jahr 57: Steuerabzug für Ölvorkommen abgelehnt (49 % Ja) (Weltpreis 0,69, Kreditklima 37, Verschuldung 21, Spannung 38)
+- Jahr 60: Steuerabzug für Ölvorkommen Antrag (Weltpreis 0,79, Kreditklima 39, Verschuldung 20, Spannung 37)
+- Jahr 60: Steuerabzug für Ölvorkommen abgelehnt (49 % Ja) (Weltpreis 0,81, Kreditklima 35, Verschuldung 20, Spannung 34)
+- Jahr 62: Steuerabzug für Ölvorkommen Antrag (Weltpreis 0,85, Kreditklima 41, Verschuldung 19, Spannung 33)
+- Jahr 63: Steuerabzug für Ölvorkommen abgelehnt (46 % Ja) (Weltpreis 0,86, Kreditklima 44, Verschuldung 19, Spannung 33)
+- Jahr 65: Steuerabzug für Ölvorkommen Antrag (Weltpreis 0,86, Kreditklima 46, Verschuldung 19, Spannung 34)
+- Jahr 65: Steuerabzug für Ölvorkommen beschlossen (53 % Ja) (Weltpreis 0,85, Kreditklima 46, Verschuldung 19, Spannung 35)
+- Jahr 66: Verstaatlichung (Weltpreis 0,93, Kreditklima 52, Verschuldung 19, Spannung 36)
+- Jahr 71: Wahl: Handelspartei regiert (Weltpreis 0,78, Kreditklima 63, Verschuldung 31, Spannung 56)
 
 <!-- Ab hier von Hand geschrieben: npm run welt lässt den Rest stehen. -->
 

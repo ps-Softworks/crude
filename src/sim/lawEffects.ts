@@ -15,7 +15,9 @@ function cents(v: number): number {
 }
 
 /** Die geltenden Gesetzesregeln dieses Spielstands (leer ohne Weltmodell). */
-export function rulesInForce(state: Pick<GameState, 'worldModel'>, balance: Pick<Balance, 'laws'>): Partial<Record<LawRule, number>> {
+export function rulesInForce(state: Pick<GameState, 'worldModel'> & Partial<Pick<GameState, 'chapter'>>, balance: Pick<Balance, 'laws'>): Partial<Record<LawRule, number>> {
+  // 0.4.20+19: erst ab Kapitel 2 (wie lawRule).
+  if ((state.chapter ?? 1) < 2) return {};
   return lawRules(state.worldModel?.laws, balance.laws);
 }
 

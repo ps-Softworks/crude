@@ -22,7 +22,8 @@ function mitGesetz(ids: string[], cash = 10_000): GameState {
   const w = g.worldModel ?? newWorld('steuer', balance.worldModel);
   const bills = { ...w.laws.bills };
   for (const id of ids) bills[id] = { stage: 'passed', pressure: 0, voteIn: 0, cooldown: 0, proposals: 1, passedRound: 1, lastVote: 0.6, weakened: false, lobbyVote: 0 };
-  return { ...g, cash, worldModel: { ...w, laws: { ...w.laws, bills } } };
+  // Gesetzesregeln wirken ab Kapitel 2 (0.4.20+19).
+  return { ...g, chapter: 2, cash, worldModel: { ...w, laws: { ...w.laws, bills } } };
 }
 
 describe('Einkommensteuer (0.4.20+17)', () => {
@@ -125,6 +126,12 @@ describe('Wirkung der neuen Gesetze (0.4.20+18)', () => {
     expect(r.brand!.regions.cordova.stations).toBe(4);
     expect(r.cash).toBeGreaterThan(mitNetz.cash);
     expect(settleBreakup(mitNetz, balance).brand!.regions.cordova.stations).toBe(8);
+  });
+
+  it('in Kapitel 1 wirkt keine Gesetzesregel auf Jacobs Firma (0.4.20+19)', () => {
+    const k1 = { ...mitGesetz(['bank_supervision', 'income_tax']), chapter: 1 };
+    expect(lawRule(k1, balance.laws, 'creditLimit', 1)).toBe(1);
+    expect(settleIncomeTax(k1, { ...k1, cash: k1.cash + 5_000 }, balance).cash).toBe(k1.cash + 5_000);
   });
 
   it('lawRule liest die Regel geltender Gesetze, sonst den Ersatzwert', () => {

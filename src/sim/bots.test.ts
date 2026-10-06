@@ -616,7 +616,10 @@ describe('Bot-Läufe: Transportwege (0.2.15+4)', () => {
   it('die planenden Bots mit Marge verkaufen nie mit Verlust nach Fracht und Förderzins', () => {
     for (const s of ['vorsichtig', 'ausgewogen'] as const) {
       for (const r of spiele(s, 15)) {
-        expect(r.state.log.some((z) => / verkauft.* – -[0-9]/.test(z))).toBe(false);
+        // 0.4.20+19: Ausnahme – liefen in der Runde davor die Tanks über, ist ein kleiner Verlust besser als noch mehr Öl im Boden.
+        const log = r.state.log;
+        const verlust = log.filter((z, i) => / verkauft.* – -[0-9]/.test(z) && !log.slice(Math.max(0, i - 15), i).some((v) => v.includes('Die Tanks sind voll')));
+        expect(verlust).toEqual([]);
       }
     }
   });

@@ -312,7 +312,7 @@ export function advanceLaws(input: LawsState, view: LawView, catalog: readonly L
       b.cooldown -= 1;
       continue;
     }
-    if (b.pressure >= def.threshold && offen < lb.maxOpen && u[0] < lb.proposeChance) {
+    if (b.pressure >= def.threshold * lb.thresholdScale && offen < lb.maxOpen && u[0] < lb.proposeChance) {
       b.stage = 'debate';
       const r = lb.debateRounds;
       b.voteIn = Math.min(r.max, r.min + Math.floor(u[2] * (r.max - r.min + 1)));
@@ -329,8 +329,10 @@ export function advanceLaws(input: LawsState, view: LawView, catalog: readonly L
  * Gesetz. Für die Systeme, die eine Regel lesen (Bankrahmen, Löhne, Bohrkosten, Lager …).
  */
 export function lawRule(state: object, catalog: readonly LawDef[] | undefined, rule: LawRule, fallback = 0): number {
-  const laws = (state as { worldModel?: { laws?: Pick<LawsState, 'bills'> } | null }).worldModel?.laws;
-  if (!laws || !catalog) return fallback;
+  const s = state as { worldModel?: { laws?: Pick<LawsState, 'bills'> } | null; chapter?: number };
+  const laws = s.worldModel?.laws;
+  // 0.4.20+19: Kapitel 1 bleibt sanft – die Regeln treffen Jacobs Firma erst ab Kapitel 2 (die Welt spürt sie immer).
+  if (!laws || !catalog || (s.chapter ?? 1) < 2) return fallback;
   return lawRules(laws, catalog)[rule] ?? fallback;
 }
 

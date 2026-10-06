@@ -73,8 +73,8 @@ describe('Fertig-Kriterium 4.3: Gesetze entstehen aus dem Weltzustand, nicht zu 
       const runden = runs.map((r) => r.lawPassed[id]);
       const beschlossen = runden.filter((x): x is number => x !== null);
       const nie = runden.length - beschlossen.length;
-      // Manchmal gar nicht …
-      expect(nie).toBeGreaterThanOrEqual(runs.length * 0.05);
+      // Manchmal gar nicht … (0.4.20+19: Gesetze kommen öfter – Philipp: in jeder Welt mehrere; „nie“ ist jetzt selten)
+      expect(nie).toBeGreaterThanOrEqual(1);
       // … meistens irgendwann (GDD §10: Gesetze sind Spielfelder, keine Seltenheit).
       expect(beschlossen.length).toBeGreaterThanOrEqual(runs.length * 0.5);
       // Kein festes Datum: viele verschiedene Runden, weit gestreut, keine Runde gehäuft.
@@ -161,9 +161,9 @@ describe('Bedingungen aus dem Weltzustand', () => {
 
   it('Druck sammelt sich, solange Gründe stimmen (Gleichgewicht = Punkte ÷ (1 − decay)), und verfliegt danach', () => {
     const def: LawDef = { ...kartell, threshold: 999, pressure: [{ when: { war: true }, add: 1.5 }] };
-    const krieg = tagen(start(), { ...ruhig, war: true }, [def], 80);
+    const krieg = tagen(start(), { ...ruhig, war: true }, [def], 200);
     expect(krieg.at(-1)!.bills.antitrust.pressure).toBeCloseTo(1.5 / (1 - lb.decay), 3);
-    const frieden = tagen(krieg.at(-1)!, ruhig, [def], 30);
+    const frieden = tagen(krieg.at(-1)!, ruhig, [def], 80);
     expect(frieden.at(-1)!.bills.antitrust.pressure).toBeLessThan(0.1);
   });
 
@@ -179,15 +179,18 @@ describe('Bedingungen aus dem Weltzustand', () => {
       const s = tagen(start(trust), view, [{ ...kartell, threshold: 999 }], 60, { ...sicher, trust: fest });
       return s.at(-1)!.bills.antitrust.pressure;
     };
-    expect(gleichgewicht(ruhig, 0.35)).toBeLessThan(kartell.threshold);
+    // 0.4.20+19: Die Schwelle zählt × thresholdScale.
+    const schwelle = kartell.threshold * lb.thresholdScale;
+    expect(gleichgewicht(ruhig, 0.35)).toBeLessThan(schwelle);
     // Die Marktbeherrschung zählt mehr als die Regierung: Volksbund an der Macht, wütende Leute
     // und starke Fraktion reichen ohne mächtigen Trust nicht (Befund zu 4.3).
     const vbStark = { ...start(0.35), seats: { handel: 0.25, volksbund: 0.45, provinz: 0.3 } };
     const vbAllein = tagen(vbStark, { ...ruhig, government: 'volksbund', mood: 30 }, [{ ...kartell, threshold: 999 }], 60, { ...sicher, trust: { ...sicher.trust, revert: 0, credit: 0, government: { handel: 0, volksbund: 0, provinz: 0 } } });
-    expect(vbAllein.at(-1)!.bills.antitrust.pressure).toBeLessThan(kartell.threshold);
-    // Ein erdrückender Trust bringt das Gesetz auch ohne Volksbund-Regierung über die Schwelle – nur die Handelspartei hält es auf.
-    expect(gleichgewicht({ ...ruhig, government: 'handel' }, 0.52)).toBeLessThan(kartell.threshold);
-    expect(gleichgewicht({ ...ruhig, government: 'volksbund', mood: 40 }, 0.45)).toBeGreaterThan(kartell.threshold);
+    // 0.4.20+19: Mit häufigerer Gesetzgebung reicht der Volksbund allein über die (gesenkte) Schwelle – ein mächtiger Trust bringt aber deutlich mehr Druck.
+    expect(vbAllein.at(-1)!.bills.antitrust.pressure).toBeLessThan(gleichgewicht({ ...ruhig, government: 'volksbund', mood: 30 }, 0.5));
+    // Ein erdrückender Trust bringt das Gesetz über die Schwelle; die Handelspartei bremst es deutlich.
+    expect(gleichgewicht({ ...ruhig, government: 'handel' }, 0.52)).toBeLessThan(gleichgewicht({ ...ruhig, government: 'volksbund', mood: 40 }, 0.52));
+    expect(gleichgewicht({ ...ruhig, government: 'volksbund', mood: 40 }, 0.45)).toBeGreaterThan(schwelle);
     expect(gleichgewicht({ ...ruhig, government: 'provinz' }, 0.52)).toBeGreaterThan(kartell.threshold);
   });
 
@@ -264,10 +267,10 @@ describe('Gesetzgebung als Prozess: Antrag, Debatte, Abstimmung', () => {
   });
 
   it('höchstens maxOpen Anträge gleichzeitig im Parlament', () => {
-    const zweites: LawDef = { ...test, id: 'zweites' };
-    const [r1] = tagen(start(), ruhig, [test, zweites], 1);
+    const viele: LawDef[] = Array.from({ length: lb.maxOpen + 1 }, (_, i) => ({ ...test, id: `g${i}` }));
+    const [r1] = tagen(start(), ruhig, viele, 1);
     expect(r1.news.filter((n) => n.kind === 'proposed')).toHaveLength(lb.maxOpen);
-    expect(r1.bills.zweites.stage).toBe('idle');
+    expect(r1.bills[`g${lb.maxOpen}`].stage).toBe('idle');
   });
 
   it('nach einer Wahl sitzen die neuen Abgeordneten im Parlament', () => {
@@ -365,8 +368,8 @@ describe('Wirkung beschlossener Gesetze', () => {
       if (hoch) ueber50 += 1;
     }
     expect(beschluesse).toBeGreaterThan(100);
-    expect(beherrscht / beschluesse).toBeGreaterThan(0.8);
-    expect(unterHandel / beschluesse).toBeLessThan(0.05);
+    expect(beherrscht / beschluesse).toBeGreaterThan(0.75);
+    expect(unterHandel / beschluesse).toBeLessThan(0.2); // 0.4.20+19: Gesetze kommen öfter – die Handelspartei bremst, verhindert aber nicht alles
     // „Kartellgesetz und Zerschlagung des Trusts“ (GDD Kap. 2) ist eine echte Weltlage, aber keine Pflicht.
     expect(zerschlagbar).toBeGreaterThanOrEqual(300 * 0.2);
     expect(zerschlagbar).toBeLessThanOrEqual(300 * 0.6);
