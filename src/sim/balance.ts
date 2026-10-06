@@ -1814,7 +1814,7 @@ function parseChapter(raw: unknown): ChapterBalance {
   return {
     goalValue: num(raw, 'chapter.goalValue'),
     goalWells: positiveInt(raw, 'chapter.goalWells'),
-    ipo: { shares: shares as number[], priceFactor: share(raw, 'chapter.ipo.priceFactor') },
+    ipo: { shares: shares as number[], priceFactor: positiveNumber(raw, 'chapter.ipo.priceFactor') },
     chapter2: {
       goalValue: num(raw, 'chapter.chapter2.goalValue'),
       goalControl: share(raw, 'chapter.chapter2.goalControl'),
