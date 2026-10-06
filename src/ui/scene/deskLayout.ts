@@ -98,7 +98,8 @@ const KAPITEL3: Record<DeskSpot, Placement> = {
   karte: AT.karte,
   konkurrenz: AT.konkurrenz,
   boerse: { left: 42.5, top: 4, width: 8.5, height: 25 },
-  radio: { left: 43.5, top: 31.5, width: 6.5, height: 13 },
+  // Notiz-Prüfung: Der Fuß des Radios steht wie die Lampe sichtbar auf der Platte (vorher schwebte er an der Kante).
+  radio: { left: 43.5, top: 33.5, width: 6.5, height: 12.5 },
   werkstatt: AT.werkstatt,
   termine: AT.termine,
   familie: AT.familie,
@@ -109,7 +110,7 @@ const KAPITEL3: Record<DeskSpot, Placement> = {
   akte: { left: 2, top: 75, width: 11.5, height: 22 },
   fracht: { left: 14, top: 75, width: 13, height: 22 },
   protokoll: { left: 28, top: 76, width: 8, height: 21 },
-  ruth: { left: 37, top: 46, width: 25, height: 35 },
+  ruth: { left: 37, top: 47, width: 25, height: 34 },
   ablage: { left: 37, top: 83, width: 25, height: 15 },
   hallstead: { left: 37.5, top: 83.5, width: 11.75, height: 14 },
   konzern: { left: 49.75, top: 83.5, width: 11.75, height: 14 },

@@ -442,6 +442,7 @@
   background: transparent; border: 1px solid transparent; box-shadow: none; border-left: 3px solid var(--linie);
 }
 .zettel-punkt > span:nth-child(1):not(.siegel), .zettel-punkt > span:nth-last-child(2) { flex: 1; }
+.zettel-punkt > span:not(.siegel):not(.zettel-pfeil) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .zettel-punkt.dringend { border-left-color: var(--rot); }
 .zettel-punkt:hover:not(:disabled) { background: var(--ocker-hell); border-color: var(--linie); border-left-color: var(--tinte-weich); }
 .zettel-pfeil { color: var(--tinte-weich); font-weight: 700; }

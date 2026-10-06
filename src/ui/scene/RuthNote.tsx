@@ -4,6 +4,7 @@
 // Ab 0.2.15+11 wird der Zettel konkret: Liegt mehr als eine Sache offen, steht
 // jede einzeln da – mit eigenem Weg dorthin (Bohrung, Besuch, Briefe …).
 
+import { useLayoutEffect, useRef, useState } from 'react';
 import type { NextStep } from '../../sim/desk';
 import type { TutorialView } from '../../sim/tutorial';
 import type { OpenItem } from '../inbox';
@@ -61,6 +62,29 @@ export function RuthNote({
     punkte.unshift({ key: 'schritt', text: step.text, urgent: false, go: onGo });
   }
 
+  // Nur so viele Punkte, wie auf den Zettel passen (der Rest steht an der Glocke): Nach jeder Änderung
+  // misst der Zettel nach und nimmt so lange einen Punkt weg, bis nichts mehr abgeschnitten ist.
+  const zettel = useRef<HTMLDivElement>(null);
+  const schluessel = punkte.map((p) => `${p.key}:${p.text}`).join('|');
+  const [platz, setPlatz] = useState(MAX_PUNKTE);
+  const [fuer, setFuer] = useState(schluessel);
+  if (fuer !== schluessel) {
+    setFuer(schluessel);
+    setPlatz(MAX_PUNKTE);
+  }
+  useLayoutEffect(() => {
+    const z = zettel.current;
+    if (z && platz > 1 && z.scrollHeight > z.clientHeight + 1) setPlatz(platz - 1);
+  });
+  useLayoutEffect(() => {
+    const z = zettel.current;
+    if (!z || typeof ResizeObserver === 'undefined') return;
+    const beobachter = new ResizeObserver(() => setPlatz(MAX_PUNKTE));
+    // Der feste Platz auf dem Tisch, nicht die Unterlage (die wächst und schrumpft mit dem Zettel).
+    beobachter.observe(z.closest('.unterlage-platz') ?? z);
+    return () => beobachter.disconnect();
+  }, []);
+
   const ps = exhausted && !krank && <span className="zettel-ps">PS: Du siehst erschöpft aus. Fehler schleichen sich ein.</span>;
   const links = (
     <span className="unterlage-links">
@@ -80,12 +104,12 @@ export function RuthNote({
 
   // Mehrere Sachen offen: eine Liste, jeder Punkt mit eigenem Weg.
   if (punkte.length > 0) {
-    const sichtbar = punkte.slice(0, MAX_PUNKTE);
+    const sichtbar = punkte.slice(0, Math.min(MAX_PUNKTE, platz));
     return (
       <div className="unterlage">
-        <div className="zettel zettel-liste" role="group" aria-label="Ruths Zettel: Das wartet auf dich">
+        <div ref={zettel} className="zettel zettel-liste" role="group" aria-label="Ruths Zettel: Das wartet auf dich">
+          {/* Nur der Kopf, ohne „Das wartet auf dich:“ – jede Zeile auf dem Zettel zählt (Platz für Punkte). */}
           <span className="zettel-kopf">{kopf}</span>
-          <span className="zettel-text">Das wartet auf dich:</span>
           <ul className="zettel-punkte">
             {sichtbar.map((pk) => (
               <li key={pk.key}>
@@ -99,7 +123,7 @@ export function RuthNote({
               </li>
             ))}
           </ul>
-          {punkte.length > MAX_PUNKTE && <span className="muted klein">… und {punkte.length - MAX_PUNKTE} weitere an der Glocke (E).</span>}
+          {punkte.length > sichtbar.length && <span className="muted klein">… und {punkte.length - sichtbar.length} weitere an der Glocke (E).</span>}
           {ps}
         </div>
         {links}

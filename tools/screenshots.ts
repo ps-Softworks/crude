@@ -168,6 +168,11 @@ const kap3 = weiter(kapitel3Systeme(p4basis));
 if (kap2.finished || kap3.finished) throw new Error('Phase-4-Spielstand ist vorzeitig zu Ende.');
 // 0.4.20+10: Derselbe Stand wirklich in Kapitel 3 – dort steht der Mahagoni-Tisch mit eigenem Platzplan.
 const kap3Tisch: GameState = { ...kap3, chapter: 3 };
+// Ruths Zettel voll: dazu alle eigenen Pachten ungebohrt und mit Frist in dieser Runde (lange Zeile „… verfallen nach dieser Runde“).
+const kap3VollerZettel: GameState = {
+  ...kap3Tisch,
+  leases: kap3Tisch.leases.map((l) => (l.holder === 'jacob' ? { ...l, drilled: false, expiresAfterRound: kap3Tisch.round } : l)),
+};
 // 0.4.20+8: Cranes Feldzug – Preiskrieg in zwei Regionen, Cranes Kasse halb leer, Pettibone hat Thornes Geld angeboten.
 const imFeldzug: GameState = (() => {
   const b = brandOf(kap3Tisch, balance);
@@ -238,6 +243,7 @@ const bilder: Bild[] = [
   { name: '16-tisch-kapitel2', state: kap2 },
   { name: '17-tisch-kapitel3', state: kap3Tisch },
   { name: '17b-tisch-kapitel3-vorschau', state: kap3 },
+  { name: '17c-ruths-zettel-voll', state: kap3VollerZettel },
   { name: '18-raffinerie', state: kap3, dann: KLICK('.objekt-raffinerie') },
   { name: '19-fernleitung', state: kap3, tasten: ['f'], dann: REITER('Fernleitung') },
   { name: '20-aktien', state: kap3, tasten: ['g'], dann: REITER('Aufsichtsrat') },
@@ -485,6 +491,7 @@ try {
       ['Kapitel 2', kap2],
       ['Kapitel 3 (Vorschau)', kap3],
       ['Kapitel 3', kap3Tisch],
+      ['Kapitel 3, voller Zettel', kap3VollerZettel],
     ] as const) {
       await lade(state, {}, undefined);
       const m = await cdp.js<{ sh: number; sw: number; ih: number; iw: number }>(
@@ -494,6 +501,15 @@ try {
       if (m.sh > m.ih || m.sw > m.iw) ueber.push(`Seite ${m.sw}×${m.sh}`);
       if (ueber.length > 0) fehler++;
       console.log(`${ueber.length === 0 ? 'ok    ' : 'FEHLER'} ${w}×${h} Tisch ${name}: ${ueber.length === 0 ? 'nichts überdeckt' : ueber.join(' · ')}`);
+      // Ruths Zettel: nichts abgeschnitten – auch im vollen Fall (Besuch, Briefe, verfallende Pachten, Bohrung).
+      const zettel = await cdp.js<string>(`(() => {
+        const z = document.querySelector('.zettel');
+        if (!z) return 'ok';
+        const n = z.querySelectorAll('.zettel-punkt').length;
+        return z.scrollHeight <= z.clientHeight + 1 ? 'ok (' + n + ' Punkte)' : 'abgeschnitten ' + z.scrollHeight + ' > ' + z.clientHeight + ' px';
+      })()`);
+      if (!zettel.startsWith('ok')) fehler++;
+      console.log(`${zettel.startsWith('ok') ? 'ok    ' : 'FEHLER'} ${w}×${h} Ruths Zettel ${name}: ${zettel}`);
       if (name === 'Kapitel 3' && (h < 800 || w === 1920)) {
         for (const [fenster, tasten, klick] of P4_FENSTER) {
           await lade(state, {}, undefined);
