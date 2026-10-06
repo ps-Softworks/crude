@@ -118,12 +118,22 @@ describe('Fernleitungen: Freischaltung (Kapitel 2)', () => {
     expect(pipelineWorldOf({})).toEqual(DEFAULT_PIPELINE_WORLD);
     // Integration: Die Stimmung kommt nur noch aus dem echten Weltmodell (state.worldModel, 4.1).
     expect(pipelineWorldOf({ worldModel: { mood: 30 } }).mood).toBe(30);
-    expect(pipelineWorldOf({ chapter: 2, worldModel: { mood: 70 }, politics: { influence: 65 }, laws: { commonCarrier: true } })).toEqual({
+    // 0.4.20+9: Einfluss = Hallstead-Gefallen × influencePerFavor (höchstens 100); Transportpflicht gibt es noch nicht.
+    const je = balance.bigPipelines.rights.influencePerFavor;
+    expect(pipelineWorldOf({ chapter: 2, worldModel: { mood: 70 }, hallstead: { lobby: { favors: 4 } } }, balance)).toEqual({
       chapter: 2,
       mood: 70,
-      influence: 65,
-      commonCarrier: true,
+      influence: 4 * je,
+      commonCarrier: false,
     });
+    expect(pipelineWorldOf({ hallstead: { lobby: { favors: 1000 } } }, balance).influence).toBe(100);
+    expect(pipelineWorldOf({ hallstead: { lobby: { favors: 4 } } }).influence).toBe(0);
+  });
+
+  it('0.4.20+9: Mit genug Gefallen in Hallstead reicht der Einfluss für eine Enteignung', () => {
+    const noetig = Math.ceil(balance.bigPipelines.rights.expropriateInfluence / balance.bigPipelines.rights.influencePerFavor);
+    expect(pipelineWorldOf({ hallstead: { lobby: { favors: noetig } } }, balance).influence).toBeGreaterThanOrEqual(balance.bigPipelines.rights.expropriateInfluence);
+    expect(pipelineWorldOf({ hallstead: { lobby: { favors: noetig - 1 } } }, balance).influence).toBeLessThan(balance.bigPipelines.rights.expropriateInfluence);
   });
 });
 

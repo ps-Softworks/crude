@@ -184,6 +184,8 @@
           Delaney reads for a long time. "You know what you're doing? Crane doesn't
           forget a thing like this." He takes the papers anyway.
       marks: [delaney_kronzeuge]
+      # 0.4.20+9: Crane vergisst das nicht – Margaret und Pruett werden zu Feinden (Groll ab 60 = „Feind“, 4.10).
+      effects: { rival: { crane: { trust: -30, grudge: 60 } } }
       appointments: 2
 
 - id: k2_delaney_anklage

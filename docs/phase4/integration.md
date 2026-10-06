@@ -225,10 +225,13 @@ Main ist inzwischen bei 0.4.4. Beim nächsten Merge von main in diesen Branch be
 1. `chapterCheck` kennt nur Kapitel 1, und `endRound` schreibt am Ende immer „Kapitel 1 ist zu Ende“. Bereit liegen:
    Kapitel 2 – `ownsRefinery` (4.6) oder `ownsHarborPipeline` (4.7), Kontrolle ≥ 50 % über `control` (4.8);
    Kapitel 3 – `brandGoal` (4.14: ≥ 3 Regionen oder ≥ 10 %), dazu „mindestens Rating C“ (GDD §13).
-2. Neue Enden fehlen: „abgesetzt“ (4.8 `stocks.ousted`), Haft/Zwangsverkauf (4.11), und „verkauft an Pruett“ (4.10)
+2. Neue Enden fehlen: „abgesetzt“ (4.8 `stocks.ousted`), Haft (4.11), und „verkauft an Pruett“ (4.10)
    zeigt noch die Texte der Crane-Übernahme aus Kapitel 1.
+   *Erledigt 0.4.20+9:* Der Zwangsverkauf ist kein Ende, sondern wirkt im Urteil: `forcedSale` (investigation.ts)
+   verkauft `investigation.forcedSale.share` der fördernden Quellen (größte zuerst) zu
+   Rate × `rounds` × Posted Price × `discount`; leere Pachten gehen mit, Logzeile „Zwangsverkauf: …“.
 
-**Kopplungen zwischen den Systemen (alle noch offen)**
+**Kopplungen zwischen den Systemen** (0.4.20+9: einige erledigt, jeweils vermerkt)
 3. ~~Raffinerie ↔ Forschung~~ erledigt (0.4.20+9): Alle Techniken wirken ab Kapitel 2. Cracken hebt den
    Benzin-Höchstanteil im Mix um 20 Punkte (20 % → 40 %, `refineryMixBounds`), Tanklaster geben jedem eigenen
    Gespann +50 % Kapazität (`teamCapacity`, auch im Wegevergleich), Bohrtiefe macht jede Stufe so sicher wie
@@ -238,15 +241,26 @@ Main ist inzwischen bei 0.4.4. Beim nächsten Merge von main in diesen Branch be
    Tankstellen beliefern statt den Großhandel?
 5. Börse ↔ Aktien: Der eigene Kurs (4.8) fällt im Börsencrash (4.15) nur indirekt mit; Harlan Oil steht nicht
    auf der Kurstafel. Hallstead-Bahn-/Autoaktien (4.16) sind eigene Beteiligungen ohne Kurs.
-6. Personal ↔ Ermittler/Lobby: `staffHeat` (4.9) wirkt nicht auf Delaney; der Lobbyist (4.16) ist keine
-   Personal-Rolle; Kronzeuge gegen Crane (4.11) macht Crane in 4.10 nicht zum Feind.
-7. Gefallen (4.16 `spendFavors`) werden für Genehmigungen und Ermittlungen (4.11) noch nicht verlangt;
-   politischer Druck kostet dort Geld. Einfluss für Enteignung (4.7) ist ein Entwurfsname (`politics.influence`).
-8. Diplomatie → Welt: `diplomacyMoodShift` vorbereitet, nicht eingespeist. Bullards Gebietsabsprache wirkt nur
-   über billigere Pachten, nicht in seiner Pacht-KI.
+6. Personal ↔ Ermittler/Lobby: der Lobbyist (4.16) ist keine Personal-Rolle. Umschlag-Hitze (`lobbyHeat`, 4.16)
+   wirkt noch nicht auf Delaney.
+   *Erledigt 0.4.20+9:* `staffHeat` (4.9) zählt × `investigation.staffHeatFactor` (abgerundet) zur Hitze
+   (`staffHeatPoints` in investigation.ts). Kronzeuge gegen Crane (`k2_delaney_besuch` → `kronzeuge`) setzt
+   `rival: { crane: { trust: -30, grudge: 60 } }` – Margaret und Pruett werden zu Feinden.
+7. Gefallen (4.16 `spendFavors`) werden für Genehmigungen noch nicht verlangt.
+   *Erledigt 0.4.20+9:* Politischer Druck gegen Delaney kostet zuerst `investigation.pressure.favors` Gefallen
+   (`pressurePaysWithFavors`), nur ohne genug Gefallen `pressure.cost` $ (Hallstead öffnet erst in Kapitel 3, in
+   Kapitel 2 also weiter Geld). Einfluss für Enteignung (4.7) = Hallstead-Gefallen × `bigPipelines.rights.influencePerFavor`
+   (höchstens 100) in `pipelineWorldOf(state, balance)`; der Entwurfsname `politics.influence` ist weg.
+   Transportpflicht (`commonCarrier`) bleibt `false`: Der Gesetzeskatalog kennt kein solches Gesetz (nur
+   Kartellgesetz und Einkommensteuer) – Hinweis im Kommentar von `pipelineWorldOf`.
+8. Diplomatie → Welt: `diplomacyMoodShift` vorbereitet, nicht eingespeist.
+   *Erledigt 0.4.20+9:* Solange eine Gebietsabsprache mit Bullard läuft (`territoryPact` in rival.ts), pachtet er
+   nichts direkt neben Jacobs Land (wie beim Handschlag aus Kapitel 1).
 9. Zeitung: keine Schlagzeilen zu Fernleitung, Ermittlung, Preiskampf der Marke; die Börsenseite hängt in der
    Oberfläche (NewspaperPanel), nicht in `makeNewspaper`.
-10. Imperiumswert ohne Börsendepot (4.15); Konsortium-Rauswurf (4.17) als feste Summe statt über den Weltpreis.
+10. Imperiumswert ohne Börsendepot (4.15).
+   *Erledigt 0.4.20+9:* Konsortium-Rauswurf (4.17) kostet `expelledPenalty` × Posted Price ÷ `market.basePrice`
+   (`expelledCost` in konsortium.ts).
 
 **Balance und Bots**
 11. Alle Zahlen der Blöcke `refinery`, `bigPipelines`, `stocks`, `staff`, `diplomacy`, `investigation`, `research`,

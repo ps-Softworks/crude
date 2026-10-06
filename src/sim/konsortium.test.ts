@@ -9,10 +9,12 @@ import {
   answerFavor,
   answerInvitation,
   detectionChance,
+  expelledCost,
   favorChoices,
   invitationOpen,
   konsortiumWorldInput,
   rescueAvailable,
+  settleKonsortium,
   trustWord,
 } from './konsortium';
 import { loadBalance } from './testBalance';
@@ -149,6 +151,20 @@ describe('Gefallen', () => {
     const raus = ok(answerFavor(knapp, balance, 'verweigern'));
     expect(raus.kapitel3!.konsortium.path).toBe('verstossen');
     expect(raus.kapitel3!.konsortium.pressureUntil).toBe(s.round + K.expelledRounds);
+  });
+
+  it('0.4.20+9: Der Preisdruck nach dem Rauswurf wächst und fällt mit dem Posted Price', () => {
+    const g = k3Game('raus-preis', balance);
+    const raus = patchK(g, (k) => ({ ...k, konsortium: { ...k.konsortium, path: 'verstossen', pressureUntil: g.round + 3 } }));
+    expect(expelledCost({ postedPrice: balance.market.basePrice }, balance)).toBe(K.expelledPenalty);
+    expect(expelledCost({ postedPrice: balance.market.basePrice * 2 }, balance)).toBe(2 * K.expelledPenalty);
+    const billig = { ...raus, postedPrice: balance.market.basePrice / 2 };
+    const teuer = { ...raus, postedPrice: balance.market.basePrice * 2 };
+    const [, c1] = settleKonsortium(billig, balance, billig.kapitel3!);
+    const [, c2] = settleKonsortium(teuer, balance, teuer.kapitel3!);
+    expect(c1).toBe(-expelledCost(billig, balance));
+    expect(c2).toBe(-expelledCost(teuer, balance));
+    expect(c2).toBe(4 * c1);
   });
 
   it('eine verstrichene Frist zählt als Verweigerung', () => {

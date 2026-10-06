@@ -16,7 +16,10 @@
 // Gegenmittel (GDD §10): Anwalt (Stufe 0–5, kostet je Runde), Spur vernichten
 // (kann eine neue Spur „Vertuschung“ erzeugen), Zeugen kaufen (neue Spur!),
 // Sündenbock (einmal je Fall, kostet Kraft), politischer Druck (Delaney wird für
-// einige Runden versetzt – je nach Regierung; misslingt es, wird es schlimmer).
+// einige Runden versetzt – je nach Regierung; misslingt es, wird es schlimmer;
+// 0.4.20+9: bezahlt mit Hallstead-Gefallen, wenn Jacob genug hat, sonst mit Geld).
+// 0.4.20+9: Zur Hitze zählt auch die Hitze des Personals (staffHeat × staffHeatFactor),
+// und eine schwere Strafe erzwingt den Verkauf eines Teils der Quellen (forcedSale).
 //
 // Auf dem Schreibtisch erscheint Delaney über Ereignisse (content/events/k2-delaney.yaml):
 // Die Simulation setzt die Merkzeichen DELANEY_MARKS, die Antworten setzen
@@ -36,6 +39,11 @@ import { LANGUAGES, type LocalizedText } from './i18n';
 import { Rng, seedFromString, type RngState } from './rng';
 import { chapterOf, PORT_PARTIES, worldPort, type PortParty, type WorldPort } from './worldPort';
 import { reputationOf } from './reputation';
+import { staffHeat } from './staff';
+import { availableFavors, spendFavors } from './lobby';
+import { hallsteadUnlocked } from './hallsteadState';
+import { producingWells } from './production';
+import { wellsOn } from './drilling';
 
 // --- Spielzahlen (balance.yaml, Abschnitt investigation) ------------------------
 
@@ -83,8 +91,13 @@ export interface InvestigationBalance {
   destroy: { cost: number; cut: number; chance: number; severity: number; evidence: number };
   witness: { cost: number; evidenceCut: number; severity: number };
   scapegoat: { evidenceCut: number; strength: number };
-  pressure: { cost: number; rounds: number; chance: Record<PortParty | 'none', number>; failEvidence: number; severity: number };
+  /** 0.4.20+9: favors = so viele Hallstead-Gefallen statt cost (wenn Jacob sie hat). */
+  pressure: { cost: number; favors: number; rounds: number; chance: Record<PortParty | 'none', number>; failEvidence: number; severity: number };
   crown: { evidenceCut: number };
+  /** 0.4.20+9: Hitze des Personals (4.9, 0–100) × staffHeatFactor zählt zur Hitze (abgerundet). */
+  staffHeatFactor: number;
+  /** 0.4.20+9: Zwangsverkauf bei schwerer Strafe – share der fördernden Quellen (größte zuerst), Erlös = Rate × rounds × Preis × discount. */
+  forcedSale: { share: number; rounds: number; discount: number };
 }
 
 function wert(obj: unknown, path: string): unknown {
@@ -190,6 +203,7 @@ export function parseInvestigationBalance(raw: unknown): InvestigationBalance {
     scapegoat: { evidenceCut: zahl(raw, `${p}.scapegoat.evidenceCut`, 0), strength: zahl(raw, `${p}.scapegoat.strength`, 0) },
     pressure: {
       cost: zahl(raw, `${p}.pressure.cost`, 0),
+      favors: ganz(raw, `${p}.pressure.favors`, 0),
       rounds: ganz(raw, `${p}.pressure.rounds`, 1),
       chance: {
         handel: zahl(raw, `${p}.pressure.chance.handel`, 0, 1),
@@ -201,6 +215,12 @@ export function parseInvestigationBalance(raw: unknown): InvestigationBalance {
       severity: ganz(raw, `${p}.pressure.severity`, 1, 5),
     },
     crown: { evidenceCut: zahl(raw, `${p}.crown.evidenceCut`, 0) },
+    staffHeatFactor: zahl(raw, `${p}.staffHeatFactor`, 0),
+    forcedSale: {
+      share: zahl(raw, `${p}.forcedSale.share`, 0, 1),
+      rounds: zahl(raw, `${p}.forcedSale.rounds`, 0),
+      discount: zahl(raw, `${p}.forcedSale.discount`, 0, 1),
+    },
   };
   if (b.probeAt < b.rumorAt) throw new BalanceError(`balance.yaml: "${p}.probeAt" darf nicht unter "${p}.rumorAt" liegen`);
   if (b.trial.min > b.trial.max) throw new BalanceError(`balance.yaml: "${p}.trial" hat min > max`);
@@ -221,7 +241,7 @@ export const DELANEY_MARKS = {
   dropped: 'delaney_eingestellt',
   acquitted: 'delaney_freispruch',
   convicted: 'delaney_verurteilt',
-  /** Schwere Strafe: Zwangsverkauf (4.x: noch ohne Wirkung auf die Pachten, siehe docs/phase4/4.11.md). */
+  /** Schwere Strafe: Zwangsverkauf (0.4.20+9: ein Teil der Quellen geht unter Wert weg, siehe zwangsverkauf). */
   forcedSale: 'delaney_zwangsverkauf',
   /** Verurteilung zu langer Haft (Hitze der offenen Spuren ≥ fine.prisonAt): frühes Ende „Hinter Gittern“ (GDD §14, 4.12). */
   prison: 'delaney_haft',
@@ -396,9 +416,15 @@ export function traces(state: GameState, balance: Balance): TraceView[] {
   }));
 }
 
-/** Hitze: Summe der Spuren, die noch zählen. */
+/** Hitze: Summe der Spuren, die noch zählen – 0.4.20+9: plus die Hitze des Personals (Fixer-Aufträge, 4.9). */
 export function heat(state: GameState, balance: Balance): number {
-  return traces(state, balance).reduce((s, t) => s + t.current, 0);
+  const spuren = traces(state, balance).reduce((s, t) => s + t.current, 0);
+  return spuren + staffHeatPoints(state, balance);
+}
+
+/** 0.4.20+9: Hitzepunkte aus dem Personal – was Jacobs Fixer anrichtet, hört auch Delaney (abgerundet). */
+export function staffHeatPoints(state: GameState, balance: Balance): number {
+  return Math.floor(staffHeat(state) * balance.investigation.staffHeatFactor + 1e-9);
 }
 
 export type HeatWord = 'kuehl' | 'warm' | 'heiss' | 'gluehend';
@@ -470,6 +496,40 @@ function abschliessen(state: MitErmittlung, inv: InvestigationState, verdict: Ve
     pressure: false,
     transferredUntil: 0,
   };
+}
+
+export interface ForcedSale {
+  wells: GameState['wells'];
+  leases: GameState['leases'];
+  loans: GameState['loans'];
+  sold: number;
+  proceeds: number;
+}
+
+/**
+ * 0.4.20+9: Zwangsverkauf nach schwerer Strafe (GDD §10): Das Gericht lässt forcedSale.share der
+ * fördernden Quellen verkaufen – die größten zuerst, aufgerundet. Erlös je Quelle =
+ * letzte Rate × forcedSale.rounds × Posted Price × forcedSale.discount. Steht auf einer Pacht keine
+ * Quelle mehr, geht die Pacht mit (und ein Kredit verliert sein Pfand).
+ */
+export function forcedSale(state: GameState, balance: Balance): ForcedSale {
+  const f = balance.investigation.forcedSale;
+  const quellen = [...producingWells(state)].sort((a, b) => (b.production?.lastRate ?? 0) - (a.production?.lastRate ?? 0) || (a.id < b.id ? -1 : 1));
+  const n = Math.min(quellen.length, Math.max(0, Math.ceil(quellen.length * f.share - 1e-9)));
+  let out: Pick<GameState, 'wells' | 'leases' | 'loans'> = { wells: state.wells, leases: state.leases, loans: state.loans };
+  let proceeds = 0;
+  for (const q of quellen.slice(0, n)) {
+    proceeds += Math.round((q.production?.lastRate ?? 0) * f.rounds * state.postedPrice * f.discount);
+    out = { ...out, wells: out.wells.filter((w) => w.id !== q.id) };
+    if (wellsOn(out, q.parcelId).length === 0) {
+      out = {
+        ...out,
+        leases: out.leases.filter((l) => !(l.parcelId === q.parcelId && l.holder === 'jacob')),
+        loans: out.loans.map((l) => (l.collateral === q.parcelId ? { ...l, collateral: null } : l)),
+      };
+    }
+  }
+  return { ...out, sold: n, proceeds };
 }
 
 function laeuft(inv: InvestigationState): boolean {
@@ -558,6 +618,7 @@ export function advanceInvestigation(input: GameState, balance: Balance): GameSt
   const runde = input.round;
   const versetzt = inv.transferredUntil >= runde;
   const C = DELANEY_CHOICE_MARKS;
+  let verkauf: ForcedSale | null = null;
 
   switch (inv.stage) {
     case 'ruhe':
@@ -623,6 +684,8 @@ export function advanceInvestigation(input: GameState, balance: Balance): GameSt
         marks = setMark(marks, DELANEY_MARKS.convicted, runde);
         if (strafe.heavy) marks = setMark(marks, DELANEY_MARKS.forcedSale, runde);
         if (strafe.prison) marks = setMark(marks, DELANEY_MARKS.prison, runde);
+        // 0.4.20+9: Der Zwangsverkauf wirkt jetzt – ein Teil der Quellen geht unter Wert weg.
+        if (strafe.heavy && !strafe.prison) verkauf = forcedSale(input, balance);
         log.push(
           zeile(
             input,
@@ -633,6 +696,15 @@ export function advanceInvestigation(input: GameState, balance: Balance): GameSt
               : `Schuldig. Das Gericht verhängt ${strafe.amount.toLocaleString('de-DE')} $ Strafe.`,
           ),
         );
+        if (verkauf && verkauf.sold > 0) {
+          cash = Math.round((cash + verkauf.proceeds) * 100) / 100;
+          log.push(
+            zeile(
+              input,
+              `Zwangsverkauf: ${verkauf.sold} ${verkauf.sold === 1 ? 'Quelle geht' : 'Quellen gehen'} unter Wert an andere Gesellschaften – Erlös ${verkauf.proceeds.toLocaleString('de-DE')} $.`,
+            ),
+          );
+        }
       }
       break;
     }
@@ -658,6 +730,7 @@ export function advanceInvestigation(input: GameState, balance: Balance): GameSt
   inv = { ...inv, rng: rng.state };
   return {
     ...start,
+    ...(verkauf && verkauf.sold > 0 ? { wells: verkauf.wells, leases: verkauf.leases, loans: verkauf.loans } : {}),
     cash,
     events: { ...input.events, marks },
     investigation: inv,
@@ -773,7 +846,15 @@ export function applyPressure(state: GameState, balance: Balance): Investigation
   if (!laeuft(r.inv)) return { ok: false, reason: 'Gegen wen denn? Noch ermittelt niemand.' };
   if (r.inv.pressure) return { ok: false, reason: 'In diesem Fall hat Jacob seine Freunde schon bemüht.' };
   const p = balance.investigation.pressure;
-  if (state.cash < p.cost) return { ok: false, reason: `Dafür fehlt das Geld (${p.cost.toLocaleString('de-DE')} $ nötig).` };
+  // 0.4.20+9: Erst Gefallen aus Hallstead (4.16), nur ohne sie kostet es Geld.
+  const mitGefallen = pressurePaysWithFavors(state, balance);
+  if (!mitGefallen && state.cash < p.cost) return { ok: false, reason: `Dafür fehlt das Geld (${p.cost.toLocaleString('de-DE')} $ nötig).` };
+  let bezahlt: GameState = { ...state, cash: Math.round((state.cash - p.cost) * 100) / 100 };
+  if (mitGefallen) {
+    const g = spendFavors(state, balance, p.favors);
+    if (!g.ok) return { ok: false, reason: 'Die Gefallen reichen nicht.' };
+    bezahlt = g.state;
+  }
   const rng = new Rng(r.inv.rng);
   const klappt = rng.float() < pressureChance(state, balance);
   let inv: InvestigationState = { ...r.inv, pressure: true, rng: rng.state };
@@ -788,7 +869,13 @@ export function applyPressure(state: GameState, balance: Balance): Investigation
   const text = klappt
     ? 'Aus Hallstead kommt ein Telegramm: Delaney wird für eine Weile an einen anderen Fall gesetzt.'
     : 'Delaney erfährt, wer in Hallstead für Jacob telefoniert hat. Er notiert sich jeden Namen.';
-  return { ok: true, state: mit(state, inv, { cash: Math.round((state.cash - p.cost) * 100) / 100 }, text) };
+  return { ok: true, state: mit(bezahlt, inv, {}, text) };
+}
+
+/** 0.4.20+9: Zahlt Jacob den politischen Druck mit Hallstead-Gefallen (statt pressure.cost $)? */
+export function pressurePaysWithFavors(state: GameState, balance: Balance): boolean {
+  const n = balance.investigation.pressure.favors;
+  return n > 0 && hallsteadUnlocked(state, balance) && availableFavors(state) >= n;
 }
 
 /** Kurzansicht für Schattenbuch und Zeitung. */

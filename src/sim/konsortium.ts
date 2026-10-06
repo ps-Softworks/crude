@@ -12,7 +12,7 @@
 //     Gefahr wächst. Fliegt es auf: Rauswurf, Ansehen weg, Macht des Konsortiums
 //     sinkt (Licht der Öffentlichkeit, Vales größte Angst).
 // Rauswurf (verstossen): Das Konsortium drückt eine Weile Jacobs Preise
-// (expelledPenalty je Runde – Ersatz, bis das Weltmodell 4.1 das übernimmt).
+// (expelledPenalty je Runde beim Trendpreis; 0.4.20+9: skaliert mit dem Posted Price, expelledCost).
 // In jeder Krise: Rettung gegen Kontrolle (GDD §12) – in der Pleitefrist bietet
 // Vale Geld; wer annimmt, ist Mitglied unter Aufsicht (Gefallen öfter).
 //
@@ -160,6 +160,11 @@ export function acceptRescue(input: GameState, balance: Balance): Kapitel3Result
   return { ok: true, state: { ...state, cash: state.cash + kb.rescue.cash, kapitel3: k } };
 }
 
+/** 0.4.20+9: Preisdruck je Runde nach dem Rauswurf – expelledPenalty × Posted Price ÷ Trendpreis (market.basePrice). */
+export function expelledCost(state: Pick<GameState, 'postedPrice'>, balance: Balance): number {
+  return Math.round((balance.kapitel3.konsortium.expelledPenalty * state.postedPrice) / balance.market.basePrice);
+}
+
 /** Chance, dass das Doppelspiel in dieser Runde auffliegt. */
 export function detectionChance(k3: Kapitel3State, balance: Balance, round: number): number {
   const kb = balance.kapitel3.konsortium;
@@ -189,8 +194,9 @@ export function settleKonsortium(state: GameState, balance: Balance, input: Kapi
 
   // Preisdruck nach dem Rauswurf.
   if (k.konsortium.path === 'verstossen' && r < k.konsortium.pressureUntil) {
-    cash -= kb.expelledPenalty;
-    k = note(k, { round: r, key: 'preisdruck', vars: { betrag: kb.expelledPenalty } });
+    const druck = expelledCost(state, balance);
+    cash -= druck;
+    k = note(k, { round: r, key: 'preisdruck', vars: { betrag: druck } });
   }
 
   if (k.konsortium.path === 'mitglied') {

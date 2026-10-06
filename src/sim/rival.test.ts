@@ -4,10 +4,11 @@ import { stageCost, type Well } from './drilling';
 import { endRound, newGame, type GameState } from './game';
 import { buyLease, leaseTerms, settleLeases, type Lease } from './lease';
 import { advanceMarket } from './market';
-import { advanceRival, betrayalParcel, bullardStance, newRival, rivalCandidates, rivalChance, rivalNetPerBarrel, rivalUtility, rivalWellIncome, type RivalWell } from './rival';
+import { advanceRival, betrayalParcel, bullardStance, newRival, rivalCandidates, territoryPact, rivalChance, rivalNetPerBarrel, rivalUtility, rivalWellIncome, type RivalWell } from './rival';
 import { Rng } from './rng';
 import { loadBalance } from './testBalance';
 import { RIVAL_MARKS } from './trust';
+import { startDiplomacy } from './diplomacy';
 
 const balance = loadBalance();
 const bullard = balance.rivals.bullard;
@@ -352,6 +353,23 @@ describe('Bullard merkt sich Jacobs Antwort (2.8)', () => {
     expect(frei.some((n) => mit.includes(n.id))).toBe(false);
     // Weiter weg darf er weiter pachten.
     expect(mit.length).toBeGreaterThan(0);
+  });
+
+  it('0.4.20+9 Gebietsabsprache (4.10): Solange sie läuft, pachtet Bullard nichts neben Jacobs Land', () => {
+    const { state, p } = mitJacobPacht('gebiet');
+    const d = startDiplomacy(state, balance, 2);
+    const pakt = { id: 'p1', rival: 'bullard' as const, kind: 'territory' as const, startRound: state.round, endRound: state.round + 3, traced: false };
+    const mit = { ...d, diplomacy: { ...d.diplomacy!, pacts: [pakt] } };
+    const frei = nachbarn(state, p.id).filter((n) => !n.discovery);
+    expect(territoryPact(d)).toBe(false);
+    expect(frei.some((n) => rivalCandidates(d, balance).some((c) => c.id === n.id))).toBe(true);
+    expect(territoryPact(mit)).toBe(true);
+    const ids = rivalCandidates(mit, balance).map((c) => c.id);
+    expect(frei.some((n) => ids.includes(n.id))).toBe(false);
+    expect(ids.length).toBeGreaterThan(0);
+    // Abgelaufen: wieder alles offen.
+    const spaeter = { ...mit, round: pakt.endRound + 1 };
+    expect(territoryPact(spaeter)).toBe(false);
   });
 
   it('Fehde: Der Nachbarschaftsbonus neben Jacobs Land zählt feudFactor-fach', () => {

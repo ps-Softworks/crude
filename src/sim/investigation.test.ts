@@ -30,7 +30,12 @@ import {
   previewInvestigation,
   investigationUnlocked,
   DIPLOMACY_TRACE_KIND,
+  forcedSale,
+  pressurePaysWithFavors,
+  staffHeatPoints,
 } from './investigation';
+import type { Well } from './drilling';
+import { hallsteadOf } from './hallsteadState';
 import { deserializeGame, serializeGame } from './save';
 import { loadBalance } from './testBalance';
 import { loadEvents } from './testEvents';
@@ -529,3 +534,81 @@ describe('Ermittler – Inhalte und Spielzahlen', () => {
     expect(deserializeGame(serializeGame(v, 'test')).ok).toBe(true);
   });
 });
+
+describe('0.4.20+9: Kopplungen mit Personal, Hallstead und Diplomatie', () => {
+  it('die Hitze des Personals (Fixer) zählt mit staffHeatFactor zur Hitze', () => {
+    const b = mitInv({ jumpFade: 0 });
+    const s = runden(kapitel2(['moss_betrogen']), 1, b);
+    const ohne = heat(s, b);
+    const staff = { ...s, staff: { ...(s.staff ?? ({} as NonNullable<GameState['staff']>)), heat: 75 } } as K2;
+    expect(staffHeatPoints(staff, b)).toBe(Math.floor(75 * b.investigation.staffHeatFactor));
+    expect(heat(staff, b)).toBe(ohne + staffHeatPoints(staff, b));
+    expect(staffHeatPoints(s, b)).toBe(0);
+  });
+
+  it('politischer Druck kostet zuerst Hallstead-Gefallen, ohne genug Gefallen Geld', () => {
+    const b = mitInv({ jumpFade: 0 });
+    const s = runden(kapitel2(['moss_betrogen', 'silas_betrogen', 'courier_gekauft', 'silas_kronzeuge'], { chapter: 3 }), 2, b);
+    expect(inv(s).stage).toBe('vorermittlung');
+    const h = hallsteadOf(s, b);
+    const n = b.investigation.pressure.favors;
+    const mitG = { ...s, hallstead: { ...h, lobby: { ...h.lobby, favors: n + 1 } } } as K2;
+    expect(pressurePaysWithFavors(mitG, b)).toBe(true);
+    const r = applyPressure(mitG, b);
+    if (!r.ok) throw new Error(r.reason);
+    expect(r.state.cash).toBe(mitG.cash);
+    expect(r.state.hallstead!.lobby.favors).toBe(1);
+    const wenig = { ...s, hallstead: { ...h, lobby: { ...h.lobby, favors: n - 1 } } } as K2;
+    expect(pressurePaysWithFavors(wenig, b)).toBe(false);
+    const r2 = applyPressure(wenig, b);
+    if (!r2.ok) throw new Error(r2.reason);
+    expect(r2.state.cash).toBe(wenig.cash - b.investigation.pressure.cost);
+    expect(r2.state.hallstead!.lobby.favors).toBe(n - 1);
+  });
+
+  it('Kronzeuge gegen Crane: die Antwort macht Crane (Margaret und Pruett) zum Feind', () => {
+    const e = loadEvents().flatMap((x) => x.choices).find((c) => c.marks.includes(DELANEY_CHOICE_MARKS.crown));
+    expect(e?.system?.rival?.crane?.grudge).toBeGreaterThanOrEqual(60);
+    expect(e?.system?.rival?.crane?.trust).toBeLessThan(0);
+  });
+
+  function mitQuellen(s: K2): K2 {
+    const ps = s.parcels.slice(0, 4);
+    const wells = ps.map((p, i) => ({ id: `${p.id}#1`, parcelId: p.id, stage: 1, status: 'found', roundsLeft: 0, spent: 0, production: { initialRate: 100, roundsProduced: 1, lastRate: 100 * (i + 1), total: 100 } }) as unknown as Well);
+    const leases = ps.map((p) => ({ parcelId: p.id, holder: 'jacob' as const, bonus: 0, royalty: 0.125, startRound: 1, expiresAfterRound: 99, drilled: true }));
+    return { ...s, wells, leases, options: [], loans: [] };
+  }
+
+  it('Zwangsverkauf: share der Quellen, die größten zuerst, unter Wert – samt leerer Pachten', () => {
+    const s = mitQuellen(kapitel2());
+    const f = balance.investigation.forcedSale;
+    const v = forcedSale(s, balance);
+    const n = Math.ceil(4 * f.share - 1e-9);
+    expect(v.sold).toBe(n);
+    expect(v.wells).toHaveLength(4 - n);
+    expect(v.wells.some((w) => w.production?.lastRate === 400)).toBe(false);
+    expect(v.leases).toHaveLength(4 - n);
+    expect(v.proceeds).toBe(Math.round(400 * f.rounds * s.postedPrice * f.discount));
+    expect(forcedSale({ ...s, wells: [] }, balance).sold).toBe(0);
+  });
+
+  it('Zwangsverkauf wirkt im Urteil der schweren Strafe (Rundenschritt der Ermittlung)', () => {
+    const b = mitInv({ jumpFade: 0, trial: { ...balance.investigation.trial, min: 1, max: 1 }, fine: { ...balance.investigation.fine, heavyAt: 2, prisonAt: 99 } });
+    let s = mitQuellen(runden(kapitel2(schmutzigK2), 2, b));
+    let n = 0;
+    while (inv(s).stage === 'vorermittlung' && n++ < 30) s = runden(s, 1, b);
+    expect(inv(s).stage).toBe('anklage');
+    const strafe = fineFor(s, b);
+    expect(strafe.heavy).toBe(true);
+    const verkauf = forcedSale(s, b);
+    const vorher = s;
+    while (inv(s).stage === 'anklage') s = runden(s, 1, b);
+    expect(inv(s).verdict).toBe('schwere_strafe');
+    expect(s.events.marks[DELANEY_MARKS.forcedSale]).toBeDefined();
+    expect(s.wells).toHaveLength(vorher.wells.length - verkauf.sold);
+    expect(s.cash).toBe(vorher.cash - strafe.amount + verkauf.proceeds);
+    expect(s.log.some((l) => l.includes('Zwangsverkauf'))).toBe(true);
+  });
+});
+
+const schmutzigK2 = ['moss_betrogen', 'silas_betrogen', 'courier_gekauft', 'silas_kronzeuge', 'vale_geld', 'thorne_exklusiv'];

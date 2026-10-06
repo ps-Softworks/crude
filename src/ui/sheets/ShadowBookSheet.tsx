@@ -10,6 +10,7 @@ import {
   destroyTrace,
   investigationView,
   pressureChance,
+  pressurePaysWithFavors,
   sacrificeScapegoat,
   setLawyer,
   type InvestigationResult,
@@ -128,7 +129,7 @@ export function ShadowBookSheet({ ctx }: { ctx: SheetContext }) {
                 Einen Sündenbock opfern (kostet Kraft)
               </Aktion>
               <Aktion result={applyPressure(game, balance)} onDone={ctx.onGame}>
-                {`Freunde in Hallstead anrufen (${money(B.pressure.cost)})`}
+                {`Freunde in Hallstead anrufen (${pressurePaysWithFavors(game, balance) ? `${B.pressure.favors} Gefallen` : money(B.pressure.cost)})`}
               </Aktion>
             </div>
             {ermittelt && (

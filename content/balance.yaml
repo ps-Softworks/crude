@@ -1547,6 +1547,7 @@ bigPipelines:
     courtRounds: 2          # … dauert so lange …
     courtChance: 0.5        # … und geht so oft gut aus (+ politischer Einfluss / 200)
     expropriateInfluence: 60 # Enteignung nur mit politischem Einfluss ab 60 (GDD §6, §10)
+    influencePerFavor: 5    # 0.4.20+9: Einfluss = Hallstead-Gefallen × 5 (höchstens 100; 12 Gefallen → 60)
     expropriateShare: 0.5   # Entschädigung: halber fairer Preis
   sabotage:
     building: 0.06          # Chance je Runde im Bau …
@@ -1812,13 +1813,19 @@ investigation:
     evidenceCut: 30      # einmal je Fall
     strength: 10         # kostet Kraft
   pressure:
-    cost: 5000           # Spenden und Telefonate in Hallstead
+    cost: 5000           # Spenden und Telefonate in Hallstead …
+    favors: 3            # … 0.4.20+9: oder so viele Hallstead-Gefallen (4.16), wenn Jacob sie hat (zuerst)
     rounds: 4            # so lange ist Delaney versetzt
     chance: { handel: 0.7, volksbund: 0.25, provinz: 0.5, none: 0.5 }  # je regierender Partei (none: ohne Weltmodell)
     failEvidence: 15     # misslungen: so viele Beweise mehr …
     severity: 2          # … und eine neue Spur „Einflussnahme“
   crown:
     evidenceCut: 40      # Kronzeuge gegen den Crane Trust
+  staffHeatFactor: 0.04  # 0.4.20+9: Hitze des Personals (Fixer, 0–100) × 0,04 zählt zur Hitze (100 → +4)
+  forcedSale:            # 0.4.20+9: Zwangsverkauf bei schwerer Strafe (PLATZHALTER)
+    share: 0.25          # Anteil der fördernden Quellen (größte zuerst, aufgerundet)
+    rounds: 8            # Erlös = letzte Rate × 8 Runden × Posted Price …
+    discount: 0.5        # … × 0,5 (unter Wert)
 
 # 4.11 Forschung bis Technikstufe II (GDD §5, §6, §7.1), ab Kapitel 2.
 # Texte: content/research.yaml. Wirkung lesen andere Systeme über techEffect/hasTech/techTier (src/sim/research.ts).
@@ -2055,7 +2062,7 @@ kapitel3:
     refuseTrust: -20
     expelBelow: 20           # darunter fliegt Jacob aus dem Konsortium
     trustWords: [35, 65]     # ab hier wirkt Vale abwartend, ab hier vertraut er (nur als Satz sichtbar)
-    expelledPenalty: 5000    # je Runde: Das Konsortium drückt Jacobs Preise (bis das Weltmodell das übernimmt)
+    expelledPenalty: 5000    # je Runde beim Trendpreis market.basePrice; 0.4.20+9: wächst und fällt mit dem Posted Price
     expelledRounds: 6
     power: { join: 5, refuse: -5, double: 3, exposed: -15, broken: -10 }
     rescue: { cash: 50000, trust: 30 }  # Rettung in der Pleitefrist – gegen die Förderquoten

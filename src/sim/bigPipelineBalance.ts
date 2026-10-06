@@ -81,6 +81,8 @@ export interface RightsBalance {
   courtChance: number;
   /** Enteignung nur mit politischem Einfluss ab diesem Wert (0–100, GDD §6/§10). */
   expropriateInfluence: number;
+  /** 0.4.20+9: Politischer Einfluss je Hallstead-Gefallen (4.16), höchstens 100. */
+  influencePerFavor: number;
   /** Entschädigung bei Enteignung: Anteil des fairen Preises. */
   expropriateShare: number;
 }
@@ -209,6 +211,7 @@ export function parseBigPipelineBalance(raw: unknown, landowners: readonly strin
     courtRounds: ganz(b, 'rights.courtRounds', 1),
     courtChance: anteil(b, 'rights.courtChance'),
     expropriateInfluence: zahl(b, 'rights.expropriateInfluence'),
+    influencePerFavor: abNull(b, 'rights.influencePerFavor'),
     expropriateShare: abNull(b, 'rights.expropriateShare'),
   };
   if (rights.offerFactor.low > rights.offerFactor.fair || rights.offerFactor.fair > rights.offerFactor.generous) {
