@@ -52,6 +52,9 @@ export const HEADLINE_IDS = [
   'outlook_steady',
   'price_cut',
   'price_raise',
+  // 0.4.20+38: Preismeldung gegen die Aussicht der Titelseite – „noch“ statt Widerspruch.
+  'price_cut_turn',
+  'price_raise_turn',
   'crane_cut',
   'rival_find',
   'jacob_gusher',
@@ -160,8 +163,11 @@ export function newsItems(state: GameState, balance: Balance): HeadlineId[] {
     const vorher = history[history.length - 2];
     const jetzt = history[history.length - 1];
     const change = (jetzt - vorher) / vorher;
-    if (change <= -balance.market.newsThreshold + 1e-9) ids.push('price_cut');
-    else if (change >= balance.market.newsThreshold - 1e-9) ids.push('price_raise');
+    // 0.4.20+38: Die Titelseite sagt die nächste Runde voraus, die Kurzmeldung berichtet die letzte. Zeigen beide in
+    // verschiedene Richtungen, nimmt die Zeitung die Wende-Fassung („Noch zahlt der Trust mehr – doch …“).
+    const aussicht = marketOutlook(state, balance);
+    if (change <= -balance.market.newsThreshold + 1e-9) ids.push(aussicht === 'rise' ? 'price_cut_turn' : 'price_cut');
+    else if (change >= balance.market.newsThreshold - 1e-9) ids.push(aussicht === 'fall' || aussicht === 'crash' ? 'price_raise_turn' : 'price_raise');
   }
   // Cranes Abschlag (2.8) gilt ab dieser Runde.
   const abschlag = markRound(state, RIVAL_MARKS.craneCut);

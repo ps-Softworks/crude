@@ -41,7 +41,7 @@ headlines:
       de: Absprache der Wildcatter geplatzt
       en: Wildcatters' agreement collapses
     text:
-      de: Wochenlang drosselten die kleinen Firmen am Salt Hill ihre Pumpen. Jetzt fördert jeder, was er kann, und die Tanks am Hafen laufen voll.
+      de: Wochenlang drosselten die kleinen Firmen am Salt Hill ihre Pumpen. Jetzt fördert wieder jeder, was er kann.
       en: For weeks the small outfits at Salt Hill throttled their pumps. Now everyone pumps what he can, and the harbour tanks are filling up.
   # Kartellverfahren gegen Jacobs Förderbremse.
   cartel_court:
@@ -220,6 +220,36 @@ headlines:
         text:
           de: "Ein neuer Aushang im Kontor des Trusts, und diesmal lächeln die Förderer. Wer Öl im Tank hat, freut sich."
           en: "A new notice in the Trust's office, and this time the producers smile. Whoever has oil in the tank is glad of it."
+  # 0.4.20+38: Der Preis hat sich in der letzten Runde bewegt, die Titelseite sagt aber die Gegenrichtung voraus –
+  # die Meldung sagt deshalb „noch“ und deutet die Wende an, statt der Titelseite zu widersprechen.
+  price_raise_turn:
+    title:
+      de: Noch zahlt der Trust mehr
+      en: The Trust Still Pays More
+    text:
+      de: Der Posted Price ist gestiegen – doch in den Kontoren rechnet man schon mit der Wende. Wer verkaufen will, wartet besser nicht zu lange.
+      en: The posted price has risen – but in the counting houses they already expect the turn. Whoever wants to sell had better not wait too long.
+    variants:
+      - title:
+          de: "Kurzes Glück für die Förderer"
+          en: "Brief Luck for the Producers"
+        text:
+          de: "Der Trust hat den Preis angehoben. Die alten Hasen am Salt Hill trauen dem Frieden nicht."
+          en: "The Trust has raised the price. The old hands at Salt Hill don't trust the calm."
+  price_cut_turn:
+    title:
+      de: Der Trust senkt – noch
+      en: The Trust Cuts – for Now
+    text:
+      de: Der Trust zahlt weniger je Barrel. Doch die Händler flüstern, das bleibe nicht lange so.
+      en: The Trust pays less per barrel. But the traders whisper it won't stay that way for long.
+    variants:
+      - title:
+          de: "Tiefer Preis, kurze Freude für den Trust"
+          en: "Low Price, Short Joy for the Trust"
+        text:
+          de: "Der Posted Price ist gefallen. Wer jetzt nicht verkaufen muss, hält sein Öl zurück."
+          en: "The posted price has fallen. Whoever doesn't have to sell now holds back his oil."
   # 2.8: Der Crane Trust zahlt den Unabhängigen ab dieser Runde weniger (Jacob hat den Abschlag hingenommen).
   crane_cut:
     title:
@@ -538,7 +568,7 @@ headlines:
       de: Riesenfund lässt die Märkte zittern
       en: Giant strike shakes the markets
     text:
-      de: Irgendwo ist ein Feld angebohrt worden, wie es noch keiner gesehen hat. Alle Nachbarn bohren um die Wette – bald wird es mehr Öl geben als Tanks.
+      de: Irgendwo ist ein Feld angebohrt worden, wie es noch keiner gesehen hat. Alle Nachbarn bohren um die Wette – auf lange Sicht wird es mehr Öl geben als Tanks.
       en: Somewhere a field has been tapped such as nobody has ever seen. All the neighbours are drilling for their lives – soon there will be more oil than tanks.
   world_election_handel:
     title:

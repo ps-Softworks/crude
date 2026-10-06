@@ -404,3 +404,23 @@ describe('Zeitung: Börsenseite aus der Simulation (0.4.20+9)', () => {
     expect(makeNewspaper(familie, balance, content, undefined, undefined, boerse).exchange!.quotes.some((q) => q.own)).toBe(false);
   });
 });
+
+describe('Keine Widersprüche zwischen Titelseite und Kurzmeldungen (0.4.20+38)', () => {
+  it('steigt der Preis, während die Titelseite fallende Preise ankündigt (oder umgekehrt), heißt die Meldung „noch“', () => {
+    let wenden = 0;
+    for (let seed = 0; seed < 25; seed++) {
+      const rng = new Rng(seedFromString(`wende${seed}`));
+      let state = newGame(`wende${seed}`, balance);
+      for (let r = 0; r < 15 && !state.finished; r++) {
+        const items = newsItems(state, balance);
+        const aussicht = marketOutlook(state, balance);
+        if (aussicht === 'fall' || aussicht === 'crash') expect(items).not.toContain('price_raise');
+        if (aussicht === 'rise') expect(items).not.toContain('price_cut');
+        if (items.includes('price_raise_turn') || items.includes('price_cut_turn')) wenden++;
+        state = endRound(botTurn(state, balance, 'gierig', rng), balance);
+      }
+    }
+    // Die Wende kommt in echten Partien vor – sonst prüft der Test nichts.
+    expect(wenden).toBeGreaterThan(0);
+  });
+});
