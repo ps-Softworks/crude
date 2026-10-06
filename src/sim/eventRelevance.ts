@@ -25,6 +25,7 @@
 
 // Termine als Hauptwerkzeug, Etappe 2.
 import { FEUER_READ_MARKS } from './feuer';
+import { FINANCING_READ_MARKS } from './financingMarks';
 import { PRICING_READ_MARKS } from './pricing';
 import { FREIGHT_READ_MARKS } from './freight';
 import { LETTER_READ_MARKS } from './letters'; // Etappe 3: Antworten in gekoppelten Briefen
@@ -94,6 +95,8 @@ export function simReadMarks(balance: Balance): string[] {
     ...LETTER_READ_MARKS,
     // B3: Antworten auf Bullards Drohbrief und Ruths Bitte (feuer.ts).
     ...FEUER_READ_MARKS,
+    // Geldquellen: vorzeitig auszahlen, entschädigen, Vale abweisen.
+    ...FINANCING_READ_MARKS,
   ];
 }
 

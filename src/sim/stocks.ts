@@ -33,6 +33,7 @@
 // Reine Funktionen, Zufall nur über den eigenen Rng (Seed + ":aktien").
 // Namen und Texte: content/stocks.yaml (stocksContent.ts), Zahlen: balance.yaml → stocks.
 
+import { financingDebt } from './financing';
 import type { Balance, Rating } from './balance';
 import { formatDate } from './calendar';
 import { debt } from './credit';
@@ -284,7 +285,8 @@ export function bondCoupons(s: Pick<StocksState, 'bonds'> | undefined): number {
 
 /** Bankschulden + Anleihen. */
 export function totalDebt(state: GameState): number {
-  return debt(state) + bondDebt(state.stocks);
+  // Geldquellen: Einlagen der Investoren, Vales Darlehen und der Staatskredit sind zurückzuzahlen.
+  return debt(state) + bondDebt(state.stocks) + financingDebt(state);
 }
 
 /**

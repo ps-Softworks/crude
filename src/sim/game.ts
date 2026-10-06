@@ -4,6 +4,7 @@
 import { advanceNetwork, newNetwork, type NetworkState } from './network';
 import { settleBuyers, type BuyersState } from './buyers';
 import type { InsolvencyState } from './insolvency';
+import { settleFinancing, type FinancingState } from './financing';
 import { newAgenda, settleAgenda, type AgendaState } from './agenda';
 import type { Balance, Rating, TransportMode } from './balance';
 import { formatDate } from './calendar';
@@ -197,6 +198,8 @@ export interface GameState {
   network?: NetworkState;
   /** 0.4.20+43: Großhändler – Verkäufe der Runde und Lieferverträge (src/sim/buyers.ts). Fehlt = nichts verkauft, kein Vertrag. */
   buyers?: BuyersState;
+  /** Geldquellen (GDD §8): Einlagen der Investoren, Farm-outs, Vales Darlehen, Staatskredit und -auftrag (src/sim/financing.ts). Fehlt = nichts läuft. */
+  financing?: FinancingState;
   /** Feldkauf (0.4.20+27): je Ranch die Runde, ab der Bullard wieder ein Angebot anhört (nach Ablehnung). Fehlt = nie abgelehnt. */
   buyouts?: Record<string, number>;
   /** Pleitefrist (insolvency.ts): Beginn und Rating vor der Krise, schon umgeschuldet. Fehlt = keine Frist (bzw. alter Stand: Rating von jetzt). */
@@ -448,7 +451,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // 4.16 Andockpunkt: Beteiligungen und Lobby in Hallstead (ohne Hallstead-Zustand unverändert) – vor der Pleiteprüfung.
   const hallstead = settleHallstead(ermittelt, balance);
   // 0.4.20+17: Geltende Gesetze – Einkommensteuer auf den Gewinn der Runde (vor der Pleiteprüfung).
-  const besteuert = settleBreakup(settleIncomeTax(input, hallstead, balance), balance);
+  // Geldquellen (GDD §8): Gewinnanteile der Investoren mindern den Gewinn der Runde, darum vor der Steuer.
+  const besteuert = settleBreakup(settleIncomeTax(input, settleFinancing(input, hallstead, balance), balance), balance);
   // Pleitefrist: Das Rating vom Rundenbeginn zählt als „vor der Krise“ (Umschuldung, insolvency.ts).
   // 0.4.20+42: Verlaufseintrag der Runde (Kasse, Schulden, Wert, Förderung, Preis) für die Diagramme.
   const geprueft = appendHistory({ ...checkBankruptcy(besteuert, balance, input.rating), roundLogStart }, balance, produziert.oilStock - gelagert.oilStock);

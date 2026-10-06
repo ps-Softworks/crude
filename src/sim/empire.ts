@@ -10,6 +10,7 @@
 // noch förderbar ist. Das ganze Feld zählt nicht: Am Salt Hill hängen Dutzende
 // Parzellen zusammen, die Jacob nicht gehören. Wer pleite ist, hat 0.
 
+import { financingDebt } from './financing';
 import type { Balance } from './balance';
 import { debt } from './credit';
 import { logisticsAssets } from './logistics';
@@ -64,6 +65,6 @@ export function empireValue(state: GameState, balance: Balance): number {
   // 4.20: Das Depot an der Börse mit Kurswert minus Maklerkredit – vorher verschwand gekauftes Geld aus dem Wert.
   const anleihen = (state.stocks?.bonds ?? []).reduce((sum, b) => sum + b.principal, 0);
   // 0.4.20+8: Thornes Kredit aus Cranes Feldzug zählt mit dem Betrag, der zur Frist fällig ist.
-  const thorne = state.feldzug?.loan?.owed ?? 0;
+  const thorne = (state.feldzug?.loan?.owed ?? 0) + financingDebt(state); // Geldquellen: Einlagen und Darlehen sind Schulden
   return cents(state.cash + tank + reserven + logisticsAssets(state, balance) + rigAssets(state, balance) + venturesValue(state, balance) + refineryAssets(state, balance) + bigPipelineAssets(state, balance) + brandAssets(state, balance) + hallsteadAssets(state) + projectsValue(state) + exchangeEquity(state) - debt(state) - anleihen - thorne);
 }

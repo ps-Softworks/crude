@@ -269,6 +269,12 @@ network:
     hallstead_handel: { meet: [{ chapter: 2, referral: bank }, { chapter: 2, referral: motorwagen }, { chapter: 2, empire: 300000 }] }
     crane_eastern: { meet: [{ chapter: 3 }], breachMarks: [delgado_verband] }
     aldmark_export: { meet: [{ chapter: 2, referral: marine }, { chapter: 2, referral: hallstead_handel }] }
+    # Geldquellen (GDD §8, src/sim/financing.ts): Privatinvestoren, Konsortium, Regierung. PLATZHALTER.
+    witwe_sloane: { meet: [{ referral: bank }, { chapter: 2, empire: 250000 }] }
+    doktor_haskell: { meet: [{ referral: bank }, { empire: 50000 }] }
+    rancher_whitcomb: { meet: [{ referral: grundbesitzer }, { wells: 3 }] }
+    konsortium: { meet: [{ chapter: 2, empire: 350000 }, { chapter: 2, referral: bank }] }
+    regierung: { meet: [{ chapter: 2, crisis: true }, { chapter: 2, tension: 60 }] }
 
 # Planungsbrett (Etappe 1): Karten, mit denen Jacob seine Termine verplant. Texte stehen in
 # content/plans.yaml, Regeln in src/sim/plans.ts (handler). event = ein fester Termin aus
@@ -340,6 +346,36 @@ plans:
     vertrag_eastern: { contact: crane_eastern, tab: markt, appointments: 2, target: option, handler: vertrag_eastern }
     vertrag_aldmark: { contact: aldmark_export, tab: markt, appointments: 2, target: option, handler: vertrag_aldmark }
     abgeordneter_gefallen: { contact: abgeordneter, tab: leute, appointments: 1, target: option, handler: abgeordneter_gefallen, call: 1, requires: { minChapter: 2 } }
+    # Geldquellen (GDD §8, src/sim/financing.ts, Zahlen unter financing).
+    investor_sloane: { contact: witwe_sloane, tab: markt, appointments: 1, target: option, handler: investor_sloane }
+    investor_haskell: { contact: doktor_haskell, tab: markt, appointments: 1, target: option, handler: investor_haskell }
+    investor_whitcomb: { contact: rancher_whitcomb, tab: markt, appointments: 1, target: option, handler: investor_whitcomb }
+    farmout: { contact: oelleute, tab: land, appointments: 1, target: option, handler: farmout }
+    farmout_pruefen: { contact: selbst, tab: land, appointments: 1, cash: 200, handler: farmout_pruefen }
+    vale_darlehen: { contact: konsortium, tab: markt, appointments: 1, target: option, handler: vale_darlehen, requires: { minChapter: 2 } }
+    staat_kredit: { contact: regierung, tab: markt, appointments: 1, target: option, handler: staat_kredit, requires: { minChapter: 2 } }
+    staat_auftrag: { contact: regierung, tab: markt, appointments: 2, target: option, handler: staat_auftrag, requires: { minChapter: 2 } }
+
+# Geldquellen (GDD §8, src/sim/financing.ts): jede hat einen Haken. Beträge je Kapitel (Index 0 = Kapitel 1,
+# leere Liste = gibt es dort nicht). Alles PLATZHALTER.
+financing:
+  investors:
+    # Einlage ohne Zins, share vom Gewinn jeder Runde, nach rounds Runden zurück; reicht die Kasse dann nicht, ist sie verloren.
+    sloane: { contact: witwe_sloane, sizes: [[2000, 4000], [20000, 40000], [50000, 80000]], rounds: 8, share: 0.10, wish: reserve, value: 0.5 }   # Witwe: Kasse nie unter 50 % der Einlage
+    haskell: { contact: doktor_haskell, sizes: [[3000, 6000], [25000, 50000], [60000, 100000]], rounds: 8, share: 0.15, wish: debt, value: 1.0 }   # Arzt: Bankschulden höchstens 1 × Einlage
+    whitcomb: { contact: rancher_whitcomb, sizes: [[2500, 5000], [20000, 40000], [40000, 70000]], rounds: 8, share: 0.12, wish: land, value: 0 }   # Rancher: kein neues Bohrloch neben seiner Weide
+  # Farm-out: Partner zahlt die erste Bohrstufe mit eigenem Turm, holt rounds Runden share der Förderung ab;
+  # betrügt je Runde mit cheat und nimmt dann cheatExtra mehr. Prüfen: ertappt Beziehung −caught, grundlos −clean.
+  farmout: { share: 0.4, rounds: 12, cheat: { bullard: 0.3, wildcatter: 0.15 }, cheatExtra: 0.25, caught: 25, clean: 8 }
+  # Mr. Vale: zinslos, einmal je Partie, ab Kapitel 2; nach favorAfter Runden will er einen Gefallen (Ereignis vale_gefallen).
+  vale: { contact: konsortium, sizes: [[], [60000, 120000], [120000, 250000]], rounds: 12, favorAfter: 4 }
+  # Staat: nur in Krieg und Krise (oder Außenspannung ab tensionFrom). Kredit: Zins je Jahr, Lieferpflicht deliverPerDollar
+  # bbl je geliehenem $ und Runde zum Preis bei Abschluss × (1 − discount). Auftrag: Festpreis × (1 + premium), Aufsicht = heat Hitze.
+  state:
+    contact: regierung
+    tensionFrom: 60
+    loan: { sizes: [[], [30000, 60000], [60000, 120000]], rate: 0.02, rounds: 8, deliverPerDollar: 0.06, discount: 0.15, shortfall: 0.3 }
+    order: { sizes: [[], [4000, 8000], [8000, 16000]], rounds: 8, premium: 0.12, shortfall: 0.3, heat: 3 }
 
 # Großhändler (0.4.20+43, src/sim/buyers.ts): kaufen Rohöl neben Crane und dem Händler in Port Ellis, sobald
 # Jacob ihre Stelle kennt (network.contacts). Preis = (Posted Price + premium) × Beziehung, Menge je Runde je

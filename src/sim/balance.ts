@@ -30,6 +30,7 @@ import { parseHallstead, type HallsteadBalance } from './hallsteadBalance';
 import { parseExplorationBalance, parsePlansBalance, type ExplorationBalance, type PlansBalance } from './plansBalance';
 import { parseNetworkBalance, type NetworkBalance } from './network';
 import { parseBuyersBalance, type BuyerBalance, type ExtraBuyer } from './buyers';
+import { parseFinancingBalance, type FinancingBalance } from './financing';
 // Termine als Hauptwerkzeug, Etappe 2: Preis- und Transport-Aktionen.
 import { parseDealsBalance, type DealsBalance } from './dealsBalance';
 import { parseBotPlans, parseFreightBalance, parsePriceActions, type BotPlans, type FreightBalance, type PriceActionsBalance } from './pricingBalance';
@@ -1034,6 +1035,8 @@ export interface Balance {
   network: NetworkBalance;
   /** Weitere Großhändler (0.4.20+43, src/sim/buyers.ts). */
   buyers: Record<ExtraBuyer, BuyerBalance>;
+  /** Geldquellen (GDD §8): Privatinvestoren, Farm-out, Konsortium, Staat (src/sim/financing.ts). */
+  financing: FinancingBalance;
   /** Preis-Aktionen (Etappe 2): Förderbremse, Liefervertrag, Gerüchte, Crane, Ruf bei den Wildcattern. */
   priceActions: PriceActionsBalance;
   /** Transport-Aktionen (Etappe 2, balance.yaml transport.negotiation): Thorne, Brennan, Transportgemeinschaft. */
@@ -2702,6 +2705,7 @@ export function parseBalance(raw: unknown): Balance {
     plans: parsePlansBalance(raw),
     network: parseNetworkBalance(raw),
     buyers: parseBuyersBalance(raw),
+    financing: parseFinancingBalance(raw),
     priceActions: parsePriceActions(raw),
     freight: parseFreightBalance(raw),
     deals: parseDealsBalance(raw),

@@ -1,0 +1,251 @@
+# Geldquellen (GDD §8 – jede Geldquelle hat einen Haken). ENTWURF von Claude, bitte in eigener Stimme umschreiben.
+# Regeln in src/sim/financing.ts, Zahlen in balance.yaml financing. Alle Ereignisse kommen in jedem Kapitel
+# (minChapter: 1) – die Merkzeichen der Simulation entscheiden, wann.
+#
+# Merkzeichen, die die Simulation setzt (FINANCING_SIM_MARKS, src/sim/financingMarks.ts):
+#   sloane_verstimmt, haskell_verstimmt, whitcomb_verstimmt   Wunsch des Investors gebrochen (Beschwerdebrief)
+#   sloane_ruiniert, haskell_ruiniert, whitcomb_ruiniert      Einlage am Ende verloren (Drama)
+#   vale_gefallen_faellig                                    Mr. Vale will seinen Gefallen
+# Merkzeichen, die die Simulation liest (FINANCING_READ_MARKS):
+#   <investor>_auszahlen       Jacob zahlt die Einlage vorzeitig zurück (wenn die Kasse reicht)
+#   <investor>_entschaedigt    Jacob gibt die Hälfte des verlorenen Geldes aus eigener Tasche
+#   vale_gefallen_verweigert   Vales Darlehen ist sofort fällig, das Konsortium verärgert
+
+# --- Beschwerdebriefe -------------------------------------------------------------------------
+
+- id: geld_sloane_beschwerde
+  conditions: { minChapter: 1 }
+  certain: true
+  marked: [sloane_verstimmt]
+  mail: personal
+  deadline: 2
+  title:
+    de: Ein Brief von Mrs. Sloane
+    en: A Letter from Mrs. Sloane
+  text:
+    de: >-
+      Feines Papier, eine zittrige Hand. „Mr. Harlan, Sie haben mir versprochen, dass immer
+      etwas in der Kasse bleibt. Man erzählt mir in der Kirche, dass dem nicht so ist. Mein
+      seliger Mann hat nie einen Dollar ausgegeben, den er nicht hatte. Ich schlafe nicht mehr.“
+    en: >-
+      Fine paper, a trembling hand. "Mr. Harlan, you promised me there would always be
+      something left in the till. They tell me at church that there is not. My late husband
+      never spent a dollar he did not have. I no longer sleep."
+  choices:
+    - id: auszahlen
+      label: { de: "Ihr die Einlage vorzeitig zurückzahlen (wenn die Kasse reicht)", en: "Repay her investment early (if the cash allows)" }
+      result:
+        de: Jacob schreibt einen Scheck und einen freundlichen Brief. Mrs. Sloane schläft wieder.
+        en: Jacob writes a cheque and a kind letter. Mrs. Sloane sleeps again.
+      marks: [sloane_auszahlen]
+      appointments: 0
+    - id: beruhigen
+      label: { de: "Ihr schreiben, dass alles in Ordnung ist", en: "Write her that all is well" }
+      result:
+        de: Ein höflicher Brief. Ob sie ihm glaubt, steht nicht darin.
+        en: A polite letter. Whether she believes him is not in it.
+      effects: { strength: -2 }
+      appointments: 0
+      default: true
+
+- id: geld_haskell_beschwerde
+  conditions: { minChapter: 1 }
+  certain: true
+  marked: [haskell_verstimmt]
+  mail: personal
+  deadline: 2
+  title:
+    de: Doktor Haskell schreibt
+    en: Doctor Haskell Writes
+  text:
+    de: >-
+      „Lieber Harlan, ich habe Ihnen mein Geld nicht gegeben, damit Sie sich bei der Bank
+      verschulden. Schulden sind wie Wundbrand: Man merkt sie, wenn es zu spät ist. Ich erwarte,
+      dass Sie das in Ordnung bringen – oder mir mein Geld zurückgeben.“
+    en: >-
+      "Dear Harlan, I did not give you my money so that you could go into debt with the bank.
+      Debt is like gangrene: you notice it when it is too late. I expect you to put this right –
+      or to give me my money back."
+  choices:
+    - id: auszahlen
+      label: { de: "Ihm die Einlage zurückzahlen (wenn die Kasse reicht)", en: "Repay his investment (if the cash allows)" }
+      result:
+        de: Der Doktor nimmt den Scheck und nickt, wie bei einer gelungenen Naht.
+        en: The doctor takes the cheque and nods, as after a successful stitch.
+      marks: [haskell_auszahlen]
+      appointments: 0
+    - id: erklaeren
+      label: { de: "Ihm erklären, dass Schulden zum Geschäft gehören", en: "Explain that debt is part of business" }
+      result:
+        de: Haskell antwortet nicht. In der Praxis sagt er, Harlan sei ein Patient, der nicht hören will.
+        en: Haskell does not reply. In his practice he says Harlan is a patient who will not listen.
+      effects: { strength: -2 }
+      appointments: 0
+      default: true
+
+- id: geld_whitcomb_beschwerde
+  conditions: { minChapter: 1 }
+  certain: true
+  marked: [whitcomb_verstimmt]
+  visitor: whitcomb
+  title:
+    de: Whitcomb steht in der Tür
+    en: Whitcomb in the Doorway
+  text:
+    de: >-
+      Amos Whitcomb hat den Hut nicht abgenommen. „Ein Bohrturm, eine Viertelmeile von meiner
+      Tränke. Das Wasser schmeckt schon nach Schwefel. Wir hatten eine Abmachung, Harlan.“
+    en: >-
+      Amos Whitcomb has not taken off his hat. "A derrick, a quarter mile from my water hole.
+      The water already tastes of sulphur. We had an agreement, Harlan."
+  choices:
+    - id: auszahlen
+      label: { de: "Ihm sein Geld zurückgeben (wenn die Kasse reicht)", en: "Give him his money back (if the cash allows)" }
+      result:
+        de: Whitcomb steckt den Scheck in die Weste. „So ist es sauber.“
+        en: Whitcomb puts the cheque in his vest. "That's clean, then."
+      marks: [whitcomb_auszahlen]
+    - id: abwimmeln
+      label: { de: "„Öl ist Öl, Amos.“", en: "\"Oil is oil, Amos.\"" }
+      result:
+        de: Whitcomb geht ohne Gruß. Am Abend fehlt am Zaun der Bohrstelle ein Pfosten.
+        en: Whitcomb leaves without a word. That evening a post is missing from the fence at the drill site.
+      effects: { strength: -3 }
+      appointments: 0
+      default: true
+
+# --- Geld verloren: persönliches Drama ---------------------------------------------------------
+
+- id: geld_sloane_ruin
+  conditions: { minChapter: 1 }
+  certain: true
+  marked: [sloane_ruiniert]
+  visitor: sloane
+  title:
+    de: Mrs. Sloane verkauft ihr Haus
+    en: Mrs. Sloane Sells Her House
+  text:
+    de: >-
+      Lavinia Sloane steht in Trauer vor Jacobs Tisch, obwohl ihr Mann seit Jahren tot ist. Ihr
+      Geld ist fort, das Haus steht zum Verkauf. Sie sagt nichts Böses. Sie fragt nur, ob er
+      in der Kirche noch in ihrer Bank sitzen wird.
+    en: >-
+      Lavinia Sloane stands before Jacob's desk in mourning, though her husband has been dead for
+      years. Her money is gone, the house is for sale. She says nothing unkind. She only asks
+      whether he will still sit in her pew at church.
+  choices:
+    - id: helfen
+      label: { de: "Ihr die Hälfte aus eigener Tasche geben", en: "Give her half out of his own pocket" }
+      result:
+        de: Sie behält das Haus. In der Kirche sitzt Jacob wieder in ihrer Bank.
+        en: She keeps the house. At church Jacob sits in her pew again.
+      marks: [sloane_entschaedigt]
+    - id: wegsehen
+      label: { de: "„Geschäft ist Geschäft, Mrs. Sloane.“", en: "\"Business is business, Mrs. Sloane.\"" }
+      result:
+        de: Ganz Cordova kennt die Geschichte bis Sonntag. Ruth hört sie im Laden.
+        en: All of Cordova knows the story by Sunday. Ruth hears it in the store.
+      effects: { ruth: -10, strength: -4, reputation: { public: -8 } }
+      default: true
+
+- id: geld_haskell_ruin
+  conditions: { minChapter: 1 }
+  certain: true
+  marked: [haskell_ruiniert]
+  visitor: arzt
+  title:
+    de: Der Doktor schließt die Praxis
+    en: The Doctor Closes His Practice
+  text:
+    de: >-
+      Doktor Haskell hat seine Tasche dabei, als käme er zu einem Kranken. „Meine Ersparnisse
+      sind fort, Harlan. Ich gehe nach Hallstead, ins Spital, für Lohn. Salt Hill wird einen
+      neuen Arzt suchen müssen.“
+    en: >-
+      Doctor Haskell has his bag with him, as if visiting a patient. "My savings are gone,
+      Harlan. I am going to Hallstead, to the hospital, for wages. Salt Hill will have to look
+      for a new doctor."
+  choices:
+    - id: helfen
+      label: { de: "Ihm die Hälfte ersetzen, damit er bleibt", en: "Replace half so he stays" }
+      result:
+        de: Haskell bleibt. Er sagt nicht danke, aber er behandelt Thomas' Fieber umsonst.
+        en: Haskell stays. He does not say thank you, but he treats Thomas's fever for free.
+      marks: [haskell_entschaedigt]
+    - id: gehen_lassen
+      label: { de: "Ihn gehen lassen", en: "Let him go" }
+      result:
+        de: Die Praxis steht leer. Wenn in Salt Hill jemand krank wird, fährt man zwei Tage.
+        en: The practice stands empty. When someone in Salt Hill falls ill, it is a two-day ride.
+      effects: { ruth: -8, strength: -6, reputation: { public: -6, workers: -4 } }
+      default: true
+
+- id: geld_whitcomb_ruin
+  conditions: { minChapter: 1 }
+  certain: true
+  marked: [whitcomb_ruiniert]
+  visitor: whitcomb
+  title:
+    de: Whitcomb verkauft die Weide
+    en: Whitcomb Sells His Pasture
+  text:
+    de: >-
+      Amos Whitcomb legt eine Urkunde auf den Tisch. „Die Weide. Bullard zahlt in bar. Mein
+      Geld bei dir ist weg, und die Bank will ihres.“ Er sieht Jacob lange an. „Willst du sie?“
+    en: >-
+      Amos Whitcomb lays a deed on the desk. "The pasture. Bullard pays cash. My money with you
+      is gone, and the bank wants its own." He looks at Jacob for a long time. "Do you want it?"
+  choices:
+    - id: helfen
+      label: { de: "Ihm die Hälfte ersetzen – die Weide bleibt seine", en: "Replace half – the pasture stays his" }
+      result:
+        de: Whitcomb zerreißt die Urkunde nicht, aber er steckt sie wieder ein.
+        en: Whitcomb does not tear up the deed, but he puts it back in his pocket.
+      marks: [whitcomb_entschaedigt]
+    - id: bullard
+      label: { de: "Ihn an Bullard verkaufen lassen", en: "Let him sell to Bullard" }
+      result:
+        de: Bullard bekommt die Weide und eine Geschichte, die er in jedem Saloon erzählt.
+        en: Bullard gets the pasture and a story he tells in every saloon.
+      effects: { strength: -4, reputation: { industryRespect: -6, public: -4 } }
+      default: true
+
+# --- Mr. Vale will seinen Gefallen ------------------------------------------------------------
+
+- id: geld_vale_gefallen
+  conditions: { minChapter: 2 }
+  certain: true
+  marked: [vale_gefallen_faellig]
+  visitor: vale
+  title:
+    de: Mr. Vale bittet um eine Kleinigkeit
+    en: Mr. Vale Asks a Small Thing
+  text:
+    de: >-
+      Mr. Vale nimmt keinen Platz. „Unter Freunden bittet man nicht, man erinnert. Einige Herren,
+      denen ich verbunden bin, wünschen, dass der Preis eine Weile nicht steigt. Und Mrs. Delgados
+      Verband – nun, er stört. Sie wissen, wie man das macht.“
+    en: >-
+      Mr. Vale does not take a seat. "Among friends one does not ask, one reminds. Certain gentlemen
+      to whom I am obliged wish the price not to rise for a while. And Mrs. Delgado's association –
+      well, it is a nuisance. You know how it is done."
+  choices:
+    - id: preis
+      label: { de: "Billig an Vales Freunde verkaufen und den Preis halten", en: "Sell cheaply to Vale's friends and hold the price" }
+      result:
+        de: Jacobs Öl geht für eine Weile unter Preis an Herren, die er nie sieht. Vale lächelt.
+        en: For a while Jacob's oil goes below price to gentlemen he never sees. Vale smiles.
+      effects: { price: -0.12, consortium: { trust: 10 } }
+      default: true
+    - id: delgado
+      label: { de: "Gegen Delgados Verband stimmen", en: "Vote against Delgado's association" }
+      result:
+        de: Im Verband fehlt eine Stimme, und Rosa Delgado weiß, wessen. Die Bohrtrupps reden darüber.
+        en: The association is one vote short, and Rosa Delgado knows whose. The drilling crews talk about it.
+      effects: { rival: { delgado: { trust: -30, grudge: 25 } }, reputation: { workers: -10 }, consortium: { trust: 10 } }
+    - id: ablehnen
+      label: { de: "„Ich bin Ihnen Geld schuldig, Mr. Vale, nicht mehr.“", en: "\"I owe you money, Mr. Vale, nothing more.\"" }
+      result:
+        de: Vale nickt, als hätte er das erwartet. Am nächsten Morgen liegt die Rechnung auf dem Tisch – über die ganze Summe.
+        en: Vale nods as if he expected it. The next morning the bill is on the desk – for the whole sum.
+      marks: [vale_gefallen_verweigert]

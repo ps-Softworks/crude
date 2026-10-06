@@ -171,7 +171,7 @@ describe('Bedingungen', () => {
     // mit den Kindern aus 4.5 steht bei den festen Terminen, gilt aber nur in Kapitel 2.)
     // 0.4.19+3: dazu das Sonntagsessen in Kapitel 3 (termin_familie_k3, termin_kinder_k3).
     const spaeteTermine = ['termin_familie_k2', 'termin_familie_k3', 'termin_kinder_k3'];
-    const k1 = katalog.filter((x) => !/^k[2-9]_/.test(x.id) && !x.id.startsWith('fernleitung_') && !x.id.startsWith('feuer_') && !x.id.startsWith('vale_rettung_') && !spaeteTermine.includes(x.id)); // B3: feuer_… gilt in allen Kapiteln
+    const k1 = katalog.filter((x) => !/^k[2-9]_/.test(x.id) && !x.id.startsWith('fernleitung_') && !x.id.startsWith('feuer_') && !x.id.startsWith('vale_rettung_') && !x.id.startsWith('geld_') && !spaeteTermine.includes(x.id)); // B3: feuer_… gilt in allen Kapiteln
     expect(k1.length).toBeGreaterThan(0);
     for (const e of k1) {
       expect(e.conditions.minChapter, e.id).toBeUndefined();
@@ -191,7 +191,7 @@ describe('Bedingungen', () => {
   });
 
   it('sichere Kapitel-1-Ereignisse (thomas_geburt, Silas, Moss, Rivalen …) tragen ausdrücklich maxChapter: 1', () => {
-    const sicher = loadEvents().filter((e) => e.certain && !/^k[2-9]_/.test(e.id) && !e.id.startsWith('fernleitung_') && !e.id.startsWith('feuer_') && !e.id.startsWith('vale_rettung_'));
+    const sicher = loadEvents().filter((e) => e.certain && !/^k[2-9]_/.test(e.id) && !e.id.startsWith('fernleitung_') && !e.id.startsWith('feuer_') && !e.id.startsWith('vale_rettung_') && !e.id.startsWith('geld_'));
     // B3: Bullards Drohbrief und Ruths Bitte (feuer_…) gelten absichtlich in allen Kapiteln (minChapter: 1).
     expect(sicher.map((e) => e.id)).toContain('thomas_geburt');
     for (const e of sicher) {

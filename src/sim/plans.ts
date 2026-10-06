@@ -18,6 +18,7 @@
 // Vertrags). Die Oberfläche liest nur planView.
 
 import { BUYER_HANDLERS } from './buyers';
+import { FINANCING_HANDLERS } from './financing';
 import { acceptReferral, isCold, isKnown, noteContact, relationOf, shiftRelation } from './network';
 import { overtimeFor, refundAppointments, spendAppointments, timeReason } from './agenda';
 import type { Balance } from './balance';
@@ -229,7 +230,7 @@ const LAND_HANDLERS: Record<string, Handler> = {
 // (game ↔ plans ↔ deals/freight/transport), beim Laden des Moduls können sie noch fehlen.
 let alle: Record<string, Handler> | null = null;
 function handlers(): Record<string, Handler> {
-  alle ??= { ...LAND_HANDLERS, ...PRICE_HANDLERS, ...FREIGHT_HANDLERS, ...DEAL_HANDLERS, ...BUYER_HANDLERS };
+  alle ??= { ...LAND_HANDLERS, ...PRICE_HANDLERS, ...FREIGHT_HANDLERS, ...DEAL_HANDLERS, ...BUYER_HANDLERS, ...FINANCING_HANDLERS };
   return alle;
 }
 

@@ -10,6 +10,7 @@ import { agendaView } from '../../sim/agenda';
 import { formatDate } from '../../sim/game';
 import { localize } from '../../sim/i18n';
 import { callerCard, dealsRunning } from '../../sim/deals';
+import { financingRunning } from '../../sim/financing';
 import { chapterOf } from '../../sim/chapterOf';
 import { contactOf } from '../../sim/planContent';
 import { bookCard, introduce, planView, unbookCard, type PlanCardView, type PlanSlot } from '../../sim/plans';
@@ -175,7 +176,7 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
   const hand = v.cards
     .filter((c) => stelleVon.get(c.id) === aktiv)
     .sort((a, b) => Number(a.reason !== null) - Number(b.reason !== null));
-  const laufend = dealsRunning(game, balance);
+  const laufend = [...dealsRunning(game, balance), ...financingRunning(game)];
   const gebucht = v.slots.map((s, i) => ({ s, i })).filter(({ s }) => s.kind !== 'frei');
   const stellenName = (id: string) => localize(planContent.contacts.find((k) => k.id === id)?.name ?? planContent.title);
   // Neu kennengelernt: in dieser oder der letzten Runde.

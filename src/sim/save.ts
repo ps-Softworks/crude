@@ -28,6 +28,7 @@ import { validHallstead } from './hallsteadState';
 import { isKapitel3State } from './kapitel3'; // 4.17 Andockpunkt
 import { validRivalsK3 } from './rivalsK3'; // 4.19 Andockpunkt
 import { validFeldzug } from './feldzug'; // 0.4.20+8
+import { validFinancing } from './financing';
 // Termine als Hauptwerkzeug, Etappe 2: Preis- und Transport-Aktionen.
 import { isPricingState, newPricing } from './pricing';
 import { isFreightState, newFreight } from './freight';
@@ -274,6 +275,7 @@ export function validateState(value: unknown): LoadResult {
   if (value.kapitel3 !== undefined && !isKapitel3State(value.kapitel3)) return { ok: false, reason: UNVOLLSTAENDIG };
   if (!validRivalsK3(value.rivalsK3)) return { ok: false, reason: UNVOLLSTAENDIG };
   if (!validFeldzug(value.feldzug)) return { ok: false, reason: UNVOLLSTAENDIG };
+  if (!validFinancing(value.financing)) return { ok: false, reason: UNVOLLSTAENDIG }; // Geldquellen (freiwillig)
   if (value.hotOil !== undefined && typeof value.hotOil !== 'boolean') return { ok: false, reason: UNVOLLSTAENDIG };
   if (value.taxBase !== undefined && (typeof value.taxBase !== 'object' || value.taxBase === null || !istZahl((value.taxBase as { cash?: unknown }).cash) || !istZahl((value.taxBase as { debt?: unknown }).debt))) return { ok: false, reason: UNVOLLSTAENDIG };
   const round = value.round as number;

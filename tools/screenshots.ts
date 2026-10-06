@@ -339,6 +339,30 @@ const bilder: Bild[] = [
   { name: '46-netzwerk-empfehlung', state: advanceNetwork(shiftRelation(start, 'grundbesitzer', 15), balance, { grundbesitzer: 'Grundbesitzer', oelleute: 'Andere Ölleute' }), prefs: { 'crude.reiter.termine': 'grundbesitzer' }, tasten: ['t'] },
   // 0.4.20+43 Großhändler: Kapitel 2, alle Stellen bekannt – mehrere Abnehmer im Frachtfenster.
   { name: '46b-fracht-abnehmer', state: { ...kapitel2, network: knowAll(balance), oilStock: Math.max(kapitel2.oilStock, 20000) }, prefs: { 'crude.reiter.fracht': 'verkauf' }, tasten: ['f'] },
+  // Geldquellen (GDD §8): Witwe Sloane mit aufgeklappter Einlage, Farm-out bei den Ölleuten, Regierung im Krieg mit laufenden Abmachungen.
+  { name: '48-geld-investor', state: { ...start, network: knowAll(balance) }, prefs: { 'crude.reiter.termine': 'witwe_sloane' }, tasten: ['t'], dann: `document.querySelector('.angebot-name')?.click()`, warte: 400 },
+  {
+    name: '48b-geld-farmout',
+    state: (() => {
+      const p = start.parcels.find((x) => !x.discovery && !start.leases.some((l) => l.parcelId === x.id))!;
+      return { ...start, network: knowAll(balance), leases: [...start.leases, { parcelId: p.id, holder: 'jacob' as const, bonus: 500, royalty: 0.125, startRound: start.round, expiresAfterRound: 99, drilled: false }] };
+    })(),
+    prefs: { 'crude.reiter.termine': 'oelleute' },
+    tasten: ['t'],
+    dann: `[...document.querySelectorAll('.angebot-name')].find((b) => b.textContent.includes('Farm-out'))?.click()`,
+    warte: 400,
+  },
+  {
+    name: '48c-geld-regierung',
+    state: {
+      ...kapitel2,
+      network: knowAll(balance),
+      worldModel: { ...kapitel2.worldModel, war: 4 },
+      financing: { investors: [{ id: 'haskell' as const, amount: 25000, share: 0.15, from: kapitel2.round, until: kapitel2.round + 7, paid: 0, broken: false }], farmouts: [], vale: { amount: 60000, from: kapitel2.round, until: kapitel2.round + 11, favorRound: kapitel2.round + 4 }, valeUsed: true, stateLoan: null, stateOrder: null, lost: {}, done: [] },
+    },
+    prefs: { 'crude.reiter.termine': 'regierung' },
+    tasten: ['t'],
+  },
   { name: '36-brett-markt', state: { ...mitBremse, network: knowAll(balance) }, prefs: { 'crude.reiter.termine': 'oelleute' }, tasten: ['t'] },
   // 0.4.20+32: neue Deals – Bank und Eisenbahn mit Festtarif/Kontingent.
   { name: '37b-adressbuch-bank', state: { ...mitBremse, network: knowAll(balance) }, prefs: { 'crude.reiter.termine': 'bank' }, tasten: ['t'] },
