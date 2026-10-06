@@ -223,6 +223,24 @@ cards:
       en: "For a few dollars Sheriff Tatum posts a man with a shotgun at the tanks. Full tanks attract thieves."
     risk: { de: "Hält nur diese Runde.", en: "Only lasts this round." }
   # 0.4.20+34 Telefon: Anrufe (kommen von selbst, gelten nur diese Runde).
+  marine_heizoel:
+    title: { de: "Heizöl für die Flotte", en: "Fuel Oil for the Fleet" }
+    text:
+      de: "Kommandant Brandt stellt die Kohlenbunker auf Öl um. Die Marine nimmt jede Runde eine feste Menge Heizöl – zum Preis von heute, acht Runden lang."
+      en: "Commander Brandt is switching the coal bunkers to oil. The navy takes a fixed amount of fuel oil every round – at today's price, for eight rounds."
+    risk: { de: "Steigt der Ölpreis, verschenkt Jacob Geld. Und wer nicht liefert, zahlt Vertragsstrafe – auch wenn die Raffinerie brennt.", en: "If the oil price rises, Jacob gives money away. And whoever doesn't deliver pays a penalty – even if the refinery is on fire." }
+  fabrik_schmieroel:
+    title: { de: "Schmieröl für die Fabriken", en: "Lubricant for the Factories" }
+    text:
+      de: "Bahnwerkstätten und Maschinenfabriken zahlen für verlässliches Schmieröl einen Aufschlag – wenn es jede Runde kommt."
+      en: "Railway workshops and machine works pay a premium for reliable lubricant – if it arrives every round."
+    risk: { de: "Die Raffinerie muss genug Schmieröl machen, sonst wird die Strafe teuer.", en: "The refinery must make enough lubricant, or the penalty gets expensive." }
+  lampenoel_kerosin:
+    title: { de: "Kerosin für die Lampenöl-Händler", en: "Kerosene for the Lamp Oil Dealers" }
+    text:
+      de: "Die Händler auf dem Land kaufen Kerosin für drei Jahre im Voraus – während die Städte schon elektrisches Licht bekommen."
+      en: "The country dealers buy kerosene three years ahead – while the cities are already getting electric light."
+    risk: { de: "Zwölf Runden sind lang. Wer den Mix umstellt, muss das Kerosin trotzdem liefern.", en: "Twelve rounds are long. Whoever changes the mix must still deliver the kerosene." }
   bank_angebot:
     title: { de: "Sonderkredit (Anruf der Bank)", en: "Special Loan (the Bank Calls)" }
     text:
@@ -276,6 +294,14 @@ contacts:
     name: { de: "Sheriff", en: "Sheriff" }
     who: { de: "Sheriff Tatum", en: "Sheriff Tatum" }
     cards: [wache]
+  marine:
+    name: { de: "Marine", en: "Navy" }
+    who: { de: "Kommandant Brandt, Flottenstützpunkt Port Ellis", en: "Commander Brandt, Port Ellis naval station" }
+    cards: [marine_heizoel]
+  grosskunden:
+    name: { de: "Großkunden", en: "Large Customers" }
+    who: { de: "Fabriken, Bahnwerkstätten und Lampenöl-Händler", en: "Factories, railway workshops and lamp oil dealers" }
+    cards: [fabrik_schmieroel, lampenoel_kerosin]
   familie:
     name: { de: "Familie", en: "Family" }
     who: { de: "Ruth und die Kinder", en: "Ruth and the children" }

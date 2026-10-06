@@ -18,6 +18,8 @@ import type { PlanHandler } from './planHandler';
 import { shiftStanding } from './pricing';
 import { producingWells, wellRate } from './production';
 import { rigReady, rigWell } from './rigs';
+import { ownsRefinery, productDemand, productPrice, refineryWorld } from './refinery';
+import type { Product } from './refineryBalance';
 import { Rng, seedFromString } from './rng';
 import { buyerPrice, tariff } from './transport';
 
@@ -44,6 +46,20 @@ export interface DealsState {
   call?: { card: string; round: number } | null;
   /** 0.4.20+34 Sonderkredit der Bank (Anruf): bis Runde due getilgt, sonst steigt der Zins. */
   offerLoan?: { loanId: number; due: number } | null;
+  /** 0.4.20+35 Lieferverträge für Raffinerie-Produkte (Marine, Großkunden): je Runde qty zum Festpreis. */
+  supply?: SupplyContract[];
+}
+
+export interface SupplyContract {
+  /** Karte, aus der der Vertrag stammt (je Karte höchstens einer). */
+  card: string;
+  product: Product;
+  qty: number;
+  price: number;
+  /** Gilt von Runde from bis einschließlich until. */
+  from: number;
+  until: number;
+  shortfall: number;
 }
 
 export function newDeals(): DealsState {
@@ -472,8 +488,83 @@ const bankAngebot: PlanHandler = {
   },
 };
 
+// --- Raffinerie: Lieferverträge (Marine, Großkunden) ----------------------------------------
+
+const PRODUKT: Record<Product, string> = { kerosene: 'Kerosin', lubricant: 'Schmieröl', fuelOil: 'Heizöl', gasoline: 'Benzin' };
+
+/** Laufende Lieferverträge in dieser Runde. */
+export function activeSupply(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'deals'>>, round = state.round): SupplyContract[] {
+  return (state.deals?.supply ?? []).filter((c) => round >= c.from && round <= c.until);
+}
+
+/** Festpreis eines neuen Vertrags: der heutige Großhandelspreis bei normaler Abnahme × (1 + Aufschlag). */
+export function supplyPrice(state: GameState, balance: Balance, product: Product, premium: number): number {
+  const world = refineryWorld(state, balance);
+  return cents(productPrice(product, productDemand(product, world, balance), state.postedPrice, world, balance) * (1 + premium));
+}
+
+function supplyDeal(card: string, key: keyof Balance['deals']['supply']): PlanHandler {
+  return {
+    lock(state) {
+      if (!ownsRefinery(state) || (state.refinery?.level ?? 0) < 1) return 'Erst braucht Jacob eine laufende Raffinerie.';
+      if ((state.deals?.supply ?? []).some((c) => c.card === card && c.until >= state.round)) return 'Der Vertrag läuft noch.';
+      return null;
+    },
+    options(state, balance) {
+      const c = balance.deals.supply[key];
+      const preis = supplyPrice(state, balance, c.product, c.premium);
+      return c.sizes.map((n) => ({ id: String(n), label: `${bbl(n)} ${PRODUKT[c.product]} je Runde zu ${preis.toLocaleString('de-DE')} $ · ${c.rounds} Runden`, reason: null }));
+    },
+    detail(_state, balance) {
+      const c = balance.deals.supply[key];
+      return `Fester Preis, egal wohin der Ölpreis geht. Die Vertragsmenge drückt den Großhandel nicht. Jedes fehlende Barrel kostet ${c.shortfall.toLocaleString('de-DE')} $.`;
+    },
+    apply(state, balance, target) {
+      const c = balance.deals.supply[key];
+      const qty = Number(target ?? c.sizes[0]);
+      const price = supplyPrice(state, balance, c.product, c.premium);
+      const neu: SupplyContract = { card, product: c.product, qty, price, from: state.round, until: state.round + c.rounds - 1, shortfall: c.shortfall };
+      const alt = (state.deals?.supply ?? []).filter((x) => x.card !== card && x.until >= state.round);
+      return log(withDeals(state, { supply: [...alt, neu] }), `Liefervertrag: ${bbl(qty)} ${PRODUKT[c.product]} je Runde zu ${price.toLocaleString('de-DE')} $, ${c.rounds} Runden.`);
+    },
+  };
+}
+
+/**
+ * Für den Lauf der Raffinerie: wie viel eines Produkts an Verträge geht und was es bringt. Die Raffinerie
+ * verkauft davon nur den Rest an den Großhandel (planRun).
+ */
+export function contractedOutput(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'deals'>>, product: Product, output: number): { qty: number; revenue: number } {
+  let rest = output;
+  let revenue = 0;
+  let qty = 0;
+  for (const c of activeSupply(state).filter((x) => x.product === product)) {
+    const n = Math.min(rest, c.qty);
+    rest -= n;
+    qty += n;
+    revenue += n * c.price;
+  }
+  return { qty, revenue: cents(revenue) };
+}
+
+/** Nach dem Lauf der Raffinerie: Strafe für fehlende Vertragsmengen (auch bei Stillstand). */
+export function supplyShortfall(state: GameState, output: Partial<Record<Product, number>>): GameState {
+  let s = state;
+  const rest: Partial<Record<Product, number>> = { ...output };
+  for (const c of activeSupply(state)) {
+    const da = Math.min(rest[c.product] ?? 0, c.qty);
+    rest[c.product] = (rest[c.product] ?? 0) - da;
+    const fehlt = c.qty - da;
+    if (fehlt > 0) s = log({ ...s, cash: cents(s.cash - fehlt * c.shortfall) }, `Liefervertrag: ${bbl(fehlt)} ${PRODUKT[c.product]} fehlen – Vertragsstrafe ${money(fehlt * c.shortfall)}.`);
+  }
+  return s;
+}
+
 export const DEAL_HANDLERS: Record<string, PlanHandler> = {
   bank_angebot: bankAngebot,
+  marine_heizoel: supplyDeal('marine_heizoel', 'marine'),
+  fabrik_schmieroel: supplyDeal('fabrik_schmieroel', 'lubricant'),
+  lampenoel_kerosin: supplyDeal('lampenoel_kerosin', 'kerosene'),
   bank_zins: bankZins,
   bank_stundung: bankStundung,
   bank_pfand: bankPfand,
@@ -566,5 +657,6 @@ export function dealsRunning(state: GameState, balance: Balance): string[] {
   if (d.bulkRound === state.round) out.push(`Händler nimmt diese Runde ${bbl(balance.deals.trader.bulk.extra)} mehr`);
   if (d.lent) out.push(`Bohrturm verliehen bis Ende Runde ${d.lent.until}`);
   if (d.guardRound === state.round) out.push('Wache an den Tanks');
+  for (const c of activeSupply(state)) out.push(`Liefervertrag: ${bbl(c.qty)} ${PRODUKT[c.product]} je Runde zu ${c.price.toLocaleString('de-DE')} $ bis Runde ${c.until}`);
   return out;
 }

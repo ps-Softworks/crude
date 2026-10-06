@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { creditLimit, quarterInterest, settleLoans, takeLoan } from './credit';
-import { callerCard, DEAL_HANDLERS, dealsOf, dealsRunning, newDeals, royaltyPrice, settleDeals } from './deals';
+import { activeSupply, callerCard, DEAL_HANDLERS, dealsOf, supplyPrice, supplyShortfall, dealsRunning, newDeals, royaltyPrice, settleDeals } from './deals';
 import type { Well } from './drilling';
 import { newGame, type GameState } from './game';
 import { bookCard, planView, ringPhone, settlePlans } from './plans';
+import { planRun, unlockRefinery } from './refinery';
 import { buyRig, rigReady } from './rigs';
 import { deserializeGame, serializeGame } from './save';
 import { loadBalance } from './testBalance';
@@ -258,5 +259,46 @@ describe('Telefon (0.4.20+34)', () => {
     expect(nach.loans.find((l) => l.id === kredit.id)!.rate).toBeCloseTo(kredit.rate + b.bank.offer.penalty, 6);
     const getilgt = settleDeals({ ...frist, loans: frist.loans.filter((l) => l.id !== kredit.id) }, balance);
     expect(dealsOf(getilgt).offerLoan).toBeNull();
+  });
+});
+
+describe('Lieferverträge der Raffinerie (0.4.20+35)', () => {
+  function mitRaffinerie(seed = 'raff'): GameState {
+    const s = unlockRefinery(start(seed, { chapter: 2, oilStock: 20000 }), balance);
+    return { ...s, refinery: { ...s.refinery!, level: 1 } };
+  }
+
+  it('nur mit laufender Raffinerie; Marine nicht neben dem Rohöl-Vertrag der Marine', () => {
+    expect(DEAL_HANDLERS.marine_heizoel.lock!(start('x', { chapter: 2 }), balance)).toMatch(/Raffinerie/);
+    const s = mitRaffinerie();
+    expect(planView(s, balance, katalog).cards.find((c) => c.id === 'marine_heizoel')?.reason).toBeNull();
+    const mitVertrag = { ...s, events: { ...s.events, marks: { ...s.events.marks, k2_marine_vertrag: 1 } } };
+    expect(planView(mitVertrag, balance, katalog).cards.some((c) => c.id === 'marine_heizoel')).toBe(false);
+  });
+
+  it('die Vertragsmenge geht zum Festpreis weg, der Rest zum Großhandelspreis ohne sie', () => {
+    const s0 = mitRaffinerie();
+    const c = b.supply.marine;
+    const s = buche(s0, 'marine_heizoel', String(c.sizes[0]));
+    const v = activeSupply(s)[0];
+    expect(v.price).toBe(supplyPrice(s0, balance, 'fuelOil', c.premium));
+    const crude = 10000;
+    const ohne = planRun(s0, balance, crude);
+    const mit = planRun(s, balance, crude);
+    const out = mit.output.fuelOil;
+    expect(out).toBeGreaterThan(c.sizes[0]);
+    const rest = out - c.sizes[0];
+    // Gleiches Erlös-Prinzip: Vertragsmenge × Festpreis + Rest × (Preis bei weniger Angebot – höher als ohne Vertrag).
+    expect(mit.prices.fuelOil).toBeGreaterThanOrEqual(ohne.prices.fuelOil);
+    expect(mit.revenue - ohne.revenue).toBeCloseTo(c.sizes[0] * v.price + rest * mit.prices.fuelOil - out * ohne.prices.fuelOil, 0);
+  });
+
+  it('fehlende Vertragsmenge kostet je Barrel Strafe, auch bei Stillstand', () => {
+    const s = buche(mitRaffinerie(), 'fabrik_schmieroel', String(b.supply.lubricant.sizes[1]));
+    const still = supplyShortfall(s, {});
+    expect(still.cash).toBeCloseTo(s.cash - b.supply.lubricant.sizes[1] * b.supply.lubricant.shortfall, 2);
+    const genug = supplyShortfall(s, { lubricant: b.supply.lubricant.sizes[1] });
+    expect(genug.cash).toBe(s.cash);
+    expect(activeSupply({ ...s, round: s.round + b.supply.lubricant.rounds })).toEqual([]);
   });
 });

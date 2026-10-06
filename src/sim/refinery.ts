@@ -20,6 +20,7 @@
 // In Kapitel 1 ist state.refinery undefined – dann tut hier nichts etwas.
 
 import type { Balance, TransportMode } from './balance';
+import { contractedOutput, supplyShortfall } from './deals';
 import { dateOf, formatDate } from './calendar';
 import type { GameState } from './game';
 import { Rng, seedFromString, type RngState } from './rng';
@@ -538,8 +539,10 @@ export function planRun(
     // Preis; die Tankstellen zahlen den Preis, der sich dort bildet (ohne Überschuss: die Preisobergrenze).
     const markt = p === 'gasoline' ? Math.max(0, output[p] - Math.min(output[p], abnahme)) : output[p];
     if (p === 'gasoline') toStations = output[p] - markt;
-    prices[p] = cents(productPrice(p, markt, state.postedPrice, world, balance) * Math.max(0, 1 + timedEffect(state, `productPrice:${p}`)));
-    revenue += output[p] * prices[p];
+    // 0.4.20+35: Lieferverträge (Marine, Großkunden – deals.ts) nehmen ihre Menge zum Festpreis; nur der Rest drückt den Großhandel.
+    const vertrag = contractedOutput(state, p, markt);
+    prices[p] = cents(productPrice(p, markt - vertrag.qty, state.postedPrice, world, balance) * Math.max(0, 1 + timedEffect(state, `productPrice:${p}`)));
+    revenue += (output[p] - vertrag.qty) * prices[p] + vertrag.revenue;
   }
   const royaltyBarrels = state.oilStock > 0 ? (menge * state.royaltyOil) / state.oilStock : 0;
   const run = {
@@ -801,6 +804,8 @@ export function advanceRefinery(input: GameState, balance: Balance, world?: Refi
         : logged(state, `Die Raffinerie steht still – Fixkosten ${dollars(run.upkeep)} $.`),
     };
     r.last = run;
+    // 0.4.20+35: Fehlende Vertragsmengen kosten Strafe (deals.ts).
+    state = supplyShortfall(state, run.output);
 
     const rng = new Rng(r.rng);
     const wurf = rng.float();

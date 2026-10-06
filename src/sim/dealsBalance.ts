@@ -2,6 +2,7 @@
 // Regeln stehen in src/sim/deals.ts.
 
 import { BalanceError } from './balance';
+import { PRODUCTS, type Product } from './refineryBalance';
 
 export interface DealsBalance {
   bank: {
@@ -14,6 +15,8 @@ export interface DealsBalance {
     /** Sonderkredit am Telefon: Beträge, Zinsnachlass, Untergrenze, Frist (Runden), Strafzins danach. */
     offer: { sizes: number[]; discount: number; floor: number; rounds: number; penalty: number };
   };
+  /** 0.4.20+35 Lieferverträge der Raffinerie: Produkt, Mengen je Runde, Laufzeit, Aufschlag auf den heutigen Preis, Strafe je fehlendem Barrel. */
+  supply: Record<'marine' | 'lubricant' | 'kerosene', { product: Product; sizes: number[]; rounds: number; premium: number; shortfall: number }>;
   /** 0.4.20+34 Telefon: Chance je Runde (ab Kapitel 2), dass jemand anruft. */
   phone: { chance: number };
   rail: {
@@ -89,6 +92,12 @@ function liste(obj: unknown, path: string): number[] {
   return value as number[];
 }
 
+function vertrag(raw: unknown, q: string) {
+  const product = wert(raw, `${q}.product`);
+  if (typeof product !== 'string' || !(PRODUCTS as readonly string[]).includes(product)) throw new BalanceError(`balance.yaml: "${q}.product" muss ${PRODUCTS.join(', ')} sein`);
+  return { product: product as Product, sizes: liste(raw, `${q}.sizes`), rounds: ganz(raw, `${q}.rounds`), premium: zahl(raw, `${q}.premium`), shortfall: zahl(raw, `${q}.shortfall`) };
+}
+
 export function parseDealsBalance(raw: unknown): DealsBalance {
   const p = 'deals';
   if (wert(raw, p) === undefined) throw new BalanceError('balance.yaml: Block "deals" fehlt');
@@ -111,6 +120,11 @@ export function parseDealsBalance(raw: unknown): DealsBalance {
       },
     },
     phone: { chance: anteil(raw, `${p}.phone.chance`) },
+    supply: {
+      marine: vertrag(raw, `${p}.supply.marine`),
+      lubricant: vertrag(raw, `${p}.supply.lubricant`),
+      kerosene: vertrag(raw, `${p}.supply.kerosene`),
+    },
     rail: {
       fixed: { rounds: liste(raw, `${p}.rail.fixed.rounds`), minimum: zahl(raw, `${p}.rail.fixed.minimum`), shortfall: zahl(raw, `${p}.rail.fixed.shortfall`) },
       quota: { sizes: liste(raw, `${p}.rail.quota.sizes`), discount: anteil(raw, `${p}.rail.quota.discount`), rounds: ganz(raw, `${p}.rail.quota.rounds`) },
