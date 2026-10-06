@@ -176,11 +176,11 @@ const bankZins: PlanHandler = {
   },
   detail(state, balance) {
     const r = balance.deals.bank.rate;
-    return `Mit Rating ${state.rating} gibt Mr. Pettibone mit ${percent(r.chance[state.rating])} nach: −${percent(r.cut)} Zins auf alle Bankkredite.`;
+    return `Mit Rating ${state.rating} gibt Mr. Pettibone mit ${percent(withRelation(state, balance, 'bank', r.chance[state.rating]))} nach: −${percent(r.cut)} Zins auf alle Bankkredite.`;
   },
   apply(state, balance) {
     const r = balance.deals.bank.rate;
-    const ja = rng(state, 'bank_zins').float() < r.chance[state.rating];
+    const ja = rng(state, 'bank_zins').float() < withRelation(state, balance, 'bank', r.chance[state.rating]);
     const s = cooldown(state, 'bank_zins', r.cooldown);
     if (!ja) return log(s, 'Mr. Pettibone hört zu, nickt – und bleibt beim Zins.');
     const loans = s.loans.map((l) => (l.source === 'bank' ? { ...l, rate: Math.max(r.floor, Math.round((l.rate - r.cut) * 10000) / 10000) } : l));
@@ -299,6 +299,11 @@ export function dealScale(state: Pick<GameState, 'chapter'>, balance: Balance): 
 function advanceCash(state: GameState, balance: Balance, n: number, preis: number): number {
   const a = balance.deals.crane.advance;
   return cents(n * preis * Math.min(1, (1 - a.discount) * relationFactor(state, balance, 'crane')));
+}
+
+/** 0.4.20+44: Chance eines Verhandlungs-Deals × Beziehung zur Stelle (zwischen 0 und 1). */
+function withRelation(state: GameState, balance: Balance, contact: string, chance: number): number {
+  return Math.max(0, Math.min(1, chance * relationFactor(state, balance, contact)));
 }
 
 const craneVorschuss: PlanHandler = {
@@ -448,7 +453,7 @@ const foerderzins: PlanHandler = {
     const preis = royaltyPrice(state, balance, target);
     const s = cooldown(state, 'foerderzins', r.cooldown);
     const name = state.parcels.find((p) => p.id === target)?.name ?? target;
-    const chance = Math.max(0, Math.min(1, r.chance + state.wildcatterStanding));
+    const chance = withRelation(state, balance, 'grundbesitzer', Math.max(0, Math.min(1, r.chance + state.wildcatterStanding)));
     if (preis <= 0 || s.cash < preis || rng(state, `foerderzins:${target}`).float() >= chance) return log(s, `Der Besitzer von ${name} will vom Förderzins nichts abgeben.`);
     const leases = s.leases.map((l) => (l.parcelId === target ? { ...l, royalty: Math.round((l.royalty - r.cut) * 1000) / 1000 } : l));
     return log({ ...s, leases, cash: cents(s.cash - preis) }, `Der Besitzer von ${name} nimmt ${money(preis)} und senkt den Förderzins um ${percent(r.cut)}.`);
@@ -468,7 +473,7 @@ const interview: PlanHandler = {
   },
   apply(state, balance) {
     const i = balance.deals.interview;
-    const chance = i.chance - ((state.pricing?.rumours.count ?? 0) > 0 ? i.rumourPenalty : 0);
+    const chance = withRelation(state, balance, 'zeitung', i.chance - ((state.pricing?.rumours.count ?? 0) > 0 ? i.rumourPenalty : 0));
     const gut = rng(state, 'interview').float() < chance;
     const s = cooldown(shiftStanding(state, balance, gut ? i.shift : -i.shift), 'interview', i.cooldown);
     return log(s, gut ? 'Der Courier druckt das Gespräch – die anderen Ölleute lesen es gern.' : 'Nora Whitlock schreibt, was sie gesehen hat. Die anderen Ölleute rümpfen die Nase.');

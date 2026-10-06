@@ -1,4 +1,4 @@
-import { knowAll } from './network';
+import { knowAll, shiftRelation } from './network';
 import { describe, expect, it } from 'vitest';
 import { creditLimit, quarterInterest, settleLoans, takeLoan } from './credit';
 import { activeSupply, callerCard, crewReturnCost, insuranceClaim, insurancePremium, DEAL_HANDLERS, dealsOf, supplyPrice, supplyShortfall, dealsRunning, newDeals, royaltyPrice, settleDeals } from './deals';
@@ -58,6 +58,20 @@ describe('Bank (0.4.20+31)', () => {
       expect(DEAL_HANDLERS.bank_zins.lock!(nach, balance)).toMatch(/Erst wieder/);
     }
     expect(Math.abs(ja / n - b.bank.rate.chance[mitKredit().rating])).toBeLessThan(0.08);
+  });
+
+  it('0.4.20+44: eine enge Beziehung zur Bank hebt die Chance, eine kühle senkt sie', () => {
+    const basis = b.bank.rate.chance[mitKredit().rating];
+    const zaehle = (delta: number) => {
+      let ja = 0;
+      for (let i = 0; i < 300; i++) {
+        const s = shiftRelation(mitKredit(`zinsb${i}`), 'bank', delta);
+        if (DEAL_HANDLERS.bank_zins.apply(s, balance).loans[0].rate < s.loans[0].rate) ja++;
+      }
+      return ja / 300;
+    };
+    expect(zaehle(50)).toBeGreaterThan(basis);
+    expect(zaehle(-30)).toBeLessThan(basis);
   });
 
   it('Stundung: keine Bankzinsen aus der Kasse, dafür wächst die Schuld um Zinsen × (1 + Aufschlag)', () => {
