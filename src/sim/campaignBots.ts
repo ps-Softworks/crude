@@ -32,6 +32,7 @@ import { applyPressure, DELANEY_MARKS, heat, pressurePaysWithFavors, setLawyer }
 import { hallsteadUnlocked } from './hallsteadState';
 import { availableFavors, bribe, hireLobbyist } from './lobby';
 import { answerFavor, answerInvitation, invitationOpen } from './konsortium';
+import { buildWorkshop, buyLicense, licensePrice, researchUnlocked, startResearch } from './research';
 import { hasTrait, hireStaff, memberOf, onDuty, orderFixer, staffHeat } from './staff';
 
 /** Texte, die Kapitel 2 und 3 brauchen (Räte des Aufsichtsrats, Kapitel-3-Texte). */
@@ -270,6 +271,37 @@ export function stocksTurn(state: GameState, balance: Balance, policy: CampaignB
  *   als Mitglied erfüllt er sie, wenn die Rücklage bleibt.
  * Geld nur über der Rücklage. Rein und deterministisch (Zufall nur in den Systemen selbst).
  */
+/**
+ * Forschungs-Variante (Messung für den Builder, 0.4.20+30): Werkstatt bauen, sobald policy.research.research etwas
+ * enthält, die erste noch fehlende Technik daraus erforschen, Lizenzen aus policy.research.licenses kaufen – alles nur
+ * über der Rücklage.
+ */
+export function researchTurn(state: GameState, balance: Balance, policy: CampaignBotPolicy): GameState {
+  const p = policy.research;
+  if (!p || state.finished || !researchUnlocked(state, balance)) return state;
+  let s = state;
+  const frei = (kosten: number) => s.cash - kosten >= policy.reserve;
+  const hat = (id: string) => s.research?.owned[id] !== undefined;
+  if (p.research.length > 0) {
+    if (!s.research?.workshop && frei(balance.research.workshop)) {
+      const r = buildWorkshop(s, balance);
+      if (r.ok) s = r.state;
+    }
+    const naechste = p.research.find((id) => !hat(id));
+    if (s.research?.workshop && !s.research.project && naechste) {
+      const r = startResearch(s, balance, naechste, p.funding);
+      if (r.ok) s = r.state;
+    }
+  }
+  for (const id of p.licenses) {
+    const t = balance.research.techs.find((x) => x.id === id);
+    if (!t || hat(id) || !frei(licensePrice(s, balance, t))) continue;
+    const r = buyLicense(s, balance, id);
+    if (r.ok) s = r.state;
+  }
+  return s;
+}
+
 /** Personal-Variante (Messung für den Builder, 0.4.20+28): stellt die Rollen aus policy.staff ein, sobald eine Bewerbung dafür vorliegt und die Rücklage reicht. */
 export function staffTurn(state: GameState, balance: Balance, policy: CampaignBotPolicy): GameState {
   if (!policy.staff?.length || !state.staff || state.finished || chapterOf(state) < 2 || state.cash < policy.reserve) return state;
@@ -389,7 +421,7 @@ function playChapter(state: GameState, balance: Balance, strategy: Strategy, pol
     if (s.round > grenze) throw new Error(`Kampagne ${s.seed} (${strategy}) endet Kapitel ${s.chapter} nicht.`);
     // Rücklage plus das bald Fällige (Anleihen, Thornes Kredit) – sonst frisst der Ausbau das Geld für die Rückzahlung.
     const p: CampaignBotPolicy = { ...policy, reserve: policy.reserve + dueSoon(s) };
-    let t = dirtyTurn(botTurn(staffTurn(s, balance, p), balance, strategy, rng, catalog), balance, p);
+    let t = dirtyTurn(botTurn(researchTurn(staffTurn(s, balance, p), balance, p), balance, strategy, rng, catalog), balance, p);
     if (p.systemsChance >= 1 || rng.float() < p.systemsChance) t = botChapterSystems(t, balance, { reserve: p.reserve, perRound: p.perRound, refineryExpand: REFINERY_EXPAND[p.stance] });
     const ohneKredit = !t.feldzug?.loan;
     t = botFeldzug(t, balance, p.feldzug, p.reserve);
