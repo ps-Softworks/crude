@@ -2299,6 +2299,11 @@ insolvency:
     repay: 1.6             # Jacob schuldet ihm das 1,6-fache
     rate: 0.15             # zu 15 % pro Jahr – und einen Gefallen (Ereignis vale_rettung_gefallen)
 
+# Zweiter Anlauf (src/sim/secondChance.ts, GDD §8/§14): einmal je Spiel nach der Pleite neu als Wildcatter.
+secondChance:
+  cash: [1500, 15000, 40000]   # PLATZHALTER: Startgeld je Kapitel (Kapitel 1 weniger als der Spielstart mit 2.500 $)
+  minRounds: 8                 # bleiben weniger Runden im Kapitel, läuft es für Jacob so lange weiter
+
 rivalsK3:
   margaret:
     startAwareness: 5         # Kapitelbeginn: Crane Eastern ist in jeder Region so viel bekannter

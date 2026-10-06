@@ -5,6 +5,7 @@
 import type { BuyoutBalance } from './buyout';
 import type { SaleBalance } from './sale';
 import type { InsolvencyBalance } from './insolvency';
+import type { SecondChanceBalance } from './secondChance';
 import { parseStocksBalance, type StocksBalance } from './stocksBalance'; // 4.8 Andockpunkt
 import { parseDiplomacy, type DiplomacyBalance } from './diplomacyBalance'; // 4.10 Andockpunkt
 // 4.15 Andockpunkt: Börse und Kauf auf Kredit.
@@ -1081,6 +1082,8 @@ export interface Balance {
   sale: SaleBalance;
   /** Pleitefrist mit Auswegen (src/sim/insolvency.ts): Umschuldung und Rettung durch Mr. Vale. */
   insolvency: InsolvencyBalance;
+  /** Zweiter Anlauf nach der Pleite (src/sim/secondChance.ts). */
+  secondChance: SecondChanceBalance;
   /** 0.4.20+8: Cranes Feldzug in Kapitel 3 (src/sim/feldzug.ts). */
   feldzug: FeldzugBalance;
   /** 4.12: Systemwirkungen der Ereignisse (src/sim/eventSystems.ts). */
@@ -2772,6 +2775,10 @@ export function parseBalance(raw: unknown): Balance {
         repay: num(raw, 'insolvency.rescue.repay'),
         rate: share(raw, 'insolvency.rescue.rate'),
       },
+    },
+    secondChance: {
+      cash: list(raw, 'secondChance.cash').map((_, i) => num(raw, `secondChance.cash.${i}`)),
+      minRounds: positiveInt(raw, 'secondChance.minRounds'),
     },
     feldzug: parseFeldzugBalance(raw), // 0.4.20+8
     eventSystems: parseEventSystemsBalance(raw), // 4.12

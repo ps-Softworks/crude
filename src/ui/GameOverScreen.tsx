@@ -5,12 +5,18 @@ import { chapterRound, chapterRounds } from '../sim/timeskip';
 import { useEffect, useRef } from 'react';
 import { debt } from '../sim/credit';
 import { formatDate, type GameState } from '../sim/game';
+import { secondChanceBlocker, secondChanceCash, secondChanceEnd } from '../sim/secondChance';
+import { balance } from './balance';
+import { ConfirmButton } from './ConfirmButton';
 import { FeedbackLink } from './FeedbackLink';
 import { barrels, money } from './format';
 import { Silhouette } from './Silhouette';
 
 
-export function GameOverScreen({ game, onRestart }: { game: GameState; onRestart: () => void }) {
+export function GameOverScreen({ game, onRestart, onSecondChance }: { game: GameState; onRestart: () => void; onSecondChance?: () => void }) {
+  // Zweiter Anlauf (GDD §14): einmal je Spiel, Regeln in src/sim/secondChance.ts.
+  const anlauf = onSecondChance && secondChanceBlocker(game) === null;
+  const anlaufEnde = secondChanceEnd(game, balance);
   const schuld = debt(game);
   // Pleite im Zeitsprung (4.5): Der Sprung hat in diesem Jahr geendet, nicht in einer Kapitelrunde.
   const imSprung = game.timeskips[game.timeskips.length - 1]?.bankrupt === true;
@@ -71,11 +77,27 @@ export function GameOverScreen({ game, onRestart }: { game: GameState; onRestart
               Ein Wildcatter, der pleitegeht, ist in den Bars von Port Ellis kein Unbekannter. Mit einem neuen Versuch in einer anderen Welt
               vielleicht ein anderes Ende.
             </p>
+            {anlauf && (
+              <p className="zweiter-anlauf">
+                <strong>Zweiter Anlauf:</strong> Jacob fängt in derselben Welt noch einmal an – mit {money(secondChanceCash(game, balance))}, Silas'
+                altem Turm und ohne Schulden. Quellen, Pachten und Anlagen sind weg; Ruf, Feinde, Gefallen und Familie bleiben.
+                {anlaufEnde > game.totalRounds ? ` Das Kapitel läuft für ihn bis Runde ${anlaufEnde - (game.chapterStart ?? 1) + 1}.` : ''} Das geht nur einmal.
+              </p>
+            )}
           </div>
         </div>
       </div>
       <div className="bogen-fuss">
         <FeedbackLink className="feedback gross" />
+        {anlauf && (
+          <ConfirmButton
+            question="Noch einmal von vorn anfangen – in dieser Welt, als Wildcatter? Den zweiten Anlauf gibt es nur einmal."
+            confirmLabel="Ja, zweiter Anlauf"
+            onConfirm={onSecondChance!}
+          >
+            Zweiter Anlauf
+          </ConfirmButton>
+        )}
         <button className="primary" onClick={onRestart}>
           Neues Spiel
         </button>

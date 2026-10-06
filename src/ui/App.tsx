@@ -9,6 +9,7 @@
 // Ab 0.4.5: Zeitsprung nach Kapitel 1 – Brief an den Verwalter, Weichen-Telegramme,
 // Chronik „Die Jahre dazwischen“, dann Kapitel 2 (Platzhalter) am Schreibtisch.
 
+import { startSecondChance } from '../sim/secondChance';
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { agendaView } from '../sim/agenda';
 import { decideIpo } from '../sim/chapter';
@@ -569,7 +570,15 @@ export function App() {
             ) : brief && game.ending === 'kapitel' ? (
               <DirectivesLetter game={game} onSend={sprungStarten} onBack={() => setBrief(false)} />
             ) : game.ending === 'pleite' ? (
-              <GameOverScreen game={game} onRestart={neuesSpiel} />
+              <GameOverScreen
+                game={game}
+                onRestart={neuesSpiel}
+                onSecondChance={() => {
+                  // Zweiter Anlauf (secondChance.ts): einmal je Spiel nach der Pleite im selben Kapitel neu anfangen.
+                  const r = startSecondChance(game, balance, events);
+                  if (r.ok) setGame(r.state);
+                }}
+              />
             ) : (
               <ChapterEndScreen
                 game={game}

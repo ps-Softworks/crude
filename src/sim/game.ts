@@ -193,6 +193,8 @@ export interface GameState {
   buyouts?: Record<string, number>;
   /** Pleitefrist (insolvency.ts): Beginn und Rating vor der Krise, schon umgeschuldet. Fehlt = keine Frist (bzw. alter Stand: Rating von jetzt). */
   insolvency?: InsolvencyState;
+  /** Zweiter Anlauf nach der Pleite (secondChance.ts): erste Runde des Neuanfangs. Fehlt = noch nicht genutzt. */
+  secondChance?: { round: number };
   /** 0.4.20+8: Cranes Feldzug in Kapitel 3 (src/sim/feldzug.ts) – fehlt, bis die Marke gegründet ist. */
   feldzug?: FeldzugState;
   /** 0.4.20+18: Förderquoten (Gesetz production_quota) – true = Jacob fördert voll, „heißes Öl“ (lawEffects.ts). */
