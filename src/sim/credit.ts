@@ -82,13 +82,15 @@ export function baseCreditLimit(state: Pick<GameState, 'wells'>, balance: Balanc
  * Bankrahmen: Grundrahmen × Faktor aus dem Kreditzyklus (4.4, worldLimitFactor) –
  * im Boom mehr, in Panik und Crash weniger –, auf 100 $ gerundet. Ohne Weltmodell der Grundrahmen.
  */
-export function creditLimit(state: Pick<GameState, 'wells'> & Partial<Pick<GameState, 'worldModel'>>, balance: Balance): number {
-  const faktor = worldLimitFactor(state.worldModel, balance.worldModel);
+export function creditLimit(state: Pick<GameState, 'wells'> & Partial<Pick<GameState, 'worldModel' | 'feldzug'>>, balance: Balance): number {
+  // 0.4.20+8: In Cranes Preiskrieg sitzt Thorne im Kreditausschuss – die Bank gibt nur einen Teil des Rahmens.
+  const krieg = state.feldzug?.phase === 'krieg' ? balance.feldzug.bank.limitFactor : 1;
+  const faktor = worldLimitFactor(state.worldModel, balance.worldModel) * krieg;
   return Math.round((baseCreditLimit(state, balance) * faktor) / 100) * 100;
 }
 
 /** Wie viel die Bank noch gibt: Rahmen minus das, was er ihr schon schuldet. */
-export function headroom(state: Pick<GameState, 'loans' | 'wells'> & Partial<Pick<GameState, 'worldModel'>>, balance: Balance): number {
+export function headroom(state: Pick<GameState, 'loans' | 'wells'> & Partial<Pick<GameState, 'worldModel' | 'feldzug'>>, balance: Balance): number {
   const offen = state.loans.filter((l) => l.source === 'bank').reduce((sum, l) => sum + l.principal, 0);
   return Math.max(0, creditLimit(state, balance) - offen);
 }

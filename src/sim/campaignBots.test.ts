@@ -238,6 +238,8 @@ describe('Auswertung', () => {
     crises: { credit: 0, gluts: 0, wars: 0 },
     marginBuys: 0,
     liquidations: 0,
+    feldzug: 'keiner',
+    thorneLoans: 0,
   });
 
   it('Siegquote: höchster Endwert gewinnt, Gleichstand wird geteilt, ohne Überlebende kein Sieger', () => {
@@ -270,6 +272,8 @@ describe('Auswertung', () => {
       winRate: 0.3,
       marginBuys: 0,
       liquidations: 0,
+      feldzug: 'keiner',
+      thorneLoans: 0,
       results: [],
     });
     const leer = { credit: [1], gluts: [1], wars: [0] };

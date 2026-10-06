@@ -10,13 +10,14 @@
 
 import { CAMPAIGN_TARGET_IDS, FAMILY_TIMES, STANCES, type Balance, type CampaignBotPolicy, type CampaignTargetId, type FamilyTime, type Stance } from './balance';
 import { botTurn, playGame, type Strategy, STRATEGIES } from './bots';
-import { botChapterSystems } from './botsKapitel3';
+import { botChapterSystems, botFeldzug } from './botsKapitel3';
 import { canGoPublic, chapterResult, decideIpo, type ChapterResult } from './chapter';
 import type { ChapterSystemTexts } from './chapterSystems';
 import { chapterOf } from './chapterOf';
 import { empireValue } from './empire';
 import type { EventDef } from './events';
 import { buyStock, exchangeWarning, readClimate, sellPosition } from './exchange';
+import type { FeldzugOutcome } from './feldzug';
 import { endRound, type GameState } from './game';
 import type { Kapitel3Content } from './kapitel3Content';
 import { Rng, seedFromString } from './rng';
@@ -66,6 +67,15 @@ export interface CampaignResult {
   /** Börse (Kapitel 3): Käufe auf Kredit und Zwangsverkäufe. */
   marginBuys: number;
   liquidations: number;
+  /** 0.4.20+8 Cranes Feldzug in Kapitel 3: wie er ausging ('keiner' = nie angekündigt oder Kapitel 3 nicht erreicht, 'laufend' = die Kampagne endete mitten im Krieg), Thornes Kredit genommen. */
+  feldzug: FeldzugOutcome | 'keiner' | 'laufend';
+  thorneLoans: number;
+}
+
+function feldzugAusgang(s: GameState): CampaignResult['feldzug'] {
+  const f = s.feldzug;
+  if (!f || f.phase === 'ruhe') return 'keiner';
+  return f.outcome ?? 'laufend';
 }
 
 /** Letzte Runde von Kapitel 3: Kapitel 1 + zwei Mal (Zeitsprung + nächstes Kapitel). */
@@ -207,13 +217,16 @@ export function stocksTurn(state: GameState, balance: Balance, policy: CampaignB
 }
 
 /** Spielt ein Kapitel (2 oder 3) bis zum Ende: botTurn, Kapitelsysteme, Börse, endRound. */
-function playChapter(state: GameState, balance: Balance, strategy: Strategy, policy: CampaignBotPolicy, rng: Rng, catalog: readonly EventDef[], texts: CampaignTexts, stats: { marginBuys: number; liquidations: number }): GameState {
+function playChapter(state: GameState, balance: Balance, strategy: Strategy, policy: CampaignBotPolicy, rng: Rng, catalog: readonly EventDef[], texts: CampaignTexts, stats: { marginBuys: number; liquidations: number; thorneLoans: number }): GameState {
   let s = state;
   const grenze = s.totalRounds + 5;
   while (!s.finished) {
     if (s.round > grenze) throw new Error(`Kampagne ${s.seed} (${strategy}) endet Kapitel ${s.chapter} nicht.`);
     let t = botTurn(s, balance, strategy, rng, catalog);
     if (policy.systemsChance >= 1 || rng.float() < policy.systemsChance) t = botChapterSystems(t, balance, { reserve: policy.reserve, perRound: policy.perRound });
+    const ohneKredit = !t.feldzug?.loan;
+    t = botFeldzug(t, balance, policy.feldzug, policy.reserve);
+    if (ohneKredit && t.feldzug?.loan) stats.thorneLoans += 1;
     t = stocksTurn(t, balance, policy);
     t = bondsTurn(t, balance, policy);
     const vorher = t.exchange?.positions.length ?? 0;
@@ -234,14 +247,14 @@ export function playCampaign(seed: string, balance: Balance, strategy: Strategy,
   const rng = new Rng(seedFromString(`${seed}:kampagne:${strategy}`));
   const basis = campaignPolicy(balance, strategy, rng);
   const policy: CampaignBotPolicy = stance ? { ...basis, stance } : basis;
-  const stats = { marginBuys: 0, liquidations: 0 };
+  const stats = { marginBuys: 0, liquidations: 0, thorneLoans: 0 };
   const k1 = chapter1 ?? playGame(seed, balance, strategy, catalog).state;
   const endeRunde = campaignEndRound(balance, k1.totalRounds);
   const chapters: ChapterOutcome[] = [{ chapter: 1, result: chapterResult(k1, balance), inJump: false, value: k1.ending === 'pleite' ? 0 : empireValue(k1, balance), creditCrisis: creditCount(k1) > 0 }];
   const ende = (s: GameState, survived: boolean): CampaignResult => {
     const rest = Math.max(0, endeRunde - s.round);
     const welt = rest > 0 ? skipWorld(s.worldModel, balance.worldModel, rest, {}, balance.laws) : s.worldModel;
-    return { seed, strategy, stance: policy.stance, chapters, survived, finalValue: survived ? empireValue(s, balance) : 0, crises: crisesOf(welt), ...stats };
+    return { seed, strategy, stance: policy.stance, chapters, survived, finalValue: survived ? empireValue(s, balance) : 0, crises: crisesOf(welt), ...stats, feldzug: feldzugAusgang(s) };
   };
   if (k1.ending !== 'kapitel') return ende(k1, false);
   let s = k1;
@@ -577,7 +590,7 @@ function wert(unit: CampaignTargetRow['unit'], x: number): string {
   return unit === 'share' ? prozent(x) : zahl(x);
 }
 
-export function campaignTables(report: CampaignReport): { overview: string; chapters: string; crises: string; stances: string; fair: string } {
+export function campaignTables(report: CampaignReport): { overview: string; chapters: string; crises: string; stances: string; fair: string; feldzug: string } {
   const overview = [
     '| Strategie | Kampagnen | bis Ende Kapitel 3 | je pleite | Ø Endwert | Siegquote | Ø Käufe auf Kredit | Ø Zwangsverkäufe |',
     '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
@@ -614,7 +627,25 @@ export function campaignTables(report: CampaignReport): { overview: string; chap
     '| --- | ---: | ---: | ---: |',
     ...report.fair.map((f) => `| ${f.strategy} | ${prozent(f.survived)} | ${geld(f.meanFinal)} | ${prozent(f.winRate)} |`),
   ].join('\n');
-  return { overview, chapters: `${chapters}\n\n${crises}`, crises: krisen, stances, fair };
+  const feldzug = feldzugTable(report);
+  return { overview, chapters: `${chapters}\n\n${crises}`, crises: krisen, stances, fair, feldzug };
+}
+
+/** 0.4.20+8 Cranes Feldzug: Ausgänge je Strategie, Anteile an den Kampagnen, die Kapitel 3 begonnen haben. */
+export function feldzugTable(report: CampaignReport): string {
+  return [
+    '| Strategie | Kapitel 3 begonnen | Feldzug erlebt | durchgehalten | Absprache | Netz verloren | bis Kapitelende | mitten im Krieg ausgeschieden | Thornes Kredit genommen | davon geschluckt |',
+    '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
+    ...report.rows.map((r) => {
+      const k3 = r.results.filter((x) => x.chapters.some((c) => c.chapter === 3 && !c.inJump));
+      const n = Math.max(1, k3.length);
+      const anteil = (o: string) => prozent(k3.filter((x) => x.feldzug === o).length / n);
+      const krieg = k3.filter((x) => x.feldzug !== 'keiner');
+      const kredit = k3.filter((x) => x.thorneLoans > 0);
+      const geschluckt = kredit.filter((x) => x.chapters.some((c) => c.chapter === 3 && c.result === 'geschluckt'));
+      return `| ${r.strategy} | ${k3.length.toLocaleString('de-DE')} | ${prozent(krieg.length / n)} | ${anteil('durchgehalten')} | ${anteil('absprache')} | ${anteil('aufgegeben')} | ${anteil('kapitelende')} | ${anteil('laufend')} | ${prozent(kredit.length / n)} | ${kredit.length ? prozent(geschluckt.length / kredit.length) : '–'} |`;
+    }),
+  ].join('\n');
 }
 
 export function campaignTargetTable(targets: readonly CampaignTargetRow[]): string {
@@ -629,5 +660,7 @@ export function campaignTargetTable(targets: readonly CampaignTargetRow[]): stri
 export function policyLine(p: CampaignBotPolicy): string {
   const boerse = p.exchange ? `Börse ${prozent(p.exchange.share)} des freien Geldes mit Hebel ${p.exchange.leverage}${p.exchange.sellOnWarning ? ', verkauft bei Warnung' : ', hält trotz Warnung'}` : 'keine Börse';
   const weichen = Object.keys(p.answers).map((id) => `${id} → ${p.answers[id]}`).join(', ');
-  return `Haltung ${HALTUNG[p.stance]}, Familie „${FAMILIE[p.family]}“, Börsengang ${p.ipo > 0 ? prozent(p.ipo) : 'nein'}, Rücklage ${geld(p.reserve)}, bis ${p.perRound} Tankstellen je Runde, ${boerse}; Weichen: ${weichen}`;
+  const f = p.feldzug;
+  const feldzug = f ? `Cranes Feldzug: ${f.pact ? 'nimmt die Preisabsprache' : 'hält durch'}${f.loan ? ', nimmt Thornes Kredit' : ''}${f.sellBelow > 0 ? `, verkauft Tankstellen unter ${geld(f.sellBelow)} Kasse` : ''}` : 'Cranes Feldzug: hält einfach durch';
+  return `Haltung ${HALTUNG[p.stance]}, Familie „${FAMILIE[p.family]}“, Börsengang ${p.ipo > 0 ? prozent(p.ipo) : 'nein'}, Rücklage ${geld(p.reserve)}, bis ${p.perRound} Tankstellen je Runde, ${boerse}, ${feldzug}; Weichen: ${weichen}`;
 }

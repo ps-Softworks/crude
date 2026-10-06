@@ -23,6 +23,7 @@ const REFUSALS = [
   'running',
   'samePrice',
   'name',
+  'pact',
 ] as const satisfies readonly BrandRefusal[];
 const UI_KEYS = [
   'tabNetwork',
@@ -52,6 +53,22 @@ const UI_KEYS = [
   'noNews',
   'newsBadge',
   'deskNoBrand',
+  // 0.4.20+8: Cranes Feldzug (src/sim/feldzug.ts), Reiter Crane.
+  'feldzugThreat',
+  'feldzugWar',
+  'feldzugBank',
+  'feldzugHeld',
+  'feldzugPact',
+  'feldzugLost',
+  'feldzugChapterEnd',
+  'feldzugPactButton',
+  'feldzugOffer',
+  'feldzugLoanButton',
+  'feldzugLoan',
+  'feldzugRepay',
+  'chestVoll',
+  'chestHalb',
+  'chestKnapp',
 ] as const;
 export type BrandUiKey = (typeof UI_KEYS)[number];
 

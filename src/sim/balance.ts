@@ -31,6 +31,7 @@ import { parseLettersBalance, type LettersBalance } from './lettersBalance';
 // 4.17 Andockpunkt: Kapitel 3 (Seismik, Konsortium, Projekte, Stand) prüft seinen Block selbst.
 import { parseKapitel3Balance, type Kapitel3Balance } from './kapitel3Balance';
 import { parseRivalsK3Balance, type RivalsK3Balance } from './rivalsK3';
+import { parseFeldzugBalance, type FeldzugBalance } from './feldzug';
 import { parseEventSystemsBalance, type EventSystemsBalance } from './eventSystems'; // 4.12
 
 export type GeologyType = 'dry' | 'small' | 'gusher';
@@ -556,6 +557,12 @@ export interface CampaignBotPolicy {
    * oder die Kontrolle unter controlBelow fällt – höchstens buyback der Aktien je Runde; null = wehrt sich nicht.
    */
   defend: { thorneFrom: number; controlBelow: number; buyback: number } | null;
+  /**
+   * Cranes Feldzug (Kapitel 3, 0.4.20+8): pact = nimmt Margarets Preisliste, loan = nimmt Thornes Geld, sobald die
+   * Kasse unter die Rücklage fällt, sellBelow = verkauft im Krieg Tankstellen (schlechteste Region zuerst), solange die
+   * Kasse darunter liegt. Fehlt/null: hält einfach durch.
+   */
+  feldzug?: { pact: boolean; loan: boolean; sellBelow: number } | null;
 }
 
 /** Bewertung einer Ereignis-Antwort durch einen Bot (2.15). */
@@ -983,6 +990,8 @@ export interface Balance {
   kapitel3: Kapitel3Balance;
   /** Rivalen in Kapitel 3 (4.19). */
   rivalsK3: RivalsK3Balance;
+  /** 0.4.20+8: Cranes Feldzug in Kapitel 3 (src/sim/feldzug.ts). */
+  feldzug: FeldzugBalance;
   /** 4.12: Systemwirkungen der Ereignisse (src/sim/eventSystems.ts). */
   eventSystems: EventSystemsBalance;
 }
@@ -1890,7 +1899,19 @@ function parseCampaignPolicy(raw: unknown, name: string): CampaignBotPolicy {
     exchange,
     bonds: path(raw, `${p}.bonds`) === undefined || path(raw, `${p}.bonds`) === null ? null : { load: share(raw, `${p}.bonds.load`) },
     defend,
+    feldzug: parseFeldzugPolicy(raw, `${p}.feldzug`),
   };
+}
+
+function parseFeldzugPolicy(raw: unknown, p: string): CampaignBotPolicy['feldzug'] {
+  const f = path(raw, p);
+  if (f === null || f === undefined) return null;
+  const flag = (k: string) => {
+    const v = path(raw, `${p}.${k}`);
+    if (typeof v !== 'boolean') throw new BalanceError(`balance.yaml: "${p}.${k}" muss true oder false sein`);
+    return v;
+  };
+  return { pact: flag('pact'), loan: flag('loan'), sellBelow: nonNegative(raw, `${p}.sellBelow`) };
 }
 
 function choice<T extends string>(obj: unknown, path: string, allowed: readonly T[]): T {
@@ -2513,6 +2534,7 @@ export function parseBalance(raw: unknown): Balance {
     exchange: parseExchangeBalance(raw),
     kapitel3: parseKapitel3Balance(raw), // 4.17 Andockpunkt
     rivalsK3: parseRivalsK3Balance(raw), // 4.19 Andockpunkt
+    feldzug: parseFeldzugBalance(raw), // 0.4.20+8
     eventSystems: parseEventSystemsBalance(raw), // 4.12
   };
 

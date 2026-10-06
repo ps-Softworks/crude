@@ -27,6 +27,7 @@ import {
   regionPresent,
 } from '../../sim/brand';
 import { brandNewsText, brandText, campaignName, regionName } from '../../sim/brandContent';
+import { chestWord, feldzugAbsprache, feldzugKredit, feldzugTilgen, thorneOffer, type FeldzugResult } from '../../sim/feldzug';
 import type { GameState } from '../../sim/game';
 import { localize } from '../../sim/i18n';
 import { balance } from '../balance';
@@ -261,12 +262,71 @@ function Werbung({ ctx }: { ctx: SheetContext }) {
   );
 }
 
+const FELDZUG_ENDE = {
+  durchgehalten: 'feldzugHeld',
+  absprache: 'feldzugPact',
+  aufgegeben: 'feldzugLost',
+  kapitelende: 'feldzugChapterEnd',
+} as const;
+const KASSE = { voll: 'chestVoll', halb: 'chestHalb', knapp: 'chestKnapp' } as const;
+
+/** Ein Knopf für eine Aktion des Feldzugs: gesperrt mit Begründung, wenn sie nicht geht. */
+function FeldzugAktion({ result, onDone, children }: { result: FeldzugResult; onDone: (s: GameState) => void; children: string }) {
+  return (
+    <button type="button" disabled={!result.ok} title={result.ok ? undefined : localize(C.refusals.cash)} onClick={() => result.ok && onDone(result.state)}>
+      {children}
+    </button>
+  );
+}
+
+/** Cranes Feldzug (0.4.20+8): Stand, Kriegskasse als Wort, Absprache und Thornes Kredit. Regeln in src/sim/feldzug.ts. */
+function Feldzug({ ctx }: { ctx: SheetContext }) {
+  const game = ctx.game;
+  const f = game.feldzug;
+  if (!f || f.phase === 'ruhe') return null;
+  const offer = f.phase === 'krieg' && f.loanOffered && !f.loan ? thorneOffer(game, balance) : null;
+  return (
+    <div className="marke-feldzug">
+      {f.phase === 'drohung' && <p className="marke-krieg">{t('feldzugThreat')}</p>}
+      {f.phase === 'krieg' && (
+        <>
+          <p className="marke-krieg">{t('feldzugWar', { kasse: t(KASSE[chestWord(f)]) })}</p>
+          <p>{t('feldzugBank')}</p>
+        </>
+      )}
+      {f.phase === 'vorbei' && f.outcome && <p>{t(FELDZUG_ENDE[f.outcome])}</p>}
+      {(f.phase === 'drohung' || f.phase === 'krieg') && (
+        <FeldzugAktion result={feldzugAbsprache(game, balance)} onDone={ctx.onGame}>
+          {t('feldzugPactButton')}
+        </FeldzugAktion>
+      )}
+      {offer && (
+        <>
+          <p>{t('feldzugOffer', { betrag: money(offer.amount), zurueck: money(offer.owed), runde: game.round - game.chapterStart + 1 + balance.feldzug.thorne.rounds })}</p>
+          <FeldzugAktion result={feldzugKredit(game, balance)} onDone={ctx.onGame}>
+            {t('feldzugLoanButton')}
+          </FeldzugAktion>
+        </>
+      )}
+      {f.loan && (
+        <>
+          <p className="marke-krieg">{t('feldzugLoan', { zurueck: money(f.loan.owed), runde: f.loan.due - game.chapterStart + 1 })}</p>
+          <FeldzugAktion result={feldzugTilgen(game)} onDone={ctx.onGame}>
+            {t('feldzugRepay', { zurueck: money(f.loan.owed) })}
+          </FeldzugAktion>
+        </>
+      )}
+    </div>
+  );
+}
+
 function Crane({ ctx }: { ctx: SheetContext }) {
   const world = brandWorldFrom(ctx.game);
   const brand = brandOf(ctx.game, balance);
   return (
     <>
       <p className="marke-brieftext">{t('craneIntro')}</p>
+      <Feldzug ctx={ctx} />
       <p>{t('national', { anteil: percent(nationalShare(brand).crane) })}</p>
       <ul className="pinnwand-liste">
         {balance.brand.regions

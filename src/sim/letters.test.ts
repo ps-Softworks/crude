@@ -309,7 +309,7 @@ describe('Plan-Merkzeichen am Rundenende (src/sim/letters.ts)', () => {
 
 describe('Spielstand (Etappe 3)', () => {
   it('Format 22: die Abgesprungenen überstehen Sichern und Laden; ältere Stände laden ohne sie', () => {
-    expect(SAVE_FORMAT).toBe(22);
+    expect(SAVE_FORMAT).toBe(23);
     const s = spiel('speichern');
     const mit = { ...s, freight: { ...s.freight!, poolLeft: ['Pickett'] } };
     const geladen = deserializeGame(serializeGame(mit, '0.4.5+1'));

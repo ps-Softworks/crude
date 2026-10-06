@@ -239,9 +239,11 @@ export interface BrandWorld {
   motorization: number;
   /** Benzin aus eigener Raffinerie in bbl je Runde (4.13). null = kein Raffinerie-Modul: Benzin reicht immer. */
   ownGasoline: number | null;
+  /** 0.4.20+8: Cranes Feldzug – Faktor auf Jacobs Marge in Regionen mit seinen Tankstellen (state.feldzug.dumping). Ersatz: 1. */
+  dumping: number;
 }
 
-export const DEFAULT_BRAND_WORLD: BrandWorld = { chapter: 1, reputation: 0, crash: false, motorization: 1, ownGasoline: null };
+export const DEFAULT_BRAND_WORLD: BrandWorld = { chapter: 1, reputation: 0, crash: false, motorization: 1, ownGasoline: null, dumping: 1 };
 
 /** Felder, die andere Systeme später in den Spielzustand legen. Alles optional. */
 interface FremdeFelder {
@@ -249,6 +251,8 @@ interface FremdeFelder {
   /** Weltmodell aus 4.1 (auf main: GameState.worldModel: WorldState). */
   worldModel?: { crash?: unknown } | null;
   reputation?: { public?: unknown } | null;
+  /** 0.4.20+8: Cranes Feldzug (src/sim/feldzug.ts). */
+  feldzug?: { phase?: unknown; dumping?: unknown; pact?: unknown } | null;
 }
 
 function endlich(v: unknown): v is number {
@@ -266,7 +270,8 @@ export function brandWorldFrom(state: object, overrides: Partial<BrandWorld> = {
   const chapter = Math.max(chapterOf(state), vorab);
   const crash = s.worldModel && endlich(s.worldModel.crash) ? s.worldModel.crash > 0 : DEFAULT_BRAND_WORLD.crash;
   const reputation = s.reputation && endlich(s.reputation.public) ? Math.max(-100, Math.min(100, s.reputation.public)) : DEFAULT_BRAND_WORLD.reputation;
-  return { ...DEFAULT_BRAND_WORLD, chapter, crash, reputation, ...overrides };
+  const dumping = s.feldzug && s.feldzug.phase === 'krieg' && endlich(s.feldzug.dumping) ? s.feldzug.dumping : 1;
+  return { ...DEFAULT_BRAND_WORLD, chapter, crash, reputation, dumping, ...overrides };
 }
 
 /** Ist das System in diesem Kapitel freigeschaltet? */
@@ -458,7 +463,8 @@ export function regionMarket(brand: BrandState, balance: WithBrand, regionId: st
   const sales = Math.min(demand * share, rs.stations * b.station.capacity);
   const craneSales = Math.min(demand * craneShare, rs.crane.stations * b.station.capacity);
   const priceWar = brand.founded && rs.stations > 0 && rs.price === 'billig' && rs.crane.price === 'billig';
-  const margin = b.prices[rs.price].margin * (priceWar ? b.priceWar.marginFactor : 1);
+  // 0.4.20+8: In Cranes Feldzug drückt ihr Dumping Jacobs Marge überall, wo er Tankstellen hat.
+  const margin = b.prices[rs.price].margin * (priceWar ? b.priceWar.marginFactor : 1) * (rs.stations > 0 ? world.dumping : 1);
   const profit = cents(sales * margin - rs.stations * b.station.upkeep);
   return { demand, sales, craneSales, share, craneShare, profit, priceWar, attract: { jacob, crane, independents }, margin };
 }
@@ -479,7 +485,8 @@ export type BrandRefusal =
   | 'campaign'
   | 'running'
   | 'samePrice'
-  | 'name';
+  | 'name'
+  | 'pact';
 
 export type BrandResult<S> = { ok: true; state: S } | { ok: false; reason: BrandRefusal };
 
@@ -516,6 +523,8 @@ export function buildStations<S extends BrandGame>(state: S, balance: WithBrand,
   const brand = brandOf(state, balance);
   if (!brand.founded) return { ok: false, reason: 'notFounded' };
   if (!brandRegionOpen(world, balance, regionId)) return { ok: false, reason: 'region' };
+  // 0.4.20+8: Nach der Preisabsprache mit Crane baut Harlan bis Kapitelende nicht weiter.
+  if ((state as FremdeFelder).feldzug?.pact === true) return { ok: false, reason: 'pact' };
   const st = balance.brand.station;
   if (!Number.isInteger(count) || count < 1 || count > st.buildMax) return { ok: false, reason: 'count' };
   const r = brand.regions[regionId];

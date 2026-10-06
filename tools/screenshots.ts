@@ -30,7 +30,8 @@ import { Rng, seedFromString } from '../src/sim/rng';
 import { serializeGame } from '../src/sim/save';
 // Phase 4: dieselben Freischaltungen wie die Debug-Knöpfe im Menü.
 import { unlockBigPipelines } from '../src/sim/bigPipeline';
-import { previewBrand } from '../src/sim/brand';
+import { brandOf, previewBrand } from '../src/sim/brand';
+import { newFeldzug } from '../src/sim/feldzug';
 import { startDiplomacy } from '../src/sim/diplomacy';
 import { openExchange } from '../src/sim/exchange';
 import { debugUnlockHallstead } from '../src/sim/hallsteadState';
@@ -156,6 +157,13 @@ const p4basis = suche((s) => s.round === 6 && s.wells.length > 0 && !s.finished,
 const kap2 = weiter(kapitel2Systeme(p4basis));
 const kap3 = weiter(kapitel3Systeme(p4basis));
 if (kap2.finished || kap3.finished) throw new Error('Phase-4-Spielstand ist vorzeitig zu Ende.');
+// 0.4.20+8: Cranes Feldzug – Preiskrieg in zwei Regionen, Cranes Kasse halb leer, Pettibone hat Thornes Geld angeboten.
+const imFeldzug: GameState = (() => {
+  const b = brandOf(kap3, balance);
+  const krieg = (id: string, n: number) => ({ ...b.regions[id], stations: n, crane: { ...b.regions[id].crane, price: 'billig' as const, warRounds: 2 } });
+  const brand = { ...b, founded: true, nameId: 'harlan', regions: { ...b.regions, cordova: krieg('cordova', 8), okara: krieg('okara', 5) } };
+  return { ...kap3, cash: 12_000, brand, feldzug: { ...newFeldzug(kap3.seed), phase: 'krieg', since: kap3.round, chest: 3, chestStart: 6, dumping: balance.feldzug.war.margin, loanOffered: true } };
+})();
 const KLICK = (sel: string) => `(() => { const el = document.querySelector(${JSON.stringify(sel)}); el?.dispatchEvent(new MouseEvent('click', { bubbles: true })); return !!el; })()`;
 /** Fenster der Phase-4-Systeme, je mit dem Klick, der es öffnet. */
 const P4_FENSTER: [string, string[], string][] = [
@@ -252,6 +260,7 @@ const bilder: Bild[] = [
   // 0.4.20+2: Rundgang Kapitel 2 (zweiter Schritt: Kassenbuch) – kommt von selbst und blättert nur mit „Weiter“.
   { name: '40-kapitel2-rundgang', state: kapitel2, prefs: { 'crude.rundgang.k2': 'nein' }, tasten: ['Enter'], warte: 3400 },
   // 0.4.20+3: Rundgang Kapitel 3 (dritter Schritt: Vertrieb).
+  { name: '42-feldzug', state: imFeldzug, dann: `${KLICK('.objekt-marke')}; setTimeout(() => ${REITER('Crane')}, 400)`, warte: 1000 },
   { name: '41-kapitel3-rundgang', state: { ...kap3, chapter: 3 }, prefs: { 'crude.rundgang.k3': 'nein' }, tasten: ['Enter', 'Enter'], warte: 3400 },
 ];
 
