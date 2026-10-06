@@ -1,13 +1,14 @@
 // Kopfleiste (0.2.15+9): eine Messingleiste über Schreibtisch und Karte – Titel,
 // Datum, Kasse, Schulden, Tank, Termine und Jacobs Zustand in einem Wort. Bleibt
-// auch auf der Karte stehen, damit man beim Bauen das Geld sieht.
+// auch auf der Karte stehen, damit man beim Bauen das Geld sieht. Logo und Version
+// sitzen klein in der Ecke unten links, damit die Leiste Platz hat.
 
 import { agendaView } from '../../sim/agenda';
 import { debt, headroom } from '../../sim/credit';
 import { formatDate, type GameState } from '../../sim/game';
 import { balance } from '../balance';
 import { FeedbackLink } from '../FeedbackLink';
-import { barrels, money } from '../format';
+import { money } from '../format';
 import { Bohrturm } from '../Silhouette';
 import { chapterRound, chapterRounds, chapterUnderConstruction, fillTimeskipText } from '../../sim/timeskip';
 import { timeskipContent } from '../timeskip';
@@ -56,16 +57,19 @@ export function TopBar({
   // Bankrott droht: die Banderole braucht Platz – Nebensachen fallen weg, das Menü bleibt (0.2.15+12).
   const banderole = game.bankruptcyDeadline > 0 && !game.finished && !game.ending;
   return (
+    <>
+    <div className="ecke-marke" aria-hidden="true">
+      <Bohrturm size={14} />
+      CRUDE <span className="version">v{__APP_VERSION__}</span>
+    </div>
     <div className="kopfleiste">
-      <span className="kopf-titel">
-        <Bohrturm size={22} />
-        CRUDE <span className="version">v{__APP_VERSION__}</span>
-        {chapterUnderConstruction(game) && (
+      {chapterUnderConstruction(game) && (
+        <span className="kopf-titel">
           <span className="kapitel-im-bau" title={fillTimeskipText(timeskipContent.preview.text, {})}>
             {fillTimeskipText(timeskipContent.preview.badge, {})}
           </span>
-        )}
-      </span>
+        </span>
+      )}
       <span>
         {formatDate(game)} · Runde {chapterRound(game)}/{chapterRounds(game)}
       </span>
@@ -76,7 +80,6 @@ export function TopBar({
         Schulden {money(debt(game))}
         {!banderole && <span className="klein"> (frei {money(headroom(game, balance))})</span>}
       </span>
-      <span>Tank {barrels(game.oilStock)} bbl</span>
       <Termine game={game} debug={debug} kurz={banderole} />
       {banderole && (
         <button type="button" className="banderole" onClick={onLedger} title={`Bankrott droht – die Frist läuft bis Runde ${game.bankruptcyDeadline}. Klick öffnet das Kassenbuch.`}>
@@ -95,5 +98,6 @@ export function TopBar({
         </button>
       </span>
     </div>
+    </>
   );
 }
