@@ -287,6 +287,7 @@ export interface ChapterContent {
     sell: LocalizedText;
     keep: LocalizedText;
     consequence: LocalizedText;
+    consequenceHint: LocalizedText;
     thorneOpen: LocalizedText;
     thorneClosed: LocalizedText;
     keepConsequence: LocalizedText;
@@ -394,6 +395,7 @@ export function parseChapterContent(file: string, text: string): { content: Chap
     sell: sprachtext(i.sell, 'ipo.sell'),
     keep: sprachtext(i.keep, 'ipo.keep'),
     consequence: sprachtext(i.consequence, 'ipo.consequence'),
+    consequenceHint: sprachtext(i.consequenceHint, 'ipo.consequenceHint'),
     thorneOpen: sprachtext(i.thorneOpen, 'ipo.thorneOpen'),
     thorneClosed: sprachtext(i.thorneClosed, 'ipo.thorneClosed'),
     keepConsequence: sprachtext(i.keepConsequence, 'ipo.keepConsequence'),

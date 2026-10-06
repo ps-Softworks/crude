@@ -11,7 +11,7 @@
 // 4.19: Kapitel 3 „Der Konzernherr“ – Prüfung (Marke in Regionen oder Marktanteil, Rating), „Was aus ihnen
 // wurde“ (Daniel, Thomas, Ruth, Mr. Vale) und das Ende des Early-Access-Umfangs („Kapitel 4 folgt“).
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { arcSummaries } from '../sim/arcs';
 import { canGoPublic, chapter2Check, chapter3Check, chapterBonuses, chapterCheck, chapterResult, fillText, ipoConsequenceText, ipoProceeds, type Chapter2EndingId } from '../sim/chapter';
 import { chapterOf } from '../sim/chapterOf';
@@ -86,6 +86,7 @@ export function ChapterEndScreen({
   const pruefung = chapterCheck(game, balance);
   const boni = chapterBonuses(game, chapterContent, arcContent);
   const { goals, bonus, ipo } = chapterContent;
+  const [ipoBlick, setIpoBlick] = useState<number | null>(null);
   return (
     <section ref={ref} className={`gameover kapitelende bogen ${ergebnis ?? ''}`} aria-labelledby="bogen-titel">
       <div className="bogen-inhalt">
@@ -195,20 +196,19 @@ export function ChapterEndScreen({
                 <h3>{fillText(ipo.title, {})}</h3>
                 {game.ipo === null && canGoPublic(game, balance) ? (
                   <>
-                    <p>{fillText(ipo.text, {})}</p>
+                    {/* Die Folgen der Wahl unter Maus/Fokus ersetzen den Einleitungstext – alle vier untereinander sprengten den Bildschirm. */}
+                    <p className={ipoBlick === null ? 'ipo-text' : 'ipo-text klein'} aria-live="polite">
+                      {ipoBlick === null ? `${fillText(ipo.text, {})} ${fillText(ipo.consequenceHint, {})}` : ipoConsequenceText(game, balance, ipo, ipoBlick)}
+                    </p>
                     <div className="knoepfe">
                       {balance.chapter.ipo.shares.map((share) => (
-                        <div key={share}>
-                          <button onClick={() => onIpo(share)}>
-                            {fillText(ipo.sell, { anteil: prozent(share), preis: money(ipoProceeds(game, balance, share)) })}
-                          </button>
-                          <p className="klein">{ipoConsequenceText(game, balance, ipo, share)}</p>
-                        </div>
+                        <button key={share} onClick={() => onIpo(share)} onMouseEnter={() => setIpoBlick(share)} onFocus={() => setIpoBlick(share)}>
+                          {fillText(ipo.sell, { anteil: prozent(share), preis: money(ipoProceeds(game, balance, share)) })}
+                        </button>
                       ))}
-                      <div>
-                        <button onClick={() => onIpo(0)}>{fillText(ipo.keep, {})}</button>
-                        <p className="klein">{ipoConsequenceText(game, balance, ipo, 0)}</p>
-                      </div>
+                      <button onClick={() => onIpo(0)} onMouseEnter={() => setIpoBlick(0)} onFocus={() => setIpoBlick(0)}>
+                        {fillText(ipo.keep, {})}
+                      </button>
                     </div>
                   </>
                 ) : game.ipo !== null && game.ipo.share > 0 ? (

@@ -249,8 +249,7 @@ details summary { cursor: pointer; color: var(--tinte-weich); }
 .hint { margin: 6px 0 0; font-size: 0.95rem; color: var(--rot); font-style: italic; }
 .kapitelende { margin-bottom: 8px; }
 .knoepfe { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 12px; }
-.ipo .knoepfe > div { flex: 1 1 100%; }
-.ipo .knoepfe .klein { margin: 4px 0 0; }
+.ipo .ipo-text { min-height: 6.6em; }
 a.feedback { color: var(--tinte); }
 a.feedback.kopf { font-size: 13px; font-weight: normal; letter-spacing: normal; color: var(--tinte-blass); }
 a.feedback.gross { font-size: 1.05rem; }

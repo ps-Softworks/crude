@@ -79,6 +79,7 @@ ipo:
       the next chapter – but every share sold is a vote that no longer belongs to Jacob.
   sell: { de: "{anteil} verkaufen – {preis}", en: "Sell {anteil} – {preis}" }
   keep: { de: "Familienfirma bleiben", en: "Stay a family firm" }
+  consequenceHint: { de: "Zeig auf eine Wahl, um zu sehen, was sie bedeutet.", en: "Point at a choice to see what it means." }
   # Folgen je Wahl, gerechnet aus balance.yaml (stocks.*, chapter.ipo). Platzhalter: {preis} {anteil} {eigen}
   # {sitze} {frist} {gnade} {schwelle} {kontrolle} {thorne} (= thorneOpen/thorneClosed).
   consequence:
