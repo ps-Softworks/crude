@@ -319,14 +319,46 @@
 .foto-bitter > svg, .foto-estranged > svg { filter: grayscale(0.6); }
 .objekt-familie .objekt-status { white-space: nowrap; text-align: center; max-width: none; overflow: visible; }
 
-/* Lampe – nur Stimmung. Erschöpft: dunkler, krank: aus. */
+/* Wandlampe (Kapitel 1/2) – nur Stimmung. Hängt an der Wand und wirft einen warmen Schein auf die Tapete
+   (::before liegt hinter allen Gegenständen, aber vor der Wand). Erschöpft: dunkler, krank: aus. */
 .lampe { position: absolute; pointer-events: none; }
-.lampe svg { width: 100%; height: 100%; }
-.lampe-schein { fill: var(--ocker-hell); opacity: 0.55; }
-.lampe-glas { fill: rgba(248, 241, 223, 0.55); stroke: var(--tinte-blass); stroke-width: 1; }
-.lampe-flamme { fill: var(--ocker); }
-.schreibtisch.erschoepft .lampe-schein { opacity: 0.2; }
-.schreibtisch.krank .lampe-schein, .schreibtisch.krank .lampe-flamme { opacity: 0; }
+.lampe::before {
+  content: ''; position: absolute; z-index: -1; pointer-events: none;
+  left: -80%; right: -80%; top: -10%; bottom: 4%;
+  background: radial-gradient(ellipse 50% 50% at 50% 37%, rgba(255, 210, 120, 0.6), rgba(245, 196, 110, 0.28) 40%, rgba(236, 190, 110, 0) 100%);
+  transition: opacity 0.6s;
+}
+.lampe svg { width: 100%; height: 100%; filter: drop-shadow(2px 4px 3px rgba(40, 22, 6, 0.35)); }
+.lampe-reflektor { fill: url(#lampe-reflektor-verlauf); stroke: #6e5320; stroke-width: 1; }
+.lampe-stop-mitte { stop-color: #fff1c8; }
+.lampe-stop-hell { stop-color: var(--messing); }
+.lampe-stop-rand { stop-color: var(--messing-dunkel); }
+.lampe-reflektor-ring { fill: none; stroke: rgba(110, 83, 32, 0.45); stroke-width: 0.8; }
+.lampe-eisen { fill: var(--tinte); }
+.lampe-platte-rand { fill: var(--messing); stroke: var(--messing-dunkel); stroke-width: 0.8; }
+.lampe-arm { fill: none; stroke: var(--tinte); stroke-width: 2.4; stroke-linecap: round; }
+.lampe-behaelter { fill: rgba(248, 241, 223, 0.6); stroke: var(--tinte-blass); stroke-width: 0.9; }
+.lampe-oel { fill: var(--ocker); opacity: 0.7; }
+.lampe-glas { fill: rgba(255, 248, 228, 0.5); stroke: var(--tinte-blass); stroke-width: 0.9; }
+.lampe-glas-rand { fill: var(--tinte-blass); }
+.lampe-glanz { stroke-width: 1.4; }
+.lampe-schein { fill: var(--ocker-hell); opacity: 0.75; }
+.lampe-flamme { fill: var(--ocker); transform-box: fill-box; transform-origin: 50% 100%; animation: lampe-flackern 3.2s ease-in-out infinite; }
+.lampe-flamme-kern { fill: #fff3d0; transform-box: fill-box; transform-origin: 50% 100%; animation: lampe-flackern 3.2s ease-in-out infinite; }
+@keyframes lampe-flackern {
+  0%, 100% { transform: scale(1, 1); }
+  30% { transform: scale(0.97, 1.04); }
+  55% { transform: scale(1.02, 0.97); }
+  80% { transform: scale(0.99, 1.02); }
+}
+.schreibtisch.erschoepft .lampe-schein { opacity: 0.25; }
+.schreibtisch.erschoepft .lampe::before { opacity: 0.35; }
+.schreibtisch.krank .lampe-schein, .schreibtisch.krank .lampe-flamme, .schreibtisch.krank .lampe-flamme-kern, .schreibtisch.krank .lampe::before { opacity: 0; }
+.schreibtisch.krank .lampe-stop-mitte { stop-color: var(--messing); }
+@media (prefers-reduced-motion: reduce) {
+  .lampe-flamme, .lampe-flamme-kern { animation: none; }
+  .lampe::before { transition: none; }
+}
 
 /* 0.4.20+10: Kapitel 3 – Mahagoni-Tisch mit Radio, Kurstafel an der Wand und Ablage für die Mappen.
    Nur Aussehen; der Platzplan steht in deskLayout.ts. */

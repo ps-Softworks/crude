@@ -30,8 +30,8 @@ export const DESK_BASE = ['karte', 'konkurrenz', 'termine', 'familie', 'tuer', '
 const AT: Record<DeskSpot, Placement> = {
   karte: { left: 2, top: 4, width: 22, height: 34 },
   konkurrenz: { left: 26, top: 6, width: 15, height: 28 },
-  // 0.4.20+14: Die Petroleumlampe steht hinten auf dem Tisch und ragt vor die Wand (Tiefe).
-  lampe: { left: 45.5, top: 30, width: 6, height: 17 },
+  // Die Petroleumlampe hängt als Wandlampe zwischen Pinnwand (bis 41 %) und Blaupause (ab 51,5 %), ganz über dem Tisch.
+  lampe: { left: 42.5, top: 5, width: 8, height: 32 },
   termine: { left: 58, top: 4, width: 10, height: 30 },
   familie: { left: 70.5, top: 6, width: 13, height: 28 },
   // 0.4.20+14: Die Tür reicht bis zum Boden (TISCH.boden); ihr unterer Teil steht hinter dem Tisch.
