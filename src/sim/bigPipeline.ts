@@ -68,22 +68,25 @@ function zahlOder(v: unknown, ersatz: number): number {
 /**
  * Liest die Weltgrößen aus dem Zustand, soweit es sie schon gibt. Stimmung: das
  * gemeinsame Weltmodell state.worldModel.mood (WorldState aus world.ts, 4.1/4.2).
- * Kapitel (4.5): state.chapter. Politischer Einfluss und Transportpflicht (4.3) sind
- * noch Entwurfsnamen (4.2 kennt keinen Einfluss-Wert). Fehlt etwas, gilt der
- * Ersatzwert. 4.x Integration: hier die echten Felder eintragen.
+ * Kapitel (4.5): state.chapter. Fehlt etwas, gilt der Ersatzwert.
+ * 0.4.20+9: Politischer Einfluss = Hallstead-Gefallen (4.16, state.hallstead.lobby.favors)
+ * × rights.influencePerFavor, höchstens 100 (ohne balance: 0).
+ * Transportpflicht: Der Gesetzeskatalog (content/laws, 4.3) kennt noch kein
+ * Transportpflicht-Gesetz – darum immer false. Kommt eines, LAW_RULES (laws.ts) um eine
+ * Regel erweitern und hier über lawRules aus state.worldModel.laws lesen.
  */
-export function pipelineWorldOf(state: object): PipelineWorld {
+export function pipelineWorldOf(state: object, balance?: Pick<Balance, 'bigPipelines'>): PipelineWorld {
   const s = state as {
     chapter?: unknown;
     worldModel?: { mood?: unknown };
-    politics?: { influence?: unknown };
-    laws?: { commonCarrier?: unknown };
+    hallstead?: { lobby?: { favors?: unknown } };
   };
+  const gefallen = zahlOder(s.hallstead?.lobby?.favors, 0);
   return {
     chapter: zahlOder(s.chapter, DEFAULT_PIPELINE_WORLD.chapter),
     mood: zahlOder(s.worldModel?.mood, DEFAULT_PIPELINE_WORLD.mood),
-    influence: zahlOder(s.politics?.influence, DEFAULT_PIPELINE_WORLD.influence),
-    commonCarrier: s.laws?.commonCarrier === true,
+    influence: balance ? Math.min(100, Math.max(0, gefallen * balance.bigPipelines.rights.influencePerFavor)) : DEFAULT_PIPELINE_WORLD.influence,
+    commonCarrier: DEFAULT_PIPELINE_WORLD.commonCarrier,
   };
 }
 
@@ -312,7 +315,7 @@ export function bigPipelinesUnlocked(state: Partial<Pick<GameState, 'bigPipeline
  */
 export function unlockBigPipelines(state: GameState, balance: Balance, opts: { force?: boolean; world?: PipelineWorld } = {}): GameState {
   if (state.bigPipelines) return state;
-  const world = opts.world ?? pipelineWorldOf(state);
+  const world = opts.world ?? pipelineWorldOf(state, balance);
   if (!opts.force && world.chapter < balance.bigPipelines.fromChapter) return state;
   return {
     ...state,
@@ -619,7 +622,7 @@ export function detourRight(state: GameState, balance: Balance, projectId: strin
 }
 
 /** Enteignung (GDD §6): nur mit politischem Einfluss; Entschädigung ein Anteil des fairen Preises. */
-export function expropriateRight(state: GameState, balance: Balance, projectId: string, rightId: string, world: PipelineWorld = pipelineWorldOf(state)): PipelineResult {
+export function expropriateRight(state: GameState, balance: Balance, projectId: string, rightId: string, world: PipelineWorld = pipelineWorldOf(state, balance)): PipelineResult {
   const nein = guardState(state);
   if (nein) return { ok: false, reason: nein };
   const r = balance.bigPipelines.rights;
@@ -857,7 +860,7 @@ export interface AdvanceOptions {
  * Ohne Freischaltung kommt der Zustand unverändert zurück.
  */
 export function advanceBigPipelines(input: GameState, balance: Balance, opts: AdvanceOptions = {}): GameState {
-  const world = opts.world ?? pipelineWorldOf(input);
+  const world = opts.world ?? pipelineWorldOf(input, balance);
   let state = unlockBigPipelines(input, balance, { world });
   if (!state.bigPipelines || state.finished) return state;
   const b = balance.bigPipelines;

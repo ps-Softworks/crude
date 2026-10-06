@@ -193,7 +193,7 @@ function Planer({ game, onChange }: { game: GameState; onChange: (s: GameState) 
 
 /** Eine Zeile der Wegerechte mit den Aktionen, die gerade gehen. */
 function Recht({ game, project, right, onChange }: { game: GameState; project: TrunkProject; right: WayRight; onChange: (s: GameState) => void }) {
-  const welt = pipelineWorldOf(game);
+  const welt = pipelineWorldOf(game, balance);
   const verhandeln = project.status === 'rights' && (right.status === 'open' || right.status === 'refused') && right.kind !== 'rail';
   const quer = project.status === 'rights' && right.status === 'holdout';
   return (

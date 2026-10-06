@@ -13,6 +13,7 @@ import { Rng, seedFromString, type RngState } from './rng';
 import { markRound, RIVAL_MARKS } from './trust';
 // Etappe 2: Nach dem Gerücht „Riesenfund bei Bullard“ wartet Bullard mit neuen Pachten ab.
 import { bullardShy } from './pricing';
+import { hasPact } from './diplomacyPacts';
 
 /** Eine Bohrung von Bullard. Vereinfacht: ein Bohrgang, Ergebnis = Geologie. */
 export interface RivalWell {
@@ -66,6 +67,11 @@ function jacobLand(state: GameState): Parcel[] {
     ...state.wells.map((w) => w.parcelId),
   ]);
   return state.parcels.filter((p) => ids.has(p.id));
+}
+
+/** 0.4.20+9: Läuft gerade eine Gebietsabsprache mit Bullard (Diplomatie 4.10)? */
+export function territoryPact(state: Pick<GameState, 'diplomacy' | 'round'>): boolean {
+  return state.diplomacy !== undefined && hasPact(state.diplomacy, 'bullard', 'territory', state.round);
 }
 
 /**
@@ -164,6 +170,7 @@ export function rivalWellIncome(well: RivalWell, balance: Balance, price: number
 /**
  * Parzellen, die Bullard pachten könnte: frei, nicht Salt Hill, nicht schon einmal
  * von ihm gebohrt. Mit Handschlag (2.8) nichts direkt neben Jacobs Land. Sortiert nach id.
+ * 0.4.20+9: Ebenso, solange eine Gebietsabsprache (4.10, territory) mit Bullard läuft.
  */
 export function rivalCandidates(state: GameState, _balance: Balance): Parcel[] {
   const taken = new Set([
@@ -172,7 +179,7 @@ export function rivalCandidates(state: GameState, _balance: Balance): Parcel[] {
     ...state.wells.map((w) => w.parcelId),
     ...state.rival.wells.map((w) => w.parcelId),
   ]);
-  const pakt = bullardStance(state) === 'pakt';
+  const pakt = bullardStance(state) === 'pakt' || territoryPact(state);
   const jacobs = pakt ? jacobLand(state) : [];
   return state.parcels
     .filter((p) => !p.discovery && !taken.has(p.id))
