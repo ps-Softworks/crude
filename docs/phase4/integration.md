@@ -248,7 +248,7 @@ Main ist inzwischen bei 0.4.4. Beim nächsten Merge von main in diesen Branch be
    auf der Kurstafel.~~ *Erledigt 0.4.20+9:* Solange Börsencrash oder Kreditcrash der Welt nachwirken, sinkt die
    Stimmung der eigenen Aktie je Runde um `stocks.price.crashWeight` (`stocksWorldOf` → `crash`); Harlan Oil steht
    nach dem Börsengang auf dem Kurszettel der Börsenseite (`quotes` in `makeExchangePage`, nur Anzeige).
-   Offen: Hallstead-Bahn-/Autoaktien (4.16) sind eigene Beteiligungen ohne Kurs.
+   *Erledigt 0.4.20+28:* Bahn-/Autoaktien (4.16) hatten schon Wert und Imperiumswert; jetzt folgen sie zusätzlich dem Börsensektor (`exchangeSector`/`exchangeBeta` in `hallstead.holdings.kinds`, `sectorChange` in holdings.ts), solange Jacobs Börse offen ist; der Crash-Einbruch entfällt dann (steckt im Kurs).
 6. Personal ↔ Ermittler/Lobby: der Lobbyist (4.16) ist keine Personal-Rolle. Umschlag-Hitze (`lobbyHeat`, 4.16)
    wirkt noch nicht auf Delaney.
    *Erledigt 0.4.20+9:* `staffHeat` (4.9) zählt × `investigation.staffHeatFactor` (abgerundet) zur Hitze
@@ -259,9 +259,10 @@ Main ist inzwischen bei 0.4.4. Beim nächsten Merge von main in diesen Branch be
    (`pressurePaysWithFavors`), nur ohne genug Gefallen `pressure.cost` $ (Hallstead öffnet erst in Kapitel 3, in
    Kapitel 2 also weiter Geld). Einfluss für Enteignung (4.7) = Hallstead-Gefallen × `bigPipelines.rights.influencePerFavor`
    (höchstens 100) in `pipelineWorldOf(state, balance)`; der Entwurfsname `politics.influence` ist weg.
+   *Zusätzlich 0.4.20+28:* Seismik-Lizenz auch gegen `kapitel3.seismik.licenseFavors` Gefallen statt Geld (`buyLicenseWithFavors`, Knopf im Konzern-Fenster).
    Transportpflicht (`commonCarrier`) bleibt `false`: Der Gesetzeskatalog kennt kein solches Gesetz (nur
    Kartellgesetz und Einkommensteuer) – Hinweis im Kommentar von `pipelineWorldOf`.
-8. Diplomatie → Welt: `diplomacyMoodShift` vorbereitet, nicht eingespeist.
+8. Diplomatie → Welt: `diplomacyMoodShift` vorbereitet, nicht eingespeist (0.4.20+28: bewusst offen – Einspeisung nur über `WorldInput.moodKick` in game.ts/world.ts, gehört der Politik-Sitzung).
    *Erledigt 0.4.20+9:* Solange eine Gebietsabsprache mit Bullard läuft (`territoryPact` in rival.ts), pachtet er
    nichts direkt neben Jacobs Land (wie beim Handschlag aus Kapitel 1).
 9. ~~Zeitung: keine Schlagzeilen zu Fernleitung, Ermittlung, Preiskampf der Marke; die Börsenseite hängt in der

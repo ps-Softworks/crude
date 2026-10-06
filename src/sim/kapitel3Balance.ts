@@ -24,6 +24,8 @@ export interface SeismikBalance {
   chapterStages: number[];
   stage: number;
   licenseCost: number;
+  /** Alternative zum Geld: so viele Hallstead-Gefallen (0 = nicht möglich). */
+  licenseFavors: number;
   surveyCost: number;
   surveyRounds: number;
   crews: number;
@@ -175,6 +177,7 @@ function parseSeismik(k: unknown): SeismikBalance {
     chapterStages,
     stage: num(k, 'seismik.stage', { min: 1, max: 5, int: true }),
     licenseCost: geld(k, 'seismik.licenseCost'),
+    licenseFavors: num(k, 'seismik.licenseFavors', { min: 0, int: true }),
     surveyCost: geld(k, 'seismik.surveyCost'),
     surveyRounds: runden(k, 'seismik.surveyRounds'),
     crews,

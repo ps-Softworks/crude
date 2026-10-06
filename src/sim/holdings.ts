@@ -31,6 +31,7 @@ import {
   type HallsteadState,
   type Position,
 } from './hallsteadState';
+import { exchangeOpen, priceChange } from './exchange';
 import { Rng } from './rng';
 
 /** Kurznamen fürs Protokoll (die Kladde ist wie überall deutsch; Fenstertexte stehen in content/hallstead.yaml). */
@@ -143,6 +144,18 @@ export function holdingsValue(state: Pick<GameState, 'hallstead'>): number {
 }
 
 /**
+ * Mittlere Kursänderung der Börsen-Aktien eines Sektors seit der letzten Runde (0.4.20+28).
+ * null, wenn Jacobs Börse noch nicht offen ist oder der Sektor keine Aktie hat.
+ */
+export function sectorChange(state: GameState, balance: Balance, sector: string): number | null {
+  const ex = state.exchange;
+  if (!ex || !exchangeOpen(state)) return null;
+  const ids = balance.exchange.stocks.filter((s) => s.sector === sector).map((s) => s.id);
+  if (ids.length === 0) return null;
+  return ids.reduce((sum, id) => sum + priceChange(ex, id), 0) / ids.length;
+}
+
+/**
  * Rundenende für die Beteiligungen: Werte bewegen, Crash und Schläge, Erträge
  * in die Kasse, Glaubwürdigkeit der Zeitung erholt sich. Liefert neuen Zustand
  * und die Meldungen fürs Telegramm.
@@ -163,9 +176,12 @@ export function settleHoldings(state: GameState, balance: Balance, h: HallsteadS
     // Zwei Würfel je Beteiligung, immer gezogen: so bleibt die Folge gleich, egal was passiert.
     const uNoise = rng.float();
     const uShock = rng.float();
-    const r = kb.drift + kb.creditBeta * (welt.credit - 50) + kb.demandBeta * wachstum + kb.noise * (2 * uNoise - 1);
+    // Börsenbezug: Bahn-/Autoaktien folgen ihrem Sektor, solange die Börse offen ist.
+    const boerse = kb.exchangeSector && kb.exchangeBeta > 0 ? sectorChange(state, balance, kb.exchangeSector) : null;
+    const r = kb.drift + kb.creditBeta * (welt.credit - 50) + kb.demandBeta * wachstum + kb.noise * (2 * uNoise - 1) + (boerse === null ? 0 : kb.exchangeBeta * boerse);
     let value = Math.max(0, pos.value * (1 + r));
-    if (crashBeginnt && kb.crashDrop > 0) {
+    // Folgt der Wert der Börse, steckt der Crash schon im Kurs – kein zweiter Einbruch.
+    if (crashBeginnt && kb.crashDrop > 0 && boerse === null) {
       const verlust = value * kb.crashDrop;
       value -= verlust;
       news.push({ key: 'crash', kind, amount: cents(verlust) });

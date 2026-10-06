@@ -66,6 +66,7 @@ export type Kapitel3Result = { ok: true; state: GameState } | { ok: false; reaso
 export const KAPITEL3_NOTES = [
   'freigeschaltet',
   'seismik_lizenz',
+  'seismik_lizenz_gefallen',
   'seismik_trupp',
   'seismik_auftrag',
   'seismik_bericht',

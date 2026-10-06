@@ -1176,6 +1176,10 @@ hallstead:
         creditBeta: 0.002
         demandBeta: 0.3
         noise: 0.06
+        # Folgt dem Börsensektor „rail“ (Thorne Bahn), sobald Jacobs Börse offen ist: Wert × (1 + 0,6 × Kursänderung
+        # der Sektor-Aktien in der letzten Runde). Der Crash-Einbruch (crashDrop) entfällt dann – der Kurs trägt ihn schon.
+        exchangeSector: rail
+        exchangeBeta: 0.6
         crashDrop: 0.35
         shock: { chance: 0, drop: 0, crashOnly: false }
       auto:                  # Autoaktien: wachsen mit der Nachfrage, stürzen im Crash am tiefsten
@@ -1186,6 +1190,8 @@ hallstead:
         creditBeta: 0.003
         demandBeta: 1.5
         noise: 0.1
+        exchangeSector: auto   # folgt den Autoaktien der Börse (Motorwagen), s. Eisenbahn
+        exchangeBeta: 0.6
         crashDrop: 0.45
         shock: { chance: 0, drop: 0, crashOnly: false }
       zeitung:               # eigene Zeitung: kostet eher, bringt Einfluss (Kampagnen)
@@ -2082,6 +2088,7 @@ kapitel3:
     chapterStages: [1, 2, 3, 3, 4, 4, 5]  # Mindeststufe je Kapitel 1–7 (GDD §13: II in Kap. 2, III in Kap. 3, IV in Kap. 5)
     stage: 3                 # Reflexionsseismik braucht Technikstufe III (GDD §5)
     licenseCost: 20000       # Lizenz beim Patentinhaber (einmalig); Konsortium-Mitglieder zahlen nichts
+    licenseFavors: 4         # oder Genehmigung über Hallstead-Gefallen statt Geld (spendFavors, ein Zugeständnis der Behörde)
     surveyCost: 6000         # eine Vermessung je Ranch
     surveyRounds: 1          # so lange ist der Spezialtrupp unterwegs
     crews: 1                 # Trupps mit der Lizenz

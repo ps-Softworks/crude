@@ -29,6 +29,7 @@ export interface Kapitel3Content {
     stage: T;
     license: T;
     licenseFree: T;
+    licenseFavors: T;
     crew: T;
     order: T;
     label: T;
@@ -70,7 +71,7 @@ const SCHEMA: Schema = {
   reasons: keys(KAPITEL3_REASONS, 'T'),
   notes: keys(KAPITEL3_NOTES, 'T'),
   seismik: {
-    ...keys(['intro', 'stage', 'license', 'licenseFree', 'crew', 'order', 'label', 'pending', 'none', 'chance', 'trap', 'trapRange', 'showOnMap', 'howTo'], 'T'),
+    ...keys(['intro', 'stage', 'license', 'licenseFree', 'licenseFavors', 'crew', 'order', 'label', 'pending', 'none', 'chance', 'trap', 'trapRange', 'showOnMap', 'howTo'], 'T'),
     sizes: { $any: 'T' },
   },
   konsortium: {
