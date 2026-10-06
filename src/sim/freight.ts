@@ -23,7 +23,7 @@
 import type { Balance } from './balance';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
-import { pipelineBuildCost, pipelineCredible } from './logistics';
+import { pipelineBuildCost, pipelineCredible, teamCapacity } from './logistics';
 import type { PlanHandler } from './planHandler';
 import { bullardFeud, wildcatterStanding } from './pricing';
 import { Rng, seedFromString } from './rng';
@@ -243,7 +243,7 @@ export function fallbackCapacity(state: GameState, balance: Balance): number {
   const t = balance.transport;
   const lg = state.logistics;
   const pipe = lg.pipeline === 'ready' ? t.pipeline.capacity : 0;
-  return lg.teams * t.teams.capacity + (brennanActive(state) ? balance.freight.brennan.capacity : 0) + pipe;
+  return lg.teams * teamCapacity(state, balance) + (brennanActive(state) ? balance.freight.brennan.capacity : 0) + pipe;
 }
 
 /** Druckmittel gegen Thorne, je 1 Punkt. */

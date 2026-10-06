@@ -17,6 +17,7 @@ import { formatDate } from './calendar';
 import type { GameState } from './game';
 import { recordAct } from './politics';
 import { fixerDefense } from './staff'; // 4.9 Andockpunkt
+import { techTeamFactor } from './research'; // 0.4.20+9: Tanklaster
 import { Rng, seedFromString, type RngState } from './rng';
 import { markRound, RIVAL_MARKS } from './trust';
 
@@ -194,6 +195,11 @@ export function spillOver(state: GameState, balance: Balance): GameState {
 /** Stehen die eigenen Fuhrwerke in dieser Runde still? */
 export function teamsIdle(state: Pick<GameState, 'round' | 'logistics'>): boolean {
   return state.logistics.teamsIdleUntil >= state.round;
+}
+
+/** 0.4.20+9: bbl je Gespann und Runde – mit Tanklastern (Forschung, ab Kapitel 2) mehr. */
+export function teamCapacity(state: object, balance: Balance): number {
+  return Math.round(balance.transport.teams.capacity * techTeamFactor(state, balance));
 }
 
 export function hireTeam(state: GameState, balance: Balance): LogisticsResult {
@@ -412,6 +418,8 @@ export interface RouteScenario {
   /** Ist schon da (keine Anschaffung mehr): eigene Gespanne / fertige Pipeline. */
   ownedTeams?: number;
   pipelineBuilt?: boolean;
+  /** 0.4.20+9: bbl je Gespann (mit Tanklastern mehr); fehlt = transport.teams.capacity. */
+  teamCapacity?: number;
 }
 
 export interface RouteCost {
@@ -438,11 +446,12 @@ export function routeCost(balance: Balance, s: RouteScenario, mode: TransportMod
     case 'rail':
       return { mode, perBarrel: s.railTariff, capacity: t.rail.capacity };
     case 'teams': {
-      const n = Math.min(t.teams.maxTeams, Math.max(1, Math.ceil(s.volume / t.teams.capacity)));
-      const menge = Math.min(s.volume, n * t.teams.capacity);
+      const je = s.teamCapacity ?? t.teams.capacity;
+      const n = Math.min(t.teams.maxTeams, Math.max(1, Math.ceil(s.volume / je)));
+      const menge = Math.min(s.volume, n * je);
       const neu = Math.max(0, n - (s.ownedTeams ?? 0));
       const fix = n * t.teams.wagePerRound + (neu * t.teams.hireCost * (1 - t.teams.resale)) / runden;
-      return { mode, perBarrel: cents(t.teams.costPerBarrel + fix / Math.max(1, menge)), capacity: n * t.teams.capacity, teams: n };
+      return { mode, perBarrel: cents(t.teams.costPerBarrel + fix / Math.max(1, menge)), capacity: n * je, teams: n };
     }
     case 'pipeline': {
       const menge = Math.min(s.volume, t.pipeline.capacity);
@@ -484,6 +493,7 @@ export function routePlan(state: GameState, balance: Balance, volume: number): {
     rounds: Math.max(1, state.totalRounds - state.round + 1),
     railTariff: state.railTariff,
     ownedTeams: state.logistics.teams,
+    teamCapacity: teamCapacity(state, balance),
     pipelineBuilt: state.logistics.pipeline === 'ready' || state.logistics.pipeline === 'damaged',
   };
   return { scenario, routes: compareRoutes(balance, scenario) };

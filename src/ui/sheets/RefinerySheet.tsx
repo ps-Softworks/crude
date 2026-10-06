@@ -18,6 +18,7 @@ import {
   PRODUCTS,
   refineryCapacity,
   refineryStatus,
+  refineryMixBounds,
   refineryTech,
   refineryWorld,
   setRefineryIntake,
@@ -140,7 +141,7 @@ function PlantPanel({ ctx }: { ctx: SheetContext }) {
 function MixPanel({ ctx }: { ctx: SheetContext }) {
   const { game } = ctx;
   const r = game.refinery!;
-  const bounds = refineryTech(balance, r.tech).mix;
+  const bounds = refineryMixBounds(game, balance, r.tech); // 0.4.20+9: mit Cracken mehr Benzin
   const [wunsch, setWunsch] = useState<ProductMix>(r.mix);
   const vorschau = normalizeMix(wunsch, bounds);
   const welt = refineryWorld(game, balance);

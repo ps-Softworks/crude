@@ -16,14 +16,15 @@
 // sie (refused): Dann haben die Rivalen die Technik nicht (rivalsHaveTech).
 //
 // Wirkung: Dieses Modul schaltet frei und liefert Kennzahlen (hasTech, techTier,
-// techEffect). Bohrzeit und Bohrkosten wirken schon (drilling.ts über techDrillCost/
-// techDrillRounds, ab Kapitel 2). Bohrtiefe, Raffinerie (4.6) und Tanklaster lesen sie
-// noch nicht – das ist der Andockpunkt; in Kapitel 1 ändert sich nichts.
+// techEffect). Ab Kapitel 2 wirken alle Kennzahlen: Bohrzeit und Bohrkosten (drilling.ts
+// über techDrillCost/techDrillRounds), Bohrtiefe (techStage: tiefe Stufen so sicher wie
+// flachere), Benzinausbeute (refinery.ts über techGasolineYield) und Tanklaster
+// (transport.ts über techTeamFactor). In Kapitel 1 ändert sich nichts.
 //
 // Rein und deterministisch: eigener Zufall (Seed + ":forschung").
 
 import { parseDocument } from 'yaml';
-import type { Balance, Range } from './balance';
+import type { Balance, DrillStage, Range } from './balance';
 import { BalanceError } from './balance';
 import { formatDate } from './calendar';
 import type { ContentError } from './eventContent';
@@ -42,9 +43,9 @@ export type TechDomain = (typeof TECH_DOMAINS)[number];
  * Kennzahlen, die eine Technik anderen Systemen liefert (Summe über alle eigenen Techniken):
  *   drillTime      Anteil Bohrzeit (−0,25 = ein Viertel schneller)
  *   drillCost      Anteil Bohrkosten (−0,1 = 10 % billiger)
- *   depth          zusätzliche erreichbare Tiefe in m
- *   gasolineYield  zusätzliche Benzinausbeute der Raffinerie (0,2 = von 20 % auf 40 %)
- *   trucks         1 = Tanklaster verfügbar
+ *   depth          zusätzliche erreichbare Tiefe in m (eine Bohrstufe ist so sicher wie eine um so viel flachere)
+ *   gasolineYield  zusätzliche Benzinausbeute der Raffinerie (0,2 = Benzin-Höchstanteil von 20 % auf 40 %)
+ *   trucks         Anteil mehr Kapazität der eigenen Fuhrwerke (0,5 = +50 % je Gespann)
  */
 export const TECH_EFFECT_KEYS = ['drillTime', 'drillCost', 'depth', 'gasolineYield', 'trucks'] as const;
 export type TechEffectKey = (typeof TECH_EFFECT_KEYS)[number];
@@ -224,10 +225,46 @@ export function techEffect(state: GameState, balance: Pick<Balance, 'research'>,
 }
 
 /**
- * Kennzahlen, die schon wirken: Bohrzeit und Bohrkosten (drilling.ts über techDrillCost/techDrillRounds).
- * depth, gasolineYield und trucks warten auf ihre Systeme (Bohrtiefe, Raffinerie 4.6, Tanklaster).
+ * Kennzahlen, die schon wirken. 0.4.20+9: alle – Bohrtiefe (techStage), Benzinausbeute
+ * (techGasolineYield) und Tanklaster (techTeamFactor) sind dazugekommen.
  */
-export const ACTIVE_TECH_EFFECTS: readonly TechEffectKey[] = ['drillTime', 'drillCost'];
+export const ACTIVE_TECH_EFFECTS: readonly TechEffectKey[] = ['drillTime', 'drillCost', 'depth', 'gasolineYield', 'trucks'];
+
+/** Eine Kennzahl ab Kapitel 2 (vorher und ohne Technik 0). */
+function wirksam(state: object, balance: Pick<Balance, 'research'>, key: TechEffectKey): number {
+  return researchUnlocked(state, balance) ? techEffect(state as GameState, balance, key) : 0;
+}
+
+/**
+ * 0.4.20+9: Bohrstufe `stage` (ab 1) mit Jacobs Bohrtiefe. Wer tiefer kommt, bohrt eine
+ * Stufe so sicher wie eine um `depth` m flachere: Unfall- und Klemm-Chance werden
+ * zwischen den Nachbarstufen nach der Tiefe gemittelt (nie unter die erste Stufe).
+ * Tiefe, Kosten, Dauer und Ölanteil bleiben – das Öl liegt, wo es liegt.
+ */
+export function techStage(state: object, balance: Pick<Balance, 'research' | 'drilling'>, stage: number): DrillStage {
+  const stages = balance.drilling.stages;
+  const st = stages[Math.min(Math.max(1, stage), stages.length) - 1];
+  const extra = wirksam(state, balance, 'depth');
+  if (extra <= 0) return st;
+  const tiefe = st.depth - extra;
+  const tiefer = stages.findIndex((s) => s.depth >= tiefe);
+  if (tiefer <= 0) return { ...st, accident: Math.min(st.accident, stages[0].accident), stuck: Math.min(st.stuck, stages[0].stuck) };
+  const a = stages[tiefer - 1];
+  const b = stages[tiefer];
+  const t = b.depth === a.depth ? 1 : (tiefe - a.depth) / (b.depth - a.depth);
+  const misch = (x: number, y: number) => Math.round((x + (y - x) * t) * 10000) / 10000;
+  return { ...st, accident: Math.min(st.accident, misch(a.accident, b.accident)), stuck: Math.min(st.stuck, misch(a.stuck, b.stuck)) };
+}
+
+/** 0.4.20+9: zusätzlicher Benzin-Höchstanteil im Produktmix (Cracken, ab Kapitel 2). */
+export function techGasolineYield(state: object, balance: Pick<Balance, 'research'>): number {
+  return Math.max(0, wirksam(state, balance, 'gasolineYield'));
+}
+
+/** 0.4.20+9: Faktor auf die Kapazität je eigenem Gespann (Tanklaster, ab Kapitel 2); ohne Technik 1. */
+export function techTeamFactor(state: object, balance: Pick<Balance, 'research'>): number {
+  return Math.max(0, 1 + wirksam(state, balance, 'trucks'));
+}
 
 /** Bohrkosten mit Jacobs Techniken (ab Kapitel 2; vorher und ohne Technik unverändert). */
 export function techDrillCost(state: object, balance: Pick<Balance, 'research'>, cost: number): number {

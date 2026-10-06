@@ -19,6 +19,7 @@ import {
   storageCapacity,
   storageOutlook,
   surveyPipeline,
+  teamCapacity,
   teamsIdle,
   type LogisticsResult,
 } from '../sim/logistics';
@@ -264,7 +265,7 @@ export function StoragePanel({ game, onChange }: { game: GameState; onChange: (s
 
       <h3>Eigene Fuhrwerke</h3>
       <p>
-        {lg.teams} Gespann{lg.teams === 1 ? '' : 'e'} · schaffen {barrels(lg.teams * T.teams.capacity)} bbl je Runde zu{' '}
+        {lg.teams} Gespann{lg.teams === 1 ? '' : 'e'} · schaffen {barrels(lg.teams * teamCapacity(game, balance))} bbl je Runde zu{' '}
         {price(T.teams.costPerBarrel)} je bbl · Lohn {money(fix.wages)} je Runde
         {teamsIdle(game) && <strong> · stehen still bis Runde {lg.teamsIdleUntil}</strong>}
       </p>

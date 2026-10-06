@@ -229,8 +229,11 @@ Main ist inzwischen bei 0.4.4. Beim nächsten Merge von main in diesen Branch be
    zeigt noch die Texte der Crane-Übernahme aus Kapitel 1.
 
 **Kopplungen zwischen den Systemen (alle noch offen)**
-3. Raffinerie ↔ Forschung: Cracken (4.11) wirkt noch nicht auf die Benzinausbeute (4.6, `refinery.techs`).
-   Tanklaster und Bohrtiefe wirken ebenfalls noch nicht; das Fenster sagt das ehrlich („wirkt noch nicht“).
+3. ~~Raffinerie ↔ Forschung~~ erledigt (0.4.20+9): Alle Techniken wirken ab Kapitel 2. Cracken hebt den
+   Benzin-Höchstanteil im Mix um 20 Punkte (20 % → 40 %, `refineryMixBounds`), Tanklaster geben jedem eigenen
+   Gespann +50 % Kapazität (`teamCapacity`, auch im Wegevergleich), Bohrtiefe macht jede Stufe so sicher wie
+   eine um 150 m (je Technik) flachere (`techStage`: Unfall/Klemmen, Kosten und Ölanteil bleiben). Zahlen sind
+   Platzhalter in `research.techs`.
 4. Raffinerie ↔ Marke: `ownGasoline` in 4.14 ist `null` (Benzin reicht immer). Soll die eigene Raffinerie die
    Tankstellen beliefern statt den Großhandel?
 5. Börse ↔ Aktien: Der eigene Kurs (4.8) fällt im Börsencrash (4.15) nur indirekt mit; Harlan Oil steht nicht

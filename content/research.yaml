@@ -41,8 +41,8 @@ funding:
 effects:
   drillTime: { de: "Bohrzeit", en: "Drilling time" }
   drillCost: { de: "Bohrkosten", en: "Drilling cost" }
-  depth: { de: "Bohrtiefe", en: "Drilling depth" }
-  gasolineYield: { de: "Benzinausbeute", en: "Gasoline yield" }
-  trucks: { de: "Tanklaster fahren", en: "Tank trucks run" }
+  depth: { de: "Bohrtiefe (tiefe Stufen sicherer)", en: "Drilling depth (deep stages safer)" }
+  gasolineYield: { de: "Benzinausbeute (Höchstanteil im Mix)", en: "Gasoline yield (maximum share in the mix)" }
+  trucks: { de: "Tanklaster: eigene Fuhrwerke schaffen je Gespann", en: "Tank trucks: own haulage carries per team" }
 
 pending: { de: "wirkt noch nicht – das kommt mit einem späteren Schritt", en: "no effect yet – comes with a later step" }
