@@ -508,7 +508,9 @@ describe('Weichen', () => {
 
 describe('Direktiven wirken (GDD §2: Haltung bestimmt Ertrag und Streuung, Familienzeit kostet Wachstum)', () => {
   // Kapitelenden des Standard-Bots (wie npm run bots) – mit Quellen, Schulden und allem.
-  const enden = chapterEnds(balance, 10, catalog);
+  // Betrügerischer Bot: 20 statt 10 – seit der Standard-Bot Spuren scheut, lag „Bezirke wagemutig ≥ ausgewogen“ bei
+  // 10 Kapitelenden knapp darunter (12 gegen 13); über 900 Sprünge erschließt wagemutig öfter (85,7 % gegen 83,6 %).
+  const enden = chapterEnds(balance, 20, catalog);
   const lauf = (stance: Directives['stance'], family: Directives['family']) => enden.map((e) => springen(e, { stance, family }, ZWEITE));
   const schnitt = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
   const wert = (r: { state: GameState }) => empireValue(r.state, balance);

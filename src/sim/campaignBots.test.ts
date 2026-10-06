@@ -8,6 +8,9 @@ import {
   campaignTargetValues,
   campaignWinners,
   chapterRows,
+  delaneyOutcome,
+  delaneyTable,
+  dirtyTurn,
   checkCampaignTargets,
   bondsTurn,
   exchangeTurn,
@@ -28,12 +31,15 @@ import { loadKapitel3Texts } from './testKapitel3';
 import { SWITCH_CHOICES, type SwitchId } from './timeskip';
 import { skipWorld } from './world';
 import { creditCrises } from './worldRun';
+import { DELANEY_MARKS, newInvestigation } from './investigation';
+import { ensureKapitel3 } from './kapitel3';
+import { newStaff } from './staff';
 
 const balance = loadBalance();
 const catalog = loadEvents();
 const board = parseStocksContent('content/stocks.yaml', readFileSync(new URL('../../content/stocks.yaml', import.meta.url), 'utf8'), balance.stocks.board.seatsMax).content!.board;
 const texts = { stocksBoard: board, kapitel3: loadKapitel3Texts() };
-const POLICIES = ['cautious', 'greedy', 'balanced'] as const;
+const POLICIES = ['cautious', 'greedy', 'balanced', 'cheat'] as const;
 
 function policy(patch: Partial<CampaignBotPolicy> = {}): CampaignBotPolicy {
   return { ...balance.bots.campaign.balanced, ...patch };
@@ -76,6 +82,26 @@ describe('Kampagnen-Politik in balance.yaml (bots.campaign)', () => {
 
   it('zu jeder Kennzahl gibt es einen Zielbereich', () => {
     for (const id of CAMPAIGN_TARGET_IDS) expect(balance.bots.campaignTargets[id].min).toBeLessThanOrEqual(balance.bots.campaignTargets[id].max);
+  });
+
+  it('nur der betrügerische Bot zieht schmutzige Hebel; sein Lobbyist ist ein Kandidat, der Umschläge nimmt', () => {
+    const c = balance.bots.campaign;
+    for (const name of ['cautious', 'greedy', 'balanced'] as const) expect(c[name].dirty ?? null).toBeNull();
+    expect(campaignPolicy(balance, 'zufaellig', new Rng(3)).dirty).toBeNull();
+    const d = c.cheat.dirty!;
+    expect(campaignPolicy(balance, 'betruegerisch', new Rng(1))).toBe(c.cheat);
+    expect(c.cheat.feldzug!.pact).toBe(true);
+    expect(c.cheat.answers.grady).toBe('take');
+    expect(d.konsortium).toBe('ausspielen');
+    const kandidat = balance.hallstead.lobby.candidates[d.lobbyist!];
+    expect(kandidat).toBeDefined();
+    expect(kandidat.trait).not.toBe('gewissenhaft');
+    const raw = rawBalance();
+    const bots = raw.bots as Record<string, unknown>;
+    const campaign = bots.campaign as Record<string, unknown>;
+    const mit = (dirty: unknown) => ({ ...raw, bots: { ...bots, campaign: { ...campaign, cheat: { ...(campaign.cheat as object), dirty } } } });
+    expect(() => parseBalance(mit({ ...d, konsortium: 'verraten' }))).toThrow(/konsortium/);
+    expect(() => parseBalance(mit({ ...d, fixer: 'ja' }))).toThrow(/fixer/);
   });
 
   it('der Zufalls-Bot würfelt seine Politik aus dem Seed – gleich gewürfelt, gleiche Politik', () => {
@@ -230,6 +256,75 @@ describe('Aktienbuch (Kapitel 2/3): stocksTurn', () => {
   });
 });
 
+describe('Schmutzige Hebel (dirtyTurn)', () => {
+  const cheat = balance.bots.campaign.cheat;
+  const k2 = (): GameState => {
+    const g = newGame('schmutz', balance);
+    return { ...g, chapter: 2, cash: 100_000, staff: newStaff('schmutz', g.round, balance) };
+  };
+
+  it('ohne dirty und in Kapitel 1 bleibt alles, wie es ist', () => {
+    const s = k2();
+    expect(dirtyTurn(s, balance, policy())).toBe(s);
+    const k1 = newGame('k1', balance);
+    expect(dirtyTurn(k1, balance, cheat)).toBe(k1);
+  });
+
+  it('stellt einen Sicherheitschef ein, der nicht gewissenhaft ist, und lässt bei Bullard sabotieren', () => {
+    const s = k2();
+    const kandidat = s.staff!.candidates.find((c) => c.role === 'fixer' && !c.traits.includes('gewissenhaft'));
+    const t = dirtyTurn(s, balance, cheat);
+    if (!kandidat) {
+      expect(t.staff!.hired.some((m) => m.role === 'fixer')).toBe(false);
+      return;
+    }
+    expect(t.staff!.hired.find((m) => m.role === 'fixer')!.name).toBe(kandidat.name);
+    expect(t.staff!.orders).toContain('sabotage');
+    expect(t.cash).toBe(s.cash - balance.staff.fixer.orders.sabotage.cost);
+    // Ist das Personal schon zu heiß, keine Sabotage mehr.
+    const heiss = { ...t, staff: { ...t.staff!, orders: [], heat: cheat.dirty!.sabotageBelow } };
+    expect(dirtyTurn(heiss, balance, cheat).staff!.orders).toEqual([]);
+  });
+
+  it('ermittelt Delaney: Anwalt und einmal politischer Druck – nur über der Rücklage', () => {
+    const s0 = k2();
+    const inv = { ...newInvestigation(s0, balance), stage: 'vorermittlung' as const, evidence: 20 };
+    const s: GameState = { ...s0, staff: undefined, investigation: inv };
+    const t = dirtyTurn(s, balance, cheat);
+    expect(t.investigation!.lawyer).toBe(cheat.dirty!.lawyer);
+    expect(t.investigation!.pressure).toBe(true);
+    expect(t.cash).toBe(s.cash - balance.investigation.pressure.cost);
+    // Zweites Mal im selben Fall kein Druck mehr.
+    expect(dirtyTurn(t, balance, cheat).cash).toBe(t.cash);
+    const arm: GameState = { ...s, cash: cheat.reserve + balance.investigation.pressure.cost - 1 };
+    expect(dirtyTurn(arm, balance, cheat).investigation!.pressure).toBe(false);
+  });
+
+  it('Kapitel 3: Lobbyist einstellen, Vales Einladung ausspielen, Gefallen vortäuschen', () => {
+    const g = newGame('k3', balance);
+    const s0: GameState = ensureKapitel3({ ...g, chapter: 3, cash: 100_000 }, balance);
+    const k3 = s0.kapitel3!;
+    const s: GameState = { ...s0, kapitel3: { ...k3, konsortium: { ...k3.konsortium, invitedRound: s0.round, inviteDeadline: s0.round + 1 } } };
+    const t = dirtyTurn(s, balance, cheat);
+    expect(t.hallstead?.lobby.lobbyist?.id).toBe(cheat.dirty!.lobbyist);
+    expect(t.kapitel3!.konsortium.path).toBe('doppelspiel');
+    const mitGefallen: GameState = { ...t, kapitel3: { ...t.kapitel3!, konsortium: { ...t.kapitel3!.konsortium, favor: { id: 'drosseln', round: t.round, deadline: t.round + 1 } } } };
+    const u = dirtyTurn(mitGefallen, balance, cheat);
+    expect(u.kapitel3!.konsortium.favor).toBeNull();
+    expect(u.cash).toBe(mitGefallen.cash);
+  });
+
+  it('delaneyOutcome liest die Merkzeichen der Ermittlung', () => {
+    const g = newGame('akte', balance);
+    const leer = delaneyOutcome(g, balance);
+    expect(leer).toEqual({ probe: false, charge: false, convicted: false, forcedSale: false, prison: false, heat: 0, exposed: false });
+    const m = { ...g.events.marks, [DELANEY_MARKS.probe]: 1, [DELANEY_MARKS.convicted]: 2, [DELANEY_MARKS.prison]: 3 };
+    const d = delaneyOutcome({ ...g, events: { ...g.events, marks: m } }, balance);
+    expect(d.probe && d.convicted && d.prison).toBe(true);
+    expect(d.charge || d.forcedSale).toBe(false);
+  });
+});
+
 describe('Auswertung', () => {
   const r = (finalValue: number, survived = finalValue > 0): CampaignResult => ({
     seed: 's',
@@ -243,6 +338,7 @@ describe('Auswertung', () => {
     liquidations: 0,
     feldzug: 'keiner',
     thorneLoans: 0,
+    delaney: { probe: false, charge: false, convicted: false, forcedSale: false, prison: false, heat: 0, exposed: false },
   });
 
   it('Siegquote: höchster Endwert gewinnt, Gleichstand wird geteilt, ohne Überlebende kein Sieger', () => {
@@ -282,15 +378,17 @@ describe('Auswertung', () => {
     const leer = { credit: [1], gluts: [1], wars: [0] };
     const report: CampaignReport = {
       games: 1,
-      rows: [row('vorsichtig', 50), row('gierig', 100), row('ausgewogen', 200), row('zufaellig', 0)],
+      rows: [row('vorsichtig', 50), row('gierig', 100), row('ausgewogen', 200), row('betruegerisch', 150), row('zufaellig', 0)],
       stances: [{ stance: 'aggressive', survived: 1, meanFinal: 1, winRate: 0.5 }],
       fair: [{ strategy: 'gierig', survived: 1, meanFinal: 1, winRate: 0.45 }],
-      crises: { vorsichtig: leer, gierig: { credit: [3], gluts: [0], wars: [0] }, ausgewogen: leer, zufaellig: leer },
+      crises: { vorsichtig: leer, gierig: { credit: [3], gluts: [0], wars: [0] }, ausgewogen: leer, betruegerisch: leer, zufaellig: leer },
     };
     const werte = campaignTargetValues(report);
     expect(werte.creditCrises).toBe(1);
     expect(werte.cautiousBehind).toBe(0.25);
     expect(werte.stanceWin).toBe(0.5);
+    expect(werte.cheatPrison).toBe(0);
+    expect(delaneyTable(report).split('\n')).toHaveLength(2 + report.rows.length);
     const ziele = checkCampaignTargets(report, balance);
     expect(ziele.map((t) => t.id)).toEqual([...CAMPAIGN_TARGET_IDS]);
     expect(ziele.find((t) => t.id === 'fairWinRate')!.ok).toBe(0.45 <= balance.bots.campaignTargets.fairWinRate.max);

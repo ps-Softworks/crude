@@ -1,6 +1,9 @@
 // Bot-Läufe (GDD §17, Schritt 1.14): Die Simulation spielt ganze Partien ohne
-// Grafik, mit vier Strategien – vorsichtig, gierig, ausgewogen, zufällig. Daraus
+// Grafik, mit fünf Strategien – vorsichtig, gierig, ausgewogen, betrügerisch, zufällig. Daraus
 // entstehen Bankrottquote und mittlerer Imperiumswert je Strategie für die Balance.
+// Betrügerisch (GDD §17): wirtschaftet wie der Standard-Bot, zieht aber jeden schmutzigen Hebel
+// (Förderbremse mit Klausel und Verrat an Crane, Gerücht, Bluff, schmutzige Antworten). Die ehrlichen
+// Bots wiegen Spuren für Delaney als Risiko (bots.events.*.traceCost).
 // Seit 2.15 spielen die Bots mit den echten Ereignissen (Briefe, feste Termine,
 // Rivalen) und beantworten sie nach ihrer Strategie; dazu kommen Kennzahlen, die
 // gegen die Zielwerte aus GDD §15 geprüft werden (bots.targets in balance.yaml).
@@ -11,7 +14,7 @@
 // Die Zahlen stehen in content/balance.yaml unter bots.
 
 import { type CardUse, finishCards, newCardTracker, trackCards } from './cardStats';
-import { TRANSPORT_MODES, type Balance, type BotEventWeights, type BotInvest, type BotTargetId, type BotTransport, type Buyer, type TransportMode } from './balance';
+import { TRANSPORT_MODES, type Balance, type BotCharacter, type BotEventWeights, type BotInvest, type BotTargetId, type BotTransport, type Buyer, type TransportMode } from './balance';
 import { overtimeFor } from './agenda';
 import { creditLimit, debt, headroom, takeLoan } from './credit';
 import { applyAction, parcelActions, type DeskActionKind } from './desk';
@@ -47,6 +50,7 @@ import { craneCut, exclusiveActive, grudgeCut, RIVAL_MARKS, volumeObligation } f
 import { tutorialHint } from './tutorial';
 import { advanceWorld, newWorld } from './world';
 import { choiceCost, choiceReason, resolveEvent, routineOffered, type EventChoice, type EventDef } from './events';
+import { investigationUnlocked, traces } from './investigation';
 // Termine als Hauptwerkzeug (Etappe 1): Erkundung über das Planungsbrett.
 import { knowledgeOf, suggestRide } from './exploration';
 import { bookCard, exploreAppointments } from './plans';
@@ -54,8 +58,10 @@ import { bookCard, exploreAppointments } from './plans';
 import { activeContract, cartelActive, cranePressure, craneResistance, type PricingState } from './pricing';
 import { brennanActive, freightPressure, thorneResistance } from './freight';
 
-export type Strategy = 'vorsichtig' | 'gierig' | 'ausgewogen' | 'zufaellig';
-export const STRATEGIES: readonly Strategy[] = ['vorsichtig', 'gierig', 'ausgewogen', 'zufaellig'];
+export type Strategy = 'vorsichtig' | 'gierig' | 'ausgewogen' | 'betruegerisch' | 'zufaellig';
+export const STRATEGIES: readonly Strategy[] = ['vorsichtig', 'gierig', 'ausgewogen', 'betruegerisch', 'zufaellig'];
+/** Die planenden Bots (alle außer zufällig). */
+export type Planner = Exclude<Strategy, 'zufaellig'>;
 
 /** Führt eine Aktion aus; bei ok:false bleibt alles, wie es war. */
 function act(state: GameState, balance: Balance, parcelId: string, kind: DeskActionKind): GameState {
@@ -204,13 +210,14 @@ interface Purse {
   borrowable: (state: GameState) => number;
 }
 
-function purseFor(balance: Balance, strategy: Exclude<Strategy, 'zufaellig'>): Purse {
+function purseFor(balance: Balance, strategy: Planner): Purse {
   switch (strategy) {
     case 'vorsichtig':
       return { reserve: balance.bots.cautious.cashReserve, borrowable: () => 0 };
     case 'gierig':
       return { reserve: 0, borrowable: (s) => headroom(s, balance) };
     case 'ausgewogen':
+    case 'betruegerisch':
       return { reserve: balance.bots.balanced.cashReserve, borrowable: (s) => balancedBorrowable(s, balance) };
   }
 }
@@ -318,7 +325,7 @@ export function thorneOfferValue(state: GameState, balance: Balance, kind: 'excl
   return -fee - runden * Math.max(0, menge - bahn) * th.exclusivePenalty + abgelehnt * th.hikeStep * bahn * stufen;
 }
 
-function answerThorne(state: GameState, balance: Balance, catalog: readonly EventDef[], cfg: BotTransport, purse: Purse, ledger: TransportLedger): GameState {
+function answerThorne(state: GameState, balance: Balance, catalog: readonly EventDef[], cfg: BotTransport, purse: Purse, ledger: TransportLedger, traceCost = 0): GameState {
   if (cfg.thorne === 'refuse') return state;
   for (const event of openItems(state, catalog)) {
     const exklusiv = event.choices.find((c) => c.marks.includes(RIVAL_MARKS.thorneExclusive));
@@ -332,8 +339,9 @@ function answerThorne(state: GameState, balance: Balance, catalog: readonly Even
     else {
       const werte = [
         // Briefe mit Gewicht: die Gebühr so, wie sie jetzt gilt (letterScale.ts).
-        { c: exklusiv, v: exklusiv ? thorneOfferValue(state, balance, 'exclusive', -(scaledCash(state, balance, exklusiv) ?? 0)) : -Infinity },
-        { c: rabatt, v: rabatt ? thorneOfferValue(state, balance, 'volume') : -Infinity },
+        // Betrügerischer Bot: Der geheime Exklusivvertrag ist eine Spur für Delaney (thorne_exklusiv) – ehrliche Bots rechnen sie mit.
+        { c: exklusiv, v: exklusiv ? thorneOfferValue(state, balance, 'exclusive', -(scaledCash(state, balance, exklusiv) ?? 0)) - traceValue(state, balance, exklusiv, traceCost) : -Infinity },
+        { c: rabatt, v: rabatt ? thorneOfferValue(state, balance, 'volume') - traceValue(state, balance, rabatt, traceCost) : -Infinity },
       ].sort((a, b) => b.v - a.v);
       wahl = werte[0].v > 0 ? werte[0].c : undefined;
     }
@@ -356,14 +364,14 @@ function answerThorne(state: GameState, balance: Balance, catalog: readonly Even
 function transportTurn(
   state: GameState,
   balance: Balance,
-  strategy: Exclude<Strategy, 'zufaellig'>,
+  strategy: Planner,
   catalog: readonly EventDef[],
   ledger: TransportLedger,
 ): GameState {
-  const cfg = balance.bots.transport[strategyKey(strategy)];
+  const cfg = balance.bots.transport[econKey(strategy)];
   const purse = purseFor(balance, strategy);
   const { teams, storage, pipeline } = balance.transport;
-  state = answerThorne(state, balance, catalog, cfg, purse, ledger);
+  state = answerThorne(state, balance, catalog, cfg, purse, ledger, eventPolicy(balance, strategy).traceCost);
 
   // Pipeline: vermessen, Wegerechte kaufen, bauen – nur, wenn sie sich lohnt.
   const lg0 = state.logistics;
@@ -462,7 +470,7 @@ function rumourHold(state: GameState, balance: Balance): number {
  * Abschlag zahlt; Brennan, wenn die Bahn teurer ist; Transportgemeinschaft gründen und halten.
  * Die Feinarbeit je Charakter ist Etappe 4.
  */
-function planTurn(state: GameState, balance: Balance, strategy: Exclude<Strategy, 'zufaellig'>, catalog: readonly EventDef[]): GameState {
+function planTurn(state: GameState, balance: Balance, strategy: Planner, catalog: readonly EventDef[]): GameState {
   const cfg = balance.botPlans[strategyKey(strategy)];
   if (!Object.values(cfg).some(Boolean) || state.chapter > 1) return state;
   const purse = purseFor(balance, strategy);
@@ -523,11 +531,22 @@ function planTurn(state: GameState, balance: Balance, strategy: Exclude<Strategy
   }
   if (cfg.rumour && state.oilStock >= pa.rumour.dry.minTank * 1.5 && state.pricing.rumours.count < 2 && leisten(state, 150)) state = buchen(state, 'geruecht', 'versiegen');
   // Spielspaß K1: Cranes Gegendruck nach einem frischen Nachgeben zählt mit; Cranes Laune bleibt das Risiko.
-  if (cfg.crane && craneCut(state, balance) > 0 && cranePressure(state, balance) - craneResistance(state, balance) >= 2) state = buchen(state, 'crane_feilschen', 'abschlag');
+  // Betrügerischer Bot (betray): Läuft eine Förderbremse oder der Händlervertrag und reicht der Druck für Cranes
+  // Angebot (3 Punkte), verkauft er den Pakt an Crane – die Wildcatter nennen es Verrat.
+  const punkte = cranePressure(state, balance) - craneResistance(state, balance);
+  const verraten = cfg.betray && (state.pricing.cartel !== null || activeContract(state, 'haendler') !== null) && punkte >= 3;
+  if (cfg.crane && verraten) state = buchen(state, 'crane_feilschen', 'angebot');
+  else if (cfg.crane && craneCut(state, balance) > 0 && punkte >= 2) state = buchen(state, 'crane_feilschen', 'abschlag');
   return state;
 }
 
-function strategyKey(strategy: Exclude<Strategy, 'zufaellig'>): 'cautious' | 'greedy' | 'balanced' {
+/** Charakter in balance.yaml für Ereignisse, Karten und Kampagne (betrügerisch = cheat). */
+export function strategyKey(strategy: Planner): BotCharacter {
+  return strategy === 'vorsichtig' ? 'cautious' : strategy === 'gierig' ? 'greedy' : strategy === 'betruegerisch' ? 'cheat' : 'balanced';
+}
+
+/** Wirtschafts-Charakter (Bohren, Pachten, Transport, Ausbau, Erkundung): Der betrügerische Bot wirtschaftet wie der Standard-Bot. */
+export function econKey(strategy: Planner): 'cautious' | 'greedy' | 'balanced' {
   return strategy === 'vorsichtig' ? 'cautious' : strategy === 'gierig' ? 'greedy' : 'balanced';
 }
 
@@ -617,8 +636,8 @@ function invest(state: GameState, balance: Balance, purse: Purse, cost: number, 
  * Rücklage), dann – wenn mehr Bohrarbeit wartet als Türme frei sind – einen Turm
  * mieten oder kaufen. Danach bohren die Bots ihre Pachten, dann folgt investWells.
  */
-function investRigs(state: GameState, balance: Balance, strategy: Exclude<Strategy, 'zufaellig'>, purse: Purse): GameState {
-  const cfg = balance.bots.invest[strategyKey(strategy)];
+function investRigs(state: GameState, balance: Balance, strategy: Planner, purse: Purse): GameState {
+  const cfg = balance.bots.invest[econKey(strategy)];
   const R = balance.drilling.rigs;
   // Erst wenn eine Quelle Geld bringt – vorher zählt jeder Dollar für Pacht und Bohrung.
   if (production(state) === 0 && !state.wells.some((w) => w.status === 'found')) return state;
@@ -646,8 +665,8 @@ function investRigs(state: GameState, balance: Balance, strategy: Exclude<Strate
 }
 
 /** Zweiter Teil des Ausbaus, nach den neuen Pachten: weitere Bohrlöcher, Pumpen, leere Miettürme zurück. */
-function investWells(state: GameState, balance: Balance, strategy: Exclude<Strategy, 'zufaellig'>, purse: Purse): GameState {
-  const cfg = balance.bots.invest[strategyKey(strategy)];
+function investWells(state: GameState, balance: Balance, strategy: Planner, purse: Purse): GameState {
+  const cfg = balance.bots.invest[econKey(strategy)];
   for (const parcelId of goodInvestments(state, balance, 'drill', cfg.wellPayback)) {
     if (!freeRig(state)) break;
     state = invest(state, balance, purse, drillQuote(state, balance, parcelId).cost, (s) => applyAction(s, balance, parcelId, 'drill'));
@@ -831,9 +850,10 @@ function balancedPay(state: GameState, balance: Balance, parcelId: string, kind:
   return r.ok ? r.state : state;
 }
 
-function balancedTurn(state: GameState, balance: Balance, catalog: readonly EventDef[], ledger: TransportLedger): GameState {
+/** Der Standard-Bot; der betrügerische wirtschaftet genauso (strategy bestimmt nur Karten und Bluff beim Verkauf). */
+function balancedTurn(state: GameState, balance: Balance, catalog: readonly EventDef[], ledger: TransportLedger, strategy: 'ausgewogen' | 'betruegerisch' = 'ausgewogen'): GameState {
   const { minChance, cashReserve, maxStage, maxUndrilled } = balance.bots.balanced;
-  state = transportTurn(state, balance, 'ausgewogen', catalog, ledger);
+  state = transportTurn(state, balance, strategy, catalog, ledger);
   for (const well of openWells(state)) {
     const vorher = state;
     const next = well.stage + 1;
@@ -844,7 +864,7 @@ function balancedTurn(state: GameState, balance: Balance, catalog: readonly Even
     if (state === vorher) state = act(state, balance, well.parcelId, 'abandon');
   }
   for (const option of jacobsOptions(state)) state = balancedPay(state, balance, option.parcelId, 'exercise', option.bonus);
-  state = investRigs(state, balance, 'ausgewogen', purseFor(balance, 'ausgewogen'));
+  state = investRigs(state, balance, strategy, purseFor(balance, strategy));
   // Nach einem trockenen Loch und ohne fördernde Quelle zählt nur der nächste Fund: Dann bohrt er auch ohne Rücklage.
   // In den letzten beiden Runden nicht mehr: Wer dann ins Minus rutscht, ist am Kapitelende pleite.
   const ohneQuelle = roundsLeft(state) > 2 && state.wells.some((w) => w.status === 'dry') && !state.wells.some((w) => w.status === 'found');
@@ -852,7 +872,7 @@ function balancedTurn(state: GameState, balance: Balance, catalog: readonly Even
     state = balancedPay(state, balance, parcelId, 'drill', stageCost(balance, 1), ohneQuelle ? -balance.bots.balanced.cashReserve : 0);
   }
   // Ausbau (0.2.15+7): was sich laut Rechnung bezahlt macht, im eigenen Kreditrahmen.
-  state = investWells(state, balance, 'ausgewogen', purseFor(balance, 'ausgewogen'));
+  state = investWells(state, balance, strategy, purseFor(balance, strategy));
   // Neues Land nur, wenn danach auch die erste Bohrstufe und die Rücklage bezahlbar bleiben.
   if (undrilled(state).length + jacobsOptions(state).length < maxUndrilled) {
     const geld = state.cash + balancedBorrowable(state, balance) - cashReserve - stageCost(balance, 1);
@@ -873,10 +893,11 @@ function balancedTurn(state: GameState, balance: Balance, catalog: readonly Even
  * So viel Geld hätte der Bot für einen Pachtbonus übrig – fürs Erkunden zählt nicht,
  * ob er gerade noch ungebohrtes Land hält: Er schaut sich schon nach dem nächsten um.
  */
-function landBudget(state: GameState, balance: Balance, strategy: Exclude<Strategy, 'zufaellig'>): number {
+function landBudget(state: GameState, balance: Balance, strategy: Planner): number {
   const stufe1 = stageCost(balance, 1);
   switch (strategy) {
     case 'ausgewogen':
+    case 'betruegerisch':
       return state.cash + balancedBorrowable(state, balance) - balance.bots.balanced.cashReserve - stufe1;
     case 'vorsichtig':
       return state.cash - balance.bots.cautious.cashReserve - stufe1;
@@ -890,8 +911,8 @@ function landBudget(state: GameState, balance: Balance, strategy: Exclude<Strate
  * freie Ranches mit mindestens bots.explore.until Fundchance, reitet er übers
  * Land – höchstens rides Mal je Runde, vor den Briefen (die Zeit ist sonst weg).
  */
-function exploreTurn(state: GameState, balance: Balance, strategy: Exclude<Strategy, 'zufaellig'>, catalog: readonly EventDef[]): GameState {
-  const { rides, until, known } = balance.bots.explore[strategyKey(strategy)];
+function exploreTurn(state: GameState, balance: Balance, strategy: Planner, catalog: readonly EventDef[]): GameState {
+  const { rides, until, known } = balance.bots.explore[econKey(strategy)];
   for (let i = 0; i < rides; i++) {
     // Auch wer gerade knapp bei Kasse ist, sieht sich um: Reiten kostet nur Zeit, und das Geld kommt wieder.
     const budget = Math.max(landBudget(state, balance, strategy), balance.start.cash);
@@ -912,7 +933,7 @@ export interface EventPolicy extends BotEventWeights {
   reserve: number;
 }
 
-export function eventPolicy(balance: Balance, strategy: Exclude<Strategy, 'zufaellig'>): EventPolicy {
+export function eventPolicy(balance: Balance, strategy: Planner): EventPolicy {
   switch (strategy) {
     case 'vorsichtig':
       return { ...balance.bots.events.cautious, reserve: balance.bots.cautious.cashReserve };
@@ -920,7 +941,32 @@ export function eventPolicy(balance: Balance, strategy: Exclude<Strategy, 'zufae
       return { ...balance.bots.events.greedy, reserve: 0 };
     case 'ausgewogen':
       return { ...balance.bots.events.balanced, reserve: balance.bots.balanced.cashReserve };
+    case 'betruegerisch':
+      return { ...balance.bots.events.cheat, reserve: balance.bots.balanced.cashReserve };
   }
+}
+
+/**
+ * Schwerepunkte, die eine Antwort Delaney hinterlässt (Betrügerischer Bot, GDD §17): Merkzeichen aus
+ * investigation.traces (schon in Kapitel 1, soweit noch nicht gesetzt) und ab Kapitel 2 die Systemwirkungen
+ * trace und heat. Negative Werte (Spuren verblassen) zählen höchstens so viel, wie an Spuren offen ist.
+ */
+export function tracePoints(state: GameState, balance: Balance, choice: EventChoice): number {
+  const gesetzt = state.events.marks;
+  const alte = balance.investigation.traces
+    .filter((t) => choice.marks.includes(t.mark) && gesetzt[t.mark] === undefined)
+    .reduce((s, t) => s + t.severity, 0);
+  if (!investigationUnlocked(state, balance)) return alte;
+  const sys = (choice.system?.trace?.severity ?? 0) + (choice.system?.heat ?? 0);
+  if (sys >= 0) return alte + sys;
+  const offen = traces(state, balance).reduce((s, t) => s + (t.closed ? 0 : t.current), 0);
+  return alte - Math.min(-sys, offen);
+}
+
+/** Was die Spuren einer Antwort den Bot kosten (in $, mit dem Faktor der Briefe); negativ = er greift gern zu. */
+export function traceValue(state: GameState, balance: Balance, choice: EventChoice, traceCost: number): number {
+  if (traceCost === 0) return 0;
+  return tracePoints(state, balance, choice) * traceCost * letterScale(state, balance);
 }
 
 /** Den Verkauf an Crane (frühes Ende) wählt kein Bot: die Bot-Läufe messen das ganze Kapitel. */
@@ -962,7 +1008,8 @@ function effectValue(state: GameState, balance: Balance, choice: EventChoice, po
     wirksam * policy.strength * f +
     ((e.ruth ?? 0) + (e.thomas ?? 0) + (e.clara ?? 0)) * policy.family * f -
     (e.railTariff ?? 0) * barrelsAhead(state) +
-    timedValue(state, balance, e)
+    timedValue(state, balance, e) -
+    traceValue(state, balance, choice, policy.traceCost)
   );
 }
 
@@ -1079,6 +1126,8 @@ export function botTurn(
       return greedyTurn(state, balance, catalog, ledger);
     case 'ausgewogen':
       return balancedTurn(state, balance, catalog, ledger);
+    case 'betruegerisch':
+      return balancedTurn(state, balance, catalog, ledger, 'betruegerisch');
     case 'zufaellig':
       return randomTurn(state, balance, rng, ledger);
   }
@@ -1393,6 +1442,15 @@ export interface BotRow {
   /** Kreditzyklus (4.4): Partien auf Seeds mit bzw. ohne Kreditkrise im Kapitel – und wie viele davon pleite. */
   crisis: { games: number; bankrupt: number };
   calm: { games: number; bankrupt: number };
+  /** Betrügerischer Bot (GDD §17): Ø Schwere der Spuren für Delaney am Kapitelende (Merkzeichen aus investigation.traces). */
+  traces: number;
+  /** Anteil der Partien mit mindestens einer Spur. */
+  dirtyGames: number;
+}
+
+/** Schwere aller Spuren aus Kapitel 1, die Jacob für Delaney hinterlassen hat (Merkzeichen aus investigation.traces). */
+export function chapterTraces(state: GameState, balance: Balance): number {
+  return balance.investigation.traces.filter((t) => state.events.marks[t.mark] !== undefined).reduce((s, t) => s + t.severity, 0);
 }
 
 /**
@@ -1485,6 +1543,8 @@ export function runBots(balance: Balance, games = balance.bots.games, catalog: r
         seeds: [] as { empire: number; bankrupt: boolean }[],
         crisis: { games: 0, bankrupt: 0 },
         calm: { games: 0, bankrupt: 0 },
+        spuren: 0,
+        schmutzig: 0,
       },
     ]),
   );
@@ -1514,6 +1574,9 @@ export function runBots(balance: Balance, games = balance.bots.games, catalog: r
       if (r.pipeline && r.goal) s.pipelineZiel++;
       for (const k of Object.keys(s.build) as (keyof BuildStats)[]) s.build[k] += r.build[k];
       s.seeds.push({ empire: r.empire, bankrupt: r.bankrupt });
+      const spuren = chapterTraces(r.state, balance);
+      s.spuren += spuren;
+      if (spuren > 0) s.schmutzig++;
       return { strategy, bankrupt: r.bankrupt, empire: r.empire };
     });
     for (const [strategy, anteil] of seedWinners(results, balance.start.cash)) summe.get(strategy)!.siege += anteil;
@@ -1541,6 +1604,8 @@ export function runBots(balance: Balance, games = balance.bots.games, catalog: r
       seeds: s.seeds,
       crisis: s.crisis,
       calm: s.calm,
+      traces: anteil(s.spuren),
+      dirtyGames: anteil(s.schmutzig),
     };
   });
 }
@@ -1750,11 +1815,11 @@ function prozent(value: number): string {
 export function botTable(rows: readonly BotRow[]): string {
   const zeilen = rows.map(
     (r) =>
-      `| ${r.strategy} | ${r.games.toLocaleString('de-DE')} | ${prozent(r.bankruptRate)} | ${prozent(r.goalRate)} | ${Math.round(r.meanEmpire).toLocaleString('de-DE')} $ | ${prozent(r.winRate)} | ${Math.round(r.rivalCash).toLocaleString('de-DE')} $ | ${zahl(r.rivalWells, 1)} | ${zahl(r.meanAppointments, 1)} |`,
+      `| ${r.strategy} | ${r.games.toLocaleString('de-DE')} | ${prozent(r.bankruptRate)} | ${prozent(r.goalRate)} | ${Math.round(r.meanEmpire).toLocaleString('de-DE')} $ | ${prozent(r.winRate)} | ${Math.round(r.rivalCash).toLocaleString('de-DE')} $ | ${zahl(r.rivalWells, 1)} | ${zahl(r.meanAppointments, 1)} | ${zahl(r.traces ?? 0, 2)} (${prozent(r.dirtyGames ?? 0)}) |`,
   );
   return [
-    '| Strategie | Partien | Bankrottquote | Kapitelziel | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen | Ø Termine |',
-    '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
+    '| Strategie | Partien | Bankrottquote | Kapitelziel | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen | Ø Termine | Ø Spuren für Delaney (Partien mit Spur) |',
+    '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
     ...zeilen,
   ].join('\n');
 }

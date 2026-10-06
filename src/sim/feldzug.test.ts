@@ -255,6 +255,16 @@ describe('Cranes Feldzug – Bots', () => {
     expect(t.feldzug!.outcome).toBe('absprache');
   });
 
+  it('Betrügerischer Bot: mit pactAfter erst nach so vielen Runden Krieg', () => {
+    const p = { pact: true, loan: false, sellBelow: 0, pactAfter: 2 };
+    const drohung = settleFeldzug(k3(), sicher);
+    expect(botFeldzug(drohung, sicher, p, 0).feldzug!.outcome).toBeNull();
+    const krieg = imKrieg(k3());
+    const seit = krieg.feldzug!.since;
+    expect(botFeldzug({ ...krieg, round: seit + 1 }, sicher, p, 0).feldzug!.outcome).toBeNull();
+    expect(botFeldzug({ ...krieg, round: seit + 2 }, sicher, p, 0).feldzug!.outcome).toBe('absprache');
+  });
+
   it('verkauft im Krieg Tankstellen, solange die Kasse unter sellBelow liegt', () => {
     const s = { ...imKrieg(k3()), cash: 0 };
     const t = botFeldzug(s, sicher, { pact: false, loan: false, sellBelow: 20000 }, 0);

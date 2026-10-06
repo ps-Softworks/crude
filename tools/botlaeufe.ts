@@ -68,9 +68,11 @@ ${table}
 - **vorsichtig:** bohrt und kauft nur, wenn danach noch die Rücklage in der Kasse bleibt, kauft nur Optionen, deren Bonus er danach auch zahlen kann, nimmt nie selbst einen Kredit; tiefer (höchstens bis Stufe ${balance.bots.cautious.maxStage}) nur, wenn der Geologe mindestens das ${balance.bots.deeper.cautious.toLocaleString('de-DE')}-Fache der Gewinnschwelle gibt.
 - **gierig:** bohrt jede Pacht, bohrt tiefer schon ab dem ${balance.bots.deeper.greedy.toLocaleString('de-DE')}-Fachen der Gewinnschwelle (gibt auf, wenn auch ein Kredit nicht mehr reicht), pachtet die beste bezahlbare Prognose, solange Kasse und Bankrahmen reichen und höchstens so viele Pachten ungebohrt sind, wie in balance.yaml steht; leiht fehlendes Geld und behält Bargeld für den Verzögerungszins.
 - **ausgewogen (Standard-Bot):** pachtet die beste Prognose ab ${prozent(balance.bots.balanced.minChance)} Fundchance, bohrt tiefer bis Stufe ${balance.bots.balanced.maxStage}, wenn der Geologe mindestens das ${balance.bots.deeper.balanced.toLocaleString('de-DE')}-Fache der Gewinnschwelle gibt (Spielspaß K1: „lohnt ab“ im Ranch-Fenster), behält ${balance.bots.balanced.cashReserve} $ Rücklage und leiht, aber höchstens ${prozent(balance.bots.balanced.maxDebtShare)} des Bankrahmens.
+- **betrügerisch (GDD §17):** bohrt, pachtet, transportiert und baut aus wie der Standard-Bot, zieht aber jeden schmutzigen Hebel: Förderbremse mit Organisatoren-Klausel – und verkauft sie an Crane, sobald dessen Angebot reicht (Verrat) –, Gerücht „Quellen versiegen“, Thornes Sondertarif mit Bluff, Händler-Liefervertrag nie; Karten in balance.yaml bots.plans.cheat ${JSON.stringify(balance.botPlans.cheat)}. Bei Briefen zählt ihm jeder Schwerepunkt einer Spur für Delaney ${(-balance.bots.events.cheat.traceCost).toLocaleString('de-DE')} $ (× Faktor der Briefe) – er nimmt die schmutzige Antwort, wenn sie nicht klar weniger bringt.
 - **zufällig:** wählt jede Runde einige erlaubte Aktionen per Zufall und beantwortet Ereignisse zufällig.
-- **Erkundung (Etappe 1):** Die drei planenden Bots reiten vor den Briefen übers Land (Karte „Übers Land reiten“), solange sie zu wenige bezahlbare freie Ranches mit guter Prognose kennen (balance.yaml bots.explore). Prognosen gibt es nur, wo Jacob etwas weiß.
-- **Ereignisse:** Die drei planenden Bots bewerten jede Antwort in $ (Geld, Öl, Kraft, Familie, Bahntarif, Termine; Gewichte in balance.yaml unter bots.events) und antworten, wenn das mehr bringt als liegen lassen. Den Verkauf an Crane wählt kein Bot.
+- **Spuren für Delaney:** Ø Schwere der Merkzeichen aus balance.yaml investigation.traces am Kapitelende (Moss' Papier, Silas betrogen, Silas als Kronzeuge, gekaufter Courier-Bericht, Vales Geld, Thornes Exklusivvertrag), in Klammern der Anteil der Partien mit mindestens einer Spur. Die ehrlichen Bots wiegen jeden Schwerepunkt als Risiko (bots.events.*.traceCost: vorsichtig ${balance.bots.events.cautious.traceCost.toLocaleString('de-DE')} $, gierig ${balance.bots.events.greedy.traceCost.toLocaleString('de-DE')} $, ausgewogen ${balance.bots.events.balanced.traceCost.toLocaleString('de-DE')} $ je Punkt, × Faktor der Briefe) und nehmen eine schmutzige Antwort nur, wenn sie klar mehr bringt.
+- **Erkundung (Etappe 1):** Die planenden Bots reiten vor den Briefen übers Land (Karte „Übers Land reiten“), solange sie zu wenige bezahlbare freie Ranches mit guter Prognose kennen (balance.yaml bots.explore). Prognosen gibt es nur, wo Jacob etwas weiß.
+- **Ereignisse:** Die planenden Bots bewerten jede Antwort in $ (Geld, Öl, Kraft, Familie, Bahntarif, Termine, Spuren für Delaney; Gewichte in balance.yaml unter bots.events) und antworten, wenn das mehr bringt als liegen lassen. Den Verkauf an Crane wählt kein Bot.
 - **Kapitelziel:** Anteil der Partien, in denen die Kapitelprüfung bestanden ist (nicht bankrott und Imperiumswert ≥ ${balance.chapter.goalValue.toLocaleString('de-DE')} $ oder ${balance.chapter.goalWells} fördernde Quellen, Zahlen in balance.yaml unter chapter).
 - **Siegquote:** Anteil der Seeds, in denen die Strategie den höchsten Imperiumswert hat. Eine Pleite zählt immer als letzter Platz, Gleichstand wird geteilt. Seit 2.15 gewinnt nur, wer mindestens die Startkasse (${balance.start.cash.toLocaleString('de-DE')} $) erreicht – sonst hat niemand gewonnen (diesmal ${prozent(ohneSieger)} der Seeds).
 - **Ø Termine:** Termine je Runde zu Rundenbeginn (krank = 0).
@@ -83,7 +85,7 @@ ${wege}
 
 Pipeline lief in: ${pipelineLine(rows)}.
 
-- **Transport-Charakter** (balance.yaml bots.transport): vorsichtig ${JSON.stringify(balance.bots.transport.cautious)}; gierig ${JSON.stringify(balance.bots.transport.greedy)}; ausgewogen ${JSON.stringify(balance.bots.transport.balanced)}; zufällig: mit ${prozent(balance.bots.random.logisticsChance)} je Runde eine zufällige Anschaffung, verkauft zufällig auch an den Händler.
+- **Transport-Charakter** (balance.yaml bots.transport): vorsichtig ${JSON.stringify(balance.bots.transport.cautious)}; gierig ${JSON.stringify(balance.bots.transport.greedy)}; ausgewogen ${JSON.stringify(balance.bots.transport.balanced)}; betrügerisch wie ausgewogen; zufällig: mit ${prozent(balance.bots.random.logisticsChance)} je Runde eine zufällige Anschaffung, verkauft zufällig auch an den Händler.
 
 ## Ausbau: Bohrtürme, Pumpen, weitere Bohrlöcher
 
@@ -93,7 +95,7 @@ ${ausbau}
 
 „Alles ausbauen“ schlägt den Standard-Bot in ${prozent(variants.all.beatsStandard)}, „nie ausbauen“ in ${prozent(variants.none.beatsStandard)} der Seeds mit unterschiedlichem Ausgang.
 
-- **Ausbau-Charakter** (balance.yaml bots.invest): vorsichtig ${JSON.stringify(balance.bots.invest.cautious)}; gierig ${JSON.stringify(balance.bots.invest.greedy)}; ausgewogen ${JSON.stringify(balance.bots.invest.balanced)}.
+- **Ausbau-Charakter** (balance.yaml bots.invest): vorsichtig ${JSON.stringify(balance.bots.invest.cautious)}; gierig ${JSON.stringify(balance.bots.invest.greedy)}; ausgewogen ${JSON.stringify(balance.bots.invest.balanced)}; betrügerisch wie ausgewogen.
 
 ## Kreditzyklus
 

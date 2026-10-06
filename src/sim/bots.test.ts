@@ -14,6 +14,10 @@ import {
   runInvestVariant,
   choiceValue,
   eventPolicy,
+  econKey,
+  strategyKey,
+  tracePoints,
+  traceValue,
   bookRound,
   creditCrisisInChapter,
   crisisTable,
@@ -28,6 +32,7 @@ import {
   okActions,
   playGame,
   runBots,
+  chapterTraces,
   seedWinners,
   STRATEGIES,
   targetTable,
@@ -46,6 +51,99 @@ import { RIVAL_MARKS } from './trust';
 
 const balance = loadBalance();
 const events = loadEvents();
+
+describe('Betrügerischer Bot (GDD §17)', () => {
+  const ehrlich = (marks: string[], cash: number, system?: EventDef['choices'][number]['system']) => ({
+    id: 'dreckig',
+    label: { de: 'dreckig', en: 'dirty' },
+    result: { de: 'x', en: 'x' },
+    requires: {},
+    effects: { cash },
+    default: false,
+    marks,
+    ...(system ? { system } : {}),
+  });
+  const brief: EventDef = {
+    id: 'versuchung',
+    title: { de: 'Versuchung', en: 'Temptation' },
+    text: { de: 'x', en: 'x' },
+    conditions: {},
+    chance: 1,
+    once: false,
+    marked: [],
+    notMarked: [],
+    delay: 0,
+    routine: true,
+    appointments: 0,
+    choices: [
+      { ...ehrlich([], 100), id: 'sauber' },
+      // Moss' Papier: Spur der Schwere 3 für Delaney, bringt 400 $ mehr.
+      { ...ehrlich(['moss_betrogen'], 500), id: 'dreckig' },
+    ],
+  };
+
+  it('vier echte Strategien und der Zufall; der Betrüger wirtschaftet wie der Standard-Bot', () => {
+    expect(STRATEGIES).toEqual(['vorsichtig', 'gierig', 'ausgewogen', 'betruegerisch', 'zufaellig']);
+    expect(strategyKey('betruegerisch')).toBe('cheat');
+    expect(econKey('betruegerisch')).toBe('balanced');
+    expect(strategyKey('ausgewogen')).toBe('balanced');
+  });
+
+  it('eventPolicy: ehrliche Bots scheuen Spuren (vorsichtig am meisten), der Betrüger greift gern zu', () => {
+    const p = (s: Parameters<typeof eventPolicy>[1]) => eventPolicy(balance, s);
+    expect(p('vorsichtig').traceCost).toBeGreaterThan(p('ausgewogen').traceCost);
+    expect(p('ausgewogen').traceCost).toBeGreaterThan(p('gierig').traceCost);
+    expect(p('gierig').traceCost).toBeGreaterThan(0);
+    expect(p('betruegerisch').traceCost).toBeLessThanOrEqual(0);
+    expect(p('betruegerisch').reserve).toBe(balance.bots.balanced.cashReserve);
+  });
+
+  it('Spuren zählen: Merkzeichen aus investigation.traces schon in Kapitel 1, Systemwirkungen erst ab Kapitel 2', () => {
+    const start = newGame('spuren', balance);
+    expect(tracePoints(start, balance, ehrlich(['moss_betrogen'], 0))).toBe(3);
+    // Schon gesetzt: keine neue Spur.
+    const schon = { ...start, events: { ...start.events, marks: { ...start.events.marks, moss_betrogen: 1 } } };
+    expect(tracePoints(schon, balance, ehrlich(['moss_betrogen'], 0))).toBe(0);
+    expect(tracePoints(start, balance, ehrlich([], 0, { trace: { severity: 2 } }))).toBe(0);
+    const k2: GameState = { ...start, chapter: 2 };
+    expect(tracePoints(k2, balance, ehrlich([], 0, { trace: { severity: 2 }, heat: 1 }))).toBe(3);
+    // Verblassen zählt höchstens, was offen ist (hier: nichts).
+    expect(tracePoints(k2, balance, ehrlich([], 0, { trace: { severity: -2 } }))).toBe(0);
+    expect(traceValue(start, balance, ehrlich(['moss_betrogen'], 0), 1000)).toBe(3000);
+    expect(traceValue(start, balance, ehrlich(['moss_betrogen'], 0), 0)).toBe(0);
+  });
+
+  it('der ehrliche Bot lässt die schmutzige Antwort liegen, die mehr Geld bringt – der Betrüger nimmt sie', () => {
+    const start = newGame('versuchung', balance);
+    const standard = answerEvents(start, balance, [brief], eventPolicy(balance, 'ausgewogen'));
+    expect(standard.cash).toBe(start.cash + 100);
+    expect(standard.events.marks.moss_betrogen).toBeUndefined();
+    const betrueger = answerEvents(start, balance, [brief], eventPolicy(balance, 'betruegerisch'));
+    expect(betrueger.cash).toBe(start.cash + 500);
+    expect(betrueger.events.marks.moss_betrogen).toBeDefined();
+    // Bringt die schmutzige Antwort klar mehr als die Spur kostet, nimmt sie auch der ehrliche Bot.
+    const viel = { ...brief, choices: [brief.choices[0], { ...brief.choices[1], effects: { cash: 100 + 3 * eventPolicy(balance, 'ausgewogen').traceCost + 500 } }] };
+    expect(answerEvents(start, balance, [viel], eventPolicy(balance, 'ausgewogen')).events.marks.moss_betrogen).toBeDefined();
+  });
+
+  it('Karten: Der Betrüger gründet die Förderbremse mit Klausel, blufft und verrät; die ehrlichen verraten nie', () => {
+    const c = balance.botPlans;
+    expect(c.cheat.cartel && c.cheat.bluff && c.cheat.betray && c.cheat.rumour).toBe(true);
+    for (const k of ['cautious', 'greedy', 'balanced'] as const) expect(c[k].betray).toBe(false);
+  });
+
+  it('spielt Kapitel 1 deterministisch und hinterlässt mehr Spuren als der Standard-Bot', () => {
+    let betrug = 0;
+    let standard = 0;
+    for (const seed of seeds(6)) {
+      const a = playGame(seed, balance, 'betruegerisch', events);
+      expect(playGame(seed, balance, 'betruegerisch', events).empire).toBe(a.empire);
+      betrug += chapterTraces(a.state, balance);
+      standard += chapterTraces(playGame(seed, balance, 'ausgewogen', events).state, balance);
+    }
+    expect(betrug).toBeGreaterThan(standard);
+  });
+});
 const seeds = (n: number) => Array.from({ length: n }, (_, i) => `test-${i}`);
 /** Hat Jacob in dieser Partie selbst bei der Bank geliehen? (takeLoan schreibt das ins Protokoll) */
 const bankLoan = (log: string[]) => log.some((z) => z.includes('bei der Bank geliehen'));
@@ -148,7 +246,7 @@ describe('Bot-Läufe', () => {
     const table = botTable(runBots(balance, 3));
     const zeilen = table.split('\n');
     expect(zeilen[0]).toBe(
-      '| Strategie | Partien | Bankrottquote | Kapitelziel | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen | Ø Termine |',
+      '| Strategie | Partien | Bankrottquote | Kapitelziel | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen | Ø Termine | Ø Spuren für Delaney (Partien mit Spur) |',
     );
     expect(zeilen).toHaveLength(2 + STRATEGIES.length);
     for (const s of STRATEGIES) expect(table).toContain(`| ${s} |`);
@@ -386,6 +484,8 @@ describe('Bot-Läufe mit Ereignissen (2.15)', () => {
       seeds: [],
       crisis: { games: 0, bankrupt: 0 },
       calm: { games: 10, bankrupt: 0 },
+      traces: 0,
+      dirtyGames: 0,
       ...o,
     });
     const tag = balance.bots.daysPerRound;
