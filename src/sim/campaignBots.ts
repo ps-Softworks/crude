@@ -343,6 +343,9 @@ export function dirtyTurn(state: GameState, balance: Balance, policy: CampaignBo
  * erst in der letzten Runde unter, mit 500.000 $ bis 1,1 Mio. $ Imperiumswert.
  */
 export const BOT_VORLAUF = 2;
+
+/** Raffinerie-Ausbau nach Haltung (0.4.20+17): Mehrerlös bis Kapitelende ≥ Kosten × Faktor; vorsichtig baut nie aus. */
+export const REFINERY_EXPAND: Record<Stance, number | null> = { aggressive: 1, balanced: 1.5, cautious: null };
 export function dueSoon(state: GameState, runden = BOT_VORLAUF): number {
   const grenze = state.round + runden;
   const anleihen = (state.stocks?.bonds ?? []).filter((b) => b.maturity <= grenze).reduce((sum, b) => sum + b.principal, 0);
@@ -373,7 +376,7 @@ function playChapter(state: GameState, balance: Balance, strategy: Strategy, pol
     // Rücklage plus das bald Fällige (Anleihen, Thornes Kredit) – sonst frisst der Ausbau das Geld für die Rückzahlung.
     const p: CampaignBotPolicy = { ...policy, reserve: policy.reserve + dueSoon(s) };
     let t = dirtyTurn(botTurn(s, balance, strategy, rng, catalog), balance, p);
-    if (p.systemsChance >= 1 || rng.float() < p.systemsChance) t = botChapterSystems(t, balance, { reserve: p.reserve, perRound: p.perRound });
+    if (p.systemsChance >= 1 || rng.float() < p.systemsChance) t = botChapterSystems(t, balance, { reserve: p.reserve, perRound: p.perRound, refineryExpand: REFINERY_EXPAND[p.stance] });
     const ohneKredit = !t.feldzug?.loan;
     t = botFeldzug(t, balance, p.feldzug, p.reserve);
     if (ohneKredit && t.feldzug?.loan) stats.thorneLoans += 1;
