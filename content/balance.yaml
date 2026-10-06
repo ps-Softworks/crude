@@ -2153,6 +2153,23 @@ kapitel3:
 
 # Rivalen in Kapitel 3 (4.19, GDD §13: „Margaret Crane führt den Kampf um die Marke. Thorne bläht
 # Aktien auf. Bullard verschuldet sich.“). Regeln in src/sim/rivalsK3.ts. Alle Werte PLATZHALTER.
+# Feldkauf (0.4.20+26, Tester-Wunsch): Jacob bietet Bullard Geld für eine seiner Pachten – mit allem, was darauf steht.
+# Bullards Preis = Ölfluss (Rate × Nettopreis über horizon Runden mit Rückgang; ungebohrt: seine Fundchance × valuePerFind)
+#   × Knappheit (1 + scarcityWeight × Anteil der guten Ranches, die schon vergeben sind) × Haltung.
+# Annahme-Chance logistisch: bei Bullards Preis 50 %, bei Preis × (1 + spread) ~73 %, × (1 + 2 spread) ~88 %.
+buyout:
+  horizon: 8               # PLATZHALTER: so viele Runden Ölfluss rechnet er (2 Jahre)
+  goodChance: 0.35         # ab dieser Fundchance (Bullards Bild) zählt eine Ranch als gut
+  scarcityWeight: 0.8      # alle guten Ranches vergeben: Preis × 1,8
+  feud: 1.5                # Fehde/Verrat: er verkauft nur mit Aufschlag
+  pakt: 0.9                # Handschlag: Freundschaftspreis
+  distress: 0.7            # Kapitel 3, Bullard verschuldet (rivalsK3.bullard.distressAt): er braucht Geld
+  spread: 0.15
+  sliderMin: 0.5           # Regler von 50 % …
+  sliderMax: 2             # … bis 200 % seines Preises
+  step: 100
+  cooldown: 3              # nach einer Ablehnung 3 Runden kein neues Angebot für diese Ranch
+
 rivalsK3:
   margaret:
     startAwareness: 5         # Kapitelbeginn: Crane Eastern ist in jeder Region so viel bekannter

@@ -222,6 +222,8 @@ interface Bild {
 
 const RUHE: Record<string, string> = { 'crude.zeitung': 'aus', 'crude.rundgang': 'gesehen', 'crude.rundgang.k2': 'gesehen', 'crude.rundgang.k3': 'gesehen' };
 const JACOBS_RANCH = `(() => { const r = [...document.querySelectorAll('.karte-ranch')].find((g) => /Jacobs (Pacht|Option)/.test(g.getAttribute('aria-label'))) ?? document.querySelector('.karte-ranch'); r.dispatchEvent(new MouseEvent('click', { bubbles: true })); })()`;
+// Feldkauf (0.4.20+26): eine Ranch Bullards mit fördernder Quelle anklicken.
+const BULLARDS_RANCH = `(() => { const r = [...document.querySelectorAll('.karte-ranch')].find((g) => /Bullards Pacht/.test(g.getAttribute('aria-label'))); r.dispatchEvent(new MouseEvent('click', { bubbles: true })); })()`;
 const DOKUMENT_VORN = `(() => { const b = [...document.querySelectorAll('.stapel-liste button')].find((x) => x.textContent.includes('mit Dokument')); b?.click(); })()`;
 
 // Etappe 2: mittlere Partie mit fördernder Quelle, vollem Tank und laufender Förderbremse (seit der Vorrunde).
@@ -229,6 +231,14 @@ const mitBremse = (() => {
   const basis = suche((s) => s.round === 8 && s.wells.some((w) => w.status === 'found') && !s.finished, [8]);
   const b = foundCartel({ ...basis, round: basis.round - 1, oilStock: Math.max(basis.oilStock, 12000) }, balance, false);
   return { ...b, round: basis.round, freight: { ...b.freight, railLast: 9000 } };
+})();
+
+// Feldkauf (0.4.20+26): Spätere Partie, in der Bullard eine fördernde Quelle hat – nur diese Pacht bleibt seine,
+// damit das Bild sie sicher trifft.
+const mitBullardQuelle = (() => {
+  const s = suche((x) => x.round === 10 && x.rival.wells.some((w) => w.status === 'found') && !x.finished, [10]);
+  const quelle = s.rival.wells.find((w) => w.status === 'found')!.parcelId;
+  return { ...s, cash: Math.max(s.cash, 40000), leases: s.leases.filter((l) => l.holder !== 'bullard' || l.parcelId === quelle) };
 })();
 
 const bilder: Bild[] = [
@@ -289,6 +299,7 @@ const bilder: Bild[] = [
   // 0.4.20+2: Rundgang Kapitel 2 (zweiter Schritt: Kassenbuch) – kommt von selbst und blättert nur mit „Weiter“.
   { name: '40-kapitel2-rundgang', state: kapitel2, prefs: { 'crude.rundgang.k2': 'nein' }, tasten: ['Enter'], warte: 3400 },
   // 0.4.20+3: Rundgang Kapitel 3 (dritter Schritt: Vertrieb).
+  { name: '43-feldkauf', state: mitBullardQuelle, tasten: ['k'], dann: BULLARDS_RANCH, warte: 900 },
   { name: '42-feldzug', state: imFeldzug, dann: `${KLICK('.objekt-marke')}; setTimeout(() => ${REITER('Crane')}, 400)`, warte: 1000 },
   { name: '41-kapitel3-rundgang', state: { ...kap3, chapter: 3 }, prefs: { 'crude.rundgang.k3': 'nein' }, tasten: ['Enter', 'Enter'], warte: 3400 },
 ];
@@ -396,7 +407,8 @@ try {
   mkdirSync(OUT, { recursive: true });
   for (const f of readdirSync(OUT)) if (f.endsWith('.png')) rmSync(new URL(f, OUT));
 
-  for (const bild of bilder) {
+  // SHOT_NUR=<Teil des Namens>: nur diese Bilder (schneller Blick auf ein Fenster).
+  for (const bild of bilder.filter((b) => !process.env.SHOT_NUR || b.name.includes(process.env.SHOT_NUR))) {
     await lade(bild.state, bild.prefs ?? {}, bild.gesehen);
     for (const t of bild.tasten ?? []) {
       await cdp.taste(t);

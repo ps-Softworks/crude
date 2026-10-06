@@ -2,6 +2,7 @@
 // Objekt; parseBalance prüft es und meldet verständliche Fehler.
 // Seit 0.2.15+5 gehört die Karte (content/map.yaml) mit dazu: parseGameData.
 
+import type { BuyoutBalance } from './buyout';
 import { parseStocksBalance, type StocksBalance } from './stocksBalance'; // 4.8 Andockpunkt
 import { parseDiplomacy, type DiplomacyBalance } from './diplomacyBalance'; // 4.10 Andockpunkt
 // 4.15 Andockpunkt: Börse und Kauf auf Kredit.
@@ -1059,6 +1060,8 @@ export interface Balance {
   kapitel3: Kapitel3Balance;
   /** Rivalen in Kapitel 3 (4.19). */
   rivalsK3: RivalsK3Balance;
+  /** Feldkauf (0.4.20+26): Bullard Pachten abkaufen (src/sim/buyout.ts). */
+  buyout: BuyoutBalance;
   /** 0.4.20+8: Cranes Feldzug in Kapitel 3 (src/sim/feldzug.ts). */
   feldzug: FeldzugBalance;
   /** 4.12: Systemwirkungen der Ereignisse (src/sim/eventSystems.ts). */
@@ -2699,6 +2702,19 @@ export function parseBalance(raw: unknown): Balance {
     exchange: parseExchangeBalance(raw),
     kapitel3: parseKapitel3Balance(raw), // 4.17 Andockpunkt
     rivalsK3: parseRivalsK3Balance(raw), // 4.19 Andockpunkt
+    buyout: {
+      horizon: positiveInt(raw, 'buyout.horizon'),
+      goodChance: share(raw, 'buyout.goodChance'),
+      scarcityWeight: num(raw, 'buyout.scarcityWeight'),
+      feud: num(raw, 'buyout.feud'),
+      pakt: num(raw, 'buyout.pakt'),
+      distress: num(raw, 'buyout.distress'),
+      spread: num(raw, 'buyout.spread'),
+      sliderMin: num(raw, 'buyout.sliderMin'),
+      sliderMax: num(raw, 'buyout.sliderMax'),
+      step: positiveInt(raw, 'buyout.step'),
+      cooldown: positiveInt(raw, 'buyout.cooldown'),
+    },
     feldzug: parseFeldzugBalance(raw), // 0.4.20+8
     eventSystems: parseEventSystemsBalance(raw), // 4.12
   };

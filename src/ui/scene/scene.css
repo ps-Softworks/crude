@@ -613,6 +613,11 @@ button.klein-primary { padding: 2px 12px; font-size: 15px; }
 .ranch-inhalt h3 { margin: 12px 0 4px; }
 .ranch-unterzeile { margin: 0 0 8px; }
 .ranch-aktionen { margin: 8px 0; }
+/* Feldkauf (0.4.20+26): Angebot an Bullard mit Regler und Vorhersage. */
+.feldkauf { margin: 10px 0; padding: 8px 10px; border: 1px dashed var(--tinte-weich); border-radius: 4px; }
+.feldkauf h4 { margin: 0 0 4px; }
+.feldkauf-regler { display: block; margin: 6px 0 2px; }
+.feldkauf-regler input[type='range'] { display: block; width: 100%; margin-top: 4px; accent-color: var(--tinte-weich); }
 .ausbau-klappe { margin-top: 12px; }
 .ausbau-klappe > summary { font-weight: 600; font-variant: small-caps; letter-spacing: 0.04em; color: var(--tinte); }
 

@@ -185,6 +185,8 @@ export interface GameState {
   kapitel3?: Kapitel3State;
   /** 4.19 Andockpunkt: Rivalen in Kapitel 3 (src/sim/rivalsK3.ts) – fehlt vor Kapitel 3. */
   rivalsK3?: RivalsK3State;
+  /** Feldkauf (0.4.20+26): je Ranch die Runde, ab der Bullard wieder ein Angebot anhört (nach Ablehnung). Fehlt = nie abgelehnt. */
+  buyouts?: Record<string, number>;
   /** 0.4.20+8: Cranes Feldzug in Kapitel 3 (src/sim/feldzug.ts) – fehlt, bis die Marke gegründet ist. */
   feldzug?: FeldzugState;
   /** 0.4.20+18: Förderquoten (Gesetz production_quota) – true = Jacob fördert voll, „heißes Öl“ (lawEffects.ts). */
