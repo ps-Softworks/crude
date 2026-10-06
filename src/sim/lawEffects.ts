@@ -109,3 +109,20 @@ export function settleBreakup(state: GameState, balance: Balance): GameState {
   const prozent = Math.round(anteil * 100);
   return { ...s, log: [...s.log, `${formatDate(s)}: Kartellgesetz: Bei ${prozent} % Marktanteil im ganzen Land muss Jacob ${verkauft} Tankstellen verkaufen.`] };
 }
+
+/**
+ * 0.4.20+22: Kladde – ab Kapitel 2 steht jedes Gesetz, das in dieser Runde beschlossen wurde, mit seiner
+ * Kurzbeschreibung im Protokoll (die Zeitung bringt die Meldung, die Kladde sagt, was es für Jacob heißt).
+ */
+export function logPassedLaws(state: GameState, balance: Pick<Balance, 'laws'>): GameState {
+  if ((state.chapter ?? 1) < 2) return state;
+  const neu = (state.worldModel?.laws?.news ?? []).filter((n) => n.kind === 'passed');
+  if (neu.length === 0) return state;
+  const zeilen = neu.flatMap((n) => {
+    const def = balance.laws.find((d) => d.id === n.law);
+    if (!def) return [];
+    const weich = state.worldModel?.laws.bills[n.law]?.weakened ? ' (aufgeweicht)' : '';
+    return [`${formatDate(state)}: Neues Gesetz gilt: ${def.name.de}${weich} – ${def.summary.de}`];
+  });
+  return { ...state, log: [...state.log, ...zeilen] };
+}

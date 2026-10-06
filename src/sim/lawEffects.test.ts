@@ -3,7 +3,7 @@ import { newGame, type GameState } from './game';
 import { brandOf, settleBrand } from './brand';
 import { creditLimit } from './credit';
 import { drillQuote } from './drilling';
-import { quotaInForce, setHotOil, settleBreakup, settleHotOil, settleIncomeTax, taxableProfit } from './lawEffects';
+import { logPassedLaws, quotaInForce, setHotOil, settleBreakup, settleHotOil, settleIncomeTax, taxableProfit } from './lawEffects';
 import { lawRule } from './laws';
 import { fixedCosts, settleStorage, spillOver, storageCapacity } from './logistics';
 import { pipelineWorldOf } from './bigPipeline';
@@ -138,5 +138,16 @@ describe('Wirkung der neuen Gesetze (0.4.20+18)', () => {
     expect(lawRule(mitGesetz([]), balance.laws, 'creditLimit', 1)).toBe(1);
     expect(lawRule(mitGesetz(['bank_supervision']), balance.laws, 'creditLimit', 1)).toBe(regel('bank_supervision', 'creditLimit'));
     expect(lawRule({}, balance.laws, 'wageRise')).toBe(0);
+  });
+});
+
+describe('Kladde: neue Gesetze (0.4.20+22)', () => {
+  it('ab Kapitel 2 steht ein beschlossenes Gesetz mit seiner Kurzbeschreibung im Protokoll, in Kapitel 1 nicht', () => {
+    const g = mitGesetz(['income_tax']);
+    const mitMeldung = { ...g, worldModel: { ...g.worldModel!, laws: { ...g.worldModel!.laws, news: [{ law: 'income_tax', kind: 'passed' as const, yes: 0.6 }] } } };
+    const r = logPassedLaws(mitMeldung, balance);
+    expect(r.log.at(-1)).toContain('Neues Gesetz gilt: Einkommensteuer');
+    expect(r.log.at(-1)).toContain(steuer.summary.de);
+    expect(logPassedLaws({ ...mitMeldung, chapter: 1 }, balance).log).toEqual(mitMeldung.log);
   });
 });

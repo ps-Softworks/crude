@@ -228,6 +228,7 @@ export function HallsteadSheet({ ctx }: { ctx: SheetContext }) {
                     <strong>{law.name}</strong>
                     <span className="muted">{law.oil}</span>
                   </div>
+                  {law.summary && <p className="muted">{law.summary}</p>}
                   {(law.status || law.pressure || law.watered) && (
                     <p className="hallstead-notiz">
                       {law.status && <strong>{law.status} </strong>}
