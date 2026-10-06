@@ -1,6 +1,7 @@
 // Prüfprogramm für Inhalte (2.1): liest alle Ereignis-Dateien und meldet Fehler
 // mit Datei und Zeilennummer. Aufruf: npm run check:content
 // Anderer Ordner: npm run check:content -- src/sim/__fixtures__/events
+import { parseFeuerContent } from '../src/sim/feuer';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { checkArcMarks, parseArcContent } from '../src/sim/arcs';
@@ -147,6 +148,8 @@ if (hallstead.content) errors.push(...checkHallsteadContent('content/hallstead.y
   if (brett.content) errors.push(...checkPlanContent('content/plans.yaml', brett.content, balance, events.map((e) => e.id)));
   if (parsed.errors.length === 0) for (const m of planRefErrors(balance, events)) errors.push({ file: 'content/balance.yaml', line: 1, message: m });
 }
+// B3: Ende „Ein Feuer in der Nacht“.
+errors.push(...parseFeuerContent('content/feuer.yaml', readFileSync(new URL('../content/feuer.yaml', import.meta.url), 'utf8')).errors);
 if (errors.length > 0) {
   for (const error of errors) console.error(formatContentError(error));
   console.error(`\n${errors.length} Fehler in ${files.length} Datei(en). Inhalte nicht in Ordnung.`);

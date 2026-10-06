@@ -11,6 +11,7 @@
 // Sicherheitschef mit Sabotage, Anwalt und politischer Druck gegen Delaney, Lobbyist und Umschläge in
 // Hallstead, Doppelspiel im Konsortium. Sein Risiko ist echt: Anklage, Zwangsverkauf, Haft.
 
+import { FEUER_MARKS } from './feuer';
 import { CAMPAIGN_TARGET_IDS, FAMILY_TIMES, STANCES, type Balance, type CampaignBotPolicy, type CampaignTargetId, type FamilyTime, type Stance } from './balance';
 import { botTurn, playGame, type Strategy, STRATEGIES } from './bots';
 import { botChapterSystems, botFeldzug } from './botsKapitel3';
@@ -81,6 +82,8 @@ export interface CampaignResult {
   thorneLoans: number;
   /** Betrügerischer Bot (GDD §17): Was Delaney erreicht hat und wie das Konsortium ausging (Stand am Ende der Kampagne). */
   delaney: DelaneyOutcome;
+  /** B3: Bullard hat Stufe 3 (Drohbrief) bzw. Stufe 4 erreicht; das Ende selbst steht als „feuer“ in chapters. */
+  bullard?: { threat: boolean; violence: boolean };
 }
 
 export interface DelaneyOutcome {
@@ -454,7 +457,7 @@ export function playCampaign(seed: string, balance: Balance, strategy: Strategy,
   const ende = (s: GameState, survived: boolean): CampaignResult => {
     const rest = Math.max(0, endeRunde - s.round);
     const welt = rest > 0 ? skipWorld(s.worldModel, balance.worldModel, rest, {}, balance.laws) : s.worldModel;
-    return { seed, strategy, stance: policy.stance, chapters, survived, finalValue: survived ? empireValue(s, balance) : 0, crises: crisesOf(welt), ...stats, feldzug: feldzugAusgang(s), delaney: delaneyOutcome(s, balance) };
+    return { seed, strategy, stance: policy.stance, chapters, survived, finalValue: survived ? empireValue(s, balance) : 0, crises: crisesOf(welt), ...stats, feldzug: feldzugAusgang(s), delaney: delaneyOutcome(s, balance), bullard: { threat: s.events.marks[FEUER_MARKS.threat] !== undefined, violence: s.events.marks[FEUER_MARKS.violence] !== undefined } };
   };
   if (k1.ending !== 'kapitel') return ende(k1, false);
   let s = k1;

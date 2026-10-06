@@ -1,0 +1,163 @@
+# „Ein Feuer in der Nacht“ (B3, GDD §14 frühes Ende, §9.5 Eskalationsleiter). Regeln: src/sim/feuer.ts,
+# Zahlen: balance.yaml „feuer“. Gilt in allen Kapiteln (minChapter: 1).
+#
+# Merkzeichen, die die Simulation setzt:
+#   feuer_drohung   Bullard steht auf Stufe 3 (Fehde/Verrat plus Taten oder Groll) → Drohbrief
+#   feuer_stufe4    Bullard steht auf Stufe 4 → Ruth bittet; danach drohen Anschläge
+# Merkzeichen, die diese Antworten setzen (liest feuer.ts):
+#   bullard_versoehnt     Stufe − feuer.reconcile, danach höchstens 3 (kein Anschlag mehr)
+#   feuer_wache           Nachtwache: Anschlag-Chance × feuer.attack.guardFactor, Lohn je Runde
+#   feuer_gegendrohung    Stufe + 1
+#   feuer_familie_fort    Ruth (und die Kinder) bei ihrer Schwester – ändert „Was aus ihnen wurde“
+# ENTWURF – Philipp überarbeitet die Texte.
+
+- id: feuer_drohbrief
+  rival: bullard
+  certain: true
+  once: true
+  draft: true
+  tableau: true
+  marked: [feuer_drohung]
+  conditions: { minChapter: 1 }
+  title:
+    de: Ein Stein durchs Fenster
+    en: A Stone Through the Window
+  text:
+    de: >-
+      In der Nacht klirrt es im Büro. Auf den Dielen liegt ein Feldstein, mit Draht ist ein
+      Zettel darumgewickelt: „Wer einem Mann ins Gesicht spuckt, schläft schlecht, Harlan.
+      Bald schläfst du gar nicht mehr.“ Keine Unterschrift. Braucht es auch nicht – im Saloon
+      wissen alle, wie Jim Bullard über Jacob redet. Ruth hat die Scherben zusammengekehrt,
+      bevor jemand barfuß hineintritt. Sie legt den Stein auf den Schreibtisch. „Bitte, Jacob.
+      Tu etwas, bevor er es tut.“
+    en: >-
+      In the night glass shatters in the office. On the floorboards lies a fieldstone with a note
+      wired around it: "A man who spits in another man's face sleeps badly, Harlan. Soon you won't
+      sleep at all." No signature. None needed – everyone at the saloon knows how Jim Bullard talks
+      about Jacob. Ruth swept up the shards before anyone could step in them barefoot. She sets the
+      stone on the desk. "Please, Jacob. Do something before he does."
+  choices:
+    - id: versoehnen
+      label: { de: "Zu Bullard reiten und eine Entschädigung anbieten ({cash})", en: "Ride to Bullard and offer compensation ({cash})" }
+      result:
+        de: >-
+          Bullard zählt das Geld zweimal, dann spuckt er neben Jacobs Stiefel in den Staub –
+          nicht darauf. „Wir sind quitt, Harlan. Fast.“ Die Nächte bleiben ruhig.
+        en: >-
+          Bullard counts the money twice, then spits into the dust beside Jacob's boot – not on it.
+          "We're square, Harlan. Nearly." The nights stay quiet.
+      requires: { minCash: 2000 }
+      effects: { cash: -2000 }
+      marks: [bullard_versoehnt]
+      appointments: 2
+    - id: wache
+      label: { de: "Zwei Nachtwächter anheuern – Lohn jede Runde, solange Bullard gefährlich ist", en: "Hire two night watchmen – wages every round while Bullard is dangerous" }
+      result:
+        de: >-
+          Zwei Männer mit Schrotflinten gehen nachts um Haus und Tanks. Sie kosten Lohn, und
+          Bullard hasst Jacob nicht weniger. Aber wer zündeln will, muss jetzt an ihnen vorbei.
+        en: >-
+          Two men with shotguns walk the house and the tanks at night. They cost wages, and Bullard
+          hates Jacob no less. But anyone who wants to start a fire has to get past them now.
+      marks: [feuer_wache]
+      appointments: 1
+    - id: zurueckdrohen
+      label: { de: "Den Stein zurückschicken, mit einem eigenen Zettel: „Komm doch.“", en: "Send the stone back with a note of his own: \"Come and try.\"" }
+      result:
+        de: >-
+          Der Junge vom Mietstall bringt den Stein zu Bullards Camp. Er kommt blass zurück. Im
+          Saloon heißt es, Bullard habe gelacht – und dann lange nichts mehr gesagt.
+        en: >-
+          The boy from the livery stable takes the stone to Bullard's camp. He comes back pale. At
+          the saloon they say Bullard laughed – and then said nothing for a long while.
+      marks: [feuer_gegendrohung]
+      appointments: 0
+    - id: ignorieren
+      label: { de: "Den Zettel ins Ofenfeuer werfen", en: "Throw the note into the stove" }
+      result:
+        de: >-
+          Der Zettel brennt schnell. Ruth sieht Jacob dabei zu und sagt nichts. Nachts steht sie
+          zweimal auf und schaut aus dem Fenster.
+        en: >-
+          The note burns quickly. Ruth watches Jacob do it and says nothing. At night she gets up
+          twice and looks out of the window.
+      effects: { ruth: -5 }
+      appointments: 0
+      default: true
+
+- id: feuer_ruth
+  rival: bullard
+  certain: true
+  once: true
+  draft: true
+  visitor: ruth
+  marked: [feuer_stufe4]
+  conditions: { minChapter: 1 }
+  title:
+    de: Ruth kann nicht mehr schlafen
+    en: Ruth Can No Longer Sleep
+  text:
+    de: >-
+      Letzte Nacht hat jemand vom Hügel auf den Bohrturm geschossen. Heute früh lagen hinter der
+      Scheune zwei leere Petroleumkanister, im Staub die Spuren von drei Pferden. Ruth steht in der
+      Tür, die Arme verschränkt, damit Jacob nicht sieht, wie ihre Hände zittern. „Er will dich
+      brennen sehen, Jacob. Nicht deine Quellen – dich. Mach Frieden mit ihm, egal, was es kostet.
+      Oder schick uns fort, wenn du schon nicht nachgeben willst.“
+    en: >-
+      Last night someone fired at the derrick from the hill. This morning two empty kerosene cans
+      lay behind the barn, and in the dust the tracks of three horses. Ruth stands in the doorway,
+      arms folded so Jacob won't see her hands shaking. "He wants to see you burn, Jacob. Not your
+      wells – you. Make peace with him, whatever it costs. Or send us away, if you won't give in."
+  choices:
+    - id: frieden
+      label: { de: "Bullard vor dem ganzen Saloon um Verzeihung bitten und zahlen ({cash})", en: "Ask Bullard's pardon in front of the whole saloon and pay ({cash})" }
+      result:
+        de: >-
+          Es ist der längste Gang, den Jacob je gegangen ist: durch den Silver Dollar, an jedem
+          Wildcatter vorbei, bis an Bullards Tisch. Bullard nimmt das Geld und die Hand. „Du hast
+          Mumm, Harlan. Das hätte ich nicht gedacht.“ Die Männer auf dem Hügel kommen nicht wieder.
+        en: >-
+          It is the longest walk Jacob has ever made: through the Silver Dollar, past every
+          wildcatter, to Bullard's table. Bullard takes the money and the hand. "You've got nerve,
+          Harlan. Didn't think so." The men on the hill don't come back.
+      requires: { minCash: 4000 }
+      effects: { cash: -4000 }
+      marks: [bullard_versoehnt]
+      appointments: 2
+    - id: bewachen
+      label: { de: "Haus und Tanks Tag und Nacht bewachen lassen", en: "Have the house and tanks guarded day and night" }
+      result:
+        de: >-
+          Ab heute schlafen zwei Männer in der Scheune, einer sitzt mit dem Gewehr auf der Veranda.
+          Ruth nickt. Ganz beruhigt ist sie nicht – Wachen werden müde.
+        en: >-
+          From today two men sleep in the barn and one sits on the porch with a rifle. Ruth nods.
+          She isn't entirely reassured – guards get tired.
+      marks: [feuer_wache]
+      appointments: 1
+    - id: fortschicken
+      label: { de: "Ruth und die Kinder zu ihrer Schwester nach Port Ellis schicken", en: "Send Ruth and the children to her sister in Port Ellis" }
+      result:
+        de: >-
+          Am Bahnhof hält Ruth Jacobs Hand länger als sonst. „Komm nach, wenn es vorbei ist.“ Das
+          Haus ist still ohne sie. Bullard hasst Jacob wie zuvor – aber wenigstens schläft sonst
+          niemand mehr darin.
+        en: >-
+          At the station Ruth holds Jacob's hand longer than usual. "Come after us when it's over."
+          The house is quiet without them. Bullard hates Jacob as before – but at least no one else
+          sleeps in it now.
+      effects: { ruth: -8, thomas: -8 }
+      marks: [feuer_familie_fort]
+      appointments: 1
+    - id: trotzen
+      label: { de: "„Ich lasse mich nicht aus meinem eigenen Haus jagen.“", en: "\"I won't be driven out of my own house.\"" }
+      result:
+        de: >-
+          Ruth sieht ihn lange an. „Dann lass wenigstens die Lampe brennen“, sagt sie und geht. Jacob
+          legt das Gewehr neben das Bett.
+        en: >-
+          Ruth looks at him for a long time. "Then at least leave the lamp burning," she says and
+          goes. Jacob lays the rifle beside the bed.
+      effects: { ruth: -10 }
+      appointments: 0
+      default: true

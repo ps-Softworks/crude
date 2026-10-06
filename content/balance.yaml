@@ -289,6 +289,26 @@ plans:
     abgeordneter_gefallen: { tab: leute, appointments: 1, target: option, handler: abgeordneter_gefallen, call: 1, requires: { minChapter: 2 } }
 
 # Deals im Adressbuch (0.4.20+31, src/sim/deals.ts). Alles PLATZHALTER bis zu Bot-Läufen.
+# B3 „Ein Feuer in der Nacht“ (GDD §14, §9.5; src/sim/feuer.ts). Bullard ist der einzige Rivale, der bis
+# Stufe 4 (Gewalt) geht. Stufe aus Fehde (2), Verrat (3), ab Kapitel 2 Bullards Groll; +1 je Sabotage,
+# Gegendrohung, schwelender Drohung; Versöhnung −reconcile. PLATZHALTER bis zu Philipps Partien.
+feuer:
+  levels:
+    grudge: [20, 40, 60]      # Bullards Groll (Diplomatie) ab Kapitel 2: ab hier Stufe 1, 2, 3
+  reconcile: 2                # Versöhnung senkt die Stufe um so viel (danach höchstens Stufe 3)
+  festerRounds: 8             # so viele Runden nach dem Drohbrief ohne Versöhnung wird aus Stufe 3 Stufe 4
+  graceRounds: 2              # Anschläge frühestens so viele Runden nach Stufe 4 (Ruth hat gewarnt)
+  attack:
+    chance: 0.08              # je Runde auf Stufe 4: Chance auf den Anschlag …
+    guardFactor: 0.25         # … mit Nachtwache oder Sheriff-Wache nur so viel davon
+  guard:
+    costPerRound: 150         # Lohn der Nachtwache je Runde, solange Bullard gefährlich ist (Stufe ≥ 3)
+  bots:                       # so viele $ ist den Bots eine Stufe weniger Bullard wert (Antworten auf Drohbrief/Ruth)
+    cautious: 20000
+    balanced: 10000
+    greedy: 600
+    cheat: 2500
+
 deals:
   bank:
     rate: { chance: { A: 0.75, B: 0.5, C: 0.25, D: 0 }, cut: 0.01, floor: 0.04, cooldown: 4 }   # Zins nachverhandeln: Bankkredite −1 Punkt

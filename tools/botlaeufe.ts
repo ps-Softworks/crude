@@ -4,7 +4,7 @@
 // Aufruf: npm run bots
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { loadBalance } from '../src/sim/testBalance';
-import { blindWildcatChance, botTable, buildTable, checkTargets, crisisTable, investVariant, buyoutLine, pipelineLine, runBots, runInvestVariant, targetTable, transportTable } from '../src/sim/bots';
+import { blindWildcatChance, botTable, buildTable, checkTargets, crisisTable, fireTable, investVariant, buyoutLine, pipelineLine, runBots, runInvestVariant, targetTable, transportTable } from '../src/sim/bots';
 import { loadEvents } from '../src/sim/testEvents';
 import { runTimeskipBots, timeskipTables } from '../src/sim/timeskipBots';
 
@@ -28,6 +28,7 @@ const ausbau = buildTable(rows, variants);
 const targets = checkTargets(rows, blindWildcatChance(balance), balance, variants);
 const zielTabelle = targetTable(targets);
 const krisen = crisisTable(rows);
+const feuer = fireTable(rows);
 const ohneSieger = Math.max(0, 1 - rows.reduce((s, r) => s + r.winRate, 0));
 // Zeitsprung I (4.5): Haltung, Familie und Bankpanik-Weiche nach dem Kapitelende des Standard-Bots.
 const sprung = runTimeskipBots(balance, balance.bots.timeskipEnds, catalog);
@@ -38,6 +39,7 @@ console.log(table);
 console.log(`\n${wege}\nPipeline: ${pipelineLine(rows)}\nFeldkauf: ${buyoutLine(rows)}`);
 console.log(`\n${ausbau}\n„alles ausbauen“ schlägt den Standard-Bot in ${prozent(variants.all.beatsStandard)}, „nie ausbauen“ in ${prozent(variants.none.beatsStandard)} der Seeds mit unterschiedlichem Ausgang.`);
 console.log(`\nKreditzyklus (Bankpanik oder Crash im Kapitel):\n${krisen}`);
+console.log(`\nFeuer in der Nacht (Bullards Eskalation):\n${feuer}`);
 console.log(`\nZeitsprung I (${sprung.ends} Kapitelenden des Standard-Bots):\n${sprungTabellen}`);
 console.log(`\n${zielTabelle}`);
 console.log(`\n${balance.bots.games} Partien je Strategie in ${sekunden} s.`);
@@ -104,6 +106,12 @@ ${ausbau}
 Bankrottquote je Strategie, getrennt nach Seeds, in deren Welt während des Kapitels eine Kreditkrise (Bankpanik oder Crash, 4.4) kommt, und Seeds ohne. Eingeteilt wird an der Welt allein (ohne Jacobs Handeln), damit eine frühe Pleite die Einteilung nicht verzerrt. In Kapitel 1 ist es fast immer eine Bankpanik; Crash und Embargo kommen erst in späteren Kapiteln (docs/weltmodell.md). Seit 4.20 kündigt die Bank in der Krise Kredite (balance.yaml credit.crisisCall). Hier kein Zielwert, nur Kennzahl; den Zielwert „Pleite gierig mit Kreditkrise ÷ ohne“ misst der Abschnitt „Kapitel 2 und 3“ an der tatsächlichen Welt jeder Partie.
 
 ${krisen}
+
+## Feuer in der Nacht
+
+Bullards Eskalation (GDD §9.5, §14; src/sim/feuer.ts): Anteil der Partien, in denen Bullard Stufe 3 erreicht (Drohbrief), Stufe 4 (Ruth bittet, danach Anschläge möglich) und in denen Jacob im Feuer stirbt. Ziel: in normalen Partien praktisch nie, beim gierigen und betrügerischen Bot selten. Kein Zielwert in der Tabelle oben, nur Kennzahl.
+
+${feuer}
 
 ## Zeitsprung I
 

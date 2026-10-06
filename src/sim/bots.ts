@@ -54,6 +54,7 @@ import { craneCut, exclusiveActive, grudgeCut, RIVAL_MARKS, volumeObligation } f
 import { tutorialHint } from './tutorial';
 import { advanceWorld, newWorld } from './world';
 import { choiceCost, choiceReason, resolveEvent, routineOffered, type EventChoice, type EventDef } from './events';
+import { deescalationSteps, FEUER_MARKS } from './feuer';
 import { investigationUnlocked, traces } from './investigation';
 // Termine als Hauptwerkzeug (Etappe 1): Erkundung über das Planungsbrett.
 import { knowledgeOf, suggestRide } from './exploration';
@@ -974,18 +975,20 @@ function exploreTurn(state: GameState, balance: Balance, strategy: Planner, cata
 /** Wie der Bot eine Antwort bewertet; reserve = Bargeld, das danach bleiben muss. */
 export interface EventPolicy extends BotEventWeights {
   reserve: number;
+  /** B3: so viele $ ist eine Stufe weniger Bullard wert (balance.yaml feuer.bots). */
+  fire?: number;
 }
 
 export function eventPolicy(balance: Balance, strategy: Planner): EventPolicy {
   switch (strategy) {
     case 'vorsichtig':
-      return { ...balance.bots.events.cautious, reserve: balance.bots.cautious.cashReserve };
+      return { ...balance.bots.events.cautious, reserve: balance.bots.cautious.cashReserve, fire: balance.feuer.bots.cautious };
     case 'gierig':
-      return { ...balance.bots.events.greedy, reserve: 0 };
+      return { ...balance.bots.events.greedy, reserve: 0, fire: balance.feuer.bots.greedy };
     case 'ausgewogen':
-      return { ...balance.bots.events.balanced, reserve: balance.bots.balanced.cashReserve };
+      return { ...balance.bots.events.balanced, reserve: balance.bots.balanced.cashReserve, fire: balance.feuer.bots.balanced };
     case 'betruegerisch':
-      return { ...balance.bots.events.cheat, reserve: balance.bots.balanced.cashReserve };
+      return { ...balance.bots.events.cheat, reserve: balance.bots.balanced.cashReserve, fire: balance.feuer.bots.cheat };
   }
 }
 
@@ -1052,7 +1055,8 @@ function effectValue(state: GameState, balance: Balance, choice: EventChoice, po
     ((e.ruth ?? 0) + (e.thomas ?? 0) + (e.clara ?? 0)) * policy.family * f -
     (e.railTariff ?? 0) * barrelsAhead(state) +
     timedValue(state, balance, e) -
-    traceValue(state, balance, choice, policy.traceCost)
+    traceValue(state, balance, choice, policy.traceCost) +
+    (policy.fire ?? 0) * deescalationSteps(state, balance, choice.marks) * f
   );
 }
 
@@ -1482,6 +1486,8 @@ export interface BotRow {
   bankruptRate: number;
   /** Anteil der Partien, in denen die Kapitelprüfung (2.11) bestanden ist. */
   goalRate: number;
+  /** B3: Anteil der Partien mit Bullards Drohbrief (Stufe 3), Stufe 4 und dem Ende „Ein Feuer in der Nacht“. */
+  fire?: { threat: number; violence: number; ending: number };
   meanEmpire: number;
   /**
    * Anteil der Seeds, in denen diese Strategie den höchsten Imperiumswert hat (Gleichstand wird geteilt).
@@ -1622,6 +1628,9 @@ export function runBots(balance: Balance, games = balance.bots.games, catalog: r
         schmutzig: 0,
         kaufAngebote: 0,
         kaeufe: 0,
+        fDrohung: 0,
+        fStufe4: 0,
+        fEnde: 0,
       },
     ]),
   );
@@ -1657,6 +1666,10 @@ export function runBots(balance: Balance, games = balance.bots.games, catalog: r
       const kauf = buyoutCount(r.state);
       s.kaufAngebote += kauf.offers;
       s.kaeufe += kauf.accepted;
+      // B3: Bullards Eskalation – Drohbrief, Stufe 4, Feuer in der Nacht.
+      if (r.state.events.marks[FEUER_MARKS.threat] !== undefined) s.fDrohung++;
+      if (r.state.events.marks[FEUER_MARKS.violence] !== undefined) s.fStufe4++;
+      if (r.state.ending === 'feuer') s.fEnde++;
       return { strategy, bankrupt: r.bankrupt, empire: r.empire };
     });
     for (const [strategy, anteil] of seedWinners(results, balance.start.cash)) summe.get(strategy)!.siege += anteil;
@@ -1669,6 +1682,7 @@ export function runBots(balance: Balance, games = balance.bots.games, catalog: r
       games,
       bankruptRate: anteil(s.pleiten),
       goalRate: anteil(s.ziel),
+      fire: { threat: anteil(s.fDrohung), violence: anteil(s.fStufe4), ending: anteil(s.fEnde) },
       meanEmpire: anteil(s.wert),
       winRate: anteil(s.siege),
       rivalCash: anteil(s.bKasse),
@@ -1891,6 +1905,15 @@ export function targetTable(targets: readonly TargetRow[]): string {
 
 function prozent(value: number): string {
   return `${(value * 100).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
+}
+
+/** B3: Markdown-Tabelle „Feuer in der Nacht“ – Anteil der Partien mit Drohbrief, Stufe 4 und Anschlag. */
+export function fireTable(rows: readonly BotRow[]): string {
+  return [
+    '| Strategie | Drohbrief (Stufe 3) | Stufe 4 | Feuer in der Nacht |',
+    '| --- | ---: | ---: | ---: |',
+    ...rows.map((r) => `| ${r.strategy} | ${prozent(r.fire?.threat ?? 0)} | ${prozent(r.fire?.violence ?? 0)} | ${prozent(r.fire?.ending ?? 0)} |`),
+  ].join('\n');
 }
 
 /** Markdown-Tabelle: Quoten in % mit einer Nachkommastelle, Werte in ganzen $, Bullards Quellen und Termine mit einer Nachkommastelle. */

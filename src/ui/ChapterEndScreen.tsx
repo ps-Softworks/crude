@@ -73,7 +73,7 @@ export function ChapterEndScreen({
   const k2 = kapitel >= 2;
   const k3 = kapitel >= 3;
   const k2Text = k3 ? chapterContent.chapter3 : chapterContent.chapter2;
-  const k2Ende: Chapter2EndingId = ergebnis === null || ergebnis === 'pleite' ? 'verfehlt' : ergebnis;
+  const k2Ende: Chapter2EndingId = ergebnis === null || ergebnis === 'pleite' || ergebnis === 'feuer' ? 'verfehlt' : ergebnis;
   const ende = k2 ? k2Text.endings[k2Ende] : chapterContent.endings[ergebnis === 'erreicht' || ergebnis === 'verkauft' ? ergebnis : 'verfehlt'];
   const imBau = k2;
   const pruefung2 = chapter2Check(game, balance);
