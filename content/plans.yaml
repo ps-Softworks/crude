@@ -155,11 +155,83 @@ cards:
       en: "Out of Thorne's exclusive contract – with a settlement and enough pressure that he accepts it."
     risk: { de: "Teuer. Ohne Druckmittel lacht Thorne nur.", en: "Expensive. Without leverage Thorne just laughs." }
 
-# Adressbuch (0.4.20+28): Stellen, die Jacob aufsuchen kann – Reihenfolge = Anzeige.
+  # 0.4.20+31 Deals im Adressbuch (Regeln src/sim/deals.ts).
+  bank_zins:
+    title: { de: "Zins nachverhandeln", en: "Renegotiate the Rate" }
+    text:
+      de: "Mr. Pettibone empfängt im Hinterzimmer der Salt Hill Savings. Wer pünktlich zahlt, bekommt vielleicht einen Punkt nachgelassen – auf alle Bankkredite."
+      en: "Mr. Pettibone receives in the back room of Salt Hill Savings. Pay on time and he may knock a point off – on every bank loan."
+    risk: { de: "Sagt er nein, darf Jacob ein Jahr lang nicht wiederkommen.", en: "If he says no, Jacob may not come back for a year." }
+  bank_stundung:
+    title: { de: "Zinsen stunden", en: "Defer the Interest" }
+    text:
+      de: "Diese Runde keine Bankzinsen aus der Kasse – die Bank schlägt sie auf die Schuld, mit Aufschlag."
+      en: "No bank interest out of the till this round – the bank adds it to the debt, with a surcharge."
+    risk: { de: "Teures Geld: Die Schuld wächst um mehr, als die Zinsen gekostet hätten.", en: "Expensive money: the debt grows by more than the interest would have cost." }
+  bank_pfand:
+    title: { de: "Bohrturm verpfänden", en: "Pledge a Rig" }
+    text:
+      de: "Ein eigener Bohrturm als Sicherheit – dafür räumt die Bank mehr Kredit ein. Der Turm bohrt weiter."
+      en: "One of Jacob's own rigs as security – in return the bank extends more credit. The rig keeps drilling."
+    risk: { de: "Versäumt Jacob eine Zahlung, gehört der Turm der Bank. Dann zahlt er Miete.", en: "If Jacob misses a payment, the rig belongs to the bank. Then he pays rent." }
+  bahn_festtarif:
+    title: { de: "Festtarif mit Thorne", en: "Fixed Rate with Thorne" }
+    text:
+      de: "Thorne friert den Tarif ein – kein Aufschlag, solange der Vertrag läuft. Er will dafür Menge sehen."
+      en: "Thorne freezes the rate – no increase while the contract runs. In return he wants volume."
+    risk: { de: "Fährt Jacob weniger als die Mindestmenge per Bahn, zahlt er für jedes fehlende Barrel.", en: "If Jacob ships less than the minimum by rail, he pays for every missing barrel." }
+  bahn_kontingent:
+    title: { de: "Frachtkontingent kaufen", en: "Buy a Freight Allotment" }
+    text:
+      de: "Bahnfracht im Voraus, deutlich unter dem Tarif. Die Barrel fahren dann ohne weitere Fracht."
+      en: "Rail freight paid in advance, well below the rate. Those barrels then travel without further freight."
+    risk: { de: "Das Geld ist weg. Was in der Frist nicht gefahren ist, verfällt.", en: "The money is gone. Whatever isn't shipped in time is forfeit." }
+  crane_vorschuss:
+    title: { de: "Vorschuss von Crane", en: "Advance from Crane" }
+    text:
+      de: "Crane zahlt heute für Öl, das Jacob erst noch liefert – mit Abschlag. Geld jetzt, wenn die Kasse knapp ist."
+      en: "Crane pays today for oil Jacob has yet to deliver – at a discount. Money now, when the till is tight."
+    risk: { de: "Was nicht rechtzeitig an Crane geht, muss Jacob mit Aufschlag zurückzahlen.", en: "Whatever isn't delivered to Crane in time, Jacob must repay with a surcharge." }
+  haendler_grossabnahme:
+    title: { de: "Großabnahme", en: "Bulk Purchase" }
+    text:
+      de: "Der Händler hat einen Kunden an der Küste und nimmt diese Runde deutlich mehr – zu seinem besseren Preis."
+      en: "The trader has a customer on the coast and takes much more this round – at his better price."
+    risk: { de: "Crane merkt sich jeden Barrel, der am Trust vorbeigeht.", en: "Crane remembers every barrel that goes past the Trust." }
+  turm_verleihen:
+    title: { de: "Bohrturm verleihen", en: "Lend a Rig" }
+    text:
+      de: "Ein Nachbar braucht einen Turm. Steht einer still, bringt er Miete statt Staub."
+      en: "A neighbour needs a rig. If one stands idle, it earns rent instead of dust."
+    risk: { de: "Solange er weg ist, bohrt er nicht für Jacob – und er kommt nicht immer heil zurück.", en: "While it's away it doesn't drill for Jacob – and it doesn't always come back in one piece." }
+  foerderzins:
+    title: { de: "Förderzins nachverhandeln", en: "Renegotiate the Royalty" }
+    text:
+      de: "Bares auf den Tisch, und der Besitzer gibt ein paar Prozent vom Förderzins ab – für immer."
+      en: "Cash on the table, and the owner gives up a few points of the royalty – for good."
+    risk: { de: "Lohnt nur, wenn die Quelle lange genug fließt. Mancher Besitzer will gar nicht.", en: "Only pays off if the well flows long enough. Some owners won't hear of it." }
+  interview:
+    title: { de: "Interview im Courier", en: "Interview in the Courier" }
+    text:
+      de: "Nora Whitlock will über den neuen Mann am Salt Hill schreiben. Gute Presse macht die anderen Ölleute zugänglicher."
+      en: "Nora Whitlock wants to write about the new man at Salt Hill. Good press makes the other oilmen more approachable."
+    risk: { de: "Nora schreibt, was sie sieht – auch das, was Jacob lieber nicht gedruckt sähe.", en: "Nora writes what she sees – including what Jacob would rather not see in print." }
+  wache:
+    title: { de: "Wache an die Tanks", en: "Guard the Tanks" }
+    text:
+      de: "Sheriff Tatum stellt für ein paar Dollar einen Mann mit Flinte an die Tanks. Volle Tanks locken Diebe."
+      en: "For a few dollars Sheriff Tatum posts a man with a shotgun at the tanks. Full tanks attract thieves."
+    risk: { de: "Hält nur diese Runde.", en: "Only lasts this round." }
+
+# Adressbuch (0.4.20+29): Stellen, die Jacob aufsuchen kann – Reihenfolge = Anzeige.
 # Jede Karte aus balance.yaml plans.cards steht bei genau einer Stelle (cards), feste
 # Termine ohne eigene Karte über ihr Ereignis (events). Was sonst nirgends steht, landet
 # bei der letzten Stelle.
 contacts:
+  bank:
+    name: { de: "Bank", en: "Bank" }
+    who: { de: "Salt Hill Savings · Mr. Pettibone", en: "Salt Hill Savings · Mr. Pettibone" }
+    cards: [bank_zins, bank_stundung, bank_pfand]
   geologen:
     name: { de: "Geologen", en: "Geologists" }
     who: { de: "Gutachter, Saloon-Kenner, Rutengänger", en: "Surveyors, saloon experts, dowsers" }
@@ -167,24 +239,24 @@ contacts:
   grundbesitzer:
     name: { de: "Grundbesitzer", en: "Landowners" }
     who: { de: "Farmer und Rancher am Salt Hill", en: "Farmers and ranchers at Salt Hill" }
-    cards: [farmer]
+    cards: [farmer, foerderzins]
   oelleute:
     name: { de: "Andere Ölleute", en: "Other Oilmen" }
     who: { de: "Bullard und die kleinen Förderer", en: "Bullard and the small producers" }
-    cards: [foerderbremse, pakt_halten, pakt_verlaengern, transportgemeinschaft, gemeinschaft_halten, bullard_einladen, zur_rede]
+    cards: [foerderbremse, pakt_halten, pakt_verlaengern, transportgemeinschaft, gemeinschaft_halten, bullard_einladen, zur_rede, turm_verleihen]
     events: [termin_lohnbohren]
   eisenbahn:
     name: { de: "Eisenbahn", en: "Railway" }
     who: { de: "Thorne Golfbahn · Augustus Thorne", en: "Thorne Gulf Railway · Augustus Thorne" }
-    cards: [thorne_vorsprechen, exklusiv_kuendigen]
+    cards: [thorne_vorsprechen, bahn_festtarif, bahn_kontingent, exklusiv_kuendigen]
   crane:
     name: { de: "Crane Trust", en: "Crane Trust" }
     who: { de: "Kontor im Hafen · Cornelius Crane", en: "Harbour office · Cornelius Crane" }
-    cards: [crane_feilschen]
+    cards: [crane_feilschen, crane_vorschuss]
   haendler:
     name: { de: "Händler in Port Ellis", en: "Trader in Port Ellis" }
     who: { de: "kauft unabhängig vom Trust", en: "buys independently of the Trust" }
-    cards: [liefervertrag]
+    cards: [liefervertrag, haendler_grossabnahme]
   fuhrleute:
     name: { de: "Fuhrleute", en: "Teamsters" }
     who: { de: "Brennan und seine Gespanne", en: "Brennan and his teams" }
@@ -192,7 +264,11 @@ contacts:
   zeitung:
     name: { de: "Zeitung", en: "Newspaper" }
     who: { de: "der Courier und seine Zeilenschinder", en: "the Courier and its hacks" }
-    cards: [geruecht]
+    cards: [interview, geruecht]
+  sheriff:
+    name: { de: "Sheriff", en: "Sheriff" }
+    who: { de: "Sheriff Tatum", en: "Sheriff Tatum" }
+    cards: [wache]
   familie:
     name: { de: "Familie", en: "Family" }
     who: { de: "Ruth und die Kinder", en: "Ruth and the children" }

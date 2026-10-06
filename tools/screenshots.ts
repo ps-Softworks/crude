@@ -295,6 +295,8 @@ const bilder: Bild[] = [
   { name: '35-planungsbrett', state: start, prefs: { 'crude.reiter.termine': 'geologen' }, tasten: ['t'] },
   // Etappe 2: Reiter Markt und Fracht, Verhandlung mit Thorne, Förderbremse auf der Pinnwand.
   { name: '36-brett-markt', state: mitBremse, prefs: { 'crude.reiter.termine': 'oelleute' }, tasten: ['t'] },
+  // 0.4.20+32: neue Deals – Bank und Eisenbahn mit Festtarif/Kontingent.
+  { name: '37b-adressbuch-bank', state: mitBremse, prefs: { 'crude.reiter.termine': 'bank' }, tasten: ['t'] },
   { name: '37-brett-fracht', state: mitBremse, prefs: { 'crude.reiter.termine': 'eisenbahn' }, tasten: ['t'], dann: `document.querySelector('.angebot-name')?.click()`, warte: 400 },
   { name: '38-fracht-thorne', state: mitBremse, prefs: { 'crude.reiter.fracht': 'pipeline' }, tasten: ['f'] },
   { name: '39-pinnwand-bremse', state: mitBremse, dann: KLICK('.objekt-konkurrenz'), warte: 600 },

@@ -15,6 +15,7 @@
 
 import { buyoutBlocker, buyoutQuote, offerBuyout, type BuyoutQuote } from './buyout';
 import { type CardUse, finishCards, newCardTracker, trackCards } from './cardStats';
+import { DEAL_HANDLERS, royaltyPrice } from './deals';
 import { TRANSPORT_MODES, type Balance, type BotCharacter, type BotEventWeights, type BotInvest, type BotTargetId, type BotTransport, type Buyer, type TransportMode } from './balance';
 import { overtimeFor } from './agenda';
 import { creditLimit, debt, headroom, takeLoan } from './credit';
@@ -560,6 +561,25 @@ function planTurn(state: GameState, balance: Balance, strategy: Planner, catalog
   const verraten = cfg.betray && (state.pricing.cartel !== null || activeContract(state, 'haendler') !== null) && punkte >= 3;
   if (cfg.crane && verraten) state = buchen(state, 'crane_feilschen', 'angebot');
   else if (cfg.crane && craneCut(state, balance) > 0 && punkte >= 2) state = buchen(state, 'crane_feilschen', 'abschlag');
+  // 0.4.20+31 Deals im Adressbuch (deals.ts) – nach den alten Karten, sie gehen bei knappen Terminen vor.
+  const dl = balance.deals;
+  const rest = state.totalRounds - state.round;
+  // Wache, sobald der erwartete Diebstahl mehr kostet als der Sheriff.
+  if (cfg.guard && state.oilStock >= dl.theft.minStock && state.oilStock * dl.theft.chance * dl.theft.loss * state.postedPrice > (balance.plans.cards.wache?.cash ?? 0)) state = buchen(state, 'wache');
+  if (cfg.bank && state.loans.some((l) => l.source === 'bank' && l.principal >= 2000)) state = buchen(state, 'bank_zins');
+  // Kontingent: höchstens so viel, wie er in der Frist sicher per Bahn fährt (80 % der letzten Bahnfracht je Runde).
+  const bahn = state.freight?.railLast ?? 0;
+  const kontingent = [...dl.rail.quota.sizes].reverse().find((n) => n <= bahn * Math.min(dl.rail.quota.rounds, rest) * 0.8);
+  if (cfg.quota && kontingent && !exclusiveActive(state, balance) && leisten(state, kontingent * tariff(state, balance, 'rail'))) state = buchen(state, 'bahn_kontingent', String(kontingent));
+  // Vorschuss nur bei knapper Kasse und wenn die nächsten Runden die Menge sicher liefern.
+  const vorschuss = [...dl.crane.advance.sizes].reverse().find((n) => n <= (state.oilStock + prod * dl.crane.advance.rounds) * 0.7);
+  if (cfg.advance && vorschuss && state.cash < purse.reserve * 2 && rest > dl.crane.advance.rounds) state = buchen(state, 'crane_vorschuss', String(vorschuss));
+  // Förderzins nur, wenn sich die Zahlung in der restlichen Zeit sicher bezahlt macht.
+  if (cfg.royalty && rest >= dl.royalty.horizon + 2) {
+    const ziel = state.leases.find((l) => l.holder === 'jacob' && DEAL_HANDLERS.foerderzins.lock?.(state, balance, l.parcelId) === null && leisten(state, royaltyPrice(state, balance, l.parcelId)));
+    if (ziel) state = buchen(state, 'foerderzins', ziel.parcelId);
+  }
+  if (cfg.interview && !ende) state = buchen(state, 'interview');
   return state;
 }
 

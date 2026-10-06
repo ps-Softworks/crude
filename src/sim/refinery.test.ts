@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BalanceError, parseBalance, type Balance } from './balance';
 import { brandWorldFrom } from './brand';
+import { newDeals } from './deals';
 import { empireValue } from './empire';
 import { endRound, newGame, type GameState } from './game';
 import {
@@ -422,7 +423,9 @@ describe('Raffinerie: eine Runde', () => {
   });
 
   it('läuft in endRound vor der Förderung: Öl der neuen Förderung bleibt im Tank', () => {
-    const s = fertig(1, { oilStock: 10_000, royaltyOil: 0 });
+    // 0.4.20+31: Wache an den Tanks – sonst können Öldiebe (Kapitel 1, deals.ts) die Menge verfälschen.
+    const roh = fertig(1, { oilStock: 10_000, royaltyOil: 0 });
+    const s = { ...roh, deals: { ...newDeals(), guardRound: roh.round } };
     const n = endRound(s, balance);
     expect(n.refinery!.last!.crude).toBe(10_000);
     expect(n.refinery!.last!.round).toBe(s.round);

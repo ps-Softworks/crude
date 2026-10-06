@@ -19,6 +19,7 @@
 .gebucht-eintrag.nacht { border-color: var(--rot); }
 .gebucht-eintrag button.link { font-size: 16px; line-height: 1; padding: 0 2px; text-decoration: none; }
 
+.laufend { margin: 0 0 8px; font-size: 14px; color: var(--tinte-weich); }
 .adressbuch { display: grid; grid-template-columns: minmax(150px, 210px) 1fr; gap: 0; margin-top: 10px; border: 1px solid var(--linie); background: var(--papier-hell); }
 .stellen { display: flex; flex-direction: column; border-right: 1px solid var(--linie); background: var(--papier); padding: 4px 0; }
 .stelle-knopf {

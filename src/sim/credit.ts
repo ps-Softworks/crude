@@ -15,6 +15,7 @@ import type { GameState } from './game';
 import { parcelLabel } from './lease';
 import { producingWells } from './production';
 import { worldLimitFactor, worldRateAdd } from './world';
+import { deferredThisRound, pledgeBonus, seizePledge } from './deals';
 // 4.16 Andockpunkt: eigene Bank in Hallstead.
 import { bankRateDiscount } from './holdings';
 import { withStandDiscount } from './stand'; // 4.17 Andockpunkt
@@ -84,18 +85,19 @@ export function baseCreditLimit(state: Pick<GameState, 'wells'>, balance: Balanc
  * Bankrahmen: Grundrahmen × Faktor aus dem Kreditzyklus (4.4, worldLimitFactor) –
  * im Boom mehr, in Panik und Crash weniger –, auf 100 $ gerundet. Ohne Weltmodell der Grundrahmen.
  */
-export function creditLimit(state: Pick<GameState, 'wells'> & Partial<Pick<GameState, 'worldModel' | 'events' | 'chapter' | 'round' | 'totalRounds' | 'feldzug'>>, balance: Balance): number {
+export function creditLimit(state: Pick<GameState, 'wells'> & Partial<Pick<GameState, 'worldModel' | 'events' | 'chapter' | 'round' | 'totalRounds' | 'feldzug' | 'deals' | 'rigs'>>, balance: Balance): number {
   // Weichen (Spielspaß K1): Steht Ruth mit auf den Urkunden, gibt die Bank mehr (weichen.ts).
   // 0.4.20+11: In Cranes Preiskrieg sitzt Thorne im Kreditausschuss – die Bank gibt nur einen Teil des Rahmens.
   const krieg = state.feldzug?.phase === 'krieg' ? balance.feldzug.bank.limitFactor : 1;
   // 0.4.20+18: Die Bankaufsicht (Gesetz bank_supervision) verlangt Reserven – der Rahmen schrumpft.
   const aufsicht = lawRule(state, balance.laws, 'creditLimit', 1);
   const faktor = worldLimitFactor(state.worldModel, balance.worldModel) * weichenCreditFactor(state, balance) * krieg * aufsicht;
-  return Math.round((baseCreditLimit(state, balance) * faktor) / 100) * 100;
+  // 0.4.20+31: Ein verpfändeter Bohrturm gibt einen festen Aufschlag (deals.ts).
+  return Math.round((baseCreditLimit(state, balance) * faktor + pledgeBonus(state, balance)) / 100) * 100;
 }
 
 /** Wie viel die Bank noch gibt: Rahmen minus das, was er ihr schon schuldet. */
-export function headroom(state: Pick<GameState, 'loans' | 'wells'> & Partial<Pick<GameState, 'worldModel' | 'events' | 'chapter' | 'round' | 'totalRounds' | 'feldzug'>>, balance: Balance): number {
+export function headroom(state: Pick<GameState, 'loans' | 'wells'> & Partial<Pick<GameState, 'worldModel' | 'events' | 'chapter' | 'round' | 'totalRounds' | 'feldzug' | 'deals' | 'rigs'>>, balance: Balance): number {
   const offen = state.loans.filter((l) => l.source === 'bank').reduce((sum, l) => sum + l.principal, 0);
   return Math.max(0, creditLimit(state, balance) - offen);
 }
@@ -369,10 +371,17 @@ export function repaySlider(state: GameState, balance: Balance): AmountSlider | 
  * oder Zinsen offen bleiben, ist eine Fehlzahlung für das Rating; ein sauber
  * bezahltes Quartal nimmt einen alten Strich wieder weg.
  */
-export function settleLoans(input: GameState, balance: Balance): GameState {
+export function settleLoans(start: GameState, balance: Balance): GameState {
+  let input = start;
   const date = formatDate(input);
   const { emergency, minLoan } = balance.credit;
-  const faellig = quarterInterestTotal(input);
+  // 0.4.20+31: Stundung – die Bankzinsen dieser Runde kommen mit Aufschlag auf die Schuld statt aus der Kasse.
+  const gestundet = deferredThisRound(input);
+  if (gestundet) {
+    const auf = 1 + balance.deals.bank.defer.surcharge;
+    input = { ...input, loans: input.loans.map((l) => (l.source === 'bank' ? { ...l, principal: cents(l.principal + quarterInterest(l) * auf) } : l)) };
+  }
+  const faellig = gestundet ? cents(input.loans.filter((l) => l.source !== 'bank').reduce((sum, l) => sum + quarterInterest(l), 0)) : quarterInterestTotal(input);
   const bezahlt = Math.min(Math.max(input.cash, 0), faellig);
   let state: GameState = { ...input, cash: cents(input.cash - faellig), log: [...input.log] };
   if (bezahlt > 0) {
@@ -411,6 +420,8 @@ export function settleLoans(input: GameState, balance: Balance): GameState {
     state.log.push(`${date}: ${money(-state.cash)} bleiben offen – niemand leiht Jacob mehr Geld.`);
   }
 
+  // 0.4.20+31: Versäumt Jacob eine Zahlung, nimmt die Bank den verpfändeten Turm.
+  if (versaeumt) state = seizePledge(state);
   const sauber = !versaeumt && input.loans.length > 0;
   const missedPayments = Math.max(0, input.missedPayments + (versaeumt ? 1 : 0) - (sauber ? 1 : 0));
   // 0.4.19+2: Schlechte Noten aus Ereignissen (ratingShift < 0) verblassen – nach shiftRecoveryRounds Runden
