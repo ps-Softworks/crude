@@ -13,6 +13,8 @@ import {
   dirtyTurn,
   checkCampaignTargets,
   bondsTurn,
+  coverDues,
+  dueSoon,
   exchangeTurn,
   playCampaign,
   stocksTurn,
@@ -234,6 +236,45 @@ describe('Anleihen (Kapitel 2/3): bondsTurn (0.4.20+6)', () => {
       expect(bondDebt(s.stocks)).toBeLessThanOrEqual(Math.max(ziel, 0.8 * bondLimit(s, balance)) + 1e-6);
     }
     expect(bondDebt(s.stocks)).toBeGreaterThan(0);
+  });
+
+  it('Anschlussfinanzierung: eine diese Runde fällige Anleihe zählt nicht mehr – er gibt rechtzeitig eine neue aus', () => {
+    const start = firma();
+    const b0 = bondsTurn(start, balance, policy({ bonds: { load: 0.8 } })).stocks!.bonds[0];
+    // Rahmen genau für eine Anleihe dieser Größe
+    const p = policy({ bonds: { load: b0.principal / bondLimit(start, balance) } });
+    const erste = bondsTurn(start, balance, p);
+    const b = erste.stocks!.bonds[0];
+    expect(b.principal).toBe(b0.principal);
+    const davor = { ...erste, round: b.maturity - 1 };
+    expect(bondsTurn(davor, balance, p).stocks!.bonds).toHaveLength(1);
+    expect(bondsTurn({ ...erste, round: b.maturity }, balance, p).stocks!.bonds).toHaveLength(2);
+  });
+});
+
+describe('Vorausschau (0.4.20+17): dueSoon und coverDues', () => {
+  const g = newGame('vorschau', balance);
+  const mitAnleihen = (round: number): GameState =>
+    ({ ...g, round, stocks: { bonds: [{ id: 1, principal: 10000, rate: 0.05, issued: 1, maturity: 12 }, { id: 2, principal: 25000, rate: 0.05, issued: 1, maturity: 20 }] } }) as unknown as GameState;
+
+  it('zählt Anleihen und Thornes Kredit, die in den nächsten zwei Runden fällig werden', () => {
+    expect(dueSoon(mitAnleihen(9))).toBe(0);
+    expect(dueSoon(mitAnleihen(10))).toBe(10000);
+    expect(dueSoon(mitAnleihen(12))).toBe(10000);
+    const thorne = (due: number) => ({ ...mitAnleihen(11), feldzug: { loan: { amount: 50000, owed: 65000, due } } }) as unknown as GameState;
+    expect(dueSoon(thorne(13))).toBe(75000);
+    expect(dueSoon(thorne(14))).toBe(10000);
+    expect(dueSoon(g)).toBe(0);
+  });
+
+  it('reicht das Geld nicht für die Rücklage, verkauft er sein Depot – sonst nicht', () => {
+    const k3 = (cash: number): GameState => ({ ...openExchange({ ...newGame('vorschau-boerse', balance), chapter: 3 } as GameState, balance), cash });
+    const gekauft = exchangeTurn(k3(50000), balance, policy({ reserve: 10000, exchange: { share: 0.5, leverage: 2, sellOnWarning: true } }));
+    expect(gekauft.exchange!.positions).toHaveLength(1);
+    expect(coverDues(gekauft, balance, 20000)).toBe(gekauft);
+    const knapp = coverDues(gekauft, balance, 40000);
+    expect(knapp.exchange!.positions).toHaveLength(0);
+    expect(knapp.cash).toBeGreaterThan(gekauft.cash);
   });
 });
 

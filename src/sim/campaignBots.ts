@@ -220,7 +220,8 @@ export function bondsTurn(state: GameState, balance: Balance, policy: CampaignBo
   if (!p || !state.stocks || state.finished || chapterOf(state) < 2) return state;
   const B = balance.stocks.bonds;
   const ziel = p.load * bondLimit(state, balance);
-  const offen = bondDebt(state.stocks);
+  // Anschlussfinanzierung (0.4.20+17): Was diese Runde fällig wird, zählt nicht mehr – sonst fehlt das Geld genau dann.
+  const offen = bondDebt(state.stocks) - state.stocks.bonds.filter((b) => b.maturity <= state.round).reduce((sum, b) => sum + b.principal, 0);
   const groesse = [...B.sizes].sort((a, b) => b - a).find((x) => offen + x <= ziel);
   if (groesse === undefined) return state;
   const r = issueBond(state, balance, groesse, Math.min(...B.terms));
@@ -334,6 +335,32 @@ export function dirtyTurn(state: GameState, balance: Balance, policy: CampaignBo
 }
 
 /** Spielt ein Kapitel (2 oder 3) bis zum Ende: botTurn, Kapitelsysteme, Börse, endRound. */
+/**
+ * Vorausschau der Bots (0.4.20+17, Sitzung „bot runner“): Was in den nächsten `runden` Runden fällig wird –
+ * Anleihen und Thornes Kredit. Ohne sie gaben die Bots bis zur letzten Runde alles aus, und eine fällige Anleihe
+ * machte die Kasse am Kapitelende negativ (= Pleite, ohne Frist): gierig ging so in 48 von 115 Kapitel-3-Pleiten
+ * erst in der letzten Runde unter, mit 500.000 $ bis 1,1 Mio. $ Imperiumswert.
+ */
+export const BOT_VORLAUF = 2;
+export function dueSoon(state: GameState, runden = BOT_VORLAUF): number {
+  const grenze = state.round + runden;
+  const anleihen = (state.stocks?.bonds ?? []).filter((b) => b.maturity <= grenze).reduce((sum, b) => sum + b.principal, 0);
+  const loan = state.feldzug?.loan;
+  return anleihen + (loan && loan.due <= grenze ? loan.owed : 0);
+}
+
+/** Deckt das Geld die Rücklage plus das bald Fällige nicht, verkauft der Bot sein Depot an der Börse (Kapitelende: immer, wenn die Kasse knapp ist). */
+export function coverDues(state: GameState, balance: Balance, reserve: number): GameState {
+  const ex = state.exchange;
+  if (!ex || state.finished || ex.positions.length === 0 || state.cash >= reserve) return state;
+  let s = state;
+  for (const pos of ex.positions) {
+    const r = sellPosition(s, balance, pos.id);
+    if (r.ok) s = r.state;
+  }
+  return s;
+}
+
 /** Beobachter für Messungen (Sitzung „bot runner“): sieht den Stand vor jedem Rundenende (vorher, nach allen Bot-Zügen) und danach. */
 export type CampaignObserver = (vorher: GameState, nachher: GameState) => void;
 
@@ -342,15 +369,17 @@ function playChapter(state: GameState, balance: Balance, strategy: Strategy, pol
   const grenze = s.totalRounds + 5;
   while (!s.finished) {
     if (s.round > grenze) throw new Error(`Kampagne ${s.seed} (${strategy}) endet Kapitel ${s.chapter} nicht.`);
-    let t = dirtyTurn(botTurn(s, balance, strategy, rng, catalog), balance, policy);
-    if (policy.systemsChance >= 1 || rng.float() < policy.systemsChance) t = botChapterSystems(t, balance, { reserve: policy.reserve, perRound: policy.perRound });
+    // Rücklage plus das bald Fällige (Anleihen, Thornes Kredit) – sonst frisst der Ausbau das Geld für die Rückzahlung.
+    const p: CampaignBotPolicy = { ...policy, reserve: policy.reserve + dueSoon(s) };
+    let t = dirtyTurn(botTurn(s, balance, strategy, rng, catalog), balance, p);
+    if (p.systemsChance >= 1 || rng.float() < p.systemsChance) t = botChapterSystems(t, balance, { reserve: p.reserve, perRound: p.perRound });
     const ohneKredit = !t.feldzug?.loan;
-    t = botFeldzug(t, balance, policy.feldzug, policy.reserve);
+    t = botFeldzug(t, balance, p.feldzug, p.reserve);
     if (ohneKredit && t.feldzug?.loan) stats.thorneLoans += 1;
-    t = stocksTurn(t, balance, policy);
-    t = bondsTurn(t, balance, policy);
+    t = stocksTurn(t, balance, p);
+    t = bondsTurn(t, balance, p);
     const vorher = t.exchange?.positions.length ?? 0;
-    t = exchangeTurn(t, balance, policy);
+    t = t.round >= t.totalRounds ? coverDues(t, balance, p.reserve) : exchangeTurn(coverDues(t, balance, dueSoon(t)), balance, p);
     if ((t.exchange?.positions.length ?? 0) > vorher) stats.marginBuys += t.exchange!.positions.some((x) => x.loan > 0) ? 1 : 0;
     s = endRound(t, balance, catalog, texts.kapitel3 ? { kapitel3: texts.kapitel3 } : {});
     observe?.(t, s);
