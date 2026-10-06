@@ -271,11 +271,20 @@ export function advanceLaws(input: LawsState, view: LawView, catalog: readonly L
     if (move.action === 'weaken' && b.stage === 'debate') b.weakened = true;
   }
   const news: LawNewsItem[] = [];
+  // 0.4.20+24: Bis openingRound ruht das Parlament; dann wird das Eröffnungsgesetz fest beschlossen.
+  const ruht = lb.openingRound > 0 && view.round < lb.openingRound;
+  if (lb.openingRound > 0 && view.round === lb.openingRound && catalog.some((d) => d.id === lb.opening)) {
+    const b = (bills[lb.opening] ??= freshBill());
+    if (b.stage !== 'passed') {
+      Object.assign(b, { stage: 'passed', passedRound: view.round, lastVote: lb.openingVote, weakened: false, voteIn: 0, lobbyVote: 0 });
+      news.push({ law: lb.opening, kind: 'passed', yes: lb.openingVote });
+    }
+  }
   let offen = catalog.filter((d) => bills[d.id]?.stage === 'debate').length;
   for (const def of catalog) {
     const u = [rng.float(), rng.float(), rng.float()];
     const b = (bills[def.id] ??= freshBill());
-    if (b.stage === 'passed') continue;
+    if (b.stage === 'passed' || ruht) continue;
     const einfluss = clamp(round.influence?.[def.id] ?? 0, -1, 1);
     b.pressure = Math.max(0, b.pressure * lb.decay + reasonPoints(def.pressure, view, lage) + einfluss * lb.lobby.influencePressure);
     const lobbyStimmen = b.lobbyVote + einfluss * lb.lobby.influenceVote;

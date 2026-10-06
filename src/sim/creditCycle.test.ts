@@ -40,6 +40,8 @@ const still: WorldModelBalance = (() => {
   b = mit('nationalism', { noise: 0, nationalizeChance: 0 }, b);
   b = mit('mood', { noise: 0 }, b);
   b = mit('politics', { noise: 0 }, b);
+  // 0.4.20+24: Parlament ohne festen Auftakt (sonst ruht es bis openingRound).
+  b = mit('laws', { openingRound: 0 }, b);
   return {
     ...b,
     foreign: {

@@ -816,6 +816,14 @@ export interface LawsBalance {
   /** 0.4.20+19: Faktor auf die Schwelle jedes Gesetzes (content/laws/threshold) – weniger = Anträge öfter. */
   thresholdScale: number;
   /**
+   * 0.4.20+24: Das Parlament ruht bis openingRound (Beginn Kapitel 2). In dieser Runde wird das Eröffnungsgesetz
+   * (opening, die Einkommensteuer) fest beschlossen – es führt das Politiksystem ein. 0 = kein fester Auftakt.
+   */
+  openingRound: number;
+  opening: string;
+  /** Zustimmung, mit der die Zeitung das Eröffnungsgesetz meldet (0–1). */
+  openingVote: number;
+  /**
    * influencePressure/influenceVote/weakenFrom (0.4.20+17): Jacobs Einfluss je Gesetz (−1 … +1, schon nach Größe
    * gewichtet) gibt so viele Druckpunkte je Runde bzw. so viel Zustimmung bei der Abstimmung; Verwässerung ab
    * weakenFrom macht das Gesetz beim Beschluss „aufgeweicht“ (lobby.weaken.rules).
@@ -2490,6 +2498,13 @@ function parseWorldModel(raw: unknown): WorldModelBalance {
         max: sh('laws.trust.max'),
       },
       thresholdScale: nn('laws.thresholdScale'),
+      openingRound: integerInRange(raw, `${w}.laws.openingRound`, 0, 10000),
+      openingVote: sh('laws.openingVote'),
+      opening: (() => {
+        const v = (raw as { worldModel?: { laws?: { opening?: unknown } } }).worldModel?.laws?.opening;
+        if (typeof v !== 'string') throw new BalanceError('balance.yaml: "worldModel.laws.opening" fehlt (id des Eröffnungsgesetzes)');
+        return v;
+      })(),
       lobby: {
         demand: nn('laws.lobby.demand'),
         block: sh('laws.lobby.block'),

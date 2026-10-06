@@ -41,6 +41,10 @@ schritte:
     text:
       de: Die Schublade. Ein Bundesanwalt sammelt, was du früher getan hast. Die Hitze sagt dir, wie nah er dir ist.
       en: The drawer. A federal prosecutor collects what you did in the past. The heat tells you how close he is.
+  - objekt: hallstead
+    text:
+      de: Die Provinzpolitik. Hallstead hat gerade die Einkommensteuer beschlossen – 7 % von jedem Rundengewinn. Ab jetzt tagt das Parlament über weitere Gesetze. Hier forderst oder bremst du sie mit Gefallen und spendest an Parteien. Je größer deine Firma, desto mehr zählt dein Wort.
+      en: Provincial politics. Hallstead has just passed an income tax – 7 % of every round's profit. From now on Parliament debates further laws. Here you push or block them with favours and donate to parties. The bigger your firm, the more your word counts.
   - objekt: glocke
     text:
       de: Sonst bleibt alles, wie du es kennst. Den Rundgang findest du jederzeit wieder im Menü (☰).
