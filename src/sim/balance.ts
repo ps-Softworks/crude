@@ -568,7 +568,8 @@ export interface CampaignBotPolicy {
   /** Chance je Runde, dass er Raffinerie, Marke und Tankstellen anfasst (planende Bots: 1). */
   systemsChance: number;
   /** Börse (Kapitel 3): Anteil des freien Geldes je Kauf, Hebel, verkauft bei Warnung der Zeitung – oder null (nie). */
-  exchange: { share: number; leverage: number; sellOnWarning: boolean } | null;
+  /** afterCrash (0.4.20+17): kauft nur, solange die Börse nach einem Crash am Boden liegt (antizyklisch). */
+  exchange: { share: number; leverage: number; sellOnWarning: boolean; afterCrash?: boolean } | null;
   /**
    * Anleihen (Kapitel 2/3, 0.4.20+6): gibt je Runde eine Anleihe aus (größte, die passt; kürzeste Laufzeit), solange
    * alle Anleihen zusammen unter load × Anleihen-Rahmen bleiben – Wachstum auf Pump (GDD §15). Fehlt/null: nie.
@@ -1980,7 +1981,9 @@ function parseCampaignPolicy(raw: unknown, name: string): CampaignBotPolicy {
   if (ex !== null && ex !== undefined) {
     const sell = path(raw, `${p}.exchange.sellOnWarning`);
     if (typeof sell !== 'boolean') throw new BalanceError(`balance.yaml: "${p}.exchange.sellOnWarning" muss true oder false sein`);
-    exchange = { share: share(raw, `${p}.exchange.share`), leverage: positiveInt(raw, `${p}.exchange.leverage`), sellOnWarning: sell };
+    const nachCrash = path(raw, `${p}.exchange.afterCrash`);
+    if (nachCrash !== undefined && typeof nachCrash !== 'boolean') throw new BalanceError(`balance.yaml: "${p}.exchange.afterCrash" muss true oder false sein`);
+    exchange = { share: share(raw, `${p}.exchange.share`), leverage: positiveInt(raw, `${p}.exchange.leverage`), sellOnWarning: sell, ...(nachCrash ? { afterCrash: true } : {}) };
   }
   const def = path(raw, `${p}.defend`);
   const defend: CampaignBotPolicy['defend'] =

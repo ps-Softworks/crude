@@ -199,6 +199,17 @@ describe('Börse (Kapitel 3): exchangeTurn', () => {
     expect(exchangeTurn(heiss, balance, gier).exchange!.positions).toHaveLength(1);
   });
 
+  it('antizyklisch (afterCrash): kauft nur, solange die Börse nach einem Crash am Boden liegt', () => {
+    const p = policy({ reserve: 10000, exchange: { share: 0.5, leverage: 1, sellOnWarning: true, afterCrash: true } });
+    expect(exchangeTurn(k3(50000), balance, p).exchange!.positions).toHaveLength(0);
+    const amBoden: GameState = { ...k3(50000), exchange: { ...k3(50000).exchange!, crash: 3 } };
+    const s = exchangeTurn(amBoden, balance, p);
+    expect(s.exchange!.positions).toHaveLength(1);
+    expect(s.exchange!.positions[0].loan).toBe(0);
+    // ohne afterCrash kauft niemand in den Crash hinein
+    expect(exchangeTurn(amBoden, balance, policy({ reserve: 10000, exchange: { share: 0.5, leverage: 1, sellOnWarning: true } })).exchange!.positions).toHaveLength(0);
+  });
+
   it('das Depot zählt zum Imperiumswert (Kurswert minus Maklerkredit)', () => {
     const vorher = k3(50000);
     const s = exchangeTurn(vorher, balance, policy({ reserve: 0, exchange: { share: 0.5, leverage: 2, sellOnWarning: true } }));

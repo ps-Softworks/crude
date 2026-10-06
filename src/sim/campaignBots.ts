@@ -195,7 +195,8 @@ export function exchangeTurn(state: GameState, balance: Balance, policy: Campaig
     }
     return s;
   }
-  if ((s.exchange?.positions.length ?? 0) > 0 || ex.crash > 0 || (warnung && p.sellOnWarning)) return s;
+  // Antizyklisch (0.4.20+17): kauft nur, solange die Börse nach einem Crash am Boden liegt – sonst nie während eines Crashs.
+  if ((s.exchange?.positions.length ?? 0) > 0 || (p.afterCrash ? ex.crash === 0 : ex.crash > 0) || (warnung && p.sellOnWarning)) return s;
   const einsatz = Math.floor((s.cash - policy.reserve) * p.share);
   if (einsatz < balance.exchange.margin.minBuy) return s;
   const aktien = Object.keys(ex.prices).sort();
