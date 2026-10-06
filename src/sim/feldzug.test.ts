@@ -167,13 +167,15 @@ describe('Cranes Feldzug – Auswege', () => {
       },
     };
     const craneVorher = mitAnteil.brand!.regions.mittelland.crane.stations;
-    const t = ok(feldzugAbsprache(mitAnteil, balance));
-    expect(balance.feldzug.pact.keepRegions).toBe(2);
+    // Mit zwei behaltenen Regionen (die Zahl in balance.yaml justiert der bot runner)
+    const zwei = { ...balance, feldzug: { ...balance.feldzug, pact: { ...balance.feldzug.pact, keepRegions: 2 } } };
+    const t = ok(feldzugAbsprache(mitAnteil, zwei));
     expect(t.brand!.regions.cordova.stations).toBe(6);
     expect(t.brand!.regions.okara.stations).toBe(4);
     expect(t.brand!.regions.mittelland.stations).toBe(0);
     expect(t.brand!.regions.mittelland.crane.stations).toBe(craneVorher + 2);
     expect(t.cash).toBeCloseTo(mitAnteil.cash + 2 * stationCost(balance, 'mittelland') * balance.brand.station.resale, 2);
+    expect(ok(feldzugAbsprache(mitAnteil, balance)).brand!.regions.okara.stations).toBe(balance.feldzug.pact.keepRegions >= 2 ? 4 : 0);
   });
 
   it('Preisabsprache geht schon bei der Ankündigung, aber nicht in Ruhe', () => {
