@@ -2,7 +2,7 @@
 - [x] Teil 1 Netzwerk + Teil 2 Großhändler – 0.4.20+42 (Zweig netzwerk)
 - [x] B1 Einstellungen, B2 Geräusche (Agent) – zusammengeführt
 - [x] C1 Verlauf/Diagramme, C2 Speicherplätze, C3 Glossar (Agent) – zusammengeführt
-- [ ] A1 Verkaufen, A4 Pleite-Frist, A7 Versicherung, B4 Zweiter Anlauf (Agent läuft)
+- [x] A1 Verkaufen, A4 Pleite-Frist, A7 Versicherung, B4 Zweiter Anlauf (Agent) – 0.4.20+45, dazu Tank-Notverkauf am Kapitelende
 - [x] B3 Feuer in der Nacht (Agent) – 0.4.20+44
 - [ ] A2 Investoren, A3 Farm-out, A5 Konsortium, A6 Staat (Agent läuft)
 - [ ] C6 Abschluss: auf main zusammenführen, Roadmap, Tester-Build, Bericht

@@ -502,6 +502,18 @@ export function checkBankruptcy(input: GameState, balance: Balance, ratingBefore
     log: [...input.log, `${date}: ${grund} Jacob Harlan ist pleite – die Bank nimmt die Firma in Zwangsverwaltung.`],
   });
   if (input.round >= input.totalRounds) {
+    // 0.4.20+45: Am Kapitelende gibt es keine Frist mehr – erst geht das Öl im Tank zum Notpreis weg (ohne das Öl der Landbesitzer).
+    const eigen = Math.max(0, input.oilStock - input.royaltyOil);
+    const erloes = cents(eigen * input.postedPrice * balance.bankruptcy.tankSale);
+    if (eigen > 0 && input.cash + erloes >= 0) {
+      return {
+        ...input,
+        cash: cents(input.cash + erloes),
+        oilStock: input.royaltyOil,
+        bankruptcyDeadline: 0,
+        log: [...input.log, `${date}: Kapitelende im Minus – Jacob verkauft den Tank zum Notpreis (${money(Math.round(erloes))}) und rettet die Firma.`],
+      };
+    }
     return pleite(`Das Kapitel endet mit ${money(-input.cash)} im Minus.`);
   }
   const { graceRounds } = balance.bankruptcy;

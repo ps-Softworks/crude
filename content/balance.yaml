@@ -660,6 +660,7 @@ credit:
 # Wer sie übersteht, macht weiter; wer sie verstreichen lässt, ist pleite.
 bankruptcy:
   graceRounds: 2           # Runden Frist, bevor es Konkurs gibt
+  tankSale: 0.6            # 0.4.20+45: Kapitelende im Minus – Notverkauf des Tanks zu 60 % des Posted Price (abzüglich Förderzins-Öl), bevor die Pleite zählt
 
 # Imperiumswert (GDD §4): Kasse + Öl im Tank + Reserven im Boden − Schulden.
 # Reserven zählen nur vorsichtig, weil Förderkosten und Risiko noch darin stecken.

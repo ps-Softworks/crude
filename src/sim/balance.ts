@@ -726,6 +726,8 @@ export type CampaignTargetId = (typeof CAMPAIGN_TARGET_IDS)[number];
 
 export interface BankruptcyBalance {
   graceRounds: number;
+  /** 0.4.20+45: Kapitelende im Minus – das Öl im Tank geht zu diesem Anteil des Posted Price weg, bevor die Pleite zählt. */
+  tankSale: number;
 }
 
 
@@ -1811,7 +1813,7 @@ function parseBankruptcy(raw: unknown): BankruptcyBalance {
   if (!block || typeof block !== 'object') {
     throw new BalanceError('balance.yaml: Block "bankruptcy" fehlt');
   }
-  return { graceRounds: positiveInt(raw, 'bankruptcy.graceRounds') };
+  return { graceRounds: positiveInt(raw, 'bankruptcy.graceRounds'), tankSale: share(raw, 'bankruptcy.tankSale') };
 }
 
 function parseEmpire(raw: unknown): EmpireBalance {

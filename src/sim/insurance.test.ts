@@ -1,3 +1,4 @@
+import { knowAll } from './network';
 import { describe, expect, it } from 'vitest';
 import { DEAL_HANDLERS, dealsOf, insuranceClaim, insurancePremium, insuredAssets, recentClaims } from './deals';
 import { advanceDrilling, type Well } from './drilling';
@@ -12,7 +13,8 @@ const katalog = loadEvents();
 const b = balance.deals;
 
 function start(seed: string, patch: Partial<GameState> = {}): GameState {
-  return { ...newGame(seed, balance, katalog), ...patch };
+  // Die Versicherung lernt Jacob über die Bank kennen (network) – hier gilt sie als bekannt.
+  return { ...newGame(seed, balance, katalog), network: knowAll(balance), ...patch };
 }
 
 function buche(s: GameState, card: string, target?: string): GameState {

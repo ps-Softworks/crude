@@ -456,10 +456,21 @@ describe('Pleite (checkBankruptcy)', () => {
     expect(nach.bankruptcyDeadline).toBe(0);
   });
 
-  it('negative Kasse in der letzten Runde des Kapitels: sofort pleite', () => {
-    const state = checkBankruptcy({ ...inNot(), round: balance.start.rounds }, balance);
+  it('negative Kasse in der letzten Runde des Kapitels: ohne Öl im Tank sofort pleite', () => {
+    const state = checkBankruptcy({ ...inNot(), round: balance.start.rounds, oilStock: 0, royaltyOil: 0 }, balance);
     expect(state.ending).toBe('pleite');
     expect(state.finished).toBe(true);
+  });
+
+  it('0.4.20+45: Kapitelende im Minus – der Tank geht zum Notpreis weg; reicht er, keine Pleite', () => {
+    const basis = { ...inNot(), round: balance.start.rounds };
+    const voll = checkBankruptcy({ ...basis, oilStock: 3000, royaltyOil: 500 }, balance);
+    expect(voll.ending).toBeNull();
+    expect(voll.cash).toBeCloseTo(basis.cash + 2500 * basis.postedPrice * balance.bankruptcy.tankSale, 2);
+    expect(voll.oilStock).toBe(500);
+    expect(voll.log.at(-1)).toMatch(/Notpreis/);
+    // Zu wenig im Tank: trotzdem pleite.
+    expect(checkBankruptcy({ ...basis, cash: -100000, oilStock: 100, royaltyOil: 0 }, balance).ending).toBe('pleite');
   });
 
   it('eine laufende Frist fällt, sobald die Kasse wieder stimmt', () => {
