@@ -246,7 +246,7 @@ describe('Bot-Läufe', () => {
     const table = botTable(runBots(balance, 3));
     const zeilen = table.split('\n');
     expect(zeilen[0]).toBe(
-      '| Strategie | Partien | Bankrottquote | Kapitelziel | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen | Ø Termine |',
+      '| Strategie | Partien | Bankrottquote | Kapitelziel | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen | Ø Termine | Ø Spuren für Delaney (Partien mit Spur) |',
     );
     expect(zeilen).toHaveLength(2 + STRATEGIES.length);
     for (const s of STRATEGIES) expect(table).toContain(`| ${s} |`);
