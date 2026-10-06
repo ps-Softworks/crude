@@ -71,6 +71,7 @@ export const DIPLO_TEXT_KEYS = [
   'estimate',
   'estimate_barrel',
   'estimate_none',
+  'estimate_lease',
   'estimate_trace_law',
   'estimate_trace_none',
   'heat',

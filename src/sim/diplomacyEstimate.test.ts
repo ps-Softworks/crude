@@ -40,11 +40,11 @@ describe('Schätzung der Absprachen (diplomacyEstimate)', () => {
     expect(e.cartel).toBe(false);
   });
 
-  it('Gebietsabsprache: Anteil an den typischen Pachtausgaben je Runde', () => {
+  it('Gebietsabsprache: nennt den Anteil, um den neue Pachten billiger werden, keinen erfundenen Betrag', () => {
     const { state } = mitQuelle();
     const e = estimateOffer(state, balance, 'territory')!;
-    const r = balance.events.relevance;
-    expect(e.perRound).toBe(Math.round((balance.diplomacy.pacts.territoryLeaseCost * r.refLeaseSpend) / balance.events.timedRounds));
+    expect(e.perRound).toBeNull();
+    expect(e.leaseDiscount).toBe(balance.diplomacy.pacts.territoryLeaseCost);
     expect(e.perBarrel).toBeNull();
     expect(e.cartel).toBe(true);
   });

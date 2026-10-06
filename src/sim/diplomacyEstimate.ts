@@ -3,7 +3,7 @@
 // Zahlen wie die Wirkung selbst (diplomacyEffects.ts, balance.diplomacy.pacts):
 //   price      pricePremium $ je Barrel × Förderung je Runde
 //   supply     supplyPremium $ je Barrel × Förderung je Runde
-//   territory  territoryLeaseCost × typische Pachtausgaben je Runde (events.relevance.refLeaseSpend ÷ timedRounds)
+//   territory  kein Betrag je Runde – neue Pachten werden um territoryLeaseCost billiger (leaseDiscount)
 //   cross      kein Ertrag (nur Schutz vor Übernahmen) → null
 // Spur: Preis- und Gebietsabsprachen sind Kartelle; gilt ein Kartellgesetz, entsteht beim
 // Abschluss eine Spur der Schwere cartelHeat im Schattenbuch (diplomacyPacts.ts, trace()).
@@ -34,6 +34,9 @@ export interface OfferEstimate {
   rounds: number;
   /** Preis je Barrel, auf dem die Schätzung beruht (nur Preis-/Liefervertrag), sonst null. */
   perBarrel: number | null;
+  /** Gebietsabsprache: Anteil, um den neue Pachten billiger werden (sonst null). Ein Betrag je Runde hinge an
+   * künftigen Pachten, die niemand kennt – darum der Anteil statt einer erfundenen Summe. */
+  leaseDiscount: number | null;
   /** Kartellabsprache: Mit Kartellgesetz entsteht beim Abschluss eine Spur im Schattenbuch. */
   cartel: boolean;
   /** Schwere dieser Spur. */
@@ -49,9 +52,7 @@ export function estimateOffer(state: GameState, balance: Balance, kind: OfferKin
   if (kind === 'price' || kind === 'supply') {
     perBarrel = kind === 'price' ? p.pricePremium : p.supplyPremium;
     perRound = Math.round(perBarrel * barrelsPerRound(state, balance));
-  } else if (kind === 'territory') {
-    const r = balance.events.relevance;
-    perRound = Math.round((p.territoryLeaseCost * r.refLeaseSpend) / balance.events.timedRounds);
   }
-  return { perRound, rounds: p.rounds, perBarrel, cartel: isCartel({ kind }), traceSeverity: p.cartelHeat };
+  const leaseDiscount = kind === 'territory' ? p.territoryLeaseCost : null;
+  return { perRound, rounds: p.rounds, perBarrel, leaseDiscount, cartel: isCartel({ kind }), traceSeverity: p.cartelHeat };
 }
