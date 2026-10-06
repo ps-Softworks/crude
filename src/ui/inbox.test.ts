@@ -4,7 +4,7 @@ import { newGame } from '../sim/game';
 import { loadBalance } from '../sim/testBalance';
 import { loadEvents } from '../sim/testEvents';
 import { figureCatalog } from './figureCatalog.node';
-import { eventsShownIn, inboxBadges, landDeadlines, openItems, seenKey, sortInbox, unseen, visitorNames } from './inbox';
+import { bankruptcyDeadlineOf, eventsShownIn, inboxBadges, landDeadlines, openItems, seenKey, sortInbox, unseen, visitorNames } from './inbox';
 import { appearancesOf } from './visitors';
 
 function ereignis(id: string, extra: Partial<DeskEvent> = {}): DeskEvent {
@@ -54,6 +54,14 @@ describe('Was auf dem Schreibtisch liegt', () => {
     // Ohne freie Termine ist der Kalender kein offener Punkt.
     expect(openItems(inbox, { left: 0 }).map((i) => i.target)).not.toContain('termine');
     expect(openItems(sortInbox([], [], []), { left: 5 })).toEqual([]);
+  });
+
+  it('die Pleitefrist steht dringend ganz vorn und führt ins Kassenbuch', () => {
+    const items = openItems(sortInbox([], [], []), { left: 0 }, null, 7);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ target: 'kassenbuch', urgent: true });
+    expect(items[0].text).toMatch(/Bankrott droht! Bis Runde 7/);
+    expect(bankruptcyDeadlineOf({ bankruptcyDeadline: 7, finished: true })).toBe(0);
   });
 
   it('warnt an der Glocke vor Land, das nach dieser Runde verfällt (0.2.15+12)', () => {

@@ -2283,6 +2283,22 @@ sale:
     others: 0.45           # die anderen Ölleute bieten mindestens so viel – Bullard muss mithalten
     rig: 0.8               # Turm: 80 % des normalen Verkaufspreises
 
+# Pleitefrist mit Auswegen (src/sim/insolvency.ts, GDD §8): Frist bankruptcy.graceRounds, dazu Notverkauf (sale.emergency),
+# Umschuldung und Rettung durch Mr. Vale (Kapitel 1/2; Kapitel 3: Konsortium, kapitel3.konsortium.rescue).
+insolvency:
+  restructure:
+    minRating: C           # GDD §8: mindestens Rating C vor der Krise
+    lawyerFee: 800         # PLATZHALTER: Anwaltshonorar …
+    lawyerShare: 0.05      # … plus 5 % der umgeschuldeten Summe
+    ownLawyer: 0.5         # mit eigenem Anwalt (Ermittlung, ab Kapitel 2) halbes Honorar
+    rateAdd: 0.04          # Zins: Bankzins ohne Sicherheit + 4 Punkte
+    deferRounds: 4         # die ersten 4 Runden kommen die Zinsen auf die Schuld
+  rescue:
+    cushion: 1000          # PLATZHALTER: Vale legt mindestens 1.000 $ über das Loch hinaus …
+    cushionShare: 0.25     # … oder 25 % des Lochs
+    repay: 1.6             # Jacob schuldet ihm das 1,6-fache
+    rate: 0.15             # zu 15 % pro Jahr – und einen Gefallen (Ereignis vale_rettung_gefallen)
+
 rivalsK3:
   margaret:
     startAwareness: 5         # Kapitelbeginn: Crane Eastern ist in jeder Region so viel bekannter

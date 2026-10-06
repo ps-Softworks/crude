@@ -1,0 +1,51 @@
+# Pleitefrist mit Auswegen (src/sim/insolvency.ts, GDD §8 „Rettung durch das Konsortium zu brutalen Bedingungen“).
+# Entwurf von Claude, bitte in eigener Stimme umschreiben.
+# Hat Jacob in der Pleitefrist das Geld der Herren aus Hallstead genommen (acceptValeRescue, Merkzeichen
+# vale_rettung – nur Kapitel 1 und 2, in Kapitel 3 rettet das Konsortium selbst), fordert Mr. Vale einige
+# Runden später seinen Gefallen ein. minChapter: 1 – das Ereignis hängt an einem Merkzeichen der Simulation
+# und kommt so in jedem Kapitel, sobald es gesetzt ist (auch nach dem Zeitsprung).
+
+- id: vale_rettung_gefallen
+  visitor: vale
+  certain: true
+  marked: [vale_rettung]
+  delay: 3
+  deadline: 1
+  conditions: { minChapter: 1 }
+  title:
+    de: Mr. Vale erinnert an einen Gefallen
+    en: Mr. Vale Recalls a Favour
+  text:
+    de: >-
+      Der Herr im grauen Mantel setzt sich, ohne gefragt zu werden. „Sie erinnern sich: Als die Bank Ihnen die
+      Tür wies, haben meine Freunde in Hallstead nicht lange gefragt. Heute frage ich. Ein paar Herren brauchen
+      Öl – viel Öl, zu einem Preis, über den man unter Freunden nicht streitet. Ein Jahr lang. Mehr nicht.“
+      Er lächelt. „Und falls Sie lieber nur das Geld zurückzahlen: Auch das lässt sich einrichten. Es wird nur
+      teurer.“
+    en: >-
+      The gentleman in the grey coat sits down without being asked. "You remember: when the bank showed you the
+      door, my friends in Hallstead did not ask many questions. Today I am asking. A few gentlemen need oil –
+      a great deal of oil, at a price friends do not argue about. For one year. Nothing more." He smiles. "And
+      should you prefer simply to pay back the money: that can be arranged as well. It will only cost more."
+  choices:
+    - id: gefallen
+      label: { de: "Den Gefallen tun: ein Jahr lang Öl unter Preis an Vales Freunde", en: "Do the favour: a year of oil below price for Vale's friends" }
+      result:
+        de: >-
+          Vale nickt, als hätte er nichts anderes erwartet. Ein Jahr lang fahren Jacobs Fässer zu Käufern, deren
+          Namen niemand ausspricht. Ruth trägt den Preis ein und sagt nichts – aber sie unterstreicht ihn.
+        en: >-
+          Vale nods as if he had expected nothing else. For a year Jacob's barrels go to buyers whose names nobody
+          speaks. Ruth writes down the price and says nothing – but she underlines it.
+      effects: { price: -0.15 }
+      default: true
+    - id: ablehnen
+      label: { de: "Ablehnen und Vales Leuten {cash} „Bearbeitungsgebühr“ zahlen", en: "Refuse and pay Vale's people {cash} as a \"handling fee\"" }
+      result:
+        de: >-
+          „Wie Sie wünschen.“ Vale legt eine Rechnung auf den Tisch, sauber geschrieben, ohne Absender. Als er geht,
+          weiß Jacob, dass er sich in Hallstead einen Feind gemacht hat, der nie laut wird.
+        en: >-
+          "As you wish." Vale places an invoice on the desk, neatly written, without a sender. When he leaves, Jacob
+          knows he has made an enemy in Hallstead who never raises his voice.
+      effects: { cash: -2500 }

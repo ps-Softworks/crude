@@ -171,7 +171,8 @@ describe('Bedingungen', () => {
     // mit den Kindern aus 4.5 steht bei den festen Terminen, gilt aber nur in Kapitel 2.)
     // 0.4.19+3: dazu das Sonntagsessen in Kapitel 3 (termin_familie_k3, termin_kinder_k3).
     const spaeteTermine = ['termin_familie_k2', 'termin_familie_k3', 'termin_kinder_k3'];
-    const k1 = katalog.filter((x) => !/^k[2-9]_/.test(x.id) && !x.id.startsWith('fernleitung_') && !spaeteTermine.includes(x.id));
+    // Pleitefrist (insolvency.ts): vale_rettung_gefallen hängt wie die Fernleitungs-Ereignisse an einem Merkzeichen der Simulation.
+    const k1 = katalog.filter((x) => !/^k[2-9]_/.test(x.id) && !x.id.startsWith('fernleitung_') && !x.id.startsWith('vale_rettung_') && !spaeteTermine.includes(x.id));
     expect(k1.length).toBeGreaterThan(0);
     for (const e of k1) {
       expect(e.conditions.minChapter, e.id).toBeUndefined();
@@ -191,7 +192,7 @@ describe('Bedingungen', () => {
   });
 
   it('sichere Kapitel-1-Ereignisse (thomas_geburt, Silas, Moss, Rivalen …) tragen ausdrücklich maxChapter: 1', () => {
-    const sicher = loadEvents().filter((e) => e.certain && !/^k[2-9]_/.test(e.id) && !e.id.startsWith('fernleitung_'));
+    const sicher = loadEvents().filter((e) => e.certain && !/^k[2-9]_/.test(e.id) && !e.id.startsWith('fernleitung_') && !e.id.startsWith('vale_rettung_'));
     expect(sicher.map((e) => e.id)).toContain('thomas_geburt');
     for (const e of sicher) {
       expect(e.conditions.maxChapter, e.id).toBe(1);

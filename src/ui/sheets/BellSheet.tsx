@@ -4,7 +4,7 @@
 
 import { agendaView } from '../../sim/agenda';
 import { balance } from '../balance';
-import { landDeadlines, openItems, type OpenItem } from '../inbox';
+import { bankruptcyDeadlineOf, landDeadlines, openItems, type OpenItem } from '../inbox';
 import type { SheetContext } from './types';
 
 export function BellSheet({ ctx, onEndRound, onGo, onChapterEnd }: { ctx: SheetContext; onEndRound: () => void; onGo: (item: OpenItem) => void; onChapterEnd: (() => void) | null }) {
@@ -21,7 +21,7 @@ export function BellSheet({ ctx, onEndRound, onGo, onChapterEnd }: { ctx: SheetC
       </div>
     );
   }
-  const offen = openItems(ctx.inbox, agendaView(game, balance), landDeadlines(game));
+  const offen = openItems(ctx.inbox, agendaView(game, balance), landDeadlines(game), bankruptcyDeadlineOf(game));
   return (
     <div className="glocke-blatt">
       {offen.length > 0 ? (

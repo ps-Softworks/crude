@@ -22,8 +22,8 @@ import { withStandDiscount } from './stand'; // 4.17 Andockpunkt
 import { chapterOf } from './chapterOf';
 import { weichenCreditFactor } from './weichen';
 
-/** Woher das Geld kommt: von der Bank oder als Notkredit vom Geldverleiher. */
-export type LoanSource = 'bank' | 'lender';
+/** Woher das Geld kommt: von der Bank, als Notkredit vom Geldverleiher oder als Rettung von Mr. Vale (insolvency.ts). */
+export type LoanSource = 'bank' | 'lender' | 'vale';
 
 /** Ein einzelner Kredit. Jeder Kredit behält seinen Zins, bis er getilgt ist. */
 export interface Loan {
@@ -38,6 +38,8 @@ export interface Loan {
   takenRound: number;
   /** Parzelle der fördernden Quelle, die als Pfand dient; null ohne Pfand. */
   collateral: string | null;
+  /** Umschuldung (insolvency.ts): bis einschließlich dieser Runde kommen die Zinsen auf die Schuld statt aus der Kasse. */
+  deferUntil?: number;
 }
 
 export type LoanResult = { ok: true; state: GameState; loan: Loan } | { ok: false; reason: string };
@@ -375,13 +377,16 @@ export function settleLoans(start: GameState, balance: Balance): GameState {
   let input = start;
   const date = formatDate(input);
   const { emergency, minLoan } = balance.credit;
+  // Umschuldung (insolvency.ts): Kredite mit deferUntil zahlen bis dahin keine Zinsen – sie kommen auf die Schuld.
+  const gestreckt = (l: Loan) => l.deferUntil !== undefined && l.deferUntil >= start.round;
   // 0.4.20+31: Stundung – die Bankzinsen dieser Runde kommen mit Aufschlag auf die Schuld statt aus der Kasse.
   const gestundet = deferredThisRound(input);
-  if (gestundet) {
-    const auf = 1 + balance.deals.bank.defer.surcharge;
-    input = { ...input, loans: input.loans.map((l) => (l.source === 'bank' ? { ...l, principal: cents(l.principal + quarterInterest(l) * auf) } : l)) };
+  const auf = gestundet ? 1 + balance.deals.bank.defer.surcharge : 1;
+  const aufDieSchuld = (l: Loan) => gestreckt(l) || (gestundet && l.source === 'bank');
+  if (input.loans.some(aufDieSchuld)) {
+    input = { ...input, loans: input.loans.map((l) => (aufDieSchuld(l) ? { ...l, principal: cents(l.principal + quarterInterest(l) * (gestreckt(l) ? 1 : auf)) } : l)) };
   }
-  const faellig = gestundet ? cents(input.loans.filter((l) => l.source !== 'bank').reduce((sum, l) => sum + quarterInterest(l), 0)) : quarterInterestTotal(input);
+  const faellig = cents(input.loans.filter((l) => !aufDieSchuld(l)).reduce((sum, l) => sum + quarterInterest(l), 0));
   const bezahlt = Math.min(Math.max(input.cash, 0), faellig);
   let state: GameState = { ...input, cash: cents(input.cash - faellig), log: [...input.log] };
   if (bezahlt > 0) {
@@ -477,18 +482,19 @@ export function callLoansInCrisis(input: GameState, balance: Balance): GameState
   };
 }
 
-export function checkBankruptcy(input: GameState, balance: Balance): GameState {
+export function checkBankruptcy(input: GameState, balance: Balance, ratingBefore: Rating = input.rating): GameState {
   if (input.finished || input.ending !== null) return input;
   const date = formatDate(input);
   if (input.cash >= 0) {
-    if (input.bankruptcyDeadline === 0) return input;
+    // Frist vorbei: auch der Vermerk der Krise (insolvency.ts) fällt weg.
+    const { insolvency: _vorbei, ...ohne } = input;
+    if (input.bankruptcyDeadline === 0) return input.insolvency ? ohne : input;
     return {
-      ...input,
+      ...ohne,
       bankruptcyDeadline: 0,
       log: [...input.log, `${date}: Die Kasse stimmt wieder – die Bank lässt die Frist fallen.`],
     };
   }
-
   const pleite = (grund: string): GameState => ({
     ...input,
     finished: true,
@@ -503,6 +509,8 @@ export function checkBankruptcy(input: GameState, balance: Balance): GameState {
     return {
       ...input,
       bankruptcyDeadline: input.round + graceRounds,
+      // insolvency.ts: Beginn der Frist und Rating vor der Krise (für die Umschuldung).
+      insolvency: { since: input.round, ratingBefore },
       log: [
         ...input.log,
         `${date}: Die Kasse ist ${money(-input.cash)} im Minus und niemand leiht mehr. Die Bank gibt ${graceRounds} Runden Frist.`,

@@ -32,7 +32,7 @@ import { GameOverScreen } from './GameOverScreen';
 import { ChronicleScreen, DirectivesLetter, SwitchTelegram } from './TimeskipScreen';
 import { figures } from './figureContent';
 import { figureOf } from './figures';
-import { eventsShownIn, inboxBadges, landDeadlines, openItems, seenKey, sortInbox, unseen, visitorNames, type OpenItem } from './inbox';
+import { bankruptcyDeadlineOf, eventsShownIn, inboxBadges, landDeadlines, openItems, seenKey, sortInbox, unseen, visitorNames, type OpenItem } from './inbox';
 import { keyInput, keyToAction } from './keys';
 import type { MapMarker } from './Map';
 import { MapView } from './map/MapView';
@@ -207,7 +207,7 @@ export function App() {
   // Was auf dem Tisch liegt – nur gefiltert und gezählt aus src/sim.
   const inbox = sortInbox(deskEvents(game, balance, events), deskMail(game, balance, events), deskRoutines(game, balance, events), appearances);
   const badges = inboxBadges(inbox, ui.seen);
-  const offen = openItems(inbox, agendaView(game, balance), landDeadlines(game));
+  const offen = openItems(inbox, agendaView(game, balance), landDeadlines(game), bankruptcyDeadlineOf(game));
   // Wer im Raum steht, wartet nicht mehr vor der Tür.
   const draussen = { ...inbox, visitors: inbox.visitors.filter((e) => e.id !== ui.visitor) };
   const wartende = visitorNames(draussen);

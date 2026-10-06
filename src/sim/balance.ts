@@ -4,6 +4,7 @@
 
 import type { BuyoutBalance } from './buyout';
 import type { SaleBalance } from './sale';
+import type { InsolvencyBalance } from './insolvency';
 import { parseStocksBalance, type StocksBalance } from './stocksBalance'; // 4.8 Andockpunkt
 import { parseDiplomacy, type DiplomacyBalance } from './diplomacyBalance'; // 4.10 Andockpunkt
 // 4.15 Andockpunkt: Börse und Kauf auf Kredit.
@@ -1078,6 +1079,8 @@ export interface Balance {
   buyout: BuyoutBalance;
   /** Anlagen verkaufen (Gegenstück zum Feldkauf, src/sim/sale.ts). */
   sale: SaleBalance;
+  /** Pleitefrist mit Auswegen (src/sim/insolvency.ts): Umschuldung und Rettung durch Mr. Vale. */
+  insolvency: InsolvencyBalance;
   /** 0.4.20+8: Cranes Feldzug in Kapitel 3 (src/sim/feldzug.ts). */
   feldzug: FeldzugBalance;
   /** 4.12: Systemwirkungen der Ereignisse (src/sim/eventSystems.ts). */
@@ -2752,6 +2755,22 @@ export function parseBalance(raw: unknown): Balance {
         feud: share(raw, 'sale.emergency.feud'),
         others: share(raw, 'sale.emergency.others'),
         rig: share(raw, 'sale.emergency.rig'),
+      },
+    },
+    insolvency: {
+      restructure: {
+        minRating: ratingText((raw as { insolvency?: { restructure?: unknown } }).insolvency?.restructure, 'minRating', 'insolvency.restructure.minRating'),
+        lawyerFee: num(raw, 'insolvency.restructure.lawyerFee'),
+        lawyerShare: share(raw, 'insolvency.restructure.lawyerShare'),
+        ownLawyer: share(raw, 'insolvency.restructure.ownLawyer'),
+        rateAdd: num(raw, 'insolvency.restructure.rateAdd'),
+        deferRounds: positiveInt(raw, 'insolvency.restructure.deferRounds'),
+      },
+      rescue: {
+        cushion: num(raw, 'insolvency.rescue.cushion'),
+        cushionShare: share(raw, 'insolvency.rescue.cushionShare'),
+        repay: num(raw, 'insolvency.rescue.repay'),
+        rate: share(raw, 'insolvency.rescue.rate'),
       },
     },
     feldzug: parseFeldzugBalance(raw), // 0.4.20+8

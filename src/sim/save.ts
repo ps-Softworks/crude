@@ -240,6 +240,8 @@ export function validateState(value: unknown): LoadResult {
   }
   // Feldkauf (0.4.20+27): Wartezeit je Ranch – freiwillig, wenn da: Ranch-Kennung → Runde.
   if (value.buyouts !== undefined && (!istObjekt(value.buyouts) || !Object.values(value.buyouts).every(istZahl))) return { ok: false, reason: UNVOLLSTAENDIG };
+  // Pleitefrist mit Auswegen (insolvency.ts): freiwillig, wenn da: Beginn und Rating vor der Krise.
+  if (value.insolvency !== undefined && (!istObjekt(value.insolvency) || !istZahl(value.insolvency.since) || !['A', 'B', 'C', 'D'].includes(value.insolvency.ratingBefore as string))) return { ok: false, reason: UNVOLLSTAENDIG };
   // 0.4.20+31: Deals im Adressbuch.
   if (value.deals !== undefined) {
     const d = value.deals;

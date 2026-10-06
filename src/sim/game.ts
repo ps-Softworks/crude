@@ -1,6 +1,7 @@
 // Spielzustand und Rundenschleife. Alles hier ist reine Logik:
 // Funktionen bekommen einen Zustand und geben einen neuen zurück.
 
+import type { InsolvencyState } from './insolvency';
 import { newAgenda, settleAgenda, type AgendaState } from './agenda';
 import type { Balance, Rating, TransportMode } from './balance';
 import { formatDate } from './calendar';
@@ -190,6 +191,8 @@ export interface GameState {
   rivalsK3?: RivalsK3State;
   /** Feldkauf (0.4.20+27): je Ranch die Runde, ab der Bullard wieder ein Angebot anhört (nach Ablehnung). Fehlt = nie abgelehnt. */
   buyouts?: Record<string, number>;
+  /** Pleitefrist (insolvency.ts): Beginn und Rating vor der Krise, schon umgeschuldet. Fehlt = keine Frist (bzw. alter Stand: Rating von jetzt). */
+  insolvency?: InsolvencyState;
   /** 0.4.20+8: Cranes Feldzug in Kapitel 3 (src/sim/feldzug.ts) – fehlt, bis die Marke gegründet ist. */
   feldzug?: FeldzugState;
   /** 0.4.20+18: Förderquoten (Gesetz production_quota) – true = Jacob fördert voll, „heißes Öl“ (lawEffects.ts). */
@@ -432,7 +435,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const hallstead = settleHallstead(ermittelt, balance);
   // 0.4.20+17: Geltende Gesetze – Einkommensteuer auf den Gewinn der Runde (vor der Pleiteprüfung).
   const besteuert = settleBreakup(settleIncomeTax(input, hallstead, balance), balance);
-  const state = { ...checkBankruptcy(besteuert, balance), roundLogStart };
+  // Pleitefrist: Das Rating vom Rundenbeginn zählt als „vor der Krise“ (Umschuldung, insolvency.ts).
+  const state = { ...checkBankruptcy(besteuert, balance, input.rating), roundLogStart };
   if (state.ending === 'pleite') return state;
   // 4.12 Andockpunkt: frühe Enden ab Kapitel 2 (abgesetzt, geschluckt, hinter Gittern – GDD §14).
   const frueh = applyEarlyEnding(state, balance);
