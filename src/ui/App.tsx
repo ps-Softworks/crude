@@ -393,6 +393,19 @@ export function App() {
     setSpielNr((n) => n + 1);
   }
 
+  // 0.4.20+42: Stand aus einem Speicherplatz übernehmen – wie eine neue Welt, nur mit dem geladenen Zustand.
+  function ladenAusPlatz(geladen: GameState) {
+    setBrief(false);
+    setSeed(geladen.seed);
+    setGame(openProvince(geladen, balance));
+    setNotice(null);
+    setPeek(false);
+    setUebergang(null);
+    setBericht(null);
+    dispatch({ type: 'reset' });
+    setSpielNr((n) => n + 1);
+  }
+
   function startNewWorld(neuerSeed: string) {
     setBrief(false);
     setSeed(neuerSeed);
@@ -554,6 +567,7 @@ export function App() {
         onNewWorld: () => startNewWorld(seed),
         onRandomWorld: () => startNewWorld(freshSeed(seed)),
         onForget: neuesSpiel,
+        onLoadSlot: ladenAusPlatz,
       }}
     />
   );

@@ -11,6 +11,8 @@
 // 4.19: Kapitel 3 „Der Konzernherr“ – Prüfung (Marke in Regionen oder Marktanteil, Rating), „Was aus ihnen
 // wurde“ (Daniel, Thomas, Ruth, Mr. Vale) und das Ende des Early-Access-Umfangs („Kapitel 4 folgt“).
 
+import { Begriff } from './Begriff';
+import { HistorySummary } from './HistoryPanel';
 import { useEffect, useRef, useState } from 'react';
 import { arcSummaries } from '../sim/arcs';
 import { canGoPublic, chapter2Check, chapter3Check, chapterBonuses, chapterCheck, chapterResult, fillText, ipoConsequenceText, ipoProceeds, type Chapter2EndingId } from '../sim/chapter';
@@ -159,7 +161,7 @@ export function ChapterEndScreen({
             )}
             <h3>Zahlen</h3>
             <dl className="terms zweispaltig">
-              <dt>{verkauft ? 'Kaufpreis' : 'Imperiumswert'}</dt>
+              <dt>{verkauft ? 'Kaufpreis' : <Begriff id="imperiumswert">Imperiumswert</Begriff>}</dt>
               <dd>
                 <strong>{money(empireValue(game, balance))}</strong>
               </dd>
@@ -189,6 +191,7 @@ export function ChapterEndScreen({
               )}
             </dl>
             {k2 && <ReputationLine game={game} />}
+            <HistorySummary game={game} />
           </div>
           <div>
             {!verkauft && !imBau && (

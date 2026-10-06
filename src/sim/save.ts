@@ -119,6 +119,8 @@ export function validateState(value: unknown): LoadResult {
   if (!ZAHLEN.every((key) => istZahl(value[key]))) return { ok: false, reason: UNVOLLSTAENDIG };
   // Kapitel (Phase 4): darf fehlen (= Kapitel 1), sonst eine Zahl.
   if (value.chapter !== undefined && !istZahl(value.chapter)) return { ok: false, reason: KAPUTT };
+  // Verlauf (0.4.20+42): freiwillig, sonst eine Liste von Einträgen mit Zahlen.
+  if (value.history !== undefined && !(istListe(value.history) && value.history.every((e) => istObjekt(e) && ['r', 'k', 'cash', 'debt', 'value', 'out', 'price'].every((k) => istZahl(e[k]))))) return { ok: false, reason: KAPUTT };
   if (!LISTEN.every((key) => istListe(value[key]))) return { ok: false, reason: UNVOLLSTAENDIG };
   if (!OBJEKTE.every((key) => istObjekt(value[key]))) return { ok: false, reason: UNVOLLSTAENDIG };
 

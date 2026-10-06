@@ -4,6 +4,7 @@
 
 import { openBuyers } from '../sim/buyers';
 import { contactNames } from './plans';
+import { Begriff } from './Begriff';
 import { useState } from 'react';
 import { BUYERS, TRANSPORT_MODES, type Buyer, type TransportMode } from '../sim/balance';
 import type { GameState } from '../sim/game';
@@ -82,7 +83,7 @@ export function SalePanel({ game, onSold }: { game: GameState; onSold: (state: G
   return (
     <div className="sale-panel">
       <p>
-        Im Tank: <strong>{barrels(tank)}</strong> von {barrels(storageCapacity(game, balance))} bbl · Posted Price{' '}
+        Im Tank: <strong>{barrels(tank)}</strong> von {barrels(storageCapacity(game, balance))} bbl · <Begriff id="posted_price">Posted Price</Begriff>{' '}
         {price(game.postedPrice)}
         {priceChange} je Barrel
       </p>
@@ -335,7 +336,7 @@ export function PipelinePanel({ game, onChange }: { game: GameState; onChange: (
         <ul className="rechte">
           {rechte.map((r) => (
             <li key={r.mark}>
-              {r.held ? '☑' : '☐'} Wegerecht {r.label}
+              {r.held ? '☑' : '☐'} <Begriff id="wegerecht">Wegerecht</Begriff> {r.label}
             </li>
           ))}
         </ul>

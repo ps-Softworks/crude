@@ -9,6 +9,8 @@ import { keyLabel, SHORTCUTS } from '../keys';
 import { Tabs, activeTab } from '../sheet/Tabs';
 import { tester } from '../tester';
 import type { SheetContext } from './types';
+import type { GameState } from '../../sim/game';
+import { SlotsPanel } from './SlotsPanel';
 import { ConfirmButton } from '../ConfirmButton';
 // 4.6 Andockpunkt: Raffinerie im Debug-Reiter freischalten.
 import { unlockRefinery } from '../../sim/refinery';
@@ -46,6 +48,8 @@ export interface MenuProps {
   onNewWorld: () => void;
   onRandomWorld: () => void;
   onForget: () => void;
+  /** Stand aus einem Speicherplatz übernehmen (0.4.20+42). */
+  onLoadSlot: (state: GameState) => void;
 }
 
 /** Weltmodell (4.1) als Zahlen – nur im Debug-Reiter; im Spiel deutet nur die Zeitung an. */
@@ -151,6 +155,8 @@ export function MenuSheet(p: MenuProps) {
   const { ctx } = p;
   const tabs = [
     { id: 'spiel', label: 'Spiel' },
+    { id: 'speichern', label: 'Speichern' },
+    { id: 'laden', label: 'Laden' },
     { id: 'tasten', label: 'Tasten' },
     ...(ctx.debugTools ? [{ id: 'debug', label: 'Debug' }] : []),
   ];
@@ -174,6 +180,11 @@ export function MenuSheet(p: MenuProps) {
             </button>
           </p>
           <p>
+            <button type="button" onClick={() => ctx.open('glossar', { back: { sheet: 'menu' } })}>
+              Glossar öffnen
+            </button>
+          </p>
+          <p>
             <button type="button" onClick={p.onTour}>
               Rundgang über den Schreibtisch zeigen
             </button>
@@ -190,6 +201,8 @@ export function MenuSheet(p: MenuProps) {
           <p className="muted klein">Der Spielstand wird nach jeder Aktion von selbst gesichert.</p>
         </div>
       )}
+      {tab === 'speichern' && <SlotsPanel mode="save" game={ctx.game} onLoad={p.onLoadSlot} />}
+      {tab === 'laden' && <SlotsPanel mode="load" game={ctx.game} onLoad={p.onLoadSlot} />}
       {tab === 'tasten' && <KeyHelp debugTools={ctx.debugTools} />}
       {tab === 'debug' && ctx.debugTools && (
         <section className="debug">

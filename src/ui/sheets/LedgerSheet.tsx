@@ -3,10 +3,12 @@
 // 4.8 Andockpunkt: Ab Kapitel 2 (state.stocks) bekommt das Kassenbuch Reiter für
 // Aktienbuch, Aufsichtsrat und Anleihen (StocksPanel). In Kapitel 1 bleibt es, wie es war.
 
+import { Begriff } from '../Begriff';
 import { creditLimit, debt, headroom } from '../../sim/credit';
 import { startStocks, stocksAttention } from '../../sim/stocks';
 import { balance } from '../balance';
 import { BankPanel } from '../BankPanel';
+import { HistoryPanel } from '../HistoryPanel';
 import { ChapterGoalProgress } from '../ChapterGoalProgress';
 import { ReputationLine } from '../Reputation';
 import { money } from '../format';
@@ -21,7 +23,7 @@ export function LedgerSheet({ ctx }: { ctx: SheetContext }) {
     <>
       <p className="kassenbuch-kopf">
         Kasse <strong>{money(game.cash)}</strong> · Schulden {money(debt(game))} · Rahmen frei {money(headroom(game, balance))} von{' '}
-        {money(creditLimit(game, balance))} · Rating {game.rating}
+        {money(creditLimit(game, balance))} · <Begriff id="rating">Rating</Begriff> {game.rating}
       </p>
       {/* 4.12: Ruf als Wörter, sobald Ereignisse ihn bewegt haben. */}
       <ReputationLine game={game} className="klein kassenbuch-ruf" />
@@ -31,10 +33,18 @@ export function LedgerSheet({ ctx }: { ctx: SheetContext }) {
   );
   // 4.8 Andockpunkt: ohne Aktienbuch (Kapitel 1) nur die Bank. Der Debug-Knopf zum Anlegen steht im Menü → Debug → „Vorab freischalten“.
   if (!game.stocks) {
+    const tabs1 = [
+      { id: 'bank', label: 'Bank' },
+      { id: 'verlauf', label: 'Verlauf' },
+    ];
+    const tab1 = activeTab('kassenbuch', tabs1, ctx.tab);
     return (
       <>
         {kopf}
-        <BankPanel game={game} onResult={ctx.onLoan} />
+        <Tabs sheet="kassenbuch" tabs={tabs1} active={tab1} onChange={ctx.onTab}>
+          {tab1 === 'bank' && <BankPanel game={game} onResult={ctx.onLoan} />}
+          {tab1 === 'verlauf' && <HistoryPanel game={game} />}
+        </Tabs>
       </>
     );
   }
@@ -45,6 +55,7 @@ export function LedgerSheet({ ctx }: { ctx: SheetContext }) {
     { id: 'aktien', label: 'Aktienbuch' },
     ...(game.stocks.public ? [{ id: 'rat', label: 'Aufsichtsrat', badge: achtung ? '!' : undefined }] : []),
     { id: 'anleihen', label: 'Anleihen' },
+    { id: 'verlauf', label: 'Verlauf' },
   ];
   const tab = activeTab('kassenbuch', tabs, ctx.tab);
   return (
@@ -55,6 +66,7 @@ export function LedgerSheet({ ctx }: { ctx: SheetContext }) {
         {tab === 'aktien' && <SharesPanel game={game} onChange={ctx.onGame} debug={ctx.debug} />}
         {tab === 'rat' && <BoardPanel game={game} onChange={ctx.onGame} debug={ctx.debug} />}
         {tab === 'anleihen' && <BondsPanel game={game} onChange={ctx.onGame} />}
+        {tab === 'verlauf' && <HistoryPanel game={game} />}
       </Tabs>
     </>
   );

@@ -19,6 +19,8 @@ export const SHEET_IDS = [
   'menu',
   /** Einstellungen: Textgröße, Ton, Vollbild, weniger Animation, Karte (aus dem Menü). */
   'einstellungen',
+  /** Glossar: Begriffe der Epoche und des Spiels (0.4.20+42). */
+  'glossar',
   'glocke',
   /** Rundenbericht nach der Glocke: was über Nacht geschah (0.2.15+11). */
   'bericht',

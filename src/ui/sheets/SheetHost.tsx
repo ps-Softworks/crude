@@ -16,6 +16,7 @@ import { IncidentsSheet } from './IncidentsSheet';
 import { KonzernSheet } from './KonzernSheet'; // 4.17 Andockpunkt
 import { JournalSheet } from './JournalSheet';
 import { LedgerSheet } from './LedgerSheet';
+import { GlossarySheet } from './GlossarySheet';
 import { MenuSheet, type MenuProps } from './MenuSheet';
 import { SettingsSheet } from './SettingsSheet';
 import { NewspaperSheet } from './NewspaperSheet';
@@ -51,6 +52,7 @@ export const SHEET_INFO: Record<SheetId, { title: string; size: SheetSize }> = {
   konkurrenz: { title: 'Konkurrenz', size: 'brief' },
   menu: { title: 'Menü', size: 'brief' },
   einstellungen: { title: 'Einstellungen', size: 'brief' },
+  glossar: { title: 'Glossar', size: 'mappe' },
   glocke: { title: 'Runde beenden', size: 'brief' },
   bericht: { title: 'Was diese Runde geschah', size: 'brief' },
   wartende: { title: 'Wer vor der Tür wartet', size: 'brief' },
@@ -104,6 +106,7 @@ export function SheetHost({ open, ctx, menu, notice, onClose, onBack, onEndRound
     konkurrenz: () => <RivalsSheet ctx={ctx} />,
     menu: () => <MenuSheet ctx={ctx} {...menu} />,
     einstellungen: () => <SettingsSheet />,
+    glossar: () => <GlossarySheet />,
     glocke: () => <BellSheet ctx={ctx} onEndRound={onEndRound} onGo={onGo} onChapterEnd={onChapterEnd} />,
     bericht: () => <ReportSheet report={report} onDone={onClose} next={open.then === 'zeitung'} onJournal={() => ctx.open('protokoll', { back: { sheet: 'bericht' } })} />,
     wartende: () => <WaitingSheet ctx={ctx} onVisitor={onVisitor} />,

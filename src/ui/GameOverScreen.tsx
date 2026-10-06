@@ -1,6 +1,7 @@
 // Pleite-Bildschirm: Die Rechnung ist nicht zu bezahlen, die Bank nimmt die Firma
 // in Zwangsverwaltung. Zeigt den Stand am Ende und startet ein neues Spiel.
 
+import { HistorySummary } from './HistoryPanel';
 import { chapterRound, chapterRounds } from '../sim/timeskip';
 import { useEffect, useRef } from 'react';
 import { debt } from '../sim/credit';
@@ -56,6 +57,7 @@ export function GameOverScreen({ game, onRestart }: { game: GameState; onRestart
               <dt>Pachten</dt>
               <dd>{game.leases.filter((l) => l.holder === 'jacob').length}</dd>
             </dl>
+            <HistorySummary game={game} />
           </div>
           <div>
             <h3>Die letzten Einträge</h3>

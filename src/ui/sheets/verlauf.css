@@ -1,0 +1,80 @@
+/* Verlauf (0.4.20+42): Diagramme wie Tusche auf Papier. */
+.verlauf-gitter {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem 0.9rem;
+}
+.verlauf-bild {
+  margin: 0;
+  padding: 0.35rem 0.5rem 0.2rem;
+  background: var(--papier-hell);
+  border: 1px solid var(--linie);
+  border-radius: 2px;
+  min-width: 0;
+}
+.verlauf-bild figcaption {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--tinte-weich);
+}
+.verlauf-legende {
+  display: inline-flex;
+  gap: 0.6rem;
+  font-weight: 400;
+  font-style: italic;
+}
+.verlauf-legende .ton-tinte { color: var(--tinte); }
+.verlauf-legende .ton-rot { color: var(--rot); }
+.verlauf-legende .ton-ocker { color: var(--ocker); }
+.verlauf-legende .ton-blau { color: var(--blau); }
+.verlauf-bild svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.verlauf-bild .gitter {
+  stroke: var(--linie-hell);
+  stroke-width: 0.6;
+  stroke-dasharray: 2 2;
+}
+.verlauf-bild .nulllinie {
+  stroke: var(--tinte-blass);
+  stroke-width: 0.8;
+}
+.verlauf-bild .kapitellinie {
+  stroke: var(--tinte-blass);
+  stroke-width: 0.6;
+  stroke-dasharray: 4 3;
+}
+.verlauf-bild .achse {
+  font-size: 8px;
+  fill: var(--tinte-blass);
+  font-family: inherit;
+}
+.verlauf-bild .linie {
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.verlauf-bild .linie.ton-tinte { stroke: var(--tinte); }
+.verlauf-bild .linie.ton-rot { stroke: var(--rot); }
+.verlauf-bild .linie.ton-ocker { stroke: var(--ocker); }
+.verlauf-bild .linie.ton-blau { stroke: var(--blau); }
+.verlauf-fuss {
+  margin: 0.5rem 0 0;
+}
+/* Kleine Fassung im Kapitelbildschirm. */
+.verlauf-bild.kompakt {
+  padding: 0.2rem 0.4rem 0.1rem;
+}
+.verlauf-bild.kompakt figcaption {
+  font-size: 0.78rem;
+}
+.verlauf-stat {
+  margin: 0.2rem 0 0.4rem;
+  font-size: 0.85rem;
+}
