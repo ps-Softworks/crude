@@ -10,6 +10,7 @@
 #   tools/pc.sh log <name>                ganze Logdatei
 #   tools/pc.sh hol <name> <datei>        Datei aus dem Arbeitsordner des Laufs holen (z. B. docs/botlaeufe.md)
 # Auf dem PC: %USERPROFILE%\CRUDE-laeufe\<name>.log, <name>.fertig (Exit-Code), Arbeitsordner <name>-wt.
+# Jeder Lauf: Leerlauf-Priorität und nur die Prozessoren 2–19 (2 von 20 bleiben frei), also höchstens 18 Worker.
 # Hat sich package.json geändert, vorher im Projekt auf dem PC npm install laufen lassen (node_modules wird geteilt).
 set -e
 cmd=$1; name=$2
@@ -30,6 +31,7 @@ case $cmd in
     ssh pc "New-Item -ItemType Directory -Force \$env:USERPROFILE\\CRUDE-laeufe | Out-Null;
       Remove-Item \$env:USERPROFILE\\CRUDE-laeufe\\$name.log, \$env:USERPROFILE\\CRUDE-laeufe\\$name.fertig -ErrorAction SilentlyContinue;
       Set-Content \$env:USERPROFILE\\CRUDE-laeufe\\$name.ps1 @'
+\$p = Get-Process -Id \$PID; \$p.PriorityClass = 'Idle'; \$p.ProcessorAffinity = 0xFFFFC
 \$d = \"\$env:USERPROFILE\\CRUDE-laeufe\"
 \$log = \"\$d\\$name.log\"
 \$wt = \"\$d\\$name-wt\"
