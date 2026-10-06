@@ -1899,11 +1899,16 @@ research:
     - { cost: 500, points: 1 }     # sparsam
     - { cost: 1200, points: 2.5 }  # kräftig
   luck: { min: 0.5, max: 1.5 }     # Fortschritt je Runde schwankt
+  # 0.4.20+29: Je Kapitel nur EINE Forschungsrichtung (domain), gewählt mit der ersten Förderung. Lizenzen anderer
+  # Richtungen bleiben möglich, kosten aber × 1,5 – die Wahl soll zählen.
+  licenseOffDirection: 1.5
   patentIncome: 400      # $ Lizenzgebühren je Runde und Patent, sobald die Welt die Technik braucht
   # Technikstand der Welt (0–100), solange es kein Weltmodell gibt. Skala wie worldModel.tech
   # auf main (4.1): Start 6–10, logistisch +1,7 % je Runde → Kapitel 2 (Jahr 11–14) etwa 11–22,
   # Kapitel 3 (Jahr 21–24) etwa 22–35. 12 ≈ Beginn von Kapitel 2.
   worldFallback: { tech: 12 }
+  # 0.4.20+29: worldAt angehoben (vorher 10/17/20/15): Die Welt steht zu Beginn von Kapitel 2 bei ~12–20 (Median ~15, +1,7 % je Runde);
+  # wer früh in EINE Richtung forscht (Stufe I in 2–5 Runden), hält das Patent in mindestens 80 % der Welten (Test „Patent-Check“).
   # worldAt: ab diesem Technikstand der Welt haben andere die Technik (Lizenz kaufbar, kein Patent mehr;
   # Jacobs Patent bringt ab dann Lizenzgebühren). Am Weltmodell von main ausgerichtet: Drehbohren ist
   # zu Beginn von Kapitel 2 schon verbreitet, Tanklaster und Rollenmeißel ziehen im Lauf von Kapitel 2
@@ -1913,7 +1918,7 @@ research:
       tier: 1
       domain: bohren
       points: 4
-      worldAt: 10
+      worldAt: 18
       license: 2500
       effects: { drillTime: -0.25, depth: 150 }   # depth: jede Stufe so sicher wie eine 150 m flachere (Unfall/Klemmen)
     - id: rollenmeissel  # Rollenmeißel (Stufe II): harte Schichten
@@ -1921,21 +1926,21 @@ research:
       domain: bohren
       points: 6
       requires: [rotary]
-      worldAt: 17
+      worldAt: 23
       license: 6000
       effects: { drillTime: -0.15, drillCost: -0.15, depth: 150 }
     - id: thermal_cracking  # Thermisches Cracken (Stufe II, GDD §6): Benzin-Höchstanteil im Mix 20 % → 40 % (Raffinerie 4.6)
       tier: 2
       domain: raffinerie
       points: 8
-      worldAt: 20
+      worldAt: 25
       license: 8000
       effects: { gasolineYield: 0.2 }
     - id: tanklaster     # Tanklaster (Stufe II, GDD §6): klein, flexibel, für Tankstellen
       tier: 2
       domain: transport
       points: 5
-      worldAt: 15
+      worldAt: 19
       license: 4000
       effects: { trucks: 0.5 }   # 0.4.20+9: eigene Gespanne schaffen 50 % mehr je Runde (PLATZHALTER)
 

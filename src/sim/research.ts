@@ -80,6 +80,8 @@ export interface ResearchBalance {
   luck: Range;
   /** Lizenzgebühren der Rivalen je Runde und Patent, sobald die Welt so weit ist. */
   patentIncome: number;
+  /** Aufschlag auf Lizenzen außerhalb der Richtung des Kapitels (1,5 = 50 % teurer). */
+  licenseOffDirection: number;
   /** Ersatz, solange es kein Weltmodell gibt (Technikstand). */
   worldFallback: WorldPort;
   techs: TechBalance[];
@@ -157,6 +159,7 @@ export function parseResearchBalance(raw: unknown): ResearchBalance {
     funding,
     luck,
     patentIncome: zahl(raw, `${p}.patentIncome`, 0),
+    licenseOffDirection: zahl(raw, `${p}.licenseOffDirection`, 1),
     worldFallback: { mood: 50, tech: zahl(raw, `${p}.worldFallback.tech`, 0, 100), government: null },
     techs,
   };
@@ -180,6 +183,10 @@ export interface ResearchState {
   owned: Record<string, TechSource>;
   /** Patente, für die Jacob keine Lizenz vergibt. */
   refused: string[];
+  /** Richtung der eigenen Forschung in einem Kapitel: mit der ersten Förderung gewählt, gilt bis Kapitelende. */
+  direction?: { chapter: number; domain: TechDomain };
+  /** Letzter Abschluss (für die Zeitung der Folgerunde). */
+  done?: { id: string; round: number; patent: boolean };
   /** Nur Debug: schon vor Kapitel 2 freigeschaltet (Vorschau im Debug-Reiter). */
   preview?: boolean;
 }
@@ -200,6 +207,18 @@ export function previewResearch(state: GameState): GameState {
 
 export function newResearch(seed: string): ResearchState {
   return { rng: seedFromString(`${seed}:forschung`), workshop: false, project: null, funding: 0, progress: {}, owned: {}, refused: [] };
+}
+
+/** Richtung der Forschung im laufenden Kapitel, oder null, solange noch keine gewählt ist. */
+export function researchDirection(state: object): TechDomain | null {
+  const d = (state as MitForschung).research?.direction;
+  return d && d.chapter === chapterOf(state) ? d.domain : null;
+}
+
+/** Lizenzpreis einer Technik: außerhalb der gewählten Richtung mit Aufschlag. */
+export function licensePrice(state: object, balance: Pick<Balance, 'research'>, t: Pick<TechBalance, 'domain' | 'license'>): number {
+  const dir = researchDirection(state);
+  return dir && dir !== t.domain ? Math.round(t.license * balance.research.licenseOffDirection) : t.license;
 }
 
 function forschung(state: GameState): ResearchState {
@@ -316,6 +335,10 @@ export interface TechView {
   licensable: boolean;
   license: number;
   refused: boolean;
+  /** Eigene Forschung gesperrt: das Kapitel forscht schon in einer anderen Richtung. */
+  directionLocked: boolean;
+  /** Lizenz mit Aufschlag, weil die Technik nicht in der Richtung des Kapitels liegt. */
+  surcharge: boolean;
   /** Jacobs Patent bringt diese Runde Lizenzgebühren (die Welt braucht die Technik, Jacob verweigert nicht). */
   paying: boolean;
 }
@@ -323,6 +346,7 @@ export interface TechView {
 export function techViews(state: GameState, balance: Pick<Balance, 'research'>): TechView[] {
   const r = forschung(state);
   const welt = worldTech(state, balance);
+  const dir = researchDirection(state);
   return balance.research.techs.map((t) => {
     const missing = t.requires.filter((x) => r.owned[x] === undefined);
     const source = r.owned[t.id] ?? null;
@@ -336,8 +360,10 @@ export function techViews(state: GameState, balance: Pick<Balance, 'research'>):
       progress: Math.min(1, (r.progress[t.id] ?? 0) / t.points),
       missing,
       licensable: !source && welt >= t.worldAt,
-      license: t.license,
+      license: licensePrice(state, balance, t),
       refused: r.refused.includes(t.id),
+      directionLocked: dir !== null && dir !== t.domain,
+      surcharge: dir !== null && dir !== t.domain && balance.research.licenseOffDirection !== 1,
       paying: source === 'patent' && !r.refused.includes(t.id) && welt >= t.worldAt,
     };
   });
@@ -393,7 +419,9 @@ export function startResearch(state: GameState, balance: Balance, id: string, fu
   if (t.requires.some((x) => r.owned[x] === undefined)) return { ok: false, reason: 'Dafür fehlt noch eine andere Technik.' };
   if (!Number.isInteger(funding) || funding < 0 || funding >= balance.research.funding.length) return { ok: false, reason: 'Diese Förderstufe gibt es nicht.' };
   if (r.project === id && r.funding === funding) return { ok: false, reason: 'Daran wird schon so geforscht.' };
-  return { ok: true, state: mit(state, { ...r, project: id, funding }) };
+  const dir = researchDirection(state);
+  if (dir && dir !== t.domain) return { ok: false, reason: `In diesem Kapitel forscht die Werkstatt nur im Bereich ${dir}.` };
+  return { ok: true, state: mit(state, { ...r, project: id, funding, direction: { chapter: chapterOf(state), domain: t.domain } }) };
 }
 
 /** Die Forschung anhalten – der Fortschritt bleibt. */
@@ -409,14 +437,15 @@ export function stopResearch(state: GameState, balance: Balance): ResearchResult
 export function buyLicense(state: GameState, balance: Balance, id: string): ResearchResult {
   const t = balance.research.techs.find((x) => x.id === id);
   if (!t) return { ok: false, reason: 'Diese Technik gibt es nicht.' };
-  const nein = grund(state, balance, t.license);
+  const preis = licensePrice(state, balance, t);
+  const nein = grund(state, balance, preis);
   if (nein) return { ok: false, reason: nein };
   const r = forschung(state);
   if (r.owned[id]) return { ok: false, reason: 'Die Technik hat Jacob schon.' };
   if (worldTech(state, balance) < t.worldAt) return { ok: false, reason: 'Noch hat niemand diese Technik – es gibt keine Lizenz zu kaufen.' };
   if (t.requires.some((x) => r.owned[x] === undefined)) return { ok: false, reason: 'Dafür fehlt noch eine andere Technik.' };
   const neu: ResearchState = { ...r, owned: { ...r.owned, [id]: 'lizenz' }, project: r.project === id ? null : r.project };
-  return { ok: true, state: mit(state, neu, { cash: cents(state.cash - t.license), log: zeile(state, `Jacob kauft eine Lizenz (${t.license.toLocaleString('de-DE')} $).`) }) };
+  return { ok: true, state: mit(state, neu, { cash: cents(state.cash - preis), log: zeile(state, `Jacob kauft eine Lizenz (${preis.toLocaleString('de-DE')} $).`) }) };
 }
 
 /** Lizenz für ein eigenes Patent verweigern oder wieder vergeben. */
@@ -449,7 +478,21 @@ export function advanceResearch(input: GameState, balance: Balance): GameState {
   const datum = formatDate(input);
   let changed = false;
 
-  const t = r.project ? rb.techs.find((x) => x.id === r.project) : undefined;
+  let t = r.project ? rb.techs.find((x) => x.id === r.project) : undefined;
+  // Richtung des Kapitels: Läuft noch ein Projekt aus dem Vorkapitel, gilt dessen Bereich als gewählt;
+  // passt ein laufendes Projekt nicht zur gewählten Richtung (alter Stand), hält es an.
+  if (t) {
+    const dir = researchDirection(input);
+    if (!dir) {
+      r = { ...r, direction: { chapter: chapterOf(input), domain: t.domain } };
+      changed = true;
+    } else if (dir !== t.domain) {
+      r = { ...r, project: null };
+      t = undefined;
+      changed = true;
+      log.push(`${datum}: Die Werkstatt forscht in diesem Kapitel nur im Bereich ${dir} – das laufende Projekt ruht.`);
+    }
+  }
   if (t && r.workshop) {
     changed = true;
     const stufe = rb.funding[r.funding] ?? rb.funding[0];
@@ -460,7 +503,7 @@ export function advanceResearch(input: GameState, balance: Balance): GameState {
       r = { ...r, progress: { ...r.progress, [t.id]: punkte } };
       if (punkte >= t.points) {
         const patent = worldTech(input, balance) < t.worldAt;
-        r = { ...r, owned: { ...r.owned, [t.id]: patent ? 'patent' : 'eigen' }, project: null };
+        r = { ...r, owned: { ...r.owned, [t.id]: patent ? 'patent' : 'eigen' }, project: null, done: { id: t.id, round: input.round, patent } };
         log.push(
           `${datum}: ${patent ? 'Die Werkstatt hat es geschafft – und niemand war schneller. Jacob meldet ein Patent an.' : 'Die Werkstatt hat es geschafft. Andere haben es schon, aber jetzt hat es auch Jacob.'}`,
         );
@@ -497,6 +540,14 @@ export function validResearch(v: unknown): boolean {
   if (!istObjekt(v)) return false;
   if (!istZahl(v.rng) || !istZahl(v.funding) || typeof v.workshop !== 'boolean') return false;
   if (v.preview !== undefined && typeof v.preview !== 'boolean') return false;
+  if (v.direction !== undefined) {
+    const d = v.direction;
+    if (!istObjekt(d) || !istZahl(d.chapter) || !(TECH_DOMAINS as readonly unknown[]).includes(d.domain)) return false;
+  }
+  if (v.done !== undefined) {
+    const d = v.done;
+    if (!istObjekt(d) || typeof d.id !== 'string' || !istZahl(d.round) || typeof d.patent !== 'boolean') return false;
+  }
   if (v.project !== null && typeof v.project !== 'string') return false;
   if (!istObjekt(v.progress) || !Object.values(v.progress).every(istZahl)) return false;
   if (!istObjekt(v.owned) || !Object.values(v.owned).every((s) => (SOURCES as readonly unknown[]).includes(s))) return false;
@@ -513,7 +564,16 @@ export interface ResearchContent {
   effects: Record<TechEffectKey, LocalizedText>;
   /** Hinweis bei Kennzahlen, die noch nicht wirken (nicht in ACTIVE_TECH_EFFECTS). */
   pending: LocalizedText;
+  /** Sätze der Werkstatt zur Richtung des Kapitels ({domain} = Bereich, {factor} = Aufschlag in Prozent). */
+  direction: Record<(typeof DIRECTION_TEXTS)[number], LocalizedText>;
 }
+
+/** Schlüssel in research.yaml → direction. */
+export const DIRECTION_TEXTS = [
+  'free', 'chosen', 'locked', 'surchargeNote', 'noWorkshop', 'noProject', 'running', 'build', 'research', 'stop', 'license', 'refuse', 'allow',
+  'refusedNote', 'payingNote', 'waitingNote', 'footer', 'unitPoints', 'stageLine',
+  'statusPatent', 'statusOwn', 'statusLicense', 'statusAlmost', 'statusHalf', 'statusWorking', 'statusParked', 'statusBlocked', 'statusOpen',
+] as const;
 
 /** Liest content/research.yaml; prüft gegen balance.yaml, dass jede Technik und jede Förderstufe einen Text hat. */
 export function parseResearchContent(file: string, text: string, balance?: Pick<Balance, 'research'>): { content: ResearchContent | null; errors: ContentError[] } {
@@ -568,6 +628,14 @@ export function parseResearchContent(file: string, text: string, balance?: Pick<
       if (t) effects[k] = t;
     }
   const pending = sprachtext(raw?.pending, 'pending');
+  const direction: Partial<Record<(typeof DIRECTION_TEXTS)[number], LocalizedText>> = {};
+  const dirRaw = raw?.direction;
+  if (!istObjekt(dirRaw)) fehler('„direction“ fehlt – die Sätze der Werkstatt.');
+  else
+    for (const k of DIRECTION_TEXTS) {
+      const t = sprachtext(dirRaw[k], `direction.${k}`);
+      if (t) direction[k] = t;
+    }
   if (balance) {
     for (const t of balance.research.techs) if (!techs[t.id] && istObjekt(techsRaw) && !(t.id in techsRaw)) fehler(`techs.${t.id}: Text fehlt (Technik aus balance.yaml).`);
     for (const id of Object.keys(techs)) if (!balance.research.techs.some((t) => t.id === id)) fehler(`techs.${id}: Diese Technik steht nicht in balance.yaml.`);
@@ -577,7 +645,7 @@ export function parseResearchContent(file: string, text: string, balance?: Pick<
   }
   if (errors.length > 0) return { content: null, errors };
   return {
-    content: { techs, domains: domains as Record<TechDomain, LocalizedText>, funding, effects: effects as Record<TechEffectKey, LocalizedText>, pending: pending as LocalizedText },
+    content: { techs, domains: domains as Record<TechDomain, LocalizedText>, funding, effects: effects as Record<TechEffectKey, LocalizedText>, pending: pending as LocalizedText, direction: direction as ResearchContent['direction'] },
     errors,
   };
 }

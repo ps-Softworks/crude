@@ -326,6 +326,20 @@ headlines:
       en: The federal court convicts Jacob Harlan. The penalty is heavy and the name tarnished – in the Hallstead offices they count who will still give him credit.
 
   # --- 0.4.20+9: Benzinpreiskampf mit Margaret Crane (4.14) – aus der letzten Markenabrechnung ---
+  research_patent:
+    title:
+      de: Harlans Werkstatt meldet ein Patent an
+      en: Harlan's workshop files a patent
+    text:
+      de: In Cordova heißt es, Jacob Harlans Mechaniker seien den großen Häusern zuvorgekommen. Das Patentamt hat die Anmeldung angenommen – wer die Technik will, muss künftig bei Harlan anklopfen.
+      en: In Cordova they say Jacob Harlan's mechanics beat the big houses to it. The patent office has accepted the filing – whoever wants the technology will have to knock on Harlan's door.
+  research_done:
+    title:
+      de: Neue Technik in Harlans Werkstatt
+      en: New technology in Harlan's workshop
+    text:
+      de: Die Mechaniker hinter dem Lager haben nachgebaut, was andere schon vormachten, und es besser eingestellt. Auf Harlans Feldern wird man es bald sehen.
+      en: The mechanics behind the warehouse have rebuilt what others already showed and tuned it better. It will soon be visible on Harlan's fields.
   brand_price_war:
     title:
       de: Benzinkrieg an den Tankstellen

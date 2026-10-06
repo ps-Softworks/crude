@@ -46,3 +46,34 @@ effects:
   trucks: { de: "Tanklaster: eigene Fuhrwerke schaffen je Gespann", en: "Tank trucks: own haulage carries per team" }
 
 pending: { de: "wirkt noch nicht – das kommt mit einem späteren Schritt", en: "no effect yet – comes with a later step" }
+
+# Richtung des Kapitels (0.4.20+29) und Sätze des Werkstatt-Fensters. Platzhalter in {geschweiften Klammern}.
+direction:
+  free: { de: "Die Werkstatt forscht in jedem Kapitel nur an einer Richtung. Welche, entscheidet die erste Förderung – danach gilt sie bis zum Kapitelende.", en: "In each chapter the workshop researches in one direction only. The first funding decides which – it then holds until the chapter ends." }
+  chosen: { de: "In diesem Kapitel forscht die Werkstatt an: {domain}.", en: "This chapter the workshop researches: {domain}." }
+  locked: { de: "Dieses Kapitel forscht die Werkstatt an {domain} – erst im nächsten Kapitel wieder frei wählbar.", en: "This chapter the workshop researches {domain} – free to choose again next chapter." }
+  surchargeNote: { de: "Lizenz außerhalb der Richtung: {factor} % Aufschlag", en: "Licence outside the chosen direction: {factor} % surcharge" }
+  noWorkshop: { de: "Jacob hat noch keine Werkstatt. Ohne sie bleibt nur, Lizenzen zu kaufen, wenn andere eine Technik schon haben.", en: "Jacob has no workshop yet. Without one he can only buy licences once others have a technology." }
+  noProject: { de: "Die Werkstatt steht still.", en: "The workshop stands idle." }
+  running: { de: "In der Werkstatt: {tech} ({funding}, {cost} je Runde).", en: "In the workshop: {tech} ({funding}, {cost} per round)." }
+  build: { de: "Versuchswerkstatt einrichten ({cost})", en: "Set up test workshop ({cost})" }
+  research: { de: "Forschen: {funding} ({cost} je Runde)", en: "Research: {funding} ({cost} per round)" }
+  stop: { de: "Anhalten", en: "Pause" }
+  license: { de: "Lizenz kaufen ({cost})", en: "Buy licence ({cost})" }
+  refuse: { de: "Rivalen die Lizenz verweigern", en: "Refuse licences to rivals" }
+  allow: { de: "Lizenzen wieder vergeben", en: "Grant licences again" }
+  refusedNote: { de: "Jacob verweigert die Lizenz: Die Rivalen haben diese Technik nicht.", en: "Jacob refuses the licence: the rivals do not have this technology." }
+  payingNote: { de: "Die Rivalen zahlen Lizenzgebühren: {cost} je Runde.", en: "The rivals pay licence fees: {cost} per round." }
+  waitingNote: { de: "Die Rivalen brauchen die Technik noch nicht – noch keine Lizenzgebühren.", en: "The rivals do not need the technology yet – no licence fees so far." }
+  footer: { de: "Wer eine Technik als Erster entwickelt, hält das Patent. Haben andere sie schon, gibt es Lizenzen zu kaufen.", en: "Whoever develops a technology first holds the patent. If others already have it, licences can be bought." }
+  unitPoints: { de: "Prozentpunkte", en: "percentage points" }
+  stageLine: { de: "Stufe {tier} · {domain} · {status}", en: "Tier {tier} · {domain} · {status}" }
+  statusPatent: { de: "Patent bei Jacob", en: "patent held by Jacob" }
+  statusOwn: { de: "selbst entwickelt", en: "developed in-house" }
+  statusLicense: { de: "Lizenz gekauft", en: "licence bought" }
+  statusAlmost: { de: "fast fertig", en: "almost done" }
+  statusHalf: { de: "halb fertig", en: "half done" }
+  statusWorking: { de: "in Arbeit", en: "in progress" }
+  statusParked: { de: "angefangen, liegt", en: "started, on hold" }
+  statusBlocked: { de: "braucht erst eine andere Technik", en: "needs another technology first" }
+  statusOpen: { de: "offen", en: "open" }

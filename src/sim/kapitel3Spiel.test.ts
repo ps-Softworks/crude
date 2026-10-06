@@ -195,7 +195,7 @@ describe('Rivalen in Kapitel 3', () => {
     expect(r.ok).toBe(true);
     expect(validRivalsK3({ bullardDebt: 'viel' })).toBe(false);
     expect(validRivalsK3(undefined)).toBe(true);
-    expect(SAVE_FORMAT).toBe(25);
+    expect(SAVE_FORMAT).toBe(26);
     // Format 20 (0.4.12) lädt weiter.
     const alt = deserializeGame(JSON.stringify({ format: 20, appVersion: '0.4.12', savedRound: s.round, state: { ...s, rivalsK3: undefined } }));
     expect(alt.ok).toBe(true);
