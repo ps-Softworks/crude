@@ -80,7 +80,11 @@ describe('Wirkung der neuen Gesetze (0.4.20+18)', () => {
     expect(auflagen.cash).toBeLessThan(frei.cash);
     const voll = (g: GameState): GameState => ({ ...g, oilStock: storageCapacity(g, balance) + 1_000 });
     const auslauf = spillOver(voll(mitGesetz(['environment'], 50_000)), balance);
-    expect(auslauf.cash).toBeCloseTo(50_000 - 1_000 * regel('environment', 'spillFine'), 2);
+    expect(auslauf.cash).toBeCloseTo(50_000 - Math.min(1_000 * regel('environment', 'spillFine'), 50_000 * regel('environment', 'spillFineCap')), 2);
+    // 0.4.20+23: Gedeckelt – bei wenig Geld und viel Überlauf höchstens spillFineCap der Kasse.
+    const arm = { ...mitGesetz(['environment'], 1_000), oilStock: 0 };
+    const flut = spillOver({ ...arm, oilStock: storageCapacity(arm, balance) + 40_000 }, balance);
+    expect(flut.cash).toBeCloseTo(1_000 * (1 - regel('environment', 'spillFineCap')), 2);
     expect(spillOver(voll(mitGesetz([], 50_000)), balance).cash).toBe(50_000);
   });
 

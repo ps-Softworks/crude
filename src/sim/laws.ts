@@ -37,11 +37,12 @@ export type LawWorldEffect = (typeof LAW_WORLD_EFFECTS)[number];
  * commonCarrier = 1 heißt Transportpflicht für Fernleitungen, quotaShare = erlaubter Anteil der Förderung,
  * quotaFine = Bußgeld $ je Barrel heißes Öl, quotaCatch = Chance je Runde, dass der Inspektor es findet, wageRise = Lohnaufschlag (Personal, Gespanne),
  * creditLimit = Faktor auf den Bankrahmen, drillCostRise = Aufschlag auf Bohrkosten,
- * storageCostRise = Aufschlag auf Lagerkosten, spillFine = Bußgeld $ je ausgelaufenem Barrel.
+ * storageCostRise = Aufschlag auf Lagerkosten, spillFine = Bußgeld $ je ausgelaufenem Barrel,
+ * spillFineCap = höchstens dieser Anteil der Kasse je Runde (0.4.20+23: das Bußgeld allein macht niemanden pleite).
  */
 export const LAW_RULES = [
   'incomeTax', 'cartelBan', 'breakupFrom',
-  'incomeTaxAdd', 'depletionAllowance', 'commonCarrier', 'quotaShare', 'quotaFine', 'quotaCatch', 'wageRise', 'creditLimit', 'drillCostRise', 'storageCostRise', 'spillFine',
+  'incomeTaxAdd', 'depletionAllowance', 'commonCarrier', 'quotaShare', 'quotaFine', 'quotaCatch', 'wageRise', 'creditLimit', 'drillCostRise', 'storageCostRise', 'spillFine', 'spillFineCap',
 ] as const;
 export type LawRule = (typeof LAW_RULES)[number];
 

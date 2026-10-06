@@ -32,14 +32,15 @@ effects:
   rules:
     drillCostRise: 0.15    # Bohren +15 %
     storageCostRise: 0.25  # Lagerkosten +25 %
-    spillFine: 0.6         # Bußgeld $ je ausgelaufenem Barrel
+    spillFine: 0.15        # Bußgeld $ je ausgelaufenem Barrel (0.4.20+23: 0,6 → 0,15 – mit 0,6 gingen Bots ohne Geld für Tanks in 3–4 Runden pleite)
+    spillFineCap: 0.1      # höchstens 10 % der Kasse je Runde
 
 lobby:
   demand: { label: { de: "Auflagen fordern", en: "Call for regulations" } }
   block: { label: { de: "Die Felder frei halten", en: "Keep the fields free" } }
   weaken:
     label: { de: "Übergangsfristen aushandeln", en: "Negotiate transition periods" }
-    rules: { drillCostRise: 0.05, storageCostRise: 0.1, spillFine: 0.3 }
+    rules: { drillCostRise: 0.05, storageCostRise: 0.1, spillFine: 0.08, spillFineCap: 0.05 }
   delay: { label: { de: "Die Abstimmung verschleppen", en: "Stall the vote" } }
 
 news:

@@ -191,7 +191,9 @@ export function spillOver(state: GameState, balance: Balance): GameState {
   const out = lose(state, ueber);
   const gemeldet = { ...out, log: logged(out, `Die Tanks sind voll: ${bbl(ueber)} Barrel laufen in den Boden. Mehr Tanks oder schneller verkaufen!`) };
   // 0.4.20+18: Umweltgesetze (environment) – wer Öl auslaufen lässt, zahlt je Barrel.
-  const busse = cents(ueber * lawRule(state, balance.laws, 'spillFine'));
+  // 0.4.20+23: gedeckelt auf spillFineCap der Kasse – das Bußgeld allein treibt niemanden in die Pleite.
+  const deckel = Math.max(0, gemeldet.cash) * lawRule(state, balance.laws, 'spillFineCap', 1);
+  const busse = cents(Math.min(ueber * lawRule(state, balance.laws, 'spillFine'), deckel));
   if (busse <= 0) return gemeldet;
   return { ...gemeldet, cash: cents(gemeldet.cash - busse), log: logged(gemeldet, `Umweltgesetz: ${dollars(busse)} $ Bußgeld für das ausgelaufene Öl.`) };
 }
