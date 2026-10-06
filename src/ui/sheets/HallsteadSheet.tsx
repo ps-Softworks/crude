@@ -10,7 +10,7 @@ import { PARTY_IDS } from '../../sim/hallsteadBalance';
 import { fillText, hallsteadView } from '../../sim/hallsteadContent';
 import { debugUnlockHallstead, hallsteadUnlocked, type HallsteadResult } from '../../sim/hallsteadState';
 import { buyHolding, runCampaign, sellHolding } from '../../sim/holdings';
-import { bribe, donate, fireLobbyist, hireLobbyist, pushLaw, waterDownLaw } from '../../sim/lobby';
+import { bribe, donate, fireLobbyist, hireLobbyist, politicsUnlocked, pushLaw, waterDownLaw } from '../../sim/lobby';
 import { localize } from '../../sim/i18n';
 import { balance } from '../balance';
 import { money } from '../format';
@@ -22,9 +22,9 @@ import './hallstead.css';
 
 const L = localize;
 
-/** Liegt die Mappe auf dem Tisch? Ab Kapitel 3 – oder nach der Debug-Freischaltung im Menü. */
+/** Liegt die Mappe auf dem Tisch? Ab Kapitel 2 als Provinzpolitik, ab Kapitel 3 als Hallstead-Mappe (oder per Debug). */
 export function hallsteadOnDesk(game: GameState): boolean {
-  return hallsteadUnlocked(game, balance);
+  return politicsUnlocked(game, balance);
 }
 
 /** Debug-Knopf für den gemeinsamen Abschnitt „Vorab freischalten“ im Menü (4.16 Andockpunkt). */
@@ -43,9 +43,15 @@ export function HallsteadDeskItem({ game, at, glow, onOpen }: { game: GameState;
   const v = hallsteadView(game, balance, C);
   const anzahl = v.holdings.filter((h) => h.owned).length;
   // Kurz, weil sich die Mappe die untere Reihe mit Schublade und Siegelmappe teilen kann (Integration).
-  const status = v.unlocked ? (v.favors > 0 ? `${v.favors} ${L(C.ui.favors)}` : `${anzahl} ${anzahl === 1 ? 'Anteil' : 'Anteile'}`) : 'verschlossen';
+  const status = v.unlocked
+    ? v.favors > 0
+      ? `${v.favors} ${L(C.ui.favors)}`
+      : `${anzahl} ${anzahl === 1 ? 'Anteil' : 'Anteile'}`
+    : v.politics
+      ? `${v.favors} ${L(C.ui.favors)}`
+      : 'verschlossen';
   return (
-    <DeskObject id="hallstead" name={L(C.object.name)} at={at} sheet="hallstead" glow={glow} onOpen={onOpen} status={status} badge={v.telegramNews && v.unlocked ? { text: 'Telegramm' } : null}>
+    <DeskObject id="hallstead" name={L(v.unlocked ? C.object.name : C.object.nameProvince)} at={at} sheet="hallstead" glow={glow} onOpen={onOpen} status={status} badge={v.telegramNews && v.unlocked ? { text: 'Telegramm' } : null}>
       <svg viewBox="0 0 100 70" className="hallstead-mappe" aria-hidden="true">
         <rect x="6" y="10" width="88" height="54" rx="4" className="mappe-leder" />
         <rect x="6" y="10" width="88" height="10" rx="3" className="mappe-klappe" />
@@ -68,7 +74,7 @@ export function HallsteadSheet({ ctx }: { ctx: SheetContext }) {
     } else setMeldung(L(C.reasons[r.reason]));
   }
 
-  if (!v.unlocked) {
+  if (!v.unlocked && !v.politics) {
     return (
       <div className="hallstead">
         <p>{L(C.object.locked)}</p>
@@ -77,8 +83,9 @@ export function HallsteadSheet({ ctx }: { ctx: SheetContext }) {
     );
   }
 
+  // 0.4.20+17: In Kapitel 2 (Provinzpolitik) nur Lobby und Gesetze, ohne Beteiligungen.
   const tabs: TabDef[] = [
-    { id: 'beteiligungen', label: L(C.tabs.holdings) },
+    ...(v.unlocked ? [{ id: 'beteiligungen', label: L(C.tabs.holdings) }] : []),
     { id: 'lobbyist', label: L(C.tabs.lobby), badge: v.favors > 0 ? String(v.favors) : undefined },
     { id: 'gesetze', label: L(C.tabs.laws) },
   ];
@@ -88,7 +95,7 @@ export function HallsteadSheet({ ctx }: { ctx: SheetContext }) {
 
   return (
     <div className="hallstead">
-      <p className="muted">{L(C.object.hint)}</p>
+      <p className="muted">{L(v.unlocked ? C.object.hint : C.object.hintProvince)}</p>
       {v.telegram.length > 0 && (
         <aside className="hallstead-telegramm" aria-label={L(C.ui.telegram)}>
           <strong>{L(C.ui.telegram)}</strong>
@@ -151,9 +158,11 @@ export function HallsteadSheet({ ctx }: { ctx: SheetContext }) {
         {aktiv === 'lobbyist' && (
           <div className="hallstead-lobby">
             <p>
-              {v.government} {fillText(L(C.ui.favorsHint), { favors: v.favors })}
+              {v.government} {fillText(L(v.unlocked ? C.ui.favorsHint : C.ui.favorsHintProvince), { favors: v.favors })} {v.weight}
             </p>
-            {v.lobbyist ? (
+            {!v.unlocked ? (
+              <p className="hint">{L(C.ui.lobbyistLater)}</p>
+            ) : v.lobbyist ? (
               <div className="hallstead-person">
                 <strong>{v.lobbyist.name}</strong> – {v.lobbyist.competence}, {v.lobbyist.trait}. {v.lobbyist.text}
                 <div className="hallstead-knoepfe">
@@ -210,7 +219,7 @@ export function HallsteadSheet({ ctx }: { ctx: SheetContext }) {
         {aktiv === 'gesetze' && (
           <div className="hallstead-gesetze">
             {v.lawsPending && <p className="hint">{v.lawsPending}</p>}
-            {!v.lobbyist && <p className="hint">{L(C.ui.needLobbyist)}</p>}
+            <p className="muted">{v.weight}</p>
             <ul className="hallstead-liste">
               {v.laws.map((law) => (
                 <li key={law.id}>
@@ -218,20 +227,26 @@ export function HallsteadSheet({ ctx }: { ctx: SheetContext }) {
                     <strong>{law.name}</strong>
                     <span className="muted">{law.oil}</span>
                   </div>
-                  {(law.pressure || law.watered) && (
+                  {(law.status || law.pressure || law.watered) && (
                     <p className="hallstead-notiz">
+                      {law.status && <strong>{law.status} </strong>}
                       {law.pressure}
                       {law.watered && ` ${L(C.ui.watered)}`}
                     </p>
                   )}
                   <div className="hallstead-knoepfe">
-                    <button type="button" disabled={!v.lobbyist || v.favors < lb.pushCost} onClick={() => tu(pushLaw(game, balance, law.id, 1))}>
+                    <button type="button" disabled={game.finished || law.passed || v.favors < lb.pushCost} onClick={() => tu(pushLaw(game, balance, law.id, 1))}>
                       {L(C.ui.push)} ({lb.pushCost} {L(C.ui.favors)})
                     </button>
-                    <button type="button" disabled={!v.lobbyist || v.favors < lb.pushCost} onClick={() => tu(pushLaw(game, balance, law.id, -1))}>
+                    <button type="button" disabled={game.finished || law.passed || v.favors < lb.pushCost} onClick={() => tu(pushLaw(game, balance, law.id, -1))}>
                       {L(C.ui.block)} ({lb.pushCost} {L(C.ui.favors)})
                     </button>
-                    <button type="button" disabled={!v.lobbyist || v.favors < lb.waterCost} onClick={() => tu(waterDownLaw(game, balance, law.id))}>
+                    <button
+                      type="button"
+                      title={v.lobbyist ? undefined : L(C.ui.waterLater)}
+                      disabled={game.finished || law.passed || !v.lobbyist || v.favors < lb.waterCost}
+                      onClick={() => tu(waterDownLaw(game, balance, law.id))}
+                    >
                       {L(C.ui.water)} ({lb.waterCost} {L(C.ui.favors)})
                     </button>
                   </div>

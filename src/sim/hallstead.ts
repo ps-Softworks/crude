@@ -8,15 +8,22 @@
 
 import type { Balance } from './balance';
 import type { GameState } from './game';
-import { hallsteadUnlocked } from './hallsteadState';
+import { empireValue } from './empire';
+import { hallsteadOf, hallsteadUnlocked } from './hallsteadState';
 import { campaignMoodShift, holdingsValue, settleHoldings } from './holdings';
-import { settleLobby } from './lobby';
+import { politicalWeight, politicsUnlocked, settleLobby } from './lobby';
 
 export function settleHallstead(state: GameState, balance: Balance): GameState {
+  // 0.4.20+17 Provinzpolitik: In Kapitel 2 rechnet nur die Politik ab (Gefallen, Spenden, Druck), Hallstead selbst erst ab Kapitel 3.
+  if (!hallsteadUnlocked(state, balance)) {
+    if (!politicsUnlocked(state, balance)) return state;
+    const p = settleLobby(state, balance, hallsteadOf(state, balance), politicalWeight(empireValue(state, balance), balance));
+    return { ...p.state, hallstead: { ...p.h, news: p.news } };
+  }
   const h0 = state.hallstead;
-  if (!h0 || !hallsteadUnlocked(state, balance)) return state;
+  if (!h0) return state;
   const a = settleHoldings(state, balance, h0);
-  const b = settleLobby(a.state, balance, a.h);
+  const b = settleLobby(a.state, balance, a.h, politicalWeight(empireValue(state, balance), balance));
   return { ...b.state, hallstead: { ...b.h, news: [...a.news, ...b.news] } };
 }
 

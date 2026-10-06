@@ -313,7 +313,7 @@ describe('Wirkung beschlossener Gesetze', () => {
   it('Regeln für spätere Kapitel: Steuersatz, Kartellverbot, Zerschlagung; ohne Gesetz keine', () => {
     const w = newWorld('regeln', wb);
     expect(lawRules(w.laws, laws)).toEqual({});
-    expect(lawRules(beschlossen(w, ['income_tax', 'antitrust']).laws, laws)).toEqual({ incomeTax: 0.07, cartelBan: 1, breakupFrom: kartell.effects.rules.breakupFrom });
+    expect(lawRules(beschlossen(w, ['income_tax', 'antitrust']).laws, laws)).toEqual({ incomeTax: 0.05, cartelBan: 1, breakupFrom: kartell.effects.rules.breakupFrom });
   });
 
   it('Marktanteil des Trusts: Crash-Runden und Ölschwemmen treiben ihn hoch (Pleitefirmen werden aufgekauft)', () => {
@@ -395,6 +395,28 @@ describe('Lobby (vorbereitet für Kapitel 2)', () => {
     expect(verwaessert.bills.antitrust.weakened).toBe(true);
     const gilt = { ...verwaessert, bills: { antitrust: { ...verwaessert.bills.antitrust, stage: 'passed' as const } } };
     expect(lawRules(gilt, [test])).toEqual({ cartelBan: 1, breakupFrom: kartell.lobby.weaken!.rules!.breakupFrom });
+  });
+
+  it('0.4.20+17: Jacobs Einfluss bringt je Runde Druck und verschiebt die Abstimmung; Verwässerung weicht das Gesetz beim Beschluss auf', () => {
+    const provinz: LawView = { ...ruhig, government: 'provinz' };
+    const [gefordert] = tagen(start(), provinz, [test], 1, sicher, { ...keineRunde, influence: { antitrust: 0.5 } });
+    const [ohne] = tagen(start(), provinz, [test], 1);
+    expect(gefordert.bills.antitrust.pressure - ohne.bills.antitrust.pressure).toBeCloseTo(0.5 * lb.lobby.influencePressure, 9);
+    // Bremsen drückt den Druck nicht unter 0.
+    expect(tagen(start(), provinz, [test], 1, sicher, { ...keineRunde, influence: { antitrust: -1 } })[0].bills.antitrust.pressure).toBe(0);
+
+    const imParlament: LawsState = { ...start(), bills: { antitrust: { stage: 'debate', pressure: 0, voteIn: 2, cooldown: 0, proposals: 1, passedRound: null, lastVote: null, weakened: false, lobbyVote: 0 } } };
+    const frei = tagen(imParlament, ruhig, [test], 2).at(-1)!;
+    const gebremst = tagen(imParlament, ruhig, [test], 2, sicher, { ...keineRunde, influence: { antitrust: -1 } }).at(-1)!;
+    expect(frei.bills.antitrust.lastVote! - gebremst.bills.antitrust.lastVote!).toBeCloseTo(lb.lobby.influenceVote, 9);
+
+    // Ein sicheres Gesetz (alle Fraktionen dafür) – mit genug Verwässerung gilt es aufgeweicht, darunter nicht.
+    const sicherDurch: LawDef = { ...test, votes: { handel: 1, volksbund: 1, provinz: 1 } };
+    const nass = tagen(imParlament, ruhig, [sicherDurch], 2, sicher, { ...keineRunde, water: { antitrust: lb.lobby.weakenFrom } }).at(-1)!;
+    expect(nass.bills.antitrust.stage).toBe('passed');
+    expect(nass.bills.antitrust.weakened).toBe(true);
+    const trocken = tagen(imParlament, ruhig, [sicherDurch], 2, sicher, { ...keineRunde, water: { antitrust: lb.lobby.weakenFrom / 2 } }).at(-1)!;
+    expect(trocken.bills.antitrust.weakened).toBe(false);
   });
 
   it('Züge, die ein Gesetz nicht anbietet, und unbekannte Gesetze bewirken nichts', () => {

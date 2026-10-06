@@ -82,6 +82,12 @@ export interface HallsteadBalance {
     bribe: { cost: number; favors: number; heat: number; heatDecay: number };
     donation: { min: number; perFavor: number; winMultiplier: number };
     drunkChance: number;
+    /** 0.4.20+17 Provinzpolitik: ab diesem Kapitel fordern/bremsen und spenden (ohne Lobbyist; Hallstead selbst ab unlockChapter). */
+    politicsChapter: number;
+    /** 0.4.20+17: Gefallen je Runde aus Jacobs eigenen Kontakten (× Gewicht nach Firmengröße). */
+    ownFavors: number;
+    /** 0.4.20+17: Gewicht von Jacobs Wort = Imperiumswert ÷ fullAt, mindestens min, höchstens 1. */
+    weight: { fullAt: number; min: number };
     genieSpread: number;
     candidates: Record<string, LobbyCandidateBalance>;
   };
@@ -194,6 +200,9 @@ export function parseHallstead(raw: unknown): HallsteadBalance {
         winMultiplier: nonNeg(raw, 'hallstead.lobby.donation.winMultiplier'),
       },
       drunkChance: share(raw, 'hallstead.lobby.drunkChance'),
+      politicsChapter: posInt(raw, 'hallstead.lobby.politicsChapter'),
+      ownFavors: nonNeg(raw, 'hallstead.lobby.ownFavors'),
+      weight: { fullAt: nonNeg(raw, 'hallstead.lobby.weight.fullAt'), min: share(raw, 'hallstead.lobby.weight.min') },
       genieSpread: share(raw, 'hallstead.lobby.genieSpread'),
       candidates,
     },

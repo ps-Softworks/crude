@@ -53,6 +53,9 @@ import { advanceResearch, type ResearchState } from './research';
 import { exchangeWorldInput, readClimate, settleExchange, type ExchangeState } from './exchange';
 // 4.16 Andockpunkt: Nebeninvestments und Lobbyist in Hallstead (ab Kapitel 3).
 import { hallsteadWorldInput, settleHallstead } from './hallstead';
+import { empireValue } from './empire';
+import { lawInfluence } from './lobby';
+import { settleIncomeTax } from './lawEffects';
 import type { HallsteadState } from './hallsteadState';
 // 4.17 Andockpunkt: Kapitel 3 (Seismik, Konsortium, Projekte, Stand).
 import type { Kapitel3State } from './kapitel3';
@@ -302,6 +305,9 @@ function advanceWorldInGame(state: GameState, vorMarkt: GameState, balance: Bala
   const lobby = { ...salzHuegel, moodKick: (salzHuegel.moodKick ?? 0) + hallsteadWorldInput(state, balance).moodKick };
   // 4.17 Andockpunkt: Die Macht des Konsortiums verschiebt Spannung, Kreditklima und Stimmung (ohne Kapitel 3 alles 0).
   const input = mergeInput(lobby, konsortiumWorldInput(state, balance));
+  // 0.4.20+17: Jacobs Druck auf Gesetze (Provinzpolitik ab Kapitel 2, Hallstead ab Kapitel 3), gewichtet nach Firmengröße.
+  const politik = lawInfluence(state, balance, empireValue(state, balance));
+  if (Object.keys(politik.lawInfluence).length > 0) Object.assign(input, politik);
   return { ...state, worldModel: advanceWorld(state.worldModel, balance.worldModel, input, balance.laws) };
 }
 
@@ -392,7 +398,9 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const ermittelt = advanceResearch(advanceInvestigation(diplomatie, balance), balance);
   // 4.16 Andockpunkt: Beteiligungen und Lobby in Hallstead (ohne Hallstead-Zustand unverändert) – vor der Pleiteprüfung.
   const hallstead = settleHallstead(ermittelt, balance);
-  const state = { ...checkBankruptcy(hallstead, balance), roundLogStart };
+  // 0.4.20+17: Geltende Gesetze – Einkommensteuer auf den Gewinn der Runde (vor der Pleiteprüfung).
+  const besteuert = settleIncomeTax(input, hallstead, balance);
+  const state = { ...checkBankruptcy(besteuert, balance), roundLogStart };
   if (state.ending === 'pleite') return state;
   // 4.12 Andockpunkt: frühe Enden ab Kapitel 2 (abgesetzt, geschluckt, hinter Gittern – GDD §14).
   const frueh = applyEarlyEnding(state, balance);

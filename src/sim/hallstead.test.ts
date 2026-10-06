@@ -34,6 +34,9 @@ import {
   lobbyLawShift,
   lobbyWaterDown,
   pushLaw,
+  lawInfluence,
+  politicsUnlocked,
+  politicalWeight,
   LAWS_CONNECTED,
   spendFavors,
   waterDownLaw,
@@ -369,17 +372,20 @@ describe('Lobbyist in Hallstead (GDD §10, §11)', () => {
     const c = lb.candidates.pryce;
     let g = ok(hireLobbyist(kapitel3(), balance, 'pryce'));
     const kasse = g.cash;
+    // 0.4.20+17: dazu Jacobs eigene Kontakte (ownFavors × Gewicht nach Firmengröße).
+    const eigene = Math.round(lb.ownFavors * politicalWeight(empireValue(g, balance), balance) * 100) / 100;
     g = settleHallstead(g, balance);
     expect(g.cash).toBe(kasse - c.salary);
-    expect(g.hallstead!.lobby.favors).toBeCloseTo(c.competence * lb.favorsPerCompetence * lb.government.handel, 5);
+    expect(g.hallstead!.lobby.favors).toBeCloseTo(c.competence * lb.favorsPerCompetence * lb.government.handel + eigene, 5);
     const v = settleHallstead(mitWelt(ok(hireLobbyist(kapitel3(), balance, 'pryce')), { government: 'volksbund' }), balance);
-    expect(v.hallstead!.lobby.favors).toBeCloseTo(c.competence * lb.favorsPerCompetence * lb.government.volksbund, 5);
+    expect(v.hallstead!.lobby.favors).toBeCloseTo(c.competence * lb.favorsPerCompetence * lb.government.volksbund + eigene, 5);
   });
 
   it('der Trinker verschläft Runden, das Genie schwankt, mehr als maxFavors gibt es nicht', () => {
     const b = bal((h) => {
       h.lobby.drunkChance = 1;
       h.lobby.maxFavors = 3;
+      h.lobby.ownFavors = 0;
     });
     const t = settleHallstead(ok(hireLobbyist(kapitel3('t', 2_000_000, b), b, 'tibbs')), b);
     expect(t.hallstead!.lobby.favors).toBe(0);
@@ -387,7 +393,7 @@ describe('Lobbyist in Hallstead (GDD §10, §11)', () => {
     const lb = balance.hallstead.lobby;
     const basis = lb.candidates.lowell.competence * lb.favorsPerCompetence * lb.government.handel;
     for (const seed of ['a', 'b', 'c', 'd']) {
-      const f = settleHallstead(ok(hireLobbyist(kapitel3(seed), balance, 'lowell')), balance).hallstead!.lobby.favors;
+      const f = settleHallstead(ok(hireLobbyist(kapitel3(seed), b, 'lowell')), b).hallstead!.lobby.favors;
       expect(f).toBeGreaterThanOrEqual(basis * (1 - lb.genieSpread) - 0.01);
       expect(f).toBeLessThanOrEqual(basis * (1 + lb.genieSpread) + 0.01);
     }
@@ -399,7 +405,8 @@ describe('Lobbyist in Hallstead (GDD §10, §11)', () => {
   it('Gesetze fordern und verhindern kostet Gefallen und verschiebt die Chance (Andockpunkt 4.3)', () => {
     const lb = balance.hallstead.lobby;
     let g = kapitel3();
-    expect(pushLaw(g, balance, 'kartell', -1)).toEqual({ ok: false, reason: 'noLobbyist' });
+    // 0.4.20+17: Fordern/Bremsen geht auch ohne Lobbyist – es kostet nur Gefallen.
+    expect(pushLaw(g, balance, 'kartell', -1)).toEqual({ ok: false, reason: 'favors' });
     g = ok(hireLobbyist(g, balance, 'pryce'));
     expect(pushLaw(g, balance, 'kartell', -1)).toEqual({ ok: false, reason: 'favors' });
     g = { ...g, hallstead: { ...g.hallstead!, lobby: { ...g.hallstead!.lobby, favors: 10 } } };
@@ -457,18 +464,22 @@ describe('Lobbyist in Hallstead (GDD §10, §11)', () => {
 
   it('Wahlkampfspende: gewinnt die Partei, schuldet sie Gefallen, sonst ist das Geld weg', () => {
     const d = balance.hallstead.lobby.donation;
-    const g = kapitel3();
-    expect(donate(g, balance, 'handel', d.min - 1)).toEqual({ ok: false, reason: 'amount' });
+    // Ohne Jacobs eigene Kontakte (0.4.20+17), damit nur die Spende zählt.
+    const b0 = bal((h) => {
+      h.lobby.ownFavors = 0;
+    });
+    const g = kapitel3('hallstead', undefined, b0);
+    expect(donate(g, b0, 'handel', d.min - 1)).toEqual({ ok: false, reason: 'amount' });
     // Wahl in 2 Runden laut Weltmodell.
-    let a = ok(donate(mitWelt(g, { electionIn: 2, government: 'handel' }), balance, 'handel', 2 * d.min));
+    let a = ok(donate(mitWelt(g, { electionIn: 2, government: 'handel' }), b0, 'handel', 2 * d.min));
     expect(a.hallstead!.lobby.donations[0].electionRound).toBe(2);
-    a = settleHallstead(a, balance);
+    a = settleHallstead(a, b0);
     expect(a.hallstead!.lobby.donations).toHaveLength(1);
-    a = settleHallstead({ ...a, round: 2 }, balance);
+    a = settleHallstead({ ...a, round: 2 }, b0);
     expect(a.hallstead!.lobby.donations).toHaveLength(0);
     expect(a.hallstead!.lobby.favors).toBeCloseTo(((2 * d.min) / d.perFavor) * d.winMultiplier, 5);
-    let v = ok(donate(mitWelt(g, { electionIn: 1, government: 'volksbund' }), balance, 'provinz', d.min));
-    v = settleHallstead(v, balance);
+    let v = ok(donate(mitWelt(g, { electionIn: 1, government: 'volksbund' }), b0, 'provinz', d.min));
+    v = settleHallstead(v, b0);
     expect(v.hallstead!.lobby.favors).toBe(0);
     expect(v.hallstead!.news).toContainEqual({ key: 'donationLost', party: 'provinz', amount: d.min });
   });
@@ -505,7 +516,9 @@ describe('Texte der Hallstead-Mappe (content/hallstead.yaml)', () => {
     const r = parseHallsteadContent('content/hallstead.yaml', contentText);
     expect(r.errors).toEqual([]);
     expect(checkHallsteadContent('content/hallstead.yaml', r.content!, balance)).toEqual([]);
-    expect(r.content!.laws.map((l) => l.id)).toContain('kartell');
+    // 0.4.20+17: dieselben Kennungen wie im Gesetzeskatalog (content/laws/).
+    expect(r.content!.laws.map((l) => l.id)).toContain('antitrust');
+    expect(r.content!.laws.map((l) => l.id)).toContain('income_tax');
   });
 
   it('meldet fehlende Texte, falsche Haltungen und Kandidaten ohne Text', () => {
@@ -539,7 +552,10 @@ describe('Texte der Hallstead-Mappe (content/hallstead.yaml)', () => {
     expect(v.canBribe).toBe(true);
     expect(v.government).toContain('Handelspartei');
     expect(v.donations[0]).toContain('Handelspartei');
-    expect(v.laws.length).toBe(content.laws.length);
+    // 0.4.20+17: Die Mappe zeigt nur Gesetze, die das Parlament kennt.
+    expect(v.laws.map((l) => l.id).sort()).toEqual(content.laws.filter((l) => balance.laws.some((d) => d.id === l.id)).map((l) => l.id).sort());
+    expect(v.laws.length).toBeGreaterThanOrEqual(2);
+    expect(v.weight).toMatch(/wiegt/);
     // Solange kein Gesetzessystem (4.3) den Druck liest, sagt die Mappe das.
     expect(v.lawsPending).toBe(LAWS_CONNECTED ? null : content.ui.lawsPending.de);
     expect(v.telegram.length).toBeGreaterThan(0);
@@ -551,5 +567,45 @@ describe('Texte der Hallstead-Mappe (content/hallstead.yaml)', () => {
     const zu = hallsteadView(newGame('zu', balance), balance, content);
     expect(zu.unlocked).toBe(false);
     expect(zu.lobbyist).toBeNull();
+  });
+});
+
+describe('0.4.20+17: Provinzpolitik in Kapitel 2, Gewicht nach Firmengröße', () => {
+  const lb = balance.hallstead.lobby;
+  const kapitel2 = (): GameState => ({ ...kapitel3(), chapter: 2 }) as GameState;
+
+  it('ab Kapitel 2 fordern, bremsen und spenden – ohne Lobbyist; Lobbyist und Umschlag erst mit Hallstead', () => {
+    expect(politicsUnlocked(newGame('k1', balance), balance)).toBe(false);
+    const k2 = kapitel2();
+    expect(politicsUnlocked(k2, balance)).toBe(true);
+    expect(hallsteadUnlocked(k2, balance)).toBe(false);
+    const mitGefallen = { ...k2, hallstead: { ...hallsteadOf(k2, balance), lobby: { ...hallsteadOf(k2, balance).lobby, favors: 5 } } };
+    const g = ok(pushLaw(mitGefallen, balance, 'income_tax', -1));
+    expect(g.hallstead!.lobby.pressure.income_tax).toBe(-lb.pushStep);
+    expect(ok(donate(k2, balance, 'handel', lb.donation.min)).hallstead!.lobby.donations).toHaveLength(1);
+    expect(hireLobbyist(k2, balance, 'pryce')).toEqual({ ok: false, reason: 'locked' });
+    expect(pushLaw(newGame('k1', balance), balance, 'income_tax', 1)).toEqual({ ok: false, reason: 'locked' });
+  });
+
+  it('das Gewicht wächst mit dem Imperiumswert (min … 1) – davon hängen eigene Gefallen und Einfluss ab', () => {
+    expect(politicalWeight(0, balance)).toBe(lb.weight.min);
+    expect(politicalWeight(lb.weight.fullAt / 2, balance)).toBeCloseTo(0.5, 9);
+    expect(politicalWeight(lb.weight.fullAt * 3, balance)).toBe(1);
+    const k2 = kapitel2();
+    const gewicht = politicalWeight(empireValue(k2, balance), balance);
+    const nach = settleHallstead(k2, balance);
+    expect(nach.hallstead!.lobby.favors).toBeCloseTo(Math.round(lb.ownFavors * gewicht * 100) / 100, 9);
+    // In Kapitel 2 keine Beteiligungen, kein Gehalt.
+    expect(nach.cash).toBe(k2.cash);
+  });
+
+  it('lawInfluence: Druck ÷ 100 × Gewicht je Gesetz, dazu die Verwässerung; in Kapitel 1 nichts', () => {
+    const k2 = kapitel2();
+    const h = hallsteadOf(k2, balance);
+    const g = { ...k2, hallstead: { ...h, lobby: { ...h.lobby, pressure: { income_tax: -50 }, water: { antitrust: 0.2 } } } };
+    const r = lawInfluence(g, balance, lb.weight.fullAt / 2);
+    expect(r.lawInfluence.income_tax).toBeCloseTo(-0.25, 9);
+    expect(r.lawWater).toEqual({ antitrust: 0.2 });
+    expect(lawInfluence(newGame('k1', balance), balance, 1e9)).toEqual({ lawInfluence: {}, lawWater: {} });
   });
 });

@@ -148,6 +148,10 @@ export interface LawRoundInput {
   election: Record<Party, number> | null;
   /** Lobby-Züge (vorbereitet). */
   lobby: readonly LobbyMove[];
+  /** 0.4.20+17: Jacobs Einfluss je Gesetz (−1 verhindern … +1 fordern), schon nach Firmengröße gewichtet. */
+  influence?: Readonly<Record<string, number>>;
+  /** 0.4.20+17: Verwässerung je Gesetz (0 … 1) – ab lobby.weakenFrom gilt das Gesetz beim Beschluss aufgeweicht. */
+  water?: Readonly<Record<string, number>>;
 }
 
 export interface LobbyMove {
@@ -259,26 +263,29 @@ export function advanceLaws(input: LawsState, view: LawView, catalog: readonly L
     const u = [rng.float(), rng.float(), rng.float()];
     const b = (bills[def.id] ??= freshBill());
     if (b.stage === 'passed') continue;
-    b.pressure = Math.max(0, b.pressure * lb.decay + reasonPoints(def.pressure, view, lage));
+    const einfluss = clamp(round.influence?.[def.id] ?? 0, -1, 1);
+    b.pressure = Math.max(0, b.pressure * lb.decay + reasonPoints(def.pressure, view, lage) + einfluss * lb.lobby.influencePressure);
+    const lobbyStimmen = b.lobbyVote + einfluss * lb.lobby.influenceVote;
     if (b.stage === 'debate') {
       b.voteIn -= 1;
       if (b.voteIn > 0) {
         // Letzte Runde vor der Abstimmung: Die Zeitung berichtet aus der Debatte, wie es aussieht.
         if (b.voteIn === 1) {
-          const erwartet = expectedYes(def, view, lage, b.lobbyVote);
+          const erwartet = expectedYes(def, view, lage, lobbyStimmen);
           const outlook = Math.abs(erwartet - 0.5) < lb.closeVote ? 'close' : erwartet > 0.5 ? 'likely' : 'unlikely';
           news.push({ law: def.id, kind: 'debate', outlook });
         }
         continue;
       }
       // Abstimmung: Sitze × Haltung, Lage, Lobby und ein wenig Zufall.
-      const yes = clamp(expectedYes(def, view, lage, b.lobbyVote) + lb.voteNoise * (2 * u[1] - 1), 0, 1);
+      const yes = clamp(expectedYes(def, view, lage, lobbyStimmen) + lb.voteNoise * (2 * u[1] - 1), 0, 1);
       b.lastVote = yes;
       b.lobbyVote = 0;
       offen -= 1;
       if (yes > 0.5) {
         b.stage = 'passed';
         b.passedRound = view.round;
+        if ((round.water?.[def.id] ?? 0) >= lb.lobby.weakenFrom) b.weakened = true;
         news.push({ law: def.id, kind: 'passed', yes });
       } else {
         b.stage = 'idle';

@@ -813,7 +813,12 @@ export interface LawsBalance {
    */
   trust: { start: Range; base: number; revert: number; government: Record<Party, number>; credit: number; crash: number; glut: number; noise: number; min: number; max: number };
   /** Vorbereitet (ab Kapitel 2): Stärke der Lobby-Züge. */
-  lobby: { demand: number; block: number; delay: number };
+  /**
+   * influencePressure/influenceVote/weakenFrom (0.4.20+17): Jacobs Einfluss je Gesetz (−1 … +1, schon nach Größe
+   * gewichtet) gibt so viele Druckpunkte je Runde bzw. so viel Zustimmung bei der Abstimmung; Verwässerung ab
+   * weakenFrom macht das Gesetz beim Beschluss „aufgeweicht“ (lobby.weaken.rules).
+   */
+  lobby: { demand: number; block: number; delay: number; influencePressure: number; influenceVote: number; weakenFrom: number };
 }
 
 export interface WorldModelBalance {
@@ -2482,7 +2487,14 @@ function parseWorldModel(raw: unknown): WorldModelBalance {
         min: sh('laws.trust.min'),
         max: sh('laws.trust.max'),
       },
-      lobby: { demand: nn('laws.lobby.demand'), block: sh('laws.lobby.block'), delay: integerInRange(raw, `${w}.laws.lobby.delay`, 0, 100) },
+      lobby: {
+        demand: nn('laws.lobby.demand'),
+        block: sh('laws.lobby.block'),
+        delay: integerInRange(raw, `${w}.laws.lobby.delay`, 0, 100),
+        influencePressure: nn('laws.lobby.influencePressure'),
+        influenceVote: sh('laws.lobby.influenceVote'),
+        weakenFrom: sh('laws.lobby.weakenFrom'),
+      },
     },
   };
   if (!Number.isInteger(wm.laws.debateRounds.min) || !Number.isInteger(wm.laws.debateRounds.max)) {
