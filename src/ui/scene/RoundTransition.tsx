@@ -5,12 +5,13 @@
 // Klick oder Taste überspringt. Bei „weniger Bewegung“ nur ein kurzes Einblenden.
 
 import { useEffect, useRef } from 'react';
+import { reducedMotion } from '../settings';
 
 export const UEBERGANG_MS = 950;
 const RUHIG_MS = 300;
 
 function ruhig(): boolean {
-  return typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  return reducedMotion();
 }
 
 export function RoundTransition({ from, to, round, lines, onDone }: { from: string; to: string; round: number; lines: readonly string[]; onDone: () => void }) {

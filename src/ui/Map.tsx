@@ -23,6 +23,8 @@ import { labelFits, ranchStatus, slotPositions, STATUS_LABEL, type RanchStatus }
 import { knowledgeOf } from '../sim/exploration';
 import { regionTrends } from '../sim/geology';
 import { levelLabel, zoneWord } from './plans';
+import { reducedMotion } from './settings';
+import { useSettings } from './useSettings';
 
 /** Zeichen auf einer Ranch (0.2.15+10): Pflock = hier geht etwas, Brief = ein offenes Ereignis betrifft sie. */
 export interface MapMarker {
@@ -66,6 +68,22 @@ const MARK: Partial<Record<RanchStatus, string>> = {
   bullard: 'var(--rost)',
   bullardOption: 'var(--rost)',
   other: 'var(--ocker)',
+};
+/** Farbenblind-freundliche Karte (Okabe-Ito): Blau für Jacob, Orange für Bullard, Gelb für andere – dazu Muster, damit nie nur die Farbe trägt. */
+const FILL_CB: Record<RanchStatus, string> = {
+  free: 'var(--land)',
+  option: 'url(#karte-option-cb)',
+  lease: 'url(#karte-cb-lease)',
+  bullard: 'url(#karte-cb-bullard)',
+  bullardOption: 'url(#karte-bullard-option-cb)',
+  other: 'url(#karte-cb-other)',
+};
+const MARK_CB: Partial<Record<RanchStatus, string>> = {
+  option: '#0072B2',
+  lease: '#0072B2',
+  bullard: '#D55E00',
+  bullardOption: '#D55E00',
+  other: '#8a7a00',
 };
 const DEBUG_FILL = { dry: 'var(--grau-hell)', small: 'var(--blau-hell)', gusher: 'var(--ocker-hell)' } as const;
 
@@ -168,6 +186,7 @@ const BLOECKE: readonly [number, number, number, number][] = [
 ];
 
 export function Map({ balance, game, debug, selected, highlight, onSelect, markers = [], onMarker }: Props) {
+  const cb = useSettings().colorblindMap;
   const world = balance.world;
   const limits: Limits = useMemo(() => ({ world: world.size, aspect: ASPECT, minW: 3.5, margin: 1.5 }), [world.size]);
 
@@ -210,7 +229,7 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
     (ziel: View) => {
       stopFahrt();
       const von = viewRef.current;
-      const ruhig = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      const ruhig = reducedMotion();
       if (ruhig || sameView(von, ziel)) {
         setView(ziel);
         return;
@@ -436,6 +455,26 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
             <rect width="0.32" height="0.32" style={{ fill: 'var(--land)' }} />
             <line x1="0" y1="0" x2="0" y2="0.32" style={{ stroke: 'var(--rost)' }} strokeWidth="0.06" strokeOpacity="0.6" />
           </pattern>
+          <pattern id="karte-option-cb" width="0.32" height="0.32" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="0.32" height="0.32" fill="#d4e6f3" />
+            <line x1="0" y1="0" x2="0" y2="0.32" stroke="#0072B2" strokeWidth="0.06" strokeOpacity="0.8" />
+          </pattern>
+          <pattern id="karte-bullard-option-cb" width="0.32" height="0.32" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+            <rect width="0.32" height="0.32" fill="#f8e6d2" />
+            <line x1="0" y1="0" x2="0" y2="0.32" stroke="#D55E00" strokeWidth="0.07" strokeOpacity="0.85" />
+          </pattern>
+          <pattern id="karte-cb-lease" width="0.3" height="0.3" patternUnits="userSpaceOnUse">
+            <rect width="0.3" height="0.3" fill="#bcdcf0" />
+            <circle cx="0.15" cy="0.15" r="0.055" fill="#0072B2" />
+          </pattern>
+          <pattern id="karte-cb-bullard" width="0.3" height="0.3" patternUnits="userSpaceOnUse">
+            <rect width="0.3" height="0.3" fill="#f5cfa6" />
+            <path d="M0,0 L0.3,0.3 M0.3,0 L0,0.3" stroke="#D55E00" strokeWidth="0.045" strokeOpacity="0.85" />
+          </pattern>
+          <pattern id="karte-cb-other" width="0.3" height="0.3" patternUnits="userSpaceOnUse">
+            <rect width="0.3" height="0.3" fill="#f6ee9e" />
+            <line x1="0" y1="0.15" x2="0.3" y2="0.15" stroke="#8a7a00" strokeWidth="0.05" strokeOpacity="0.8" />
+          </pattern>
           <pattern id="karte-wellen" width="1.6" height="0.7" patternUnits="userSpaceOnUse">
             <path d="M0,0.35 q0.2,-0.16 0.4,0 t0.4,0" fill="none" style={{ stroke: 'var(--blau)' }} strokeWidth="0.04" strokeOpacity="0.5" />
           </pattern>
@@ -516,8 +555,8 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
         <g pointerEvents={detail ? undefined : 'none'}>
           {ranches.map(({ p, shape }) => {
             const status = ranchStatus(game, p.id);
-            const fill = debug ? DEBUG_FILL[p.geology] : FILL[status];
-            const mark = MARK[status];
+            const fill = debug ? DEBUG_FILL[p.geology] : (cb ? FILL_CB : FILL)[status];
+            const mark = (cb ? MARK_CB : MARK)[status];
             const name = p.name;
             const option = optionOf(game, p.id);
             const label = `${name}, ${STATUS_LABEL[status]}, ${p.slots} ${p.slots === 1 ? 'Bohrplatz' : 'Bohrplätze'}`;
@@ -701,7 +740,7 @@ export function Map({ balance, game, debug, selected, highlight, onSelect, marke
                   const y = shape.center[1] + u(30);
                   if (!labelFits(shape.polygon, [shape.center[0], y + klein * 0.6], text.length, klein)) return null;
                   return (
-                    <text x={shape.center[0]} y={y} className="karte-klein karte-status" style={{ fontSize: klein, fill: MARK[status] }} paintOrder="stroke" {...halo}>
+                    <text x={shape.center[0]} y={y} className="karte-klein karte-status" style={{ fontSize: klein, fill: (cb ? MARK_CB : MARK)[status] }} paintOrder="stroke" {...halo}>
                       {text}
                     </text>
                   );

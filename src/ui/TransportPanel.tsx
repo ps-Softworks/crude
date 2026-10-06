@@ -34,6 +34,7 @@ import { timedEffect, timedRoundsLeft } from '../sim/events';
 import { cartelCut, craneCutRoundsLeft, exclusiveActive, grudgeCut, railFrozen, volumeDealActive, volumeObligation } from '../sim/trust';
 import { balance } from './balance';
 import { barrels, money, NBSP } from './format';
+import { playSound } from './sound';
 
 const T = balance.transport;
 
@@ -144,6 +145,7 @@ export function SalePanel({ game, onSold }: { game: GameState; onSold: (state: G
               menge={menge}
               onSold={(s, text) => {
                 onSold(s);
+                playSound('kasse');
                 setAmount('');
                 setQuittung(text);
               }}

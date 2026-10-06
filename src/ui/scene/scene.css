@@ -975,3 +975,23 @@ circle.telefon-kurbel { fill: #1f1a16; }
 .telefon.klingelt .telefon-glocken { transform-origin: 30px 18px; animation: telefon-klingeln 0.12s linear infinite alternate; }
 @keyframes telefon-klingeln { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
 @media (prefers-reduced-motion: reduce) { .telefon.klingelt .telefon-glocken { animation: none; } }
+
+/* ------------------------------------------------------------------ Einstellungen (B1) */
+.einstellungen fieldset { margin: 0 0 12px; padding: 8px 12px 10px; border: 1px solid var(--linie); border-radius: 4px; }
+.einstellungen legend { font-variant: small-caps; letter-spacing: 0.06em; padding: 0 6px; }
+.einstellungen label { display: block; margin: 6px 0; }
+.einstellungen-reihe { display: flex; gap: 8px; flex-wrap: wrap; }
+.einstellungen-reihe button[aria-checked='true'] { background: var(--tinte); color: var(--papier-hell); border-color: var(--tinte); }
+.einstellungen-regler input[type='range'] { display: block; width: 100%; margin-top: 4px; accent-color: var(--tinte-weich); }
+
+/* Textgröße: der Text in Fenstern, Besuchen und Kapitelbögen wächst; die Fenster scrollen innen. */
+html.text-gross .sheet-inhalt, html.text-gross .ranch-inhalt, html.text-gross .besuch, html.text-gross .tableau-flaeche { zoom: 1.12; }
+html.text-sehrgross .sheet-inhalt, html.text-sehrgross .ranch-inhalt, html.text-sehrgross .besuch, html.text-sehrgross .tableau-flaeche { zoom: 1.25; }
+
+/* Weniger Animation (eigener Schalter, zusätzlich zu prefers-reduced-motion). */
+html.wenig-bewegung *, html.wenig-bewegung *::before, html.wenig-bewegung *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}

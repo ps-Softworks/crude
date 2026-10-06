@@ -17,6 +17,8 @@ export const SHEET_IDS = [
   'protokoll',
   'konkurrenz',
   'menu',
+  /** Einstellungen: Textgröße, Ton, Vollbild, weniger Animation, Karte (aus dem Menü). */
+  'einstellungen',
   'glocke',
   /** Rundenbericht nach der Glocke: was über Nacht geschah (0.2.15+11). */
   'bericht',

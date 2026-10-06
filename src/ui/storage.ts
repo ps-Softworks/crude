@@ -13,6 +13,9 @@ export interface DesktopBridge {
   readSave(name: string): string | null;
   writeSave(name: string, text: string): boolean;
   removeSave(name: string): boolean;
+  /** Vollbild der Desktop-Hülle (ältere Hüllen kennen es nicht). */
+  isFullScreen?(): boolean;
+  setFullScreen?(on: boolean): boolean;
 }
 
 interface StoreHost {

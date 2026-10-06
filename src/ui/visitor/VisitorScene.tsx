@@ -20,12 +20,13 @@ import type { Appearance } from '../inbox';
 import { Outcome, outcomeOf, type OutcomeData } from '../Outcome';
 import { SilhouetteForm } from '../Silhouette';
 import { TableauBild } from './TableauBild';
+import { reducedMotion } from '../settings';
 
 const FOKUSSIERBAR = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
 const GEHEN_MS = 260;
 
 function ruhig(): boolean {
-  return typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  return reducedMotion();
 }
 
 export function VisitorScene({
