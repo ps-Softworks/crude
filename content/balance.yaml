@@ -138,7 +138,7 @@ lease:
   startOptions:
     count: 2              # PLATZHALTER
     termRounds: 4         # PLATZHALTER
-    # Startquelle (0.4.20+19): Die erste Startoption liegt auf einer Ranch mit sicherem Öl in der ersten
+    # Startquelle (0.4.20+21): Die erste Startoption liegt auf einer Ranch mit sicherem Öl in der ersten
     # Stufe (300 m) – eigene kleine Lagerstätte, ohne Unfall und Klemmen beim ersten Loch. Die Prognose
     # zeigt „Öl sicher“. sureReserves = Barrel in dieser Lagerstätte (gemessen: tools/startquelle.ts).
     # Die zweite Option bleibt Zufall.

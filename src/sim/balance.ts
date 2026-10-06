@@ -150,7 +150,7 @@ export interface LeaseBalance {
   landowners: Landowner[];
   option: { feeShare: number; termRounds: number };
   /**
-   * Freie Startoptionen. Die erste liegt auf der Startquelle (0.4.20+19): sicheres Öl in Stufe 1,
+   * Freie Startoptionen. Die erste liegt auf der Startquelle (0.4.20+21): sicheres Öl in Stufe 1,
    * eigene Lagerstätte mit sureReserves Barrel.
    */
   startOptions: { count: number; termRounds: number; sureReserves: number; sureRateShare: number };

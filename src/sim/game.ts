@@ -214,7 +214,7 @@ export interface GameState {
 }
 
 /**
- * Startquelle (0.4.20+19): Die Ranch der ersten Startoption bekommt sicheres Öl in Stufe 1 –
+ * Startquelle (0.4.20+21): Die Ranch der ersten Startoption bekommt sicheres Öl in Stufe 1 –
  * kleine Quelle, eigene Lagerstätte mit lease.startOptions.sureReserves Barrel (verbindet sich
  * mit keinem Nachbarfeld, damit die Menge genau stimmt). Die Felder werden danach neu gebaut.
  */

@@ -115,7 +115,7 @@ export function initialRate(
 ): number {
   const parcel = state.parcels.find((p) => p.id === well.parcelId);
   if (!parcel) return 0;
-  // Startquelle (0.4.20+19): feste Rate je Runde, unabhängig von der Ranchgröße – sie soll gleich lange tragen.
+  // Startquelle (0.4.20+21): feste Rate je Runde, unabhängig von der Ranchgröße – sie soll gleich lange tragen.
   if (parcel.sure) return Math.round(parcel.reserves * balance.lease.startOptions.sureRateShare);
   const anteil = balance.production.initialRateShare[well.result];
   return Math.round((parcel.reserves / areaFactor(balance, parcel)) * anteil);

@@ -1,4 +1,4 @@
-# Startquelle (0.4.20+19)
+# Startquelle (0.4.20+21)
 
 Die erste Startoption liegt auf einer Ranch mit **sicherem Öl in 300 m**: eigene kleine Lagerstätte
 (`lease.startOptions.sureReserves`), erstes Loch ohne Unfall und Klemmen, Prognose „Öl sicher“, der Einstieg

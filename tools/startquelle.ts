@@ -1,4 +1,4 @@
-// Startquelle (0.4.20+19): Wie viel Öl braucht die sichere erste Quelle für einen sauberen Anfang?
+// Startquelle (0.4.20+21): Wie viel Öl braucht die sichere erste Quelle für einen sauberen Anfang?
 // Maßstab (Philipp): Sie soll mindestens reichen, bis eine weitere Quelle Öl bringt, und sich selbst lohnen.
 // Spielt Kapitel 1 je Menge (lease.startOptions.sureReserves) mit den vier planenden Bots und mit Ereignissen.
 // Aufruf: npx tsx tools/startquelle.ts [Partien je Bot, Standard 100] [Mengen, z. B. 8000,12000,20000]

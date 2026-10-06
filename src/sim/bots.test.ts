@@ -532,7 +532,7 @@ describe('Bot-Läufe mit Ereignissen (2.15)', () => {
 });
 
 describe('Fund-Statistik (GDD §15)', () => {
-  it('die Startquelle (0.4.20+19) zählt nicht als Fund – nur gewürfelte Funde', () => {
+  it('die Startquelle (0.4.20+21) zählt nicht als Fund – nur gewürfelte Funde', () => {
     const state = newGame('fundstatistik', balance);
     const sicher = state.parcels.find((p) => p.sure)!.id;
     const anderer = state.parcels.find((p) => !p.sure && !p.discovery)!.id;
@@ -641,7 +641,7 @@ describe('Bot-Läufe: Transportwege (0.2.15+4)', () => {
     for (const s of ['vorsichtig', 'ausgewogen'] as const) {
       for (const r of spiele(s, 15)) {
         // Ausnahme: Pflichtmenge eines Liefervertrags an den Händler (sonst kostet die Fehlmenge Strafe) –
-        // kommt seit der Startquelle (0.4.20+19) in diesen Seeds vor.
+        // kommt seit der Startquelle (0.4.20+21) in diesen Seeds vor.
         expect(r.state.log.some((z) => / verkauft.* – -[0-9]/.test(z) && !/an den Händler/.test(z))).toBe(false);
       }
     }

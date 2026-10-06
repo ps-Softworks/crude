@@ -169,7 +169,7 @@ function fest(seed: string, key: string): Rng {
 export function knowledgeForecast(state: Pick<GameState, 'seed' | 'parcels' | 'knowledge'>, balance: Balance, parcelId: string): Forecast | null {
   const k = knowledgeOf(state, parcelId);
   if (k.level < 1) return null;
-  // Startquelle (0.4.20+19): Silas hat das Öl selbst gesehen – die Prognose sagt es offen.
+  // Startquelle (0.4.20+21): Silas hat das Öl selbst gesehen – die Prognose sagt es offen.
   if (state.parcels.find((p) => p.id === parcelId)?.sure) return { parcelId, low: 100, high: 100, center: 100, sure: true };
   const width = knowledgeWidth(balance, k);
   const karte = k.level === 2 ? k.clues.filter((c) => c.kind === 'kartierung').sort((a, b) => (b.accuracy ?? 0) - (a.accuracy ?? 0))[0] : undefined;
