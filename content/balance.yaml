@@ -590,6 +590,7 @@ eventSystems:
     fever: 100
     party: 150
     seismik: 3000
+    feldzug: 20000            # Preisabsprache oder Thornes Kredit in Cranes Feldzug (beendet einen Krieg bzw. bringt zehntausende $)
 
 # Zeitsprünge (4.5, GDD §2/§13): Zwischen den Kapiteln rechnet die Welt die Jahre weiter –
 # mit vereinfachten Regeln (src/sim/timeskip.ts), Texte in content/timeskip.yaml. Vor dem Sprung
@@ -792,6 +793,7 @@ bots:
       perRound: 2
       exchange: null
       defend: { thorneFrom: 0.05, controlBelow: 0.65, buyback: 0.05 }
+      feldzug: { pact: false, loan: false, sellBelow: 25000 }    # 0.4.20+8: hält durch, verkauft Tankstellen, sobald die Rücklage angegriffen ist
     greedy:
       stance: aggressive
       family: little
@@ -802,6 +804,7 @@ bots:
       exchange: { share: 0.15, leverage: 5, sellOnWarning: false }
       bonds: { load: 0.1 }    # gibt Anleihen bis 10 % des Anleihen-Rahmens aus (0,2: Pleite 74,5 %, 0,5: 90,5 % – Anleihen bringen ihm nie mehr ein, die Krise in Kapitel 3 holt ihn)
       defend: { thorneFrom: 0.15, controlBelow: 0.55, buyback: 0.03 }
+      feldzug: { pact: false, loan: true, sellBelow: 0 }         # 0.4.20+8: kämpft auf Pump – Thornes Geld, nie verkaufen (mit Absprache rettete ihn Margarets Gebietsaufteilung: Pleite 70 % → 24 %)
     balanced:
       stance: balanced
       family: some
@@ -811,6 +814,7 @@ bots:
       perRound: 3
       exchange: { share: 0.1, leverage: 2, sellOnWarning: true }
       defend: { thorneFrom: 0.1, controlBelow: 0.6, buyback: 0.05 }
+      feldzug: { pact: false, loan: true, sellBelow: 5000 }      # 0.4.20+8 Cranes Feldzug: hält durch, überbrückt mit Thornes Geld, verkauft erst knapp vor null
   # Zielwerte Kapitel 1–3 (4.20, GDD §15 und §17): Toleranzbereich min–max je Kennzahl, Tabelle Ist/Ziel in
   # docs/botlaeufe.md (Abschnitt „Kapitel 2 und 3“). Krisen: GDD §15 nennt Zahlen je Kampagne (7 Kapitel, 73 Jahre);
   # Kapitel 1–3 sind 24 Jahre, also rund ein Drittel davon.
@@ -2119,3 +2123,33 @@ rivalsK3:
     rate: 0.03                # Zins je Runde
     distressAt: 60000         # ab so viel Schulden ist er am Ende (Merkzeichen k3_bullard_verschuldet) …
     distressTrust: 10         # … und kommt mit Angeboten: Vertrauen + so viel
+
+# 0.4.20+8 Cranes Feldzug (Kapitel 3, GDD §13 „Preiskampf an der Zapfsäule“, src/sim/feldzug.ts): die echte
+# Bedrohung auch für den, der ohne Schulden spielt – sie trifft die festen Kosten des Tankstellennetzes.
+# Zwei bequeme Auswege mit Haken: Preisabsprache (Spur für Delaney, kein Ausbau mehr) und Thornes Kredit
+# (Pfand = Mehrheit an Harlan Oil; zur Frist nicht bezahlt → Ende „Geschluckt“). PLATZHALTER, per npm run kampagne justiert.
+feldzug:
+  fromChapter: 3
+  trigger:
+    stations: 10              # ab so vielen Harlan-Tankstellen (auch im Bau) denkt Margaret über den Feldzug nach …
+    notBefore: 3              # … frühestens in dieser Runde des Kapitels …
+    chance: 0.4               # … und kündigt ihn mit dieser Chance je Runde an (eine Runde später geht es los)
+  war:
+    margin: 0.25              # Jacobs Marge an der Zapfsäule × so viel in jeder Region mit Harlan-Tankstellen
+    chestMin: 4               # Cranes Kriegskasse reicht für so viele Runden … (gewürfelt; Jacob sieht nur „voll/halb/knapp“)
+    chestMax: 8               # … bis so viele
+    craneAwareness: 8         # zum Auftakt wirbt Crane laut: Bekanntheit + so viel in Harlans Regionen
+  bank:
+    limitFactor: 0.5          # im Krieg gibt die Bank nur so viel des Rahmens (Thorne sitzt im Kreditausschuss)
+  held:
+    craneClose: 0.3           # durchgehalten: Crane schließt diesen Anteil ihrer Tankstellen in Harlans Regionen …
+    reputation: 5             # … und Harlans Ruf in der Öffentlichkeit steigt um so viel
+  pact:
+    trace: 4                  # Preisabsprache: Spur dieser Schwere (1–5) im Schattenbuch …
+    keepRegions: 2            # … und Gebietsaufteilung: Harlan behält nur so viele Regionen (die stärksten), Crane kauft die übrigen Tankstellen zum Restwert
+  thorne:
+    offerBelow: 25000         # sinkt die Kasse im Krieg darunter, bietet Pettibone Thornes Geld an …
+    share: 0.15               # … so viel des Imperiumswerts …
+    min: 40000                # … mindestens so viel …
+    interest: 0.3             # … zur Frist mit so viel Zins zurück …
+    rounds: 4                 # … nach so vielen Runden

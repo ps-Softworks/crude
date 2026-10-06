@@ -39,6 +39,7 @@ console.log(`\n${t.chapters}`);
 console.log(`\n${t.crises}`);
 console.log(`\n${t.stances}`);
 console.log(`\n${t.fair}`);
+console.log(`\n${t.feldzug}`);
 console.log(`\n${zielTabelle}`);
 console.log(`\n${games} Kampagnen je Strategie in ${sekunden} s.`);
 const verfehlt = targets.filter((x) => !x.ok);
@@ -87,6 +88,12 @@ ${t.stances}
 Kapitel 1 entscheidet viel: Wer es ohne Quelle beendet, geht im Zeitsprung meist pleite. Damit Kapitel 2 und 3 allein vergleichbar sind, spielt hier jede Strategie ab dem Kapitelende des Standard-Bots weiter (gleiche Kasse, gleiche Quellen).
 
 ${t.fair}
+
+### Cranes Feldzug (Kapitel 3)
+
+Ab ${balance.feldzug.trigger.stations} Harlan-Tankstellen kündigt Margaret Crane einen Preiskrieg an (src/sim/feldzug.ts): Jacobs Marge an der Zapfsäule fällt auf ${(balance.feldzug.war.margin * 100).toLocaleString('de-DE')} %, die Bank gibt nur ${(balance.feldzug.bank.limitFactor * 100).toLocaleString('de-DE')} % des Rahmens, bis Cranes Kasse nach ${balance.feldzug.war.chestMin}–${balance.feldzug.war.chestMax} Runden leer ist. Auswege: Preisabsprache (Spur für Delaney, Harlan behält nur ${balance.feldzug.pact.keepRegions} Regionen) oder Thornes Kredit (Pfand: die Mehrheit – nicht bezahlt = geschluckt). Anteile an den Kampagnen, die Kapitel 3 selbst gespielt haben; „davon geschluckt“ an denen mit Thornes Kredit.
+
+${t.feldzug}
 
 ### Zielwerte Kapitel 1–3
 

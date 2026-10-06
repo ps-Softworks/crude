@@ -35,3 +35,7 @@
   .marke-tabelle th, .marke-tabelle td { border-bottom: none; }
   .marke-aktionen { grid-column: 1 / -1; }
 }
+/* 0.4.20+8 Cranes Feldzug im Reiter Crane */
+.marke-feldzug { border-left: 3px solid var(--rot); padding-left: 0.6em; margin: 0.6em 0; }
+.marke-feldzug p.marke-krieg { white-space: normal; }
+.marke-feldzug button { margin: 0.2em 0.4em 0.4em 0; }

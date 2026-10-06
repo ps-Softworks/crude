@@ -8,8 +8,9 @@
 // Kapitel 1 kommt derselbe Zustand zurück – die Kapitel-1-Bot-Läufe ändern sich dadurch nicht.
 
 import type { Balance } from './balance';
-import { brandOf, brandRegionOpen, brandUnlocked, brandWorldFrom, buildingCount, buildStations, foundBrand, stationCost } from './brand';
+import { brandOf, brandRegionOpen, brandUnlocked, brandWorldFrom, buildingCount, buildStations, foundBrand, sellStation, stationCost } from './brand';
 import { chapterOf } from './chapterOf';
+import { feldzugAbsprache, feldzugKredit, feldzugTilgen } from './feldzug';
 import type { GameState } from './game';
 import { buildRefinery } from './refinery';
 
@@ -71,6 +72,53 @@ export function botChapterSystems(state: GameState, balance: Balance, policy: Br
     if (n <= 0) break;
     const res = buildStations(s, balance, world, rb.id, n);
     if (res.ok) s = res.state;
+  }
+  return s;
+}
+
+/** Wie ein Bot auf Cranes Feldzug antwortet (0.4.20+8, balance.yaml → bots.campaign.*.feldzug). */
+export interface FeldzugBotPolicy {
+  pact: boolean;
+  loan: boolean;
+  sellBelow: number;
+}
+
+/**
+ * Cranes Feldzug (0.4.20+8): Wer Absprachen mag, nimmt Margarets Preisliste. Sonst hält er durch – nimmt mit loan
+ * Thornes Geld, sobald die Kasse unter die Rücklage fällt, zahlt es zurück, sobald es samt Rücklage da ist, und
+ * verkauft im Krieg Tankstellen (Region mit dem schlechtesten letzten Gewinn zuerst), solange die Kasse unter
+ * sellBelow liegt. Rein, deterministisch, ohne Zufall.
+ */
+export function botFeldzug(state: GameState, balance: Balance, policy: FeldzugBotPolicy | null | undefined, reserve: number): GameState {
+  const f = state.feldzug;
+  if (!f || !policy || state.finished) return state;
+  let s = state;
+  if (policy.pact && (f.phase === 'drohung' || f.phase === 'krieg')) {
+    const r = feldzugAbsprache(s, balance);
+    if (r.ok) return r.state;
+  }
+  if (s.feldzug?.loan && s.cash >= s.feldzug.loan.owed + reserve) {
+    const r = feldzugTilgen(s);
+    if (r.ok) s = r.state;
+  }
+  // Thornes Frist naht (diese Runde fällig): Tankstellen verkaufen, bis das Geld für ihn da ist.
+  const frist = s.feldzug?.loan && s.round >= s.feldzug.loan.due ? s.feldzug.loan.owed : 0;
+  if (s.feldzug?.phase !== 'krieg' && frist === 0) return s;
+  if (policy.loan && s.feldzug?.phase === 'krieg' && s.cash < reserve) {
+    const r = feldzugKredit(s, balance);
+    if (r.ok) s = r.state;
+  }
+  const world = brandWorldFrom(s);
+  const ziel = Math.max(s.feldzug?.phase === 'krieg' ? policy.sellBelow : 0, frist);
+  for (let i = 0; i < 200 && s.cash < ziel; i++) {
+    const brand = brandOf(s, balance);
+    const regionen = Object.entries(brand.regions)
+      .filter(([, r]) => r.stations > 0)
+      .sort(([a, x], [b, y]) => (x.last?.profit ?? 0) - (y.last?.profit ?? 0) || (a < b ? -1 : 1));
+    if (regionen.length === 0) break;
+    const r = sellStation(s, balance, world, regionen[0][0]);
+    if (!r.ok) break;
+    s = r.state;
   }
   return s;
 }

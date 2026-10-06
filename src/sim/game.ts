@@ -62,6 +62,7 @@ import type { Kapitel3Content } from './kapitel3Content';
 import { advanceKapitel3 } from './kapitel3Runde';
 // 4.19 Andockpunkt: Rivalen in Kapitel 3 (Margaret, Thorne, Bullard).
 import { settleRivalsK3, type RivalsK3State } from './rivalsK3';
+import { settleFeldzug, type FeldzugState } from './feldzug';
 import { konsortiumWorldInput } from './konsortium';
 
 export { SEASONS, dateOf, formatDate, type Season } from './calendar';
@@ -181,6 +182,8 @@ export interface GameState {
   kapitel3?: Kapitel3State;
   /** 4.19 Andockpunkt: Rivalen in Kapitel 3 (src/sim/rivalsK3.ts) – fehlt vor Kapitel 3. */
   rivalsK3?: RivalsK3State;
+  /** 0.4.20+8: Cranes Feldzug in Kapitel 3 (src/sim/feldzug.ts) – fehlt, bis die Marke gegründet ist. */
+  feldzug?: FeldzugState;
   /** Ruf (4.12, GDD §4, src/sim/reputation.ts): fehlt, bis ein Ereignis ihn ändert (dann −100…100 je Achse). */
   reputation?: Partial<Reputation>;
   /** 4.12: Was Systemwirkungen der Ereignisse dauerhaft hinterlassen (Durchleitungsgebühr, Rating, Termine, Erben). */
@@ -376,7 +379,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const gehandelt = callLoansInCrisis(settleExchange(verzinst, balance, readClimate(input)), balance);
   // 4.17 Andockpunkt: Kapitel 3 – Seismik-Berichte, Konsortium, Projekte, Stand (vor Kapitel 3 unverändert).
   // 4.19 Andockpunkt: Rivalen in Kapitel 3 – Margarets Tankstellen, Thornes Aktien, Bullards Schulden (vor Kapitel 3 unverändert).
-  const konzern = settleRivalsK3(advanceKapitel3(gehandelt, balance, texts.kapitel3), balance);
+  // 0.4.20+8: Cranes Feldzug – Ankündigung, Preiskrieg, Thornes Kredit und Frist (vor Kapitel 3 und ohne Marke unverändert).
+  const konzern = settleFeldzug(settleRivalsK3(advanceKapitel3(gehandelt, balance, texts.kapitel3), balance), balance);
   // Der neue Preis gilt für die Verkäufe der nächsten Runde.
   // 4.7 Andockpunkt: Fernleitungen nach dem Transport – Thorne nimmt unter Druck eine Erhöhung zurück und senkt den Tarif.
   const gefahren = advanceBigPipelines(advanceTransport(konzern, balance), balance, { railTariffBefore: konzern.railTariff });

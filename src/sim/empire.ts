@@ -63,5 +63,7 @@ export function empireValue(state: GameState, balance: Balance): number {
   // 4.17 Andockpunkt: Konsortialprojekte mit dem gezahlten Anteil (gescheiterte zählen nicht; Kapitel 1: 0).
   // 4.20: Das Depot an der Börse mit Kurswert minus Maklerkredit – vorher verschwand gekauftes Geld aus dem Wert.
   const anleihen = (state.stocks?.bonds ?? []).reduce((sum, b) => sum + b.principal, 0);
-  return cents(state.cash + tank + reserven + logisticsAssets(state, balance) + rigAssets(state, balance) + venturesValue(state, balance) + refineryAssets(state, balance) + bigPipelineAssets(state, balance) + brandAssets(state, balance) + hallsteadAssets(state) + projectsValue(state) + exchangeEquity(state) - debt(state) - anleihen);
+  // 0.4.20+8: Thornes Kredit aus Cranes Feldzug zählt mit dem Betrag, der zur Frist fällig ist.
+  const thorne = state.feldzug?.loan?.owed ?? 0;
+  return cents(state.cash + tank + reserven + logisticsAssets(state, balance) + rigAssets(state, balance) + venturesValue(state, balance) + refineryAssets(state, balance) + bigPipelineAssets(state, balance) + brandAssets(state, balance) + hallsteadAssets(state) + projectsValue(state) + exchangeEquity(state) - debt(state) - anleihen - thorne);
 }

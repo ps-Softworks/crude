@@ -1,0 +1,108 @@
+# Kapitel 3 – Cranes Feldzug (0.4.20+8, src/sim/feldzug.ts). Entwurf – Philipp überarbeitet.
+# Die echte Bedrohung in Kapitel 3: Margaret Crane führt einen Preiskrieg in jeder Region mit
+# Harlan-Tankstellen. Die Simulation setzt die Merkzeichen, die Szenen hier bieten die Auswege an
+# (Wirkung `feldzug: absprache | kredit`, dieselben Aktionen stehen im Fenster „Vertrieb“, Reiter Crane).
+#
+# Merkzeichen der Simulation (FELDZUG_MARKS):
+#   k3_feldzug_drohung → Margarets Besuch (dagegenhalten oder Preisabsprache)
+#   k3_feldzug_thorne  → Pettibone bietet Thornes Geld an (Pfand: die Mehrheit an Harlan Oil)
+#   k3_feldzug_krieg, k3_feldzug_durchgehalten, k3_feldzug_absprache, k3_feldzug_aufgegeben – für spätere Szenen
+
+- id: k3_feldzug_ankuendigung
+  visitor: margaret
+  rival: crane
+  marked: [k3_feldzug_drohung]
+  delay: 0
+  certain: true
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Margaret Crane erklärt den Krieg
+    en: Margaret Crane Declares War
+  text:
+    de: >-
+      Margaret Crane behält die Handschuhe an. „Ich habe meinem Vater versprochen, dass
+      Crane Eastern an jeder Kreuzung steht, an der ein Automobil hält. Sie stehen mir an
+      zu vielen im Weg, Mr. Harlan.“ Ab Montag verkauft sie Benzin unter Einstandspreis,
+      überall, wo Harlan eine Säule hat. „So lange, bis einer von uns die Rechnung nicht
+      mehr bezahlen kann. Ich habe Zeit. Haben Sie Geld?“ Dann schiebt sie eine Preisliste
+      über den Tisch, ohne Unterschrift. „Oder wir sparen uns das.“
+    en: >-
+      Margaret Crane keeps her gloves on. "I promised my father that Crane Eastern would
+      stand at every crossroads where an automobile stops. You stand in my way at too many,
+      Mr. Harlan." From Monday she will sell gasoline below cost wherever Harlan has a pump.
+      "Until one of us can no longer pay the bill. I have time. Do you have money?" Then she
+      slides a price list across the desk, unsigned. "Or we spare ourselves the trouble."
+  choices:
+    - id: dagegenhalten
+      label: { de: "„Dann bezahlen Sie die Rechnung.“", en: "\"Then you pay the bill.\"" }
+      result:
+        de: >-
+          Margaret steht auf und nickt, als hätte sie nichts anderes erwartet. Am Montag
+          kostet das Benzin von Crane Eastern zwei Cent weniger als bei Harlan, an jeder
+          Kreuzung. Jede Harlan-Tankstelle verdient jetzt kaum noch etwas, die Pacht läuft
+          weiter, und die Bank ist plötzlich vorsichtig.
+        en: >-
+          Margaret stands and nods, as if she had expected nothing else. On Monday Crane
+          Eastern's gasoline costs two cents less than Harlan's, at every crossroads. Each
+          Harlan station now earns next to nothing, the lease keeps running, and the bank is
+          suddenly cautious.
+      default: true
+    - id: absprache
+      label: { de: "Die Preisliste nehmen – Gebiete teilen, keine neuen Tankstellen", en: "Take the price list – split the territory, no new stations" }
+      result:
+        de: >-
+          Jacob steckt die Liste ein. Ab Montag kosten beide Säulen dasselbe, auf den Cent.
+          Harlan behält seine zwei besten Regionen, die übrigen Tankstellen übernimmt Crane zum
+          Restwert, und Harlan baut keine neue mehr. Unterschrieben hat niemand. In Cordova
+          sammelt ein Bundesanwalt genau solche Listen.
+        en: >-
+          Jacob pockets the list. From Monday both pumps cost the same, to the cent. Harlan
+          keeps its two best regions, Crane takes over the other stations at salvage value, and
+          Harlan builds no new ones. No one signed anything. In Cordova a federal prosecutor
+          collects exactly such lists.
+      effects: { feldzug: absprache }
+
+- id: k3_feldzug_pettibone
+  visitor: bankier
+  rival: thorne
+  marked: [k3_feldzug_thorne]
+  delay: 0
+  certain: true
+  conditions: { minChapter: 3, maxChapter: 3 }
+  title:
+    de: Pettibone bietet Überbrückung
+    en: Pettibone Offers a Bridge
+  text:
+    de: >-
+      Mr. Pettibone von der Thorne Rail & Trust Bank hat gehört, dass die Kasse von Harlan
+      Oil leerer ist als früher. Mr. Thorne helfe gern. Eine runde Summe, sofort, ohne
+      Fragen, zurück in vier Quartalen mit einem Zins, „über den wir unter Freunden nicht
+      reden“. Als Pfand genügt die Mehrheit an Harlan Oil. „Eine reine Formalität, Mr.
+      Harlan. Es sei denn, Sie zahlen nicht.“
+    en: >-
+      Mr. Pettibone of Thorne Rail & Trust Bank has heard that Harlan Oil's till is emptier
+      than it used to be. Mr. Thorne is glad to help. A round sum, at once, no questions,
+      back in four quarters at an interest "friends don't discuss". The majority of Harlan
+      Oil will do as security. "A pure formality, Mr. Harlan. Unless you don't pay."
+  choices:
+    - id: annehmen
+      label: { de: "Annehmen – Pfand ist die Mehrheit an Harlan Oil", en: "Accept – the majority of Harlan Oil as security" }
+      result:
+        de: >-
+          Das Geld ist am nächsten Morgen da. Der Vertrag liegt im Safe, und die Frist steht
+          im Kassenbuch. Wenn das Geld dann nicht da ist, gehört die Firma Augustus Thorne.
+        en: >-
+          The money is there the next morning. The contract lies in the safe, and the
+          deadline is in the ledger. If the money isn't there by then, the company belongs to
+          Augustus Thorne.
+      effects: { feldzug: kredit }
+    - id: ablehnen
+      label: { de: "„Danke. Ich überbrücke selbst.“", en: "\"Thank you. I'll bridge it myself.\"" }
+      result:
+        de: >-
+          Pettibone setzt den Hut auf. „Das Angebot bleibt auf dem Tisch, solange Mrs. Crane
+          ihre Preise hält.“ Er lässt seine Karte da.
+        en: >-
+          Pettibone puts on his hat. "The offer stays on the table as long as Mrs. Crane
+          holds her prices." He leaves his card.
+      default: true

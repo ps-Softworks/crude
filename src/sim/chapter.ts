@@ -161,13 +161,15 @@ export function earlyEnding(state: GameState, balance: Balance): EarlyEnding | n
   if (state.events.marks[DELANEY_MARKS.prison] !== undefined) return 'haft';
   const s = state.stocks;
   if (s && s.ousted > 0) return 'abgesetzt';
+  // 0.4.20+8: Thornes Kredit aus Cranes Feldzug nicht bezahlt – er zieht das Pfand (auch bei der Familienfirma).
+  if (state.feldzug?.swallowed) return 'geschluckt';
   if (s && s.public && s.ousted === 0 && thorneStake(s) > ownStake(s) && control(s, balance) < balance.chapter.chapter2.swallowedControl) return 'geschluckt';
   return null;
 }
 
 const EARLY_LOG: Record<EarlyEnding, string> = {
   abgesetzt: 'Der Aufsichtsrat hat Jacob Harlan abgesetzt. Ein anderer sitzt jetzt an seinem Schreibtisch.',
-  geschluckt: 'Augustus Thorne hält mehr Aktien von Harlan Oil als Jacob. Die Firma gehört jetzt zu Thorne Rail.',
+  geschluckt: 'Augustus Thorne hält jetzt mehr von Harlan Oil als Jacob. Die Firma gehört zu Thorne Rail.',
   haft: 'Jacob Harlan muss ins Bundesgefängnis. Die Firma führt ein Verwalter.',
 };
 

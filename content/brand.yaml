@@ -105,6 +105,22 @@ ui:
   newsBadge: { de: "{anzahl} neu", en: "{anzahl} new" }
   # Kurzform am Gegenstand vor der Gründung (der Platz am Tisch ist schmal).
   deskNoBrand: { de: "noch keine Marke", en: "no brand yet" }
+  # 0.4.20+8 Cranes Feldzug (src/sim/feldzug.ts): Reiter Crane.
+  feldzugThreat: { de: "Margaret Crane hat den Preiskrieg angekündigt. Ab der nächsten Runde verkauft sie überall unter Einstandspreis, wo wir Tankstellen haben.", en: "Margaret Crane has announced a price war. From next round she sells below cost wherever we have stations." }
+  feldzugWar: { de: "Preiskrieg! Crane verkauft unter Einstandspreis, unsere Marge an der Zapfsäule ist fast weg. Ihre Kriegskasse ist {kasse}.", en: "Price war! Crane sells below cost, our margin at the pump is nearly gone. Her war chest is {kasse}." }
+  feldzugBank: { de: "Die Bank gibt im Krieg nur einen Teil des Rahmens – Thorne sitzt im Kreditausschuss. Durchhalten, Tankstellen verkaufen oder verhandeln.", en: "During the war the bank grants only part of the credit line – Thorne sits on the credit committee. Hold out, sell stations or negotiate." }
+  feldzugHeld: { de: "Wir haben Cranes Preiskrieg überstanden. Sie hat Tankstellen neben unseren geschlossen.", en: "We survived Crane's price war. She closed stations next to ours." }
+  feldzugPact: { de: "Die Absprache mit Crane gilt: gleiche Preise, Harlan nur noch in zwei Regionen, keine neuen Tankstellen. Delaney sammelt solche Listen.", en: "The arrangement with Crane holds: same prices, Harlan in only two regions, no new stations. Delaney collects such lists." }
+  feldzugLost: { de: "Crane hat den Preiskrieg gewonnen – Harlan hat keine Tankstelle mehr.", en: "Crane won the price war – Harlan has no stations left." }
+  feldzugChapterEnd: { de: "Der Preiskrieg endete mit dem Kapitel.", en: "The price war ended with the chapter." }
+  feldzugPactButton: { de: "Margarets Preisliste nehmen (Absprache: nur noch zwei Regionen)", en: "Take Margaret's price list (arrangement: only two regions)" }
+  feldzugOffer: { de: "Pettibone von Thornes Treuhandbank bietet {betrag} an. Zurück bis Runde {runde}: {zurueck}. Pfand: die Mehrheit an Harlan Oil.", en: "Pettibone of Thorne's trust bank offers {betrag}. Back by round {runde}: {zurueck}. Security: the majority of Harlan Oil." }
+  feldzugLoanButton: { de: "Thornes Geld annehmen", en: "Accept Thorne's money" }
+  feldzugLoan: { de: "Thornes Kredit: {zurueck} fällig in Runde {runde}. Fehlt das Geld dann, gehört die Firma Thorne.", en: "Thorne's loan: {zurueck} due in round {runde}. If the money is missing then, the company belongs to Thorne." }
+  feldzugRepay: { de: "Jetzt zurückzahlen ({zurueck})", en: "Repay now ({zurueck})" }
+  chestVoll: { de: "noch voll", en: "still full" }
+  chestHalb: { de: "halb leer", en: "half empty" }
+  chestKnapp: { de: "fast leer", en: "nearly empty" }
 
 # Was bei der letzten Abrechnung geschah (BrandNews in src/sim/brand.ts).
 news:
@@ -129,3 +145,4 @@ refusals:
   running: { de: Diese Werbung läuft dort schon., en: That campaign is already running there. }
   samePrice: { de: Dieser Preis gilt schon., en: That price is already set. }
   name: { de: Dieser Name geht nicht., en: That name will not do. }
+  pact: { de: Die Absprache mit Crane gilt – keine neuen Tankstellen., en: The arrangement with Crane holds – no new stations. }

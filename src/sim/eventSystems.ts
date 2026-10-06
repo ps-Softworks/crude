@@ -32,6 +32,10 @@ import { brandOf, brandUnlocked, brandWorldFrom } from './brand';
 import { hallsteadOf, hallsteadUnlocked } from './hallsteadState';
 import { ensureKapitel3, kapitel3Unlocked } from './kapitel3';
 import { adjustAnsehen } from './stand';
+import { feldzugAbsprache, feldzugKredit } from './feldzug';
+
+/** Werte der Wirkung „feldzug“. */
+export const FELDZUG_EFFECTS = ['absprache', 'kredit'] as const;
 
 export { REPUTATION_AXES, reputationOf, reputationWord, validReputation, type Reputation, type ReputationAxis } from './reputation';
 
@@ -98,6 +102,8 @@ export const SYSTEM_EFFECT_KEYS = [
   'fever',
   'party',
   'seismik',
+  // 0.4.20+8: Cranes Feldzug – Preisabsprache oder Thornes Kredit (src/sim/feldzug.ts).
+  'feldzug',
 ] as const;
 export type SystemEffectKey = (typeof SYSTEM_EFFECT_KEYS)[number];
 
@@ -180,6 +186,8 @@ export interface SystemEffects {
   party?: Partial<Record<Party, number>>;
   /** Seismik (4.17): +1 = Lizenz (hat Jacob sie schon: ein Trupp mehr), −1 = ein Trupp weniger. */
   seismik?: number;
+  /** Cranes Feldzug (0.4.20+8): absprache = gleiche Preise mit Crane, kredit = Thornes Geld annehmen. */
+  feldzug?: (typeof FELDZUG_EFFECTS)[number];
 }
 
 /** Was Systemwirkungen dauerhaft hinterlassen (state.consequences). Fehlt, solange nichts davon geschah. */
@@ -403,6 +411,8 @@ export function parseSystemEffects(raw: Record<string, unknown>, fehler: (key: s
   if (hire) out.hire = hire;
   const fire = wahlAus('fire', STAFF_HIRE_ROLES);
   if (fire) out.fire = fire;
+  const feldzug = wahlAus('feldzug', FELDZUG_EFFECTS);
+  if (feldzug) out.feldzug = feldzug;
   const research = tabelle('research');
   if (research) out.research = research as Record<string, number>;
   const yieldT = tabelle('productYield', PRODUCTS);
@@ -939,6 +949,10 @@ export function applySystemEffects(state: GameState, sys: SystemEffects | undefi
   out = hallstead(out, balance, sys);
   out = boerse(out, balance, sys);
   out = parteien(out, balance, sys);
+  if (sys.feldzug) {
+    const r = sys.feldzug === 'absprache' ? feldzugAbsprache(out, balance) : feldzugKredit(out, balance);
+    if (r.ok) out = r.state;
+  }
   if (sys.transportFee) {
     const c = folgen(out);
     out = { ...out, consequences: { ...c, transportFee: Math.max(0, Math.round(c.transportFee + sys.transportFee)) } };
@@ -1021,6 +1035,7 @@ export function systemImpact(sys: SystemEffects | undefined, balance: Balance): 
   x += summe(sys.consortium) * w.consortium;
   x += summe(sys.stock) * w.stock * (sys.leverage ?? 1) + (sys.leverage ? sys.leverage * w.leverage : 0);
   x += Math.abs(sys.fever ?? 0) * w.fever + summe(sys.party) * w.party + Math.abs(sys.seismik ?? 0) * w.seismik;
+  x += (sys.feldzug ? 1 : 0) * w.feldzug;
   return Math.round(x);
 }
 
