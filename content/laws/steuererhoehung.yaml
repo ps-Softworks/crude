@@ -1,0 +1,64 @@
+# Höhere Einkommensteuer (0.4.20+18, Philipp: „später kann durch viel Druck noch mehr werden“): nur wenn die
+# Einkommensteuer schon gilt und Krieg, Krise oder schlechte Stimmung lange drücken. Wirkung: incomeTaxAdd.
+# ENTWURF: Zahlen und Texte sind Vorschläge von Claude.
+id: income_tax_raise
+draft: true
+name: { de: Höhere Einkommensteuer, en: Income Tax Increase }
+summary:
+  de: "Der Bund verdoppelt die Steuer auf Gewinne."
+  en: "The Federation doubles the tax on profits."
+
+threshold: 14
+pressure:
+  - when: { inForce: [income_tax], war: true }
+    add: 2.4
+  - when: { inForce: [income_tax], crash: true }
+    add: 1.4
+  - when: { inForce: [income_tax], mood: { max: 30 } }
+    add: 0.8
+  - when: { inForce: [income_tax], government: volksbund }
+    add: 0.6
+  - when: { government: handel }
+    add: -1.0
+
+votes: { handel: 0.05, volksbund: 0.8, provinz: 0.35 }
+swing:
+  - when: { war: true }
+    add: 0.12
+
+effects:
+  world:
+    moodShift: 0.3
+    creditShift: -0.1
+  rules:
+    incomeTaxAdd: 0.05     # zur Einkommensteuer dazu (5 % → 10 %)
+
+lobby:
+  demand: { label: { de: "Die Erhöhung fordern", en: "Call for the increase" } }
+  block: { label: { de: "Gegen die Erhöhung stimmen lassen", en: "Have members vote against the increase" } }
+  weaken:
+    label: { de: "Die Erhöhung halbieren", en: "Halve the increase" }
+    rules: { incomeTaxAdd: 0.025 }
+  delay: { label: { de: "Die Abstimmung verschleppen", en: "Stall the vote" } }
+
+news:
+  proposed:
+    title: { de: "Mehr Steuern für den Krieg?", en: "More taxes for the war?" }
+    text:
+      de: "Die Staatskasse reicht nicht. Ein Antrag will die Einkommensteuer verdoppeln."
+      en: "The treasury is not enough. A bill would double the income tax."
+  debate:
+    title: { de: "Wer zahlt die Rechnung?", en: "Who pays the bill?" }
+    text:
+      de: "Der Volksbund zeigt auf die Ölbarone. Die Handelspartei droht mit Abwanderung der Firmen."
+      en: "The People's League points at the oil barons. The Commerce Party threatens that firms will leave."
+  passed:
+    title: { de: "Einkommensteuer verdoppelt", en: "Income tax doubled" }
+    text:
+      de: "Ab sofort geht ein doppelter Anteil jedes Gewinns an den Bund."
+      en: "From now on a double share of every profit goes to the Federation."
+  failed:
+    title: { de: "Keine höhere Steuer", en: "No tax increase" }
+    text:
+      de: "Die Erhöhung scheitert. Die Staatskasse muss anders gefüllt werden."
+      en: "The increase fails. The treasury will have to be filled another way."

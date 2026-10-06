@@ -1,0 +1,65 @@
+# Transportpflicht für Fernleitungen (0.4.20+18, GDD §10): Wer eine Fernleitung besitzt, muss fremdes Öl
+# gegen Gebühr durchleiten (historisch: Hepburn Act 1906). Druck, wenn wenige Konzerne den Transport beherrschen.
+# Wirkung: commonCarrier = 1 (src/sim/bigPipelines.ts, pipelineWorldOf).
+# ENTWURF: Zahlen und Texte sind Vorschläge von Claude.
+id: transport_duty
+draft: true
+name: { de: Transportpflicht für Fernleitungen, en: Common Carrier Act }
+summary:
+  de: "Fernleitungen gelten als öffentliche Wege: Jeder Förderer darf sein Öl gegen eine feste Gebühr durchleiten."
+  en: "Trunk pipelines count as public roads: every producer may ship oil through them for a fixed fee."
+
+threshold: 10
+pressure:
+  - when: { trustShare: { min: 0.45 } }     # der Trust beherrscht die Wege
+    add: 1.6
+  - when: { trustShare: { min: 0.55 } }
+    add: 0.8
+  - when: { government: volksbund }
+    add: 0.6
+  - when: { government: provinz }           # die kleinen Förderer der Provinz wollen an die Leitungen
+    add: 0.5
+  - when: { mood: { max: 40 } }
+    add: 0.3
+  - when: { government: handel }
+    add: -0.6
+
+votes: { handel: 0.25, volksbund: 0.75, provinz: 0.65 }
+swing:
+  - when: { trustShare: { min: 0.5 } }
+    add: 0.05
+
+effects:
+  world: {}               # bewusst ohne trustShift: sonst verliert das Kartellgesetz seinen Anlass (Test „Fertig-Kriterium 4.3“)
+  rules:
+    commonCarrier: 1
+
+lobby:
+  demand: { label: { de: "Offene Leitungen fordern", en: "Call for open pipelines" } }
+  block: { label: { de: "Die Eigentümer schützen", en: "Protect the owners" } }
+  weaken:
+    label: { de: "Hohe Durchleitungsgebühren erlauben", en: "Allow high carriage fees" }
+    rules: { commonCarrier: 0.5 }
+  delay: { label: { de: "Die Debatte verschleppen", en: "Stall the debate" } }
+
+news:
+  proposed:
+    title: { de: "Sollen Leitungen allen offenstehen?", en: "Should pipelines be open to all?" }
+    text:
+      de: "Ein Antrag im Parlament will Fernleitungen zu öffentlichen Wegen machen. Jeder Förderer dürfte sein Öl gegen Gebühr durchleiten."
+      en: "A bill in Parliament would make trunk pipelines public roads. Every producer could ship oil through them for a fee."
+  debate:
+    title: { de: "Streit um die Leitungen", en: "Quarrel over the pipelines" }
+    text:
+      de: "„Wer die Leitung hat, hat das Feld“, sagt ein Abgeordneter der Provinzliga. Die Eigentümer sprechen von Enteignung."
+      en: "\"Whoever owns the pipeline owns the field,\" says a member of the Provincial League. The owners call it expropriation."
+  passed:
+    title: { de: "Transportpflicht beschlossen", en: "Common Carrier Act passed" }
+    text:
+      de: "Ab sofort müssen Fernleitungen fremdes Öl durchleiten. Die kleinen Förderer jubeln, die Eigentümer rechnen nach."
+      en: "From now on trunk pipelines must carry other producers' oil. The small producers cheer, the owners do their sums."
+  failed:
+    title: { de: "Transportpflicht gescheitert", en: "Common carrier bill defeated" }
+    text:
+      de: "Das Parlament lässt die Leitungen in privater Hand. Wer keine hat, bleibt auf Bahn und Fuhrwerk angewiesen."
+      en: "Parliament leaves the pipelines in private hands. Whoever has none stays dependent on rail and wagon."

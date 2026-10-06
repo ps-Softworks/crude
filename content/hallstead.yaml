@@ -83,6 +83,9 @@ laws:
   income_tax:
     name: { de: "Einkommensteuer", en: "Income tax" }
     oil: against
+  income_tax_raise:
+    name: { de: "Höhere Einkommensteuer", en: "Income tax increase" }
+    oil: against
   depletion_allowance:
     name: { de: "Steuerabzug für Ölvorkommen", en: "Depletion allowance" }
     oil: for

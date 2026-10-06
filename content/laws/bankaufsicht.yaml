@@ -1,0 +1,63 @@
+# Bankaufsicht (0.4.20+18, GDD §10): Nach Bankpanik oder Crash will der Staat die Banken beaufsichtigen
+# (historisch: Federal Reserve Act 1913). Paniken werden milder, Kredit wird knapper.
+# Wirkung: creditLimit (Bankrahmen), weniger Verschuldung in der Welt.
+# ENTWURF: Zahlen und Texte sind Vorschläge von Claude.
+id: bank_supervision
+draft: true
+name: { de: Bankaufsicht, en: Banking Supervision Act }
+summary:
+  de: "Eine Aufsicht prüft die Banken und verlangt Reserven. Paniken werden seltener, Kredit wird knapper."
+  en: "A supervisor audits the banks and demands reserves. Panics grow rarer, credit grows tighter."
+
+threshold: 10
+pressure:
+  - when: { crash: true }                   # nach Panik oder Crash
+    add: 2.5
+  - when: { credit: { max: 35 } }
+    add: 0.8
+  - when: { government: volksbund }
+    add: 0.5
+  - when: { credit: { min: 65 } }           # in guten Zeiten will niemand Aufsicht
+    add: -0.6
+
+votes: { handel: 0.4, volksbund: 0.75, provinz: 0.55 }
+swing:
+  - when: { crash: true }
+    add: 0.1
+
+effects:
+  world:
+    leverageShift: -0.3    # je Runde: weniger Verschuldung, Paniken seltener
+    creditShift: -0.1
+  rules:
+    creditLimit: 0.85      # Bankrahmen × 0,85
+
+lobby:
+  demand: { label: { de: "Die Aufsicht fordern", en: "Call for supervision" } }
+  block: { label: { de: "Die Banken schützen", en: "Protect the banks" } }
+  weaken:
+    label: { de: "Milde Reserven aushandeln", en: "Negotiate mild reserves" }
+    rules: { creditLimit: 0.93 }
+  delay: { label: { de: "Die Abstimmung verschleppen", en: "Stall the vote" } }
+
+news:
+  proposed:
+    title: { de: "Aufsicht über die Banken?", en: "Supervision for the banks?" }
+    text:
+      de: "Nach der Panik will ein Antrag die Banken beaufsichtigen und Reserven verlangen."
+      en: "After the panic a bill would put the banks under supervision and demand reserves."
+  debate:
+    title: { de: "Wer hütet das Geld?", en: "Who guards the money?" }
+    text:
+      de: "„Nie wieder Schlangen vor geschlossenen Schaltern“, sagt ein Abgeordneter. Die Bankiers warnen vor knappem Kredit."
+      en: "\"Never again queues outside closed counters,\" says a member. The bankers warn of tight credit."
+  passed:
+    title: { de: "Bankaufsicht beschlossen", en: "Banking supervision passed" }
+    text:
+      de: "Die Banken müssen Reserven halten. Kredit wird vorsichtiger vergeben."
+      en: "Banks must hold reserves. Credit is extended more carefully."
+  failed:
+    title: { de: "Keine Bankaufsicht", en: "No banking supervision" }
+    text:
+      de: "Die Banken bleiben frei – bis zur nächsten Panik."
+      en: "The banks stay free – until the next panic."

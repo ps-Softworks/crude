@@ -1,0 +1,63 @@
+# Förderquoten und Verbot von heißem Öl (0.4.20+18, GDD §10): Nach einer Ölschwemme deckelt der Staat die
+# Förderung je Quelle (historisch: Texas Railroad Commission, Connally Hot Oil Act). Wer mehr fördert,
+# riskiert Bußgeld je Barrel „heißes Öl“. Wirkung: quotaShare, quotaFine (src/sim/lawEffects.ts), weniger Öl am Markt.
+# ENTWURF: Zahlen und Texte sind Vorschläge von Claude.
+id: production_quota
+draft: true
+name: { de: Förderquoten, en: Production Quota Act }
+summary:
+  de: "Jede Quelle darf nur noch einen Teil dessen fördern, was sie könnte. Was darüber hinausgeht, ist heißes Öl – und strafbar."
+  en: "Every well may only produce part of what it could. Anything above is hot oil – and punishable."
+
+threshold: 10
+pressure:
+  - when: { scarcity: { max: 0.85 } }       # Ölschwemme: der Preis fällt ins Bodenlose
+    add: 2.0
+  - when: { scarcity: { max: 0.7 } }
+    add: 1.2
+  - when: { government: provinz }           # die Provinz will ihre Förderer retten
+    add: 0.5
+  - when: { scarcity: { min: 1.1 } }        # knappes Öl: niemand will weniger fördern
+    add: -1.0
+
+votes: { handel: 0.45, volksbund: 0.55, provinz: 0.7 }
+swing:
+  - when: { scarcity: { max: 0.8 } }
+    add: 0.08
+
+effects:
+  world:
+    supplyShift: -0.03     # je Runde: weniger Öl am Markt, der Preis stützt sich
+  rules:
+    quotaShare: 0.8        # erlaubt sind 80 % der möglichen Förderung
+    quotaFine: 0.5         # Bußgeld $ je Barrel heißes Öl, wenn der Inspektor es findet
+
+lobby:
+  demand: { label: { de: "Quoten fordern", en: "Call for quotas" } }
+  block: { label: { de: "Freie Förderung verteidigen", en: "Defend free production" } }
+  weaken:
+    label: { de: "Großzügige Quoten aushandeln", en: "Negotiate generous quotas" }
+    rules: { quotaShare: 0.9, quotaFine: 0.3 }
+  delay: { label: { de: "Die Abstimmung verschleppen", en: "Stall the vote" } }
+
+news:
+  proposed:
+    title: { de: "Quoten gegen die Ölschwemme?", en: "Quotas against the glut?" }
+    text:
+      de: "Der Preis fällt und fällt. Ein Antrag will die Förderung je Quelle deckeln – wer mehr fördert, soll zahlen."
+      en: "The price keeps falling. A bill would cap production per well – whoever produces more would pay."
+  debate:
+    title: { de: "Debatte um das heiße Öl", en: "Debate over hot oil" }
+    text:
+      de: "„Wir ersaufen in unserem eigenen Öl“, sagt ein Abgeordneter. Die Gegner nennen Quoten ein Geschenk an den Trust."
+      en: "\"We are drowning in our own oil,\" says a member. Opponents call quotas a gift to the Trust."
+  passed:
+    title: { de: "Förderquoten beschlossen", en: "Production quotas passed" }
+    text:
+      de: "Ab sofort gilt eine Quote je Quelle. Inspektoren reiten durch die Felder und zählen Fässer."
+      en: "A quota per well applies from now on. Inspectors ride through the fields counting barrels."
+  failed:
+    title: { de: "Förderquoten abgelehnt", en: "Production quotas defeated" }
+    text:
+      de: "Jeder fördert weiter, so viel er kann. Der Preis entscheidet, wer übrig bleibt."
+      en: "Everyone keeps producing as much as they can. The price decides who survives."

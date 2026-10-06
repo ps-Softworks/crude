@@ -1,0 +1,63 @@
+# Gewerkschaftsgesetz (0.4.20+18, GDD §10): Arbeiter dürfen sich organisieren, Löhne steigen, Streikbrecher sind
+# verboten. Druck aus Streiks und schlechter Stimmung. Wirkung: wageRise (Personal, Gespanne; src/sim/lawEffects.ts).
+# ENTWURF: Zahlen und Texte sind Vorschläge von Claude.
+id: labour_act
+draft: true
+name: { de: Gewerkschaftsgesetz, en: Labour Act }
+summary:
+  de: "Arbeiter dürfen sich zusammenschließen und Löhne aushandeln. Streikbrecher sind verboten."
+  en: "Workers may organise and bargain for wages. Strikebreakers are banned."
+
+threshold: 10
+pressure:
+  - when: { mood: { max: 40 } }
+    add: 1.2
+  - when: { mood: { max: 30 } }
+    add: 0.8
+  - when: { government: volksbund }
+    add: 1.0
+  - when: { crash: true }                   # Krise: Entlassungen, Hunger
+    add: 0.6
+  - when: { government: handel }
+    add: -0.8
+
+votes: { handel: 0.1, volksbund: 0.9, provinz: 0.45 }
+swing:
+  - when: { mood: { max: 35 } }
+    add: 0.05
+
+effects:
+  world:
+    moodShift: 0.6         # die Arbeiter haben endlich eine Stimme
+  rules:
+    wageRise: 0.2          # Löhne für Personal und Gespanne +20 %
+
+lobby:
+  demand: { label: { de: "Das Gesetz fordern", en: "Call for the act" } }
+  block: { label: { de: "Abgeordnete umstimmen", en: "Turn members of Parliament" } }
+  weaken:
+    label: { de: "Ausnahmen für die Ölfelder", en: "Exemptions for the oil fields" }
+    rules: { wageRise: 0.1 }
+  delay: { label: { de: "Die Abstimmung verschleppen", en: "Stall the vote" } }
+
+news:
+  proposed:
+    title: { de: "Gewerkschaften vor dem Parlament", en: "Unions before Parliament" }
+    text:
+      de: "Nach den Streiks will ein Antrag Gewerkschaften erlauben und Streikbrecher verbieten."
+      en: "After the strikes a bill would legalise unions and ban strikebreakers."
+  debate:
+    title: { de: "Lohn oder Ordnung?", en: "Wages or order?" }
+    text:
+      de: "„Ein Mann, der zwölf Stunden am Bohrturm steht, hat ein Recht auf seinen Lohn“, ruft der Volksbund. Die Handelspartei warnt vor Chaos."
+      en: "\"A man who stands twelve hours at the derrick has a right to his wage,\" cries the People's League. The Commerce Party warns of chaos."
+  passed:
+    title: { de: "Gewerkschaftsgesetz beschlossen", en: "Labour Act passed" }
+    text:
+      de: "Die Arbeiter dürfen sich organisieren. Auf den Feldern steigen die Löhne."
+      en: "Workers may organise. Wages rise across the fields."
+  failed:
+    title: { de: "Gewerkschaftsgesetz gescheitert", en: "Labour Act defeated" }
+    text:
+      de: "Das Parlament lehnt ab. Auf den Feldern bleibt es still – vorerst."
+      en: "Parliament says no. The fields stay quiet – for now."

@@ -25,15 +25,24 @@ export const LAW_NUMBERS = ['scarcity', 'credit', 'mood', 'tension', 'nationalis
 export type LawNumber = (typeof LAW_NUMBERS)[number];
 
 /** Wirkung auf die Welt, jede Runde, solange das Gesetz gilt. */
-export const LAW_WORLD_EFFECTS = ['creditShift', 'moodShift', 'tensionShift', 'nationalismShift', 'trustShift'] as const;
+/** 0.4.20+18: supplyShift (Angebot in Weltnachfrage, negativ = weniger Öl → Preis steigt), leverageShift (Verschuldung). */
+export const LAW_WORLD_EFFECTS = ['creditShift', 'moodShift', 'tensionShift', 'nationalismShift', 'trustShift', 'supplyShift', 'leverageShift'] as const;
 export type LawWorldEffect = (typeof LAW_WORLD_EFFECTS)[number];
 
 /**
- * Regeln für das Spiel, die spätere Kapitel lesen (lawRules):
+ * Regeln für das Spiel (lawRules, Wirkung in lawEffects.ts):
  * incomeTax = Steuersatz auf Gewinne, cartelBan = 1 heißt Absprachen verboten,
- * breakupFrom = ab diesem Marktanteil droht ein Zerschlagungsverfahren.
+ * breakupFrom = ab diesem landesweiten Tankstellen-Marktanteil wird zerschlagen.
+ * 0.4.20+18: incomeTaxAdd = Aufschlag auf die Einkommensteuer, depletionAllowance = steuerfreier Anteil des Gewinns,
+ * commonCarrier = 1 heißt Transportpflicht für Fernleitungen, quotaShare = erlaubter Anteil der Förderung,
+ * quotaFine = Bußgeld $ je Barrel heißes Öl, wageRise = Lohnaufschlag (Personal, Gespanne),
+ * creditLimit = Faktor auf den Bankrahmen, drillCostRise = Aufschlag auf Bohrkosten,
+ * storageCostRise = Aufschlag auf Lagerkosten, spillFine = Bußgeld $ je ausgelaufenem Barrel.
  */
-export const LAW_RULES = ['incomeTax', 'cartelBan', 'breakupFrom'] as const;
+export const LAW_RULES = [
+  'incomeTax', 'cartelBan', 'breakupFrom',
+  'incomeTaxAdd', 'depletionAllowance', 'commonCarrier', 'quotaShare', 'quotaFine', 'wageRise', 'creditLimit', 'drillCostRise', 'storageCostRise', 'spillFine',
+] as const;
 export type LawRule = (typeof LAW_RULES)[number];
 
 /** Lobby (vorbereitet, ab Kapitel 2): fordern, verhindern, verwässern, verzögern (GDD §10). */
@@ -49,6 +58,8 @@ export type LawCondition = Partial<Record<LawNumber | Party, Partial<Range>>> & 
   government?: Party[];
   war?: boolean;
   crash?: boolean;
+  /** 0.4.20+18: Diese Gesetze gelten schon (alle). */
+  inForce?: string[];
 };
 
 /** Ein Grund: Stimmt die Bedingung, kommen add Punkte dazu (Druck je Runde bzw. Zustimmung bei der Abstimmung). */
@@ -195,7 +206,7 @@ function inRange(value: number, r: Partial<Range>): boolean {
 }
 
 /** Stimmt die Bedingung im Weltzustand? */
-export function conditionMet(c: LawCondition, view: LawView, laws: Pick<LawsState, 'trustShare' | 'seats'>): boolean {
+export function conditionMet(c: LawCondition, view: LawView, laws: Pick<LawsState, 'trustShare' | 'seats'> & { bills?: LawsState['bills'] }): boolean {
   for (const k of LAW_NUMBERS) {
     const r = c[k];
     if (!r) continue;
@@ -209,16 +220,17 @@ export function conditionMet(c: LawCondition, view: LawView, laws: Pick<LawsStat
   if (c.government && !c.government.includes(view.government)) return false;
   if (c.war !== undefined && c.war !== view.war) return false;
   if (c.crash !== undefined && c.crash !== view.crash) return false;
+  if (c.inForce && !c.inForce.every((id) => laws.bills?.[id]?.stage === 'passed')) return false;
   return true;
 }
 
 /** Summe der Punkte aller erfüllten Gründe. */
-export function reasonPoints(reasons: readonly LawReason[], view: LawView, laws: Pick<LawsState, 'trustShare' | 'seats'>): number {
+export function reasonPoints(reasons: readonly LawReason[], view: LawView, laws: Pick<LawsState, 'trustShare' | 'seats'> & { bills?: LawsState['bills'] }): number {
   return reasons.reduce((s, r) => (conditionMet(r.when, view, laws) ? s + r.add : s), 0);
 }
 
 /** Zustimmung ohne Zufall: Sitze × Haltung der Fraktionen, dazu die Lage (swing) und die Lobby. */
-export function expectedYes(def: LawDef, view: LawView, laws: Pick<LawsState, 'trustShare' | 'seats'>, lobbyVote = 0): number {
+export function expectedYes(def: LawDef, view: LawView, laws: Pick<LawsState, 'trustShare' | 'seats'> & { bills?: LawsState['bills'] }, lobbyVote = 0): number {
   const fraktionen = PARTIES.reduce((s, p) => s + laws.seats[p] * def.votes[p], 0);
   return clamp(fraktionen + reasonPoints(def.swing, view, laws) + lobbyVote, 0, 1);
 }
@@ -244,7 +256,7 @@ export function advanceLaws(input: LawsState, view: LawView, catalog: readonly L
     t.min,
     t.max,
   );
-  const lage = { trustShare, seats };
+  const lage = { trustShare, seats, bills: input.bills };
   const bills: Record<string, BillState> = {};
   for (const [id, b] of Object.entries(input.bills)) bills[id] = { ...b };
   // Lobby (vorbereitet): nur Züge, die das Gesetz anbietet.
@@ -408,7 +420,7 @@ export function isLawsState(value: unknown): value is LawsState {
 // --- Inhalte: content/laws/*.yaml ----------------------------------------------
 
 const LAW_KEYS = ['id', 'name', 'summary', 'threshold', 'pressure', 'votes', 'swing', 'effects', 'lobby', 'news', 'draft'];
-const CONDITION_KEYS = [...LAW_NUMBERS, ...PARTIES, 'government', 'war', 'crash'];
+const CONDITION_KEYS = [...LAW_NUMBERS, ...PARTIES, 'government', 'war', 'crash', 'inForce'];
 const ID_MUSTER = /^[a-z0-9_]+$/;
 
 type Pfad = (string | number)[];
@@ -492,6 +504,12 @@ export function parseLawFile(file: string, text: string): { law: LawDef | null; 
           fehler(p, `${wer}: „government“ nennt eine oder mehrere Parteien (${PARTIES.join(', ')}).`);
           ok = false;
         } else out.government = liste as Party[];
+      } else if (k === 'inForce') {
+        const liste = typeof v === 'string' ? [v] : v;
+        if (!Array.isArray(liste) || liste.length === 0 || !liste.every((x) => typeof x === 'string' && x.trim() !== '')) {
+          fehler(p, `${wer}: „inForce“ nennt eines oder mehrere Gesetze (ids), die schon gelten.`);
+          ok = false;
+        } else out.inForce = liste as string[];
       } else if (k === 'war' || k === 'crash') {
         if (typeof v !== 'boolean') {
           fehler(p, `${wer}: „${k}“ ist true oder false.`);

@@ -514,10 +514,12 @@ describe('Spiel, Spielstand und Inhalte', () => {
     expect(isLawsState({ ...s, news: [{ law: 'antitrust', kind: 'gerücht' }] })).toBe(false);
   });
 
-  it('content/laws/: Kartellgesetz und Einkommensteuer, fehlerfrei, mit allen Meldungen und englischem Text', () => {
+  it('content/laws/: alle zehn Gesetze (0.4.20+18), fehlerfrei, mit allen Meldungen und englischem Text', () => {
     const { laws: alle, errors } = parseLawFiles(readLawFiles());
     expect(errors).toEqual([]);
-    expect(alle.map((l) => l.id).sort()).toEqual(['antitrust', 'income_tax']);
+    expect(alle.map((l) => l.id).sort()).toEqual(
+      ['antitrust', 'bank_supervision', 'depletion_allowance', 'environment', 'import_quota', 'income_tax', 'income_tax_raise', 'labour_act', 'production_quota', 'transport_duty'].sort(),
+    );
     for (const l of alle) {
       for (const k of ['proposed', 'debate', 'passed', 'failed'] as const) {
         expect(l.news[k].title.en).not.toBe('');

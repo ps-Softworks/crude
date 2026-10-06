@@ -517,6 +517,9 @@ export function lawsInput(laws: LawsState | undefined, catalog: readonly LawDef[
   if (e.moodShift !== undefined) out.moodShift = e.moodShift;
   if (e.tensionShift !== undefined) out.tensionShift = e.tensionShift;
   if (e.nationalismShift !== undefined) out.nationalismShift = e.nationalismShift;
+  // 0.4.20+18: Förderquoten und Importquoten nehmen Öl vom Markt, die Bankaufsicht dämpft die Verschuldung.
+  if (e.supplyShift !== undefined) out.extraSupply = e.supplyShift;
+  if (e.leverageShift !== undefined) out.leverageShift = e.leverageShift;
   return out;
 }
 
