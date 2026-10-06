@@ -7,7 +7,7 @@ import { endRound } from './game';
 import { kapitel3Of } from './kapitel3';
 import { kapitel3NoteText, logKapitel3Notes } from './kapitel3Log';
 import { advanceKapitel3 } from './kapitel3Runde';
-import { answerInvitation } from './konsortium';
+import { answerInvitation, expelledCost } from './konsortium';
 import { joinProject } from './projekte';
 import { loadBalance } from './testBalance';
 import { k3Game, k3Round, k3Rounds, loadKapitel3Texts, ok, withK3 } from './testKapitel3';
@@ -43,7 +43,9 @@ describe('Kapitel 3 in der Kladde', () => {
     expect(neueZeilen(s, t).some((z) => z.includes(kapitel3NoteText(t, { round: 0, key: 'aufgeflogen' }, texts)))).toBe(true);
     const u = k3Round(t, b, texts);
     expect(u.cash).toBeLessThan(t.cash);
-    expect(neueZeilen(t, u).some((z) => z.includes('drückt Jacobs Preise') && z.includes('5.000'))).toBe(true);
+    // 0.4.20+9: Der Preisdruck hängt am Posted Price (expelledCost).
+    const betrag = expelledCost(t, b).toLocaleString('de-DE');
+    expect(neueZeilen(t, u).some((z) => z.includes('drückt Jacobs Preise') && z.includes(betrag))).toBe(true);
   });
 
   it('Projekt fertig oder gescheitert, Erträge – alles steht im Protokoll', () => {
