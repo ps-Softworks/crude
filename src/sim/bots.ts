@@ -13,6 +13,7 @@
 // gehört der Welt und wird nie angefasst; Math.random kommt nicht vor.
 // Die Zahlen stehen in content/balance.yaml unter bots.
 
+import { buyoutBlocker, buyoutQuote, offerBuyout, type BuyoutQuote } from './buyout';
 import { type CardUse, finishCards, newCardTracker, trackCards } from './cardStats';
 import { TRANSPORT_MODES, type Balance, type BotCharacter, type BotEventWeights, type BotInvest, type BotTargetId, type BotTransport, type Buyer, type TransportMode } from './balance';
 import { overtimeFor } from './agenda';
@@ -1125,6 +1126,32 @@ function randomTurn(state: GameState, balance: Balance, rng: Rng, ledger: Transp
  * Eine Runde Aktionen nach der Strategie – ohne endRound. Mit Katalog (2.15)
  * beantwortet der Bot zuerst Ereignisse und nimmt feste Termine wahr.
  */
+/**
+ * Feldkauf (0.4.20+28): Höchstens ein Angebot je Runde an Bullard – für die Ranch mit dem meisten Ölfluss je Dollar.
+ * Angebot = offer × Bullards Preis (auf den Schritt gerundet, im Reglerbereich); nur wenn es höchstens maxPrice ×
+ * Ölfluss kostet und danach reserve $ in der Kasse bleiben. Annahme oder Ablehnung wie beim Spieler.
+ */
+export function buyoutTurn(state: GameState, balance: Balance, strategy: Planner): GameState {
+  if (state.finished) return state;
+  const p = balance.bots.buyout[econKey(strategy)];
+  const angebote = state.leases
+    .filter((l) => l.holder === 'bullard' && buyoutBlocker(state, l.parcelId) === null)
+    .map((l) => buyoutQuote(state, balance, l.parcelId))
+    .filter((q): q is BuyoutQuote => q !== null)
+    .map((q) => ({ q, betrag: Math.min(q.max, Math.max(q.min, Math.round((q.value * p.offer) / q.step) * q.step)) }))
+    .filter(({ q, betrag }) => betrag <= q.flow * p.maxPrice && state.cash - betrag >= p.reserve)
+    .sort((a, b) => b.q.flow / b.betrag - a.q.flow / a.betrag || (a.q.parcelId < b.q.parcelId ? -1 : 1));
+  if (angebote.length === 0) return state;
+  const r = offerBuyout(state, balance, angebote[0].q.parcelId, angebote[0].betrag);
+  return r.ok ? r.state : state;
+}
+
+/** Feldkauf in einer Partie, aus dem Protokoll gezählt: Angebote und davon angenommene. */
+export function buyoutCount(state: Pick<GameState, 'log'>): { offers: number; accepted: number } {
+  const accepted = state.log.filter((z) => z.includes('Bullard verkauft dir')).length;
+  return { offers: accepted + state.log.filter((z) => z.includes('Bullard lehnt dein Angebot')).length, accepted };
+}
+
 export function botTurn(
   state: GameState,
   balance: Balance,
@@ -1138,6 +1165,7 @@ export function botTurn(
   if (strategy !== 'zufaellig') state = exploreTurn(state, balance, strategy, catalog);
   // Etappe 2: Preis- und Fracht-Karten nach bots.plans – ebenfalls vor den Briefen.
   if (strategy !== 'zufaellig') state = planTurn(state, balance, strategy, catalog);
+  if (strategy !== 'zufaellig') state = buyoutTurn(state, balance, strategy);
   if (catalog.length > 0) {
     state = strategy === 'zufaellig' ? randomAnswers(state, balance, catalog, rng) : answerEvents(state, balance, catalog, eventPolicy(balance, strategy));
   }
@@ -1468,6 +1496,9 @@ export interface BotRow {
   traces: number;
   /** Anteil der Partien mit mindestens einer Spur. */
   dirtyGames: number;
+  /** Feldkauf (0.4.20+28): Ø Angebote an Bullard und Ø angenommene je Partie. */
+  buyoutOffers?: number;
+  buyouts?: number;
 }
 
 /** Schwere aller Spuren aus Kapitel 1, die Jacob für Delaney hinterlassen hat (Merkzeichen aus investigation.traces). */
@@ -1569,6 +1600,8 @@ export function runBots(balance: Balance, games = balance.bots.games, catalog: r
         calm: { games: 0, bankrupt: 0 },
         spuren: 0,
         schmutzig: 0,
+        kaufAngebote: 0,
+        kaeufe: 0,
       },
     ]),
   );
@@ -1601,6 +1634,9 @@ export function runBots(balance: Balance, games = balance.bots.games, catalog: r
       const spuren = chapterTraces(r.state, balance);
       s.spuren += spuren;
       if (spuren > 0) s.schmutzig++;
+      const kauf = buyoutCount(r.state);
+      s.kaufAngebote += kauf.offers;
+      s.kaeufe += kauf.accepted;
       return { strategy, bankrupt: r.bankrupt, empire: r.empire };
     });
     for (const [strategy, anteil] of seedWinners(results, balance.start.cash)) summe.get(strategy)!.siege += anteil;
@@ -1630,6 +1666,8 @@ export function runBots(balance: Balance, games = balance.bots.games, catalog: r
       calm: s.calm,
       traces: anteil(s.spuren),
       dirtyGames: anteil(s.schmutzig),
+      buyoutOffers: anteil(s.kaufAngebote),
+      buyouts: anteil(s.kaeufe),
     };
   });
 }
@@ -1904,6 +1942,11 @@ export function transportTable(rows: readonly BotRow[]): string {
 }
 
 /** Wie oft lief eine Pipeline – je Strategie, in allen Partien und in denen mit Kapitelziel. */
+/** Feldkauf (0.4.20+28): Ø Angebote und Käufe je Partie und Strategie. */
+export function buyoutLine(rows: readonly BotRow[]): string {
+  return rows.map((r) => `${r.strategy} ${zahl(r.buyoutOffers ?? 0, 2)} Angebote, ${zahl(r.buyouts ?? 0, 2)} Käufe`).join('; ');
+}
+
 export function pipelineLine(rows: readonly BotRow[]): string {
   return rows
     .map((r) => `${r.strategy} ${prozent(r.games > 0 ? r.pipelineGames / r.games : 0)} (mit Kapitelziel ${r.goalGames > 0 ? prozent(r.pipelineGoalGames / r.goalGames) : '–'})`)
