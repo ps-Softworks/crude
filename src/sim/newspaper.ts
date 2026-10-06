@@ -38,6 +38,9 @@ export const DELANEY_HEADLINES = [
   'delaney_convicted',
 ] as const;
 
+/** 0.4.20+29: Meldungen zur Forschung (4.11): Abschluss der Werkstatt, mit oder ohne Patent. */
+export const RESEARCH_HEADLINES = ['research_patent', 'research_done'] as const;
+
 /** Aussicht für den Ölpreis bis zum Rundenende. */
 export type Outlook = 'crash' | 'fall' | 'steady' | 'rise';
 
@@ -65,6 +68,7 @@ export const HEADLINE_IDS = [
   'pipeline_damaged',
   // 0.4.20+9: Delaneys Ermittlung (4.11) – neue Stufe oder Ausgang.
   ...DELANEY_HEADLINES,
+  ...RESEARCH_HEADLINES,
   // 0.4.20+9: Benzinpreiskampf mit Margaret Crane (4.14) beginnt oder endet.
   'brand_price_war',
   'brand_price_war_end',
@@ -185,6 +189,8 @@ export function newsItems(state: GameState, balance: Balance): HeadlineId[] {
   if (leitung) ids.push(leitung);
   const delaney = delaneyHeadline(state);
   if (delaney) ids.push(delaney);
+  const forschung = researchHeadline(state);
+  if (forschung) ids.push(forschung);
   const preiskampf = brandHeadline(state);
   if (preiskampf) ids.push(preiskampf);
   // Öffentliches Handeln (4.2): Worüber man über Jacob redet – die lauteste Tat der letzten Runde.
@@ -237,6 +243,13 @@ export function delaneyHeadline(state: Pick<GameState, 'round' | 'investigation'
     default:
       return null;
   }
+}
+
+/** 0.4.20+29: Forschung (4.11) – hat die Werkstatt in der letzten Runde eine Technik fertig, meldet es die Zeitung (Patent geht vor). */
+export function researchHeadline(state: Pick<GameState, 'round' | 'research'>): HeadlineId | null {
+  const d = state.research?.done;
+  if (!d || d.round !== state.round - 1) return null;
+  return d.patent ? 'research_patent' : 'research_done';
 }
 
 /**

@@ -11,6 +11,9 @@ import {
   hasTech,
   parseResearchBalance,
   parseResearchContent,
+  researchDirection,
+  DIRECTION_TEXTS,
+  TECH_DOMAINS,
   previewResearch,
   researchUnlocked,
   rivalsHaveTech,
@@ -34,6 +37,7 @@ import { deeperQuote, drillQuote } from './drilling';
 import { refineryMixBounds, refineryTech, setRefineryMix, unlockRefinery } from './refinery';
 import { routePlan, teamCapacity } from './logistics';
 import { modeCapacity } from './transport';
+import { researchHeadline } from './newspaper';
 import { loadBalance } from './testBalance';
 
 const balance = loadBalance();
@@ -313,18 +317,16 @@ describe('Technikstand: Skala wie das Weltmodell von main (4.1)', () => {
     expect(buyLicense(g, balance, 'thermal_cracking').ok).toBe(true);
   });
 
-  it('Ersatzwert ≈ Beginn von Kapitel 2: Drehbohren ist verbreitet (Lizenz), Stufe II ist noch patentierbar', () => {
+  it('Ersatzwert ≈ Beginn von Kapitel 2: alle Techniken sind noch patentierbar (0.4.20+29), Lizenzen gibt es erst später', () => {
     const views = techViews(kapitel2(), balance);
-    const v = (id: string) => views.find((x) => x.id === id)!;
-    expect(v('rotary').licensable).toBe(true);
-    for (const id of ['rollenmeissel', 'thermal_cracking', 'tanklaster']) expect(v(id).licensable).toBe(false);
+    for (const v of views) expect(v.licensable).toBe(false);
   });
 
   it('alle Stufe-II-Techniken werden bis Kapitel 3 (Technikstand ≈ 22–35) verbreitet – Lizenzgebühren sind erreichbar', () => {
     const wb = balance.research;
     expect(wb.worldFallback.tech).toBeGreaterThanOrEqual(6);
     expect(wb.worldFallback.tech).toBeLessThanOrEqual(22);
-    for (const t of wb.techs) expect(t.worldAt).toBeLessThanOrEqual(25);
+    for (const t of wb.techs) expect(t.worldAt).toBeLessThanOrEqual(30);
   });
 
   it('die Werkstatt zeigt, ob ein Patent Lizenzgebühren bringt', () => {
@@ -380,5 +382,104 @@ describe('Forschung – Spielstand, Inhalte, Spielzahlen', () => {
     expect(w.research!.workshop).toBe(true);
     expect(validResearch(w.research)).toBe(true);
     expect(deserializeGame(serializeGame(w, 'test')).ok).toBe(true);
+  });
+});
+
+describe('0.4.20+29: eine Forschungsrichtung je Kapitel', () => {
+  const werkstatt = () => ok(buildWorkshop(kapitel2(), fest));
+
+  it('die erste Förderung wählt die Richtung; andere Bereiche sind bis Kapitelende gesperrt', () => {
+    let s = werkstatt();
+    expect(researchDirection(s)).toBeNull();
+    s = ok(startResearch(s, fest, 'rotary', 0));
+    expect(researchDirection(s)).toBe('bohren');
+    const r = startResearch(s, fest, 'tanklaster', 0);
+    expect(r.ok).toBe(false);
+    expect(techViews(s, fest).find((v) => v.id === 'tanklaster')!.directionLocked).toBe(true);
+    s = ok(stopResearch(s, fest));
+    expect(startResearch(s, fest, 'thermal_cracking', 0).ok).toBe(false);
+    expect(startResearch(s, fest, 'rotary', 1).ok).toBe(true);
+  });
+
+  it('im nächsten Kapitel ist die Wahl wieder frei', () => {
+    let s = ok(startResearch(werkstatt(), fest, 'rotary', 0));
+    s = { ...s, chapter: 3 } as K2;
+    expect(researchDirection(s)).toBeNull();
+    expect(techViews(s, fest).every((v) => !v.directionLocked)).toBe(true);
+    s = ok(stopResearch(s, fest));
+    expect(researchDirection(ok(startResearch(s, fest, 'tanklaster', 0)))).toBe('transport');
+  });
+
+  it('Lizenzen außerhalb der Richtung kosten den Aufschlag, innerhalb und vor der Wahl nicht', () => {
+    const t = fest.research.techs.find((x) => x.id === 'thermal_cracking')!;
+    const welt = mitTech(werkstatt(), 60);
+    expect(techViews(welt, fest).find((v) => v.id === 'thermal_cracking')!.license).toBe(t.license);
+    const gewaehlt = ok(startResearch(welt, fest, 'rotary', 0));
+    const v = techViews(gewaehlt, fest).find((x) => x.id === 'thermal_cracking')!;
+    expect(v.surcharge).toBe(true);
+    expect(v.license).toBe(Math.round(t.license * fest.research.licenseOffDirection));
+    const gekauft = ok(buyLicense(gewaehlt, fest, 'thermal_cracking'));
+    expect(gekauft.cash).toBe(gewaehlt.cash - v.license);
+    expect(techViews(gewaehlt, fest).find((x) => x.id === 'rotary')!.surcharge).toBe(false);
+  });
+
+  it('ein laufendes Projekt aus einem alten Stand setzt die Richtung beim nächsten Rundenabschluss', () => {
+    const s = ok(startResearch(werkstatt(), fest, 'tanklaster', 0));
+    const alt = { ...s, research: { ...s.research!, direction: undefined } } as K2;
+    expect(researchDirection(runden(alt, 1, fest))).toBe('transport');
+  });
+
+  it('Abschluss: Protokollzeile, Merkzeichen und Zeitungsmeldung in der Folgerunde', () => {
+    let s = ok(startResearch(werkstatt(), fest, 'tanklaster', 1));
+    s = runden(s, 4, fest);
+    expect(s.research!.done).toMatchObject({ id: 'tanklaster', patent: true });
+    expect(s.log.some((z) => z.includes('Werkstatt hat es geschafft'))).toBe(true);
+    const nachher = { ...s, round: s.research!.done!.round + 1 };
+    expect(researchHeadline(nachher)).toBe('research_patent');
+    expect(researchHeadline({ ...s, round: s.research!.done!.round + 2 })).toBeNull();
+    expect(researchHeadline({ ...nachher, research: { ...s.research!, done: { ...s.research!.done!, patent: false } } })).toBe('research_done');
+  });
+
+  it('Spielstand: alte Stände ohne direction/done laden, kaputte Richtung wird abgelehnt', () => {
+    const s = ok(startResearch(werkstatt(), fest, 'rotary', 0));
+    const geladen = deserializeGame(serializeGame(s, '0'));
+    expect(geladen.ok).toBe(true);
+    if (geladen.ok) expect((geladen.state as K2).research!.direction).toEqual({ chapter: 2, domain: 'bohren' });
+    const alt = { ...s.research! } as Record<string, unknown>;
+    delete alt.direction;
+    expect(validResearch(alt)).toBe(true);
+    expect(validResearch({ ...alt, direction: { chapter: 2, domain: 'quatsch' } })).toBe(false);
+    expect(validResearch({ ...alt, done: { id: 'x', round: 'a', patent: true } })).toBe(false);
+  });
+
+  it('Patent-Check: zu Beginn von Kapitel 2 ist je Richtung mindestens eine Technik bei früher Förderung patentierbar', () => {
+    const wb = balance.research;
+    const rate = balance.worldModel.tech.rate;
+    const kraeftig = wb.funding[wb.funding.length - 1];
+    const ersteJeBereich = TECH_DOMAINS.map((d) => wb.techs.find((t) => t.domain === d && t.requires.length === 0)!);
+    const anteil: Record<string, number> = {};
+    const N = 200;
+    for (const t of ersteJeBereich) {
+      // Schlechtester Zufall: luck.min. So viele Runden braucht die Werkstatt mindestens mit kräftiger Förderung.
+      const runden_ = Math.ceil(t.points / (kraeftig.points * wb.luck.min));
+      let patent = 0;
+      for (let i = 0; i < N; i++) {
+        let tech = newGame(`welt${i}`, balance).worldModel!.tech;
+        for (let r = 0; r < 40 + runden_; r++) tech += rate * tech * (1 - tech / 100);
+        if (tech < t.worldAt) patent++;
+      }
+      anteil[t.id] = patent / N;
+      expect(patent / N, `${t.id}: Patent in ${runden_} Runden ab Kapitelbeginn`).toBeGreaterThanOrEqual(0.8);
+    }
+    expect(Object.keys(anteil)).toHaveLength(3);
+  });
+
+  it('Texte der Werkstatt (direction) stehen in research.yaml auf Deutsch und Englisch', () => {
+    const c = parseResearchContent('content/research.yaml', readFileSync('content/research.yaml', 'utf8'), balance);
+    expect(c.errors).toEqual([]);
+    for (const k of DIRECTION_TEXTS) {
+      expect(c.content!.direction[k].de).not.toBe('');
+      expect(c.content!.direction[k].en).not.toBe('');
+    }
   });
 });
