@@ -37,6 +37,7 @@ export const SHORTCUTS: readonly Shortcut[] = [
   { key: 'p', action: { kind: 'open', sheet: 'protokoll' }, label: 'Protokoll' },
   { key: 'w', action: { kind: 'visitor' }, label: 'Besucher hereinbitten' },
   { key: 'e', action: { kind: 'open', sheet: 'glocke' }, label: 'Runde beenden' },
+  { key: 'l', action: { kind: 'open', sheet: 'glossar' }, label: 'Glossar' },
   { key: '?', action: { kind: 'help' }, label: 'Tastenhilfe' },
   { key: 'd', shift: true, action: { kind: 'debug' }, label: 'Debug', debugOnly: true },
 ];

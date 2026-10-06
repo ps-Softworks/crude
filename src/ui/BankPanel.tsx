@@ -1,6 +1,7 @@
 // Bankkredit: Rating, Schulden, Rahmen und die Zinsrechnung. Alle Regeln stehen
 // in src/sim/credit – hier wird nur angezeigt und geklickt.
 
+import { Begriff } from './Begriff';
 import { useState } from 'react';
 import type { Rating } from '../sim/balance';
 import {
@@ -98,7 +99,9 @@ export function BankPanel({ game, onResult }: { game: GameState; onResult: (resu
   return (
     <div className="bank-panel">
       <p className={`state rating rating-${game.rating.toLowerCase()}`}>
-        <strong>Rating {game.rating}</strong> – {RATING_TEXT[game.rating]}
+        <strong>
+          <Begriff id="rating">Rating</Begriff> {game.rating}
+        </strong> – {RATING_TEXT[game.rating]}
         {game.missedPayments > 0 && (
           <>
             {' '}

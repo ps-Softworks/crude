@@ -1,0 +1,201 @@
+# Glossar (0.4.20+42): Begriffe der Epoche und des Spiels, je kurz erklärt.
+# Die Oberfläche zeigt sie im Fenster „Glossar“ und als Erklärung beim Darüberfahren
+# (`<Begriff id="…">`). Jeder Eintrag: id (eindeutig), term {de, en}, text {de, en} in ein bis zwei
+# Sätzen, optional `see` (Kennungen verwandter Begriffe). Geprüft von src/sim/glossary.ts
+# (npm run check:content). ENTWURF: Ton und Wortwahl sind Vorschläge.
+
+begriffe:
+  - id: posted_price
+    term: { de: Posted Price, en: Posted price }
+    text:
+      de: "Der Preis, den der Trust öffentlich aushängt und den jeder Förderer für sein Öl bekommt. Wer nicht an den Trust verkauft, hat kaum andere Käufer."
+      en: "The price the Trust posts publicly and pays every producer for his oil. Anyone who doesn't sell to the Trust has hardly any other buyers."
+    see: [trust, barrel]
+  - id: barrel
+    term: { de: Barrel (bbl), en: Barrel (bbl) }
+    text:
+      de: "Das Fass, in dem Öl gehandelt wird – gut 159 Liter. Förderung, Tanks und Preise rechnen alle in Barrel."
+      en: "The cask oil is traded in – about 159 litres. Production, tanks and prices are all counted in barrels."
+  - id: wildcatter
+    term: { de: Wildcatter, en: Wildcatter }
+    text:
+      de: "Ein unabhängiger Ölsucher, der auf eigenes Risiko dort bohrt, wo noch niemand Öl gefunden hat. Die meisten gehen pleite, einige werden reich."
+      en: "An independent oil prospector who drills at his own risk where nobody has struck oil yet. Most go broke; a few get rich."
+  - id: gusher
+    term: { de: Gusher, en: Gusher }
+    text:
+      de: "Eine Quelle, aus der das Öl aus eigenem Druck meterhoch schießt. Ein Glücksfall – und eine Menge Öl, die man erst einmal auffangen muss."
+      en: "A well where the oil shoots skyward under its own pressure. A stroke of luck – and a lot of oil that must be caught before it is lost."
+    see: [bohrturm]
+  - id: pacht
+    term: { de: Pacht, en: Lease }
+    text:
+      de: "Das Recht, auf dem Land eines Ranchers zu bohren und das Öl zu fördern. Dafür zahlt man eine Gebühr und gibt einen Teil des Öls ab."
+      en: "The right to drill on a rancher's land and take out the oil. You pay a fee and hand over part of the oil."
+    see: [pachtoption, foerderzins]
+  - id: pachtoption
+    term: { de: Pachtoption, en: Lease option }
+    text:
+      de: "Ein billiges Vorrecht auf eine Pacht: Man sichert sich das Land für ein paar Runden und entscheidet erst später, ob man wirklich pachtet."
+      en: "A cheap first claim on a lease: you secure the land for a few rounds and decide later whether to really lease it."
+    see: [pacht]
+  - id: foerderzins
+    term: { de: Förderzins, en: Royalty }
+    text:
+      de: "Der Anteil des geförderten Öls, der dem Landbesitzer gehört – etwa ein Achtel bis ein Viertel. Je besser das Land, desto mehr verlangt er."
+      en: "The share of the oil produced that belongs to the landowner – roughly an eighth to a quarter. The better the land, the more he asks."
+    see: [pacht]
+  - id: bohrturm
+    term: { de: Bohrturm, en: Drilling rig }
+    text:
+      de: "Das Gerüst samt Maschine, mit dem gebohrt wird. Je Turm läuft eine Bohrung zugleich; man kann ihn kaufen, mieten oder sich einen leihen."
+      en: "The derrick and engine that do the drilling. One rig drills one hole at a time; you can buy, rent or borrow one."
+    see: [seilschlag]
+  - id: seilschlag
+    term: { de: Seilschlag, en: Cable-tool drilling }
+    text:
+      de: "Das alte Bohrverfahren: Ein schwerer Meißel am Seil fällt immer wieder in das Loch und schlägt das Gestein auf. Langsam, aber verlässlich."
+      en: "The old drilling method: a heavy bit on a rope drops again and again into the hole and breaks up the rock. Slow, but reliable."
+    see: [bohrturm]
+  - id: pipeline
+    term: { de: Pipeline, en: Pipeline }
+    text:
+      de: "Eine Rohrleitung, die das Öl vom Feld zur Bahn oder zum Hafen bringt. Teuer im Bau, aber danach ist die Fracht fast umsonst – wenn man die Wegerechte hat."
+      en: "A pipe that carries the oil from the field to the railway or the harbour. Costly to build, but afterwards freight is almost free – if you hold the rights of way."
+    see: [wegerecht, fernleitung]
+  - id: wegerecht
+    term: { de: Wegerecht, en: Right of way }
+    text:
+      de: "Die Erlaubnis eines Grundbesitzers, eine Leitung über sein Land zu legen. Ohne alle Rechte entlang der Strecke bleibt die Pipeline Stückwerk."
+      en: "A landowner's permission to lay a pipe across his land. Without every right along the route, a pipeline stays patchwork."
+    see: [pipeline]
+  - id: fernleitung
+    term: { de: Fernleitung, en: Trunk pipeline }
+    text:
+      de: "Eine große Leitung quer durchs Land, etwa zum Hafen. Sie spart auf Dauer Fracht, kostet aber viel und weckt den Zorn der Konkurrenz."
+      en: "A large pipeline across the country, for instance to the harbour. It saves freight in the long run but costs a lot and draws the competition's wrath."
+    see: [pipeline, transportpflicht]
+  - id: raffinerie
+    term: { de: Raffinerie, en: Refinery }
+    text:
+      de: "Eine Anlage, die Rohöl in Benzin, Kerosin, Heizöl und Schmieröl zerlegt. Die Produkte bringen zusammen mehr als das rohe Öl."
+      en: "A plant that splits crude oil into gasoline, kerosene, heating oil and lubricants. Together the products fetch more than the raw oil."
+    see: [kerosin, cracken]
+  - id: kerosin
+    term: { de: Kerosin, en: Kerosene }
+    text:
+      de: "Das Lampenöl der Epoche: Noch brennt es in den meisten Haushalten. Der Markt ist klein und schrumpft, sobald das elektrische Licht kommt."
+      en: "The lamp oil of the era: it still burns in most households. The market is small and shrinks once electric light arrives."
+    see: [raffinerie]
+  - id: cracken
+    term: { de: Cracken, en: Cracking }
+    text:
+      de: "Ein Verfahren, bei dem schwere Ölanteile unter Hitze in leichtere zerbrochen werden. So gewinnt man deutlich mehr Benzin aus demselben Fass."
+      en: "A process that breaks heavy fractions of oil into lighter ones under heat. It yields far more gasoline from the same barrel."
+    see: [raffinerie]
+  - id: trust
+    term: { de: Trust, en: Trust }
+    text:
+      de: "Der Crane Trust: ein Konzern, der Käufer, Bahnen und Raffinerien in einer Hand bündelt und so den Preis diktiert. Mit ihm gibt es kaum Wettbewerb."
+      en: "The Crane Trust: a combine that gathers buyers, railways and refineries in one hand and so dictates the price. There is hardly any competition with it."
+    see: [posted_price, kartellgesetz]
+  - id: kartellgesetz
+    term: { de: Kartellgesetz, en: Antitrust law }
+    text:
+      de: "Ein Gesetz gegen Monopole. Es kann den Trust zerschlagen – und trifft jeden, der zu groß wird, auch Jacob."
+      en: "A law against monopolies. It can break up the Trust – and it hits anyone who grows too big, Jacob included."
+    see: [trust]
+  - id: transportpflicht
+    term: { de: Transportpflicht, en: Common carrier duty }
+    text:
+      de: "Ein Gesetz, das Leitungen und Bahnen zwingt, fremdes Öl zu gleichen Bedingungen zu befördern. Wer eine eigene Leitung baut, muss andere mitliefern lassen."
+      en: "A law forcing pipelines and railways to carry other people's oil on equal terms. Whoever builds his own pipe must let others ship through it."
+    see: [fernleitung]
+  - id: foerderquote
+    term: { de: Förderquote, en: Production quota }
+    text:
+      de: "Eine gesetzliche Obergrenze für die Förderung, die den Preis stützen soll. Wer mehr fördert, riskiert Bußgelder."
+      en: "A legal cap on production meant to support the price. Whoever pumps more risks fines."
+    see: [heisses_oel]
+  - id: heisses_oel
+    term: { de: Heißes Öl, en: Hot oil }
+    text:
+      de: "Öl, das über die Quote hinaus gefördert und heimlich verkauft wird. Es bringt Geld, bis der Inspektor es findet."
+      en: "Oil produced beyond the quota and sold on the quiet. It brings in money until the inspector finds it."
+    see: [foerderquote]
+  - id: rating
+    term: { de: Rating, en: Credit rating }
+    text:
+      de: "Die Note der Bank für Jacobs Kreditwürdigkeit, von A bis E. Je besser das Rating, desto höher der Kreditrahmen und desto niedriger der Zins."
+      en: "The bank's grade for Jacob's creditworthiness, from A to E. The better the rating, the higher the credit line and the lower the interest."
+    see: [anleihe]
+  - id: imperiumswert
+    term: { de: Imperiumswert, en: Empire value }
+    text:
+      de: "Was die ganze Firma wert wäre: Kasse, Öl im Tank, Reserven im Boden, Anlagen und Beteiligungen – abzüglich aller Schulden. Die Messlatte für jedes Kapitelziel."
+      en: "What the whole company would be worth: cash, oil in the tanks, reserves in the ground, plants and holdings – minus all debts. The yardstick for every chapter goal."
+  - id: konsortium
+    term: { de: Konsortium, en: Consortium }
+    text:
+      de: "Ein Zusammenschluss mehrerer Ölleute für ein Projekt, das keiner allein bezahlen will – etwa eine Seismik-Kampagne. Man teilt Kosten und Ertrag."
+      en: "A pooling of several oilmen for a project none wants to pay for alone – a seismic campaign, say. Costs and returns are shared."
+    see: [seismik]
+  - id: aufsichtsrat
+    term: { de: Aufsichtsrat, en: Board }
+    text:
+      de: "Das Gremium, das nach einem Börsengang über Jacob wacht. Bekommen Fremde mehr Sitze als er, kann der Rat ihn absetzen."
+      en: "The body that watches over Jacob after an IPO. If outsiders hold more seats than he does, the board can remove him."
+    see: [boersengang]
+  - id: boersengang
+    term: { de: Börsengang, en: IPO }
+    text:
+      de: "Die Firma verkauft Anteile an Fremde. Das bringt viel Geld und neue Wege, verwässert aber die Macht."
+      en: "The company sells shares to outsiders. It brings a lot of money and new avenues but dilutes control."
+    see: [aufsichtsrat, anleihe]
+  - id: anleihe
+    term: { de: Anleihe, en: Bond }
+    text:
+      de: "Ein Kredit, den viele Anleger gemeinsam geben, gegen einen festen Zins. Wer sie nicht bedient, verliert das Vertrauen der Börse."
+      en: "A loan given jointly by many investors at a fixed rate. Whoever fails to service it loses the exchange's trust."
+    see: [rating]
+  - id: margin
+    term: { de: Kauf auf Kredit (Margin), en: Margin buying }
+    text:
+      de: "Aktien kaufen, indem man sich das Geld beim Makler leiht. Steigen die Kurse, ist der Gewinn groß – fallen sie, verlangt der Makler sofort sein Geld zurück."
+      en: "Buying shares with money borrowed from the broker. If prices rise the profit is large; if they fall, the broker wants his money back at once."
+    see: [boersengang]
+  - id: seismik
+    term: { de: Seismik, en: Seismic survey }
+    text:
+      de: "Man schickt Erschütterungen in den Boden und misst, was zurückkommt. So erkennt man Öl führende Schichten, ohne zu bohren – gegen Lizenz und Geld."
+      en: "Shocks are sent into the ground and what comes back is measured. It reveals oil-bearing strata without drilling – for a licence and a fee."
+    see: [konsortium]
+  - id: zeitsprung
+    term: { de: Zeitsprung, en: Time skip }
+    text:
+      de: "Die Jahre zwischen zwei Kapiteln. Jacob gibt Richtlinien, ein Verwalter führt die Geschäfte weiter, und die Chronik berichtet, was geschah."
+      en: "The years between two chapters. Jacob leaves directions, a manager keeps the business running, and the chronicle tells what happened."
+  - id: tankstelle
+    term: { de: Tankstelle, en: Filling station }
+    text:
+      de: "Ein Verkaufsplatz für Benzin an der Straße, mit eigener Marke. Sie kostet Unterhalt und lohnt sich nur, wo viele Autos fahren."
+      en: "A roadside place that sells gasoline under your own brand. It costs upkeep and pays only where many cars drive."
+    see: [raffinerie]
+  - id: preiskrieg
+    term: { de: Preiskrieg, en: Price war }
+    text:
+      de: "Ein Konkurrent verkauft absichtlich unter Preis, bis der andere aufgibt. Wer die tiefere Tasche hat, gewinnt."
+      en: "A competitor deliberately sells below price until the other gives up. The deeper pocket wins."
+    see: [trust]
+  - id: lobby
+    term: { de: Lobby, en: Lobby }
+    text:
+      de: "Der Versuch, Gesetze durch Gespräche, Gefallen und Geld zu beeinflussen. Je größer die Firma, desto mehr zählt ihr Wort im Parlament."
+      en: "The attempt to sway laws through talks, favours and money. The bigger the company, the more its word counts in parliament."
+    see: [kartellgesetz]
+  - id: einkommensteuer
+    term: { de: Einkommensteuer, en: Income tax }
+    text:
+      de: "Eine Abgabe auf den Gewinn jeder Runde, nicht auf Kredite. Das Gesetz kann aufgeweicht oder später erhöht werden."
+      en: "A levy on each round's profit, not on loans. The law can be watered down or raised later."
+    see: [lobby]

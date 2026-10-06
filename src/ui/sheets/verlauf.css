@@ -71,9 +71,6 @@
 .verlauf-bild.kompakt {
   padding: 0.2rem 0.4rem 0.1rem;
 }
-.verlauf-bild.kompakt svg {
-  max-height: 5.5rem;
-}
 .verlauf-bild.kompakt figcaption {
   font-size: 0.78rem;
 }

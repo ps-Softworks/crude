@@ -14,7 +14,8 @@ export interface ChartSeries {
 }
 
 const W = 320;
-const H = 112;
+const H_FULL = 112;
+const H_COMPACT = 68;
 const RAND = { l: 44, r: 8, t: 8, b: 18 };
 
 /** Kurze Achsenzahl: 1.200 → „1,2k“, 2.500.000 → „2,5M“. */
@@ -50,6 +51,7 @@ export function HistoryChart({
   /** Kleinere Fassung (Kapitelbildschirm). */
   compact?: boolean;
 }) {
+  const H = compact ? H_COMPACT : H_FULL;
   if (history.length < 2) {
     return (
       <figure className="verlauf-bild">

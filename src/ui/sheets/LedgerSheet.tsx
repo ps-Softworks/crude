@@ -3,6 +3,7 @@
 // 4.8 Andockpunkt: Ab Kapitel 2 (state.stocks) bekommt das Kassenbuch Reiter für
 // Aktienbuch, Aufsichtsrat und Anleihen (StocksPanel). In Kapitel 1 bleibt es, wie es war.
 
+import { Begriff } from '../Begriff';
 import { creditLimit, debt, headroom } from '../../sim/credit';
 import { startStocks, stocksAttention } from '../../sim/stocks';
 import { balance } from '../balance';
@@ -22,7 +23,7 @@ export function LedgerSheet({ ctx }: { ctx: SheetContext }) {
     <>
       <p className="kassenbuch-kopf">
         Kasse <strong>{money(game.cash)}</strong> · Schulden {money(debt(game))} · Rahmen frei {money(headroom(game, balance))} von{' '}
-        {money(creditLimit(game, balance))} · Rating {game.rating}
+        {money(creditLimit(game, balance))} · <Begriff id="rating">Rating</Begriff> {game.rating}
       </p>
       {/* 4.12: Ruf als Wörter, sobald Ereignisse ihn bewegt haben. */}
       <ReputationLine game={game} className="klein kassenbuch-ruf" />

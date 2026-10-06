@@ -257,6 +257,8 @@ const bilder: Bild[] = [
   { name: '06-kassenbuch', state: mitte, tasten: ['g'] },
   { name: '06b-kassenbuch-verlauf', state: mitte, prefs: { 'crude.reiter.kassenbuch': 'verlauf' }, tasten: ['g'] },
   { name: '06c-menue-speichern', state: mitte, prefs: { 'crude.reiter.menu': 'speichern', 'crude.slot.1': serializeGame(mitte, '0.0.0') }, dann: KLICK('.menue-knopf'), warte: 500 },
+  { name: '06d-glossar', state: mitte, tasten: ['l'], warte: 400 },
+  { name: '06e-begriff-erklaert', state: mitte, tasten: ['v'], dann: `document.querySelector('.sheet .begriff')?.focus()`, warte: 400 },
   { name: '07-karte-ranch', state: mitte, tasten: ['k'], dann: JACOBS_RANCH, warte: 900 },
   { name: '08-besuch', state: besuch, tasten: ['w'], warte: 700 },
   ...(szene ? [{ name: '09-szene', state: szene, gesehen: ['zeitung'], warte: 1400 }] : []),

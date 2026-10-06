@@ -3,6 +3,7 @@
 // Bohrungen, Ausbau zum Aufklappen und die Randnotiz. Welche Knöpfe es gibt,
 // entscheidet parcelActions aus src/sim – hier steht keine einzige Spielregel.
 
+import { Begriff } from '../Begriff';
 import { useEffect, useRef } from 'react';
 import { drillBlocker, parcelActions, parcelOutlooks, paybackText, type DeskActionKind, type ParcelOutlook } from '../../sim/desk';
 import { deeperChance, deeperQuote, stageOutlook, wellOf, wellsOn, type StageOutlook, type Well } from '../../sim/drilling';
@@ -204,7 +205,9 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
               <dd>{terms.landowner.label}</dd>
               <dt>Bonus</dt>
               <dd>{money(terms.bonus)}</dd>
-              <dt>Förderzins</dt>
+              <dt>
+                <Begriff id="foerderzins">Förderzins</Begriff>
+              </dt>
               <dd>{percent(terms.royalty)}</dd>
               <dt>Optionsgebühr</dt>
               <dd>{money(terms.optionFee)}</dd>

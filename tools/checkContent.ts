@@ -26,6 +26,7 @@ import { checkStaffContent, parseStaffContent } from '../src/sim/staffContent'; 
 import { parseExchangeContent } from '../src/sim/exchangeContent';
 import { loadBalance, readLawFiles } from '../src/sim/testBalance';
 import { EVENTS_DIR, readEventFiles } from '../src/sim/testEvents';
+import { parseGlossary } from '../src/sim/glossary';
 import { parseTutorialContent } from '../src/sim/tutorial';
 import { parseTimeskipContent } from '../src/sim/timeskip';
 import { mapRefErrors } from '../src/sim/regions';
@@ -119,6 +120,8 @@ try {
 } catch (e) {
   errors.push({ file: 'content/tutorial.yaml', line: 1, message: (e as Error).message });
 }
+// Glossar (0.4.20+42): Begriffe, Sprachen, Verweise.
+errors.push(...parseGlossary('content/glossar.yaml', readFileSync(new URL('../content/glossar.yaml', import.meta.url), 'utf8')).errors);
 // 4.6 Andockpunkt: Raffinerie (content/refinery.yaml).
 errors.push(...parseRefineryContent('content/refinery.yaml', readFileSync(new URL('../content/refinery.yaml', import.meta.url), 'utf8')).errors);
 // 4.7 Andockpunkt: Fernleitungen (Kapitel 2) – Briefe in content/pipelines.yaml.

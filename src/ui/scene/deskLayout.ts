@@ -9,7 +9,7 @@ import type { SheetId } from '../sceneState';
 import type { Placement } from './DeskObject';
 
 /** Was neben den Fenster-Gegenständen einen Platz braucht: Wandkarte, Tür, Ruths Zettel, Zierde. */
-export type DeskSpot = Exclude<SheetId, 'bericht' | 'menu' | 'wartende'> | 'karte' | 'tuer' | 'ruth' | 'lampe' | 'radio' | 'ablage';
+export type DeskSpot = Exclude<SheetId, 'bericht' | 'menu' | 'wartende' | 'glossar'> | 'karte' | 'tuer' | 'ruth' | 'lampe' | 'radio' | 'ablage';
 
 /** Gegenstände, die erst mit einem System auf den Tisch kommen. */
 export interface DeskPresent {
