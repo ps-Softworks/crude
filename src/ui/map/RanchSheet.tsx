@@ -20,6 +20,7 @@ import { barrels, money, percent, rounds, units } from '../format';
 import { STATUS_LABEL, ranchStatus } from '../mapShapes';
 import { SeismikZeile } from '../Kapitel3Ranch'; // 4.17 Andockpunkt
 import { Feldkauf } from './Feldkauf'; // Feldkauf (0.4.20+27)
+import { Verkauf } from './Verkauf'; // Anlagen verkaufen
 // Termine als Hauptwerkzeug (Etappe 1): Wissensstand, Hinweise und Erkundungs-Karten.
 import { knowledgeOf, knowledgeView } from '../../sim/exploration';
 import { bookCard, planView } from '../../sim/plans';
@@ -245,6 +246,8 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
             <OutlookInfo outlooks={outlooks} />
           </details>
         )}
+
+        {lease?.holder === 'jacob' && onGame && <Verkauf game={game} parcelId={id} onGame={onGame} />}
 
         {debug && (
           <p className="muted">

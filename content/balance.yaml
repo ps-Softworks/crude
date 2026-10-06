@@ -2267,6 +2267,22 @@ buyout:
   step: 100
   cooldown: 3              # nach einer Ablehnung 3 Runden kein neues Angebot für diese Ranch
 
+# Anlagen verkaufen (src/sim/sale.ts): Gegenstück zum Feldkauf – Bullard nennt ein festes Gebot.
+sale:
+  bid: 0.75                # PLATZHALTER: Gebot = 75 % seines Werts
+  pakt: 0.9                # Handschlag: fast der volle Wert
+  feud: 0.5                # Fehde: er nutzt die Not aus
+  undrilledBonus: 0.8      # ungebohrtes Land: mindestens 80 % des gezahlten Pachtbonus
+  cashShare: 0.8           # höchstens 80 % von Bullards Kasse
+  rigShare: 0.5            # eigener Turm: halber Neupreis (mit Dampfmaschine/Gestänge)
+  step: 100
+  emergency:               # Notverkauf in der Pleitefrist (GDD §8: 40–60 % des Werts, Rivalen bieten mit)
+    neutral: 0.5
+    pakt: 0.6
+    feud: 0.4
+    others: 0.45           # die anderen Ölleute bieten mindestens so viel – Bullard muss mithalten
+    rig: 0.8               # Turm: 80 % des normalen Verkaufspreises
+
 rivalsK3:
   margaret:
     startAwareness: 5         # Kapitelbeginn: Crane Eastern ist in jeder Region so viel bekannter

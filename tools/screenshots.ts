@@ -248,6 +248,10 @@ const mitBullardQuelle = (() => {
   return { ...s, cash: Math.max(s.cash, 40000), leases: s.leases.filter((l) => l.holder !== 'bullard' || l.parcelId === quelle) };
 })();
 
+// Anlagen verkaufen: Jacobs fördernde Ranch anklicken und den Abschnitt „An Bullard verkaufen“ aufklappen.
+const verkaufName = spaet.parcels.find((p) => p.id === spaet.wells.find((w) => w.status === 'found')!.parcelId)!.name;
+const VERKAUF_KLICK = `(() => { const r = [...document.querySelectorAll('.karte-ranch')].find((g) => (g.getAttribute('aria-label') ?? '').includes(${JSON.stringify(verkaufName)})); r.dispatchEvent(new MouseEvent('click', { bubbles: true })); setTimeout(() => { const d = document.querySelector('details.verkauf'); if (d) { d.open = true; d.scrollIntoView({ block: 'end' }); } }, 500); })()`;
+
 const bilder: Bild[] = [
   { name: '01-schreibtisch-start', state: start },
   { name: '02-schreibtisch-mitte', state: mitte },
@@ -315,6 +319,7 @@ const bilder: Bild[] = [
   { name: '40-kapitel2-rundgang', state: kapitel2, prefs: { 'crude.rundgang.k2': 'nein' }, tasten: ['Enter'], warte: 3400 },
   // 0.4.20+3: Rundgang Kapitel 3 (dritter Schritt: Vertrieb).
   { name: '43-feldkauf', state: mitBullardQuelle, tasten: ['k'], dann: BULLARDS_RANCH, warte: 900 },
+  { name: '43b-verkauf', state: { ...spaet, loans: spaet.loans.map((l) => ({ ...l, collateral: null })), rival: { ...spaet.rival, cash: Math.max(spaet.rival.cash, 30000) } }, tasten: ['k'], dann: VERKAUF_KLICK, warte: 1400 },
   { name: '42-feldzug', state: imFeldzug, dann: `${KLICK('.objekt-marke')}; setTimeout(() => ${REITER('Crane')}, 400)`, warte: 1000 },
   // Seismik (4.17): Lizenz da, freie Ranch auf der Karte – der Knopf „Seismik-Trupp schicken“ muss sichtbar sein.
   { name: '44-seismik-ranch', state: mitSeismik, tasten: ['k'], dann: FREIE_RANCH, warte: 900 },
