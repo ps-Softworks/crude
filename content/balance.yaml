@@ -322,7 +322,7 @@ plans:
     fabrik_schmieroel: { contact: grosskunden, tab: markt, appointments: 1, target: option, handler: fabrik_schmieroel, requires: { minChapter: 2 } }
     lampenoel_kerosin: { contact: grosskunden, tab: markt, appointments: 1, target: option, handler: lampenoel_kerosin, requires: { minChapter: 2 } }
     # 0.4.20+36 Versicherung, Arbeiter, Presse.
-    versicherung: { contact: versicherung, tab: markt, appointments: 1, target: option, handler: versicherung, requires: { minChapter: 2 } }
+    versicherung: { contact: versicherung, tab: markt, appointments: 1, target: option, handler: versicherung }   # ab Kapitel 1 (Feuer, Bohrunfall, Turmschaden)
     lohnerhoehung: { contact: arbeiter, tab: leute, appointments: 1, handler: lohnerhoehung, requires: { minChapter: 2 } }
     streik_droht: { contact: arbeiter, tab: leute, appointments: 1, target: option, handler: streik_droht, call: 1, requires: { minChapter: 2 } }
     anzeigen: { contact: zeitung, tab: leute, appointments: 1, handler: anzeigen, requires: { minChapter: 2 } }
@@ -395,7 +395,10 @@ deals:
   theft: { chance: 0.06, minStock: 3000, loss: 0.2 }
   phone: { chance: 0.35 }
   # 0.4.20+36 Versicherung, Arbeiter, Presse (Telefon, Kapitel 2). PLATZHALTER.
-  insurance: { rounds: [4, 8], base: 150, share: 0.004, cover: 0.8, claimRaise: 0.5 }   # zahlt 80 % bei Feuer in Raffinerie/Tanks
+  # Versicherung (ab Kapitel 1, GDD §8 „Gegen Feuer, Blowout und Tankerverlust. Die Prämie steigt mit der Unfallgeschichte“):
+  # zahlt 80 % bei Tank-/Raffineriebrand, Bohrunfall und Turmschaden. Prämie je Runde = Grundbetrag (Kapitel 1: firstChapterBase)
+  # + share × Anlagenwert (Tanks, Raffinerie, eigene Türme), × (1 + history.raise je versichertem Schaden der letzten history.rounds Runden).
+  insurance: { rounds: [4, 8], base: 150, firstChapterBase: 40, share: 0.004, cover: 0.8, claimRaise: 0.5, history: { rounds: 8, raise: 0.25 } }
   workers:
     raise: { perWell: 40, rounds: 8, reputation: 15 }   # Lohnerhöhung: Ruf bei den Arbeitern hebt die Förderung (eventSystems.reputation.production)
     strike: { dealPerWell: 120, dealReputation: 5, breakerCost: 1500, breakerReputation: 20, loss: 0.4 }   # Anruf „Streik droht“; ignoriert = −40 % Förderung nächste Runde
@@ -2352,6 +2355,43 @@ buyout:
   sliderMax: 2             # … bis 200 % seines Preises
   step: 100
   cooldown: 3              # nach einer Ablehnung 3 Runden kein neues Angebot für diese Ranch
+
+# Anlagen verkaufen (src/sim/sale.ts): Gegenstück zum Feldkauf – Bullard nennt ein festes Gebot.
+sale:
+  bid: 0.75                # PLATZHALTER: Gebot = 75 % seines Werts
+  pakt: 0.9                # Handschlag: fast der volle Wert
+  feud: 0.5                # Fehde: er nutzt die Not aus
+  undrilledBonus: 0.8      # ungebohrtes Land: mindestens 80 % des gezahlten Pachtbonus
+  cashShare: 0.8           # höchstens 80 % von Bullards Kasse
+  rigShare: 0.5            # eigener Turm: halber Neupreis (mit Dampfmaschine/Gestänge)
+  step: 100
+  emergency:               # Notverkauf in der Pleitefrist (GDD §8: 40–60 % des Werts, Rivalen bieten mit)
+    neutral: 0.5
+    pakt: 0.6
+    feud: 0.4
+    others: 0.45           # die anderen Ölleute bieten mindestens so viel – Bullard muss mithalten
+    rig: 0.8               # Turm: 80 % des normalen Verkaufspreises
+
+# Pleitefrist mit Auswegen (src/sim/insolvency.ts, GDD §8): Frist bankruptcy.graceRounds, dazu Notverkauf (sale.emergency),
+# Umschuldung und Rettung durch Mr. Vale (Kapitel 1/2; Kapitel 3: Konsortium, kapitel3.konsortium.rescue).
+insolvency:
+  restructure:
+    minRating: C           # GDD §8: mindestens Rating C vor der Krise
+    lawyerFee: 800         # PLATZHALTER: Anwaltshonorar …
+    lawyerShare: 0.05      # … plus 5 % der umgeschuldeten Summe
+    ownLawyer: 0.5         # mit eigenem Anwalt (Ermittlung, ab Kapitel 2) halbes Honorar
+    rateAdd: 0.04          # Zins: Bankzins ohne Sicherheit + 4 Punkte
+    deferRounds: 4         # die ersten 4 Runden kommen die Zinsen auf die Schuld
+  rescue:
+    cushion: 1000          # PLATZHALTER: Vale legt mindestens 1.000 $ über das Loch hinaus …
+    cushionShare: 0.25     # … oder 25 % des Lochs
+    repay: 1.6             # Jacob schuldet ihm das 1,6-fache
+    rate: 0.15             # zu 15 % pro Jahr – und einen Gefallen (Ereignis vale_rettung_gefallen)
+
+# Zweiter Anlauf (src/sim/secondChance.ts, GDD §8/§14): einmal je Spiel nach der Pleite neu als Wildcatter.
+secondChance:
+  cash: [1500, 15000, 40000]   # PLATZHALTER: Startgeld je Kapitel (Kapitel 1 weniger als der Spielstart mit 2.500 $)
+  minRounds: 8                 # bleiben weniger Runden im Kapitel, läuft es für Jacob so lange weiter
 
 rivalsK3:
   margaret:

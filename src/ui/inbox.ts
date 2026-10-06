@@ -130,9 +130,17 @@ function anzahl(n: number, eins: string, viele: string): string {
   return n === 1 ? `1 ${eins}` : `${n} ${viele}`;
 }
 
-/** Was vor dem Rundenende noch offen liegt. Gesperrt wird nichts. */
-export function openItems(inbox: Inbox, agenda: Pick<AgendaView, 'left'>, land: LandDeadlines | null = null, referrals = 0): OpenItem[] {
+/** Pleitefrist (insolvency.ts): bis zu welcher Runde Geld herein muss – 0 = keine Frist. Nur gelesen. */
+export function bankruptcyDeadlineOf(game: Pick<GameState, 'bankruptcyDeadline' | 'finished'>): number {
+  return game.finished ? 0 : game.bankruptcyDeadline;
+}
+
+/** Was vor dem Rundenende noch offen liegt. Gesperrt wird nichts. Die Pleitefrist steht immer vorn. */
+export function openItems(inbox: Inbox, agenda: Pick<AgendaView, 'left'>, land: LandDeadlines | null = null, bankruptcyDeadline = 0, referrals = 0): OpenItem[] {
   const items: OpenItem[] = [];
+  if (bankruptcyDeadline > 0) {
+    items.push({ target: 'kassenbuch', text: `Bankrott droht! Bis Runde ${bankruptcyDeadline} muss Geld herein → Kassenbuch`, urgent: true });
+  }
   if (inbox.visitors.length > 0) {
     items.push({
       target: 'tuer',

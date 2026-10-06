@@ -150,7 +150,7 @@ export function BankPanel({ game, onResult }: { game: GameState; onResult: (resu
         <ul className="loans">
           {game.loans.map((loan) => (
             <li key={loan.id}>
-              {loan.source === 'bank' ? 'Bank' : 'Geldverleiher'} · {money(loan.principal)} ·{' '}
+              {loan.source === 'bank' ? 'Bank' : loan.source === 'vale' ? 'Mr. Vale' : 'Geldverleiher'} · {money(loan.principal)} ·{' '}
               {percent(loan.rate)} pro Jahr
               <br />
               {money(loan.principal)} × {percent(loan.rate)} ÷ 4 = {money(quarterInterest(loan))} je Quartal

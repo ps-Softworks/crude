@@ -27,6 +27,7 @@ import { FREIGHT_SIM_MARKS } from './freight';
 import { LETTER_SIM_MARKS } from './letters';
 import { FELDZUG_SIM_MARKS } from './feldzug'; // 0.4.20+8: Cranes Feldzug
 import { FEUER_SIM_MARKS } from './feuer'; // B3: Ein Feuer in der Nacht
+import { INSOLVENCY_SIM_MARKS } from './insolvencyMarks'; // Pleitefrist: Vales Rettung
 import { STAND_SIM_MARKS } from './stand'; // 0.4.19+3: Heirat über den Stand (thomas_verheiratet)
 
 export interface ContentError {
@@ -580,7 +581,7 @@ export function parseEventFiles(files: readonly { file: string; text: string }[]
   // 4.7 Andockpunkt: BIG_PIPELINE_SIM_MARKS. 4.9 Andockpunkt: STAFF_SIM_MARKS. 4.10 Andockpunkt: DIPLOMACY_SIM_MARKS.
   // 4.11 Andockpunkt: DELANEY_SIM_MARKS (Delaney im Amt, Gerücht, Vorermittlung, Anklage, Urteil).
   // Zeitsprung I (4.5): TIMESKIP_SIM_MARKS (Clara, Benzin, Okara …); Zeitsprung II (noch nicht gebaut): ZEITSPRUNG_MARKS.
-  const gesetzt = new Set<string>([...SIM_MARKS, ...RIVAL_SIM_MARKS, ...LOGISTICS_SIM_MARKS, ...BIG_PIPELINE_SIM_MARKS, ...STAFF_SIM_MARKS, ...DIPLOMACY_SIM_MARKS, ...DELANEY_SIM_MARKS, ...TIMESKIP_SIM_MARKS, ...ZEITSPRUNG_MARKS, ...PRICING_SIM_MARKS, ...FREIGHT_SIM_MARKS, ...LETTER_SIM_MARKS, ...STAND_SIM_MARKS, ...FELDZUG_SIM_MARKS, ...FEUER_SIM_MARKS, ...events.flatMap((e) => e.choices.flatMap((c) => [...c.marks, ...(c.marksIfForged ?? [])]))]);
+  const gesetzt = new Set<string>([...SIM_MARKS, ...RIVAL_SIM_MARKS, ...LOGISTICS_SIM_MARKS, ...BIG_PIPELINE_SIM_MARKS, ...STAFF_SIM_MARKS, ...DIPLOMACY_SIM_MARKS, ...DELANEY_SIM_MARKS, ...TIMESKIP_SIM_MARKS, ...ZEITSPRUNG_MARKS, ...PRICING_SIM_MARKS, ...FREIGHT_SIM_MARKS, ...LETTER_SIM_MARKS, ...STAND_SIM_MARKS, ...FELDZUG_SIM_MARKS, ...FEUER_SIM_MARKS, ...INSOLVENCY_SIM_MARKS, ...events.flatMap((e) => e.choices.flatMap((c) => [...c.marks, ...(c.marksIfForged ?? [])]))]);
   for (const event of events) {
     for (const m of [...event.marked, ...event.notMarked]) {
       if (gesetzt.has(m)) continue;

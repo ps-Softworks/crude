@@ -13,6 +13,7 @@
 // gehört der Welt und wird nie angefasst; Math.random kommt nicht vor.
 // Die Zahlen stehen in content/balance.yaml unter bots.
 
+import { insolvencyBotTurn } from './insolvency';
 import { buyoutBlocker, buyoutQuote, offerBuyout, type BuyoutQuote } from './buyout';
 import { type CardUse, finishCards, newCardTracker, trackCards } from './cardStats';
 import { DEAL_HANDLERS, royaltyPrice } from './deals';
@@ -1198,6 +1199,8 @@ export function botTurn(
   if (state.finished) return state;
   // 0.4.20+42: Empfehlungen nehmen alle planenden Bots gleich an – neue Kontakte bringen neue Karten.
   if (strategy !== 'zufaellig') state = networkTurn(state, balance);
+  // Pleitefrist (insolvency.ts): erst Notverkauf, dann – in der letzten Runde der Frist – Vales Rettung.
+  if (strategy !== 'zufaellig') state = insolvencyBotTurn(state, balance);
   // Erkundung (Etappe 1): Die planenden Bots reiten übers Land, bevor die Briefe die Zeit fressen.
   if (strategy !== 'zufaellig') state = exploreTurn(state, balance, strategy, catalog);
   // Etappe 2: Preis- und Fracht-Karten nach bots.plans – ebenfalls vor den Briefen.

@@ -20,7 +20,12 @@ export interface DealsBalance {
   /** 0.4.20+35 Lieferverträge der Raffinerie: Produkt, Mengen je Runde, Laufzeit, Aufschlag auf den heutigen Preis, Strafe je fehlendem Barrel. */
   supply: Record<'marine' | 'lubricant' | 'kerosene' | 'gasoline', { product: Product; sizes: number[]; rounds: number; premium: number; shortfall: number }>;
   /** 0.4.20+36 Feuerversicherung: Laufzeiten, Prämie = base + share × Wert, zahlt cover des Schadens, Prämie nach Schaden × (1 + claimRaise). */
-  insurance: { rounds: number[]; base: number; share: number; cover: number; claimRaise: number };
+  /**
+   * Versicherung (ab Kapitel 1): Prämie = (base bzw. firstChapterBase) + share × Anlagenwert (Tanks, Raffinerie, eigene Türme),
+   * × (1 + history.raise je versichertem Schaden der letzten history.rounds Runden). Zahlt cover bei Tank-/Raffineriebrand,
+   * Bohrunfall und Turmschaden; nach jedem Schaden steigt die laufende Prämie um claimRaise.
+   */
+  insurance: { rounds: number[]; base: number; firstChapterBase: number; share: number; cover: number; claimRaise: number; history: { rounds: number; raise: number } };
   /** 0.4.20+36 Arbeiter: Lohnerhöhung (je fördernder Quelle, Runden, Ruf) und Streik-Anruf (Einigung je Quelle, Streikbrecher, Förderausfall). */
   workers: {
     raise: { perWell: number; rounds: number; reputation: number };
@@ -142,9 +147,11 @@ export function parseDealsBalance(raw: unknown): DealsBalance {
     insurance: {
       rounds: liste(raw, `${p}.insurance.rounds`),
       base: zahl(raw, `${p}.insurance.base`),
+      firstChapterBase: zahl(raw, `${p}.insurance.firstChapterBase`),
       share: anteil(raw, `${p}.insurance.share`),
       cover: anteil(raw, `${p}.insurance.cover`),
       claimRaise: zahl(raw, `${p}.insurance.claimRaise`),
+      history: { rounds: ganz(raw, `${p}.insurance.history.rounds`), raise: zahl(raw, `${p}.insurance.history.raise`) },
     },
     workers: {
       raise: { perWell: zahl(raw, `${p}.workers.raise.perWell`), rounds: ganz(raw, `${p}.workers.raise.rounds`), reputation: zahl(raw, `${p}.workers.raise.reputation`) },

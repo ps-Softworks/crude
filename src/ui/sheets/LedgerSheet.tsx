@@ -4,6 +4,7 @@
 // Aktienbuch, Aufsichtsrat und Anleihen (StocksPanel). In Kapitel 1 bleibt es, wie es war.
 
 import { Begriff } from '../Begriff';
+import { InsolvencyPanel } from '../InsolvencyPanel';
 import { creditLimit, debt, headroom } from '../../sim/credit';
 import { startStocks, stocksAttention } from '../../sim/stocks';
 import { balance } from '../balance';
@@ -29,6 +30,8 @@ export function LedgerSheet({ ctx }: { ctx: SheetContext }) {
       <ReputationLine game={game} className="klein kassenbuch-ruf" />
       {/* 0.4.19+2: Die Kapitelprüfung ab Kapitel 2 dauerhaft sichtbar (Rating und Rücklagen stehen hier). */}
       <ChapterGoalProgress game={game} />
+      {/* Pleitefrist mit Auswegen (insolvency.ts): nur, solange die Frist läuft. */}
+      <InsolvencyPanel ctx={ctx} />
     </>
   );
   // 4.8 Andockpunkt: ohne Aktienbuch (Kapitel 1) nur die Bank. Der Debug-Knopf zum Anlegen steht im Menü → Debug → „Vorab freischalten“.

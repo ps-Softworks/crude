@@ -242,11 +242,11 @@ cards:
       en: "The country dealers buy kerosene three years ahead – while the cities are already getting electric light."
     risk: { de: "Zwölf Runden sind lang. Wer den Mix umstellt, muss das Kerosin trotzdem liefern.", en: "Twelve rounds are long. Whoever changes the mix must still deliver the kerosene." }
   versicherung:
-    title: { de: "Feuerversicherung", en: "Fire Insurance" }
+    title: { de: "Versicherung", en: "Insurance" }
     text:
-      de: "Mr. Ashby von der Provinzial versichert Raffinerie und Tanks gegen Feuer. Die Prämie richtet sich nach dem, was brennen kann."
-      en: "Mr. Ashby of the Provincial insures refinery and tanks against fire. The premium depends on what can burn."
-    risk: { de: "Die Prämie ist jede Runde fällig, auch wenn nie etwas brennt – und nach jedem Schaden wird sie teurer.", en: "The premium is due every round, even if nothing ever burns – and after every claim it gets dearer." }
+      de: "Mr. Ashby von der Provinzial versichert gegen Feuer in Tanks und Raffinerie, gegen Unfälle auf dem Bohrturm und Schäden am eigenen Turm. Die Prämie richtet sich nach dem, was brennen und brechen kann – und nach dem, was schon gebrannt hat."
+      en: "Mr. Ashby of the Provincial insures against fire in tanks and refinery, accidents on the derrick and damage to Jacob's own rigs. The premium depends on what can burn and break – and on what has burned before."
+    risk: { de: "Die Prämie ist jede Runde fällig, auch wenn nie etwas passiert – und nach jedem Schaden wird sie teurer. Wer spart, spielt Roulette.", en: "The premium is due every round, even if nothing ever happens – and after every claim it gets dearer. Whoever saves on it plays roulette." }
   lohnerhoehung:
     title: { de: "Mehr Lohn für die Bohrtrupps", en: "Higher Wages for the Crews" }
     text:

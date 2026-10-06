@@ -10,6 +10,7 @@
 // Chronik „Die Jahre dazwischen“, dann Kapitel 2 (Platzhalter) am Schreibtisch.
 
 import { contactNames } from './plans';
+import { startSecondChance } from '../sim/secondChance';
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { agendaView } from '../sim/agenda';
 import { decideIpo } from '../sim/chapter';
@@ -34,7 +35,7 @@ import { FeuerScreen } from './FeuerScreen';
 import { ChronicleScreen, DirectivesLetter, SwitchTelegram } from './TimeskipScreen';
 import { figures } from './figureContent';
 import { figureOf } from './figures';
-import { eventsShownIn, inboxBadges, landDeadlines, openItems, seenKey, sortInbox, unseen, visitorNames, type OpenItem } from './inbox';
+import { bankruptcyDeadlineOf, eventsShownIn, inboxBadges, landDeadlines, openItems, seenKey, sortInbox, unseen, visitorNames, type OpenItem } from './inbox';
 import { keyInput, keyToAction } from './keys';
 import type { MapMarker } from './Map';
 import { MapView } from './map/MapView';
@@ -211,7 +212,7 @@ export function App() {
   // Was auf dem Tisch liegt – nur gefiltert und gezählt aus src/sim.
   const inbox = sortInbox(deskEvents(game, balance, events), deskMail(game, balance, events), deskRoutines(game, balance, events), appearances);
   const badges = inboxBadges(inbox, ui.seen);
-  const offen = openItems(inbox, agendaView(game, balance), landDeadlines(game), game.network?.referrals.length ?? 0);
+  const offen = openItems(inbox, agendaView(game, balance), landDeadlines(game), bankruptcyDeadlineOf(game), game.network?.referrals.length ?? 0);
   // Wer im Raum steht, wartet nicht mehr vor der Tür.
   const draussen = { ...inbox, visitors: inbox.visitors.filter((e) => e.id !== ui.visitor) };
   const wartende = visitorNames(draussen);
@@ -592,7 +593,15 @@ export function App() {
             ) : brief && game.ending === 'kapitel' ? (
               <DirectivesLetter game={game} onSend={sprungStarten} onBack={() => setBrief(false)} />
             ) : game.ending === 'pleite' ? (
-              <GameOverScreen game={game} onRestart={neuesSpiel} />
+              <GameOverScreen
+                game={game}
+                onRestart={neuesSpiel}
+                onSecondChance={() => {
+                  // Zweiter Anlauf (secondChance.ts): einmal je Spiel nach der Pleite im selben Kapitel neu anfangen.
+                  const r = startSecondChance(game, balance, events);
+                  if (r.ok) setGame(r.state);
+                }}
+              />
             ) : game.ending === 'feuer' ? (
               <FeuerScreen game={game} onRestart={neuesSpiel} />
             ) : (

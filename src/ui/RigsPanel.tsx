@@ -22,6 +22,8 @@ import {
   type Rig,
   type RigResult,
 } from '../sim/rigs';
+import { inEmergency, rigSaleBlocker, rigSalePrice, sellRig } from '../sim/sale';
+import { ConfirmButton } from './ConfirmButton';
 import { balance } from './balance';
 import { money, NBSP } from './format';
 
@@ -91,6 +93,31 @@ function Entscheidung({ game, rig, onChange, onShow }: { game: GameState; rig: R
   );
 }
 
+/** Eigenen Turm verkaufen (Anlagen verkaufen, src/sim/sale.ts) – mit Rückfrage, gesperrt mit Grund. */
+function TurmVerkauf({ game, rigId, onChange }: { game: GameState; rigId: string; onChange: (s: GameState) => void }) {
+  const sperre = rigSaleBlocker(game, rigId);
+  const preis = rigSalePrice(game, balance, rigId);
+  if (sperre) {
+    return (
+      <button type="button" disabled title={sperre}>
+        Turm verkaufen
+      </button>
+    );
+  }
+  return (
+    <ConfirmButton
+      question={`${inEmergency(game) ? 'In der Not ' : ''}für ${money(preis)} verkaufen? Ohne Turm bohrt hier niemand mehr.`}
+      confirmLabel="Ja, verkaufen"
+      onConfirm={() => {
+        const r = sellRig(game, balance, rigId);
+        if (r.ok) onChange(r.state);
+      }}
+    >
+      {`Turm verkaufen (${money(preis)})`}
+    </ConfirmButton>
+  );
+}
+
 export function RigsPanel({ game, onChange, onShow }: { game: GameState; onChange: (s: GameState) => void; onShow?: (parcelId: string) => void }) {
   const dampf = steamPayback(balance);
   const gestaenge = rodsPayback(balance);
@@ -126,6 +153,7 @@ export function RigsPanel({ game, onChange, onShow }: { game: GameState; onChang
                   Zurückgeben
                 </Aktion>
               )}
+              {rig.kind === 'owned' && <TurmVerkauf game={game} rigId={rig.id} onChange={onChange} />}
             </div>
           </li>
         ))}

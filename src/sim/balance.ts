@@ -3,6 +3,9 @@
 // Seit 0.2.15+5 gehört die Karte (content/map.yaml) mit dazu: parseGameData.
 
 import type { BuyoutBalance } from './buyout';
+import type { SaleBalance } from './sale';
+import type { InsolvencyBalance } from './insolvency';
+import type { SecondChanceBalance } from './secondChance';
 import { parseStocksBalance, type StocksBalance } from './stocksBalance'; // 4.8 Andockpunkt
 import { parseDiplomacy, type DiplomacyBalance } from './diplomacyBalance'; // 4.10 Andockpunkt
 // 4.15 Andockpunkt: Börse und Kauf auf Kredit.
@@ -1082,6 +1085,12 @@ export interface Balance {
   rivalsK3: RivalsK3Balance;
   /** Feldkauf (0.4.20+27): Bullard Pachten abkaufen (src/sim/buyout.ts). */
   buyout: BuyoutBalance;
+  /** Anlagen verkaufen (Gegenstück zum Feldkauf, src/sim/sale.ts). */
+  sale: SaleBalance;
+  /** Pleitefrist mit Auswegen (src/sim/insolvency.ts): Umschuldung und Rettung durch Mr. Vale. */
+  insolvency: InsolvencyBalance;
+  /** Zweiter Anlauf nach der Pleite (src/sim/secondChance.ts). */
+  secondChance: SecondChanceBalance;
   /** 0.4.20+8: Cranes Feldzug in Kapitel 3 (src/sim/feldzug.ts). */
   feldzug: FeldzugBalance;
   /** B3: „Ein Feuer in der Nacht“ – Bullards Eskalation bis Stufe 4 (src/sim/feuer.ts). */
@@ -2745,6 +2754,42 @@ export function parseBalance(raw: unknown): Balance {
       sliderMax: num(raw, 'buyout.sliderMax'),
       step: positiveInt(raw, 'buyout.step'),
       cooldown: positiveInt(raw, 'buyout.cooldown'),
+    },
+    sale: {
+      bid: num(raw, 'sale.bid'),
+      pakt: num(raw, 'sale.pakt'),
+      feud: num(raw, 'sale.feud'),
+      undrilledBonus: num(raw, 'sale.undrilledBonus'),
+      cashShare: share(raw, 'sale.cashShare'),
+      rigShare: share(raw, 'sale.rigShare'),
+      step: positiveInt(raw, 'sale.step'),
+      emergency: {
+        neutral: share(raw, 'sale.emergency.neutral'),
+        pakt: share(raw, 'sale.emergency.pakt'),
+        feud: share(raw, 'sale.emergency.feud'),
+        others: share(raw, 'sale.emergency.others'),
+        rig: share(raw, 'sale.emergency.rig'),
+      },
+    },
+    insolvency: {
+      restructure: {
+        minRating: ratingText((raw as { insolvency?: { restructure?: unknown } }).insolvency?.restructure, 'minRating', 'insolvency.restructure.minRating'),
+        lawyerFee: num(raw, 'insolvency.restructure.lawyerFee'),
+        lawyerShare: share(raw, 'insolvency.restructure.lawyerShare'),
+        ownLawyer: share(raw, 'insolvency.restructure.ownLawyer'),
+        rateAdd: num(raw, 'insolvency.restructure.rateAdd'),
+        deferRounds: positiveInt(raw, 'insolvency.restructure.deferRounds'),
+      },
+      rescue: {
+        cushion: num(raw, 'insolvency.rescue.cushion'),
+        cushionShare: share(raw, 'insolvency.rescue.cushionShare'),
+        repay: num(raw, 'insolvency.rescue.repay'),
+        rate: share(raw, 'insolvency.rescue.rate'),
+      },
+    },
+    secondChance: {
+      cash: list(raw, 'secondChance.cash').map((_, i) => num(raw, `secondChance.cash.${i}`)),
+      minRounds: positiveInt(raw, 'secondChance.minRounds'),
     },
     feldzug: parseFeldzugBalance(raw), // 0.4.20+8
     feuer: parseFeuerBalance(raw), // B3

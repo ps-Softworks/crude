@@ -57,3 +57,5 @@ witwe: { form: frau, name: Martha Quill }
 # Kapitel 2 – Weichen nur für die Aktiengesellschaft (k2-ag-tueren.yaml).
 vandermeer: { form: zylinder, name: Ambrose Vandermeer }
 kommandant: { form: hut, name: Kommandant Brandt }
+# Pleitefrist mit Auswegen (insolvency.ts): Mr. Vale fordert nach der Rettung seinen Gefallen ein (vale-rettung.yaml).
+vale: { form: zylinder, name: Mr. Vale }
