@@ -54,3 +54,6 @@ grady: { form: zylinder, name: Senator Grady }
 dunmore: { form: zylinder, name: Lionel Dunmore }
 # 0.4.19+3: Die Witwe des Tanker-Maschinisten (k3_tanker_witwe, Weiche zs2_export_krieg).
 witwe: { form: frau, name: Martha Quill }
+# Kapitel 2 – Weichen nur für die Aktiengesellschaft (k2-ag-tueren.yaml).
+vandermeer: { form: zylinder, name: Ambrose Vandermeer }
+kommandant: { form: hut, name: Kommandant Brandt }

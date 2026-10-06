@@ -1,0 +1,201 @@
+# Kapitel 2 – Türen, die nur eine Aktiengesellschaft öffnet (Börsengang am Ende von Kapitel 1). ENTWURF – Philipp überarbeitet.
+# Alle Ereignisse: conditions { minChapter: 2, maxChapter: 2, minPublicShare: 1 } – Familienfirmen bekommen sie nie.
+# Jede Antwort wirkt spürbar und bleibend (Kredit/Schuldendienst, Aktienanteil, Rat, befristeter Preis, Ruf, Strohmänner).
+# Merkzeichen: k2_ag_konsortium, k2_ag_projekt_klein, k2_ag_projekt_abgelehnt, k2_marine_vertrag, k2_marine_abgelehnt,
+# k2_ag_strohmaenner (Ablauf-Sperren der Ereignisse, siehe content/relevance.yaml).
+
+- id: k2_ag_projekt
+  visitor: vandermeer
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 2, maxRound: 12, minPublicShare: 1 }
+  notMarked: [k2_ag_konsortium, k2_ag_projekt_klein, k2_ag_projekt_abgelehnt]
+  chance: 0.2
+  title:
+    de: Vandermeer bietet Projektfinanzierung
+    en: Vandermeer Offers Project Finance
+  text:
+    de: >-
+      Ambrose Vandermeer legt keine Mappe auf den Tisch, sondern ein einziges Blatt. Das
+      Bankhaus Vandermeer & Co. habe Harlan Oils Bilanz geprüft, die Bilanz einer
+      Aktiengesellschaft, die jeder in Hallstead einsehen dürfe. Für Raffinerie oder
+      Leitung zum Hafen stelle man dem Unternehmen Geld hin, wie es einer Familienfirma
+      nie angeboten würde. „Wir leihen auf Papiere, Mr. Harlan, nicht auf Gesichter.“
+      Die Gegenleistung stehe auf der Rückseite.
+    en: >-
+      Ambrose Vandermeer does not lay a folder on the desk but a single sheet. The banking
+      house of Vandermeer & Co. has examined Harlan Oil's balance sheet, the balance sheet
+      of a public company that anyone in Hallstead may inspect. For a refinery or the line
+      to the harbour they will put up money such as no family firm would ever be offered.
+      “We lend on paper, Mr. Harlan, not on faces.” The price is on the back.
+  choices:
+    - id: konsortium
+      label: { de: "Die volle Finanzierung: 40.000 $, Sitz im Rat, 3 % der Aktien an das Konsortium", en: "Take the full financing: 40,000 $, a seat on the board, 3 % of the shares to the syndicate" }
+      result:
+        de: >-
+          Vandermeer unterschreibt mit einer Feder, die er selbst mitgebracht hat. Das Geld
+          liegt am Montag in Port Ellis. Von nun an sitzt er im Rat und fragt in jeder
+          Sitzung nach der Dividende, und drei von hundert Aktien liegen in seinem Tresor.
+        en: >-
+          Vandermeer signs with a pen he brought himself. The money is in Port Ellis on
+          Monday. From now on he sits on the board and asks about the dividend at every
+          meeting, and three of every hundred shares lie in his safe.
+      effects: { loan: 40000, control: -3, boardLoyalty: { vandermeer: 15 }, dividendPressure: 2 }
+      marks: [k2_ag_konsortium]
+    - id: klein
+      label: { de: "Nur eine Tranche: 15.000 $ ohne Sitz, aber mit schlechterem Rating", en: "Only a tranche: 15,000 $ with no seat, but a worse rating" }
+      result:
+        de: >-
+          Vandermeer rechnet halblaut nach und nickt. Das Geld kommt, ohne Bedingungen im
+          Rat, aber die Bank vermerkt Jacobs Zögern im Kreditbuch, und der nächste Zins
+          fällt höher aus.
+        en: >-
+          Vandermeer does some sums under his breath and nods. The money comes with no
+          conditions in the board room, but the bank notes Jacob's hesitation in the loan
+          book, and the next rate is higher.
+      effects: { loan: 15000, rating: -1 }
+      marks: [k2_ag_projekt_klein]
+      appointments: 0
+    - id: ablehnen
+      label: { de: "Danken und ablehnen – die Firma baut aus eigener Kraft", en: "Thank him and decline – the firm builds on its own" }
+      result:
+        de: >-
+          Vandermeer faltet sein Blatt und steckt es ein, ohne eine Miene zu verziehen. In
+          Hallstead heißt es am Abend, Harlan Oil habe Geld abgelehnt, das andere gern
+          genommen hätten. Der Kurs gibt nach, und der Rat redet leiser.
+        en: >-
+          Vandermeer folds his sheet and pockets it without a flicker. By evening it is said
+          in Hallstead that Harlan Oil turned down money others would gladly have taken. The
+          share price eases, and the board speaks more quietly.
+      effects: { sharePrice: -0.04, boardLoyalty: { vandermeer: -10 } }
+      marks: [k2_ag_projekt_abgelehnt]
+      appointments: 0
+      default: true
+
+- id: k2_ag_marine
+  visitor: kommandant
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, maxRound: 14, minPublicShare: 1, minProducingWells: 3 }
+  notMarked: [k2_marine_vertrag, k2_marine_abgelehnt]
+  chance: 0.18
+  title:
+    de: Die Marine will nur von einer Aktiengesellschaft kaufen
+    en: The Navy Will Only Buy From a Public Company
+  text:
+    de: >-
+      Kommandant Brandt trägt Zivil und lässt den Hut auf dem Knie. Das Marineamt stelle
+      seine Kessel in Port Ellis auf Heizöl um und kaufe über Jahre. Aber das Amt
+      unterschreibe nur mit einer ordentlichen Aktiengesellschaft mit geprüfter Bilanz,
+      „ein Lieferant, der pleitegeht, ist in der Flotte ein gestrandetes Schiff“. Harlan
+      Oil habe eine. Der Preis sei fest und gut. Die Menge auch.
+    en: >-
+      Commander Brandt wears civilian clothes and keeps his hat on his knee. The Navy
+      Department is converting its boilers in Port Ellis to fuel oil and will buy for years.
+      But the department signs only with a proper public company with an audited balance
+      sheet; “a supplier that goes bankrupt is a stranded ship to the fleet.” Harlan Oil
+      has one. The price is fixed and good. So is the quantity.
+  choices:
+    - id: voll
+      label: { de: "Den vollen Liefervertrag unterschreiben (fester Mehrpreis, ein Teil der Förderung gebunden)", en: "Sign the full supply contract (better fixed price, part of the output committed)" }
+      result:
+        de: >-
+          Brandt prüft jede Seite, bevor er sie abzeichnet. Von nun an fährt ein Teil der
+          Förderung fest zum Marineamt, zu einem Preis, den kein Trust drücken kann. Die
+          Zeitung in Hallstead nennt Harlan Oil „Lieferant der Flotte“.
+        en: >-
+          Brandt checks every page before he initials it. From now on part of the output goes
+          to the Navy Department at a price no trust can push down. The Hallstead paper calls
+          Harlan Oil “purveyor to the fleet”.
+      effects: { price: 0.25, production: -0.08, sharePrice: 0.06, reputation: { politics: 6 } }
+      marks: [k2_marine_vertrag]
+      sharp: true
+    - id: teil
+      label: { de: "Nur eine Teilmenge liefern, dafür ohne Bindung des Restes", en: "Deliver only a partial quantity, leaving the rest free" }
+      result:
+        de: >-
+          Brandt verzieht keine Miene und halbiert den Preisaufschlag. Das Amt bekommt sein
+          Öl, Jacob behält die Freiheit, den Rest an der Börse oder am Hafen zu verkaufen.
+        en: >-
+          Brandt does not flinch and halves the premium. The department gets its oil, Jacob
+          keeps the freedom to sell the rest on the exchange or at the harbour.
+      effects: { price: 0.12, sharePrice: 0.02 }
+      marks: [k2_marine_vertrag]
+      appointments: 0
+    - id: ablehnen
+      label: { de: "Ablehnen – die Förderung bleibt ungebunden", en: "Decline – the output stays unbound" }
+      result:
+        de: >-
+          Brandt steht auf und setzt den Hut auf. Das Marineamt wendet sich an Crane
+          Eastern, die den Vertrag in der Woche darauf unterschreibt. Margaret Crane
+          schickt Jacob keine Karte, aber ihre Kasse ist voller.
+        en: >-
+          Brandt rises and puts on his hat. The Navy Department turns to Crane Eastern, which
+          signs the following week. Margaret Crane sends Jacob no card, but her treasury is
+          fuller.
+      effects: { sharePrice: -0.06, rival: { margaret: { strength: 3 } } }
+      marks: [k2_marine_abgelehnt]
+      appointments: 0
+      default: true
+
+- id: k2_ag_strohmaenner
+  mail: demand
+  deadline: 3
+  conditions: { minChapter: 2, maxChapter: 2, minRound: 4, maxRound: 16, minPublicShare: 1 }
+  notMarked: [k2_ag_strohmaenner]
+  chance: 0.15
+  title:
+    de: Jemand sammelt Harlan-Aktien
+    en: Someone Is Collecting Harlan Shares
+  text:
+    de: >-
+      Pettibones Makler schreibt in Eile: Seit zwei Wochen kaufen Namen, die niemand kennt,
+      Harlan-Aktien in kleinen Paketen, alle über Postfächer in Hallstead, alle bar. Der Kurs
+      zieht an, und die Hallstead Gazette fragt in einer Randnotiz, wie solide die Bilanz
+      wirklich sei, wenn sie jeder Fremde lesen dürfe. Wer so kauft, will nicht Dividende,
+      sondern Stimmen. Der Makler vermutet Thorne.
+    en: >-
+      Pettibone's broker writes in haste: for two weeks names nobody knows have been buying
+      Harlan shares in small parcels, all through post-office boxes in Hallstead, all in cash.
+      The price is climbing, and the Hallstead Gazette asks in a marginal note how sound the
+      balance sheet really is if any stranger may read it. Whoever buys like this wants not
+      dividends but votes. The broker suspects Thorne.
+  choices:
+    - id: rueckkauf
+      label: { de: "Die Pakete am Markt zurückkaufen (12.000 $)", en: "Buy the parcels back on the market (12,000 $)" }
+      result:
+        de: >-
+          Pettibones Makler kauft drei Tage lang, ohne den eigenen Namen zu nennen. Zwei
+          Prozent der Aktien wandern zurück zu Jacob, und die Strohmänner steigen aus.
+          Teuer, aber der Rat bleibt, wie er ist.
+        en: >-
+          Pettibone's broker buys for three days without giving his own name. Two percent of
+          the shares come back to Jacob, and the straw men get out. Costly, but the board
+          stays as it is.
+      requires: { minCash: 12000 }
+      effects: { cash: -12000, control: 2, rivalStake: { thorne: -1 } }
+      marks: [k2_ag_strohmaenner]
+    - id: bilanz
+      label: { de: "Die Bilanz offenlegen und die Presse einladen", en: "Open the books and invite the press" }
+      result:
+        de: >-
+          Jacob lässt die Bilanz drucken und lädt die Gazette in die Bay Street. Die Zahlen
+          sind gut, die Randnotiz verschwindet, und die Kleinaktionäre halten ihre Papiere.
+          Die Strohmänner aber behalten die ihren, und Thorne behält ihre Stimmen.
+        en: >-
+          Jacob has the balance sheet printed and invites the Gazette to Bay Street. The
+          figures are good, the marginal note vanishes, and the small shareholders hold on to
+          their papers. But the straw men keep theirs, and Thorne keeps their votes.
+      effects: { sharePrice: 0.05, reputation: { public: 5 }, rivalStake: { thorne: 0.5 } }
+      public: [press_praise]
+      marks: [k2_ag_strohmaenner]
+    - id: dulden
+      label: { de: "Dulden – wer kauft, treibt den Kurs", en: "Tolerate it – whoever buys drives up the price" }
+      result:
+        de: >-
+          Der Kurs steigt zwei Wochen, und Pettibone lächelt in seinen Kragen. Dann hört
+          Sayles auf zu kaufen. Er hat jetzt genug Stimmen, um in jeder Versammlung zu
+          fragen, wem das Unternehmen eigentlich gehört.
+        en: >-
+          The price climbs for two weeks, and Pettibone smiles into his collar. Then Sayles
+          stops buying. He now has enough votes to ask at every meeting whom the company
+          really belongs to.
+      effects: { sharePrice: 0.08, rivalStake: { thorne: 2 }, boardLoyalty: { bankier: -10 } }
+      marks: [k2_ag_strohmaenner]
+      default: true
