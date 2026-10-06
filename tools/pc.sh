@@ -28,7 +28,9 @@ case $cmd in
       git branch -f "pc-lauf/$name" "$PC_REF" >/dev/null || { echo "FEHLER: $PC_REF ist kein Commit/Zweig"; exit 1; }
       PC_REF="pc-lauf/$name"
       if [ "$(git rev-list --count "origin/main..$PC_REF")" = 0 ]; then
-        bundle=nein   # nichts über origin/main hinaus: der PC nimmt origin/main
+        # Der Commit liegt schon in origin/main (Vorfahr): der PC nimmt GENAU diesen Commit, nicht origin/main
+        # (bis 06.10.2026 abends nahm er origin/main – v7-*, k25, bis-* liefen dadurch auf falschem Stand).
+        bundle=hash; ziel=$(git rev-parse "$PC_REF")
       else
         git bundle create /tmp/crude-$name.bundle "origin/main..$PC_REF" || { echo "FEHLER: Bundle für $PC_REF ging nicht"; exit 1; }
       ssh pc "New-Item -ItemType Directory -Force \$env:USERPROFILE\\CRUDE-laeufe | Out-Null" >/dev/null
@@ -47,7 +49,7 @@ case $cmd in
 \$wt = \"\$d\\$name-wt\"
 Set-Location \$env:USERPROFILE\\CRUDE
 git fetch -q origin *>> \$log
-if ('$bundle' -eq 'ja') { git fetch -q -f \"\$d\\$name.bundle\" \"${PC_REF}:refs/laeufe/$name\" *>> \$log } else { git update-ref refs/laeufe/$name origin/main }
+if ('$bundle' -eq 'ja') { git fetch -q -f \"\$d\\$name.bundle\" \"${PC_REF}:refs/laeufe/$name\" *>> \$log } elseif ('$bundle' -eq 'hash') { git update-ref refs/laeufe/$name $ziel } else { git update-ref refs/laeufe/$name origin/main }
 if (Test-Path \$wt) { cmd /c rmdir \"\$wt\\node_modules\" 2>\$null; git worktree remove --force \$wt *>> \$log }
 git worktree prune
 git worktree add -f --detach \$wt refs/laeufe/$name *>> \$log
