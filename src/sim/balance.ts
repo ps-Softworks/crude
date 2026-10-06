@@ -151,7 +151,7 @@ export interface LeaseBalance {
   landowners: Landowner[];
   option: { feeShare: number; termRounds: number };
   /**
-   * Freie Startoptionen. Die erste liegt auf der Startquelle (0.4.20+25): sicheres Öl in Stufe 1,
+   * Freie Startoptionen. Die erste liegt auf der Startquelle (0.4.20+26): sicheres Öl in Stufe 1,
    * eigene Lagerstätte mit sureReserves Barrel.
    */
   startOptions: { count: number; termRounds: number; sureReserves: number; sureRateShare: number };
@@ -1060,7 +1060,7 @@ export interface Balance {
   kapitel3: Kapitel3Balance;
   /** Rivalen in Kapitel 3 (4.19). */
   rivalsK3: RivalsK3Balance;
-  /** Feldkauf (0.4.20+26): Bullard Pachten abkaufen (src/sim/buyout.ts). */
+  /** Feldkauf (0.4.20+27): Bullard Pachten abkaufen (src/sim/buyout.ts). */
   buyout: BuyoutBalance;
   /** 0.4.20+8: Cranes Feldzug in Kapitel 3 (src/sim/feldzug.ts). */
   feldzug: FeldzugBalance;

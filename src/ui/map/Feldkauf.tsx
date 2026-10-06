@@ -1,4 +1,4 @@
-// Feldkauf (0.4.20+26): Angebot an Bullard für eine seiner Pachten – Regler für die Summe, darunter die
+// Feldkauf (0.4.20+27): Angebot an Bullard für eine seiner Pachten – Regler für die Summe, darunter die
 // Vorhersage, mit welcher Chance er annimmt. Preis, Chance und Ergebnis rechnet src/sim/buyout.ts.
 
 import { useEffect, useState } from 'react';

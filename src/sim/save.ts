@@ -238,7 +238,7 @@ export function validateState(value: unknown): LoadResult {
   ) {
     return { ok: false, reason: UNVOLLSTAENDIG };
   }
-  // Feldkauf (0.4.20+26): Wartezeit je Ranch – freiwillig, wenn da: Ranch-Kennung → Runde.
+  // Feldkauf (0.4.20+27): Wartezeit je Ranch – freiwillig, wenn da: Ranch-Kennung → Runde.
   if (value.buyouts !== undefined && (!istObjekt(value.buyouts) || !Object.values(value.buyouts).every(istZahl))) return { ok: false, reason: UNVOLLSTAENDIG };
   // 4.6 Andockpunkt: Die Raffinerie ist optional (fehlt in Kapitel 1); wenn sie da ist, muss sie stimmen.
   if (value.refinery !== undefined && !isRefineryState(value.refinery)) return { ok: false, reason: UNVOLLSTAENDIG };

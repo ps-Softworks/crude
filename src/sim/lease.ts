@@ -263,7 +263,7 @@ export function exerciseOption(state: GameState, balance: Balance, parcelId: str
 
 /**
  * Startoptionen: freie Optionen auf verschiedenen Ranches in Randlage, per Seed gewählt.
- * Die erste wird die Startquelle (0.4.20+25, makeSureStart in game.ts): sicheres Öl in 300 m.
+ * Die erste wird die Startquelle (0.4.20+26, makeSureStart in game.ts): sicheres Öl in 300 m.
  * Die übrigen bleiben Zufall. Jede Option verbraucht genau einen Zufallswert, wie zuvor.
  */
 export function startOptions(state: GameState, balance: Balance, rng: Rng): LeaseOption[] {

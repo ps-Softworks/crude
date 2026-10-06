@@ -346,7 +346,7 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
     const s = rng.float();
     const depth = stageOf(balance, well.stage).depth;
     // Stahlgestänge (0.2.15+7) senkt Unfall- und Klemm-Chance des Turms; 0.4.20+9: Bohrtiefe aus der Forschung auch.
-    // Startquelle (0.4.20+25): Das erste Loch läuft ohne Unfall und Klemmen – „sicher“ heißt sicher.
+    // Startquelle (0.4.20+26): Das erste Loch läuft ohne Unfall und Klemmen – „sicher“ heißt sicher.
     const sicher = input.parcels.find((p) => p.id === well.parcelId)?.sure && well.stage === 1;
     const risiko = sicher ? { accident: 0, stuck: 0 } : rigRisk(balance, findRig(input, well.rigId), techStage(input, balance, well.stage));
     if (a < risiko.accident) {

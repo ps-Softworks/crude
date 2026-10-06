@@ -1,4 +1,4 @@
-// Feldkauf (0.4.20+26, Tester-Wunsch): Jacob kauft der Konkurrenz eine Pacht ab – mit allem, was darauf steht.
+// Feldkauf (0.4.20+27, Tester-Wunsch): Jacob kauft der Konkurrenz eine Pacht ab – mit allem, was darauf steht.
 // Bullard nennt keinen Preis; Jacob wählt eine Summe und sieht vorher, mit welcher Chance Bullard annimmt.
 //
 // Bullards Preisvorstellung (Wert):

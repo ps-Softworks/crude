@@ -19,7 +19,7 @@ import { balance } from '../balance';
 import { barrels, money, percent, rounds, units } from '../format';
 import { STATUS_LABEL, ranchStatus } from '../mapShapes';
 import { SeismikZeile } from '../Kapitel3Ranch'; // 4.17 Andockpunkt
-import { Feldkauf } from './Feldkauf'; // Feldkauf (0.4.20+26)
+import { Feldkauf } from './Feldkauf'; // Feldkauf (0.4.20+27)
 // Termine als Hauptwerkzeug (Etappe 1): Wissensstand, Hinweise und Erkundungs-Karten.
 import { knowledgeOf, knowledgeView } from '../../sim/exploration';
 import { bookCard, planView } from '../../sim/plans';

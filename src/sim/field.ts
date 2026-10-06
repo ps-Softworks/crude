@@ -53,7 +53,7 @@ export function buildFields(parcels: readonly Parcel[]): Field[] {
       gruppe.push(parcel);
       for (const id of parcel.neighbors) {
         const nachbar = byId.get(id);
-        // Die Startquelle (0.4.20+25) ist eine eigene Lagerstätte – sie verbindet sich mit keinem Nachbarn.
+        // Die Startquelle (0.4.20+26) ist eine eigene Lagerstätte – sie verbindet sich mit keinem Nachbarn.
         if (parcel.sure || nachbar?.sure) continue;
         if (nachbar && hasOil(nachbar) && !besucht.has(nachbar.id)) {
           besucht.add(nachbar.id);

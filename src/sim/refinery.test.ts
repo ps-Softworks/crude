@@ -216,16 +216,27 @@ describe('Raffinerie: Preise und Absatz', () => {
     const wenig = productPrice('kerosene', 100, R.crudeRef, welt, balance);
     const normal = productPrice('kerosene', p.demand, R.crudeRef, welt, balance);
     const viel = productPrice('kerosene', p.demand * 100, R.crudeRef, welt, balance);
+    const roh = p.crudeLink * R.crudeRef;
     expect(normal).toBeCloseTo(p.basePrice, 2);
-    expect(wenig).toBeCloseTo(p.basePrice * p.ceiling, 2);
-    expect(viel).toBeCloseTo(p.basePrice * p.floor, 2);
+    expect(wenig).toBeCloseTo(roh + (p.basePrice - roh) * p.ceiling, 2);
+    expect(viel).toBeCloseTo(roh + (p.basePrice - roh) * p.floor, 2);
+    // Auch ein überschwemmter Markt bleibt über dem Wert des Rohöls darin.
+    expect(viel).toBeGreaterThan(roh);
   });
 
-  it('der Preis folgt dem Rohölpreis zum Anteil crudeLink', () => {
-    const p = R.products.fuelOil;
-    const basis = productPrice('fuelOil', p.demand, R.crudeRef, welt, balance);
-    const doppelt = productPrice('fuelOil', p.demand, 2 * R.crudeRef, welt, balance);
-    expect(doppelt / basis).toBeCloseTo(1 + p.crudeLink, 2);
+  it('der Preis folgt dem Rohölpreis: je $ Rohöl um crudeLink $, die Spanne bleibt', () => {
+    for (const prod of PRODUCTS) {
+      const p = R.products[prod];
+      const basis = productPrice(prod, p.demand, R.crudeRef, welt, balance);
+      const teurer = productPrice(prod, p.demand, R.crudeRef + 0.5, welt, balance);
+      expect(teurer - basis).toBeCloseTo(0.5 * p.crudeLink, 2);
+    }
+  });
+
+  it('balance.yaml braucht eine Raffineriespanne', () => {
+    const raw = structuredClone(rawBalance()) as Record<string, any>;
+    raw.refinery.products.kerosene.basePrice = 0.5;
+    expect(() => parseBalance(raw)).toThrow(BalanceError);
   });
 
   it('Nachfrage wandelt sich: Benzin wächst mit den Jahren, Kerosin schrumpft, Heizöl im Krieg', () => {
@@ -458,11 +469,12 @@ describe('Raffinerie: Balance in Stufe I (Bezugswelt, Rohöl zum Bezugspreis)', 
     expect(nachfrage / ausbeute).toBeLessThan(2);
   });
 
-  it('gut eingestellt bringt klar mehr als der Rohölverkauf, mit Startmix und voller Menge weniger', () => {
+  it('gut eingestellt bringt klar mehr als der Rohölverkauf, mit Startmix und voller Menge nur wenig mehr', () => {
     const s = stufe1(R.startMix, 1);
     const best = bestRefinerySetting(s, balance, { world: welt });
-    expect(best.gain / best.crude).toBeGreaterThan(0.4);
-    expect(gewinn(s)).toBeLessThan(0);
+    expect(best.gain / best.crude).toBeGreaterThan(0.5);
+    expect(gewinn(s)).toBeGreaterThan(0);
+    expect(gewinn(s)).toBeLessThan(0.5 * best.gain);
     // Die gefundene Einstellung ist gültig und bringt, was sie verspricht.
     expect(normalizeMix(best.mix, refineryMixBounds(s, balance, 1))).toEqual(best.mix);
     expect(gewinn(ok(setRefineryIntake(ok(setRefineryMix(s, balance, best.mix)), best.intake)))).toBeCloseTo(best.gain, 0);

@@ -363,7 +363,7 @@ describe('Startoptionen', () => {
     }
   });
 
-  it('Startquelle (0.4.20+25): die erste Startoption ist sicheres Öl in eigener Lagerstätte mit sureReserves Barrel', () => {
+  it('Startquelle (0.4.20+26): die erste Startoption ist sicheres Öl in eigener Lagerstätte mit sureReserves Barrel', () => {
     const amFund = balance.lease.locations[0].name;
     for (let i = 0; i < 200; i++) {
       const seed = `startoption-${i}`;
@@ -383,7 +383,7 @@ describe('Startoptionen', () => {
     }
   });
 
-  it('Startquelle (0.4.20+25): fündig in Stufe 1, auch wenn Unfall und Klemmen in Stufe 1 sicher wären', () => {
+  it('Startquelle (0.4.20+26): fündig in Stufe 1, auch wenn Unfall und Klemmen in Stufe 1 sicher wären', () => {
     const stages = balance.drilling.stages.map((st, i) => (i === 0 ? { ...st, accident: 1, stuck: 1 } : st));
     const riskant: Balance = { ...balance, drilling: { ...balance.drilling, stages } };
     for (let i = 0; i < 30; i++) {
@@ -401,7 +401,7 @@ describe('Startoptionen', () => {
     }
   });
 
-  it('Startquelle (0.4.20+25): Prognose und Ausblick sagen „Öl sicher“ statt einer Bandbreite', () => {
+  it('Startquelle (0.4.20+26): Prognose und Ausblick sagen „Öl sicher“ statt einer Bandbreite', () => {
     const state = newGame('sicher-anzeige', balance);
     const f = state.forecasts[state.options[0].parcelId];
     expect(formatForecast(f)).toBe('Öl sicher');

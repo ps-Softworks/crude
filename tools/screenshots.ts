@@ -222,7 +222,7 @@ interface Bild {
 
 const RUHE: Record<string, string> = { 'crude.zeitung': 'aus', 'crude.rundgang': 'gesehen', 'crude.rundgang.k2': 'gesehen', 'crude.rundgang.k3': 'gesehen' };
 const JACOBS_RANCH = `(() => { const r = [...document.querySelectorAll('.karte-ranch')].find((g) => /Jacobs (Pacht|Option)/.test(g.getAttribute('aria-label'))) ?? document.querySelector('.karte-ranch'); r.dispatchEvent(new MouseEvent('click', { bubbles: true })); })()`;
-// Feldkauf (0.4.20+26): eine Ranch Bullards mit fördernder Quelle anklicken.
+// Feldkauf (0.4.20+27): eine Ranch Bullards mit fördernder Quelle anklicken.
 const BULLARDS_RANCH = `(() => { const r = [...document.querySelectorAll('.karte-ranch')].find((g) => /Bullards Pacht/.test(g.getAttribute('aria-label'))); r.dispatchEvent(new MouseEvent('click', { bubbles: true })); })()`;
 const DOKUMENT_VORN = `(() => { const b = [...document.querySelectorAll('.stapel-liste button')].find((x) => x.textContent.includes('mit Dokument')); b?.click(); })()`;
 
@@ -233,7 +233,7 @@ const mitBremse = (() => {
   return { ...b, round: basis.round, freight: { ...b.freight, railLast: 9000 } };
 })();
 
-// Feldkauf (0.4.20+26): Spätere Partie, in der Bullard eine fördernde Quelle hat – nur diese Pacht bleibt seine,
+// Feldkauf (0.4.20+27): Spätere Partie, in der Bullard eine fördernde Quelle hat – nur diese Pacht bleibt seine,
 // damit das Bild sie sicher trifft.
 const mitBullardQuelle = (() => {
   const s = suche((x) => x.round === 10 && x.rival.wells.some((w) => w.status === 'found') && !x.finished, [10]);

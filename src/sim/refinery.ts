@@ -396,16 +396,19 @@ export function productDemand(product: Product, world: RefineryWorld, balance: B
 }
 
 /**
- * Preis in $ je Barrel, wenn Jacob `sold` Barrel anbietet. Ein Teil des Preises
- * folgt dem Rohölpreis (crudeLink), der Rest ist fest. Mehr Angebot als
- * Nachfrage drückt den Preis (Elastizität), weniger hebt ihn – begrenzt auf
- * floor..ceiling des Grundpreises.
+ * Preis in $ je Barrel, wenn Jacob `sold` Barrel anbietet (0.4.20+25):
+ *   Preis = Rohöl im Produkt (crudeLink × Posted Price) + Raffineriespanne.
+ * Der Rohölanteil folgt dem Rohölpreis ganz – steigt das Rohöl, steigen die Produkte mit.
+ * Die Spanne (Grundpreis − Rohölanteil beim Bezugspreis) hängt an Angebot und Nachfrage:
+ * Mehr Angebot drückt sie (Elastizität), weniger hebt sie – begrenzt auf floor..ceiling.
+ * Ein überschwemmter Markt kostet also Spanne, aber das Produkt fällt nie unter den Wert des Rohöls.
  */
 export function productPrice(product: Product, sold: number, postedPrice: number, world: RefineryWorld, balance: Balance): number {
   const p = balance.refinery.products[product];
-  const bindung = 1 - p.crudeLink + (p.crudeLink * postedPrice) / balance.refinery.crudeRef;
+  const roh = p.crudeLink * postedPrice;
+  const spanne = p.basePrice - p.crudeLink * balance.refinery.crudeRef;
   const knapp = (productDemand(product, world, balance) / Math.max(sold, 1)) ** p.elasticity;
-  return cents(p.basePrice * bindung * clamp(knapp, p.floor, p.ceiling));
+  return cents(roh + spanne * clamp(knapp, p.floor, p.ceiling));
 }
 
 // --- Zufuhr über die Transportwege (GDD §6: Felder → Raffinerie) ----------------

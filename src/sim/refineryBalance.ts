@@ -52,9 +52,12 @@ export interface ProductBalance {
   /** Was der Großhandel je Runde zum Grundpreis abnimmt (bbl). */
   demand: number;
   elasticity: number;
-  /** Anteil des Preises, der dem Rohölpreis folgt (0 = gar nicht, 1 = ganz). */
+  /**
+   * 0.4.20+25: Rohöl im Produkt – je $ Rohölpreis steigt der Produktpreis um so viel (1 = ganz). Der Rest des
+   * Grundpreises ist die Raffineriespanne; nur sie hängt an Angebot und Nachfrage.
+   */
   crudeLink: number;
-  /** Preisgrenzen als Anteil am Grundpreis. */
+  /** Grenzen der Raffineriespanne als Anteil an der Spanne beim Grundpreis. */
   floor: number;
   ceiling: number;
   trend: ProductTrend;
@@ -182,6 +185,11 @@ export function parseRefineryBalance(raw: unknown): RefineryBalance {
   }
   const products = {} as Record<Product, ProductBalance>;
   for (const prod of PRODUCTS) products[prod] = parseProduct(raw, prod);
+  const crudeRef = positive(raw, 'crudeRef');
+  for (const prod of PRODUCTS) {
+    const pr = products[prod];
+    if (pr.basePrice <= pr.crudeLink * crudeRef) fail(`products.${prod}`, 'braucht basePrice > crudeLink × crudeRef (sonst gibt es keine Raffineriespanne)');
+  }
   return {
     unlockChapter: int(raw, 'unlockChapter', 1),
     buildCost: nonNeg(raw, 'buildCost'),
@@ -195,7 +203,7 @@ export function parseRefineryBalance(raw: unknown): RefineryBalance {
     assetShare: share(raw, 'assetShare'),
     fire: { chance: share(raw, 'fire.chance'), repairCost: nonNeg(raw, 'fire.repairCost'), repairRounds: int(raw, 'fire.repairRounds', 1) },
     sour: { yieldLoss: share(raw, 'sour.yieldLoss'), costAdd: nonNeg(raw, 'sour.costAdd') },
-    crudeRef: positive(raw, 'crudeRef'),
+    crudeRef,
     worldDefaults: { tech: num(raw, 'worldDefaults.tech'), tension: num(raw, 'worldDefaults.tension'), demand: positive(raw, 'worldDefaults.demand') },
     techs,
     startMix,

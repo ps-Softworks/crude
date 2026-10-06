@@ -37,7 +37,7 @@ function ohneZeit(state: GameState): GameState {
   return { ...state, agenda: { ...state.agenda, used: state.agenda.budget } };
 }
 
-/** Spiel ohne die Startquelle (0.4.20+25): Option weg, Prognose weg – für die Regeln dahinter. */
+/** Spiel ohne die Startquelle (0.4.20+26): Option weg, Prognose weg – für die Regeln dahinter. */
 function ohneStartquelle(state: GameState): GameState {
   const sicher = state.options[0].parcelId;
   const forecasts = { ...state.forecasts };
@@ -128,7 +128,7 @@ describe('Wann der Einstieg läuft (tutorialActive)', () => {
 
 describe('Schritt 1: Pacht', () => {
   it('Etappe 1: sieht nichts Bezahlbares gut aus, rät er erst zum Ritt übers Land – ohne Überstunden', () => {
-    // 0.4.20+25: ohne die Startquelle – ein Seed, auf dem dann nichts Bezahlbares über exploreBelow liegt.
+    // 0.4.20+26: ohne die Startquelle – ein Seed, auf dem dann nichts Bezahlbares über exploreBelow liegt.
     const nichtsGut = (s: ReturnType<typeof newGame>) => {
       const z = recommendedParcel(s, balance);
       return z === null || shownChance(s, z.parcelId) < balance.tutorial.exploreBelow;
@@ -147,7 +147,7 @@ describe('Schritt 1: Pacht', () => {
     expect(hint(ohneZeit(state)).id).not.toBe('explore');
   });
 
-  it('Startquelle (0.4.20+25): rät zu Beginn immer zuerst, die sichere Option einzulösen', () => {
+  it('Startquelle (0.4.20+26): rät zu Beginn immer zuerst, die sichere Option einzulösen', () => {
     for (let i = 0; i < 60; i++) {
       const state = newGame(`gute-option-${i}`, balance);
       const h = hint(state);
@@ -250,7 +250,7 @@ describe('Schritt 2: Bohrung', () => {
     expect(hint(state)).toMatchObject({ id: 'loan_drill', action: { kind: 'loan' } });
   });
 
-  it('der Turm bohrt: Runde beenden – vor dem ersten Ritt erst übers Land reiten (Startquelle, 0.4.20+25)', () => {
+  it('der Turm bohrt: Runde beenden – vor dem ersten Ritt erst übers Land reiten (Startquelle, 0.4.20+26)', () => {
     const state = mitBohrung('drilling');
     expect(hint(state)).toMatchObject({ id: 'explore_wait', step: 'drill', action: { kind: 'plan', cardId: 'ritt' } });
     const geritten = hintTurn(state, balance, 1);
