@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { acceptChance, buyoutBlocker, buyoutQuote, goodLandScarcity, offerBuyout } from './buyout';
+import { buyoutCount, buyoutTurn } from './bots';
 import { endRound, newGame, type GameState } from './game';
 import { leaseOf } from './lease';
 import { deserializeGame, serializeGame } from './save';
@@ -164,5 +165,22 @@ describe('Feldkauf: Angebot', () => {
     const geladen = deserializeGame(serializeGame(s, 'test'));
     if (!geladen.ok) throw new Error(geladen.reason);
     expect(geladen.state.buyouts).toEqual({ [id]: state.round + 2 });
+  });
+});
+
+describe('Feldkauf der Bots (0.4.20+31)', () => {
+  it('bietet offer × Preis für die Ranch mit dem besten Ölfluss je Dollar – nur mit Reserve und bis maxPrice × Ölfluss', () => {
+    const { state, id } = mitBullard('bot-kauf');
+    const q = buyoutQuote(state, balance, id)!;
+    const willig: typeof balance = { ...balance, bots: { ...balance.bots, buyout: { ...balance.bots.buyout, balanced: { offer: 1.1, maxPrice: 99, reserve: 0 } } } };
+    const nachher = buyoutTurn(state, willig, 'ausgewogen');
+    expect(buyoutCount(nachher)).toMatchObject({ offers: 1 });
+    const betrag = Math.round((q.value * 1.1) / q.step) * q.step;
+    if (buyoutCount(nachher).accepted === 1) expect(nachher.cash).toBe(state.cash - betrag);
+    // Zu teuer gemessen am Ölfluss: kein Angebot.
+    const geizig: typeof balance = { ...balance, bots: { ...balance.bots, buyout: { ...balance.bots.buyout, balanced: { offer: 1.1, maxPrice: 0.1, reserve: 0 } } } };
+    expect(buyoutTurn(state, geizig, 'ausgewogen')).toBe(state);
+    // Keine Reserve übrig: kein Angebot.
+    expect(buyoutTurn({ ...state, cash: betrag }, { ...willig, bots: { ...willig.bots, buyout: { ...willig.bots.buyout, balanced: { offer: 1.1, maxPrice: 99, reserve: 1 } } } }, 'ausgewogen').cash).toBe(betrag);
   });
 });

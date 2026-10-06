@@ -4,7 +4,7 @@
 // Aufruf: npm run bots
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { loadBalance } from '../src/sim/testBalance';
-import { blindWildcatChance, botTable, buildTable, checkTargets, crisisTable, investVariant, pipelineLine, runBots, runInvestVariant, targetTable, transportTable } from '../src/sim/bots';
+import { blindWildcatChance, botTable, buildTable, checkTargets, crisisTable, investVariant, buyoutLine, pipelineLine, runBots, runInvestVariant, targetTable, transportTable } from '../src/sim/bots';
 import { loadEvents } from '../src/sim/testEvents';
 import { runTimeskipBots, timeskipTables } from '../src/sim/timeskipBots';
 
@@ -35,7 +35,7 @@ const sprungTabellen = timeskipTables(sprung);
 const sekunden = ((Date.now() - start) / 1000).toFixed(1);
 
 console.log(table);
-console.log(`\n${wege}\nPipeline: ${pipelineLine(rows)}`);
+console.log(`\n${wege}\nPipeline: ${pipelineLine(rows)}\nFeldkauf: ${buyoutLine(rows)}`);
 console.log(`\n${ausbau}\n„alles ausbauen“ schlägt den Standard-Bot in ${prozent(variants.all.beatsStandard)}, „nie ausbauen“ in ${prozent(variants.none.beatsStandard)} der Seeds mit unterschiedlichem Ausgang.`);
 console.log(`\nKreditzyklus (Bankpanik oder Crash im Kapitel):\n${krisen}`);
 console.log(`\nZeitsprung I (${sprung.ends} Kapitelenden des Standard-Bots):\n${sprungTabellen}`);
@@ -84,6 +84,8 @@ Anteil an allen verkauften Barrel (gesamt und je Strategie). Erlös = was nach F
 ${wege}
 
 Pipeline lief in: ${pipelineLine(rows)}.
+
+Feldkauf (Ø je Partie, balance.yaml bots.buyout): ${buyoutLine(rows)}.
 
 - **Transport-Charakter** (balance.yaml bots.transport): vorsichtig ${JSON.stringify(balance.bots.transport.cautious)}; gierig ${JSON.stringify(balance.bots.transport.greedy)}; ausgewogen ${JSON.stringify(balance.bots.transport.balanced)}; betrügerisch wie ausgewogen; zufällig: mit ${prozent(balance.bots.random.logisticsChance)} je Runde eine zufällige Anschaffung, verkauft zufällig auch an den Händler.
 

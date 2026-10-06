@@ -531,6 +531,8 @@ export interface BotsBalance {
   rightsEstimate: number;
   /** Wie die planenden Bots in Türme, Bohrlöcher und Pumpen investieren (0.2.15+7). */
   invest: Record<'cautious' | 'greedy' | 'balanced', BotInvest>;
+  /** Feldkauf (0.4.20+31): Angebot = offer × Bullards Preis, nur bis maxPrice × Ölfluss und mit reserve $ Rest. */
+  buyout: Record<'cautious' | 'greedy' | 'balanced', { offer: number; maxPrice: number; reserve: number }>;
   /**
    * Erkundung (Etappe 1): Solange der Bot weniger als known bezahlbare freie Ranches kennt, die
    * mindestens until versprechen, reitet er bis zu rides Mal je Runde übers Land (Karte „Übers Land reiten“).
@@ -1959,6 +1961,11 @@ function parseBots(raw: unknown): BotsBalance {
       cautious: { rides: nonNegativeInt(raw, 'bots.explore.cautious.rides'), until: share(raw, 'bots.explore.cautious.until'), known: positiveInt(raw, 'bots.explore.cautious.known') },
       greedy: { rides: nonNegativeInt(raw, 'bots.explore.greedy.rides'), until: share(raw, 'bots.explore.greedy.until'), known: positiveInt(raw, 'bots.explore.greedy.known') },
       balanced: { rides: nonNegativeInt(raw, 'bots.explore.balanced.rides'), until: share(raw, 'bots.explore.balanced.until'), known: positiveInt(raw, 'bots.explore.balanced.known') },
+    },
+    buyout: {
+      cautious: { offer: num(raw, 'bots.buyout.cautious.offer'), maxPrice: num(raw, 'bots.buyout.cautious.maxPrice'), reserve: num(raw, 'bots.buyout.cautious.reserve') },
+      greedy: { offer: num(raw, 'bots.buyout.greedy.offer'), maxPrice: num(raw, 'bots.buyout.greedy.maxPrice'), reserve: num(raw, 'bots.buyout.greedy.reserve') },
+      balanced: { offer: num(raw, 'bots.buyout.balanced.offer'), maxPrice: num(raw, 'bots.buyout.balanced.maxPrice'), reserve: num(raw, 'bots.buyout.balanced.reserve') },
     },
     invest: {
       cautious: parseBotInvest(raw, 'cautious'),
