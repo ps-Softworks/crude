@@ -390,4 +390,18 @@ describe('Ein ganzer Durchlauf Kapitel 1 → 3 mit Bots', () => {
     const knapp = mit(p - 0.01);
     expect(Object.values(botChapterSystems(knapp, balance).brand!.regions).some((r) => r.building.length > 0)).toBe(true);
   });
+
+  it('der Bot baut nicht weiter, wo die Tankstellen zuletzt Verlust machten (0.4.20+7)', () => {
+    const s = botChapterSystems(k3('bot-verlust', { cash: 500000 }), balance);
+    const b = brandOf(s, balance);
+    const mit = (profit: number): GameState => {
+      const regions = Object.fromEntries(
+        Object.entries(b.regions).map(([id, r]) => [id, { ...r, stations: 5, building: [], last: { demand: 1000, sales: 100, craneSales: 0, share: 0.1, craneShare: 0, profit, priceWar: false } }]),
+      );
+      return { ...s, brand: { ...b, regions } };
+    };
+    const verlust = mit(-1);
+    expect(botChapterSystems(verlust, balance)).toBe(verlust);
+    expect(Object.values(botChapterSystems(mit(0), balance).brand!.regions).some((r) => r.building.length > 0)).toBe(true);
+  });
 });

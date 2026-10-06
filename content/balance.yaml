@@ -1836,7 +1836,7 @@ brand:
     cost: 17500             # $ je Tankstelle (× costFactor der Region); 0.4.20+6: 6.000 → 17.500 – bei 6.000 erreichte der Standard-Bot das Kapitelziel 3 in 96 %, jetzt ~62 %
     buildRounds: 1          # so viele Runden dauert der Bau
     buildMax: 5             # höchstens so viele auf einmal in Auftrag geben
-    upkeep: 300             # $ je Tankstelle und Runde (Pächter, Pumpe, Lieferwagen)
+    upkeep: 900             # $ je Tankstelle und Runde (Pächter, Pumpe, Lieferwagen); 0.4.20+7: 300 → 900 – vorher machte eine Tankstelle nie Verlust, auch nicht im Crash oder Preiskampf; jetzt kostet der Wettlauf mit Crane (Kapitelziel 3 Standard-Bot 64 % → ~35 %)
     resale: 0.5             # Anteil der Baukosten beim Verkauf einer Tankstelle
     capacity: 4000          # bbl Benzin, die eine Tankstelle je Runde höchstens verkauft
     maxPerRegion: 40        # so viele Tankstellen je Marke und Region höchstens
@@ -1875,7 +1875,7 @@ brand:
     adGain: 2               # Bekanntheit je Runde durch ihre ständige Werbung
   value:
     profitMultiple: 4       # Markenwert = Gewinn des Netzes je Runde (ohne Werbewirkung, nie unter 0) × so viele Runden – ein Jahr Gewinn
-    assetShare: 0.5         # Tankstellen zählen im Imperiumswert mit diesem Anteil ihrer Baukosten
+    assetShare: 0.7         # Tankstellen zählen im Imperiumswert mit diesem Anteil ihrer Baukosten (0.4.20+7: 0,5 → 0,7 – sonst schrumpfte das Imperium in Kapitel 3, obwohl das Netz Gewinn macht)
   goal:                     # Kapitelprüfung Kapitel 3 (GDD §13): Marke in ≥ 3 Regionen oder ≥ 10 % Marktanteil
     regions: 3
     share: 0.25             # nationaler Marktanteil als zweiter Weg (0.4.20+6: 0,10 → 0,25 – 0,10 erreichte jede Marke nebenbei)

@@ -507,7 +507,8 @@ describe('Kennzahlen', () => {
   });
 
   it('Markenwert = Gewinn des Netzes je Runde × profitMultiple und hängt am Ruf', () => {
-    let s = settleBrand({ ...mitTankstellen(20), round: 5 }, balance, K3);
+    // Ein kleines Netz, das Gewinn macht (0.4.20+7: 20 Tankstellen in einer Region tragen den Unterhalt nicht mehr).
+    let s = settleBrand({ ...mitTankstellen(5), round: 5 }, balance, K3);
     for (let i = 0; i < 6; i++) s = settleBrand({ ...s, round: s.round + 1 }, balance, K3);
     const gewinn = Math.max(0, regionMarket(s.brand!, balance, 'cordova', K3).profit);
     expect(gewinn).toBeGreaterThan(0);

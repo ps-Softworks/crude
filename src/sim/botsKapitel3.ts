@@ -3,7 +3,8 @@
 // dieser Schritt vor dem Rundenende nach einfachen Regeln Hand an: Marke gründen, Tankstellen in den
 // billigsten offenen Regionen bauen (bis die Marke dort vertreten ist), solange über einer Rücklage
 // Geld da ist. 0.4.20+6: „vertreten“ heißt Marktanteil (brand.goal.presenceShare) – der Bot baut in so
-// vielen Regionen, wie das Ziel verlangt, plus einer, nach, bis der Anteil mit Abstand reicht. Rein, deterministisch, ohne Zufall. In Kapitel 2 baut er die Raffinerie (0.4.19+2), in
+// vielen Regionen, wie das Ziel verlangt, plus einer, nach, bis der Anteil mit Abstand reicht – 0.4.20+7: nicht, wo die
+// Tankstellen zuletzt Verlust machten. Rein, deterministisch, ohne Zufall. In Kapitel 2 baut er die Raffinerie (0.4.19+2), in
 // Kapitel 1 kommt derselbe Zustand zurück – die Kapitel-1-Bot-Läufe ändern sich dadurch nicht.
 
 import type { Balance } from './balance';
@@ -62,6 +63,8 @@ export function botChapterSystems(state: GameState, balance: Balance, policy: Br
     const r = brand.regions[rb.id];
     const anteil = r.last?.share ?? 0;
     if (r.stations > 0 && anteil >= goal.presenceShare + BRAND_BOT_MARGIN) continue;
+    // 0.4.20+7: Wo die Tankstellen zuletzt Verlust machten, baut er nicht weiter (Crane hält dagegen).
+    if (r.stations > 0 && (r.last?.profit ?? 0) < 0) continue;
     const bestand = r.stations + buildingCount(brand, rb.id);
     if (bestand >= BRAND_BOT_MAX_STATIONS) continue;
     const n = Math.min(policy.perRound, BRAND_BOT_MAX_STATIONS - bestand, Math.floor((s.cash - policy.reserve) / stationCost(balance, rb.id)));
