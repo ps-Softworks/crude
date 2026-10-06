@@ -12,8 +12,7 @@ import { brandOf, brandRegionOpen, brandUnlocked, brandWorldFrom, buildingCount,
 import { chapterOf } from './chapterOf';
 import { feldzugAbsprache, feldzugKredit, feldzugTilgen } from './feldzug';
 import type { GameState } from './game';
-import { roundFlow } from './timeskip';
-import { buildRefinery, crudeVsRefined, expandRefinery, plannedCrude, planRun, PRODUCTS, refineryMixBounds, type ProductMix } from './refinery';
+import { bestRefinerySetting, buildRefinery, expandRefinery, plannedCrude, planRun, refineryExpansion } from './refinery';
 
 export interface BrandBotPolicy {
   /** So viel $ bleibt immer in der Kasse. */
@@ -48,9 +47,8 @@ export function botChapter2Systems(state: GameState, balance: Balance, policy: B
 
 /**
  * Raffinerie-Betrieb (0.4.20+17, Sitzung „bot runner“): Vorher lief jede Bot-Raffinerie mit dem absichtlich schlechten
- * Start-Mix und voller Zufuhr (Amortisation ~30 statt ~10 Runden, tools/raffinerieLaeufe.ts). Jetzt wählt der Bot
- * je Runde den Mix (Gitter 5 %) und die Zufuhr (5 %-Schritte) mit dem höchsten Mehrerlös gegenüber dem Verkauf als
- * Rohöl – wie ein Spieler, der die Vorschau im Raffinerie-Fenster liest.
+ * Start-Mix und voller Zufuhr. Jetzt stellt der Bot je Runde Mix und Zufuhr mit dem höchsten Mehrerlös gegenüber dem
+ * Verkauf als Rohöl ein (bestRefinerySetting) – wie ein Spieler, der die Vorschau im Raffinerie-Fenster liest.
  */
 export function refineryGain(state: GameState, balance: Balance, crudeNet: number): number {
   const crude = plannedCrude(state, balance);
@@ -59,67 +57,25 @@ export function refineryGain(state: GameState, balance: Balance, crudeNet: numbe
   return run.revenue - run.operating - run.feed - crude * crudeNet;
 }
 
-function refineryMixes(state: GameState, balance: Balance): ProductMix[] {
-  const b = refineryMixBounds(state, balance, state.refinery!.tech);
-  const stufen = (p: (typeof PRODUCTS)[number]) => {
-    const xs: number[] = [];
-    for (let v = Math.ceil(b[p].min * 20 - 1e-9); v <= Math.floor(b[p].max * 20 + 1e-9); v++) xs.push(v);
-    return xs;
-  };
-  const [a, c, d, rest] = PRODUCTS;
-  const out: ProductMix[] = [];
-  for (const x of stufen(a))
-    for (const y of stufen(c))
-      for (const z of stufen(d)) {
-        const w = 20 - x - y - z;
-        if (w < b[rest].min * 20 - 1e-9 || w > b[rest].max * 20 + 1e-9) continue;
-        out.push({ [a]: x / 20, [c]: y / 20, [d]: z / 20, [rest]: w / 20 } as ProductMix);
-      }
-  return out;
-}
-
-/** Zum Zug des Bots ist der Tank meist leer (verkauft wird am Rundenende) – gerechnet wird mit dem Öl dieser Runde dazu. */
-export function withRoundOil(state: GameState): GameState {
-  return { ...state, oilStock: state.oilStock + roundFlow(state) };
-}
-
 export function tuneRefinery(state: GameState, balance: Balance): GameState {
   const r = state.refinery;
   if (!r || r.level === 0 || state.finished) return state;
-  const blick = withRoundOil(state);
-  const crudeNet = crudeVsRefined(blick, balance).crudeNet;
-  const mit = (s: GameState, mix: ProductMix, intake: number): GameState => ({ ...s, refinery: { ...r, mix, intake } });
-  let best = { mix: r.mix, intake: r.intake, gain: refineryGain(blick, balance, crudeNet) };
-  // Abwechselnd Mix und Zufuhr verbessern (zweimal): Welcher Mix am besten ist, hängt von der Menge ab (Preisdruck).
-  const mixe = refineryMixes(state, balance);
-  for (let runde = 0; runde < 2; runde++) {
-    const zufuhr = runde === 0 ? [1, 0.5] : [best.intake];
-    for (const intake of zufuhr)
-      for (const mix of mixe) {
-        const g = refineryGain(mit(blick, mix, intake), balance, crudeNet);
-        if (g > best.gain + 1e-6) best = { mix, intake, gain: g };
-      }
-    for (let i = 0; i <= 20; i++) {
-      const g = refineryGain(mit(blick, best.mix, i / 20), balance, crudeNet);
-      if (g > best.gain + 1e-6) best = { ...best, intake: i / 20, gain: g };
-    }
-  }
-  if (best.mix === r.mix && best.intake === r.intake) return state;
-  return mit(state, best.mix, best.intake);
+  // 0.4.20+18: Die Simulation rechnet die beste Einstellung selbst (Raster 5 % + Feinsuche, Benzin für die eigenen Tankstellen).
+  const best = bestRefinerySetting(state, balance);
+  if (JSON.stringify(best.mix) === JSON.stringify(r.mix) && best.intake === r.intake) return state;
+  return { ...state, refinery: { ...r, mix: best.mix, intake: best.intake } };
 }
 
 /** Mix und Zufuhr einstellen, dann ausbauen, wenn der Mehrerlös bis Kapitelende die Kosten × refineryExpand deckt. */
 export function runRefinery(state: GameState, balance: Balance, policy: BrandBotPolicy): GameState {
-  let s = tuneRefinery(state, balance);
+  const s = tuneRefinery(state, balance);
   const r = s.refinery;
   const faktor = policy.refineryExpand;
   const b = balance.refinery;
-  if (!r || faktor == null || r.project || r.level === 0 || r.level >= b.maxLevel || s.cash < b.expandCost + policy.reserve) return s;
-  const crudeNet = crudeVsRefined(withRoundOil(s), balance).crudeNet;
-  const groesser = tuneRefinery({ ...s, refinery: { ...r, level: r.level + 1 } }, balance);
-  const mehr = refineryGain(withRoundOil(groesser), balance, crudeNet) - refineryGain(withRoundOil(s), balance, crudeNet) - b.upkeepPerLevel;
+  if (!r || faktor == null || r.project || r.level === 0 || s.cash < b.expandCost + policy.reserve) return s;
+  const aus = refineryExpansion(s, balance);
   const rest = s.totalRounds - s.round - b.expandRounds;
-  if (mehr <= 0 || mehr * rest < b.expandCost * faktor) return s;
+  if (!aus || aus.payback === null || aus.gain * rest < aus.cost * faktor) return s;
   const e = expandRefinery(s, balance);
   return e.ok ? e.state : s;
 }
