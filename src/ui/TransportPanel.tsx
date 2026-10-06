@@ -2,6 +2,8 @@
 // eigene Fuhrwerke, Pipeline und Thorne. Hier wird nichts gerechnet und nichts
 // entschieden – Preise, Kosten, Kapazitäten und Gründe kommen aus src/sim.
 
+import { openBuyers } from '../sim/buyers';
+import { contactNames } from './plans';
 import { useState } from 'react';
 import { BUYERS, TRANSPORT_MODES, type Buyer, type TransportMode } from '../sim/balance';
 import type { GameState } from '../sim/game';
@@ -40,7 +42,13 @@ function price(value: number): string {
   return `${value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${NBSP}$`;
 }
 
-const BUYER_LABEL: Record<Buyer, string> = { crane: 'Crane Trust', trader: T.trader.label };
+const BUYER_LABEL: Record<'crane' | 'trader', string> = { crane: 'Crane Trust', trader: T.trader.label };
+
+/** 0.4.20+43: Name eines Käufers – die Großhändler heißen wie ihre Stelle im Adressbuch. */
+function buyerLabel(b: Buyer): string {
+  if (b === 'crane' || b === 'trader') return BUYER_LABEL[b];
+  return contactNames[balance.buyers[b].contact] ?? b;
+}
 
 /** Knopf für eine Aktion aus src/sim/logistics: gesperrt mit Grund, wenn sie nicht geht. */
 function Aktion({ result, onDone, children }: { result: LogisticsResult; onDone: (s: GameState) => void; children: string }) {
@@ -89,15 +97,23 @@ export function SalePanel({ game, onSold }: { game: GameState; onSold: (state: G
           {nachwirkungRunden} {nachwirkungRunden === 1 ? 'Runde' : 'Runden'}).
         </p>
       )}
-      {groll > 0 && <p className="hint">Crane ist verärgert, weil du an den Händler verkauft hast: {price(groll)} je Barrel weniger.</p>}
+      {groll > 0 && <p className="hint">Crane ist verärgert, weil du an einen anderen Abnehmer verkauft hast: {price(groll)} je Barrel weniger.</p>}
       <Vertraege game={game} />
       <fieldset className="kaeufer">
         <legend>Käufer</legend>
-        {BUYERS.map((b) => (
+        {[...BUYERS, ...openBuyers(game, balance)].map((b) => (
           <label key={b}>
-            <input type="radio" name="kaeufer" checked={buyer === b} onChange={() => setBuyer(b)} /> {BUYER_LABEL[b]} –{' '}
+            <input type="radio" name="kaeufer" checked={buyer === b} onChange={() => setBuyer(b)} /> {buyerLabel(b)} –{' '}
             {price(buyerPrice(game, balance, b))} je Barrel
             {b === 'trader' && <> (nimmt noch {barrels(buyerCapacityLeft(game, balance, b))} bbl; Crane merkt es sich)</>}
+            {b !== 'crane' && b !== 'trader' && (
+              <>
+                {' '}
+                (nimmt noch {barrels(buyerCapacityLeft(game, balance, b))} bbl
+                {balance.buyers[b].freight > 0 && <>, weiter Weg: +{price(balance.buyers[b].freight)} Fracht</>}
+                {balance.buyers[b].defaultChance > 0 && <>, zahlt nicht immer</>}; Crane merkt es sich)
+              </>
+            )}
           </label>
         ))}
       </fieldset>
@@ -397,7 +413,7 @@ function ThorneVerhandlung({ game }: { game: GameState }) {
           Transportgemeinschaft: {v.pool.members.join(', ')} – {barrels(v.pool.volume)} bbl je Runde mehr auf der Bahn{v.pool.pipeline ? ', Pipeline gemeinsam' : ''}. Rabatt {price(v.pool.discount)} je Barrel; Zusage an Thorne: zusammen mindestens {barrels(v.pool.minimum)} bbl je Runde, sonst Strafe.
         </p>
       )}
-      <p className="klein">Vorsprechen, Brennan und Gemeinschaft liegen als Karten im Kalender (T), Reiter Fracht.</p>
+      <p className="klein">Thorne, Brennan und die Transportgemeinschaft erreichst du über das Adressbuch (T) – sobald du sie kennst.</p>
     </div>
   );
 }

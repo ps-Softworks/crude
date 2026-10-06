@@ -9,6 +9,7 @@
 // Ab 0.4.5: Zeitsprung nach Kapitel 1 – Brief an den Verwalter, Weichen-Telegramme,
 // Chronik „Die Jahre dazwischen“, dann Kapitel 2 (Platzhalter) am Schreibtisch.
 
+import { contactNames } from './plans';
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { agendaView } from '../sim/agenda';
 import { decideIpo } from '../sim/chapter';
@@ -337,7 +338,7 @@ export function App() {
 
   function end() {
     if (game.finished) return;
-    const next = endRound(game, balance, events, { kapitel3: k3 }); // 4.17 Andockpunkt: Kapitel-3-Texte für die Kladde
+    const next = endRound(game, balance, events, { kapitel3: k3, contactNames }); // 4.17 Andockpunkt: Kapitel-3-Texte für die Kladde
     // Rundenwechsel (2c): Kalenderblatt, neues Datum. Was geschah, steht danach im Rundenbericht.
     // Am Kapitelende kommt das Tableau.
     if (!next.ending) {

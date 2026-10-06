@@ -43,8 +43,8 @@ schritte:
       en: In the freight folder (F, V) you sell oil and plan transport.
   - objekt: termine
     text:
-      de: Der Kalender (T) ist Jacobs Planungsbrett – sein wichtigstes Werkzeug. Hier reitet er übers Land, spricht mit Farmern und Geologen (Reiter Land), macht Preise (Markt) und verhandelt mit der Bahn (Fracht). Jede Karte kostet Termine; zu viele kosten Kraft.
-      en: The calendar (T) is Jacob's planning board – his most important tool. Here he rides the country, talks to farmers and geologists (Land tab), sets prices (Market) and bargains with the railway (Freight). Every card costs appointments; too many cost strength.
+      de: Der Kalender (T) ist Jacobs Adressbuch – sein wichtigstes Werkzeug. Links stehen die Leute, die er kennt, rechts ihre Angebote. Jede Karte kostet Termine; zu viele kosten Kraft. Wer mit jemandem Geschäfte macht, gewinnt sein Vertrauen – und bekommt Empfehlungen an neue Leute.
+      en: The calendar (T) is Jacob's address book – his most important tool. On the left are the people he knows, on the right their offers. Every card costs appointments; too many cost strength. Doing business with someone earns their trust – and introductions to new people.
   - objekt: familie
     text:
       de: Das Familienfoto (H) zeigt, wie es um deine Familie steht. Vergiss sie nicht.

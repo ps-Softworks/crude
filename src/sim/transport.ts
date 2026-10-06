@@ -8,6 +8,7 @@
 
 import type { Balance, Buyer, TransportMode } from './balance';
 import { afterSale, bulkExtra, saleAdjust } from './deals';
+import { extraBuyerCapacityLeft, extraBuyerPrice, isExtraBuyer, recordBuyerSale } from './buyers';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
 import { LOGISTICS_MARKS, pipelineWorks, teamCapacity, teamsIdle, withMark } from './logistics';
@@ -39,7 +40,7 @@ function dollars(value: number): string {
 }
 
 /** Was eine Verkaufsrechnung vom Zustand braucht. */
-type Verkaufslage = Pick<GameState, 'railTariff' | 'postedPrice' | 'round'> & Partial<Pick<GameState, 'events' | 'logistics' | 'pricing' | 'freight' | 'ventures' | 'wildcatters' | 'rival' | 'deals'>>;
+type Verkaufslage = Pick<GameState, 'railTariff' | 'postedPrice' | 'round'> & Partial<Pick<GameState, 'events' | 'logistics' | 'pricing' | 'freight' | 'ventures' | 'wildcatters' | 'rival' | 'deals' | 'network' | 'buyers' | 'chapter'>>;
 
 /** Strafe je Barrel, die Thorne während eines Exklusivvertrags für andere Wege verlangt. */
 export function exclusiveSurcharge(state: Verkaufslage, balance: Balance, mode: TransportMode): number {
@@ -113,13 +114,16 @@ export function modeUnavailable(state: Pick<GameState, 'round' | 'logistics'> & 
  */
 export function buyerPrice(state: Verkaufslage, balance: Balance, buyer: Buyer = 'crane'): number {
   if (buyer === 'crane') return jacobPrice(state, balance);
+  // 0.4.20+43: weitere Großhändler (buyers.ts).
+  if (isExtraBuyer(buyer)) return extraBuyerPrice(state, balance, buyer);
   const vertrag = activeContract(state, 'haendler');
   return vertrag ? vertrag.price : cents(state.postedPrice + balance.transport.trader.premium);
 }
 
 /** Wie viel der Käufer in dieser Runde noch nimmt (Crane: alles; Händler mit Liefervertrag: die Vertragsmenge). */
-export function buyerCapacityLeft(state: Partial<Pick<GameState, 'logistics' | 'round' | 'pricing' | 'deals'>>, balance: Balance, buyer: Buyer): number {
+export function buyerCapacityLeft(state: Partial<Pick<GameState, 'logistics' | 'round' | 'pricing' | 'deals' | 'network' | 'buyers' | 'chapter' | 'postedPrice'>>, balance: Balance, buyer: Buyer): number {
   if (buyer === 'crane') return Infinity;
+  if (isExtraBuyer(buyer)) return extraBuyerCapacityLeft({ postedPrice: 0, ...state }, balance, buyer);
   const vertrag = state.round !== undefined ? activeContract({ round: state.round, pricing: state.pricing }, 'haendler') : null;
   // 0.4.20+31: Großabnahme – in dieser Runde nimmt der Händler mehr (deals.ts).
   return Math.max(0, (vertrag ? vertrag.qty : balance.transport.trader.capacity) + bulkExtra(state, balance) - (state.logistics?.traderSold ?? 0));
@@ -127,7 +131,12 @@ export function buyerCapacityLeft(state: Partial<Pick<GameState, 'logistics' | '
 
 /** Was je Barrel nach Fracht übrig bleibt (vor Förderzins). */
 export function netPrice(state: Verkaufslage, balance: Balance, mode: TransportMode, buyer: Buyer = 'crane'): number {
-  return cents(buyerPrice(state, balance, buyer) - tariff(state, balance, mode));
+  return cents(buyerPrice(state, balance, buyer) - tariff(state, balance, mode) - buyerFreight(balance, buyer));
+}
+
+/** 0.4.20+43: Zusatzfracht je Barrel zu einem fernen Großhändler (0 für Crane und den Händler im Hafen). */
+export function buyerFreight(balance: Balance, buyer: Buyer): number {
+  return isExtraBuyer(buyer) ? balance.buyers[buyer].freight : 0;
 }
 
 export interface SaleQuote {
@@ -160,12 +169,21 @@ export function quoteSale(
   // 0.4.20+31: Frachtkontingent (schon bezahlte Bahnfracht) und Cranes Vorschuss (schon bezahltes Öl) – deals.ts.
   const deal = saleAdjust(state, mode, buyer, barrels, price, fracht);
   const gross = cents(barrels * price - deal.prepaid);
-  const transportCost = cents(barrels * fracht - deal.freight);
+  const transportCost = cents(barrels * (fracht + buyerFreight(balance, buyer)) - deal.freight);
   const royalty = cents(royaltyBarrels(state, barrels) * price);
   return { barrels, gross, transportCost, royalty, net: cents(gross - transportCost - royalty) };
 }
 
 export type SaleResult = { ok: true; state: GameState; quote: SaleQuote } | { ok: false; reason: string };
+
+/** Für die Kladde: an wen verkauft wurde. */
+const BUYER_PLACE: Record<string, string> = {
+  cordova: 'den Lampenölhandel in Cordova',
+  okara: 'die Ölbörse in Okara',
+  hallstead: 'den Treibstoffhandel in Hallstead',
+  eastern: 'Crane Eastern',
+  aldmark: 'das Exporthaus Aldmark',
+};
 
 const PER: Record<TransportMode, string> = {
   wagon: 'per Fuhrwerk',
@@ -198,15 +216,18 @@ export function sellOil(
   }
   const nimmt = buyerCapacityLeft(state, balance, buyer);
   if (barrels > nimmt) {
-    return { ok: false, reason: `Der Händler nimmt in dieser Runde nur noch ${nimmt} Barrel.` };
+    return { ok: false, reason: `${buyer === 'trader' ? 'Der Händler' : 'Der Abnehmer'} nimmt in dieser Runde nur noch ${nimmt} Barrel.` };
   }
   const quote = quoteSale(state, balance, mode, barrels, buyer);
-  const an = buyer === 'trader' ? ' an den Händler' : '';
+  const an = buyer === 'trader' ? ' an den Händler' : isExtraBuyer(buyer) ? ` an ${BUYER_PLACE[buyer]}` : '';
   const strafe = exclusiveSurcharge(state, balance, mode) > 0 ? ' (mit Thornes Strafe)' : '';
+  // Crane merkt sich jeden Verkauf an einen unabhängigen Abnehmer (Groll); die Menge zählt nur beim Händler im Hafen.
   const logistics =
     buyer === 'trader'
       ? { ...state.logistics, traderSold: state.logistics.traderSold + barrels, traderLast: state.round }
-      : state.logistics;
+      : isExtraBuyer(buyer)
+        ? { ...state.logistics, traderLast: state.round }
+        : state.logistics;
   const deal = saleAdjust(state, mode, buyer, barrels, buyerPrice(state, balance, buyer), tariff(state, balance, mode));
   const out: GameState = {
     ...afterSale(state, deal.quota, deal.owed),
@@ -220,6 +241,7 @@ export function sellOil(
       `${formatDate(state)}: ${barrels.toLocaleString('de-DE')} Barrel ${PER[mode]}${an} verkauft${strafe} – ${dollars(quote.net)} $ nach Fracht und Förderzins.`,
     ],
   };
+  if (isExtraBuyer(buyer)) return { ok: true, quote, state: recordBuyerSale(out, balance, buyer, barrels, quote.gross) };
   return { ok: true, quote, state: buyer === 'trader' ? withMark(out, LOGISTICS_MARKS.trader) : out };
 }
 

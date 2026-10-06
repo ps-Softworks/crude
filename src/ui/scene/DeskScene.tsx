@@ -132,7 +132,7 @@ export function DeskScene(p: DeskSceneProps) {
   // 0.4.20+34: Telefon statt Kalender ab Kapitel 2; wer gerade anruft (Name der Stelle).
   const telefon = kapitel >= 2;
   const anruf = callerCard(game);
-  const anrufer = anruf ? localize(planContent.contacts.find((k) => k.cards.includes(anruf))?.name ?? planContent.title) : null;
+  const anrufer = anruf ? localize(planContent.contacts.find((k) => k.id === balance.plans.cards[anruf]?.contact)?.name ?? planContent.title) : null;
   const da: DeskPresent = {
     raffinerie: !!game.refinery,
     personal: !!game.staff,

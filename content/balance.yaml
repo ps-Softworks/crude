@@ -223,70 +223,135 @@ exploration:
     hallstead: { accuracy: 5, bias: 0, wage: 200 }
     hale: { accuracy: 1, bias: 15, wage: 40 }           # billig, ungenau, sieht überall Öl
 
+# Netzwerk (0.4.20+42, src/sim/network.ts): Welche Stellen im Adressbuch Jacob kennt und wie er neue kennenlernt.
+# start = von Anfang an bekannt. meet = Wege zum Kennenlernen (einer genügt, alle Bedingungen eines Eintrags müssen
+# gelten): referral = Empfehlung einer Stelle, sobald die Beziehung dort ≥ referralAt (kommt als Angebot im Adressbuch);
+# chapter/round/empire/wells/reputation/mark/refinery = meldet sich von selbst. breachMarks = Merkzeichen, die die
+# Beziehung je einmal um breach senken. Kapitel 1 startet klein (Philipp, 06.10.2026). Alles PLATZHALTER.
+network:
+  relation:
+    start: 50              # Beziehung beim Kennenlernen
+    use: 6                 # + je gebuchter Karte der Stelle
+    breach: 25             # − je Bruch-Merkzeichen
+    idle: 6                # so viele Runden ohne Kontakt, dann …
+    decay: 2               # … − so viel je Runde …
+    floor: 30              # … bis zu diesem Boden (Vernachlässigung allein verärgert niemanden)
+    cold: 20               # darunter verärgert: Karten erst nach Versöhnung
+    referralAt: 62         # ab hier empfiehlt die Stelle weiter (nach zwei, drei Geschäften)
+    bonus: 0.15            # Preisfaktor 1 ± 0,15 zwischen Beziehung 0 und 100
+    introAppointments: 1   # „Vorstellen lassen“ kostet einen Termin
+    reconcileCash: 500     # Versöhnen kostet so viel …
+    reconcileTo: 40        # … und hebt die Beziehung auf diesen Wert
+    jumpFade: 0.5          # Zeitsprung: Beziehung rückt halb zurück Richtung start
+  contacts:
+    bank: { start: true }
+    geologen: { start: true }
+    grundbesitzer: { start: true }
+    crane: { start: true, breachMarks: [delgado_verband] }
+    eisenbahn: { start: true }
+    haendler: { start: true }
+    selbst: { start: true }
+    familie: { start: true }
+    oelleute: { meet: [{ referral: grundbesitzer }, { wells: 1 }], breachMarks: [kartell_verraten, bullard_verraten, bullard_fehde] }
+    fuhrleute: { meet: [{ referral: haendler }, { wells: 2 }], breachMarks: [brennan_abgeworben] }
+    zeitung: { meet: [{ referral: bank }, { wells: 3 }, { chapter: 2 }], breachMarks: [geruecht_aufgeflogen] }
+    sheriff: { meet: [{ wells: 1, round: 4 }, { referral: grundbesitzer }] }
+    versicherung: { meet: [{ referral: bank }, { chapter: 2 }] }
+    arbeiter: { meet: [{ chapter: 2 }] }
+    lohnbohrer: { meet: [{ chapter: 2, referral: oelleute }, { chapter: 2, wells: 6 }] }
+    grosskunden: { meet: [{ refinery: true }] }
+    marine: { meet: [{ refinery: true, referral: abgeordneter }, { refinery: true, empire: 400000 }] }
+    motorwagen: { meet: [{ chapter: 2, referral: grosskunden }, { chapter: 2, empire: 300000 }] }
+    abgeordneter: { meet: [{ chapter: 2, referral: zeitung }, { chapter: 2, empire: 250000 }, { chapter: 2, reputation: { axis: politics, min: 20 } }] }
+    # 0.4.20+43: Großhändler (buyers) – jeder ist eine Stelle, die man erst kennenlernt.
+    cordova_handel: { meet: [{ referral: haendler }, { wells: 3 }] }
+    okara_boerse: { meet: [{ chapter: 2, referral: oelleute }, { chapter: 2, wells: 6 }] }
+    hallstead_handel: { meet: [{ chapter: 2, referral: bank }, { chapter: 2, referral: motorwagen }, { chapter: 2, empire: 300000 }] }
+    crane_eastern: { meet: [{ chapter: 3 }], breachMarks: [delgado_verband] }
+    aldmark_export: { meet: [{ chapter: 2, referral: marine }, { chapter: 2, referral: hallstead_handel }] }
+
 # Planungsbrett (Etappe 1): Karten, mit denen Jacob seine Termine verplant. Texte stehen in
 # content/plans.yaml, Regeln in src/sim/plans.ts (handler). event = ein fester Termin aus
 # content/events/, den die Karte ersetzt (Termine und Wirkung wie dort). Feste Termine ohne eigene
 # Karte kommen automatisch in den Reiter „leute“. Alles PLATZHALTER.
 plans:
   cards:
-    ritt: { tab: land, appointments: 2, strength: -3, target: ranch, handler: ritt }           # Ranch + 2 Nachbarn: Sickerstelle, Salzwasser, Formation
-    farmer: { tab: land, appointments: 1, target: ranch, handler: farmer }                     # Hinweis „alter Brunnen“
-    geologe_einstellen: { tab: land, appointments: 1, cash: 300, handler: geologe_einstellen } # Genauigkeit 3
+    ritt: { contact: selbst, tab: land, appointments: 2, strength: -3, target: ranch, handler: ritt }           # Ranch + 2 Nachbarn: Sickerstelle, Salzwasser, Formation
+    farmer: { contact: grundbesitzer, tab: land, appointments: 1, target: ranch, handler: farmer }                     # Hinweis „alter Brunnen“
+    geologe_einstellen: { contact: geologen, tab: land, appointments: 1, cash: 300, handler: geologe_einstellen } # Genauigkeit 3
     # 0.4.19+2: Hale und das nächtliche Tagebuch nur in Kapitel 1 – ab Kapitel 3 ist Dr. Hale der Seismik-Gelehrte,
     # und der Konzernherr bricht nicht selbst in Bohrhütten ein.
-    geologe_hale: { tab: land, appointments: 1, cash: 100, handler: geologe_hale, requires: { maxChapter: 1 } }   # Genauigkeit 1, Verzerrung +15
-    geologe_hallstead: { tab: land, appointments: 3, cash: 600, handler: geologe_hallstead }   # Genauigkeit 5
-    geologe_besprechung: { tab: land, appointments: 1, target: ranch, handler: geologe_besprechung }  # Ranch + exploration.mapNeighbours Nachbarn kartiert
-    bohrbericht: { tab: land, appointments: 1, target: ranch, handler: bohrbericht }           # Preis: exploration.reportCost
-    tagebuch: { tab: land, appointments: 2, strength: -5, handler: tagebuch, requires: { maxChapter: 1 } }   # 1 Termin + 1 Nacht (Überstunden-Kraft)
-    rute: { tab: land, appointments: 1, cash: 20, strength: 1, target: ranch, handler: rute }  # Faktor 1, hebt die Laune
-    feldinspektion: { tab: land, event: termin_rundgang }
+    geologe_hale: { contact: geologen, tab: land, appointments: 1, cash: 100, handler: geologe_hale, requires: { maxChapter: 1 } }   # Genauigkeit 1, Verzerrung +15
+    geologe_hallstead: { contact: geologen, tab: land, appointments: 3, cash: 600, handler: geologe_hallstead }   # Genauigkeit 5
+    geologe_besprechung: { contact: geologen, tab: land, appointments: 1, target: ranch, handler: geologe_besprechung }  # Ranch + exploration.mapNeighbours Nachbarn kartiert
+    bohrbericht: { contact: selbst, tab: land, appointments: 1, target: ranch, handler: bohrbericht }           # Preis: exploration.reportCost
+    tagebuch: { contact: selbst, tab: land, appointments: 2, strength: -5, handler: tagebuch, requires: { maxChapter: 1 } }   # 1 Termin + 1 Nacht (Überstunden-Kraft)
+    rute: { contact: geologen, tab: land, appointments: 1, cash: 20, strength: 1, target: ranch, handler: rute }  # Faktor 1, hebt die Laune
+    feldinspektion: { contact: selbst, tab: land, event: termin_rundgang }
     # Etappe 2: Preis-Aktionen (Reiter Markt, Zahlen der Regeln: priceActions) – nur Kapitel 1 (ab Kapitel 2 gibt es die Diplomatie) …
-    foerderbremse: { tab: markt, appointments: 2, cash: 100, target: option, timing: rundenende, handler: foerderbremse, requires: { maxChapter: 1 } }   # Bewirtung im Saloon
-    pakt_halten: { tab: markt, appointments: 1, timing: rundenende, handler: pakt_halten, requires: { maxChapter: 1 } }
-    pakt_verlaengern: { tab: markt, appointments: 1, timing: rundenende, handler: pakt_verlaengern, requires: { maxChapter: 1 } }
-    bullard_einladen: { tab: markt, appointments: 1, timing: rundenende, handler: bullard_einladen, requires: { maxChapter: 1 } }
-    zur_rede: { tab: markt, appointments: 1, timing: rundenende, handler: zur_rede, requires: { maxChapter: 1 } }
-    liefervertrag: { tab: markt, appointments: 1, target: option, timing: rundenende, handler: liefervertrag, requires: { maxChapter: 1 } }
-    geruecht: { tab: markt, appointments: 1, cash: 150, target: option, timing: rundenende, handler: geruecht, requires: { maxChapter: 1 } }
-    crane_feilschen: { tab: markt, appointments: 2, target: option, timing: rundenende, handler: crane_feilschen, requires: { maxChapter: 1 } }
+    foerderbremse: { contact: oelleute, tab: markt, appointments: 2, cash: 100, target: option, timing: rundenende, handler: foerderbremse, requires: { maxChapter: 1 } }   # Bewirtung im Saloon
+    pakt_halten: { contact: oelleute, tab: markt, appointments: 1, timing: rundenende, handler: pakt_halten, requires: { maxChapter: 1 } }
+    pakt_verlaengern: { contact: oelleute, tab: markt, appointments: 1, timing: rundenende, handler: pakt_verlaengern, requires: { maxChapter: 1 } }
+    bullard_einladen: { contact: oelleute, tab: markt, appointments: 1, timing: rundenende, handler: bullard_einladen, requires: { maxChapter: 1 } }
+    zur_rede: { contact: oelleute, tab: markt, appointments: 1, timing: rundenende, handler: zur_rede, requires: { maxChapter: 1 } }
+    liefervertrag: { contact: haendler, tab: markt, appointments: 1, target: option, timing: rundenende, handler: liefervertrag, requires: { maxChapter: 1 } }
+    geruecht: { contact: zeitung, tab: markt, appointments: 1, cash: 150, target: option, timing: rundenende, handler: geruecht, requires: { maxChapter: 1 } }
+    crane_feilschen: { contact: crane, tab: markt, appointments: 2, target: option, timing: rundenende, handler: crane_feilschen, requires: { maxChapter: 1 } }
     # … und Transport-Aktionen (Reiter Fracht, Zahlen der Regeln: transport.negotiation)
-    thorne_vorsprechen: { tab: fracht, appointments: 2, cash: 30, strength: -3, target: option, timing: rundenende, handler: thorne_vorsprechen, requires: { maxChapter: 1 } }
-    brennan: { tab: fracht, appointments: 1, cash: 150, handler: brennan, requires: { maxChapter: 1 } }
-    transportgemeinschaft: { tab: fracht, appointments: 2, cash: 100, target: option, timing: rundenende, handler: transportgemeinschaft, requires: { maxChapter: 1 } }
-    gemeinschaft_halten: { tab: fracht, appointments: 1, timing: rundenende, handler: gemeinschaft_halten, requires: { maxChapter: 1 } }
-    exklusiv_kuendigen: { tab: fracht, appointments: 1, cash: 800, handler: exklusiv_kuendigen, requires: { maxChapter: 1 } }
+    thorne_vorsprechen: { contact: eisenbahn, tab: fracht, appointments: 2, cash: 30, strength: -3, target: option, timing: rundenende, handler: thorne_vorsprechen, requires: { maxChapter: 1 } }
+    brennan: { contact: fuhrleute, tab: fracht, appointments: 1, cash: 150, handler: brennan, requires: { maxChapter: 1 } }
+    transportgemeinschaft: { contact: oelleute, tab: fracht, appointments: 2, cash: 100, target: option, timing: rundenende, handler: transportgemeinschaft, requires: { maxChapter: 1 } }
+    gemeinschaft_halten: { contact: oelleute, tab: fracht, appointments: 1, timing: rundenende, handler: gemeinschaft_halten, requires: { maxChapter: 1 } }
+    exklusiv_kuendigen: { contact: eisenbahn, tab: fracht, appointments: 1, cash: 800, handler: exklusiv_kuendigen, requires: { maxChapter: 1 } }
     # 0.4.20+31 Deals im Adressbuch (Regeln src/sim/deals.ts, Zahlen unten im Block deals). Alles PLATZHALTER.
-    bank_zins: { tab: markt, appointments: 1, timing: rundenende, handler: bank_zins }
-    bank_stundung: { tab: markt, appointments: 1, handler: bank_stundung }
-    bank_pfand: { tab: markt, appointments: 1, handler: bank_pfand }
-    bahn_festtarif: { tab: fracht, appointments: 2, strength: -2, target: option, timing: rundenende, handler: bahn_festtarif }
-    bahn_kontingent: { tab: fracht, appointments: 1, target: option, handler: bahn_kontingent }
-    crane_vorschuss: { tab: markt, appointments: 1, target: option, handler: crane_vorschuss, requires: { maxChapter: 1 } }
-    haendler_grossabnahme: { tab: markt, appointments: 1, handler: haendler_grossabnahme, requires: { maxChapter: 1 } }
-    turm_verleihen: { tab: leute, appointments: 1, target: option, handler: turm_verleihen, requires: { maxChapter: 1 } }
-    foerderzins: { tab: land, appointments: 1, target: ranch, timing: rundenende, handler: foerderzins, requires: { maxChapter: 1 } }
-    interview: { tab: leute, appointments: 1, timing: rundenende, handler: interview, requires: { maxChapter: 1 } }
-    wache: { tab: leute, appointments: 1, cash: 60, handler: wache, requires: { maxChapter: 1 } }
+    bank_zins: { contact: bank, tab: markt, appointments: 1, timing: rundenende, handler: bank_zins }
+    bank_stundung: { contact: bank, tab: markt, appointments: 1, handler: bank_stundung }
+    bank_pfand: { contact: bank, tab: markt, appointments: 1, handler: bank_pfand }
+    bahn_festtarif: { contact: eisenbahn, tab: fracht, appointments: 2, strength: -2, target: option, timing: rundenende, handler: bahn_festtarif }
+    bahn_kontingent: { contact: eisenbahn, tab: fracht, appointments: 1, target: option, handler: bahn_kontingent }
+    crane_vorschuss: { contact: crane, tab: markt, appointments: 1, target: option, handler: crane_vorschuss }
+    haendler_grossabnahme: { contact: haendler, tab: markt, appointments: 1, handler: haendler_grossabnahme }
+    turm_verleihen: { contact: oelleute, tab: leute, appointments: 1, target: option, handler: turm_verleihen }
+    foerderzins: { contact: grundbesitzer, tab: land, appointments: 1, target: ranch, timing: rundenende, handler: foerderzins }
+    interview: { contact: zeitung, tab: leute, appointments: 1, timing: rundenende, handler: interview, requires: { maxChapter: 1 } }
+    wache: { contact: sheriff, tab: leute, appointments: 1, cash: 60, handler: wache, requires: { maxChapter: 1 } }
     # 0.4.20+34 Telefon: Anrufe (call = Gewicht beim Auslosen), nur ab Kapitel 2.
-    bank_angebot: { tab: markt, appointments: 1, target: option, handler: bank_angebot, call: 1, requires: { minChapter: 2 } }
+    bank_angebot: { contact: bank, tab: markt, appointments: 1, target: option, handler: bank_angebot, call: 1, requires: { minChapter: 2 } }
     # 0.4.20+39 Lieferverträge der Raffinerie (Marine nur ohne den Rohöl-Vertrag aus k2_ag_marine).
-    marine_heizoel: { tab: markt, appointments: 2, target: option, handler: marine_heizoel, requires: { minChapter: 2, notMarked: [k2_marine_vertrag] } }
-    fabrik_schmieroel: { tab: markt, appointments: 1, target: option, handler: fabrik_schmieroel, requires: { minChapter: 2 } }
-    lampenoel_kerosin: { tab: markt, appointments: 1, target: option, handler: lampenoel_kerosin, requires: { minChapter: 2 } }
+    marine_heizoel: { contact: marine, tab: markt, appointments: 2, target: option, handler: marine_heizoel, requires: { minChapter: 2, notMarked: [k2_marine_vertrag] } }
+    fabrik_schmieroel: { contact: grosskunden, tab: markt, appointments: 1, target: option, handler: fabrik_schmieroel, requires: { minChapter: 2 } }
+    lampenoel_kerosin: { contact: grosskunden, tab: markt, appointments: 1, target: option, handler: lampenoel_kerosin, requires: { minChapter: 2 } }
     # 0.4.20+36 Versicherung, Arbeiter, Presse.
-    versicherung: { tab: markt, appointments: 1, target: option, handler: versicherung, requires: { minChapter: 2 } }
-    lohnerhoehung: { tab: leute, appointments: 1, handler: lohnerhoehung, requires: { minChapter: 2 } }
-    streik_droht: { tab: leute, appointments: 1, target: option, handler: streik_droht, call: 1, requires: { minChapter: 2 } }
-    anzeigen: { tab: leute, appointments: 1, handler: anzeigen, requires: { minChapter: 2 } }
-    interview_presse: { tab: leute, appointments: 1, timing: rundenende, handler: interview_presse, requires: { minChapter: 2 } }
+    versicherung: { contact: versicherung, tab: markt, appointments: 1, target: option, handler: versicherung, requires: { minChapter: 2 } }
+    lohnerhoehung: { contact: arbeiter, tab: leute, appointments: 1, handler: lohnerhoehung, requires: { minChapter: 2 } }
+    streik_droht: { contact: arbeiter, tab: leute, appointments: 1, target: option, handler: streik_droht, call: 1, requires: { minChapter: 2 } }
+    anzeigen: { contact: zeitung, tab: leute, appointments: 1, handler: anzeigen, requires: { minChapter: 2 } }
+    interview_presse: { contact: zeitung, tab: leute, appointments: 1, timing: rundenende, handler: interview_presse, requires: { minChapter: 2 } }
     # 0.4.20+37 Lohnbohrer, Ausrüster, Motorwagen, Abgeordneter (Anrufe mit call).
-    ausruester_sammel: { tab: land, appointments: 1, target: option, handler: ausruester_sammel, requires: { minChapter: 2 } }
-    lohnbohrer: { tab: land, appointments: 1, handler: lohnbohrer, requires: { minChapter: 2 } }
-    motorwagen_benzin: { tab: markt, appointments: 1, target: option, handler: motorwagen_benzin, requires: { minChapter: 2 } }
-    motorwagen_beteiligung: { tab: markt, appointments: 2, handler: motorwagen_beteiligung, call: 0.5, requires: { minChapter: 2, maxChapter: 2 } }
-    abgeordneter_stimme: { tab: leute, appointments: 1, handler: abgeordneter_stimme, call: 1, requires: { minChapter: 2 } }
-    abgeordneter_gefallen: { tab: leute, appointments: 1, target: option, handler: abgeordneter_gefallen, call: 1, requires: { minChapter: 2 } }
+    ausruester_sammel: { contact: lohnbohrer, tab: land, appointments: 1, target: option, handler: ausruester_sammel, requires: { minChapter: 2 } }
+    lohnbohrer: { contact: lohnbohrer, tab: land, appointments: 1, handler: lohnbohrer, requires: { minChapter: 2 } }
+    motorwagen_benzin: { contact: motorwagen, tab: markt, appointments: 1, target: option, handler: motorwagen_benzin, requires: { minChapter: 2 } }
+    motorwagen_beteiligung: { contact: motorwagen, tab: markt, appointments: 2, handler: motorwagen_beteiligung, call: 0.5, requires: { minChapter: 2, maxChapter: 2 } }
+    abgeordneter_stimme: { contact: abgeordneter, tab: leute, appointments: 1, handler: abgeordneter_stimme, call: 1, requires: { minChapter: 2 } }
+    # 0.4.20+43: Lieferverträge mit den Großhändlern (src/sim/buyers.ts, Zahlen unter buyers).
+    vertrag_cordova: { contact: cordova_handel, tab: markt, appointments: 1, target: option, handler: vertrag_cordova }
+    vertrag_okara: { contact: okara_boerse, tab: markt, appointments: 1, target: option, handler: vertrag_okara }
+    vertrag_hallstead: { contact: hallstead_handel, tab: markt, appointments: 1, target: option, handler: vertrag_hallstead }
+    vertrag_eastern: { contact: crane_eastern, tab: markt, appointments: 2, target: option, handler: vertrag_eastern }
+    vertrag_aldmark: { contact: aldmark_export, tab: markt, appointments: 2, target: option, handler: vertrag_aldmark }
+    abgeordneter_gefallen: { contact: abgeordneter, tab: leute, appointments: 1, target: option, handler: abgeordneter_gefallen, call: 1, requires: { minChapter: 2 } }
+
+# Großhändler (0.4.20+43, src/sim/buyers.ts): kaufen Rohöl neben Crane und dem Händler in Port Ellis, sobald
+# Jacob ihre Stelle kennt (network.contacts). Preis = (Posted Price + premium) × Beziehung, Menge je Runde je
+# Kapitel (capacity, 0 = kauft nicht), Zusatzfracht je Barrel (freight). Verkäufe an sie ärgern Crane wie der
+# Händler (Groll). Vertrag: Menge je Runde zum Festpreis heute × (1 + premium), was fehlt, kostet penalty je bbl.
+# defaultChance: Exporthaus zahlt mit dieser Chance je Runde nicht. Alles PLATZHALTER.
+buyers:
+  cordova: { contact: cordova_handel, premium: 0.05, capacity: [2000, 6000, 8000], freight: 0.06, contract: { sizes: [1500, 3000], rounds: 6, premium: 0.04, penalty: 0.3 } }
+  okara: { contact: okara_boerse, premium: 0.06, capacity: [0, 8000, 10000], freight: 0.04, contract: { sizes: [5000, 8000], rounds: 8, premium: 0.04, penalty: 0.3 } }
+  hallstead: { contact: hallstead_handel, premium: 0.08, capacity: [0, 10000, 15000], freight: 0.09, contract: { sizes: [6000, 10000], rounds: 8, premium: 0.05, penalty: 0.3 } }
+  eastern: { contact: crane_eastern, premium: 0.12, capacity: [0, 0, 20000], freight: 0.12, contract: { sizes: [10000, 20000], rounds: 8, premium: 0.05, penalty: 0.4 } }
+  aldmark: { contact: aldmark_export, premium: 0.25, capacity: [0, 12000, 20000], freight: 0.15, defaultChance: 0.08, contract: { sizes: [8000, 15000], rounds: 6, premium: 0.05, penalty: 0.3 } }
 
 # Deals im Adressbuch (0.4.20+31, src/sim/deals.ts). Alles PLATZHALTER bis zu Bot-Läufen.
 deals:
@@ -298,6 +363,7 @@ deals:
   rail:
     fixed: { rounds: [4, 8], minimum: 4000, shortfall: 0.10 }   # Festtarif: kein Aufschlag, dafür mind. 4.000 bbl je Runde per Bahn
     quota: { sizes: [5000, 10000], discount: 0.2, rounds: 6 }  # Frachtkontingent: heute zahlen, 20 % billiger, 6 Runden gültig
+  chapterScale: [1, 4, 6]   # 0.4.20+42: Vorschuss und Großabnahme wachsen mit dem Kapitel (K2-Förderung ~25.000 bbl je Runde)
   crane:
     advance: { sizes: [3000, 6000], discount: 0.15, rounds: 2, penalty: 0.3 }   # Vorschuss: 85 % sofort, Lieferung in 2 Runden, sonst Rest × Preis × 1,3 zurück
   trader:

@@ -1,4 +1,5 @@
 // Termine als Hauptwerkzeug, Etappe 2: Transport-Aktionen (Plan 2.3, Tests 2.6 „Transport“ und „Gemeinsam“).
+import { knowAll } from './network';
 import { describe, expect, it } from 'vitest';
 import type { Balance } from './balance';
 import {
@@ -41,7 +42,8 @@ function ok(r: { ok: true; state: GameState } | { ok: false; reason: string }): 
 }
 
 function spiel(seed: string, patch: Partial<GameState> = {}): GameState {
-  return { ...newGame(seed, balance, katalog), cash: 5000, ...patch };
+  // 0.4.20+42: Fracht-Karten (Brennan, Gemeinschaft) – alle Stellen gelten als bekannt.
+  return { ...newGame(seed, balance, katalog), network: knowAll(balance), cash: 5000, ...patch };
 }
 
 /** Bahnmenge der Vorrunde setzen (gebündelte Menge). */
@@ -324,7 +326,7 @@ describe('Gemeinsam (Plan 2.6)', () => {
   });
 
   it('Migration: ein Spielstand aus Format 21 (0.4.19, vor den Terminen) lädt ohne Preis- und Transport-Aktionen', () => {
-    expect(SAVE_FORMAT).toBe(27); // Etappe 3: freight.poolLeft (freiwillig)
+    expect(SAVE_FORMAT).toBe(28); // Etappe 3: freight.poolLeft (freiwillig)
     const s = spiel('migration');
     const alt: Record<string, unknown> = { ...s };
     delete alt.pricing;

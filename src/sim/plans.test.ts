@@ -33,7 +33,7 @@ function unbekannt(state: GameState): string {
 function mitRundenendKarte(): Balance {
   return {
     ...balance,
-    plans: { cards: { ...balance.plans.cards, probe: { tab: 'markt', appointments: 2, cash: 50, strength: 0, target: 'ranch', timing: 'rundenende', handler: 'rute', requires: {} } } },
+    plans: { cards: { ...balance.plans.cards, probe: { contact: 'selbst', tab: 'markt', appointments: 2, cash: 50, strength: 0, target: 'ranch', timing: 'rundenende', handler: 'rute', requires: {} } } },
   };
 }
 
@@ -278,17 +278,17 @@ describe('Inhalte und Spielstand (Plan 1.3, 1.5)', () => {
   it('Adressbuch: jede Karte und jeder feste Termin liegt bei einer Stelle, Unbekanntes bei der letzten', () => {
     const { content } = parsePlanContent('content/plans.yaml', readFileSync(new URL('../../content/plans.yaml', import.meta.url), 'utf8'));
     const c = content!;
-    expect(contactOf(c, { id: 'thorne_vorsprechen', auto: false })).toBe('eisenbahn');
+    expect(contactOf(c, { id: 'thorne_vorsprechen', auto: false, contact: balance.plans.cards.thorne_vorsprechen.contact })).toBe('eisenbahn');
     expect(contactOf(c, { id: 'termin_ruth', event: 'termin_ruth', auto: true })).toBe('familie');
     expect(contactOf(c, { id: 'x', event: 'gibtsnicht', auto: true })).toBe(c.contacts[c.contacts.length - 1].id);
     const zugeordnet = new Set(c.contacts.flatMap((k) => k.events));
     const ohneKarte = katalog.filter((e) => e.routine && !Object.values(balance.plans.cards).some((k) => k.event === e.id));
     for (const e of ohneKarte) expect(zugeordnet.has(e.id), e.id).toBe(true);
-    // Doppelt oder unbekannt meldet die Prüfung.
-    const kaputt = { ...c, contacts: [...c.contacts, { id: 'doppelt', name: c.title, who: c.title, cards: ['ritt', 'gibtsnicht'], events: ['nie'] }] };
+    // Stelle ohne Netzwerk-Regel, fehlende Stelle und unbekannte Ereignisse meldet die Prüfung.
+    const kaputt = { ...c, contacts: [...c.contacts.filter((k) => k.id !== 'bank'), { id: 'gibtsnicht', name: c.title, who: c.title, events: ['nie'] }] };
     const fehler = checkPlanContent('content/plans.yaml', kaputt, balance, katalog.map((e) => e.id)).map((f) => f.message).join('\n');
-    expect(fehler).toMatch(/ritt steht bei 2 Stellen/);
-    expect(fehler).toMatch(/gibtsnicht/);
+    expect(fehler).toMatch(/contacts\.bank fehlt/);
+    expect(fehler).toMatch(/gibtsnicht: Diese Stelle gibt es/);
     expect(fehler).toMatch(/Ereignis nie/);
   });
 

@@ -1,6 +1,8 @@
 // Spielzustand und Rundenschleife. Alles hier ist reine Logik:
 // Funktionen bekommen einen Zustand und geben einen neuen zurück.
 
+import { advanceNetwork, newNetwork, type NetworkState } from './network';
+import { settleBuyers, type BuyersState } from './buyers';
 import { newAgenda, settleAgenda, type AgendaState } from './agenda';
 import type { Balance, Rating, TransportMode } from './balance';
 import { formatDate } from './calendar';
@@ -188,6 +190,10 @@ export interface GameState {
   kapitel3?: Kapitel3State;
   /** 4.19 Andockpunkt: Rivalen in Kapitel 3 (src/sim/rivalsK3.ts) – fehlt vor Kapitel 3. */
   rivalsK3?: RivalsK3State;
+  /** 0.4.20+42: Netzwerk – bekannte Stellen im Adressbuch, Beziehungen, Empfehlungen (src/sim/network.ts). Fehlt = alle bekannt (alter Stand). */
+  network?: NetworkState;
+  /** 0.4.20+43: Großhändler – Verkäufe der Runde und Lieferverträge (src/sim/buyers.ts). Fehlt = nichts verkauft, kein Vertrag. */
+  buyers?: BuyersState;
   /** Feldkauf (0.4.20+27): je Ranch die Runde, ab der Bullard wieder ein Angebot anhört (nach Ablehnung). Fehlt = nie abgelehnt. */
   buyouts?: Record<string, number>;
   /** 0.4.20+8: Cranes Feldzug in Kapitel 3 (src/sim/feldzug.ts) – fehlt, bis die Marke gegründet ist. */
@@ -270,6 +276,7 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
     knowledge: {},
     exploration: newExploration(),
     plans: newPlans(1),
+    network: newNetwork(balance),
     pricing: newPricing(),
     freight: newFreight(),
     wildcatterStanding: 0,
@@ -359,7 +366,7 @@ function advanceWorldInGame(state: GameState, vorMarkt: GameState, balance: Bala
  * neuen Nachbarquellen ihre Wildcatter.
  */
 // 4.17 Andockpunkt: kapitel3 = Texte aus content/kapitel3.yaml, damit Kapitel 3 seine Ereignisse in die Kladde schreibt.
-export function endRound(input: GameState, balance: Balance, catalog: readonly EventDef[] = [], texts: { kapitel3?: Kapitel3Content } = {}): GameState {
+export function endRound(input: GameState, balance: Balance, catalog: readonly EventDef[] = [], texts: { kapitel3?: Kapitel3Content; contactNames?: Record<string, string> } = {}): GameState {
   if (input.finished) return input;
   // Offene Ereignisse bekommen ihre Standard-Antwort, bevor die Runde abgerechnet wird.
   // Gebiete (0.2.15+5): Hat eine Antwort ein Gebiet freigeschaltet, bekommt es jetzt seine Ranches.
@@ -376,7 +383,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // Etappe 3: Merkzeichen aus Jacobs Plänen für die gekoppelten Briefe, Antworten aus Briefen wirken (letters.ts).
   const vorDeals = settlePlans(familie, balance);
   // 0.4.20+31: Deals im Adressbuch – Öldiebe, Mindestmenge, Fristen, Turm-Miete (vor Lager und Zinsen).
-  const nachBrett = appendReport(settleDeals(vorDeals, balance), vorDeals.log.length);
+  // 0.4.20+43: Großhändler – Ausfall beim Export, Vertragsstrafen.
+  const nachBrett = appendReport(settleBuyers(settleDeals(vorDeals, balance), balance), vorDeals.log.length);
   const geplant = appendReport(settleLetters(familie, nachBrett, balance), nachBrett.log.length);
   // Termine (2.3): Krankheit (2.7), ruhige Runde gibt Kraft zurück, die nächste beginnt mit frischen Terminen.
   const terminiert = settleAgenda(geplant, balance);
@@ -453,5 +461,6 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
     balance,
   );
   // 0.4.20+34: Ab Kapitel 2 klingelt manchmal das Telefon – ein Anruf mit einem Angebot nur für diese Runde.
-  return ringPhone(drawEvents(begonnen, balance, catalog), balance, catalog);
+  // 0.4.20+42: Netzwerk – Stellen melden sich, Empfehlungen, Beziehungen ohne Kontakt sinken.
+  return ringPhone(drawEvents(advanceNetwork(begonnen, balance, texts.contactNames), balance, catalog), balance, catalog);
 }

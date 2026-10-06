@@ -17,6 +17,8 @@
 // Karten mit target „option“ bieten mehrere Möglichkeiten (z. B. Laufzeit und Menge eines
 // Vertrags). Die Oberfläche liest nur planView.
 
+import { BUYER_HANDLERS } from './buyers';
+import { acceptReferral, isCold, isKnown, noteContact, relationOf, shiftRelation } from './network';
 import { overtimeFor, refundAppointments, spendAppointments, timeReason } from './agenda';
 import type { Balance } from './balance';
 import { formatDate } from './calendar';
@@ -227,7 +229,7 @@ const LAND_HANDLERS: Record<string, Handler> = {
 // (game ↔ plans ↔ deals/freight/transport), beim Laden des Moduls können sie noch fehlen.
 let alle: Record<string, Handler> | null = null;
 function handlers(): Record<string, Handler> {
-  alle ??= { ...LAND_HANDLERS, ...PRICE_HANDLERS, ...FREIGHT_HANDLERS, ...DEAL_HANDLERS };
+  alle ??= { ...LAND_HANDLERS, ...PRICE_HANDLERS, ...FREIGHT_HANDLERS, ...DEAL_HANDLERS, ...BUYER_HANDLERS };
   return alle;
 }
 
@@ -244,7 +246,7 @@ export function planCards(balance: Balance, catalog: readonly EventDef[]): PlanC
   const vergeben = new Set(eigene.map((c) => c.event).filter(Boolean));
   const termine: PlanCardDef[] = catalog
     .filter((e) => e.routine && !vergeben.has(e.id))
-    .map((e) => ({ id: e.id, tab: 'leute', appointments: e.appointments, cash: 0, strength: 0, target: 'none', timing: 'sofort', event: e.id, requires: {}, auto: true }));
+    .map((e) => ({ id: e.id, contact: '', tab: 'leute', appointments: e.appointments, cash: 0, strength: 0, target: 'none', timing: 'sofort', event: e.id, requires: {}, auto: true }));
   return [...eigene, ...termine];
 }
 
@@ -258,13 +260,20 @@ function requiresMet(state: GameState, r: PlanRequires): boolean {
   return true;
 }
 
+/** 0.4.20+42: Kennt Jacob die Stelle der Karte (und reicht die Beziehung)? Feste Termine ohne Stelle gehen immer. */
+function contactOpen(state: GameState, card: PlanCardDef): boolean {
+  if (!card.contact) return true;
+  if (!isKnown(state, card.contact)) return false;
+  return card.requires.minRelation === undefined || relationOf(state, card.contact) >= card.requires.minRelation;
+}
+
 function eventOf(catalog: readonly EventDef[], id: string | undefined): EventDef | undefined {
   return id === undefined ? undefined : catalog.find((e) => e.id === id);
 }
 
 /** Ist die Karte auf der Hand? Feste Termine: wenn sie im Kalender stehen könnten (oder schon wahrgenommen sind). */
 function onHand(state: GameState, card: PlanCardDef, catalog: readonly EventDef[], balance?: Balance): boolean {
-  if (state.finished || !requiresMet(state, card.requires)) return false;
+  if (state.finished || !requiresMet(state, card.requires) || !contactOpen(state, card)) return false;
   // 0.4.20+34: Anrufe liegen nur in der Runde auf der Hand, in der das Telefon für sie geklingelt hat.
   if (card.call !== undefined && !ringing(state, card.id)) return false;
   if (card.event === undefined) {
@@ -317,6 +326,7 @@ export function cardReason(state: GameState, balance: Balance, catalog: readonly
   if (state.finished) return 'Das Kapitel ist beendet.';
   if (!onHand(state, card, catalog, balance)) return 'Diese Karte liegt gerade nicht auf der Hand.';
   if (card.event !== undefined && state.agenda.done.includes(card.event)) return 'Diese Runde schon wahrgenommen.';
+  if (card.contact && isCold(state, balance, card.contact)) return 'Die Stelle ist verärgert – erst versöhnen.';
   if ((card.target === 'ranch' || card.target === 'option') && target !== undefined) {
     const t = targetReason(state, card, target, balance);
     if (t) return t;
@@ -354,7 +364,8 @@ export function bookCard(state: GameState, balance: Balance, catalog: readonly E
     const r = resolveEvent(state, balance, catalog, e.id, e.choices[0].id);
     if (!r.ok) return r;
     const eintrag: BookedPlan = { cardId, appointments: n, overtime, cash: 0, strength: 0, done: true };
-    return { ok: true, state: { ...r.state, plans: { ...plans, booked: [...plans.booked, eintrag] } } };
+    const gepflegt = card.contact ? noteContact(r.state, balance, card.contact) : r.state;
+    return { ok: true, state: { ...gepflegt, plans: { ...plans, booked: [...plans.booked, eintrag] } } };
   }
   const h = handlers()[card.handler!];
   if (!h) return { ok: false, reason: `Karte „${cardId}“ hat keine Regel.` };
@@ -376,6 +387,8 @@ export function bookCard(state: GameState, balance: Balance, catalog: readonly E
     next = h.apply(next, balance, target);
     report = [...report, ...next.log.slice(vorher)];
   }
+  // 0.4.20+42: Jedes Geschäft pflegt die Beziehung zur Stelle.
+  if (card.contact) next = noteContact(next, balance, card.contact);
   return { ok: true, state: { ...next, plans: { ...plans, booked: [...plans.booked, eintrag], report } } };
 }
 
@@ -384,7 +397,10 @@ export function unbookCard(state: GameState, balance: Balance, index: number): P
   const b = state.plans.booked[index];
   if (!b || state.plans.round !== state.round) return { ok: false, reason: 'Diese Buchung gibt es nicht.' };
   if (b.done) return { ok: false, reason: 'Das ist schon geschehen – zurücknehmen geht nicht mehr.' };
-  const zurueck = refundAppointments(state, balance, b.appointments, b.overtime);
+  // 0.4.20+42: Zurücknehmen nimmt auch die Beziehungspflege zurück – sonst ließe sie sich erbuchen.
+  const stelle = balance.plans.cards[b.cardId]?.contact;
+  const ohnePflege = stelle ? shiftRelation(state, stelle, -balance.network.relation.use) : state;
+  const zurueck = refundAppointments(ohnePflege, balance, b.appointments, b.overtime);
   return {
     ok: true,
     state: {
@@ -441,6 +457,8 @@ export interface PlanTargetView {
 /** Eine Karte auf dem Brett. */
 export interface PlanCardView {
   id: string;
+  /** Stelle im Adressbuch (0.4.20+42; leer bei festen Terminen ohne eigene Karte). */
+  contact: string;
   tab: PlanTab;
   appointments: number;
   /** Geld, das sie kostet (beim Bohrbericht: der billigste Preis). */
@@ -537,6 +555,7 @@ export function planView(state: GameState, balance: Balance, catalog: readonly E
     const h = c.handler ? handlers()[c.handler] : undefined;
     const view: PlanCardView = {
       id: c.id,
+      contact: c.contact,
       tab: c.tab,
       appointments: cardAppointments(c, catalog),
       cash: c.handler === 'bohrbericht' ? balance.exploration.reportCost.dry : c.cash,
@@ -608,7 +627,7 @@ export function ringPhone(state: GameState, balance: Balance, catalog: readonly 
   const rng = new Rng(seedFromString(`${state.seed}:telefon:${state.round}`));
   if (rng.float() >= balance.deals.phone.chance) return state;
   const moeglich = planCards(balance, catalog).filter((c) => {
-    if (c.call === undefined || !requiresMet(state, c.requires)) return false;
+    if (c.call === undefined || !requiresMet(state, c.requires) || !contactOpen(state, c)) return false;
     const h = c.handler ? handlers()[c.handler] : undefined;
     if (h?.visible && !h.visible(state, balance)) return false;
     return !h?.lock || h.lock(state, balance) === null;
@@ -618,4 +637,9 @@ export function ringPhone(state: GameState, balance: Balance, catalog: readonly 
   let w = rng.float() * summe;
   const karte = moeglich.find((c) => (w -= c.call ?? 0) < 0) ?? moeglich[moeglich.length - 1];
   return { ...state, deals: { ...dealsOf(state), call: { card: karte.id, round: state.round } } };
+}
+
+/** 0.4.20+42: „Vorstellen lassen“ – eine Empfehlung annehmen; kostet network.relation.introAppointments Termine (Überstunden wie beim Buchen). */
+export function introduce(state: GameState, balance: Balance, to: string): PlanResult {
+  return acceptReferral(state, balance, to, (s, n) => spendAppointments(s, balance, n));
 }

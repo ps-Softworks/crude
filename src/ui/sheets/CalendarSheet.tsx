@@ -12,7 +12,8 @@ import { localize } from '../../sim/i18n';
 import { callerCard, dealsRunning } from '../../sim/deals';
 import { chapterOf } from '../../sim/chapterOf';
 import { contactOf } from '../../sim/planContent';
-import { bookCard, planView, unbookCard, type PlanCardView, type PlanSlot } from '../../sim/plans';
+import { bookCard, introduce, planView, unbookCard, type PlanCardView, type PlanSlot } from '../../sim/plans';
+import { isCold, isKnown, reconcile, relationOf, relationStage } from '../../sim/network';
 import { chapterRound, chapterRounds } from '../../sim/timeskip';
 import { balance } from '../balance';
 import { events } from '../events';
@@ -153,7 +154,7 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
   const stelleVon = new Map(v.cards.map((c) => [c.id, contactOf(planContent, c)]));
   // Nur Stellen, bei denen gerade überhaupt etwas liegt (ab Kapitel 2 fallen Markt und Fracht weg).
   const stellen = planContent.contacts
-    .filter((k) => v.cards.some((c) => stelleVon.get(c.id) === k.id))
+    .filter((k) => isKnown(game, k.id) && v.cards.some((c) => stelleVon.get(c.id) === k.id))
     .map((k) => ({ ...k, frei: v.cards.filter((c) => stelleVon.get(c.id) === k.id && c.reason === null).length }));
   // Verlangt (ctx.tab), sonst zuletzt gewählt, sonst die erste Stelle, bei der etwas geht.
   const gibt = (id: string | null | undefined): id is string => !!id && stellen.some((k) => k.id === id);
@@ -176,6 +177,12 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
     .sort((a, b) => Number(a.reason !== null) - Number(b.reason !== null));
   const laufend = dealsRunning(game, balance);
   const gebucht = v.slots.map((s, i) => ({ s, i })).filter(({ s }) => s.kind !== 'frei');
+  const stellenName = (id: string) => localize(planContent.contacts.find((k) => k.id === id)?.name ?? planContent.title);
+  // Neu kennengelernt: in dieser oder der letzten Runde.
+  const neuSeit = (id: string) => {
+    const k = game.network?.known[id];
+    return !!k && k.since > 1 && game.round - k.since <= 1;
+  };
   function waehle(id: string) {
     setAbgenommen(true);
     writePref('crude.reiter.termine', id);
@@ -241,6 +248,31 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
       )}
       {/* Ergebnisse der Sofort-Karten gleich sehen (0.4.19+3); der volle Wochenbericht steht im Rundenbericht. */}
       {v.report.length > 0 && <Wochenbericht report={v.report} />}
+      {(game.network?.referrals ?? []).length > 0 && !game.finished && (
+        <ul className="empfehlungen" aria-label="Empfehlungen">
+          {game.network!.referrals.map((r) => (
+            <li key={r.to}>
+              <span>
+                <strong>{stellenName(r.from)}</strong> empfiehlt dir: <strong>{stellenName(r.to)}</strong>
+                <span className="muted"> – {localize(planContent.contacts.find((k) => k.id === r.to)?.who ?? planContent.title)}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const x = introduce(game, balance, r.to);
+                  if (!x.ok) setFehler(x.reason);
+                  else {
+                    ctx.onGame(x.state);
+                    waehle(r.to);
+                  }
+                }}
+              >
+                Vorstellen lassen ({balance.network.relation.introAppointments} Termin)
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="adressbuch">
         <nav className="stellen" aria-label={telefon ? 'Fräulein, verbinden Sie mich mit …' : 'Wen aufsuchen?'}>
           {telefon && <p className="stellen-kopf">Fräulein, verbinden Sie mich mit …</p>}
@@ -255,7 +287,9 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
               <span className="stelle-name">
                 {k.id === anrufStelle && <span aria-label="ruft an">☎ </span>}
                 {localize(k.name)}
+                {neuSeit(k.id) && <span className="stelle-neu"> neu</span>}
               </span>
+              <Beziehung game={game} id={k.id} />
               {k.frei > 0 && <span className="stelle-zahl">{k.frei}</span>}
             </button>
           ))}
@@ -265,6 +299,7 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
             <>
               <h3>{localize(stelle.name)}</h3>
               <p className="stelle-wer">{localize(stelle.who)}</p>
+              <BeziehungZeile game={game} id={stelle.id} onGame={ctx.onGame} onFehler={setFehler} />
               {stelle.id === 'geologen' && <GeologenAkte game={game} />}
               <ul className="angebote">
                 {hand.map((c) => (
@@ -285,6 +320,54 @@ export function CalendarSheet({ ctx }: { ctx: SheetContext }) {
         </section>
       </div>
     </>
+  );
+}
+
+/** 0.4.20+42: Beziehung zur Stelle als kleiner Balken (5 Stufen). Ohne Netzwerk (alter Stand) nichts. */
+function Beziehung({ game, id }: { game: SheetContext['game']; id: string }) {
+  if (!game.network?.known[id]) return null;
+  const rel = relationOf(game, id);
+  const stufe = relationStage(balance, rel);
+  return (
+    <span className={`beziehung b-${stufe}`} title={`Beziehung: ${stufe}`} aria-label={`Beziehung ${stufe}`}>
+      <span style={{ width: `${rel}%` }} />
+    </span>
+  );
+}
+
+/** Beziehung in Worten, was sie bringt – und Versöhnen, wenn die Stelle verärgert ist. */
+function BeziehungZeile({ game, id, onGame, onFehler }: { game: SheetContext['game']; id: string; onGame: SheetContext['onGame']; onFehler: (t: string) => void }) {
+  if (!game.network?.known[id]) return null;
+  const rel = relationOf(game, id);
+  const r = balance.network.relation;
+  const stufe = relationStage(balance, rel);
+  const empfiehlt = rel >= r.referralAt;
+  return (
+    <p className="beziehung-zeile klein">
+      Beziehung: <strong>{stufe}</strong>
+      {!isCold(game, balance, id) && (
+        <span className="muted">
+          {' '}
+          · jedes Geschäft hier pflegt sie{empfiehlt ? ' · empfiehlt dich weiter' : ''}
+        </span>
+      )}
+      {isCold(game, balance, id) && !game.finished && (
+        <>
+          {' '}
+          – hier macht man keine Geschäfte mehr mit dir.{' '}
+          <button
+            type="button"
+            onClick={() => {
+              const x = reconcile(game, balance, id);
+              if (x.ok) onGame(x.state);
+              else onFehler(x.reason);
+            }}
+          >
+            Versöhnen ({money(r.reconcileCash)})
+          </button>
+        </>
+      )}
+    </p>
   );
 }
 

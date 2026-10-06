@@ -25,6 +25,8 @@ import { parseBrandBalance, type BrandBalance } from './brand';
 import { parseHallstead, type HallsteadBalance } from './hallsteadBalance';
 // Termine als Hauptwerkzeug (Etappe 1): Erkundung und Planungsbrett.
 import { parseExplorationBalance, parsePlansBalance, type ExplorationBalance, type PlansBalance } from './plansBalance';
+import { parseNetworkBalance, type NetworkBalance } from './network';
+import { parseBuyersBalance, type BuyerBalance, type ExtraBuyer } from './buyers';
 // Termine als Hauptwerkzeug, Etappe 2: Preis- und Transport-Aktionen.
 import { parseDealsBalance, type DealsBalance } from './dealsBalance';
 import { parseBotPlans, parseFreightBalance, parsePriceActions, type BotPlans, type FreightBalance, type PriceActionsBalance } from './pricingBalance';
@@ -249,8 +251,8 @@ export interface ProductionBalance {
 export type TransportMode = 'wagon' | 'rail' | 'teams' | 'pipeline';
 export const TRANSPORT_MODES: readonly TransportMode[] = ['wagon', 'rail', 'teams', 'pipeline'];
 
-/** Käufer (0.2.15+2): der Crane Trust oder der unabhängige Händler in Port Ellis. */
-export type Buyer = 'crane' | 'trader';
+/** Käufer (0.2.15+2): der Crane Trust oder der unabhängige Händler in Port Ellis; ab 0.4.20+43 dazu die Großhändler aus buyers.ts. */
+export type Buyer = 'crane' | 'trader' | ExtraBuyer;
 export const BUYERS: readonly Buyer[] = ['crane', 'trader'];
 
 export interface TransportModeBalance {
@@ -1022,6 +1024,10 @@ export interface Balance {
   exploration: ExplorationBalance;
   /** Planungsbrett (Etappe 1): Zahlen der Karten. */
   plans: PlansBalance;
+  /** Netzwerk (0.4.20+42): welche Stellen Jacob kennt, wie er neue kennenlernt, Beziehung (src/sim/network.ts). */
+  network: NetworkBalance;
+  /** Weitere Großhändler (0.4.20+43, src/sim/buyers.ts). */
+  buyers: Record<ExtraBuyer, BuyerBalance>;
   /** Preis-Aktionen (Etappe 2): Förderbremse, Liefervertrag, Gerüchte, Crane, Ruf bei den Wildcattern. */
   priceActions: PriceActionsBalance;
   /** Transport-Aktionen (Etappe 2, balance.yaml transport.negotiation): Thorne, Brennan, Transportgemeinschaft. */
@@ -2680,6 +2686,8 @@ export function parseBalance(raw: unknown): Balance {
     forecast: parseForecast(raw),
     exploration: parseExplorationBalance(raw),
     plans: parsePlansBalance(raw),
+    network: parseNetworkBalance(raw),
+    buyers: parseBuyersBalance(raw),
     priceActions: parsePriceActions(raw),
     freight: parseFreightBalance(raw),
     deals: parseDealsBalance(raw),

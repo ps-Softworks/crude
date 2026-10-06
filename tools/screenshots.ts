@@ -46,6 +46,7 @@ import { openStaff } from '../src/sim/staff';
 import { startStocks } from '../src/sim/stocks';
 import { parseStocksContent } from '../src/sim/stocksContent';
 import { loadBalance } from '../src/sim/testBalance';
+import { advanceNetwork, knowAll, shiftRelation } from '../src/sim/network';
 import { loadEvents } from '../src/sim/testEvents';
 import { decideIpo } from '../src/sim/chapter';
 import { answerSwitch, markChronicleRead, runTimeskip, startTimeskip, SWITCH_CHOICES } from '../src/sim/timeskip';
@@ -305,10 +306,14 @@ const bilder: Bild[] = [
   // Termine als Adressbuch (0.4.20+28): Stellen links, Angebote der gewählten Stelle rechts.
   { name: '35-planungsbrett', state: start, prefs: { 'crude.reiter.termine': 'geologen' }, tasten: ['t'] },
   // Etappe 2: Reiter Markt und Fracht, Verhandlung mit Thorne, Förderbremse auf der Pinnwand.
-  { name: '36-brett-markt', state: mitBremse, prefs: { 'crude.reiter.termine': 'oelleute' }, tasten: ['t'] },
+  // 0.4.20+42 Netzwerk: Beziehung zu den Grundbesitzern gut – sie empfehlen die Ölleute.
+  { name: '46-netzwerk-empfehlung', state: advanceNetwork(shiftRelation(start, 'grundbesitzer', 15), balance, { grundbesitzer: 'Grundbesitzer', oelleute: 'Andere Ölleute' }), prefs: { 'crude.reiter.termine': 'grundbesitzer' }, tasten: ['t'] },
+  // 0.4.20+43 Großhändler: Kapitel 2, alle Stellen bekannt – mehrere Abnehmer im Frachtfenster.
+  { name: '46b-fracht-abnehmer', state: { ...kapitel2, network: knowAll(balance), oilStock: Math.max(kapitel2.oilStock, 20000) }, prefs: { 'crude.reiter.fracht': 'verkauf' }, tasten: ['f'] },
+  { name: '36-brett-markt', state: { ...mitBremse, network: knowAll(balance) }, prefs: { 'crude.reiter.termine': 'oelleute' }, tasten: ['t'] },
   // 0.4.20+32: neue Deals – Bank und Eisenbahn mit Festtarif/Kontingent.
-  { name: '37b-adressbuch-bank', state: mitBremse, prefs: { 'crude.reiter.termine': 'bank' }, tasten: ['t'] },
-  { name: '37-brett-fracht', state: mitBremse, prefs: { 'crude.reiter.termine': 'eisenbahn' }, tasten: ['t'], dann: `document.querySelector('.angebot-name')?.click()`, warte: 400 },
+  { name: '37b-adressbuch-bank', state: { ...mitBremse, network: knowAll(balance) }, prefs: { 'crude.reiter.termine': 'bank' }, tasten: ['t'] },
+  { name: '37-brett-fracht', state: { ...mitBremse, network: knowAll(balance) }, prefs: { 'crude.reiter.termine': 'eisenbahn' }, tasten: ['t'], dann: `document.querySelector('.angebot-name')?.click()`, warte: 400 },
   { name: '38-fracht-thorne', state: mitBremse, prefs: { 'crude.reiter.fracht': 'pipeline' }, tasten: ['f'] },
   { name: '39-pinnwand-bremse', state: mitBremse, dann: KLICK('.objekt-konkurrenz'), warte: 600 },
   // 0.4.20+2: Rundgang Kapitel 2 (zweiter Schritt: Kassenbuch) – kommt von selbst und blättert nur mit „Weiter“.

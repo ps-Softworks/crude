@@ -1,3 +1,4 @@
+import { knowAll } from './network';
 import { describe, expect, it } from 'vitest';
 import { creditLimit, quarterInterest, settleLoans, takeLoan } from './credit';
 import { activeSupply, callerCard, crewReturnCost, insuranceClaim, insurancePremium, DEAL_HANDLERS, dealsOf, supplyPrice, supplyShortfall, dealsRunning, newDeals, royaltyPrice, settleDeals } from './deals';
@@ -17,7 +18,8 @@ const katalog = loadEvents();
 const b = balance.deals;
 
 function start(seed = 'deals', patch: Partial<GameState> = {}): GameState {
-  return { ...newGame(seed, balance, katalog), ...patch };
+  // 0.4.20+42: Die Deals hier testen ihre eigenen Regeln – alle Stellen gelten als bekannt.
+  return { ...newGame(seed, balance, katalog), network: knowAll(balance), ...patch };
 }
 
 function mitKredit(seed = 'deals', betrag = 4000): GameState {

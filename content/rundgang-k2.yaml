@@ -9,6 +9,10 @@ schritte:
     text:
       de: Sechs Jahre später. Auf dem Tisch liegen ein paar Dinge, die es vorher nicht gab – hier ein kurzer Rundgang. Ruths Zettel sagt dir weiter, was als Nächstes dran ist.
       en: Six years later. A few things on the desk weren't here before – here is a short tour. Ruth's note still tells you what to do next.
+  - objekt: termine
+    text:
+      de: Statt des Kalenders hängt jetzt ein Telefon an der Wand (T). Das Fräulein verbindet dich mit allen, die du kennst – und manchmal klingelt es mit einem Angebot nur für diese Runde. Neue Leute lernst du über Empfehlungen kennen, oder sie melden sich, wenn die Firma groß genug ist.
+      en: Instead of the calendar, a telephone now hangs on the wall (T). The operator connects you with everyone you know – and sometimes it rings with an offer good for this round only. You meet new people through introductions, or they call once the company is big enough.
   - objekt: kassenbuch
     text:
       de: Im Kassenbuch (G) steht oben das Kapitelziel und wie weit du bist. Dazu neu, je nach Firmenform – Aktienbuch, Aufsichtsrat (er will Dividende) und Anleihen.

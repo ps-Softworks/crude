@@ -40,3 +40,6 @@ export function clueLine(c: ClueView): string {
   const wo = c.neighbour ? ` – nebenan auf ${c.neighbour}` : '';
   return `Runde ${c.round}: ${was}${wo} (${localize(content.sources[c.source])})`;
 }
+
+/** 0.4.20+42: Namen der Stellen für die Kladde (Netzwerk: „… meldet sich“, Empfehlungen). */
+export const contactNames: Record<string, string> = Object.fromEntries(planContent.contacts.map((k) => [k.id, localize(k.name)]));

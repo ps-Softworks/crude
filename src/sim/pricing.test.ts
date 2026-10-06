@@ -1,4 +1,5 @@
 // Termine als Hauptwerkzeug, Etappe 2: Preis-Aktionen (Plan 2.1, 2.2, Tests 2.6 „Preis“).
+import { knowAll } from './network';
 import { describe, expect, it } from 'vitest';
 import type { Balance } from './balance';
 import type { Well } from './drilling';
@@ -33,6 +34,11 @@ import { craneCut, jacobPrice, RIVAL_MARKS } from './trust';
 import { buyerCapacityLeft, buyerPrice, sellOil } from './transport';
 
 const balance = loadBalance();
+
+/** 0.4.20+42: Preis-Karten der Ölleute – alle Stellen gelten als bekannt. */
+function neuesSpiel(seed: string): GameState {
+  return { ...newGame(seed, balance, katalog), network: knowAll(balance) };
+}
 const katalog = loadEvents();
 const PA = balance.priceActions;
 
@@ -43,7 +49,7 @@ function ok(r: { ok: true; state: GameState } | { ok: false; reason: string }): 
 
 /** Ein Spiel mit einer fördernden Quelle auf einer echten ölführenden Ranch und vollem Tank. */
 function mitQuelle(seed: string, rate = 8000, tank = 12000): GameState {
-  const s = newGame(seed, balance, katalog);
+  const s = neuesSpiel(seed);
   const p = s.parcels.find((x) => !x.discovery && x.geology !== 'dry')!;
   const well: Well = { id: `${p.id}#1`, parcelId: p.id, stage: 1, status: 'found', roundsLeft: 0, spent: 0, oilStage: 1, result: 'small', production: { initialRate: rate, lastRate: rate, total: 0, roundsProduced: 1 }, startRound: 1 };
   return { ...s, wells: [well], oilStock: tank, cash: 5000 };
@@ -429,14 +435,14 @@ describe('Preis-Karten auf dem Brett', () => {
   });
 
   it('Förderbremse ohne eigene Förderung ist gesperrt', () => {
-    const s = newGame('ohne-quelle', balance, katalog);
+    const s = neuesSpiel('ohne-quelle');
     expect(planView(s, balance, katalog).cards.find((c) => c.id === 'foerderbremse')?.reason).toMatch(/fördernde Quelle/);
   });
 });
 
 describe('Spielstand (Etappe 2)', () => {
   it('der neue Zustand ist im frischen Spiel leer', () => {
-    const s = newGame('neu', balance, katalog);
+    const s = neuesSpiel('neu');
     expect(s.pricing).toEqual(newPricing());
     expect(s.wildcatterStanding).toBe(0);
     expect(computePrice(balance.market, marketMods(s, balance).supply, 1)).toBeGreaterThan(0);

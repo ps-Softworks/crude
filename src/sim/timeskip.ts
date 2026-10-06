@@ -28,6 +28,7 @@
 // Spielstand nur, was Jacob entschieden hat (state.jump), nie ein halber Sprung.
 // Texte: content/timeskip.yaml; Zahlen: balance.yaml → timeskip.
 
+import { jumpNetwork } from './network';
 import { parseDocument } from 'yaml';
 import { FAMILY_TIMES, STANCES, type Balance, type FamilyTime, type Stance } from './balance';
 import { formatDate } from './calendar';
@@ -1267,6 +1268,8 @@ export function runTimeskip(start: GameState, balance: Balance, catalog: readonl
     chapter: kapitel,
     chapterStart: round,
     totalRounds: round + t.nextChapterRounds - 1,
+    // 0.4.20+42: Kontakte bleiben, Beziehungen verblassen ein Stück, offene Empfehlungen verfallen.
+    network: jumpNetwork(s.network, balance, round),
     neighbourOffset: ziel - neighbourWells(balance.market, round),
     finished: false,
     ending: null,

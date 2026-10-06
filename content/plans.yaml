@@ -315,79 +315,97 @@ cards:
     risk: { de: "Wer ihn nicht in der Frist tilgt, zahlt danach deutlich mehr Zins.", en: "Whoever fails to repay it in time pays considerably more interest afterwards." }
 
 # Adressbuch (0.4.20+29): Stellen, die Jacob aufsuchen kann – Reihenfolge = Anzeige.
-# Jede Karte aus balance.yaml plans.cards steht bei genau einer Stelle (cards), feste
-# Termine ohne eigene Karte über ihr Ereignis (events). Was sonst nirgends steht, landet
-# bei der letzten Stelle.
+# Welche Karte bei welcher Stelle liegt, sagt die Karte selbst (contact in balance.yaml plans.cards);
+# wann Jacob eine Stelle kennt, steht in balance.yaml network.contacts (0.4.20+42). Feste Termine ohne
+# eigene Karte über ihr Ereignis (events). Was sonst nirgends steht, landet bei der letzten Stelle.
+  vertrag_cordova:
+    title: { de: "Liefervertrag Lampenöl", en: "Lamp oil supply contract" }
+    text: { de: "Ferrante nimmt Rohöl zu einem festen Preis, Runde für Runde – Cordova brennt jede Nacht Lampen.", en: "Ferrante takes crude at a fixed price, round after round – Cordova burns lamps every night." }
+    risk: { de: "Fehlt Öl, zahlst du Vertragsstrafe, und Ferrante wird kühl.", en: "Short on oil, you pay a penalty, and Ferrante cools." }
+  vertrag_okara:
+    title: { de: "Liefervertrag Okara", en: "Okara supply contract" }
+    text: { de: "Die Ölbörse in Okara kauft feste Mengen – kurzer Weg, Pruett schaut zu.", en: "The Okara exchange buys fixed volumes – short haul, Pruett watching." }
+    risk: { de: "Fehlt Öl, zahlst du Vertragsstrafe.", en: "Short on oil, you pay a penalty." }
+  vertrag_hallstead:
+    title: { de: "Liefervertrag Hauptstadt", en: "Capital supply contract" }
+    text: { de: "Wynn beliefert die Motorwerke und will sich auf dich verlassen können. Guter Preis, weiter Weg.", en: "Wynn supplies the motor works and wants to rely on you. Good price, long haul." }
+    risk: { de: "Fehlt Öl, zahlst du Vertragsstrafe.", en: "Short on oil, you pay a penalty." }
+  vertrag_eastern:
+    title: { de: "Liefervertrag mit Margaret Crane", en: "Supply contract with Margaret Crane" }
+    text: { de: "Margaret braucht Rohöl für ihre Ostküsten-Raffinerien – und zahlt dafür besser als ihr Vater je zahlte.", en: "Margaret needs crude for her east coast refineries – and pays better than her father ever did." }
+    risk: { de: "Wer Margaret beliefert, macht sie stärker. Fehlt Öl, kostet es Strafe.", en: "Supplying Margaret makes her stronger. Short on oil costs a penalty." }
+  vertrag_aldmark:
+    title: { de: "Exportvertrag Aldmark", en: "Aldmark export contract" }
+    text: { de: "Die Aldmarker zahlen den besten Preis im Land – über den Hafen, über das Meer.", en: "The Aldmarkers pay the best price in the land – via the harbour, across the sea." }
+    risk: { de: "Manchmal bleibt die Zahlung aus. Fehlt Öl, kostet es Strafe.", en: "Sometimes payment never arrives. Short on oil costs a penalty." }
 contacts:
   bank:
     name: { de: "Bank", en: "Bank" }
     who: { de: "Salt Hill Savings · Mr. Pettibone", en: "Salt Hill Savings · Mr. Pettibone" }
-    cards: [bank_angebot, bank_zins, bank_stundung, bank_pfand]
   geologen:
     name: { de: "Geologen", en: "Geologists" }
     who: { de: "Gutachter, Saloon-Kenner, Rutengänger", en: "Surveyors, saloon experts, dowsers" }
-    cards: [geologe_einstellen, geologe_hale, geologe_hallstead, geologe_besprechung, rute]
   grundbesitzer:
     name: { de: "Grundbesitzer", en: "Landowners" }
     who: { de: "Farmer und Rancher am Salt Hill", en: "Farmers and ranchers at Salt Hill" }
-    cards: [farmer, foerderzins]
   oelleute:
     name: { de: "Andere Ölleute", en: "Other Oilmen" }
     who: { de: "Bullard und die kleinen Förderer", en: "Bullard and the small producers" }
-    cards: [foerderbremse, pakt_halten, pakt_verlaengern, transportgemeinschaft, gemeinschaft_halten, bullard_einladen, zur_rede, turm_verleihen]
     events: [termin_lohnbohren]
   eisenbahn:
     name: { de: "Eisenbahn", en: "Railway" }
     who: { de: "Thorne Golfbahn · Augustus Thorne", en: "Thorne Gulf Railway · Augustus Thorne" }
-    cards: [thorne_vorsprechen, bahn_festtarif, bahn_kontingent, exklusiv_kuendigen]
   crane:
     name: { de: "Crane Trust", en: "Crane Trust" }
     who: { de: "Kontor im Hafen · Cornelius Crane", en: "Harbour office · Cornelius Crane" }
-    cards: [crane_feilschen, crane_vorschuss]
   haendler:
     name: { de: "Händler in Port Ellis", en: "Trader in Port Ellis" }
     who: { de: "kauft unabhängig vom Trust", en: "buys independently of the Trust" }
-    cards: [liefervertrag, haendler_grossabnahme]
   fuhrleute:
     name: { de: "Fuhrleute", en: "Teamsters" }
     who: { de: "Brennan und seine Gespanne", en: "Brennan and his teams" }
-    cards: [brennan]
   zeitung:
     name: { de: "Zeitung", en: "Newspaper" }
     who: { de: "der Courier und seine Zeilenschinder", en: "the Courier and its hacks" }
-    cards: [interview, geruecht, interview_presse, anzeigen]
   sheriff:
     name: { de: "Sheriff", en: "Sheriff" }
     who: { de: "Sheriff Tatum", en: "Sheriff Tatum" }
-    cards: [wache]
   marine:
     name: { de: "Marine", en: "Navy" }
     who: { de: "Kommandant Brandt, Flottenstützpunkt Port Ellis", en: "Commander Brandt, Port Ellis naval station" }
-    cards: [marine_heizoel]
   grosskunden:
     name: { de: "Großkunden", en: "Large Customers" }
     who: { de: "Fabriken, Bahnwerkstätten und Lampenöl-Händler", en: "Factories, railway workshops and lamp oil dealers" }
-    cards: [fabrik_schmieroel, lampenoel_kerosin]
   versicherung:
     name: { de: "Versicherung", en: "Insurance" }
     who: { de: "Provinzial-Feuerversicherung · Mr. Ashby", en: "Provincial Fire Insurance · Mr. Ashby" }
-    cards: [versicherung]
   arbeiter:
     name: { de: "Arbeiter", en: "Workers" }
     who: { de: "der Vormann der Bohrtrupps", en: "the foreman of the drilling crews" }
-    cards: [streik_droht, lohnerhoehung]
   lohnbohrer:
     name: { de: "Lohnbohrer und Ausrüster", en: "Contract Drillers and Outfitters" }
     who: { de: "Bohrmannschaften aus Okara, der Ausrüster aus Port Ellis", en: "Drilling crews from Okara, the outfitter from Port Ellis" }
-    cards: [lohnbohrer, ausruester_sammel]
   motorwagen:
     name: { de: "Motorwagen-Werke", en: "Motor Works" }
     who: { de: "Föderale Motorwagen-Werke, Hallstead", en: "Federal Motor Works, Hallstead" }
-    cards: [motorwagen_beteiligung, motorwagen_benzin]
   abgeordneter:
     name: { de: "Abgeordneter", en: "Deputy" }
     who: { de: "ein Abgeordneter der Provinz", en: "a provincial deputy" }
-    cards: [abgeordneter_gefallen, abgeordneter_stimme]
+  cordova_handel:
+    name: { de: "Lampenölhandel Cordova", en: "Cordova Lamp Oil Trade" }
+    who: { de: "Ferrante & Söhne, Großhändler für Lampenöl", en: "Ferrante & Sons, lamp oil wholesalers" }
+  okara_boerse:
+    name: { de: "Ölbörse Okara", en: "Okara Oil Exchange" }
+    who: { de: "Pruetts Einkäufer und die Händler am Okara-Feld", en: "Pruett's buyers and the traders at the Okara field" }
+  hallstead_handel:
+    name: { de: "Treibstoffhandel Hallstead", en: "Hallstead Fuel Trade" }
+    who: { de: "Bartholomew Wynn, beliefert die Motorwerke der Hauptstadt", en: "Bartholomew Wynn, supplies the capital's motor works" }
+  crane_eastern:
+    name: { de: "Crane Eastern", en: "Crane Eastern" }
+    who: { de: "Margaret Cranes Einkauf an der Ostküste", en: "Margaret Crane's purchasing on the east coast" }
+  aldmark_export:
+    name: { de: "Exporthaus Aldmark", en: "Aldmark Export House" }
+    who: { de: "Kaufleute aus Aldmark – zahlen gut, wenn sie zahlen", en: "Merchants from Aldmark – they pay well, when they pay" }
   familie:
     name: { de: "Familie", en: "Family" }
     who: { de: "Ruth und die Kinder", en: "Ruth and the children" }
@@ -395,7 +413,6 @@ contacts:
   selbst:
     name: { de: "Selbst erledigen", en: "Do It Yourself" }
     who: { de: "ohne Gesprächspartner", en: "no one to talk to" }
-    cards: [ritt, bohrbericht, tagebuch, feldinspektion]
 
 # Hinweise im Ranch-Fenster: was Jacob gesehen hat (seen) bzw. vergeblich gesucht (unseen).
 clues:

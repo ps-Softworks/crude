@@ -9,6 +9,7 @@
 // Kontingent, Vorschuss, Großabnahme), settleRigs (rigs.ts: verliehener Turm) und
 // settleDeals im Rundenende (game.ts: Fristen, Miete, Öldiebe).
 
+import { relationFactor } from './network';
 import type { Balance } from './balance';
 import { bankRate, headroom, quarterInterest, takeLoan } from './credit';
 import { formatDate } from './calendar';
@@ -285,6 +286,21 @@ const bahnKontingent: PlanHandler = {
 
 // --- Crane und Händler -------------------------------------------------------------
 
+/**
+ * 0.4.20+42: Kapitel-1-Deals gelten auch später – ihre Mengen wachsen mit dem Kapitel (deals.chapterScale),
+ * sonst wären 3.000 bbl Vorschuss in Kapitel 3 ein Witz.
+ */
+export function dealScale(state: Pick<GameState, 'chapter'>, balance: Balance): number {
+  const k = balance.deals.chapterScale;
+  return k[Math.min(k.length, Math.max(1, state.chapter ?? 1)) - 1];
+}
+
+/** Vorschuss in $: Preis × Menge × (1 − Abschlag), eine gute Beziehung zu Crane drückt den Abschlag (höchstens auf 0). */
+function advanceCash(state: GameState, balance: Balance, n: number, preis: number): number {
+  const a = balance.deals.crane.advance;
+  return cents(n * preis * Math.min(1, (1 - a.discount) * relationFactor(state, balance, 'crane')));
+}
+
 const craneVorschuss: PlanHandler = {
   lock(state) {
     if (dealsOf(state).advance) return 'Der letzte Vorschuss ist noch nicht abgeliefert.';
@@ -293,7 +309,7 @@ const craneVorschuss: PlanHandler = {
   options(state, balance) {
     const a = balance.deals.crane.advance;
     const preis = buyerPrice(state, balance, 'crane');
-    return a.sizes.map((n) => ({ id: String(n), label: `${bbl(n)} – sofort ${money(n * preis * (1 - a.discount))}`, reason: null }));
+    return a.sizes.map((x) => x * dealScale(state, balance)).map((n) => ({ id: String(n), label: `${bbl(n)} – sofort ${money(advanceCash(state, balance, n, preis))}`, reason: null }));
   },
   detail(_state, balance) {
     const a = balance.deals.crane.advance;
@@ -301,9 +317,9 @@ const craneVorschuss: PlanHandler = {
   },
   apply(state, balance, target) {
     const a = balance.deals.crane.advance;
-    const n = Number(target ?? a.sizes[0]);
+    const n = Number(target ?? a.sizes[0] * dealScale(state, balance));
     const preis = buyerPrice(state, balance, 'crane');
-    const geld = cents(n * preis * (1 - a.discount));
+    const geld = advanceCash(state, balance, n, preis);
     const s = withDeals({ ...state, cash: cents(state.cash + geld) }, { advance: { owed: n, price: preis, until: state.round + a.rounds - 1 } });
     return log(s, `Crane zahlt ${money(geld)} Vorschuss auf ${bbl(n)}.`);
   },
@@ -311,7 +327,7 @@ const craneVorschuss: PlanHandler = {
 
 /** Großabnahme: So viel nimmt der Händler in dieser Runde zusätzlich. */
 export function bulkExtra(state: Partial<Pick<GameState, 'deals' | 'round'>>, balance: Balance): number {
-  return state.round !== undefined && state.deals?.bulkRound === state.round ? balance.deals.trader.bulk.extra : 0;
+  return state.round !== undefined && state.deals?.bulkRound === state.round ? balance.deals.trader.bulk.extra * dealScale(state as Pick<GameState, 'chapter'>, balance) : 0;
 }
 
 const haendlerGrossabnahme: PlanHandler = {
@@ -320,11 +336,11 @@ const haendlerGrossabnahme: PlanHandler = {
     return cooling(state, 'haendler_grossabnahme');
   },
   detail(_state, balance) {
-    return `Der Händler nimmt diese Runde ${bbl(balance.deals.trader.bulk.extra)} mehr – zu seinem Preis. Crane merkt sich jeden Händlerverkauf.`;
+    return `Der Händler nimmt diese Runde ${bbl(balance.deals.trader.bulk.extra * dealScale(_state, balance))} mehr – zu seinem Preis. Crane merkt sich jeden Händlerverkauf.`;
   },
   apply(state, balance) {
     const s = cooldown(withDeals(state, { bulkRound: state.round }), 'haendler_grossabnahme', balance.deals.trader.bulk.cooldown);
-    return log(s, `Der Händler in Port Ellis nimmt diese Runde ${bbl(balance.deals.trader.bulk.extra)} mehr.`);
+    return log(s, `Der Händler in Port Ellis nimmt diese Runde ${bbl(balance.deals.trader.bulk.extra * dealScale(state, balance))} mehr.`);
   },
 };
 
@@ -985,7 +1001,7 @@ export function dealsRunning(state: GameState, balance: Balance): string[] {
   if (d.railFixed && d.railFixed.until >= state.round) out.push(`Festtarif bis Runde ${d.railFixed.until} – mind. ${bbl(balance.deals.rail.fixed.minimum)} je Runde per Bahn`);
   if (d.railQuota && d.railQuota.left > 0 && d.railQuota.until >= state.round) out.push(`Frachtkontingent: noch ${bbl(d.railQuota.left)} bis Runde ${d.railQuota.until}`);
   if (d.advance) out.push(`Vorschuss: noch ${bbl(d.advance.owed)} an Crane bis Ende Runde ${d.advance.until}`);
-  if (d.bulkRound === state.round) out.push(`Händler nimmt diese Runde ${bbl(balance.deals.trader.bulk.extra)} mehr`);
+  if (d.bulkRound === state.round) out.push(`Händler nimmt diese Runde ${bbl(bulkExtra(state, balance))} mehr`);
   if (d.lent) out.push(`Bohrturm verliehen bis Ende Runde ${d.lent.until}`);
   if (d.guardRound === state.round) out.push('Wache an den Tanks');
   if (d.insurance && d.insurance.until >= state.round) out.push(`Feuerversicherung bis Runde ${d.insurance.until} (${money(d.insurance.premium)} je Runde)`);

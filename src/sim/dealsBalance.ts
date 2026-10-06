@@ -5,6 +5,8 @@ import { BalanceError } from './balance';
 import { PRODUCTS, type Product } from './refineryBalance';
 
 export interface DealsBalance {
+  /** 0.4.20+42: Mengen der Kapitel-1-Deals × diesen Faktor je Kapitel (Index 0 = Kapitel 1). */
+  chapterScale: number[];
   bank: {
     /** Zins nachverhandeln: Chance je Rating, Senkung je Erfolg, Untergrenze, Pause nach jedem Versuch. */
     rate: { chance: Record<'A' | 'B' | 'C' | 'D', number>; cut: number; floor: number; cooldown: number };
@@ -178,6 +180,7 @@ export function parseDealsBalance(raw: unknown): DealsBalance {
       fixed: { rounds: liste(raw, `${p}.rail.fixed.rounds`), minimum: zahl(raw, `${p}.rail.fixed.minimum`), shortfall: zahl(raw, `${p}.rail.fixed.shortfall`) },
       quota: { sizes: liste(raw, `${p}.rail.quota.sizes`), discount: anteil(raw, `${p}.rail.quota.discount`), rounds: ganz(raw, `${p}.rail.quota.rounds`) },
     },
+    chapterScale: liste(raw, `${p}.chapterScale`),
     crane: {
       advance: {
         sizes: liste(raw, `${p}.crane.advance.sizes`),

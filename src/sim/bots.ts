@@ -57,7 +57,8 @@ import { choiceCost, choiceReason, resolveEvent, routineOffered, type EventChoic
 import { investigationUnlocked, traces } from './investigation';
 // Termine als Hauptwerkzeug (Etappe 1): Erkundung über das Planungsbrett.
 import { knowledgeOf, suggestRide } from './exploration';
-import { bookCard, exploreAppointments } from './plans';
+import { bookCard, exploreAppointments, introduce } from './plans';
+import { openBuyers } from './buyers';
 // Etappe 2: Preis- und Transport-Aktionen über das Planungsbrett.
 import { activeContract, cartelActive, cranePressure, craneResistance, type PricingState } from './pricing';
 import { brennanActive, freightPressure, thorneResistance } from './freight';
@@ -128,7 +129,8 @@ function sell(state: GameState, balance: Balance, share: number, ledger: Transpo
   let rest = Math.floor(Math.floor(state.oilStock) * share);
   // Etappe 2: Ein Liefervertrag mit dem Händler wird zuerst erfüllt (Fehlmenge kostet Strafe).
   const vertrag = activeContract(state, 'haendler') !== null;
-  const buyers: Buyer[] = trader || vertrag ? ['trader', 'crane'] : ['crane'];
+  // 0.4.20+43: Wer an den Händler verkauft, verkauft auch an die bekannten Großhändler.
+  const buyers: Buyer[] = trader || vertrag ? ['trader', ...openBuyers(state, balance), 'crane'] : ['crane'];
   const wege = TRANSPORT_MODES.flatMap((mode) => buyers.map((buyer) => ({ mode, buyer })));
   // Spielspaß K1: Der bluffende Bot schickt während Thornes Prüfung zuerst alles per Bahn – die Drohung war Luft.
   const pruefung = bluff && state.freight?.bluffCheck != null && state.round >= state.freight.bluffCheck.from;
@@ -1172,6 +1174,15 @@ export function buyoutCount(state: Pick<GameState, 'log'>): { offers: number; ac
   return { offers: accepted + state.log.filter((z) => z.includes('Bullard lehnt dein Angebot')).length, accepted };
 }
 
+/** 0.4.20+42: Jede offene Empfehlung annehmen, solange die Termine reichen. */
+export function networkTurn(state: GameState, balance: Balance): GameState {
+  for (const ref of state.network?.referrals ?? []) {
+    const r = introduce(state, balance, ref.to);
+    if (r.ok) state = r.state;
+  }
+  return state;
+}
+
 export function botTurn(
   state: GameState,
   balance: Balance,
@@ -1181,6 +1192,8 @@ export function botTurn(
   ledger: TransportLedger = newLedger(),
 ): GameState {
   if (state.finished) return state;
+  // 0.4.20+42: Empfehlungen nehmen alle planenden Bots gleich an – neue Kontakte bringen neue Karten.
+  if (strategy !== 'zufaellig') state = networkTurn(state, balance);
   // Erkundung (Etappe 1): Die planenden Bots reiten übers Land, bevor die Briefe die Zeit fressen.
   if (strategy !== 'zufaellig') state = exploreTurn(state, balance, strategy, catalog);
   // Etappe 2: Preis- und Fracht-Karten nach bots.plans – ebenfalls vor den Briefen.

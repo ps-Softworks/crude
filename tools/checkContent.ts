@@ -39,6 +39,7 @@ import { checkInvestigationContent, parseInvestigationContent } from '../src/sim
 import { parseResearchContent } from '../src/sim/research';
 // Termine als Hauptwerkzeug (Etappe 1): Planungsbrett.
 import { checkPlanContent, parsePlanContent } from '../src/sim/planContent';
+import { checkNetwork } from '../src/sim/network';
 import { planRefErrors } from '../src/sim/plans';
 
 const dir = process.argv[2] ? resolve(process.argv[2]) : EVENTS_DIR;
@@ -145,6 +146,8 @@ if (hallstead.content) errors.push(...checkHallsteadContent('content/hallstead.y
   const brett = parsePlanContent('content/plans.yaml', readFileSync(new URL('../content/plans.yaml', import.meta.url), 'utf8'));
   errors.push(...brett.errors);
   if (brett.content) errors.push(...checkPlanContent('content/plans.yaml', brett.content, balance, events.map((e) => e.id)));
+  // 0.4.20+42: Netzwerk – jede Karte hat eine Stelle, jede Stelle ist erreichbar.
+  for (const message of checkNetwork(balance)) errors.push({ file: 'content/balance.yaml', line: 1, message });
   if (parsed.errors.length === 0) for (const m of planRefErrors(balance, events)) errors.push({ file: 'content/balance.yaml', line: 1, message: m });
 }
 if (errors.length > 0) {

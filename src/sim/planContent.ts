@@ -25,8 +25,6 @@ export interface PlanContact {
   name: LocalizedText;
   /** Wer dort sitzt, in einer Zeile. */
   who: LocalizedText;
-  /** Karten aus balance.yaml plans.cards. */
-  cards: string[];
   /** Feste Termine ohne eigene Karte (Ereignis-IDs). */
   events: string[];
 }
@@ -154,13 +152,12 @@ export function parsePlanContent(file: string, text: string): { content: PlanCon
         fehler(`contacts.${id}: braucht name und who.`);
         continue;
       }
-      const unbekannt = Object.keys(c).filter((k) => !['name', 'who', 'cards', 'events'].includes(k));
-      if (unbekannt.length > 0) fehler(`contacts.${id}: unbekannt ${unbekannt.join(', ')}. Erlaubt: name, who, cards, events.`);
+      const unbekannt = Object.keys(c).filter((k) => !['name', 'who', 'events'].includes(k));
+      if (unbekannt.length > 0) fehler(`contacts.${id}: unbekannt ${unbekannt.join(', ')}. Erlaubt: name, who, events (die Karten nennen ihre Stelle selbst: contact in balance.yaml plans.cards).`);
       const name = sprachtext(c.name, `contacts.${id}.name`);
       const who = sprachtext(c.who, `contacts.${id}.who`);
-      const cardIds = liste(c.cards, `contacts.${id}.cards`);
       const eventIds = liste(c.events, `contacts.${id}.events`);
-      if (name && who) contacts.push({ id, name, who, cards: cardIds, events: eventIds });
+      if (name && who) contacts.push({ id, name, who, events: eventIds });
     }
     if (contacts.length === 0) fehler('contacts: mindestens eine Stelle.');
   }
@@ -179,29 +176,27 @@ export function parsePlanContent(file: string, text: string): { content: PlanCon
 }
 
 /**
- * Bei welcher Stelle liegt eine Karte? Eigene Karten über contacts.*.cards, feste Termine ohne
- * eigene Karte über contacts.*.events; was nirgends steht, bei der letzten Stelle.
- * Reine Darstellungshilfe – die Simulation liest das nicht.
+ * Bei welcher Stelle liegt eine Karte? Eigene Karten nennen ihre Stelle selbst (contact in balance.yaml,
+ * 0.4.20+42), feste Termine ohne eigene Karte über contacts.*.events; was nirgends steht, bei der letzten Stelle.
  */
-export function contactOf(content: Pick<PlanContent, 'contacts'>, card: { id: string; event?: string; auto: boolean }): string {
+export function contactOf(content: Pick<PlanContent, 'contacts'>, card: { id: string; event?: string; auto?: boolean; contact?: string }): string {
   const { contacts } = content;
-  const hit = card.auto
+  const hit = card.auto || !card.contact
     ? contacts.find((c) => card.event !== undefined && c.events.includes(card.event))
-    : contacts.find((c) => c.cards.includes(card.id));
+    : contacts.find((c) => c.id === card.contact);
   return (hit ?? contacts[contacts.length - 1]).id;
 }
 
 /** Passt content/plans.yaml zu balance.yaml? Jede eigene Karte braucht Texte und genau eine Stelle, jede Zone ihr Wort. */
 export function checkPlanContent(file: string, content: PlanContent, balance: Balance, eventIds?: readonly string[]): ContentError[] {
   const errors: ContentError[] = [];
-  for (const id of Object.keys(balance.plans.cards)) {
-    const n = content.contacts.filter((c) => c.cards.includes(id)).length;
-    if (n !== 1) errors.push({ file, line: 1, message: `Karte ${id} steht bei ${n} Stellen in contacts (genau eine nötig).` });
+  // 0.4.20+42: Jede Stelle des Netzwerks (balance.yaml network.contacts) braucht Name und Zeile hier – und umgekehrt.
+  const texte = new Set(content.contacts.map((c) => c.id));
+  for (const id of Object.keys(balance.network.contacts)) {
+    if (!texte.has(id)) errors.push({ file, line: 1, message: `contacts.${id} fehlt (Stelle aus balance.yaml network.contacts).` });
   }
   for (const c of content.contacts) {
-    for (const id of c.cards) {
-      if (!balance.plans.cards[id]) errors.push({ file, line: 1, message: `contacts.${c.id}.cards: ${id} gibt es in balance.yaml plans.cards nicht.` });
-    }
+    if (!balance.network.contacts[c.id]) errors.push({ file, line: 1, message: `contacts.${c.id}: Diese Stelle gibt es in balance.yaml network.contacts nicht.` });
     if (eventIds) {
       for (const id of c.events) {
         if (!eventIds.includes(id)) errors.push({ file, line: 1, message: `contacts.${c.id}.events: Ereignis ${id} gibt es nicht.` });

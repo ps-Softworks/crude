@@ -78,9 +78,13 @@ export interface PlanRequires {
   /** 0.4.20+34: erst ab diesem Kapitel (Telefon). */
   minChapter?: number;
   maxChapter?: number;
+  /** 0.4.20+42: nur bei mindestens dieser Beziehung zur Stelle (network.ts). */
+  minRelation?: number;
 }
 
 export interface PlanCardBalance {
+  /** Stelle im Adressbuch (0.4.20+42, network.contacts) – unbekannte Stellen zeigen ihre Karten nicht. */
+  contact: string;
   tab: PlanTab;
   appointments: number;
   cash: number;
@@ -198,9 +202,13 @@ export function parsePlansBalance(raw: unknown): PlansBalance {
     if (req.minRound !== undefined) requires.minRound = zahl(raw, `${q}.requires.minRound`);
     if (req.minChapter !== undefined) requires.minChapter = zahl(raw, `${q}.requires.minChapter`);
     if (req.maxChapter !== undefined) requires.maxChapter = zahl(raw, `${q}.requires.maxChapter`);
+    if (req.minRelation !== undefined) requires.minRelation = zahl(raw, `${q}.requires.minRelation`);
+    const contact = wert(raw, `${q}.contact`);
+    if (typeof contact !== 'string' || contact === '') throw new BalanceError(`balance.yaml: "${q}.contact" fehlt (Stelle aus network.contacts)`);
     const call = wert(raw, `${q}.call`);
     if (call !== undefined && (typeof call !== 'number' || !(call > 0))) throw new BalanceError(`balance.yaml: "${q}.call" muss eine Zahl über 0 sein`);
     cards[id] = {
+      contact,
       tab: tab as PlanTab,
       appointments,
       cash: wert(raw, `${q}.cash`) === undefined ? 0 : nichtNegativ(raw, `${q}.cash`),
