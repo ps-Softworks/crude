@@ -163,9 +163,11 @@ export interface BotPlans {
   pool: boolean;
   /** Spielspaß K1: blufft bewusst – hält sich nach einem Zugeständnis nicht an Thornes Bahngrenze. */
   bluff: boolean;
+  /** Betrügerischer Bot (GDD §17): verkauft die laufende Förderbremse oder den Händlervertrag an Crane (feilschen mit Angebot = Verrat). */
+  betray: boolean;
 }
 
-export const BOT_PLAN_KEYS = ['cartel', 'contract', 'rumour', 'crane', 'thorne', 'brennan', 'pool', 'bluff'] as const;
+export const BOT_PLAN_KEYS = ['cartel', 'contract', 'rumour', 'crane', 'thorne', 'brennan', 'pool', 'bluff', 'betray'] as const;
 
 function wert(obj: unknown, path: string): unknown {
   return path.split('.').reduce<unknown>((o, key) => (o && typeof o === 'object' ? (o as Record<string, unknown>)[key] : undefined), obj);
@@ -346,9 +348,9 @@ export function parseFreightBalance(raw: unknown): FreightBalance {
   return out;
 }
 
-export function parseBotPlans(raw: unknown): Record<'cautious' | 'greedy' | 'balanced', BotPlans> {
-  const out = {} as Record<'cautious' | 'greedy' | 'balanced', BotPlans>;
-  for (const name of ['cautious', 'greedy', 'balanced'] as const) {
+export function parseBotPlans(raw: unknown): Record<'cautious' | 'greedy' | 'balanced' | 'cheat', BotPlans> {
+  const out = {} as Record<'cautious' | 'greedy' | 'balanced' | 'cheat', BotPlans>;
+  for (const name of ['cautious', 'greedy', 'balanced', 'cheat'] as const) {
     // Ein schon gelesenes Balance-Objekt trägt den Block unter „botPlans“.
     const q = wert(raw, 'bots.plans') === undefined && wert(raw, 'botPlans') !== undefined ? `botPlans.${name}` : `bots.plans.${name}`;
     const plans = {} as BotPlans;

@@ -386,6 +386,8 @@ describe('Bot-Läufe mit Ereignissen (2.15)', () => {
       seeds: [],
       crisis: { games: 0, bankrupt: 0 },
       calm: { games: 10, bankrupt: 0 },
+      traces: 0,
+      dirtyGames: 0,
       ...o,
     });
     const tag = balance.bots.daysPerRound;

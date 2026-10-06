@@ -7,6 +7,9 @@
 //
 // Wie jede Strategie die späteren Kapitel spielt, steht in balance.yaml unter bots.campaign; die
 // Zielwerte unter bots.campaignTargets. Ausgabe: tools/kampagnenlaeufe.ts → docs/botlaeufe.md.
+// Der betrügerische Bot (GDD §17) zieht in Kapitel 2/3 zusätzlich die schmutzigen Hebel (dirtyTurn):
+// Sicherheitschef mit Sabotage, Anwalt und politischer Druck gegen Delaney, Lobbyist und Umschläge in
+// Hallstead, Doppelspiel im Konsortium. Sein Risiko ist echt: Anklage, Zwangsverkauf, Haft.
 
 import { CAMPAIGN_TARGET_IDS, FAMILY_TIMES, STANCES, type Balance, type CampaignBotPolicy, type CampaignTargetId, type FamilyTime, type Stance } from './balance';
 import { botTurn, playGame, type Strategy, STRATEGIES } from './bots';
@@ -25,6 +28,11 @@ import { bondDebt, bondLimit, buyBack, control, courtMember, issueBond, thorneBl
 import { answerSwitch, runTimeskip, startTimeskip, SWITCH_CHOICES, type Directives, type SwitchId } from './timeskip';
 import { skipWorld, type WorldState } from './world';
 import { creditCrises } from './worldRun';
+import { applyPressure, DELANEY_MARKS, heat, pressurePaysWithFavors, setLawyer } from './investigation';
+import { hallsteadUnlocked } from './hallsteadState';
+import { availableFavors, bribe, hireLobbyist } from './lobby';
+import { answerFavor, answerInvitation, invitationOpen } from './konsortium';
+import { hasTrait, hireStaff, memberOf, onDuty, orderFixer, staffHeat } from './staff';
 
 /** Texte, die Kapitel 2 und 3 brauchen (Räte des Aufsichtsrats, Kapitel-3-Texte). */
 export interface CampaignTexts extends ChapterSystemTexts {
@@ -70,6 +78,36 @@ export interface CampaignResult {
   /** 0.4.20+8 Cranes Feldzug in Kapitel 3: wie er ausging ('keiner' = nie angekündigt oder Kapitel 3 nicht erreicht, 'laufend' = die Kampagne endete mitten im Krieg), Thornes Kredit genommen. */
   feldzug: FeldzugOutcome | 'keiner' | 'laufend';
   thorneLoans: number;
+  /** Betrügerischer Bot (GDD §17): Was Delaney erreicht hat und wie das Konsortium ausging (Stand am Ende der Kampagne). */
+  delaney: DelaneyOutcome;
+}
+
+export interface DelaneyOutcome {
+  /** Vorermittlung eröffnet, Anklage erhoben, verurteilt (Geldstrafe oder schwerer), Zwangsverkauf, Haft. */
+  probe: boolean;
+  charge: boolean;
+  convicted: boolean;
+  forcedSale: boolean;
+  prison: boolean;
+  /** Hitze am Ende (Spuren + Personal). */
+  heat: number;
+  /** Doppelspiel im Konsortium aufgeflogen. */
+  exposed: boolean;
+}
+
+/** Was Delaney am Ende einer Kampagne in der Hand hatte (Merkzeichen der Ermittlung, Konsortium). */
+export function delaneyOutcome(s: GameState, balance: Balance): DelaneyOutcome {
+  const m = s.events.marks;
+  const hat = (k: string) => m[k] !== undefined;
+  return {
+    probe: hat(DELANEY_MARKS.probe),
+    charge: hat(DELANEY_MARKS.charge),
+    convicted: hat(DELANEY_MARKS.convicted),
+    forcedSale: hat(DELANEY_MARKS.forcedSale),
+    prison: hat(DELANEY_MARKS.prison) || s.ending === 'haft',
+    heat: s.investigation ? heat(s, balance) : 0,
+    exposed: (s.kapitel3?.notes ?? []).some((n) => n.key === 'aufgeflogen'),
+  };
 }
 
 function feldzugAusgang(s: GameState): CampaignResult['feldzug'] {
@@ -97,6 +135,8 @@ export function campaignPolicy(balance: Balance, strategy: Strategy, rng: Rng): 
       return c.greedy;
     case 'ausgewogen':
       return c.balanced;
+    case 'betruegerisch':
+      return c.cheat;
     case 'zufaellig': {
       const stance = STANCES[rng.int(0, STANCES.length - 1)];
       const family = FAMILY_TIMES[rng.int(0, FAMILY_TIMES.length - 1)];
@@ -104,6 +144,7 @@ export function campaignPolicy(balance: Balance, strategy: Strategy, rng: Rng): 
       const answers = Object.fromEntries((Object.keys(SWITCH_CHOICES) as SwitchId[]).map((id) => [id, SWITCH_CHOICES[id][rng.int(0, 1)]])) as Record<SwitchId, string>;
       return {
         ...c.balanced,
+        dirty: null,
         perRound: c.balanced.perRound,
         stance,
         family,
@@ -216,13 +257,89 @@ export function stocksTurn(state: GameState, balance: Balance, policy: CampaignB
   return s;
 }
 
+/**
+ * Schmutzige Hebel (Betrügerischer Bot, GDD §17, balance.yaml bots.campaign.cheat.dirty), je Runde vor dem Rundenende:
+ * - Sicherheitschef (Kapitel 2/3): stellt den ersten Bewerber ein, der nicht gewissenhaft ist, und lässt bei Bullard
+ *   sabotieren, solange die Hitze des Personals unter sabotageBelow liegt (sie zählt auch bei Delaney).
+ * - Delaney: Ermittelt er, nimmt der Bot einen Anwalt der Stufe lawyer und macht einmal je Fall politischen Druck –
+ *   mit Hallstead-Gefallen, wenn er sie hat (Kapitel 3: Umschläge, bis sie reichen), sonst mit Geld.
+ * - Hallstead (Kapitel 3): stellt den Lobbyisten lobbyist ein.
+ * - Konsortium (Kapitel 3): antwortet auf Vales Einladung mit konsortium; im Doppelspiel täuscht er Gefallen vor,
+ *   als Mitglied erfüllt er sie, wenn die Rücklage bleibt.
+ * Geld nur über der Rücklage. Rein und deterministisch (Zufall nur in den Systemen selbst).
+ */
+export function dirtyTurn(state: GameState, balance: Balance, policy: CampaignBotPolicy): GameState {
+  const d = policy.dirty;
+  if (!d || state.finished || chapterOf(state) < 2) return state;
+  let s = state;
+  const frei = (kosten: number) => s.cash - kosten >= policy.reserve;
+  // Sicherheitschef
+  if (d.fixer && s.staff) {
+    if (!memberOf(s, 'fixer')) {
+      const i = s.staff.candidates.findIndex((c) => c.role === 'fixer' && !hasTrait(c, 'gewissenhaft'));
+      if (i >= 0) {
+        const r = hireStaff(s, balance, i);
+        if (r.ok) s = r.state;
+      }
+    }
+    if (onDuty(s, 'fixer') && staffHeat(s) < d.sabotageBelow && frei(balance.staff.fixer.orders.sabotage.cost)) {
+      const r = orderFixer(s, balance, 'sabotage');
+      if (r.ok) s = r.state;
+    }
+  }
+  // Lobbyist in Hallstead
+  if (d.lobbyist && hallsteadUnlocked(s, balance) && !s.hallstead?.lobby.lobbyist) {
+    const c = balance.hallstead.lobby.candidates[d.lobbyist];
+    if (c && frei(c.hireCost)) {
+      const r = hireLobbyist(s, balance, d.lobbyist);
+      if (r.ok) s = r.state;
+    }
+  }
+  // Delaney
+  const inv = s.investigation;
+  if (inv && (inv.stage === 'vorermittlung' || inv.stage === 'anklage')) {
+    if (inv.lawyer < d.lawyer) {
+      const r = setLawyer(s, balance, d.lawyer);
+      if (r.ok) s = r.state;
+    }
+    if (d.pressure && !inv.pressure) {
+      const P = balance.investigation.pressure;
+      const B = balance.hallstead.lobby.bribe;
+      for (let i = 0; i < 3 && d.bribe && hallsteadUnlocked(s, balance) && s.hallstead?.lobby.lobbyist && availableFavors(s) < P.favors && frei(B.cost); i++) {
+        const r = bribe(s, balance);
+        if (!r.ok) break;
+        s = r.state;
+      }
+      if (pressurePaysWithFavors(s, balance) || frei(P.cost)) {
+        const r = applyPressure(s, balance);
+        if (r.ok) s = r.state;
+      }
+    }
+  }
+  // Konsortium
+  if (d.konsortium && s.kapitel3 && invitationOpen(s.kapitel3)) {
+    const r = answerInvitation(s, balance, d.konsortium);
+    if (r.ok) s = r.state;
+  }
+  const k = s.kapitel3?.konsortium;
+  if (k?.favor) {
+    const kosten = balance.kapitel3.konsortium.favors.find((f) => f.id === k.favor!.id)?.cash ?? 0;
+    const wahl = k.path === 'doppelspiel' ? 'vortaeuschen' : frei(kosten) ? 'erfuellen' : null;
+    if (wahl) {
+      const r = answerFavor(s, balance, wahl);
+      if (r.ok) s = r.state;
+    }
+  }
+  return s;
+}
+
 /** Spielt ein Kapitel (2 oder 3) bis zum Ende: botTurn, Kapitelsysteme, Börse, endRound. */
 function playChapter(state: GameState, balance: Balance, strategy: Strategy, policy: CampaignBotPolicy, rng: Rng, catalog: readonly EventDef[], texts: CampaignTexts, stats: { marginBuys: number; liquidations: number; thorneLoans: number }): GameState {
   let s = state;
   const grenze = s.totalRounds + 5;
   while (!s.finished) {
     if (s.round > grenze) throw new Error(`Kampagne ${s.seed} (${strategy}) endet Kapitel ${s.chapter} nicht.`);
-    let t = botTurn(s, balance, strategy, rng, catalog);
+    let t = dirtyTurn(botTurn(s, balance, strategy, rng, catalog), balance, policy);
     if (policy.systemsChance >= 1 || rng.float() < policy.systemsChance) t = botChapterSystems(t, balance, { reserve: policy.reserve, perRound: policy.perRound });
     const ohneKredit = !t.feldzug?.loan;
     t = botFeldzug(t, balance, policy.feldzug, policy.reserve);
@@ -254,7 +371,7 @@ export function playCampaign(seed: string, balance: Balance, strategy: Strategy,
   const ende = (s: GameState, survived: boolean): CampaignResult => {
     const rest = Math.max(0, endeRunde - s.round);
     const welt = rest > 0 ? skipWorld(s.worldModel, balance.worldModel, rest, {}, balance.laws) : s.worldModel;
-    return { seed, strategy, stance: policy.stance, chapters, survived, finalValue: survived ? empireValue(s, balance) : 0, crises: crisesOf(welt), ...stats, feldzug: feldzugAusgang(s) };
+    return { seed, strategy, stance: policy.stance, chapters, survived, finalValue: survived ? empireValue(s, balance) : 0, crises: crisesOf(welt), ...stats, feldzug: feldzugAusgang(s), delaney: delaneyOutcome(s, balance) };
   };
   if (k1.ending !== 'kapitel') return ende(k1, false);
   let s = k1;
@@ -534,6 +651,8 @@ const LABEL: Record<CampaignTargetId, { label: string; source: string; unit: Cam
   winRate: { label: 'Höchste Siegquote einer Strategie (Endwert Kapitel 3)', source: 'GDD §17: keine Einzelstrategie gewinnt in mehr als 40 %', unit: 'share' },
   fairWinRate: { label: 'Höchste Siegquote einer Strategie bei gleichem Start (Kapitel 2/3 ab Kapitelende des Standard-Bots)', source: 'GDD §17 auf Kapitel 2 und 3 allein: kein Weg dominiert', unit: 'share' },
   stanceWin: { label: 'Höchste Siegquote einer Haltung im Zeitsprung (Standard-Bot)', source: 'kein dominanter Weg: keine Haltung gewinnt fast immer', unit: 'share' },
+  cheatPrison: { label: 'Kampagnen des betrügerischen Bots, die mit Haft enden', source: 'GDD §17/§10: Betrug lohnt sich manchmal, oft endet er vor Gericht', unit: 'share' },
+  cheatCaught: { label: 'Kampagnen des betrügerischen Bots mit Verurteilung (Geldstrafe, Zwangsverkauf oder Haft)', source: 'GDD §10: Delaney erwischt ihn oft, aber nicht immer', unit: 'share' },
 };
 
 function row(report: CampaignReport, s: Strategy): CampaignRow {
@@ -566,6 +685,8 @@ export function campaignTargetValues(report: CampaignReport): Record<CampaignTar
     winRate: Math.max(...report.rows.map((r) => r.winRate)),
     fairWinRate: Math.max(...report.fair.map((r) => r.winRate)),
     stanceWin: Math.max(...report.stances.map((s) => s.winRate)),
+    cheatPrison: schnitt(row(report, 'betruegerisch').results.map((r) => (r.delaney.prison ? 1 : 0))),
+    cheatCaught: schnitt(row(report, 'betruegerisch').results.map((r) => (r.delaney.convicted || r.delaney.prison ? 1 : 0))),
   };
 }
 
@@ -590,7 +711,7 @@ function wert(unit: CampaignTargetRow['unit'], x: number): string {
   return unit === 'share' ? prozent(x) : zahl(x);
 }
 
-export function campaignTables(report: CampaignReport): { overview: string; chapters: string; crises: string; stances: string; fair: string; feldzug: string } {
+export function campaignTables(report: CampaignReport): { overview: string; chapters: string; crises: string; stances: string; fair: string; feldzug: string; delaney: string } {
   const overview = [
     '| Strategie | Kampagnen | bis Ende Kapitel 3 | je pleite | Ø Endwert | Siegquote | Ø Käufe auf Kredit | Ø Zwangsverkäufe |',
     '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
@@ -628,7 +749,21 @@ export function campaignTables(report: CampaignReport): { overview: string; chap
     ...report.fair.map((f) => `| ${f.strategy} | ${prozent(f.survived)} | ${geld(f.meanFinal)} | ${prozent(f.winRate)} |`),
   ].join('\n');
   const feldzug = feldzugTable(report);
-  return { overview, chapters: `${chapters}\n\n${crises}`, crises: krisen, stances, fair, feldzug };
+  return { overview, chapters: `${chapters}\n\n${crises}`, crises: krisen, stances, fair, feldzug, delaney: delaneyTable(report) };
+}
+
+/** Betrügerischer Bot (GDD §17): Was Delaney je Strategie erreicht – Anteile an allen Kampagnen der Strategie. */
+export function delaneyTable(report: CampaignReport): string {
+  return [
+    '| Strategie | Vorermittlung | Anklage | verurteilt | Zwangsverkauf | Haft | Ø Hitze am Ende | Doppelspiel aufgeflogen | Preisabsprache im Feldzug |',
+    '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
+    ...report.rows.map((r) => {
+      const n = Math.max(1, r.results.length);
+      const anteil = (f: (d: DelaneyOutcome) => boolean) => prozent(r.results.filter((x) => f(x.delaney)).length / n);
+      const hitze = r.results.reduce((s, x) => s + x.delaney.heat, 0) / n;
+      return `| ${r.strategy} | ${anteil((d) => d.probe)} | ${anteil((d) => d.charge)} | ${anteil((d) => d.convicted)} | ${anteil((d) => d.forcedSale)} | ${anteil((d) => d.prison)} | ${zahl(hitze)} | ${anteil((d) => d.exposed)} | ${prozent(r.results.filter((x) => x.feldzug === 'absprache').length / n)} |`;
+    }),
+  ].join('\n');
 }
 
 /** 0.4.20+8 Cranes Feldzug: Ausgänge je Strategie, Anteile an den Kampagnen, die Kapitel 3 begonnen haben. */
@@ -662,5 +797,17 @@ export function policyLine(p: CampaignBotPolicy): string {
   const weichen = Object.keys(p.answers).map((id) => `${id} → ${p.answers[id]}`).join(', ');
   const f = p.feldzug;
   const feldzug = f ? `Cranes Feldzug: ${f.pact ? 'nimmt die Preisabsprache' : 'hält durch'}${f.loan ? ', nimmt Thornes Kredit' : ''}${f.sellBelow > 0 ? `, verkauft Tankstellen unter ${geld(f.sellBelow)} Kasse` : ''}` : 'Cranes Feldzug: hält einfach durch';
-  return `Haltung ${HALTUNG[p.stance]}, Familie „${FAMILIE[p.family]}“, Börsengang ${p.ipo > 0 ? prozent(p.ipo) : 'nein'}, Rücklage ${geld(p.reserve)}, bis ${p.perRound} Tankstellen je Runde, ${boerse}, ${feldzug}; Weichen: ${weichen}`;
+  const d = p.dirty;
+  const schmutz = d
+    ? `; schmutzige Hebel: ${[
+        d.fixer ? `Sicherheitschef mit Sabotage bis Personal-Hitze ${d.sabotageBelow}` : null,
+        d.lawyer > 0 ? `Anwalt Stufe ${d.lawyer}, sobald Delaney ermittelt` : null,
+        d.pressure ? 'politischer Druck gegen Delaney' : null,
+        d.lobbyist ? `Lobbyist ${d.lobbyist}${d.bribe ? ' mit Umschlägen' : ''}` : null,
+        d.konsortium ? `Konsortium: ${d.konsortium}` : null,
+      ]
+        .filter(Boolean)
+        .join(', ')}`
+    : '';
+  return `Haltung ${HALTUNG[p.stance]}, Familie „${FAMILIE[p.family]}“, Börsengang ${p.ipo > 0 ? prozent(p.ipo) : 'nein'}, Rücklage ${geld(p.reserve)}, bis ${p.perRound} Tankstellen je Runde, ${boerse}, ${feldzug}; Weichen: ${weichen}${schmutz}`;
 }

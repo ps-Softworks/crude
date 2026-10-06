@@ -243,6 +243,7 @@ describe('Auswertung', () => {
     liquidations: 0,
     feldzug: 'keiner',
     thorneLoans: 0,
+    delaney: { probe: false, charge: false, convicted: false, forcedSale: false, prison: false, heat: 0, exposed: false },
   });
 
   it('Siegquote: höchster Endwert gewinnt, Gleichstand wird geteilt, ohne Überlebende kein Sieger', () => {
@@ -282,10 +283,10 @@ describe('Auswertung', () => {
     const leer = { credit: [1], gluts: [1], wars: [0] };
     const report: CampaignReport = {
       games: 1,
-      rows: [row('vorsichtig', 50), row('gierig', 100), row('ausgewogen', 200), row('zufaellig', 0)],
+      rows: [row('vorsichtig', 50), row('gierig', 100), row('ausgewogen', 200), row('betruegerisch', 150), row('zufaellig', 0)],
       stances: [{ stance: 'aggressive', survived: 1, meanFinal: 1, winRate: 0.5 }],
       fair: [{ strategy: 'gierig', survived: 1, meanFinal: 1, winRate: 0.45 }],
-      crises: { vorsichtig: leer, gierig: { credit: [3], gluts: [0], wars: [0] }, ausgewogen: leer, zufaellig: leer },
+      crises: { vorsichtig: leer, gierig: { credit: [3], gluts: [0], wars: [0] }, ausgewogen: leer, betruegerisch: leer, zufaellig: leer },
     };
     const werte = campaignTargetValues(report);
     expect(werte.creditCrises).toBe(1);

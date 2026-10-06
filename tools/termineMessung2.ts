@@ -48,7 +48,7 @@ const median = (xs: readonly number[]) => {
   return s.length % 2 === 1 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2;
 };
 
-const AUS: BotPlans = { cartel: false, contract: false, rumour: false, crane: false, thorne: false, brennan: false, pool: false, bluff: false };
+const AUS: BotPlans = { cartel: false, contract: false, rumour: false, crane: false, thorne: false, brennan: false, pool: false, bluff: false, betray: false };
 function mit(plans: Partial<BotPlans>): Balance {
   return { ...balance, botPlans: { ...balance.botPlans, balanced: { ...AUS, ...plans } } };
 }

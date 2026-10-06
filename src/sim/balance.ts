@@ -521,8 +521,8 @@ export interface BotsBalance {
   deeper: Record<'cautious' | 'greedy' | 'balanced', number>;
   /** Tage je Runde (Quartal) – für die Anfangsrate in bbl/Tag. */
   daysPerRound: number;
-  /** Wie die Bots Ereignisse bewerten (2.15). */
-  events: Record<'cautious' | 'greedy' | 'balanced', BotEventWeights>;
+  /** Wie die Bots Ereignisse bewerten (2.15); cheat = der betrügerische Bot (GDD §17). */
+  events: Record<BotCharacter, BotEventWeights>;
   /** Wie die planenden Bots Lager und Transportwege nutzen (0.2.15+4). */
   transport: Record<'cautious' | 'greedy' | 'balanced', BotTransport>;
   /** Grobe Schätzung in $, was die Wegerechte für die Pipeline zusammen kosten (Planung der Bots). */
@@ -543,6 +543,8 @@ export interface BotsBalance {
     cautious: CampaignBotPolicy;
     greedy: CampaignBotPolicy;
     balanced: CampaignBotPolicy;
+    /** Betrügerischer Bot (GDD §17): Wirtschaft wie ausgewogen, dazu jeder schmutzige Hebel (dirty). */
+    cheat: CampaignBotPolicy;
     /** Zufalls-Bot: Chance je Runde, dass er Raffinerie, Marke und Tankstellen anfasst. */
     randomSystemsChance: number;
   };
@@ -583,7 +585,28 @@ export interface CampaignBotPolicy {
    * Kasse darunter liegt. Fehlt/null: hält einfach durch.
    */
   feldzug?: { pact: boolean; loan: boolean; sellBelow: number } | null;
+  /**
+   * Schmutzige Hebel in Kapitel 2/3 (nur der betrügerische Bot, src/sim/campaignBots.ts dirtyTurn). Fehlt/null: keine.
+   * fixer = stellt einen Sicherheitschef ein (keinen Gewissenhaften) und lässt bei Bullard sabotieren, solange die
+   * Hitze des Personals unter sabotageBelow liegt; lawyer = Anwaltsstufe, sobald Delaney ermittelt; pressure =
+   * politischer Druck gegen Delaney (einmal je Fall); lobbyist = Kandidat in Hallstead (Kapitel 3, null = keiner);
+   * bribe = Umschläge in Hallstead, bis die Gefallen für den Druck reichen; konsortium = Antwort auf Vales Einladung
+   * (ausspielen: Gefallen werden vorgetäuscht).
+   */
+  dirty?: {
+    fixer: boolean;
+    sabotageBelow: number;
+    lawyer: number;
+    pressure: boolean;
+    lobbyist: string | null;
+    bribe: boolean;
+    konsortium: 'annehmen' | 'ablehnen' | 'ausspielen' | null;
+  } | null;
 }
+
+/** Charakter eines planenden Bots in balance.yaml (cheat = betrügerisch, GDD §17). */
+export type BotCharacter = 'cautious' | 'greedy' | 'balanced' | 'cheat';
+export const BOT_CHARACTERS: readonly BotCharacter[] = ['cautious', 'greedy', 'balanced', 'cheat'];
 
 /** Bewertung einer Ereignis-Antwort durch einen Bot (2.15). */
 export interface BotEventWeights {
@@ -595,6 +618,12 @@ export interface BotEventWeights {
   appointment: number;
   /** Überstunden nur ab dieser Kraft. */
   overtimeFrom: number;
+  /**
+   * $ je Schwerepunkt einer Spur für Delaney (Systemwirkung trace/heat, Merkzeichen aus investigation.traces),
+   * mit dem Faktor der Briefe wie Kraft und Familie. Ehrliche Bots scheuen schmutzige Antworten; negativ = der
+   * Bot greift gern zur schmutzigen Antwort (betrügerisch).
+   */
+  traceCost: number;
 }
 
 /** Investitions-Charakter eines Bots (0.2.15+7, src/sim/bots.ts). */
@@ -671,6 +700,8 @@ export const CAMPAIGN_TARGET_IDS = [
   'winRate',
   'fairWinRate',
   'stanceWin',
+  'cheatPrison',
+  'cheatCaught',
 ] as const;
 export type CampaignTargetId = (typeof CAMPAIGN_TARGET_IDS)[number];
 
@@ -968,7 +999,7 @@ export interface Balance {
   /** Transport-Aktionen (Etappe 2, balance.yaml transport.negotiation): Thorne, Brennan, Transportgemeinschaft. */
   freight: FreightBalance;
   /** Welche Preis- und Fracht-Karten die Bots spielen (balance.yaml bots.plans). */
-  botPlans: Record<'cautious' | 'greedy' | 'balanced', BotPlans>;
+  botPlans: Record<BotCharacter, BotPlans>;
   /** Gekoppelte Briefe (Etappe 3, src/sim/letters.ts). */
   letters: LettersBalance;
   /** Weichen statt Alltagspost (Spielspaß K1, src/sim/weichen.ts). */
@@ -1892,6 +1923,7 @@ function parseBots(raw: unknown): BotsBalance {
       cautious: parseBotWeights(raw, 'cautious'),
       greedy: parseBotWeights(raw, 'greedy'),
       balanced: parseBotWeights(raw, 'balanced'),
+      cheat: parseBotWeights(raw, 'cheat'),
     },
     transport: {
       cautious: parseBotTransport(raw, 'cautious'),
@@ -1922,6 +1954,7 @@ function parseBots(raw: unknown): BotsBalance {
       cautious: parseCampaignPolicy(raw, 'cautious'),
       greedy: parseCampaignPolicy(raw, 'greedy'),
       balanced: parseCampaignPolicy(raw, 'balanced'),
+      cheat: parseCampaignPolicy(raw, 'cheat'),
       randomSystemsChance: share(raw, 'bots.campaign.randomSystemsChance'),
     },
     campaignTargets: Object.fromEntries(
@@ -1966,6 +1999,30 @@ function parseCampaignPolicy(raw: unknown, name: string): CampaignBotPolicy {
     bonds: path(raw, `${p}.bonds`) === undefined || path(raw, `${p}.bonds`) === null ? null : { load: share(raw, `${p}.bonds.load`) },
     defend,
     feldzug: parseFeldzugPolicy(raw, `${p}.feldzug`),
+    dirty: parseDirtyPolicy(raw, `${p}.dirty`),
+  };
+}
+
+function parseDirtyPolicy(raw: unknown, p: string): CampaignBotPolicy['dirty'] {
+  const d = path(raw, p);
+  if (d === null || d === undefined) return null;
+  const flag = (k: string) => {
+    const v = path(raw, `${p}.${k}`);
+    if (typeof v !== 'boolean') throw new BalanceError(`balance.yaml: "${p}.${k}" muss true oder false sein`);
+    return v;
+  };
+  const lobbyist = path(raw, `${p}.lobbyist`);
+  if (lobbyist !== null && (typeof lobbyist !== 'string' || lobbyist === '')) throw new BalanceError(`balance.yaml: "${p}.lobbyist" muss ein Kandidat oder null sein`);
+  const k = path(raw, `${p}.konsortium`);
+  const konsortium = k === null ? null : choice(raw, `${p}.konsortium`, ['annehmen', 'ablehnen', 'ausspielen'] as const);
+  return {
+    fixer: flag('fixer'),
+    sabotageBelow: nonNegative(raw, `${p}.sabotageBelow`),
+    lawyer: nonNegativeInt(raw, `${p}.lawyer`),
+    pressure: flag('pressure'),
+    lobbyist: lobbyist as string | null,
+    bribe: flag('bribe'),
+    konsortium,
   };
 }
 
@@ -2037,6 +2094,7 @@ function parseBotWeights(raw: unknown, name: string): BotEventWeights {
     family: nonNegative(raw, `${p}.family`),
     appointment: nonNegative(raw, `${p}.appointment`),
     overtimeFrom: nonNegative(raw, `${p}.overtimeFrom`),
+    traceCost: num(raw, `${p}.traceCost`),
   };
 }
 
