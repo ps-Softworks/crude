@@ -3,8 +3,11 @@
 
 import { parseDocument } from 'yaml';
 import type { ContentError } from './eventContent';
+import type { Balance } from './balance';
 import { LANGUAGES, localize, type Lang, type LocalizedText } from './i18n';
 import { AGENDAS, DEMAND_KINDS, MEMBER_MOODS, type MemberMood, type BoardMember, type BoardSeatDef, type Demand, type DemandKind, type ShareBlock } from './stocks';
+
+export const HINT_KEYS = ['accept', 'reject', 'rejectSpy', 'withdraw', 'court'] as const;
 
 export interface BoardSeatContent extends BoardSeatDef {
   name: LocalizedText;
@@ -21,6 +24,7 @@ export interface StocksContent {
   agendas: Record<(typeof AGENDAS)[number], LocalizedText>;
   demands: Record<DemandKind, LocalizedText>;
   moods: Record<MemberMood, LocalizedText>;
+  hints: Record<(typeof HINT_KEYS)[number], LocalizedText>;
 }
 
 function istObjekt(value: unknown): value is Record<string, unknown> {
@@ -115,8 +119,13 @@ export function parseStocksContent(file: string, text: string, minSeats = 9): { 
   const moods = {} as StocksContent['moods'];
   for (const k of MEMBER_MOODS) moods[k] = sprachtext(mo[k], `moods.${k}`);
 
+  const h = istObjekt(raw.hints) ? raw.hints : {};
+  if (!istObjekt(raw.hints)) fehler('Block „hints“ fehlt.');
+  const hints = {} as StocksContent['hints'];
+  for (const k of HINT_KEYS) hints[k] = sprachtext(h[k], `hints.${k}`);
+
   if (errors.length > 0) return { content: null, errors };
-  return { content: { draft: raw.draft === true, board, guests, thorne, straw, agendas, demands, moods }, errors };
+  return { content: { draft: raw.draft === true, board, guests, thorne, straw, agendas, demands, moods, hints }, errors };
 }
 
 /** Name des Strohmanns eines Blocks. */
@@ -144,4 +153,20 @@ export function demandText(content: StocksContent, demand: Demand, memberName: s
   const betrag = `${demand.target.toLocaleString('de-DE')} $`;
   const werte: Record<string, string> = { name: memberName, betrag, anzahl: String(demand.target), runde: String(demand.due) };
   return localize(content.demands[demand.kind], lang).replace(/\{(\w+)\}/g, (ganz, key: string) => werte[key] ?? ganz);
+}
+
+/** Folgen der Antwort auf eine Forderung in Worten (Lesehilfe, Zahlen aus balance.yaml). */
+export function demandHints(content: StocksContent, balance: Balance, spy: boolean, lang?: Lang): { accept: string; reject: string; withdraw: string; court: string } {
+  const D = balance.stocks.demands;
+  const werte: Record<string, string> = {
+    erfuellt: String(D.fulfillGain),
+    still: String(D.quietGain),
+    bruch: String(D.failLoss),
+    abgelehnt: String(D.rejectLoss),
+    malus: String(D.spyPenalty),
+    kosten: `${balance.stocks.board.courtCost.toLocaleString('de-DE')} $`,
+    gewinn: String(balance.stocks.board.courtGain),
+  };
+  const fill = (x: LocalizedText) => localize(x, lang).replace(/\{(\w+)\}/g, (ganz, key: string) => werte[key] ?? ganz);
+  return { accept: fill(content.hints.accept), reject: fill(spy ? content.hints.rejectSpy : content.hints.reject), withdraw: fill(content.hints.withdraw), court: fill(content.hints.court) };
 }

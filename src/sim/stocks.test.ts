@@ -46,7 +46,7 @@ import {
   type StocksResult,
   type StocksState,
 } from './stocks';
-import { demandText, memberLabel, parseStocksContent, strawName, type StocksContent } from './stocksContent';
+import { demandHints, demandText, memberLabel, parseStocksContent, strawName, type StocksContent } from './stocksContent';
 import { loadBalance, rawBalance } from './testBalance';
 
 const balance = loadBalance();
@@ -726,5 +726,20 @@ describe('Zufall, Spielstand, Zahlen und Texte', () => {
     expect(errors.map((e) => e.message).join('\n')).toMatch(/mindestens 9 Räte[\s\S]*thorne[\s\S]*straw/);
     const doppelt = parseStocksContent(FILE, stocksText.replace('id: witwe', 'id: bankier'));
     expect(doppelt.errors.some((e) => e.message.includes('doppelt'))).toBe(true);
+  });
+});
+
+describe('Folgen in Worten (Lesehilfe)', () => {
+  it('Forderungs-Hinweise nennen die Zahlen aus balance.yaml', () => {
+    const D = balance.stocks.demands;
+    const h = demandHints(inhalt, balance, false, 'de');
+    expect(h.accept).toContain(`um ${D.fulfillGain}`);
+    expect(h.accept).toContain(`um ${D.failLoss}`);
+    expect(h.reject).toContain(`um ${D.rejectLoss}`);
+    expect(h.reject).toContain(`+${D.quietGain}`);
+    expect(h.withdraw).toContain(String(D.failLoss));
+    expect(h.court).toContain(String(balance.stocks.board.courtGain));
+    expect(demandHints(inhalt, balance, true, 'de').reject).toContain(String(D.spyPenalty));
+    expect(JSON.stringify(h)).not.toMatch(/\{\w+\}/);
   });
 });

@@ -236,6 +236,33 @@ export function decideIpo(state: GameState, balance: Balance, share: number): Ip
 }
 
 /** Anteil, den Jacob selbst hält (1 = alles). */
+/**
+ * Folgen eines Börsengangs in Worten (Lesehilfe für den Brief, keine Regel): Zahlen kommen aus
+ * balance.yaml (stocks.board/demands/dividend/thorne/vote, chapter.ipo). share 0 = Familienfirma.
+ */
+export function ipoConsequenceText(state: GameState, balance: Balance, content: ChapterContent['ipo'], share: number, lang?: Lang): string {
+  if (share <= 0) return fillText(content.keepConsequence, {}, lang);
+  const B = balance.stocks;
+  const prozent = (x: number) => `${Math.round(x * 100)} %`;
+  const sitze = Math.min(B.board.seatsMax, Math.max(B.board.seatsMin, B.board.seatsBase + Math.round(share * B.board.seatsPerShare)));
+  const schwelle = prozent(B.thorne.minOutside);
+  const thorne = fillText(share >= B.thorne.minOutside ? content.thorneOpen : content.thorneClosed, { schwelle }, lang);
+  return fillText(
+    content.consequence,
+    {
+      preis: `${ipoProceeds(state, balance, share).toLocaleString('de-DE')} $`,
+      anteil: prozent(share),
+      eigen: prozent(1 - share),
+      sitze: String(sitze),
+      frist: String(B.demands.dueRounds),
+      gnade: String(B.dividend.graceRounds),
+      thorne,
+      kontrolle: prozent(0.5),
+    },
+    lang,
+  );
+}
+
 export function ownShare(state: Pick<GameState, 'ipo'>): number {
   return 1 - (state.ipo?.share ?? 0);
 }
@@ -259,6 +286,10 @@ export interface ChapterContent {
     text: LocalizedText;
     sell: LocalizedText;
     keep: LocalizedText;
+    consequence: LocalizedText;
+    thorneOpen: LocalizedText;
+    thorneClosed: LocalizedText;
+    keepConsequence: LocalizedText;
     sold: LocalizedText;
     kept: LocalizedText;
     blocked: LocalizedText;
@@ -362,6 +393,10 @@ export function parseChapterContent(file: string, text: string): { content: Chap
     text: sprachtext(i.text, 'ipo.text'),
     sell: sprachtext(i.sell, 'ipo.sell'),
     keep: sprachtext(i.keep, 'ipo.keep'),
+    consequence: sprachtext(i.consequence, 'ipo.consequence'),
+    thorneOpen: sprachtext(i.thorneOpen, 'ipo.thorneOpen'),
+    thorneClosed: sprachtext(i.thorneClosed, 'ipo.thorneClosed'),
+    keepConsequence: sprachtext(i.keepConsequence, 'ipo.keepConsequence'),
     sold: sprachtext(i.sold, 'ipo.sold'),
     kept: sprachtext(i.kept, 'ipo.kept'),
     blocked: sprachtext(i.blocked, 'ipo.blocked'),
