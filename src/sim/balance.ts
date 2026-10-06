@@ -584,7 +584,7 @@ export interface CampaignBotPolicy {
    * Kasse unter die Rücklage fällt, sellBelow = verkauft im Krieg Tankstellen (schlechteste Region zuerst), solange die
    * Kasse darunter liegt. Fehlt/null: hält einfach durch.
    */
-  feldzug?: { pact: boolean; loan: boolean; sellBelow: number } | null;
+  feldzug?: { pact: boolean; loan: boolean; sellBelow: number; pactAfter?: number } | null;
   /**
    * Schmutzige Hebel in Kapitel 2/3 (nur der betrügerische Bot, src/sim/campaignBots.ts dirtyTurn). Fehlt/null: keine.
    * fixer = stellt einen Sicherheitschef ein (keinen Gewissenhaften) und lässt bei Bullard sabotieren, solange die
@@ -2034,7 +2034,8 @@ function parseFeldzugPolicy(raw: unknown, p: string): CampaignBotPolicy['feldzug
     if (typeof v !== 'boolean') throw new BalanceError(`balance.yaml: "${p}.${k}" muss true oder false sein`);
     return v;
   };
-  return { pact: flag('pact'), loan: flag('loan'), sellBelow: nonNegative(raw, `${p}.sellBelow`) };
+  const nach = path(raw, `${p}.pactAfter`);
+  return { pact: flag('pact'), loan: flag('loan'), sellBelow: nonNegative(raw, `${p}.sellBelow`), ...(nach === undefined ? {} : { pactAfter: nonNegativeInt(raw, `${p}.pactAfter`) }) };
 }
 
 function choice<T extends string>(obj: unknown, path: string, allowed: readonly T[]): T {

@@ -796,7 +796,7 @@ export function policyLine(p: CampaignBotPolicy): string {
   const boerse = p.exchange ? `Börse ${prozent(p.exchange.share)} des freien Geldes mit Hebel ${p.exchange.leverage}${p.exchange.sellOnWarning ? ', verkauft bei Warnung' : ', hält trotz Warnung'}` : 'keine Börse';
   const weichen = Object.keys(p.answers).map((id) => `${id} → ${p.answers[id]}`).join(', ');
   const f = p.feldzug;
-  const feldzug = f ? `Cranes Feldzug: ${f.pact ? 'nimmt die Preisabsprache' : 'hält durch'}${f.loan ? ', nimmt Thornes Kredit' : ''}${f.sellBelow > 0 ? `, verkauft Tankstellen unter ${geld(f.sellBelow)} Kasse` : ''}` : 'Cranes Feldzug: hält einfach durch';
+  const feldzug = f ? `Cranes Feldzug: ${f.pact ? `nimmt die Preisabsprache${f.pactAfter ? ` nach ${f.pactAfter} Runden Krieg` : ''}` : 'hält durch'}${f.loan ? ', nimmt Thornes Kredit' : ''}${f.sellBelow > 0 ? `, verkauft Tankstellen unter ${geld(f.sellBelow)} Kasse` : ''}` : 'Cranes Feldzug: hält einfach durch';
   const d = p.dirty;
   const schmutz = d
     ? `; schmutzige Hebel: ${[

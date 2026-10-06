@@ -81,6 +81,8 @@ export interface FeldzugBotPolicy {
   pact: boolean;
   loan: boolean;
   sellBelow: number;
+  /** Betrügerischer Bot: die Absprache erst nach so vielen Runden Krieg (fehlt/0 = schon bei der Drohung). */
+  pactAfter?: number;
 }
 
 /**
@@ -93,7 +95,8 @@ export function botFeldzug(state: GameState, balance: Balance, policy: FeldzugBo
   const f = state.feldzug;
   if (!f || !policy || state.finished) return state;
   let s = state;
-  if (policy.pact && (f.phase === 'drohung' || f.phase === 'krieg')) {
+  const warten = policy.pactAfter ?? 0;
+  if (policy.pact && ((f.phase === 'drohung' && warten === 0) || (f.phase === 'krieg' && s.round - f.since >= warten))) {
     const r = feldzugAbsprache(s, balance);
     if (r.ok) return r.state;
   }

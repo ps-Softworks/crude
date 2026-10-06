@@ -837,8 +837,8 @@ bots:
       perRound: 3
       exchange: { share: 0.1, leverage: 2, sellOnWarning: true }
       defend: { thorneFrom: 0.1, controlBelow: 0.6, buyback: 0.05 }
-      feldzug: { pact: true, loan: false, sellBelow: 5000 }
-      dirty: { fixer: true, sabotageBelow: 40, lawyer: 2, pressure: true, lobbyist: tibbs, bribe: true, konsortium: ausspielen }
+      feldzug: { pact: true, loan: false, sellBelow: 5000, pactAfter: 3 }   # lässt Crane erst 3 Runden bluten, dann die Absprache (sofort: Endwert gleicher Start +115.000 $ über dem Standard-Bot)
+      dirty: { fixer: true, sabotageBelow: 40, lawyer: 3, pressure: true, lobbyist: tibbs, bribe: true, konsortium: ausspielen }   # Anwalt 2: Haft 42 %, 3: 35 % (60 Seeds)
   # Zielwerte Kapitel 1–3 (4.20, GDD §15 und §17): Toleranzbereich min–max je Kennzahl, Tabelle Ist/Ziel in
   # docs/botlaeufe.md (Abschnitt „Kapitel 2 und 3“). Krisen: GDD §15 nennt Zahlen je Kampagne (7 Kapitel, 73 Jahre);
   # Kapitel 1–3 sind 24 Jahre, also rund ein Drittel davon.

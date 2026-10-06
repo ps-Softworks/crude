@@ -40,6 +40,7 @@ console.log(`\n${t.crises}`);
 console.log(`\n${t.stances}`);
 console.log(`\n${t.fair}`);
 console.log(`\n${t.feldzug}`);
+console.log(`\n${t.delaney}`);
 console.log(`\n${zielTabelle}`);
 console.log(`\n${games} Kampagnen je Strategie in ${sekunden} s.`);
 const verfehlt = targets.filter((x) => !x.ok);
@@ -56,11 +57,12 @@ const abschnitt = `${ANFANG}
 
 Stand: ${datum} · Version ${version} · erzeugt mit \`npm run kampagne\` (tools/kampagnenlaeufe.ts, Regeln in src/sim/campaignBots.ts)
 
-${games.toLocaleString('de-DE')} Kampagnen je Strategie auf denselben Seeds wie oben (\`${balance.bots.seedPrefix}-0\` …): Die Bots spielen Kapitel 1 wie oben, dann Zeitsprung I, Kapitel 2, Zeitsprung II und Kapitel 3 – mit Ritt und Karten (Termin-Aktionen), allen Ereignissen, Börsengang, Direktiven und Weichen, Raffinerie (Kapitel 2), Marke, Tankstellen und Börse (Kapitel 3). Eine verfehlte Kapitelprüfung beendet die Kampagne nicht (das nächste Kapitel beginnt geschwächt); aus scheidet, wer pleitegeht (auch im Zeitsprung), abgesetzt oder geschluckt wird oder ins Gefängnis kommt. Endwert = Imperiumswert am Ende von Kapitel 3, ausgeschieden = 0. Siegquote: höchster Endwert je Seed. In ${(report.games * 9).toLocaleString('de-DE')} Kampagnen (4 Strategien, 2 weitere Haltungen des Standard-Bots, 3 Strategien vom gleichen Start) in ${sekunden} s.
+${games.toLocaleString('de-DE')} Kampagnen je Strategie auf denselben Seeds wie oben (\`${balance.bots.seedPrefix}-0\` …): Die Bots spielen Kapitel 1 wie oben, dann Zeitsprung I, Kapitel 2, Zeitsprung II und Kapitel 3 – mit Ritt und Karten (Termin-Aktionen), allen Ereignissen, Börsengang, Direktiven und Weichen, Raffinerie (Kapitel 2), Marke, Tankstellen und Börse (Kapitel 3). Eine verfehlte Kapitelprüfung beendet die Kampagne nicht (das nächste Kapitel beginnt geschwächt); aus scheidet, wer pleitegeht (auch im Zeitsprung), abgesetzt oder geschluckt wird oder ins Gefängnis kommt. Endwert = Imperiumswert am Ende von Kapitel 3, ausgeschieden = 0. Siegquote: höchster Endwert je Seed. In ${(report.games * (2 * report.rows.length + 1)).toLocaleString('de-DE')} Kampagnen (${report.rows.length} Strategien, 2 weitere Haltungen des Standard-Bots, ${report.rows.length - 1} Strategien vom gleichen Start) in ${sekunden} s.
 
 - **vorsichtig:** ${policyLine(c.cautious)}
 - **gierig:** ${policyLine(c.greedy)}
 - **ausgewogen (Standard-Bot):** ${policyLine(c.balanced)}
+- **betrügerisch:** ${policyLine(c.cheat)}
 - **zufällig:** würfelt Direktiven, Börsengang, Weichen und Börse; Raffinerie, Marke und Tankstellen fasst er in ${(c.randomSystemsChance * 100).toLocaleString('de-DE')} % der Runden an.
 
 ${t.overview}
@@ -94,6 +96,12 @@ ${t.fair}
 Ab ${balance.feldzug.trigger.stations} Harlan-Tankstellen kündigt Margaret Crane einen Preiskrieg an (src/sim/feldzug.ts): Jacobs Marge an der Zapfsäule fällt auf ${(balance.feldzug.war.margin * 100).toLocaleString('de-DE')} %, die Bank gibt nur ${(balance.feldzug.bank.limitFactor * 100).toLocaleString('de-DE')} % des Rahmens, bis Cranes Kasse nach ${balance.feldzug.war.chestMin}–${balance.feldzug.war.chestMax} Runden leer ist. Auswege: Preisabsprache (Spur für Delaney, Harlan behält nur ${balance.feldzug.pact.keepRegions} Regionen) oder Thornes Kredit (Pfand: die Mehrheit – nicht bezahlt = geschluckt). Anteile an den Kampagnen, die Kapitel 3 selbst gespielt haben; „davon geschluckt“ an denen mit Thornes Kredit.
 
 ${t.feldzug}
+
+### Betrug und Delaney
+
+Der betrügerische Bot (GDD §17) zieht jeden schmutzigen Hebel (siehe oben); sein Risiko ist echt: Spuren machen Hitze, Delaney ermittelt, klagt an und verurteilt – bei viel Hitze zum Zwangsverkauf eines Teils der Quellen, ab ${balance.investigation.fine.prisonAt} Hitzepunkten offener Spuren zu Haft (Kampagne zu Ende). Anteile an allen Kampagnen der Strategie, Stand am Ende der Kampagne (Merkzeichen der Ermittlung); Ø Hitze = Spuren plus Personal am Ende.
+
+${t.delaney}
 
 ### Zielwerte Kapitel 1–3
 
