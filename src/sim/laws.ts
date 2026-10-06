@@ -37,11 +37,12 @@ export type LawWorldEffect = (typeof LAW_WORLD_EFFECTS)[number];
  * commonCarrier = 1 heißt Transportpflicht für Fernleitungen, quotaShare = erlaubter Anteil der Förderung,
  * quotaFine = Bußgeld $ je Barrel heißes Öl, quotaCatch = Chance je Runde, dass der Inspektor es findet, wageRise = Lohnaufschlag (Personal, Gespanne),
  * creditLimit = Faktor auf den Bankrahmen, drillCostRise = Aufschlag auf Bohrkosten,
- * storageCostRise = Aufschlag auf Lagerkosten, spillFine = Bußgeld $ je ausgelaufenem Barrel.
+ * storageCostRise = Aufschlag auf Lagerkosten, spillFine = Bußgeld $ je ausgelaufenem Barrel,
+ * spillFineCap = höchstens dieser Anteil der Kasse je Runde (0.4.20+23: das Bußgeld allein macht niemanden pleite).
  */
 export const LAW_RULES = [
   'incomeTax', 'cartelBan', 'breakupFrom',
-  'incomeTaxAdd', 'depletionAllowance', 'commonCarrier', 'quotaShare', 'quotaFine', 'quotaCatch', 'wageRise', 'creditLimit', 'drillCostRise', 'storageCostRise', 'spillFine',
+  'incomeTaxAdd', 'depletionAllowance', 'commonCarrier', 'quotaShare', 'quotaFine', 'quotaCatch', 'wageRise', 'creditLimit', 'drillCostRise', 'storageCostRise', 'spillFine', 'spillFineCap',
 ] as const;
 export type LawRule = (typeof LAW_RULES)[number];
 
@@ -312,7 +313,7 @@ export function advanceLaws(input: LawsState, view: LawView, catalog: readonly L
       b.cooldown -= 1;
       continue;
     }
-    if (b.pressure >= def.threshold && offen < lb.maxOpen && u[0] < lb.proposeChance) {
+    if (b.pressure >= def.threshold * lb.thresholdScale && offen < lb.maxOpen && u[0] < lb.proposeChance) {
       b.stage = 'debate';
       const r = lb.debateRounds;
       b.voteIn = Math.min(r.max, r.min + Math.floor(u[2] * (r.max - r.min + 1)));
@@ -329,8 +330,10 @@ export function advanceLaws(input: LawsState, view: LawView, catalog: readonly L
  * Gesetz. Für die Systeme, die eine Regel lesen (Bankrahmen, Löhne, Bohrkosten, Lager …).
  */
 export function lawRule(state: object, catalog: readonly LawDef[] | undefined, rule: LawRule, fallback = 0): number {
-  const laws = (state as { worldModel?: { laws?: Pick<LawsState, 'bills'> } | null }).worldModel?.laws;
-  if (!laws || !catalog) return fallback;
+  const s = state as { worldModel?: { laws?: Pick<LawsState, 'bills'> } | null; chapter?: number };
+  const laws = s.worldModel?.laws;
+  // 0.4.20+19: Kapitel 1 bleibt sanft – die Regeln treffen Jacobs Firma erst ab Kapitel 2 (die Welt spürt sie immer).
+  if (!laws || !catalog || (s.chapter ?? 1) < 2) return fallback;
   return lawRules(laws, catalog)[rule] ?? fallback;
 }
 

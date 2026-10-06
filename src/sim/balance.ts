@@ -150,7 +150,7 @@ export interface LeaseBalance {
   landowners: Landowner[];
   option: { feeShare: number; termRounds: number };
   /**
-   * Freie Startoptionen. Die erste liegt auf der Startquelle (0.4.20+21): sicheres Öl in Stufe 1,
+   * Freie Startoptionen. Die erste liegt auf der Startquelle (0.4.20+24): sicheres Öl in Stufe 1,
    * eigene Lagerstätte mit sureReserves Barrel.
    */
   startOptions: { count: number; termRounds: number; sureReserves: number; sureRateShare: number };
@@ -813,6 +813,8 @@ export interface LawsBalance {
    */
   trust: { start: Range; base: number; revert: number; government: Record<Party, number>; credit: number; crash: number; glut: number; noise: number; min: number; max: number };
   /** Vorbereitet (ab Kapitel 2): Stärke der Lobby-Züge. */
+  /** 0.4.20+19: Faktor auf die Schwelle jedes Gesetzes (content/laws/threshold) – weniger = Anträge öfter. */
+  thresholdScale: number;
   /**
    * influencePressure/influenceVote/weakenFrom (0.4.20+17): Jacobs Einfluss je Gesetz (−1 … +1, schon nach Größe
    * gewichtet) gibt so viele Druckpunkte je Runde bzw. so viel Zustimmung bei der Abstimmung; Verwässerung ab
@@ -2487,6 +2489,7 @@ function parseWorldModel(raw: unknown): WorldModelBalance {
         min: sh('laws.trust.min'),
         max: sh('laws.trust.max'),
       },
+      thresholdScale: nn('laws.thresholdScale'),
       lobby: {
         demand: nn('laws.lobby.demand'),
         block: sh('laws.lobby.block'),

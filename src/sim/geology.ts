@@ -51,7 +51,7 @@ export interface Parcel {
   /** Wie der Landbesitzer verhandelt; bestimmt Bonus und Förderzins der Pacht mit. */
   landowner: LandownerType;
   /**
-   * Startquelle (0.4.20+21): sicheres Öl in Stufe 1, eigene Lagerstätte, erstes Loch ohne Unfall
+   * Startquelle (0.4.20+24): sicheres Öl in Stufe 1, eigene Lagerstätte, erstes Loch ohne Unfall
    * und Klemmen. Die Prognose zeigt „Öl sicher“. Nur auf der ersten Startoption.
    */
   sure?: boolean;

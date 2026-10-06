@@ -246,6 +246,8 @@ export interface LawRow {
   status: string | null;
   /** 0.4.20+17: Das Gesetz gilt schon – fordern, bremsen, verwässern ändern nichts mehr. */
   passed: boolean;
+  /** 0.4.20+22: Was das Gesetz bewirkt (summary aus content/laws/). */
+  summary: string;
 }
 
 export interface HallsteadView {
@@ -350,9 +352,11 @@ export function hallsteadView(state: GameState, balance: Balance, c: HallsteadCo
         : b?.stage === 'debate'
           ? fillText(L(c.ui.lawDebate), { rounds: rundenText(Math.max(1, b.voteIn), lang) })
           : null;
+    const def = balance.laws.find((d) => d.id === law.id);
     return {
       status,
       passed: b?.stage === 'passed',
+      summary: def ? L(def.summary) : '',
       id: law.id,
       name: L(law.name),
       oil: L(law.oil === 'for' ? c.ui.oilFor : c.ui.oilAgainst),

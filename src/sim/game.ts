@@ -55,7 +55,7 @@ import { exchangeWorldInput, readClimate, settleExchange, type ExchangeState } f
 import { hallsteadWorldInput, settleHallstead } from './hallstead';
 import { empireValue } from './empire';
 import { lawInfluence } from './lobby';
-import { settleBreakup, settleHotOil, settleIncomeTax } from './lawEffects';
+import { logPassedLaws, settleBreakup, settleHotOil, settleIncomeTax } from './lawEffects';
 import type { HallsteadState } from './hallsteadState';
 // 4.17 Andockpunkt: Kapitel 3 (Seismik, Konsortium, Projekte, Stand).
 import type { Kapitel3State } from './kapitel3';
@@ -214,7 +214,7 @@ export interface GameState {
 }
 
 /**
- * Startquelle (0.4.20+21): Die Ranch der ersten Startoption bekommt sicheres Öl in Stufe 1 –
+ * Startquelle (0.4.20+24): Die Ranch der ersten Startoption bekommt sicheres Öl in Stufe 1 –
  * kleine Quelle, eigene Lagerstätte mit lease.startOptions.sureReserves Barrel (verbindet sich
  * mit keinem Nachbarfeld, damit die Menge genau stimmt). Die Felder werden danach neu gebaut.
  */
@@ -389,7 +389,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const trend = worldPriceFactor(gefoerdert.worldModel, balance.worldModel);
   const mods = marketMods(gefoerdert, balance);
   const bepreist = advanceMarket(gefoerdert, balance.market, rivalRate, trend, mods);
-  const markt = advanceWorldInGame(appendReport(settlePricingAfterMarket(bepreist, balance, mods, trend), bepreist.log.length), gefoerdert, balance);
+  // 0.4.20+22: Beschlossene Gesetze stehen ab Kapitel 2 mit ihrer Wirkung in der Kladde.
+  const markt = logPassedLaws(advanceWorldInGame(appendReport(settlePricingAfterMarket(bepreist, balance, mods, trend), bepreist.log.length), gefoerdert, balance), balance);
   // Erkundung (Etappe 1): Was die eigene Bohrung zeigt, wird zum Bohrbericht der Ranch.
   const gebohrt = learnFromWells(advanceDrilling(markt, balance), balance);
   const gepachtet = settleLeases(gebohrt, balance);

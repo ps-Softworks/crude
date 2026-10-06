@@ -30,7 +30,7 @@ describe('Bohr-Trefferquote im echten Spielablauf', () => {
     let aufStartoption = 0;
     for (const seed of seeds(500, 'quote')) {
       const { records } = playDrillRun(seed, balance, { catalog });
-      // 0.4.20+21: Die Startquelle ist sicheres Öl – sie zählt nicht. Die Eichung der Prognose gilt für das übrige Land:
+      // 0.4.20+24: Die Startquelle ist sicheres Öl – sie zählt nicht. Die Eichung der Prognose gilt für das übrige Land:
       // gemessen wird die erste Bohrung auf einer anderen Ranch.
       const sicher = newGame(seed, balance, catalog).parcels.find((p) => p.sure)?.id;
       if (records.some((r) => r.parcelId === sicher)) aufStartoption++;
@@ -83,7 +83,7 @@ describe('Bohr-Trefferquote im echten Spielablauf', () => {
         // Spielspaß K1: Nur Jacobs eigener tiefer Fund vergrößert den Vorrat – um genau den findFactor seiner Tiefe.
         const ersterFund = state.wells.find((w) => w.parcelId === p.id && w.status === 'found');
         const faktor = ersterFund ? balance.drilling.stages[ersterFund.stage - 1].findFactor : 1;
-        // Die Startquelle (0.4.20+21) bekommt ihr Öl bei Spielbeginn – danach ändert sich auch dort nichts mehr.
+        // Die Startquelle (0.4.20+24) bekommt ihr Öl bei Spielbeginn – danach ändert sich auch dort nichts mehr.
         const roh = p.sure ? { geology: 'small', reserves: balance.lease.startOptions.sureReserves } : f;
         expect([p.geology, p.reserves, p.zone, p.x, p.y]).toEqual([roh.geology, roh.reserves + Math.round(roh.reserves * (faktor - 1)), f.zone, f.x, f.y]);
       }

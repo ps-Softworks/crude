@@ -532,7 +532,7 @@ describe('Bot-Läufe mit Ereignissen (2.15)', () => {
 });
 
 describe('Fund-Statistik (GDD §15)', () => {
-  it('die Startquelle (0.4.20+21) zählt nicht als Fund – nur gewürfelte Funde', () => {
+  it('die Startquelle (0.4.20+24) zählt nicht als Fund – nur gewürfelte Funde', () => {
     const state = newGame('fundstatistik', balance);
     const sicher = state.parcels.find((p) => p.sure)!.id;
     const anderer = state.parcels.find((p) => !p.sure && !p.discovery)!.id;
@@ -640,9 +640,13 @@ describe('Bot-Läufe: Transportwege (0.2.15+4)', () => {
   it('die planenden Bots mit Marge verkaufen nie mit Verlust nach Fracht und Förderzins', () => {
     for (const s of ['vorsichtig', 'ausgewogen'] as const) {
       for (const r of spiele(s, 15)) {
-        // Ausnahme: Pflichtmenge eines Liefervertrags an den Händler (sonst kostet die Fehlmenge Strafe) –
-        // kommt seit der Startquelle (0.4.20+21) in diesen Seeds vor.
-        expect(r.state.log.some((z) => / verkauft.* – -[0-9]/.test(z) && !/an den Händler/.test(z))).toBe(false);
+        // Ausnahmen: liefen in der Runde davor die Tanks über (0.4.20+19), ist ein kleiner Verlust besser als noch mehr Öl im
+        // Boden; Pflichtmenge eines Liefervertrags an den Händler (sonst Strafe) – kommt seit der Startquelle (0.4.20+24) vor.
+        const log = r.state.log;
+        const verlust = log.filter(
+          (z, i) => / verkauft.* – -[0-9]/.test(z) && !/an den Händler/.test(z) && !log.slice(Math.max(0, i - 15), i).some((v) => v.includes('Die Tanks sind voll')),
+        );
+        expect(verlust).toEqual([]);
       }
     }
   });

@@ -88,7 +88,7 @@ describe('Geologen-Prognosen im Spielzustand', () => {
     const vorher = { ...newGame('leer', balance), seed: 'reihenfolge', knowledge: {}, parcels };
     const options = startOptions(vorher, balance, rng);
     const state = newGame('reihenfolge', balance);
-    // Danach wird die erste Option zur Startquelle (0.4.20+21) – sonst bleibt die Karte, wie sie war.
+    // Danach wird die erste Option zur Startquelle (0.4.20+24) – sonst bleibt die Karte, wie sie war.
     expect(state.parcels).toEqual(makeSureStart({ ...vorher, fields: buildFields(geologie) }, balance, options[0].parcelId).parcels);
     expect(state.parcels.filter((p) => !p.sure).map(({ fieldId: _f, ...p }) => p)).toEqual(
       parcels.filter((p) => p.id !== options[0].parcelId).map(({ fieldId: _f, ...p }) => p),

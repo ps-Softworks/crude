@@ -1,6 +1,7 @@
 // Raffinerie-Betrieb der Kampagnen-Bots (0.4.20+17): Öl im Tank halten, Mix/Zufuhr einstellen, ausbauen.
 import { describe, expect, it } from 'vitest';
-import { refineryHold } from './bots';
+import { refineryHold, spillSellShare } from './bots';
+import { storageCapacity } from './logistics';
 import { refineryGain, runRefinery, tuneRefinery } from './botsKapitel3';
 import { newGame, type GameState } from './game';
 import { crudeVsRefined, refineryCapacity, refineryMixBounds, unlockRefinery } from './refinery';
@@ -66,5 +67,20 @@ describe('Ausbau (runRefinery)', () => {
     expect(runRefinery(anlage(1, { ...spaet, round: 55 }), frei, p).refinery!.project).toBe('expand');
     expect(runRefinery(anlage(1, { ...spaet, chapter: 3, round: 95, totalRounds: 96 }), frei, p).refinery!.project).toBeNull();
     expect(runRefinery(anlage(1, { ...spaet, cash: 1000 }), frei, p).refinery!.project).toBeNull();
+  });
+});
+
+describe('Überlauf bei Umweltgesetz (spillSellShare, 0.4.20+24)', () => {
+  const mitUmwelt = (oil: number, gesetz = true): GameState => {
+    const g = newGame('ueberlauf', balance);
+    const bills = { ...g.worldModel!.laws.bills };
+    if (gesetz) bills.environment = { stage: 'passed', pressure: 0, voteIn: 0, cooldown: 0, proposals: 1, passedRound: 1, lastVote: 0.6, weakened: false, lobbyVote: 0 };
+    return { ...g, chapter: 2, oilStock: oil, worldModel: { ...g.worldModel!, laws: { ...g.worldModel!.laws, bills } } };
+  };
+  it('verkauft vorab, was nicht in die Tanks passt – nur mit Bußgeld', () => {
+    const platz = storageCapacity(mitUmwelt(0), balance);
+    expect(spillSellShare(mitUmwelt(platz + 5000), balance)).toBeCloseTo(5000 / (platz + 5000), 6);
+    expect(spillSellShare(mitUmwelt(platz - 1), balance)).toBe(0);
+    expect(spillSellShare(mitUmwelt(platz + 5000, false), balance)).toBe(0);
   });
 });

@@ -138,7 +138,7 @@ lease:
   startOptions:
     count: 2              # PLATZHALTER
     termRounds: 4         # PLATZHALTER
-    # Startquelle (0.4.20+21): Die erste Startoption liegt auf einer Ranch mit sicherem Öl in der ersten
+    # Startquelle (0.4.20+24): Die erste Startoption liegt auf einer Ranch mit sicherem Öl in der ersten
     # Stufe (300 m) – eigene kleine Lagerstätte, ohne Unfall und Klemmen beim ersten Loch. Die Prognose
     # zeigt „Öl sicher“. sureReserves = Barrel in dieser Lagerstätte (gemessen: tools/startquelle.ts).
     # Die zweite Option bleibt Zufall.
@@ -519,7 +519,7 @@ chapter:
   chapter2:
     # 0.4.19+2: GDD §13 nennt 1 Mio. $ – das erreichte keine einzige Bot-Partie (bester Wert ~320.000 $,
     # 30 Seeds mit Raffinerie-Zug des Bots). Mit 200.000 $ besteht der Standard-Bot in etwa 30 % (PLATZHALTER).
-    goalValue: 500000          # Imperiumswert ≥ so viel $ … (0.4.20+5: 200.000 → 400.000 $ – seit der Verwalter die Förderung hält und die Provinz offen ist, bestand der Standard-Bot in 82,5 %, Ziel höchstens 70 %; 0.4.20+15: 400.000 → 500.000 $ – mit Spielspaß K1 und Spur-Gewichtung bestand er in 74,5–77,5 %, jetzt 67 % (200 Kampagnen; 450.000: 70,0 %, 480.000: 68,5 %))
+    goalValue: 575000          # Imperiumswert ≥ so viel $ … (0.4.20+24: 500.000 → 575.000 $ – mit funktionierender Bot-Raffinerie bestand der Standard-Bot in 75,9 % (1.000 Kampagnen; Varianten 200: 550.000 68,5 %, 600.000 63 %); 0.4.20+5: 200.000 → 400.000 $ – seit der Verwalter die Förderung hält und die Provinz offen ist, bestand der Standard-Bot in 82,5 %, Ziel höchstens 70 %; 0.4.20+15: 400.000 → 500.000 $ – mit Spielspaß K1 und Spur-Gewichtung bestand er in 74,5–77,5 %, jetzt 67 % (200 Kampagnen; 450.000: 70,0 %, 480.000: 68,5 %))
     goalControl: 0.5           # … Kontrolle ≥ 50 % (Familienfirma: immer) und eigene Raffinerie oder Fernleitung zum Hafen
     swallowedControl: 0.5      # Ende „Geschluckt“: Thorne hält mehr Aktien als Jacob und Jacobs Kontrolle liegt darunter
   # Kapitel 3 „Der Konzernherr“ (4.19, GDD §13): Marke in ≥ brand.goal.regions Regionen oder ≥ brand.goal.share
@@ -1353,13 +1353,14 @@ worldModel:
     volksbund: { scrutiny: 1.5 }  # gegen Trusts, für Aufsicht – jeder Brand wird zum Thema
     provinz: { scrutiny: 1 }
   laws:                      # 4.3 Gesetzeskatalog (GDD §10): Ablauf im Parlament; die Gesetze selbst stehen in content/laws/
-    decay: 0.85              # Druck je Runde: alter Druck × decay + Druckpunkte der erfüllten Gründe (Gleichgewicht = Punkte ÷ 0,15)
-    proposeChance: 0.2       # Chance je Runde, dass ein Gesetz über seiner Schwelle als Antrag ins Parlament kommt
-    maxOpen: 1               # so viele Anträge gleichzeitig im Parlament (die Zeitung bringt je Runde eine Gesetzesmeldung)
+    decay: 0.92              # Druck je Runde: alter Druck × decay + Druckpunkte der erfüllten Gründe (Gleichgewicht = Punkte ÷ 0,08; 0.4.20+19: 0,85 → 0,92)
+    thresholdScale: 0.6      # 0.4.20+19: Faktor auf die Schwelle jedes Gesetzes (content/laws/) – Philipp: in jeder Welt sollen bis Kapitel 3 mehrere Gesetze durchkommen
+    proposeChance: 0.5       # Chance je Runde, dass ein Gesetz über seiner Schwelle als Antrag ins Parlament kommt (0.4.20+19: 0,2 → 0,5)
+    maxOpen: 3               # so viele Anträge gleichzeitig im Parlament (0.4.20+19: 1 → 3; die Zeitung bringt je Runde eine Gesetzesmeldung)
     debateRounds: { min: 2, max: 3 }   # Antrag → Debatte → Abstimmung nach so vielen Runden
     voteNoise: 0.04          # Zufall bei der Abstimmung: ± so viel Zustimmung (Abweichler, Kranke, Absprachen)
     closeVote: 0.05          # Debatte: liegt die erwartete Zustimmung näher als so viel an 50 %, meldet die Zeitung „knapp“
-    cooldown: 12             # nach einer Niederlage so viele Runden kein neuer Antrag für dasselbe Gesetz
+    cooldown: 6              # nach einer Niederlage so viele Runden kein neuer Antrag für dasselbe Gesetz (0.4.20+19: 12 → 6)
     failPressure: 0.3        # … und der Druck fällt auf diesen Anteil
     trust:                   # Marktanteil des größten Konzerns im Land (Crane Trust) – Hilfsgröße für das Kartellgesetz
       start: { min: 0.30, max: 0.46 }
@@ -1480,7 +1481,7 @@ refinery:
   buildRounds: 3           # Bauzeit in Runden
   unitCapacity: 10000      # bbl Rohöl je Runde und Ausbaustufe
   maxLevel: 4              # höchstens so viele Ausbaustufen (Stufe 4 lohnt nur mit vielen Tankstellen und großem Markt)
-  expandCost: 50000        # $ je weitere Ausbaustufe (Stufe 2 lohnt Ende Kapitel 2 in ~40 % der Welten, Stufe 3 erst mit Tankstellen)
+  expandCost: 40000        # $ je weitere Ausbaustufe (0.4.20+21: 50.000 → 40.000 – Bots bauten kaum aus, Amortisation in K2 22–32 Runden; Stufe 3 lohnt erst mit Tankstellen)
   expandRounds: 2          # Bauzeit je Ausbau (die alte Anlage läuft weiter)
   upkeepPerLevel: 800      # Fixkosten je fertiger Ausbaustufe und Runde (Löhne, Kessel, Wache)
   operatingCost: 0.50      # $ je verarbeitetem Barrel Rohöl (Kohle, Chemikalien, Fässer)
