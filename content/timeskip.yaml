@@ -208,8 +208,8 @@ chapter2:
 report:
   title: { de: "Bericht des Verwalters", en: "The manager's report" }
   flowFell:
-    de: "Die alten Quellen geben nach: Harlan Oil fördert {nachher} bbl je Runde, vor sechs Jahren waren es {vorher}. Gutes Land war knapp – erst jetzt ist die ganze Provinz vermessen und zu haben."
-    en: "The old wells are giving out: Harlan Oil produces {nachher} bbl a round, six years ago it was {vorher}. Good land was scarce – only now is the whole province surveyed and up for grabs."
+    de: "Die alten Quellen geben nach: Harlan Oil fördert {nachher} bbl je Runde, vor sechs Jahren waren es {vorher}. Junge Quellen fördern anfangs am meisten und verlieren jedes Quartal einen Teil – die {altQuellen} Quellen von damals bringen heute nur noch {altFoerderung} bbl, die {neuQuellen} neuen des Verwalters {neuFoerderung} bbl. Gutes Land war knapp – erst jetzt ist die ganze Provinz vermessen und zu haben."
+    en: "The old wells are giving out: Harlan Oil produces {nachher} bbl a round, six years ago it was {vorher}. Young wells produce most at first and lose a share every quarter – the {altQuellen} wells from back then now yield only {altFoerderung} bbl, the manager's {neuQuellen} new ones {neuFoerderung} bbl. Good land was scarce – only now is the whole province surveyed and up for grabs."
   flowHeld:
     de: "Die Förderung hält: {nachher} bbl je Runde, vor sechs Jahren waren es {vorher}. Jetzt ist die ganze Provinz vermessen und zu haben."
     en: "Production is holding: {nachher} bbl a round, six years ago it was {vorher}. Now the whole province is surveyed and up for grabs."

@@ -29,6 +29,15 @@ export interface ManagerReport {
   flowAfter: number;
   /** Fiel die Förderung um mehr als ein Fünftel? */
   fell: boolean;
+  /**
+   * 0.4.20+29: Woher die Förderung nachher kommt – Quellen aus Kapitel 1 (sie verlieren je Runde einen Teil und
+   * sind nach dem Sprung fast leer) und Quellen, die der Verwalter gebohrt hat. Sonst wirkt „mehr Quellen,
+   * weniger Öl“ wie ein Fehler.
+   */
+  oldWells: number;
+  oldFlow: number;
+  newWells: number;
+  newFlow: number;
   ideas: ReportIdea[];
 }
 
@@ -62,5 +71,28 @@ export function managerReport(state: GameState, record: Pick<TimeskipRecord, 'nu
     idee('land', pacht[Math.floor(pacht.length / 2)] + bohrung, { count: frei.length });
   }
 
-  return { flowBefore, flowAfter, fell: flowBefore > 0 && flowAfter < flowBefore * GEHALTEN, ideas };
+  // Kapitel 1 endet vor dem Sprung: Kapitel 2 beginnt nach timeskip.rounds Quartalen.
+  const kapitel1Ende = state.chapterStart - balance.timeskip.rounds - 1;
+  let oldWells = 0, oldFlow = 0, newWells = 0, newFlow = 0;
+  for (const w of state.wells) {
+    if (w.status !== 'found') continue;
+    const rate = w.production?.lastRate ?? 0;
+    if (w.startRound <= kapitel1Ende) {
+      oldWells += 1;
+      oldFlow += rate;
+    } else {
+      newWells += 1;
+      newFlow += rate;
+    }
+  }
+  return {
+    flowBefore,
+    flowAfter,
+    fell: flowBefore > 0 && flowAfter < flowBefore * GEHALTEN,
+    oldWells,
+    oldFlow: Math.round(oldFlow),
+    newWells,
+    newFlow: Math.round(newFlow),
+    ideas,
+  };
 }

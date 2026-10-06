@@ -17,6 +17,9 @@ describe('Bericht des Verwalters (0.4.20+2)', () => {
     expect(r.flowBefore).toBe(Math.round(roundFlow(ende)));
     expect(r.flowAfter).toBe(Math.round(roundFlow(state)));
     expect(r.fell).toBe(r.flowAfter < r.flowBefore * 0.8);
+    // 0.4.20+29: Alte und neue Quellen ergeben zusammen die Förderung nachher.
+    expect(r.oldWells + r.newWells).toBe(state.wells.filter((w) => w.status === 'found').length);
+    expect(Math.abs(r.oldFlow + r.newFlow - r.flowAfter)).toBeLessThanOrEqual(1);
     const ids = r.ideas.map((i) => i.id);
     expect(ids).toEqual(expect.arrayContaining(['refinery', 'harbor', 'land']));
     expect(r.ideas.find((i) => i.id === 'refinery')!.cost).toBe(balance.refinery.buildCost);

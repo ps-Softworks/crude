@@ -247,7 +247,7 @@ export function ChronicleScreen({ game, record, onContinue }: { game: GameState;
         {bericht && (
           <div className="sprung-bericht">
             <h3>{fillTimeskipText(T.report.title, {})}</h3>
-            <p className="bogen-text">{fillTimeskipText(bericht.fell ? T.report.flowFell : T.report.flowHeld, { vorher: bbl(bericht.flowBefore), nachher: bbl(bericht.flowAfter) })}</p>
+            <p className="bogen-text">{fillTimeskipText(bericht.fell ? T.report.flowFell : T.report.flowHeld, { vorher: bbl(bericht.flowBefore), nachher: bbl(bericht.flowAfter), altQuellen: String(bericht.oldWells), altFoerderung: bbl(bericht.oldFlow), neuQuellen: String(bericht.newWells), neuFoerderung: bbl(bericht.newFlow) })}</p>
             {bericht.ideas.length > 0 && (
               <>
                 <p className="bogen-text">{fillTimeskipText(T.report.ideas, {})}</p>
