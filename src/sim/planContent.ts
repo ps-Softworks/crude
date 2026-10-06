@@ -19,8 +19,22 @@ export interface PlanCardText {
   risk?: LocalizedText;
 }
 
+/** Eine Stelle im Adressbuch (0.4.20+28): wen Jacob aufsucht – mit den Karten, die dort liegen. */
+export interface PlanContact {
+  id: string;
+  name: LocalizedText;
+  /** Wer dort sitzt, in einer Zeile. */
+  who: LocalizedText;
+  /** Karten aus balance.yaml plans.cards. */
+  cards: string[];
+  /** Feste Termine ohne eigene Karte (Ereignis-IDs). */
+  events: string[];
+}
+
 export interface PlanContent {
   title: LocalizedText;
+  /** Stellen in Anzeige-Reihenfolge; die letzte nimmt alles auf, was nirgends steht. */
+  contacts: PlanContact[];
   tabs: Record<PlanTab, LocalizedText>;
   cards: Record<string, PlanCardText>;
   clues: Record<ClueKind, { seen: LocalizedText; unseen: LocalizedText }>;
@@ -124,6 +138,32 @@ export function parsePlanContent(file: string, text: string): { content: PlanCon
       if (seen && unseen) clues[kind] = { seen, unseen };
     }
   }
+  const contacts: PlanContact[] = [];
+  if (!istObjekt(raw.contacts)) fehler('„contacts“ fehlt.');
+  else {
+    const liste = (value: unknown, wo: string): string[] => {
+      if (value === undefined) return [];
+      if (!Array.isArray(value) || value.some((v) => typeof v !== 'string')) {
+        fehler(`${wo}: muss eine Liste von Kennungen sein.`);
+        return [];
+      }
+      return value as string[];
+    };
+    for (const [id, c] of Object.entries(raw.contacts)) {
+      if (!istObjekt(c)) {
+        fehler(`contacts.${id}: braucht name und who.`);
+        continue;
+      }
+      const unbekannt = Object.keys(c).filter((k) => !['name', 'who', 'cards', 'events'].includes(k));
+      if (unbekannt.length > 0) fehler(`contacts.${id}: unbekannt ${unbekannt.join(', ')}. Erlaubt: name, who, cards, events.`);
+      const name = sprachtext(c.name, `contacts.${id}.name`);
+      const who = sprachtext(c.who, `contacts.${id}.who`);
+      const cardIds = liste(c.cards, `contacts.${id}.cards`);
+      const eventIds = liste(c.events, `contacts.${id}.events`);
+      if (name && who) contacts.push({ id, name, who, cards: cardIds, events: eventIds });
+    }
+    if (contacts.length === 0) fehler('contacts: mindestens eine Stelle.');
+  }
   let report: PlanContent['report'] | null = null;
   if (!istObjekt(raw.report)) fehler('„report“ fehlt.');
   else {
@@ -133,14 +173,41 @@ export function parsePlanContent(file: string, text: string): { content: PlanCon
   }
   if (errors.length > 0 || !title || !tabs || !sources || !geologists || !levels || !zones || !report) return { content: null, errors };
   return {
-    content: { title, tabs, cards, clues: clues as PlanContent['clues'], sources, geologists, levels, zones, report },
+    content: { title, contacts, tabs, cards, clues: clues as PlanContent['clues'], sources, geologists, levels, zones, report },
     errors,
   };
 }
 
-/** Passt content/plans.yaml zu balance.yaml? Jede eigene Karte braucht Texte, jede Zone ihr Wort. */
-export function checkPlanContent(file: string, content: PlanContent, balance: Balance): ContentError[] {
+/**
+ * Bei welcher Stelle liegt eine Karte? Eigene Karten über contacts.*.cards, feste Termine ohne
+ * eigene Karte über contacts.*.events; was nirgends steht, bei der letzten Stelle.
+ * Reine Darstellungshilfe – die Simulation liest das nicht.
+ */
+export function contactOf(content: Pick<PlanContent, 'contacts'>, card: { id: string; event?: string; auto: boolean }): string {
+  const { contacts } = content;
+  const hit = card.auto
+    ? contacts.find((c) => card.event !== undefined && c.events.includes(card.event))
+    : contacts.find((c) => c.cards.includes(card.id));
+  return (hit ?? contacts[contacts.length - 1]).id;
+}
+
+/** Passt content/plans.yaml zu balance.yaml? Jede eigene Karte braucht Texte und genau eine Stelle, jede Zone ihr Wort. */
+export function checkPlanContent(file: string, content: PlanContent, balance: Balance, eventIds?: readonly string[]): ContentError[] {
   const errors: ContentError[] = [];
+  for (const id of Object.keys(balance.plans.cards)) {
+    const n = content.contacts.filter((c) => c.cards.includes(id)).length;
+    if (n !== 1) errors.push({ file, line: 1, message: `Karte ${id} steht bei ${n} Stellen in contacts (genau eine nötig).` });
+  }
+  for (const c of content.contacts) {
+    for (const id of c.cards) {
+      if (!balance.plans.cards[id]) errors.push({ file, line: 1, message: `contacts.${c.id}.cards: ${id} gibt es in balance.yaml plans.cards nicht.` });
+    }
+    if (eventIds) {
+      for (const id of c.events) {
+        if (!eventIds.includes(id)) errors.push({ file, line: 1, message: `contacts.${c.id}.events: Ereignis ${id} gibt es nicht.` });
+      }
+    }
+  }
   for (const id of Object.keys(balance.plans.cards)) {
     if (!content.cards[id]) errors.push({ file, line: 1, message: `cards.${id} fehlt (Karte aus balance.yaml plans.cards).` });
   }

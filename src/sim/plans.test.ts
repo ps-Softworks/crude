@@ -7,7 +7,7 @@ import { resolveEvent } from './events';
 import { hireGeologist, knowledgeForecast, knowledgeOf, learnFromWells, rideParcels } from './exploration';
 import { endRound, newGame, type GameState } from './game';
 import { leaseTerms } from './lease';
-import { checkPlanContent, parsePlanContent } from './planContent';
+import { checkPlanContent, contactOf, parsePlanContent } from './planContent';
 import { bookCard, cardReason, planCards, planRefErrors, planView, settlePlans, unbookCard } from './plans';
 import { deserializeGame, serializeGame } from './save';
 import { loadBalance } from './testBalance';
@@ -270,9 +270,26 @@ describe('Inhalte und Spielstand (Plan 1.3, 1.5)', () => {
   it('content/plans.yaml passt zu balance.yaml, jede Regel und jeder feste Termin existiert', () => {
     const { content, errors } = parsePlanContent('content/plans.yaml', readFileSync(new URL('../../content/plans.yaml', import.meta.url), 'utf8'));
     expect(errors).toEqual([]);
-    expect(checkPlanContent('content/plans.yaml', content!, balance)).toEqual([]);
+    expect(checkPlanContent('content/plans.yaml', content!, balance, katalog.map((e) => e.id))).toEqual([]);
     expect(planRefErrors(balance, katalog)).toEqual([]);
     expect(planRefErrors({ ...balance, plans: { cards: { kaputt: { ...balance.plans.cards.ritt, handler: 'gibtsnicht' } } } }, katalog)[0]).toMatch(/gibtsnicht/);
+  });
+
+  it('Adressbuch: jede Karte und jeder feste Termin liegt bei einer Stelle, Unbekanntes bei der letzten', () => {
+    const { content } = parsePlanContent('content/plans.yaml', readFileSync(new URL('../../content/plans.yaml', import.meta.url), 'utf8'));
+    const c = content!;
+    expect(contactOf(c, { id: 'thorne_vorsprechen', auto: false })).toBe('eisenbahn');
+    expect(contactOf(c, { id: 'termin_ruth', event: 'termin_ruth', auto: true })).toBe('familie');
+    expect(contactOf(c, { id: 'x', event: 'gibtsnicht', auto: true })).toBe(c.contacts[c.contacts.length - 1].id);
+    const zugeordnet = new Set(c.contacts.flatMap((k) => k.events));
+    const ohneKarte = katalog.filter((e) => e.routine && !Object.values(balance.plans.cards).some((k) => k.event === e.id));
+    for (const e of ohneKarte) expect(zugeordnet.has(e.id), e.id).toBe(true);
+    // Doppelt oder unbekannt meldet die Prüfung.
+    const kaputt = { ...c, contacts: [...c.contacts, { id: 'doppelt', name: c.title, who: c.title, cards: ['ritt', 'gibtsnicht'], events: ['nie'] }] };
+    const fehler = checkPlanContent('content/plans.yaml', kaputt, balance, katalog.map((e) => e.id)).map((f) => f.message).join('\n');
+    expect(fehler).toMatch(/ritt steht bei 2 Stellen/);
+    expect(fehler).toMatch(/gibtsnicht/);
+    expect(fehler).toMatch(/Ereignis nie/);
   });
 
   it('ein alter Spielstand (Format 21, 0.4.19) lädt: jede Ranch mit Prognose ist kartiert, ohne q gilt die Zone', () => {

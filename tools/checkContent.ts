@@ -144,7 +144,7 @@ if (hallstead.content) errors.push(...checkHallsteadContent('content/hallstead.y
   const balance = loadBalance();
   const brett = parsePlanContent('content/plans.yaml', readFileSync(new URL('../content/plans.yaml', import.meta.url), 'utf8'));
   errors.push(...brett.errors);
-  if (brett.content) errors.push(...checkPlanContent('content/plans.yaml', brett.content, balance));
+  if (brett.content) errors.push(...checkPlanContent('content/plans.yaml', brett.content, balance, events.map((e) => e.id)));
   if (parsed.errors.length === 0) for (const m of planRefErrors(balance, events)) errors.push({ file: 'content/balance.yaml', line: 1, message: m });
 }
 if (errors.length > 0) {

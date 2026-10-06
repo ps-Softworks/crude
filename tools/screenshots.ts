@@ -289,11 +289,11 @@ const bilder: Bild[] = [
   { name: '33-zeitsprung-chronik', state: nachSprung },
   { name: '33b-zeitsprung-bericht', state: nachSprung, dann: `document.querySelector('.bogen-fuss .primary')?.click()` },
   { name: '34-kapitel2-schreibtisch', state: kapitel2 },
-  // Termine als Hauptwerkzeug (Etappe 1): Planungsbrett mit Kartenhand.
-  { name: '35-planungsbrett', state: start, prefs: { 'crude.reiter.termine': 'land' }, tasten: ['t'] },
+  // Termine als Adressbuch (0.4.20+28): Stellen links, Angebote der gewählten Stelle rechts.
+  { name: '35-planungsbrett', state: start, prefs: { 'crude.reiter.termine': 'geologen' }, tasten: ['t'] },
   // Etappe 2: Reiter Markt und Fracht, Verhandlung mit Thorne, Förderbremse auf der Pinnwand.
-  { name: '36-brett-markt', state: mitBremse, prefs: { 'crude.reiter.termine': 'markt' }, tasten: ['t'] },
-  { name: '37-brett-fracht', state: mitBremse, prefs: { 'crude.reiter.termine': 'fracht' }, tasten: ['t'] },
+  { name: '36-brett-markt', state: mitBremse, prefs: { 'crude.reiter.termine': 'oelleute' }, tasten: ['t'] },
+  { name: '37-brett-fracht', state: mitBremse, prefs: { 'crude.reiter.termine': 'eisenbahn' }, tasten: ['t'], dann: `document.querySelector('.angebot-name')?.click()`, warte: 400 },
   { name: '38-fracht-thorne', state: mitBremse, prefs: { 'crude.reiter.fracht': 'pipeline' }, tasten: ['f'] },
   { name: '39-pinnwand-bremse', state: mitBremse, dann: KLICK('.objekt-konkurrenz'), warte: 600 },
   // 0.4.20+2: Rundgang Kapitel 2 (zweiter Schritt: Kassenbuch) – kommt von selbst und blättert nur mit „Weiter“.
@@ -405,7 +405,8 @@ try {
 
   // Alte Bilder weg, damit nichts Veraltetes liegen bleibt.
   mkdirSync(OUT, { recursive: true });
-  for (const f of readdirSync(OUT)) if (f.endsWith('.png')) rmSync(new URL(f, OUT));
+  // Mit SHOT_NUR nur die verlangten Bilder neu – die übrigen bleiben liegen.
+  if (!process.env.SHOT_NUR) for (const f of readdirSync(OUT)) if (f.endsWith('.png')) rmSync(new URL(f, OUT));
 
   // SHOT_NUR=<Teil des Namens>: nur diese Bilder (schneller Blick auf ein Fenster).
   for (const bild of bilder.filter((b) => !process.env.SHOT_NUR || b.name.includes(process.env.SHOT_NUR))) {
