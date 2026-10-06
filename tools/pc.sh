@@ -11,6 +11,9 @@
 #   tools/pc.sh hol <name> <datei>        Datei aus dem Arbeitsordner des Laufs holen (z. B. docs/botlaeufe.md)
 # Auf dem PC: %USERPROFILE%\CRUDE-laeufe\<name>.log, <name>.fertig (Exit-Code), Arbeitsordner <name>-wt.
 # Jeder Lauf: Leerlauf-Priorität und nur die Prozessoren 2–19 (2 von 20 bleiben frei), also höchstens 18 Worker.
+# Der PC (i7-12700K) hat P- und E-Kerne: Windows schiebt Hintergrund-Prozesse mit niedriger Priorität per Power
+# Throttling auf die 4 E-Kerne (gemessen 3,7 statt 18 Kerne). Abhilfe einmalig (nach jedem Node-Update wiederholen):
+#   ssh pc 'powercfg /powerthrottling disable /path (Get-Command node).Source'
 # Hat sich package.json geändert, vorher im Projekt auf dem PC npm install laufen lassen (node_modules wird geteilt).
 set -e
 cmd=$1; name=$2
