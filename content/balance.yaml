@@ -1506,11 +1506,14 @@ refinery:
         gasoline: { min: 0.15, max: 0.20 }
   startMix: { kerosene: 0.55, lubricant: 0.10, fuelOil: 0.15, gasoline: 0.20 }
   # Je Produkt: Grundpreis in $ je Barrel, Nachfrage des Großhandels in bbl je Runde (in der Bezugswelt),
-  # Preiselastizität, Bindung an den Rohölpreis, Preisgrenzen (Anteil am Grundpreis).
+  # Preiselastizität, Rohöl im Produkt (crudeLink), Grenzen der Raffineriespanne.
+  # 0.4.20+25 (Philipp: raffiniertes Öl ist nie billiger als Rohöl, und die Produkte folgen dem Rohölpreis):
+  #   Preis = crudeLink × Posted Price + Spanne × (Nachfrage/Angebot)^Elastizität, Spanne = basePrice − crudeLink × crudeRef,
+  #   der Faktor begrenzt auf floor..ceiling. Ein überschwemmter Markt kostet Spanne, nie den Wert des Rohöls.
+  #   Startmix bei voller Menge ~+0,30 $/bbl über dem Rohölverkauf, gut eingestellt ~+0,75 $/bbl.
   # 0.4.20+18: Die Märkte sind verschieden groß und verschieden viel wert. Kerosin bringt gut, aber der Markt ist
   # klein und schrumpft; Heizöl ist der große Markt; Schmieröl ist klein und teuer. Elastizität 2: Wer einen Markt
-  # überschwemmt, verliert dort Erlös. Der Startmix (55 % Kerosin) liegt bewusst daneben – mit ihm und voller Menge
-  # bringt Raffinieren weniger als der Rohölverkauf; gut eingestellt ~0,75 $ je Barrel mehr.
+  # überschwemmt, verliert dort Spanne. Der Startmix (55 % Kerosin) liegt bewusst daneben.
   # Wachstum: Das allgemeine Wachstum trägt der Nachfrage-Index der Welt (trend.demand =
   # Exponent auf Welt-Nachfrage / worldDefaults.demand). perYear ist nur die Verschiebung
   # des Produkts gegenüber dieser allgemeinen Ölnachfrage (Kerosin verliert Anteile,
@@ -1521,33 +1524,33 @@ refinery:
       basePrice: 1.80
       demand: 3000
       elasticity: 2.0
-      crudeLink: 0.3
-      floor: 0.25
-      ceiling: 1.1
+      crudeLink: 1.0
+      floor: 0.3
+      ceiling: 1.2
       trend: { refYear: 98, perYear: -0.02, tech: -0.15, tension: 0, war: 0, demand: 1, min: 0.2 }
     lubricant:             # Maschinen und Eisenbahn: kleine Menge, guter Preis, schnell gesättigt
       basePrice: 3.30
       demand: 1300
       elasticity: 2.0
-      crudeLink: 0.2
-      floor: 0.4
-      ceiling: 1.1
+      crudeLink: 1.0
+      floor: 0.5
+      ceiling: 1.2
       trend: { refYear: 98, perYear: 0.0, tech: 0.10, tension: 0, war: 0.1, demand: 1, min: 0.2 }
     fuelOil:               # Marine, Eisenbahn, Industrie
       basePrice: 1.90
       demand: 6500
       elasticity: 2.0
-      crudeLink: 0.5
-      floor: 0.4
-      ceiling: 1.1
+      crudeLink: 1.0
+      floor: 0.5
+      ceiling: 1.2
       trend: { refYear: 98, perYear: 0.0, tech: 0.05, tension: 0.8, war: 0.6, demand: 1, min: 0.2 }
     gasoline:              # Nebenprodukt; gewinnt mit der Automobilisierung Anteile
-      basePrice: 2.00
+      basePrice: 2.30      # 0.4.20+25: 2,00 → 2,30 – sonst trägt Benzin für die Tankstellen den Ausbau auf Stufe 3 nicht mehr
       demand: 2200
       elasticity: 2.0
-      crudeLink: 0.3
-      floor: 0.3
-      ceiling: 1.1
+      crudeLink: 1.0
+      floor: 0.5
+      ceiling: 1.2
       trend: { refYear: 98, perYear: 0.08, tech: 0.30, tension: 0, war: 0.3, demand: 1, min: 0.2 }
 
 # 4.7 Fernleitungen (GDD §6, Kapitel 2): große Pipelines vom Feld zum Hafen oder Bahnhof.
