@@ -30,9 +30,8 @@ function Aktion({ result, onDone, children }: { result: ResearchResult; onDone: 
   );
 }
 
-/** Wert einer Kennzahl lesbar: Anteile in Prozent, Tiefe in Metern, Tanklaster als Ja. */
+/** Wert einer Kennzahl lesbar: Anteile in Prozent (Tanklaster: je Gespann), Tiefe in Metern. */
 function wirkWert(key: TechEffectKey, v: number): string {
-  if (key === 'trucks') return '';
   if (key === 'depth') return ` ${v > 0 ? '+' : '−'}${Math.abs(v)} m`;
   const p = Math.round(Math.abs(v) * 100);
   return key === 'gasolineYield' ? ` +${p} Prozentpunkte` : ` ${v > 0 ? '+' : '−'}${p} %`;

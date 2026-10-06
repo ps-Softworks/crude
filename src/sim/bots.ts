@@ -35,6 +35,7 @@ import {
   setGuards,
   storageCapacity,
   surveyPipeline,
+  teamCapacity,
   traderGain,
 } from './logistics';
 import { jacobSupply } from './market';
@@ -220,7 +221,7 @@ function teamCostPerBarrel(state: GameState, balance: Balance): number {
 /** Barrel je Runde, die nach Pipeline und eigenen Gespannen noch für ein weiteres Gespann übrig sind. */
 function teamSlice(state: GameState, balance: Balance): number {
   const pipe = modeCapacity(state, balance, 'pipeline');
-  return production(state) - pipe - state.logistics.teams * balance.transport.teams.capacity;
+  return production(state) - pipe - state.logistics.teams * teamCapacity(state, balance);
 }
 
 /**

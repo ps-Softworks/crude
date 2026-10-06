@@ -14,7 +14,8 @@ import { leaseOf, parcelLabel } from './lease';
 import { Rng } from './rng';
 import { findRig, freeRig, noRigReason, rigLabel, rigRisk, rigStageCost, rigStageRounds, type Rig } from './rigs';
 // 4.11 Andockpunkt: Drehbohren und Rollenmeißel verkürzen und verbilligen das Bohren (ab Kapitel 2).
-import { techDrillCost, techDrillRounds } from './research';
+// 0.4.20+9: Bohrtiefe (Drehbohren, Rollenmeißel) macht tiefe Stufen sicherer (techStage).
+import { techDrillCost, techDrillRounds, techStage } from './research';
 
 export type WellStatus = 'drilling' | 'decision' | 'stuck' | 'found' | 'dry';
 
@@ -311,8 +312,8 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
     const a = rng.float();
     const s = rng.float();
     const depth = stageOf(balance, well.stage).depth;
-    // Stahlgestänge (0.2.15+7) senkt Unfall- und Klemm-Chance des Turms.
-    const risiko = rigRisk(balance, findRig(input, well.rigId), stageOf(balance, well.stage));
+    // Stahlgestänge (0.2.15+7) senkt Unfall- und Klemm-Chance des Turms; 0.4.20+9: Bohrtiefe aus der Forschung auch.
+    const risiko = rigRisk(balance, findRig(input, well.rigId), techStage(input, balance, well.stage));
     if (a < risiko.accident) {
       const paid = Math.min(cash, balance.drilling.accidentCost);
       cash -= paid;
@@ -398,7 +399,7 @@ export function deeperQuote(state: Pick<GameState, 'rigs'>, balance: Balance, we
   const stage = balance.drilling.stages[well.stage];
   if (!stage) return null;
   const rig = findRig(state, well.rigId);
-  return { cost: techDrillCost(state, balance, rigStageCost(balance, rig, stage)), accident: rigRisk(balance, rig, stage).accident }; // 4.11 Andockpunkt
+  return { cost: techDrillCost(state, balance, rigStageCost(balance, rig, stage)), accident: rigRisk(balance, rig, techStage(state, balance, well.stage + 1)).accident }; // 4.11 Andockpunkt, 0.4.20+9 Bohrtiefe
 }
 
 /** Klemmendes Werkzeug bergen: kostet Geld und eine Runde, dann wird die Stufe neu abgeschlossen. */

@@ -9,7 +9,7 @@
 import type { Balance, Buyer, TransportMode } from './balance';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
-import { LOGISTICS_MARKS, pipelineWorks, teamsIdle, withMark } from './logistics';
+import { LOGISTICS_MARKS, pipelineWorks, teamCapacity, teamsIdle, withMark } from './logistics';
 import { Rng } from './rng';
 import { timedEffect } from './events';
 // 4.7 Andockpunkt: Fernleitungen geben den Wegen „Pipeline“ (Hafen) und „Bahn“ (Bahnhof) Kapazität dazu.
@@ -77,7 +77,8 @@ export function modeCapacity(state: Partial<Pick<GameState, 'logistics' | 'round
       // 4.7 Andockpunkt: plus Fernleitungen zum Bahnhof – ihr Öl fährt mit Thornes Bahn, zu seinem Tarif.
       return t.rail.capacity + Math.round(bigPipelineCapacity(state, balance, 'rail') * durchsatz);
     case 'teams':
-      return !lg || teamsIdle({ round: state.round ?? 0, logistics: lg }) ? 0 : lg.teams * t.teams.capacity;
+      // 0.4.20+9: Tanklaster (Forschung, ab Kapitel 2) – jedes Gespann schafft mehr.
+      return !lg || teamsIdle({ round: state.round ?? 0, logistics: lg }) ? 0 : lg.teams * teamCapacity(state, balance);
     case 'pipeline':
       // 4.7 Andockpunkt: plus laufende Fernleitungen zum Hafen (Kapitel 2+; in Kapitel 1 immer 0).
       // Etappe 2: Mit gemeinsamer Pipeline der Transportgemeinschaft belegt deren Öl einen Teil.

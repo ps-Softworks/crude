@@ -27,6 +27,8 @@ import { PRODUCTS, type MixBound, type Product, type ProductMix, type RefineryTe
 import { capacityLeft, modeCapacity, modeUnavailable, netPrice, tariff } from './transport';
 import { effectiveDemand } from './world';
 import { timedEffect } from './events';
+// 0.4.20+9: Cracken (4.11) hebt den Benzin-Höchstanteil im Mix.
+import { techGasolineYield } from './research';
 
 export { PRODUCTS, type Product, type ProductMix } from './refineryBalance';
 
@@ -160,6 +162,17 @@ function clamp(v: number, lo: number, hi: number): number {
 export function refineryTech(balance: Balance, stage: number): RefineryTech {
   const techs = balance.refinery.techs;
   return techs[clamp(Math.round(stage), 1, techs.length) - 1];
+}
+
+/**
+ * 0.4.20+9: Grenzen des Produktmix mit Jacobs Techniken: Cracken hebt den
+ * Höchstanteil von Benzin um techGasolineYield (die übrigen Grenzen bleiben).
+ */
+export function refineryMixBounds(state: object, balance: Balance, stage: number): Record<Product, MixBound> {
+  const mix = refineryTech(balance, stage).mix;
+  const mehr = techGasolineYield(state, balance);
+  if (mehr <= 0) return mix;
+  return { ...mix, gasoline: { ...mix.gasoline, max: Math.min(1, Math.round((mix.gasoline.max + mehr) * 1000) / 1000) } };
 }
 
 /**
@@ -328,7 +341,7 @@ export function setRefineryMix(state: GameState, balance: Balance, wish: Partial
   const nein = sperre(state);
   if (nein) return { ok: false, reason: nein };
   const r = state.refinery!;
-  return { ok: true, state: { ...state, refinery: { ...r, mix: normalizeMix(wish, refineryTech(balance, r.tech).mix) } } };
+  return { ok: true, state: { ...state, refinery: { ...r, mix: normalizeMix(wish, refineryMixBounds(state, balance, r.tech)) } } };
 }
 
 /** Wie viel der Kapazität je Runde aus dem Tank in die Raffinerie geht (0–1, auf 5 % gerundet). */

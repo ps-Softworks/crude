@@ -19,6 +19,9 @@ import {
   techDrillCost,
   techDrillRounds,
   techEffect,
+  techGasolineYield,
+  techStage,
+  TECH_EFFECT_KEYS,
   techTier,
   techViews,
   toggleRefuse,
@@ -28,6 +31,9 @@ import {
 } from './research';
 import { deserializeGame, serializeGame } from './save';
 import { deeperQuote, drillQuote } from './drilling';
+import { refineryMixBounds, refineryTech, setRefineryMix, unlockRefinery } from './refinery';
+import { routePlan, teamCapacity } from './logistics';
+import { modeCapacity } from './transport';
 import { loadBalance } from './testBalance';
 
 const balance = loadBalance();
@@ -94,7 +100,7 @@ describe('Werkstatt und Forschung (GDD §5, §6)', () => {
     s = runden(s, n - 1, fest);
     expect(hasTech(s, 'tanklaster')).toBe(true);
     expect(s.research!.project).toBeNull();
-    expect(techEffect(s, fest, 'trucks')).toBe(1);
+    expect(techEffect(s, fest, 'trucks')).toBe(t.effects.trucks);
   });
 
   it('erst die Voraussetzung: Rollenmeißel braucht Drehbohren', () => {
@@ -219,8 +225,84 @@ describe('Wirkung beim Bohren (Drehbohren, Rollenmeißel – ab Kapitel 2)', () 
     expect(deeperQuote(beide, balance, well)!.cost).toBeLessThan(deeperQuote(ohne, balance, well)!.cost);
   });
 
-  it('nur Bohrzeit und Bohrkosten wirken schon; Tiefe, Benzinausbeute, Tanklaster warten auf ihre Systeme', () => {
-    expect([...ACTIVE_TECH_EFFECTS].sort()).toEqual(['drillCost', 'drillTime']);
+  it('0.4.20+9: alle Kennzahlen wirken – auch Tiefe, Benzinausbeute und Tanklaster', () => {
+    expect([...ACTIVE_TECH_EFFECTS].sort()).toEqual([...TECH_EFFECT_KEYS].sort());
+  });
+});
+
+describe('0.4.20+9: Bohrtiefe, Cracken und Tanklaster wirken (ab Kapitel 2)', () => {
+  const leer = (): ResearchState => ({ rng: 1, workshop: false, project: null, funding: 0, progress: {}, owned: {}, refused: [] });
+  const mit = (ids: string[], extra: Partial<K2> = {}): K2 => {
+    const owned: Record<string, 'lizenz'> = {};
+    for (const id of ids) owned[id] = 'lizenz';
+    return kapitel2({ research: { ...leer(), owned }, ...extra });
+  };
+  const st = balance.drilling.stages;
+
+  it('Bohrtiefe: eine Stufe ist so sicher wie eine um die Mehrtiefe flachere, Kosten und Ölanteil bleiben', () => {
+    const ohne = kapitel2();
+    for (let i = 1; i <= st.length; i++) expect(techStage(ohne, balance, i)).toBe(st[i - 1]);
+    const rot = mit(['rotary']);
+    const tiefe = balance.research.techs.find((x) => x.id === 'rotary')!.effects.depth!;
+    // Stufe 2 liegt um `tiefe` m flacher: zwischen Stufe 1 und 2 gemittelt
+    const t = (st[1].depth - tiefe - st[0].depth) / (st[1].depth - st[0].depth);
+    const s2 = techStage(rot, balance, 2);
+    expect(s2.accident).toBeCloseTo(st[0].accident + (st[1].accident - st[0].accident) * t, 4);
+    expect(s2.stuck).toBeLessThan(st[1].stuck);
+    expect(s2.cost).toBe(st[1].cost);
+    expect(s2.oilShare).toBe(st[1].oilShare);
+    expect(s2.depth).toBe(st[1].depth);
+    // Stufe 1 wird nie sicherer als sie ist (es gibt nichts Flacheres)
+    expect(techStage(rot, balance, 1)).toEqual(st[0]);
+    // beide Techniken (+300 m): Stufe 2 wie Stufe 1, Stufe 3 wie Stufe 2
+    const beide = mit(['rotary', 'rollenmeissel']);
+    expect(techStage(beide, balance, 2).accident).toBe(st[0].accident);
+    expect(techStage(beide, balance, 3).stuck).toBe(st[1].stuck);
+    // in Kapitel 1 nicht
+    expect(techStage({ ...rot, chapter: 1 }, balance, 2)).toBe(st[1]);
+  });
+
+  it('Bohrtiefe: das Angebot „tiefer bohren“ nennt das kleinere Unfallrisiko', () => {
+    const ohne = kapitel2();
+    const rot = mit(['rotary']);
+    const well = { stage: 1, rigId: ohne.rigs[0].id } as Parameters<typeof deeperQuote>[2];
+    expect(deeperQuote(ohne, balance, well)!.accident).toBe(st[1].accident);
+    expect(deeperQuote(rot, balance, well)!.accident).toBeLessThan(st[1].accident);
+  });
+
+  it('Cracken: der Benzin-Höchstanteil im Mix steigt, Jacob kann mehr Benzin einstellen', () => {
+    const mehr = balance.research.techs.find((x) => x.id === 'thermal_cracking')!.effects.gasolineYield!;
+    const grund = refineryTech(balance, 1).mix.gasoline.max;
+    const ohne = unlockRefinery(kapitel2(), balance);
+    const mitC = unlockRefinery(mit(['thermal_cracking']), balance);
+    expect(techGasolineYield(ohne, balance)).toBe(0);
+    expect(refineryMixBounds(ohne, balance, 1)).toBe(refineryTech(balance, 1).mix);
+    expect(refineryMixBounds(mitC, balance, 1).gasoline.max).toBeCloseTo(grund + mehr, 6);
+    const wunsch = { kerosene: 0.35, lubricant: 0.05, fuelOil: 0.1, gasoline: 0.5 };
+    const a = setRefineryMix(ohne, balance, wunsch);
+    const b = setRefineryMix(mitC, balance, wunsch);
+    if (!a.ok || !b.ok) throw new Error('Mix');
+    expect(a.state.refinery!.mix.gasoline).toBeLessThanOrEqual(grund);
+    expect(b.state.refinery!.mix.gasoline).toBeGreaterThan(grund);
+    expect(b.state.refinery!.mix.gasoline).toBeLessThanOrEqual(grund + mehr + 1e-9);
+    // in Kapitel 1 nicht
+    expect(refineryMixBounds({ ...mitC, chapter: 1 }, balance, 1).gasoline.max).toBe(grund);
+  });
+
+  it('Tanklaster: jedes eigene Gespann schafft mehr, auch im Wegevergleich', () => {
+    const f = 1 + balance.research.techs.find((x) => x.id === 'tanklaster')!.effects.trucks!;
+    const je = balance.transport.teams.capacity;
+    const gespanne = (g: K2): K2 => ({ ...g, logistics: { ...g.logistics, teams: 2 } });
+    const ohne = gespanne(kapitel2());
+    const mitT = gespanne(mit(['tanklaster']));
+    expect(teamCapacity(ohne, balance)).toBe(je);
+    expect(teamCapacity(mitT, balance)).toBe(Math.round(je * f));
+    expect(modeCapacity(ohne, balance, 'teams')).toBe(2 * je);
+    expect(modeCapacity(mitT, balance, 'teams')).toBe(2 * Math.round(je * f));
+    const weg = (g: K2) => routePlan(g, balance, 4 * je).routes.find((r) => r.mode === 'teams')!;
+    expect(weg(mitT).teams).toBeLessThan(weg(ohne).teams!);
+    // in Kapitel 1 nicht
+    expect(teamCapacity({ ...mitT, chapter: 1 }, balance)).toBe(je);
   });
 });
 
