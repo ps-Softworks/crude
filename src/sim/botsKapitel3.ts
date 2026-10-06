@@ -12,7 +12,7 @@ import { brandOf, brandRegionOpen, brandUnlocked, brandWorldFrom, buildingCount,
 import { chapterOf } from './chapterOf';
 import { feldzugAbsprache, feldzugKredit, feldzugTilgen } from './feldzug';
 import type { GameState } from './game';
-import { bestRefinerySetting, buildRefinery, expandRefinery, plannedCrude, planRun, refineryExpansion } from './refinery';
+import { bestRefinerySetting, buildRefinery, crudeSupply, expandRefinery, plannedCrude, planRun, refineryExpansion } from './refinery';
 
 export interface BrandBotPolicy {
   /** So viel $ bleibt immer in der Kasse. */
@@ -61,7 +61,7 @@ export function tuneRefinery(state: GameState, balance: Balance): GameState {
   const r = state.refinery;
   if (!r || r.level === 0 || state.finished) return state;
   // 0.4.20+18: Die Simulation rechnet die beste Einstellung selbst (Raster 5 % + Feinsuche, Benzin für die eigenen Tankstellen).
-  const best = bestRefinerySetting(state, balance);
+  const best = bestRefinerySetting(state, balance, { maxCrude: crudeSupply(state, balance) + Math.floor(state.oilStock) });
   if (JSON.stringify(best.mix) === JSON.stringify(r.mix) && best.intake === r.intake) return state;
   return { ...state, refinery: { ...r, mix: best.mix, intake: best.intake } };
 }
@@ -73,7 +73,7 @@ export function runRefinery(state: GameState, balance: Balance, policy: BrandBot
   const faktor = policy.refineryExpand;
   const b = balance.refinery;
   if (!r || faktor == null || r.project || r.level === 0 || s.cash < b.expandCost + policy.reserve) return s;
-  const aus = refineryExpansion(s, balance);
+  const aus = refineryExpansion(s, balance, { maxCrude: crudeSupply(s, balance) + Math.floor(s.oilStock) });
   const rest = s.totalRounds - s.round - b.expandRounds;
   if (!aus || aus.payback === null || aus.gain * rest < aus.cost * faktor) return s;
   const e = expandRefinery(s, balance);
