@@ -6,6 +6,7 @@ import { deserializeGame, serializeGame } from './save';
 import { parseStocksContent } from './stocksContent';
 import { loadBalance } from './testBalance';
 import { loadEvents } from './testEvents';
+import { regionChapter } from './worldMap';
 
 const balance = loadBalance();
 const events = loadEvents();
@@ -40,7 +41,7 @@ describe('Kapitelstart der Phase-4-Systeme (Integration)', () => {
   it('ab Kapitel 2 ist die ganze Provinz offen, die neuen Ranches ohne Prognosen (0.4.20+2)', () => {
     const vorher = imKapitel(2);
     const s = openChapterSystems(vorher, balance, { stocksBoard: board });
-    const bohrbar = balance.world.regions.filter((r) => r.kind === 'drillable').map((r) => r.id);
+    const bohrbar = balance.world.regions.filter((r) => r.kind === 'drillable' && regionChapter(r) <= 2).map((r) => r.id);
     expect(bohrbar.length).toBeGreaterThan(1);
     for (const id of bohrbar) {
       expect(s.regions).toContain(id);
@@ -58,7 +59,7 @@ describe('Kapitelstart der Phase-4-Systeme (Integration)', () => {
     expect(openProvince(k1, balance)).toBe(k1);
     const alt = imKapitel(2, 'provinz-alt');
     const offen = openProvince(alt, balance);
-    for (const r of balance.world.regions.filter((x) => x.kind === 'drillable')) expect(offen.regions).toContain(r.id);
+    for (const r of balance.world.regions.filter((x) => x.kind === 'drillable' && regionChapter(x) <= 2)) expect(offen.regions).toContain(r.id);
     expect(offen.parcels.length).toBeGreaterThan(alt.parcels.length);
     // Altes Land, Pachten und Kasse bleiben unberührt.
     for (const p of alt.parcels) expect(offen.parcels.find((q) => q.id === p.id)).toEqual(p);
@@ -69,6 +70,16 @@ describe('Kapitelstart der Phase-4-Systeme (Integration)', () => {
     const geladen = deserializeGame(serializeGame(offen, 'test'));
     if (!geladen.ok) throw new Error(geladen.reason);
     expect(openProvince(geladen.state, balance).parcels.length).toBe(offen.parcels.length);
+  });
+
+  it('0.4.20+41: Die Küstenebene bleibt in Kapitel 2 zu und geht erst mit Kapitel 3 auf – auch für alte Stände', () => {
+    const k2 = openProvince(imKapitel(2, 'kueste'), balance);
+    expect(k2.regions).not.toContain('kueste');
+    expect(k2.parcels.some((p) => p.region === 'kueste')).toBe(false);
+    const k3 = openProvince({ ...k2, chapter: 3 }, balance);
+    expect(k3.regions).toContain('kueste');
+    expect(k3.parcels.some((p) => p.region === 'kueste')).toBe(true);
+    for (const p of k2.parcels) expect(k3.parcels.find((q) => q.id === p.id)).toEqual(p);
   });
 
   it('Kapitel 3 legt zusätzlich Marke, Börse und Siegelmappe an', () => {

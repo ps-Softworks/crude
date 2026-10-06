@@ -7,6 +7,9 @@
 #             Antwort mit unlocks: [gebiet] – siehe content/events/README.md)
 #   geology   Profil (Zonen aus balance.yaml geology) und Mitte des Salzdoms
 #   outline   Umriss; bohrbare Gebiete müssen konvex sein (die Ranches werden darin zerlegt)
+#   chapter   ab diesem Kapitel geht ein gesperrtes Gebiet auf (Standard 2 – ab Kapitel 2 ist die Provinz offen)
+#   richness  Ergiebigkeit: reserves = Faktor auf die Reserven (und damit die Anfangsrate),
+#             chance = Aufschlag auf die Fundchance der Zone (0,10 = +10 Punkte). Standard 1 / 0.
 # draft: true = Name neu von Claude, noch nicht in der Weltbibel bestätigt.
 # Die Ranches selbst stehen nicht hier: Sie werden je Seed erzeugt (src/sim/ranches.ts),
 # Zahlen dazu in balance.yaml unter ranches.
@@ -36,6 +39,7 @@ regions:
     kind: drillable
     unlocked: false
     geology: { profile: salzdom, center: [21, 3] }
+    richness: { reserves: 1.3 }   # 0.4.20+41: Kapitel-2-Land ergiebiger als Salt Hill
     outline: [[12, 0.6], [30, 0.6], [30.4, 4.6], [24, 5.0], [17, 5.0], [12.4, 4.4]]
   - id: cottonwood
     name: { de: Cottonwood-Niederung, en: Cottonwood Bottoms }
@@ -43,6 +47,7 @@ regions:
     kind: drillable
     unlocked: false
     geology: { profile: salzdom, center: [33, 13] }
+    richness: { reserves: 1.3 }
     outline: [[28.4, 7.2], [39.4, 6.2], [39.4, 21], [30, 21.5], [28, 15.5], [27.9, 11]]
   - id: bitterwasser
     name: { de: Bitterwasser-Sümpfe, en: Bitterwater Marsh }
@@ -50,7 +55,19 @@ regions:
     kind: drillable
     unlocked: false
     geology: { profile: salzdom, center: [6, 16] }
+    richness: { reserves: 1.3 }
     outline: [[0.6, 9], [10.6, 8.6], [14.6, 21.4], [10, 24.2], [0.6, 23.6]]
+  # 0.4.20+41: Neues Land für Kapitel 3 – bis dahin sind die alten Felder leer gefördert. Tiefere
+  # Bohrtechnik erschließt die Küstenebene zwischen Salt Hill und Port Ellis.
+  - id: kueste
+    name: { de: Salado-Küstenebene, en: Salado Coastal Plain }
+    draft: true
+    kind: drillable
+    unlocked: false
+    chapter: 3
+    geology: { profile: salzdom, center: [22.5, 19.6] }
+    richness: { reserves: 1.8, chance: 0.05 }
+    outline: [[15.0, 18.4], [27.6, 17.2], [29.2, 21.2], [22.4, 22.4], [16.8, 21.8]]
 
 landmarks:
   - id: golf

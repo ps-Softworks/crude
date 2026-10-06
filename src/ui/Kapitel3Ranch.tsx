@@ -1,5 +1,6 @@
-// Seismik im Ranch-Fenster (4.17, Kapitel 3): eine Zeile unter dem Geologen –
-// der Bericht, der Trupp unterwegs oder der Knopf „Seismik-Trupp schicken“.
+// Seismik im Ranch-Fenster (4.17, Kapitel 3): eine Zeile im Block „Wissen“ (0.4.20+41: vorher
+// versteckt in der zugeklappten Klappe „Prognose und Konditionen“) – der Bericht, der Trupp
+// unterwegs oder der Knopf „Seismik-Trupp schicken“.
 // Ob es geht, sagt surveyBlocker aus src/sim/seismik. Vor Kapitel 3: nichts.
 
 import type { GameState } from '../sim/game';
@@ -36,9 +37,8 @@ export function SeismikZeile({ game, parcelId, onGame }: { game: GameState; parc
       </>
     );
   return (
-    <>
-      <dt>{t(k3.seismik.label)}</dt>
-      <dd>{inhalt}</dd>
-    </>
+    <p className="seismik-zeile">
+      <strong>{t(k3.seismik.label)}:</strong> {inhalt}
+    </p>
   );
 }

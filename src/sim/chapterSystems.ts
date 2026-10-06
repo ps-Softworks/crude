@@ -24,6 +24,7 @@ import { seatStartGuests } from './eventSystems';
 import { newResearch, researchUnlocked } from './research';
 import { openStaff, staffUnlocked } from './staff';
 import { chapterOf, startStocks, type BoardSeatDef } from './stocks';
+import { regionChapter } from './worldMap';
 
 export interface ChapterSystemTexts {
   /** Räte für den Aufsichtsrat (content/stocks.yaml, `board`) – ohne sie entsteht kein Aktienbuch. */
@@ -37,10 +38,12 @@ export interface ChapterSystemTexts {
  * alles offen ist, kommt derselbe Zustand zurück – die Oberfläche ruft das auch für ältere Spielstände beim Laden auf.
  */
 export function openProvince(state: GameState, balance: Balance): GameState {
-  if (chapterOf(state) <= 1) return state;
-  const zu = balance.world.regions.filter((r) => r.kind === 'drillable' && !state.parcels.some((p) => p.region === r.id));
-  if (zu.length === 0 && balance.world.regions.every((r) => r.kind !== 'drillable' || state.regions.includes(r.id))) return state;
-  return openRegions(balance.world.regions.filter((r) => r.kind === 'drillable').reduce((acc, r) => unlockRegion(acc, r.id), state), balance);
+  const kapitel = chapterOf(state);
+  if (kapitel <= 1) return state;
+  // 0.4.20+41: Gebiete mit späterem Kapitel (map.yaml chapter, z. B. die Küstenebene ab Kapitel 3) bleiben bis dahin zu.
+  const faellig = balance.world.regions.filter((r) => r.kind === 'drillable' && regionChapter(r) <= kapitel);
+  if (faellig.every((r) => state.regions.includes(r.id) && state.parcels.some((p) => p.region === r.id))) return state;
+  return openRegions(faellig.reduce((acc, r) => unlockRegion(acc, r.id), state), balance);
 }
 
 /**

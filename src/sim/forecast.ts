@@ -6,6 +6,7 @@
 import type { Balance, Geologist } from './balance';
 import type { Parcel } from './geology';
 import type { Rng } from './rng';
+import { regionRichness } from './worldMap';
 
 export type { Geologist };
 
@@ -26,10 +27,12 @@ export interface Forecast {
  * Öffentliches Wissen über die Zone (Etappe 1, zones.prior): was jeder über eine
  * Ranch in dieser Lage zum Salzdom weiß, ohne hinzusehen – die Ø Fundchance der Zone.
  */
-export function zoneChance(balance: Balance, parcel: Pick<Parcel, 'zone'>): number {
+export function zoneChance(balance: Balance, parcel: Pick<Parcel, 'zone'> & { region?: string }): number {
   const zone = balance.geology.zones.find((z) => z.name === parcel.zone);
   if (!zone) throw new Error(`Unbekannte Zone "${parcel.zone}".`);
-  return zone.prior;
+  // 0.4.20+41: Dass ein Gebiet ergiebiger ist, weiß man – der Aufschlag gilt auch fürs öffentliche Wissen.
+  const plus = parcel.region ? regionRichness(balance.world, parcel.region).chance : 0;
+  return Math.min(0.95, Math.max(0.01, zone.prior + plus));
 }
 
 /**

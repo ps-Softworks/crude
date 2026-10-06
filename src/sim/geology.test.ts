@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { areaFactor, generateParcels, ranchOfFigure, zoneFor } from './geology';
+import { zoneChance } from './forecast';
 import { loadBalance } from './testBalance';
+import { regionChapter, regionRichness } from './worldMap';
 
 const balance = loadBalance();
 const dome = balance.world.regions.find((r) => r.id === 'salthill')!.geology!.center;
@@ -89,5 +91,37 @@ describe('Karte und Ranches', () => {
         expect(ranch.discovery).toBe(false);
       }
     }
+  });
+});
+
+describe('Ergiebigkeit der Gebiete (0.4.20+41, map.yaml richness/chapter)', () => {
+  const ohne = { ...balance, world: { ...balance.world, regions: balance.world.regions.map((r) => ({ ...r, richness: undefined })) } };
+
+  it('Kapitel-2-Gebiete und die Küstenebene haben mehr Öl je Ranch, Salt Hill bleibt gleich', () => {
+    for (const id of ['salthill', 'hollins', 'kueste']) {
+      const faktor = regionRichness(balance.world, id).reserves;
+      const mit = generateParcels(balance, 'reich', [id]);
+      const roh = generateParcels(ohne, 'reich', [id]);
+      expect(mit.length).toBe(roh.length);
+      mit.forEach((p, i) => {
+        // Gleicher Zufall: gleiche Ranches, Reserven × Faktor (gerundet); bessere Fundchance kann aus „trocken“ Öl machen.
+        if (roh[i].reserves > 0 && p.reserves > 0 && p.geology === roh[i].geology) expect(Math.abs(p.reserves - roh[i].reserves * faktor)).toBeLessThanOrEqual(faktor + 1);
+        expect(p.chance ?? 0).toBeGreaterThanOrEqual(roh[i].chance ?? 0);
+      });
+    }
+    expect(regionRichness(balance.world, 'salthill')).toEqual({ reserves: 1, chance: 0 });
+    expect(regionRichness(balance.world, 'hollins').reserves).toBeGreaterThan(1);
+    expect(regionRichness(balance.world, 'kueste').reserves).toBeGreaterThan(regionRichness(balance.world, 'hollins').reserves);
+  });
+
+  it('das öffentliche Wissen kennt den Aufschlag der Fundchance', () => {
+    const plus = regionRichness(balance.world, 'kueste').chance;
+    expect(plus).toBeGreaterThan(0);
+    expect(zoneChance(balance, { zone: 'ring', region: 'kueste' })).toBeCloseTo(zoneChance(balance, { zone: 'ring', region: 'salthill' }) + plus, 6);
+  });
+
+  it('Kapitel je Gebiet: Salt Hill 1, gesperrte Gebiete 2, die Küstenebene 3', () => {
+    const k = (id: string) => regionChapter(balance.world.regions.find((r) => r.id === id)!);
+    expect([k('salthill'), k('hollins'), k('cottonwood'), k('bitterwasser'), k('kueste')]).toEqual([1, 2, 2, 2, 3]);
   });
 });

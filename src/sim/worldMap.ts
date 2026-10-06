@@ -19,6 +19,13 @@ export interface Region {
   draft: boolean;
   /** Nur bohrbare Gebiete: Geologie-Profil und Mitte des Salzdoms. */
   geology?: { profile: string; center: Vec };
+  /**
+   * Nur bohrbare Gebiete (0.4.20+41): Kapitel, ab dem das Gebiet aufgeht – offene 1, sonst Standard 2
+   * (ab Kapitel 2 ist die ganze Provinz offen); Gebiete mit späterem Kapitel bleiben bis dahin unerforscht.
+   */
+  chapter?: number;
+  /** Nur bohrbare Gebiete (0.4.20+41): Reserven × reserves, Fundchance + chance (Punkte 0–1). Standard 1 / 0. */
+  richness?: { reserves: number; chance: number };
   /** Nur bohrbare Gebiete: Landmarke, zu der die Pipeline-Route führt. */
   pipelineTo?: string;
   /** Bekannter Fund in diesem Gebiet (Salt Hill): Name und Besitzer der Entdeckungsquelle. */
@@ -229,6 +236,20 @@ function parseRegion(raw: unknown, i: number): Region {
     const center = vec(g.center, `${path}.geology.center`);
     region.geology = { profile: str(g, 'profile', `${path}.geology`), center };
     if (o.pipelineTo !== undefined) region.pipelineTo = str(o, 'pipelineTo', path);
+    if (o.chapter !== undefined) {
+      const c = zahl(o.chapter, `${path}.chapter`);
+      if (!Number.isInteger(c) || c < 1) fehler(`"${path}.chapter" muss eine ganze Zahl ab 1 sein`);
+      if (o.unlocked === true && c > 1) fehler(`"${path}.chapter": ein offenes Gebiet gilt ab Kapitel 1`);
+      region.chapter = c;
+    }
+    if (o.richness !== undefined) {
+      const r = obj(o.richness, `${path}.richness`);
+      const reserves = r.reserves === undefined ? 1 : zahl(r.reserves, `${path}.richness.reserves`);
+      const chance = r.chance === undefined ? 0 : zahl(r.chance, `${path}.richness.chance`);
+      if (reserves <= 0) fehler(`"${path}.richness.reserves" muss größer als 0 sein`);
+      if (chance < -0.5 || chance > 0.5) fehler(`"${path}.richness.chance" muss zwischen −0,5 und 0,5 liegen`);
+      region.richness = { reserves, chance };
+    }
     if (o.discovery !== undefined) {
       const d = obj(o.discovery, `${path}.discovery`);
       if (!pointInPolygon(center, outline)) fehler(`"${path}.geology.center" liegt nicht im Gebiet "${id}"`);
@@ -317,6 +338,16 @@ export function parseWorldMap(raw: unknown, landowners: readonly string[]): Worl
   };
   if (ranchNames.smallBelow > ranchNames.largeFrom) fehler('"ranchNames.smallBelow" ist größer als "largeFrom"');
   return { size: { width, height }, regions, landmarks, figures, ranchNames };
+}
+
+/** Ab welchem Kapitel ein bohrbares Gebiet aufgeht (0.4.20+41): offene 1, sonst `chapter` oder 2. */
+export function regionChapter(region: Pick<Region, 'unlocked' | 'chapter'>): number {
+  return region.chapter ?? (region.unlocked ? 1 : 2);
+}
+
+/** Ergiebigkeit eines Gebiets (0.4.20+41): Faktor auf die Reserven, Aufschlag auf die Fundchance. */
+export function regionRichness(world: WorldMap, id: string): { reserves: number; chance: number } {
+  return regionById(world, id)?.richness ?? { reserves: 1, chance: 0 };
 }
 
 export function regionById(world: WorldMap, id: string): Region | undefined {

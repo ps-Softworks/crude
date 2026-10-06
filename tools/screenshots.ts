@@ -39,6 +39,7 @@ import { openExchange } from '../src/sim/exchange';
 import { debugUnlockHallstead } from '../src/sim/hallsteadState';
 import { previewInvestigation } from '../src/sim/investigation';
 import { previewKapitel3 } from '../src/sim/kapitel3';
+import { openProvince } from '../src/sim/chapterSystems';
 import { unlockRefinery } from '../src/sim/refinery';
 import { previewResearch } from '../src/sim/research';
 import { openStaff } from '../src/sim/staff';
@@ -171,6 +172,7 @@ const kap3 = weiter(kapitel3Systeme(p4basis));
 if (kap2.finished || kap3.finished) throw new Error('Phase-4-Spielstand ist vorzeitig zu Ende.');
 // 0.4.20+10: Derselbe Stand wirklich in Kapitel 3 – dort steht der Mahagoni-Tisch mit eigenem Platzplan.
 const kap3Tisch: GameState = { ...kap3, chapter: 3 };
+const mitSeismik: GameState = kap3Tisch.kapitel3 ? { ...kap3Tisch, cash: 50_000, kapitel3: { ...kap3Tisch.kapitel3, seismik: { ...kap3Tisch.kapitel3.seismik, license: true } } } : kap3Tisch;
 const kap3Familie: GameState = { ...kap3Tisch, ipo: { share: 0, proceeds: 0 }, stocks: kap3Tisch.stocks ? { ...kap3Tisch.stocks, public: false, jacob: kap3Tisch.stocks.jacob + kap3Tisch.stocks.float, float: 0, board: [], bonds: [] } : kap3Tisch.stocks };
 // 0.4.20+18: Raffinerie fertig (Stufe 1) mit Öl im Tank – Ausbau-Hinweis und Abwägung im Fenster.
 const kap3Raff: GameState = { ...kap3, oilStock: Math.max(kap3.oilStock, 30_000), refinery: kap3.refinery ? { ...kap3.refinery, level: 1, project: null, projectLeft: 0 } : kap3.refinery };
@@ -228,6 +230,7 @@ const RUHE: Record<string, string> = { 'crude.zeitung': 'aus', 'crude.rundgang':
 const JACOBS_RANCH = `(() => { const r = [...document.querySelectorAll('.karte-ranch')].find((g) => /Jacobs (Pacht|Option)/.test(g.getAttribute('aria-label'))) ?? document.querySelector('.karte-ranch'); r.dispatchEvent(new MouseEvent('click', { bubbles: true })); })()`;
 // Feldkauf (0.4.20+27): eine Ranch Bullards mit fördernder Quelle anklicken.
 const BULLARDS_RANCH = `(() => { const r = [...document.querySelectorAll('.karte-ranch')].find((g) => /Bullards Pacht/.test(g.getAttribute('aria-label'))); r.dispatchEvent(new MouseEvent('click', { bubbles: true })); })()`;
+const FREIE_RANCH = `(() => { const r = [...document.querySelectorAll('.karte-ranch')].find((g) => /frei/i.test(g.getAttribute('aria-label') ?? '')) ?? document.querySelector('.karte-ranch'); r.dispatchEvent(new MouseEvent('click', { bubbles: true })); })()`;
 const DOKUMENT_VORN = `(() => { const b = [...document.querySelectorAll('.stapel-liste button')].find((x) => x.textContent.includes('mit Dokument')); b?.click(); })()`;
 
 // Etappe 2: mittlere Partie mit fördernder Quelle, vollem Tank und laufender Förderbremse (seit der Vorrunde).
@@ -313,6 +316,10 @@ const bilder: Bild[] = [
   // 0.4.20+3: Rundgang Kapitel 3 (dritter Schritt: Vertrieb).
   { name: '43-feldkauf', state: mitBullardQuelle, tasten: ['k'], dann: BULLARDS_RANCH, warte: 900 },
   { name: '42-feldzug', state: imFeldzug, dann: `${KLICK('.objekt-marke')}; setTimeout(() => ${REITER('Crane')}, 400)`, warte: 1000 },
+  // Seismik (4.17): Lizenz da, freie Ranch auf der Karte – der Knopf „Seismik-Trupp schicken“ muss sichtbar sein.
+  { name: '44-seismik-ranch', state: mitSeismik, tasten: ['k'], dann: FREIE_RANCH, warte: 900 },
+  // 0.4.20+41: Provinz in Kapitel 3 mit der neuen Küstenebene (Karte, dann „Übersicht“).
+  { name: '45-provinz-kapitel3', state: openProvince(kap3Tisch, balance), tasten: ['k'], dann: KLICK('.karte-knoepfe button'), warte: 1500 },
   { name: '41-kapitel3-rundgang', state: { ...kap3, chapter: 3 }, prefs: { 'crude.rundgang.k3': 'nein' }, tasten: ['Enter', 'Enter'], warte: 3400 },
 ];
 

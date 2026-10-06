@@ -15,7 +15,7 @@
 import type { Balance, GeologyType, LandownerType, Zone } from './balance';
 import { generateWorld, initialRegions } from './ranches';
 import { Rng, seedFromString } from './rng';
-import { distanceToSegment, regionById, type Vec } from './worldMap';
+import { distanceToSegment, regionById, regionRichness, type Vec } from './worldMap';
 
 export interface Parcel {
   id: string;
@@ -167,10 +167,12 @@ export function generateParcels(balance: Balance, seed: string, regions: readonl
     // Eigener Strang für das Rauschen von q, damit Geologie- und Besitzer-Würfe gleich viele bleiben.
     const rauschen = new Rng(seedFromString(`${seed}:fundchance:${regionId}`));
     const trends = regionTrends(balance, seed, regionId);
+    // 0.4.20+41: Ergiebigere Gebiete (map.yaml richness) – mehr Öl je Ranch und bessere Fundchance.
+    const reich = regionRichness(balance.world, regionId);
     const neue: Parcel[] = shapes.map((r) => {
       const [x, y] = r.center;
       const zone = zoneFor(balance, regionId, x, y);
-      const chance = parcelChance(balance, zone, trends, x, y, rauschen.float());
+      const chance = parcelChance(balance, { base: zone.base + reich.chance }, trends, x, y, rauschen.float());
       const geology = rollGeology(zone, chance, rng.float());
       const range = geology === 'dry' ? undefined : balance.geology.reserves[geology];
       const roh = range ? rng.int(range.min, range.max) : 0;
@@ -188,7 +190,7 @@ export function generateParcels(balance: Balance, seed: string, regions: readonl
         zone: zone.name,
         chance,
         geology,
-        reserves: Math.round(roh * areaFactor(balance, r)),
+        reserves: Math.round(roh * reich.reserves * areaFactor(balance, r)),
         landowner: 'neutral',
         discovery: r.discovery,
       };

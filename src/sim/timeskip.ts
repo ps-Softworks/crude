@@ -39,6 +39,7 @@ import type { ContentError } from './eventContent';
 import { drawEvents, marksIntoNextChapter, type EventDef } from './events';
 import { openChapterSystems, type ChapterSystemTexts } from './chapterSystems';
 import { chapterOf } from './chapterOf';
+import { regionChapter } from './worldMap';
 import { bondWord, type BondWord } from './family';
 import { fieldOf, fieldLabel } from './field';
 // Etappe 1: Ohne Prognose schätzt der Verwalter nach dem öffentlichen Zonenwissen, nie nach der verdeckten Wahrheit.
@@ -985,7 +986,8 @@ function bohren(l: Lauf): void {
   let ziele = bohrziele(l);
   // Nachbarbezirke: erst, wenn am offenen Land kaum noch etwas lohnt (weniger als die Hälfte dessen, was er bohren darf).
   while (ziele.length < hoechstens / 2 && l.expanded.length < t.expand[stance] && rest >= t.expandCost + vollBohrung) {
-    const bezirk = balance.world.regions.find((r) => r.kind === 'drillable' && !l.s.regions.includes(r.id));
+    // 0.4.20+41: nur Gebiete, die spätestens im nächsten Kapitel aufgehen (map.yaml chapter).
+    const bezirk = balance.world.regions.find((r) => r.kind === 'drillable' && !l.s.regions.includes(r.id) && regionChapter(r) <= chapterOf(l.s) + 1);
     if (!bezirk) break;
     l.s = openRegions(unlockRegion(l.s, bezirk.id), balance);
     l.s = { ...l.s, cash: l.s.cash - t.expandCost };

@@ -48,6 +48,7 @@ import {
 import { wildcatterWells } from './wildcatters';
 import { explorableNeighbours, knowledgeOf } from './exploration';
 import { bookCard, cardReason, planCards } from './plans';
+import { regionChapter } from './worldMap';
 
 const balance = loadBalance();
 const catalog = loadEvents();
@@ -778,7 +779,8 @@ describe('Erkundung und Planungsbrett nach dem Zeitsprung', () => {
     expect(cardReason(k2, balance, catalog, karte('foerderbremse'))).toMatch(/nicht auf der Hand/);
     expect(cardReason(k2, balance, catalog, karte('thorne_vorsprechen'))).toMatch(/nicht auf der Hand/);
     // 0.4.20+2: Ab Kapitel 2 ist die ganze Provinz offen; Land, das vorher niemand erkundet hat, ist Gerücht.
-    for (const r of balance.world.regions.filter((x) => x.kind === 'drillable')) expect(k2.regions).toContain(r.id);
+    expect(k2.regions).not.toContain('kueste'); // 0.4.20+41: erst ab Kapitel 3, auch der Verwalter erschließt sie im Zeitsprung I nicht
+    for (const r of balance.world.regions.filter((x) => x.kind === 'drillable' && regionChapter(x) <= 2)) expect(k2.regions).toContain(r.id);
     const offen = k2;
     const neu = offen.parcels.filter((p) => knowledgeOf(offen, p.id).level === 0 && !offen.leases.some((x) => x.parcelId === p.id));
     expect(neu.length).toBeGreaterThan(0);

@@ -198,7 +198,6 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
                   </dd>
                 </>
               )}
-              <SeismikZeile game={game} parcelId={id} onGame={onGame} />
               <dt>Lage</dt>
               <dd>{terms.location.label}</dd>
               <dt>Landbesitzer</dt>
@@ -301,6 +300,7 @@ function Wissen({ game, parcel, debug, onGame }: { game: GameState; parcel: Parc
           ))}
         </ul>
       )}
+      <SeismikZeile game={game} parcelId={parcel.id} onGame={onGame} />
       {onGame && karten.length > 0 && !game.finished && (
         <div className="erkunden">
           {karten.map((c) => (
