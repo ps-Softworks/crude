@@ -60,10 +60,18 @@
 /* ------------------------------------------------------------------ Szene */
 .szene { position: relative; flex: 1 1 auto; min-height: 0; }
 .wand {
-  position: absolute; left: 0; right: 0; top: 0; height: 43%;
+  /* 0.4.20+14: Der Raum hinter dem Tisch – Tapete bis zur Fußleiste (TISCH.boden = 60 %), darunter die Dielen.
+     Ganz hinten (z-index −2): Tür und Tisch stehen davor. */
+  position: absolute; inset: 0; z-index: -2;
   background:
+    /* Fußleiste */
+    linear-gradient(180deg, transparent 0 57.6%, #e8dcc0 57.6% 57.9%, #cbbb98 57.9% 59.4%, #2a1d12 59.4% 60%, transparent 60%),
+    /* Dielen (unterhalb der Fußleiste) */
+    linear-gradient(180deg, transparent 0 60%, rgba(0, 0, 0, 0.3) 60% 60.2%, transparent 60.2% 66%, rgba(0, 0, 0, 0.3) 66% 66.2%, transparent 66.2% 74%, rgba(0, 0, 0, 0.3) 74% 74.2%, transparent 74.2% 85%, rgba(0, 0, 0, 0.3) 85% 85.2%, transparent 85.2%),
+    linear-gradient(180deg, transparent 0 60%, #2b2622 60%, #3b342d 100%),
+    /* Tapete */
     repeating-linear-gradient(90deg, rgba(120, 90, 50, 0.07) 0 14px, transparent 14px 40px),
-    linear-gradient(180deg, var(--tapete), var(--papier-dunkel));
+    linear-gradient(180deg, var(--tapete) 0%, var(--papier-dunkel) 60%);
 }
 /* 0.4.20+12: Der Tisch in Perspektive. .tisch ist der Raum unter der Wand (Dielen, Fußleiste); darauf die
    Tischplatte als Trapez (hinten schmaler, vorn breiter) und die Vorderkante mit Schubladen. Die Maße
@@ -74,24 +82,50 @@
   --platte: var(--holz);
   --platte-dunkel: var(--tisch);
   --kante: var(--tisch-dunkel);
-  position: absolute; left: 0; right: 0; top: 43%; bottom: 0;
-  /* Dielenboden, der nach vorn hin heller wird; oben die Fußleiste an der Wand. */
-  background:
-    linear-gradient(180deg, #2a1d12 0 7px, #4a3523 7px 9px, transparent 9px),
-    repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0 1px, transparent 1px 22px),
-    linear-gradient(180deg, #33241a 0%, #4b3624 100%);
+  /* Lederauflage (Ochsenblut) und Goldprägung; Mahagoni (Kapitel 3) überschreibt sie. */
+  --leder-hinten: #4a1d17;
+  --leder-vorn: #63281f;
+  --praegung: #a8823f;
+  /* Eigene Ebene (z 0): Platte und Kante liegen über dem Rand (::after), die Gegenstände danach über dem Tisch,
+     die Tür (z −1) und die Wand (z −2) dahinter. */
+  position: absolute; left: 0; right: 0; top: 43%; bottom: 0; z-index: 0;
+}
+/* 0.4.20+14: Der Tisch wirft einen Schatten auf die Wand dahinter – so steht er vor ihr, statt in den Boden überzugehen. */
+.tisch::before {
+  content: ''; position: absolute; left: 5%; right: 5%; top: -14px; height: 14px;
+  background: linear-gradient(180deg, rgba(20, 10, 0, 0), rgba(20, 10, 0, 0.32));
+  filter: blur(2px);
+}
+/* Dicke der Platte an den schrägen Seiten: ein dunkler Rand, etwas breiter als die Platte. */
+.tisch::after {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: var(--platte-h);
+  clip-path: polygon(5.5% 0.6%, 94.5% 0.6%, 99.6% 100%, 0.4% 100%);
+  background: linear-gradient(180deg, var(--kante), var(--platte-dunkel));
 }
 .tischplatte {
-  position: absolute; left: 0; right: 0; top: 0; height: var(--platte-h);
+  position: absolute; left: 0; right: 0; top: 0; height: var(--platte-h); z-index: 1;
   clip-path: polygon(6% 0, 94% 0, 99% 100%, 1% 100%);
+  /* 0.4.20+14: Holzrahmen der Platte – glatt poliert, ohne Dielenfugen; hinten die Lichtkante, vorn Licht auf der Kante. */
   background:
-    /* hinten Schatten der Wand, vorn Licht auf der Kante */
-    linear-gradient(180deg, rgba(0, 0, 0, 0.38) 0, rgba(0, 0, 0, 0) 9%, rgba(0, 0, 0, 0) 92%, rgba(255, 230, 180, 0.16) 100%),
-    repeating-linear-gradient(178.5deg, rgba(0, 0, 0, 0.06) 0 2px, transparent 2px 13px),
-    linear-gradient(180deg, var(--platte) 0%, var(--platte-hell) 70%, var(--platte) 100%);
+    linear-gradient(180deg, rgba(255, 230, 180, 0.45) 0 2px, rgba(0, 0, 0, 0.18) 2px, rgba(0, 0, 0, 0) 5%, rgba(0, 0, 0, 0) 94%, rgba(255, 230, 180, 0.18) 100%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.12), rgba(255, 230, 180, 0.08) 50%, rgba(0, 0, 0, 0.12)),
+    linear-gradient(180deg, var(--platte-hell) 0%, var(--platte) 100%);
+}
+/* 0.4.20+14: Lederauflage mit Goldprägung – so unterscheidet sich die Platte klar vom Dielenboden. */
+.tischplatte::before, .tischplatte::after { content: ''; position: absolute; inset: 0; }
+.tischplatte::before {
+  clip-path: polygon(8.1% 5.2%, 91.9% 5.2%, 96.3% 94.8%, 3.7% 94.8%);
+  background: var(--praegung);
+}
+.tischplatte::after {
+  clip-path: polygon(8.4% 5.8%, 91.6% 5.8%, 96% 94.2%, 4% 94.2%);
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(255, 220, 190, 0.1), rgba(0, 0, 0, 0) 60%),
+    repeating-linear-gradient(35deg, rgba(0, 0, 0, 0.05) 0 1px, transparent 1px 4px),
+    linear-gradient(180deg, var(--leder-hinten), var(--leder-vorn));
 }
 .tischkante {
-  position: absolute; left: 1%; right: 1%; top: var(--platte-h); bottom: 0;
+  position: absolute; left: 1%; right: 1%; top: var(--platte-h); bottom: 0; z-index: 1;
   background: linear-gradient(180deg, rgba(255, 230, 180, 0.22) 0 3px, var(--platte-dunkel) 3px, var(--kante) 100%);
   box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.5), 0 6px 14px rgba(0, 0, 0, 0.5);
 }
@@ -236,6 +270,13 @@
 .f-messing { fill: var(--messing); stroke: var(--messing-dunkel); stroke-width: 1; }
 .f-messing-dunkel { fill: var(--messing-dunkel); }
 .f-tuerfeld { fill: var(--holz); stroke: var(--tisch-dunkel); stroke-width: 1.5; }
+/* 0.4.20+14: Tür bis zum Boden */
+.f-tuerblatt { fill: var(--holz-hell); }
+.f-milchglas { fill: #d8d2bf; }
+.f-tuerfeld-rand { fill: none; stroke: var(--tisch-dunkel); stroke-width: 2; }
+.f-schwelle { fill: #2a1d12; }
+.f-kassenbuch { fill: #c9b07a; stroke: #6e5530; stroke-width: 1.5; }
+.f-kassenbuch-ruecken { fill: #3b2a1a; }
 .f-papier { fill: var(--papier-hell); stroke: var(--linie); stroke-width: 1; }
 .f-papier-dunkel { fill: var(--papier-dunkel); }
 .f-leder { fill: var(--leder); }
@@ -301,13 +342,7 @@
   --platte-dunkel: var(--mahagoni-dunkel);
   --kante: #2a0f09;
 }
-.schreibtisch.mahagoni .tischplatte {
-  background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0, rgba(0, 0, 0, 0) 9%, rgba(0, 0, 0, 0) 92%, rgba(255, 210, 180, 0.14) 100%),
-    repeating-linear-gradient(177deg, rgba(0, 0, 0, 0.09) 0 2px, transparent 2px 13px),
-    repeating-linear-gradient(93deg, rgba(255, 200, 170, 0.035) 0 40px, transparent 40px 110px),
-    linear-gradient(180deg, var(--mahagoni) 0%, var(--mahagoni-hell) 70%, var(--mahagoni) 100%);
-}
+.schreibtisch.mahagoni .tisch { --leder-hinten: #1f2420; --leder-vorn: #2c332c; --praegung: #b8924a; }
 /* Personalakten direkt unter der Tür: das Abzeichen steht in der Ecke, aber in einer Zeile. */
 .schreibtisch.mahagoni .abzeichen { white-space: nowrap; }
 .radio { position: absolute; pointer-events: none; }
@@ -333,11 +368,17 @@
 
 /* Tür (0.2.15+10): Plakette mit Namen, Schatten hinter dem Glas, klopft einmal. */
 .tuer-bild { position: relative; }
-.tuer-schatten { position: absolute; top: 9%; left: 50%; height: 34%; transform: translateX(-50%); opacity: 0.4; pointer-events: none; }
+/* 0.4.20+14: Die Tür steht an der Wand hinter dem Tisch (vor der Wand, z −2; hinter der Platte). Schild und Plakette
+   sitzen auf dem Türblatt, weil ihr unterer Teil hinter dem Tisch verschwindet. */
+.objekt.objekt-tuer { z-index: -1; justify-content: flex-start; padding: 0; }
+.objekt-tuer .objekt-bild { position: absolute; inset: 0; }
+.objekt-tuer .objekt-bild > svg.form { filter: drop-shadow(-2px 0 4px rgba(20, 10, 0, 0.25)); }
+.objekt-tuer .namensschild { position: absolute; top: 52%; left: 50%; transform: translateX(-50%); }
+.tuer-schatten { position: absolute; top: 8%; left: 50%; height: 27%; transform: translateX(-50%); opacity: 0.4; pointer-events: none; }
 .tuer-schatten svg { height: 100%; width: auto; }
 .tuer-schatten .silhouette-grund, .tuer-schatten .silhouette-rahmen { fill: none; stroke: none; }
 .tuer-plakette {
-  position: absolute; top: 47%; left: 50%; transform: translateX(-50%);
+  position: absolute; top: 40%; left: 50%; transform: translateX(-50%);
   max-width: 96%; overflow: hidden; text-overflow: ellipsis;
   font-size: 15px; white-space: nowrap; padding: 0 8px;
   background: var(--messing); border: 1px solid var(--messing-dunkel); color: var(--tinte);
@@ -348,7 +389,7 @@
 .tuer.klopft .objekt-bild { animation: klopfen 150ms ease-in-out 3; transform-origin: 50% 100%; }
 @keyframes klopfen { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(1.6deg); } }
 .klopf {
-  position: absolute; top: 64%; left: 50%; white-space: nowrap;
+  position: absolute; top: 61%; left: 50%; white-space: nowrap;
   font-size: 16px; font-style: italic; color: var(--tinte); padding: 1px 8px;
   background: var(--papier-hell); border: 1px solid var(--linie); border-radius: 10px;
   box-shadow: 0 2px 4px rgba(20, 10, 0, 0.3);

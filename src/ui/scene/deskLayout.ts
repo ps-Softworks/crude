@@ -30,10 +30,12 @@ export const DESK_BASE = ['karte', 'konkurrenz', 'termine', 'familie', 'tuer', '
 const AT: Record<DeskSpot, Placement> = {
   karte: { left: 2, top: 4, width: 22, height: 34 },
   konkurrenz: { left: 26, top: 6, width: 15, height: 28 },
-  lampe: { left: 45, top: 8, width: 6, height: 26 },
+  // 0.4.20+14: Die Petroleumlampe steht hinten auf dem Tisch und ragt vor die Wand (Tiefe).
+  lampe: { left: 45.5, top: 30, width: 6, height: 17 },
   termine: { left: 58, top: 4, width: 10, height: 30 },
   familie: { left: 70.5, top: 6, width: 13, height: 28 },
-  tuer: { left: 86, top: 0, width: 12, height: 42 },
+  // 0.4.20+14: Die Tür reicht bis zum Boden (TISCH.boden); ihr unterer Teil steht hinter dem Tisch.
+  tuer: { left: 84.5, top: 1, width: 14.5, height: 59 },
   zeitung: { left: 2.5, top: 48, width: 15, height: 24 },
   post: { left: 19, top: 47, width: 13, height: 25 },
   vorfaelle: { left: 33.5, top: 46, width: 8.5, height: 26 },
@@ -96,7 +98,7 @@ const KAPITEL3: Record<DeskSpot, Placement> = {
   karte: AT.karte,
   konkurrenz: AT.konkurrenz,
   boerse: { left: 42.5, top: 4, width: 8.5, height: 25 },
-  radio: { left: 43.5, top: 30, width: 6.5, height: 13 },
+  radio: { left: 43.5, top: 31.5, width: 6.5, height: 13 },
   werkstatt: AT.werkstatt,
   termine: AT.termine,
   familie: AT.familie,
@@ -161,8 +163,11 @@ export function sharedColumn(chapter: number, da: DeskPresent): boolean {
 // breiter, darunter die Vorderkante mit Schubladen. Die Platzpläne oben bleiben, wie sie sind (Prozent der
 // ganzen Szene); aufTisch rückt alles, was auf dem Tisch liegt, in die Platte. Reine Darstellung.
 
-/** Wo die Tischplatte liegt, in Prozent der Szene: hinten (Wand) und vorn (Kante), dazu die Einrückung je Seite. */
-export const TISCH = { hinten: 43, vorn: 89, einzugHinten: 6, einzugVorn: 1 } as const;
+/**
+ * Wo die Tischplatte liegt, in Prozent der Szene: hinten (Wand) und vorn (Kante), dazu die Einrückung je Seite.
+ * boden (0.4.20+14): Hinter dem Tisch geht die Wand weiter bis zur Fußleiste – erst dort beginnt der Boden.
+ */
+export const TISCH = { hinten: 43, vorn: 89, einzugHinten: 6, einzugVorn: 1, boden: 60 } as const;
 
 /** Einrückung der Platte je Seite in Höhe y (Prozent der Szene). */
 export function tischEinzug(y: number): number {

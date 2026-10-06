@@ -17,7 +17,7 @@ describe('Schreibtisch-Platzplan', () => {
     const plan = deskLayout(1, NICHTS);
     expect(plan.zeitung).toEqual({ left: 2.5, top: 48, width: 15, height: 24 });
     expect(plan.ruth).toEqual({ left: 45, top: 47, width: 26, height: 36 });
-    expect(plan.lampe).toEqual({ left: 45, top: 8, width: 6, height: 26 });
+    expect(plan.lampe).toEqual({ left: 45.5, top: 30, width: 6, height: 17 });
     expect(plan.glocke).toEqual({ left: 86, top: 70, width: 12, height: 27 });
     expect(plan.raffinerie).toBeUndefined();
     expect(plan.boerse).toBeUndefined();
@@ -73,6 +73,8 @@ describe('Schreibtisch-Platzplan', () => {
         const [b, pb] = eintraege[j];
         // Die Ablage ist der Untergrund der beiden Mappen.
         if ((a === 'ablage' && (b === 'hallstead' || b === 'konzern')) || (b === 'ablage' && (a === 'hallstead' || a === 'konzern'))) continue;
+        // 0.4.20+14: Die Tür reicht bis zum Boden und steht hinter dem Tisch – was davor auf der Platte liegt, verdeckt sie.
+        if (a === 'tuer' || b === 'tuer') continue;
         // Verglichen wird, was zu sehen ist: nach aufTisch (Tischplatte in Perspektive, Schublade in der Kante).
         expect(ueberlappt(aufTisch(pa), aufTisch(pb)), `${a} ↔ ${b}`).toBe(false);
       }

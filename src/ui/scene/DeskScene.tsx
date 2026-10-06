@@ -28,7 +28,7 @@ import type { SheetId } from '../sceneState';
 import { Silhouette } from '../Silhouette';
 import { rivalsLines } from '../sheets/RivalsSheet';
 import { DeskObject, type Placement } from './DeskObject';
-import { aufTisch, deskLayout, MAHAGONI_AB, SCHUBLADEN, sharedColumn, type DeskPresent, type DeskSpot } from './deskLayout'; // 0.4.20+10
+import { aufTisch, deskLayout, MAHAGONI_AB, SCHUBLADEN, sharedColumn, TISCH, type DeskPresent, type DeskSpot } from './deskLayout'; // 0.4.20+10
 import { RadioShape } from './objects/RadioShape';
 import { chapterOf } from '../../sim/chapterOf';
 import { Door } from './Door';
@@ -143,7 +143,12 @@ export function DeskScene(p: DeskSceneProps) {
   const platz = (id: DeskSpot | SheetId): Placement => {
     const at = (AT as Partial<Record<string, Placement>>)[id];
     // Fehlt der Gegenstand (System noch zu), bleibt es wie vorher: kein Platz.
-    return at ? aufTisch(at) : at!;
+    if (!at) return at!;
+    const r = aufTisch(at);
+    // 0.4.20+14: Ruths Zettel trägt lange Texte (Einstieg). Liegt nichts darunter (keine Mappen), behält er seine
+    // die ganze Höhe bis kurz vor die Vorderkante (die Platte ist schmaler als der alte Tisch, der Text bricht öfter um).
+    if (id === 'ruth' && !AT.ablage && !AT.hallstead && !AT.konzern) return { ...r, height: TISCH.vorn - r.top - 1 };
+    return r;
   };
 
   // Akte: was die Türme gerade tun, gezählt in src/sim (rigSummary).

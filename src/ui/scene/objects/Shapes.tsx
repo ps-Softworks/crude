@@ -41,12 +41,16 @@ export function LampShape() {
 
 export function DoorShape() {
   return (
-    <svg viewBox="0 0 80 160" className="form" {...svg}>
-      <rect x="0" y="0" width="80" height="160" className="f-holz-dunkel" />
-      <rect x="8" y="8" width="64" height="152" className="f-holz" />
-      <rect x="16" y="18" width="48" height="52" className="f-tuerfeld" />
-      <rect x="16" y="82" width="48" height="66" className="f-tuerfeld" />
-      <circle cx="62" cy="80" r="3.5" className="f-messing" />
+    // 0.4.20+14: Bis zum Boden – Zarge, Türblatt mit Milchglas oben und Füllung unten, Klinke, Schwelle.
+    <svg viewBox="0 0 80 220" className="form" {...svg} preserveAspectRatio="none">
+      <rect x="0" y="0" width="80" height="220" className="f-holz-dunkel" />
+      <rect x="7" y="7" width="66" height="211" className="f-tuerblatt" />
+      <rect x="15" y="16" width="50" height="62" className="f-milchglas" />
+      <rect x="15" y="16" width="50" height="62" className="f-tuerfeld-rand" />
+      <rect x="15" y="122" width="50" height="86" className="f-tuerfeld" />
+      <rect x="57" y="106" width="9" height="3" rx="1.5" className="f-messing" />
+      <circle cx="59" cy="113" r="2.2" className="f-messing" />
+      <rect x="0" y="216" width="80" height="4" className="f-schwelle" />
     </svg>
   );
 }
@@ -97,8 +101,10 @@ export function SpikeShape({ count, urgent }: { count: number; urgent: boolean }
 export function LedgerShape() {
   return (
     <svg viewBox="0 0 100 80" className="form" {...svg}>
-      <rect x="10" y="8" width="80" height="66" rx="3" className="f-leder" />
-      <rect x="10" y="8" width="12" height="66" className="f-holz-dunkel" />
+      {/* 0.4.20+14: heller Leineneinband mit dunklem Rücken und Messingecken – hebt sich von der Lederauflage ab. */}
+      <rect x="10" y="8" width="80" height="66" rx="3" className="f-kassenbuch" />
+      <rect x="10" y="8" width="14" height="66" className="f-kassenbuch-ruecken" />
+      <path d="M78,8 L90,8 L90,20 Z M78,74 L90,74 L90,62 Z" className="f-messing" />
       <rect x="40" y="26" width="38" height="16" className="f-papier" />
       <line x1="44" y1="34" x2="74" y2="34" className="s-tinte" />
     </svg>

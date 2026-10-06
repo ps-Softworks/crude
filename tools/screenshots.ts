@@ -431,7 +431,13 @@ try {
   })()`;
   // Phase 4: Gegenstände selbst (nicht nur ihre Schilder) liegen nicht übereinander.
   const KOERPER = `(() => {
-    const teile = [...document.querySelectorAll('.szene .objekt')].map((el) => ({ el, r: el.getBoundingClientRect() }));
+    // 0.4.20+14: Die Tür steht hinter dem Tisch – es zählt nur, was von ihr über der Tischplatte zu sehen ist.
+    const tischOben = document.querySelector('.tisch')?.getBoundingClientRect().top ?? Infinity;
+    const teile = [...document.querySelectorAll('.szene .objekt')].map((el) => {
+      const r = el.getBoundingClientRect();
+      if (!el.classList.contains('objekt-tuer')) return { el, r };
+      return { el, r: { left: r.left, right: r.right, top: r.top, bottom: Math.min(r.bottom, tischOben) } };
+    });
     const zettel = document.querySelector('.unterlage-platz');
     if (zettel) teile.push({ el: zettel, r: zettel.getBoundingClientRect() });
     const fehler = [];
