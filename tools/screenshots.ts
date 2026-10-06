@@ -168,6 +168,8 @@ const kap3 = weiter(kapitel3Systeme(p4basis));
 if (kap2.finished || kap3.finished) throw new Error('Phase-4-Spielstand ist vorzeitig zu Ende.');
 // 0.4.20+10: Derselbe Stand wirklich in Kapitel 3 – dort steht der Mahagoni-Tisch mit eigenem Platzplan.
 const kap3Tisch: GameState = { ...kap3, chapter: 3 };
+// 0.4.20+18: Raffinerie fertig (Stufe 1) mit Öl im Tank – Ausbau-Hinweis und Abwägung im Fenster.
+const kap3Raff: GameState = { ...kap3, oilStock: Math.max(kap3.oilStock, 30_000), refinery: kap3.refinery ? { ...kap3.refinery, level: 1, project: null, projectLeft: 0 } : kap3.refinery };
 // Ruths Zettel voll: dazu alle eigenen Pachten ungebohrt und mit Frist in dieser Runde (lange Zeile „… verfallen nach dieser Runde“).
 const kap3VollerZettel: GameState = {
   ...kap3Tisch,
@@ -251,6 +253,8 @@ const bilder: Bild[] = [
   { name: '17b-tisch-kapitel3-vorschau', state: kap3 },
   { name: '17c-ruths-zettel-voll', state: kap3VollerZettel },
   { name: '18-raffinerie', state: kap3, dann: KLICK('.objekt-raffinerie') },
+  { name: '18b-raffinerie-anlage', state: kap3Raff, dann: KLICK('.objekt-raffinerie') },
+  { name: '18c-raffinerie-abwaegung', state: kap3Raff, dann: `${KLICK('.objekt-raffinerie')}; setTimeout(() => ${REITER('Verkaufen oder raffinieren')}, 400)`, warte: 1000 },
   { name: '19-fernleitung', state: kap3, tasten: ['f'], dann: REITER('Fernleitung') },
   { name: '20-aktien', state: kap3, tasten: ['g'], dann: REITER('Aufsichtsrat') },
   { name: '21-personal', state: kap3, dann: KLICK('.objekt-personal') },

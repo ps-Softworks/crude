@@ -1,0 +1,62 @@
+# Steuerabzug für Ölvorkommen (0.4.20+18, GDD §10): Ein Teil des Gewinns aus Öl bleibt steuerfrei, weil das
+# Vorkommen sich erschöpft (historisch: Depletion Allowance 27,5 %). Gibt es nur, wenn die Einkommensteuer gilt.
+# Wirkung: depletionAllowance (src/sim/lawEffects.ts).
+# ENTWURF: Zahlen und Texte sind Vorschläge von Claude.
+id: depletion_allowance
+draft: true
+name: { de: Steuerabzug für Ölvorkommen, en: Depletion Allowance }
+summary:
+  de: "Ein Ölfeld verbraucht sich. Darum bleibt ein Teil des Gewinns aus Öl steuerfrei."
+  en: "An oil field wears out. So part of the profit from oil stays tax-free."
+
+threshold: 10
+pressure:
+  - when: { inForce: [income_tax], government: handel }
+    add: 2.0
+  - when: { inForce: [income_tax], government: provinz }
+    add: 1.0
+  - when: { inForce: [income_tax], scarcity: { min: 1.1 } }   # knappes Öl: das Land will mehr Bohrungen
+    add: 0.6
+  - when: { government: volksbund }
+    add: -0.8
+
+votes: { handel: 0.85, volksbund: 0.15, provinz: 0.55 }
+swing:
+  - when: { war: true }                     # im Krieg zählt jeder Barrel
+    add: 0.06
+
+effects:
+  world:
+    moodShift: -0.3        # „ein Geschenk an die Ölbarone“
+  rules:
+    depletionAllowance: 0.275
+
+lobby:
+  demand: { label: { de: "Den Abzug fordern", en: "Call for the allowance" } }
+  block: { label: { de: "Gegen das Geschenk stimmen lassen", en: "Have members vote against the gift" } }
+  weaken:
+    label: { de: "Den Abzug kürzen", en: "Cut the allowance" }
+    rules: { depletionAllowance: 0.15 }
+  delay: { label: { de: "Die Abstimmung verschleppen", en: "Stall the vote" } }
+
+news:
+  proposed:
+    title: { de: "Steuerfrei für die Ölbarone?", en: "Tax-free for the oil barons?" }
+    text:
+      de: "Ein Antrag will einen Teil jedes Ölgewinns von der Steuer befreien – weil das Feld sich erschöpft."
+      en: "A bill would exempt part of every oil profit from tax – because the field runs dry."
+  debate:
+    title: { de: "Abzug oder Geschenk?", en: "Allowance or gift?" }
+    text:
+      de: "„Wer bohrt, trägt das Risiko“, sagt die Handelspartei. Der Volksbund rechnet vor, wie viel Brot das kostet."
+      en: "\"Whoever drills carries the risk,\" says the Commerce Party. The People's League works out how much bread it costs."
+  passed:
+    title: { de: "Steuerabzug für Öl beschlossen", en: "Depletion allowance passed" }
+    text:
+      de: "Ein gutes Viertel jedes Ölgewinns bleibt steuerfrei. In Port Ellis knallen die Korken."
+      en: "A good quarter of every oil profit stays tax-free. In Port Ellis the corks are popping."
+  failed:
+    title: { de: "Kein Steuerabzug für Öl", en: "No depletion allowance" }
+    text:
+      de: "Öl wird versteuert wie jedes andere Geschäft. Die Förderer schimpfen."
+      en: "Oil is taxed like any other business. The producers grumble."

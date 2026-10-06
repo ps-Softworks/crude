@@ -29,6 +29,7 @@ import { effectiveDemand } from './world';
 import { timedEffect } from './events';
 // 0.4.20+9: Cracken (4.11) hebt den Benzin-Höchstanteil im Mix.
 import { techGasolineYield } from './research';
+import { producingWells, wellRate } from './production';
 
 export { PRODUCTS, type Product, type ProductMix } from './refineryBalance';
 
@@ -52,6 +53,8 @@ export interface RefineryRun {
   royalty: number;
   /** Fixkosten der fertigen Ausbaustufen. */
   upkeep: number;
+  /** 0.4.20+18: davon Benzin an die eigenen Tankstellen (bbl; fehlt in älteren Spielständen). */
+  toStations?: number;
   /** Was in der Kasse landet (kann negativ sein). */
   net: number;
 }
@@ -169,10 +172,22 @@ export function refineryTech(balance: Balance, stage: number): RefineryTech {
  * Höchstanteil von Benzin um techGasolineYield (die übrigen Grenzen bleiben).
  */
 export function refineryMixBounds(state: object, balance: Balance, stage: number): Record<Product, MixBound> {
-  const mix = refineryTech(balance, stage).mix;
-  const mehr = techGasolineYield(state, balance);
+  return crackedBounds(refineryTech(balance, stage).mix, techGasolineYield(state, balance));
+}
+
+/**
+ * 0.4.20+18: Cracken spaltet Kerosin zu Benzin – der Benzin-Höchstanteil steigt um `mehr`, der
+ * Kerosin-Mindestanteil sinkt um ebenso viel (nie unter 0). Sonst zwingt das Kerosin den Rest des
+ * Mix auf einen gesättigten Markt, und mehr Benzin für die Tankstellen lohnt keinen Ausbau.
+ */
+export function crackedBounds(mix: Record<Product, MixBound>, mehr: number): Record<Product, MixBound> {
   if (mehr <= 0) return mix;
-  return { ...mix, gasoline: { ...mix.gasoline, max: Math.min(1, Math.round((mix.gasoline.max + mehr) * 1000) / 1000) } };
+  const r = (v: number) => Math.round(v * 1000) / 1000;
+  return {
+    ...mix,
+    gasoline: { ...mix.gasoline, max: Math.min(1, r(mix.gasoline.max + mehr)) },
+    kerosene: { ...mix.kerosene, min: Math.max(0, r(mix.kerosene.min - mehr)) },
+  };
 }
 
 /**
@@ -476,6 +491,21 @@ export function feedLimited(state: Pick<GameState, 'refinery' | 'oilStock'> & Fe
 }
 
 /**
+ * 0.4.20+18: Wie viel Benzin die eigenen Tankstellen abnehmen (bbl je Runde): ihr Absatz der letzten
+ * Abrechnung (settleBrand läuft nach der Raffinerie). Ohne gegründete Marke 0.
+ */
+export function stationOfftake(state: { brand?: unknown }): number {
+  const brand = state.brand as { founded?: unknown; regions?: Record<string, { last?: { sales?: unknown } | null }> } | undefined;
+  if (!brand || brand.founded !== true || !brand.regions) return 0;
+  let summe = 0;
+  for (const r of Object.values(brand.regions)) {
+    const v = r?.last?.sales;
+    if (zahl(v) && v > 0) summe += v;
+  }
+  return Math.floor(summe);
+}
+
+/**
  * Rechnet eine Raffinerie-Runde mit `crude` Barrel durch, ohne etwas zu ändern.
  * Fixkosten (upkeep) zählen mit, sobald eine Stufe fertig ist.
  */
@@ -483,7 +513,7 @@ export function planRun(
   state: GameState,
   balance: Balance,
   crude: number,
-  opts: { world?: RefineryWorld; sourShare?: number } = {},
+  opts: { world?: RefineryWorld; sourShare?: number; stationOfftake?: number } = {},
 ): RefineryRun {
   const r = state.refinery;
   const b = balance.refinery;
@@ -496,10 +526,16 @@ export function planRun(
   const output = {} as Record<Product, number>;
   const prices = {} as Record<Product, number>;
   let revenue = 0;
+  const abnahme = opts.stationOfftake ?? stationOfftake(state);
+  let toStations = 0;
   for (const p of PRODUCTS) {
     // 4.12: befristete Systemwirkungen productYield/productPrice (Anteil je Produkt).
     output[p] = Math.round(ausbeute * mix[p] * Math.max(0, 1 + timedEffect(state, `productYield:${p}`)));
-    prices[p] = cents(productPrice(p, output[p], state.postedPrice, world, balance) * Math.max(0, 1 + timedEffect(state, `productPrice:${p}`)));
+    // 0.4.20+18: Benzin für die eigenen Tankstellen geht nicht an den Großhandel – nur der Rest drückt dessen
+    // Preis; die Tankstellen zahlen den Preis, der sich dort bildet (ohne Überschuss: die Preisobergrenze).
+    const markt = p === 'gasoline' ? Math.max(0, output[p] - Math.min(output[p], abnahme)) : output[p];
+    if (p === 'gasoline') toStations = output[p] - markt;
+    prices[p] = cents(productPrice(p, markt, state.postedPrice, world, balance) * Math.max(0, 1 + timedEffect(state, `productPrice:${p}`)));
     revenue += output[p] * prices[p];
   }
   const royaltyBarrels = state.oilStock > 0 ? (menge * state.royaltyOil) / state.oilStock : 0;
@@ -514,6 +550,7 @@ export function planRun(
     royalty: cents(royaltyBarrels * state.postedPrice),
     upkeep: cents((r?.level ?? 0) * b.upkeepPerLevel),
     net: 0,
+    toStations,
   };
   run.net = cents(run.revenue - run.operating - run.feed - run.royalty - run.upkeep);
   return run;
@@ -568,6 +605,154 @@ export function crudeVsRefined(state: GameState, balance: Balance, world?: Refin
     schritt > 0 ? cents((run.revenue - run.operating - run.feed - (weniger.revenue - weniger.operating - weniger.feed)) / schritt) : 0;
   const cn = crudeMode ? crudeNet : 0;
   return { crudeNet: cn, crudeMode, refinedNet, crude, advantage: cents(refinedNet - cn), marginalNet };
+}
+
+// --- Beste Einstellung und Ausbau (0.4.20+18) -------------------------------------
+
+/** Die beste Einstellung für Mix und Menge, gemessen am Mehrerlös gegenüber dem Rohölverkauf. */
+export interface RefinerySetting {
+  mix: ProductMix;
+  /** Anteil der Kapazität (0–1, in 5-%-Schritten). */
+  intake: number;
+  /** Barrel Rohöl in die Raffinerie. */
+  crude: number;
+  /** Mehrerlös je Runde gegenüber dem Verkauf derselben Menge Rohöl (ohne Fixkosten und Förderzins); 0 = nicht raffinieren. */
+  gain: number;
+  /** Bester Erlös je Barrel beim Rohölverkauf (Vergleichswert). */
+  crudeNet: number;
+}
+
+export interface SettingOptions {
+  /** So viele Ausbaustufen rechnen (sonst die fertigen). */
+  level?: number;
+  /** Grenzen des Mix (sonst die der Technikstufe mit Jacobs Techniken). */
+  bounds?: Record<Product, MixBound>;
+  /** Abnahme der eigenen Tankstellen in bbl (sonst ihr letzter Absatz). */
+  stationOfftake?: number;
+  world?: RefineryWorld;
+  /** Zufuhr nicht durch die freien Transportwege begrenzen (Messwerkzeug). */
+  unlimitedFeed?: boolean;
+  /** Höchstens so viele Barrel Rohöl (z. B. die Förderung je Runde); sonst unbegrenzt. */
+  maxCrude?: number;
+}
+
+/** Bester Erlös je Barrel beim Verkauf an den Trust nach Fracht (ohne Förderzins); 0, wenn kein Weg frei ist. */
+function bestCrudeNet(state: GameState, balance: Balance): number {
+  let best = -Infinity;
+  for (const m of ['wagon', 'rail', 'teams', 'pipeline'] as TransportMode[]) {
+    if (modeUnavailable(state, m) || modeCapacity(state, balance, m) <= 0) continue;
+    best = Math.max(best, netPrice(state, balance, m, 'crane'));
+  }
+  return Number.isFinite(best) ? best : 0;
+}
+
+/** Stützstellen eines Anteils: von min in `step`-Schritten bis max (beide Enden dabei). */
+function stuetzen(b: MixBound, step: number): number[] {
+  const xs: number[] = [];
+  for (let v = b.min; v < b.max - 1e-9; v += step) xs.push(Math.round(v * 1000) / 1000);
+  xs.push(b.max);
+  return xs;
+}
+
+/**
+ * 0.4.20+18: Sucht Mix und Menge mit dem größten Mehrerlös gegenüber dem Rohölverkauf –
+ * erst ein Raster (Mix 5 %, Menge 5 %), dann in 1-%-Schritten weiter, solange es besser wird.
+ * Benzin für die eigenen Tankstellen zählt mit (planRun). Bringt keine Einstellung mehr als
+ * der Verkauf, ist gain 0 und intake 0. Ändert nichts am Zustand.
+ */
+export function bestRefinerySetting(state: GameState, balance: Balance, opts: SettingOptions = {}): RefinerySetting {
+  const r = state.refinery;
+  const level = opts.level ?? r?.level ?? 0;
+  const bounds = opts.bounds ?? refineryMixBounds(state, balance, r?.tech ?? 1);
+  const world = opts.world ?? refineryWorld(state, balance);
+  const crudeNet = bestCrudeNet(state, balance);
+  const kapazitaet = refineryCapacity({ ...state, refinery: r ? { ...r, level, repairLeft: 0 } : undefined }, balance);
+  const deckel = Math.min(opts.unlimitedFeed ? Infinity : feedCapacity(state, balance), opts.maxCrude ?? Infinity);
+  const leer: RefinerySetting = { mix: r?.mix ?? normalizeMix(balance.refinery.startMix, bounds), intake: 0, crude: 0, gain: 0, crudeNet };
+  if (!r || level <= 0 || kapazitaet <= 0) return leer;
+
+  const wert = (mix: ProductMix, intake: number): { gain: number; crude: number } => {
+    const crude = Math.max(0, Math.min(Math.floor(intake * kapazitaet + 1e-9), deckel));
+    if (crude === 0) return { gain: 0, crude };
+    const run = planRun({ ...state, refinery: { ...r, mix } }, balance, crude, { world, stationOfftake: opts.stationOfftake });
+    return { gain: run.revenue - run.operating - run.feed - crude * crudeNet, crude };
+  };
+
+  let best = leer;
+  const pruefe = (mix: ProductMix, intake: number): boolean => {
+    const w = wert(mix, intake);
+    if (w.gain > best.gain + 1e-6) {
+      best = { mix, intake, crude: w.crude, gain: w.gain, crudeNet };
+      return true;
+    }
+    return false;
+  };
+  const gueltig = (m: ProductMix) => PRODUCTS.every((p) => m[p] >= bounds[p].min - 1e-9 && m[p] <= bounds[p].max + 1e-9);
+  for (const k of stuetzen(bounds.kerosene, 0.05))
+    for (const l of stuetzen(bounds.lubricant, 0.05))
+      for (const g of stuetzen(bounds.gasoline, 0.05)) {
+        const mix = { kerosene: k, lubricant: l, gasoline: g, fuelOil: Math.round((1 - k - l - g) * 1000) / 1000 };
+        if (!gueltig(mix)) continue;
+        for (let i = 1; i <= 20; i++) pruefe(mix, i / 20);
+      }
+  // Feinsuche: 1 % von einem Produkt zum anderen, Menge ± 5 %.
+  for (let runde = 0; runde < 60 && best.intake > 0; runde++) {
+    let besser = false;
+    for (const von of PRODUCTS)
+      for (const zu of PRODUCTS) {
+        if (von === zu) continue;
+        const mix = { ...best.mix, [von]: Math.round((best.mix[von] - 0.01) * 1000) / 1000, [zu]: Math.round((best.mix[zu] + 0.01) * 1000) / 1000 };
+        if (gueltig(mix) && pruefe(mix, best.intake)) besser = true;
+      }
+    for (const d of [-0.05, 0.05]) {
+      const intake = Math.round((best.intake + d) * 20) / 20;
+      if (intake > 0 && intake <= 1 && pruefe(best.mix, intake)) besser = true;
+    }
+    if (!besser) break;
+  }
+  return { ...best, gain: cents(best.gain) };
+}
+
+/**
+ * 0.4.20+18: Rohöl, das Jacobs Quellen je Runde ungefähr liefern (Summe der Förderraten ohne befristete
+ * Wirkungen) – die Grenze für den Ausbau: Die Transportwege schaffen meist mehr als die Förderung.
+ */
+export function crudeSupply(state: Pick<GameState, 'wells'>, balance: Balance): number {
+  const ws = producingWells(state);
+  return Math.round(ws.reduce((a, w) => a + wellRate(balance, w, ws.length), 0));
+}
+
+/** Was der nächste Ausbau bringt (beide Stufen bestmöglich eingestellt). */
+export interface RefineryExpansion {
+  /** Mehrerlös je Runde der nächsten Stufe nach ihren Fixkosten (kann negativ sein). */
+  gain: number;
+  /** Runden, bis der Ausbau bezahlt ist; null, wenn er sich nicht bezahlt macht. */
+  payback: number | null;
+  cost: number;
+  /** Mit dieser Förderung je Runde gerechnet (bbl; Infinity = unbegrenzt). */
+  supply: number;
+  /** Lohnt nur deshalb nicht, weil die Förderung nicht reicht (mit unbegrenztem Öl würde er sich bezahlt machen). */
+  oilShort: boolean;
+}
+
+/**
+ * 0.4.20+18: Lohnt die nächste Ausbaustufe? Gerechnet mit Jacobs Förderung je Runde (crudeSupply), wenn
+ * opts.maxCrude nichts anderes sagt. null ohne Anlage oder auf der höchsten Stufe.
+ */
+export function refineryExpansion(state: GameState, balance: Balance, opts: Omit<SettingOptions, 'level'> = {}): RefineryExpansion | null {
+  const r = state.refinery;
+  const b = balance.refinery;
+  if (!r || r.level <= 0 || r.level >= b.maxLevel) return null;
+  const supply = opts.maxCrude ?? crudeSupply(state, balance);
+  const rechne = (maxCrude: number) => {
+    const jetzt = bestRefinerySetting(state, balance, { ...opts, maxCrude, level: r.level }).gain;
+    const dann = bestRefinerySetting(state, balance, { ...opts, maxCrude, level: r.level + 1 }).gain;
+    return cents(dann - jetzt - b.upkeepPerLevel);
+  };
+  const gain = rechne(supply);
+  const payback = gain > 0 ? Math.ceil(b.expandCost / gain) : null;
+  const oilShort = payback === null && Number.isFinite(supply) && rechne(Infinity) > 0;
+  return { gain, payback, cost: b.expandCost, supply, oilShort };
 }
 
 // --- Rundenende -----------------------------------------------------------------

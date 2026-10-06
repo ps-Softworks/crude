@@ -23,6 +23,7 @@
 //
 // Rein und deterministisch: eigener Zufall (Seed + ":forschung").
 
+import { lawRule } from './laws';
 import { parseDocument } from 'yaml';
 import type { Balance, DrillStage, Range } from './balance';
 import { BalanceError } from './balance';
@@ -267,10 +268,13 @@ export function techTeamFactor(state: object, balance: Pick<Balance, 'research'>
 }
 
 /** Bohrkosten mit Jacobs Techniken (ab Kapitel 2; vorher und ohne Technik unverändert). */
-export function techDrillCost(state: object, balance: Pick<Balance, 'research'>, cost: number): number {
-  if (!researchUnlocked(state, balance)) return cost;
+export function techDrillCost(state: object, balance: Pick<Balance, 'research'> & Partial<Pick<Balance, 'laws'>>, cost: number): number {
+  // 0.4.20+18: Umweltgesetze (environment) machen jede Bohrung teurer.
+  const auflagen = 1 + lawRule(state, balance.laws, 'drillCostRise');
+  const mitAuflagen = auflagen === 1 ? cost : Math.round(cost * auflagen);
+  if (!researchUnlocked(state, balance)) return mitAuflagen;
   const anteil = techEffect(state as GameState, balance, 'drillCost');
-  return anteil === 0 ? cost : Math.round(cost * Math.max(0.1, 1 + anteil));
+  return anteil === 0 ? mitAuflagen : Math.round(mitAuflagen * Math.max(0.1, 1 + anteil));
 }
 
 /** Bohrdauer in Runden mit Jacobs Techniken (ab Kapitel 2), mindestens 1; halbe Runden zählen zugunsten von Jacob. */

@@ -188,6 +188,9 @@ export interface WorldInput {
   nationalismShift?: number;
   /** Lobby im Parlament (4.3, vorbereitet für Kapitel 2): einmalig wie moodKick. */
   lobby?: LobbyMove[];
+  /** 0.4.20+17: Jacobs Einfluss je Gesetz (−1 … +1) und Verwässerung (0 … 1) – einmalig wie moodKick. */
+  lawInfluence?: Record<string, number>;
+  lawWater?: Record<string, number>;
   /** Verschuldung verschieben (4.4, vorbereitet für Aktien auf Kredit ab Kapitel 3): dauerhaft wie creditShift. */
   leverageShift?: number;
 }
@@ -498,6 +501,8 @@ export function mergeInput(a: WorldInput, b: WorldInput): WorldInput {
   if (tensionShift !== undefined) out.tensionShift = tensionShift;
   if (nationalismShift !== undefined) out.nationalismShift = nationalismShift;
   if (a.lobby || b.lobby) out.lobby = [...(a.lobby ?? []), ...(b.lobby ?? [])];
+  if (a.lawInfluence || b.lawInfluence) out.lawInfluence = { ...a.lawInfluence, ...b.lawInfluence };
+  if (a.lawWater || b.lawWater) out.lawWater = { ...a.lawWater, ...b.lawWater };
   if (a.partyShift || b.partyShift) {
     out.partyShift = Object.fromEntries(PARTIES.map((p) => [p, (a.partyShift?.[p] ?? 0) + (b.partyShift?.[p] ?? 0)])) as Record<Party, number>;
   }
@@ -512,6 +517,9 @@ export function lawsInput(laws: LawsState | undefined, catalog: readonly LawDef[
   if (e.moodShift !== undefined) out.moodShift = e.moodShift;
   if (e.tensionShift !== undefined) out.tensionShift = e.tensionShift;
   if (e.nationalismShift !== undefined) out.nationalismShift = e.nationalismShift;
+  // 0.4.20+18: Förderquoten und Importquoten nehmen Öl vom Markt, die Bankaufsicht dämpft die Verschuldung.
+  if (e.supplyShift !== undefined) out.extraSupply = e.supplyShift;
+  if (e.leverageShift !== undefined) out.leverageShift = e.leverageShift;
   return out;
 }
 
@@ -761,7 +769,7 @@ export function advanceWorld(input: WorldState, wb: WorldModelBalance, externIn:
     { round: input.round + 1, scarcity: knapp, credit, mood, tension, nationalism, tech, government, war: war > 0, crash: kreditkrise },
     laws,
     wb.laws,
-    { crashing: kreditkrise, glut: news.includes('glut'), election: gewaehlt, lobby: extern.lobby ?? [] },
+    { crashing: kreditkrise, glut: news.includes('glut'), election: gewaehlt, lobby: extern.lobby ?? [], influence: extern.lawInfluence, water: extern.lawWater },
     lawWorldEffects(gesetze, laws).trustShift ?? 0,
   );
 
@@ -803,7 +811,7 @@ export function advanceWorld(input: WorldState, wb: WorldModelBalance, externIn:
  * wirken jede Runde; einmalige Stöße (moodKick, partyShift) nur in der ersten.
  */
 export function skipWorld(world: WorldState, wb: WorldModelBalance, rounds: number, extern: WorldInput = {}, laws: readonly LawDef[] = []): WorldState {
-  const { moodKick: _kick, partyShift: _party, lobby: _lobby, ...dauerhaft } = extern;
+  const { moodKick: _kick, partyShift: _party, lobby: _lobby, lawInfluence: _einfluss, lawWater: _wasser, ...dauerhaft } = extern;
   let w = world;
   for (let i = 0; i < rounds; i++) w = advanceWorld(w, wb, i === 0 ? extern : dauerhaft, laws);
   return w;

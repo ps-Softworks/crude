@@ -53,6 +53,9 @@ import { advanceResearch, type ResearchState } from './research';
 import { exchangeWorldInput, readClimate, settleExchange, type ExchangeState } from './exchange';
 // 4.16 Andockpunkt: Nebeninvestments und Lobbyist in Hallstead (ab Kapitel 3).
 import { hallsteadWorldInput, settleHallstead } from './hallstead';
+import { empireValue } from './empire';
+import { lawInfluence } from './lobby';
+import { settleBreakup, settleHotOil, settleIncomeTax } from './lawEffects';
 import type { HallsteadState } from './hallsteadState';
 // 4.17 Andockpunkt: Kapitel 3 (Seismik, Konsortium, Projekte, Stand).
 import type { Kapitel3State } from './kapitel3';
@@ -184,6 +187,8 @@ export interface GameState {
   rivalsK3?: RivalsK3State;
   /** 0.4.20+8: Cranes Feldzug in Kapitel 3 (src/sim/feldzug.ts) – fehlt, bis die Marke gegründet ist. */
   feldzug?: FeldzugState;
+  /** 0.4.20+18: Förderquoten (Gesetz production_quota) – true = Jacob fördert voll, „heißes Öl“ (lawEffects.ts). */
+  hotOil?: boolean;
   /** Ruf (4.12, GDD §4, src/sim/reputation.ts): fehlt, bis ein Ereignis ihn ändert (dann −100…100 je Achse). */
   reputation?: Partial<Reputation>;
   /** 4.12: Was Systemwirkungen der Ereignisse dauerhaft hinterlassen (Durchleitungsgebühr, Rating, Termine, Erben). */
@@ -319,6 +324,9 @@ function advanceWorldInGame(state: GameState, vorMarkt: GameState, balance: Bala
   const lobby = { ...salzHuegel, moodKick: (salzHuegel.moodKick ?? 0) + hallsteadWorldInput(state, balance).moodKick };
   // 4.17 Andockpunkt: Die Macht des Konsortiums verschiebt Spannung, Kreditklima und Stimmung (ohne Kapitel 3 alles 0).
   const input = mergeInput(lobby, konsortiumWorldInput(state, balance));
+  // 0.4.20+17: Jacobs Druck auf Gesetze (Provinzpolitik ab Kapitel 2, Hallstead ab Kapitel 3), gewichtet nach Firmengröße.
+  const politik = lawInfluence(state, balance, empireValue(state, balance));
+  if (Object.keys(politik.lawInfluence).length > 0) Object.assign(input, politik);
   return { ...state, worldModel: advanceWorld(state.worldModel, balance.worldModel, input, balance.laws) };
 }
 
@@ -370,7 +378,10 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const ausgeruht = advanceRefinery(besetzt, balance);
   // Lager (0.2.15+2): Kosten, Schwund und Brand für das Öl, das noch im Tank steht; neue Tanks sind fertig.
   // Nach der Förderung läuft aus, was nicht mehr in die Tanks passt.
-  const gefoerdert = spillOver(advanceProduction(settleStorage(ausgeruht, balance), balance), balance);
+  const gelagert = settleStorage(ausgeruht, balance);
+  const produziert = advanceProduction(gelagert, balance);
+  // 0.4.20+18: Heißes Öl unter Förderquoten – der Inspektor kann es finden (Bußgeld je Barrel über der Quote).
+  const gefoerdert = spillOver(settleHotOil(produziert, balance, produziert.oilStock - gelagert.oilStock), balance);
   // Weltmodell (4.1): Der Preis dieser Runde folgt dem Welttrend von heute, danach rückt die Welt ein Quartal weiter.
   // Salt Hill fließt mit seinem Über- oder Unterangebot (winzig) in die Welt ein.
   const rivalRate = balance.rivals.bullard.ratePerWell;
@@ -409,7 +420,9 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   const ermittelt = advanceResearch(advanceInvestigation(diplomatie, balance), balance);
   // 4.16 Andockpunkt: Beteiligungen und Lobby in Hallstead (ohne Hallstead-Zustand unverändert) – vor der Pleiteprüfung.
   const hallstead = settleHallstead(ermittelt, balance);
-  const state = { ...checkBankruptcy(hallstead, balance), roundLogStart };
+  // 0.4.20+17: Geltende Gesetze – Einkommensteuer auf den Gewinn der Runde (vor der Pleiteprüfung).
+  const besteuert = settleBreakup(settleIncomeTax(input, hallstead, balance), balance);
+  const state = { ...checkBankruptcy(besteuert, balance), roundLogStart };
   if (state.ending === 'pleite') return state;
   // 4.12 Andockpunkt: frühe Enden ab Kapitel 2 (abgesetzt, geschluckt, hinter Gittern – GDD §14).
   const frueh = applyEarlyEnding(state, balance);

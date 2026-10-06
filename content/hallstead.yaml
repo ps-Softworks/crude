@@ -6,6 +6,8 @@ object:
   name: { de: "Hallstead-Mappe", en: "Hallstead file" }
   hint: { de: "Beteiligungen, Lobbyist und Gesetze in der Hauptstadt.", en: "Holdings, lobbyist and bills in the capital." }
   locked: { de: "Hallsteads Türen öffnen sich erst einem Konzernherrn (ab Kapitel 3).", en: "Hallstead only opens its doors to a captain of industry (from chapter 3)." }
+  nameProvince: { de: "Provinzpolitik", en: "Provincial politics" }
+  hintProvince: { de: "Abgeordnete, Spenden und Gesetze. Ein eigener Lobbyist und die Hauptstadt kommen später – wer groß genug ist, wird in Hallstead gehört.", en: "Members of parliament, donations and bills. A lobbyist of your own and the capital come later – those big enough get heard in Hallstead." }
 
 tabs:
   holdings: { de: "Beteiligungen", en: "Holdings" }
@@ -72,31 +74,34 @@ parties:
 # das Gesetzessystem (4.3) seinen eigenen Katalog liefert; die ids sollen dort gleich heißen.
 # oil: was die Förderer-Lobby will (for/against).
 laws:
-  transportpflicht:
+  transport_duty:
     name: { de: "Transportpflicht für Pipelines", en: "Common carrier pipelines" }
     oil: against
-  kartell:
+  antitrust:
     name: { de: "Kartellgesetz", en: "Antitrust act" }
     oil: against
-  einkommensteuer:
+  income_tax:
     name: { de: "Einkommensteuer", en: "Income tax" }
     oil: against
-  steuerabzug:
+  income_tax_raise:
+    name: { de: "Höhere Einkommensteuer", en: "Income tax increase" }
+    oil: against
+  depletion_allowance:
     name: { de: "Steuerabzug für Ölvorkommen", en: "Depletion allowance" }
     oil: for
-  foerderquoten:
+  production_quota:
     name: { de: "Förderquoten, Verbot von heißem Öl", en: "Production quotas, hot oil ban" }
     oil: for
-  gewerkschaft:
+  labour_act:
     name: { de: "Gewerkschaftsgesetz", en: "Labour act" }
     oil: against
-  bankaufsicht:
+  bank_supervision:
     name: { de: "Bankaufsicht", en: "Banking supervision" }
     oil: against
-  importquoten:
+  import_quota:
     name: { de: "Importquoten", en: "Import quotas" }
     oil: for
-  umwelt:
+  environment:
     name: { de: "Umweltgesetze", en: "Environmental laws" }
     oil: against
 
@@ -125,6 +130,18 @@ ui:
   pressureFor: { de: "Jacobs Leute drängen darauf.", en: "Jacob's people are pushing for it." }
   pressureAgainst: { de: "Jacobs Leute bremsen.", en: "Jacob's people are stalling it." }
   watered: { de: "Schon verwässert.", en: "Already watered down." }
+  hotOil: { de: "Heißes Öl fördern (an der Quote vorbei)", en: "Produce hot oil (past the quota)" }
+  hotOilHint: { de: "Die Quellen fördern voll. Findet der Inspektor das Öl über der Quote, kostet jedes Barrel ein Bußgeld.", en: "The wells produce at full rate. If the inspector finds the oil above the quota, every barrel costs a fine." }
+  favorsHintProvince: { de: "Die Abgeordneten der Provinz schulden Jacob {favors} Gefallen.", en: "The province's members of parliament owe Jacob {favors} favours." }
+  lobbyistLater: { de: "Einen Lobbyisten in der Hauptstadt kann sich erst ein Konzernherr leisten (ab Kapitel 3). Bis dahin zählen Jacobs eigene Kontakte – je größer die Firma, desto mehr.", en: "Only a captain of industry can keep a lobbyist in the capital (from chapter 3). Until then Jacob's own contacts count – the bigger the firm, the more." }
+  weight: { de: "Jacobs Wort wiegt in der Politik {word}.", en: "Jacob's word carries {word} weight in politics." }
+  weightLow: { de: "wenig", en: "little" }
+  weightMid: { de: "spürbar", en: "noticeable" }
+  weightHigh: { de: "schwer", en: "heavy" }
+  lawPassed: { de: "Gilt.", en: "In force." }
+  lawPassedWeak: { de: "Gilt – aufgeweicht.", en: "In force – watered down." }
+  lawDebate: { de: "Im Parlament – Abstimmung in {rounds}.", en: "Before parliament – vote in {rounds}." }
+  waterLater: { de: "Verwässern kann erst ein Lobbyist in Hallstead.", en: "Only a lobbyist in Hallstead can water a bill down." }
   needLobbyist: { de: "Ohne Lobbyisten in Hallstead hört dort niemand zu.", en: "Without a lobbyist in Hallstead, nobody there listens." }
   lawsPending: { de: "Noch steht keines dieser Gesetze zur Abstimmung. Was Jacobs Leute jetzt fordern, bremsen oder verwässern, ist nur vorgemerkt – und verblasst, bis das Parlament darüber berät.", en: "None of these bills is up for a vote yet. Whatever Jacob's people push, block or water down now is only noted – and fades until parliament takes them up." }
   telegram: { de: "Telegramm aus Hallstead", en: "Telegram from Hallstead" }

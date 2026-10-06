@@ -35,6 +35,7 @@ import {
   type LobbyState,
 } from './hallsteadState';
 import { Rng } from './rng';
+import { chapterOf } from './stocks';
 
 function cents(v: number): number {
   return Math.round(v * 100) / 100;
@@ -81,27 +82,54 @@ export function availableFavors(state: GameState): number {
 
 /** Gefallen ausgeben – für Gesetze hier und für andere Systeme (Andockpunkt). */
 export function spendFavors(state: GameState, balance: Balance, n: number): HallsteadResult {
-  if (!hallsteadUnlocked(state, balance)) return { ok: false, reason: 'locked' };
+  // 0.4.20+17: Gefallen gibt es ab der Provinzpolitik (Kapitel 2), nicht erst mit Hallstead.
+  if (!politicsUnlocked(state, balance)) return { ok: false, reason: 'locked' };
   if (!Number.isInteger(n) || n < 0) return { ok: false, reason: 'amount' };
   const h = hallsteadOf(state, balance);
   if (availableFavors({ ...state, hallstead: h }) < n) return { ok: false, reason: 'favors' };
   return { ok: true, state: { ...state, hallstead: { ...h, lobby: { ...h.lobby, favors: Math.max(0, h.lobby.favors - n) } } } };
 }
 
-/** Fordern (+1) oder verhindern (−1): Druck auf ein Gesetz. Braucht den Lobbyisten. */
+/**
+ * 0.4.20+17 Provinzpolitik: Ab hallstead.lobby.politicsChapter (Kapitel 2) kann Jacob Gesetze fordern oder bremsen
+ * und spenden – mit eigenen Kontakten, ohne Lobbyist. Lobbyist, Umschlag und Verwässern gibt es erst mit Hallstead.
+ */
+export function politicsUnlocked(state: GameState, balance: Balance): boolean {
+  return chapterOf(state) >= balance.hallstead.lobby.politicsChapter || hallsteadUnlocked(state, balance);
+}
+
+/** 0.4.20+17: Wie viel Jacobs Wort in der Politik wiegt – nach Firmengröße (Imperiumswert ÷ weight.fullAt, min … 1). */
+export function politicalWeight(empire: number, balance: Balance): number {
+  const w = balance.hallstead.lobby.weight;
+  return clamp(w.fullAt > 0 ? empire / w.fullAt : 1, w.min, 1);
+}
+
+/**
+ * 0.4.20+17 (Andockpunkt Gesetze 4.3): Jacobs Einfluss je Gesetz für das Parlament – Druck (−100 … +100) ÷ 100 ×
+ * Gewicht – und die Verwässerung. Ohne Politik (Kapitel 1) leer.
+ */
+export function lawInfluence(state: GameState, balance: Balance, empire: number): { lawInfluence: Record<string, number>; lawWater: Record<string, number> } {
+  if (!politicsUnlocked(state, balance) || !state.hallstead) return { lawInfluence: {}, lawWater: {} };
+  const gewicht = politicalWeight(empire, balance);
+  const lawInfluence: Record<string, number> = {};
+  for (const [id, p] of Object.entries(state.hallstead.lobby.pressure)) lawInfluence[id] = Math.round((clamp(p, -100, 100) / 100) * gewicht * 1000) / 1000;
+  return { lawInfluence, lawWater: { ...state.hallstead.lobby.water } };
+}
+
+/** Fordern (+1) oder verhindern (−1): Druck auf ein Gesetz. 0.4.20+17: ab Kapitel 2, auch ohne Lobbyist. */
 export function pushLaw(state: GameState, balance: Balance, lawId: string, direction: 1 | -1): HallsteadResult {
-  if (!hallsteadUnlocked(state, balance) || state.finished) return { ok: false, reason: 'locked' };
+  if (!politicsUnlocked(state, balance) || state.finished) return { ok: false, reason: 'locked' };
   if (lawId.trim() === '') return { ok: false, reason: 'unknown' };
-  if (!state.hallstead?.lobby.lobbyist) return { ok: false, reason: 'noLobbyist' };
   const lb = balance.hallstead.lobby;
-  const alt = state.hallstead.lobby.pressure[lawId] ?? 0;
+  const alt = state.hallstead?.lobby.pressure[lawId] ?? 0;
   if (alt * direction >= 100) return { ok: false, reason: 'maxed' };
   const bezahlt = spendFavors(state, balance, lb.pushCost);
   if (!bezahlt.ok) return bezahlt;
   const h = bezahlt.state.hallstead!;
   const pressure = { ...h.lobby.pressure, [lawId]: clamp(alt + direction * lb.pushStep, -100, 100) };
   const was = direction > 0 ? 'fordert' : 'bremst';
-  return { ok: true, state: mitLobby(bezahlt.state, h, { ...h.lobby, pressure }, 0, `Jacobs Lobbyist ${was} in Hallstead ein Gesetz (${lawId}).`) };
+  const wer = h.lobby.lobbyist ? 'Jacobs Lobbyist' : 'Jacob';
+  return { ok: true, state: mitLobby(bezahlt.state, h, { ...h.lobby, pressure }, 0, `${wer} ${was} bei den Abgeordneten ein Gesetz (${lawId}).`) };
 }
 
 /** Verwässern: weniger Wirkung, falls das Gesetz kommt. Braucht den Lobbyisten. */
@@ -134,7 +162,7 @@ export function bribe(state: GameState, balance: Balance): HallsteadResult {
 
 /** Wahlkampfspende an eine Partei für die nächste Wahl. */
 export function donate(state: GameState, balance: Balance, party: PartyId, amount: number): HallsteadResult {
-  if (!hallsteadUnlocked(state, balance) || state.finished) return { ok: false, reason: 'locked' };
+  if (!politicsUnlocked(state, balance) || state.finished) return { ok: false, reason: 'locked' };
   if (!Number.isFinite(amount) || amount < balance.hallstead.lobby.donation.min) return { ok: false, reason: 'amount' };
   if (state.cash < amount) return { ok: false, reason: 'cash' };
   const h = hallsteadOf(state, balance);
@@ -148,7 +176,7 @@ export function donate(state: GameState, balance: Balance, party: PartyId, amoun
  * die Mappe einen Hinweis, dass der Druck nur vorgemerkt ist.
  * 4.3 Andockpunkt: auf true setzen, sobald 4.3 beides auf Beschlusschance und Wirkung anwendet.
  */
-export const LAWS_CONNECTED = false;
+export const LAWS_CONNECTED = true;
 
 /** Änderung der Chance eines Gesetzes durch Jacobs Druck, −maxShift bis +maxShift (Andockpunkt 4.3). */
 export function lobbyLawShift(state: Pick<GameState, 'hallstead'>, balance: Balance, lawId: string): number {
@@ -184,7 +212,7 @@ function verblassen(werte: Record<string, number>, decay: number, schwelle: numb
  * Rundenende für die Lobby: Gehalt, Gefallen des Lobbyisten, Wahlausgang der
  * Spenden, Druck und Verwässerung verblassen.
  */
-export function settleLobby(state: GameState, balance: Balance, h: HallsteadState): { state: GameState; h: HallsteadState; news: HallsteadNews[] } {
+export function settleLobby(state: GameState, balance: Balance, h: HallsteadState, weight = 1): { state: GameState; h: HallsteadState; news: HallsteadNews[] } {
   const lb = balance.hallstead.lobby;
   const welt = worldView(state, balance);
   const rng = new Rng(h.rng);
@@ -210,6 +238,8 @@ export function settleLobby(state: GameState, balance: Balance, h: HallsteadStat
     }
     favors += neu;
   }
+  // 0.4.20+17: Jacobs eigene Kontakte – je größer die Firma, desto mehr schuldet man ihm.
+  favors += Math.round(lb.ownFavors * weight * 100) / 100;
   const offen = [];
   for (const d of h.lobby.donations) {
     if (d.electionRound > state.round) {

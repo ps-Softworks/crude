@@ -45,6 +45,7 @@ import {
   traderGain,
 } from './logistics';
 import { jacobSupply } from './market';
+import { refineryCapacity } from './refinery';
 import { buyerCapacityLeft, capacityLeft, modeCapacity, modeUnavailable, netPrice, quoteSale, sellOil, tariff } from './transport';
 import { craneCut, exclusiveActive, grudgeCut, RIVAL_MARKS, volumeObligation } from './trust';
 import { tutorialHint } from './tutorial';
@@ -425,7 +426,9 @@ function transportTurn(
   }
 
   // Etappe 2: Ist das Gerücht „Quellen versiegen“ gebucht, bleibt genug im Tank, damit man es glaubt.
-  const halten = rumourHold(state, balance);
+  // 0.4.20+17: Ab Kapitel 2 bleibt das Rohöl für die eigene Raffinerie im Tank (vorher verkaufte der Bot alles, und
+  // die Raffinerie lief leer – nur Fixkosten).
+  const halten = Math.max(rumourHold(state, balance), refineryHold(state, balance));
   const anteil = halten > 0 && state.oilStock > 0 ? Math.min(sellShare(state, cfg), Math.max(0, (state.oilStock - halten) / state.oilStock)) : sellShare(state, cfg);
   const blufft = balance.botPlans[strategyKey(strategy)].bluff;
   state = sell(state, balance, anteil, ledger, useTrader(state, balance, cfg, anteil), cfg.margin, blufft);
@@ -456,6 +459,13 @@ function transportTurn(
 }
 
 /** Barrel, die für ein gebuchtes Gerücht „Quellen versiegen“ im Tank bleiben müssen (sonst 0). */
+/** So viel Rohöl braucht die eigene Raffinerie am Rundenende (Kapazität × Zufuhr; 0 ohne laufende Anlage). */
+export function refineryHold(state: GameState, balance: Balance): number {
+  const r = state.refinery;
+  if (!r || r.level === 0 || r.repairLeft > 0) return 0;
+  return Math.floor(r.intake * refineryCapacity(state, balance));
+}
+
 function rumourHold(state: GameState, balance: Balance): number {
   const gebucht = state.plans?.round === state.round && state.plans.booked.some((b) => b.cardId === 'geruecht' && b.target === 'versiegen' && !b.done);
   return gebucht ? balance.priceActions.rumour.dry.minTank + 1 : 0;

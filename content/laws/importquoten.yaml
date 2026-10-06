@@ -1,0 +1,58 @@
+# Importquoten (0.4.20+18, GDD §10): Weniger ausländisches Öl, wenn Embargo, Spannung oder Nationalismus drücken.
+# Wirkung: weniger Öl am Markt → heimischer Preis steigt (supplyShift).
+# ENTWURF: Zahlen und Texte sind Vorschläge von Claude.
+id: import_quota
+draft: true
+name: { de: Importquoten für Öl, en: Oil Import Quotas }
+summary:
+  de: "Ausländisches Öl darf nur noch in festen Mengen ins Land. Das heimische Öl wird teurer."
+  en: "Foreign oil may enter only in fixed amounts. Domestic oil gets dearer."
+
+threshold: 10
+pressure:
+  - when: { nationalism: { min: 50 } }
+    add: 1.2
+  - when: { tension: { min: 55 } }
+    add: 0.8
+  - when: { scarcity: { max: 0.9 } }        # billiges Auslandsöl drückt den Preis
+    add: 0.6
+  - when: { government: handel }            # die Handelspartei will freien Handel
+    add: -0.6
+
+votes: { handel: 0.3, volksbund: 0.5, provinz: 0.75 }
+swing:
+  - when: { nationalism: { min: 60 } }
+    add: 0.06
+
+effects:
+  world:
+    supplyShift: -0.02     # je Runde: weniger Öl am Markt
+    nationalismShift: 0.2
+  rules: {}
+
+lobby:
+  demand: { label: { de: "Quoten fordern", en: "Call for quotas" } }
+  block: { label: { de: "Freien Handel verteidigen", en: "Defend free trade" } }
+  delay: { label: { de: "Die Abstimmung verschleppen", en: "Stall the vote" } }
+
+news:
+  proposed:
+    title: { de: "Weniger Öl aus dem Ausland?", en: "Less oil from abroad?" }
+    text:
+      de: "Ein Antrag will die Einfuhr von Öl begrenzen. Die heimischen Förderer hoffen auf bessere Preise."
+      en: "A bill would limit oil imports. Domestic producers hope for better prices."
+  debate:
+    title: { de: "Föderation zuerst?", en: "Federation first?" }
+    text:
+      de: "„Unser Öl für unser Land“, ruft die Provinzliga. Die Handelspartei fürchtet die Rache der Handelspartner."
+      en: "\"Our oil for our country,\" cries the Provincial League. The Commerce Party fears the trading partners' revenge."
+  passed:
+    title: { de: "Importquoten beschlossen", en: "Import quotas passed" }
+    text:
+      de: "Weniger Tanker legen in Port Ellis an. Das heimische Öl ist gefragt."
+      en: "Fewer tankers dock at Port Ellis. Domestic oil is in demand."
+  failed:
+    title: { de: "Keine Importquoten", en: "No import quotas" }
+    text:
+      de: "Das Ausland liefert weiter, so viel es will."
+      en: "Foreign suppliers keep delivering as much as they like."

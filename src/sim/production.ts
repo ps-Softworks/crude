@@ -15,6 +15,7 @@ import { timedEffect } from './events';
 import { leaseOf, parcelLabel } from './lease';
 // Termine als Hauptwerkzeug, Etappe 2: In der Förderbremse drosselt Jacob seine eigene Förderung (das Öl bleibt im Boden).
 import { throttleFactor } from './pricing';
+import { lawRule } from './laws';
 
 /**
  * Druckfaktor eines Feldes mit so vielen fördernden Quellen: Die ersten
@@ -153,6 +154,12 @@ function shareOut(wanted: readonly number[], budget: number): number[] {
   return ganz;
 }
 
+/** 0.4.20+18: Anteil der Förderung unter Förderquoten – 1 ohne Gesetz oder mit heißem Öl (state.hotOil). */
+export function quotaFactor(state: Pick<GameState, 'hotOil'> & object, balance: Pick<Balance, 'laws'>): number {
+  const quote = lawRule(state, balance.laws, 'quotaShare');
+  return quote > 0 && !state.hotOil ? quote : 1;
+}
+
 /**
  * Rundenende: Alle fördernden Quellen liefern ihre Rate. Je Feld gibt es nur die
  * förderbare Menge – wer mehr bohrt, drückt sich gegenseitig die Raten und
@@ -173,7 +180,8 @@ export function advanceProduction(input: GameState, balance: Balance): GameState
 
   // 4.12: Ruf bei den Arbeitern (GDD §4: Moral, Unfälle, Streiks) hebt oder senkt die Förderung dauerhaft.
   // Etappe 2: Förderbremse drosselt die eigene Förderung.
-  const faktor = Math.max(0, 1 + timedEffect(input, 'production') + reputationOf(input, 'workers') * balance.eventSystems.reputation.production) * throttleFactor(input);
+  // 0.4.20+18: Förderquoten (production_quota) – wer kein heißes Öl fördert, hält die Quote ein.
+  const faktor = Math.max(0, 1 + timedEffect(input, 'production') + reputationOf(input, 'workers') * balance.eventSystems.reputation.production) * throttleFactor(input) * quotaFactor(input, balance);
   const neuenStand = new Map<string, { lastRate: number; total: number }>();
   const hoechststand = new Map<string, number>();
   let gefoerdert = 0;

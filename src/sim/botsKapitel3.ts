@@ -12,13 +12,18 @@ import { brandOf, brandRegionOpen, brandUnlocked, brandWorldFrom, buildingCount,
 import { chapterOf } from './chapterOf';
 import { feldzugAbsprache, feldzugKredit, feldzugTilgen } from './feldzug';
 import type { GameState } from './game';
-import { buildRefinery } from './refinery';
+import { bestRefinerySetting, buildRefinery, crudeSupply, expandRefinery, plannedCrude, planRun, refineryExpansion } from './refinery';
 
 export interface BrandBotPolicy {
   /** So viel $ bleibt immer in der Kasse. */
   reserve: number;
   /** Höchstens so viele Tankstellen je Runde und Region (0.4.20+6: vorher je Runde insgesamt). */
   perRound: number;
+  /**
+   * 0.4.20+17 Raffinerie-Ausbau: Er baut eine Stufe aus, wenn der Mehrerlös bis Kapitelende die Kosten × diesen
+   * Faktor deckt (null = nie ausbauen). Mix und Zufuhr stellt jeder Bot ein.
+   */
+  refineryExpand?: number | null;
 }
 
 /** Bot-Faustregeln für den Marktanteil (0.4.20+6): so viel Abstand über presenceShare, höchstens so viele Tankstellen je Region. */
@@ -34,16 +39,53 @@ export const DEFAULT_BRAND_BOT: BrandBotPolicy = { reserve: 15000, perRound: 3 }
  */
 export function botChapter2Systems(state: GameState, balance: Balance, policy: BrandBotPolicy = DEFAULT_BRAND_BOT): GameState {
   if (state.finished || chapterOf(state) !== 2 || !state.refinery) return state;
-  if (state.refinery.level > 0 || state.refinery.project) return state;
+  if (state.refinery.level > 0 || state.refinery.project) return runRefinery(state, balance, policy);
   if (state.cash < balance.refinery.buildCost + policy.reserve) return state;
   const r = buildRefinery(state, balance);
   return r.ok ? r.state : state;
+}
+
+/**
+ * Raffinerie-Betrieb (0.4.20+17, Sitzung „bot runner“): Vorher lief jede Bot-Raffinerie mit dem absichtlich schlechten
+ * Start-Mix und voller Zufuhr. Jetzt stellt der Bot je Runde Mix und Zufuhr mit dem höchsten Mehrerlös gegenüber dem
+ * Verkauf als Rohöl ein (bestRefinerySetting) – wie ein Spieler, der die Vorschau im Raffinerie-Fenster liest.
+ */
+export function refineryGain(state: GameState, balance: Balance, crudeNet: number): number {
+  const crude = plannedCrude(state, balance);
+  if (crude <= 0) return 0;
+  const run = planRun(state, balance, crude);
+  return run.revenue - run.operating - run.feed - crude * crudeNet;
+}
+
+export function tuneRefinery(state: GameState, balance: Balance): GameState {
+  const r = state.refinery;
+  if (!r || r.level === 0 || state.finished) return state;
+  // 0.4.20+18: Die Simulation rechnet die beste Einstellung selbst (Raster 5 % + Feinsuche, Benzin für die eigenen Tankstellen).
+  const best = bestRefinerySetting(state, balance, { maxCrude: crudeSupply(state, balance) + Math.floor(state.oilStock) });
+  if (JSON.stringify(best.mix) === JSON.stringify(r.mix) && best.intake === r.intake) return state;
+  return { ...state, refinery: { ...r, mix: best.mix, intake: best.intake } };
+}
+
+/** Mix und Zufuhr einstellen, dann ausbauen, wenn der Mehrerlös bis Kapitelende die Kosten × refineryExpand deckt. */
+export function runRefinery(state: GameState, balance: Balance, policy: BrandBotPolicy): GameState {
+  const s = tuneRefinery(state, balance);
+  const r = s.refinery;
+  const faktor = policy.refineryExpand;
+  const b = balance.refinery;
+  if (!r || faktor == null || r.project || r.level === 0 || s.cash < b.expandCost + policy.reserve) return s;
+  const aus = refineryExpansion(s, balance, { maxCrude: crudeSupply(s, balance) + Math.floor(s.oilStock) });
+  // Horizont: Rest des Kapitels, in Kapitel 2 dazu Kapitel 3 (die Anlage läuft weiter; Zeitsprung II nicht mitgezählt).
+  const rest = s.totalRounds - s.round - b.expandRounds + (chapterOf(s) === 2 ? balance.timeskip.nextChapterRounds : 0);
+  if (!aus || aus.payback === null || aus.gain * rest < aus.cost * faktor) return s;
+  const e = expandRefinery(s, balance);
+  return e.ok ? e.state : s;
 }
 
 /** Ein Zug des Bots an den Systemen späterer Kapitel: Raffinerie (Kapitel 2), Marke und Tankstellen (Kapitel 3). */
 export function botChapterSystems(state: GameState, balance: Balance, policy: BrandBotPolicy = DEFAULT_BRAND_BOT): GameState {
   if (chapterOf(state) === 2) return botChapter2Systems(state, balance, policy);
   if (state.finished || chapterOf(state) < 3) return state;
+  state = runRefinery(state, balance, policy);
   const world = brandWorldFrom(state);
   if (!brandUnlocked(world, balance)) return state;
   let s = state;

@@ -6,7 +6,10 @@ import { endRound, newGame, type GameState } from './game';
 import {
   adjustMix,
   advanceRefinery,
+  bestRefinerySetting,
   buildRefinery,
+  crackedBounds,
+  crudeSupply,
   crudeVsRefined,
   demandFactor,
   expandRefinery,
@@ -21,6 +24,9 @@ import {
   PRODUCTS,
   refineryAssets,
   refineryCapacity,
+  refineryExpansion,
+  refineryMixBounds,
+  stationOfftake,
   feedCapacity,
   feedLimited,
   planFeed,
@@ -373,8 +379,8 @@ describe('Raffinerie: eine Runde', () => {
     const s = fertig(2, { oilStock: 100_000 });
     const keroViel = ok(setRefineryMix(s, balance, { kerosene: 1 }));
     const keroWenig = ok(setRefineryMix(s, balance, { fuelOil: 1, lubricant: 1 }));
-    const a = planRun(keroViel, balance, 50_000);
-    const b = planRun(keroWenig, balance, 50_000);
+    const a = planRun(keroViel, balance, 15_000);
+    const b = planRun(keroWenig, balance, 15_000);
     expect(a.prices.kerosene).toBeLessThan(b.prices.kerosene);
     expect(a.revenue).not.toBe(b.revenue);
   });
@@ -417,10 +423,12 @@ describe('Raffinerie: Abwägung Rohöl verkaufen oder raffinieren', () => {
     const s = fertig(1, { oilStock: 20_000 });
     const v = crudeVsRefined(s, balance, welt);
     expect(v.crudeMode).not.toBeNull();
-    expect(v.crude).toBe(20_000);
+    expect(v.crude).toBe(R.unitCapacity);
     expect(v.advantage).toBeCloseTo(v.refinedNet - v.crudeNet, 2);
-    // Mit den Startzahlen lohnt das Raffinieren bei normalem Rohölpreis.
-    expect(v.advantage).toBeGreaterThan(0);
+    // Gut eingestellt lohnt das Raffinieren bei normalem Rohölpreis.
+    const best = bestRefinerySetting(s, balance, { world: welt });
+    const gut = crudeVsRefined(ok(setRefineryIntake(ok(setRefineryMix(s, balance, best.mix)), best.intake)), balance, welt);
+    expect(gut.advantage).toBeGreaterThan(0);
   });
 
   it('bei sehr hohem Rohölpreis und Überangebot an Produkten kann Rohöl besser sein', () => {
@@ -442,41 +450,107 @@ describe('Raffinerie: Balance in Stufe I (Bezugswelt, Rohöl zum Bezugspreis)', 
     const run = planRun(s, balance, crude, { world: welt });
     return run.revenue - run.operating - run.feed - crude * crudeVsRefined(s, balance, welt).crudeNet;
   }
-  const guterMix = { kerosene: 0.5, lubricant: 0.15, fuelOil: 0.2, gasoline: 0.15 };
 
-  it('die Nachfrage aller Produkte entspricht etwa der Ausbeute einer Ausbaustufe', () => {
+  it('die Nachfrage aller Produkte reicht für eine Ausbaustufe, aber nicht für zwei', () => {
     const nachfrage = PRODUCTS.reduce((a, p) => a + productDemand(p, welt, balance), 0);
     const ausbeute = R.unitCapacity * (1 - R.techs[0].loss);
-    expect(nachfrage / ausbeute).toBeGreaterThan(0.8);
-    expect(nachfrage / ausbeute).toBeLessThan(1.1);
+    expect(nachfrage / ausbeute).toBeGreaterThan(1);
+    expect(nachfrage / ausbeute).toBeLessThan(2);
+  });
+
+  it('gut eingestellt bringt klar mehr als der Rohölverkauf, mit Startmix und voller Menge weniger', () => {
+    const s = stufe1(R.startMix, 1);
+    const best = bestRefinerySetting(s, balance, { world: welt });
+    expect(best.gain / best.crude).toBeGreaterThan(0.4);
+    expect(gewinn(s)).toBeLessThan(0);
+    // Die gefundene Einstellung ist gültig und bringt, was sie verspricht.
+    expect(normalizeMix(best.mix, refineryMixBounds(s, balance, 1))).toEqual(best.mix);
+    expect(gewinn(ok(setRefineryIntake(ok(setRefineryMix(s, balance, best.mix)), best.intake)))).toBeCloseTo(best.gain, 0);
   });
 
   it('ein schiefer Mix kostet schon in Stufe I spürbar', () => {
-    const schief = gewinn(stufe1(R.startMix, 0.75));
-    const gut = gewinn(stufe1(guterMix, 0.75));
-    expect(gut).toBeGreaterThan(schief * 1.2);
-  });
-
-  it('zu viel Menge drückt die Preise: bei voller Menge bringen die letzten Barrel weniger als der Verkauf', () => {
-    const voll = crudeVsRefined(stufe1(guterMix, 1), balance, welt);
-    expect(voll.marginalNet).toBeLessThan(voll.crudeNet);
-    const halb = crudeVsRefined(stufe1(guterMix, 0.5), balance, welt);
-    expect(halb.marginalNet).toBeGreaterThan(halb.crudeNet);
-    expect(gewinn(stufe1(guterMix, 0.75))).toBeGreaterThan(gewinn(stufe1(guterMix, 1)));
-  });
-
-  it('gut eingestellt lohnt das Raffinieren, aber ohne Preisobergrenze für alles', () => {
-    const s = stufe1(guterMix, 0.75);
-    expect(gewinn(s)).toBeGreaterThan(0);
-    const run = planRun(s, balance, plannedCrude(s, balance), { world: welt });
-    const amDeckel = PRODUCTS.filter((p) => run.prices[p] >= productPrice(p, 1, R.crudeRef, welt, balance) - 0.005);
-    expect(amDeckel.length).toBeLessThan(PRODUCTS.length);
+    const best = bestRefinerySetting(stufe1(R.startMix, 1), balance, { world: welt });
+    const schief = gewinn(stufe1(R.startMix, best.intake));
+    expect(best.gain).toBeGreaterThan(schief + 0.3 * best.crude);
   });
 
   it('eine zweite Ausbaustufe bei voller Menge drückt in der Bezugswelt unter den Rohölverkauf', () => {
     const s = mitPipeline(fertig(2, { oilStock: 100_000, royaltyOil: 0, postedPrice: R.crudeRef, startYear: welt.year, round: 1 }));
     const v = crudeVsRefined(s, balance, welt);
     expect(v.advantage).toBeLessThan(0);
+    expect(v.marginalNet).toBeLessThan(v.crudeNet);
+  });
+
+  it('der Ausbau lohnt erst, wenn die Märkte wachsen', () => {
+    const s = stufe1(R.startMix, 1);
+    const heute = refineryExpansion(s, balance, { world: welt, maxCrude: Infinity })!;
+    const gewachsen = refineryExpansion(s, balance, { world: { ...welt, demand: welt.demand * 1.5 }, maxCrude: Infinity })!;
+    expect(heute.payback === null || heute.payback > 30).toBe(true);
+    expect(gewachsen.gain).toBeGreaterThan(heute.gain);
+    expect(gewachsen.payback).not.toBeNull();
+    expect(gewachsen.payback!).toBeLessThanOrEqual(20);
+    expect(refineryExpansion({ ...s, refinery: { ...s.refinery!, level: R.maxLevel } }, balance)).toBeNull();
+  });
+
+  it('der Ausbau rechnet mit der Förderung: ohne genug Öl lohnt er nicht, und das Fenster erfährt warum', () => {
+    const s = stufe1(R.startMix, 1);
+    const gewachsen = { world: { ...welt, demand: welt.demand * 1.5 } };
+    const wenig = refineryExpansion(s, balance, { ...gewachsen, maxCrude: R.unitCapacity })!;
+    expect(wenig.payback).toBeNull();
+    expect(wenig.oilShort).toBe(true);
+    expect(wenig.supply).toBe(R.unitCapacity);
+    const genug = refineryExpansion(s, balance, { ...gewachsen, maxCrude: 3 * R.unitCapacity })!;
+    expect(genug.payback).not.toBeNull();
+    expect(genug.oilShort).toBe(false);
+    // Ohne Vorgabe zählt die Förderung der Quellen.
+    expect(refineryExpansion(s, balance, gewachsen)!.supply).toBe(crudeSupply(s, balance));
+  });
+});
+
+describe('Raffinerie: Benzin für die eigenen Tankstellen (0.4.20+18)', () => {
+  function mitTankstellen(s: GameState, sales: number): GameState {
+    return { ...s, brand: { founded: true, regions: { a: { last: { sales: sales / 2 } }, b: { last: { sales: sales / 2 } } } } } as unknown as GameState;
+  }
+  const s0 = mitPipeline(fertig(2, { oilStock: 100_000, royaltyOil: 0, postedPrice: R.crudeRef, startYear: welt.year, round: 1 }));
+
+  it('stationOfftake zählt den letzten Absatz der gegründeten Marke', () => {
+    expect(stationOfftake(s0)).toBe(0);
+    expect(stationOfftake(mitTankstellen(s0, 8000))).toBe(8000);
+    expect(stationOfftake({ brand: { founded: false, regions: { a: { last: { sales: 500 } } } } })).toBe(0);
+  });
+
+  it('Benzin an die Tankstellen drückt den Großhandelspreis nicht', () => {
+    const ohne = planRun(s0, balance, 20_000, { world: welt });
+    const mit = planRun(mitTankstellen(s0, 50_000), balance, 20_000, { world: welt });
+    expect(ohne.toStations).toBe(0);
+    expect(mit.toStations).toBe(mit.output.gasoline);
+    expect(mit.prices.gasoline).toBeGreaterThan(ohne.prices.gasoline);
+    expect(mit.prices.kerosene).toBe(ohne.prices.kerosene);
+    // Nur der Überschuss geht an den Großhandel.
+    const wenig = planRun(mitTankstellen(s0, 1000), balance, 20_000, { world: welt });
+    expect(wenig.toStations).toBe(1000);
+    expect(wenig.prices.gasoline).toBeLessThan(mit.prices.gasoline);
+  });
+
+  it('mit Cracken und Tankstellen lohnt ein Ausbau, der ohne sie nicht lohnt', () => {
+    // Kapitel 3: die Märkte sind gewachsen, Stufe 2 steht.
+    // Typische Welt Mitte Kapitel 3 (Runde 88, Median aus npm run welt): Jahr 110, Technik 25, Nachfrage 2,55.
+    const k3: RefineryWorld = { year: 110, tech: 25, tension: 20, war: false, demand: 2.55 };
+    const bounds = crackedBounds(refineryTech(balance, 1).mix, 0.2);
+    const ohne = refineryExpansion(s0, balance, { world: k3, bounds, stationOfftake: 0, unlimitedFeed: true, maxCrude: Infinity })!;
+    const mit = refineryExpansion(s0, balance, { world: k3, bounds, stationOfftake: 30_000, unlimitedFeed: true, maxCrude: Infinity })!;
+    expect(ohne.payback === null || ohne.payback > 30).toBe(true);
+    expect(mit.gain).toBeGreaterThan(ohne.gain + 2000);
+    expect(mit.payback).not.toBeNull();
+    expect(mit.payback!).toBeLessThanOrEqual(30);
+  });
+
+  it('Cracken tauscht Kerosin gegen Benzin', () => {
+    const b = refineryTech(balance, 1).mix;
+    const c = crackedBounds(b, 0.2);
+    expect(c.gasoline.max).toBeCloseTo(b.gasoline.max + 0.2, 6);
+    expect(c.kerosene.min).toBeCloseTo(Math.max(0, b.kerosene.min - 0.2), 6);
+    expect(crackedBounds(b, 0)).toBe(b);
   });
 });
 

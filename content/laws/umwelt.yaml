@@ -1,0 +1,65 @@
+# Umweltgesetze (0.4.20+18, GDD §10): Nach Feldbränden und verseuchten Brunnen verlangt der Staat Auflagen.
+# Kommt eher spät (Technik, Stimmung). Wirkung: Bohren und Lager teurer, Bußgeld je ausgelaufenem Barrel.
+# ENTWURF: Zahlen und Texte sind Vorschläge von Claude.
+id: environment
+draft: true
+name: { de: Umweltgesetze, en: Environmental Act }
+summary:
+  de: "Bohrlöcher müssen abgedichtet, Tanks gesichert werden. Wer Öl ausläuft, zahlt."
+  en: "Wells must be sealed, tanks secured. Whoever spills oil pays."
+
+threshold: 12
+pressure:
+  - when: { tech: { min: 40 } }             # spät: man weiß, was Öl im Brunnen anrichtet
+    add: 0.8
+  - when: { mood: { max: 40 } }
+    add: 0.6
+  - when: { government: volksbund }
+    add: 0.8
+  - when: { government: provinz }           # die Farmer der Provinz
+    add: 0.4
+  - when: { government: handel }
+    add: -0.6
+
+votes: { handel: 0.2, volksbund: 0.8, provinz: 0.6 }
+swing:
+  - when: { mood: { max: 35 } }
+    add: 0.04
+
+effects:
+  world:
+    moodShift: 0.3
+  rules:
+    drillCostRise: 0.15    # Bohren +15 %
+    storageCostRise: 0.25  # Lagerkosten +25 %
+    spillFine: 0.6         # Bußgeld $ je ausgelaufenem Barrel
+
+lobby:
+  demand: { label: { de: "Auflagen fordern", en: "Call for regulations" } }
+  block: { label: { de: "Die Felder frei halten", en: "Keep the fields free" } }
+  weaken:
+    label: { de: "Übergangsfristen aushandeln", en: "Negotiate transition periods" }
+    rules: { drillCostRise: 0.05, storageCostRise: 0.1, spillFine: 0.3 }
+  delay: { label: { de: "Die Abstimmung verschleppen", en: "Stall the vote" } }
+
+news:
+  proposed:
+    title: { de: "Auflagen für die Ölfelder?", en: "Regulations for the oil fields?" }
+    text:
+      de: "Verseuchte Brunnen, brennende Felder: Ein Antrag will Bohrlöcher und Tanks unter Auflagen stellen."
+      en: "Poisoned wells, burning fields: a bill would put wells and tanks under regulation."
+  debate:
+    title: { de: "Öl oder Wasser?", en: "Oil or water?" }
+    text:
+      de: "Ein Farmer aus Salt Hill zeigt den Abgeordneten ein Glas Brunnenwasser. Es schillert."
+      en: "A farmer from Salt Hill shows the members a glass of well water. It shimmers."
+  passed:
+    title: { de: "Umweltgesetze beschlossen", en: "Environmental Act passed" }
+    text:
+      de: "Bohrlöcher müssen abgedichtet, Tanks gesichert werden. Wer Öl ausläuft, zahlt."
+      en: "Wells must be sealed, tanks secured. Whoever spills oil pays."
+  failed:
+    title: { de: "Keine Auflagen", en: "No regulations" }
+    text:
+      de: "Die Felder bleiben, wie sie sind. Die Farmer kochen ihr Wasser ab."
+      en: "The fields stay as they are. The farmers boil their water."

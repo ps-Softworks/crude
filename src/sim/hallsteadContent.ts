@@ -9,10 +9,11 @@ import type { GameState } from './game';
 import { HOLDING_KINDS, LOBBY_TRAITS, PARTY_IDS, type HoldingKind, type LobbyTrait, type PartyId } from './hallsteadBalance';
 import { hallsteadUnlocked, worldView, type HallsteadNews, type HallsteadReason } from './hallsteadState';
 import { saleProceeds } from './holdings';
-import { availableFavors, currentLobbyist, LAWS_CONNECTED } from './lobby';
+import { empireValue } from './empire';
+import { availableFavors, currentLobbyist, LAWS_CONNECTED, politicalWeight, politicsUnlocked } from './lobby';
 import { LANGUAGES, localize, type Lang, type LocalizedText } from './i18n';
 
-const OBJECT_KEYS = ['name', 'hint', 'locked'] as const;
+const OBJECT_KEYS = ['name', 'hint', 'locked', 'nameProvince', 'hintProvince'] as const;
 const TAB_KEYS = ['holdings', 'lobby', 'laws'] as const;
 const CRED_KEYS = ['high', 'scratched', 'lost'] as const;
 const COMPETENCE_KEYS = ['low', 'mid', 'high'] as const;
@@ -20,6 +21,8 @@ export const UI_KEYS = [
   'value', 'invested', 'buy', 'buyMore', 'sell', 'hire', 'fire', 'salary', 'favors', 'favorsHint', 'bribe', 'bribeHint',
   'donate', 'donateHint', 'donationPending', 'government', 'push', 'block', 'water', 'oilFor', 'oilAgainst',
   'pressureFor', 'pressureAgainst', 'watered', 'needLobbyist', 'lawsPending', 'telegram', 'nothing', 'debugUnlock',
+  // 0.4.20+17 Provinzpolitik: Gefallen der Provinz, Lobbyist erst in Hallstead, Gewicht, Stand im Parlament.
+  'hotOil', 'hotOilHint', 'favorsHintProvince', 'lobbyistLater', 'weight', 'weightLow', 'weightMid', 'weightHigh', 'lawPassed', 'lawPassedWeak', 'lawDebate', 'waterLater',
 ] as const;
 export const NEWS_KEYS = ['crash', 'yieldPlus', 'yieldMinus', 'donationWon', 'donationLost', 'lobbyFavors', 'lobbyDrunk', 'salary'] as const;
 export const REASON_KEYS: readonly HallsteadReason[] = [
@@ -239,10 +242,18 @@ export interface LawRow {
   /** Satz zum Druck, oder null. */
   pressure: string | null;
   watered: boolean;
+  /** 0.4.20+17: Stand im Parlament (gilt, in der Debatte) – oder null. */
+  status: string | null;
+  /** 0.4.20+17: Das Gesetz gilt schon – fordern, bremsen, verwässern ändern nichts mehr. */
+  passed: boolean;
 }
 
 export interface HallsteadView {
   unlocked: boolean;
+  /** 0.4.20+17: Provinzpolitik offen (ab Kapitel 2) – fordern, bremsen, spenden. */
+  politics: boolean;
+  /** 0.4.20+17: Wie viel Jacobs Wort wiegt (nach Firmengröße), als Satz. */
+  weight: string;
   holdings: HoldingRow[];
   newspaper: { owned: boolean; credibility: string; campaignDone: boolean };
   bankDiscount: string | null;
@@ -328,9 +339,20 @@ export function hallsteadView(state: GameState, balance: Balance, c: HallsteadCo
   const wer = currentLobbyist(state, balance);
   const welt = worldView(state, balance);
   const credibility = h?.holdings.credibility ?? hb.newspaper.credibilityStart;
-  const laws: LawRow[] = c.laws.map((law) => {
+  // 0.4.20+17: Nur Gesetze, die das Parlament kennt (content/laws/), mit ihrem Stand dort.
+  const bills = state.worldModel?.laws?.bills ?? {};
+  const laws: LawRow[] = c.laws.filter((law) => balance.laws.some((d) => d.id === law.id)).map((law) => {
     const p = h?.lobby.pressure[law.id] ?? 0;
+    const b = bills[law.id];
+    const status =
+      b?.stage === 'passed'
+        ? L(b.weakened ? c.ui.lawPassedWeak : c.ui.lawPassed)
+        : b?.stage === 'debate'
+          ? fillText(L(c.ui.lawDebate), { rounds: rundenText(Math.max(1, b.voteIn), lang) })
+          : null;
     return {
+      status,
+      passed: b?.stage === 'passed',
       id: law.id,
       name: L(law.name),
       oil: L(law.oil === 'for' ? c.ui.oilFor : c.ui.oilAgainst),
@@ -340,6 +362,11 @@ export function hallsteadView(state: GameState, balance: Balance, c: HallsteadCo
   });
   return {
     unlocked: hallsteadUnlocked(state, balance),
+    politics: politicsUnlocked(state, balance),
+    weight: (() => {
+      const w = politicalWeight(empireValue(state, balance), balance);
+      return fillText(L(c.ui.weight), { word: L(w < 0.34 ? c.ui.weightLow : w < 0.67 ? c.ui.weightMid : c.ui.weightHigh) });
+    })(),
     holdings,
     newspaper: {
       owned: !!h?.holdings.positions.zeitung,
