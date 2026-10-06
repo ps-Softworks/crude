@@ -26,6 +26,7 @@ import type { Well } from './drilling';
 import { empireValue } from './empire';
 import { endRound, newGame, type GameState } from './game';
 import { deserializeGame, SAVE_FORMAT, serializeGame } from './save';
+import { bondLimit } from './stocks';
 import { loadBalance, rawBalance } from './testBalance';
 import { loadEvents } from './testEvents';
 
@@ -258,7 +259,9 @@ describe('Börsengang-Brief: Folgen je Wahl', () => {
       expect(text).toContain(`${Math.round(share * 100)} %`);
       expect(text).toContain(share >= B.thorne.minOutside ? 'kann über Strohmänner einsteigen' : 'erst einsteigen');
       expect(text).not.toMatch(/\{\w+\}/);
+      expect(text).toContain(`bis zu ${bondLimit(g, balance).toLocaleString('de-DE')} $`);
     }
     expect(ipoConsequenceText(g, balance, c, 0, 'de')).toContain('keine Anleger');
+    expect(ipoConsequenceText(g, balance, c, 0, 'de')).toContain('keine Anleihen');
   });
 });

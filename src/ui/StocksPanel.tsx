@@ -18,6 +18,8 @@ import {
   dividendCost,
   investigate,
   issueBond,
+  canIssueBonds,
+  FAMILY_BOND_REASON,
   issueProceeds,
   issueShares,
   loyalSeats,
@@ -286,6 +288,9 @@ export function BondsPanel({ game, onChange }: Props) {
           ))}
         </ul>
       )}
+      {!canIssueBonds(game) ? (
+        <p className="hint">{FAMILY_BOND_REASON}</p>
+      ) : (
       <div className="regler-zeile">
         <strong>Neue Anleihe</strong>
         <label>
@@ -313,6 +318,7 @@ export function BondsPanel({ game, onChange }: Props) {
         </Aktion>
         {!probe.ok && <p className="hint">{probe.reason}</p>}
       </div>
+      )}
     </div>
   );
 }

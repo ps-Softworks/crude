@@ -38,7 +38,7 @@ import { producingWells } from './production';
 import { LOGISTICS_SIM_MARKS } from './logistics';
 import { ownsRefinery } from './refinery';
 import { ownsHarborPipeline } from './bigPipeline';
-import { control, ownStake, thorneStake } from './stocks';
+import { bondLimit, control, ownStake, thorneStake } from './stocks';
 import { DELANEY_MARKS } from './investigation';
 import { brandGoal } from './brand';
 import { RATINGS } from './balance';
@@ -257,6 +257,7 @@ export function ipoConsequenceText(state: GameState, balance: Balance, content: 
       frist: String(B.demands.dueRounds),
       gnade: String(B.dividend.graceRounds),
       thorne,
+      anleihen: `${bondLimit(state, balance).toLocaleString('de-DE')} $`,
       kontrolle: prozent(0.5),
     },
     lang,

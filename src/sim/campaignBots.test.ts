@@ -224,7 +224,7 @@ describe('Börse (Kapitel 3): exchangeTurn', () => {
 describe('Anleihen (Kapitel 2/3): bondsTurn (0.4.20+6)', () => {
   const firma = (cash = 50000): GameState => {
     const g = newGame('anleihen-bot', balance);
-    return startStocks({ ...g, cash, ipo: { share: 0, proceeds: 0 }, chapter: 2, rating: 'B', worldModel: { ...g.worldModel, credit: 50, mood: 50 } } as GameState, balance, board);
+    return startStocks({ ...g, cash, ipo: { share: 0.2, proceeds: 0 }, chapter: 2, rating: 'B', worldModel: { ...g.worldModel, credit: 50, mood: 50 } } as GameState, balance, board);
   };
 
   it('ohne Anleihen-Politik oder in Kapitel 1 gibt er keine aus', () => {
@@ -496,5 +496,13 @@ describe('Auswertung', () => {
     expect(ziele.find((t) => t.id === 'fairWinRate')!.ok).toBe(0.45 <= balance.bots.campaignTargets.fairWinRate.max);
     const eng: Balance = { ...balance, bots: { ...balance.bots, campaignTargets: { ...balance.bots.campaignTargets, creditCrises: { min: 2, max: 3 } } } };
     expect(checkCampaignTargets(report, eng).find((t) => t.id === 'creditCrises')!.ok).toBe(false);
+  });
+});
+
+describe('Anleihen-Bot als Familienfirma', () => {
+  it('gibt keine Anleihe aus und lässt den Zustand unverändert', () => {
+    const g = newGame('anleihen-familie', balance);
+    const s = startStocks({ ...g, cash: 50000, ipo: { share: 0, proceeds: 0 }, chapter: 2, rating: 'B' } as GameState, balance, board);
+    expect(bondsTurn(s, balance, policy({ bonds: { load: 0.8 } }))).toBe(s);
   });
 });

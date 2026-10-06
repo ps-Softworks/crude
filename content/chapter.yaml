@@ -80,19 +80,21 @@ ipo:
   sell: { de: "{anteil} verkaufen – {preis}", en: "Sell {anteil} – {preis}" }
   keep: { de: "Familienfirma bleiben", en: "Stay a family firm" }
   consequenceHint: { de: "Zeig auf eine Wahl, um zu sehen, was sie bedeutet.", en: "Point at a choice to see what it means." }
-  # Folgen je Wahl, gerechnet aus balance.yaml (stocks.*, chapter.ipo). Platzhalter: {preis} {anteil} {eigen}
+  # Folgen je Wahl, gerechnet aus balance.yaml (stocks.*, chapter.ipo). Platzhalter: {preis} {anteil} {eigen} {anleihen}
   # {sitze} {frist} {gnade} {schwelle} {kontrolle} {thorne} (= thorneOpen/thorneClosed).
   consequence:
     de: >-
       Das bedeutet: {preis} sofort in die Kasse, {anteil} der Stimmen gehen an Anleger, Jacob hält {eigen}.
       Der Aufsichtsrat hat {sitze} Sitze und stellt Forderungen mit {frist} Runden Frist (Dividende, weniger
-      Schulden, Rückkauf, neue Quellen). Nach {gnade} Runden ohne Dividende sinkt der Kurs. {thorne} Fällt
+      Schulden, Rückkauf, neue Quellen). Nach {gnade} Runden ohne Dividende sinkt der Kurs. Öffnet den Anleihenmarkt: bis zu {anleihen} (die Hälfte des
+      Imperiumswerts). {thorne} Fällt
       Jacobs Kontrolle unter {kontrolle}, droht bei Kursverfall oder schlechter Stimmung ein Misstrauensvotum
       – am Ende die Absetzung.
     en: >-
       That means: {preis} into the cash box right away, {anteil} of the votes go to investors, Jacob holds
       {eigen}. The supervisory board has {sitze} seats and makes demands with {frist} rounds' notice (dividends,
-      less debt, buybacks, new wells). After {gnade} rounds without a dividend the share price falls. {thorne}
+      less debt, buybacks, new wells). After {gnade} rounds without a dividend the share price falls. Opens the bond market: up to {anleihen} (half the
+      empire value). {thorne}
       If Jacob's control drops below {kontrolle}, a falling price or a bad public mood can bring a vote of
       no confidence – and in the end his removal.
   thorneOpen:
@@ -104,10 +106,10 @@ ipo:
   keepConsequence:
     de: >-
       Das bedeutet: kein frisches Geld, aber auch keine Anleger, kein Aufsichtsrat und kein Thorne im Rat –
-      Jacob entscheidet allein und behält alle Stimmen.
+      Jacob entscheidet allein und behält alle Stimmen. Nur der Bankkredit, keine Anleihen.
     en: >-
       That means: no fresh money, but also no investors, no supervisory board and no Thorne on it – Jacob
-      decides alone and keeps all the votes.
+      decides alone and keeps all the votes. Only the bank loan, no bonds.
   sold:
     de: Jacob verkauft {anteil} seiner Firma an Anleger und bekommt {preis}. Er behält die Mehrheit – noch.
     en: Jacob sells {anteil} of his company to investors and receives {preis}. He keeps the majority – for now.

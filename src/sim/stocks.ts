@@ -568,10 +568,18 @@ export function pressCampaign(state: GameState, balance: Balance): StocksResult 
 }
 
 /** Eine Anleihe ausgeben: principal aus bonds.sizes, term aus bonds.terms. Große brauchen bei einer AG die Mehrheit. */
+export const FAMILY_BOND_REASON = 'Anleihen gibt nur eine Aktiengesellschaft aus – das Bankhaus zeichnet keine Papiere einer Familienfirma.';
+
+/** Neue Anleihen gibt nur die Aktiengesellschaft aus; bestehende Anleihen einer Familienfirma (alte Spielstände) laufen weiter. */
+export function canIssueBonds(state: GameState): boolean {
+  return !!state.stocks?.public;
+}
+
 export function issueBond(state: GameState, balance: Balance, principal: number, term: number, world: StocksWorld = stocksWorldOf(state)): StocksResult {
   const a = aktiv(state);
   if (!a.ok) return a;
   const { s } = a;
+  if (!s.public) return { ok: false, reason: FAMILY_BOND_REASON };
   const B = balance.stocks.bonds;
   if (!B.sizes.includes(principal)) return { ok: false, reason: 'Diese Summe bietet das Bankhaus nicht an.' };
   if (!B.terms.includes(term)) return { ok: false, reason: 'Diese Laufzeit gibt es nicht.' };

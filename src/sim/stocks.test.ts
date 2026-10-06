@@ -25,6 +25,7 @@ import {
   investigate,
   isStocksState,
   issueBond,
+  canIssueBonds,
   issueShares,
   issueMajority,
   loyalSeats,
@@ -121,14 +122,26 @@ describe('Freischaltung (Kapitel 2)', () => {
     expect(startStocks(g, balance, inhalt.board, { force: true }).stocks?.public).toBe(true);
   });
 
-  it('die Familienfirma bekommt kein Aktienbuch, aber Anleihen', () => {
+  it('die Familienfirma bekommt kein Aktienbuch und keine neuen Anleihen', () => {
     const g = startStocks(kapitel2(0), balance, inhalt.board);
     expect(st(g).public).toBe(false);
     expect(st(g).board).toHaveLength(0);
     expect(control(st(g), balance)).toBe(1);
     expect(issueShares(g, balance, 10).ok).toBe(false);
     expect(payDividend(g, balance, 0).ok).toBe(false);
-    expect(issueBond(g, balance, balance.stocks.bonds.sizes[0], balance.stocks.bonds.terms[0]).ok).toBe(true);
+    const r = issueBond(g, balance, balance.stocks.bonds.sizes[0], balance.stocks.bonds.terms[0]);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason).toContain('Aktiengesellschaft');
+    expect(canIssueBonds(g)).toBe(false);
+  });
+
+  it('alte Anleihen einer Familienfirma laufen weiter, nur neue gibt es nicht', () => {
+    const g0 = startStocks(kapitel2(0), balance, inhalt.board);
+    const alt = { id: 1, principal: 10000, rate: 0.08, issued: 1, maturity: 4 };
+    const g = { ...g0, stocks: { ...st(g0), bonds: [alt], nextBond: 2 } };
+    expect(bondDebt(g.stocks)).toBe(10000);
+    expect(bondCoupons(g.stocks)).toBeGreaterThan(0);
+    expect(issueBond(g, balance, balance.stocks.bonds.sizes[0], balance.stocks.bonds.terms[0]).ok).toBe(false);
   });
 
   it('der Aufsichtsrat hat 5–9 Sitze, mehr verkaufte Aktien = mehr Sitze', () => {
@@ -662,11 +675,10 @@ describe('Anleihen', () => {
     const dritte = issueBond({ ...g, round: g.round + 2 }, balance, B.sizes[0], B.terms[0]);
     expect(dritte.ok).toBe(false);
     if (!dritte.ok) expect(dritte.reason).toContain('höchstens');
-    // Familienfirma: kein Rat, aber derselbe Rahmen.
-    let f = startStocks(kapitel2(0, 'familie-rahmen', 10000), balance, inhalt.board);
+    // Familienfirma: kein Rat und keine neuen Anleihen.
+    const f = startStocks(kapitel2(0, 'familie-rahmen', 10000), balance, inhalt.board);
     expect(bondLimit(f, balance)).toBe(B.limitMin);
-    f = ok(issueBond(f, balance, 25000, B.terms[0]));
-    expect(issueBond({ ...f, round: f.round + 1 }, balance, B.sizes[0], B.terms[0]).ok).toBe(false);
+    expect(issueBond(f, balance, 25000, B.terms[0]).ok).toBe(false);
   });
 
   it('die Mehrheitsprüfung gilt für die Summe aller Anleihen, nicht nur für die neue', () => {
