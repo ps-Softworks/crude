@@ -169,6 +169,11 @@ export function MenuSheet(p: MenuProps) {
             führt durch die ersten Runden)
           </label>
           <p>
+            <button type="button" onClick={() => ctx.open('einstellungen', { back: { sheet: 'menu' } })}>
+              Einstellungen
+            </button>
+          </p>
+          <p>
             <button type="button" onClick={p.onTour}>
               Rundgang über den Schreibtisch zeigen
             </button>

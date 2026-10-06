@@ -5,6 +5,7 @@
 
 import { useEffect, useId, useLayoutEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { stageScale } from '../stage';
+import { playSound } from '../sound';
 
 const FOKUSSIERBAR =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
@@ -51,6 +52,9 @@ export function Sheet({ title, size, onClose, back, note, noteExtra, className, 
     el.style.transformOrigin = `${(q.left + q.width / 2 - r.left) / f}px ${(q.top + q.height / 2 - r.top) / f}px`;
     // Nur beim Öffnen.
   }, [title]);
+
+  // Papierrascheln beim Öffnen (leise; nur bei neuem Fenster).
+  useEffect(() => playSound('papier'), [title]);
 
   // Beim Öffnen: Fokus ins Fenster – auf das, was data-autofocus trägt, sonst auf den
   // aktiven Reiter, sonst auf das Fenster selbst. Nie von selbst auf einen Knopf im

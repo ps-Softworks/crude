@@ -30,6 +30,7 @@ import { money, NBSP } from './format';
 import { politicsContent } from './politics';
 import { Silhouette } from './Silhouette';
 import { timeskipContent as T } from './timeskip';
+import { playSound } from './sound';
 
 /** Jahr der Föderation zu einem Spieljahr (Jahr 1 = start.year). */
 function foederation(year: number): number {
@@ -123,6 +124,7 @@ export function DirectivesLetter({ game, onSend, onBack }: { game: GameState; on
 /** Ein Weichen-Telegramm mitten im Sprung. */
 export function SwitchTelegram({ id, year, funds, onAnswer }: { id: SwitchId; year: number; funds: SwitchFunds; onAnswer: (choice: string) => void }) {
   const ref = useTitelFokus(id);
+  useEffect(() => playSound('ticker'), [id]);
   const s = T.switches[id];
   return (
     <section ref={ref} className="telegramm" aria-labelledby="telegramm-titel" role="dialog">

@@ -6,6 +6,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import { stageScale } from '../stage';
 import { WallMapShape } from './objects/Shapes';
+import { reducedMotion } from '../settings';
 
 export const ZOOM_MS = 380;
 
@@ -28,7 +29,7 @@ export function MapZoom({ dir, onDone }: { dir: 'in' | 'out'; onDone: () => void
     const f = stageScale(el);
     const klein = `translate(${(w.left - b.left) / f}px, ${(w.top - b.top) / f}px) scale(${w.width / b.width}, ${w.height / b.height})`;
     const gross = 'translate(0px, 0px) scale(1, 1)';
-    const ruhig = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const ruhig = reducedMotion();
     const frames = ruhig
       ? [{ opacity: dir === 'in' ? 0 : 1 }, { opacity: dir === 'in' ? 1 : 0 }]
       : dir === 'in'

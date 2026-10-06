@@ -1,6 +1,13 @@
 // Wandtelefon ab Kapitel 2 (0.4.20+34): Holzkasten mit zwei Glocken, Sprechtrichter, Kurbel und
 // Hörer an der Schnur. Klingelt es, zittern die Glocken (ohne Bewegung bei reduced motion).
+import { useEffect } from 'react';
+import { playSound } from '../sound';
+
 export function Telefon({ klingelt }: { klingelt: boolean }) {
+  // Es klingelt: zwei Glocken (einmal, wenn der Anruf eintrifft).
+  useEffect(() => {
+    if (klingelt) playSound('telefon');
+  }, [klingelt]);
   return (
     <svg className={`telefon${klingelt ? ' klingelt' : ''}`} viewBox="0 0 60 100" role="presentation" aria-hidden="true">
       <rect className="telefon-brett" x="14" y="4" width="32" height="92" rx="2" />

@@ -6,4 +6,6 @@ contextBridge.exposeInMainWorld('crudeDesktop', {
   readSave: (name) => ipcRenderer.sendSync('crude-save-read', name),
   writeSave: (name, text) => ipcRenderer.sendSync('crude-save-write', name, text),
   removeSave: (name) => ipcRenderer.sendSync('crude-save-remove', name),
+  isFullScreen: () => ipcRenderer.sendSync('crude-fullscreen-get'),
+  setFullScreen: (on) => ipcRenderer.sendSync('crude-fullscreen-set', !!on),
 });

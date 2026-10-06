@@ -58,6 +58,7 @@ import {
 import { useFocusReturn } from './sheet/useFocusReturn';
 import type { RoundReport } from './sheets/ReportSheet';
 import { SheetHost } from './sheets/SheetHost';
+import { reducedMotion } from './settings';
 import type { SheetContext } from './sheets/types';
 import { freshSeed, withoutSeedParam } from './restart';
 import { readPref, writePref } from './storage';
@@ -67,6 +68,7 @@ import { tourSteps, tourStepsK2, tourStepsK3 } from './tourContent';
 import { chapterOf } from '../sim/chapterOf';
 import { openProvince } from '../sim/chapterSystems';
 import { loadTutorialOn, mapTutorialContent, saveTutorialOn, tutorialContent } from './tutorial';
+import { playSound, soundForWells } from './sound';
 import { VisitorScene } from './visitor/VisitorScene';
 import { appearances } from './visitorContent';
 
@@ -105,7 +107,7 @@ function wetteText(kurz: string | null): string {
 }
 
 function wenigBewegung(): boolean {
-  return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  return reducedMotion();
 }
 
 /**
@@ -320,6 +322,7 @@ export function App() {
     if (result.ok) {
       onGame(result.state);
       setStempel((alt) => ({ text: STEMPEL[kind], n: (alt?.n ?? 0) + 1 }));
+      playSound('stempel');
     } else setNotice(result.reason);
   }
 
@@ -347,6 +350,10 @@ export function App() {
     setGame(next);
     setNotice(null);
     dispatch({ type: 'close' });
+    // Glocke, danach (wenn über Nacht Öl kam) Kasse bzw. Gusher.
+    playSound('glocke');
+    const fund = soundForWells(game.wells, next.wells);
+    if (fund) window.setTimeout(() => playSound(fund), 900);
   }
 
   // Entscheidung zur Aktiengesellschaft am Kapitelende (2.11).

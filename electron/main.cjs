@@ -46,6 +46,18 @@ ipcMain.on('crude-save-remove', (event, name) => {
   }
 });
 
+// Vollbild aus den Einstellungen des Spiels.
+ipcMain.on('crude-fullscreen-get', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  event.returnValue = !!win && win.isFullScreen();
+});
+
+ipcMain.on('crude-fullscreen-set', (event, on) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win) win.setFullScreen(!!on);
+  event.returnValue = !!win;
+});
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1400,

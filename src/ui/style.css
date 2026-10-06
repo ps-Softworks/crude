@@ -401,3 +401,9 @@ input[type='checkbox'] { accent-color: var(--tinte-weich); }
 .rueckfrage > p.rueckfrage-knoepfe {
   margin: 0;
 }
+
+/* Farbenblind-freundliche Karte (Einstellungen): Legende passend zu den Mustern in Map.tsx (Okabe-Ito). */
+html.karte-cb .karte-legende .feld.option { background: repeating-linear-gradient(45deg, #d4e6f3 0 3px, #0072B2 3px 4px); border-color: #0072B2; }
+html.karte-cb .karte-legende .feld.lease { background: radial-gradient(#0072B2 1.2px, #bcdcf0 1.6px) 0 0 / 5px 5px; border-color: #0072B2; }
+html.karte-cb .karte-legende .feld.bullard { background: repeating-linear-gradient(45deg, #f5cfa6 0 3px, #D55E00 3px 4px), repeating-linear-gradient(-45deg, transparent 0 3px, #D55E00 3px 4px); border-color: #D55E00; }
+html.karte-cb .karte-legende .feld.other { background: repeating-linear-gradient(0deg, #f6ee9e 0 3px, #8a7a00 3px 4px); border-color: #8a7a00; }
