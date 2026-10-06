@@ -9,6 +9,7 @@ import {
   bestRefinerySetting,
   buildRefinery,
   crackedBounds,
+  crudeSupply,
   crudeVsRefined,
   demandFactor,
   expandRefinery,
@@ -482,13 +483,27 @@ describe('Raffinerie: Balance in Stufe I (Bezugswelt, Rohöl zum Bezugspreis)', 
 
   it('der Ausbau lohnt erst, wenn die Märkte wachsen', () => {
     const s = stufe1(R.startMix, 1);
-    const heute = refineryExpansion(s, balance, { world: welt })!;
-    const gewachsen = refineryExpansion(s, balance, { world: { ...welt, demand: welt.demand * 1.5 } })!;
+    const heute = refineryExpansion(s, balance, { world: welt, maxCrude: Infinity })!;
+    const gewachsen = refineryExpansion(s, balance, { world: { ...welt, demand: welt.demand * 1.5 }, maxCrude: Infinity })!;
     expect(heute.payback === null || heute.payback > 30).toBe(true);
     expect(gewachsen.gain).toBeGreaterThan(heute.gain);
     expect(gewachsen.payback).not.toBeNull();
     expect(gewachsen.payback!).toBeLessThanOrEqual(20);
     expect(refineryExpansion({ ...s, refinery: { ...s.refinery!, level: R.maxLevel } }, balance)).toBeNull();
+  });
+
+  it('der Ausbau rechnet mit der Förderung: ohne genug Öl lohnt er nicht, und das Fenster erfährt warum', () => {
+    const s = stufe1(R.startMix, 1);
+    const gewachsen = { world: { ...welt, demand: welt.demand * 1.5 } };
+    const wenig = refineryExpansion(s, balance, { ...gewachsen, maxCrude: R.unitCapacity })!;
+    expect(wenig.payback).toBeNull();
+    expect(wenig.oilShort).toBe(true);
+    expect(wenig.supply).toBe(R.unitCapacity);
+    const genug = refineryExpansion(s, balance, { ...gewachsen, maxCrude: 3 * R.unitCapacity })!;
+    expect(genug.payback).not.toBeNull();
+    expect(genug.oilShort).toBe(false);
+    // Ohne Vorgabe zählt die Förderung der Quellen.
+    expect(refineryExpansion(s, balance, gewachsen)!.supply).toBe(crudeSupply(s, balance));
   });
 });
 
@@ -522,8 +537,8 @@ describe('Raffinerie: Benzin für die eigenen Tankstellen (0.4.20+18)', () => {
     // Typische Welt Mitte Kapitel 3 (Runde 88, Median aus npm run welt): Jahr 110, Technik 25, Nachfrage 2,55.
     const k3: RefineryWorld = { year: 110, tech: 25, tension: 20, war: false, demand: 2.55 };
     const bounds = crackedBounds(refineryTech(balance, 1).mix, 0.2);
-    const ohne = refineryExpansion(s0, balance, { world: k3, bounds, stationOfftake: 0, unlimitedFeed: true })!;
-    const mit = refineryExpansion(s0, balance, { world: k3, bounds, stationOfftake: 30_000, unlimitedFeed: true })!;
+    const ohne = refineryExpansion(s0, balance, { world: k3, bounds, stationOfftake: 0, unlimitedFeed: true, maxCrude: Infinity })!;
+    const mit = refineryExpansion(s0, balance, { world: k3, bounds, stationOfftake: 30_000, unlimitedFeed: true, maxCrude: Infinity })!;
     expect(ohne.payback === null || ohne.payback > 30).toBe(true);
     expect(mit.gain).toBeGreaterThan(ohne.gain + 2000);
     expect(mit.payback).not.toBeNull();

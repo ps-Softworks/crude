@@ -148,7 +148,11 @@ function ExpansionHint({ ctx }: { ctx: SheetContext }) {
   if (!aus) return null;
   return (
     <p className="klein">
-      {aus.payback !== null ? rt('hints.expandPays', { gain: money(aus.gain), rounds: rounds(aus.payback) }) : rt('hints.expandNot')}
+      {aus.payback !== null
+        ? rt('hints.expandPays', { gain: money(aus.gain), rounds: rounds(aus.payback) })
+        : aus.oilShort
+          ? rt('hints.expandNoOil', { supply: barrels(aus.supply), capacity: barrels(refineryCapacity(ctx.game, balance)) })
+          : rt('hints.expandNot')}
     </p>
   );
 }
@@ -236,7 +240,11 @@ function ComparePanel({ ctx }: { ctx: SheetContext }) {
       {v.advantage >= 0 && v.marginalNet < v.crudeNet && (
         <p>{rt('hints.lessIntake', { marginal: price(v.marginalNet), crude: price(v.crudeNet) })}</p>
       )}
-      {best && <p>{rt('hints.bestGain', { now: money(Math.round(v.advantage * v.crude)), best: money(best.gain) })}</p>}
+      {best && (
+        <p>
+          {rt(v.advantage < 0 ? 'hints.bestLoss' : 'hints.bestGain', { now: money(Math.abs(Math.round(v.advantage * v.crude))), best: money(best.gain) })}
+        </p>
+      )}
       {benzin > 0 && <p className="klein">{rt('hints.stations', { gasoline: barrels(benzin) })}</p>}
       <p className="klein">{rt('hints.compare')}</p>
     </div>

@@ -29,6 +29,7 @@ import { effectiveDemand } from './world';
 import { timedEffect } from './events';
 // 0.4.20+9: Cracken (4.11) hebt den Benzin-Höchstanteil im Mix.
 import { techGasolineYield } from './research';
+import { producingWells, wellRate } from './production';
 
 export { PRODUCTS, type Product, type ProductMix } from './refineryBalance';
 
@@ -631,6 +632,8 @@ export interface SettingOptions {
   world?: RefineryWorld;
   /** Zufuhr nicht durch die freien Transportwege begrenzen (Messwerkzeug). */
   unlimitedFeed?: boolean;
+  /** Höchstens so viele Barrel Rohöl (z. B. die Förderung je Runde); sonst unbegrenzt. */
+  maxCrude?: number;
 }
 
 /** Bester Erlös je Barrel beim Verkauf an den Trust nach Fracht (ohne Förderzins); 0, wenn kein Weg frei ist. */
@@ -664,7 +667,7 @@ export function bestRefinerySetting(state: GameState, balance: Balance, opts: Se
   const world = opts.world ?? refineryWorld(state, balance);
   const crudeNet = bestCrudeNet(state, balance);
   const kapazitaet = refineryCapacity({ ...state, refinery: r ? { ...r, level, repairLeft: 0 } : undefined }, balance);
-  const deckel = opts.unlimitedFeed ? Infinity : feedCapacity(state, balance);
+  const deckel = Math.min(opts.unlimitedFeed ? Infinity : feedCapacity(state, balance), opts.maxCrude ?? Infinity);
   const leer: RefinerySetting = { mix: r?.mix ?? normalizeMix(balance.refinery.startMix, bounds), intake: 0, crude: 0, gain: 0, crudeNet };
   if (!r || level <= 0 || kapazitaet <= 0) return leer;
 
@@ -710,6 +713,15 @@ export function bestRefinerySetting(state: GameState, balance: Balance, opts: Se
   return { ...best, gain: cents(best.gain) };
 }
 
+/**
+ * 0.4.20+18: Rohöl, das Jacobs Quellen je Runde ungefähr liefern (Summe der Förderraten ohne befristete
+ * Wirkungen) – die Grenze für den Ausbau: Die Transportwege schaffen meist mehr als die Förderung.
+ */
+export function crudeSupply(state: Pick<GameState, 'wells'>, balance: Balance): number {
+  const ws = producingWells(state);
+  return Math.round(ws.reduce((a, w) => a + wellRate(balance, w, ws.length), 0));
+}
+
 /** Was der nächste Ausbau bringt (beide Stufen bestmöglich eingestellt). */
 export interface RefineryExpansion {
   /** Mehrerlös je Runde der nächsten Stufe nach ihren Fixkosten (kann negativ sein). */
@@ -717,17 +729,30 @@ export interface RefineryExpansion {
   /** Runden, bis der Ausbau bezahlt ist; null, wenn er sich nicht bezahlt macht. */
   payback: number | null;
   cost: number;
+  /** Mit dieser Förderung je Runde gerechnet (bbl; Infinity = unbegrenzt). */
+  supply: number;
+  /** Lohnt nur deshalb nicht, weil die Förderung nicht reicht (mit unbegrenztem Öl würde er sich bezahlt machen). */
+  oilShort: boolean;
 }
 
-/** 0.4.20+18: Lohnt die nächste Ausbaustufe? null ohne Anlage oder auf der höchsten Stufe. */
+/**
+ * 0.4.20+18: Lohnt die nächste Ausbaustufe? Gerechnet mit Jacobs Förderung je Runde (crudeSupply), wenn
+ * opts.maxCrude nichts anderes sagt. null ohne Anlage oder auf der höchsten Stufe.
+ */
 export function refineryExpansion(state: GameState, balance: Balance, opts: Omit<SettingOptions, 'level'> = {}): RefineryExpansion | null {
   const r = state.refinery;
   const b = balance.refinery;
   if (!r || r.level <= 0 || r.level >= b.maxLevel) return null;
-  const jetzt = bestRefinerySetting(state, balance, { ...opts, level: r.level }).gain;
-  const dann = bestRefinerySetting(state, balance, { ...opts, level: r.level + 1 }).gain;
-  const gain = cents(dann - jetzt - b.upkeepPerLevel);
-  return { gain, payback: gain > 0 ? Math.ceil(b.expandCost / gain) : null, cost: b.expandCost };
+  const supply = opts.maxCrude ?? crudeSupply(state, balance);
+  const rechne = (maxCrude: number) => {
+    const jetzt = bestRefinerySetting(state, balance, { ...opts, maxCrude, level: r.level }).gain;
+    const dann = bestRefinerySetting(state, balance, { ...opts, maxCrude, level: r.level + 1 }).gain;
+    return cents(dann - jetzt - b.upkeepPerLevel);
+  };
+  const gain = rechne(supply);
+  const payback = gain > 0 ? Math.ceil(b.expandCost / gain) : null;
+  const oilShort = payback === null && Number.isFinite(supply) && rechne(Infinity) > 0;
+  return { gain, payback, cost: b.expandCost, supply, oilShort };
 }
 
 // --- Rundenende -----------------------------------------------------------------
