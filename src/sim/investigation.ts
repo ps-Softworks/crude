@@ -28,6 +28,7 @@
 // Rein und deterministisch: eigener Zufall (Seed + ":delaney"). In Kapitel 1 ändert
 // keine Funktion etwas – der Zustand bleibt dasselbe Objekt.
 
+import { stateOversightHeat } from './financing';
 import { parseDocument } from 'yaml';
 import type { Balance } from './balance';
 import { BalanceError } from './balance';
@@ -425,7 +426,8 @@ export function traces(state: GameState, balance: Balance): TraceView[] {
  */
 export function heat(state: GameState, balance: Balance): number {
   const spuren = traces(state, balance).reduce((s, t) => s + t.current, 0);
-  return spuren + staffHeatPoints(state, balance) + lobbyHeatPoints(state, balance);
+  // Geldquellen: Unter staatlicher Aufsicht (Staatsauftrag) sehen Prüfer in die Bücher.
+  return spuren + staffHeatPoints(state, balance) + lobbyHeatPoints(state, balance) + stateOversightHeat(state, balance);
 }
 
 /** 0.4.20+16: Hitzepunkte aus Umschlägen – gekaufte Gefallen hinterlassen Spuren, die Delaney riecht (abgerundet). */

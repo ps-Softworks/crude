@@ -451,6 +451,15 @@ export function foreignOffline(w: Pick<WorldState, 'demand'> & { foreign?: Forei
  * Phase des Kreditzyklus (4.4, GDD §7.2): Crash und Panik gehen vor; „überhitzt“
  * heißt hohe Verschuldung bei mutigen Banken – dann wird ein Auslöser zum Crash.
  */
+/**
+ * Krieg oder Krise (Geldquellen, GDD §8: Staatskredite und -aufträge gibt es nur dann): Krieg in Übersee,
+ * Aufstand in Costa Negra, Embargo aus Qasir, Crash oder Bankpanik. Die Außenspannung allein prüft, wer sie braucht.
+ */
+export function worldInCrisis(w: (Pick<WorldState, 'crash' | 'war'> & { panic?: number; foreign?: ForeignState }) | undefined): boolean {
+  if (!w) return false;
+  return (w.war ?? 0) > 0 || w.crash > 0 || (w.panic ?? 0) > 0 || (w.foreign?.uprising ?? 0) > 0 || (w.foreign?.embargo ?? 0) > 0;
+}
+
 export function creditPhase(w: Pick<WorldState, 'credit' | 'crash'> & { panic?: number; leverage?: number }, wb: Pick<WorldModelBalance, 'credit'>): CreditPhase {
   const c = wb.credit;
   if (w.crash > 0) return 'crash';

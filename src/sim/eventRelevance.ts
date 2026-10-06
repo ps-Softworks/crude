@@ -24,6 +24,7 @@
 // sie werden aufgelistet, aber nicht bewertet.
 
 // Termine als Hauptwerkzeug, Etappe 2.
+import { FINANCING_READ_MARKS } from './financingMarks';
 import { PRICING_READ_MARKS } from './pricing';
 import { FREIGHT_READ_MARKS } from './freight';
 import { LETTER_READ_MARKS } from './letters'; // Etappe 3: Antworten in gekoppelten Briefen
@@ -91,6 +92,8 @@ export function simReadMarks(balance: Balance): string[] {
     ...FREIGHT_READ_MARKS,
     // Etappe 3: Antworten in gekoppelten Briefen (Hales Gutachten, Bohrlisten, Nora, Liefervertrag, Gemeinschaft, Ruf).
     ...LETTER_READ_MARKS,
+    // Geldquellen: vorzeitig auszahlen, entschädigen, Vale abweisen.
+    ...FINANCING_READ_MARKS,
   ];
 }
 

@@ -19,6 +19,7 @@ import { empireValue } from './empire';
 import type { GameState } from './game';
 import { producingWells } from './production';
 import { reputationOf, REPUTATION_AXES, type ReputationAxis } from './reputation';
+import { worldInCrisis } from './world';
 
 /** Eine Bedingung, unter der Jacob eine Stelle kennenlernt. Alle gesetzten Felder müssen gelten. */
 export interface MeetRule {
@@ -38,6 +39,10 @@ export interface MeetRule {
   mark?: string;
   /** Eigene Raffinerie fertig. */
   refinery?: boolean;
+  /** Geldquellen: Das Weltmodell zeigt Krieg oder Krise (worldInCrisis: Krieg, Aufstand, Embargo, Crash, Bankpanik). */
+  crisis?: boolean;
+  /** Geldquellen: Außenspannung im Weltmodell mindestens. */
+  tension?: number;
 }
 
 export interface ContactRule {
@@ -112,7 +117,7 @@ function zahl(raw: unknown, path: string, min = -Infinity, max = Infinity): numb
   return v;
 }
 
-const MEET_KEYS = ['referral', 'chapter', 'round', 'empire', 'wells', 'reputation', 'mark', 'refinery'];
+const MEET_KEYS = ['referral', 'chapter', 'round', 'empire', 'wells', 'reputation', 'mark', 'refinery', 'crisis', 'tension'];
 
 /** Liest network aus balance.yaml; Stellen-Kennungen prüft checkNetwork gegen die Karten. */
 export function parseNetworkBalance(raw: unknown): NetworkBalance {
@@ -153,7 +158,7 @@ export function parseNetworkBalance(raw: unknown): NetworkBalance {
         if (typeof m.referral !== 'string') throw new BalanceError(`balance.yaml: "${w}.referral" muss eine Stelle sein`);
         rule.referral = m.referral;
       }
-      for (const k of ['chapter', 'round', 'empire', 'wells'] as const) {
+      for (const k of ['chapter', 'round', 'empire', 'wells', 'tension'] as const) {
         if (m[k] !== undefined) rule[k] = zahl(m, k, 0);
       }
       if (m.mark !== undefined) {
@@ -161,6 +166,7 @@ export function parseNetworkBalance(raw: unknown): NetworkBalance {
         rule.mark = m.mark;
       }
       if (m.refinery !== undefined) rule.refinery = m.refinery === true;
+      if (m.crisis !== undefined) rule.crisis = m.crisis === true;
       if (m.reputation !== undefined) {
         const rep = m.reputation;
         if (!obj(rep) || typeof rep.axis !== 'string' || !(REPUTATION_AXES as readonly string[]).includes(rep.axis)) {
@@ -285,6 +291,8 @@ export function meetConditionsHold(state: GameState, balance: Balance, m: MeetRu
   if (m.wells !== undefined && producingWells(state).length < m.wells) return false;
   if (m.mark !== undefined && state.events.marks[m.mark] === undefined) return false;
   if (m.refinery && !(state.refinery && state.refinery.level > 0)) return false;
+  if (m.crisis && !worldInCrisis(state.worldModel)) return false;
+  if (m.tension !== undefined && (state.worldModel?.tension ?? 0) < m.tension) return false;
   if (m.reputation && reputationOf(state, m.reputation.axis) < m.reputation.min) return false;
   if (m.empire !== undefined && empireValue(state, balance) < m.empire) return false;
   return true;

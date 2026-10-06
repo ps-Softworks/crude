@@ -57,3 +57,8 @@ witwe: { form: frau, name: Martha Quill }
 # Kapitel 2 – Weichen nur für die Aktiengesellschaft (k2-ag-tueren.yaml).
 vandermeer: { form: zylinder, name: Ambrose Vandermeer }
 kommandant: { form: hut, name: Kommandant Brandt }
+# Geldquellen (content/events/geldquellen.yaml): Mr. Vale bittet um seinen Gefallen; Witwe Sloane und Rancher Whitcomb
+# sind neu (ENTWURF) – Martha Quill wird erst in Kapitel 3 Witwe (k3_tanker_witwe), darum nicht sie als Geldgeberin.
+vale: { form: zylinder, name: Mr. Vale }
+sloane: { form: frau, name: Lavinia Sloane }
+whitcomb: { form: hut, name: Amos Whitcomb }

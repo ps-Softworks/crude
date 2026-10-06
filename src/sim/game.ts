@@ -3,6 +3,7 @@
 
 import { advanceNetwork, newNetwork, type NetworkState } from './network';
 import { settleBuyers, type BuyersState } from './buyers';
+import { settleFinancing, type FinancingState } from './financing';
 import { newAgenda, settleAgenda, type AgendaState } from './agenda';
 import type { Balance, Rating, TransportMode } from './balance';
 import { formatDate } from './calendar';
@@ -194,6 +195,8 @@ export interface GameState {
   network?: NetworkState;
   /** 0.4.20+43: Großhändler – Verkäufe der Runde und Lieferverträge (src/sim/buyers.ts). Fehlt = nichts verkauft, kein Vertrag. */
   buyers?: BuyersState;
+  /** Geldquellen (GDD §8): Einlagen der Investoren, Farm-outs, Vales Darlehen, Staatskredit und -auftrag (src/sim/financing.ts). Fehlt = nichts läuft. */
+  financing?: FinancingState;
   /** Feldkauf (0.4.20+27): je Ranch die Runde, ab der Bullard wieder ein Angebot anhört (nach Ablehnung). Fehlt = nie abgelehnt. */
   buyouts?: Record<string, number>;
   /** 0.4.20+8: Cranes Feldzug in Kapitel 3 (src/sim/feldzug.ts) – fehlt, bis die Marke gegründet ist. */
@@ -439,7 +442,8 @@ export function endRound(input: GameState, balance: Balance, catalog: readonly E
   // 4.16 Andockpunkt: Beteiligungen und Lobby in Hallstead (ohne Hallstead-Zustand unverändert) – vor der Pleiteprüfung.
   const hallstead = settleHallstead(ermittelt, balance);
   // 0.4.20+17: Geltende Gesetze – Einkommensteuer auf den Gewinn der Runde (vor der Pleiteprüfung).
-  const besteuert = settleBreakup(settleIncomeTax(input, hallstead, balance), balance);
+  // Geldquellen (GDD §8): Gewinnanteile der Investoren mindern den Gewinn der Runde, darum vor der Steuer.
+  const besteuert = settleBreakup(settleIncomeTax(input, settleFinancing(input, hallstead, balance), balance), balance);
   const state = { ...checkBankruptcy(besteuert, balance), roundLogStart };
   if (state.ending === 'pleite') return state;
   // 4.12 Andockpunkt: frühe Enden ab Kapitel 2 (abgesetzt, geschluckt, hinter Gittern – GDD §14).

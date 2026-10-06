@@ -59,6 +59,8 @@ export function startRigs(balance: Balance): Rig[] {
 /** Name eines Turms für Schreibtisch und Protokoll. */
 export function rigLabel(rig: Pick<Rig, 'id' | 'kind'>): string {
   if (rig.kind === 'lent') return "Silas' Seilschlag-Turm";
+  // Geldquellen (Farm-out): Der Partner bohrt mit seinem eigenen Turm.
+  if (rig.id.startsWith('partner-')) return 'Turm des Partners';
   const nr = rig.id.replace(/^turm-/, '');
   return rig.kind === 'rented' ? `Mietturm ${nr}` : `Turm ${nr}`;
 }

@@ -338,6 +338,39 @@ cards:
     title: { de: "Exportvertrag Aldmark", en: "Aldmark export contract" }
     text: { de: "Die Aldmarker zahlen den besten Preis im Land – über den Hafen, über das Meer.", en: "The Aldmarkers pay the best price in the land – via the harbour, across the sea." }
     risk: { de: "Manchmal bleibt die Zahlung aus. Fehlt Öl, kostet es Strafe.", en: "Sometimes payment never arrives. Short on oil costs a penalty." }
+  # Geldquellen (GDD §8, src/sim/financing.ts). ENTWURF von Claude – Philipp überarbeitet.
+  investor_sloane:
+    title: { de: "Einlage von Mrs. Sloane", en: "Mrs. Sloane's Investment" }
+    text: { de: "Lavinia Sloane hat das Geld ihres verstorbenen Mannes auf der Bank liegen und traut der Bank nicht. Sie will keinen Zins – sie will einen Anteil am Gewinn.", en: "Lavinia Sloane keeps her late husband's money at the bank and does not trust the bank. She wants no interest – she wants a share of the profit." }
+    risk: { de: "Sie will Sicherheit: Fällt die Kasse unter ihre Rücklage, ist sie gekränkt. Ist ihr Geld am Ende weg, ist sie ruiniert.", en: "She wants safety: if the cash falls below her reserve, she is hurt. If her money is gone at the end, she is ruined." }
+  investor_haskell:
+    title: { de: "Einlage von Doktor Haskell", en: "Doctor Haskell's Investment" }
+    text: { de: "Der Doktor hat dreißig Jahre Knochen gerichtet und gespart. Er hält Schulden für eine Krankheit – und Öl für eine gute Medizin.", en: "The doctor has set bones and saved for thirty years. He considers debt a disease – and oil a good medicine." }
+    risk: { de: "Steigen Jacobs Bankschulden über seine Einlage, fühlt er sich betrogen.", en: "If Jacob's bank debt rises above his investment, he feels cheated." }
+  investor_whitcomb:
+    title: { de: "Einlage von Amos Whitcomb", en: "Amos Whitcomb's Investment" }
+    text: { de: "Whitcomb hat eine Herde verkauft und will das Geld arbeiten lassen. Nur seine Weide soll in Ruhe bleiben.", en: "Whitcomb sold a herd and wants the money to work. Only his pasture must be left in peace." }
+    risk: { de: "Ein neues Bohrloch neben seiner Weide bricht die Abmachung.", en: "A new well next to his pasture breaks the agreement." }
+  farmout:
+    title: { de: "Farm-out: Partner bohren lassen", en: "Farm-out: Let a Partner Drill" }
+    text: { de: "Ein anderer Ölmann bringt Turm und Geld und bohrt auf Jacobs Pacht. Findet er Öl, gehört ihm ein Teil der Förderung.", en: "Another oilman brings rig and money and drills on Jacob's lease. If he strikes oil, part of the output is his." }
+    risk: { de: "Geteiltes Risiko, geteilter Gewinn – und wer das Öl abholt, kann sich verzählen.", en: "Shared risk, shared profit – and whoever collects the oil may miscount." }
+  farmout_pruefen:
+    title: { de: "Abrechnung prüfen lassen", en: "Have the Accounts Audited" }
+    text: { de: "Ein Buchprüfer aus Port Ellis legt Förderbuch und Abholscheine nebeneinander.", en: "An auditor from Port Ellis lays the production book next to the pickup slips." }
+    risk: { de: "Findet er nichts, nimmt der Partner das Misstrauen übel.", en: "If he finds nothing, the partner resents the mistrust." }
+  vale_darlehen:
+    title: { de: "Darlehen von Mr. Vale", en: "A Loan from Mr. Vale" }
+    text: { de: "Mr. Vale bietet Geld an, wie andere Leute Zigarren anbieten: viel, ohne Zins, ohne Papier.", en: "Mr. Vale offers money the way other men offer cigars: a lot, without interest, without paper." }
+    risk: { de: "Irgendwann bittet er um einen Gefallen. Wer ablehnt, zahlt sofort alles zurück.", en: "Some day he asks a favour. Whoever refuses repays everything at once." }
+  staat_kredit:
+    title: { de: "Staatskredit", en: "Government Loan" }
+    text: { de: "In Krieg und Krise braucht die Provinz Öl und leiht dafür billiges Geld.", en: "In war and crisis the province needs oil and lends cheap money for it." }
+    risk: { de: "Preisbindung: Jacob liefert jede Runde Öl zum Preis von heute – auch wenn er morgen das Doppelte wert ist.", en: "Price binding: Jacob delivers oil every round at today's price – even if tomorrow it is worth twice as much." }
+  staat_auftrag:
+    title: { de: "Staatsauftrag", en: "Government Contract" }
+    text: { de: "Das Ministerium kauft feste Mengen zu einem guten Preis.", en: "The ministry buys fixed volumes at a good price." }
+    risk: { de: "Prüfer sitzen im Büro und lesen mit – auch für den Bundesanwalt.", en: "Inspectors sit in the office and read along – for the federal prosecutor too." }
 contacts:
   bank:
     name: { de: "Bank", en: "Bank" }
@@ -406,6 +439,22 @@ contacts:
   aldmark_export:
     name: { de: "Exporthaus Aldmark", en: "Aldmark Export House" }
     who: { de: "Kaufleute aus Aldmark – zahlen gut, wenn sie zahlen", en: "Merchants from Aldmark – they pay well, when they pay" }
+  # Geldquellen (GDD §8). Amos Whitcomb ist neu – ENTWURF.
+  witwe_sloane:
+    name: { de: "Witwe Sloane", en: "Widow Sloane" }
+    who: { de: "Lavinia Sloane, Witwe eines Holzhändlers in Cordova", en: "Lavinia Sloane, widow of a Cordova timber merchant" }
+  doktor_haskell:
+    name: { de: "Doktor Haskell", en: "Doctor Haskell" }
+    who: { de: "der Landarzt von Salt Hill, mit Ersparnissen", en: "the country doctor of Salt Hill, with savings" }
+  rancher_whitcomb:
+    name: { de: "Rancher Whitcomb", en: "Rancher Whitcomb" }
+    who: { de: "Amos Whitcomb, Viehzüchter mit Geld aus dem Herdenverkauf", en: "Amos Whitcomb, cattleman with money from selling his herd" }
+  konsortium:
+    name: { de: "Konsortium", en: "Consortium" }
+    who: { de: "Mr. Vale und Freunde, die man nicht sieht", en: "Mr. Vale and friends one never sees" }
+  regierung:
+    name: { de: "Regierung", en: "Government" }
+    who: { de: "Kriegs- und Versorgungsministerium, Hallstead", en: "Ministry of War and Supply, Hallstead" }
   familie:
     name: { de: "Familie", en: "Family" }
     who: { de: "Ruth und die Kinder", en: "Ruth and the children" }

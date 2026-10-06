@@ -13,6 +13,7 @@
 // gehört der Welt und wird nie angefasst; Math.random kommt nicht vor.
 // Die Zahlen stehen in content/balance.yaml unter bots.
 
+import { financingContacts } from './financing';
 import { buyoutBlocker, buyoutQuote, offerBuyout, type BuyoutQuote } from './buyout';
 import { type CardUse, finishCards, newCardTracker, trackCards } from './cardStats';
 import { DEAL_HANDLERS, royaltyPrice } from './deals';
@@ -1176,7 +1177,10 @@ export function buyoutCount(state: Pick<GameState, 'log'>): { offers: number; ac
 
 /** 0.4.20+42: Jede offene Empfehlung annehmen, solange die Termine reichen. */
 export function networkTurn(state: GameState, balance: Balance): GameState {
+  // Geldquellen: Investoren, Konsortium und Staat spielen die Bots nicht – deren Vorstellung kostete nur Termine.
+  const ohne = new Set(financingContacts(balance));
   for (const ref of state.network?.referrals ?? []) {
+    if (ohne.has(ref.to)) continue;
     const r = introduce(state, balance, ref.to);
     if (r.ok) state = r.state;
   }
