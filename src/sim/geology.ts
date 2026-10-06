@@ -50,6 +50,11 @@ export interface Parcel {
   reserves: number;
   /** Wie der Landbesitzer verhandelt; bestimmt Bonus und Förderzins der Pacht mit. */
   landowner: LandownerType;
+  /**
+   * Startquelle (0.4.20+19): sicheres Öl in Stufe 1, eigene Lagerstätte, erstes Loch ohne Unfall
+   * und Klemmen. Die Prognose zeigt „Öl sicher“. Nur auf der ersten Startoption.
+   */
+  sure?: boolean;
   /** Bekannter Fund (Salt Hill): Quelle des Booms, nicht pachtbar. */
   discovery: boolean;
   /** Lagerstätte, in der die Ranch liegt. Wird ab 1.7 gesetzt. */

@@ -24,7 +24,7 @@ const ANTEIL = P.initialRateShare;
 /** Spiel mit so vielen fördernden Quellen auf der ersten ölführenden Parzelle. */
 function spiel(quellen = 1, seed = 'foerderung', bal: Balance = balance, result: Find = 'small'): GameState {
   const state = newGame(seed, bal);
-  const parcel = state.parcels.find((p) => p.fieldId !== undefined)!;
+  const parcel = state.parcels.find((p) => p.fieldId !== undefined && !p.sure)!;
   const ids = state.fields.find((f) => f.id === parcel.fieldId)!.parcelIds.slice(0, quellen);
   return { ...state, wells: ids.map((id) => quelle(state, id, bal, result)) };
 }
@@ -195,7 +195,7 @@ describe('Rundenende in der Förderung', () => {
     // Eine Karte mit mindestens zwei Feldern, das erste groß genug für freeWells + 1 Quellen.
     const seed = Array.from({ length: 50 }, (_, i) => `felder-${i}`).find((s) => {
       const g = newGame(s, balance);
-      const erstes = g.fields.find((f) => f.id === g.parcels.find((p) => p.fieldId !== undefined)!.fieldId)!;
+      const erstes = g.fields.find((f) => f.id === g.parcels.find((p) => p.fieldId !== undefined && !p.sure)!.fieldId)!;
       return g.fields.length >= 2 && erstes.parcelIds.length > P.freeWells;
     })!;
     const state = spiel(P.freeWells + 1, seed);

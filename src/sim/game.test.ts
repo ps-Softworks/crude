@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { assignFields, buildFields } from './field';
-import { endRound, formatDate, newGame, type GameState } from './game';
+import { endRound, formatDate, makeSureStart, newGame, type GameState } from './game';
 import { generateParcels } from './geology';
 import { startOptions } from './lease';
 import { computePrice, neighbourSupply } from './market';
@@ -85,9 +85,14 @@ describe('Geologen-Prognosen im Spielzustand', () => {
     const geologie = generateParcels(balance, 'reihenfolge');
     // Die Lagerstätten kommen nach der Geologie und verändern sie nicht.
     const parcels = assignFields(geologie, buildFields(geologie));
-    const options = startOptions({ ...newGame('leer', balance), seed: 'reihenfolge', knowledge: {}, parcels }, balance, rng);
+    const vorher = { ...newGame('leer', balance), seed: 'reihenfolge', knowledge: {}, parcels };
+    const options = startOptions(vorher, balance, rng);
     const state = newGame('reihenfolge', balance);
-    expect(state.parcels).toEqual(parcels);
+    // Danach wird die erste Option zur Startquelle (0.4.20+19) – sonst bleibt die Karte, wie sie war.
+    expect(state.parcels).toEqual(makeSureStart({ ...vorher, fields: buildFields(geologie) }, balance, options[0].parcelId).parcels);
+    expect(state.parcels.filter((p) => !p.sure).map(({ fieldId: _f, ...p }) => p)).toEqual(
+      parcels.filter((p) => p.id !== options[0].parcelId).map(({ fieldId: _f, ...p }) => p),
+    );
     expect(state.options).toEqual(options);
   });
 

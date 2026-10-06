@@ -150,10 +150,10 @@ export interface LeaseBalance {
   landowners: Landowner[];
   option: { feeShare: number; termRounds: number };
   /**
-   * Freie Startoptionen. Die erste liegt auf einer guten Ranch (0.4.20+1): wahre Fundchance
-   * mindestens minChance (0–1) und angezeigte Prognose-Mitte mindestens minForecast (in %).
+   * Freie Startoptionen. Die erste liegt auf der Startquelle (0.4.20+19): sicheres Öl in Stufe 1,
+   * eigene Lagerstätte mit sureReserves Barrel.
    */
-  startOptions: { count: number; termRounds: number; minChance: number; minForecast: number };
+  startOptions: { count: number; termRounds: number; sureReserves: number; sureRateShare: number };
 }
 
 /** Eine Bohrstufe: Stufe 1 = Zieltiefe, jede weitere = "tiefer bohren". */
@@ -1375,8 +1375,8 @@ function parseLease(raw: unknown): LeaseBalance {
     startOptions: {
       count: num(raw, 'lease.startOptions.count'),
       termRounds: positiveInt(raw, 'lease.startOptions.termRounds'),
-      minChance: share(raw, 'lease.startOptions.minChance'),
-      minForecast: num(raw, 'lease.startOptions.minForecast'),
+      sureReserves: num(raw, 'lease.startOptions.sureReserves'),
+      sureRateShare: share(raw, 'lease.startOptions.sureRateShare'),
     },
   };
 }
@@ -2688,9 +2688,8 @@ export function parseBalance(raw: unknown): Balance {
   if (!Number.isInteger(count) || count < 0) {
     throw new BalanceError('balance.yaml: "lease.startOptions.count" muss eine ganze Zahl ab 0 sein und auf die Karte passen');
   }
-  const { minForecast } = balance.lease.startOptions;
-  if (minForecast < 0 || minForecast > 100) {
-    throw new BalanceError('balance.yaml: "lease.startOptions.minForecast" muss zwischen 0 und 100 (Prozent) liegen');
+  if (!(balance.lease.startOptions.sureReserves > 0)) {
+    throw new BalanceError('balance.yaml: "lease.startOptions.sureReserves" muss größer als 0 sein');
   }
   return balance;
 }

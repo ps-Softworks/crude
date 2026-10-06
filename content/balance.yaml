@@ -138,10 +138,17 @@ lease:
   startOptions:
     count: 2              # PLATZHALTER
     termRounds: 4         # PLATZHALTER
-    # 0.4.20+1: Die erste Startoption liegt auf einer guten Ranch – wahre Fundchance mindestens
-    # minChance und angezeigte Prognose (Mitte des Bands) mindestens minForecast %. Die zweite bleibt Zufall.
-    minChance: 0.5
-    minForecast: 45
+    # Startquelle (0.4.20+19): Die erste Startoption liegt auf einer Ranch mit sicherem Öl in der ersten
+    # Stufe (300 m) – eigene kleine Lagerstätte, ohne Unfall und Klemmen beim ersten Loch. Die Prognose
+    # zeigt „Öl sicher“. sureReserves = Barrel in dieser Lagerstätte (gemessen: tools/startquelle.ts).
+    # Die zweite Option bleibt Zufall.
+    # Gemessen (docs/startquelle.md): Ab etwa 25.000 bbl findet der Einsteiger, der nur mit eigenem Geld sucht,
+    # in 91 % der Partien eine zweite Quelle (6.000 → 60 %, 15.000 → 85 %, 40.000 → 93 %); mehr bringt kaum noch etwas.
+    sureReserves: 25000
+    # Anfangsrate der Startquelle je Runde als Anteil von sureReserves – fest, nicht nach Ranchgröße (sonst
+    # leerte eine kleine Ranch die Quelle in 4 Runden, eine große hielt das ganze Kapitel). Mit decline 0,09
+    # fördert ein Loch so etwa 12 Runden: 0,13 × (1 − 0,91^12) ÷ 0,09 ≈ 1.
+    sureRateShare: 0.13
 
 # Förderung (GDD §5). Das Öl liegt in Lagerstätten, die mehrere Ranches
 # umfassen. Jede Quelle startet mit einem Anteil der Reserve je Standardfläche (ranches.slotArea) ihrer Ranch und fällt je

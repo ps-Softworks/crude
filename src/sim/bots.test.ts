@@ -6,6 +6,7 @@ import {
   balancedEmergency,
   blindWildcatChance,
   botTable,
+  findStats,
   botTurn,
   buildStats,
   buildTable,
@@ -530,6 +531,29 @@ describe('Bot-Läufe mit Ereignissen (2.15)', () => {
   }, 600_000); // dieselbe Arbeit wie `npm run bots`; auf einem ausgelasteten Rechner gut 4 Minuten
 });
 
+describe('Fund-Statistik (GDD §15)', () => {
+  it('die Startquelle (0.4.20+19) zählt nicht als Fund – nur gewürfelte Funde', () => {
+    const state = newGame('fundstatistik', balance);
+    const sicher = state.parcels.find((p) => p.sure)!.id;
+    const anderer = state.parcels.find((p) => !p.sure && !p.discovery)!.id;
+    const quelle = (parcelId: string, initialRate: number) => ({
+      id: `${parcelId}#1`,
+      parcelId,
+      stage: 1,
+      status: 'found' as const,
+      roundsLeft: 0,
+      spent: 1000,
+      oilStage: 1,
+      result: 'small' as const,
+      production: { initialRate, roundsProduced: 3, lastRate: initialRate * 0.8, total: 0 },
+      startRound: 1,
+    });
+    const f = findStats({ ...state, wells: [quelle(sicher, 3250), quelle(anderer, 9000)] });
+    expect(f.small).toEqual([9000]);
+    expect(f.declines).toHaveLength(1);
+  });
+});
+
 describe('Bot-Läufe: Transportwege (0.2.15+4)', () => {
   /** Spiel mit n fördernden Quellen, die zusammen rate Barrel je Runde liefern. */
   function mitFoerderung(rate: number, round = 2, seed = 'wege'): GameState {
@@ -616,7 +640,9 @@ describe('Bot-Läufe: Transportwege (0.2.15+4)', () => {
   it('die planenden Bots mit Marge verkaufen nie mit Verlust nach Fracht und Förderzins', () => {
     for (const s of ['vorsichtig', 'ausgewogen'] as const) {
       for (const r of spiele(s, 15)) {
-        expect(r.state.log.some((z) => / verkauft.* – -[0-9]/.test(z))).toBe(false);
+        // Ausnahme: Pflichtmenge eines Liefervertrags an den Händler (sonst kostet die Fehlmenge Strafe) –
+        // kommt seit der Startquelle (0.4.20+19) in diesen Seeds vor.
+        expect(r.state.log.some((z) => / verkauft.* – -[0-9]/.test(z) && !/an den Händler/.test(z))).toBe(false);
       }
     }
   });

@@ -1506,10 +1506,12 @@ export function measuredDecline(production: { initialRate: number; roundsProduce
   return 1 - (lastRate / initialRate) ** (1 / (roundsProduced - 1));
 }
 
-function findStats(state: GameState): FindStats {
+export function findStats(state: GameState): FindStats {
   const out: FindStats = { small: [], gusher: [], declines: [] };
+  // Die Startquelle (0.4.20+19) ist gesetzt, kein gewürfelter Fund – sie zählt hier nicht mit (GDD §15 gilt für Funde).
+  const sicher = new Set(state.parcels.filter((p) => p.sure).map((p) => p.id));
   for (const w of state.wells) {
-    if (w.status !== 'found' || !w.production || !w.result) continue;
+    if (w.status !== 'found' || !w.production || !w.result || sicher.has(w.parcelId)) continue;
     (w.result === 'gusher' ? out.gusher : out.small).push(w.production.initialRate);
     const d = measuredDecline(w.production);
     if (d !== null) out.declines.push(d);

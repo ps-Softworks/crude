@@ -33,6 +33,8 @@ export type TutorialStep = (typeof TUTORIAL_STEPS)[number];
 /** Alle Hinweise, die content/tutorial.yaml liefern muss. */
 export const TUTORIAL_HINT_IDS = [
   'explore',
+  'explore_wait',
+  'lease_sure',
   'lease_option',
   'lease_buy',
   'lease_none',
@@ -171,6 +173,11 @@ export function recommendedParcel(
   return kandidaten[0] ?? null;
 }
 
+/** Ist Jacob schon einmal übers Land geritten? */
+function hasRidden(state: GameState): boolean {
+  return Object.values(state.knowledge ?? {}).some((k) => k.clues.some((c) => c.source === 'ritt'));
+}
+
 /**
  * Etappe 1: Ranch für einen Ritt übers Land, wenn die beste bezahlbare Empfehlung
  * unter tutorial.exploreBelow liegt (oder es keine gibt) und der Ritt ohne Überstunden
@@ -179,7 +186,7 @@ export function recommendedParcel(
 function exploreSuggestion(state: GameState, balance: Balance, ziel: { parcelId: string } | null): string | null {
   // 0.4.19+3: Der erste Ritt kommt immer – auch wenn die Startoption schon gut aussieht. Sonst erfuhren Erstspieler
   // nie, dass die Termine das Hauptwerkzeug sind (Seed erst1: Option bei 40–80 % eingelöst, kein Ritt).
-  const geritten = Object.values(state.knowledge ?? {}).some((k) => k.clues.some((c) => c.source === 'ritt'));
+  const geritten = hasRidden(state);
   if (geritten && ziel && shownChance(state, ziel.parcelId) >= balance.tutorial.exploreBelow) return null;
   const termine = balance.plans.cards.ritt?.appointments ?? 0;
   if (state.sick > 0 || state.agenda.used + termine > state.agenda.budget) return null;
@@ -271,7 +278,12 @@ export function tutorialHint(state: GameState, balance: Balance): TutorialHint |
   }
 
   const bohrt = state.wells.find((w) => w.status === 'drilling');
-  if (bohrt) return hint('drill_wait', 'drill', end, [bohrt.parcelId]);
+  if (bohrt) {
+    // Startquelle (0.4.20+19): Der erste Ritt kommt, während der Turm bohrt – die nächste Quelle suchen.
+    const ritt = hasRidden(state) ? null : exploreSuggestion(state, balance, null);
+    if (ritt) return hint('explore_wait', 'drill', { kind: 'plan', cardId: 'ritt', parcelId: ritt }, [ritt], { ort: labelOf(state, ritt) });
+    return hint('drill_wait', 'drill', end, [bohrt.parcelId]);
+  }
 
   const quelle = state.wells.find((w) => w.status === 'found');
   if (quelle) {
@@ -299,6 +311,10 @@ export function tutorialHint(state: GameState, balance: Balance): TutorialHint |
   }
 
   const ziel = recommendedParcel(state, balance);
+  // Startquelle (0.4.20+19): Die sichere Option geht allem vor – erst bohren, dann reiten.
+  if (ziel?.kind === 'exercise' && state.forecasts[ziel.parcelId]?.sure) {
+    return hint('lease_sure', 'lease', { kind: 'exercise', parcelId: ziel.parcelId }, [ziel.parcelId], { ort: labelOf(state, ziel.parcelId) });
+  }
   // Etappe 1: Sieht nichts Bezahlbares gut aus, erst übers Land reiten – solange es ohne Überstunden geht.
   const ritt = exploreSuggestion(state, balance, ziel);
   if (ritt) return hint('explore', 'lease', { kind: 'plan', cardId: 'ritt', parcelId: ritt }, [ritt], { ort: labelOf(state, ritt) });

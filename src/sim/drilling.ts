@@ -154,6 +154,7 @@ export function activeWells(state: Pick<GameState, 'wells'>): Well[] {
 /** In welcher Stufe liegt das Öl? roll in [0, 1); trockene Ranches haben keins. */
 export function rollOilStage(balance: Balance, parcel: Parcel, roll: number): number | null {
   if (parcel.geology === 'dry') return null;
+  if (parcel.sure) return 1;
   const stages = balance.drilling.stages;
   let threshold = roll;
   for (let i = 0; i < stages.length; i++) {
@@ -213,7 +214,7 @@ export function stageOutlook(
   else if (well.status === 'drilling' || well.status === 'stuck') stage = well.stage;
   else return null;
   if (stage > stages.length) return null;
-  const chance = stage === 1 ? mid * stages[0].oilShare : mid;
+  const chance = forecast.sure ? 100 : stage === 1 ? mid * stages[0].oilShare : mid;
   return { stage, depth: stages[stage - 1].depth, chance: Math.round(chance) };
 }
 
@@ -345,7 +346,9 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
     const s = rng.float();
     const depth = stageOf(balance, well.stage).depth;
     // Stahlgestänge (0.2.15+7) senkt Unfall- und Klemm-Chance des Turms; 0.4.20+9: Bohrtiefe aus der Forschung auch.
-    const risiko = rigRisk(balance, findRig(input, well.rigId), techStage(input, balance, well.stage));
+    // Startquelle (0.4.20+19): Das erste Loch läuft ohne Unfall und Klemmen – „sicher“ heißt sicher.
+    const sicher = input.parcels.find((p) => p.id === well.parcelId)?.sure && well.stage === 1;
+    const risiko = sicher ? { accident: 0, stuck: 0 } : rigRisk(balance, findRig(input, well.rigId), techStage(input, balance, well.stage));
     if (a < risiko.accident) {
       const paid = Math.min(cash, balance.drilling.accidentCost);
       cash -= paid;

@@ -127,7 +127,7 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
                 {lease.holder === 'jacob' && !lease.drilled && forecast && stufe && (
                   <>
                     <br />
-                    Geologe: {formatForecast(forecast)}, davon {outlookText(stufe)}
+                    Geologe: {forecast.sure ? `Öl sicher in ${stufe.depth}\u00a0m` : `${formatForecast(forecast)}, davon ${outlookText(stufe)}`}
                   </>
                 )}
               </>

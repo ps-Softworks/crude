@@ -209,6 +209,22 @@ export interface GameState {
 }
 
 /**
+ * Startquelle (0.4.20+19): Die Ranch der ersten Startoption bekommt sicheres Öl in Stufe 1 –
+ * kleine Quelle, eigene Lagerstätte mit lease.startOptions.sureReserves Barrel (verbindet sich
+ * mit keinem Nachbarfeld, damit die Menge genau stimmt). Die Felder werden danach neu gebaut.
+ */
+export function makeSureStart(state: GameState, balance: Balance, parcelId: string): Pick<GameState, 'parcels' | 'fields'> {
+  const roh = state.parcels.map((p) => {
+    if (p.id !== parcelId) return p;
+    const sicher: Parcel = { ...p, sure: true, geology: 'small', chance: 1, reserves: balance.lease.startOptions.sureReserves };
+    delete sicher.fieldId;
+    return sicher;
+  });
+  const fields = buildFields(roh);
+  return { parcels: assignFields(roh, fields), fields };
+}
+
+/**
  * Neue Partie. catalog sind die Ereignisse aus content/events/; ohne Katalog
  * (Bots, ältere Tests) gibt es keine Ereignisse. Ereignisse würfeln mit eigenem
  * Zufall, die Welt ist mit und ohne Katalog dieselbe.
@@ -276,6 +292,7 @@ export function newGame(seed: string, balance: Balance, catalog: readonly EventD
   // Erst die Startoptionen, dann die Prognosen: so bleiben Karte und Startoptionen
   // bei gleichem Seed so, wie sie es vor der Prognose waren.
   state.options = startOptions(state, balance, rng);
+  if (state.options.length > 0) Object.assign(state, makeSureStart(state, balance, state.options[0].parcelId));
   // Etappe 1: Keine Gratis-Prognosen mehr für die ganze Karte. Die alten Prognosen werden nur
   // noch gewürfelt, damit der Weltzufall danach (Bohrungen …) bei gleichem Seed derselbe bleibt.
   makeForecasts(balance, parcels, balance.forecast.geologist, rng);

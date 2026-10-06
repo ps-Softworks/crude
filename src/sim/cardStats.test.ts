@@ -55,7 +55,8 @@ describe('Messhilfe Karten (Spielspaß K1)', () => {
 
   it('playGame sammelt die Anwendungen je Karte (Fracht-Karten des Standard-Bots)', () => {
     const b: Balance = { ...balance, botPlans: { ...balance.botPlans, balanced: { ...balance.botPlans.balanced, thorne: true, brennan: true, pool: true } } };
-    const alle = ['bot-0', 'bot-1', 'bot-2', 'bot-3'].flatMap((seed) => playGame(seed, b, 'ausgewogen', katalog).plans.cards);
+    // 0.4.20+19: Mit der Startquelle kommen die Fracht-Karten in anderen Seeds – zwölf statt vier.
+    const alle = Array.from({ length: 12 }, (_, i) => `bot-${i}`).flatMap((seed) => playGame(seed, b, 'ausgewogen', katalog).plans.cards);
     expect(alle.length).toBeGreaterThan(0);
     expect(alle.every((u) => Number.isFinite(u.money))).toBe(true);
     expect(alle.some((u) => u.card === 'thorne_vorsprechen')).toBe(true);

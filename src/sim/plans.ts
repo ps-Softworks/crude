@@ -113,7 +113,7 @@ function gesehenText(state: GameState, eintraege: { parcelId: string; clues: Clu
  * sonst fühlte sich Erkundung folgenlos an, obwohl sie es nicht ist.
  */
 function prognoseText(vorher: GameState, nachher: GameState, ids: string[]): string {
-  const kurz = (f: { low: number; high: number }) => `${f.low}–${f.high} %`;
+  const kurz = (f: { low: number; high: number; sure?: boolean }) => (f.sure ? 'Öl sicher' : `${f.low}–${f.high} %`);
   const teile = ids.map((id) => {
     const a = vorher.forecasts[id];
     const b = nachher.forecasts[id];

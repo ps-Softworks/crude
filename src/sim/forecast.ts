@@ -18,6 +18,8 @@ export interface Forecast {
   high: number;
   /** Mittelpunkt der Schätzung, ungerundet – nur für Auswertungen. */
   center: number;
+  /** Startquelle (0.4.20+19): Öl sicher, das Band ist 100–100 %. */
+  sure?: boolean;
 }
 
 /**
@@ -124,5 +126,6 @@ export function forecastMid(forecast: Pick<Forecast, 'low' | 'high'>): number {
 
 /** Kurzform für die Anzeige, z. B. "35–60 % Fundchance". */
 export function formatForecast(forecast: Forecast): string {
+  if (forecast.sure) return 'Öl sicher';
   return `${forecast.low}–${forecast.high} % Fundchance`;
 }

@@ -32,6 +32,12 @@ hints:
   explore:
     de: Was du über das Land weißt, ist bisher Gerede. Reite hin und sieh selbst nach – Sickerstellen, Salzwasser, Hügelzüge. Öffne den Kalender (T) und buche „Übers Land reiten“ für {ort}, oder klick die Ranch auf der Wandkarte (K) an. Das kostet zwei Termine, keinen Cent.
     en: What you know about the land so far is talk. Ride out and see for yourself – seeps, salt water, ridges. Open the calendar (T) and book “Ride the country” for {ort}, or click the ranch on the wall map (K). It costs two appointments, not a cent.
+  lease_sure:
+    de: Silas hat es dir in Port Ellis gesagt – auf {ort} ist Öl, keine 300 m tief. Deine Option kostet nichts. Öffne die Wandkarte (K), klick die golden umrandete Ranch mit dem Fähnchen „hier“ an und wähle „Option einlösen“. Danach bohrst du dort.
+    en: Silas told you in Port Ellis – there is oil on {ort}, less than 300 m down. Your option costs nothing. Open the wall map (K), click the ranch with the gold frame and the “here” flag and choose “Exercise option”. Then you drill there.
+  explore_wait:
+    de: Der Turm bohrt – nutz die Zeit. Eine Quelle allein trägt dich nicht lange, such schon die nächste. Öffne den Kalender (T) und buche „Übers Land reiten“ für {ort}, oder klick die Ranch auf der Wandkarte (K) an. Zwei Termine, kein Cent.
+    en: The rig is drilling – use the time. One well alone will not carry you for long, look for the next one. Open the calendar (T) and book “Ride the country” for {ort}, or click the ranch on the wall map (K). Two appointments, not a cent.
   lease_option:
     de: Ohne Land kein Öl. Du hast eine Option auf {ort} – {quelle} {chance}. Öffne die Wandkarte (K), klick die golden umrandete Ranch mit dem Fähnchen „hier“ an und wähle „Option einlösen“ ({kosten}) – das ist der Preis, den du dir mit der Option gesichert hast. Danach gehört dir die Pacht.
     en: No land, no oil. You hold an option on {ort} – {quelle} {chance}. Open the wall map (K), click the ranch and choose “Exercise option” ({kosten}) – the price you locked in with the option. Then the lease is yours.
@@ -89,6 +95,12 @@ onMap:
   explore:
     de: Was du über das Land weißt, ist bisher Gerede. Klick {ort} an und wähle „Übers Land reiten“ – zwei Termine, dann weißt du mehr über die Ranch und zwei Nachbarn.
     en: What you know about the land so far is talk. Click {ort} and choose “Ride the country” – two appointments, and you will know more about the ranch and two neighbours.
+  lease_sure:
+    de: Silas hat es dir gesagt – auf {ort} ist Öl, keine 300 m tief. Klick die Ranch an und wähle „Option einlösen“ – kostet nichts. Danach bohrst du dort.
+    en: Silas told you – there is oil on {ort}, less than 300 m down. Click the ranch and choose “Exercise option” – it costs nothing. Then you drill there.
+  explore_wait:
+    de: Der Turm bohrt – such schon die nächste Quelle. Klick {ort} an und wähle „Übers Land reiten“ – zwei Termine, dann weißt du mehr über die Ranch und zwei Nachbarn.
+    en: The rig is drilling – look for the next well. Click {ort} and choose “Ride the country” – two appointments, and you will know more about the ranch and two neighbours.
   lease_option:
     de: Ohne Land kein Öl. Du hast eine Option auf {ort} – {quelle} {chance}. Klick die Ranch an und wähle „Option einlösen“ ({kosten}) – dein gesicherter Preis.
     en: No land, no oil. You hold an option on {ort} – {quelle} {chance}. Click the ranch and choose “Exercise option” ({kosten}) – your locked-in price.

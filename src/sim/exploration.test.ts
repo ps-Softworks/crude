@@ -99,7 +99,8 @@ describe('Salzrücken und verdeckte Fundchance q (Plan 1.1)', () => {
 
 /** Eine Ranch der Karte mit Nachbarn im selben Gebiet. */
 function ranchMitNachbarn(state: GameState): Parcel {
-  return state.parcels.find((p) => !p.discovery && p.neighbors.filter((id) => state.parcels.some((q) => q.id === id && !q.discovery)).length >= 2 && !state.knowledge[p.id])!;
+  // Ohne die Startquelle (0.4.20+19): deren Prognose steht fest auf „Öl sicher“.
+  return state.parcels.find((p) => !p.discovery && !p.sure && p.neighbors.filter((id) => state.parcels.some((q) => q.id === id && !q.discovery && !q.sure)).length >= 2 && !state.knowledge[p.id] && !p.neighbors.some((id) => state.parcels.find((q) => q.id === id)?.sure))!;
 }
 
 describe('Hinweise rechnen als Quote (Plan 1.2)', () => {
@@ -117,7 +118,7 @@ describe('Hinweise rechnen als Quote (Plan 1.2)', () => {
 
   it('ein Hinweis auf der Ranch multipliziert die Quote, auf dem Nachbarn mit Faktor hoch neighbourPower', () => {
     const p = ranchMitNachbarn(state);
-    const n = state.parcels.find((q) => p.neighbors.includes(q.id) && !q.discovery && q.region === p.region)!;
+    const n = state.parcels.find((q) => p.neighbors.includes(q.id) && !q.discovery && !q.sure && q.region === p.region)!;
     const quote = (x: number) => x / (1 - x);
     const clue: Clue = { kind: 'brunnen', source: 'farmer', round: 1, seen: true };
     const f = clueFactor(balance, clue);
@@ -280,7 +281,8 @@ describe('Prognose bleibt im Rahmen der Geologie (0.4.19+2)', () => {
         const schlecht: Clue[] = (['sickerstelle', 'formation'] as const).map((kind) => ({ kind, source: 'ritt', round: 1, seen: false }) as Clue);
         s = addClues(s, balance, p.id, p.id.endsWith('1') ? schlecht : gut);
       }
-      for (const p of s.parcels.filter((q) => !q.discovery)) {
+      // Die Startquelle (0.4.20+19) zeigt bewusst „Öl sicher“ (100 %).
+      for (const p of s.parcels.filter((q) => !q.discovery && !q.sure)) {
         const f = knowledgeForecast(s, balance, p.id)!;
         expect(f.high).toBeLessThanOrEqual(oben);
         expect(f.low).toBeGreaterThanOrEqual(unten);

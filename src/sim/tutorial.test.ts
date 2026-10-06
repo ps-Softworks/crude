@@ -37,6 +37,14 @@ function ohneZeit(state: GameState): GameState {
   return { ...state, agenda: { ...state.agenda, used: state.agenda.budget } };
 }
 
+/** Spiel ohne die Startquelle (0.4.20+19): Option weg, Prognose weg – für die Regeln dahinter. */
+function ohneStartquelle(state: GameState): GameState {
+  const sicher = state.options[0].parcelId;
+  const forecasts = { ...state.forecasts };
+  delete forecasts[sicher];
+  return { ...state, options: state.options.slice(1), forecasts };
+}
+
 function hint(state: GameState): TutorialHint {
   const h = tutorialHint(state, balance);
   if (!h) throw new Error('Kein Hinweis');
@@ -120,14 +128,13 @@ describe('Wann der Einstieg läuft (tutorialActive)', () => {
 
 describe('Schritt 1: Pacht', () => {
   it('Etappe 1: sieht nichts Bezahlbares gut aus, rät er erst zum Ritt übers Land – ohne Überstunden', () => {
-    // 0.4.20+1: Die erste Startoption zeigt jetzt mindestens lease.startOptions.minForecast % – ein Seed, auf dem
-    // trotzdem nichts Bezahlbares über exploreBelow liegt.
+    // 0.4.20+19: ohne die Startquelle – ein Seed, auf dem dann nichts Bezahlbares über exploreBelow liegt.
     const nichtsGut = (s: ReturnType<typeof newGame>) => {
       const z = recommendedParcel(s, balance);
       return z === null || shownChance(s, z.parcelId) < balance.tutorial.exploreBelow;
     };
-    const seed = ['einstieg', ...Array.from({ length: 50 }, (_, i) => `einstieg-${i}`)].find((x) => nichtsGut(newGame(x, balance)))!;
-    const state = newGame(seed, balance);
+    const seed = ['einstieg', ...Array.from({ length: 50 }, (_, i) => `einstieg-${i}`)].find((x) => nichtsGut(ohneStartquelle(newGame(x, balance))))!;
+    const state = ohneStartquelle(newGame(seed, balance));
     expect(nichtsGut(state)).toBe(true);
     const h = hint(state);
     expect(h).toMatchObject({ id: 'explore', step: 'lease', action: { kind: 'plan', cardId: 'ritt' } });
@@ -140,21 +147,16 @@ describe('Schritt 1: Pacht', () => {
     expect(hint(ohneZeit(state)).id).not.toBe('explore');
   });
 
-  it('0.4.20+1: empfiehlt zu Beginn eine Ranch, die mindestens so gut aussieht wie die gute erste Startoption', () => {
+  it('Startquelle (0.4.20+19): rät zu Beginn immer zuerst, die sichere Option einzulösen', () => {
     for (let i = 0; i < 60; i++) {
-      const state = ohneZeit(newGame(`gute-option-${i}`, balance));
-      const erste = state.options[0].parcelId;
-      const ziel = recommendedParcel(state, balance)!;
-      expect(ziel, `Seed gute-option-${i}`).not.toBeNull();
-      expect(recommendScore(state, balance, ziel.parcelId, ziel.cost)).toBeGreaterThanOrEqual(recommendScore(state, balance, erste, 0));
-      if (shownChance(state, erste) >= balance.lease.startOptions.minForecast) {
-        expect(shownChance(state, ziel.parcelId), `Seed gute-option-${i}`).toBeGreaterThanOrEqual(balance.lease.startOptions.minForecast);
-      }
+      const state = newGame(`gute-option-${i}`, balance);
+      const h = hint(state);
+      expect(h, `Seed gute-option-${i}`).toMatchObject({ id: 'lease_sure', step: 'lease', action: { kind: 'exercise', parcelId: state.options[0].parcelId } });
     }
   });
 
   it('empfiehlt die beste bezahlbare Wertung (Schätzung minus Pachtkosten) und zeigt auf sie', () => {
-    const state = ohneZeit(newGame('einstieg', balance));
+    const state = ohneZeit(ohneStartquelle(newGame('einstieg', balance)));
     const h = hint(state);
     expect(h.step).toBe('lease');
     expect(['lease_option', 'lease_buy']).toContain(h.id);
@@ -248,8 +250,12 @@ describe('Schritt 2: Bohrung', () => {
     expect(hint(state)).toMatchObject({ id: 'loan_drill', action: { kind: 'loan' } });
   });
 
-  it('der Turm bohrt: Runde beenden', () => {
-    expect(hint(mitBohrung('drilling'))).toMatchObject({ id: 'drill_wait', action: { kind: 'endRound' } });
+  it('der Turm bohrt: Runde beenden – vor dem ersten Ritt erst übers Land reiten (Startquelle, 0.4.20+19)', () => {
+    const state = mitBohrung('drilling');
+    expect(hint(state)).toMatchObject({ id: 'explore_wait', step: 'drill', action: { kind: 'plan', cardId: 'ritt' } });
+    const geritten = hintTurn(state, balance, 1);
+    expect(hint(geritten)).toMatchObject({ id: 'drill_wait', action: { kind: 'endRound' } });
+    expect(hint(ohneZeit(state))).toMatchObject({ id: 'drill_wait', action: { kind: 'endRound' } });
   });
 
   it('trocken in dieser Stufe: tiefer nur, wenn der Geologe die Gewinnschwelle erreicht, sonst aufgeben (Spielspaß K1)', () => {
