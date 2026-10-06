@@ -28,14 +28,13 @@ import type { SheetId } from '../sceneState';
 import { Silhouette } from '../Silhouette';
 import { rivalsLines } from '../sheets/RivalsSheet';
 import { DeskObject, type Placement } from './DeskObject';
-import { aufTisch, deskLayout, MAHAGONI_AB, sharedColumn, type DeskPresent, type DeskSpot } from './deskLayout'; // 0.4.20+10
+import { aufTisch, deskLayout, MAHAGONI_AB, SCHUBLADEN, sharedColumn, type DeskPresent, type DeskSpot } from './deskLayout'; // 0.4.20+10
 import { RadioShape } from './objects/RadioShape';
 import { chapterOf } from '../../sim/chapterOf';
 import { Door } from './Door';
 import {
   BellShape,
   CorkShape,
-  DrawerShape,
   FolderShape,
   LampShape,
   LedgerShape,
@@ -199,12 +198,12 @@ export function DeskScene(p: DeskSceneProps) {
         {/* 0.4.20+12: Boden an den Seiten, Tischplatte als Trapez, vorn die Kante mit drei Schubladen. */}
         <div className="tisch" aria-hidden="true">
           <div className="tischplatte" />
-          <div className="tischkante">
-            <span className="schubladenfront" />
-            <span className="schubladenfront" />
-            <span className="schubladenfront" />
-          </div>
+          <div className="tischkante" />
         </div>
+        {/* 0.4.20+13: Schubladen in der Vorderkante – die rechte ist das Schattenbuch (ab Kapitel 2 ein Knopf). */}
+        {SCHUBLADEN.map((at, i) =>
+          i === SCHUBLADEN.length - 1 && da.schattenbuch ? null : <div key={i} className="schubladenfront" aria-hidden="true" style={prozent(at)} />,
+        )}
         {/* 0.4.20+10: Ablage für Hallstead- und Siegelmappe unter Ruths Zettel (nur Kapitel 3). */}
         {mahagoni && (da.hallstead || da.konzern) && <div className="ablage" aria-hidden="true" style={prozent(platz('ablage'))} />}
 
@@ -439,7 +438,12 @@ export function DeskScene(p: DeskSceneProps) {
           )}
         {/* 4.11 Andockpunkt: Schattenbuch und Werkstatt – in Kapitel 1 nicht auf dem Tisch. */}
         {investigationUnlocked(game, balance) &&
-          obj('schattenbuch', 'Schublade', { status: `Hitze: ${localize(investigationContent.heat[heatWord(heat(game, balance), balance)])}` }, <DrawerShape />)}
+          obj(
+            'schattenbuch',
+            'Schublade',
+            { status: `Hitze: ${localize(investigationContent.heat[heatWord(heat(game, balance), balance)])}`, className: 'in-schublade' },
+            <span className="schubladengriff" aria-hidden="true" />,
+          )}
         {researchUnlocked(game, balance) &&
           obj(
             'werkstatt',

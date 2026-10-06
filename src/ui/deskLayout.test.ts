@@ -1,7 +1,7 @@
 // Platzplan des Schreibtischs (0.4.20+10): Kapitel 1/2 unverändert, ab Kapitel 3 jeder Gegenstand mit eigenem Platz.
 import { describe, expect, it } from 'vitest';
 import type { Placement } from './scene/DeskObject';
-import { aufTisch, DESK_BASE, deskLayout, sharedColumn, TISCH, tischEinzug, type DeskPresent } from './scene/deskLayout';
+import { aufTisch, DESK_BASE, SCHUBLADEN, deskLayout, sharedColumn, TISCH, tischEinzug, type DeskPresent } from './scene/deskLayout';
 
 const NICHTS: DeskPresent = { raffinerie: false, personal: false, schattenbuch: false, werkstatt: false, marke: false, boerse: false, hallstead: false, konzern: false };
 const ALLES: DeskPresent = { raffinerie: true, personal: true, schattenbuch: true, werkstatt: true, marke: true, boerse: true, hallstead: true, konzern: true };
@@ -29,7 +29,8 @@ describe('Schreibtisch-Platzplan', () => {
     const plan = deskLayout(2, { ...NICHTS, raffinerie: true, personal: true, schattenbuch: true, werkstatt: true });
     expect(plan.raffinerie).toEqual({ left: 72, top: 75, width: 13, height: 22 });
     expect(plan.personal).toEqual({ left: 86.5, top: 46, width: 11.5, height: 22 });
-    expect(plan.schattenbuch).toEqual({ left: 47, top: 85, width: 22, height: 12 });
+    // 0.4.20+13: Die Schublade steckt in der Vorderkante (rechte Schublade).
+    expect(plan.schattenbuch).toEqual(SCHUBLADEN[2]);
     expect(plan.werkstatt).toEqual({ left: 51.5, top: 8, width: 6, height: 24 });
   });
 
@@ -39,14 +40,14 @@ describe('Schreibtisch-Platzplan', () => {
     expect(plan.boerse).toEqual({ left: 72, top: 86, width: 13, height: 11 });
     expect(plan.personal).toEqual({ left: 86.5, top: 44, width: 11.5, height: 12.5 });
     expect(plan.marke).toEqual({ left: 86.5, top: 57, width: 11.5, height: 12.5 });
-    expect(plan.schattenbuch).toEqual({ left: 45.5, top: 85, width: 7, height: 12 });
-    expect(plan.hallstead).toEqual({ left: 53, top: 85, width: 9.5, height: 12 });
-    expect(plan.konzern).toEqual({ left: 63, top: 85, width: 8.5, height: 12 });
+    expect(plan.schattenbuch).toEqual(SCHUBLADEN[2]);
+    // Hallstead- und Siegelmappe teilen sich die untere Reihe: links die Hälfte, rechts der alte Platz der Mappe.
+    expect(plan.hallstead).toEqual({ left: 47, top: 85, width: 11.5, height: 12 });
+    expect(plan.konzern).toEqual({ left: 59, top: 85, width: 11.5, height: 12 });
     expect(sharedColumn(1, ALLES)).toBe(true);
-    // Zu zweit: links die Hälfte, rechts der alte Platz der Mappe.
-    const zwei = deskLayout(2, { ...NICHTS, schattenbuch: true, konzern: true });
-    expect(zwei.schattenbuch).toEqual({ left: 47, top: 85, width: 11.5, height: 12 });
-    expect(zwei.konzern).toEqual({ left: 59, top: 85, width: 11.5, height: 12 });
+    // Allein behält jede Mappe ihren Platz – die Schublade nimmt keinen mehr weg.
+    const allein = deskLayout(2, { ...NICHTS, schattenbuch: true, konzern: true });
+    expect(allein.konzern).toEqual({ left: 59, top: 85, width: 11.5, height: 12 });
     expect(deskLayout(2, { ...NICHTS, boerse: true }).boerse).toEqual({ left: 72.5, top: 75, width: 12.5, height: 22 });
   });
 
@@ -63,7 +64,8 @@ describe('Schreibtisch-Platzplan', () => {
       expect(at.left + at.width, id).toBeLessThanOrEqual(100);
       expect(at.top + at.height, id).toBeLessThanOrEqual(100);
       // Lesbar: kein Gegenstand mehr in der Größe der alten geteilten Plätze (höchstens 12 % hoch).
-      if (id !== 'radio') expect(at.height, id).toBeGreaterThanOrEqual(13);
+      // Ausnahmen: das Radio (Zierde) und die Schublade in der Vorderkante (eine Zeile: Griff, Name, Hitze).
+      if (id !== 'radio' && id !== 'schattenbuch') expect(at.height, id).toBeGreaterThanOrEqual(13);
     }
     for (let i = 0; i < eintraege.length; i++)
       for (let j = i + 1; j < eintraege.length; j++) {
@@ -71,7 +73,8 @@ describe('Schreibtisch-Platzplan', () => {
         const [b, pb] = eintraege[j];
         // Die Ablage ist der Untergrund der beiden Mappen.
         if ((a === 'ablage' && (b === 'hallstead' || b === 'konzern')) || (b === 'ablage' && (a === 'hallstead' || a === 'konzern'))) continue;
-        expect(ueberlappt(pa, pb), `${a} ↔ ${b}`).toBe(false);
+        // Verglichen wird, was zu sehen ist: nach aufTisch (Tischplatte in Perspektive, Schublade in der Kante).
+        expect(ueberlappt(aufTisch(pa), aufTisch(pb)), `${a} ↔ ${b}`).toBe(false);
       }
   });
 
@@ -103,7 +106,7 @@ describe('Tisch in Perspektive (0.4.20+12)', () => {
     for (const kapitel of [1, 3]) {
       const plan = deskLayout(kapitel, ALLES);
       for (const p of Object.values(plan) as Placement[]) {
-        if (p.top < TISCH.hinten || p.width === 0) continue;
+        if (p.top < TISCH.hinten || p.top >= TISCH.vorn || p.width === 0) continue;
         const q = aufTisch(p);
         expect(q.top).toBeGreaterThanOrEqual(TISCH.hinten);
         expect(q.top + q.height).toBeLessThanOrEqual(TISCH.vorn + 0.01);
@@ -121,5 +124,18 @@ describe('Tisch in Perspektive (0.4.20+12)', () => {
       for (let j = i + 1; j < plan.length; j++) {
         if (!ueberlappt(plan[i], plan[j])) expect(ueberlappt(aufTisch(plan[i]), aufTisch(plan[j]))).toBe(false);
       }
+  });
+});
+
+describe('Schublade in der Vorderkante (0.4.20+13)', () => {
+  it('drei Schubladen nebeneinander in der Kante, die rechte ist das Schattenbuch – aufTisch lässt sie stehen', () => {
+    expect(SCHUBLADEN).toHaveLength(3);
+    for (const s of SCHUBLADEN) {
+      expect(s.top).toBeGreaterThanOrEqual(TISCH.vorn);
+      expect(s.top + s.height).toBeLessThanOrEqual(100);
+      expect(aufTisch(s)).toEqual(s);
+    }
+    for (let i = 1; i < SCHUBLADEN.length; i++) expect(SCHUBLADEN[i].left).toBeGreaterThanOrEqual(SCHUBLADEN[i - 1].left + SCHUBLADEN[i - 1].width);
+    for (const k of [1, 2, 3]) expect(deskLayout(k, ALLES).schattenbuch).toEqual(SCHUBLADEN[2]);
   });
 });

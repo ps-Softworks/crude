@@ -47,8 +47,9 @@ const AT: Record<DeskSpot, Placement> = {
   raffinerie: { left: 72, top: 75, width: 13, height: 22 },
   // 4.9 Andockpunkt: Personalakten rechts neben dem Kassenbuch, zwischen Tür und Glocke (der Platz unter dem Kassenbuch gehört der Raffinerie).
   personal: { left: 86.5, top: 46, width: 11.5, height: 22 },
-  // 4.11 Andockpunkt: Schublade unter Ruths Zettel (zwischen Kladde und Raffinerie-Plan), Blaupause an der Wand zwischen Lampe und Kalender.
-  schattenbuch: { left: 47, top: 85, width: 22, height: 12 },
+  // 4.11 Andockpunkt: Blaupause an der Wand zwischen Lampe und Kalender. 0.4.20+13: Die Schublade (Schattenbuch) ist
+  // die rechte Schublade in der Vorderkante des Tischs (SCHUBLADEN), nicht mehr ein Kasten auf der Platte.
+  schattenbuch: { left: 64.5, top: 90.8, width: 23.5, height: 7.4 },
   werkstatt: { left: 51.5, top: 8, width: 6, height: 24 },
   // 4.14 Andockpunkt: rechts neben dem Kassenbuch, über der Glocke (Platzplan in docs/phase4/4.14.md).
   // Liegen Personalakten und Vertrieb beide da, teilen sie sich die Spalte (RECHTE_SPALTE_GETEILT).
@@ -75,29 +76,14 @@ const RECHTE_SPALTE_GETEILT: Record<'personal' | 'marke', Placement> = {
   marke: { left: 86.5, top: 57, width: 11.5, height: 12.5 },
 };
 
-/** 4.16: Liegt die Hallstead-Mappe auf dem Tisch, rückt die Schublade (4.11) in die linke Hälfte ihrer Reihe. */
-const SCHUBLADE_GETEILT: Placement = { left: 47, top: 85, width: 11.5, height: 12 };
-
-type UntereReihe = 'schattenbuch' | 'hallstead' | 'konzern';
-
 /**
- * Integration 4.11/4.16/4.17: Die untere Reihe zwischen Kladde (bis 45 %) und Raffinerie-Plan
- * (ab 72 %) teilen sich Schublade, Hallstead-Mappe und Siegelmappe. Allein behält jeder seinen
- * Platz (AT), zu zweit links/rechts je eine Hälfte, zu dritt je ein Drittel (46–71 %).
+ * Integration 4.16/4.17: Die untere Reihe zwischen Kladde (bis 45 %) und Raffinerie-Plan (ab 72 %) teilen
+ * sich Hallstead-Mappe und Siegelmappe – allein behält jede ihren Platz (AT), zu zweit links/rechts je eine
+ * Hälfte. (Bis 0.4.20+12 lag hier auch die Schublade; sie steckt jetzt in der Vorderkante.)
  */
-function untereReihe(da: Record<UntereReihe, boolean>): Partial<Record<UntereReihe, Placement>> {
-  const liste = (['schattenbuch', 'hallstead', 'konzern'] as const).filter((id) => da[id]);
-  if (liste.length <= 1) return {};
-  if (liste.length === 2) {
-    const [links, rechts] = liste;
-    return { [links]: SCHUBLADE_GETEILT, [rechts]: AT.hallstead };
-  }
-  return {
-    // 0.4.20+12: Die Hallstead-Mappe hat das längste Schild – sie bekommt etwas mehr Breite (Perspektive staucht die Reihe).
-    schattenbuch: { left: 45.5, top: 85, width: 7, height: 12 },
-    hallstead: { left: 53, top: 85, width: 9.5, height: 12 },
-    konzern: { left: 63, top: 85, width: 8.5, height: 12 },
-  };
+function untereReihe(da: Record<'hallstead' | 'konzern', boolean>): Partial<Record<'hallstead' | 'konzern', Placement>> {
+  if (!da.hallstead || !da.konzern) return {};
+  return { hallstead: { left: 47, top: 85, width: 11.5, height: 12 }, konzern: AT.hallstead };
 }
 
 /**
@@ -129,7 +115,7 @@ const KAPITEL3: Record<DeskSpot, Placement> = {
   marke: { left: 75, top: 47, width: 11.5, height: 25 },
   personal: { left: 87.5, top: 46, width: 10.5, height: 23 },
   raffinerie: { left: 63.5, top: 75, width: 10.5, height: 22 },
-  schattenbuch: { left: 75, top: 79, width: 10.5, height: 18 },
+  schattenbuch: AT.schattenbuch,
   glocke: { left: 86.5, top: 72, width: 11.5, height: 25 },
   // Lampe gibt es auf dem Mahagoni-Tisch nicht mehr (dort hängt die Kurstafel).
   lampe: AT.radio,
@@ -152,7 +138,6 @@ export function deskLayout(chapter: number, da: DeskPresent): Partial<Record<Des
   const plan: Partial<Record<DeskSpot, Placement>> = {};
   for (const id of [...DESK_BASE, ...extra, 'lampe'] as const) plan[id] = AT[id];
   const reihe = untereReihe(da);
-  if (reihe.schattenbuch && da.schattenbuch) plan.schattenbuch = reihe.schattenbuch;
   if (reihe.hallstead && da.hallstead) plan.hallstead = reihe.hallstead;
   if (reihe.konzern && da.konzern) plan.konzern = reihe.konzern;
   if (da.raffinerie && da.boerse) {
@@ -191,7 +176,8 @@ export function tischEinzug(y: number): number {
  * Platte auf Höhe seiner Mitte gerückt.
  */
 export function aufTisch(p: Placement): Placement {
-  if (p.top < TISCH.hinten || p.width === 0) return p;
+  // Wand (oberhalb der Platte) und Vorderkante (Schubladen, unterhalb) bleiben, wie sie sind.
+  if (p.top < TISCH.hinten || p.top >= TISCH.vorn || p.width === 0) return p;
   const k = (TISCH.vorn - TISCH.hinten) / (100 - TISCH.hinten);
   const top = TISCH.hinten + (p.top - TISCH.hinten) * k;
   const height = p.height * k;
@@ -200,3 +186,14 @@ export function aufTisch(p: Placement): Placement {
   const r = (v: number) => Math.round(v * 100) / 100;
   return { left: r(ein + p.left * breite), top: r(top), width: r(p.width * breite), height: r(height) };
 }
+
+/**
+ * 0.4.20+13: Die drei Schubladen in der Vorderkante, in Prozent der Szene (Kante von TISCH.vorn bis 100 %,
+ * links und rechts 1 % Einzug). Die rechte ist die Schublade mit dem Schattenbuch (AT.schattenbuch), sobald es
+ * Delaney gibt (Kapitel 2); die beiden anderen sind Zierde.
+ */
+export const SCHUBLADEN: readonly Placement[] = [
+  { left: 12, top: 90.8, width: 23.5, height: 7.4 },
+  { left: 38.25, top: 90.8, width: 23.5, height: 7.4 },
+  AT.schattenbuch,
+];
