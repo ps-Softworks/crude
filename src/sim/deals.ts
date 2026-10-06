@@ -15,6 +15,7 @@ import { formatDate } from './calendar';
 import type { GameState } from './game';
 import { leaseOf } from './lease';
 import type { PlanHandler } from './planHandler';
+import { recordAct } from './politics';
 import { shiftStanding } from './pricing';
 import { producingWells, wellRate } from './production';
 import { rigReady, rigWell } from './rigs';
@@ -48,6 +49,10 @@ export interface DealsState {
   offerLoan?: { loanId: number; due: number } | null;
   /** 0.4.20+35 Lieferverträge für Raffinerie-Produkte (Marine, Großkunden): je Runde qty zum Festpreis. */
   supply?: SupplyContract[];
+  /** 0.4.20+36 Feuerversicherung: bis Runde until, Prämie je Runde (steigt nach jedem Schaden). */
+  insurance?: { until: number; premium: number } | null;
+  /** 0.4.20+36 Lohnerhöhung: Mehrkosten je Runde bis until. */
+  wages?: { until: number; perRound: number } | null;
 }
 
 export interface SupplyContract {
@@ -560,7 +565,148 @@ export function supplyShortfall(state: GameState, output: Partial<Record<Product
   return s;
 }
 
+// --- Versicherung, Arbeiter, Presse (Kapitel 2) ---------------------------------------------
+
+/** Prämie je Runde: Grundbetrag + Anteil am Wert von Raffinerie und Tanks. */
+export function insurancePremium(state: GameState, balance: Balance): number {
+  const i = balance.deals.insurance;
+  const tanks = state.logistics.tanks * balance.transport.storage.tankCost;
+  const raff = state.refinery && (state.refinery.level > 0 || state.refinery.project) ? balance.refinery.buildCost + Math.max(0, state.refinery.level - 1) * balance.refinery.expandCost : 0;
+  return Math.round(i.base + i.share * (tanks + raff));
+}
+
+/** Ist Jacob in dieser Runde versichert? */
+export function insured(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'deals'>>): boolean {
+  const v = state.deals?.insurance;
+  return !!v && v.until >= state.round;
+}
+
+/** Schaden melden: Mit Versicherung zahlt sie (Anteil cover), die Prämie steigt danach. Ohne Versicherung unverändert. */
+export function insuranceClaim(state: GameState, balance: Balance, schaden: number, was: string): GameState {
+  if (!insured(state) || schaden <= 0) return state;
+  const i = balance.deals.insurance;
+  const zahlt = cents(schaden * i.cover);
+  const v = state.deals!.insurance!;
+  return log(withDeals({ ...state, cash: cents(state.cash + zahlt) }, { insurance: { ...v, premium: Math.round(v.premium * (1 + i.claimRaise)) } }), `Die Versicherung zahlt ${money(zahlt)} für ${was} – die Prämie steigt.`);
+}
+
+const versicherung: PlanHandler = {
+  lock(state) {
+    if (insured(state)) return 'Die Versicherung läuft noch.';
+    return null;
+  },
+  options(state, balance) {
+    const p = insurancePremium(state, balance);
+    return balance.deals.insurance.rounds.map((r) => ({ id: String(r), label: `${r} Runden · ${money(p)} je Runde`, reason: null }));
+  },
+  detail(_state, balance) {
+    const i = balance.deals.insurance;
+    return `Zahlt ${percent(i.cover)} bei Feuer in Raffinerie oder Tanks. Nach jedem Schaden steigt die Prämie um ${percent(i.claimRaise)}.`;
+  },
+  apply(state, balance, target) {
+    const r = Number(target ?? balance.deals.insurance.rounds[0]);
+    const p = insurancePremium(state, balance);
+    return log(withDeals(state, { insurance: { until: state.round + r - 1, premium: p } }), `Feuerversicherung abgeschlossen: ${r} Runden, ${money(p)} je Runde.`);
+  },
+};
+
+function lohnJeRunde(state: GameState, balance: Balance): number {
+  return Math.round(balance.deals.workers.raise.perWell * Math.max(1, producingWells(state).length));
+}
+
+function arbeiterRuf(state: GameState, delta: number): GameState {
+  const r = state.reputation;
+  const alt = r?.workers ?? 0;
+  return { ...state, reputation: { ...(r ?? { public: 0, politics: 0, workers: 0, industryRespect: 0, industryFear: 0, standing: 0 }), workers: Math.max(-100, Math.min(100, alt + delta)) } };
+}
+
+function oeffentlich(state: GameState, delta: number): GameState {
+  const r = state.reputation;
+  return { ...state, reputation: { ...(r ?? { public: 0, politics: 0, workers: 0, industryRespect: 0, industryFear: 0, standing: 0 }), public: Math.max(-100, Math.min(100, (r?.public ?? 0) + delta)) } };
+}
+
+const lohnerhoehung: PlanHandler = {
+  lock(state) {
+    const w = state.deals?.wages;
+    if (w && w.until >= state.round) return 'Die Lohnerhöhung läuft noch.';
+    return null;
+  },
+  detail(state, balance) {
+    const w = balance.deals.workers.raise;
+    return `${money(lohnJeRunde(state, balance))} mehr Lohn je Runde, ${w.rounds} Runden. Die Bohrtrupps danken es mit Arbeit (Ruf bei den Arbeitern +${w.reputation}).`;
+  },
+  apply(state, balance) {
+    const w = balance.deals.workers.raise;
+    const s = withDeals(arbeiterRuf(state, w.reputation), { wages: { until: state.round + w.rounds - 1, perRound: lohnJeRunde(state, balance) } });
+    return log(s, 'Jacob sagt den Bohrtrupps mehr Lohn zu.');
+  },
+};
+
+const streikDroht: PlanHandler = {
+  options(state, balance) {
+    const s = balance.deals.workers.strike;
+    const zahl = Math.round(s.dealPerWell * Math.max(1, producingWells(state).length));
+    return [
+      { id: 'verhandeln', label: `Verhandeln – ${money(zahl)} mehr Lohn, einmalig`, reason: state.cash < zahl ? `Nicht genug Geld (${money(zahl)}).` : null },
+      { id: 'streikbrecher', label: `Streikbrecher holen – ${money(s.breakerCost)}, die Zeitungen schreiben darüber`, reason: state.cash < s.breakerCost ? `Nicht genug Geld (${money(s.breakerCost)}).` : null },
+    ];
+  },
+  cost(state, balance, target) {
+    const s = balance.deals.workers.strike;
+    return target === 'streikbrecher' ? s.breakerCost : target === 'verhandeln' ? Math.round(s.dealPerWell * Math.max(1, producingWells(state).length)) : 0;
+  },
+  detail(_state, balance) {
+    const s = balance.deals.workers.strike;
+    return `Wer nicht reagiert, hat am Rundenende einen Streik: ${percent(s.loss)} weniger Förderung.`;
+  },
+  apply(state, balance, target) {
+    const s = balance.deals.workers.strike;
+    if (target === 'streikbrecher') return log(recordAct(arbeiterRuf(state, -s.breakerReputation), 'strike_break'), 'Streikbrecher aus Port Ellis halten die Bohrtürme in Gang. Die Zeitungen sind voll davon.');
+    return log(arbeiterRuf(state, s.dealReputation), 'Jacob einigt sich mit dem Vormann – kein Streik.');
+  },
+};
+
+const anzeigen: PlanHandler = {
+  cost(_state, balance) {
+    return balance.deals.press.ads.cost;
+  },
+  lock(state) {
+    return cooling(state, 'anzeigen');
+  },
+  detail(_state, balance) {
+    const a = balance.deals.press.ads;
+    return `Ganzseitige Anzeigen in Hallstead: öffentlicher Ruf +${a.reputation}. Mit ${percent(a.backlash)} wittern die Leser Bestechung.`;
+  },
+  apply(state, balance) {
+    const a = balance.deals.press.ads;
+    const s = cooldown(state, 'anzeigen', a.cooldown);
+    if (rng(state, 'anzeigen').float() < a.backlash) return log(recordAct(oeffentlich(s, -a.reputation), 'press_scandal'), 'Die Anzeigen gehen nach hinten los – „Was hat Harlan zu verbergen?“');
+    return log(recordAct(oeffentlich(s, a.reputation), 'press_praise'), 'Die Anzeigen wirken: Harlan Oil steht gut da.');
+  },
+};
+
+const interviewPresse: PlanHandler = {
+  lock(state) {
+    return cooling(state, 'interview_presse');
+  },
+  detail(_state, balance) {
+    const i = balance.deals.press.interview;
+    return `Nora Whitlock fragt nach. Gute Presse mit ${percent(i.chance)}: öffentlicher Ruf ±${i.reputation}.`;
+  },
+  apply(state, balance) {
+    const i = balance.deals.press.interview;
+    const gut = rng(state, 'interview_presse').float() < i.chance;
+    const s = cooldown(oeffentlich(state, gut ? i.reputation : -i.reputation), 'interview_presse', i.cooldown);
+    return log(gut ? recordAct(s, 'press_praise') : s, gut ? 'Noras Artikel ist fair – die Leser mögen Jacob.' : 'Nora schreibt, was sie gesehen hat. Es ist nicht schmeichelhaft.');
+  },
+};
+
 export const DEAL_HANDLERS: Record<string, PlanHandler> = {
+  versicherung,
+  lohnerhoehung,
+  streik_droht: streikDroht,
+  anzeigen,
+  interview_presse: interviewPresse,
   bank_angebot: bankAngebot,
   marine_heizoel: supplyDeal('marine_heizoel', 'marine'),
   fabrik_schmieroel: supplyDeal('fabrik_schmieroel', 'lubricant'),
@@ -631,6 +777,17 @@ export function settleDeals(input: GameState, balance: Balance): GameState {
     }
   }
 
+  // Versicherungsprämie und Lohnerhöhung je Runde.
+  d = dealsOf(s);
+  if (d.insurance && d.insurance.until >= s.round) s = { ...s, cash: cents(s.cash - d.insurance.premium) };
+  if (d.wages && d.wages.until >= s.round) s = { ...s, cash: cents(s.cash - d.wages.perRound) };
+  // Streik: Wer beim Anruf nicht reagiert hat, hat nächste Runde weniger Förderung.
+  if (d.call?.card === 'streik_droht' && d.call.round === s.round && !(s.plans?.booked ?? []).some((x) => x.cardId === 'streik_droht')) {
+    const loss = b.workers.strike.loss;
+    s = recordAct({ ...s, events: { ...s.events, timed: [...s.events.timed, { key: 'production' as const, value: -loss, until: s.round, source: 'streik' }] } }, 'strike');
+    s = log(s, `Die Bohrtrupps streiken – ${percent(loss)} weniger Förderung in dieser Runde.`);
+  }
+
   // Verliehener Turm: Miete, Rückgabe, vielleicht beschädigt.
   d = dealsOf(s);
   if (d.lent) {
@@ -657,6 +814,8 @@ export function dealsRunning(state: GameState, balance: Balance): string[] {
   if (d.bulkRound === state.round) out.push(`Händler nimmt diese Runde ${bbl(balance.deals.trader.bulk.extra)} mehr`);
   if (d.lent) out.push(`Bohrturm verliehen bis Ende Runde ${d.lent.until}`);
   if (d.guardRound === state.round) out.push('Wache an den Tanks');
+  if (d.insurance && d.insurance.until >= state.round) out.push(`Feuerversicherung bis Runde ${d.insurance.until} (${money(d.insurance.premium)} je Runde)`);
+  if (d.wages && d.wages.until >= state.round) out.push(`Lohnerhöhung bis Runde ${d.wages.until} (${money(d.wages.perRound)} je Runde)`);
   for (const c of activeSupply(state)) out.push(`Liefervertrag: ${bbl(c.qty)} ${PRODUKT[c.product]} je Runde zu ${c.price.toLocaleString('de-DE')} $ bis Runde ${c.until}`);
   return out;
 }

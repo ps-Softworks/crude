@@ -13,6 +13,7 @@
 // Reine Funktionen: Zustand rein, neuer Zustand raus.
 
 import type { Balance, TransportMode } from './balance';
+import { insuranceClaim } from './deals';
 import { lawRule } from './laws';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
@@ -179,6 +180,8 @@ export function settleStorage(input: GameState, balance: Balance): GameState {
     state = lose(state, weg);
     // Öffentliches Handeln (4.2): Ein Feldbrand bei Jacob drückt am Rundenende die Stimmung im Land.
     state = recordAct({ ...state, log: logged(state, `Ein Tank brennt! ${bbl(weg)} Barrel Öl gehen in Rauch auf.`) }, 'field_fire');
+    // 0.4.20+36: Mit Feuerversicherung zahlt sie einen Teil des verbrannten Öls (deals.ts).
+    state = insuranceClaim(state, balance, weg * state.postedPrice, 'den Tankbrand');
   }
   return { ...state, logistics: { ...state.logistics, rng: rng.state } };
 }

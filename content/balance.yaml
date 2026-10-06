@@ -274,6 +274,12 @@ plans:
     marine_heizoel: { tab: markt, appointments: 2, target: option, handler: marine_heizoel, requires: { minChapter: 2, notMarked: [k2_marine_vertrag] } }
     fabrik_schmieroel: { tab: markt, appointments: 1, target: option, handler: fabrik_schmieroel, requires: { minChapter: 2 } }
     lampenoel_kerosin: { tab: markt, appointments: 1, target: option, handler: lampenoel_kerosin, requires: { minChapter: 2 } }
+    # 0.4.20+36 Versicherung, Arbeiter, Presse.
+    versicherung: { tab: markt, appointments: 1, target: option, handler: versicherung, requires: { minChapter: 2 } }
+    lohnerhoehung: { tab: leute, appointments: 1, handler: lohnerhoehung, requires: { minChapter: 2 } }
+    streik_droht: { tab: leute, appointments: 1, target: option, handler: streik_droht, call: 1, requires: { minChapter: 2 } }
+    anzeigen: { tab: leute, appointments: 1, handler: anzeigen, requires: { minChapter: 2 } }
+    interview_presse: { tab: leute, appointments: 1, timing: rundenende, handler: interview_presse, requires: { minChapter: 2 } }
 
 # Deals im Adressbuch (0.4.20+31, src/sim/deals.ts). Alles PLATZHALTER bis zu Bot-Läufen.
 deals:
@@ -295,6 +301,14 @@ deals:
   interview: { chance: 0.65, rumourPenalty: 0.3, shift: 0.06, cooldown: 4 }   # Ruf bei den Wildcattern ±0,06
   theft: { chance: 0.06, minStock: 3000, loss: 0.2 }
   phone: { chance: 0.35 }
+  # 0.4.20+36 Versicherung, Arbeiter, Presse (Telefon, Kapitel 2). PLATZHALTER.
+  insurance: { rounds: [4, 8], base: 150, share: 0.004, cover: 0.8, claimRaise: 0.5 }   # zahlt 80 % bei Feuer in Raffinerie/Tanks
+  workers:
+    raise: { perWell: 40, rounds: 8, reputation: 15 }   # Lohnerhöhung: Ruf bei den Arbeitern hebt die Förderung (eventSystems.reputation.production)
+    strike: { dealPerWell: 120, dealReputation: 5, breakerCost: 1500, breakerReputation: 20, loss: 0.4 }   # Anruf „Streik droht“; ignoriert = −40 % Förderung nächste Runde
+  press:
+    ads: { cost: 3000, reputation: 6, backlash: 0.15, cooldown: 4 }
+    interview: { chance: 0.6, reputation: 5, cooldown: 4 }
   # 0.4.20+35 Lieferverträge der Raffinerie (Telefon, Kapitel 2): fester Preis (heutiger Großhandelspreis × (1 + premium)),
   # die Vertragsmenge drückt den Großhandel nicht; fehlt etwas (auch bei Stillstand), kostet jedes Barrel shortfall.
   supply:

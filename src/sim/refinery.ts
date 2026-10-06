@@ -20,7 +20,7 @@
 // In Kapitel 1 ist state.refinery undefined – dann tut hier nichts etwas.
 
 import type { Balance, TransportMode } from './balance';
-import { contractedOutput, supplyShortfall } from './deals';
+import { contractedOutput, insuranceClaim, supplyShortfall } from './deals';
 import { dateOf, formatDate } from './calendar';
 import type { GameState } from './game';
 import { Rng, seedFromString, type RngState } from './rng';
@@ -821,6 +821,8 @@ export function advanceRefinery(input: GameState, balance: Balance, world?: Refi
         cash: cents(state.cash - b.fire.repairCost),
         log: logged(state, `Feuer in der Raffinerie! Die Reparatur kostet ${dollars(b.fire.repairCost)} $, ${b.fire.repairRounds} Runden Stillstand.`),
       };
+      // 0.4.20+36: Mit Feuerversicherung zahlt sie einen Teil (deals.ts).
+      state = insuranceClaim(state, balance, b.fire.repairCost, 'den Brand in der Raffinerie');
     }
   }
 

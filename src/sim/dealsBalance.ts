@@ -17,6 +17,15 @@ export interface DealsBalance {
   };
   /** 0.4.20+35 Lieferverträge der Raffinerie: Produkt, Mengen je Runde, Laufzeit, Aufschlag auf den heutigen Preis, Strafe je fehlendem Barrel. */
   supply: Record<'marine' | 'lubricant' | 'kerosene', { product: Product; sizes: number[]; rounds: number; premium: number; shortfall: number }>;
+  /** 0.4.20+36 Feuerversicherung: Laufzeiten, Prämie = base + share × Wert, zahlt cover des Schadens, Prämie nach Schaden × (1 + claimRaise). */
+  insurance: { rounds: number[]; base: number; share: number; cover: number; claimRaise: number };
+  /** 0.4.20+36 Arbeiter: Lohnerhöhung (je fördernder Quelle, Runden, Ruf) und Streik-Anruf (Einigung je Quelle, Streikbrecher, Förderausfall). */
+  workers: {
+    raise: { perWell: number; rounds: number; reputation: number };
+    strike: { dealPerWell: number; dealReputation: number; breakerCost: number; breakerReputation: number; loss: number };
+  };
+  /** 0.4.20+36 Presse: Anzeigen (Kosten, Ruf, Rückschlag-Chance, Pause) und Interview (Chance, Ruf, Pause). */
+  press: { ads: { cost: number; reputation: number; backlash: number; cooldown: number }; interview: { chance: number; reputation: number; cooldown: number } };
   /** 0.4.20+34 Telefon: Chance je Runde (ab Kapitel 2), dass jemand anruft. */
   phone: { chance: number };
   rail: {
@@ -120,6 +129,27 @@ export function parseDealsBalance(raw: unknown): DealsBalance {
       },
     },
     phone: { chance: anteil(raw, `${p}.phone.chance`) },
+    insurance: {
+      rounds: liste(raw, `${p}.insurance.rounds`),
+      base: zahl(raw, `${p}.insurance.base`),
+      share: anteil(raw, `${p}.insurance.share`),
+      cover: anteil(raw, `${p}.insurance.cover`),
+      claimRaise: zahl(raw, `${p}.insurance.claimRaise`),
+    },
+    workers: {
+      raise: { perWell: zahl(raw, `${p}.workers.raise.perWell`), rounds: ganz(raw, `${p}.workers.raise.rounds`), reputation: zahl(raw, `${p}.workers.raise.reputation`) },
+      strike: {
+        dealPerWell: zahl(raw, `${p}.workers.strike.dealPerWell`),
+        dealReputation: zahl(raw, `${p}.workers.strike.dealReputation`),
+        breakerCost: zahl(raw, `${p}.workers.strike.breakerCost`),
+        breakerReputation: zahl(raw, `${p}.workers.strike.breakerReputation`),
+        loss: anteil(raw, `${p}.workers.strike.loss`),
+      },
+    },
+    press: {
+      ads: { cost: zahl(raw, `${p}.press.ads.cost`), reputation: zahl(raw, `${p}.press.ads.reputation`), backlash: anteil(raw, `${p}.press.ads.backlash`), cooldown: ganz(raw, `${p}.press.ads.cooldown`) },
+      interview: { chance: anteil(raw, `${p}.press.interview.chance`), reputation: zahl(raw, `${p}.press.interview.reputation`), cooldown: ganz(raw, `${p}.press.interview.cooldown`) },
+    },
     supply: {
       marine: vertrag(raw, `${p}.supply.marine`),
       lubricant: vertrag(raw, `${p}.supply.lubricant`),

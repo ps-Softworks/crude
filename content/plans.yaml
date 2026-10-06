@@ -241,6 +241,36 @@ cards:
       de: "Die Händler auf dem Land kaufen Kerosin für drei Jahre im Voraus – während die Städte schon elektrisches Licht bekommen."
       en: "The country dealers buy kerosene three years ahead – while the cities are already getting electric light."
     risk: { de: "Zwölf Runden sind lang. Wer den Mix umstellt, muss das Kerosin trotzdem liefern.", en: "Twelve rounds are long. Whoever changes the mix must still deliver the kerosene." }
+  versicherung:
+    title: { de: "Feuerversicherung", en: "Fire Insurance" }
+    text:
+      de: "Mr. Ashby von der Provinzial versichert Raffinerie und Tanks gegen Feuer. Die Prämie richtet sich nach dem, was brennen kann."
+      en: "Mr. Ashby of the Provincial insures refinery and tanks against fire. The premium depends on what can burn."
+    risk: { de: "Die Prämie ist jede Runde fällig, auch wenn nie etwas brennt – und nach jedem Schaden wird sie teurer.", en: "The premium is due every round, even if nothing ever burns – and after every claim it gets dearer." }
+  lohnerhoehung:
+    title: { de: "Mehr Lohn für die Bohrtrupps", en: "Higher Wages for the Crews" }
+    text:
+      de: "Der Vormann sagt es offen: Für ein paar Dollar mehr arbeiten die Männer härter und laufen nicht zu Bullard über."
+      en: "The foreman says it plainly: for a few dollars more the men work harder and don't run off to Bullard."
+    risk: { de: "Kostet jede Runde, solange die Zusage gilt.", en: "Costs every round while the promise holds." }
+  streik_droht:
+    title: { de: "Streik droht (Anruf des Vormanns)", en: "Strike Threatened (the Foreman Calls)" }
+    text:
+      de: "Der Vormann ruft an: Die Männer wollen mehr, sonst stehen morgen die Türme still."
+      en: "The foreman calls: the men want more, or tomorrow the rigs stand still."
+    risk: { de: "Wer nichts tut, hat einen Streik. Streikbrecher halten die Türme in Gang, aber das Land redet darüber.", en: "Do nothing and there's a strike. Strikebreakers keep the rigs going, but the whole province talks about it." }
+  anzeigen:
+    title: { de: "Anzeigenkampagne", en: "Advertising Campaign" }
+    text:
+      de: "Ganzseitige Anzeigen in den Zeitungen von Hallstead: Harlan Oil, der ehrliche Mann aus dem Süden."
+      en: "Full-page advertisements in the Hallstead papers: Harlan Oil, the honest man from the South."
+    risk: { de: "Manchmal fragen die Leser, warum einer so viel Geld für sein Bild ausgibt.", en: "Sometimes readers ask why a man spends so much money on his own image." }
+  interview_presse:
+    title: { de: "Interview mit Nora Whitlock", en: "Interview with Nora Whitlock" }
+    text:
+      de: "Nora schreibt jetzt für eine Zeitung in Hallstead. Ein offenes Gespräch kann viel bewirken."
+      en: "Nora now writes for a Hallstead paper. A candid conversation can do a lot."
+    risk: { de: "Nora schreibt, was sie sieht.", en: "Nora writes what she sees." }
   bank_angebot:
     title: { de: "Sonderkredit (Anruf der Bank)", en: "Special Loan (the Bank Calls)" }
     text:
@@ -289,7 +319,7 @@ contacts:
   zeitung:
     name: { de: "Zeitung", en: "Newspaper" }
     who: { de: "der Courier und seine Zeilenschinder", en: "the Courier and its hacks" }
-    cards: [interview, geruecht]
+    cards: [interview, geruecht, interview_presse, anzeigen]
   sheriff:
     name: { de: "Sheriff", en: "Sheriff" }
     who: { de: "Sheriff Tatum", en: "Sheriff Tatum" }
@@ -302,6 +332,14 @@ contacts:
     name: { de: "Großkunden", en: "Large Customers" }
     who: { de: "Fabriken, Bahnwerkstätten und Lampenöl-Händler", en: "Factories, railway workshops and lamp oil dealers" }
     cards: [fabrik_schmieroel, lampenoel_kerosin]
+  versicherung:
+    name: { de: "Versicherung", en: "Insurance" }
+    who: { de: "Provinzial-Feuerversicherung · Mr. Ashby", en: "Provincial Fire Insurance · Mr. Ashby" }
+    cards: [versicherung]
+  arbeiter:
+    name: { de: "Arbeiter", en: "Workers" }
+    who: { de: "der Vormann der Bohrtrupps", en: "the foreman of the drilling crews" }
+    cards: [streik_droht, lohnerhoehung]
   familie:
     name: { de: "Familie", en: "Family" }
     who: { de: "Ruth und die Kinder", en: "Ruth and the children" }

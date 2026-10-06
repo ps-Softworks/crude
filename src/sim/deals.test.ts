@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { creditLimit, quarterInterest, settleLoans, takeLoan } from './credit';
-import { activeSupply, callerCard, DEAL_HANDLERS, dealsOf, supplyPrice, supplyShortfall, dealsRunning, newDeals, royaltyPrice, settleDeals } from './deals';
+import { activeSupply, callerCard, insuranceClaim, insurancePremium, DEAL_HANDLERS, dealsOf, supplyPrice, supplyShortfall, dealsRunning, newDeals, royaltyPrice, settleDeals } from './deals';
 import type { Well } from './drilling';
 import { newGame, type GameState } from './game';
 import { bookCard, planView, ringPhone, settlePlans } from './plans';
@@ -300,5 +300,52 @@ describe('Lieferverträge der Raffinerie (0.4.20+35)', () => {
     const genug = supplyShortfall(s, { lubricant: b.supply.lubricant.sizes[1] });
     expect(genug.cash).toBe(s.cash);
     expect(activeSupply({ ...s, round: s.round + b.supply.lubricant.rounds })).toEqual([]);
+  });
+});
+
+describe('Versicherung, Arbeiter, Presse (0.4.20+36)', () => {
+  const k2 = (seed: string, patch: Partial<GameState> = {}) => start(seed, { chapter: 2, ...patch });
+
+  it('Versicherung: Prämie je Runde; bei Feuer zahlt sie einen Teil, danach steigt die Prämie', () => {
+    const s0 = k2('vers', { cash: 20000 });
+    const s = buche(s0, 'versicherung', '4');
+    const p = insurancePremium(s0, balance);
+    expect(settleDeals(s, balance).cash).toBeCloseTo(s.cash - p, 2);
+    const nach = insuranceClaim(s, balance, 1000, 'Test');
+    expect(nach.cash).toBeCloseTo(s.cash + 1000 * b.insurance.cover, 2);
+    expect(dealsOf(nach).insurance!.premium).toBe(Math.round(p * (1 + b.insurance.claimRaise)));
+    expect(insuranceClaim(s0, balance, 1000, 'Test').cash).toBe(s0.cash);
+  });
+
+  it('Lohnerhöhung: Ruf bei den Arbeitern steigt, kostet je Runde', () => {
+    const s = buche(k2('lohn'), 'lohnerhoehung');
+    expect(s.reputation?.workers).toBe(b.workers.raise.reputation);
+    const nach = settleDeals(s, balance);
+    expect(nach.cash).toBeCloseTo(s.cash - dealsOf(s).wages!.perRound, 2);
+  });
+
+  it('Streik-Anruf: ignoriert = weniger Förderung; verhandeln oder Streikbrecher verhindern ihn', () => {
+    const s = k2('streik', { deals: { ...newDeals(), call: { card: 'streik_droht', round: 1 } } });
+    const ignoriert = settleDeals(s, balance);
+    expect(ignoriert.events.timed.some((t) => t.key === 'production' && t.value === -b.workers.strike.loss)).toBe(true);
+    const brecher = buche(s, 'streik_droht', 'streikbrecher');
+    expect(brecher.reputation?.workers).toBe(-b.workers.strike.breakerReputation);
+    expect(settleDeals(brecher, balance).events.timed.some((t) => t.source === 'streik')).toBe(false);
+    const einig = buche(s, 'streik_droht', 'verhandeln');
+    expect(einig.reputation?.workers).toBe(b.workers.strike.dealReputation);
+  });
+
+  it('Anzeigen und Interview verschieben den öffentlichen Ruf', () => {
+    let hoch = 0;
+    for (let i = 0; i < 200; i++) {
+      const s = k2(`anz${i}`, { cash: 10000 });
+      const x = buche(s, 'anzeigen');
+      expect(x.cash).toBeCloseTo(s.cash - b.press.ads.cost, 2);
+      expect(Math.abs(x.reputation?.public ?? 0)).toBe(b.press.ads.reputation);
+      if ((x.reputation?.public ?? 0) > 0) hoch++;
+    }
+    expect(Math.abs(hoch / 200 - (1 - b.press.ads.backlash))).toBeLessThan(0.08);
+    const iv = DEAL_HANDLERS.interview_presse.apply(k2('iv'), balance);
+    expect(Math.abs(iv.reputation?.public ?? 0)).toBe(b.press.interview.reputation);
   });
 });
