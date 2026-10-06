@@ -12,6 +12,7 @@
 import type { Balance } from './balance';
 import { bankRate, headroom, quarterInterest, takeLoan } from './credit';
 import { formatDate } from './calendar';
+import { chapterOf } from './chapterOf';
 import type { GameState } from './game';
 import { leaseOf } from './lease';
 import type { PlanHandler } from './planHandler';
@@ -53,6 +54,8 @@ export interface DealsState {
   supply?: SupplyContract[];
   /** 0.4.20+36 Feuerversicherung: bis Runde until, Prämie je Runde (steigt nach jedem Schaden). */
   insurance?: { until: number; premium: number } | null;
+  /** Unfallgeschichte der Versicherung: Runden mit versichertem Schaden (hebt die Prämie neuer Verträge). Fehlt = keiner. */
+  claims?: number[];
   /** 0.4.20+36 Lohnerhöhung: Mehrkosten je Runde bis until. */
   wages?: { until: number; perRound: number } | null;
   /** 0.4.20+37 Lohnbohrer: gemietete Türme mit Rabatt bis until (frühe Rückgabe kostet die Restmiete). */
@@ -575,12 +578,26 @@ export function supplyShortfall(state: GameState, output: Partial<Record<Product
 
 // --- Versicherung, Arbeiter, Presse (Kapitel 2) ---------------------------------------------
 
-/** Prämie je Runde: Grundbetrag + Anteil am Wert von Raffinerie und Tanks. */
-export function insurancePremium(state: GameState, balance: Balance): number {
-  const i = balance.deals.insurance;
+/** Versicherte Schäden der letzten history.rounds Runden (Unfallgeschichte). */
+export function recentClaims(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'deals'>>, balance: Balance): number {
+  const h = balance.deals.insurance.history;
+  return (state.deals?.claims ?? []).filter((r) => r > state.round - h.rounds).length;
+}
+
+/** Wert der versicherten Anlagen: Tanks, Raffinerie, eigene Türme (mit Dampfmaschine und Gestänge). */
+export function insuredAssets(state: GameState, balance: Balance): number {
   const tanks = state.logistics.tanks * balance.transport.storage.tankCost;
   const raff = state.refinery && (state.refinery.level > 0 || state.refinery.project) ? balance.refinery.buildCost + Math.max(0, state.refinery.level - 1) * balance.refinery.expandCost : 0;
-  return Math.round(i.base + i.share * (tanks + raff));
+  const r = balance.drilling.rigs;
+  const tuerme = state.rigs.filter((x) => x.kind === 'owned').reduce((sum, x) => sum + r.buy.cost + (x.steam ? r.steam.cost : 0) + (x.rods ? r.rods.cost : 0), 0);
+  return tanks + raff + tuerme;
+}
+
+/** Prämie je Runde: Grundbetrag (Kapitel 1 kleiner) + Anteil am Anlagenwert, mit Zuschlag für die Unfallgeschichte. */
+export function insurancePremium(state: GameState, balance: Balance): number {
+  const i = balance.deals.insurance;
+  const grund = chapterOf(state) <= 1 ? i.firstChapterBase : i.base;
+  return Math.round((grund + i.share * insuredAssets(state, balance)) * (1 + i.history.raise * recentClaims(state, balance)));
 }
 
 /** Ist Jacob in dieser Runde versichert? */
@@ -589,13 +606,17 @@ export function insured(state: Pick<GameState, 'round'> & Partial<Pick<GameState
   return !!v && v.until >= state.round;
 }
 
-/** Schaden melden: Mit Versicherung zahlt sie (Anteil cover), die Prämie steigt danach. Ohne Versicherung unverändert. */
+/**
+ * Schaden melden: Mit Versicherung zahlt sie (Anteil cover), die Prämie steigt danach, und der Schaden steht in der
+ * Unfallgeschichte. Ohne Versicherung unverändert.
+ */
 export function insuranceClaim(state: GameState, balance: Balance, schaden: number, was: string): GameState {
   if (!insured(state) || schaden <= 0) return state;
   const i = balance.deals.insurance;
   const zahlt = cents(schaden * i.cover);
   const v = state.deals!.insurance!;
-  return log(withDeals({ ...state, cash: cents(state.cash + zahlt) }, { insurance: { ...v, premium: Math.round(v.premium * (1 + i.claimRaise)) } }), `Die Versicherung zahlt ${money(zahlt)} für ${was} – die Prämie steigt.`);
+  const claims = [...(state.deals!.claims ?? []), state.round];
+  return log(withDeals({ ...state, cash: cents(state.cash + zahlt) }, { insurance: { ...v, premium: Math.round(v.premium * (1 + i.claimRaise)) }, claims }), `Die Versicherung zahlt ${money(zahlt)} für ${was} – die Prämie steigt.`);
 }
 
 const versicherung: PlanHandler = {
@@ -609,12 +630,12 @@ const versicherung: PlanHandler = {
   },
   detail(_state, balance) {
     const i = balance.deals.insurance;
-    return `Zahlt ${percent(i.cover)} bei Feuer in Raffinerie oder Tanks. Nach jedem Schaden steigt die Prämie um ${percent(i.claimRaise)}.`;
+    return `Zahlt ${percent(i.cover)} bei Feuer in Tanks oder Raffinerie, bei Bohrunfällen und Turmschäden. Nach jedem Schaden steigt die Prämie um ${percent(i.claimRaise)}; neue Verträge kosten je Schaden der letzten ${i.history.rounds} Runden ${percent(i.history.raise)} mehr.`;
   },
   apply(state, balance, target) {
     const r = Number(target ?? balance.deals.insurance.rounds[0]);
     const p = insurancePremium(state, balance);
-    return log(withDeals(state, { insurance: { until: state.round + r - 1, premium: p } }), `Feuerversicherung abgeschlossen: ${r} Runden, ${money(p)} je Runde.`);
+    return log(withDeals(state, { insurance: { until: state.round + r - 1, premium: p } }), `Versicherung abgeschlossen: ${r} Runden, ${money(p)} je Runde.`);
   },
 };
 
@@ -970,6 +991,8 @@ export function settleDeals(input: GameState, balance: Balance): GameState {
       const kaputt = rng(s, 'turm').float() < b.rig.lend.damage;
       s = withDeals(kaputt ? { ...s, cash: cents(s.cash - b.rig.lend.repair) } : s, { lent: null });
       s = log(s, kaputt ? `Der verliehene Turm kommt beschädigt zurück – Reparatur ${money(b.rig.lend.repair)}.` : 'Der verliehene Turm ist zurück, heil.');
+      // Versicherung (ab Kapitel 1): Turmschaden ist versichert.
+      if (kaputt) s = insuranceClaim(s, balance, b.rig.lend.repair, 'den Turmschaden');
     }
   }
   return s;
@@ -988,7 +1011,7 @@ export function dealsRunning(state: GameState, balance: Balance): string[] {
   if (d.bulkRound === state.round) out.push(`Händler nimmt diese Runde ${bbl(balance.deals.trader.bulk.extra)} mehr`);
   if (d.lent) out.push(`Bohrturm verliehen bis Ende Runde ${d.lent.until}`);
   if (d.guardRound === state.round) out.push('Wache an den Tanks');
-  if (d.insurance && d.insurance.until >= state.round) out.push(`Feuerversicherung bis Runde ${d.insurance.until} (${money(d.insurance.premium)} je Runde)`);
+  if (d.insurance && d.insurance.until >= state.round) out.push(`Versicherung bis Runde ${d.insurance.until} (${money(d.insurance.premium)} je Runde)`);
   if (d.wages && d.wages.until >= state.round) out.push(`Lohnerhöhung bis Runde ${d.wages.until} (${money(d.wages.perRound)} je Runde)`);
   if (d.crew && d.crew.until >= state.round) out.push(`Lohnbohrer-Vertrag bis Runde ${d.crew.until} (${d.crew.rigIds.length} Türme)`);
   if (d.autoStake && d.autoStake.failed !== true) out.push('Beteiligung an den Motorwagen-Werken');

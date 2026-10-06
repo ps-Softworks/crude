@@ -275,7 +275,7 @@ plans:
     fabrik_schmieroel: { tab: markt, appointments: 1, target: option, handler: fabrik_schmieroel, requires: { minChapter: 2 } }
     lampenoel_kerosin: { tab: markt, appointments: 1, target: option, handler: lampenoel_kerosin, requires: { minChapter: 2 } }
     # 0.4.20+36 Versicherung, Arbeiter, Presse.
-    versicherung: { tab: markt, appointments: 1, target: option, handler: versicherung, requires: { minChapter: 2 } }
+    versicherung: { tab: markt, appointments: 1, target: option, handler: versicherung }   # ab Kapitel 1 (Feuer, Bohrunfall, Turmschaden)
     lohnerhoehung: { tab: leute, appointments: 1, handler: lohnerhoehung, requires: { minChapter: 2 } }
     streik_droht: { tab: leute, appointments: 1, target: option, handler: streik_droht, call: 1, requires: { minChapter: 2 } }
     anzeigen: { tab: leute, appointments: 1, handler: anzeigen, requires: { minChapter: 2 } }
@@ -309,7 +309,10 @@ deals:
   theft: { chance: 0.06, minStock: 3000, loss: 0.2 }
   phone: { chance: 0.35 }
   # 0.4.20+36 Versicherung, Arbeiter, Presse (Telefon, Kapitel 2). PLATZHALTER.
-  insurance: { rounds: [4, 8], base: 150, share: 0.004, cover: 0.8, claimRaise: 0.5 }   # zahlt 80 % bei Feuer in Raffinerie/Tanks
+  # Versicherung (ab Kapitel 1, GDD §8 „Gegen Feuer, Blowout und Tankerverlust. Die Prämie steigt mit der Unfallgeschichte“):
+  # zahlt 80 % bei Tank-/Raffineriebrand, Bohrunfall und Turmschaden. Prämie je Runde = Grundbetrag (Kapitel 1: firstChapterBase)
+  # + share × Anlagenwert (Tanks, Raffinerie, eigene Türme), × (1 + history.raise je versichertem Schaden der letzten history.rounds Runden).
+  insurance: { rounds: [4, 8], base: 150, firstChapterBase: 40, share: 0.004, cover: 0.8, claimRaise: 0.5, history: { rounds: 8, raise: 0.25 } }
   workers:
     raise: { perWell: 40, rounds: 8, reputation: 15 }   # Lohnerhöhung: Ruf bei den Arbeitern hebt die Förderung (eventSystems.reputation.production)
     strike: { dealPerWell: 120, dealReputation: 5, breakerCost: 1500, breakerReputation: 20, loss: 0.4 }   # Anruf „Streik droht“; ignoriert = −40 % Förderung nächste Runde

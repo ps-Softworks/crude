@@ -12,6 +12,7 @@ import type { GameState } from './game';
 import type { Parcel } from './geology';
 import { leaseOf, parcelLabel } from './lease';
 import { Rng } from './rng';
+import { insuranceClaim } from './deals';
 import { findRig, freeRig, noRigReason, rigLabel, rigRisk, rigStageCost, rigStageRounds, type Rig } from './rigs';
 // 4.11 Andockpunkt: Drehbohren und Rollenmeißel verkürzen und verbilligen das Bohren (ab Kapitel 2).
 // 0.4.20+9: Bohrtiefe (Drehbohren, Rollenmeißel) macht tiefe Stufen sicherer (techStage).
@@ -333,6 +334,8 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
   const log = [...input.log];
   const forecasts = { ...input.forecasts };
   let cash = input.cash;
+  // Versicherung (ab Kapitel 1): Entschädigungen nach Bohrunfällen – nach der Runde gemeldet.
+  const unfaelle: number[] = [];
   // Spielspaß K1: Tiefe Funde vergrößern Vorrat von Ranch und Feld (deepFindReserves).
   let lager: Pick<GameState, 'parcels' | 'fields'> = { parcels: input.parcels, fields: input.fields };
   const lastStage = balance.drilling.stages.length;
@@ -352,6 +355,7 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
     if (a < risiko.accident) {
       const paid = Math.min(cash, balance.drilling.accidentCost);
       cash -= paid;
+      unfaelle.push(paid);
       log.push(`${date}: Unfall auf dem Bohrturm (${label}) – ${money(paid)} Entschädigung, die Stufe muss wiederholt werden.`);
       return { ...well, roundsLeft: 1 };
     }
@@ -399,7 +403,8 @@ export function advanceDrilling(input: GameState, balance: Balance): GameState {
     return { ...well, status: 'dry' };
   });
 
-  return { ...input, ...lager, rng: rng.state, cash, wells, forecasts, log };
+  const gebohrt: GameState = { ...input, ...lager, rng: rng.state, cash, wells, forecasts, log };
+  return unfaelle.reduce((st, paid) => insuranceClaim(st, balance, paid, 'den Bohrunfall'), gebohrt);
 }
 
 function needWell(state: GameState, parcelId: string, allowed: readonly WellStatus[]): Well | string {
