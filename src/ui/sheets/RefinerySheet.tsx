@@ -3,9 +3,10 @@
 // oder raffinieren. Hier wird nichts entschieden – Preise, Grenzen und Gründe
 // kommen aus src/sim/refinery.ts, die Texte aus content/refinery.yaml.
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   adjustMix,
+  bestRefinerySetting,
   buildRefinery,
   crudeVsRefined,
   expandRefinery,
@@ -17,12 +18,14 @@ import {
   productDemand,
   PRODUCTS,
   refineryCapacity,
+  refineryExpansion,
   refineryStatus,
   refineryMixBounds,
   refineryTech,
   refineryWorld,
   setRefineryIntake,
   setRefineryMix,
+  stationOfftake,
   type ProductMix,
   type RefineryResult,
 } from '../../sim/refinery';
@@ -110,6 +113,7 @@ function PlantPanel({ ctx }: { ctx: SheetContext }) {
           </Aktion>
         )}
       </div>
+      {r.level > 0 && r.level < R.maxLevel && !r.project && <ExpansionHint ctx={ctx} />}
       {r.level > 0 && (
         <>
           <label className="raffinerie-regler">
@@ -135,6 +139,17 @@ function PlantPanel({ ctx }: { ctx: SheetContext }) {
         </p>
       )}
     </div>
+  );
+}
+
+/** 0.4.20+18: Was der nächste Ausbau bei der heutigen Nachfrage bringt (beide Stufen bestmöglich eingestellt). */
+function ExpansionHint({ ctx }: { ctx: SheetContext }) {
+  const aus = useMemo(() => refineryExpansion(ctx.game, balance), [ctx.game]);
+  if (!aus) return null;
+  return (
+    <p className="klein">
+      {aus.payback !== null ? rt('hints.expandPays', { gain: money(aus.gain), rounds: rounds(aus.payback) }) : rt('hints.expandNot')}
+    </p>
   );
 }
 
@@ -199,6 +214,8 @@ function MixPanel({ ctx }: { ctx: SheetContext }) {
 function ComparePanel({ ctx }: { ctx: SheetContext }) {
   const v = crudeVsRefined(ctx.game, balance);
   const diff = price(Math.abs(v.advantage));
+  const best = useMemo(() => (ctx.game.refinery!.level > 0 ? bestRefinerySetting(ctx.game, balance) : null), [ctx.game]);
+  const benzin = stationOfftake(ctx.game);
   return (
     <div className="raffinerie">
       <table className="wege raffinerie-vergleich">
@@ -219,6 +236,8 @@ function ComparePanel({ ctx }: { ctx: SheetContext }) {
       {v.advantage >= 0 && v.marginalNet < v.crudeNet && (
         <p>{rt('hints.lessIntake', { marginal: price(v.marginalNet), crude: price(v.crudeNet) })}</p>
       )}
+      {best && <p>{rt('hints.bestGain', { now: money(Math.round(v.advantage * v.crude)), best: money(best.gain) })}</p>}
+      {benzin > 0 && <p className="klein">{rt('hints.stations', { gasoline: barrels(benzin) })}</p>}
       <p className="klein">{rt('hints.compare')}</p>
     </div>
   );

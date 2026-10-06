@@ -1,88 +1,102 @@
-// Raffinerie-Läufe (4.6): prüft die Spielzahlen der Raffinerie über viele Welten
-// zu Beginn (Runde 40) und am Ende (Runde 56) von Kapitel 2. Je Welt und Stufe:
-// der Startmix bei voller Menge gegen die beste Einstellung (Mix in 2-%-Schritten,
-// Menge in 5-%-Schritten), jeweils als Mehrerlös gegenüber dem Verkauf derselben
-// Menge Rohöl (ohne Fixkosten). Ersatz für Bot-Läufe, solange es Kapitel 2 nicht gibt.
-// Aufruf: npx tsx tools/raffinerieLaeufe.ts   (optional: Anzahl Welten, Rohölpreis)
+// Raffinerie-Läufe (4.6, 0.4.20+18): prüft die Spielzahlen der Raffinerie über viele Welten
+// zu Beginn (Runde 40) und am Ende (Runde 56) von Kapitel 2 und in Kapitel 3 (Runde 84/96, nach Zeitsprung II, mit
+// Cracken und eigenen Tankstellen, die Benzin abnehmen). Je Welt und Stufe 1–maxLevel:
+//   schlecht = Startmix bei voller Menge, gut = beste Einstellung (bestRefinerySetting),
+// jeweils als Mehrerlös gegenüber dem Verkauf derselben Menge Rohöl (ohne Fixkosten), und je Ausbau:
+// Anteil der Welten, in denen der Ausbau nach Fixkosten mehr bringt und sich in ≤ 16 bzw. ≤ 30 Runden bezahlt macht.
+// Die Zufuhr ist nicht durch die Transportwege begrenzt (Kapitel 3 hat Fernleitungen).
+// Aufruf: npx tsx tools/raffinerieLaeufe.ts   (optional: Anzahl Welten, Rohölpreis, Abnahme der Tankstellen in bbl)
 import type { GameState } from '../src/sim/game';
 import { newGame } from '../src/sim/game';
-import { crudeVsRefined, plannedCrude, planRun, refineryTech, refineryWorld, unlockRefinery, type ProductMix } from '../src/sim/refinery';
+import { bestRefinerySetting, crackedBounds, crudeVsRefined, planRun, refineryTech, unlockRefinery, type ProductMix } from '../src/sim/refinery';
+import type { MixBound, Product } from '../src/sim/refineryBalance';
 import { loadBalance } from '../src/sim/testBalance';
 import { newWorld, skipWorld } from '../src/sim/world';
 
 const balance = loadBalance();
+// Zum Ausprobieren: RAFF='{"unitCapacity":10000,"products":{"gasoline":{"basePrice":1.8}}}' überschreibt balance.refinery.
+function mische(ziel: Record<string, unknown>, quelle: Record<string, unknown>): void {
+  for (const [k, v] of Object.entries(quelle)) {
+    if (v && typeof v === 'object' && !Array.isArray(v) && ziel[k] && typeof ziel[k] === 'object') mische(ziel[k] as Record<string, unknown>, v as Record<string, unknown>);
+    else ziel[k] = v;
+  }
+}
+if (process.env.RAFF) mische(balance.refinery as unknown as Record<string, unknown>, JSON.parse(process.env.RAFF));
 const R = balance.refinery;
 const anzahl = Number(process.argv[2] ?? 20);
 const preis = Number(process.argv[3] ?? R.crudeRef);
-const bounds = refineryTech(balance, 1).mix;
+const abnahmeK3 = Number(process.argv[4] ?? 15_000);
+const crack = balance.research.techs.find((t) => (t.effects as Record<string, number>).gasolineYield)?.effects as Record<string, number> | undefined;
+const crackPlus = Number(process.env.CRACK ?? crack?.gasolineYield ?? 0);
+
+function bounds(k3: boolean): Record<Product, MixBound> {
+  const b = refineryTech(balance, 1).mix;
+  return k3 ? crackedBounds(b, crackPlus) : b;
+}
 
 function lage(seed: string, level: number, runde: number): GameState {
   const g = newGame(seed, balance);
   const worldModel = skipWorld(newWorld(seed, balance.worldModel), balance.worldModel, runde);
   const s = unlockRefinery(
-    { ...g, startYear: R.products.kerosene.trend.refYear + Math.floor((runde - 40) / 4), round: 1, worldModel, oilStock: 200_000, royaltyOil: 0, postedPrice: preis },
+    { ...g, startYear: R.products.kerosene.trend.refYear + Math.floor((runde - 40) / 4), round: 1, worldModel, oilStock: 400_000, royaltyOil: 0, postedPrice: preis },
     balance,
   );
   return { ...s, logistics: { ...s.logistics, pipeline: 'ready' }, refinery: { ...s.refinery!, level } };
 }
 
-function gewinn(s: GameState, mix: ProductMix, intake: number): number {
+function gewinn(s: GameState, mix: ProductMix, intake: number, abnahme: number): number {
   const st = { ...s, refinery: { ...s.refinery!, mix, intake } };
-  const crude = plannedCrude(st, balance);
-  const run = planRun(st, balance, crude);
+  const crude = Math.floor(intake * s.refinery!.level * R.unitCapacity);
+  const run = planRun(st, balance, crude, { stationOfftake: abnahme });
   return run.revenue - run.operating - run.feed - crude * crudeVsRefined(st, balance).crudeNet;
 }
 
-function mixe(): ProductMix[] {
-  const out: ProductMix[] = [];
-  const schritte = (p: keyof ProductMix) => {
-    const xs: number[] = [];
-    for (let v = Math.round(bounds[p].min * 100); v <= Math.round(bounds[p].max * 100); v += 2) xs.push(v);
-    return xs;
-  };
-  for (const k of schritte('kerosene'))
-    for (const l of schritte('lubricant'))
-      for (const g of schritte('gasoline')) {
-        const f = 100 - k - l - g;
-        if (f < bounds.fuelOil.min * 100 || f > bounds.fuelOil.max * 100) continue;
-        out.push({ kerosene: k / 100, lubricant: l / 100, fuelOil: f / 100, gasoline: g / 100 });
-      }
-  return out;
-}
-
-const MIXE = mixe();
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor((xs.length - 1) / 2)];
 const tsd = (v: number) => `${(v / 1000).toFixed(1)}k`;
+const pct = (n: number) => `${Math.round((n / anzahl) * 100)} %`;
 
-console.log(`Raffinerie-Läufe: ${anzahl} Welten, Rohöl ${preis.toFixed(2)} $, mit Pipeline, Mehrerlös gegenüber Rohölverkauf je Runde (ohne Fixkosten ${R.upkeepPerLevel} $/Stufe)`);
-for (const [level, runde] of [
-  [1, 40],
-  [1, 56],
-  [2, 40],
-  [2, 56],
+console.log(
+  `Raffinerie-Läufe: ${anzahl} Welten, Rohöl ${preis.toFixed(2)} $, Stufe = ${R.unitCapacity} bbl, Ausbau ${R.expandCost} $, Fixkosten ${R.upkeepPerLevel} $/Stufe; ` +
+    `Mehrerlös gegenüber Rohölverkauf je Runde (ohne Fixkosten). Kapitel 3: Cracken +${crackPlus * 100} % Benzin, Tankstellen nehmen ${abnahmeK3} bbl ab.`,
+);
+for (const [runde, k3] of [
+  [40, false],
+  [56, false],
+  [84, true],
+  [96, true],
 ] as const) {
-  const start: number[] = [];
-  const best: number[] = [];
-  const intakes: number[] = [];
-  const nachfrage: number[] = [];
-  for (let i = 0; i < anzahl; i++) {
-    const s = lage(`raff${i}`, level, runde);
-    nachfrage.push(refineryWorld(s, balance).demand);
-    start.push(gewinn(s, R.startMix, 1));
-    let top = -Infinity;
-    let topIntake = 1;
-    for (const m of MIXE)
-      for (let k = 6; k <= 20; k++) {
-        const g = gewinn(s, m, k / 20);
-        if (g > top) {
-          top = g;
-          topIntake = k / 20;
-        }
+  const abnahme = k3 ? abnahmeK3 : 0;
+  const b = bounds(k3);
+  const besteJe: number[][] = [];
+  console.log(`\nRunde ${runde}${k3 ? ' (Kapitel 3)' : ''}:`);
+  for (let level = 1; level <= R.maxLevel; level++) {
+    const schlecht: number[] = [];
+    const gut: number[] = [];
+    const mengen: number[] = [];
+    for (let i = 0; i < anzahl; i++) {
+      const s = lage(`raff${i}`, level, runde);
+      schlecht.push(gewinn(s, R.startMix, 1, abnahme));
+      const best = bestRefinerySetting(s, balance, { bounds: b, stationOfftake: abnahme, unlimitedFeed: true });
+      gut.push(best.gain);
+      mengen.push(best.intake);
+      (besteJe[i] ??= []).push(best.gain);
+    }
+    let lohnt = '';
+    if (level >= 2) {
+      let n = 0;
+      let schnell = 0;
+      let mittel = 0;
+      for (let i = 0; i < anzahl; i++) {
+        const mehr = besteJe[i][level - 1] - besteJe[i][level - 2] - R.upkeepPerLevel;
+        if (mehr > 0) n++;
+        if (mehr > 0 && R.expandCost / mehr <= 16) schnell++;
+        if (mehr > 0 && R.expandCost / mehr <= 30) mittel++;
       }
-    best.push(top);
-    intakes.push(topIntake);
+      lohnt = ` | Ausbau: lohnt ${pct(n)}, bezahlt ≤ 16 R. ${pct(schnell)}, ≤ 30 R. ${pct(mittel)}`;
+    }
+    const crude = level * R.unitCapacity;
+    console.log(
+      `  Stufe ${level}: schlecht ${tsd(median(schlecht))} (${(median(schlecht) / crude).toFixed(2)} $/bbl) | gut ${tsd(median(gut))} (${(median(gut) / (crude * median(mengen))).toFixed(2)} $/bbl bei ${Math.round(median(mengen) * 100)} %)${lohnt}`,
+    );
   }
-  console.log(
-    `Stufe ${level}, Runde ${runde}: Welt-Nachfrage ${median(nachfrage).toFixed(2)} | Startmix 100 %: ${tsd(median(start))} | beste Einstellung: ${tsd(median(best))} bei Menge ${Math.round(median(intakes) * 100)} %`,
-  );
 }

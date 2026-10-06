@@ -1467,14 +1467,16 @@ worldModel:
 # Alle Werte PLATZHALTER bis zu den Bot-Läufen für Kapitel 2.
 refinery:
   unlockChapter: 2         # GDD §13: Raffinerie und Produktmix sind neue Mechanik in Kapitel 2
-  buildCost: 150000        # $ für die erste Destillationsanlage (gut eingestellt in ~10 Runden bezahlt, achtlos in ~30; tools/raffinerieLaeufe.ts)
+  # 0.4.20+18: kleinere Anlage, die mit der Firma wächst (vorher 25.000 bbl je Stufe – der Großhandel war schon bei
+  # ~10–12.000 bbl satt, Ausbau lohnte nie). Messung: npx tsx tools/raffinerieLaeufe.ts (Tabelle in docs/phase4/4.6.md).
+  buildCost: 80000         # $ für die erste Destillationsanlage (gut eingestellt in ~12 Runden bezahlt, mit Startmix nie)
   buildRounds: 3           # Bauzeit in Runden
-  unitCapacity: 25000      # bbl Rohöl je Runde und Ausbaustufe
-  maxLevel: 4              # höchstens so viele Ausbaustufen
-  expandCost: 80000        # $ je weitere Ausbaustufe
+  unitCapacity: 10000      # bbl Rohöl je Runde und Ausbaustufe
+  maxLevel: 4              # höchstens so viele Ausbaustufen (Stufe 4 lohnt nur mit vielen Tankstellen und großem Markt)
+  expandCost: 50000        # $ je weitere Ausbaustufe (Stufe 2 lohnt Ende Kapitel 2 in ~40 % der Welten, Stufe 3 erst mit Tankstellen)
   expandRounds: 2          # Bauzeit je Ausbau (die alte Anlage läuft weiter)
-  upkeepPerLevel: 2500     # Fixkosten je fertiger Ausbaustufe und Runde (Löhne, Kessel, Wache)
-  operatingCost: 0.40      # $ je verarbeitetem Barrel Rohöl (Kohle, Chemikalien, Fässer)
+  upkeepPerLevel: 800      # Fixkosten je fertiger Ausbaustufe und Runde (Löhne, Kessel, Wache)
+  operatingCost: 0.50      # $ je verarbeitetem Barrel Rohöl (Kohle, Chemikalien, Fässer)
   assetShare: 0.6          # Buchwert der Anlage im Imperiumswert (Anteil der Baukosten)
   fire:                    # GDD §6: Raffinerien brennen
     chance: 0.03           # je Runde, in der die Anlage läuft
@@ -1494,53 +1496,54 @@ refinery:
       label: Destillation
       loss: 0.05           # Verlust beim Destillieren (Gas, Rückstand)
       mix:                 # Spielraum je Produkt als Anteil der Ausbeute; Benzin ist Nebenprodukt (ca. 20 %)
-        kerosene: { min: 0.35, max: 0.60 }
+        kerosene: { min: 0.15, max: 0.60 }   # Cracken (Forschung) senkt den Kerosin-Mindestanteil um so viel, wie es Benzin dazugibt
         lubricant: { min: 0.05, max: 0.15 }
-        fuelOil: { min: 0.10, max: 0.35 }
+        fuelOil: { min: 0.10, max: 0.55 }
         gasoline: { min: 0.15, max: 0.20 }
   startMix: { kerosene: 0.55, lubricant: 0.10, fuelOil: 0.15, gasoline: 0.20 }
   # Je Produkt: Grundpreis in $ je Barrel, Nachfrage des Großhandels in bbl je Runde (in der Bezugswelt),
   # Preiselastizität, Bindung an den Rohölpreis, Preisgrenzen (Anteil am Grundpreis).
-  # Die Nachfrage aller Produkte zusammen (23.000 bbl) entspricht etwa der Ausbeute EINER
-  # Ausbaustufe (25.000 bbl Rohöl − 5 % Verlust): Schon in Stufe I drückt ein schiefer Mix
-  # oder zu viel Menge den Preis; erst wenn die Welt mehr Öl braucht, lohnt der Ausbau.
-  # Der Startmix (viel Kerosin, viel Benzin) liegt bewusst daneben.
+  # 0.4.20+18: Die Märkte sind verschieden groß und verschieden viel wert. Kerosin bringt gut, aber der Markt ist
+  # klein und schrumpft; Heizöl ist der große Markt; Schmieröl ist klein und teuer. Elastizität 2: Wer einen Markt
+  # überschwemmt, verliert dort Erlös. Der Startmix (55 % Kerosin) liegt bewusst daneben – mit ihm und voller Menge
+  # bringt Raffinieren weniger als der Rohölverkauf; gut eingestellt ~0,75 $ je Barrel mehr.
   # Wachstum: Das allgemeine Wachstum trägt der Nachfrage-Index der Welt (trend.demand =
   # Exponent auf Welt-Nachfrage / worldDefaults.demand). perYear ist nur die Verschiebung
   # des Produkts gegenüber dieser allgemeinen Ölnachfrage (Kerosin verliert Anteile,
   # Benzin gewinnt); tech und tension wirken je 50 bzw. 100 Punkte über der Bezugswelt.
+  # Benzin für die eigenen Tankstellen (Kapitel 3) geht nicht an den Großhandel (planRun, stationOfftake).
   products:
     kerosene:              # dominiert zu Beginn, verliert mit der Elektrifizierung Anteile
-      basePrice: 2.20
-      demand: 11000
-      elasticity: 1.0
+      basePrice: 1.80
+      demand: 3000
+      elasticity: 2.0
       crudeLink: 0.3
-      floor: 0.4
-      ceiling: 1.2
+      floor: 0.25
+      ceiling: 1.1
       trend: { refYear: 98, perYear: -0.02, tech: -0.15, tension: 0, war: 0, demand: 1, min: 0.2 }
     lubricant:             # Maschinen und Eisenbahn: kleine Menge, guter Preis, schnell gesättigt
-      basePrice: 3.60
-      demand: 3000
-      elasticity: 1.2
+      basePrice: 3.30
+      demand: 1300
+      elasticity: 2.0
       crudeLink: 0.2
       floor: 0.4
-      ceiling: 1.2
+      ceiling: 1.1
       trend: { refYear: 98, perYear: 0.0, tech: 0.10, tension: 0, war: 0.1, demand: 1, min: 0.2 }
     fuelOil:               # Marine, Eisenbahn, Industrie
-      basePrice: 1.10
-      demand: 5500
-      elasticity: 1.0
+      basePrice: 1.90
+      demand: 6500
+      elasticity: 2.0
       crudeLink: 0.5
       floor: 0.4
-      ceiling: 1.2
+      ceiling: 1.1
       trend: { refYear: 98, perYear: 0.0, tech: 0.05, tension: 0.8, war: 0.6, demand: 1, min: 0.2 }
     gasoline:              # Nebenprodukt; gewinnt mit der Automobilisierung Anteile
-      basePrice: 1.00
-      demand: 3500
-      elasticity: 1.3
+      basePrice: 2.00
+      demand: 2200
+      elasticity: 2.0
       crudeLink: 0.3
       floor: 0.3
-      ceiling: 1.2
+      ceiling: 1.1
       trend: { refYear: 98, perYear: 0.08, tech: 0.30, tension: 0, war: 0.3, demand: 1, min: 0.2 }
 
 # 4.7 Fernleitungen (GDD §6, Kapitel 2): große Pipelines vom Feld zum Hafen oder Bahnhof.
