@@ -1,9 +1,9 @@
 # Weltmodell
 
-Stand: 2026-10-04 · Version 0.4.4
+Stand: 2026-10-06 · Version 0.4.20+12
 
 Erzeugt mit `npm run welt` (tools/weltlaeufe.ts, Regeln in src/sim/world.ts und src/sim/laws.ts, Zahlen in content/balance.yaml unter worldModel, Gesetze in content/laws/).
-300 Welten (Seeds `welt-0` bis `welt-299`) über eine ganze Kampagne: 292 Runden = 73 Spieljahre, **ohne Spieler**. Rechenzeit 1.8 s.
+300 Welten (Seeds `welt-0` bis `welt-299`) über eine ganze Kampagne: 292 Runden = 73 Spieljahre, **ohne Spieler**. Rechenzeit 2.1 s.
 
 - Alle Werte endlich: **ja** · Krisenzahlen in der Mehrheit der Welten im GDD-Ziel: **ja**
 
