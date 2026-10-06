@@ -6,6 +6,10 @@ import { botTurn } from './bots';
 import { endRound, newGame, type GameState } from './game';
 import {
   HEADLINE_IDS,
+  brandHeadline,
+  delaneyHeadline,
+  headlineVariant,
+  pipelineHeadline,
   expectedPrice,
   makeNewspaper,
   marketOutlook,
@@ -17,6 +21,11 @@ import { Rng, seedFromString } from './rng';
 import type { RivalWell } from './rival';
 import type { Well } from './drilling';
 import { loadBalance } from './testBalance';
+import { newBigPipelines } from './bigPipeline';
+import { newInvestigation, type InvestigationState } from './investigation';
+import { newBrand } from './brand';
+import { openExchange } from './exchange';
+import { parseExchangeContent } from './exchangeContent';
 
 const balance = loadBalance();
 const FILE = 'content/newspaper.yaml';
@@ -86,7 +95,8 @@ describe('Zeitung: Frühwarnzeichen (GDD §7.2)', () => {
     const preisHeute = heute.postedPrice;
     const zeitung = makeNewspaper(heute, balance, content);
     expect(['outlook_fall', 'outlook_crash']).toContain(zeitung.front.id);
-    expect(zeitung.front.title).toBe(content.headlines[zeitung.front.id].title.de);
+    const h = content.headlines[zeitung.front.id];
+    expect([h, ...(h.variants ?? [])].map((f) => f.title.de)).toContain(zeitung.front.title);
     // Noch ist der Preis nicht gefallen …
     expect(heute.priceHistory.at(-1)).toBe(preisHeute);
     // … aber am Ende der Runde.
@@ -264,5 +274,133 @@ describe('Kurzmeldung zu Cranes Abschlag (2.8)', () => {
     expect(newsItems(mit(6), balance)).not.toContain('crane_cut');
     expect(newsItems(mit(7), balance)).toContain('crane_cut');
     expect(newsItems(mit(8), balance)).not.toContain('crane_cut');
+  });
+});
+
+// 0.4.20+9: Varianten, neue Meldungen und Börsenseite aus der Simulation.
+describe('Zeitung: Fassungen derselben Schlagzeile (0.4.20+9)', () => {
+  it('Marktschlagzeilen haben mehrere Fassungen mit Deutsch und Englisch', () => {
+    for (const id of ['outlook_crash', 'outlook_fall', 'outlook_rise', 'outlook_steady', 'price_cut', 'price_raise'] as const) {
+      const v = content.headlines[id].variants ?? [];
+      expect(v.length).toBeGreaterThanOrEqual(3);
+      for (const f of v) {
+        expect(f.title.de).not.toBe('');
+        expect(f.text.en).not.toBe('');
+        expect(f.title.de).not.toMatch(/\d/);
+      }
+    }
+  });
+
+  it('dieselbe Fassung erscheint nie zweimal hintereinander, und gleich gerechnet kommt dasselbe heraus', () => {
+    for (const seed of ['a', 'b', 'zeitung']) {
+      for (const n of [2, 3, 4]) {
+        let vorher = -1;
+        const gesehen = new Set<number>();
+        for (let r = 1; r <= 60; r++) {
+          const v = headlineVariant(seed, 'outlook_steady', r, n);
+          expect(v).toBeGreaterThanOrEqual(0);
+          expect(v).toBeLessThan(n);
+          expect(v).not.toBe(vorher);
+          expect(headlineVariant(seed, 'outlook_steady', r, n)).toBe(v);
+          gesehen.add(v);
+          vorher = v;
+        }
+        expect(gesehen.size).toBe(n);
+      }
+    }
+    expect(headlineVariant('a', 'x', 5, 1)).toBe(0);
+  });
+
+  it('bei gleichem Markt wechselt die Titelseite von Runde zu Runde', () => {
+    const g = newGame('ruhe', balance);
+    // Gleiche Lage, nur die Runde zählt weiter (der Markt kann trotzdem kippen – verglichen wird nur bei gleicher Aussicht).
+    const titel = Array.from({ length: 12 }, (_, i) => makeNewspaper({ ...g, round: i + 1 }, balance, content).front);
+    let gleich = 0;
+    for (let i = 1; i < titel.length; i++) {
+      if (titel[i].id !== titel[i - 1].id) continue;
+      gleich += 1;
+      expect(titel[i].title).not.toBe(titel[i - 1].title);
+    }
+    expect(gleich).toBeGreaterThan(0);
+  });
+
+  it('kaputte Fassungen werden gemeldet', () => {
+    const kaputt = parseNewspaperContent(FILE, text.replace('    variants:\n      - title:', '    variants:\n      - titel:'));
+    expect(kaputt.content).toBeNull();
+    expect(kaputt.errors.some((e) => e.message.includes('variants'))).toBe(true);
+  });
+});
+
+describe('Zeitung: Fernleitung, Delaney, Benzinpreiskampf (0.4.20+9)', () => {
+  const base = { ...newGame('neu', balance), round: 10 };
+  const brief = (kind: 'ready' | 'sabotage', round: number) => ({ round, kind, projectId: 'f1', rightId: '', party: 'bau' as const, owner: '', ranch: '', amount: 0 });
+
+  it('Fernleitung fertig oder gesprengt – nur in der Ausgabe nach der Runde', () => {
+    const bp = newBigPipelines(base.seed);
+    expect(pipelineHeadline({ ...base, bigPipelines: { ...bp, letters: [brief('ready', 9)] } })).toBe('pipeline_built');
+    expect(pipelineHeadline({ ...base, bigPipelines: { ...bp, letters: [brief('sabotage', 9), brief('ready', 9)] } })).toBe('pipeline_built');
+    expect(pipelineHeadline({ ...base, bigPipelines: { ...bp, letters: [brief('sabotage', 9)] } })).toBe('pipeline_damaged');
+    expect(pipelineHeadline({ ...base, bigPipelines: { ...bp, letters: [brief('sabotage', 8)] } })).toBeNull();
+    expect(pipelineHeadline(base)).toBeNull();
+    expect(newsItems({ ...base, bigPipelines: { ...bp, letters: [brief('ready', 9)] } }, balance)).toContain('pipeline_built');
+  });
+
+  it('Delaney: jede neue Stufe und jeder Ausgang der letzten Runde hat eine Meldung', () => {
+    const inv = newInvestigation(base, balance);
+    const mit = (stage: InvestigationState['stage'], since: number, verdict: InvestigationState['verdict'] = null) => ({ ...base, investigation: { ...inv, stage, since, verdict } });
+    expect(delaneyHeadline(mit('geruecht', 9))).toBe('delaney_rumor');
+    expect(delaneyHeadline(mit('vorermittlung', 9))).toBe('delaney_probe');
+    expect(delaneyHeadline(mit('anklage', 9))).toBe('delaney_charge');
+    expect(delaneyHeadline(mit('abgeschlossen', 9, 'eingestellt'))).toBe('delaney_dropped');
+    expect(delaneyHeadline(mit('abgeschlossen', 9, 'vergleich'))).toBe('delaney_settled');
+    expect(delaneyHeadline(mit('abgeschlossen', 9, 'freispruch'))).toBe('delaney_acquitted');
+    expect(delaneyHeadline(mit('abgeschlossen', 9, 'geldstrafe'))).toBe('delaney_convicted');
+    expect(delaneyHeadline(mit('abgeschlossen', 9, 'schwere_strafe'))).toBe('delaney_convicted');
+    // Ältere Stufe, Rückkehr zur Ruhe, kein Fall: nichts.
+    expect(delaneyHeadline(mit('anklage', 8))).toBeNull();
+    expect(delaneyHeadline(mit('ruhe', 9))).toBeNull();
+    expect(delaneyHeadline(base)).toBeNull();
+    expect(newsItems(mit('anklage', 9), balance)).toContain('delaney_charge');
+  });
+
+  it('Benzinpreiskampf: Beginn vor Ende, gelesen aus der letzten Markenabrechnung', () => {
+    const b = newBrand(base.seed, balance);
+    expect(brandHeadline({ brand: { ...b, news: [{ kind: 'priceWarStart', region: 'x' }] } })).toBe('brand_price_war');
+    expect(brandHeadline({ brand: { ...b, news: [{ kind: 'priceWarEnd', region: 'y' }, { kind: 'priceWarStart', region: 'x' }] } })).toBe('brand_price_war');
+    expect(brandHeadline({ brand: { ...b, news: [{ kind: 'priceWarEnd', region: 'y' }] } })).toBe('brand_price_war_end');
+    expect(brandHeadline({ brand: { ...b, news: [{ kind: 'opened', region: 'y', count: 1 }] } })).toBeNull();
+    expect(brandHeadline({})).toBeNull();
+  });
+});
+
+describe('Zeitung: Börsenseite aus der Simulation (0.4.20+9)', () => {
+  const boerse = parseExchangeContent(
+    'content/exchange.yaml',
+    readFileSync(new URL('../../content/exchange.yaml', import.meta.url), 'utf8'),
+    balance.exchange.stocks.map((s) => s.id),
+  ).content!;
+
+  it('ohne Börse oder ohne Börsentexte keine Börsenseite', () => {
+    const g = newGame('boerse', balance);
+    expect(makeNewspaper(g, balance, content, undefined, undefined, boerse).exchange).toBeNull();
+    const mitBoerse = openExchange(g, balance);
+    expect(makeNewspaper(mitBoerse, balance, content).exchange).toBeNull();
+  });
+
+  it('mit Börse baut makeNewspaper die Seite samt Kurszettel; Harlan Oil erst nach dem Börsengang', () => {
+    const g = openExchange(newGame('boerse', balance), balance);
+    const seite = makeNewspaper(g, balance, content, undefined, undefined, boerse).exchange!;
+    expect(seite.title).toBe(boerse.headlines[seite.id].title.de);
+    expect(seite.quotes.map((q) => q.id)).toEqual(balance.exchange.stocks.map((s) => s.id));
+    expect(seite.quotes.some((q) => q.own)).toBe(false);
+    const ag = { ...g, stocks: { public: true, price: 12, priceHistory: [10, 12] } as unknown as GameState['stocks'] };
+    const eigene = makeNewspaper(ag, balance, content, undefined, undefined, boerse).exchange!.quotes.at(-1)!;
+    expect(eigene.id).toBe('own');
+    expect(eigene.name).toBe(boerse.own.de);
+    expect(eigene.price).toBe(12);
+    expect(eigene.change).toBeCloseTo(0.2, 9);
+    expect(eigene.own).toBe(true);
+    const familie = { ...g, stocks: { public: false, price: 12, priceHistory: [10, 12] } as unknown as GameState['stocks'] };
+    expect(makeNewspaper(familie, balance, content, undefined, undefined, boerse).exchange!.quotes.some((q) => q.own)).toBe(false);
   });
 });

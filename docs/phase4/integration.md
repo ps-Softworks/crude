@@ -239,8 +239,11 @@ Main ist inzwischen bei 0.4.4. Beim nächsten Merge von main in diesen Branch be
    Platzhalter in `research.techs`.
 4. Raffinerie ↔ Marke: `ownGasoline` in 4.14 ist `null` (Benzin reicht immer). Soll die eigene Raffinerie die
    Tankstellen beliefern statt den Großhandel?
-5. Börse ↔ Aktien: Der eigene Kurs (4.8) fällt im Börsencrash (4.15) nur indirekt mit; Harlan Oil steht nicht
-   auf der Kurstafel. Hallstead-Bahn-/Autoaktien (4.16) sind eigene Beteiligungen ohne Kurs.
+5. Börse ↔ Aktien: ~~Der eigene Kurs (4.8) fällt im Börsencrash (4.15) nur indirekt mit; Harlan Oil steht nicht
+   auf der Kurstafel.~~ *Erledigt 0.4.20+9:* Solange Börsencrash oder Kreditcrash der Welt nachwirken, sinkt die
+   Stimmung der eigenen Aktie je Runde um `stocks.price.crashWeight` (`stocksWorldOf` → `crash`); Harlan Oil steht
+   nach dem Börsengang auf dem Kurszettel der Börsenseite (`quotes` in `makeExchangePage`, nur Anzeige).
+   Offen: Hallstead-Bahn-/Autoaktien (4.16) sind eigene Beteiligungen ohne Kurs.
 6. Personal ↔ Ermittler/Lobby: der Lobbyist (4.16) ist keine Personal-Rolle. Umschlag-Hitze (`lobbyHeat`, 4.16)
    wirkt noch nicht auf Delaney.
    *Erledigt 0.4.20+9:* `staffHeat` (4.9) zählt × `investigation.staffHeatFactor` (abgerundet) zur Hitze
@@ -256,8 +259,12 @@ Main ist inzwischen bei 0.4.4. Beim nächsten Merge von main in diesen Branch be
 8. Diplomatie → Welt: `diplomacyMoodShift` vorbereitet, nicht eingespeist.
    *Erledigt 0.4.20+9:* Solange eine Gebietsabsprache mit Bullard läuft (`territoryPact` in rival.ts), pachtet er
    nichts direkt neben Jacobs Land (wie beim Handschlag aus Kapitel 1).
-9. Zeitung: keine Schlagzeilen zu Fernleitung, Ermittlung, Preiskampf der Marke; die Börsenseite hängt in der
-   Oberfläche (NewspaperPanel), nicht in `makeNewspaper`.
+9. ~~Zeitung: keine Schlagzeilen zu Fernleitung, Ermittlung, Preiskampf der Marke; die Börsenseite hängt in der
+   Oberfläche (NewspaperPanel), nicht in `makeNewspaper`.~~ *Erledigt 0.4.20+9:* Meldungen `pipeline_built`/
+   `pipeline_damaged` (Briefe der letzten Runde), `delaney_*` (neue Stufe oder Ausgang, aus `stage`/`since`) und
+   `brand_price_war`/`brand_price_war_end` (`state.brand.news`); `makeNewspaper` baut die Börsenseite mit (Feld
+   `exchange`), die Oberfläche zeigt nur an. Marktschlagzeilen haben je drei weitere Fassungen (`variants` in
+   content/newspaper.yaml, `headlineVariant`) – bei gleichem Markt wiederholt sich die Zeitung nicht mehr.
 10. Imperiumswert ohne Börsendepot (4.15).
    *Erledigt 0.4.20+9:* Konsortium-Rauswurf (4.17) kostet `expelledPenalty` × Posted Price ÷ `market.basePrice`
    (`expelledCost` in konsortium.ts).

@@ -60,6 +60,26 @@ headlines:
     text:
       de: Am Hafen stapeln sich die Fässer, die Händler winken ab. Wer jetzt noch Öl im Tank hat, sollte schnell verkaufen – der Trust wird den Preis kräftig drücken.
       en: Barrels are piling up at the harbour and the traders wave them away. Anyone still holding oil had better sell quickly – the Trust will push the price down hard.
+    # 0.4.20+9: weitere Fassungen – die Zeitung wiederholt sich nicht Runde für Runde.
+    variants:
+      - title:
+          de: "Fässer bis an die Kaimauer"
+          en: "Barrels up to the quay wall"
+        text:
+          de: "Die Schuten liegen voll, die Lagerhalter nehmen nichts mehr an. Wer noch Öl hat, sollte es loswerden, ehe der Trust den Preis in den Keller schickt."
+          en: "The barges lie full and the storage men take nothing more. Whoever still has oil had better be rid of it before the Trust sends the price into the cellar."
+      - title:
+          de: "Öl in Strömen, Käufer auf der Flucht"
+          en: "Oil in floods, buyers in flight"
+        text:
+          de: "Am Hafen weiß niemand mehr wohin mit dem Öl. In den Kontoren des Trusts wird schon ein neuer, viel niedrigerer Preis ausgehängt."
+          en: "At the harbour no one knows where to put the oil any more. In the Trust's offices a new, much lower price is already being posted."
+      - title:
+          de: "Schwarze Flut in Port Ellis"
+          en: "Black flood in Port Ellis"
+        text:
+          de: "Selbst die Fischer klagen über Ölfässer auf ihren Stegen. Die Händler bieten kaum noch etwas – es wird ein harter Fall."
+          en: "Even the fishermen complain of oil barrels on their jetties. The traders hardly bid at all – it will be a hard fall."
   # Der Preis wird am Ende dieser Runde spürbar fallen.
   outlook_fall:
     title:
@@ -68,6 +88,26 @@ headlines:
     text:
       de: Die Lagerhalter in Port Ellis klagen über Platzmangel. In den Kontoren des Trusts spricht man schon von einem niedrigeren Posted Price.
       en: The storage men in Port Ellis complain about a lack of space. In the Trust's offices there is already talk of a lower posted price.
+    # 0.4.20+9: weitere Fassungen – die Zeitung wiederholt sich nicht Runde für Runde.
+    variants:
+      - title:
+          de: "Lagerhalter winken ab"
+          en: "Storage men wave buyers off"
+        text:
+          de: "In Port Ellis wird der Platz knapp, und die Käufer lassen sich Zeit. Man rechnet in den Kontoren mit einem schwächeren Posted Price."
+          en: "Space is getting tight in Port Ellis and the buyers take their time. In the offices a weaker posted price is expected."
+      - title:
+          de: "Zu viel Öl, zu wenig Fässer"
+          en: "Too much oil, too few barrels"
+        text:
+          de: "Die Böttcher kommen mit dem Fassmachen nicht nach, die Tanks am Hafen füllen sich. Der Trust wird wohl nachgeben – nach unten."
+          en: "The coopers cannot keep up with the barrels and the harbour tanks are filling. The Trust will likely give way – downwards."
+      - title:
+          de: "Händler werden wählerisch"
+          en: "Traders turn choosy"
+        text:
+          de: "Am Kai wird um jedes Fass gefeilscht. Wer verkaufen will, sollte nicht zu lange warten."
+          en: "On the quay every barrel is haggled over. Anyone who wants to sell should not wait too long."
   # Der Preis wird am Ende dieser Runde spürbar steigen.
   outlook_rise:
     title:
@@ -76,6 +116,26 @@ headlines:
     text:
       de: Die Raffinerien rufen nach Öl, doch am Salt Hill kommt weniger an als erwartet. Die Händler rechnen mit besseren Preisen.
       en: The refineries are calling for oil, but less is arriving from Salt Hill than expected. Traders expect better prices.
+    # 0.4.20+9: weitere Fassungen – die Zeitung wiederholt sich nicht Runde für Runde.
+    variants:
+      - title:
+          de: "Raffinerien rufen nach Öl"
+          en: "Refineries clamour for oil"
+        text:
+          de: "Aus dem Norden kommen Telegramme: mehr Öl, und zwar bald. Am Hafen stehen die Tanks halb leer."
+          en: "Telegrams are coming from the north: more oil, and soon. At the harbour the tanks stand half empty."
+      - title:
+          de: "Käufer drängeln am Kai"
+          en: "Buyers jostle on the quay"
+        text:
+          de: "Kaum ist ein Fuhrwerk entladen, ist das Öl schon verkauft. Die Händler sprechen offen von einem besseren Preis."
+          en: "No sooner is a wagon unloaded than the oil is sold. The traders speak openly of a better price."
+      - title:
+          de: "Leere Fässer am Hafen"
+          en: "Empty barrels at the harbour"
+        text:
+          de: "Die Böttcher haben Fässer übrig, die Lagerhalter nichts zu tun. Wer jetzt Öl bringt, wird gut bezahlt werden."
+          en: "The coopers have barrels to spare and the storage men nothing to do. Whoever brings oil now will be paid well."
   # Keine große Bewegung in Sicht.
   outlook_steady:
     title:
@@ -84,6 +144,26 @@ headlines:
     text:
       de: Fässer kommen, Fässer gehen. Die Händler am Hafen sehen keinen Grund zur Aufregung.
       en: Barrels come, barrels go. The traders at the harbour see no reason for excitement.
+    # 0.4.20+9: weitere Fassungen – die Zeitung wiederholt sich nicht Runde für Runde.
+    variants:
+      - title:
+          de: "Gewohnter Gang am Hafen"
+          en: "Business as usual at the harbour"
+        text:
+          de: "Die Fuhrwerke rollen, die Händler zahlen, was sie letzte Woche zahlten. Niemand erwartet eine Überraschung."
+          en: "The wagons roll, the traders pay what they paid last week. No one expects a surprise."
+      - title:
+          de: "Stille Woche im Ölgeschäft"
+          en: "A quiet week in the oil trade"
+        text:
+          de: "In den Kontoren wird mehr über das Wetter gesprochen als über den Preis. Angebot und Nachfrage halten sich die Waage."
+          en: "In the offices there is more talk of the weather than of the price. Supply and demand are in balance."
+      - title:
+          de: "Nichts Neues vom Posted Price"
+          en: "Nothing new on the posted price"
+        text:
+          de: "Die Tanks sind weder voll noch leer. Die Händler am Kai sehen keinen Grund, ihre Preise zu ändern."
+          en: "The tanks are neither full nor empty. The traders on the quay see no reason to change their prices."
 
   # --- Kurzmeldungen: was in der letzten Runde geschah ---
   price_cut:
@@ -93,6 +173,26 @@ headlines:
     text:
       de: Der Crane Trust zahlt weniger je Barrel. Kleine Bohrfirmen rechnen nach.
       en: The Crane Trust pays less per barrel. Small drillers are doing their sums.
+    # 0.4.20+9: weitere Fassungen – die Zeitung wiederholt sich nicht Runde für Runde.
+    variants:
+      - title:
+          de: "Weniger Geld je Barrel"
+          en: "Less money per barrel"
+        text:
+          de: "Der Trust hat den Posted Price gesenkt. In den Bohrcamps wird der Gürtel enger geschnallt."
+          en: "The Trust has lowered the posted price. In the drilling camps belts are being tightened."
+      - title:
+          de: "Trust dreht an der Schraube"
+          en: "Trust turns the screw"
+        text:
+          de: "Ein neuer Aushang im Kontor des Crane Trust – und der Preis darauf ist niedriger als zuvor. Die Förderer murren."
+          en: "A new notice in the Crane Trust's office – and the price on it is lower than before. The producers grumble."
+      - title:
+          de: "Schlechte Nachricht für die Förderer"
+          en: "Bad news for the producers"
+        text:
+          de: "Der Crane Trust zahlt weniger für das Öl. Wer Schulden hat, rechnet jetzt zweimal."
+          en: "The Crane Trust is paying less for oil. Anyone with debts now does his sums twice."
   price_raise:
     title:
       de: Trust zahlt mehr
@@ -100,6 +200,26 @@ headlines:
     text:
       de: Der Crane Trust hebt den Posted Price an – das Öl am Salt Hill ist gefragt.
       en: The Crane Trust raises the posted price – Salt Hill oil is in demand.
+    # 0.4.20+9: weitere Fassungen – die Zeitung wiederholt sich nicht Runde für Runde.
+    variants:
+      - title:
+          de: "Mehr Geld je Barrel"
+          en: "More money per barrel"
+        text:
+          de: "Der Trust hat den Posted Price angehoben. In den Saloons am Salt Hill wird eine Runde ausgegeben."
+          en: "The Trust has raised the posted price. In the Salt Hill saloons a round is being stood."
+      - title:
+          de: "Gute Woche für die Förderer"
+          en: "A good week for the producers"
+        text:
+          de: "Der Crane Trust zahlt mehr – das Öl ist gefragt wie lange nicht. Die Bohrmannschaften bekommen ihren Lohn pünktlich."
+          en: "The Crane Trust is paying more – oil is wanted as it has not been for a long time. The drilling crews get their wages on time."
+      - title:
+          de: "Der Preis zieht an"
+          en: "The price climbs"
+        text:
+          de: "Ein neuer Aushang im Kontor des Trusts, und diesmal lächeln die Förderer. Wer Öl im Tank hat, freut sich."
+          en: "A new notice in the Trust's office, and this time the producers smile. Whoever has oil in the tank is glad of it."
   # 2.8: Der Crane Trust zahlt den Unabhängigen ab dieser Runde weniger (Jacob hat den Abschlag hingenommen).
   crane_cut:
     title:
@@ -137,6 +257,89 @@ headlines:
     text:
       de: Gebrauchter Bohrturm zu verkaufen, kaum benutzt. Zimmer frei in der Front Street, nur an ordentliche Herren.
       en: Used derrick for sale, hardly used. Room to let on Front Street, respectable gentlemen only.
+
+  # --- 0.4.20+9: Fernleitung (4.7) – fertig oder gesprengt (aus den Briefen der letzten Runde) ---
+  pipeline_built:
+    title:
+      de: Harlans Fernleitung fließt
+      en: Harlan's trunk line is flowing
+    text:
+      de: Das letzte Rohr ist verschraubt, das Öl läuft ohne Fuhrwerk und ohne Bahn. In Thornes Frachtbüro sieht man lange Gesichter.
+      en: The last pipe is bolted on, and the oil runs without wagon or railway. In Thorne's freight office the faces are long.
+  pipeline_damaged:
+    title:
+      de: Anschlag auf die Fernleitung
+      en: Attack on the trunk line
+    text:
+      de: In der Nacht hat es an Harlans Leitung gekracht, Öl versickert im Gras. Der Sheriff sucht die Täter – wer sie bezahlt hat, fragt man sich in Port Ellis leise.
+      en: In the night there was a blast on Harlan's line, and oil is seeping into the grass. The sheriff is looking for the culprits – who paid them is asked quietly in Port Ellis.
+
+  # --- 0.4.20+9: Bundesanwalt Delaney (4.11) – neue Stufe der Ermittlung oder ihr Ausgang ---
+  delaney_rumor:
+    title:
+      de: Fragen über einen Ölmann
+      en: Questions about an oilman
+    text:
+      de: In Cordova erzählt man sich Geschichten über Harlans frühe Jahre am Salt Hill. Bundesanwalt Delaney soll zugehört haben.
+      en: In Cordova people are telling stories about Harlan's early years at Salt Hill. Federal prosecutor Delaney is said to have listened.
+  delaney_probe:
+    title:
+      de: Bundesanwalt ermittelt gegen Harlan
+      en: Federal prosecutor investigates Harlan
+    text:
+      de: Delaney hat eine Vorermittlung eröffnet. Seine Leute befragen Farmer, Bohrmeister und alte Pächter – und sie schreiben alles auf.
+      en: Delaney has opened a preliminary inquiry. His men are questioning farmers, drillers and old leaseholders – and they write everything down.
+  delaney_charge:
+    title:
+      de: Anklage gegen Jacob Harlan
+      en: Jacob Harlan indicted
+    text:
+      de: Das Bundesgericht in Cordova hat die Anklage zugelassen. Die Geschworenen werden gelost, die Anwälte wetzen die Federn.
+      en: The federal court in Cordova has admitted the indictment. The jurors are being drawn and the lawyers are sharpening their pens.
+  delaney_dropped:
+    title:
+      de: Delaney legt die Akte Harlan beiseite
+      en: Delaney shelves the Harlan file
+    text:
+      de: Zu wenig Beweise, sagt man im Gerichtsgebäude. Harlans Freunde atmen auf – Delaney, heißt es, vergisst nichts.
+      en: Too little evidence, they say at the courthouse. Harlan's friends breathe again – Delaney, it is said, forgets nothing.
+  delaney_settled:
+    title:
+      de: Vergleich im Fall Harlan
+      en: Settlement in the Harlan case
+    text:
+      de: Harlan zahlt, Delaney schließt die Akte. Vor Gericht kommt es nicht – was der Ölmann gestanden hat, bleibt hinter verschlossenen Türen.
+      en: Harlan pays and Delaney closes the file. It will not come to court – what the oilman admitted stays behind closed doors.
+  delaney_acquitted:
+    title:
+      de: Freispruch für Harlan
+      en: Harlan acquitted
+    text:
+      de: Die Geschworenen in Cordova sprechen den Ölmann frei. Auf der Treppe des Gerichts schüttelt Harlan Hände, Delaney geht durch die Hintertür.
+      en: The jury in Cordova acquits the oilman. On the courthouse steps Harlan shakes hands; Delaney leaves by the back door.
+  delaney_convicted:
+    title:
+      de: Schuldig gesprochen
+      en: Found guilty
+    text:
+      de: Das Bundesgericht verurteilt Jacob Harlan. Die Strafe ist hoch, der Name beschmutzt – in den Kontoren von Hallstead zählt man nach, wer ihm noch Kredit gibt.
+      en: The federal court convicts Jacob Harlan. The penalty is heavy and the name tarnished – in the Hallstead offices they count who will still give him credit.
+
+  # --- 0.4.20+9: Benzinpreiskampf mit Margaret Crane (4.14) – aus der letzten Markenabrechnung ---
+  brand_price_war:
+    title:
+      de: Benzinkrieg an den Tankstellen
+      en: Gasoline war at the filling stations
+    text:
+      de: Margaret Crane unterbietet Harlans Stationen, wo sie nur kann. Die Automobilisten tanken billig, die Pächter der Stationen zählen die Tage.
+      en: Margaret Crane undercuts Harlan's stations wherever she can. The motorists fill up cheaply, the station keepers count the days.
+  brand_price_war_end:
+    title:
+      de: Waffenruhe an der Zapfsäule
+      en: Truce at the pump
+    text:
+      de: Crane hebt die Benzinpreise wieder an. Ob sie genug hat oder nur Atem holt, weiß an den Stationen niemand.
+      en: Crane raises her gasoline prices again. Whether she has had enough or is only catching her breath, no one at the stations knows.
 
   # --- Öffentliches Handeln (4.2): Worüber man in der letzten Runde über Jacob
   # redete – höchstens eine Meldung, die lauteste zuerst. Die Tat verschiebt am
