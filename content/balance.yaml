@@ -810,7 +810,7 @@ bots:
       answers: { bank_panic: ride, automobile: invest, okara: lease, clara: business, war_export: export, navy: accept, grady: take, college: company }
       reserve: 5000
       perRound: 4
-      exchange: { share: 0.15, leverage: 5, sellOnWarning: false }
+      exchange: { share: 0.05, leverage: 5, sellOnWarning: false }   # 0.4.20+17: 0,15 → 0,05 – mit 0,15 heizte sein Maklerkredit (~700.000 $) die Börse selbst bis zum Crash an (200 Kampagnen: Siegquote 15,5 → 21,5 %)
       bonds: { load: 0.1 }    # gibt Anleihen bis 10 % des Anleihen-Rahmens aus (0,2: Pleite 74,5 %, 0,5: 90,5 % – Anleihen bringen ihm nie mehr ein, die Krise in Kapitel 3 holt ihn)
       defend: { thorneFrom: 0.15, controlBelow: 0.55, buyback: 0.03 }
       feldzug: { pact: false, loan: true, sellBelow: 0 }         # 0.4.20+8: kämpft auf Pump – Thornes Geld, nie verkaufen (mit Absprache rettete ihn Margarets Gebietsaufteilung: Pleite 70 % → 24 %)
@@ -1223,6 +1223,9 @@ hallstead:
     bribe: { cost: 10000, favors: 4, heat: 10, heatDecay: 0.05 }  # Umschlag: Geld gegen Gefallen, macht Hitze (verblasst je Runde um 5 %; zählt × investigation.lobbyHeatFactor bei Delaney)
     donation: { min: 10000, perFavor: 10000, winMultiplier: 2 }  # Wahlkampfspende: gewinnt die Partei, 2 Gefallen je 10.000 $
     drunkChance: 0.2         # Trinker: Runde ohne Gefallen
+    politicsChapter: 2       # 0.4.20+17 Provinzpolitik: ab Kapitel 2 Gesetze fordern/bremsen und spenden (Lobbyist, Umschlag, Verwässern erst mit Hallstead)
+    ownFavors: 1             # 0.4.20+17: Jacobs eigene Kontakte bringen je Runde 1 Gefallen × Gewicht
+    weight: { fullAt: 1200000, min: 0.1 }   # 0.4.20+17: Gewicht von Jacobs Wort = Imperiumswert ÷ 1,2 Mio. $ (mind. 0,1, höchstens 1) – wirkt auf Druck, Abstimmung und eigene Gefallen
     genieSpread: 0.5         # Genie: Gefallen ±50 % je nach Laune
     candidates:
       pryce:  { competence: 4, hireCost: 15000, salary: 6000, trait: gewissenhaft }
@@ -1362,10 +1365,13 @@ worldModel:
       noise: 0.01
       min: 0.1
       max: 0.85
-    lobby:                   # VORBEREITET (ab Kapitel 2): was Jacobs Gefallen im Parlament bewirken
+    lobby:                   # was Jacobs Gefallen im Parlament bewirken (Züge: WorldInput.lobby; Druck aus Hallstead/Provinz: lawInfluence)
       demand: 3              # fordern: so viele Druckpunkte auf einmal
       block: 0.06            # verhindern: so viel weniger Zustimmung bei der Abstimmung
       delay: 2               # verzögern: so viele Runden mehr Debatte
+      influencePressure: 3   # 0.4.20+17: Jacobs Einfluss (−1 … +1, nach Firmengröße gewichtet) × 3 Druckpunkte je Runde
+      influenceVote: 0.2     # … und × 0,2 Zustimmung bei der Abstimmung (voller Einfluss: ±20 Punkte)
+      weakenFrom: 0.2        # verwässert ab 20 %: beim Beschluss gelten die aufgeweichten Regeln (lobby.weaken.rules)
   tension:                   # Schleife 3: Außenspannung
     base: 18                 # Ruhe-Niveau der Diplomatie
     revert: 0.04
