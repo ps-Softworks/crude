@@ -19,9 +19,24 @@ import { MAJOR_WORLD_HEADLINES, worldHeadline, WORLD_HEADLINES } from './worldNe
 // Termine als Hauptwerkzeug, Etappe 2: Gerüchte, Förderbremse, Noras Vorwarnungen.
 import { marketMods, soldThisRound } from './pricing';
 import { chapterOf } from './chapterOf';
+// 0.4.20+9: Varianten je Schlagzeile, neue Meldungen (Fernleitung, Delaney, Benzinpreiskampf), Börsenseite.
+import { seedFromString } from './rng';
+import { readClimate } from './exchange';
+import { makeExchangePage, type ExchangeContent, type ExchangePage } from './exchangeContent';
 
 /** Meldungen über Jacobs öffentliches Handeln (4.2): eine je Tat, Schlüssel public_<tat>. */
 export const PUBLIC_HEADLINES = PUBLIC_ACTS.map((a) => `public_${a}` as const);
+
+/** 0.4.20+9: Meldungen zu Delaneys Ermittlung (4.11), je Stufe bzw. Ausgang eine. */
+export const DELANEY_HEADLINES = [
+  'delaney_rumor',
+  'delaney_probe',
+  'delaney_charge',
+  'delaney_dropped',
+  'delaney_settled',
+  'delaney_acquitted',
+  'delaney_convicted',
+] as const;
 
 /** Aussicht für den Ölpreis bis zum Rundenende. */
 export type Outlook = 'crash' | 'fall' | 'steady' | 'rise';
@@ -45,14 +60,27 @@ export const HEADLINE_IDS = [
   'rumour_exposed',
   'cartel_collapse',
   'cartel_court',
+  // 0.4.20+9: Fernleitung (4.7) fertig oder gesprengt.
+  'pipeline_built',
+  'pipeline_damaged',
+  // 0.4.20+9: Delaneys Ermittlung (4.11) – neue Stufe oder Ausgang.
+  ...DELANEY_HEADLINES,
+  // 0.4.20+9: Benzinpreiskampf mit Margaret Crane (4.14) beginnt oder endet.
+  'brand_price_war',
+  'brand_price_war_end',
   ...PUBLIC_HEADLINES,
   ...WORLD_HEADLINES,
 ] as const;
 export type HeadlineId = (typeof HEADLINE_IDS)[number];
 
-export interface HeadlineText {
+export interface HeadlineVariant {
   title: LocalizedText;
   text: LocalizedText;
+}
+
+export interface HeadlineText extends HeadlineVariant {
+  /** 0.4.20+9: weitere Fassungen derselben Meldung – die Zeitung wechselt, statt sich zu wiederholen. */
+  variants?: HeadlineVariant[];
 }
 
 export interface NewspaperContent {
@@ -77,6 +105,8 @@ export interface Newspaper {
   election: ElectionReport | null;
   /** Aus dem Parlament (4.3): Antrag, Debatte oder Abstimmung der letzten Runde – höchstens eine Meldung. */
   law: LawReport | null;
+  /** 0.4.20+9: Börsenseite (4.15) – nur mit Börse und wenn die Texte der Börse mitgegeben werden. */
+  exchange?: ExchangePage | null;
 }
 
 /**
@@ -150,6 +180,13 @@ export function newsItems(state: GameState, balance: Balance): HeadlineId[] {
     if (p.courtRound === letzte && letzte > 0) ids.unshift('cartel_court');
     else if (p.collapseRound === letzte && letzte > 0) ids.push('cartel_collapse');
   }
+  // 0.4.20+9: Fernleitung, Delaney und Benzinpreiskampf der letzten Runde.
+  const leitung = pipelineHeadline(state);
+  if (leitung) ids.push(leitung);
+  const delaney = delaneyHeadline(state);
+  if (delaney) ids.push(delaney);
+  const preiskampf = brandHeadline(state);
+  if (preiskampf) ids.push(preiskampf);
   // Öffentliches Handeln (4.2): Worüber man über Jacob redet – die lauteste Tat der letzten Runde.
   const tat = loudestAct(state.worldModel);
   if (tat) ids.push(`public_${tat}`);
@@ -162,6 +199,70 @@ export function newsItems(state: GameState, balance: Balance): HeadlineId[] {
   return ids.slice(0, balance.newspaper.maxItems);
 }
 
+/**
+ * 0.4.20+9: Fernleitung (4.7) – die Briefe der letzten Runde sagen, ob eine Leitung fertig
+ * wurde oder Saboteure sie gesprengt haben. Fertig geht vor.
+ */
+export function pipelineHeadline(state: Pick<GameState, 'round' | 'bigPipelines'>): HeadlineId | null {
+  const letzte = state.round - 1;
+  const briefe = state.bigPipelines?.letters.filter((l) => l.round === letzte) ?? [];
+  if (briefe.some((l) => l.kind === 'ready')) return 'pipeline_built';
+  if (briefe.some((l) => l.kind === 'sabotage')) return 'pipeline_damaged';
+  return null;
+}
+
+/**
+ * 0.4.20+9: Delaneys Ermittlung (4.11) – hat in der letzten Runde eine neue Stufe begonnen
+ * (Gerücht, Vorermittlung, Anklage) oder ist der Fall abgeschlossen worden, meldet es die
+ * Zeitung. Gelesen wird die Stufe mit ihrer Anfangsrunde (since), nicht die Merkzeichen
+ * delaney_*: Die gelten nur beim ersten Fall, die Stufe auch bei jedem weiteren.
+ * Zurück zur Ruhe (Gerücht verflogen, Abkühlzeit vorbei) ist keine Meldung wert.
+ */
+export function delaneyHeadline(state: Pick<GameState, 'round' | 'investigation'>): HeadlineId | null {
+  const inv = state.investigation;
+  if (!inv || inv.since !== state.round - 1 || inv.since <= 0) return null;
+  switch (inv.stage) {
+    case 'geruecht':
+      return 'delaney_rumor';
+    case 'vorermittlung':
+      return 'delaney_probe';
+    case 'anklage':
+      return 'delaney_charge';
+    case 'abgeschlossen':
+      if (inv.verdict === 'eingestellt') return 'delaney_dropped';
+      if (inv.verdict === 'vergleich') return 'delaney_settled';
+      if (inv.verdict === 'freispruch') return 'delaney_acquitted';
+      if (inv.verdict === 'geldstrafe' || inv.verdict === 'schwere_strafe') return 'delaney_convicted';
+      return null;
+    default:
+      return null;
+  }
+}
+
+/**
+ * 0.4.20+9: Benzinpreiskampf (4.14) – liest nur die Nachrichten der letzten Markenabrechnung
+ * (state.brand.news). Ein neuer Preiskampf geht vor seinem Ende in einer anderen Region.
+ */
+export function brandHeadline(state: Pick<GameState, 'brand'>): HeadlineId | null {
+  const news = state.brand?.news ?? [];
+  if (news.some((n) => n.kind === 'priceWarStart')) return 'brand_price_war';
+  if (news.some((n) => n.kind === 'priceWarEnd')) return 'brand_price_war_end';
+  return null;
+}
+
+/**
+ * 0.4.20+9: Welche Fassung einer Schlagzeile in Runde round erscheint (0 = die Grundfassung).
+ * Deterministisch aus Seed, Schlagzeile und Runde; von Runde zu Runde springt die Fassung
+ * immer weiter (um 1 bis count−1), sodass dieselbe Meldung nie zweimal hintereinander
+ * gleich klingt. Gerechnet wird ab Runde 1, damit jede Ausgabe ihre Vorgängerin kennt.
+ */
+export function headlineVariant(seed: string, id: string, round: number, count: number): number {
+  if (count <= 1) return 0;
+  let v = seedFromString(`${seed}:zeitung:${id}`) % count;
+  for (let r = 1; r <= round; r++) v = (v + 1 + (seedFromString(`${seed}:zeitung:${id}:${r}`) % (count - 1))) % count;
+  return v;
+}
+
 const FRONT: Record<Outlook, HeadlineId> = {
   crash: 'outlook_crash',
   fall: 'outlook_fall',
@@ -169,19 +270,33 @@ const FRONT: Record<Outlook, HeadlineId> = {
   rise: 'outlook_rise',
 };
 
-/** Die Zeitung zu Beginn der laufenden Runde. */
-export function makeNewspaper(state: GameState, balance: Balance, content: NewspaperContent, lang?: Lang, politics?: PoliticsContent): Newspaper {
-  const headline = (id: HeadlineId): Headline => ({
-    id,
-    title: localize(content.headlines[id].title, lang),
-    text: localize(content.headlines[id].text, lang),
-  });
+/**
+ * Die Zeitung zu Beginn der laufenden Runde. Mit den Texten der Börse (exchange) baut sie
+ * auch die Börsenseite (0.4.20+9) – die Oberfläche zeigt nur noch an.
+ */
+export function makeNewspaper(
+  state: GameState,
+  balance: Balance,
+  content: NewspaperContent,
+  lang?: Lang,
+  politics?: PoliticsContent,
+  exchange?: ExchangeContent,
+): Newspaper {
+  const headline = (id: HeadlineId): Headline => {
+    const h = content.headlines[id];
+    const fassungen: HeadlineVariant[] = [h, ...(h.variants ?? [])];
+    const f = fassungen[headlineVariant(state.seed, id, state.round, fassungen.length)];
+    return { id, title: localize(f.title, lang), text: localize(f.text, lang) };
+  };
+  const s = state.stocks;
+  const eigene = s?.public ? { price: s.price, history: s.priceHistory } : null;
   return {
     name: localize(content.name, lang),
     front: headline(FRONT[marketOutlook(state, balance)]),
     items: newsItems(state, balance).map(headline),
     election: politics ? electionReport(state.worldModel, politics, lang) : null,
     law: politics ? lawReport(state.worldModel?.laws, balance.laws, politics, lang) : null,
+    exchange: exchange && state.exchange ? makeExchangePage(state.exchange, balance.exchange, exchange, readClimate(state), lang, eigene) : null,
   };
 }
 
@@ -239,7 +354,19 @@ export function parseNewspaperContent(
     }
     const title = sprachtext(eintrag.title, `${id}.title`);
     const body = sprachtext(eintrag.text, `${id}.text`);
-    if (title && body) headlines[id] = { title, text: body };
+    // 0.4.20+9: weitere Fassungen (variants), je mit title und text.
+    const variants: HeadlineVariant[] = [];
+    if (eintrag.variants !== undefined) {
+      if (!Array.isArray(eintrag.variants)) fehler(`${id}.variants: muss eine Liste sein.`);
+      else
+        eintrag.variants.forEach((v: unknown, i: number) => {
+          const vt = istObjekt(v) ? sprachtext(v.title, `${id}.variants[${i + 1}].title`) : null;
+          const vb = istObjekt(v) ? sprachtext(v.text, `${id}.variants[${i + 1}].text`) : null;
+          if (!istObjekt(v)) fehler(`${id}.variants[${i + 1}]: braucht title und text.`);
+          if (vt && vb) variants.push({ title: vt, text: vb });
+        });
+    }
+    if (title && body) headlines[id] = variants.length > 0 ? { title, text: body, variants } : { title, text: body };
   }
   if (errors.length > 0 || !name) return { content: null, errors };
   return { content: { name, headlines: headlines as Record<HeadlineId, HeadlineText> }, errors };

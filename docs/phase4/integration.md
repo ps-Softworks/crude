@@ -233,16 +233,23 @@ Main ist inzwischen bei 0.4.4. Beim nächsten Merge von main in diesen Branch be
    Tanklaster und Bohrtiefe wirken ebenfalls noch nicht; das Fenster sagt das ehrlich („wirkt noch nicht“).
 4. Raffinerie ↔ Marke: `ownGasoline` in 4.14 ist `null` (Benzin reicht immer). Soll die eigene Raffinerie die
    Tankstellen beliefern statt den Großhandel?
-5. Börse ↔ Aktien: Der eigene Kurs (4.8) fällt im Börsencrash (4.15) nur indirekt mit; Harlan Oil steht nicht
-   auf der Kurstafel. Hallstead-Bahn-/Autoaktien (4.16) sind eigene Beteiligungen ohne Kurs.
+5. Börse ↔ Aktien: ~~Der eigene Kurs (4.8) fällt im Börsencrash (4.15) nur indirekt mit; Harlan Oil steht nicht
+   auf der Kurstafel.~~ *Erledigt 0.4.20+9:* Solange Börsencrash oder Kreditcrash der Welt nachwirken, sinkt die
+   Stimmung der eigenen Aktie je Runde um `stocks.price.crashWeight` (`stocksWorldOf` → `crash`); Harlan Oil steht
+   nach dem Börsengang auf dem Kurszettel der Börsenseite (`quotes` in `makeExchangePage`, nur Anzeige).
+   Offen: Hallstead-Bahn-/Autoaktien (4.16) sind eigene Beteiligungen ohne Kurs.
 6. Personal ↔ Ermittler/Lobby: `staffHeat` (4.9) wirkt nicht auf Delaney; der Lobbyist (4.16) ist keine
    Personal-Rolle; Kronzeuge gegen Crane (4.11) macht Crane in 4.10 nicht zum Feind.
 7. Gefallen (4.16 `spendFavors`) werden für Genehmigungen und Ermittlungen (4.11) noch nicht verlangt;
    politischer Druck kostet dort Geld. Einfluss für Enteignung (4.7) ist ein Entwurfsname (`politics.influence`).
 8. Diplomatie → Welt: `diplomacyMoodShift` vorbereitet, nicht eingespeist. Bullards Gebietsabsprache wirkt nur
    über billigere Pachten, nicht in seiner Pacht-KI.
-9. Zeitung: keine Schlagzeilen zu Fernleitung, Ermittlung, Preiskampf der Marke; die Börsenseite hängt in der
-   Oberfläche (NewspaperPanel), nicht in `makeNewspaper`.
+9. ~~Zeitung: keine Schlagzeilen zu Fernleitung, Ermittlung, Preiskampf der Marke; die Börsenseite hängt in der
+   Oberfläche (NewspaperPanel), nicht in `makeNewspaper`.~~ *Erledigt 0.4.20+9:* Meldungen `pipeline_built`/
+   `pipeline_damaged` (Briefe der letzten Runde), `delaney_*` (neue Stufe oder Ausgang, aus `stage`/`since`) und
+   `brand_price_war`/`brand_price_war_end` (`state.brand.news`); `makeNewspaper` baut die Börsenseite mit (Feld
+   `exchange`), die Oberfläche zeigt nur an. Marktschlagzeilen haben je drei weitere Fassungen (`variants` in
+   content/newspaper.yaml, `headlineVariant`) – bei gleichem Markt wiederholt sich die Zeitung nicht mehr.
 10. Imperiumswert ohne Börsendepot (4.15); Konsortium-Rauswurf (4.17) als feste Summe statt über den Weltpreis.
 
 **Balance und Bots**

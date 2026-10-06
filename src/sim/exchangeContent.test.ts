@@ -57,6 +57,18 @@ describe('Börsenseite und Makler', () => {
     expect(stockName(content, 'motorwagen')).toBe(content.stocks.motorwagen.name.de);
   });
 
+  it('0.4.20+9: Kurszettel mit allen Aktien; Harlan Oil nur, wenn Kurs und Verlauf mitgegeben werden', () => {
+    const ex: ExchangeState = { ...newExchange('s', 1, EB), events: [] };
+    const ohne = makeExchangePage(ex, EB, content);
+    expect(ohne.quotes.map((q) => q.id)).toEqual(IDS);
+    expect(ohne.quotes.every((q) => !q.own && q.price === ex.prices[q.id])).toBe(true);
+    const mit = makeExchangePage(ex, EB, content, undefined, 'en', { price: 9, history: [12, 9] });
+    expect(mit.quotes).toHaveLength(IDS.length + 1);
+    expect(mit.quotes.at(-1)).toEqual({ id: 'own', name: content.own.en, price: 9, change: -0.25, own: true });
+    expect(makeExchangePage(ex, EB, content, undefined, undefined, { price: 9, history: [9] }).quotes.at(-1)!.change).toBe(0);
+    expect(content.own.de).toBe('Harlan Oil');
+  });
+
   it('Nachschussforderung nennt Aktie und den Betrag, der den Kauf wieder über die Grenze hebt', () => {
     const s = { ...openExchange(newGame('brief', balance), balance), cash: 5000 };
     const r = buyStock(s, balance, 'thorne_bahn', 1000, 5);

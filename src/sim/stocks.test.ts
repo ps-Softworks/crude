@@ -90,7 +90,7 @@ function st(g: GameState): StocksState {
 }
 
 /** n Rundenenden der Börse (ohne den Rest der Simulation); die Runde zählt mit. */
-function runden(g: GameState, n: number, b: Balance = balance, world = { credit: 50, mood: 50 }): GameState {
+function runden(g: GameState, n: number, b: Balance = balance, world: NonNullable<Parameters<typeof settleStocks>[2]> = { credit: 50, mood: 50 }): GameState {
   let s = g;
   for (let i = 0; i < n; i++) s = { ...settleStocks(s, b, world), round: s.round + 1 };
   return s;
@@ -359,6 +359,21 @@ describe('Kontrolle und Aktienbuch', () => {
     // Im echten Spiel liest die Börse das Weltmodell von main (state.worldModel, 4.1).
     const echt = newGame('klima-echt', balance);
     expect(stocksWorldOf(echt)).toEqual({ credit: echt.worldModel.credit, mood: echt.worldModel.mood });
+  });
+
+  it('0.4.20+9: Solange ein Crash nachwirkt (Börse oder Kreditcrash der Welt), fällt auch Harlan Oil', () => {
+    expect(stocksWorldOf({ worldModel: { credit: 50, mood: 50, crash: 3 } }).crash).toBe(true);
+    expect(stocksWorldOf({ worldModel: { credit: 50, mood: 50, crash: 0 }, exchange: { crash: 2 } }).crash).toBe(true);
+    expect(stocksWorldOf({ worldModel: { credit: 50, mood: 50, crash: 0 }, exchange: { crash: 0 } }).crash).toBeUndefined();
+    const ruhig = mit({ price: { noise: 0, profitWeight: 0, reversion: 0 } });
+    const g = ag(0.33, 'crash', ruhig);
+    const normal = runden(g, 1, ruhig, { credit: 50, mood: 50 });
+    const crash = runden(g, 1, ruhig, { credit: 50, mood: 50, crash: true });
+    expect(st(normal).sentiment - st(crash).sentiment).toBeCloseTo(balance.stocks.price.crashWeight, 9);
+    expect(st(crash).price).toBeLessThan(st(normal).price);
+    // Ohne Gewicht wirkt der Crash nicht.
+    const ohne = mit({ price: { noise: 0, profitWeight: 0, reversion: 0, crashWeight: 0 } });
+    expect(st(runden(ag(0.33, 'crash', ohne), 1, ohne, { credit: 50, mood: 50, crash: true })).sentiment).toBeCloseTo(st(runden(ag(0.33, 'crash', ohne), 1, ohne)).sentiment, 9);
   });
 
   it('wie ein Rat zu Jacob steht, gibt es nur als Wort; Thornes Mann ist immer dagegen', () => {

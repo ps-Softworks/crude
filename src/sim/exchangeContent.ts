@@ -26,9 +26,24 @@ export interface ExchangeText {
 
 export interface ExchangeContent {
   page: LocalizedText;
+  /** 0.4.20+9: Name von Jacobs eigener Firma auf dem Kurszettel. */
+  own: LocalizedText;
   stocks: Record<string, { name: LocalizedText; note: LocalizedText }>;
   headlines: Record<ExchangeHeadlineId, ExchangeText>;
   letters: Record<ExchangeLetterId, ExchangeText>;
+}
+
+/** 0.4.20+9: Eine Zeile auf dem Kurszettel der Börsenseite – nur zum Anzeigen. */
+export interface ExchangeQuote {
+  /** Aktie aus balance.yaml (exchange.stocks) oder 'own' für Harlan Oil. */
+  id: string;
+  name: string;
+  /** Kurs in $. */
+  price: number;
+  /** Änderung zur Vorrunde als Anteil (−0,1 = 10 % tiefer); 0 ohne Vorrunde. */
+  change: number;
+  /** Jacobs eigene Aktie (Harlan Oil). */
+  own: boolean;
 }
 
 /** Die Börsenseite der Zeitung in einer Sprache. */
@@ -37,6 +52,20 @@ export interface ExchangePage {
   id: ExchangeHeadlineId;
   title: string;
   text: string;
+  /** 0.4.20+9: Kurszettel – die gehandelten Aktien, dazu Harlan Oil, sobald die Firma an der Börse ist. */
+  quotes: ExchangeQuote[];
+}
+
+/** Kurs und Kursverlauf von Jacobs Firma (state.stocks), nur wenn sie an der Börse ist. */
+export interface OwnShare {
+  price: number;
+  /** Letzte Kurse, ältester zuerst, der aktuelle zuletzt. */
+  history: readonly number[];
+}
+
+function aenderung(price: number, history: readonly number[]): number {
+  const vorher = history.length >= 2 ? history[history.length - 2] : undefined;
+  return vorher && vorher > 0 ? (price - vorher) / vorher : 0;
 }
 
 export function makeExchangePage(
@@ -45,9 +74,15 @@ export function makeExchangePage(
   content: ExchangeContent,
   climate: CreditClimate = NEUTRAL_CLIMATE,
   lang?: Lang,
+  own: OwnShare | null = null,
 ): ExchangePage {
   const id = exchangeHeadline(ex, eb, climate);
-  return { name: localize(content.page, lang), id, title: localize(content.headlines[id].title, lang), text: localize(content.headlines[id].text, lang) };
+  const quotes: ExchangeQuote[] = eb.stocks
+    .filter((s) => ex.prices[s.id] !== undefined)
+    .map((s) => ({ id: s.id, name: stockName(content, s.id, lang), price: ex.prices[s.id], change: aenderung(ex.prices[s.id], ex.history[s.id] ?? []), own: false }));
+  // 0.4.20+9: Harlan Oil steht mit auf dem Zettel – nur Anzeige, gehandelt wird sie im Aktien-Fenster.
+  if (own) quotes.push({ id: 'own', name: localize(content.own, lang), price: own.price, change: aenderung(own.price, own.history), own: true });
+  return { name: localize(content.page, lang), id, title: localize(content.headlines[id].title, lang), text: localize(content.headlines[id].text, lang), quotes };
 }
 
 /** Name einer Aktie; unbekannte ids zeigen sich selbst. */
@@ -118,7 +153,7 @@ export function parseExchangeContent(
   }
   const raw: unknown = doc.toJS();
   if (!istObjekt(raw)) {
-    fehler('Die Datei braucht „page“, „stocks“, „headlines“ und „letters“.');
+    fehler('Die Datei braucht „page“, „own“, „stocks“, „headlines“ und „letters“.');
     return { content: null, errors };
   }
 
@@ -159,6 +194,7 @@ export function parseExchangeContent(
   }
 
   const page = sprachtext(raw.page, 'page');
+  const own = sprachtext(raw.own, 'own');
   const stocks: ExchangeContent['stocks'] = {};
   if (!istObjekt(raw.stocks)) fehler('„stocks“ fehlt.');
   else {
@@ -177,6 +213,6 @@ export function parseExchangeContent(
   }
   const headlines = titelUndText(raw.headlines, 'headlines', EXCHANGE_HEADLINE_IDS);
   const letters = titelUndText(raw.letters, 'letters', EXCHANGE_LETTER_IDS);
-  if (errors.length > 0 || !page || !headlines || !letters) return { content: null, errors };
-  return { content: { page, stocks, headlines, letters }, errors };
+  if (errors.length > 0 || !page || !own || !headlines || !letters) return { content: null, errors };
+  return { content: { page, own, stocks, headlines, letters }, errors };
 }

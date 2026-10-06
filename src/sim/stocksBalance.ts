@@ -17,6 +17,8 @@ export interface StocksBalance {
     profitWeight: number;
     creditWeight: number;
     moodWeight: number;
+    /** 0.4.20+9: Stimmung − je Runde, solange ein Crash nachwirkt. */
+    crashWeight: number;
     noise: number;
     reversion: number;
   };
@@ -141,6 +143,7 @@ export function parseStocksBalance(raw: unknown, makeError: (message: string) =>
       profitWeight: nonNeg('price.profitWeight'),
       creditWeight: nonNeg('price.creditWeight'),
       moodWeight: nonNeg('price.moodWeight'),
+      crashWeight: nonNeg('price.crashWeight'),
       noise: share('price.noise'),
       reversion: share('price.reversion'),
     },

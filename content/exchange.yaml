@@ -10,6 +10,11 @@ page:
   de: Börsenbericht aus Hallstead
   en: Market report from Hallstead
 
+# 0.4.20+9: Jacobs eigene Firma auf dem Kurszettel der Börsenseite (erst, wenn sie an der Börse ist).
+own:
+  de: Harlan Oil
+  en: Harlan Oil
+
 # Die gehandelten Aktien (ids wie in balance.yaml, exchange.stocks).
 stocks:
   thorne_bahn:

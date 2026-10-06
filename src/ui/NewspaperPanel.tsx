@@ -8,17 +8,15 @@ import { makeNewspaper } from '../sim/newspaper';
 import { balance } from './balance';
 import { newspaperContent } from './newspaper';
 import { politicsContent } from './politics';
-// 4.15 Andockpunkt: Börsenseite (nur mit Börse, ab Kapitel 3).
-import { readClimate } from '../sim/exchange';
-import { makeExchangePage } from '../sim/exchangeContent';
+// 4.15 Andockpunkt: Börsenseite (nur mit Börse, ab Kapitel 3) – seit 0.4.20+9 baut sie die Simulation mit.
 import { exchangeContent } from './exchange';
 import './sheets/exchange.css';
 
 export function NewspaperPanel({ game }: { game: GameState }) {
-  const zeitung = makeNewspaper(game, balance, newspaperContent, undefined, politicsContent);
+  const zeitung = makeNewspaper(game, balance, newspaperContent, undefined, politicsContent, exchangeContent);
   const wahl = zeitung.election;
   const gesetz = zeitung.law;
-  const boerse = game.exchange ? makeExchangePage(game.exchange, balance.exchange, exchangeContent, readClimate(game)) : null;
+  const boerse = zeitung.exchange ?? null;
   return (
     <section className="zeitung" aria-label="Zeitung">
       <div className="zeitung-kopf">{zeitung.name}</div>
@@ -70,6 +68,22 @@ export function NewspaperPanel({ game }: { game: GameState }) {
           <div className="zeitung-boerse-kopf">{boerse.name}</div>
           <h3>{boerse.title}</h3>
           <p>{boerse.text}</p>
+          {/* 0.4.20+9: Kurszettel, Harlan Oil hervorgehoben. */}
+          {boerse.quotes.length > 0 && (
+            <table className="zeitung-kurse">
+              <tbody>
+                {boerse.quotes.map((q) => (
+                  <tr key={q.id} className={q.own ? 'eigene' : undefined}>
+                    <th scope="row">{q.name}</th>
+                    <td>{q.price.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $</td>
+                    <td className={q.change < 0 ? 'ab' : q.change > 0 ? 'auf' : undefined}>
+                      {q.change === 0 ? '±0' : `${q.change > 0 ? '+' : '−'}${Math.abs(q.change * 100).toLocaleString('de-DE', { maximumFractionDigits: 1 })} %`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
     </section>

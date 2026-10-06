@@ -134,16 +134,24 @@ export interface StocksWorld {
   credit: number;
   /** Öffentliche Stimmung 0–100. */
   mood: number;
+  /** 0.4.20+9: Ein Crash wirkt nach – an der Börse (state.exchange.crash) oder der Kreditcrash der Welt (worldModel.crash). */
+  crash?: boolean;
 }
 
 export const STOCKS_WORLD_DEFAULT: StocksWorld = { credit: 50, mood: 50 };
 
 /** Liest Kreditklima und Stimmung aus dem Weltmodell (state.worldModel, 4.1); fehlt es, gelten Ersatzwerte. */
-export function stocksWorldOf(state: { worldModel?: Partial<Pick<WorldState, 'credit' | 'mood'>> }): StocksWorld {
+export function stocksWorldOf(state: {
+  worldModel?: Partial<Pick<WorldState, 'credit' | 'mood' | 'crash'>>;
+  exchange?: { crash?: number };
+}): StocksWorld {
   const w = state.worldModel;
+  // 0.4.20+9: Crash an der Börse oder in der Welt – das Feld steht nur da, wenn einer nachwirkt.
+  const crash = (state.exchange?.crash ?? 0) > 0 || (typeof w?.crash === 'number' && w.crash > 0);
   return {
     credit: typeof w?.credit === 'number' ? w.credit : STOCKS_WORLD_DEFAULT.credit,
     mood: typeof w?.mood === 'number' ? w.mood : STOCKS_WORLD_DEFAULT.mood,
+    ...(crash ? { crash: true } : {}),
   };
 }
 
@@ -704,13 +712,15 @@ export function settleStocks(input: GameState, balance: Balance, world: StocksWo
   const value = empireValue(state, balance);
   const vorher = s.price;
 
-  // Kurs: Stimmung nach Gewinn, Dividende, Kreditklima, öffentlicher Stimmung, Gerüchten; zieht zurück zur 1.
+  // Kurs: Stimmung nach Gewinn, Dividende, Kreditklima, öffentlicher Stimmung, Crash, Gerüchten; zieht zurück zur 1.
   const gewinn = clamp((value - s.lastValue) / Math.max(Math.abs(s.lastValue), 1), -0.2, 0.2);
   let sentiment = s.sentiment + gewinn * B.price.profitWeight;
   if (s.dividendRound === state.round && s.dividendsTotal > 0) sentiment += B.dividend.bonus;
   else if (state.round - s.dividendRound >= B.dividend.graceRounds) sentiment -= B.dividend.missPenalty;
   sentiment += ((clamp(world.credit, 0, 100) - 50) / 50) * B.price.creditWeight;
   sentiment += ((clamp(world.mood, 0, 100) - 50) / 50) * B.price.moodWeight;
+  // 0.4.20+9: Solange ein Crash nachwirkt (Börse oder Kreditcrash der Welt), verkaufen die Anleger auch Harlan Oil.
+  if (world.crash) sentiment -= B.price.crashWeight;
   sentiment += (rng.float() * 2 - 1) * B.price.noise;
   sentiment += (1 - sentiment) * B.price.reversion;
   s = { ...s, sentiment: clamp(sentiment, B.price.sentimentMin, B.price.sentimentMax) };

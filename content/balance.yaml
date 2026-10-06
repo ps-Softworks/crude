@@ -1538,6 +1538,7 @@ stocks:
     profitWeight: 0.5        # Wertzuwachs der Runde (Anteil, höchstens ±0,2) × dieses Gewicht
     creditWeight: 0.06       # Boom an der Börse hebt, Kreditklemme drückt (je voller Ausschlag)
     moodWeight: 0.04         # schlechte Stimmung im Land drückt
+    crashWeight: 0.06        # 0.4.20+9: je Runde, solange ein Crash nachwirkt (Börse oder Kreditcrash der Welt)
     noise: 0.04              # Gerüchte: zufälliger Ausschlag je Runde (±)
     reversion: 0.15          # so viel des Abstands zur 1 holt die Stimmung je Runde auf
   dividend:

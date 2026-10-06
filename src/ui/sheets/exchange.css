@@ -49,6 +49,14 @@
 .zeitung-boerse-kopf { font-variant: small-caps; letter-spacing: 0.08em; font-size: 0.95rem; color: var(--tinte-weich); text-align: center; }
 .zeitung-boerse h3 { margin: 2px 0 4px; font-size: 1.15rem; text-align: center; }
 .zeitung-boerse p { margin: 0; font-size: 0.97rem; }
+/* 0.4.20+9: Kurszettel auf der Börsenseite, Harlan Oil hervorgehoben */
+.zeitung-kurse { width: 100%; margin-top: 6px; border-collapse: collapse; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.zeitung-kurse th { text-align: left; font-weight: normal; }
+.zeitung-kurse td { text-align: right; padding-left: 8px; }
+.zeitung-kurse tr + tr { border-top: 1px dotted var(--tinte-weich); }
+.zeitung-kurse .eigene th, .zeitung-kurse .eigene td:first-of-type { font-weight: bold; }
+.zeitung-kurse .ab { color: var(--rot); }
+.zeitung-kurse .auf { color: var(--gruen-dunkel); }
 
 /* Gegenstand: der Börsenticker unter der Glasglocke */
 .ticker-band { position: absolute; left: 4%; right: 4%; bottom: 6%; overflow: hidden; white-space: nowrap; font-family: 'Courier New', Courier, monospace; font-size: 11px; background: var(--papier-hell); color: var(--tinte); padding: 1px 3px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
