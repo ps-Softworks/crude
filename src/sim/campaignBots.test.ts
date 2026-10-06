@@ -11,6 +11,7 @@ import {
   delaneyOutcome,
   delaneyTable,
   dirtyTurn,
+  staffTurn,
   checkCampaignTargets,
   bondsTurn,
   coverDues,
@@ -316,6 +317,26 @@ describe('Aktienbuch (Kapitel 2/3): stocksTurn', () => {
   it('Familienfirma: nichts zu tun', () => {
     const s = ag(0);
     expect(stocksTurn(s, balance, policy())).toBe(s);
+  });
+});
+
+describe('Personal-Variante (staffTurn)', () => {
+  const k2 = (cash = 100_000): GameState => {
+    const g = newGame('personal', balance);
+    return { ...g, chapter: 2, cash, staff: newStaff('personal', g.round, balance) };
+  };
+  it('ohne policy.staff, in Kapitel 1 oder unter der Rücklage stellt er niemanden ein', () => {
+    const s = k2();
+    expect(staffTurn(s, balance, policy())).toBe(s);
+    const arm = k2(100);
+    expect(staffTurn(arm, balance, policy({ staff: ['secretary'] }))).toBe(arm);
+  });
+  it('stellt die gewünschte Rolle ein, wenn eine Bewerbung vorliegt – nur einmal', () => {
+    const s = k2();
+    const t = staffTurn(s, balance, policy({ staff: ['secretary'] }));
+    const da = s.staff!.candidates.some((c) => c.role === 'secretary');
+    expect(t.staff!.hired.some((m) => m.role === 'secretary')).toBe(da);
+    expect(staffTurn(t, balance, policy({ staff: ['secretary'] })).staff!.hired.filter((m) => m.role === 'secretary').length).toBe(da ? 1 : 0);
   });
 });
 

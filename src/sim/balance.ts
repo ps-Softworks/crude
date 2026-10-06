@@ -587,6 +587,8 @@ export interface CampaignBotPolicy {
    * Kasse darunter liegt. Fehlt/null: hält einfach durch.
    */
   feldzug?: { pact: boolean; loan: boolean; sellBelow: number; pactAfter?: number } | null;
+  /** Messvariante (0.4.20+28, nur per Balance-Änderung im Speicher, nicht in balance.yaml): stellt diese Rollen ein, sobald eine Bewerbung da ist. */
+  staff?: ('secretary' | 'fixer')[];
   /**
    * Schmutzige Hebel in Kapitel 2/3 (nur der betrügerische Bot, src/sim/campaignBots.ts dirtyTurn). Fehlt/null: keine.
    * fixer = stellt einen Sicherheitschef ein (keinen Gewissenhaften) und lässt bei Bullard sabotieren, solange die

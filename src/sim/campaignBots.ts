@@ -270,6 +270,20 @@ export function stocksTurn(state: GameState, balance: Balance, policy: CampaignB
  *   als Mitglied erfüllt er sie, wenn die Rücklage bleibt.
  * Geld nur über der Rücklage. Rein und deterministisch (Zufall nur in den Systemen selbst).
  */
+/** Personal-Variante (Messung für den Builder, 0.4.20+28): stellt die Rollen aus policy.staff ein, sobald eine Bewerbung dafür vorliegt und die Rücklage reicht. */
+export function staffTurn(state: GameState, balance: Balance, policy: CampaignBotPolicy): GameState {
+  if (!policy.staff?.length || !state.staff || state.finished || chapterOf(state) < 2 || state.cash < policy.reserve) return state;
+  let s = state;
+  for (const rolle of policy.staff) {
+    if (memberOf(s, rolle) || !s.staff) continue;
+    const i = s.staff.candidates.findIndex((c) => c.role === rolle);
+    if (i < 0) continue;
+    const r = hireStaff(s, balance, i);
+    if (r.ok) s = r.state;
+  }
+  return s;
+}
+
 export function dirtyTurn(state: GameState, balance: Balance, policy: CampaignBotPolicy): GameState {
   const d = policy.dirty;
   if (!d || state.finished || chapterOf(state) < 2) return state;
@@ -375,7 +389,7 @@ function playChapter(state: GameState, balance: Balance, strategy: Strategy, pol
     if (s.round > grenze) throw new Error(`Kampagne ${s.seed} (${strategy}) endet Kapitel ${s.chapter} nicht.`);
     // Rücklage plus das bald Fällige (Anleihen, Thornes Kredit) – sonst frisst der Ausbau das Geld für die Rückzahlung.
     const p: CampaignBotPolicy = { ...policy, reserve: policy.reserve + dueSoon(s) };
-    let t = dirtyTurn(botTurn(s, balance, strategy, rng, catalog), balance, p);
+    let t = dirtyTurn(botTurn(staffTurn(s, balance, p), balance, strategy, rng, catalog), balance, p);
     if (p.systemsChance >= 1 || rng.float() < p.systemsChance) t = botChapterSystems(t, balance, { reserve: p.reserve, perRound: p.perRound, refineryExpand: REFINERY_EXPAND[p.stance] });
     const ohneKredit = !t.feldzug?.loan;
     t = botFeldzug(t, balance, p.feldzug, p.reserve);
