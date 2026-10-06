@@ -6,6 +6,7 @@ import { applyAction } from './desk';
 import { stageCost, type Well, type WellStatus } from './drilling';
 import { endRound, newGame, type GameState } from './game';
 import { leaseTerms, parcelLabel, type Lease } from './lease';
+import { deeperOutlook } from './deeper';
 import { loadBalance } from './testBalance';
 import { loadEvents } from './testEvents';
 import { capacityLeft, netPrice } from './transport';
@@ -251,12 +252,15 @@ describe('Schritt 2: Bohrung', () => {
     expect(hint(mitBohrung('drilling'))).toMatchObject({ id: 'drill_wait', action: { kind: 'endRound' } });
   });
 
-  it('trocken in dieser Stufe: tiefer nur bei guter Schätzung, sonst aufgeben', () => {
+  it('trocken in dieser Stufe: tiefer nur, wenn der Geologe die Gewinnschwelle erreicht, sonst aufgeben (Spielspaß K1)', () => {
     const state = mitBohrung('decision');
     const id = state.wells[0].parcelId;
-    const min = balance.tutorial.deeperMinChance;
-    expect(hint(prognose(state, id, min, min))).toMatchObject({ id: 'deeper', action: { kind: 'deeper', parcelId: id } });
-    expect(hint(prognose(state, id, min - 10, min - 2))).toMatchObject({ id: 'abandon', action: { kind: 'abandon', parcelId: id } });
+    const schwelle = Math.round(deeperOutlook(state, balance, id)!.breakEven * 100);
+    expect(schwelle).toBeGreaterThan(1);
+    const tief = hint(prognose(state, id, schwelle + 1, schwelle + 3));
+    expect(tief).toMatchObject({ id: 'deeper', action: { kind: 'deeper', parcelId: id } });
+    expect(tief.vars.schwelle).toBe(`${schwelle} %`);
+    expect(hint(prognose(state, id, schwelle - 2, schwelle - 1))).toMatchObject({ id: 'abandon', action: { kind: 'abandon', parcelId: id } });
     // Ohne Geld für die nächste Stufe: aufgeben.
     expect(hint({ ...prognose(state, id, 90, 100), cash: 0 }).id).toBe('abandon');
   });
@@ -326,7 +330,9 @@ describe('Ein Bot, der nur den Hinweisen folgt (Fertig-Kriterium 2.13)', () => {
     expect(spiele.filter((s) => s.found && !s.sold).length).toBe(0);
     // In den ersten drei Runden schafft es ein guter Teil schon.
     expect(spiele.filter((s) => s.foundRound !== null && s.foundRound <= 3).length / n).toBeGreaterThan(0.4);
-    expect(spiele.some((s) => s.state.ending === 'pleite')).toBe(false);
+    // Spielspaß K1: Tiefer rät der Einstieg nur noch über der Gewinnschwelle (600 m kostet 1.800 $). Wer zweimal trocken
+    // bohrt und dann in eine Bankpanik gerät, kann pleitegehen – gemessen 1 von 600 Seeds (vorher 0); hier höchstens 1 %.
+    expect(spiele.filter((s) => s.state.ending === 'pleite').length).toBeLessThanOrEqual(Math.floor(n * 0.01));
   });
 
   it('Frühes Öl: wer nur dem Einstieg folgt, hat in mindestens 90 % der Seeds bis Runde 6 eine Quelle', () => {

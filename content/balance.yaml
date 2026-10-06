@@ -175,6 +175,11 @@ forecast:
   geologist:
     accuracy: 3           # PLATZHALTER: Genauigkeit 1–5
     bias: 0               # PLATZHALTER: Verzerrung −15 bis +15 Punkte
+  # Spielspaß K1 (Tieferbohren): Nach einer trockenen Stufe schätzt der Geologe die nächste
+  # aus dem Bohrklein – Fehler relativ zur Chance (± 40 %), Bandbreite 50 % der Mitte, auf 1 Punkt
+  # gerundet. Vorher galt die breite 30-Punkte-Spanne: Bei 5–10 % echter Chance wurde sie an 0 %
+  # abgeschnitten, die Mitte zeigte im Schnitt 17,6 % bei 8,9 % echten Treffern.
+  deeper: { error: 0.4, width: 0.5, rounding: 1 }
 
 # Erkundung (Termine als Hauptwerkzeug, Etappe 1): Wer übers Land reitet, Farmer fragt oder einen
 # Geologen kartieren lässt, sammelt Hinweise. Jeder Hinweis verschiebt die Chance wie eine Wette:
@@ -264,20 +269,21 @@ priceActions:
     antitrust: { chance: 0.10, fine: 1000 }   # Kartellgesetz in Kraft: je Runde 10 % Verfahren, 1.000 $ Strafe
   contract:                  # Liefervertrag mit dem Händler in Port Ellis
     minQty: 2000             # Menge je Runde: 2.000 bis min(6.000, Förderung der Vorrunde)
-    maxQty: 6000
+    maxQty: 10000            # Spielspaß K1: 6.000 → 10.000 – größere Mengen, damit Gewinn und Verlust spürbar werden
     qtyStep: 1000
     rounds: [4, 8]
     premium: 0.04            # Festpreis = Posted Price + 0,04 − 0,02 × Laufzeit (Plan: + 0,10 – weil der Preis am Salt Hill mit jeder neuen Nachbarquelle fällt, war damit fast jeder Vertrag ein Gewinn, Ziel 20–50 % Verlustverträge)
     perRound: 0.02
-    shortfall: 0.15          # Fehlmenge kostet 0,15 $ je bbl
+    shortfall: 0.20          # Fehlmenge kostet 0,20 $ je bbl (Spielspaß K1: 0,15 → 0,20)
     grudgeAfter: 2           # Cranes Groll (transport.trader.grudgeCut) für Laufzeit + 2 Runden
     failChance: 0.30         # Bankpanik oder Crash: Händler zu 30 % pleite, die laufende Runde bleibt unbezahlt
   rumour:                    # Gerücht streuen
     cooldown: 3
-    dry: { shock: 0.15, minTank: 5000 }                    # „Quellen versiegen“: Preis +15 % in der Folgerunde, nur mit vollem Tank
+    dry: { shock: 0.15, minTank: 5000 }                    # „Quellen versiegen“: Preis +15 %, nur mit vollem Tank
+    rounds: 2                # Spielspaß K1: Ein Gerücht wirkt 2 Runden auf den Preis (vorher 1)
     bullard: { shock: -0.12, leaseCost: -0.15, rounds: 2 }  # „Riesenfund bei Bullard“: Preis −12 %, Pachten 15 % billiger, Bullard pachtet 2 Runden nichts
     wear: 0.6                # jedes weitere Gerücht wirkt × 0,6
-    exposed: { base: 0.20, perRumour: 0.15 }   # Entlarvung 20 % + 15 % je früheres Gerücht
+    exposed: { base: 0.20, perRumour: 0.15, backlash: -0.10 }   # Entlarvung 20 % + 15 % je früheres Gerücht; Spielspaß K1: „Quellen versiegen“ entlarvt – der Preis fällt sofort 10 % (eine Runde)
   crane:                     # Mit Crane feilschen
     points: { contract: 1, freight: 1, cartel: 2, alliance: 1, share: 1, antitrust: 1, tank: 1 }
     freightTeams: 2          # „eigene Wege“: mindestens 2 Gespanne oder Pipeline
@@ -286,6 +292,8 @@ priceActions:
     rebuffExtra: 2           # 1 Punkt: Abfuhr, der Abschlag kommt sofort und dauert 2 Runden länger
     deal: { bonus: 0.08, rounds: 6 }        # ab 3: +0,08 $ je bbl für 6 Runden (nur gegen Austritt aus Pakt oder Händlervertrag)
     contract: { premium: 0.05, rounds: 6 }  # ab 4: fester Abnahmevertrag zu Posted Price + 0,05
+    mood: { down: 0.45, up: 0.15 }          # Spielspaß K1: Cranes Laune −1 / 0 / +1 Punkt mit 45 / 40 / 15 % (Gesamt-Balance: mit 35 / 45 / 20 % ging Feilschen nur in 18,6 % schief, Ziel 20–45 %) – der Trust ist öfter schlecht gelaunt als gut
+    resistance: { base: 1, recent: 1, rounds: 4 }   # Spielspaß K1: Cranes Gegendruck 1 Punkt, +1, wenn er in den letzten 4 Runden schon nachgegeben hat (vorher keiner)
 
 # Bohren (GDD §5): Stufe 1 ist die Zieltiefe, jede weitere Stufe heißt
 # "tiefer bohren". Tiefer = teurer und gefährlicher (Push your luck).
@@ -312,9 +320,9 @@ drilling:
   stages:                 # PLATZHALTER; 1.15: Stufe 1 unter GDD (1.500–3.000 $), damit Tieferbohren mit der Startkasse geht
     # Frühes Öl (0.4.4+): vorher oilShare 0,7/0,2/0,1 und Stufe 1 Unfall 0,04 / Klemmen 0,05 – die erste
     # Bohrung auf einem Feld mit ≥ 60 % Prognose traf nur rund 40 %, mit der Startkasse reichte das oft nicht.
-    - { depth: 300, cost: 1000, rounds: 1, oilShare: 0.85, accident: 0.02, stuck: 0.03 }
-    - { depth: 600, cost: 1100, rounds: 1, oilShare: 0.10, accident: 0.08, stuck: 0.10 }
-    - { depth: 900, cost: 1400, rounds: 2, oilShare: 0.05, accident: 0.15, stuck: 0.15 }
+    - { depth: 300, cost: 1000, rounds: 1, oilShare: 0.85, accident: 0.02, stuck: 0.03, findFactor: 1 }
+    - { depth: 600, cost: 1800, rounds: 2, oilShare: 0.10, accident: 0.08, stuck: 0.10, findFactor: 2.5 }
+    - { depth: 900, cost: 3200, rounds: 3, oilShare: 0.05, accident: 0.15, stuck: 0.15, findFactor: 4 }
 
 # Markt (GDD §7.3): Der Crane Trust kauft das Öl zum Posted Price. Der Preis
 # entsteht jede Runde aus Angebot und Nachfrage am Salt Hill:
@@ -368,7 +376,7 @@ transport:
     costPerBarrel: 0.03     # PLATZHALTER
     capacity: 40000         # PLATZHALTER
     surveyCost: 150         # Route vermessen
-    buildCost: 6000         # PLATZHALTER
+    buildCost: 9000         # Spielspaß K1: 6.000 → 9.000 $ – Kapitel 1 ist reicher geworden; mit 6.000 $ lief in 79,8 % der erfolgreichen Partien eine Pipeline (Grenze 80 %), jetzt um 60 %
     buildRounds: 3          # GDD §6: 1–4 Runden
     upkeepPerRound: 120     # Streckenwärter
     rights:                 # Wegerechte: Merkzeichen aus content/events/, Name für den Schreibtisch, Figur aus map.yaml (deren Ranch die Route kreuzt)
@@ -397,12 +405,15 @@ transport:
     fallbackShare: 0.5      # Druckmittel 3: Ausweichkapazität (Gespanne, Brennan, Pipeline) ≥ 50 % der Bahnmenge der Vorrunde
     resistance: { base: 1, perConcession: 1, concessionRounds: 4, feud: 1 }   # Widerstand: 1 + 1 je Zugeständnis der letzten 4 Runden + 1, wenn Bullard in Fehde Jacobs Mengen verrät (Plan: 2 – damit gab Thorne kaum je nach, Ø Tarifsenkung 0,02 $ statt 0,05–0,15 $)
     mood: { down: 0.25, up: 0.25 }   # Thornes Laune: −1 / 0 / +1 mit 25 / 50 / 25 %
-    cuts: [0.05, 0.10, 0.15]         # Tarifsenkung bei Druck − Widerstand = 1, 2, ≥ 3
-    freeze: [0, 2, 4]                # … und so viele Runden keine Erhöhung
+    cuts: [0.10, 0.15, 0.20]         # Tarifsenkung bei Druck − Widerstand = 1, 2, ≥ 3 (Spielspaß K1: vorher 0,05 / 0,10 / 0,15)
+    freeze: [2, 3, 4]                # … und so viele Runden keine Erhöhung (Spielspaß K1: vorher 0 / 2 / 4)
     special: { tariff: 0.20, rounds: 6 }   # ab 3 wahlweise: Sondertarif fest für 6 Runden
-    rebuff: { factor: 2, rounds: 4 }       # Abfuhr (≤ 0) oder erwischter Bluff: Erhöhungschance × 2 für 4 Runden
-    bluff: { rounds: 2, railShare: 0.8, penalty: 0.10 }   # hing das Zugeständnis an Ausweichwegen oder Pipeline und gehen in 2 Folgerunden > 80 % per Bahn: +0,10 $
-    brennan: { costPerBarrel: 0.35, capacity: 5000, rounds: 4, minimum: 2000, shortfall: 0.15, raise: 200 }   # Brennans Fuhrleute ersetzen die Mietfuhrwerke
+    rebuff: { factor: 2, rounds: 4, raise: 0.05 }   # Abfuhr (≤ 0) oder erwischter Bluff: Erhöhungschance × 2 für 4 Runden; Spielspaß K1: bei der Abfuhr steigt der Tarif sofort um 0,05 $
+    # Hing das Zugeständnis an Ausweichwegen oder Pipeline, zählt Thorne in den 2 Folgerunden je Runde mit 35 % nach; geht in so einer
+    # Runde mehr als 60 % per Bahn: +0,15 $. Spielspaß K1: vorher Summe beider Runden > 80 %, +0,10 $ – damit erwischte Thorne fast nie jemanden (0,6 %).
+    bluff: { rounds: 2, railShare: 0.6, penalty: 0.15, check: 0.35 }
+    # Brennans Fuhrleute ersetzen die Mietfuhrwerke. Spielspaß K1: 5.000 → 8.000 bbl, Mindestmenge bleibt 2.000, Fehlmenge 0,15 → 0,25 $.
+    brennan: { costPerBarrel: 0.35, capacity: 8000, rounds: 4, minimum: 2000, shortfall: 0.25, raise: 200 }
     pool:                   # Transportgemeinschaft
       base: 0.25            # Zusage je Firma: 0,25 + (Tarif − 0,25) + Ruf (+0,20 Verband, −0,10 Fehde Bullard) …
       tariffRef: 0.25
@@ -416,6 +427,12 @@ transport:
       pipelineDiscount: 0.4 # Pipeline gemeinsam: −40 % Baukosten …
       foreignShare: 0.3     # … dafür 30 % der Kapazität für Fremdöl …
       transitFee: 0.05      # … gegen 0,05 $ Durchleitung je Barrel
+      # Spielspaß K1: Rabatt auf Jacobs Bahnfracht, solange die Gemeinschaft läuft – 0,01 $ je 2.000 bbl Gemeinschaftsmenge, höchstens 0,08 $ …
+      discountPer: 2000
+      discountStep: 0.01
+      discountMax: 0.08
+      minimum: 8000         # … gegen die Zusage, gemeinsam (Jacobs Bahnfracht + Gemeinschaft) mindestens 8.000 bbl je Runde zu verladen …
+      shortfall: 0.10       # … sonst 0,10 $ je fehlendem Barrel (ab der Runde nach der Gründung)
     cancelPressure: 2       # Exklusivvertrag kündigen geht erst ab so viel Druck
   # 0.2.15+2: zweiter Käufer – unabhängiger Händler in Port Ellis.
   trader:
@@ -486,8 +503,8 @@ empire:
 # und der Imperiumswert mindestens goalValue beträgt ODER mindestens goalWells Quellen fördern.
 # Texte und Boni: content/chapter.yaml. Wer das Ziel verfehlt, darf keine Aktien ausgeben.
 chapter:
-  goalValue: 70000         # GDD §13: 50.000 $; 0.4.20+1: 70.000 $ – mit der guten ersten Startoption trifft die erste Bohrung fast immer, mit 50.000 $ / 5 Quellen bestand der Standard-Bot in 78 % (Ziel höchstens 70 %), jetzt 66,9 % (npm run bots, 1.000 Partien) …
-  goalWells: 6             # … oder so viele fördernde Quellen (GDD §13: 5; 0.4.20+1 mit goalValue angehoben)
+  goalValue: 95000         # Spielspaß K1: 70.000 → 95.000 $ und 8 Quellen – tiefe Funde, Karten und Tieferbohren mit Gewinnschwelle machen Kapitel 1 reicher (Ø Imperium Standard-Bot 112.000 → ~124.000 $), mit 70.000 $ / 6 bestand er in 78 %. GDD §13: 50.000 $; 0.4.20+1: 70.000 $ – mit der guten ersten Startoption trifft die erste Bohrung fast immer, mit 50.000 $ / 5 Quellen bestand der Standard-Bot in 78 % (Ziel höchstens 70 %), jetzt 66,9 % (npm run bots, 1.000 Partien) …
+  goalWells: 8             # … oder so viele fördernde Quellen (GDD §13: 5; 0.4.20+1: 6; Spielspaß K1: 8)
   ipo:
     shares: [0.2, 0.33, 0.49]  # GDD §8: zur Wahl stehende Anteile, die Jacob verkaufen kann (typisch 20–49 %)
     priceFactor: 0.8           # PLATZHALTER: Anleger zahlen Imperiumswert × Anteil × 0,8 (Abschlag für Risiko und Bankprovision)
@@ -595,6 +612,9 @@ timeskip:
   # Imperium und gewann in 70 % der Seeds (Kampagnen-Bots, docs/botlaeufe.md). Jetzt erschließen alle einen,
   # wagemutig bis zu zwei, und ein Bezirk kostet mehr.
   expand: { aggressive: 2, balanced: 2, cautious: 2 }              # Nachbarbezirke, die der Verwalter höchstens erschließt, wenn am offenen Land nichts mehr lohnt (0.4.20+2: ausgewogen und vorsichtig 1 → 2; Förderung nachher ÷ vorher im Median vorher 0,35/0,23, siehe docs/botlaeufe.md)
+  # Spielspaß K1: Tiefe Stufen sind teuer (600 m 1.800 $, 900 m 3.200 $). Plante der Verwalter jede Bohrung bis 900 m,
+  # bohrte er kaum noch (Förderung nach dem Sprung ÷ vorher im Median 0,36 statt 0,55) – er geht höchstens bis 600 m.
+  deepestStage: 2             # so tief bohrt der Verwalter höchstens; liegt das Öl tiefer, gibt er auf
   expandCost: 15000           # $ je erschlossenem Bezirk (Landvermesser, Wege, Agenten); 4.20: 8.000 → 15.000
   upkeepPerWell: 60           # $ je fördernde Quelle und Quartal (Vorarbeiter, Reparaturen)
   # 0.4.19+3: Deckel für den Verwalter. Vorher machten zwei Gusher mit 10.000–14.500 bbl je Runde aus 28.585 $
@@ -677,6 +697,10 @@ bots:
   # Notfallregel (0.4.19+2): Nach trockenen Löchern, ohne Quelle und ohne Land leiht er bis emergencyDebtShare,
   # damit er nicht 14 Runden lang nichts tut (vorher blieb er in 35 % der Seeds ohne jeden Fund stehen).
   balanced: { minChance: 0.4, cashReserve: 300, maxStage: 3, maxDebtShare: 0.5, emergencyDebtShare: 0.6, maxUndrilled: 1 }
+  # Spielspaß K1 (Tieferbohren): tiefer, wenn die Chance des Geologen ≥ Schwelle × Faktor
+  # („lohnt ab“ im Ranch-Fenster = Kosten mit Risiko ÷ Wert eines Funds bis Kapitelende).
+  # Vorher: vorsichtig bis Stufe 2 mit Rücklage, gierig immer, ausgewogen bis Stufe 3 – ohne Blick auf die Chance.
+  deeper: { cautious: 1.5, greedy: 0.6, balanced: 1.0 }   # Spielspaß K1: gierig bohrt auch deutlich unter der Schwelle weiter (Push your luck, auf Kredit) – mit 0,9 ging er nach dem Streichen der Alltagsbriefe kaum noch pleite (greedyBankrupt ≥ 3 %)
   daysPerRound: 91         # ein Quartal; für die Anfangsrate in bbl/Tag (GDD §15)
   # Ereignisse (2.15): So bewerten die Bots eine Antwort – Geld zählt in $, dazu
   # strength = $ je Kraftpunkt, family = $ je Beziehungspunkt (Ruth, Thomas),
@@ -711,13 +735,18 @@ bots:
     cautious: { rides: 1, until: 0.55, known: 1 }
     greedy: { rides: 1, until: 0.40, known: 1 }
     balanced: { rides: 1, until: 0.6, known: 3 }
-  # Preis- und Fracht-Karten (Etappe 2): Welcher Bot welche Karte spielt. Die Feinarbeit (wer wann was) ist
-  # Etappe 4; bis dahin verhandelt nur der Standard-Bot mit Thorne – das ersetzt die alte Drohung mit der Pipeline.
-  # Die Messung der Etappe 2 (tools/termineMessung2.ts) schaltet die übrigen Karten für den Standard-Bot an.
+  # Preis- und Fracht-Karten (Etappe 2): Welcher Bot welche Karte spielt (bluff: hält sich nach einem Zugeständnis
+  # nicht an Thornes Bahngrenze). Die Messung (tools/termineMessung2.ts) nimmt für den Standard-Bot nur „thorne“
+  # von hier und schaltet die übrigen Karten je Variante selbst.
   plans:
-    cautious: { cartel: false, contract: false, rumour: false, crane: false, thorne: false, brennan: false, pool: false }
-    greedy: { cartel: false, contract: false, rumour: false, crane: false, thorne: false, brennan: false, pool: false }
-    balanced: { cartel: false, contract: false, rumour: false, crane: false, thorne: true, brennan: false, pool: false }
+    # Spielspaß K1: Jeder planende Bot spielt die Karten nach Charakter – vorsichtig sichert ab (Liefervertrag, Gemeinschaft),
+    # gierig zockt (Gerücht, Crane), ausgewogen drückt die Fracht (Thorne, Gemeinschaft). Thorne mit Bluff kostete den gierigen
+    # Bot etwa 9.000 $ (mit billiger Bahn baut er die Pipeline nicht), Brennan dazu hob das Kapitelziel des Standard-Bots über 70 %.
+    # Gesamt-Balance: vorsichtig spricht bei Thorne vor, ausgewogen setzt auf die Transportgemeinschaft statt auf Thorne
+    # (mit Thorne gewann der ausgewogene 39–44 % der Seeds, Grenze 40 %).
+    cautious: { cartel: false, contract: true, rumour: false, crane: false, thorne: true, brennan: false, pool: true, bluff: false }
+    greedy: { cartel: false, contract: false, rumour: true, crane: true, thorne: false, brennan: true, pool: false, bluff: false }   # Weichen-Balance: gierig nimmt Brennan (sonst gewann der ausgewogene 39–41 % der Seeds)
+    balanced: { cartel: false, contract: false, rumour: false, crane: false, thorne: false, brennan: false, pool: true, bluff: false }
   rightsEstimate: 600      # grobe Schätzung der Bots: so viel kosten die Wegerechte für die Pipeline zusammen
   # Zielwerte Kapitel 1 (2.15, GDD §15 und §17): Toleranzbereich min–max je Kennzahl.
   # Was gemessen wird, steht in src/sim/bots.ts (TARGETS); die Tabelle Ist/Ziel in docs/botlaeufe.md.
@@ -726,14 +755,17 @@ bots:
     standardBankrupt: { min: 0, max: 0.15 }   # Pleitequote ausgewogen (Standard-Bot): Kapitel 1 ist der Einstieg
     greedyBankrupt: { min: 0.03, max: 0.45 }  # Pleitequote gierig (GDD §15: wer im Boom zu viele Schulden macht, stirbt; Crashs kommen erst später); 0.4.20+1: 0,05 → 0,03 – mit der guten ersten Startoption kommt auch der gierige Bot fast immer früh zu Öl und stirbt seltener am Anfang (gemessen 4–4,5 %, vorher 8,7 %); die Kreditkrise kündigt ihm weiter
     cautiousBehind: { min: 0, max: 0.95 }     # Ø Imperium vorsichtig ÷ bester Ø der Mutigeren (GDD §15: wird überholt)
-    standardGoal: { min: 0.20, max: 0.70 }    # Kapitelziel ausgewogen: erreichbar, aber nicht geschenkt
+    # Spielspaß K1 (Tieferbohren): VORLÄUFIG 0,70 → 0,82. Mit Gewinnschwelle gibt der Standard-Bot hoffnungslose
+    # Tiefen auf, und tiefe Funde sind 2–3-mal so groß: Kapitelziel 66,9 → 80,2 %. Ein höheres goalValue hilft kaum
+    # (90.000 $ / 7 Quellen: ~71 %) und schiebt den Pipeline-Anteil über 80 % – die Gesamt-Balance folgt.
+    standardGoal: { min: 0.20, max: 0.70 }    # Kapitelziel ausgewogen: erreichbar, aber nicht geschenkt (Spielspaß K1: Grenze bleibt 0,70, dafür Kapitelziel 95.000 $ / 8 Quellen)
     smallRateInRange: { min: 0.90, max: 1 }   # Anteil kleiner Funde mit 50–500 bbl/Tag (GDD §15)
     gusherFactor: { min: 2, max: 20 }         # Ø Anfangsrate Gusher ÷ kleiner Fund (GDD §15: deutlich mehr)
     decline: { min: 0.08, max: 0.15 }         # gemessener Rückgang je Quartal (GDD §15: 8–15 %)
     wildcatHit: { min: 0.05, max: 0.25 }      # blinde Wildcat-Bohrung in Randlage auf 300 m (GDD §15: 1 von 5 bis 1 von 10)
     appointments: { min: 4.5, max: 5 }        # Ø Termine je Runde des Standard-Bots (GDD §15: 5 je Quartal)
     routeShare: { min: 0, max: 0.75 }         # 0.2.15+4: höchster Anteil eines Transportwegs an allen verkauften Barrel – kein Weg dominiert
-    pipelineSuccess: { min: 0, max: 0.80 }    # 0.4.20+1: 0,70 → 0,80 – mit der guten ersten Startoption und dem höheren Kapitelziel sind die erfolgreichen Partien noch mehr die großen Förderer (gemessen 77,4 %); ohne Pipeline schaffen es weiter etwa 15 % aller Partien (vorher 17 %). 0.2.15+4: Anteil der Partien mit Kapitelziel (planende Bots), in denen eine Pipeline läuft; Etappe 1: 0,60 → 0,65 – mit verdeckter Geologie schaffen weniger Partien das Ziel, und die erfolgreichen sind die großen Förderer, bei denen sich die Pipeline lohnt (über alle Partien läuft sie seltener als vorher); Etappe 3: 0,65 → 0,70 – weniger Briefe kosten weniger Geld und Termine, der Standard-Bot baut in erfolgreichen Partien öfter die Pipeline (39 → 53 %), kein Weg dominiert (routeShare um 0,40)
+    pipelineSuccess: { min: 0, max: 0.80 }    # Spielspaß K1: bleibt 0,80 (gemessen um 0,79 – der vorsichtige Bot spricht jetzt bei Thorne vor und schafft das Ziel öfter ohne Pipeline). 0.4.20+1: 0,70 → 0,80 – mit der guten ersten Startoption und dem höheren Kapitelziel sind die erfolgreichen Partien noch mehr die großen Förderer (gemessen 77,4 %); ohne Pipeline schaffen es weiter etwa 15 % aller Partien (vorher 17 %). 0.2.15+4: Anteil der Partien mit Kapitelziel (planende Bots), in denen eine Pipeline läuft; Etappe 1: 0,60 → 0,65 – mit verdeckter Geologie schaffen weniger Partien das Ziel, und die erfolgreichen sind die großen Förderer, bei denen sich die Pipeline lohnt (über alle Partien läuft sie seltener als vorher); Etappe 3: 0,65 → 0,70 – weniger Briefe kosten weniger Geld und Termine, der Standard-Bot baut in erfolgreichen Partien öfter die Pipeline (39 → 53 %), kein Weg dominiert (routeShare um 0,40)
     # 0.2.15+8 Ausbau: Gute Quellen lohnen den Ausbau, aber „alles ausbauen“ ist keine Siegformel.
     expandedShare: { min: 0.05, max: 0.7 }    # Anteil der Ranches mit Fund (planende Bots) mit Pumpe oder weiterem Bohrloch
     investGain: { min: 1.02, max: 10 }        # Ø Imperium ausgewogen ÷ derselbe Bot ohne Ausbau (Investieren zahlt sich aus)
@@ -990,14 +1022,31 @@ events:
   # Runden, die Antwortrunde mitgezählt. Dieselbe Wirkung aus demselben Ereignis zählt nur einmal.
   timedRounds: 4           # PLATZHALTER
   # Prüfung schwacher Antworten (0.2.15+3, npm run check:events): Eine Antwort ist spürbar, wenn sie
-  # mindestens minShare × chapterMoney wert ist (hier 200 $), eine dauerhafte Wirkung hat (Tarif,
+  # mindestens minShare × chapterMoney wert ist (Kapitel 1: 600 $; Ereignisse späterer Kapitel × laterChapterMoney: 200 $),
+  # eine dauerhafte Wirkung hat (Tarif,
   # Fuhrwerke, Preis, Förderung, Pacht) oder ein Merkzeichen setzt, das später etwas abfragt.
   # Kraft und Familie zählen mit den Gewichten des Standard-Bots (bots.events.balanced), Öl zum Trendpreis.
   relevance:
-    chapterMoney: 10000    # typisches Geld eines Kapitels: Startkasse 2.500 $, Kapitelziel 50.000 $ – grob die Kasse zur Mitte
-    minShare: 0.02         # 2 % davon = 200 $
-    refBarrels: 5000       # typischer Verkauf je Runde (eine kleine Quelle zur Kapitelmitte)
+    chapterMoney: 60000    # Briefe mit Gewicht: typisches Imperium zur Mitte von Kapitel 1 (Median Runde 6–11 ≈ 63.000 $, tools/briefGewicht.ts) – 1 % = 600 $
+    laterChapterMoney: 20000  # Kapitel 2/3 wie bisher (1 % = 200 $), bis sie eigene Balance haben
+    minShare: 0.01         # 1 % davon (Kapitel 1: 600 $, spätere Kapitel 200 $) – Ziel „Briefe mit Gewicht“: ein normaler Brief bewegt 1–3 % des Imperiums
+    refBarrels: 9000       # typische Förderung je Runde zur Kapitelmitte (Briefe mit Gewicht: Median Runde 6–11 des Standard-Bots ≈ 9.000 bbl; vorher 5.000)
     refLeaseSpend: 1500    # typischer Pachtbonus in timedRounds Runden
+    letterScale: 5         # Briefe mit Gewicht: In Kapitel 1 zählen Geld (ohne fixedCash), Kraft und Familie × 5 – typischer Faktor events.scale zur Kapitelmitte (tools/briefGewicht.ts)
+  # Briefe mit Gewicht (Spielspaß-Durchgang, src/sim/letterScale.ts): Nur in Kapitel 1 wachsen die
+  # Geldbeträge der Ereignis-Antworten (cash, auch die Geldbedingung minCash der Antwort) mit Jacobs
+  # Geschäft. Faktor = Erlös je Runde ÷ ref, mindestens 1, höchstens max. Erlös je Runde = was Jacobs
+  # Quellen in der letzten Runde gefördert haben (ohne Förderzins-Öl) × Ø Posted Price der letzten
+  # rounds Runden. Ausnahme: fixedCash: true an der Antwort (echte feste Preise, Kredite mit Rückzahlung).
+  scale:
+    ref: 1250              # PLATZHALTER: bis 1.250 $ Erlös je Runde bleiben die Beträge wie geschrieben (Gesamt-Balance: mit 1.500 $ lag ein normaler Brief bei 0,9 % des Imperiums, Ziel 1–3 %)
+    max: 8                 # PLATZHALTER: höchster Faktor (mit 4 bliebe ein normaler Brief am Kapitelende bei ~0,5 % des Imperiums)
+    rounds: 3              # Posted Price über 3 Runden gemittelt
+
+# Weichen statt Alltagspost (Spielspaß K1, src/sim/weichen.ts): Kapitel 1 hat nur noch wenige Ereignisse, jedes mit
+# Folgen bis Kapitelende (lasting, land, rig an den Antworten in content/events/k1-*.yaml).
+weichen:
+  ruthCredit: 1.25         # PLATZHALTER: Steht Ruth mit auf den Urkunden, gibt die Bank 25 % mehr Rahmen (bis Kapitelende)
 
 # Gekoppelte Briefe (Termine als Hauptwerkzeug, Etappe 3, src/sim/letters.ts): Viele Briefe in Kapitel 1
 # kommen nur noch als Antwort auf Jacobs Pläne (Ritt, Besuch bei Thorne, Gerücht, Förderbremse …).
@@ -1054,7 +1103,6 @@ newspaper:
 tutorial:
   lastRound: 8               # spätestens nach Runde 8 schweigen die Hinweise (halbes Kapitel)
   endAfterProducedRounds: 2  # fertig, wenn die erste Quelle 2 Runden gefördert hat (die Verkaufsrunde ist vorbei)
-  deeperMinChance: 25        # PLATZHALTER: tiefer bohren nur raten, wenn der Geologe der nächsten Stufe mind. 25 % gibt
   dollarsPerPoint: 100       # Frühes Öl (0.4.4+): 100 $ Pacht wiegen einen Prozentpunkt Schätzung auf – der Hinweis rät nicht zur teuren Pacht, die kaum besser aussieht
   loanRounding: 100          # vorgeschlagene Kredite auf 100 $ aufgerundet (mindestens credit.minLoan)
   exploreBelow: 55           # Etappe 1, PLATZHALTER: sieht die beste bezahlbare Ranch schlechter aus als 55 %, rät der Hinweis erst zum Ritt übers Land
@@ -1706,13 +1754,10 @@ investigation:
     - { mark: moss_betrogen, severity: 3 }                 # Moss' Pachtpapier für 100 $
     - { mark: silas_betrogen, severity: 2 }                # frisierte Bücher für Silas
     - { mark: silas_kronzeuge, severity: 2, witness: true } # Silas redet in jedem Saloon
-    - { mark: sheriff_bezahlt, severity: 2 }               # Schutzgeld an Sheriff Tatum
-    - { mark: nora_bestechung, severity: 2 }               # Bestechung der Presse
     - { mark: courier_gekauft, severity: 1 }               # gekaufter Zeitungsbericht
-    - { mark: bullard_rache, severity: 3 }                 # Bullards Seil anschneiden lassen (Sabotage)
     - { mark: vale_geld, severity: 1 }                     # Geld unbekannter Herkunft (Mr. Vale)
     - { mark: thorne_exklusiv, severity: 1 }               # geheimer Exklusivvertrag mit der Bahn
-  goodMarks: [moss_fair, silas_fair, nora_ehrlich, sheriff_umgangen, eli_versorgt]  # Leumund vor Gericht
+  goodMarks: [moss_fair, silas_fair, nora_interview, ruth_teilhaberin]  # Leumund vor Gericht
   worldFallback: { mood: 50, government: null }  # Ersatz bis zum Weltmodell (4.1)
   fadeEvery: 8           # GDD §4: −1 Schwere je Spur alle 8 Runden, solange niemand ermittelt
   jumpFade: 1            # Zeitsprung vor Kapitel 2: so viele Stufen verblassen auf einmal (Zeugen nicht)

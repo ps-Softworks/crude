@@ -107,7 +107,7 @@ describe('Delaney kommt (Kapitel 2)', () => {
     const katalog = loadEvents();
     let s: GameState = endRound(kapitel2(), balance, katalog);
     expect(s.events.pending).toContain('k2_delaney_ankunft');
-    s = kapitel2(['moss_betrogen', 'bullard_rache', 'silas_kronzeuge', 'sheriff_bezahlt']);
+    s = kapitel2(['moss_betrogen', 'silas_betrogen', 'courier_gekauft', 'silas_kronzeuge', 'vale_geld', 'thorne_exklusiv']);
     const gesehen = new Set<string>();
     for (let i = 0; i < 6; i++) {
       s = endRound(s, balance, katalog);
@@ -155,7 +155,9 @@ describe('Spuren und Hitze (GDD §4)', () => {
 });
 
 describe('Ablauf: Gerücht → Vorermittlung → Anklage → Urteil (GDD §10)', () => {
-  const schmutzig = ['moss_betrogen', 'bullard_rache', 'silas_kronzeuge', 'sheriff_bezahlt'];
+  // Spielspaß K1 (Weichen statt Alltagspost): Bullards Rache und das Schutzgeld für den Sheriff sind gestrichen – die
+  // Tests nehmen die verbliebenen Spuren (frisierte Bücher, gekaufter Bericht, Vales Geld, Exklusivvertrag).
+  const schmutzig = ['moss_betrogen', 'silas_betrogen', 'courier_gekauft', 'silas_kronzeuge', 'vale_geld', 'thorne_exklusiv'];
 
   it('Gerücht ab rumorAt, Vorermittlung ab probeAt – mit Beweisen für jeden Zeugen', () => {
     const b = mitInv({ jumpFade: 0 });
@@ -242,10 +244,10 @@ describe('Ablauf: Gerücht → Vorermittlung → Anklage → Urteil (GDD §10)',
 
   it('sinkt die Hitze in der Vorermittlung und sind keine Beweise mehr da, stellt Delaney ein', () => {
     const b = mitInv({ jumpFade: 0, evidence: { ...balance.investigation.evidence, perWitness: 0 } });
-    let s = runden(kapitel2(['moss_betrogen', 'bullard_rache']), 2, b);
+    let s = runden(kapitel2(['moss_betrogen', 'silas_betrogen', 'courier_gekauft']), 2, b);
     expect(inv(s).stage).toBe('vorermittlung');
     // Beide Spuren vernichten (ohne Zeugen dabei) – Hitze unter probeAt; ein starker Anwalt frisst die Beweise.
-    for (const id of ['moss_betrogen', 'bullard_rache']) {
+    for (const id of ['moss_betrogen', 'silas_betrogen', 'courier_gekauft']) {
       const r = destroyTrace(s, mitInv({ ...b.investigation, destroy: { ...b.investigation.destroy, chance: 0, cut: 5 } }), id);
       if (!r.ok) throw new Error(r.reason);
       s = r.state as K2;
@@ -259,11 +261,11 @@ describe('Ablauf: Gerücht → Vorermittlung → Anklage → Urteil (GDD §10)',
 
   it('Hitze 0 und kein Anwalt: die Beweise verfallen, Delaney stellt ein – kein ewiger Fall', () => {
     const b = mitInv({ jumpFade: 0, evidence: { ...balance.investigation.evidence, perWitness: 0 } });
-    let s = runden(kapitel2(['moss_betrogen', 'bullard_rache']), 3, b);
+    let s = runden(kapitel2(['moss_betrogen', 'silas_betrogen', 'courier_gekauft']), 3, b);
     expect(inv(s).stage).toBe('vorermittlung');
     expect(inv(s).evidence).toBeGreaterThan(0);
     const ohneZeugen = mitInv({ ...b.investigation, destroy: { ...b.investigation.destroy, chance: 0, cut: 5 } });
-    for (const id of ['moss_betrogen', 'bullard_rache']) {
+    for (const id of ['moss_betrogen', 'silas_betrogen', 'courier_gekauft']) {
       const r = destroyTrace(s, ohneZeugen, id);
       if (!r.ok) throw new Error(r.reason);
       s = r.state as K2;
@@ -282,7 +284,7 @@ describe('Ablauf: Gerücht → Vorermittlung → Anklage → Urteil (GDD §10)',
   it('ein Anwalt, der jeden Zuwachs abfängt: ohne Beweise gibt Delaney auf, auch wenn die Hitze bleibt', () => {
     // moss + bullard = Hitze 6 → Zuwachs 15 je Runde; Anwalt 5 fängt 15 ab.
     const b = mitInv({ jumpFade: 0, evidence: { ...balance.investigation.evidence, perWitness: 0 } });
-    let s = runden(kapitel2(['moss_betrogen', 'bullard_rache']), 1, b);
+    let s = runden(kapitel2(['moss_betrogen', 'silas_betrogen', 'courier_gekauft']), 1, b);
     expect(inv(s).stage).toBe('geruecht');
     const r = setLawyer(s, b, 5);
     if (!r.ok) throw new Error(r.reason);
@@ -319,7 +321,7 @@ describe('Antworten auf Delaneys Ereignisse', () => {
     expect(inv(runden(kapitel2([C.earlyLawyer]), 3)).lawyer).toBe(0);
     // … und kommt mit der Vorermittlung.
     const b = mitInv({ jumpFade: 0 });
-    let s = runden(kapitel2([C.earlyLawyer, 'moss_betrogen', 'bullard_rache']), 2, b);
+    let s = runden(kapitel2([C.earlyLawyer, 'moss_betrogen', 'silas_betrogen', 'courier_gekauft']), 2, b);
     expect(inv(s).stage).toBe('vorermittlung');
     expect(inv(s).lawyer).toBe(balance.investigation.lawyer.early);
     s = { ...s, events: { ...s.events, marks: { ...s.events.marks, [C.lawyer]: s.round } } };
@@ -332,7 +334,7 @@ describe('Antworten auf Delaneys Ereignisse', () => {
 
   it('offen geantwortet: mehr Beweise, aber halbe Strafe', () => {
     const b = mitInv({ jumpFade: 0 });
-    const s = runden(kapitel2(['moss_betrogen', 'bullard_rache', 'silas_kronzeuge']), 2, b);
+    const s = runden(kapitel2(['moss_betrogen', 'silas_betrogen', 'courier_gekauft', 'silas_kronzeuge']), 2, b);
     const offen = { ...s, events: { ...s.events, marks: { ...s.events.marks, [C.candid]: s.round } } };
     expect(fineFor(offen, b).amount).toBe(Math.round(fineFor(s, b).amount * b.investigation.fine.candidFactor));
     const nach = inv(advanceInvestigation(offen, b)).evidence;
@@ -342,14 +344,14 @@ describe('Antworten auf Delaneys Ereignisse', () => {
 
   it('Kronzeuge gegen den Trust: viel weniger Beweise', () => {
     const b = mitInv({ jumpFade: 0 });
-    const s = runden(kapitel2(['moss_betrogen', 'bullard_rache', 'silas_kronzeuge', 'sheriff_bezahlt']), 3, b);
+    const s = runden(kapitel2(['moss_betrogen', 'silas_betrogen', 'courier_gekauft', 'silas_kronzeuge', 'vale_geld', 'thorne_exklusiv']), 3, b);
     const k = { ...s, events: { ...s.events, marks: { ...s.events.marks, [C.crown]: s.round } } };
     expect(inv(advanceInvestigation(k, b)).evidence).toBeLessThan(inv(advanceInvestigation(s, b)).evidence);
   });
 
   it('hinausgeworfen gräbt Delaney schneller, Noras Crane-Geschichte lenkt ihn ab', () => {
     const b = mitInv({ jumpFade: 0 });
-    const s = runden(kapitel2(['moss_betrogen', 'bullard_rache']), 2, b);
+    const s = runden(kapitel2(['moss_betrogen', 'silas_betrogen', 'courier_gekauft']), 2, b);
     const mit = (m: string) => ({ ...s, events: { ...s.events, marks: { ...s.events.marks, [m]: s.round } } });
     const normal = inv(advanceInvestigation(s, b)).evidence;
     expect(inv(advanceInvestigation(mit(C.hostile), b)).evidence).toBeGreaterThan(normal);
@@ -358,7 +360,7 @@ describe('Antworten auf Delaneys Ereignisse', () => {
 
   it('ein Vergleich schließt den Fall ohne Urteil', () => {
     const b = mitInv({ jumpFade: 0 });
-    let s = runden(kapitel2(['moss_betrogen', 'bullard_rache']), 2, b);
+    let s = runden(kapitel2(['moss_betrogen', 'silas_betrogen', 'courier_gekauft']), 2, b);
     s = { ...s, events: { ...s.events, marks: { ...s.events.marks, [C.settle]: s.round } } };
     s = runden(s, 1, b);
     expect(inv(s).verdict).toBe('vergleich');
@@ -367,7 +369,7 @@ describe('Antworten auf Delaneys Ereignisse', () => {
 
   it('Interview, Leumund und bester Anwalt senken die Verurteilungschance, schlechte Stimmung hebt sie', () => {
     const b = mitInv({ jumpFade: 0 });
-    const s = runden(kapitel2(['moss_betrogen', 'bullard_rache']), 3, b);
+    const s = runden(kapitel2(['moss_betrogen', 'silas_betrogen', 'courier_gekauft']), 3, b);
     const p = convictionChance(s, b);
     const mit = (m: string) => ({ ...s, events: { ...s.events, marks: { ...s.events.marks, [m]: s.round } } });
     expect(convictionChance(mit(C.interview), b)).toBeLessThan(p);
@@ -396,14 +398,14 @@ describe('Gegenmittel im Schattenbuch', () => {
   });
 
   it('Spur vernichten mindert die Schwere und kostet Geld; mit Pech entsteht eine Spur „Vertuschung“', () => {
-    const s = runden(kapitel2(['bullard_rache']), 1);
+    const s = runden(kapitel2(['moss_betrogen']), 1);
     const sicher = mitInv({ destroy: { ...balance.investigation.destroy, chance: 0 } });
-    const r = destroyTrace(s, sicher, 'bullard_rache');
+    const r = destroyTrace(s, sicher, 'moss_betrogen');
     if (!r.ok) throw new Error(r.reason);
     expect(r.state.cash).toBe(s.cash - balance.investigation.destroy.cost);
     expect(heat(r.state, sicher)).toBe(Math.max(0, heat(s, sicher) - balance.investigation.destroy.cut));
     const pech = mitInv({ destroy: { ...balance.investigation.destroy, chance: 1 } });
-    const r2 = destroyTrace(s, pech, 'bullard_rache');
+    const r2 = destroyTrace(s, pech, 'moss_betrogen');
     if (!r2.ok) throw new Error(r2.reason);
     expect(traces(r2.state, pech).some((t) => t.key === 'vertuschung')).toBe(true);
   });
@@ -423,7 +425,7 @@ describe('Gegenmittel im Schattenbuch', () => {
     const b = mitInv({ jumpFade: 0 });
     const ruhig = runden(kapitel2(), 1, b);
     expect(sacrificeScapegoat(ruhig, b).ok).toBe(false);
-    const s = runden(kapitel2(['moss_betrogen', 'bullard_rache', 'silas_kronzeuge']), 2, b);
+    const s = runden(kapitel2(['moss_betrogen', 'silas_betrogen', 'courier_gekauft', 'silas_kronzeuge']), 2, b);
     const r = sacrificeScapegoat(s, b);
     if (!r.ok) throw new Error(r.reason);
     expect(inv(r.state).evidence).toBe(Math.max(0, inv(s).evidence - b.investigation.scapegoat.evidenceCut));
@@ -434,7 +436,7 @@ describe('Gegenmittel im Schattenbuch', () => {
 
   it('politischer Druck: hängt von der Regierung ab; gelingt er, ist Delaney versetzt und die Beweise verfallen', () => {
     const b = mitInv({ jumpFade: 0 });
-    const s = runden(kapitel2(['moss_betrogen', 'bullard_rache', 'silas_kronzeuge']), 2, b);
+    const s = runden(kapitel2(['moss_betrogen', 'silas_betrogen', 'courier_gekauft', 'silas_kronzeuge']), 2, b);
     expect(pressureChance(mitWelt(s, { government: 'handel' }), b)).toBe(b.investigation.pressure.chance.handel);
     expect(pressureChance(mitWelt(s, { government: 'volksbund' }), b)).toBe(b.investigation.pressure.chance.volksbund);
     expect(pressureChance(mitWelt(s, { government: 'provinz' }), b)).toBe(b.investigation.pressure.chance.provinz);
@@ -450,7 +452,7 @@ describe('Gegenmittel im Schattenbuch', () => {
 
   it('misslingt der Druck, gibt es mehr Beweise und eine Spur „Einflussnahme“', () => {
     const b = mitInv({ jumpFade: 0, pressure: { ...balance.investigation.pressure, chance: { handel: 0, volksbund: 0, provinz: 0, none: 0 } } });
-    const s = runden(kapitel2(['moss_betrogen', 'bullard_rache', 'silas_kronzeuge']), 2, b);
+    const s = runden(kapitel2(['moss_betrogen', 'silas_betrogen', 'courier_gekauft', 'silas_kronzeuge']), 2, b);
     const r = applyPressure(s, b);
     if (!r.ok) throw new Error(r.reason);
     expect(inv(r.state).evidence).toBe(Math.min(100, inv(s).evidence + b.investigation.pressure.failEvidence));
@@ -458,16 +460,16 @@ describe('Gegenmittel im Schattenbuch', () => {
   });
 
   it('ohne Geld geht nichts', () => {
-    const s = { ...runden(kapitel2(['bullard_rache', 'silas_kronzeuge']), 1), cash: 0 };
-    expect(destroyTrace(s, balance, 'bullard_rache').ok).toBe(false);
+    const s = { ...runden(kapitel2(['moss_betrogen', 'silas_kronzeuge']), 1), cash: 0 };
+    expect(destroyTrace(s, balance, 'moss_betrogen').ok).toBe(false);
     expect(buyWitness(s, balance, 'silas_kronzeuge').ok).toBe(false);
   });
 });
 
 describe('Ermittler – Determinismus und Spielstand', () => {
   it('gleicher Seed, gleiche Entscheidungen: gleicher Ausgang', () => {
-    const a = runden(kapitel2(['moss_betrogen', 'bullard_rache', 'silas_kronzeuge', 'delaney_interview']), 12);
-    const b = runden(kapitel2(['moss_betrogen', 'bullard_rache', 'silas_kronzeuge', 'delaney_interview']), 12);
+    const a = runden(kapitel2(['moss_betrogen', 'silas_betrogen', 'courier_gekauft', 'silas_kronzeuge', 'delaney_interview']), 12);
+    const b = runden(kapitel2(['moss_betrogen', 'silas_betrogen', 'courier_gekauft', 'silas_kronzeuge', 'delaney_interview']), 12);
     expect(a.investigation).toEqual(b.investigation);
     expect(a.cash).toBe(b.cash);
   });

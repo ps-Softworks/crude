@@ -29,7 +29,10 @@ function bohrzeile(game: GameState, vorher: Well | undefined, well: Well): { tex
   const tiefe = balance.drilling.stages[well.stage - 1]?.depth;
   const neu = !vorher || vorher.status !== well.status || vorher.stage !== well.stage;
   if (well.status === 'found' && (!vorher || vorher.status !== 'found')) {
-    return { text: `${ort}: ${well.result === 'gusher' ? 'GUSHER! Ein gewaltiger Fund' : 'Öl gefunden'} in ${tiefe} m.`, gut: true };
+    // Spielspaß K1: Hat sich das Weiterbohren gelohnt, sagt der Bericht es – ein Fund in der Tiefe ist größer.
+    const faktor = balance.drilling.stages[well.stage - 1]?.findFactor ?? 1;
+    const tief = well.stage > 1 && faktor > 1 ? ` Das Weiterbohren hat sich gelohnt: etwa ${faktor.toLocaleString('de-DE')}-mal so viel Öl wie flach.` : '';
+    return { text: `${ort}: ${well.result === 'gusher' ? 'GUSHER! Ein gewaltiger Fund' : 'Öl gefunden'} in ${tiefe} m.${tief}`, gut: true };
   }
   if (!neu) {
     return well.status === 'drilling' ? { text: `${ort}: Der Turm bohrt weiter – fertig in ${rounds(well.roundsLeft)}.` } : null;
@@ -40,7 +43,8 @@ function bohrzeile(game: GameState, vorher: Well | undefined, well: Well): { tex
     case 'stuck':
       return { text: `${ort}: Das Werkzeug klemmt in ${tiefe} m.`, warn: true };
     case 'dry':
-      return { text: `${ort}: trocken – kein Öl.` };
+      // Spielspaß K1: In der Tiefe trocken – das Spiel um den großen Fund ist verloren.
+      return { text: well.stage > 1 ? `${ort}: auch in ${tiefe} m trocken – das Spiel um den großen Fund ist verloren.` : `${ort}: trocken – kein Öl.` };
     case 'drilling':
       return { text: `${ort}: Stufe ${well.stage} auf ${tiefe} m – fertig in ${rounds(well.roundsLeft)}.` };
     default:

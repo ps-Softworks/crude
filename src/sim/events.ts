@@ -20,6 +20,8 @@ import type { PublicAct } from './world';
 import { Rng, seedFromString, type RngState } from './rng';
 import { chapterOf } from './chapterOf'; // gemeinsamer Kapitel-Helfer aller Phase-4-Systeme (state.chapter, sonst 1)
 import { applySystemEffects, type SystemEffects } from './eventSystems';
+import { fillCash, scaleChoice } from './letterScale';
+import { giftRig, grantLand, roundsToChapterEnd, type LandGrant, type RigGift } from './weichen';
 
 /**
  * Bedingungen: jede ist eine Untergrenze (min…) oder Obergrenze (max…).
@@ -132,6 +134,14 @@ export interface EventChoice {
   public?: PublicAct[];
   /** Systemwirkungen (4.12): stehen in YAML mit unter effects, wirken auf Ruf, Rivalen, Aufsichtsrat … (eventSystems.ts). */
   system?: SystemEffects;
+  /** Briefe mit Gewicht (Spielspaß-Durchgang): cash und minCash wachsen in Kapitel 1 nicht mit Jacobs Geschäft (letterScale.ts). */
+  fixedCash?: boolean;
+  /** Weichen (Spielspaß-Durchgang, weichen.ts): befristete Wirkungen gelten bis Kapitelende. */
+  lasting?: boolean;
+  /** Weichen: Jacob bekommt die Pacht auf der Ranch einer Figur ohne Bonus. */
+  land?: LandGrant;
+  /** Weichen: Silas' Turm bekommt Dampfmaschine oder Stahlgestänge geschenkt. */
+  rig?: RigGift;
 }
 
 export interface EventDef {
@@ -472,12 +482,12 @@ export function routineOffered(state: GameState, event: EventDef): boolean {
   );
 }
 
-/** Warum eine Wahl gerade nicht geht – Bedingung oder Zeit –, oder null. */
+/** Warum eine Wahl gerade nicht geht – Bedingung oder Zeit –, oder null. Geldbedingungen gelten mit dem Faktor aus letterScale.ts. */
 export function choiceReason(state: GameState, balance: Balance, event: EventDef, choice: EventChoice): string | null {
   return (
     foundReason(state, event, choice) ??
     (choice.sharp ? sharpReason(state, balance) : null) ??
-    unmetReason(state, choice.requires) ??
+    unmetReason(state, scaleChoice(state, balance, choice).requires) ??
     timeReason(state, balance, choiceCost(event, choice))
   );
 }
@@ -487,9 +497,9 @@ function foundReason(state: Pick<GameState, 'events'>, event: EventDef, choice: 
   return choice.requiresFound && !forgeryFound(state, event.id) ? 'Dafür muss die Lupe erst eine Fälschung finden.' : null;
 }
 
-/** Ist eine Wahl ohne Blick auf die Termine möglich? Bedingungen und Dokumentenprüfung. */
-function waehlbar(state: GameState, event: EventDef, choice: EventChoice): boolean {
-  return foundReason(state, event, choice) === null && unmetReason(state, choice.requires) === null;
+/** Ist eine Wahl ohne Blick auf die Termine möglich? Bedingungen und Dokumentenprüfung (Geld mit dem Faktor, wenn balance da ist). */
+function waehlbar(state: GameState, event: EventDef, choice: EventChoice, balance?: Balance): boolean {
+  return foundReason(state, event, choice) === null && unmetReason(state, scaleChoice(state, balance, choice).requires) === null;
 }
 
 /**
@@ -497,8 +507,8 @@ function waehlbar(state: GameState, event: EventDef, choice: EventChoice): boole
  * Wahl mit default: true, sonst die erste; ist sie gesperrt, die erste mögliche.
  * undefined, wenn keine geht (dann verfällt das Ereignis ohne Effekt).
  */
-export function defaultChoice(state: GameState, event: EventDef): EventChoice | undefined {
-  return [event.choices.find((c) => c.default) ?? event.choices[0], ...event.choices].find((c) => c && waehlbar(state, event, c));
+export function defaultChoice(state: GameState, event: EventDef, balance?: Balance): EventChoice | undefined {
+  return [event.choices.find((c) => c.default) ?? event.choices[0], ...event.choices].find((c) => c && waehlbar(state, event, c, balance));
 }
 
 /**
@@ -652,7 +662,7 @@ export function resolveEvent(
   if (!event || !daDa) return { ok: false, reason: 'Dieses Ereignis liegt nicht auf dem Schreibtisch.' };
   const choice = event.choices.find((c) => c.id === choiceId);
   if (!choice) return { ok: false, reason: 'Diese Antwort gibt es nicht.' };
-  const reason = foundReason(state, event, choice) ?? (choice.sharp ? sharpReason(state, balance) : null) ?? unmetReason(state, choice.requires);
+  const reason = foundReason(state, event, choice) ?? (choice.sharp ? sharpReason(state, balance) : null) ?? unmetReason(state, scaleChoice(state, balance, choice).requires);
   if (reason) return { ok: false, reason };
   const belegt = spendAppointments(state, balance, choiceCost(event, choice));
   if (!belegt.ok) return belegt;
@@ -662,8 +672,8 @@ export function resolveEvent(
 // 4.9 Andockpunkt: Personal (src/sim/staffRound.ts) erledigt Briefe nach Richtlinie –
 // ohne Jacobs Termine und unabhängig von seiner Erschöpfung (sharp gilt nicht).
 /** Ist eine Wahl ohne Blick auf Termine und Kraft möglich? Bedingungen und Dokumentenprüfung. */
-export function choicePossible(state: GameState, event: EventDef, choice: EventChoice): boolean {
-  return waehlbar(state, event, choice);
+export function choicePossible(state: GameState, event: EventDef, choice: EventChoice, balance?: Balance): boolean {
+  return waehlbar(state, event, choice, balance);
 }
 
 /** Jemand aus dem Personal beantwortet ein offenes Ereignis; vorsatz steht vor dem Eintrag im Protokoll. */
@@ -679,18 +689,23 @@ export function resolveDelegated(
   const event = finde(catalog, eventId);
   if (!event || event.routine || !state.events.pending.includes(eventId)) return { ok: false, reason: 'Dieses Ereignis liegt nicht auf dem Schreibtisch.' };
   const choice = event.choices.find((c) => c.id === choiceId);
-  if (!choice || !waehlbar(state, event, choice)) return { ok: false, reason: 'Diese Antwort geht gerade nicht.' };
+  if (!choice || !waehlbar(state, event, choice, balance)) return { ok: false, reason: 'Diese Antwort geht gerade nicht.' };
   return { ok: true, state: openRegions(erledigen(state, event, choice, lang, vorsatz, balance.events.timedRounds, balance), balance) };
 }
 
-function erledigen(state: GameState, event: EventDef, choice: EventChoice, lang: Lang, vorsatz: string, timedRounds: number, balance?: Balance): GameState {
+function erledigen(state: GameState, event: EventDef, original: EventChoice, lang: Lang, vorsatz: string, timedRounds: number, balance?: Balance): GameState {
+  // Briefe mit Gewicht: Geld wirkt mit dem Faktor der laufenden Runde (letterScale.ts) – derselbe Betrag, den der Schreibtisch zeigte.
+  const choice = scaleChoice(state, balance, original);
   // Gebiete (0.2.15+5): nur den Schalter umlegen – die Ranches kommen mit openRegions.
   const offen = (choice.unlocks ?? []).reduce(unlockRegion, state);
   // Öffentliches Handeln (4.2): wirkt am Rundenende im Weltmodell.
   const bekannt = (choice.public ?? []).reduce(recordAct, offen);
   // Systemwirkungen (4.12) brauchen die Spielzahlen; ohne balance (alte Aufrufe, nur Kapitel 1) entfallen sie.
   const systemisch = balance ? applySystemEffects(bekannt, choice.system, balance, event.id, localize(event.title, lang)) : bekannt;
-  const nach = applyEffects(systemisch, choice.effects, event.id, timedRounds);
+  // Weichen: befristete Wirkungen bis Kapitelende, geschenktes Land, ein besserer Turm.
+  const wirkt = applyEffects(systemisch, choice.effects, event.id, choice.lasting ? roundsToChapterEnd(systemisch) : timedRounds);
+  const gepachtet = choice.land && balance ? grantLand(wirkt, balance, choice.land) : wirkt;
+  const nach = choice.rig ? giftRig(gepachtet, choice.rig) : gepachtet;
   const agenda = event.routine ? { ...nach.agenda, done: [...nach.agenda.done, event.id] } : nach.agenda;
   // Merkzeichen behalten die Runde, in der sie zuerst gesetzt wurden.
   const marks = { ...nach.events.marks };
@@ -699,7 +714,7 @@ function erledigen(state: GameState, event: EventDef, choice: EventChoice, lang:
   for (const m of gesetzt) if (marks[m] === undefined) marks[m] = state.round;
   return {
     ...nach,
-    log: [...nach.log, `${formatDate(state)}: ${vorsatz}${localize(event.title, lang)} – ${localize(choice.result, lang)}`],
+    log: [...nach.log, `${formatDate(state)}: ${vorsatz}${localize(event.title, lang)} – ${fillCash(localize(original.result, lang), state, balance, event, original, lang)}`],
     events: {
       ...nach.events,
       pending: nach.events.pending.filter((id) => id !== event.id),
@@ -738,7 +753,7 @@ export function autoResolve(state: GameState, catalog: readonly EventDef[], lang
     const event = finde(catalog, id);
     // Frist läuft noch: der Brief bleibt liegen.
     if (event && dueRound(out, id) > out.round) continue;
-    const choice = event ? defaultChoice(out, event) : undefined;
+    const choice = event ? defaultChoice(out, event, balance) : undefined;
     if (event && choice) {
       out = erledigen(out, event, choice, lang, 'Ohne Antwort: ', timedRounds, balance);
     } else {
@@ -789,19 +804,19 @@ export interface DeskEvent {
 function zeigen(state: GameState, balance: Balance, event: EventDef, lang: Lang): DeskEvent {
   const document = deskDocument(state, balance, event, lang);
   // Feste Termine haben keine Standardantwort – bleiben sie liegen, passiert nichts.
-  const standard = event.routine ? undefined : defaultChoice(state, event)?.id;
+  const standard = event.routine ? undefined : defaultChoice(state, event, balance)?.id;
   return {
     ...(document ? { document } : {}),
     id: event.id,
     title: localize(event.title, lang),
-    text: localize(event.text, lang),
+    text: fillCash(localize(event.text, lang), state, balance, event, undefined, lang),
     ...(event.mail ? { mail: event.mail } : {}),
     roundsLeft: event.routine ? 1 : dueRound(state, event.id) - state.round + 1,
     urgent: !event.routine && isUrgent(state, event.id),
     choices: event.choices.map((c) => {
       const cost = choiceCost(event, c);
       const reason = choiceReason(state, balance, event, c);
-      const basis = { id: c.id, label: localize(c.label, lang), cost, overtime: overtimeFor(state, cost), ...(c.id === standard ? { fallback: true as const } : {}) };
+      const basis = { id: c.id, label: fillCash(localize(c.label, lang), state, balance, event, c, lang), cost, overtime: overtimeFor(state, cost), ...(c.id === standard ? { fallback: true as const } : {}) };
       return reason ? { ...basis, ok: false, reason } : { ...basis, ok: true };
     }),
   };

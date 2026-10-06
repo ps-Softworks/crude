@@ -5,6 +5,8 @@
 import { applyAction, parcelActions } from '../sim/desk';
 import type { GameState } from '../sim/game';
 import { parcelLabel } from '../sim/lease';
+import { deeperOutlook } from '../sim/deeper';
+import { deeperShort } from './deeperText';
 import {
   buyRig,
   buyVsRentRounds,
@@ -46,7 +48,11 @@ function lage(game: GameState, rig: Rig): string {
   if (!well) return 'frei';
   const parcel = game.parcels.find((p) => p.id === well.parcelId);
   const ort = parcel ? parcelLabel(parcel) : well.parcelId;
-  if (well.status === 'decision') return `wartet auf ${ort}: trocken – tiefer bohren oder aufgeben?`;
+  if (well.status === 'decision') {
+    // Spielspaß K1: Gewinnschwelle und Chance des Geologen gleich dazu.
+    const kurz = deeperShort(deeperOutlook(game, balance, well.parcelId));
+    return `wartet auf ${ort}: trocken – ${kurz ? `${kurz} – ` : ''}tiefer bohren oder aufgeben?`;
+  }
   if (well.status === 'stuck') return `wartet auf ${ort}: Werkzeug klemmt`;
   return `bohrt auf ${ort}`;
 }

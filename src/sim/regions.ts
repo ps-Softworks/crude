@@ -67,6 +67,10 @@ export function mapRefErrors(events: readonly EventDef[], world: WorldMap): stri
       for (const g of c.unlocks ?? []) {
         if (!gebiete.has(g)) fehler.push(`Ereignis „${e.id}“, Wahl „${c.id}“: unlocks „${g}“ ist kein Gebiet aus content/map.yaml.`);
       }
+      // Weichen (Spielspaß K1): land vergibt die Ranch einer Figur.
+      if (c.land && !figuren.has(c.land.figure)) {
+        fehler.push(`Ereignis „${e.id}“, Wahl „${c.id}“: land „${c.land.figure}“ ist keine Figur aus content/map.yaml (${[...figuren].join(', ')}).`);
+      }
     }
   }
   return fehler;

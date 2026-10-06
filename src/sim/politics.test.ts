@@ -53,17 +53,18 @@ function regiert(world: WorldState, government: Party): WorldState {
 }
 
 describe('Fertig-Kriterium 4.2: Jacobs Handeln verschiebt die Stimmung messbar', () => {
-  it('Feldbrand (brand_nachbar: „Das ist Bullards Feuer“) drückt die Stimmung gegenüber dem Graben', () => {
+  // Spielspaß K1 (Weichen statt Alltagspost): „Feuer am Salt Hill“ ist gestrichen – der Feldbrand kommt weiter von selbst
+  // (Tankbrand), darum hier direkt über recordAct.
+  it('Feldbrand drückt die Stimmung, Volksbund gewinnt Anteil, Handelspartei verliert', () => {
     for (const seed of ['brand-1', 'brand-2', 'brand-3']) {
-      const start = mitEreignis(seed, 'brand_nachbar');
-      const brand = endRound(antworten(start, 'brand_nachbar', 'schlafen'), balance);
-      const graben = endRound(antworten(start, 'brand_nachbar', 'graben'), balance);
+      const start = newGame(seed, balance);
+      const brand = endRound(recordAct(start, 'field_fire'), balance);
+      const ruhig = endRound(start, balance);
       const erwartet = actsInput(['field_fire'], start.worldModel.government, wb).moodKick!;
       expect(erwartet).toBeLessThan(-1);
-      expect(brand.worldModel.mood - graben.worldModel.mood).toBeCloseTo(erwartet, 9);
-      // Volksbund gewinnt Anteil, Handelspartei verliert.
-      expect(brand.worldModel.parties.volksbund).toBeGreaterThan(graben.worldModel.parties.volksbund);
-      expect(brand.worldModel.parties.handel).toBeLessThan(graben.worldModel.parties.handel);
+      expect(brand.worldModel.mood - ruhig.worldModel.mood).toBeCloseTo(erwartet, 9);
+      expect(brand.worldModel.parties.volksbund).toBeGreaterThan(ruhig.worldModel.parties.volksbund);
+      expect(brand.worldModel.parties.handel).toBeLessThan(ruhig.worldModel.parties.handel);
     }
   });
 
@@ -91,11 +92,11 @@ describe('Fertig-Kriterium 4.2: Jacobs Handeln verschiebt die Stimmung messbar',
     expect(catalog.some((e) => e.choices.some((c) => c.public?.includes('price_war')))).toBe(false);
   });
 
-  it('Geld für Elis Mutter (Spende) hebt die Stimmung', () => {
-    // Etappe 3: Der Prediger mit der Bretterkirche ist gestrichen – die Spende steckt jetzt in Elis Mutter (und Daniels Fahrkarte).
-    const start = mitEreignis('kirche', 'eli_mutter', { round: 3, cash: 1000 });
-    const spende = endRound(antworten(start, 'eli_mutter', 'geld'), balance);
-    const tuer = endRound(antworten(start, 'eli_mutter', 'weglegen'), balance);
+  it('eine Spende hebt die Stimmung', () => {
+    // Spielspaß K1 (Weichen statt Alltagspost): Elis Mutter ist gestrichen – die Spende direkt über recordAct.
+    const start = newGame('kirche', balance);
+    const spende = endRound(recordAct(start, 'charity'), balance);
+    const tuer = endRound(start, balance);
     expect(spende.worldModel.mood - tuer.worldModel.mood).toBeCloseTo(wb.acts.charity.mood, 9);
   });
 
@@ -312,9 +313,6 @@ describe('Inhalte und Spielstand', () => {
   it('die getaggten Antworten in content/events tragen ihre Tat', () => {
     const tat = (ev: string, ch: string) => catalog.find((e) => e.id === ev)!.choices.find((c) => c.id === ch)!.public;
     expect(tat('crane_abschlag', 'verband')).toEqual(['independents_stand']);
-    expect(tat('brand_nachbar', 'schlafen')).toEqual(['field_fire']);
-    expect(tat('streik', 'ersetzen')).toEqual(['strike_break']);
-    expect(tat('eli_mutter', 'geld')).toEqual(['charity']);
     expect(tat('nora_interview', 'erzaehlen')).toEqual(['press_praise']);
   });
 

@@ -9,8 +9,10 @@
 //                 voll fördern; bricht mehr als ein Drittel, platzt der Pakt. Bullard kann
 //                 mitmachen oder draußen voll auffahren. Steigt der Preis zu hoch, schlägt Crane zurück.
 //   Liefervertrag Fester Preis beim Händler in Port Ellis gegen feste Menge.
-//   Gerücht       Ein Schock auf den Preis der Folgerunde – mit Risiko, aufzufliegen.
+//   Gerücht       Ein Schock auf den Preis der nächsten Runden – mit Risiko, aufzufliegen (dann
+//                 fällt der Preis sofort, Spielspaß K1).
 //   Crane         Mit Druckmitteln feilschen: Abschlag streichen oder ein Angebot, das Verrat ist.
+//                 Cranes Laune zählt wie ein Punkt mehr oder weniger (Spielspaß K1).
 //
 // Ein gemeinsamer Ruf bei den Wildcattern (wildcatterStanding) gilt für Förderbremse und
 // Transportgemeinschaft (src/sim/freight.ts). Zufall: je Runde ein eigener Strang aus dem
@@ -299,8 +301,20 @@ export function marketMods(state: GameState, balance: Balance, jacob = chapterOf
     if (c.bullard === 'in') bFaktor = c.bullardBreakRound === state.round ? cb.bullard.breakFactor : 1 - cb.cut;
   }
   if (p.collapseRound === state.round) nFaktor *= 1 + cb.collapseBoost;
-  const shock = 1 + (p.rumours.shock?.round === state.round ? p.rumours.shock.value : 0);
+  const shock = 1 + rumourShockNow(state, balance);
   return { supply: jacob + nachbarn * nFaktor + bullard * bFaktor, shock, plain: jacob + nachbarn + bullard };
+}
+
+/**
+ * Spielspaß K1: Gerüchteschock auf den Preis dieser Runde (Anteil, 0 = keiner). Ein Gerücht wirkt ab
+ * der Runde, in der es gestreut wurde, rumour.rounds Runden; der Rückschlag einer Entlarvung nur eine.
+ */
+export function rumourShockNow(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'pricing'>>, balance: Balance): number {
+  const r = pricingOf(state).rumours;
+  const sh = r.shock;
+  if (!sh) return 0;
+  const dauer = r.exposedRound === sh.round ? 1 : balance.priceActions.rumour.rounds;
+  return state.round >= sh.round && state.round < sh.round + dauer ? sh.value : 0;
 }
 
 /**
@@ -607,13 +621,15 @@ export function spreadRumour(state: GameState, balance: Balance, kind: RumourKin
   }
   const auf = rng(state, 'geruecht').float() < exposeChance(state, balance);
   const value = rumourShock(state, balance, kind);
-  const rumours = { count: p.rumours.count + 1, lastRound: state.round, kind, shock: auf ? null : { round: state.round, value }, exposedRound: auf ? state.round : p.rumours.exposedRound };
+  // Spielspaß K1: Fliegt „Quellen versiegen“ auf, fällt der Preis dieser Runde (rumour.exposed.backlash).
+  const rueckschlag = auf && kind === 'versiegen' && rb.exposed.backlash !== 0 ? { round: state.round, value: rb.exposed.backlash } : null;
+  const rumours = { count: p.rumours.count + 1, lastRound: state.round, kind, shock: auf ? rueckschlag : { round: state.round, value }, exposedRound: auf ? state.round : p.rumours.exposedRound };
   let n = withPricing(state, { rumours });
   if (!auf) {
     n = log(
       n,
       kind === 'versiegen'
-        ? 'Im Courier steht, am Salt Hill versiegen die ersten Quellen. Die Händler werden nervös – der Preis zieht an.'
+        ? `Im Courier steht, am Salt Hill versiegen die ersten Quellen. Die Händler werden nervös – der Preis zieht an, ${runden(rb.rounds)} lang.`
         : 'Im Saloon erzählt man sich von einem Riesenfund bei Bullard. Der Preis bröckelt, die Farmer werden billiger, und Bullard wartet ab.',
     );
     if (kind === 'riesenfund') {
@@ -627,7 +643,7 @@ export function spreadRumour(state: GameState, balance: Balance, kind: RumourKin
   if (kind === 'riesenfund') n = setMark(n, M.feud);
   return log(
     n,
-    `Das Gerücht fliegt auf: Nora Whitlock deckt im Courier auf, von wem es kam. Sie redet nie wieder mit Jacob, Crane zahlt ihm weniger${kind === 'riesenfund' ? ', und Bullard schwört Rache' : ''}.`,
+    `Das Gerücht fliegt auf: Nora Whitlock deckt im Courier auf, von wem es kam. Sie redet nie wieder mit Jacob, Crane zahlt ihm weniger${kind === 'riesenfund' ? ', und Bullard schwört Rache' : ''}.${rueckschlag ? ` Die Händler fühlen sich betrogen – der Preis fällt sofort um ${prozent(-rueckschlag.value)}.` : ''}`,
   );
 }
 
@@ -667,22 +683,35 @@ export function cranePressure(state: GameState, balance: Balance): number {
   return cranePoints(state, balance).reduce((s, p) => s + (p.ok ? p.points : 0), 0);
 }
 
+/** Spielspaß K1: Cranes Gegendruck – ein Grundwert, mehr, wenn er in den letzten Runden schon nachgegeben hat. */
+export function craneResistance(state: Pick<GameState, 'round'> & Partial<Pick<GameState, 'pricing'>>, balance: Balance): number {
+  const w = balance.priceActions.crane.resistance;
+  const zuletzt = pricingOf(state).clearedRound;
+  return w.base + (zuletzt > 0 && state.round - zuletzt < w.rounds ? w.recent : 0);
+}
+
 /**
- * Mit Crane feilschen (Rundenende), Ergebnis nach Punkten:
- *   1: Abfuhr – Bittsteller, der Abschlag kommt sofort und länger.
+ * Mit Crane feilschen (Rundenende), Ergebnis nach Punkten + Cranes Laune (−1/0/+1, Spielspaß K1):
+ *   ≤ 1: Abfuhr – Bittsteller, der Abschlag kommt sofort und länger.
  *   2: laufender Abschlag und Groll gestrichen.
  *   ≥ 3 (nur mit „angebot“): zusätzlich Aufschlag – gegen Austritt aus Pakt oder Händlervertrag (Verrat).
  *   ≥ 4 (nur mit „angebot“): dazu ein fester Abnahmevertrag; Jacob verliert Delgados Verband.
  */
 export function haggleCrane(state: GameState, balance: Balance, offer: boolean): GameState {
   const cr = balance.priceActions.crane;
-  const punkte = cranePressure(state, balance);
-  if (punkte <= 0) return log(state, 'Crane lässt Jacob nicht einmal ins Kontor.');
-  if (punkte === 1) {
-    return setMark(log(punish(state, balance, cr.rebuffExtra), 'Crane hört sich Jacob an und lacht. „Bittsteller bekommen bei mir den Abschlag.“'), PRICING_MARKS.supplicant);
+  const druck = cranePressure(state, balance);
+  if (druck <= 0) return log(state, 'Crane lässt Jacob nicht einmal ins Kontor.');
+  // Spielspaß K1: Cranes Laune zählt wie ein Punkt mehr oder weniger (Strang :preis:…:crane).
+  const w = rng(state, 'crane').float();
+  const laune = w < cr.mood.down ? -1 : w >= 1 - cr.mood.up ? 1 : 0;
+  const gegen = craneResistance(state, balance);
+  const stimmung = `${gegen > balance.priceActions.crane.resistance.base ? ' Crane hat erst neulich nachgegeben und ist zäh.' : ''}${laune < 0 ? ' Crane ist schlechter Laune.' : laune > 0 ? ' Crane ist bester Laune.' : ''}`;
+  const punkte = druck - gegen + laune;
+  if (punkte <= 1) {
+    return setMark(log(punish(state, balance, cr.rebuffExtra), `Crane hört sich Jacob an und lacht.${stimmung} „Bittsteller bekommen bei mir den Abschlag.“ Ab der nächsten Runde zahlt er ${runden(cr.rebuffExtra + balance.rivals.crane.cutRounds)} lang weniger.`), PRICING_MARKS.supplicant);
   }
   let n = withPricing(state, { clearedRound: state.round, cranePunish: null });
-  n = log(n, 'Crane rechnet nach und streicht Abschlag und Groll – Jacob hat zu viel in der Hand.');
+  n = log(n, `Crane rechnet nach und streicht Abschlag und Groll – Jacob hat zu viel in der Hand.${stimmung}`);
   if (punkte < 3 || !offer) return n;
   // Ab 3 Punkten: Aufschlag – aber nur gegen Austritt.
   const p = pricingOf(n);
@@ -831,12 +860,16 @@ export const PRICE_HANDLERS: Record<string, PlanHandler> = {
     options: (s, b) => [
       {
         id: 'versiegen',
-        label: `„Am Salt Hill versiegen die Quellen“ (Preis +${prozent(rumourShock(s, b, 'versiegen'))})`,
+        label: `„Am Salt Hill versiegen die Quellen“ (Preis +${prozent(rumourShock(s, b, 'versiegen'))}, ${runden(b.priceActions.rumour.rounds)})`,
         reason: s.oilStock < b.priceActions.rumour.dry.minTank ? `Glaubt nur, wer volle Tanks sieht (ab ${bbl(b.priceActions.rumour.dry.minTank)} bbl).` : null,
       },
-      { id: 'riesenfund', label: `„Riesenfund bei Bullard“ (Preis ${prozent(rumourShock(s, b, 'riesenfund'))}, Pachten billiger)`, reason: null },
+      { id: 'riesenfund', label: `„Riesenfund bei Bullard“ (Preis ${prozent(rumourShock(s, b, 'riesenfund'))}, ${runden(b.priceActions.rumour.rounds)}, Pachten billiger)`, reason: null },
     ],
-    detail: (s, b) => `Fliegt mit etwa ${prozent(exposeChance(s, b))} auf.`,
+    detail: (s, b) => {
+      const cr = b.rivals.crane;
+      const rueck = b.priceActions.rumour.exposed.backlash;
+      return `Fliegt mit etwa ${prozent(exposeChance(s, b))} auf – dann zahlt Crane ${runden(cr.cutRounds)} lang ${dollar(cr.priceCut)} je Barrel weniger${rueck < 0 ? `, und beim Versiegen-Gerücht fällt der Preis sofort um ${prozent(-rueck)}` : ''}.`;
+    },
     apply: (s, b, t) => (rumourLock(s, b) ? log(s, rumourLock(s, b)!) : spreadRumour(s, b, t === 'riesenfund' ? 'riesenfund' : 'versiegen')),
   },
   crane_feilschen: {
@@ -847,7 +880,10 @@ export const PRICE_HANDLERS: Record<string, PlanHandler> = {
     ],
     detail: (s, b) => {
       const punkte = cranePoints(s, b).filter((p) => p.ok);
-      return `Druckmittel: ${punkte.length > 0 ? punkte.map((p) => p.label).join(', ') : 'keins'} (${cranePressure(s, b)} Punkte).`;
+      const cr = b.priceActions.crane;
+      const gegen = craneResistance(s, b);
+      const zaeh = gegen > cr.resistance.base ? ' Crane hat erst neulich nachgegeben und ist zäh.' : '';
+      return `Druckmittel: ${punkte.length > 0 ? punkte.map((p) => p.label).join(', ') : 'keins'} (${cranePressure(s, b)} Punkte, ${gegen} davon frisst Cranes Gegendruck).${zaeh} Cranes Laune zählt einen Punkt mehr oder weniger: Bleibt weniger als 2, gibt es die Abfuhr – ${dollar(b.rivals.crane.priceCut)} je Barrel weniger für ${runden(b.rivals.crane.cutRounds + cr.rebuffExtra)}.`;
     },
     apply: (s, b, t) => haggleCrane(s, b, t === 'angebot'),
   },

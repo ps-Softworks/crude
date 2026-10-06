@@ -220,7 +220,6 @@
   group: k2_pipeline
   once: false
   cooldown: 5
-  notMarked: [eli_waechter]
   # Bedingung: eigene Leitung läuft (minPipelines, kleine Pipeline oder Fernleitung 4.7)
   conditions: { minChapter: 2, maxChapter: 2, minRound: 3, minPipelines: 1 }
   chance: 0.1
@@ -258,52 +257,6 @@
         de: "Der Hahn wird abgeschlagen, das Loch verschweißt. Drei Wochen später ist ein neues da, bei Meile vierzehn."
         en: "The tap is knocked off, the hole sealed. Three weeks later there is a new one, at mile fourteen."
       effects: { oilStock: -2500 }
-      appointments: 0
-      default: true
-
-- id: k2_pipeline_angezapft_eli
-  group: k2_pipeline
-  once: false
-  cooldown: 5
-  marked: [eli_waechter]
-  delay: 0
-  # Bedingung: eigene Leitung läuft (minPipelines, kleine Pipeline oder Fernleitung 4.7)
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 3, minPipelines: 1 }
-  chance: 0.1
-  title:
-    de: Eli Ward hat die Diebe
-    en: Eli Ward Has the Thieves
-  text:
-    de: >-
-      Eli Ward ist grau an den Schläfen und hinkt seit dem Winter. Er hat zwei Männer
-      erwischt, die bei Meile elf Öl abzapften, und sie im Werkzeugschuppen eingeschlossen.
-      Einer ist fast noch ein Junge, Bruder eines Kesselwärters. „Ich pass auf Ihre Leitung
-      auf, Mr. Harlan. Was mit denen passiert, sagen Sie.“
-    en: >-
-      Eli Ward is grey at the temples and has limped since winter. He caught two men
-      tapping oil at mile eleven and locked them in the tool shed. One is barely more than a
-      boy, a stillman's brother. “I watch your line, Mr. Harlan. What happens to them is your
-      call.”
-  choices:
-    - id: sheriff
-      label: { de: "Dem Sheriff übergeben", en: "Hand them to the sheriff" }
-      result:
-        de: "Beide bekommen zwei Jahre. Der Kesselwärter kündigt am selben Tag. Die Löcher hören auf, für lange Zeit."
-        en: "Both get two years. The stillman quits the same day. The tapping stops, for a long time."
-      effects: { production: 0.05, strength: -3 }
-    - id: arbeit
-      label: { de: "Dem Jungen Arbeit geben, den anderen laufen lassen (1.200 $)", en: "Give the boy work, let the other go (1,200 $)" }
-      result:
-        de: "Der Junge schleppt Rohre und sagt kein Wort, sechs Monate lang. Eli behält ihn im Auge. Der andere zapft woanders."
-        en: "The boy hauls pipe and says not a word for six months. Eli keeps an eye on him. The other man taps somewhere else."
-      requires: { minCash: 1200 }
-      effects: { cash: -1200, oilStock: -800 }
-    - id: eli_entscheidet
-      label: { de: "„Machen Sie es, wie Sie es für richtig halten, Eli“", en: "“Do as you think right, Eli”" }
-      result:
-        de: "Eli lässt beide laufen, nachdem sie das Öl bezahlt haben, mit dem Lohn eines Monats. Es spricht sich herum. Eli ist danach der Mann, mit dem man an der Leitung nicht streitet."
-        en: "Eli lets both go after they've paid for the oil with a month's wages. Word gets around. After that Eli is the man nobody argues with along the line."
-      effects: { oilStock: 400, strength: 2 }
       appointments: 0
       default: true
 

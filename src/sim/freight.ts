@@ -6,12 +6,15 @@
 //                            (Gespanne, Brennan, Pipeline) für die Hälfte der Bahnmenge, eine
 //                            glaubwürdige Pipeline, ein Kartellgesetz in der Debatte. Widerstand:
 //                            2 + 1 je Zugeständnis der letzten 4 Runden (+1, wenn Bullard in Fehde
-//                            Jacobs Mengen verrät), dazu Thornes Laune −1/0/+1. Hing ein Zugeständnis
-//                            an Ausweichwegen oder Pipeline und fährt Jacob danach doch fast alles per
-//                            Bahn, merkt Thorne den Bluff.
+//                            Jacobs Mengen verrät), dazu Thornes Laune −1/0/+1. Eine Abfuhr hebt den
+//                            Tarif sofort (Spielspaß K1). Hing ein Zugeständnis an Ausweichwegen oder
+//                            Pipeline, zählt Thorne in den Folgerunden stichprobenartig nach; fährt Jacob
+//                            in so einer Runde doch das meiste per Bahn, merkt Thorne den Bluff.
 //   Brennan unter Vertrag    Fuhrleute zu festem Preis statt der Mietfuhrwerke – mit Mindestmenge.
 //   Transportgemeinschaft    Wildcatter bündeln ihre Fracht mit Jacob (Druck auf Thorne), auf Wunsch
-//                            mit gemeinsamer Pipeline. Mitglieder springen ab, wenn Jacob sich nicht kümmert.
+//                            mit gemeinsamer Pipeline. Solange sie läuft, gibt Thorne Rabatt auf Jacobs
+//                            Bahnfracht – gegen eine Zusage: Wird die gemeinsame Mindestmenge verfehlt,
+//                            kostet das Strafe. Mitglieder springen ab, wenn Jacob sich nicht kümmert.
 //   Exklusivvertrag kündigen Teuer, und nur mit genug Druck.
 //
 // Ersetzt die alte Drohung mit der Pipeline (logistics.ts). Zufall: je Runde ein eigener Strang
@@ -166,16 +169,49 @@ export function poolJoinChance(state: GameState, balance: Balance): number {
   return clamp(zusage, p.min, p.max);
 }
 
-function memberWells(state: GameState, names: readonly string[]): number {
-  const firmen = state.wildcatters.firms.filter((f) => names.includes(f.name)).reduce((s, f) => s + f.wells, 0);
-  const bullard = names.includes('Bullard') ? state.rival.wells.filter((w) => w.status === 'found').length : 0;
+/** Was die Gemeinschaft vom Zustand braucht (die Frachtrechnung in transport.ts hat nicht immer alles). */
+type PoolLage = Partial<Pick<GameState, 'freight' | 'wildcatters' | 'rival'>>;
+
+function memberWells(state: PoolLage, names: readonly string[]): number {
+  const firmen = (state.wildcatters?.firms ?? []).filter((f) => names.includes(f.name)).reduce((s, f) => s + f.wells, 0);
+  const bullard = names.includes('Bullard') ? (state.rival?.wells ?? []).filter((w) => w.status === 'found').length : 0;
   return firmen + bullard;
 }
 
 /** Bahnmenge der Gemeinschaftsmitglieder je Runde (bbl). */
-export function poolVolume(state: GameState, balance: Balance): number {
+export function poolVolume(state: PoolLage, balance: Balance): number {
   const p = balance.freight.pool;
   return Math.round(memberWells(state, freightOf(state).pool) * p.perWell * p.wellShare);
+}
+
+/**
+ * Spielspaß K1: Rabatt auf Jacobs Bahnfracht, solange die Gemeinschaft läuft ($ je bbl):
+ * discountStep je volle discountPer bbl Gemeinschaftsmenge, höchstens discountMax (transport.ts).
+ */
+export function poolDiscount(state: PoolLage, balance: Balance): number {
+  const p = balance.freight.pool;
+  if (freightOf(state).pool.length === 0) return 0;
+  return cents(Math.min(p.discountMax, Math.floor(poolVolume(state, balance) / p.discountPer) * p.discountStep));
+}
+
+/**
+ * Spielspaß K1: Strafe für die verfehlte Zusage an Thorne in dieser Runde ($): Jacobs Bahnfracht plus
+ * Gemeinschaftsmenge unter pool.minimum kostet shortfall je fehlendem Barrel – erst ab der Runde nach
+ * der Gründung. Rechnet mit den Mitgliedern vor dem Abspringen am Rundenende (sie haben noch verladen).
+ */
+export function poolPenalty(state: Pick<GameState, 'round' | 'shipped'> & PoolLage, balance: Balance): { missing: number; fine: number } {
+  const fr = freightOf(state);
+  const p = balance.freight.pool;
+  if (fr.pool.length === 0 || state.round <= fr.poolSince) return { missing: 0, fine: 0 };
+  const fehlt = Math.max(0, p.minimum - state.shipped.rail - poolVolume(state, balance));
+  return { missing: fehlt, fine: cents(fehlt * p.shortfall) };
+}
+
+/** Spielspaß K1: Brennans Strafe für die Mindestmenge in dieser Runde ($, 0 ohne laufenden Vertrag). */
+export function brennanPenalty(state: Pick<GameState, 'round' | 'shipped'> & Partial<Pick<GameState, 'freight'>>, balance: Balance): { missing: number; fine: number } {
+  if (!brennanActive(state)) return { missing: 0, fine: 0 };
+  const fehlt = Math.max(0, balance.freight.brennan.minimum - state.shipped.wagon);
+  return { missing: fehlt, fine: cents(fehlt * balance.freight.brennan.shortfall) };
 }
 
 /** Anteil der eigenen Pipeline, den das Fremdöl der Gemeinschaft belegt (0 ohne gemeinsame Pipeline). */
@@ -252,7 +288,7 @@ function stufe(x: number): 0 | 1 | 2 | 3 {
 export function outcomeTexts(balance: Balance): string[] {
   const f = balance.freight;
   return [
-    `≤ 0: Abfuhr – Thorne erhöht ${runden(f.rebuff.rounds)} lang öfter`,
+    `≤ 0: Abfuhr – der Tarif steigt sofort um ${dollar(f.rebuff.raise)}, und Thorne erhöht ${runden(f.rebuff.rounds)} lang öfter`,
     `1: Tarif −${dollar(f.cuts[0])}`,
     `2: Tarif −${dollar(f.cuts[1])}, ${runden(f.freeze[1])} keine Erhöhung`,
     `≥ 3: Tarif −${dollar(f.cuts[2])} und ${runden(f.freeze[2])} Ruhe – oder Sondertarif ${dollar(f.special.tariff)} für ${runden(f.special.rounds)}`,
@@ -279,8 +315,11 @@ export function visitThorne(state: GameState, balance: Balance, special: boolean
   const stimmung = laune < 0 ? ' Thorne hat schlechte Laune.' : laune > 0 ? ' Thorne ist bester Laune.' : '';
   let n = withFreight(state, { visits: fr.visits + 1 });
   if (ergebnis === 0) {
-    n = withFreight(n, { hikeDoubleUntil: state.round + f.rebuff.rounds - 1 });
-    return log(n, `Thorne hört sich Jacob an und schüttelt den Kopf.${stimmung} „Kommen Sie wieder, wenn Sie mir etwas zu bieten haben.“ Er wird den Tarif bald wieder anheben.`);
+    // Spielspaß K1: Die Abfuhr kostet sofort – Thorne hebt den Tarif, statt nur öfter zu erhöhen.
+    const teurer = Math.max(state.railTariff, Math.min(th.maxTariff, cents(state.railTariff + f.rebuff.raise)));
+    n = withFreight({ ...n, railTariff: teurer }, { hikeDoubleUntil: state.round + f.rebuff.rounds - 1 });
+    const folge = teurer > state.railTariff ? ` Für die Frechheit hebt er den Tarif sofort auf ${dollar(teurer)}` : ' Er';
+    return log(n, `Thorne hört sich Jacob an und schüttelt den Kopf.${stimmung} „Kommen Sie wieder, wenn Sie mir etwas zu bieten haben.“${folge} – und wird ihn bald wieder anheben.`);
   }
   const vorher = state.railTariff;
   let tarif = vorher;
@@ -300,7 +339,7 @@ export function visitThorne(state: GameState, balance: Balance, special: boolean
   patch = { ...patch, cutTotal: cents(fr.cutTotal + vorher - tarif) };
   if (ohneBluff < ergebnis) {
     patch = { ...patch, bluffCheck: { from: state.round + 1, until: state.round + f.bluff.rounds, rail: 0, total: 0 }, bluffsRisked: fr.bluffsRisked + 1 };
-    text += ' Er wird nachzählen, ob Jacob seine Drohung ernst meint.';
+    text += ' Er wird am Bahnhof nachzählen lassen, ob Jacob seine Drohung ernst meint.';
   }
   return log(withFreight({ ...n, railTariff: tarif }, patch), `${text}${stimmung}`);
 }
@@ -323,24 +362,27 @@ export function settleFreight(state: GameState, balance: Balance): GameState {
     if (abgeworben !== undefined && abgeworben >= fr.brennan.from) {
       n = log(withFreight(n, { brennan: null }), 'Brennans Fuhrleute fahren ab sofort für Thorne. Der Vertrag ist dahin.');
     } else {
-      const fehlt = Math.max(0, f.brennan.minimum - state.shipped.wagon);
-      if (fehlt > 0) {
-        const strafe = cents(fehlt * f.brennan.shortfall);
-        n = log({ ...n, cash: cents(n.cash - strafe) }, `Brennan: ${bbl(fehlt)} bbl unter der Mindestmenge – ${money(strafe)} für die wartenden Fuhrleute.`);
-      }
+      const { missing: fehlt, fine: strafe } = brennanPenalty(state, balance);
+      if (fehlt > 0) n = log({ ...n, cash: cents(n.cash - strafe) }, `Brennan: ${bbl(fehlt)} bbl unter der Mindestmenge – ${money(strafe)} für die wartenden Fuhrleute.`);
       if (state.round >= fr.brennan.until) n = log(withFreight(n, { brennan: null }), 'Brennans Vertrag läuft aus.');
     }
   }
-  // Bluff-Prüfung: Hat Jacob danach doch fast alles per Bahn geschickt?
+  // Bluff-Prüfung (Spielspaß K1): Je Runde lässt Thorne mit Chance check am Bahnhof nachzählen. Ging in so
+  // einer Runde mehr als railShare per Bahn, ist der Bluff aufgeflogen – sonst endet die Prüfung nach der letzten Runde.
   const bc = fr.bluffCheck;
   if (bc && state.round >= bc.from && state.round <= bc.until) {
     const pruef = { ...bc, rail: bc.rail + state.shipped.rail, total: bc.total + gesamt };
-    if (state.round < bc.until) n = withFreight(n, { bluffCheck: pruef });
-    else if (pruef.total > 0 && pruef.rail / pruef.total > f.bluff.railShare) {
+    const zaehlt = rng(state, 'bluff').float() < f.bluff.check;
+    if (zaehlt && gesamt > 0 && state.shipped.rail / gesamt > f.bluff.railShare) {
       const tarif = Math.min(balance.transport.thorne.maxTariff, cents(n.railTariff + f.bluff.penalty));
       n = withFreight({ ...n, railTariff: tarif }, { bluffCheck: null, bluffsCaught: fr.bluffsCaught + 1, hikeDoubleUntil: Math.max(fr.hikeDoubleUntil, state.round + f.rebuff.rounds - 1) });
-      n = setMark(log(n, `Thorne hat nachgezählt: Fast alles ging weiter per Bahn. „Ihre Drohung war Luft, Mr. Harlan.“ Der Tarif steigt auf ${dollar(tarif)}.`), FREIGHT_MARKS.bluff);
-    } else n = withFreight(n, { bluffCheck: null });
+      n = setMark(log(n, `Thornes Leute haben am Bahnhof nachgezählt: Fast alles ging weiter per Bahn. „Ihre Drohung war Luft, Mr. Harlan.“ Der Tarif steigt auf ${dollar(tarif)}.`), FREIGHT_MARKS.bluff);
+    } else n = withFreight(n, { bluffCheck: state.round < bc.until ? pruef : null });
+  }
+  // Transportgemeinschaft (Spielspaß K1): Zusage an Thorne verfehlt – Strafe, bevor jemand abspringt.
+  const strafe = poolPenalty(state, balance);
+  if (strafe.fine > 0) {
+    n = log({ ...n, cash: cents(n.cash - strafe.fine) }, `Transportgemeinschaft: ${bbl(strafe.missing)} bbl unter der Zusage an Thorne – ${money(strafe.fine)} Strafe.`);
   }
   // Transportgemeinschaft: Wer sich vernachlässigt fühlt, springt ab; Durchleitung durch die Pipeline.
   const fp = freightOf(n);
@@ -404,7 +446,10 @@ export const FREIGHT_HANDLERS: Record<string, PlanHandler> = {
       { id: 'ohne', label: 'Nur die Fracht bündeln', reason: null },
       { id: 'pipeline', label: `Dazu eine gemeinsame Pipeline (−${Math.round(b.freight.pool.pipelineDiscount * 100)} % Bau, ${Math.round(b.freight.pool.foreignShare * 100)} % Fremdöl)`, reason: null },
     ],
-    detail: (s, b) => `Jede Firma sagt mit etwa ${Math.round(poolJoinChance(s, b) * 100)} % zu.`,
+    detail: (s, b) => {
+      const p = b.freight.pool;
+      return `Jede Firma sagt mit etwa ${Math.round(poolJoinChance(s, b) * 100)} % zu. Thorne gibt ${dollar(p.discountStep)} Rabatt je ${bbl(p.discountPer)} bbl der Gemeinschaft (bis ${dollar(p.discountMax)}) auf Jacobs Bahnfracht – gegen die Zusage, gemeinsam mindestens ${bbl(p.minimum)} bbl je Runde per Bahn zu verladen; jedes fehlende Barrel kostet ${dollar(p.shortfall)}.`;
+    },
     apply: (s, b, t) => {
       if (freightOf(s).pool.length > 0) return log(s, 'Die Transportgemeinschaft gibt es schon.');
       const r = rng(s, 'gemeinschaft');
@@ -415,7 +460,10 @@ export const FREIGHT_HANDLERS: Record<string, PlanHandler> = {
       if (pool.length === 0) return log(s, 'Keiner der Wildcatter will seine Fässer mit Jacobs zusammen verladen. Die Transportgemeinschaft kommt nicht zustande.');
       const n = withFreight(s, { pool, poolPipeline: t === 'pipeline', poolSince: s.round, poolHeldRound: s.round });
       return setMark(
-        log(n, `Transportgemeinschaft gegründet: ${pool.join(', ')} verladen mit Jacob – zusammen ${bbl(poolVolume(n, b))} bbl je Runde mehr auf Thornes Bahn.${t === 'pipeline' ? ' Eine Pipeline bauen sie gemeinsam.' : ''}`),
+        log(
+          n,
+          `Transportgemeinschaft gegründet: ${pool.join(', ')} verladen mit Jacob – zusammen ${bbl(poolVolume(n, b))} bbl je Runde mehr auf Thornes Bahn. Thorne gibt dafür ${dollar(poolDiscount(n, b))} Rabatt je Barrel, solange gemeinsam mindestens ${bbl(b.freight.pool.minimum)} bbl je Runde fahren.${t === 'pipeline' ? ' Eine Pipeline bauen sie gemeinsam.' : ''}`,
+        ),
         FREIGHT_MARKS.pool,
       );
     },
@@ -442,7 +490,8 @@ export interface FreightView {
   expected: number;
   outcomes: string[];
   brennan: { roundsLeft: number } | null;
-  pool: { members: string[]; volume: number; pipeline: boolean } | null;
+  /** Spielspaß K1: discount = Rabatt auf Jacobs Bahnfracht, minimum = Zusage an Thorne (gemeinsam je Runde). */
+  pool: { members: string[]; volume: number; pipeline: boolean; discount: number; minimum: number } | null;
   special: { tariff: number; roundsLeft: number } | null;
   freezeRounds: number;
   bluffWatch: boolean;
@@ -460,7 +509,10 @@ export function freightView(state: GameState, balance: Balance): FreightView {
     expected: stufe(pressure - thorneResistance(state, balance)),
     outcomes: outcomeTexts(balance),
     brennan: fr.brennan && brennanActive(state) ? { roundsLeft: fr.brennan.until - state.round + 1 } : null,
-    pool: fr.pool.length > 0 ? { members: fr.pool, volume: poolVolume(state, balance), pipeline: fr.poolPipeline } : null,
+    pool:
+      fr.pool.length > 0
+        ? { members: fr.pool, volume: poolVolume(state, balance), pipeline: fr.poolPipeline, discount: poolDiscount(state, balance), minimum: balance.freight.pool.minimum }
+        : null,
     special: fr.special ? { tariff: fr.special.tariff, roundsLeft: Math.max(0, fr.special.until - state.round + 1) } : null,
     freezeRounds: Math.max(0, fr.freezeUntil - state.round + 2),
     bluffWatch: fr.bluffCheck !== null,

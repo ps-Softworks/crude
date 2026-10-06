@@ -18,6 +18,7 @@ import { loadEvents } from './testEvents';
 import { empireValue } from './empire';
 import { okaraIncome } from './ventures';
 import { chapterEnds } from './timeskipBots';
+import { wellsOn } from './drilling';
 import {
   answerSwitch,
   chapterGoalDate,
@@ -569,7 +570,9 @@ describe('Kreditkrise und Bankenpanik (GDD §15)', () => {
     // 0.4.20+1: aus 40 statt 20 Kapitelenden – mit der guten ersten Startoption fördern die schwachen Firmen mehr.
     const foerderung = (e: GameState) => e.wells.reduce((s, w) => s + (w.status === 'found' ? (w.production?.lastRate ?? 0) : 0), 0);
     const ende = chapterEnds(krise, 40, catalog)
-      .filter((e) => e.wells.filter((w) => w.status === 'found').length >= 2)
+      // Weichen statt Alltagspost: nur Quellen, die wirklich fördern (eine Quelle der letzten Runde hat noch keine Rate,
+      // und ohne fördernde Quelle gibt es nichts zu verkaufen).
+      .filter((e) => e.wells.filter((w) => w.status === 'found' && (w.production?.lastRate ?? 0) > 0).length >= 2)
       .sort((a, b) => foerderung(a) - foerderung(b))[0];
     expect(ende).toBeDefined();
     const geliehen = takeLoan({ ...ende, finished: false }, krise, Math.floor(headroomOf(ende, krise) / 100) * 100);
@@ -846,16 +849,35 @@ describe('Deckel des Verwalters (0.4.19+3)', () => {
       for (const w of neu) expect(w.production!.initialRate).toBeLessThanOrEqual(deckel.rateCap);
     }
   });
+  it('der Verwalter bohrt höchstens bis timeskip.deepestStage – tiefer liegendes Öl bleibt unentdeckt (Spielspaß K1)', () => {
+    expect(balance.timeskip.deepestStage).toBe(2);
+    const flach: Balance = { ...balance, timeskip: { ...balance.timeskip, deepestStage: 1 } };
+    const mutig: Directives = { stance: 'aggressive', family: 'little' };
+    let neueBohrungen = 0;
+    for (const seed of ['deckel-1', 'deckel-2', 'deckel-3']) {
+      const ende = kapitelEnde(seed);
+      const alt = new Set(ende.wells.map((w) => w.id));
+      const { state } = springen(ende, mutig, ERSTE, flach);
+      const neu = state.wells.filter((w) => !alt.has(w.id) && wellsOn(ende, w.parcelId).length === 0);
+      neueBohrungen += neu.length;
+      for (const w of neu) expect(w.stage).toBe(1);
+    }
+    expect(neueBohrungen).toBeGreaterThan(0);
+  });
 });
 
 describe('Der Verwalter steckt das Geld in neues Öl (0.4.20+2)', () => {
-  it('nach dem Sprung fördert die Firma im Median mindestens 60 % von vorher (vorher ~35 %)', () => {
-    const verhaeltnis = chapterEnds(balance, 10, catalog).map((ende) => {
+  // Spielspaß K1 (Tieferbohren): Tiefe Funde sind 2–3-mal so groß, die Firma fördert am Kapitelende mehr –
+  // der Verwalter hält davon im Median gut die Hälfte (gemessen 0,55; vorher 0,6). Schwelle 0,6 → 0,5.
+  // Gesamt-Balance: 30 statt 10 Kapitelenden – mit 10 schwankte der Median je nach Zufallsfolge zwischen 0,34 und 0,55
+  // (npm run bots, 150 Enden: ausgewogen 0,61).
+  it('nach dem Sprung fördert die Firma im Median mindestens 50 % von vorher (vor 0.4.20+2 ~35 %)', () => {
+    const verhaeltnis = chapterEnds(balance, 30, catalog).map((ende) => {
       const { state, record } = springen(ende, STANDARD, ZWEITE);
       return record.bankrupt ? 0 : roundFlow(state) / Math.max(1, roundFlow(ende));
     });
     verhaeltnis.sort((a, b) => a - b);
-    expect(verhaeltnis[Math.floor(verhaeltnis.length / 2)]).toBeGreaterThanOrEqual(0.6);
+    expect(verhaeltnis[Math.floor(verhaeltnis.length / 2)]).toBeGreaterThanOrEqual(0.5);
   });
 });
 

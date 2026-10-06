@@ -1,27 +1,27 @@
 # Bot-Läufe
 
-Stand: 2026-10-06 · Version 0.4.20+7
+Stand: 2026-10-06 · Version 0.4.20+8
 
 - Partien je Strategie: 1.000
 - Seeds: `bot-0` bis `bot-999` (für jede Strategie dieselben)
-- Mit allen 387 Ereignissen aus content/events/ (Briefe, feste Termine, Rivalen, Story-Bögen)
+- Mit allen 296 Ereignissen aus content/events/ (Briefe, feste Termine, Rivalen, Story-Bögen)
 - Erzeugt mit `npm run bots` (tools/botlaeufe.ts, Regeln in src/sim/bots.ts)
 
 | Strategie | Partien | Bankrottquote | Kapitelziel | Ø Imperiumswert | Siegquote | Ø Bullard-Kasse | Ø Bullard-Quellen | Ø Termine |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| vorsichtig | 1.000 | 0,0 % | 58,4 % | 90.992 $ | 23,3 % | 7.987 $ | 5,8 | 5,0 |
-| gierig | 1.000 | 4,5 % | 72,7 % | 106.313 $ | 35,4 % | 7.049 $ | 5,8 | 5,0 |
-| ausgewogen | 1.000 | 0,2 % | 66,9 % | 112.063 $ | 35,6 % | 6.584 $ | 5,9 | 5,0 |
-| zufaellig | 1.000 | 14,6 % | 0,0 % | -952 $ | 0,0 % | 19.940 $ | 8,0 | 5,0 |
+| vorsichtig | 1.000 | 0,0 % | 49,6 % | 97.705 $ | 23,9 % | 9.365 $ | 5,7 | 5,0 |
+| gierig | 1.000 | 3,3 % | 64,8 % | 117.677 $ | 31,9 % | 8.060 $ | 5,8 | 5,0 |
+| ausgewogen | 1.000 | 0,3 % | 63,9 % | 128.821 $ | 38,1 % | 7.591 $ | 5,7 | 5,0 |
+| zufaellig | 1.000 | 11,6 % | 0,0 % | 823 $ | 0,1 % | 22.331 $ | 7,7 | 5,0 |
 
-- **vorsichtig:** bohrt und kauft nur, wenn danach noch die Rücklage in der Kasse bleibt, kauft nur Optionen, deren Bonus er danach auch zahlen kann, nimmt nie selbst einen Kredit.
-- **gierig:** bohrt jede Pacht, bohrt immer tiefer (gibt auf, wenn auch ein Kredit nicht mehr reicht), pachtet die beste bezahlbare Prognose, solange Kasse und Bankrahmen reichen und höchstens so viele Pachten ungebohrt sind, wie in balance.yaml steht; leiht fehlendes Geld und behält Bargeld für den Verzögerungszins.
-- **ausgewogen (Standard-Bot):** pachtet die beste Prognose ab 40,0 % Fundchance, bohrt bis Stufe 3, behält 300 $ Rücklage und leiht, aber höchstens 50,0 % des Bankrahmens.
+- **vorsichtig:** bohrt und kauft nur, wenn danach noch die Rücklage in der Kasse bleibt, kauft nur Optionen, deren Bonus er danach auch zahlen kann, nimmt nie selbst einen Kredit; tiefer (höchstens bis Stufe 2) nur, wenn der Geologe mindestens das 1,5-Fache der Gewinnschwelle gibt.
+- **gierig:** bohrt jede Pacht, bohrt tiefer schon ab dem 0,6-Fachen der Gewinnschwelle (gibt auf, wenn auch ein Kredit nicht mehr reicht), pachtet die beste bezahlbare Prognose, solange Kasse und Bankrahmen reichen und höchstens so viele Pachten ungebohrt sind, wie in balance.yaml steht; leiht fehlendes Geld und behält Bargeld für den Verzögerungszins.
+- **ausgewogen (Standard-Bot):** pachtet die beste Prognose ab 40,0 % Fundchance, bohrt tiefer bis Stufe 3, wenn der Geologe mindestens das 1-Fache der Gewinnschwelle gibt (Spielspaß K1: „lohnt ab“ im Ranch-Fenster), behält 300 $ Rücklage und leiht, aber höchstens 50,0 % des Bankrahmens.
 - **zufällig:** wählt jede Runde einige erlaubte Aktionen per Zufall und beantwortet Ereignisse zufällig.
 - **Erkundung (Etappe 1):** Die drei planenden Bots reiten vor den Briefen übers Land (Karte „Übers Land reiten“), solange sie zu wenige bezahlbare freie Ranches mit guter Prognose kennen (balance.yaml bots.explore). Prognosen gibt es nur, wo Jacob etwas weiß.
 - **Ereignisse:** Die drei planenden Bots bewerten jede Antwort in $ (Geld, Öl, Kraft, Familie, Bahntarif, Termine; Gewichte in balance.yaml unter bots.events) und antworten, wenn das mehr bringt als liegen lassen. Den Verkauf an Crane wählt kein Bot.
-- **Kapitelziel:** Anteil der Partien, in denen die Kapitelprüfung bestanden ist (nicht bankrott und Imperiumswert ≥ 70.000 $ oder 6 fördernde Quellen, Zahlen in balance.yaml unter chapter).
-- **Siegquote:** Anteil der Seeds, in denen die Strategie den höchsten Imperiumswert hat. Eine Pleite zählt immer als letzter Platz, Gleichstand wird geteilt. Seit 2.15 gewinnt nur, wer mindestens die Startkasse (2.500 $) erreicht – sonst hat niemand gewonnen (diesmal 5,7 % der Seeds).
+- **Kapitelziel:** Anteil der Partien, in denen die Kapitelprüfung bestanden ist (nicht bankrott und Imperiumswert ≥ 95.000 $ oder 8 fördernde Quellen, Zahlen in balance.yaml unter chapter).
+- **Siegquote:** Anteil der Seeds, in denen die Strategie den höchsten Imperiumswert hat. Eine Pleite zählt immer als letzter Platz, Gleichstand wird geteilt. Seit 2.15 gewinnt nur, wer mindestens die Startkasse (2.500 $) erreicht – sonst hat niemand gewonnen (diesmal 6,0 % der Seeds).
 - **Ø Termine:** Termine je Runde zu Rundenbeginn (krank = 0).
 
 ## Transportwege
@@ -30,13 +30,13 @@ Anteil an allen verkauften Barrel (gesamt und je Strategie). Erlös = was nach F
 
 | Weg | Anteil Barrel | vorsichtig | gierig | ausgewogen | zufaellig | Ø Erlös je bbl | Ø Anlagen/Fixkosten je bbl | Ø Gewinn je bbl |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Mietfuhrwerk | 2,2 % | 1,0 % | 4,0 % | 1,0 % | 20,5 % | 0,07 $ | 0,00 $ | 0,07 $ |
-| Bahn (Thorne) | 39,3 % | 52,2 % | 28,2 % | 40,7 % | 74,9 % | 0,35 $ | 0,00 $ | 0,35 $ |
-| Eigene Fuhrwerke | 16,9 % | 11,4 % | 12,9 % | 26,3 % | 4,6 % | 0,49 $ | 0,17 $ | 0,32 $ |
-| Pipeline | 41,6 % | 35,5 % | 54,9 % | 32,0 % | 0,0 % | 0,49 $ | 0,03 $ | 0,46 $ |
-| davon an den Händler | 5,6 % | 0,0 % | 11,6 % | 3,6 % | 27,9 % | 0,62 $ | 0,03 $ | 0,59 $ |
+| Mietfuhrwerk | 5,3 % | 0,5 % | 12,2 % | 1,0 % | 18,0 % | 0,25 $ | 0,00 $ | 0,25 $ |
+| Bahn (Thorne) | 41,0 % | 69,0 % | 21,9 % | 41,9 % | 72,0 % | 0,37 $ | 0,00 $ | 0,36 $ |
+| Eigene Fuhrwerke | 20,1 % | 16,9 % | 14,7 % | 28,7 % | 10,0 % | 0,46 $ | 0,16 $ | 0,30 $ |
+| Pipeline | 33,5 % | 13,6 % | 51,2 % | 28,4 % | 0,0 % | 0,49 $ | 0,04 $ | 0,44 $ |
+| davon an den Händler | 12,2 % | 29,1 % | 10,2 % | 1,9 % | 25,5 % | 0,56 $ | 0,03 $ | 0,53 $ |
 
-Pipeline lief in: vorsichtig 44,8 % (mit Kapitelziel 71,2 %), gierig 82,5 % (mit Kapitelziel 96,6 %), ausgewogen 50,2 % (mit Kapitelziel 61,9 %), zufaellig 0,0 % (mit Kapitelziel –).
+Pipeline lief in: vorsichtig 19,8 % (mit Kapitelziel 36,5 %), gierig 80,3 % (mit Kapitelziel 95,2 %), ausgewogen 53,7 % (mit Kapitelziel 69,8 %), zufaellig 0,0 % (mit Kapitelziel –).
 
 - **Transport-Charakter** (balance.yaml bots.transport): vorsichtig {"trader":"never","teams":"overflow","tanks":true,"pipelinePayback":2,"thorne":"exclusive","guards":"always","holdShare":0,"margin":true}; gierig {"trader":"always","teams":"overflow","tanks":true,"pipelinePayback":1,"thorne":"refuse","guards":"never","holdShare":0.5,"margin":false}; ausgewogen {"trader":"calc","teams":"cheaper","tanks":true,"pipelinePayback":1.5,"thorne":"calc","guards":"enemies","holdShare":0,"margin":true}; zufällig: mit 15,0 % je Runde eine zufällige Anschaffung, verkauft zufällig auch an den Händler.
 
@@ -46,14 +46,14 @@ Je Partie: Ø höchste Zahl Türme zugleich (Silas' Turm mitgezählt), Ø Quelle
 
 | Bot | Ø Bohrtürme (höchstens zugleich) | Ø Pumpen | Ø weitere Bohrlöcher | Anteil ausgebauter Quellen | Ø Imperiumswert | Bankrottquote |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| vorsichtig | 1,00 | 0,28 | 0,55 | 18,5 % | 90.992 $ | 0,0 % |
-| gierig | 1,80 | 0,57 | 1,97 | 41,4 % | 106.313 $ | 4,5 % |
-| ausgewogen | 1,00 | 0,45 | 0,49 | 20,5 % | 112.063 $ | 0,2 % |
-| zufaellig | 1,00 | 0,01 | 0,01 | 34,4 % | -952 $ | 14,6 % |
-| ausgewogen, nie ausbauen | 1,00 | 0,00 | 0,00 | 0,0 % | 93.532 $ | 0,2 % |
-| ausgewogen, alles ausbauen | 2,51 | 6,17 | 3,70 | 94,5 % | 44.323 $ | 37,5 % |
+| vorsichtig | 1,00 | 0,22 | 0,80 | 20,7 % | 97.705 $ | 0,0 % |
+| gierig | 1,80 | 0,60 | 2,36 | 44,3 % | 117.677 $ | 3,3 % |
+| ausgewogen | 1,00 | 0,70 | 0,98 | 28,3 % | 128.821 $ | 0,3 % |
+| zufaellig | 1,00 | 0,01 | 0,00 | 18,5 % | 823 $ | 11,6 % |
+| ausgewogen, nie ausbauen | 1,00 | 0,00 | 0,00 | 0,0 % | 114.234 $ | 0,1 % |
+| ausgewogen, alles ausbauen | 2,32 | 6,15 | 3,67 | 94,9 % | 46.325 $ | 41,9 % |
 
-„Alles ausbauen“ schlägt den Standard-Bot in 20,4 %, „nie ausbauen“ in 33,5 % der Seeds mit unterschiedlichem Ausgang.
+„Alles ausbauen“ schlägt den Standard-Bot in 18,1 %, „nie ausbauen“ in 36,9 % der Seeds mit unterschiedlichem Ausgang.
 
 - **Ausbau-Charakter** (balance.yaml bots.invest): vorsichtig {"pumpPayback":2,"wellPayback":3,"rigs":1,"rent":false,"steam":false,"rods":true}; gierig {"pumpPayback":2,"wellPayback":4,"rigs":2,"rent":true,"steam":true,"rods":false}; ausgewogen {"pumpPayback":3,"wellPayback":4,"rigs":1,"rent":false,"steam":true,"rods":true}.
 
@@ -64,9 +64,9 @@ Bankrottquote je Strategie, getrennt nach Seeds, in deren Welt während des Kapi
 | Strategie | Seeds mit Kreditkrise | Bankrottquote dort | Seeds ohne | Bankrottquote dort |
 | --- | ---: | ---: | ---: | ---: |
 | vorsichtig | 81 | 0,0 % | 919 | 0,0 % |
-| gierig | 81 | 18,5 % | 919 | 3,3 % |
-| ausgewogen | 81 | 2,5 % | 919 | 0,0 % |
-| zufaellig | 81 | 25,9 % | 919 | 13,6 % |
+| gierig | 81 | 9,9 % | 919 | 2,7 % |
+| ausgewogen | 81 | 2,5 % | 919 | 0,1 % |
+| zufaellig | 81 | 9,9 % | 919 | 11,8 % |
 
 ## Zeitsprung I
 
@@ -74,20 +74,20 @@ Bankrottquote je Strategie, getrennt nach Seeds, in deren Welt während des Kapi
 
 | Haltung | Sprünge | Ø Imperium | p10 | Median | p90 | Ø Kasse | Förderung nachher ÷ vorher (Median) | Ø Schulden | pleite | Kreditkündigung | Notverkauf | Nachbarbezirk |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| wagemutig | 900 | 364.932 $ | 46.648 $ | 360.077 $ | 637.729 $ | 276.682 $ | 0,85 | 21.612 $ | 4,9 % | 28,7 % | 1,9 % | 87,4 % |
-| ausgewogen | 900 | 351.282 $ | 21.846 $ | 341.107 $ | 654.819 $ | 258.866 $ | 0,69 | 4.106 $ | 3,2 % | 20,8 % | 1,4 % | 82,6 % |
-| vorsichtig | 900 | 289.779 $ | 10.324 $ | 260.342 $ | 620.317 $ | 218.060 $ | 0,33 | 610 $ | 2,7 % | 9,8 % | 1,8 % | 61,9 % |
+| wagemutig | 900 | 423.207 $ | 0 $ | 417.731 $ | 765.519 $ | 324.068 $ | 0,71 | 22.106 $ | 6,0 % | 27,6 % | 1,4 % | 86,6 % |
+| ausgewogen | 900 | 403.769 $ | 6.130 $ | 399.762 $ | 760.789 $ | 300.399 $ | 0,58 | 4.150 $ | 5,3 % | 18,8 % | 0,3 % | 82,8 % |
+| vorsichtig | 900 | 333.825 $ | 3.907 $ | 288.021 $ | 755.975 $ | 251.931 $ | 0,30 | 922 $ | 6,0 % | 8,8 % | 1,3 % | 65,8 % |
 
 | Familie | Ø Imperium | Ø Ruth | mit Clara |
 | --- | ---: | ---: | ---: |
-| die Firma zuerst | 407.926 $ | 63 | 99,6 % |
-| wie bisher | 367.856 $ | 90 | 99,6 % |
-| viel Zeit zu Hause | 230.210 $ | 100 | 99,7 % |
+| die Firma zuerst | 471.256 $ | 64 | 98,6 % |
+| wie bisher | 427.291 $ | 90 | 99,1 % |
+| viel Zeit zu Hause | 262.253 $ | 100 | 99,8 % |
 
 | Haltung | Seeds mit Bankpanik-Weiche | Ø Pump − Tilgen | Pump schlechter | pleite Pump / Tilgen | Notverkauf Pump / Tilgen |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| wagemutig | 40 | -44.412 $ | 87,5 % | 2,5 % / 2,5 % | 2,5 % / 0,0 % |
-| ausgewogen | 40 | -34.446 $ | 82,5 % | 2,5 % / 2,5 % | 0,0 % / 0,0 % |
+| wagemutig | 39 | -60.523 $ | 94,9 % | 2,6 % / 2,6 % | 0,0 % / 0,0 % |
+| ausgewogen | 40 | -47.470 $ | 87,5 % | 2,5 % / 2,5 % | 0,0 % / 0,0 % |
 
 ## Zielwerte Kapitel 1
 
@@ -95,21 +95,21 @@ Toleranzbereiche stehen in balance.yaml unter bots.targets; gemessen wird in src
 
 | Kennzahl | Ziel (Quelle) | Toleranz | Ist | im Rahmen |
 | --- | --- | ---: | ---: | :---: |
-| Höchste Siegquote einer Strategie | GDD §17: keine Einzelstrategie gewinnt in mehr als 40 % | 0,0 % – 40,0 % | 35,6 % | ja |
-| Pleitequote Standard-Bot (ausgewogen) | Kapitel 1 ist der Einstieg (GDD §17: Kapitel 4 übersteht er in 55–70 %) | 0,0 % – 15,0 % | 0,2 % | ja |
-| Pleitequote gierig | GDD §15: wer im Boom zu viele Schulden macht, stirbt (4.20: in der Kreditkrise kündigt die Bank) | 3,0 % – 45,0 % | 4,5 % | ja |
-| Ø Imperium vorsichtig ÷ bester Ø der Mutigeren | GDD §15: wer nie Schulden macht, wird überholt (unter 1) | 0,00 – 0,95 | 0,81 | ja |
-| Kapitelziel Standard-Bot (ausgewogen) | Kapitelprüfung erreichbar, aber nicht geschenkt | 20,0 % – 70,0 % | 66,9 % | ja |
+| Höchste Siegquote einer Strategie | GDD §17: keine Einzelstrategie gewinnt in mehr als 40 % | 0,0 % – 40,0 % | 38,1 % | ja |
+| Pleitequote Standard-Bot (ausgewogen) | Kapitel 1 ist der Einstieg (GDD §17: Kapitel 4 übersteht er in 55–70 %) | 0,0 % – 15,0 % | 0,3 % | ja |
+| Pleitequote gierig | GDD §15: wer im Boom zu viele Schulden macht, stirbt (4.20: in der Kreditkrise kündigt die Bank) | 3,0 % – 45,0 % | 3,3 % | ja |
+| Ø Imperium vorsichtig ÷ bester Ø der Mutigeren | GDD §15: wer nie Schulden macht, wird überholt (unter 1) | 0,00 – 0,95 | 0,76 | ja |
+| Kapitelziel Standard-Bot (ausgewogen) | Kapitelprüfung erreichbar, aber nicht geschenkt | 20,0 % – 70,0 % | 63,9 % | ja |
 | Kleine Funde mit 50–500 bbl/Tag | GDD §15: Anfangsrate 50–500 bbl/Tag | 90,0 % – 100,0 % | 99,7 % | ja |
-| Ø Anfangsrate Gusher ÷ kleiner Fund | GDD §15: Gusher deutlich mehr | 2,00 – 20,00 | 5,04 | ja |
-| Gemessener Rückgang je Quartal | GDD §15: 8–15 % | 8,0 % – 15,0 % | 12,3 % | ja |
+| Ø Anfangsrate Gusher ÷ kleiner Fund | GDD §15: Gusher deutlich mehr | 2,00 – 20,00 | 4,92 | ja |
+| Gemessener Rückgang je Quartal | GDD §15: 8–15 % | 8,0 % – 15,0 % | 14,5 % | ja |
 | Trefferquote blinde Wildcat-Bohrung (Randlage, 300 m) | GDD §15: etwa 1 von 5 bis 1 von 10 | 5,0 % – 25,0 % | 14,5 % | ja |
 | Ø Termine je Runde (Standard-Bot) | GDD §15: 5 je Quartal | 4,50 – 5,00 | 5,00 | ja |
-| Höchster Anteil eines Transportwegs an allen verkauften Barrel | GDD §6: kein Weg dominiert, jeder hat seinen Preis | 0,0 % – 75,0 % | 41,6 % | ja |
-| Partien mit Kapitelziel, in denen eine Pipeline läuft | Pipeline ist eine Wahl, kein Pflichtweg | 0,0 % – 80,0 % | 77,4 % | ja |
-| Ausgebaute Quellen (Pumpe oder weiteres Bohrloch), planende Bots | Ausbau lohnt für gute Quellen, nicht für jede | 5,0 % – 70,0 % | 27,5 % | ja |
-| Ø Imperium Standard-Bot ÷ derselbe Bot ohne Ausbau | Investitionen in gute Quellen zahlen sich aus (über 1) | 1,02 – 10,00 | 1,20 | ja |
-| Seeds, in denen „alles ausbauen“ den Standard-Bot schlägt | Blind alles ausbauen ist keine Siegformel | 0,0 % – 50,0 % | 20,4 % | ja |
+| Höchster Anteil eines Transportwegs an allen verkauften Barrel | GDD §6: kein Weg dominiert, jeder hat seinen Preis | 0,0 % – 75,0 % | 41,0 % | ja |
+| Partien mit Kapitelziel, in denen eine Pipeline läuft | Pipeline ist eine Wahl, kein Pflichtweg | 0,0 % – 80,0 % | 69,8 % | ja |
+| Ausgebaute Quellen (Pumpe oder weiteres Bohrloch), planende Bots | Ausbau lohnt für gute Quellen, nicht für jede | 5,0 % – 70,0 % | 31,8 % | ja |
+| Ø Imperium Standard-Bot ÷ derselbe Bot ohne Ausbau | Investitionen in gute Quellen zahlen sich aus (über 1) | 1,02 – 10,00 | 1,13 | ja |
+| Seeds, in denen „alles ausbauen“ den Standard-Bot schlägt | Blind alles ausbauen ist keine Siegformel | 0,0 % – 50,0 % | 18,1 % | ja |
 
 <!-- Ab hier von Hand geschrieben: npm run bots lässt den Rest stehen. -->
 
@@ -125,9 +125,9 @@ Toleranzbereiche stehen in balance.yaml unter bots.targets; gemessen wird in src
 
 ## Kapitel 2 und 3 (Kampagnen-Bots, 4.20)
 
-Stand: 2026-10-06 · Version 0.4.20+7 · erzeugt mit `npm run kampagne` (tools/kampagnenlaeufe.ts, Regeln in src/sim/campaignBots.ts)
+Stand: 2026-10-06 · Version 0.4.20+8 · erzeugt mit `npm run kampagne` (tools/kampagnenlaeufe.ts, Regeln in src/sim/campaignBots.ts)
 
-1.000 Kampagnen je Strategie auf denselben Seeds wie oben (`bot-0` …): Die Bots spielen Kapitel 1 wie oben, dann Zeitsprung I, Kapitel 2, Zeitsprung II und Kapitel 3 – mit Ritt und Karten (Termin-Aktionen), allen Ereignissen, Börsengang, Direktiven und Weichen, Raffinerie (Kapitel 2), Marke, Tankstellen und Börse (Kapitel 3). Eine verfehlte Kapitelprüfung beendet die Kampagne nicht (das nächste Kapitel beginnt geschwächt); aus scheidet, wer pleitegeht (auch im Zeitsprung), abgesetzt oder geschluckt wird oder ins Gefängnis kommt. Endwert = Imperiumswert am Ende von Kapitel 3, ausgeschieden = 0. Siegquote: höchster Endwert je Seed. In 9.000 Kampagnen (4 Strategien, 2 weitere Haltungen des Standard-Bots, 3 Strategien vom gleichen Start) in 866.4 s.
+1.000 Kampagnen je Strategie auf denselben Seeds wie oben (`bot-0` …): Die Bots spielen Kapitel 1 wie oben, dann Zeitsprung I, Kapitel 2, Zeitsprung II und Kapitel 3 – mit Ritt und Karten (Termin-Aktionen), allen Ereignissen, Börsengang, Direktiven und Weichen, Raffinerie (Kapitel 2), Marke, Tankstellen und Börse (Kapitel 3). Eine verfehlte Kapitelprüfung beendet die Kampagne nicht (das nächste Kapitel beginnt geschwächt); aus scheidet, wer pleitegeht (auch im Zeitsprung), abgesetzt oder geschluckt wird oder ins Gefängnis kommt. Endwert = Imperiumswert am Ende von Kapitel 3, ausgeschieden = 0. Siegquote: höchster Endwert je Seed. In 9.000 Kampagnen (4 Strategien, 2 weitere Haltungen des Standard-Bots, 3 Strategien vom gleichen Start) in 852.0 s.
 
 - **vorsichtig:** Haltung vorsichtig, Familie „wie bisher“, Börsengang nein, Rücklage 25.000 $, bis 2 Tankstellen je Runde, keine Börse; Weichen: bank_panic → repay, automobile → ignore, okara → pass, clara → home, war_export → hold, navy → accept, grady → refuse, college → college
 - **gierig:** Haltung wagemutig, Familie „die Firma zuerst“, Börsengang 33,0 %, Rücklage 5.000 $, bis 4 Tankstellen je Runde, Börse 15,0 % des freien Geldes mit Hebel 5, hält trotz Warnung; Weichen: bank_panic → ride, automobile → invest, okara → lease, clara → business, war_export → export, navy → accept, grady → take, college → company
@@ -136,10 +136,10 @@ Stand: 2026-10-06 · Version 0.4.20+7 · erzeugt mit `npm run kampagne` (tools/k
 
 | Strategie | Kampagnen | bis Ende Kapitel 3 | je pleite | Ø Endwert | Siegquote | Ø Käufe auf Kredit | Ø Zwangsverkäufe |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| vorsichtig | 1.000 | 92,8 % | 7,2 % | 537.589 $ | 29,2 % | 0,00 | 0,00 |
-| gierig | 1.000 | 29,2 % | 70,5 % | 201.670 $ | 8,3 % | 1,32 | 0,69 |
-| ausgewogen | 1.000 | 93,3 % | 6,7 % | 711.170 $ | 61,1 % | 1,15 | 0,01 |
-| zufaellig | 1.000 | 1,0 % | 95,6 % | 474 $ | 0,0 % | 0,00 | 0,00 |
+| vorsichtig | 1.000 | 97,3 % | 2,7 % | 532.943 $ | 22,5 % | 0,00 | 0,00 |
+| gierig | 1.000 | 29,4 % | 70,4 % | 220.615 $ | 9,0 % | 1,43 | 0,77 |
+| ausgewogen | 1.000 | 91,2 % | 8,8 % | 779.573 $ | 67,8 % | 1,15 | 0,01 |
+| zufaellig | 1.000 | 6,2 % | 88,0 % | 5.130 $ | 0,0 % | 0,03 | 0,01 |
 
 ### Je Kapitel
 
@@ -147,33 +147,33 @@ Anteile beziehen sich auf alle Kampagnen der Strategie; Imperiumswerte auf die, 
 
 | Strategie | Kapitel | begonnen | scheidet aus | davon pleite | pleite schon im Sprung | abgesetzt/geschluckt | Haft | pleite nach bestandenem Vorkapitel | Kapitelziel | Ø Imperium | Median | 90 % |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| vorsichtig | 1 | 1.000 | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | – | 58,4 % | 90.992 $ | 80.252 $ | 204.409 $ |
-| vorsichtig | 2 | 1.000 | 1,8 % | 1,8 % | 0,0 % | 0,0 % | 0,0 % | 0,7 % (von 584) | 40,2 % | 360.292 $ | 285.700 $ | 790.791 $ |
-| vorsichtig | 3 | 982 | 5,4 % | 5,4 % | 3,0 % | 0,0 % | 0,0 % | 0,0 % (von 402) | 13,7 % | 579.298 $ | 547.475 $ | 1.024.985 $ |
-| gierig | 1 | 1.000 | 4,5 % | 4,5 % | 0,0 % | 0,0 % | 0,0 % | – | 72,7 % | 111.323 $ | 104.634 $ | 214.374 $ |
-| gierig | 2 | 955 | 12,1 % | 12,0 % | 10,6 % | 0,0 % | 0,1 % | 0,4 % (von 727) | 75,4 % | 682.038 $ | 677.740 $ | 974.992 $ |
-| gierig | 3 | 834 | 54,2 % | 54,0 % | 0,0 % | 0,0 % | 0,2 % | 64,9 % (von 754) | 8,0 % | 690.650 $ | 648.686 $ | 944.495 $ |
-| ausgewogen | 1 | 1.000 | 0,2 % | 0,2 % | 0,0 % | 0,0 % | 0,0 % | – | 66,9 % | 112.288 $ | 94.367 $ | 223.094 $ |
-| ausgewogen | 2 | 998 | 5,4 % | 5,4 % | 3,6 % | 0,0 % | 0,0 % | 0,0 % (von 669) | 64,2 % | 541.602 $ | 531.545 $ | 886.939 $ |
-| ausgewogen | 3 | 944 | 1,1 % | 1,1 % | 0,0 % | 0,0 % | 0,0 % | 1,6 % (von 642) | 37,2 % | 762.241 $ | 730.732 $ | 1.137.341 $ |
-| zufaellig | 1 | 1.000 | 14,6 % | 14,6 % | 0,0 % | 0,0 % | 0,0 % | – | 0,0 % | -1.115 $ | -1.528 $ | -345 $ |
-| zufaellig | 2 | 854 | 80,3 % | 77,1 % | 48,3 % | 0,0 % | 0,0 % | 0,0 % (von 0) | 0,0 % | -8.700 $ | -2.914 $ | 18.597 $ |
-| zufaellig | 3 | 51 | 4,1 % | 3,9 % | 2,6 % | 0,0 % | 0,0 % | 0,0 % (von 0) | 0,0 % | 47.382 $ | 14.904 $ | 228.050 $ |
+| vorsichtig | 1 | 1.000 | 0,0 % | 0,0 % | 0,0 % | 0,0 % | 0,0 % | – | 49,6 % | 97.705 $ | 89.957 $ | 214.535 $ |
+| vorsichtig | 2 | 1.000 | 0,8 % | 0,8 % | 0,2 % | 0,0 % | 0,0 % | 0,0 % (von 496) | 33,9 % | 352.866 $ | 254.810 $ | 791.726 $ |
+| vorsichtig | 3 | 992 | 1,9 % | 1,9 % | 1,0 % | 0,0 % | 0,0 % | 0,0 % (von 339) | 11,5 % | 547.731 $ | 489.305 $ | 959.638 $ |
+| gierig | 1 | 1.000 | 3,3 % | 3,3 % | 0,0 % | 0,0 % | 0,0 % | – | 64,8 % | 121.692 $ | 118.672 $ | 230.490 $ |
+| gierig | 2 | 967 | 11,7 % | 11,7 % | 10,1 % | 0,0 % | 0,0 % | 0,0 % (von 648) | 79,2 % | 752.665 $ | 746.572 $ | 1.065.302 $ |
+| gierig | 3 | 850 | 55,6 % | 55,4 % | 0,0 % | 0,0 % | 0,2 % | 65,3 % (von 792) | 11,3 % | 750.392 $ | 692.241 $ | 1.071.871 $ |
+| ausgewogen | 1 | 1.000 | 0,3 % | 0,3 % | 0,0 % | 0,0 % | 0,0 % | – | 63,9 % | 129.208 $ | 117.783 $ | 243.459 $ |
+| ausgewogen | 2 | 997 | 7,4 % | 7,4 % | 7,0 % | 0,0 % | 0,0 % | 0,0 % (von 639) | 71,3 % | 633.159 $ | 633.157 $ | 991.219 $ |
+| ausgewogen | 3 | 923 | 1,1 % | 1,1 % | 0,0 % | 0,0 % | 0,0 % | 1,3 % (von 713) | 44,2 % | 854.795 $ | 814.185 $ | 1.295.903 $ |
+| zufaellig | 1 | 1.000 | 11,6 % | 11,6 % | 0,0 % | 0,0 % | 0,0 % | – | 0,0 % | 931 $ | 5 $ | 205 $ |
+| zufaellig | 2 | 884 | 67,6 % | 62,6 % | 23,8 % | 0,0 % | 0,0 % | 0,0 % (von 0) | 0,0 % | -305 $ | -1.348 $ | 24.517 $ |
+| zufaellig | 3 | 208 | 14,6 % | 13,8 % | 9,4 % | 0,0 % | 0,0 % | 0,0 % (von 0) | 0,0 % | 82.748 $ | 36.723 $ | 276.960 $ |
 
 | Strategie | Kapitel | Welten mit Kreditkrise | Pleitequote dort | Welten ohne | Pleitequote dort |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| vorsichtig | 1 | 79 | 0,0 % | 921 | 0,0 % |
-| vorsichtig | 2 | 239 | 1,3 % | 761 | 2,0 % |
-| vorsichtig | 3 | 296 | 2,0 % | 656 | 2,7 % |
-| gierig | 1 | 75 | 16,0 % | 925 | 3,6 % |
-| gierig | 2 | 196 | 0,5 % | 653 | 2,0 % |
-| gierig | 3 | 693 | 59,9 % | 141 | 88,7 % |
-| ausgewogen | 1 | 79 | 2,5 % | 921 | 0,0 % |
-| ausgewogen | 2 | 225 | 1,8 % | 737 | 1,9 % |
-| ausgewogen | 3 | 496 | 2,2 % | 448 | 0,0 % |
-| zufaellig | 1 | 78 | 24,4 % | 922 | 13,8 % |
-| zufaellig | 2 | 76 | 81,6 % | 295 | 76,6 % |
-| zufaellig | 3 | 6 | 16,7 % | 19 | 63,2 % |
+| vorsichtig | 1 | 78 | 0,0 % | 922 | 0,0 % |
+| vorsichtig | 2 | 247 | 0,8 % | 751 | 0,5 % |
+| vorsichtig | 3 | 309 | 1,0 % | 673 | 0,9 % |
+| gierig | 1 | 78 | 9,0 % | 922 | 2,8 % |
+| gierig | 2 | 205 | 2,0 % | 661 | 1,8 % |
+| gierig | 3 | 743 | 62,0 % | 107 | 86,9 % |
+| ausgewogen | 1 | 79 | 1,3 % | 921 | 0,2 % |
+| ausgewogen | 2 | 233 | 0,4 % | 694 | 0,4 % |
+| ausgewogen | 3 | 546 | 2,0 % | 377 | 0,0 % |
+| zufaellig | 1 | 80 | 10,0 % | 920 | 11,7 % |
+| zufaellig | 2 | 145 | 71,0 % | 501 | 56,9 % |
+| zufaellig | 3 | 34 | 29,4 % | 80 | 42,5 % |
 
 ### Krisen je Kampagne
 
@@ -181,10 +181,10 @@ GDD §15 nennt je Kampagne (7 Kapitel, 73 Jahre) 2–4 Kreditkrisen, 1–3 Ölsc
 
 | Welten von | Ø Kreditkrisen (Bankpanik + Crash) | 10 % · 50 % · 90 % | Ø Ölschwemmen | 10 % · 50 % · 90 % | Ø Kriege | 10 % · 50 % · 90 % |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| vorsichtig | 1,24 | 0 · 1 · 3 | 0,66 | 0 · 0 · 2 | 0,38 | 0 · 0 · 1 |
-| gierig | 1,85 | 0 · 2 · 3 | 0,66 | 0 · 0 · 2 | 0,41 | 0 · 0 · 1 |
-| ausgewogen | 1,46 | 0 · 1 · 3 | 0,66 | 0 · 0 · 2 | 0,38 | 0 · 0 · 1 |
-| zufaellig | 1,11 | 0 · 1 · 2 | 0,66 | 0 · 0 · 2 | 0,37 | 0 · 0 · 1 |
+| vorsichtig | 1,26 | 0 · 1 · 3 | 0,66 | 0 · 0 · 2 | 0,38 | 0 · 0 · 1 |
+| gierig | 1,96 | 1 · 2 · 3 | 0,66 | 0 · 0 · 2 | 0,43 | 0 · 0 · 1 |
+| ausgewogen | 1,54 | 0 · 1 · 3 | 0,66 | 0 · 0 · 2 | 0,38 | 0 · 0 · 1 |
+| zufaellig | 1,15 | 0 · 1 · 2 | 0,66 | 0 · 0 · 2 | 0,37 | 0 · 0 · 1 |
 
 ### Kein dominanter Weg: Haltung im Zeitsprung
 
@@ -192,9 +192,9 @@ Der Standard-Bot spielt dieselben Seeds mit jeder der drei Haltungen (sonst unve
 
 | Haltung (Standard-Bot) | bis Ende Kapitel 3 | Ø Endwert | Siegquote |
 | --- | ---: | ---: | ---: |
-| wagemutig | 82,0 % | 628.433 $ | 27,1 % |
-| ausgewogen | 93,3 % | 711.170 $ | 45,4 % |
-| vorsichtig | 93,4 % | 648.218 $ | 22,5 % |
+| wagemutig | 79,5 % | 683.832 $ | 27,9 % |
+| ausgewogen | 91,2 % | 779.573 $ | 41,3 % |
+| vorsichtig | 91,5 % | 714.259 $ | 23,9 % |
 
 ### Gleicher Start
 
@@ -202,10 +202,10 @@ Kapitel 1 entscheidet viel: Wer es ohne Quelle beendet, geht im Zeitsprung meist
 
 | Strategie (ab Kapitelende des Standard-Bots) | bis Ende Kapitel 3 | Ø Endwert | Siegquote |
 | --- | ---: | ---: | ---: |
-| vorsichtig | 94,2 % | 638.258 $ | 25,4 % |
-| gierig | 30,0 % | 203.142 $ | 4,8 % |
-| ausgewogen | 93,3 % | 711.170 $ | 59,8 % |
-| zufaellig | 62,4 % | 311.031 $ | 5,5 % |
+| vorsichtig | 93,1 % | 709.526 $ | 28,1 % |
+| gierig | 30,3 % | 239.617 $ | 5,3 % |
+| ausgewogen | 91,2 % | 779.573 $ | 54,0 % |
+| zufaellig | 63,7 % | 370.409 $ | 6,8 % |
 
 ### Zielwerte Kapitel 1–3
 
@@ -213,22 +213,22 @@ Toleranzbereiche in balance.yaml unter bots.campaignTargets; gemessen in src/sim
 
 | Kennzahl | Ziel (Quelle) | Toleranz | Ist | im Rahmen |
 | --- | --- | ---: | ---: | :---: |
-| Ø Kreditkrisen je Kampagne (Kapitel 1–3, 24 Jahre; Welten ohne Kauf auf Kredit) | GDD §15: 2–4 je Kampagne (73 Jahre) → anteilig | 0,66 – 1,32 | 1,24 | ja |
+| Ø Kreditkrisen je Kampagne (Kapitel 1–3, 24 Jahre; Welten ohne Kauf auf Kredit) | GDD §15: 2–4 je Kampagne (73 Jahre) → anteilig | 0,66 – 1,32 | 1,26 | ja |
 | Ø Ölschwemmen je Kampagne (Kapitel 1–3) | GDD §15: 1–3 je Kampagne → anteilig | 0,33 – 1,00 | 0,66 | ja |
 | Ø Kriege je Kampagne (Kapitel 1–3) | GDD §15: 0–2 je Kampagne → anteilig | 0,00 – 0,66 | 0,38 | ja |
-| Standard-Bot spielt bis Ende Kapitel 3 | GDD §17: übersteht Kapitel 4 in 55–70 % → bis Kapitel 3 etwas mehr | 60,0 % – 90,0 % | 93,3 % | **nein** |
+| Standard-Bot spielt bis Ende Kapitel 3 | GDD §17: übersteht Kapitel 4 in 55–70 % → bis Kapitel 3 etwas mehr | 60,0 % – 90,0 % | 91,2 % | **nein** |
 | Pleitequote Standard-Bot in Kapitel 2 (mit Sprung I), wenn Kapitel 1 bestanden | Krisen fordern Opfer, aber wer das Kapitel davor geschafft hat, überlebt meist | 0,0 % – 15,0 % | 0,0 % | ja |
-| Pleitequote Standard-Bot in Kapitel 3 (mit Sprung II), wenn Kapitel 2 bestanden | wie Kapitel 2 | 0,0 % – 15,0 % | 1,6 % | ja |
-| Pleitequote gierig über die Kampagne | GDD §15: wer im Boom zu viele Schulden macht, stirbt im Crash | 20,0 % – 75,0 % | 70,5 % | ja |
-| Pleite gierig in Kapitel 1 mit Kreditkrise ÷ ohne | GDD §8/§15: in der Krise kündigt die Bank, der Crash trifft die Verschuldeten (über 1) | 1,50 – 20,00 | 4,48 | ja |
-| Kapitelziel 2 Standard-Bot | Kapitelprüfung erreichbar, aber nicht geschenkt | 20,0 % – 70,0 % | 64,2 % | ja |
-| Kapitelziel 3 Standard-Bot | Kapitelprüfung erreichbar, aber nicht geschenkt | 20,0 % – 70,0 % | 37,2 % | ja |
-| Ø Imperium Ende Kapitel 2 ÷ Ende Kapitel 1 (Standard-Bot) | GDD §13: aus der Firma wird ein Herausforderer | 1,50 – 50,00 | 4,82 | ja |
-| Ø Imperium Ende Kapitel 3 ÷ Ende Kapitel 2 (Standard-Bot) | GDD §13: aus dem Herausforderer wird ein Konzern | 1,20 – 50,00 | 1,41 | ja |
-| Ø Endwert vorsichtig ÷ bester Ø der Mutigeren | GDD §15: wer nie Schulden macht, wird überholt (unter 1) | 0,00 – 0,95 | 0,76 | ja |
-| Höchste Siegquote einer Strategie (Endwert Kapitel 3) | GDD §17: keine Einzelstrategie gewinnt in mehr als 40 % | 0,0 % – 40,0 % | 61,1 % | **nein** |
-| Höchste Siegquote einer Strategie bei gleichem Start (Kapitel 2/3 ab Kapitelende des Standard-Bots) | GDD §17 auf Kapitel 2 und 3 allein: kein Weg dominiert | 0,0 % – 40,0 % | 59,8 % | **nein** |
-| Höchste Siegquote einer Haltung im Zeitsprung (Standard-Bot) | kein dominanter Weg: keine Haltung gewinnt fast immer | 0,0 % – 60,0 % | 45,4 % | ja |
+| Pleitequote Standard-Bot in Kapitel 3 (mit Sprung II), wenn Kapitel 2 bestanden | wie Kapitel 2 | 0,0 % – 15,0 % | 1,3 % | ja |
+| Pleitequote gierig über die Kampagne | GDD §15: wer im Boom zu viele Schulden macht, stirbt im Crash | 20,0 % – 75,0 % | 70,4 % | ja |
+| Pleite gierig in Kapitel 1 mit Kreditkrise ÷ ohne | GDD §8/§15: in der Krise kündigt die Bank, der Crash trifft die Verschuldeten (über 1) | 1,50 – 20,00 | 3,18 | ja |
+| Kapitelziel 2 Standard-Bot | Kapitelprüfung erreichbar, aber nicht geschenkt | 20,0 % – 70,0 % | 71,3 % | **nein** |
+| Kapitelziel 3 Standard-Bot | Kapitelprüfung erreichbar, aber nicht geschenkt | 20,0 % – 70,0 % | 44,2 % | ja |
+| Ø Imperium Ende Kapitel 2 ÷ Ende Kapitel 1 (Standard-Bot) | GDD §13: aus der Firma wird ein Herausforderer | 1,50 – 50,00 | 4,90 | ja |
+| Ø Imperium Ende Kapitel 3 ÷ Ende Kapitel 2 (Standard-Bot) | GDD §13: aus dem Herausforderer wird ein Konzern | 1,20 – 50,00 | 1,35 | ja |
+| Ø Endwert vorsichtig ÷ bester Ø der Mutigeren | GDD §15: wer nie Schulden macht, wird überholt (unter 1) | 0,00 – 0,95 | 0,68 | ja |
+| Höchste Siegquote einer Strategie (Endwert Kapitel 3) | GDD §17: keine Einzelstrategie gewinnt in mehr als 40 % | 0,0 % – 40,0 % | 67,8 % | **nein** |
+| Höchste Siegquote einer Strategie bei gleichem Start (Kapitel 2/3 ab Kapitelende des Standard-Bots) | GDD §17 auf Kapitel 2 und 3 allein: kein Weg dominiert | 0,0 % – 40,0 % | 54,0 % | **nein** |
+| Höchste Siegquote einer Haltung im Zeitsprung (Standard-Bot) | kein dominanter Weg: keine Haltung gewinnt fast immer | 0,0 % – 60,0 % | 41,3 % | ja |
 
 <!-- Kampagne: Ende -->
 

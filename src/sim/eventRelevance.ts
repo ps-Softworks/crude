@@ -4,7 +4,9 @@
 // npm run check:events (Liste aller Antworten) und npm run check:content (Zusammenfassung).
 //
 // Eine Antwort ist STARK, wenn mindestens eins gilt:
-//   - Ihre Wirkung in $ erreicht die Schwelle (relevance.minShare × relevance.chapterMoney):
+//   - Ihre Wirkung in $ erreicht die Schwelle (relevance.minShare × relevance.chapterMoney; für Ereignisse
+//     späterer Kapitel × relevance.laterChapterMoney). Kapitel 1 rechnet Geld, Kraft und Familie mit dem
+//     typischen Faktor der Briefe (relevance.letterScale, siehe letterScale.ts):
 //     |Geld| + |Öl| × Trendpreis + |Kraft| × Gewicht + |Familie| × Gewicht (Gewichte des
 //     Standard-Bots). Beträge, weil auch „Kraft gegen Familie“ eine spürbare Abwägung ist.
 //   - Sie hat eine dauerhafte Wirkung (Bahntarif, eigene Fuhrwerke, Preis, Förderung, Pacht),
@@ -60,7 +62,10 @@ export interface ChoiceRelevance {
 }
 
 export interface RelevanceReport {
+  /** Schwelle für Kapitel-1-Ereignisse. */
   threshold: number;
+  /** Schwelle für Ereignisse späterer Kapitel. */
+  laterThreshold: number;
   choices: ChoiceRelevance[];
   /** Schwache Antworten: SCHWACH oder mit folgenlosem Merkzeichen. */
   weak: ChoiceRelevance[];
@@ -99,34 +104,54 @@ export function readMarks(events: readonly EventDef[], extra: Iterable<string>):
   return out;
 }
 
-/** Schwelle in $, ab der eine Antwort spürbar ist. */
-export function relevanceThreshold(balance: Balance): number {
-  const r = balance.events.relevance;
-  return Math.round(r.chapterMoney * r.minShare);
+/** Ist das ein Kapitel-1-Ereignis? Ohne minChapter kommt es nur in Kapitel 1 (chapterMet in events.ts). */
+function kapitel1(event: Pick<EventDef, 'conditions'>): boolean {
+  return event.conditions.minChapter === undefined;
 }
 
-/** Die sofortigen Wirkungen in $: Geld, Öl zum Trendpreis, Kraft und Familie mit den Gewichten des Standard-Bots. */
-function wirkungen(choice: Pick<EventChoice, 'effects'>, balance: Balance): number[] {
+/**
+ * Schwelle in $, ab der eine Antwort spürbar ist: Kapitel 1 misst am Kapitelgeld (chapterMoney), spätere
+ * Kapitel – bis sie eigene Balance haben – an laterChapterMoney.
+ */
+export function relevanceThreshold(balance: Balance, chapter1 = true): number {
+  const r = balance.events.relevance;
+  return Math.round((chapter1 ? r.chapterMoney : r.laterChapterMoney) * r.minShare);
+}
+
+/**
+ * Briefe mit Gewicht: In Kapitel 1 wächst das Geld der Antworten im Spiel mit Jacobs Geschäft (letterScale.ts),
+ * und die Bots wiegen Kraft und Familie im selben Maß (bots.ts, eventPolicy). Die Prüfung rechnet darum
+ * Kapitel-1-Antworten mit dem typischen Faktor zur Kapitelmitte (relevance.letterScale).
+ */
+export function relevanceScale(event: Pick<EventDef, 'conditions'>, balance: Balance): number {
+  return kapitel1(event) ? balance.events.relevance.letterScale : 1;
+}
+
+/**
+ * Die sofortigen Wirkungen in $: Geld, Öl zum Trendpreis, Kraft und Familie mit den Gewichten des Standard-Bots.
+ * factor: Faktor für Geld (außer fixedCash), Kraft und Familie (relevanceScale).
+ */
+function wirkungen(choice: Pick<EventChoice, 'effects' | 'fixedCash'>, balance: Balance, factor = 1): number[] {
   const e = choice.effects;
   const w = balance.bots.events.balanced;
   return [
-    e.cash ?? 0,
+    (e.cash ?? 0) * (choice.fixedCash ? 1 : factor),
     (e.oilStock ?? 0) * balance.market.basePrice,
-    (e.strength ?? 0) * w.strength,
-    (e.ruth ?? 0) * w.family,
-    (e.thomas ?? 0) * w.family,
-    (e.clara ?? 0) * w.family,
+    (e.strength ?? 0) * w.strength * factor,
+    (e.ruth ?? 0) * w.family * factor,
+    (e.thomas ?? 0) * w.family * factor,
+    (e.clara ?? 0) * w.family * factor,
   ];
 }
 
 /** Sofortige Wirkung in $ mit Vorzeichen (Gewinn minus Verlust). */
-export function immediateValue(choice: Pick<EventChoice, 'effects'>, balance: Balance): number {
-  return wirkungen(choice, balance).reduce((s, x) => s + x, 0);
+export function immediateValue(choice: Pick<EventChoice, 'effects' | 'fixedCash'>, balance: Balance, factor = 1): number {
+  return wirkungen(choice, balance, factor).reduce((s, x) => s + x, 0);
 }
 
 /** Wie spürbar die sofortige Wirkung ist: Summe der Beträge in $. */
-export function immediateImpact(choice: Pick<EventChoice, 'effects'>, balance: Balance): number {
-  return wirkungen(choice, balance).reduce((s, x) => s + Math.abs(x), 0);
+export function immediateImpact(choice: Pick<EventChoice, 'effects' | 'fixedCash'>, balance: Balance, factor = 1): number {
+  return wirkungen(choice, balance, factor).reduce((s, x) => s + Math.abs(x), 0);
 }
 
 /**
@@ -162,18 +187,21 @@ export function analyzeRelevance(
   later: ReadonlySet<string> = new Set(),
 ): RelevanceReport {
   const threshold = relevanceThreshold(balance);
+  const laterThreshold = relevanceThreshold(balance, false);
   const choices: ChoiceRelevance[] = [];
   for (const event of events) {
+    const schwelle = kapitel1(event) ? threshold : laterThreshold;
+    const faktor = relevanceScale(event, balance);
     const roh = event.choices.map((c) => {
       const marks = [...c.marks, ...(c.marksIfForged ?? [])];
-      const value = Math.round(immediateValue(c, balance));
-      const impact = Math.round(immediateImpact(c, balance));
+      const value = Math.round(immediateValue(c, balance, faktor));
+      const impact = Math.round(immediateImpact(c, balance, faktor));
       const lasting = Math.round(lastingValue(c, balance));
       const system = systemImpact(c.system, balance);
       const consequences = marks.filter((m) => read.has(m));
       const laterMarks = marks.filter((m) => !read.has(m) && later.has(m));
       const deadMarks = marks.filter((m) => !read.has(m) && !later.has(m));
-      const strong = impact >= threshold || lasting >= threshold || system >= threshold || consequences.length > 0;
+      const strong = impact >= schwelle || lasting >= schwelle || system >= schwelle || consequences.length > 0;
       return { event: event.id, choice: c.id, value, impact, lasting, system, consequences, deadMarks, laterMarks, strong };
     });
     const schwache = roh.filter((r) => !r.strong).length;
@@ -184,7 +212,7 @@ export function analyzeRelevance(
     }
   }
   const weak = choices.filter((c) => c.verdict === 'schwach' || c.deadMarks.length > 0);
-  return { threshold, choices, weak };
+  return { threshold, laterThreshold, choices, weak };
 }
 
 /** Eine Zeile für die Ausgabe, z. B. „moss_dank/annehmen: 300 $ – stark“. */

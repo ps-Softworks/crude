@@ -9,113 +9,13 @@
 # Merkzeichen, die die Simulation liest (transport.pipeline.rights in balance.yaml):
 #   wegerecht_moss, wegerecht_bahndamm  – erst mit beiden kann die Pipeline gebaut werden
 # Effekte für eigene Fuhrwerke: teams (Gespanne +/−), teamsIdle n (stehen bis Runde jetzt+n still).
-# Termine als Hauptwerkzeug, Etappe 2 (src/sim/freight.ts, FREIGHT_MARKS):
-#   brennan_vertrag       Brennans Fuhrleute fahren für Jacob (setzt die Simulation)
-#   brennan_abgeworben    Antwort: Thorne hat Brennan abgeworben – die Simulation beendet den Vertrag
-# Etappe 3 (gekoppelte Briefe, src/sim/letters.ts):
-#   brennan_faehrt               solange Brennan unter Vertrag fährt → fuhrleute_bestochen, fuhre_aufschlag
-#   gemeinschaft_abgesprungen    Mitglieder sind abgesprungen → gemeinschaft_abgesprungen (Brief)
-#   gemeinschaft_zurueck         Antwort: Die Abgesprungenen verladen wieder mit Jacob
-#   wildcatter_geholfen/_verprellt  Antwort: Ruf bei den Wildcattern ± letters.standing
+#
+# Spielspaß K1 (Weichen statt Alltagspost): Hier stehen nur noch die Wegerechte der Pipeline – sie
+# kommen nur, wenn Jacob die Route vermessen hat. Die Briefe zu Fuhrleuten, Brennan und der
+# Transportgemeinschaft sind gestrichen; deren Folgen kommen direkt aus den Karten.
 
-# --- Eigene Fuhrleute ----------------------------------------------------------
+# --- Wegerechte der Pipeline --------------------------------------------------
 
-- id: fuhrleute_streik
-  visitor: vormann
-  marked: [fuhrleute_eigen]
-  once: false
-  cooldown: 4
-  chance: 0.1
-  conditions: { minRound: 2 }
-  title:
-    de: Jacobs Fuhrleute legen die Peitschen hin
-    en: Jacob's Teamsters Put Down Their Whips
-  text:
-    de: >-
-      Der Vormann von Jacobs Fuhrleuten steht im Büro, die Mütze in der Hand.
-      Draußen sitzen seine Männer auf den Deichseln und rauchen. Die Mietkutscher
-      am Hafen verdienen mehr, sagt er – und die fahren nicht jeden Tag durch
-      Bullards Land.
-    en: >-
-      The foreman of Jacob's teamsters stands in the office, cap in hand. Outside,
-      his men sit on the wagon tongues and smoke. The hired drivers at the harbour
-      earn more, he says – and they don't drive through Bullard's land every day.
-  choices:
-    - id: zahlen
-      label: { de: "Den Lohn aufbessern (200 $)", en: "Raise their pay (200 $)" }
-      result:
-        de: Die Peitschen knallen wieder. Der Vormann nickt Jacob zu, als wäre nichts gewesen.
-        en: The whips crack again. The foreman nods to Jacob as if nothing had happened.
-      requires: { minCash: 200 }
-      effects: { cash: -200 }
-      appointments: 0
-    - id: reden
-      label: { de: "Mit hinausgehen, sich zu ihnen setzen und reden", en: "Go out, sit down with them and talk" }
-      result:
-        de: Ein Abend, eine Flasche, ein kleiner Zuschlag. Am Morgen sind die Ochsen angespannt.
-        en: One evening, one bottle, a small bonus. In the morning the oxen are yoked.
-      effects: { cash: -60, strength: -3 }
-      appointments: 2
-      sharp: true
-    - id: hart
-      public: [strike]
-      label: { de: "Hart bleiben", en: "Stand firm" }
-      result:
-        de: Die Gespanne bleiben stehen – diese und die nächste Runde. Den Lohn will Jacob trotzdem zahlen müssen.
-        en: The teams stay put – this round and the next. Jacob will still have to pay the wages.
-      effects: { teamsIdle: 1 }
-      appointments: 0
-      default: true
-
-# Etappe 3: Thorne besticht einen von Brennans Fuhrleuten (vorher: Jacobs eigene Fuhrleute).
-- id: fuhrleute_bestochen
-  rival: thorne
-  mail: info
-  marked: [brennan_faehrt]
-  once: false
-  cooldown: 4
-  chance: 0.3
-  conditions: { minOilStock: 300 }
-  title:
-    de: Ein Fuhrmann zählt zu viel Geld
-    en: A Teamster Counts Too Much Money
-  text:
-    de: >-
-      Brennan schreibt: Im Saloon zahlt einer seiner Fuhrleute eine Runde für alle –
-      mit frischen Scheinen der Thorne Rail & Trust Bank. Seit zwei Wochen kommen am
-      Hafen weniger von Jacobs Fässern an, als am Feld aufgeladen werden.
-    en: >-
-      Brennan writes: at the saloon one of his teamsters buys a round for everyone –
-      with crisp notes from the Thorne Rail & Trust Bank. For two weeks fewer of
-      Jacob's barrels have reached the harbour than were loaded at the field.
-  choices:
-    - id: entlassen
-      label: { de: "Brennan soll ihn vor allen davonjagen", en: "Have Brennan run him off in front of everyone" }
-      result:
-        de: Brennan jagt den Mann vom Hof. Bis ein neuer Fuhrmann gefunden ist, fährt Jacob selbst Tag und Nacht, und ein Mietgespann kostet extra.
-        en: Brennan runs the man off the yard. Until a new teamster is found, Jacob drives day and night himself, and a hired team costs extra.
-      effects: { cash: -100, strength: -7 }
-    - id: lohn
-      label: { de: "Brennans Leuten mehr zahlen, als Thorne bietet (200 $)", en: "Pay Brennan's men more than Thorne offers (200 $)" }
-      result:
-        de: Loyalität hat einen Preis, und Jacob hat ihn gezahlt. Die Fässer kommen wieder vollzählig an.
-        en: Loyalty has a price, and Jacob has paid it. The barrels arrive in full again.
-      requires: { minCash: 200 }
-      effects: { cash: -200 }
-      appointments: 0
-    - id: nichts
-      label: { de: "Nichts tun", en: "Do nothing" }
-      result:
-        de: Die Fässer verschwinden weiter, bis keiner mehr nachzählt. 300 Barrel sind weg.
-        en: The barrels keep vanishing until nobody counts any more. 300 barrels are gone.
-      effects: { oilStock: -300 }
-      appointments: 0
-      default: true
-
-# --- Wegerechte für die Pipeline ----------------------------------------------
-# Kommen sicher, sobald die Route vermessen ist, und jede Runde wieder, bis Jacob das Recht hat.
-
-# Moss, wenn noch nichts zwischen ihnen steht.
 - id: wegerecht_moss
   ranch: moss
   certain: true
@@ -143,6 +43,7 @@
         en: Moss puts his cross on the paper. The pipe may pass.
       requires: { minCash: 300 }
       effects: { cash: -300 }
+      fixedCash: true
       marks: [wegerecht_moss]
     - id: spaeter
       label: { de: "Später wiederkommen", en: "Come back later" }
@@ -180,52 +81,13 @@
         en: Moss doesn't read the paper; he trusts Jacob. That weighs more than the money.
       requires: { minCash: 80 }
       effects: { cash: -80 }
+      fixedCash: true
       marks: [wegerecht_moss]
     - id: spaeter
       label: { de: "Noch warten", en: "Wait a while" }
       result:
         de: Moss nickt. „Wenn Sie so weit sind.“
         en: Moss nods. "When you're ready."
-      appointments: 0
-      default: true
-
-# Moss, wenn Jacob ihn vertrieben hat, sich aber bei Daniel entschuldigt hat (0.2.15+3).
-- id: wegerecht_moss_versoehnt
-  ranch: moss
-  certain: true
-  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
-  once: false
-  draft: true
-  marked: [pipeline_geplant, daniel_entschuldigung]
-  notMarked: [wegerecht_moss]
-  title:
-    de: Ein Brief aus Hallstead
-    en: A Letter from Hallstead
-  text:
-    de: >-
-      Daniel Moss schreibt aus Hallstead, in der geraden Schrift eines
-      Rechtsstudenten: Sein Vater habe die Entschuldigung nicht vergessen. Über die
-      Weide dürfe ein Rohr – zum Preis, den das Land wert sei, und keinen Cent
-      darunter. Darunter, kleiner: „Ich schreibe mir alles auf, Mr. Harlan.“
-    en: >-
-      Daniel Moss writes from Hallstead in the straight hand of a law student: his
-      father has not forgotten the apology. A pipe may cross the pasture – at the
-      price the land is worth, and not a cent below. Beneath, smaller: "I write
-      everything down, Mr. Harlan."
-  choices:
-    - id: annehmen
-      label: { de: "Das Wegerecht zum vollen Preis kaufen (300 $)", en: "Buy the right of way at full price (300 $)" }
-      result:
-        de: Der Vertrag kommt mit der Post zurück, unterschrieben von Ezekiel und bezeugt von Daniel. Der Umweg durchs Sumpfland ist vom Tisch.
-        en: The contract comes back by post, signed by Ezekiel and witnessed by Daniel. The detour through the marsh is off the table.
-      requires: { minCash: 300 }
-      effects: { cash: -300 }
-      marks: [wegerecht_moss]
-    - id: spaeter
-      label: { de: "Noch warten", en: "Wait a while" }
-      result:
-        de: Jacob legt den Brief zu den anderen Papieren. Daniel wird sich das Datum merken.
-        en: Jacob puts the letter with the other papers. Daniel will remember the date.
       appointments: 0
       default: true
 
@@ -259,6 +121,7 @@
         en: Three marsh farmers are glad to sell. The route gets longer, but it stands.
       requires: { minCash: 900 }
       effects: { cash: -900 }
+      fixedCash: true
       marks: [wegerecht_moss]
     - id: abbitte
       label: { de: "Hingehen und Abbitte leisten (500 $)", en: "Go and make amends (500 $)" }
@@ -267,6 +130,7 @@
         en: It is the hardest walk of the year. In the end Daniel takes the money without shaking Jacob's hand.
       requires: { minCash: 500 }
       effects: { cash: -500, strength: -5 }
+      fixedCash: true
       marks: [wegerecht_moss, daniel_entschuldigung]
       appointments: 2
       sharp: true
@@ -310,6 +174,7 @@
         en: Mrs. Pruitt counts the money on the kitchen table. Thorne's agent arrives a day too late.
       requires: { minCash: 450 }
       effects: { cash: -450 }
+      fixedCash: true
       marks: [wegerecht_bahndamm]
     - id: besuchen
       label: { de: "Sie besuchen, Kuchen essen, zuhören (150 $)", en: "Visit her, eat cake, listen (150 $)" }
@@ -318,6 +183,7 @@
         en: Two hours about her late husband and the chickens. In the end she signs for little money.
       requires: { minCash: 150 }
       effects: { cash: -150 }
+      fixedCash: true
       marks: [wegerecht_bahndamm]
       appointments: 2
       sharp: true
@@ -326,94 +192,5 @@
       result:
         de: Mrs. Pruitt wartet. Lange wird sie es nicht tun.
         en: Mrs. Pruitt waits. She won't for long.
-      appointments: 0
-      default: true
-
-# --- Brennans Fuhrleute (Etappe 2) ------------------------------------------------
-
-- id: brennan_abwerben
-  rival: thorne
-  mail: demand
-  chance: 1                  # Etappe 3: nicht „certain“ – höchstens ein Thorne-Brief je Runde
-  once: true
-  marked: [brennan_vertrag]
-  delay: 1
-  conditions: { maxChapter: 1 }
-  title:
-    de: Thorne bietet Brennan mehr
-    en: Thorne Offers Brennan More
-  text:
-    de: >-
-      Brennan steht mit dem Hut in der Hand im Kontor. Thorne hat ihm Geld
-      geboten, wenn seine Fuhrleute nicht mehr für Jacob fahren. „Ich bleib bei
-      dir, Harlan – wenn du drauflegst. Zweihundert, und Thorne kann pfeifen.“
-    en: >-
-      Brennan stands in the office, hat in hand. Thorne has offered him money if
-      his teamsters stop hauling for Jacob. "I'll stay with you, Harlan – if you
-      top it. Two hundred, and Thorne can whistle."
-  choices:
-    - id: drauflegen
-      label: { de: "Zweihundert drauflegen (200 $)", en: "Top it up (200 $)" }
-      result:
-        de: Brennan zählt die Scheine und setzt den Hut wieder auf. Seine Wagen rollen weiter für Jacob.
-        en: Brennan counts the notes and puts his hat back on. His wagons keep rolling for Jacob.
-      requires: { minCash: 200 }
-      effects: { cash: -200 }
-      appointments: 0
-    - id: ziehen_lassen
-      label: { de: "Ihn ziehen lassen", en: "Let him go" }
-      result:
-        de: Brennan nickt und geht. Ab morgen fahren seine Fuhrleute für Thorne – Jacobs Vertrag ist dahin.
-        en: Brennan nods and leaves. From tomorrow his teamsters haul for Thorne – Jacob's contract is gone.
-      marks: [brennan_abgeworben]
-      appointments: 0
-      default: true
-
-# --- Transportgemeinschaft (Etappe 3) --------------------------------------------
-
-- id: gemeinschaft_abgesprungen
-  mail: info
-  once: false
-  cooldown: 4
-  marked: [gemeinschaft_abgesprungen]
-  chance: 1
-  deadline: 2
-  conditions: { maxChapter: 1 }
-  title:
-    de: Haskell & Dunn sind abgesprungen
-    en: Haskell & Dunn Have Pulled Out
-  text:
-    de: >-
-      Ein kurzer Brief von Haskell & Dunn, im Namen aller, die diese Woche nicht mehr
-      mit Jacob verladen: Man habe sich vernachlässigt gefühlt. Wer eine Gemeinschaft
-      gründe, müsse sich auch blicken lassen. Thornes Agent sei schon zweimal da gewesen.
-    en: >-
-      A short letter from Haskell & Dunn, on behalf of everyone who stopped shipping
-      with Jacob this week: they felt neglected. Whoever founds a pool has to show his
-      face too. Thorne's agent has already called twice.
-  choices:
-    - id: hinreiten
-      label: { de: "Hinreiten und sie zurückholen", en: "Ride out and bring them back" }
-      result:
-        de: Jacob sitzt einen Abend in ihren Kontoren, hört sich jeden Groll an und trinkt jeden Whiskey. Am Morgen verladen sie wieder mit ihm.
-        en: Jacob spends an evening in their offices, hears every grievance and drinks every whiskey. In the morning they ship with him again.
-      effects: { strength: -3 }
-      marks: [gemeinschaft_zurueck]
-      appointments: 2
-    - id: zuschuss
-      label: { de: "Ihnen einen Frachtzuschuss bieten (150 $)", en: "Offer them a freight subsidy (150 $)" }
-      result:
-        de: Geld redet leiser als Jacob, aber schneller. Sie verladen wieder mit ihm – vorerst.
-        en: Money talks quieter than Jacob, but faster. They ship with him again – for now.
-      requires: { minCash: 150 }
-      effects: { cash: -150 }
-      marks: [gemeinschaft_zurueck]
-      appointments: 0
-    - id: ziehen
-      label: { de: "Ziehen lassen", en: "Let them go" }
-      result:
-        de: Jacob legt den Brief weg. Bei den Wildcattern heißt es bald, auf Harlans Gemeinschaften sei kein Verlass.
-        en: Jacob puts the letter away. Soon the wildcatters are saying Harlan's pools can't be relied on.
-      marks: [wildcatter_verprellt]
       appointments: 0
       default: true

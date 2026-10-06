@@ -335,3 +335,301 @@ Format 22. Neu ist nur `freight.poolLeft` (wer zuletzt aus der Transportgemeinsc
 - **Zeitsprung:** Das Wissen aus Kapitel 1 bleibt. Was der Verwalter gebohrt hat, steht sofort als Bohrbericht auf der Karte (`learnFromWells`), und um bekannte Funde – auch Bullards und im neuen Land – redet man: Unbekannte Nachbarranches sind beritten (`hearsayAroundFinds`, Quelle „Gerede“). Neues Land ohne Funde bleibt Gerücht, bis Jacob hinreitet.
 - **Seismik (Kapitel 3) schärft die Erkundung, statt sie zu ersetzen:** Der Bericht rechnet auf dem auf, was Jacob über die Ranch schon weiß (`posteriorChance` aus Ritten, Karten, Berichten und Nachbarn), statt auf der Zone – und nie auf der verdeckten Fundchance q. Das Ergebnis geht als Hinweis „Seismik“ (Stufe 3, Chancen 1 − missTrap bzw. falseTrap) zurück ins Wissen: Das Band des Berichts wird die Prognose der Ranch, die Nachbarn rechnen den Hinweis mit. Ein Bohrbericht (gekauft, Tagebuch, eigene Bohrung) geht wieder vor. Tests in `src/sim/seismik.test.ts`.
 - **Spielstand:** Format 22 = main-Format 21 (Kapitel 3) plus alles aus den Etappen 1–3; Stände bis Format 21 laden mit Ersatzwerten.
+
+## Spielspaß-Durchgang: Briefe mit Gewicht
+
+**Problem:** Die Geldbeträge in den Kapitel-1-Briefen standen fest im Text und waren klein (Median 120 $). Zu Beginn sind 120 $ viel, ab der Kapitelmitte hat Jacob aber ein Imperium von 60.000 $ und mehr – dann war ein Brief egal (gemessen: Median 0,3 % des Imperiums, am Kapitelende 0,2 %).
+
+**Was jetzt anders ist:**
+
+- **Die Beträge wachsen mit Jacobs Geschäft** (nur Kapitel 1, Regel in `src/sim/letterScale.ts`). Faktor = Erlös je Runde ÷ 1.500 $, mindestens 1, höchstens 8 (`events.scale` in balance.yaml). Erlös je Runde = was Jacobs Quellen in der letzten Runde gefördert haben (ohne das Öl der Landbesitzer) × Durchschnittspreis der letzten 3 Runden. Ohne fördernde Quelle bleibt alles wie geschrieben; mit einer guten Quelle zur Kapitelmitte liegt der Faktor um 5–6, am Ende um 8. Der Faktor hängt nur an abgeschlossenen Runden – was der Schreibtisch zeigt, kostet die Antwort auch.
+- Es wachsen `cash` und die Geldbedingung `minCash` der Antwort (positive wie negative Beträge), auch wenn ein Brief ohne Antwort abläuft. Beträge werden glatt gerundet (unter 1.000 $ auf 10 $, unter 10.000 $ auf 50 $, darüber auf 100 $).
+- **Feste Preise bleiben fest** (`fixedCash: true`, sparsam): Kredite mit Rückzahlung (Bank, Rourke, Bullard, Moss' Hypothek – sonst passt die Rückzahlung nicht zum Kredit), Tausch Öl gegen Geld (Crane-Vorkauf, Händler, Pickett, Tanks), Wegerechte der Pipeline (gehören zur Pipeline-Rechnung mit festem Baupreis) und das Lohnbohren (fester Termin jede Runde).
+- **Der Spieler sieht den echten Betrag:** Statt „(120 $)“ steht in den Texten ein Platzhalter – `{cash}` in Antwort und Ergebnis, `{cash:wahl}` im Brieftext. Die Simulation setzt den gerechneten Betrag ein (Schreibtisch, Besuch, Protokoll, Ergebnis nach „Weiter“). `npm run check:content` meldet Platzhalter ohne Geld, ein Test meldet Beträge, die noch fest im Text stehen.
+- **Sieben große Entscheidungen** (gerechnet mit dem typischen Faktor, wenn sie kommen):
+
+| Brief | vorher | jetzt (Grundbetrag → typisch im Spiel) |
+| --- | --- | --- |
+| Silas: Die Abrechnung (Runde 8+) | fair 400 $, auskaufen 1.000 $ | 500 $ / 1.000 $ → ~3.200 $ / ~6.400 $ |
+| Silas redet (Saloon, nachzahlen) | 600 $ | 800 $ → ~6.100 $ |
+| Moss' Schulden (Hypothek) | leihen 300 $, Papier 100 $ | fest 2.500 $ / 800 $ |
+| Ein Glas Honig (Moss zahlt zurück) | 300 $ | fest 2.500 $ |
+| Die Versteigerung | helfen 300 $, ersteigern 500 $ | helfen fest 2.500 $, ersteigern 1.000 $ → ~4.400 $ |
+| Der Herr mit Spazierstock (Moss-Land verkaufen) | +900 $ | +1.400 $ → ~8.000 $ |
+| Mr. Vales Umschlag | +500 $ | +800 $ → ~3.800 $ |
+| Bullard braucht Geld / zahlt zurück | 500 $ / 650 $ | fest 2.000 $ / 2.600 $ |
+
+- Rourkes Wucherkredit wurde mitgezogen (300 → 800 $, Rückzahlung 420 → 1.120 $ oder 1.200 Barrel), sonst wäre er nach der Prüfung zu schwach. Kleine Anpassungen für die Prüfung: Fuhrwerk bei Thornes Waggons 120 $ statt 110 $, Rampe für das Kind in der Grube 90 $ statt 30 $, abgeschriebener Tank 600 statt 200 Barrel, Hales Gutachten zurückschicken gibt mehr Kraft (8 statt 5).
+- **Bots** rechnen mit dem echten Betrag (Antwortwert, Rücklage, Wegerechte, Thornes Vertragsgebühr). Kraft, Familie und Termine wiegen sie im selben Maß hoch – sonst wären ihnen Familie und Gesundheit mit wachsendem Geschäft nichts mehr wert.
+- **Prüfung `npm run check:events`:** Kapitelgeld jetzt realistisch 60.000 $ (Imperium zur Kapitelmitte), Schwelle 1 % = 600 $ – das passt zum Ziel „ein normaler Brief bewegt 1–3 %“. Kapitel-1-Antworten zählen Geld (ohne `fixedCash`), Kraft und Familie × 5 (typischer Faktor zur Kapitelmitte, `relevance.letterScale`). `refBarrels` 5.000 → 9.000 (gemessene Förderung zur Kapitelmitte). Kapitel 2/3 werden wie bisher mit 200 $ geprüft (`laterChapterMoney`), bis sie eigene Balance haben. Ergebnis: 0 schwache Antworten.
+
+**Abweichungen vom Auftrag, mit Grund:**
+
+- Höchstfaktor 8 statt ≈ 4: Mit 4 bliebe ein normaler Brief am Kapitelende bei rund 0,5 % des Imperiums – das Ziel 1–3 % wäre nicht erreichbar.
+- Kapitel 1 hat 16 Runden (nicht 40); die Messung teilt darum in Runde 1–5, 6–11, 12–16.
+- Die großen Briefe haben meist keinen Grundbetrag von 2.000–8.000 $: Sie kommen erst, wenn der Faktor schon bei 4–8 liegt – ein Grundbetrag von 2.000 $ würde dort 10.000–16.000 $ (15–25 % des Imperiums) kosten und wäre für die meisten nicht bezahlbar. Sie wachsen deshalb mit und landen im Spiel bei 2.000–8.000 $. Wo Hin- und Rückzahlung zusammengehören (Moss, Bullard), sind die Beträge fest und liegen direkt bei 2.000–2.600 $.
+- In den ersten Runden (Faktor 1) wirkt ein Brief gemessen am Imperium klein, weil das Imperium die Reserven im Boden mitzählt; gemessen an der Kasse (1.600–5.000 $) ist er spürbar.
+- Bot-Zielwert `pipelineSuccess` 0,80 → 0,85 (gemessen 81,2 %, vorher 77,4 %): Späte Briefe kosten jetzt Geld; wer ohne Pipeline knapp am Ziel war, verfehlt es öfter. Endgültige Balance steht noch aus.
+
+**Messung:** `npx tsx tools/briefGewicht.ts 400 --schreiben` (Block unten). Gezählt wird je Ereignis, das neu auf den Tisch kommt (ohne feste Termine), der größte Geldbetrag seiner Antworten – so, wie der Spieler ihn in dieser Runde sieht – geteilt durch das Imperium in dieser Runde. Vorher (main 0.4.20+4, gleiche 400 Seeds):
+
+| Kapiteldrittel | normale Briefe: Median (oberes Viertel) | Median Geld | große Briefe: Median (oberes Viertel) | Median Geld |
+| --- | ---: | ---: | ---: | ---: |
+| Runde 1–5 | 0,4 % (1,0 %) | 150 $ | 0,8 % (1,3 %) | 300 $ |
+| Runde 6–11 | 0,3 % (0,5 %) | 150 $ | 1,1 % (2,2 %) | 600 $ |
+| Runde 12–16 | 0,2 % (0,4 %) | 160 $ | 0,7 % (0,9 %) | 500 $ |
+
+Ganzes Kapitel vorher: normale Briefe 0,3 %, große 1,0 %. Nachher:
+
+<!-- Messung Briefe mit Gewicht: npx tsx tools/briefGewicht.ts 400 --schreiben ersetzt bis zur nächsten Marke. -->
+
+Stand: 2026-10-05 · Version 0.4.20+5 · 400 Seeds (`bot-0` bis `bot-399`), Standard-Bot mit allen Ereignissen
+
+| Kapiteldrittel | normale Briefe: Median \|Geld\| ÷ Imperium (oberes Viertel) | Median Geld | große Briefe: Median (oberes Viertel) | Median Geld | Median Faktor | Median Erlös je Runde | Median Imperium |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Runde 1–5 | 0,9 % (2,3 %), n = 1052 | 300 $ | 4,0 % (10,6 %), n = 736 | 2.500 $ | 1,00 | 0 $ | 34.811 $ |
+| Runde 6–11 | 0,9 % (2,3 %), n = 1160 | 590 $ | 5,7 % (9,8 %), n = 1237 | 3.950 $ | 8,00 | 13.445 $ | 91.809 $ |
+| Runde 12–16 | 0,3 % (0,4 %), n = 87 | 300 $ | 1,0 % (4,5 %), n = 4 | 1.500 $ | 8,00 | 14.476 $ | 108.156 $ |
+
+Ganzes Kapitel: normale Briefe Median 0,8 %, große Briefe Median 5,0 %.
+
+<!-- Ende der Messung Briefe mit Gewicht -->
+
+# Spielspaß-Durchgang: Tieferbohren
+
+Ziel: „Tiefer oder aufgeben?“ ist eine echte Wahl um die Gewinnschwelle. Die Prognose des Geologen entscheidet, und das Ranch-Fenster rechnet vor, ab wann sich das Weiterbohren lohnt (GDD §5: Push your luck – viele Riesenfelder fanden die, die weiterbohrten).
+
+## Was jetzt anders ist (kurz)
+
+- **Tief unten seltener, aber größer:** Neu je Bohrstufe `findFactor` (balance.yaml `drilling.stages`): 300 m ×1, 600 m ×2, 900 m ×3. Beim ersten Fund auf einer Ranch in der Tiefe wächst ihr Vorrat (und der ihres Feldes) um diesen Faktor; die Anfangsrate hängt am Vorrat je Fläche und wächst mit. Weitere Bohrlöcher derselben Ranch gehen auf dieselbe Tiefe und erben das (`deepFindReserves` in `src/sim/drilling.ts`). Wo das Öl liegt, bleibt 85 / 10 / 5 % (unverändert), ebenso Kosten und Risiken.
+- **Ehrliche Prognose für die nächste Stufe:** Nach einer trockenen Stufe schätzt der Geologe aus dem Bohrklein (`makeDeeperForecast`, balance.yaml `forecast.deeper`): Fehler ± 40 % der Chance, Spanne halb so breit wie die Mitte, auf 1 Punkt gerundet. Vorher galt die breite 30-Punkte-Spanne – bei 5–10 % echter Chance wurde sie an 0 % abgeschnitten, die Mitte zeigte im Schnitt **17,6 %** bei **8,9 %** echten Treffern. Jetzt **13,2 %** bei **9,0 %** (der Rest kommt aus Jacobs Wissen, siehe unten).
+- **Rechenhilfe „lohnt ab“** (`src/sim/deeper.ts`, `findValue` in `src/sim/invest.ts`): was ein Fund in der nächsten Tiefe bis Kapitelende etwa in die Kasse brächte – wie beim Ausbau mit Rückgang, Feld und Preisdruck, aber ohne verdecktes Wissen (Vorrat = Mitte der Spanne × Fläche × findFactor), kleine Quelle und Gusher nach dem Verhältnis der Zone gemischt. Einsatz = Stufenkosten + im Schnitt Unfall-Entschädigung und Bergung. **Lohnt ab = Einsatz ÷ Wert eines Funds.** Spät im Kapitel bringt ein Fund nichts mehr – dann steht da „käme zu spät“.
+- **Ranch-Fenster** zeigt bei der Entscheidung: „Ein Fund in 600 m wäre etwa 2-mal so groß wie flach und brächte bis Kapitelende rund 27.885 $ als kleine Quelle, als Gusher rund 64.631 $. Einsatz 1.100 $, dazu im Schnitt 46 $ für Unfall oder klemmendes Werkzeug. **Lohnt ab etwa 3 %** (Geologe: 23 %) – eher weiterbohren.“ (Seed bot-1, Runde 3.) Ist der Gusher weniger wert als die kleine Quelle, weil so viel Öl den Preis aller Barrel drückt, sagt das Fenster es dazu. Urteil: ab 1,25 × Schwelle „eher weiterbohren“, ab 0,8 × „ein knappes Spiel“, sonst „eher aufgeben“. Ruths Zettel und die Bohrturm-Akte nennen kurz „600 m lohnt ab etwa 3 %, Geologe 23 %“. Rundenbericht und Protokoll melden einen tiefen Fund („Das Weiterbohren hat sich gelohnt: etwa 2-mal so viel Öl wie flach“) und ein trockenes Ende in der Tiefe.
+- **Einstieg:** `tutorial.deeperMinChance` (25 %) entfällt. Der Hinweis rät zum Tieferbohren, wenn die Chance des Geologen die Gewinnschwelle erreicht, und nennt sie (`{schwelle}` in content/tutorial.yaml).
+- **Bots** (balance.yaml `bots.deeper`): tiefer, wenn Geologe ≥ Schwelle × Faktor – vorsichtig 1,5 (dazu Rücklage, höchstens 600 m), gierig 0,7 (auch knapp darunter, auf Kredit), ausgewogen 1,0. Vorher: vorsichtig bis 600 m, gierig und ausgewogen immer – ohne Blick auf die Chance.
+- **Zeitsprung:** Der Verwalter bohrt mit derselben Regel für tiefe Funde (`deepFindReserves` beim Bohren und beim Abschluss laufender Bohrungen).
+- **Spielstand:** unverändert (Vorrat von Ranch und Feld stand schon im Spielstand), kein neues Format.
+
+## Wie gemessen wird
+
+`npx tsx tools/tiefbohrung.ts 500`: die drei planenden Bots mit allen Ereignissen, 500 Seeds (wie `npm run bots`). Bei jeder Tiefer-Entscheidung: **wahre Chance** = Chance der nächsten Stufe aus der verdeckten Fundchance q *und* Jacobs eigenen Hinweisen auf der Ranch (exakter Bayes – die Hinweise hängen an der echten Geologie; q allein unterschätzt die Treffer bei Ranches, die nach guten Hinweisen gewählt wurden: 5,6 % statt 9,0 %). „Richtig“ heißt: Weiterbohren hat nach wahrer Chance einen positiven Erwartungswert (wahre Chance ≥ Schwelle).
+
+| Entscheidungen | Anzahl | Weiterbohren richtig | weitergebohrt | Bot lag richtig | Treffer, wo weitergebohrt | Ø wahre Chance | Ø Geologe | echte Trefferquote | Median „lohnt ab“ | Ø Wert eines Funds |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| alle | 9.306 | **34,7 %** | 58,9 % | 64,9 % | 10,7 % | 9,6 % | 13,2 % | 9,0 % | 5,2 % | 26.982 $ |
+| vorsichtig | 2.389 | 34,2 % | 31,5 % | 71,0 % | 11,7 % | 10,8 % | 14,6 % | 10,3 % | 6,1 % | 24.435 $ |
+| gierig | 3.788 | 29,9 % | 68,5 % | 59,2 % | 9,1 % | 8,3 % | 11,7 % | 7,5 % | 5,5 % | 23.989 $ |
+| ausgewogen | 3.129 | 40,7 % | 68,3 % | 67,1 % | 12,4 % | 10,1 % | 13,8 % | 10,0 % | 4,1 % | 32.550 $ |
+| auf 600 m | 6.134 | 36,4 % | 59,7 % | 67,3 % | 12,0 % | 10,6 % | 14,5 % | 10,0 % | 5,3 % | 24.414 $ |
+| auf 900 m | 3.172 | 31,2 % | 57,5 % | 60,2 % | 8,1 % | 7,5 % | 10,6 % | 7,2 % | 5,0 % | 31.948 $ |
+
+| Tiefe | Anteil der Funde | Ø Anfangsrate bbl/Tag | Ø Barrel bis Kapitelende | Ø Wert laut Rechenhilfe |
+| --- | ---: | ---: | ---: | ---: |
+| 300 m | 90,8 % | 141 | 70.868 | – |
+| 600 m | 6,9 % | 290 | 145.698 | 36.235 $ |
+| 900 m | 2,3 % | 437 | 203.329 | 38.654 $ |
+
+- **Echte Wahl:** In gut einem Drittel der Fälle (34,7 %, Ziel 30–50 %) lohnt das Weiterbohren wirklich. Die wahre Chance streut stark (600 m: Median 4 %, oberes Viertel 14 %, oberes Zehntel 35 %), die Schwelle liegt meist bei 3–14 %. Mit dem alten Regelwerk („immer tiefer“) lagen die Bots in 38 % der Fälle richtig, jetzt in 65 %.
+- **Weiterbohren lohnt sich, wo der Geologe es sagt:** Wo die Bots weitergebohrt haben, trafen sie 10,7 %, im Schnitt aller Entscheidungen hätten 9,0 % getroffen.
+- **Geologe gegen echte Quote:** Er sortiert richtig (Stichprobe 300 Partien: wo seine Grundlage 1 / 6 / 11 / 21 / 31 % sagte, trafen 3 / 5 / 10 / 12 / 23 %), ist oben aber zu optimistisch, im Schnitt 13,2 % statt 9,0 %. Grund ist nicht mehr die Spanne, sondern Jacobs Wissen (`posteriorChance`): Es geht von der Ø Fundchance der Zone aus und rechnet Nachbarhinweise mit, als wären sie Hinweise auf diese Ranch. Das ist das Erkundungsmodell aus Etappe 1 – hier bewusst nicht angefasst.
+- **Ø Wert eines tiefen Funds:** 36.000–39.000 $ bis Kapitelende, gut doppelt so viel Öl wie ein flacher Fund. Tiefe Funde sind 9 % aller Funde (vorher mit „immer tiefer“ 13 %, weil die Bots jetzt aufgeben, wo es nicht lohnt).
+
+## Kapitel-1-Zielwerte (npm run bots, 1.000 Partien je Strategie)
+
+Alle Kennzahlen zu Funden bleiben im Rahmen: kleine Funde mit 50–500 bbl/Tag 99,7 % (vorher 99,7 %; ein kleiner Fund in 900 m hat höchstens 3 × 125 = 375 bbl/Tag), Gusher ÷ klein 4,99 (5,04 – tiefe Funde heben beide gleich), Rückgang 13,2 % (12,3 %), blinde Wildcat 14,5 % (unverändert, Stufe 1 gleich). Die Definitionen mussten nicht geschärft werden.
+
+| Kennzahl | vorher (0.4.20+4) | jetzt | Rahmen |
+| --- | ---: | ---: | --- |
+| Kapitelziel ausgewogen | 66,9 % | **80,2 %** | 20–70 %, **vorläufig bis 82 %** |
+| Kapitelziel vorsichtig / gierig | 58,4 / 72,7 % | 64,0 / 79,8 % | – |
+| Höchste Siegquote | 35,6 % (ausgewogen) | 38,5 % (gierig) | ≤ 40 % |
+| Pleitequote ausgewogen / gierig | 0,2 / 4,5 % | 0,2 / 3,8 % | ≤ 15 % / 3–45 % |
+| Ø Imperium vorsichtig ÷ Mutigere | 0,81 | 0,74 | ≤ 0,95 |
+| Pipeline in Partien mit Kapitelziel | 77,4 % | 79,2 % | ≤ 80 % |
+| Ø Imperium ausgewogen | 112.063 $ | 134.079 $ | – |
+| Zeitsprung I, Förderung nachher ÷ vorher (ausgewogen) | 0,69 | 0,62 | – |
+
+## Abweichungen (mit Grund)
+
+- **Kapitelziel 80,2 % statt höchstens 70 %:** Das kommt vor allem daher, dass der Standard-Bot jetzt klug entscheidet. Gegenproben mit 300–400 Partien: alte Regel („immer tiefer“) ohne größere Funde 67 %, alte Regel mit größeren Funden 75 %, neue Regel ohne größere Funde 76 %. Weder Bohrkosten (600 m 1.800 $ / 900 m 2.600 $: 77 %) noch andere Anteile in der Tiefe (80/13/7 oder 75/17/8: 78–79 %) noch strengere Bot-Faktoren ändern viel. Ein höheres Kapitelziel hilft kaum (90.000 $ / 7 Quellen: 71 %) und schiebt den Pipeline-Anteil über 80 %. Deshalb ist die Obergrenze in balance.yaml **vorläufig** auf 82 % gesetzt – die Gesamt-Balance (Kapitelziel, Startbedingungen) folgt als eigener Schritt.
+- **Zeitsprung-Test** (`timeskip.test.ts`): Die Firma fördert am Kapitelende mehr (tiefe Funde), der Verwalter hält im Median 0,55 statt 0,6 davon. Schwelle 0,6 → 0,5.
+- **Kampagnen-Test „verfehlte Kapitelprüfung“** (`campaignBots.test.ts`): Die Seeds bot-0/3/5 bestehen jetzt alle; der Test erzwingt das Verfehlen mit einem unerreichbaren Kapitelziel.
+- **Bohrquote-Test:** Die verdeckte Geologie bleibt gleich – nur Jacobs eigener tiefer Fund vergrößert den Vorrat um genau den findFactor.
+
+## Offen
+
+- Gesamt-Balance Kapitel 1 (Kapitelziel 80 %, vorläufige Grenze 82 %).
+- Jacobs Wissen ist bei hohen Chancen zu optimistisch (Nachbarhinweise zählen voll mit) – betrifft auch die erste Bohrung, gehört zur Erkundung.
+- Die Rechenhilfe sieht nur eine Stufe voraus: Dass nach trockenen 600 m noch 900 m kämen, zählt sie nicht mit (vorsichtige Schwelle).
+
+---
+
+# Spielspaß-Durchgang: Preis- und Fracht-Karten
+
+Schritt 1 des Spielspaß-Durchgangs für Kapitel 1: Die Karten auf den Reitern Markt und Fracht fühlten sich folgenlos an. Gemessen vorher: alle Fracht-Karten zusammen +0,4 % Imperium (freightGain 1,00), Thorne erwischte einen Bluff in unter 1 % der Fälle, ein Gerücht brachte einmalig etwa 750 $, eine Abfuhr kostete meist nur eine verdeckt höhere Erhöhungs-Wahrscheinlichkeit. Ziel: Jede Karte wirkt spürbar (grob ein Quartalserlös, 1.500–5.000 $ über ihre Laufzeit) und trägt echtes Risiko – etwa 20–45 % der Anwendungen gehen schief, und ein Fehlschlag kostet **sofort** etwas Sichtbares. Philipp war krank, darum ohne Rückfrage entschieden.
+
+Erzeugt mit `npx tsx tools/termineMessung2.ts 500 --schreiben` (Block zwischen den Marken), der Rest ist von Hand geschrieben. Der Block der Etappe 2 weiter oben bleibt als Vorher-Stand stehen.
+
+## Was jetzt anders ist (kurz)
+
+- **Bei Thorne vorsprechen:** Erfolg senkt den Tarif deutlicher (−0,10 / −0,15 / −0,20 $ statt −0,05 / −0,10 / −0,15 $) und bringt immer Ruhe (2 / 3 / 4 Runden ohne Erhöhung statt 0 / 2 / 4). Eine **Abfuhr hebt den Tarif sofort um 0,05 $** (höchstens bis zum Höchsttarif), dazu wie bisher 4 Runden lang doppelt so oft Erhöhungen.
+- **Bluff:** Hing das Zugeständnis an Ausweichwegen oder der Pipeline, lässt Thorne in den 2 Folgerunden **je Runde mit 35 % am Bahnhof nachzählen**. Geht in so einer Runde mehr als 60 % per Bahn, fliegt der Bluff auf: +0,15 $ sofort (vorher +0,10 $) und Groll. Vorher zählte nur die Summe beider Runden gegen 80 % – das schaffte so gut wie niemand. Eigener Zufallsstrang (`…:fracht:<Runde>:bluff`).
+- **Transportgemeinschaft:** Solange sie läuft, gibt Thorne **Rabatt auf Jacobs Bahnfracht**: 0,01 $ je volle 2.000 bbl Gemeinschaftsmenge, höchstens 0,08 $ (`poolDiscount`, in `tariff()` von transport.ts). Dafür die **Zusage**: Jacobs Bahnfracht plus Gemeinschaftsmenge müssen jede Runde mindestens 8.000 bbl sein, sonst kostet jedes fehlende Barrel sofort 0,10 $ (`poolPenalty`, ab der Runde nach der Gründung, mit den Mitgliedern vor dem Abspringen). Springen Mitglieder ab oder hält Jacob Öl zurück, wird die Zusage teuer.
+- **Brennan:** 8.000 statt 5.000 bbl je Runde, Fehlmenge 0,25 statt 0,15 $ je Barrel (Mindestmenge bleibt 2.000).
+- **Liefervertrag:** bis 10.000 statt 6.000 bbl je Runde, Fehlmenge 0,20 statt 0,15 $.
+- **Gerücht streuen:** wirkt **2 Runden** auf den Preis statt einer (`rumour.rounds`, `rumourShockNow`). Fliegt „Quellen versiegen“ auf, **fällt der Preis sofort um 10 %** (eine Runde, `exposed.backlash`), dazu wie bisher Cranes Abschlag, Nora und der Ruf.
+- **Mit Crane feilschen:** Crane hat jetzt **Gegendruck** (1 Punkt, +1, wenn er in den letzten 4 Runden schon nachgegeben hat – `craneResistance`) und **Laune** (−1 / 0 / +1 mit 35 / 45 / 20 %). Bleiben weniger als 2 Punkte, gibt es die Abfuhr: Der Abschlag kommt sofort und dauert 6 Runden. Die Stufen selbst (2: Abschlag weg, 3: Angebot, 4: Abnahmevertrag) sind unverändert.
+- **Förderbremse:** unverändert (Preiswirkung, Platzen und Mehrerlös liegen weiter im Ziel).
+- **Texte:** Karten (content/plans.yaml), Kartendetails und Ergebnisse (pricing.ts, freight.ts) und das Frachtfenster nennen die neuen Folgen: sofortige Tariferhöhung, Stichproben am Bahnhof, Rabatt und Zusage der Gemeinschaft, Preissturz nach einem entlarvten Gerücht, Cranes Gegendruck und Laune. Zufallszahlen nennen sie nur, wo es vorher auch so war (Beitritts- und Entlarvungschance).
+- **Bots:** Jeder planende Bot spielt Karten nach Charakter (balance.yaml `bots.plans`): vorsichtig Liefervertrag und Gemeinschaft, gierig Gerücht und Crane, ausgewogen Thorne und Gemeinschaft. Neuer Schalter `bluff` (der Bot schickt während Thornes Prüfung zuerst alles per Bahn) – nur für die Messung. Die Bots füllen Brennans Mindestmenge zuerst, wenn der Umweg je Barrel weniger kostet als die Strafe, buchen Brennan nur mit Polster (2 × Mindestmenge) und nicht, solange die eigene Pipeline gebaut wird, gründen die Gemeinschaft erst, wenn ihre eigene Bahnfracht die Zusage allein trägt (vorher ab 4.000 bbl), und rechnen bei Crane den Gegendruck mit.
+- **Messhilfe:** `src/sim/cardStats.ts` schätzt je Anwendung einer Karte den Geldeffekt und ob sie schiefging (siehe „Wie gemessen wird“); `playGame` liefert die Liste in `plans.cards`.
+
+<!-- Messung Spielspaß K1: npx tsx tools/termineMessung2.ts 500 --schreiben ersetzt bis zur nächsten Marke. -->
+
+Stand: 2026-10-05 · Version 0.4.20+5 · 500 Seeds (`bot-0` bis `bot-499`), Standard-Bot mit allen 296 Ereignissen, je Seed 5 Varianten der Karten
+
+| Kriterium | Ziel (Plan) | Ist | erfüllt |
+| --- | --- | ---: | :---: |
+| Förderbremse: Preis der Folgerunde bei Kartellanteil ≥ 40 % (Median gegen „ohne Bremse“) | +10–18 % | +17,3 % (416 Gründungen; alle Bremsrunden +12,1 %) | ja |
+| cartelCollapse: Anteil geplatzter Förderbremsen | 0,3–0,6 | 0,54 (342 von 630) | ja |
+| pactValue: Ø Mehrerlös je Förderbremse | 300–2.500 $ | 1.480 $ (630 Pakte) | ja |
+| priceGain: Ø Imperium mit Preis-Aktionen ÷ ohne | 1,05–1,25 | 1,077 (140.547 $ gegen 130.504 $) | ja |
+| contractLoss: Anteil verlustreicher Lieferverträge | 0,2–0,5 | 0,29 (1074 Verträge) | ja |
+| Ø Tarifsenkung beim ausgewogenen Bot (je Partie) | 0,05–0,15 $ | 0,17 $ (1,8 Besuche je Partie; nur Thorne: 0,00 $) | nein |
+| freightGain: Ø Imperium mit Fracht-Aktionen ÷ ohne | 1,03–1,15 | 0,998 (130.240 $ gegen 130.504 $) | nein |
+| Bluff erwischt (Anteil der riskierten Fälle, Bluff-Bot) | 20–60 % | 25,2 % (168 von 666; Standard-Bot, der den Bluff meidet: 8,0 %, 48 von 603) | ja |
+| Höchster Posted Price in allen Varianten | ≤ 1,60 $ (priceMax) | 1,59 $ | ja |
+
+| Variante (Standard-Bot) | Ø Imperium | Kapitelziel | Pleite |
+| --- | ---: | ---: | ---: |
+| grund | 130.504 $ | 62,6 % | 0,2 % |
+| preis | 140.547 $ | 66,8 % | 0,4 % |
+| ohneFracht | 130.504 $ | 62,6 % | 0,2 % |
+| fracht | 130.240 $ | 63,2 % | 0,0 % |
+| bluff | 128.504 $ | 62,4 % | 0,0 % |
+
+| Karte | Anwendungen | schlecht | Ø Geldeffekt | Ø \|Effekt\| | Ø gut | Ø schlecht | im Ziel (20–45 %, ≥ 1.000 $) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | :---: |
+| Bei Thorne vorsprechen | 877 | 22,8 % | 4.756 $ | 5.455 $ | 6.489 $ | -1.110 $ | ja |
+| Bei Thorne vorsprechen (Bluff-Bot) | 996 | 35,2 % | 4.843 $ | 5.782 $ | 7.745 $ | -490 $ | ja |
+| Brennan unter Vertrag | 381 | 14,2 % | 6.052 $ | 6.081 $ | 6.622 $ | 2.603 $ | nein |
+| Transportgemeinschaft | 730 | 46,7 % | 2.095 $ | 2.245 $ | 3.865 $ | 75 $ | nein |
+| Liefervertrag | 1074 | 29,2 % | 1.529 $ | 2.404 $ | 2.779 $ | -1.496 $ | ja |
+| Gerücht streuen | 896 | 27,3 % | 1.875 $ | 5.169 $ | 4.491 $ | -5.077 $ | ja |
+| Mit Crane feilschen | 2783 | 20,3 % | 1.342 $ | 3.732 $ | 2.929 $ | -4.888 $ | ja |
+| Förderbremse (Pakte, geplatzt = schlecht) | 630 | 54,3 % | 1.480 $ | 5.595 $ | – | – | – |
+
+<!-- Ende der Messung Spielspaß K1 -->
+
+## Wie gemessen wird
+
+- **Varianten** wie in Etappe 2 (*grund* = Standard-Bot spricht nur bei Thorne vor, *preis* = dazu Förderbremse, Liefervertrag, Gerücht, Crane, *ohneFracht* = keine Karte, *fracht* = Thorne, Brennan, Gemeinschaft), neu *bluff* = wie *fracht*, aber der Bot blufft bewusst: Während Thornes Prüfung schickt er zuerst alles per Bahn. Die Messung nimmt aus `bots.plans` nur, ob der Standard-Bot bei Thorne vorspricht – die Charaktere der Bots für `npm run bots` verschieben sie nicht.
+- **Bluff erwischt:** erwischte ÷ riskierte Zugeständnisse beim Bluff-Bot (offene Prüfungen am Kapitelende zählen nicht); in Klammern der Standard-Bot, der den Bluff meidet, wo es sich lohnt.
+- **Je Karte** (Preis-Karten aus *preis*, Fracht-Karten aus *fracht*): Anteil schlechter Ausgänge und Ø Geldeffekt je Anwendung, jeweils minus Barpreis der Karte. Geschätzt in `src/sim/cardStats.ts`:
+  - *Thorne:* Tarifänderung × Bahnfracht der nächsten 8 Runden (Erfolg: Senkung; Abfuhr: sofortige Erhöhung); ein erwischter Bluff zählt mit seinem Aufschlag × Bahnfracht gegen den Besuch. Schlecht = Abfuhr oder erwischter Bluff. Die verhinderten Erhöhungen (Ruhe) zählen nicht mit – eher zu wenig als zu viel.
+  - *Brennan:* (Mietfuhrwerk − Brennans Preis) × Barrel über Brennan, minus Strafen. Schlecht = in einer Runde Strafe gezahlt oder abgeworben.
+  - *Gemeinschaft:* Rabatt × Bahnfracht, solange sie läuft, minus Strafen für die verfehlte Zusage. Schlecht = kommt nicht zustande oder zahlt mindestens einmal Strafe.
+  - *Liefervertrag:* Mehrerlös wie `contractLoss`. Schlecht = Verlust.
+  - *Gerücht:* Preisplus je Schockrunde × Verkauf der Folgerunde (Preis × (1 − 1/Schock)); entlarvt: Rückschlag ebenso, dazu Cranes Abschlag × Verkauf an Crane, solange er gilt. Schlecht = entlarvt (oder verpufft).
+  - *Crane:* Cranes Abzug je Barrel vorher gegen nachher × Verkauf an Crane der nächsten 8 Runden. Schlecht = Abfuhr.
+  - *Förderbremse:* wie bisher `pactValue`, schlecht = geplatzt.
+
+## Abweichungen vom Auftrag (mit Grund)
+
+| Auftrag / Idee | jetzt | Grund |
+| --- | --- | --- |
+| Abfuhr: Tarif +0,05 $ „für einige Runden“ | +0,05 $ dauerhaft (bis zur nächsten Senkung), höchstens bis maxTariff | Thornes Erhöhungen sind sonst auch dauerhaft; ein befristeter Aufschlag bräuchte neuen Zustand im Spielstand. |
+| Bluff fliegt früher auf (Bahnanteil > 60 %) | > 60 % **je Runde**, aber Thorne zählt nur mit 35 % je Runde nach | Mit einer festen Prüfung hinge die Quote nur daran, ob jemand blufft (der bluffende Bot würde immer erwischt, der ehrliche nie). Die Stichprobe macht den Bluff zum Wagnis: zweimal Glück ≈ 42 %. |
+| Bluff-Quote 20–60 % | gemessen am Bluff-Bot (Variante *bluff*) | Der Standard-Bot hält sich an die Grenze, wenn es sich lohnt – riskiert ist dort oft gar kein Bluff. Seine Quote steht in Klammern. |
+| Gemeinschaft: Mindestmenge, wenn Mitglieder abspringen | feste Zusage 8.000 bbl je Runde (Jacobs Bahnfracht + Gemeinschaft) | Ohne neuen Zustand im Spielstand; 8.000 bbl ist zugleich das erste Druckmittel gegen Thorne. |
+| Crane: größere Einsätze | Gegendruck + Laune | Mit Laune allein ging Crane fast nie schief (6 %): Große Förderer haben fast immer 3 und mehr Punkte (Marktanteil, eigene Wege, voller Tank). Der Gegendruck macht wiederholtes Feilschen zum Wagnis. |
+| Brennan: Mindestmenge höher | bleibt 2.000 bbl (Fehlmenge teurer) | Mit 3.000–4.000 bbl zahlte der Standard-Bot in über 60 % der Verträge Strafe – Brennan fährt nur das, was über Bahn, Gespanne und Pipeline hinausgeht, und das schwankt stark. |
+| Bots nach Charakter: gierig auch Bluff, ausgewogen auch Brennan | gierig nur Gerücht und Crane, ausgewogen Thorne und Gemeinschaft | Thorne (mit oder ohne Bluff) kostete den gierigen Bot etwa 9.000 $ Imperium (300 Seeds): Mit billiger Bahn baut er die Pipeline nicht und zahlt später, wenn Thorne wieder erhöht. Mit Brennan dazu lag der Standard-Bot bei 71,1 % Kapitelziel und 43,9 % Siegen (Grenzen 70 / 40 %); mit Thorne + Gemeinschaft (alte Gründungsregel) bei 70,7 %. |
+| Spielstand-Format hochzählen | bleibt Format 22 | Kein neuer Zustand: Der längere Gerüchteschock rechnet aus der vorhandenen Runde, der Rückschlag liegt im vorhandenen Feld `rumours.shock`, Rabatt und Zusage der Gemeinschaft rechnen aus den Mitgliedern, Cranes Gegendruck aus `clearedRound`. |
+
+## Kapitel-1-Zielwerte (npm run bots, 1.000 Partien je Strategie)
+
+Alle 15 Zielwerte im Rahmen, keiner nachgezogen – aber zwei liegen knapp unter der Grenze (Siegquote ausgewogen 39,6 %, Kapitelziel 69,2 %). Die Unterschiede kommen fast nur von den Karten, die die Bots jetzt spielen: Der Standard-Bot gewinnt mit Thorne und Gemeinschaft, der gierige verliert durch Gerüchte und Crane etwas, der vorsichtige bleibt gleich.
+
+| Kennzahl | vorher (0.4.20+4) | jetzt | Ziel |
+| --- | ---: | ---: | --- |
+| Höchste Siegquote (ausgewogen) | 35,6 % | 39,6 % | ≤ 40 % |
+| Pleitequote Standard-Bot | 0,2 % | 0,3 % | ≤ 15 % |
+| Pleitequote gierig | 4,5 % | 5,5 % | 3–45 % |
+| Ø Imperium vorsichtig ÷ bester Mutiger | 0,81 | 0,78 | ≤ 0,95 |
+| Kapitelziel Standard-Bot | 66,9 % | 69,2 % | 20–70 % |
+| Ø Imperium vorsichtig / gierig / ausgewogen | 90.992 / 106.313 / 112.063 $ | 91.392 / 102.133 / 116.676 $ | – |
+| Kleine Funde 50–500 bbl/Tag | 99,7 % | 99,6 % | 90–100 % |
+| Gusher ÷ kleiner Fund | 5,04 | 5,03 | 2–20 |
+| Gemessener Rückgang je Quartal | 12,3 % | 12,2 % | 8–15 % |
+| Blinde Wildcat-Bohrung (Rand, 300 m) | 14,5 % | 14,5 % | 5–25 % |
+| Ø Termine je Runde (Standard-Bot) | 5,00 | 5,00 | 4,5–5 |
+| Höchster Anteil eines Transportwegs | 41,6 % | 42,0 % | ≤ 75 % |
+| Pipeline in Partien mit Kapitelziel | 77,4 % | 73,1 % | ≤ 80 % |
+| Ausgebaute Quellen | 27,5 % | 26,9 % | 5–70 % |
+| Imperium mit ÷ ohne Ausbau | 1,20 | 1,21 | 1,02–10 |
+| „alles ausbauen“ schlägt den Standard-Bot | 20,4 % | 21,1 % | ≤ 50 % |
+
+Zwischenstände (je 1.000 Partien): gierig mit Thorne und Bluff, ausgewogen mit Thorne, Brennan und Gemeinschaft – Siegquote ausgewogen 43,9 %, Kapitelziel 71,1 %, Ø Imperium gierig 92.510 $; gierig nur Gerücht und Crane, ausgewogen Thorne und Gemeinschaft (alte Gründungsregel) – 39,6 % / 70,7 %.
+
+## Offen
+
+- **Knappe Zielwerte:** Siegquote ausgewogen 39,6 % und Kapitelziel 69,2 % liegen dicht an der Grenze – bei der Gesamt-Balance im Blick behalten (Hebel: Kapitelziel, Rabatt der Gemeinschaft, Thornes Senkungen).
+- **„Schlecht“ bei Brennan und Gemeinschaft** heißt: mindestens einmal Strafe gezahlt. Im Schnitt bleiben auch diese Verträge im Plus bzw. bei null (Ø schlecht +3.700 $ bzw. −20 $) – richtig weh tun Abfuhr bei Thorne, entlarvtes Gerücht, Abfuhr bei Crane und der verlustreiche Liefervertrag.
+- **Geldeffekte sind Schätzungen** (feste 8 Runden für Tarif- und Abschlagsänderungen, Brennan gegen das Mietfuhrwerk gerechnet). Der Imperiumsvergleich (priceGain, freightGain) ist das härtere Maß: Thorne allein bringt dem Standard-Bot dort kaum etwas (114.105 gegen 113.473 $), weil das Vorsprechen zwei Termine kostet, die sonst in Erkundung und Briefe gehen.
+- **Gieriger Bot und Thorne:** Mit billiger Bahn baut der gierige Bot die Pipeline nicht (`pipelineWorth` rechnet mit dem heutigen Tarif) – ein Bot-Problem, kein Regelproblem; deshalb spricht er nicht vor.
+- **Förderbremse** platzt weiter in 56 % der Pakte (Ziel 30–60 %) – unverändert gelassen.
+- `bots.targets` für die Karten (`priceGain`, `freightGain`, Bluff-Quote, Anteil schlechter Ausgänge je Karte) gibt es noch nicht; die Messung hier ist die Abnahme.
+
+## Spielstand
+
+Unverändert Format 22 (siehe Tabelle oben: kein neuer Zustand).
+
+---
+
+# Spielspaß-Durchgang: Weichen statt Alltagspost und Gesamt-Balance (0.4.20+6)
+
+Anlass: Ein Tester hat Kapitel 1 gespielt und fand die Briefe „komplett langweilig“. Philipps Vorgabe: **entweder wirklich relevante Briefe oder keine.** Die Beträge mit dem Geschäft wachsen zu lassen (Abschnitt „Briefe mit Gewicht“ oben) reicht dafür nicht – ein Brief, bei dem man zwischen 200 $ und 1.000 $ abwägt, bleibt Füllstoff. Der Abschnitt oben gilt weiter für die Regel `letterScale`, seine Messung beschreibt aber den Katalog vor dem Streichen.
+
+## Was jetzt anders ist (kurz)
+
+- **Kapitel 1 hat nur noch 16 Ereignisse plus die 5 festen Termine** (vorher 92). Eine Partie sieht davon etwa 10. Gestrichen sind alle Alltagsbriefe und Vorfälle (Meißel, Salz, Gas, Fieber, Steuer, Diebe, Kredite von Bank und Rourke …), die Dokumente (Pike, Hale), die Post (Witwe, Courier) und die Folgebriefe der Karten (Förderbremse, Händler, Gerücht, Bluff, Brennan, Gemeinschaft) – deren Folgen kommen seit dem Karten-Abschnitt direkt aus den Karten.
+- **Was bleibt, ist eine Weiche mit Folgen bis Kapitelende:**
+
+  | Weiche | Wann | Folgen |
+  | --- | --- | --- |
+  | Bullard im Saloon | Runde 2 | Handschlag (Bullard pachtet nicht neben Jacob) · Runde ausgeben (Wildcatter ziehen leichter mit) · stehen lassen (Fehde) |
+  | Thornes Frachtvertrag | nach dem ersten Besuch, spätestens Runde 4 | Exklusiv · Mengenrabatt · Ablehnung (wie bisher) |
+  | Thomas' Geburt | Geburtsrunde | Familie gegen Förderung; wirkt bis Kapitel 3 |
+  | Vales Umschlag | ab Runde 3, wenn die Kasse ≤ 500 $ ist | 1.500 $ Rettung – der Preis kommt in Kapitel 3 |
+  | Moss' Schulden / Versteigerung | Runde 5 (+2) | leihen: **Moss-Farm zur Pacht ohne Bonus, halber Förderzins** · Spottpreis: Farm ohne Förderzins, aber Pachten bis Kapitelende +10 % · ersteigern (3.000 $): Farm ohne Förderzins · wegbleiben: Pachten +10 % |
+  | Cranes Abschlag | Runde 6 | wie bisher (Abschlag, Verband, Treue) |
+  | Nora will ein Gespräch | Runde 7 | erzählen: Pachten −10 % · Bericht kaufen: −20 % · keine Zeit: +10 % (alles bis Kapitelende) |
+  | Silas' Abrechnung | Runde 8 | fair: **Silas bleibt Bohrmeister, Stahlgestänge geschenkt** · auskaufen: **Dampfmaschine geschenkt** · betrügen → „Silas redet“: nachzahlen oder Pachten +20 % bis Kapitelende |
+  | Ruth will ihren Namen auf dem Papier | Runde 10 | ja: **Bankrahmen +25 % bis Kapitelende** · später / nein: Ruth (wirkt bis Kapitel 3) |
+  | Cranes Übernahmeangebot | Runde 15 | verkaufen beendet das Kapitel |
+  | Wegerechte (Moss, Witwe am Bahndamm) | nur mit vermessener Pipeline | wie bisher |
+
+- **Neue Felder an einer Antwort** (`src/sim/weichen.ts`, Tests in `weichen.test.ts`): `lasting: true` (befristete Wirkungen gelten bis Kapitelende), `land: { figure, royalty }` (Pacht auf der Ranch einer Figur ohne Bonus), `rig: steam | rods` (Silas' Turm wird nachgerüstet). Die Simulation liest dazu `ruth_teilhaberin` (Bankrahmen × `weichen.ruthCredit`, nur Kapitel 1, nicht im Zeitsprung).
+- **Kapitel 2 und 3:** Folgeszenen, die nur auf gestrichene Kapitel-1-Merkzeichen warteten, sind entfernt (Eli, Kerrigan, Sheriff Tatum, Pike, Hales Seismik, Noras Bestechung, Daniels Akten zu Sheriff/Kerrigan/Pike und der Ausgang „entlastet“). Umgehängt: `ruth_buchhalterin` → `ruth_teilhaberin`, `silas_freund`/`silas_gedeckt` → `silas_fair`, `thomas_wort_*` → `geburt_*`, `nora_respekt` → `nora_interview`, `nora_beschwert` → `nora_kein_gespraech`. Ermittler-Spuren und Leumund (balance.yaml `investigation`) entsprechend gekürzt. Offen: Für einen Jacob, der Moss nie zum Feind gemacht hat, gibt es in Kapitel 3 keinen Weg mehr über Daniels Anwälte (`k3_daniel_angebot`, `k3_daniel_anklage` praktisch unerreichbar).
+
+## Gesamt-Balance Kapitel 1
+
+| Stellschraube | vorher | jetzt | Grund |
+| --- | --- | --- | --- |
+| Kapitelziel | 70.000 $ oder 6 Quellen | 95.000 $ oder 8 Quellen | Tiefe Funde und Karten machen Kapitel 1 reicher; mit dem alten Ziel bestand der Standard-Bot 78 % (Grenze 70 %). |
+| Pipeline bauen | 6.000 $ | 9.000 $ | Mit 6.000 $ lief in 79,8 % der erfolgreichen Partien eine Pipeline (Grenze 80 %); jetzt um 69 % – eine Wahl, kein Pflichtweg. |
+| Tiefe Stufen | 600 m 1.100 $ / 1 Runde, 900 m 1.400 $ / 2 Runden, Funde × 2 / × 3 | 1.800 $ / 2 Runden, 3.200 $ / 3 Runden, Funde × 2,5 / × 4 | Mit den billigen Stufen lohnte das Weiterbohren fast immer (Schwelle Ø 5 %, Geologe Ø 13 %); jetzt liegt die Schwelle um 9–10 % – eine echte Abwägung. |
+| Verwalter im Zeitsprung | plante jede Bohrung bis 900 m | höchstens bis 600 m (`timeskip.deepestStage`) | Mit 6.000 $ je geplanter Bohrung bohrte er kaum noch. |
+| Briefe `events.scale.ref` | 1.500 $ | 1.250 $ | Normale Briefe lagen bei 0,9 % des Imperiums. |
+| Crane feilschen, Laune −/0/+ | 35/45/20 % | 45/40/15 % | Feilschen ging nur in 18,6 % schief (Ziel 20–45 %). |
+| Bots: Karten | vorsichtig Liefervertrag + Gemeinschaft · gierig Gerücht + Crane · ausgewogen Thorne + Gemeinschaft | vorsichtig + Thorne · gierig + Brennan · ausgewogen Gemeinschaft (ohne Thorne) | Der ausgewogene Bot gewann 39–44 % der Seeds (Grenze 40 %). |
+| Bots: Tieferbohren gierig | 0,7 × Schwelle | 0,6 × Schwelle | Ohne die Alltagsbriefe ging der gierige Bot kaum noch pleite (Grenze ≥ 3 %). |
+
+**Kapitel-1-Zielwerte** (`npm run bots`, 1.000 Partien je Strategie): alle 15 im Rahmen. Höchste Siegquote 38,1 % (ausgewogen), Pleite Standard-Bot 0,3 %, Pleite gierig 3,3 % (knapp über 3 %), Kapitelziel Standard-Bot 63,9 %, Pipeline in Partien mit Kapitelziel 69,2 %, Ø Imperium vorsichtig / gierig / ausgewogen 97.705 / 117.677 / 128.821 $. Vor dem ganzen Durchgang (0.4.20+5): 35,6 % · 0,2 % · 4,5 % · 66,9 % · 77,4 % · 90.992 / 106.313 / 112.063 $. Die Zielwerte `standardGoal` (≤ 70 %) und `pipelineSuccess` (≤ 80 %) stehen wieder auf ihren alten Grenzen.
+
+**Messungen nach dem Streichen** (Blöcke oben neu geschrieben): Tieferbohren richtig in 26,9 % der Entscheidungen (Ziel 30–50 %, knapp darunter: Der Geologe ist bei hohen Chancen zu optimistisch, siehe Abschnitt Tieferbohren); Preis-Karten priceGain 1,077, Bluff erwischt 25,2 %. **Nicht erreicht:** `freightGain` liegt jetzt bei 1,00 (vorher 1,04) – ohne Alltagsbriefe nutzt der Standard-Bot seine Termine anders, und die zwei Termine für Thorne/Gemeinschaft kosten so viel, wie die Karten bringen; je Anwendung wirken die Fracht-Karten weiter spürbar (Thorne Ø +4.756 $, Gemeinschaft Ø +2.095 $). Brennan geht nur in 14 % schief, die Gemeinschaft in 47 % (Ziel je 20–45 %). Die Tarifsenkung je Partie liegt mit 0,17 $ über dem alten Etappe-2-Rahmen (0,05–0,15 $) – gewollt, die Senkungen sind seit dem Karten-Abschnitt größer.
+
+## Spielstand
+
+Unverändert Format 22: Die neuen Folgen stehen in vorhandenen Feldern (befristete Wirkungen, Pachten, Türme, Merkzeichen).

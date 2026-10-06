@@ -6,6 +6,8 @@
 import { useEffect, useRef } from 'react';
 import { drillBlocker, parcelActions, parcelOutlooks, paybackText, type DeskActionKind, type ParcelOutlook } from '../../sim/desk';
 import { deeperChance, deeperQuote, stageOutlook, wellOf, wellsOn, type StageOutlook, type Well } from '../../sim/drilling';
+import { deeperOutlook, deeperVerdict, type DeeperOutlook } from '../../sim/deeper';
+import { schwelleText } from '../deeperText';
 import { fieldLabel, fieldOf } from '../../sim/field';
 import { formatForecast, trueChance } from '../../sim/forecast';
 import type { GameState } from '../../sim/game';
@@ -217,6 +219,7 @@ export function RanchSheet({ game, parcel, debug, notice, stepText, onAction, on
             {well && (
               <p className={`state well ${well.status}`}>
                 <WellInfo game={game} well={well} />
+                {well.status === 'decision' && <DeeperBet outlook={deeperOutlook(game, balance, id)} />}
                 {debug && (
                   <>
                     <br />
@@ -339,6 +342,47 @@ function OutlookInfo({ outlooks }: { outlooks: ParcelOutlook[] }) {
         ))}
       </dl>
     </div>
+  );
+}
+
+const URTEIL = {
+  lohnt: 'eher weiterbohren',
+  knapp: 'ein knappes Spiel',
+  lohntNicht: 'eher aufgeben',
+} as const;
+
+/**
+ * Spielspaß K1 (Tieferbohren): die Wette zur Entscheidung „tiefer oder aufgeben?“ – was ein
+ * Fund in der nächsten Tiefe etwa brächte, der Einsatz samt Risiko und ab welcher Chance es
+ * sich lohnt. Alle Zahlen aus src/sim/deeper.ts.
+ */
+function DeeperBet({ outlook }: { outlook: DeeperOutlook | null }) {
+  if (!outlook) return null;
+  const urteil = deeperVerdict(outlook);
+  const faktor = balance.drilling.stages[outlook.stage - 1].findFactor;
+  return (
+    <span className="tiefer-wette">
+      <br />
+      {urteil === 'zuSpaet' ? (
+        <>Ein Fund in {outlook.depth}&nbsp;m käme zu spät: Bis Kapitelende brächte er die Kosten nicht mehr herein.</>
+      ) : (
+        <>
+          Ein Fund in {outlook.depth}&nbsp;m wäre {faktor > 1 ? <>etwa {faktor.toLocaleString('de-DE')}-mal so groß wie flach und brächte</> : 'brächte'} bis
+          Kapitelende rund {money(outlook.valueSmall)} als kleine Quelle, als Gusher rund {money(outlook.valueGusher)}
+          {outlook.valueGusher < outlook.valueSmall && ' – so viel Öl auf einmal drückt den Preis'}.
+          <br />
+          Einsatz {money(outlook.cost)}, dazu im Schnitt {money(outlook.risk)} für Unfall oder klemmendes Werkzeug.
+          <br />
+          <strong>Lohnt ab {schwelleText(outlook.breakEven)}</strong>
+          {outlook.chance !== null && urteil && (
+            <>
+              {' '}
+              (Geologe: {Math.round(outlook.chance * 100)}&nbsp;%) – {URTEIL[urteil]}.
+            </>
+          )}
+        </>
+      )}
+    </span>
   );
 }
 

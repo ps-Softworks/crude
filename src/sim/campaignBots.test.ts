@@ -113,7 +113,10 @@ describe('Kampagne spielen (Kapitel 1 → Sprung I → Kapitel 2 → Sprung II �
   });
 
   it('eine verfehlte Kapitelprüfung beendet die Kampagne nicht', () => {
-    const verfehlt = [r1, ...['bot-0', 'bot-3'].map((s) => playCampaign(s, balance, 'ausgewogen', catalog, texts))].find((r) => r.chapters.some((c) => c.result === 'verfehlt'));
+    // Spielspaß K1: Seit dem Tieferbohren mit Gewinnschwelle besteht der Standard-Bot Kapitel 1 öfter –
+    // darum ein unerreichbares Kapitelziel, statt auf einen Seed zu hoffen, der es verfehlt.
+    const streng = { ...balance, chapter: { ...balance.chapter, goalValue: 1e12, goalWells: 999 } };
+    const verfehlt = [r1, playCampaign('bot-0', streng, 'ausgewogen', catalog, texts)].find((r) => r.chapters.some((c) => c.result === 'verfehlt'));
     expect(verfehlt).toBeDefined();
     const i = verfehlt!.chapters.findIndex((c) => c.result === 'verfehlt');
     expect(i < verfehlt!.chapters.length - 1 || verfehlt!.survived).toBe(true);

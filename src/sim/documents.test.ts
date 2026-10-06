@@ -6,7 +6,7 @@ import { parseBalance } from './balance';
 import { checksLeft, deskDocument, forgeryFound, inspectField, isForged, rollDocument, type DocumentDef } from './documents';
 import { parseEventFile, parseEventFiles } from './eventContent';
 import { autoResolve, deskEvents, drawMail, resolveEvent, type EventChoice, type EventDef } from './events';
-import { endRound, newGame, type GameState } from './game';
+import { newGame, type GameState } from './game';
 import { Rng, seedFromString } from './rng';
 import { deserializeGame, SAVE_FORMAT, serializeGame } from './save';
 import { loadBalance, rawBalance } from './testBalance';
@@ -332,52 +332,10 @@ describe('Inhalte: Dokumente im YAML', () => {
     expect(parseEventFiles([{ file: 'a.yaml', text }]).errors).toEqual([]);
   });
 
-  it('die echten Inhalte haben eine Pachturkunde und ein Gutachten, jeweils mit teurer Folge', () => {
-    const alle = loadEvents();
-    const mitDok = alle.filter((e) => e.document);
-    expect(mitDok.map((e) => e.id)).toEqual(['dok_pike_urkunde', 'dok_hale_gutachten']);
-    for (const e of mitDok) {
-      expect(e.document!.fields.some((f) => f.forged)).toBe(true);
-      expect(e.choices.some((c) => c.requiresFound)).toBe(true);
-      const falsch = e.choices.flatMap((c) => c.marksIfForged ?? []);
-      expect(falsch.length).toBeGreaterThan(0);
-      // Jede Folge einer übersehenen Fälschung kostet in jeder Wahl Geld.
-      const folgen = alle.filter((f) => f.marked.some((m) => falsch.includes(m)));
-      expect(folgen.length).toBeGreaterThan(0);
-      for (const f of folgen) for (const c of f.choices) expect(c.effects.cash ?? 0).toBeLessThan(0);
-    }
-  });
-});
-
-describe('Fertig, wenn: eine übersehene Fälschung später spürbar Geld kostet', () => {
-  const inhalte = loadEvents().filter((e) => e.id.startsWith('dok_pike'));
-  const pike = inhalte.find((e) => e.id === 'dok_pike_urkunde')!;
-
-  /** Pikes Brief liegt im Posteingang; Jacob prüft nicht und kauft, oder lehnt ab. Danach 8 Runden. */
-  function partie(forgery: string | null, wahlId: string): GameState {
-    const s = newGame('faelschung', balance, inhalte);
-    let state: GameState = {
-      ...s,
-      events: { ...s.events, pending: [pike.id], seen: [pike.id], due: { [pike.id]: s.round + 2 }, docs: { [pike.id]: { forgery, checked: [] } } },
-    };
-    const r = resolveEvent(state, balance, inhalte, pike.id, wahlId);
-    if (!r.ok) throw new Error(r.reason);
-    state = r.state;
-    for (let i = 0; i < 8; i++) state = endRound(state, balance, inhalte);
-    return state;
-  }
-
-  it('Etappe 3: gefälschte Bohrliste gekauft – 300 $ weg und kein Hinweis; die echte wird ein Bohrbericht auf einer Ranch', () => {
-    const ohne = partie('parzelle', 'ablehnen');
-    const falsch = partie('parzelle', 'kaufen');
-    const echt = partie(null, 'kaufen');
-    expect(falsch.log.some((l) => l.includes('Pikes Bohrliste gegen das Bohrregister'))).toBe(true);
-    expect(echt.log.some((l) => l.includes('Pikes Bohrliste gehört zur Ranch'))).toBe(true);
-    const berichte = (s: GameState) => Object.values(s.knowledge ?? {}).filter((k) => k.clues.some((c) => c.kind === 'bohrbericht' && c.source === 'bericht')).length;
-    expect(berichte(echt)).toBe(berichte(ohne) + 1);
-    expect(berichte(falsch)).toBe(berichte(ohne));
-    // Kapitel 3 (Daniels Akte) liest weiter, dass Jacob eine gefälschte Urkunde gekauft hat.
-    expect(falsch.events.marks.pike_urkunde_falsch).toBeDefined();
+  // Spielspaß K1 (Weichen statt Alltagspost): Pikes Bohrliste und Hales Gutachten sind gestrichen – in den echten
+  // Inhalten gibt es kein Dokument mehr. Die Prüfung mit der Lupe bleibt als Werkzeug (Tests oben mit eigenen Inhalten).
+  it('die echten Inhalte haben derzeit kein Dokument, und jedes Dokument hätte ein fälschbares Feld', () => {
+    for (const e of loadEvents().filter((x) => x.document)) expect(e.document!.fields.some((f) => f.forged)).toBe(true);
   });
 });
 

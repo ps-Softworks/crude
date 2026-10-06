@@ -11,6 +11,7 @@ import {
   contractPrice,
   cranePoints,
   cranePressure,
+  craneResistance,
   exposeChance,
   foundCartel,
   haggleCrane,
@@ -19,6 +20,7 @@ import {
   newPricing,
   PRICING_MARKS,
   rumourShock,
+  rumourShockNow,
   settlePricing,
   settlePricingAfterMarket,
   spreadRumour,
@@ -285,8 +287,24 @@ describe('Gerüchte (Plan 2.2)', () => {
     const n = spreadRumour(s, nie, 'versiegen');
     expect(n.pricing.rumours.shock).toEqual({ round: s.round, value: PA.rumour.dry.shock });
     expect(marketMods(n, nie).shock).toBeCloseTo(1 + PA.rumour.dry.shock, 9);
+    // Spielspaß K1: Der Schock wirkt rumour.rounds Runden, danach nicht mehr.
+    expect(rumourShockNow({ ...n, round: s.round + PA.rumour.rounds - 1 }, nie)).toBeCloseTo(PA.rumour.dry.shock, 9);
+    expect(rumourShockNow({ ...n, round: s.round + PA.rumour.rounds }, nie)).toBe(0);
+    expect(rumourShockNow({ ...n, round: s.round - 1 }, nie)).toBe(0);
     const leer = spreadRumour({ ...s, oilStock: 1000 }, nie, 'versiegen');
     expect(leer.pricing.rumours.shock).toBeNull();
+  });
+
+  it('Spielspaß K1: „Quellen versiegen“ aufgeflogen – der Preis fällt sofort (backlash), nur eine Runde', () => {
+    const immer = mitPreis(balance, (p) => (p.rumour.exposed.base = 1));
+    const s = mitQuelle('geruecht-rueck', 8000, 12000);
+    const n = spreadRumour(s, immer, 'versiegen');
+    expect(n.pricing.rumours.exposedRound).toBe(s.round);
+    expect(n.pricing.rumours.shock).toEqual({ round: s.round, value: PA.rumour.exposed.backlash });
+    expect(marketMods(n, immer).shock).toBeCloseTo(1 + PA.rumour.exposed.backlash, 9);
+    expect(rumourShockNow({ ...n, round: s.round + 1 }, immer)).toBe(0);
+    expect(n.log.at(-1)).toMatch(/Preis fällt sofort/);
+    expect(n.pricing.cranePunish).not.toBeNull();
   });
 
   it('aufgeflogen: Nora verbrannt, Crane-Abschlag, Ruf −0,1; beim Bullard-Gerücht Fehde', () => {
@@ -302,6 +320,8 @@ describe('Gerüchte (Plan 2.2)', () => {
 });
 
 describe('Mit Crane feilschen (Plan 2.2)', () => {
+  /** Stufen wie im Plan: Cranes Laune neutral, kein Grund-Gegendruck (Spielspaß K1 kommt unten dazu). */
+  const PLAN = mitPreis(balance, (p) => ((p.crane.mood = { down: 0, up: 0 }), (p.crane.resistance = { ...p.crane.resistance, base: 0 })));
   it('ohne Druckmittel ist die Karte gesperrt – mit Grund', () => {
     const s = { ...mitQuelle('crane-null', 1000, 0), logistics: { ...newGame('x', balance).logistics } };
     expect(cranePressure(s, balance)).toBe(0);
@@ -319,7 +339,7 @@ describe('Mit Crane feilschen (Plan 2.2)', () => {
   it('1 Punkt: Abfuhr – der Abschlag kommt sofort und länger', () => {
     const s = mitQuelle('crane-eins', 1000, 12000);
     expect(cranePressure(s, balance)).toBe(1);
-    const n = haggleCrane(s, balance, true);
+    const n = haggleCrane(s, PLAN, true);
     expect(n.pricing.cranePunish?.until).toBe(s.round + balance.rivals.crane.cutRounds + PA.crane.rebuffExtra);
     expect(n.events.marks[PRICING_MARKS.supplicant]).toBe(s.round);
   });
@@ -328,7 +348,7 @@ describe('Mit Crane feilschen (Plan 2.2)', () => {
     const s0 = mitQuelle('crane-zwei', 1000, 12000);
     const s = { ...s0, logistics: { ...s0.logistics, teams: PA.crane.freightTeams, traderLast: s0.round }, events: { ...s0.events, marks: { ...s0.events.marks, [RIVAL_MARKS.craneCut]: s0.round } } };
     expect(cranePressure(s, balance)).toBe(2);
-    const n = haggleCrane(s, balance, true);
+    const n = haggleCrane(s, PLAN, true);
     expect(craneCut({ ...n, round: s.round + 1 }, balance)).toBe(0);
     expect(craneCut({ ...s, round: s.round + 1 }, balance)).toBeGreaterThan(0);
   });
@@ -336,12 +356,12 @@ describe('Mit Crane feilschen (Plan 2.2)', () => {
   it('ab 3 Punkten mit „angebot“: Aufschlag – Austritt aus der Förderbremse ist Verrat (Ruf −0,3)', () => {
     const s = mitBremse(mitQuelle('crane-drei', 1000, 12000));
     expect(cranePressure(s, balance)).toBeGreaterThanOrEqual(3);
-    const n = haggleCrane(s, balance, true);
+    const n = haggleCrane(s, PLAN, true);
     expect(n.pricing.cartel).toBeNull();
     expect(n.wildcatterStanding).toBeCloseTo(PA.standing.betrayal, 9);
     expect(jacobPrice({ ...n, round: s.round + 1 }, balance)).toBeCloseTo(n.postedPrice + PA.crane.deal.bonus, 9);
     // Ohne „angebot“ bleibt es bei Stufe 2: kein Verrat.
-    const treu = haggleCrane(s, balance, false);
+    const treu = haggleCrane(s, PLAN, false);
     expect(treu.pricing.cartel).not.toBeNull();
     expect(treu.wildcatterStanding).toBe(0);
   });
@@ -350,11 +370,44 @@ describe('Mit Crane feilschen (Plan 2.2)', () => {
     const s0 = mitBremse(mitQuelle('crane-vier', 1000, 12000));
     const s = { ...s0, events: { ...s0.events, marks: { ...s0.events.marks, [RIVAL_MARKS.alliance]: 1 } } };
     expect(cranePressure(s, balance)).toBeGreaterThanOrEqual(4);
-    const n = haggleCrane(s, balance, true);
+    const n = haggleCrane(s, PLAN, true);
     expect(n.pricing.contract).toMatchObject({ buyer: 'crane', price: Math.round((s.postedPrice + PA.crane.contract.premium) * 100) / 100 });
     expect(n.events.marks[RIVAL_MARKS.alliance]).toBeUndefined();
     const spaeter = { ...n, round: s.round + 1, postedPrice: 0.3 };
     expect(jacobPrice(spaeter, balance)).toBeCloseTo(n.pricing.contract!.price + PA.crane.deal.bonus, 9);
+  });
+
+  it('Spielspaß K1: Cranes Gegendruck (Grundwert, mehr nach frischem Nachgeben) und Laune zählen gegen die Punkte', () => {
+    const s0 = mitQuelle('crane-gegen', 1000, 12000);
+    const s = { ...s0, logistics: { ...s0.logistics, teams: PA.crane.freightTeams, traderLast: s0.round }, events: { ...s0.events, marks: { ...s0.events.marks, [RIVAL_MARKS.craneCut]: s0.round } } };
+    expect(cranePressure(s, balance)).toBe(2);
+    expect(craneResistance(s, balance)).toBe(PA.crane.resistance.base);
+    const frisch = { ...s, round: 10, pricing: { ...s.pricing, clearedRound: 9 } };
+    expect(craneResistance(frisch, balance)).toBe(PA.crane.resistance.base + PA.crane.resistance.recent);
+    expect(craneResistance({ ...frisch, round: 9 + PA.crane.resistance.rounds }, balance)).toBe(PA.crane.resistance.base);
+    // Laune neutral: 2 Punkte − 1 Gegendruck = 1 ⇒ Abfuhr mit verlängertem Abschlag.
+    const neutral = mitPreis(balance, (p) => (p.crane.mood = { down: 0, up: 0 }));
+    const n = haggleCrane(s, neutral, false);
+    expect(n.pricing.cranePunish?.until).toBe(s.round + balance.rivals.crane.cutRounds + PA.crane.rebuffExtra);
+    expect(n.log.at(-1)).toMatch(/Bittsteller/);
+    // Beste Laune (+1) gleicht den Gegendruck aus ⇒ Abschlag gestrichen; schlechte Laune (−1) ⇒ Abfuhr.
+    const gut = mitPreis(balance, (p) => (p.crane.mood = { down: 0, up: 1 }));
+    expect(craneCut({ ...haggleCrane(s, gut, false), round: s.round + 1 }, balance)).toBe(0);
+    const schlecht = mitPreis(balance, (p) => ((p.crane.mood = { down: 1, up: 0 }), (p.crane.resistance = { ...p.crane.resistance, base: 0 })));
+    expect(haggleCrane(s, schlecht, false).log.at(-1)).toMatch(/Bittsteller/);
+  });
+
+  it('Spielspaß K1: Cranes Laune würfelt aus dem eigenen Strang – gleicher Seed und Runde ⇒ gleiches Ergebnis, Weltzufall unberührt', () => {
+    const s = mitBremse(mitQuelle('crane-strang', 1000, 12000));
+    expect(haggleCrane(s, balance, false).log.at(-1)).toBe(haggleCrane(s, balance, false).log.at(-1));
+    expect(haggleCrane(s, balance, false).rng).toBe(s.rng);
+  });
+
+  it('Spielspaß K1: die Karte nennt Gegendruck, Laune und was die Abfuhr kostet', () => {
+    const s = mitQuelle('crane-text', 1000, 12000);
+    const text = planView(s, balance, katalog).cards.find((c) => c.id === 'crane_feilschen')?.detail ?? '';
+    expect(text).toMatch(/Gegendruck/);
+    expect(text).toMatch(/Abfuhr/);
   });
 });
 

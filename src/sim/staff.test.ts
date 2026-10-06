@@ -421,27 +421,20 @@ describe('Post nach Richtlinie', () => {
     expect(delegatedMail(s2, [nurBesuch])).toEqual([]);
   });
 
-  it('echte Briefe: Ruths Geburtstag und die Reporterin – keine geschenkte Kraft, kein Empfang ohne Jacob', () => {
-    // Etappe 3: Mutters Brief ist gestrichen – Ruths Zettel zum Geburtstag hat dieselbe Falle (Kraft nur mit Jacob).
+  it('echter Brief: die Reporterin – keine geschenkte Kraft, kein Empfang ohne Jacob', () => {
+    // Etappe 3: Mutters Brief ist gestrichen; Spielspaß K1 (Weichen statt Alltagspost): Ruths Geburtstag auch – es bleibt
+    // die Reporterin aus Kapitel 2.
     const katalog = loadEvents();
-    const mutter = katalog.find((e) => e.id === 'ruth_geburtstag')!;
     const reporterin = katalog.find((e) => e.id === 'k2_hitze_reporterin')!;
-    for (const event of [mutter, reporterin]) {
-      expect(event.mail).toBe('personal');
-      const basis = imPosteingang(mitRegel(mitPersonal([person('secretary', { competence: 5 })]), 'personal'), event.id);
-      const r = setMailSpendLimit({ ...basis, strength: 20 }, 1000);
-      if (!r.ok) throw new Error(r.reason);
-      const out = delegateMail(r.state, balance, [event]);
-      const eintrag = out.log.at(-1)!;
-      const gewaehlt = event.choices.find((c) => eintrag.includes(c.result.de))!;
-      expect(gewaehlt).toBeDefined();
-      expect(choiceCost(event, gewaehlt)).toBe(0);
-    }
-    // Ruth: „ausfahrt“ (Kraft +8, zwei Termine) bleibt Jacob vorbehalten.
-    const basis = imPosteingang(mitRegel(mitPersonal([person('secretary', { competence: 5 })]), 'personal'), 'ruth_geburtstag');
+    expect(reporterin.mail).toBe('personal');
+    const basis = imPosteingang(mitRegel(mitPersonal([person('secretary', { competence: 5 })]), 'personal'), reporterin.id);
     const r = setMailSpendLimit({ ...basis, strength: 20 }, 1000);
     if (!r.ok) throw new Error(r.reason);
-    expect(delegateMail(r.state, balance, [mutter]).strength).toBeLessThan(20 + 8);
+    const out = delegateMail(r.state, balance, [reporterin]);
+    const eintrag = out.log.at(-1)!;
+    const gewaehlt = reporterin.choices.find((c) => eintrag.includes(c.result.de))!;
+    expect(gewaehlt).toBeDefined();
+    expect(choiceCost(reporterin, gewaehlt)).toBe(0);
   });
 
   it('am Rundenende ersetzt das Vorzimmer die Standard-Antwort', () => {

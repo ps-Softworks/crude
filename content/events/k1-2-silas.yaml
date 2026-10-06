@@ -4,54 +4,20 @@
 # Silas hat Jacob den Bohrturm geliehen und soll dafür 30 % der ersten Quellen
 # bekommen. Der Bogen kommt in jeder Partie (certain: true):
 #
-#   Runde 2+  silas_schnaps     Das gerissene Seil – decken oder abziehen
-#   Runde 8+  silas_abrechnung  Die Abrechnung – fair beteiligen, auskaufen oder betrügen
-#   danach    silas_nachtschicht  (fair)        Silas hält Jacob den Rücken frei
-#             silas_abschied      (ausgekauft)  Silas zieht weiter
-#             silas_saloon        (betrogen)    Silas redet – doch noch zahlen oder
-#                                               ihn reden lassen (späterer Kronzeuge)
+#   Runde 8+  silas_abrechnung  Die Abrechnung – fair beteiligen (Silas bleibt Bohrmeister:
+#                               Stahlgestänge, halbes Risiko), auskaufen (der Turm mit
+#                               Dampfmaschine gehört Jacob) oder betrügen
+#   danach    silas_saloon      (betrogen) Silas redet – doch noch zahlen oder ihn reden
+#                               lassen (Pachten bis Kapitelende teurer, späterer Kronzeuge)
+#
+# Spielspaß K1 (Weichen statt Alltagspost): Das gerissene Seil, die Nachtschicht und der
+# Abschied sind gestrichen – die Folgen stehen jetzt direkt an der Abrechnung.
 #
 # Wie der Bogen ausgeht, liest content/arcs.yaml aus den Merkzeichen ab.
 # Merkzeichen für spätere Kapitel: silas_fair, silas_ausgekauft, silas_betrogen,
 # silas_versoehnt, silas_kronzeuge (Weltbibel: Freund oder Kronzeuge).
 
 # Entwurf – Philipp überarbeitet.
-- id: silas_schnaps
-  title:
-    de: Das gerissene Seil
-    en: The Snapped Cable
-  text:
-    de: >-
-      Bei Sonnenaufgang liegt Silas Brandt schnarchend neben dem Bohrturm, die
-      Flasche noch in der Hand. In der Nacht ist das Bohrseil gerissen, der Meißel
-      steckt unten im Loch. Die Männer stehen herum und schauen zu Jacob.
-    en: >-
-      At sunrise Silas Brandt lies snoring beside the derrick, bottle still in hand.
-      The drilling cable snapped in the night and the bit is stuck down the hole.
-      The men stand around and look at Jacob.
-  conditions: { minRound: 2, maxChapter: 1 }
-  certain: true
-  choices:
-    - id: decken
-      label: { de: "Den Schaden selbst zahlen und schweigen (120 $)", en: "Pay for the damage and say nothing (120 $)" }
-      result:
-        de: "Jacob bezahlt das neue Seil. Silas sagt kein Wort dazu, aber er ist von da an jeden Morgen als Erster am Turm. Der Turm läuft wie nie."
-        en: "Jacob pays for the new cable. Silas never says a word about it, but from then on he is the first at the derrick every morning. The derrick runs as never before."
-      requires: { minCash: 120 }
-      effects: { cash: -120, production: 0.1 }
-      marks: [silas_gedeckt]
-    - id: abziehen
-      label: { de: "Silas den Schaden von seinem Anteil abziehen", en: "Take the damage out of Silas's share" }
-      result:
-        de: "Silas zahlt. Vor den Männern nickt er nur – im Saloon erzählt er später, was für ein feiner Rechner sein Partner geworden ist. Am Turm erscheint er jetzt erst gegen Mittag."
-        en: "Silas pays. In front of the men he only nods – later, in the saloon, he tells everyone what a fine bookkeeper his partner has become. At the derrick he now turns up only around noon."
-      marks: [silas_gedemuetigt]
-      effects: { production: -0.1 }
-      default: true
-
-# Entwurf – Philipp überarbeitet.
-# Die Schlüsselentscheidung des Bogens. Ohne Antwort hält Jacob Silas hin – das
-# zählt als Betrug.
 - id: silas_abrechnung
   visitor: silas
   title:
@@ -72,31 +38,39 @@
   certain: true
   choices:
     - id: fair
-      label: { de: "Ihm 400 $ auf seinen Anteil zahlen und den Rest schriftlich machen", en: "Pay him 400 $ against his share and put the rest in writing" }
+      label: { de: "Ihm {cash} auf seinen Anteil zahlen und ihn als Bohrmeister behalten", en: "Pay him {cash} against his share and keep him on as driller" }
       result:
         de: >-
           Ruth setzt den Vertrag auf, Silas malt seinen Namen darunter, langsam wie
-          ein Schuljunge. Dann lacht er so laut, dass die Pferde scheuen.
+          ein Schuljunge. Dann lacht er so laut, dass die Pferde scheuen. Am nächsten
+          Morgen zieht er Stahlgestänge in seinen Turm: Unfälle und klemmendes Werkzeug
+          nur noch halb so oft.
         en: >-
           Ruth draws up the contract and Silas paints his name beneath it, slow as a
-          schoolboy. Then he laughs so loudly the horses shy.
-      requires: { minCash: 400 }
-      effects: { cash: -400 }
+          schoolboy. Then he laughs so loudly the horses shy. Next morning he fits steel
+          rods to his rig: accidents and stuck tools only half as often.
+      requires: { minCash: 500 }
+      effects: { cash: -500 }
+      rig: rods
       marks: [silas_fair]
     - id: auskaufen
-      label: { de: "Seinen Anteil für 1.000 $ ablösen – der Turm gehört dann Jacob", en: "Buy out his share for 1,000 $ – the rig is Jacob's from now on" }
+      label: { de: "Seinen Anteil für {cash} ablösen – der Turm samt Dampfmaschine gehört dann Jacob", en: "Buy out his share for {cash} – the rig and its steam engine are Jacob's" }
       result:
         de: >-
           Silas zählt die Scheine auf dem Fass. „Ist ehrliches Geld“, sagt er.
-          „Nur nicht so viel, wie es mal hätte werden können.“
+          „Nur nicht so viel, wie es mal hätte werden können.“ Die Dampfmaschine, die
+          er für den Turm bestellt hatte, lässt er stehen: Jacob bohrt billiger und
+          eine Runde schneller.
         en: >-
           Silas counts the bills on the barrel. "It's honest money," he says. "Just
-          not as much as it might have been."
+          not as much as it might have been." He leaves behind the steam engine he had
+          ordered for the rig: Jacob drills cheaper and a round faster.
       requires: { minCash: 1000 }
       effects: { cash: -1000 }
+      rig: steam
       marks: [silas_ausgekauft]
     - id: betruegen
-      label: { de: "Ihm Bücher zeigen, in denen kein Gewinn steht", en: "Show him books in which there is no profit" }
+      label: { de: "Ihm Bücher zeigen, in denen kein Gewinn steht – das Geld bleibt bei Jacob", en: "Show him books in which there is no profit – the money stays with Jacob" }
       result:
         de: >-
           Silas kann die Zahlen nicht lesen, aber er kann Jacobs Gesicht lesen. Er
@@ -108,82 +82,7 @@
       default: true
 
 # Entwurf – Philipp überarbeitet.
-# Nachwirkung (fair): Silas übernimmt die Nachtschicht – Jacob schläft wieder.
-- id: silas_nachtschicht
-  visitor: silas
-  title:
-    de: Silas übernimmt die Nacht
-    en: Silas Takes the Night
-  text:
-    de: >-
-      Silas kommt vom Turm herüber ins Büro, nüchtern und frisch rasiert. Er hat
-      aufgehört zu trinken, sagt er, jedenfalls unter der Woche. Dann nimmt er
-      Jacob den Stift aus der Hand: „Geh nach Hause, Junge. Den Turm halte ich,
-      du hältst deine Frau.“
-    en: >-
-      Silas comes over from the rig to the office, sober and freshly shaved. He
-      has stopped drinking, he says, at least on weekdays. Then he takes the pen
-      out of Jacob's hand: "Go home, boy. I'll hold the rig, you hold your wife."
-  marked: [silas_fair]
-  delay: 3
-  certain: true
-  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
-  choices:
-    - id: annehmen
-      label: { de: "Nach Hause gehen und schlafen", en: "Go home and sleep" }
-      result:
-        de: Jacob schläft zwei Nächte durch. Als er zurückkommt, ist das Loch zwanzig Fuß tiefer.
-        en: Jacob sleeps two nights through. When he comes back, the hole is twenty feet deeper.
-      effects: { strength: 15 }
-      appointments: 0
-      default: true
-    - id: einladen
-      label: { de: "Silas zum Sonntagsessen einladen", en: "Invite Silas to Sunday dinner" }
-      result:
-        de: "Silas bringt Thomas eine geschnitzte Bohrturm-Figur mit und erzählt Ruth Geschichten, die nur zur Hälfte gelogen sind. Seitdem hält er den Turm, als wäre es seiner."
-        en: "Silas brings Thomas a carved little derrick and tells Ruth stories that are only half lies. Since then he minds the derrick as if it were his own."
-      effects: { strength: 5, ruth: 8, production: 0.1 }
-      marks: [silas_freund]
-
-# Entwurf – Philipp überarbeitet.
-# Nachwirkung (ausgekauft): Silas zieht mit seinem Geld weiter nach Salt Hill.
-- id: silas_abschied
-  title:
-    de: Silas zieht weiter
-    en: Silas Moves On
-  text:
-    de: >-
-      Silas hat sich mit Jacobs Geld einen eigenen kleinen Turm am Salt Hill
-      gekauft. Morgen fährt er. Er steht mit seinem Bündel am Bahnsteig und tut so,
-      als warte er auf niemanden.
-    en: >-
-      Silas has bought himself a small rig of his own at Salt Hill with Jacob's
-      money. He leaves tomorrow. He stands on the platform with his bundle and
-      pretends he is waiting for nobody.
-  marked: [silas_ausgekauft]
-  delay: 2
-  certain: true
-  conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
-  choices:
-    - id: hingehen
-      label: { de: "Zum Bahnsteig gehen", en: "Go to the platform" }
-      result:
-        de: "Die beiden reden über das Wetter. Zum Abschied drückt Silas Jacob so fest, dass ihm die Rippen wehtun. Zum Schluss flüstert er Jacob den Namen eines Händlers am Hafen zu, der ein paar Cent mehr zahlt."
-        en: "The two of them talk about the weather. When they part, Silas hugs Jacob so hard his ribs ache. At the end he whispers the name of a dealer at the harbour who pays a few cents more."
-      effects: { strength: 5, price: 0.03 }
-      marks: [silas_abschied_gut]
-    - id: fernbleiben
-      label: { de: "Keine Zeit – der Turm läuft", en: "No time – the rig is running" }
-      result:
-        de: Der Zug fährt ohne Jacob auf dem Bahnsteig ab. Silas winkt trotzdem. Der Turm läuft in der Zeit eine Schicht länger.
-        en: The train leaves with no Jacob on the platform. Silas waves anyway. The derrick runs an extra shift meanwhile.
-      effects: { production: 0.05 }
-      appointments: 0
-      default: true
-
-# Entwurf – Philipp überarbeitet.
-# Nachwirkung (betrogen): Silas redet im Saloon. Letzte Chance, es geradezurücken –
-# sonst merkt sich das Spiel den späteren Kronzeugen (Weltbibel).
+# Nachwirkung (betrogen): Silas redet im Saloon.
 - id: silas_saloon
   title:
     de: Silas redet
@@ -203,7 +102,7 @@
   conditions: { maxChapter: 1 }   # sicheres Ereignis: nur Kapitel 1
   choices:
     - id: nachzahlen
-      label: { de: "Hingehen und ihm doch noch seinen Anteil zahlen (600 $)", en: "Go and pay him his share after all (600 $)" }
+      label: { de: "Hingehen und ihm doch noch seinen Anteil zahlen ({cash})", en: "Go and pay him his share after all ({cash})" }
       result:
         de: >-
           Silas steigt vom Stuhl und starrt auf das Geld. „Spät“, sagt er. Dann
@@ -211,18 +110,22 @@
         en: >-
           Silas climbs down from the chair and stares at the money. "Late," he says.
           Then he takes it anyway, and the story ends in mid-sentence.
-      requires: { minCash: 600 }
-      effects: { cash: -600 }
+      requires: { minCash: 800 }
+      effects: { cash: -800 }
       marks: [silas_versoehnt]
     - id: reden_lassen
       label: { de: "Ihn reden lassen – wer glaubt schon einem Säufer", en: "Let him talk – who believes a drunk" }
       result:
         de: >-
           Silas redet bis zur Sperrstunde. Die Frau mit dem Notizbuch schreibt
-          jedes Wort mit.
+          jedes Wort mit. Am Salt Hill weiß bald jeder Farmer, wie Harlan rechnet:
+          Pachten kosten bis Kapitelende ein Fünftel mehr.
         en: >-
           Silas talks until closing time. The woman with the notebook writes down
-          every word.
+          every word. Soon every farmer on Salt Hill knows how Harlan does his sums:
+          leases cost a fifth more until the end of the chapter.
       appointments: 0
+      effects: { leaseCost: 0.2 }
+      lasting: true
       marks: [silas_kronzeuge]
       default: true

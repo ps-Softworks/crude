@@ -2,6 +2,8 @@
 # Vorlage und Erklärung: docs/ereignis-vorlage.md
 # Das erste zinslose Geld „eines Freundes“ (Weltbibel, Mr. Vale). Kommt nur, wenn Jacob
 # knapp bei Kasse ist. Wer nicht antwortet, behält das Geld – die bequeme Falle.
+# Spielspaß K1 (Weichen statt Alltagspost): kommt sicher, sobald Jacob ab Runde 3 knapp ist, und rettet
+# ihn wirklich (1.500 $ fest) – der Preis kommt in Kapitel 3 (vale_geld, Ermittler).
 
 - id: vale_umschlag
   title:
@@ -9,26 +11,27 @@
     en: An Envelope Without a Sender
   text:
     de: >-
-      Auf Jacobs Tisch liegt ein Umschlag ohne Absender. Darin 500 $ in neuen
+      Auf Jacobs Tisch liegt ein Umschlag ohne Absender. Darin {cash:behalten} in neuen
       Scheinen und eine Karte: „Von einem Freund, der an Sie glaubt. Zinsen sind
       unter Freunden nicht nötig.“ Am Abend steht ein höflicher Herr im grauen
       Mantel vor der Pension und nickt Jacob zu, als kenne er ihn seit Jahren.
     en: >-
-      An envelope with no sender lies on Jacob's desk. Inside: 500 $ in new bills
+      An envelope with no sender lies on Jacob's desk. Inside: {cash:behalten} in new bills
       and a card – "From a friend who believes in you. Between friends, interest is
       unnecessary." That evening a polite gentleman in a grey coat stands outside
       the boarding house and nods to Jacob as if they had known each other for years.
   mail: offer       # Posteingang (2.4): ein Angebot, das als Brief kommt
   deadline: 1       # rotes Siegel: der Herr im grauen Mantel wartet nicht
-  conditions: { minRound: 3, maxCash: 400 }
-  chance: 0.5
+  conditions: { minRound: 3, maxCash: 500, maxChapter: 1 }
+  chance: 1
   choices:
     - id: behalten
-      label: { de: "Das Geld behalten", en: "Keep the money" }
+      label: { de: "Das Geld behalten – irgendwann will der Freund etwas dafür", en: "Keep the money – some day the friend will want something for it" }
       result:
-        de: Jacob bezahlt seine Rechnungen. Der Herr im grauen Mantel ist am nächsten Morgen fort.
-        en: Jacob pays his bills. The gentleman in the grey coat is gone the next morning.
-      effects: { cash: 500 }
+        de: Jacob bezahlt seine Rechnungen. Der Herr im grauen Mantel ist am nächsten Morgen fort. Im Hotelbuch steht ein Name, Mr. Vale, und Jacob vergisst ihn nicht.
+        en: Jacob pays his bills. The gentleman in the grey coat is gone the next morning. The hotel register has a name, Mr. Vale, and Jacob does not forget it.
+      effects: { cash: 1500 }
+      fixedCash: true
       marks: [vale_geld]
       default: true
     - id: zurueckgeben

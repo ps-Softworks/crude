@@ -33,7 +33,7 @@ import { FAMILY_TIMES, STANCES, type Balance, type FamilyTime, type Stance } fro
 import { formatDate } from './calendar';
 import { canGoPublic, chapterPassed } from './chapter';
 import { creditLimit, debt, headroom, loanRate, quarterInterestTotal, refreshRating, repay, takeLoan } from './credit';
-import { nextWellId, rollOilStage, stageCost, wellsOn, type Well } from './drilling';
+import { deepFindReserves, nextWellId, rollOilStage, stageCost, wellsOn, type Well } from './drilling';
 import { empireValue } from './empire';
 import type { ContentError } from './eventContent';
 import { drawEvents, marksIntoNextChapter, type EventDef } from './events';
@@ -435,18 +435,21 @@ function klemmen(value: number): number {
  * = Geologie), Optionen verfallen, gemietete Türme gehen zurück, offene Briefe sind erledigt.
  */
 function vorbereiten(state: GameState, balance: Balance): GameState {
+  // Spielspaß K1: Ein tiefer Fund vergrößert Vorrat von Ranch und Feld (deepFindReserves).
+  let lager: Pick<GameState, 'parcels' | 'fields'> = { parcels: state.parcels, fields: state.fields };
   const wells = state.wells.map((w): Well => {
     if (w.status !== 'drilling' && w.status !== 'decision' && w.status !== 'stuck') return w;
     if (w.oilStage === null) return { ...w, status: 'dry', roundsLeft: 0 };
     const parcel = state.parcels.find((p) => p.id === w.parcelId);
     const result = parcel?.geology === 'gusher' ? 'gusher' : 'small';
+    lager = deepFindReserves({ ...lager, wells: state.wells }, balance, w.parcelId, w.oilStage);
     return {
       ...w,
       status: 'found',
       stage: w.oilStage,
       roundsLeft: 0,
       result,
-      production: { initialRate: initialRate(balance, state, { parcelId: w.parcelId, result }), roundsProduced: 0, lastRate: 0, total: 0 },
+      production: { initialRate: initialRate(balance, lager, { parcelId: w.parcelId, result }), roundsProduced: 0, lastRate: 0, total: 0 },
     };
   });
   // Bullards laufende Bohrungen: Ergebnis = Geologie.
@@ -459,6 +462,7 @@ function vorbereiten(state: GameState, balance: Balance): GameState {
   });
   return {
     ...state,
+    ...lager,
     finished: false,
     ending: null,
     sick: 0,
@@ -973,7 +977,8 @@ function bohren(l: Lauf): void {
   const geliehen = kreditAnteil > 0 && bohrziele(l).length > 0 ? leihen(l, Math.floor((headroom(l.s, balance) * kreditAnteil) / 100) * 100) : 0;
   const budget = eigen + geliehen;
   const hoechstens = Math.max(1, Math.floor(t.maxNewWells[stance] * t.family.wells[family]));
-  const letzte = balance.drilling.stages.length;
+  // Spielspaß K1: höchstens bis timeskip.deepestStage – liegt das Öl tiefer, gibt der Verwalter die Bohrung auf.
+  const letzte = Math.min(t.deepestStage, balance.drilling.stages.length);
   const vollBohrung = bohrkosten(balance, letzte);
   let rest = budget;
   let ziele = bohrziele(l);
@@ -999,7 +1004,8 @@ function bohren(l: Lauf): void {
     if (rest < pacht + vollBohrung) continue;
     const auf = wellsOn(l.s, ziel.parcelId);
     const quelle = auf.find((w) => w.status === 'found');
-    const oilStage = quelle ? quelle.stage : rollOilStage(balance, parcel, l.rngBohren.float());
+    const gewuerfelt = quelle ? quelle.stage : rollOilStage(balance, parcel, l.rngBohren.float());
+    const oilStage = gewuerfelt !== null && gewuerfelt > letzte && !quelle ? null : gewuerfelt;
     const kosten = pacht + bohrkosten(balance, oilStage ?? letzte);
     rest -= kosten;
     const leases: Lease[] = terms
@@ -1009,6 +1015,8 @@ function bohren(l: Lauf): void {
         ]
       : l.s.leases.map((x) => (x.parcelId === ziel.parcelId && x.holder === 'jacob' ? { ...x, drilled: true } : x));
     const result = parcel.geology === 'gusher' ? 'gusher' : 'small';
+    // Spielspaß K1: Ein tiefer Fund vergrößert Vorrat von Ranch und Feld (deepFindReserves).
+    if (oilStage !== null) l.s = { ...l.s, ...deepFindReserves(l.s, balance, ziel.parcelId, oilStage) };
     const well: Well = {
       id: nextWellId(l.s, ziel.parcelId),
       parcelId: ziel.parcelId,

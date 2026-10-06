@@ -24,18 +24,20 @@ describe('Besucher am Schreibtisch', () => {
     const a = appearancesOf(events, figureCatalog);
     expect(a.silas_abrechnung).toEqual({ kind: 'visitor', figure: 'silas', name: 'Silas' });
     expect(a.moss_schulden).toMatchObject({ kind: 'visitor', figure: 'moss', name: 'Ezekiel Moss' });
-    expect(a.ruth_buecher).toMatchObject({ kind: 'visitor', figure: 'ruth' });
-    for (const id of ['thomas_geburt', 'brand_nachbar', 'blitz_tank', 'sturm_golf']) expect(a[id], id).toEqual({ kind: 'tableau' });
-    // Ein Brief bleibt ein Brief, ein Zettel ein Zettel.
-    expect(a.post_kurier).toBeUndefined();
-    expect(a.panne_meissel).toBeUndefined();
+    // Spielspaß K1 (Weichen statt Alltagspost): Ruths Quittungen, Feuer, Blitz und Sturm sind gestrichen.
+    expect(a.ruth_anteil).toMatchObject({ kind: 'visitor', figure: 'ruth' });
+    for (const id of ['thomas_geburt', 'k2_raffinerie_brand', 'k2_tankbrand_hafen']) expect(a[id], id).toEqual({ kind: 'tableau' });
+    // Ein Brief bleibt ein Brief.
+    expect(a.vale_umschlag).toBeUndefined();
+    expect(a.crane_abschlag).toBeUndefined();
   });
 
   it('wer nicht ins Büro kommt, ist kein Besuch, sondern ein Vorfall (0.2.15+11)', () => {
     const a = appearancesOf(events, figureCatalog);
     // Saloon, Bahnsteig, Veranda, Bohrturm, Bank: Der Text spielt woanders.
-    // Etappe 3: Prüfer Lusk ist gestrichen; Bullards Frage zur Förderbremse und Brennans Fuhrleute kommen als Brief.
-    for (const id of ['silas_schnaps', 'silas_abschied', 'silas_saloon', 'moss_wagenweg', 'moss_daniel_zorn', 'wegerecht_moss', 'bullard_saloon', 'bullard_treue', 'bank_kredit', 'fuhrleute_bestochen', 'nora_brand']) {
+    // Etappe 3: Prüfer Lusk ist gestrichen; Spielspaß K1 (Weichen statt Alltagspost): Seil, Abschied, Zaun, Daniel,
+    // Bank und Nora am Brand auch.
+    for (const id of ['silas_saloon', 'moss_versteigerung', 'wegerecht_moss', 'bullard_saloon']) {
       expect(events.some((e) => e.id === id), id).toBe(true);
       expect(a[id], id).toBeUndefined();
     }
@@ -58,7 +60,7 @@ describe('Besucher am Schreibtisch', () => {
   });
 
   it('holt den Nachsatz aus dem „result“ der gewählten Antwort', () => {
-    const e = events.find((x) => x.id === 'silas_schnaps')!;
+    const e = events.find((x) => x.id === 'silas_saloon')!;
     expect(resultText(events, e.id, e.choices[0].id)).toBe(e.choices[0].result.de);
     expect(resultText(events, e.id, 'gibt_es_nicht')).toBeNull();
   });

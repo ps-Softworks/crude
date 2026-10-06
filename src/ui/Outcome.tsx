@@ -4,6 +4,7 @@
 // Antwort bewirkt, entscheidet resolveEvent in src/sim.
 
 import type { GameState } from '../sim/game';
+import { balance } from './balance';
 import { events } from './events';
 import { barrels, moneyDelta } from './format';
 import { resultText } from './visitors';
@@ -22,7 +23,7 @@ export interface OutcomeData {
 export function outcomeOf(before: GameState, after: GameState, eventId: string, choiceId: string, title: string): OutcomeData {
   return {
     title,
-    text: resultText(events, eventId, choiceId) ?? '',
+    text: resultText(events, eventId, choiceId, before, balance) ?? '',
     cash: Math.round(after.cash - before.cash),
     oil: Math.floor(after.oilStock) - Math.floor(before.oilStock),
   };

@@ -1,5 +1,4 @@
-// Wiederholungsschutz, Variantengruppen und Entwürfe (2.10a) – und die 30
-// Alltagsereignisse für Kapitel 1 über viele Seeds.
+// Wiederholungsschutz, Variantengruppen und Entwürfe (2.10a) – und der echte Katalog über viele Seeds.
 import { describe, expect, it } from 'vitest';
 import type { Lease } from './lease';
 import type { Well } from './drilling';
@@ -11,16 +10,6 @@ import { loadBalance } from './testBalance';
 import { loadEvents } from './testEvents';
 
 const balance = loadBalance();
-
-/**
- * Die Alltagsereignisse 1–30 aus content/events/k1-8-alltag-1/2/3.yaml, die nach Etappe 3 (Briefe ausdünnen)
- * übrig sind: 13 gestrichen oder in andere hineingelegt (Bohrpannen, Sonntag, Sumpf, Kumpel, Sheriff …).
- */
-const ALLTAG = [
-  'panne_meissel', 'trupp_lohn', 'trupp_unfall', 'quelle_salzwasser', 'quelle_gas', 'brand_nachbar',
-  'fuhre_aufschlag', 'spekulant_angebot', 'bezirk_steuer', 'geruecht_fund', 'geruecht_tanks',
-  'geruecht_tarif', 'nora_interview', 'fieber', 'thomas_nacht', 'thomas_wort', 'ruth_geburtstag',
-];
 
 const t = (de: string) => ({ de, en: '' });
 
@@ -135,114 +124,25 @@ describe('Prüfprogramm: cooldown, group, draft (2.10a)', () => {
   });
 });
 
-describe('Alltagsereignisse 1–30 für Kapitel 1 (2.10a)', () => {
+// Spielspaß K1 (Weichen statt Alltagspost): Die Alltagsereignisse 1–67 (2.10a/b) sind gestrichen – Kapitel 1 hat nur noch
+// Weichen. Geprüft wird weiter, dass im ganzen Katalog nichts ungewollt wiederkommt.
+describe('Wiederholung im echten Katalog', () => {
   const katalog = loadEvents();
-  const neu = katalog.filter((e) => ALLTAG.includes(e.id));
   const quelle = { status: 'found' } as Well;
   const pacht = { holder: 'jacob' } as Lease;
-
-  it('nach Etappe 3 sind es 17, mit Schlüsselszenen als Entwurf und Wiederholungsschutz', () => {
-    expect(neu.length).toBe(17);
-    expect(neu.filter((e) => e.draft).length).toBeGreaterThanOrEqual(4);
-    expect(neu.filter((e) => !e.once).length).toBeGreaterThanOrEqual(5);
-    expect(new Set(neu.flatMap((e) => (e.group ? [e.group] : []))).size).toBeGreaterThanOrEqual(2);
-  });
 
   it('jedes wiederkehrende Ereignis im ganzen Katalog hat einen Abstand von mindestens einer Runde', () => {
     for (const e of katalog.filter((x) => !x.once && !x.routine)) expect(cooldownOf(e, balance), e.id).toBeGreaterThanOrEqual(1);
   });
 
-  // Etappe 3: Einige Ereignisse antworten auf Jacobs Pläne – in der Hälfte der Partien sind diese Merkzeichen gesetzt.
-  const plaene = [...new Set(neu.flatMap((e) => e.marked))].filter((m) => m !== 'thomas_geboren');
-
-  /** Eine Partie über 16 Runden in einer Lage, in der fast alles geht; Ankünfte mit Runde. */
-  function partie(seed: string, i: number): { id: string; round: number }[] {
-    const start = newGame(seed, balance, katalog);
-    const vorgeschichte = i % 2 === 0 ? Object.fromEntries(plaene.map((m) => [m, 1])) : {};
-    let state: GameState = { ...start, cash: 3000, oilStock: 800, wells: [quelle], leases: [pacht, pacht], events: { ...start.events, marks: { ...start.events.marks, ...vorgeschichte } } };
-    const out: { id: string; round: number }[] = [];
-    const merke = (s: GameState, vorher: Record<string, number>) => {
-      for (const [id, r] of Object.entries(s.events.lastSeen)) if (!id.startsWith('@') && r === s.round && vorher[id] !== r) out.push({ id, round: r });
-    };
-    merke(state, {});
-    for (let round = 2; round <= 16; round++) {
-      const marks = round >= 3 ? { ...state.events.marks, thomas_geboren: state.events.marks.thomas_geboren ?? 3 } : state.events.marks;
-      const vorher = state.events.lastSeen;
-      state = drawEvents(autoResolve({ ...state, round, cash: 3000, oilStock: 800, events: { ...state.events, marks } }, katalog), balance, katalog);
-      merke(state, vorher);
-      // Nie zweimal dasselbe Ereignis gleichzeitig auf dem Schreibtisch.
-      expect(new Set(state.events.pending).size).toBe(state.events.pending.length);
-    }
-    return out;
-  }
-
-  const SEEDS = Array.from({ length: 150 }, (_, i) => `wdh-${i}`);
-  const partien = SEEDS.map((seed, i) => partie(seed, i));
-
-  it('über viele Seeds keine ungewollte Wiederholung: einmalige nie doppelt, wiederkehrende und Varianten mit Abstand', () => {
-    const def = new Map(katalog.map((e) => [e.id, e]));
-    for (const ankunft of partien) {
-      const zuletzt = new Map<string, number>();
-      for (const { id, round } of ankunft) {
-        const e = def.get(id)!;
-        const vorher = zuletzt.get(id);
-        if (e.once) expect(vorher, `${id} kam zweimal`).toBeUndefined();
-        const abstand = cooldownOf(e, balance);
-        if (vorher !== undefined) expect(round - vorher, `${id} zu früh wieder`).toBeGreaterThanOrEqual(abstand);
-        if (e.group) {
-          const g = zuletzt.get(`@${e.group}`);
-          if (g !== undefined) expect(round - g, `Gruppe ${e.group} zu früh wieder (${id})`).toBeGreaterThanOrEqual(abstand);
-          zuletzt.set(`@${e.group}`, round);
-        }
-        zuletzt.set(id, round);
-      }
-    }
-  });
-
-  it('jedes der 17 Ereignisse kommt in manchen Partien vor, keins in allen', () => {
-    for (const e of neu) {
-      const anteil = partien.filter((p) => p.some((a) => a.id === e.id)).length / partien.length;
-      expect(anteil, e.id).toBeGreaterThan(0);
-      expect(anteil, e.id).toBeLessThan(1);
-    }
-  });
-});
-
-/** Die Alltagsereignisse 31–67 aus content/events/k1-8-alltag-4/5/6.yaml (2.10b), die nach Etappe 3 übrig sind (12 gestrichen oder hineingelegt). */
-const ALLTAG_2 = [
-  'bank_kredit', 'bank_tilgung', 'wucher_kredit', 'wucher_faellig', 'crane_vorkauf', 'bullard_seil', 'thorne_waggons', 'tilly_tank', 'pickett_pleite',
-  'streik', 'kerrigan_husten', 'eli_zurueck', 'eli_mutter', 'crabb_lager', 'blitz_tank', 'sturm_golf', 'torpedo', 'kind_grube', 'diebe_tank',
-  'ruth_anteil', 'ruth_schwester', 'thomas_taufe', 'nora_artikel', 'wahl_spende', 'liga_petition',
-];
-
-describe('Alltagsereignisse 31–67 für Kapitel 1 (2.10b)', () => {
-  const katalog = loadEvents();
-  const neu = katalog.filter((e) => ALLTAG_2.includes(e.id));
-  const quelle = { status: 'found' } as Well;
-  const pacht = { holder: 'jacob' } as Lease;
-
-  it('zusammen mit Teil 1 sind es nach Etappe 3 noch 42 Alltagsereignisse (vorher 67), mit Schlüsselszenen als Entwurf', () => {
-    expect(neu.length).toBe(ALLTAG_2.length);
-    const alle = katalog.filter((e) => ALLTAG.includes(e.id) || ALLTAG_2.includes(e.id));
-    expect(alle.length).toBe(42);
-    expect(neu.filter((e) => e.draft).length).toBeGreaterThanOrEqual(4);
-  });
-
-  it('keine Dopplung mit Teil 1 oder dem übrigen Katalog: eigene Titel', () => {
-    const andere = new Set(katalog.filter((e) => !ALLTAG_2.includes(e.id)).map((e) => e.title.de));
-    for (const e of neu) expect(andere.has(e.title.de), e.id).toBe(false);
-    expect(new Set(neu.map((e) => e.title.de)).size).toBe(neu.length);
-  });
-
-  // Merkzeichen, auf die die neuen Ereignisse warten – in der Hälfte der Partien gleich gesetzt,
-  // damit auch die Folge-Ereignisse vorkommen (sonst wählt der Test immer nur die Standard-Wahl).
-  const merkzeichen = [...new Set(neu.flatMap((e) => e.marked))].filter((m) => m !== 'thomas_geboren');
+  // Merkzeichen, auf die Kapitel-1-Ereignisse warten – in der Hälfte der Partien gleich gesetzt.
+  const merkzeichen = [...new Set(katalog.filter((e) => (e.conditions.minChapter ?? 1) <= 1).flatMap((e) => e.marked))].filter((m) => m !== 'thomas_geboren');
 
   /** Eine Partie über 16 Runden; Variante je Seed: viel oder wenig Geld, mit oder ohne Vorgeschichte. */
   function partie(i: number): { id: string; round: number }[] {
     const cash = i % 2 === 0 ? 3000 : 350;
     const vorgeschichte = i % 4 < 2 ? Object.fromEntries(merkzeichen.map((m) => [m, 1])) : {};
-    const start = newGame(`wdh2-${i}`, balance, katalog);
+    const start = newGame(`wdh-${i}`, balance, katalog);
     let state: GameState = { ...start, cash, oilStock: 800, wells: [quelle], leases: [pacht, pacht], events: { ...start.events, marks: { ...start.events.marks, ...vorgeschichte } } };
     const out: { id: string; round: number }[] = [];
     const merke = (s: GameState, vorher: Record<string, number>) => {
@@ -254,18 +154,17 @@ describe('Alltagsereignisse 31–67 für Kapitel 1 (2.10b)', () => {
       const vorher = state.events.lastSeen;
       state = drawEvents(autoResolve({ ...state, round, cash, oilStock: 800, events: { ...state.events, marks } }, katalog), balance, katalog);
       merke(state, vorher);
+      // Nie zweimal dasselbe Ereignis gleichzeitig auf dem Schreibtisch.
       expect(new Set(state.events.pending).size).toBe(state.events.pending.length);
     }
     return out;
   }
 
-  const partien = Array.from({ length: 200 }, (_, i) => partie(i));
-
-  it('über viele Seeds keine ungewollte Wiederholung im ganzen Katalog', () => {
+  it('über viele Seeds keine ungewollte Wiederholung: einmalige nie doppelt, wiederkehrende und Varianten mit Abstand', () => {
     const def = new Map(katalog.map((e) => [e.id, e]));
-    for (const ankunft of partien) {
+    for (let i = 0; i < 150; i++) {
       const zuletzt = new Map<string, number>();
-      for (const { id, round } of ankunft) {
+      for (const { id, round } of partie(i)) {
         const e = def.get(id)!;
         const vorher = zuletzt.get(id);
         if (e.once) expect(vorher, `${id} kam zweimal`).toBeUndefined();
@@ -279,23 +178,5 @@ describe('Alltagsereignisse 31–67 für Kapitel 1 (2.10b)', () => {
         zuletzt.set(id, round);
       }
     }
-  });
-
-  it('jedes dieser 25 Ereignisse kommt in manchen Partien vor, keins in allen', () => {
-    for (const e of neu) {
-      const anteil = partien.filter((p) => p.some((a) => a.id === e.id)).length / partien.length;
-      expect(anteil, e.id).toBeGreaterThan(0);
-      expect(anteil, e.id).toBeLessThan(1);
-    }
-  });
-
-  it('Etappe 3: Der Sheriff kommt mit den Dieben – Schutzgeld oder eigener Wächter; mit Eli als Wächter kommen keine Diebe', () => {
-    const diebe = katalog.find((e) => e.id === 'diebe_tank')!;
-    expect(diebe.group).toBe('tank');
-    expect(diebe.notMarked).toEqual(['eli_waechter']);
-    const marks = diebe.choices.flatMap((c) => c.marks);
-    expect(marks).toContain('sheriff_bezahlt');
-    expect(marks).toContain('sheriff_umgangen');
-    expect(katalog.some((e) => e.id === 'sheriff_schutz' || e.id === 'diebe_gefasst')).toBe(false);
   });
 });

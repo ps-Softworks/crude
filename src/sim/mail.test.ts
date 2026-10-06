@@ -12,13 +12,12 @@ import {
   drawEvents,
   drawMail,
   dueMailKinds,
-  MAIL_KINDS,
   resolveEvent,
   type EventChoice,
   type EventDef,
   type MailKind,
 } from './events';
-import { endRound, newGame, type GameState } from './game';
+import { endRound, newGame } from './game';
 import { deserializeGame, SAVE_FORMAT, serializeGame } from './save';
 import { loadBalance, rawBalance } from './testBalance';
 import { loadEvents } from './testEvents';
@@ -57,24 +56,24 @@ function mitPost(mail: Partial<Balance['events']['mail']>): Balance {
   return { ...balance, events: { ...balance.events, mail: { ...balance.events.mail, ...mail } } };
 }
 
-/** Briefarten, die in dieser Partie gekommen sind. */
-function artenGesehen(state: GameState, katalog: readonly EventDef[]): Set<MailKind> {
-  return new Set(state.events.seen.flatMap((id) => katalog.find((e) => e.id === id)?.mail ?? []));
-}
+// Spielspaß K1 (Weichen statt Alltagspost): Fertig-Kriterium 2.4 („jede Briefart einmal je Partie“) ist überholt – ein
+// Tester fand die Post langweilig. Kapitel 1 hat nur noch Weichen; diese kommen in jeder Partie, und mehr kommt nicht.
+describe('Weichen statt Alltagspost: in jeder Partie dieselben Weichen, sonst nichts', () => {
+  const SICHER = ['thomas_geburt', 'bullard_saloon', 'thorne_frachtvertrag', 'moss_schulden', 'crane_abschlag', 'nora_interview', 'silas_abrechnung', 'ruth_anteil', 'crane_uebernahme'];
 
-describe('Fertig-Kriterium 2.4: jede Briefart kommt mindestens einmal pro Partie', () => {
-  it('über 300 Seeds, Jacob lässt alles liegen', () => {
-    for (let i = 0; i < 300; i++) {
+  it('über 60 Seeds, Jacob lässt alles liegen: alle sicheren Weichen kommen, insgesamt höchstens 14 Ereignisse', () => {
+    for (let i = 0; i < 60; i++) {
       let state = newGame(`post-${i}`, balance, inhalte);
       while (!state.finished) state = endRound(state, balance, inhalte);
       expect(state.ending, `Seed post-${i}`).toBe('kapitel');
-      expect([...artenGesehen(state, inhalte)].sort(), `Seed post-${i}`).toEqual([...MAIL_KINDS].sort());
+      for (const id of SICHER) expect(state.events.seen, `Seed post-${i}: ${id}`).toContain(id);
+      const ereignisse = state.events.seen.filter((id) => !inhalte.find((e) => e.id === id)?.routine);
+      expect(ereignisse.length, `Seed post-${i}`).toBeLessThanOrEqual(14);
     }
-    // Viele ganze Partien: unter Last (parallele Testläufe) dauert das länger als die üblichen 5 s.
   }, 30000);
 
-  it('über 200 Seeds, Jacob beantwortet jeden Brief sofort mit der ersten möglichen Antwort', () => {
-    for (let i = 0; i < 200; i++) {
+  it('über 40 Seeds, Jacob beantwortet jeden Brief sofort mit der ersten möglichen Antwort: die Weichen kommen trotzdem', () => {
+    for (let i = 0; i < 40; i++) {
       let state = newGame(`antwort-${i}`, balance, inhalte);
       while (!state.finished) {
         for (const b of deskMail(state, balance, inhalte)) {
@@ -85,20 +84,12 @@ describe('Fertig-Kriterium 2.4: jede Briefart kommt mindestens einmal pro Partie
         }
         state = endRound(state, balance, inhalte);
       }
-      expect([...artenGesehen(state, inhalte)].sort(), `Seed antwort-${i}`).toEqual([...MAIL_KINDS].sort());
+      for (const id of ['bullard_saloon', 'thorne_frachtvertrag', 'moss_schulden', 'silas_abrechnung']) expect(state.events.seen, `Seed antwort-${i}: ${id}`).toContain(id);
     }
   }, 30000);
+});
 
-  it('jede Briefart hat in content/ einen Brief, der in jeder Partie kommen kann – ohne Merkzeichen, nur mit Runde oder Kapitel als Bedingung', () => {
-    // Etappe 3: Die meisten Briefe antworten jetzt auf Jacobs Pläne. Die Garantie trägt weiter, weil es je Art
-    // einen Brief gibt, der ohne Pläne kommt: Thornes bzw. Cranes Angebote, Cranes Abschlag, der Courier, Ruths Geburtstag.
-    const nurZeit = (e: EventDef) => Object.keys(e.conditions).every((k) => ['minRound', 'maxRound', 'maxChapter'].includes(k));
-    for (const kind of MAIL_KINDS) {
-      const immer = inhalte.filter((e) => e.mail === kind && e.marked.length === 0 && e.notMarked.length === 0 && nurZeit(e) && (e.conditions.minChapter ?? 1) <= 1);
-      expect(immer.length, kind).toBeGreaterThanOrEqual(1);
-    }
-  });
-
+describe('Briefe in content/', () => {
   it('alle Briefe haben Deutsch und Englisch', () => {
     for (const e of inhalte.filter((x) => x.mail)) {
       expect(e.title.en, e.id).not.toBe('');

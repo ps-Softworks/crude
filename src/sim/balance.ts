@@ -130,6 +130,13 @@ export interface ForecastBalance {
   /** Bandbreiten und Grenzen werden auf dieses Raster gerundet (z. B. 5 %). */
   rounding: number;
   geologist: Geologist;
+  /**
+   * Spielspaß K1 (Tieferbohren): Prognose für die nächste Stufe nach einer trockenen. Das
+   * Bohrklein verrät mehr – der Fehler ist relativ (± error × Chance), die Bandbreite
+   * width × Mitte, gerundet auf rounding Prozentpunkte. So bleibt die Schätzung auch bei
+   * kleinen Chancen ehrlich (keine an 0 % abgeschnittene breite Spanne).
+   */
+  deeper: { error: number; width: number; rounding: number };
 }
 
 export interface LeaseBalance {
@@ -162,6 +169,11 @@ export interface DrillStage {
   accident: number;
   /** Chance, dass das Werkzeug klemmt. */
   stuck: number;
+  /**
+   * Spielspaß K1 (Tieferbohren): So viel größer ist ein Fund in dieser Tiefe – Vorrat und
+   * damit Anfangsrate der Ranch mal diesem Faktor (Stufe 1 = 1).
+   */
+  findFactor: number;
 }
 
 /**
@@ -384,6 +396,8 @@ export interface TimeskipBalance {
   expand: Record<Stance, number>;
   /** $ je erschlossenem Bezirk. */
   expandCost: number;
+  /** So tief bohrt der Verwalter höchstens (Stufe, ab 1); liegt das Öl tiefer, gibt er die Bohrung auf. */
+  deepestStage: number;
   upkeepPerWell: number;
   /**
    * 0.4.19+3: Deckel für die Bohrungen des Verwalters – höchstens so viele neue Quellen je Sprung wie vorher
@@ -498,6 +512,12 @@ export interface BotsBalance {
    * im Notfall (nur trockene Löcher, kein Land) bis emergencyDebtShare.
    */
   balanced: { minChance: number; cashReserve: number; maxStage: number; maxDebtShare: number; emergencyDebtShare: number; maxUndrilled: number };
+  /**
+   * Spielspaß K1 (Tieferbohren): Die planenden Bots bohren tiefer, wenn die Chance des
+   * Geologen mindestens Schwelle × Faktor ist (Schwelle = deeperOutlook.breakEven):
+   * vorsichtig nur klar darüber, gierig auch knapp darunter, ausgewogen ab der Schwelle.
+   */
+  deeper: Record<'cautious' | 'greedy' | 'balanced', number>;
   /** Tage je Runde (Quartal) – für die Anfangsrate in bbl/Tag. */
   daysPerRound: number;
   /** Wie die Bots Ereignisse bewerten (2.15). */
@@ -944,6 +964,8 @@ export interface Balance {
   botPlans: Record<'cautious' | 'greedy' | 'balanced', BotPlans>;
   /** Gekoppelte Briefe (Etappe 3, src/sim/letters.ts). */
   letters: LettersBalance;
+  /** Weichen statt Alltagspost (Spielspaß K1, src/sim/weichen.ts). */
+  weichen: { ruthCredit: number };
   drilling: DrillingBalance;
   production: ProductionBalance;
   market: MarketBalance;
@@ -993,8 +1015,6 @@ export interface TutorialBalance {
   lastRound: number;
   /** Die Hinweise enden, sobald eine eigene Quelle so viele Runden gefördert hat (2 = nach der ersten Verkaufsrunde). */
   endAfterProducedRounds: number;
-  /** Tiefer bohren rät der Hinweis nur, wenn der Geologe der nächsten Stufe mindestens so viel % gibt. */
-  deeperMinChance: number;
   /** So viele $ Pacht ist dem Hinweis ein Prozentpunkt Schätzung wert (teure Pacht nur, wenn sie deutlich besser aussieht). */
   dollarsPerPoint: number;
   /** Kredite, die der Hinweis vorschlägt, werden auf so viele $ aufgerundet. */
@@ -1078,18 +1098,34 @@ export interface EventsBalance {
   timedRounds: number;
   /** Prüfung schwacher Antworten (0.2.15+3, tools/ereignisWirkung.ts). */
   relevance: RelevanceBalance;
+  /** Spielspaß-Durchgang: Geld in Ereignis-Antworten wächst in Kapitel 1 mit Jacobs Geschäft (src/sim/letterScale.ts). */
+  scale: LetterScaleBalance;
+}
+
+/** Briefe mit Gewicht (Spielspaß-Durchgang, Kapitel 1): Faktor = Erlös je Runde ÷ ref, zwischen 1 und max. */
+export interface LetterScaleBalance {
+  /** Erlös je Runde in $, bis zu dem die Beträge so bleiben, wie sie in content/events stehen. */
+  ref: number;
+  /** Höchster Faktor. */
+  max: number;
+  /** Über so viele Runden wird der Posted Price gemittelt (glättet Preissprünge). */
+  rounds: number;
 }
 
 /** Ab wann eine Ereignis-Antwort als spürbar gilt (0.2.15+3). */
 export interface RelevanceBalance {
-  /** Typisches Geld eines Kapitels in $ – Bezugsgröße für die Schwelle. */
+  /** Typisches Geld in Kapitel 1 in $ – Bezugsgröße für die Schwelle. */
   chapterMoney: number;
+  /** Bezugsgröße für Ereignisse späterer Kapitel, bis Kapitel 2/3 eigene Balance haben. */
+  laterChapterMoney: number;
   /** Anteil davon, ab dem eine Wirkung spürbar ist (0,02 = 2 %). */
   minShare: number;
   /** Typische Barrel, die Jacob je Runde verkauft – um Preis, Förderung und Tarif in $ umzurechnen. */
   refBarrels: number;
   /** Typischer Pachtbonus in $, den Jacob in timedRounds Runden zahlt – für leaseCost. */
   refLeaseSpend: number;
+  /** Briefe mit Gewicht: typischer Faktor der Kapitel-1-Geldbeträge zur Kapitelmitte (events.scale, gemessen mit tools/briefGewicht.ts). */
+  letterScale: number;
 }
 
 /** Einfache Dokumentenprüfung (2.5, GDD §3). */
@@ -1158,6 +1194,18 @@ function positiveInt(obj: unknown, path: string): number {
   return value;
 }
 
+function positiveNumber(obj: unknown, path: string): number {
+  const value = num(obj, path);
+  if (!(value > 0)) throw new BalanceError(`balance.yaml: "${path}" muss größer als 0 sein`);
+  return value;
+}
+
+function atLeastOne(obj: unknown, path: string): number {
+  const value = num(obj, path);
+  if (!(value >= 1)) throw new BalanceError(`balance.yaml: "${path}" muss mindestens 1 sein`);
+  return value;
+}
+
 function share(obj: unknown, path: string): number {
   const value = num(obj, path);
   if (value < 0 || value > 1) {
@@ -1201,6 +1249,11 @@ function parseForecast(raw: unknown): ForecastBalance {
     geologist: {
       accuracy: integerInRange(raw, 'forecast.geologist.accuracy', 1, 5),
       bias,
+    },
+    deeper: {
+      error: share(raw, 'forecast.deeper.error'),
+      width: share(raw, 'forecast.deeper.width'),
+      rounding: positiveInt(raw, 'forecast.deeper.rounding'),
     },
   };
 }
@@ -1297,7 +1350,11 @@ function parseDrilling(raw: unknown): DrillingBalance {
       oilShare: share(raw, `${path}.oilShare`),
       accident: share(raw, `${path}.accident`),
       stuck: share(raw, `${path}.stuck`),
+      findFactor: num(raw, `${path}.findFactor`),
     };
+    if (stage.findFactor < 1) {
+      throw new BalanceError(`balance.yaml: Bohrstufe ${i + 1} – findFactor muss mindestens 1 sein`);
+    }
     if (stage.accident + stage.stuck > 1) {
       throw new BalanceError(`balance.yaml: Bohrstufe ${i + 1} – accident + stuck ist größer als 1`);
     }
@@ -1313,6 +1370,9 @@ function parseDrilling(raw: unknown): DrillingBalance {
     }
     if (stages[i].accident <= stages[i - 1].accident) {
       throw new BalanceError('balance.yaml: Unfall-Chance muss mit jeder Stufe steigen');
+    }
+    if (stages[i].findFactor < stages[i - 1].findFactor) {
+      throw new BalanceError('balance.yaml: findFactor darf mit der Tiefe nicht sinken');
     }
   }
   const accidentCost = num(raw, 'drilling.accidentCost');
@@ -1726,6 +1786,7 @@ function parseTimeskip(raw: unknown): TimeskipBalance {
     maxNewWells: jeHaltung('maxNewWells', positiveInt),
     expand: jeHaltung('expand', nonNegativeInt),
     expandCost: nonNegative(raw, p('expandCost')),
+    deepestStage: positiveInt(raw, p('deepestStage')),
     weakStart: { wells: nonNegativeInt(raw, p('weakStart.wells')), value2: nonNegative(raw, p('weakStart.value2')), value3: nonNegative(raw, p('weakStart.value3')) },
     upkeepPerWell: nonNegative(raw, p('upkeepPerWell')),
     manager: { minNewWells: nonNegativeInt(raw, p('manager.minNewWells')), minRate: nonNegative(raw, p('manager.minRate')) },
@@ -1811,6 +1872,11 @@ function parseBots(raw: unknown): BotsBalance {
       maxDebtShare: share(raw, 'bots.balanced.maxDebtShare'),
       emergencyDebtShare: share(raw, 'bots.balanced.emergencyDebtShare'),
       maxUndrilled: positiveInt(raw, 'bots.balanced.maxUndrilled'),
+    },
+    deeper: {
+      cautious: nonNegative(raw, 'bots.deeper.cautious'),
+      greedy: nonNegative(raw, 'bots.deeper.greedy'),
+      balanced: nonNegative(raw, 'bots.deeper.balanced'),
     },
     daysPerRound: positiveInt(raw, 'bots.daysPerRound'),
     events: {
@@ -1959,7 +2025,6 @@ function parseTutorial(raw: unknown): TutorialBalance {
   return {
     lastRound: positiveInt(raw, 'tutorial.lastRound'),
     endAfterProducedRounds: positiveInt(raw, 'tutorial.endAfterProducedRounds'),
-    deeperMinChance: integerInRange(raw, 'tutorial.deeperMinChance', 0, 100),
     dollarsPerPoint: positiveInt(raw, 'tutorial.dollarsPerPoint'),
     loanRounding: positiveInt(raw, 'tutorial.loanRounding'),
     exploreBelow: nonNegative(raw, 'tutorial.exploreBelow'),
@@ -2007,9 +2072,16 @@ function parseEvents(raw: unknown): EventsBalance {
     timedRounds: positiveInt(raw, 'events.timedRounds'),
     relevance: {
       chapterMoney: nonNegative(raw, 'events.relevance.chapterMoney'),
+      laterChapterMoney: nonNegative(raw, 'events.relevance.laterChapterMoney'),
       minShare: share(raw, 'events.relevance.minShare'),
       refBarrels: nonNegative(raw, 'events.relevance.refBarrels'),
       refLeaseSpend: nonNegative(raw, 'events.relevance.refLeaseSpend'),
+      letterScale: atLeastOne(raw, 'events.relevance.letterScale'),
+    },
+    scale: {
+      ref: positiveNumber(raw, 'events.scale.ref'),
+      max: atLeastOne(raw, 'events.scale.max'),
+      rounds: positiveInt(raw, 'events.scale.rounds'),
     },
   };
 }
@@ -2477,6 +2549,7 @@ export function parseBalance(raw: unknown): Balance {
     freight: parseFreightBalance(raw),
     botPlans: parseBotPlans(raw),
     letters: parseLettersBalance(raw),
+    weichen: { ruthCredit: positiveNumber(raw, 'weichen.ruthCredit') },
     drilling: parseDrilling(raw),
     production: parseProduction(raw),
     market: parseMarket(raw),

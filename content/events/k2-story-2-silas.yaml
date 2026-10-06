@@ -166,7 +166,6 @@
       default: true
 
 # Entwurf – Philipp überarbeitet.
-# Ohne silas_gedeckt aus Kapitel 1. Mit: k2_silas_unfall_akte.
 - id: k2_silas_unfall
   rival: thorne
   title:
@@ -186,7 +185,6 @@
       "out of responsibility to the shareholders".
   conditions: { minChapter: 2, maxChapter: 2, minRound: 5, minPublicShare: 1 }
   marked: [silas_fair]
-  notMarked: [silas_gedeckt]
   delay: 0
   certain: true
   choices:
@@ -234,76 +232,6 @@
 
 # Entwurf – Philipp überarbeitet.
 # Mit silas_gedeckt aus Kapitel 1: Jacob zahlte damals das gerissene Seil und schwieg.
-- id: k2_silas_unfall_akte
-  rival: thorne
-  draft: true
-  title:
-    de: Pettibones Mappe
-    en: Pettibone's Folder
-  text:
-    de: >-
-      An Turm vier ist ein Gestänge gebrochen, ein junger Bohrarbeiter ist tot.
-      Silas hatte die Schicht und war nüchtern, sagen die Männer. Pettibone legt
-      eine Mappe auf den Ratstisch: die Quittung für ein Bohrseil, elf Jahre alt,
-      bar bezahlt von Jacob Harlan am Morgen nach einer Nacht, über die am Salt
-      Hill niemand redet. „Der Mann hat schon einmal getrunken, meine Herren. Und
-      Mr. Harlan hat es bezahlt.“
-    en: >-
-      A drill string has broken at rig four; a young driller is dead. Silas had the
-      shift and was sober, the men say. Pettibone lays a folder on the board table:
-      the receipt for a drilling cable, eleven years old, paid in cash by Jacob
-      Harlan the morning after a night nobody on Salt Hill talks about. "The man has
-      been drinking before, gentlemen. And Mr. Harlan paid for it."
-  conditions: { minChapter: 2, maxChapter: 2, minRound: 5, minPublicShare: 1 }
-  marked: [silas_fair, silas_gedeckt]
-  delay: 0
-  certain: true
-  choices:
-    - id: decken
-      label: { de: "Zu Silas stehen – auch zu dem Seil damals (3.500 $)", en: "Stand by Silas – and by the old cable too (3,500 $)" }
-      result:
-        de: >-
-          „Ich habe das Seil bezahlt, weil er es wert war“, sagt Jacob. „Er ist es
-          noch.“ Die Witwe bekommt eine Rente, der Rat einen Gutachter, der Silas
-          entlastet. Pettibone schließt die Mappe und behält sie.
-        en: >-
-          "I paid for the cable because he was worth it," Jacob says. "He still is."
-          The widow gets a pension, the board an expert who clears Silas. Pettibone
-          closes the folder and keeps it.
-      requires: { minCash: 3500 }
-      effects: { cash: -3500, boardLoyalty: { bankier: -15 }, trace: { severity: 1, label: "Seil von Salt Hill" } }
-      marks: [silas_geschuetzt]
-    - id: abberufen
-      label: { de: "Silas fallen lassen, bevor die Mappe Jacob trifft", en: "Drop Silas before the folder hits Jacob" }
-      result:
-        de: >-
-          Silas hört es von Pettibone, nicht von Jacob. Er räumt den Spind. Ganz
-          hinten liegt eine volle Flasche, unangebrochen. Er stellt sie Jacob auf den
-          Schreibtisch und geht.
-        en: >-
-          Silas hears it from Pettibone, not from Jacob. He clears his locker. Right
-          at the back is a full bottle, unopened. He sets it on Jacob's desk and
-          leaves.
-      effects: { boardLoyalty: { bankier: 10 }, reputation: { workers: -8 } }
-      marks: [silas_k2_geopfert]
-      default: true
-    - id: auszahlen
-      label: { de: "Ihm die Aktien abkaufen und die Mappe mitkaufen (10.000 $)", en: "Buy his shares and the folder with them (10,000 $)" }
-      result:
-        de: >-
-          Pettibone verkauft die Mappe nicht, aber er vergisst sie, als Silas' Aktien
-          bei Jacob liegen. Silas nimmt das Geld. „Jetzt hast du mich zweimal
-          bezahlt, Junge. Einmal hätte gereicht.“
-        en: >-
-          Pettibone doesn't sell the folder, but he forgets it once Silas's shares are
-          with Jacob. Silas takes the money. "Now you've paid for me twice, boy. Once
-          would have done."
-      requires: { minCash: 10000 }
-      effects: { cash: -10000, control: 3, boardLoyalty: { bankier: 5 } }
-      marks: [silas_k2_ausgezahlt]
-
-# Entwurf – Philipp überarbeitet.
-# Schlüsselszene (GDD: typische Falle – Thorne kauft sich über Strohmänner ein).
 - id: k2_silas_strohmann
   visitor: silas
   rival: thorne

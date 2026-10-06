@@ -1,0 +1,63 @@
+# Kapitel 1 – Weiche: Noras erstes Gespräch (Spielspaß K1, Weichen statt Alltagspost).
+# Entwurf von Claude, bitte in eigener Stimme umschreiben. Kommt in jeder Partie ab Runde 7;
+# was Jacob ihr erzählt, bestimmt bis Kapitelende, wie billig ihm die Farmer verpachten
+# (lasting, src/sim/weichen.ts), und wie Nora in Kapitel 2 über ihn schreibt.
+
+- id: nora_interview
+  visitor: nora
+  draft: true                # Schlüsselszene: Noras erstes Gespräch mit Jacob (Weltbibel: sie verfolgt seinen Aufstieg)
+  certain: true
+  conditions: { minRound: 7, maxChapter: 1 }
+  title:
+    de: Nora Whitlock will ein Gespräch
+    en: Nora Whitlock Wants an Interview
+  text:
+    de: >-
+      Nora Whitlock vom Port Ellis Courier hat ein Notizbuch und keine Eile. Am
+      Hafen redet man über den Neuen am Salt Hill, und die Farmer lesen den Courier,
+      bevor sie eine Pacht unterschreiben. Sie schreibt eine Reihe über „die neuen
+      Männer vom Salt Hill“. Ob Jacob ihr erzählen wolle, woher er kommt. Redakteur Bixby lässt
+      ausrichten, ein freundlicher „Bericht“ auf Seite zwei koste {cash:bericht}.
+    en: >-
+      Nora Whitlock of the Port Ellis Courier has a notebook and no hurry. At the
+      harbour they are talking about the new man on Salt Hill, and the farmers read
+      the Courier before they sign a lease. She's writing a series on "the new men of Salt Hill". Would
+      Jacob tell her where he comes from? Editor Bixby sends word that a friendly
+      "report" on page two costs {cash:bericht}.
+  choices:
+    - id: erzaehlen
+      public: [press_praise]
+      label: { de: "Von der Kohlengrube und dem Vater erzählen", en: "Tell her about the coal pit and his father" }
+      result:
+        de: Nora schreibt drei Seiten mit. Im Courier steht am Samstag ein Bergmannssohn, der es allen zeigen will. Die Leute am Hafen grüßen Jacob anders, und die Farmer verpachten ihm bis Kapitelende ein Zehntel billiger.
+        en: Nora fills three pages. On Saturday the Courier has a miner's son out to show them all. The men at the harbour greet Jacob differently, and the farmers lease to him a tenth cheaper until the end of the chapter.
+      effects: { strength: 2, leaseCost: -0.1 }
+      lasting: true
+      marks: [nora_interview]
+    - id: zahlen_nennen
+      label: { de: "Nur über Zahlen reden", en: "Talk only about numbers" }
+      result:
+        de: Nora schreibt Barrel und Dollar mit und klappt das Notizbuch zu. „Sie sind vorsichtig, Mr. Harlan. Das merke ich mir.“
+        en: Nora notes barrels and dollars and snaps the notebook shut. "You're careful, Mr. Harlan. I'll remember that."
+      marks: [nora_interview]
+    - id: bericht
+      public: [press_praise]
+      label: { de: "Lieber Bixby den Bericht abkaufen ({cash})", en: "Buy Bixby's report instead ({cash})" }
+      result:
+        de: "Auf Seite zwei steht, Jacob sei „ein Mann der Zukunft“. Nora Whitlock hat den Artikel ausgeschnitten und in ihr Notizbuch geklebt. Die Farmer am Hügel lesen ihn auch und verpachten an Jacob bis Kapitelende ein Fünftel billiger."
+        en: "Page two says Jacob is \"a man of the future\". Nora Whitlock has clipped the article and pasted it into her notebook. The farmers on the hill read it too and lease to Jacob a fifth cheaper until the end of the chapter."
+      requires: { minCash: 300 }
+      effects: { cash: -300, leaseCost: -0.2 }
+      lasting: true
+      marks: [courier_gekauft]
+    - id: keine_zeit
+      label: { de: "Keine Zeit", en: "No time" }
+      result:
+        de: Im Courier steht am Samstag, Jacob Harlan habe „keine Zeit für Fragen“. Darunter eine Frage. Die Farmer lesen beides und verlangen bis Kapitelende ein Zehntel mehr Pacht.
+        en: On Saturday the Courier reports that Jacob Harlan has "no time for questions". Below it, a question. The farmers read both and ask a tenth more for leases until the end of the chapter.
+      appointments: 0
+      effects: { leaseCost: 0.1 }
+      lasting: true
+      default: true
+      marks: [nora_kein_gespraech]
+

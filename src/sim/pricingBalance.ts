@@ -71,12 +71,14 @@ export interface RumourBalance {
   cooldown: number;
   /** „Quellen versiegen“: Preisschock und nötiger Tank. */
   dry: { shock: number; minTank: number };
+  /** Spielspaß K1: So viele Runden wirkt ein Gerücht auf den Preis (Entlarvung: der Rückschlag nur eine Runde). */
+  rounds: number;
   /** „Riesenfund bei Bullard“: Preisschock, Pachtpreise, Runden ohne neue Pacht Bullards. */
   bullard: { shock: number; leaseCost: number; rounds: number };
   /** Jedes weitere Gerücht wirkt × wear. */
   wear: number;
-  /** Entlarvung: base + perRumour je früheres Gerücht. */
-  exposed: { base: number; perRumour: number };
+  /** Entlarvung: base + perRumour je früheres Gerücht; backlash = Preisschock in der Runde der Entlarvung („Quellen versiegen“). */
+  exposed: { base: number; perRumour: number; backlash: number };
 }
 
 export interface CraneBalance {
@@ -92,6 +94,10 @@ export interface CraneBalance {
   deal: { bonus: number; rounds: number };
   /** Ab 4 Punkten: fester Abnahmevertrag zu Posted Price + premium. */
   contract: { premium: number; rounds: number };
+  /** Spielspaß K1: Cranes Laune −1 mit down, +1 mit up, sonst 0 – zählt wie ein Punkt mehr oder weniger. */
+  mood: { down: number; up: number };
+  /** Spielspaß K1: Cranes Gegendruck – base Punkte immer, recent mehr, wenn er in den letzten rounds Runden schon nachgegeben hat. */
+  resistance: { base: number; recent: number; rounds: number };
 }
 
 export interface PriceActionsBalance {
@@ -116,10 +122,10 @@ export interface FreightBalance {
   freeze: number[];
   /** Ab 3: Sondertarif statt Senkung. */
   special: { tariff: number; rounds: number };
-  /** Abfuhr (≤ 0) und Groll nach erwischtem Bluff: Erhöhungschance × factor für rounds Runden. */
-  rebuff: { factor: number; rounds: number };
-  /** Bluff-Prüfung: so viele Folgerunden, Bahnanteil darüber, Aufschlag. */
-  bluff: { rounds: number; railShare: number; penalty: number };
+  /** Abfuhr (≤ 0) und Groll nach erwischtem Bluff: Erhöhungschance × factor für rounds Runden; bei der Abfuhr steigt der Tarif sofort um raise. */
+  rebuff: { factor: number; rounds: number; raise: number };
+  /** Bluff-Prüfung: so viele Folgerunden; je Runde zählt Thorne mit Chance check nach – Bahnanteil der Runde über railShare: Aufschlag penalty. */
+  bluff: { rounds: number; railShare: number; penalty: number; check: number };
   brennan: { costPerBarrel: number; capacity: number; rounds: number; minimum: number; shortfall: number; raise: number };
   pool: {
     base: number;
@@ -134,6 +140,13 @@ export interface FreightBalance {
     pipelineDiscount: number;
     foreignShare: number;
     transitFee: number;
+    /** Spielspaß K1: Rabatt auf Jacobs Bahnfracht – discountStep $ je discountPer bbl Gemeinschaftsmenge, höchstens discountMax. */
+    discountPer: number;
+    discountStep: number;
+    discountMax: number;
+    /** Zusage an Thorne: gemeinsam (Jacobs Bahnfracht + Gemeinschaft) mindestens minimum bbl je Runde, sonst shortfall $ je fehlendem Barrel. */
+    minimum: number;
+    shortfall: number;
   };
   /** Exklusivvertrag kündigen: nur ab so viel Druck. */
   cancelPressure: number;
@@ -148,9 +161,11 @@ export interface BotPlans {
   thorne: boolean;
   brennan: boolean;
   pool: boolean;
+  /** Spielspaß K1: blufft bewusst – hält sich nach einem Zugeständnis nicht an Thornes Bahngrenze. */
+  bluff: boolean;
 }
 
-export const BOT_PLAN_KEYS = ['cartel', 'contract', 'rumour', 'crane', 'thorne', 'brennan', 'pool'] as const;
+export const BOT_PLAN_KEYS = ['cartel', 'contract', 'rumour', 'crane', 'thorne', 'brennan', 'pool', 'bluff'] as const;
 
 function wert(obj: unknown, path: string): unknown {
   return path.split('.').reduce<unknown>((o, key) => (o && typeof o === 'object' ? (o as Record<string, unknown>)[key] : undefined), obj);
@@ -248,9 +263,10 @@ export function parsePriceActions(raw: unknown): PriceActionsBalance {
   const rumour: RumourBalance = {
     cooldown: ganz(raw, `${r}.cooldown`),
     dry: { shock: nn(raw, `${r}.dry.shock`), minTank: nn(raw, `${r}.dry.minTank`) },
+    rounds: ganz(raw, `${r}.rounds`),
     bullard: { shock: zahl(raw, `${r}.bullard.shock`), leaseCost: zahl(raw, `${r}.bullard.leaseCost`), rounds: ganz(raw, `${r}.bullard.rounds`) },
     wear: anteil(raw, `${r}.wear`),
-    exposed: { base: anteil(raw, `${r}.exposed.base`), perRumour: anteil(raw, `${r}.exposed.perRumour`) },
+    exposed: { base: anteil(raw, `${r}.exposed.base`), perRumour: anteil(raw, `${r}.exposed.perRumour`), backlash: zahl(raw, `${r}.exposed.backlash`) },
   };
   const w = `${p}.crane`;
   const crane: CraneBalance = {
@@ -269,7 +285,10 @@ export function parsePriceActions(raw: unknown): PriceActionsBalance {
     rebuffExtra: nn(raw, `${w}.rebuffExtra`),
     deal: { bonus: nn(raw, `${w}.deal.bonus`), rounds: ganz(raw, `${w}.deal.rounds`) },
     contract: { premium: zahl(raw, `${w}.contract.premium`), rounds: ganz(raw, `${w}.contract.rounds`) },
+    mood: { down: anteil(raw, `${w}.mood.down`), up: anteil(raw, `${w}.mood.up`) },
+    resistance: { base: nn(raw, `${w}.resistance.base`), recent: nn(raw, `${w}.resistance.recent`), rounds: ganz(raw, `${w}.resistance.rounds`) },
   };
+  if (crane.mood.down + crane.mood.up > 1) throw new BalanceError('balance.yaml: "priceActions.crane.mood" down + up ≤ 1');
   return { standing, cartel, contract, rumour, crane };
 }
 
@@ -292,8 +311,8 @@ export function parseFreightBalance(raw: unknown): FreightBalance {
     cuts: zahlen(raw, `${p}.cuts`, 3),
     freeze: zahlen(raw, `${p}.freeze`, 3),
     special: { tariff: nn(raw, `${p}.special.tariff`), rounds: ganz(raw, `${p}.special.rounds`) },
-    rebuff: { factor: nn(raw, `${p}.rebuff.factor`), rounds: ganz(raw, `${p}.rebuff.rounds`) },
-    bluff: { rounds: ganz(raw, `${p}.bluff.rounds`), railShare: anteil(raw, `${p}.bluff.railShare`), penalty: nn(raw, `${p}.bluff.penalty`) },
+    rebuff: { factor: nn(raw, `${p}.rebuff.factor`), rounds: ganz(raw, `${p}.rebuff.rounds`), raise: nn(raw, `${p}.rebuff.raise`) },
+    bluff: { rounds: ganz(raw, `${p}.bluff.rounds`), railShare: anteil(raw, `${p}.bluff.railShare`), penalty: nn(raw, `${p}.bluff.penalty`), check: anteil(raw, `${p}.bluff.check`) },
     brennan: {
       costPerBarrel: nn(raw, `${b}.costPerBarrel`),
       capacity: nn(raw, `${b}.capacity`),
@@ -315,6 +334,11 @@ export function parseFreightBalance(raw: unknown): FreightBalance {
       pipelineDiscount: anteil(raw, `${o}.pipelineDiscount`),
       foreignShare: anteil(raw, `${o}.foreignShare`),
       transitFee: nn(raw, `${o}.transitFee`),
+      discountPer: ganz(raw, `${o}.discountPer`),
+      discountStep: nn(raw, `${o}.discountStep`),
+      discountMax: nn(raw, `${o}.discountMax`),
+      minimum: nn(raw, `${o}.minimum`),
+      shortfall: nn(raw, `${o}.shortfall`),
     },
     cancelPressure: nn(raw, `${p}.cancelPressure`),
   };

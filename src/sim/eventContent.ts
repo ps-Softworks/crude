@@ -9,9 +9,11 @@ import { CONDITION_KEYS, EFFECT_KEYS, MAIL_KINDS, RIVAL_IDS, type Conditions, ty
 import type { DocumentDef, DocumentField } from './documents';
 import { SIM_MARKS } from './family';
 import { LANGUAGES, type LocalizedText } from './i18n';
+import { brokenCashPlaceholders } from './letterScale';
 import { RIVAL_SIM_MARKS } from './trust';
 import { LOGISTICS_SIM_MARKS } from './logistics';
 import { TIMESKIP_SIM_MARKS } from './timeskipMarks';
+import { RIG_GIFTS, type LandGrant, type RigGift } from './weichen';
 import { PUBLIC_ACTS, type PublicAct } from './world';
 // 4.7 Andockpunkt: Merkzeichen, die die Fernleitungen setzen.
 import { BIG_PIPELINE_SIM_MARKS } from './bigPipeline';
@@ -42,7 +44,7 @@ export interface ParsedEvents {
 }
 
 const EVENT_KEYS = ['id', 'title', 'text', 'conditions', 'marked', 'notMarked', 'delay', 'chance', 'once', 'routine', 'appointments', 'choices', 'mail', 'deadline', 'document', 'certain', 'rival', 'cooldown', 'group', 'draft', 'ranch', 'visitor', 'tableau'];
-const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default', 'appointments', 'requiresFound', 'marksIfForged', 'sharp', 'unlocks', 'public'];
+const CHOICE_KEYS = ['id', 'label', 'result', 'requires', 'effects', 'marks', 'default', 'appointments', 'requiresFound', 'marksIfForged', 'sharp', 'unlocks', 'public', 'fixedCash', 'lasting', 'land', 'rig'];
 const DOCUMENT_KEYS = ['title', 'reference', 'forgeryChance', 'fields'];
 const FIELD_KEYS = ['id', 'label', 'value', 'reference', 'forged'];
 const ID_MUSTER = /^[a-z0-9_]+$/;
@@ -229,6 +231,29 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
       fehler([...pfad, 'sharp'], `${wer}: „sharp“ muss true oder false sein.`);
       ok = false;
     }
+    // Briefe mit Gewicht (Spielspaß-Durchgang): fixedCash hält den Geldbetrag fest, statt ihn mit Jacobs Geschäft wachsen zu lassen.
+    if (raw.fixedCash !== undefined && typeof raw.fixedCash !== 'boolean') {
+      fehler([...pfad, 'fixedCash'], `${wer}: „fixedCash“ muss true oder false sein.`);
+      ok = false;
+    }
+    // Weichen (Spielspaß-Durchgang, weichen.ts): lasting, land, rig.
+    if (raw.lasting !== undefined && typeof raw.lasting !== 'boolean') {
+      fehler([...pfad, 'lasting'], `${wer}: „lasting“ muss true oder false sein.`);
+      ok = false;
+    }
+    let land: LandGrant | undefined;
+    if (raw.land !== undefined) {
+      const l = raw.land as Record<string, unknown> | null;
+      const royalty = l && typeof l === 'object' ? l.royalty : undefined;
+      if (!l || typeof l !== 'object' || typeof l.figure !== 'string' || (royalty !== undefined && (typeof royalty !== 'number' || royalty < 0 || royalty >= 1))) {
+        fehler([...pfad, 'land'], `${wer}: „land“ braucht figure (Figur aus content/map.yaml) und optional royalty (0 bis unter 1), z. B. land: { figure: moss, royalty: 0.05 }.`);
+        ok = false;
+      } else land = royalty === undefined ? { figure: l.figure } : { figure: l.figure, royalty: royalty as number };
+    }
+    if (raw.rig !== undefined && !(RIG_GIFTS as readonly unknown[]).includes(raw.rig)) {
+      fehler([...pfad, 'rig'], `${wer}: „rig“ muss ${liste(RIG_GIFTS)} sein.`);
+      ok = false;
+    }
     const marksIfForged = namen(raw, 'marksIfForged', pfad, wer);
     // Gebiete (0.2.15+5): Diese Wahl schaltet Gebiete aus content/map.yaml frei.
     const unlocks = namen(raw, 'unlocks', pfad, wer);
@@ -247,6 +272,10 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
     if (raw.requiresFound === true) choice.requiresFound = true;
     if (marksIfForged.length > 0) choice.marksIfForged = marksIfForged;
     if (raw.sharp === true) choice.sharp = true;
+    if (raw.fixedCash === true) choice.fixedCash = true;
+    if (raw.lasting === true) choice.lasting = true;
+    if (land) choice.land = land;
+    if (raw.rig !== undefined) choice.rig = raw.rig as RigGift;
     if (unlocks.length > 0) choice.unlocks = unlocks;
     if (oeffentlich.length > 0) choice.public = oeffentlich as PublicAct[];
     if (hasSystemEffects(system)) choice.system = system;
@@ -463,6 +492,21 @@ export function parseEventFile(file: string, text: string): ParsedEvents {
         fehler([...pfad, 'choices'], `${wer}: Höchstens eine Wahl darf „default: true“ haben.`);
         ok = false;
       }
+      // Briefe mit Gewicht: {cash} braucht eine Antwort mit Geld, {cash:wahl} eine Wahl dieses Ereignisses mit Geld.
+      const kaputt = (text: LocalizedText | null | undefined, choice: EventChoice | undefined) =>
+        text ? LANGUAGES.flatMap((l) => brokenCashPlaceholders(text[l] ?? '', { choices }, choice)) : [];
+      const imText = kaputt(body, undefined);
+      if (imText.length > 0) {
+        fehler([...pfad, 'text'], `${wer}: Platzhalter ${[...new Set(imText)].join(', ')} zeigt auf keine Wahl mit „cash“.`);
+        ok = false;
+      }
+      choices.forEach((c, i) => {
+        const inWahl = [...kaputt(c.label, c), ...kaputt(c.result, c)];
+        if (inWahl.length > 0) {
+          fehler([...pfad, 'choices', i], `${wer}, Wahl „${c.id}“: Platzhalter ${[...new Set(inWahl)].join(', ')} braucht „cash“ in den Effekten.`);
+          ok = false;
+        }
+      });
     }
     if (!ok || !title || !body || !conditions || !marked || !notMarked) return null;
     const def: EventDef = {

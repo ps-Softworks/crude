@@ -18,6 +18,7 @@ import { worldLimitFactor, worldRateAdd } from './world';
 import { bankRateDiscount } from './holdings';
 import { withStandDiscount } from './stand'; // 4.17 Andockpunkt
 import { chapterOf } from './chapterOf';
+import { weichenCreditFactor } from './weichen';
 
 /** Woher das Geld kommt: von der Bank oder als Notkredit vom Geldverleiher. */
 export type LoanSource = 'bank' | 'lender';
@@ -82,13 +83,14 @@ export function baseCreditLimit(state: Pick<GameState, 'wells'>, balance: Balanc
  * Bankrahmen: Grundrahmen × Faktor aus dem Kreditzyklus (4.4, worldLimitFactor) –
  * im Boom mehr, in Panik und Crash weniger –, auf 100 $ gerundet. Ohne Weltmodell der Grundrahmen.
  */
-export function creditLimit(state: Pick<GameState, 'wells'> & Partial<Pick<GameState, 'worldModel'>>, balance: Balance): number {
-  const faktor = worldLimitFactor(state.worldModel, balance.worldModel);
+export function creditLimit(state: Pick<GameState, 'wells'> & Partial<Pick<GameState, 'worldModel' | 'events' | 'chapter' | 'round' | 'totalRounds'>>, balance: Balance): number {
+  // Weichen (Spielspaß K1): Steht Ruth mit auf den Urkunden, gibt die Bank mehr (weichen.ts).
+  const faktor = worldLimitFactor(state.worldModel, balance.worldModel) * weichenCreditFactor(state, balance);
   return Math.round((baseCreditLimit(state, balance) * faktor) / 100) * 100;
 }
 
 /** Wie viel die Bank noch gibt: Rahmen minus das, was er ihr schon schuldet. */
-export function headroom(state: Pick<GameState, 'loans' | 'wells'> & Partial<Pick<GameState, 'worldModel'>>, balance: Balance): number {
+export function headroom(state: Pick<GameState, 'loans' | 'wells'> & Partial<Pick<GameState, 'worldModel' | 'events' | 'chapter' | 'round' | 'totalRounds'>>, balance: Balance): number {
   const offen = state.loans.filter((l) => l.source === 'bank').reduce((sum, l) => sum + l.principal, 0);
   return Math.max(0, creditLimit(state, balance) - offen);
 }

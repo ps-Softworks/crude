@@ -59,10 +59,11 @@ function amEnde(cash: number, wells = 0): GameState {
 }
 
 describe('balance.yaml: chapter', () => {
-  it('hat Ziel 70.000 $ oder 6 Quellen und Anteile unter 50 %', () => {
-    // 0.4.20+1: vorher 50.000 $ / 5 Quellen (GDD §13) – angehoben mit der guten ersten Startoption.
-    expect(balance.chapter.goalValue).toBe(70000);
-    expect(balance.chapter.goalWells).toBe(6);
+  it('hat Ziel 95.000 $ oder 8 Quellen und Anteile unter 50 %', () => {
+    // 0.4.20+1: vorher 50.000 $ / 5 Quellen (GDD §13) – angehoben mit der guten ersten Startoption;
+    // Spielspaß K1: 70.000 $ / 6 → 95.000 $ / 8 (tiefe Funde und Karten machen Kapitel 1 reicher).
+    expect(balance.chapter.goalValue).toBe(95000);
+    expect(balance.chapter.goalWells).toBe(8);
     expect(balance.chapter.ipo.shares.length).toBeGreaterThan(0);
     for (const s of balance.chapter.ipo.shares) expect(s).toBeLessThan(0.5);
   });
@@ -106,7 +107,7 @@ describe('Ausgänge des Kapitels', () => {
   });
 
   it('erreicht: Kapitelende mit bestandener Prüfung, steht im Protokoll', () => {
-    const s = amEnde(80000);
+    const s = amEnde(balance.chapter.goalValue + 10000);
     expect(chapterResult(s, balance)).toBe('erreicht');
     expect(s.log.at(-1)).toMatch(/Kapitel 1 ist zu Ende\. Das Ziel ist erreicht\./);
   });
@@ -154,15 +155,15 @@ describe('Aktiengesellschaft', () => {
   const anteil = balance.chapter.ipo.shares[0];
 
   it('nur am Kapitelende mit bestandener Prüfung', () => {
-    expect(canGoPublic(letzteRunde(80000), balance)).toBe(false);
-    expect(canGoPublic(amEnde(80000), balance)).toBe(true);
+    expect(canGoPublic(letzteRunde(balance.chapter.goalValue + 10000), balance)).toBe(false);
+    expect(canGoPublic(amEnde(balance.chapter.goalValue + 10000), balance)).toBe(true);
     expect(canGoPublic(amEnde(1000), balance)).toBe(false);
-    expect(decideIpo(letzteRunde(80000), balance, anteil).ok).toBe(false);
+    expect(decideIpo(letzteRunde(balance.chapter.goalValue + 10000), balance, anteil).ok).toBe(false);
     expect(decideIpo(amEnde(1000), balance, anteil).ok).toBe(false);
   });
 
   it('Erlös = Imperiumswert × Anteil × priceFactor, kommt in die Kasse', () => {
-    const s = amEnde(80000);
+    const s = amEnde(balance.chapter.goalValue + 10000);
     const erwartet = Math.round(empireValue(s, balance) * anteil * balance.chapter.ipo.priceFactor);
     expect(ipoProceeds(s, balance, anteil)).toBe(erwartet);
     const r = decideIpo(s, balance, anteil);
@@ -174,7 +175,7 @@ describe('Aktiengesellschaft', () => {
   });
 
   it('nur einmal und nur angebotene Anteile', () => {
-    const s = amEnde(80000);
+    const s = amEnde(balance.chapter.goalValue + 10000);
     expect(decideIpo(s, balance, 0.6).ok).toBe(false);
     const r = decideIpo(s, balance, anteil);
     if (!r.ok) throw new Error(r.reason);
@@ -183,7 +184,7 @@ describe('Aktiengesellschaft', () => {
   });
 
   it('Familienfirma bleiben geht immer am Kapitelende, auch nach verfehlter Prüfung', () => {
-    for (const s of [amEnde(80000), amEnde(1000)]) {
+    for (const s of [amEnde(balance.chapter.goalValue + 10000), amEnde(1000)]) {
       const r = decideIpo(s, balance, 0);
       if (!r.ok) throw new Error(r.reason);
       expect(r.state.ipo).toEqual({ share: 0, proceeds: 0 });
@@ -222,7 +223,7 @@ describe('content/chapter.yaml', () => {
 
 describe('Spielstand', () => {
   it('ab Format 9 sichert der Spielstand die Entscheidung mit', () => {
-    const r = decideIpo(amEnde(80000), balance, 0);
+    const r = decideIpo(amEnde(balance.chapter.goalValue + 10000), balance, 0);
     if (!r.ok) throw new Error(r.reason);
     const geladen = deserializeGame(serializeGame(r.state, 'test'));
     expect(SAVE_FORMAT).toBeGreaterThanOrEqual(9);

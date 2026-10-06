@@ -47,9 +47,10 @@ function urteil(events: EventDef[], read = readMarks(events, []), later = new Se
 }
 
 describe('Wirkung der Antworten (0.2.15+3)', () => {
-  it('Schwelle = minShare × chapterMoney aus balance.yaml (2 % von 10.000 $ = 200 $)', () => {
+  it('Schwelle = minShare × chapterMoney aus balance.yaml (Kapitel 1: 1 % von 60.000 $ = 600 $, spätere Kapitel 200 $)', () => {
     expect(T).toBe(Math.round(balance.events.relevance.chapterMoney * balance.events.relevance.minShare));
-    expect(T).toBe(200);
+    expect(T).toBe(600);
+    expect(relevanceThreshold(balance, false)).toBe(200);
   });
 
   it('sofortige Wirkung: Geld, Öl zum Trendpreis, Kraft und Familie mit den Gewichten des Standard-Bots; Beträge zählen', () => {
@@ -130,31 +131,31 @@ describe('Wirkung der Antworten (0.2.15+3)', () => {
   });
 });
 
-describe('Nachwirkungen früher folgenloser Merkzeichen (0.2.15+3, nach Etappe 3)', () => {
+// Spielspaß K1 (Weichen statt Alltagspost): Diebe, Bullards Seil, Trupp, Kerrigan und Daniels Entschuldigung sind
+// gestrichen. Die verbliebenen Weichen tragen ihre Folgen jetzt selbst (Land, Turm, Wirkung bis Kapitelende).
+describe('Folgen der Weichen in Kapitel 1 (Spielspaß K1)', () => {
   const events = loadEvents();
   const ev = (id: string) => events.find((e) => e.id === id)!;
+  const wahl = (id: string, c: string) => ev(id).choices.find((x) => x.id === c)!;
 
-  it('Schutz vor Dieben: Mit Eli als Wächter kommen keine Diebe; Sheriff und eigener Nachtwächter sind jetzt Antworten auf die Diebe', () => {
-    expect(ev('diebe_tank').notMarked).toEqual(['eli_waechter']);
-    expect(ev('diebe_tank').choices.flatMap((c) => c.marks)).toEqual(expect.arrayContaining(['sheriff_bezahlt', 'sheriff_umgangen']));
+  it('Moss: fair geliehen gibt die Farm zum halben Förderzins, Betrug und Ersteigern ohne Förderzins', () => {
+    expect(wahl('moss_schulden', 'leihen').land).toEqual({ figure: 'moss', royalty: 0.0625 });
+    expect(wahl('moss_schulden', 'papier').land).toEqual({ figure: 'moss', royalty: 0 });
+    expect(wahl('moss_schulden', 'papier')).toMatchObject({ lasting: true, effects: { leaseCost: 0.1 } });
+    expect(wahl('moss_versteigerung', 'doch_helfen').land).toEqual({ figure: 'moss', royalty: 0.0625 });
+    expect(wahl('moss_versteigerung', 'ersteigern').land).toEqual({ figure: 'moss', royalty: 0 });
+    expect(wahl('moss_versteigerung', 'wegbleiben')).toMatchObject({ lasting: true, effects: { leaseCost: 0.1 } });
   });
 
-  it('Bullard sägt kein Seil an, wenn Jacob beim Brand geholfen hat', () => {
-    expect(ev('bullard_seil').notMarked).toEqual(['brand_geholfen']);
+  it('Silas: fair bringt Stahlgestänge, auskaufen die Dampfmaschine, reden lassen teurere Pachten bis Kapitelende', () => {
+    expect(wahl('silas_abrechnung', 'fair').rig).toBe('rods');
+    expect(wahl('silas_abrechnung', 'auskaufen').rig).toBe('steam');
+    expect(wahl('silas_saloon', 'reden_lassen')).toMatchObject({ lasting: true, effects: { leaseCost: 0.2 } });
   });
 
-  it('Trupp: Wer den Sonntag verweigert, riskiert den Streik; der Kumpel aus der Grube kommt mit dem fehlenden Seil', () => {
-    expect(ev('trupp_lohn').choices.find((c) => c.id === 'nein')!.marks).toEqual(['trupp_unmut']);
-    expect(ev('streik').marked).toEqual(['trupp_unmut']);
-    expect(ev('crabb_lager').choices.find((c) => c.id === 'entlassen')!.marks).toEqual(['kerrigan_eingestellt']);
-  });
-
-  it('Folgeereignisse: Bullards Rache steckt in der Antwort selbst, Kerrigans Zusammenbruch, Moss nach der Entschuldigung', () => {
-    const zurueck = ev('bullard_seil').choices.find((c) => c.id === 'zurueck')!;
-    expect(zurueck.marks).toEqual(['bullard_rache']);
-    expect(zurueck.effects.cash).toBeLessThan(0);
-    expect(ev('kerrigan_zusammenbruch').marked).toEqual(['kerrigan_verheizt']);
-    expect(ev('wegerecht_moss_versoehnt').marked).toEqual(['pipeline_geplant', 'daniel_entschuldigung']);
+  it('Nora und Ruth: Folgen bis Kapitelende; Moss ohne Entschuldigung bleibt Feind am Wegerecht', () => {
+    for (const c of ['erzaehlen', 'bericht', 'keine_zeit']) expect(wahl('nora_interview', c).lasting).toBe(true);
+    expect(wahl('ruth_anteil', 'ja').marks).toContain('ruth_teilhaberin');
     expect(ev('wegerecht_moss_feind').notMarked).toContain('daniel_entschuldigung');
   });
 });
