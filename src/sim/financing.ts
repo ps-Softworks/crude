@@ -30,7 +30,6 @@ import {
   INVESTORS,
   investorCompensateMark,
   investorPayoutMark,
-  investorRuinedMark,
   investorUpsetMark,
   VALE_FAVOR_DUE,
   VALE_FAVOR_REFUSED,
@@ -98,6 +97,12 @@ export interface InvestorDeal {
   ranch?: string;
 }
 
+/** 0.4.20+49: Anteil des Partners – gekürzt, wenn Jacob das Tieferbohren selbst bezahlt hat. */
+export function farmoutShare(f: Pick<FarmOut, 'share' | 'paid'>, spent: number): number {
+  if (f.paid === undefined || spent <= 0) return f.share;
+  return f.share * Math.min(1, f.paid / spent);
+}
+
 export interface FarmOut {
   wellId: string;
   parcelId: string;
@@ -111,6 +116,9 @@ export interface FarmOut {
   owed: number;
   /** Ertappt: betrügt nicht mehr. */
   caught: boolean;
+  /** 0.4.20+49: Was der Partner bezahlt hat (erste Stufe). Bohrt Jacob auf eigene Kosten tiefer, sinkt der Anteil im
+   * Verhältnis paid ÷ gesamte Bohrkosten. Fehlt (alter Stand) = voller Anteil. */
+  paid?: number;
 }
 
 export interface DeliveryDeal {
@@ -384,7 +392,7 @@ const farmout: PlanHandler = {
   },
   detail(state, balance) {
     const fo = balance.financing.farmout;
-    return `${PARTNER[farmoutPartner(state)]} bringt seinen Turm und zahlt die erste Bohrstufe. Ist sie fündig, holt er ${fo.rounds} Runden lang ${percent(fo.share)} der Förderung dieser Quelle ab. Tiefer bohren zahlt Jacob. Ob er ehrlich abrechnet, zeigt nur eine Prüfung.`;
+    return `${PARTNER[farmoutPartner(state)]} bringt seinen Turm und zahlt die erste Bohrstufe. Ist sie fündig, holt er ${fo.rounds} Runden lang ${percent(fo.share)} der Förderung dieser Quelle ab. Tiefer bohren zahlt Jacob – dann sinkt der Anteil des Partners im Verhältnis der Kosten. Ob er ehrlich abrechnet, zeigt nur eine Prüfung.`;
   },
   apply(state, balance, target) {
     const fo = balance.financing.farmout;
@@ -397,7 +405,7 @@ const farmout: PlanHandler = {
     if (!r.ok) return log(state, `Der Partner kann nicht bohren: ${r.reason}`);
     const well = r.state.wells[r.state.wells.length - 1];
     const partner = farmoutPartner(state);
-    const fout: FarmOut = { wellId: well.id, parcelId: target, partner, share: fo.share, rigId: rig.id, from: state.round, until: state.round + fo.rounds, owed: 0, caught: false };
+    const fout: FarmOut = { wellId: well.id, parcelId: target, partner, share: fo.share, rigId: rig.id, from: state.round, until: state.round + fo.rounds, owed: 0, caught: false, paid: well.spent };
     const f = financingOf(state);
     const s: GameState = { ...r.state, cash: state.cash, rigs: [...state.rigs, rig], log: r.state.log.slice(0, -1) };
     return log(withFin(s, { farmouts: [...f.farmouts, fout] }), `Farm-out: ${PARTNER[partner]} bohrt mit eigenem Turm auf ${ranchName(state, target)} und zahlt die Bohrung (${money(well.spent)}). Fündig, gehören ihm ${percent(fo.share)} der Förderung.`);
@@ -547,11 +555,6 @@ function liefern(s0: GameState, d: DeliveryDeal, shortfall: number, wer: string)
   return log({ ...s, cash: cents(s.cash + erloes - strafe) }, zeile);
 }
 
-/** Schuld erlassen oder verloren: Die Steuer soll das nicht als Gewinn zählen. */
-function schuldWeg(s: GameState, betrag: number): GameState {
-  return s.taxBase ? { ...s, taxBase: { ...s.taxBase, debt: s.taxBase.debt - betrag } } : s;
-}
-
 function investorenAbrechnen(before: GameState, input: GameState, balance: Balance): GameState {
   let s = input;
   const f0 = financingOf(s);
@@ -591,11 +594,15 @@ function investorenAbrechnen(before: GameState, input: GameState, balance: Balan
         if (!d.broken) s = shiftRelation(s, contact, balance.network.relation.use);
         s = log(s, `Die Einlage geht zurück: ${money(d.amount)}; an Gewinnanteilen flossen ${money(d.paid)}.`);
       } else {
-        s = schuldWeg(s, d.amount);
-        s = shiftRelation(s, contact, -100);
-        s = setMark(s, investorRuinedMark(d.id));
-        s = withFin(s, { lost: { ...financingOf(s).lost, [d.id]: d.amount } });
-        s = log(s, `Die Kasse reicht nicht für die Einlage (${money(d.amount)}) – das Geld des Geldgebers ist verloren.`);
+        // 0.4.20+49 (Frage bot trainer): Kein geschenktes Geld – was die Kasse nicht hergibt, wird zur Schuld zum Zins
+        // des Geldverleihers. Der Geldgeber ist trotzdem tief verärgert und gibt kein zweites Mal (lost = 0, kein Drama).
+        const bar = Math.max(0, Math.min(s.cash, d.amount));
+        const rest = cents(d.amount - bar);
+        const id = s.loans.reduce((m, l) => Math.max(m, l.id), 0) + 1;
+        s = { ...s, cash: cents(s.cash - bar), loans: [...s.loans, { id, source: 'lender', principal: rest, rate: balance.credit.emergency.rate, takenRound: s.round, collateral: null }] };
+        s = shiftRelation(s, contact, -50);
+        s = withFin(s, { lost: { ...financingOf(s).lost, [d.id]: 0 } });
+        s = log(s, `Die Kasse reicht nicht für die Einlage (${money(d.amount)}): ${money(bar)} gehen zurück, ${money(rest)} werden zur Schuld zum Zins des Geldverleihers.`);
       }
       continue;
     }
@@ -638,15 +645,16 @@ function farmoutsAbrechnen(input: GameState, balance: Balance): GameState {
     }
     if (well.status === 'found' && (well.production?.lastRate ?? 0) > 0) {
       const rate = well.production!.lastRate;
-      const ehrlich = rate * f.share;
+      const anteil = farmoutShare(f, well.spent);
+      const ehrlich = rate * anteil;
       const chance = f.caught ? 0 : fo.cheat[f.partner];
       const betrug = chance > 0 && new Rng(seedFromString(`${s.seed}:farmout:${f.wellId}:${s.round}`)).float() < chance;
-      const [s2, n] = nimmOel(s, betrug ? rate * (f.share + fo.cheatExtra) : ehrlich);
+      const [s2, n] = nimmOel(s, betrug ? rate * (anteil + fo.cheatExtra) : ehrlich);
       s = s2;
       const zuviel = Math.max(0, n - Math.round(ehrlich));
       if (zuviel > 0) f = { ...f, owed: cents(f.owed + zuviel * s.postedPrice) };
       // Im Protokoll steht, was der Partner meldet – nicht, was er wirklich abholt.
-      s = log(s, `Farm-out auf ${ranchName(s, f.parcelId)}: ${PARTNER[f.partner]} holt seinen Anteil ab (${bbl(Math.min(n, Math.round(ehrlich)))}, ${percent(f.share)}).`);
+      s = log(s, `Farm-out auf ${ranchName(s, f.parcelId)}: ${PARTNER[f.partner]} holt seinen Anteil ab (${bbl(Math.min(n, Math.round(ehrlich)))}, ${percent(anteil)}).`);
     }
     if (s.round >= f.until && f.rigId === null) {
       s = log(s, `Das Farm-out auf ${ranchName(s, f.parcelId)} ist ausgelaufen – die Quelle gehört wieder ganz Jacob.`);

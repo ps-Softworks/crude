@@ -10,6 +10,7 @@ import {
   financingRunning,
   newFinancing,
   settleFinancing,
+  farmoutShare,
   sizesIn,
   stateOpen,
   stateOversightHeat,
@@ -162,7 +163,7 @@ describe('Privatinvestoren', () => {
     expect(settleFinancing(g, { ...g, wells: [loch(nah)] }, balance).events.marks.whitcomb_verstimmt).toBeDefined();
   });
 
-  it('Laufzeitende: Einlage zurück, wenn die Kasse reicht; sonst verloren – Drama, Beziehung 0, keine Steuer auf die erlassene Schuld', () => {
+  it('Laufzeitende: Einlage zurück, wenn die Kasse reicht; sonst wird der Rest zur Schuld (0.4.20+49) – kein geschenktes Geld', () => {
     const d = { id: 'haskell' as const, amount: 3000, share: 0.15, from: 1, until: 5, paid: 400, broken: false };
     const g = fin(spiel({ round: 5, cash: 5000 }), { investors: [d] });
     const ok = settleFinancing(g, g, balance);
@@ -172,20 +173,14 @@ describe('Privatinvestoren', () => {
 
     const arm = { ...g, cash: 1000, taxBase: { cash: 1000, debt: totalDebt(g) } };
     const weg = settleFinancing(arm, arm, balance);
-    expect(weg.cash).toBe(1000);
-    expect(weg.events.marks.haskell_ruiniert).toBeDefined();
-    expect(relationOf(weg, 'doktor_haskell')).toBe(0);
-    expect(financingOf(weg).lost.haskell).toBe(3000);
+    expect(weg.cash).toBe(0);
+    const kredit = weg.loans.at(-1)!;
+    expect(kredit).toMatchObject({ source: 'lender', principal: 2000, rate: balance.credit.emergency.rate });
+    expect(weg.events.marks.haskell_ruiniert).toBeUndefined();
+    expect(relationOf(weg, 'doktor_haskell')).toBe(Math.max(0, relationOf(g, 'doktor_haskell') - 50));
     expect(financingDebt(weg)).toBe(0);
-    expect(weg.taxBase!.debt).toBe(arm.taxBase.debt - 3000);
     // Danach gibt es kein zweites Mal.
     expect(FINANCING_HANDLERS.investor_haskell.lock!(weg, balance)).toContain('kein zweites Mal');
-    // Entschädigen: die Hälfte aus eigener Tasche, Beziehung auf reconcileTo.
-    const helfen = settleFinancing(weg, mitMark({ ...weg, cash: 4000 }, 'haskell_entschaedigt'), balance);
-    expect(helfen.cash).toBe(2500);
-    expect(relationOf(helfen, 'doktor_haskell')).toBe(balance.network.relation.reconcileTo);
-    // Nur einmal.
-    expect(settleFinancing(helfen, helfen, balance).cash).toBe(2500);
   });
 
   it('Antwort auf den Beschwerdebrief: vorzeitig auszahlen', () => {
@@ -401,5 +396,13 @@ describe('Geldquellen im Spielablauf', () => {
     const kaputt = JSON.parse(serializeGame(g, 'test'));
     kaputt.state.financing.investors[0].id = 'niemand';
     expect(deserializeGame(JSON.stringify(kaputt)).ok).toBe(false);
+  });
+});
+
+describe('0.4.20+49: Farm-out – Tieferbohren auf Jacobs Kosten kürzt den Anteil des Partners', () => {
+  it('Anteil × bezahlt ÷ gesamte Bohrkosten; alter Stand ohne paid: voller Anteil', () => {
+    expect(farmoutShare({ share: 0.4, paid: 1000 }, 1000)).toBeCloseTo(0.4, 10);
+    expect(farmoutShare({ share: 0.4, paid: 1000 }, 4000)).toBeCloseTo(0.1, 10);
+    expect(farmoutShare({ share: 0.4 }, 4000)).toBeCloseTo(0.4, 10);
   });
 });
