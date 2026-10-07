@@ -5,7 +5,7 @@
 - [x] A1 Verkaufen, A4 Pleite-Frist, A7 Versicherung, B4 Zweiter Anlauf (Agent) – 0.4.20+45, dazu Tank-Notverkauf am Kapitelende
 - [x] B3 Feuer in der Nacht (Agent) – 0.4.20+44
 - [x] A2 Investoren, A3 Farm-out, A5 Konsortium, A6 Staat (Agent) – 0.4.20+46
-- [ ] C6 Abschluss: auf main zusammenführen, Roadmap, Tester-Build, Bericht
+- [x] C6 Abschluss: auf main zusammengeführt (0.4.20+47), Roadmap nachgezogen, Tester-Build release/crude-0.4.20+46.zip, Kampagne 1.000
 
 # Plan: Kontakte aufbauen, neue Großhändler, Geldquellen und Rest (Nachtarbeit)
 
