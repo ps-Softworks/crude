@@ -2408,6 +2408,7 @@ sale:
     feud: 0.4
     others: 0.45           # die anderen Ölleute bieten mindestens so viel – Bullard muss mithalten
     rig: 0.8               # Turm: 80 % des normalen Verkaufspreises
+    crisis: 0.7            # 0.4.20+48: in Bankpanik/Crash × 0,7 – die Käufer sind selbst klamm (PLATZHALTER, bot trainer stellt nach)
 
 # Pleitefrist mit Auswegen (src/sim/insolvency.ts, GDD §8): Frist bankruptcy.graceRounds, dazu Notverkauf (sale.emergency),
 # Umschuldung und Rettung durch Mr. Vale (Kapitel 1/2; Kapitel 3: Konsortium, kapitel3.konsortium.rescue).
@@ -2424,6 +2425,7 @@ insolvency:
     cushionShare: 0.25     # … oder 25 % des Lochs
     repay: 1.6             # Jacob schuldet ihm das 1,6-fache
     rate: 0.15             # zu 15 % pro Jahr – und einen Gefallen (Ereignis vale_rettung_gefallen)
+    crisisRepay: 1.25      # 0.4.20+48: in Bankpanik/Crash schuldet Jacob ihm × 1,25 mehr (PLATZHALTER)
 
 # Zweiter Anlauf (src/sim/secondChance.ts, GDD §8/§14): einmal je Spiel nach der Pleite neu als Wildcatter.
 secondChance:

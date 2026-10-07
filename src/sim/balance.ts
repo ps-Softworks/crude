@@ -2775,6 +2775,7 @@ export function parseBalance(raw: unknown): Balance {
         feud: share(raw, 'sale.emergency.feud'),
         others: share(raw, 'sale.emergency.others'),
         rig: share(raw, 'sale.emergency.rig'),
+        crisis: share(raw, 'sale.emergency.crisis'),
       },
     },
     insolvency: {
@@ -2791,6 +2792,7 @@ export function parseBalance(raw: unknown): Balance {
         cushionShare: share(raw, 'insolvency.rescue.cushionShare'),
         repay: num(raw, 'insolvency.rescue.repay'),
         rate: share(raw, 'insolvency.rescue.rate'),
+        crisisRepay: num(raw, 'insolvency.rescue.crisisRepay'),
       },
     },
     secondChance: {

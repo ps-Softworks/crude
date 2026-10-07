@@ -852,6 +852,13 @@ export function worldRateAdd(world: (Pick<WorldState, 'credit' | 'crash'> & { pa
   return Math.round(clamp(roh, -k.rateMaxAdd, k.rateMaxAdd) * 400) / 400;
 }
 
+/** 0.4.20+48: Herrscht gerade eine Kreditkrise (Bankpanik oder Crash)? Dann ist auch die Gegenseite klamm. Ohne Weltmodell nein. */
+export function inCreditCrisis(world: (Pick<WorldState, 'credit' | 'crash'> & { panic?: number; leverage?: number }) | undefined, wb: WorldModelBalance): boolean {
+  if (!world) return false;
+  const phase = creditPhase(world, wb);
+  return phase === 'panic' || phase === 'crash';
+}
+
 /**
  * Faktor auf den Bankrahmen (4.4): Im Boom und erst recht in der Blase leihen die
  * Banken großzügiger, bei knappem Geld weniger, in Panik und Crash kürzen sie die

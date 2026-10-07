@@ -15,6 +15,7 @@
 // mindestens emergency.others × Wert. Bullards Kasse deckelt dann nicht: Was er nicht hat, legen seine Teilhaber
 // dazu. Türme gehen in der Frist zu rigShare × emergency.rig des Neupreises weg.
 import type { Balance } from './balance';
+import { inCreditCrisis } from './world';
 import { formatDate } from './calendar';
 import type { GameState } from './game';
 import { leaseOf, parcelLabel } from './lease';
@@ -38,7 +39,7 @@ export interface SaleBalance {
   /** Gebote rundet er auf diesen Schritt. */
   step: number;
   /** Notverkauf in der Pleitefrist: Anteile des Werts je Haltung, Untergrenze durch andere Bieter, Faktor für Türme. */
-  emergency: { neutral: number; pakt: number; feud: number; others: number; rig: number };
+  emergency: { neutral: number; pakt: number; feud: number; others: number; rig: number; /** 0.4.20+48: in Bankpanik/Crash × so viel – die Käufer sind selbst klamm. */ crisis: number };
 }
 
 export interface SaleQuote {
@@ -105,8 +106,9 @@ export function saleQuote(state: GameState, balance: Balance, parcelId: string):
   const stance = bullardStance(state);
   const not = inEmergency(state);
   const e = k.emergency;
+  const klamm = not && inCreditCrisis(state.worldModel, balance.worldModel) ? e.crisis : 1;
   const factor = not
-    ? Math.max(e.others, stance === 'pakt' ? e.pakt : stance === 'fehde' ? e.feud : e.neutral)
+    ? Math.max(e.others, stance === 'pakt' ? e.pakt : stance === 'fehde' ? e.feud : e.neutral) * klamm
     : stance === 'pakt' ? k.pakt : stance === 'fehde' ? k.feud : k.bid;
   const value = Math.round(flow * scarcity);
   const roh = Math.floor((value * factor) / k.step) * k.step;

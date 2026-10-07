@@ -12,6 +12,7 @@
 //     selbst, konsortium.ts): Vale deckt das Loch plus ein Polster (max(cushion, cushionShare × Loch)), Jacob
 //     schuldet ihm repay × diese Summe zu rate – und das Merkzeichen vale_rettung: Einige Runden später fordert
 //     Vale einen Gefallen ein (content/events/vale-rettung.yaml). Nur einmal je Spiel.
+import { inCreditCrisis } from './world';
 import { RATINGS, type Balance, type Rating } from './balance';
 import { formatDate } from './calendar';
 import { bankRateAdd, debt, loanRate, type Loan } from './credit';
@@ -36,6 +37,8 @@ export interface InsolvencyBalance {
     cushionShare: number;
     repay: number;
     rate: number;
+    /** 0.4.20+48: In Bankpanik/Crash ist auch Vale klamm – die Rückzahlung × so viel. */
+    crisisRepay: number;
   };
 }
 
@@ -193,7 +196,8 @@ export function valeRescueQuote(state: GameState, balance: Balance): ValeRescueQ
   const r = balance.insolvency.rescue;
   const loch = cashGap(state);
   const cash = Math.round(loch + Math.max(r.cushion, loch * r.cushionShare));
-  return { cash, owed: Math.round(cash * r.repay), rate: r.rate };
+  const klamm = inCreditCrisis(state.worldModel, balance.worldModel) ? r.crisisRepay : 1;
+  return { cash, owed: Math.round(cash * r.repay * klamm), rate: r.rate };
 }
 
 /** Vales Geld annehmen: Kasse gedeckt, Schuld bei Vale, Merkzeichen für seinen späteren Gefallen. */

@@ -165,3 +165,26 @@ describe('Ausweg (c): Rettung durch Mr. Vale', () => {
     expect(gesehen).toBe(true);
   });
 });
+
+describe('0.4.20+48: In der Kreditkrise ist auch die Gegenseite klamm', () => {
+  const krise = (s: GameState): GameState => ({ ...s, worldModel: { ...s.worldModel!, crash: 2 } });
+  it('Notverkauf: Gebote × sale.emergency.crisis', () => {
+    const s0 = inFrist();
+    const parcel = s0.parcels.find((p) => !p.discovery && !p.sure && !s0.leases.some((l) => l.parcelId === p.id))!;
+    const s: GameState = {
+      ...s0,
+      leases: [...s0.leases, { parcelId: parcel.id, holder: 'jacob', bonus: 800, royalty: 0.15, startRound: 1, expiresAfterRound: 99, drilled: true }],
+      wells: [quelle(parcel.id, 3000)],
+    };
+    const normal = emergencySales(s, balance).leases[0].offer;
+    const klamm = emergencySales(krise(s), balance).leases[0].offer;
+    expect(klamm).toBeLessThan(normal);
+    expect(klamm).toBeGreaterThanOrEqual(Math.floor((normal * balance.sale.emergency.crisis) / balance.sale.step) * balance.sale.step - balance.sale.step);
+  });
+  it('Vale: Rückzahlung × insolvency.rescue.crisisRepay', () => {
+    const s = inFrist();
+    const q = valeRescueQuote(krise(s), balance);
+    expect(q.owed).toBe(Math.round(q.cash * R.rescue.repay * R.rescue.crisisRepay));
+    expect(valeRescueQuote(s, balance).owed).toBeLessThan(q.owed);
+  });
+});
